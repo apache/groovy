@@ -46,15 +46,12 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -71,7 +68,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
     public static final String MODULE_META_INF_FILE = "META-INF/services/org.codehaus.groovy.runtime.ExtensionModule";
     private static final MetaClass[] EMPTY_METACLASS_ARRAY = new MetaClass[0];
     private static final MetaClassRegistryChangeEventListener[] EMPTY_METACLASSREGISTRYCHANGEEVENTLISTENER_ARRAY = new MetaClassRegistryChangeEventListener[0];
-    
+
     /**
      * System property name used to disable specific extension modules.
      * When set, the value should be a comma-separated list of extension module names to disable.
@@ -95,7 +92,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
      * Flag to load default metaclasses for standard Java and Groovy types when initializing the registry.
      */
     public static final int LOAD_DEFAULT = 0;
-    
+
     /**
      * Flag to skip loading default metaclasses during registry initialization.
      */

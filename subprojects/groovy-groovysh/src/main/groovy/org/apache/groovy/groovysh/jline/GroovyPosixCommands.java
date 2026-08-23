@@ -30,7 +30,6 @@ import org.codehaus.groovy.runtime.ArrayGroovyMethods;
 import org.jline.builtins.ConfigurationPath;
 import org.jline.builtins.Less;
 import org.jline.builtins.Options;
-import org.jline.builtins.PosixCommands.Context;
 import org.jline.builtins.Source;
 import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedString;

@@ -24,7 +24,6 @@ import groovy.lang.MetaMethod;
 import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
-import org.codehaus.groovy.util.ReferenceBundle;
 
 import java.lang.reflect.Modifier;
 import java.util.concurrent.ConcurrentHashMap;

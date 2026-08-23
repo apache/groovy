@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.codehaus.groovy.control.ResolveVisitor.EMPTY_STRING_ARRAY;
-import static org.codehaus.groovy.runtime.InvokerHelper.EMPTY_ARGS;
 import static org.codehaus.groovy.runtime.InvokerHelper.MAIN_METHOD_NAME;
 
 /**
