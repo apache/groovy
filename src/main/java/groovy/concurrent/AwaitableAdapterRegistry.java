@@ -232,6 +232,9 @@ public final class AwaitableAdapterRegistry {
                         cf.complete(future.get());
                     } catch (ExecutionException e) {
                         cf.completeExceptionally(e.getCause());
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        cf.completeExceptionally(e);
                     } catch (Throwable e) {
                         cf.completeExceptionally(e);
                     }

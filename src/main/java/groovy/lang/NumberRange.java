@@ -544,7 +544,7 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
 
     private boolean isIntegral(Number stepSize) {
         BigDecimal tempStepSize = NumberMath.toBigDecimal(stepSize);
-        return tempStepSize.equals(new BigDecimal(tempStepSize.toBigInteger()));
+        return tempStepSize.compareTo(new BigDecimal(tempStepSize.toBigInteger())) == 0;
     }
 
     /**

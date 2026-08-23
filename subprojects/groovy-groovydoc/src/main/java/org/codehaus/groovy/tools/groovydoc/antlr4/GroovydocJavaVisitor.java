@@ -360,8 +360,8 @@ public class GroovydocJavaVisitor
     }
 
     private String getAnnotationText(final AnnotationExpr an) {
-        if (an != null && an.getTokenRange().isPresent()) {
-            return an.getTokenRange().get().toString();
+        if (an != null) {
+            return an.getTokenRange().map(Object::toString).orElse("");
         }
         return "";
     }

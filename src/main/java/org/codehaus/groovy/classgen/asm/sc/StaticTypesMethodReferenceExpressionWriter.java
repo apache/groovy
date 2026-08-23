@@ -561,7 +561,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                 score += 9;
             }
             return score;
-        }).thenComparing(StaticTypesMethodReferenceExpressionWriter::isExtensionMethod)).get();
+        }).thenComparing(StaticTypesMethodReferenceExpressionWriter::isExtensionMethod)).orElse(null);
     }
 
     private List<MethodNode> findVisibleMethods(final String name, final ClassNode type) {

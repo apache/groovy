@@ -1024,12 +1024,12 @@ public class MetaClassHelper {
      */
     public static Object normalizeBoxedReturn(final Object value, final Class<?> returnType) {
         if (value == null || !returnType.isPrimitive()) return value; // null includes void
-        if (returnType == int.class) return Integer.valueOf((Integer) value);
-        if (returnType == boolean.class) return Boolean.valueOf((Boolean) value);
-        if (returnType == long.class) return Long.valueOf((Long) value);
-        if (returnType == char.class) return Character.valueOf((Character) value);
-        if (returnType == byte.class) return Byte.valueOf((Byte) value);
-        if (returnType == short.class) return Short.valueOf((Short) value);
+        if (returnType == int.class) return Integer.valueOf(((Integer) value).intValue());
+        if (returnType == boolean.class) return Boolean.valueOf(((Boolean) value).booleanValue());
+        if (returnType == long.class) return Long.valueOf(((Long) value).longValue());
+        if (returnType == char.class) return Character.valueOf(((Character) value).charValue());
+        if (returnType == byte.class) return Byte.valueOf(((Byte) value).byteValue());
+        if (returnType == short.class) return Short.valueOf(((Short) value).shortValue());
         return value; // float/double: valueOf does not cache on any path
     }
 

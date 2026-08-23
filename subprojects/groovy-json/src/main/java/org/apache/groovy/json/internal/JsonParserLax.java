@@ -317,7 +317,8 @@ public class JsonParserLax extends JsonParserCharArray {
 
                 case 'n':
                     if (isNull()) {
-                        return decodeNull() == null ? ValueContainer.NULL : ValueContainer.NULL;
+                        decodeNull();
+                        return ValueContainer.NULL;
                     } else {
                         value = decodeStringLax();
                     }

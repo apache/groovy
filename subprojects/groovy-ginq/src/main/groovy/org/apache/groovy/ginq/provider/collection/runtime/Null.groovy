@@ -26,7 +26,7 @@ import groovy.transform.PackageScope
  * @since 4.0.0
  */
 @PackageScope
-class Null {
+class Null implements Cloneable {
     /** Shared null-object instance. */
     public static final Null INSTANCE = new Null()
 

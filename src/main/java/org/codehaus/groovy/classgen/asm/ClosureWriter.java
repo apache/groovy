@@ -1557,7 +1557,7 @@ public class ClosureWriter {
         }
         final byte[] hashBytes = md.digest(str.getBytes(StandardCharsets.UTF_8));
         long hash = 0;
-        for (int i = Math.min(hashBytes.length, 7); i >= 0; i--) {
+        for (int i = Math.min(hashBytes.length - 1, 7); i >= 0; i--) {
             hash = (hash << 8) | (hashBytes[i] & 0xFF);
         }
         return hash;

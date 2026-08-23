@@ -28,7 +28,7 @@ final class ManagedConcurrentValueMapTest {
     @Test
     void testEntriesRemoveSelfFromMapWhenFinalized() {
         for (int i = 0; i < 5; i++) {
-            map.put("Key${i}", new Object())
+            map.put('Key' + i, new Object())
         }
 
         assert map.@internalMap.size() == 5

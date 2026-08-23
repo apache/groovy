@@ -100,7 +100,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         if (0 == size) {
             return null;
         }
-        return nthValue(extractor, size - 1);
+        return nthValue(extractor, size - 1L);
     }
 
     @Override
@@ -282,7 +282,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         if ((firstIndex < 0 && lastIndex < 0) || (firstIndex >= size && lastIndex >= size)) {
             return null;
         }
-        return new RowBound(Math.max(firstIndex, 0), Math.min(lastIndex, size - 1));
+        return new RowBound(Math.max(firstIndex, 0L), Math.min(lastIndex, size - 1L));
     }
 
     private static <T, U extends Comparable<? super U>> long getIndexByValue(BigDecimal value, boolean isLower, List<U> list) {
@@ -303,7 +303,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         if (isLower) {
             int i = valueIndex - 1;
             for (; i >= 0; i--) {
-                if (!value.equals(toBigDecimal((Number) list.get(i)))) {
+                if (value.compareTo(toBigDecimal((Number) list.get(i))) != 0) {
                     break;
                 }
             }
@@ -311,7 +311,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         } else {
             int i = valueIndex + 1;
             for (int n = list.size(); i < n; i++) {
-                if (!value.equals(toBigDecimal((Number) list.get(i)))) {
+                if (value.compareTo(toBigDecimal((Number) list.get(i))) != 0) {
                     break;
                 }
             }

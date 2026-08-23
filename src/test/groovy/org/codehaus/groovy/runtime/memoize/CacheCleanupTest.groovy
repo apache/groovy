@@ -57,7 +57,7 @@ public class CacheCleanupTest {
         cache.put('key2', new SoftReference(ANCHOR))
         assert cache.@map.size() == 2
         for (i in (3..1000)) {
-            cache.put("key${i}", new SoftReference(null))  //Simulating evicted objects
+            cache.put('key' + i, new SoftReference(null))  //Simulating evicted objects
             cache.get('key1')  //touch the non-null cache entries to keep them hot to prevent a potential LRU algorithm from evicting them
             cache.get('key2')
         }

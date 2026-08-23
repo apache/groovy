@@ -322,21 +322,21 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
             FontMetrics fm = graphics.getFontMetrics(font);
             int width = SwingUtilities.computeStringWidth(fm, header);
             ((Graphics2D) graphics).drawString(header,
-                    (float) (paper.getImageableWidth() / 2 - width / 2),
-                    (float) paper.getImageableY() / 2 + fm.getHeight());
+                    (float) (paper.getImageableWidth() / 2.0 - width / 2.0),
+                    (float) (paper.getImageableY() / 2.0 + fm.getHeight()));
 
             ((Graphics2D) graphics).translate(0, paper.getImageableY() - fm.getHeight());
-            double height = paper.getImageableHeight() + paper.getImageableY() / 2;
+            double height = paper.getImageableHeight() + paper.getImageableY() / 2.0;
             width = SwingUtilities.computeStringWidth(fm, name);
             ((Graphics2D) graphics).drawString(name,
-                    (float) (paper.getImageableWidth() / 2 - width / 2),
-                    (float) height - fm.getHeight() / 2);
+                    (float) (paper.getImageableWidth() / 2.0 - width / 2.0),
+                    (float) (height - fm.getHeight() / 2.0));
 
             ((Graphics2D) graphics).translate(0, fm.getHeight());
             width = SwingUtilities.computeStringWidth(fm, pageStr);
             ((Graphics2D) graphics).drawString(pageStr,
-                    (float) (paper.getImageableWidth() / 2 - width / 2),
-                    (float) height - fm.getHeight() / 2);
+                    (float) (paper.getImageableWidth() / 2.0 - width / 2.0),
+                    (float) (height - fm.getHeight() / 2.0));
 
             return Printable.PAGE_EXISTS;
         }

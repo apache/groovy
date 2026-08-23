@@ -163,7 +163,10 @@ public class JsonFastParser extends JsonParserCharArray {
             case '{' -> decodeJsonObjectLazyFinalParse();
             case 't' -> decodeTrue() ? ValueContainer.TRUE : ValueContainer.FALSE;
             case 'f' -> !decodeFalse() ? ValueContainer.FALSE : ValueContainer.TRUE;
-            case 'n' -> decodeNull() == null ? ValueContainer.NULL : ValueContainer.NULL;
+            case 'n' -> {
+                decodeNull();
+                yield ValueContainer.NULL;
+            }
             case '[' -> decodeJsonArrayOverlay();
             case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' -> decodeNumberOverlay(false);
             case '-' -> decodeNumberOverlay(true);

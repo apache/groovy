@@ -44,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -73,19 +74,16 @@ public class FactorySupportTest {
     }
 
     @Test
-    public void otherExceptionsWrappedAsUnchecked() throws ParserConfigurationException {
-        try {
-            FactorySupport.createFactory(new PrivilegedExceptionAction() {
+    public void otherExceptionsWrappedAsUnchecked() {
+        RuntimeException re = assertThrows(RuntimeException.class, () ->
+            FactorySupport.createFactory(new PrivilegedExceptionAction<Object>() {
+                @Override
                 public Object run() throws Exception {
                     throw PRIVILEGED_ACTION_EXCEPTION;
                 }
-            });
-            fail("Exception was not caught");
-        } catch (RuntimeException re) {
-            assertSame(PRIVILEGED_ACTION_EXCEPTION, re.getCause());
-        } catch (Throwable t) {
-            fail("Exception was not wrapped as runtime");
-        }
+            })
+        );
+        assertSame(PRIVILEGED_ACTION_EXCEPTION, re.getCause());
     }
 
     @Test

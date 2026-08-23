@@ -5484,7 +5484,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     // GROOVY-10355: a cast whose operand is the binary-only keyword identifier "in" or "as"
     private static final String CAST_OF_BINARY_KEYWORD = "_CAST_OF_BINARY_KEYWORD";
 
-    private static final Pattern BARE_NAME_PATTERN = Pattern.compile("[A-Za-z_$][A-Za-z0-9_$]*(\\.[A-Za-z_$][A-Za-z0-9_$]*)*");
+    private static final Pattern BARE_NAME_PATTERN = Pattern.compile("[A-Za-z_$][A-Za-z0-9_$]*(?:\\.[A-Za-z_$][A-Za-z0-9_$]*)*");
 
     private static final String CLASS_NAME = "_CLASS_NAME";
     private static final String INSIDE_PARENTHESES_LEVEL = "_INSIDE_PARENTHESES_LEVEL";

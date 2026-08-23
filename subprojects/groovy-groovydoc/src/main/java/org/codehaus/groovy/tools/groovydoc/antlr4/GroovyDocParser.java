@@ -98,10 +98,11 @@ public class GroovyDocParser implements GroovyDocParserI {
         GroovydocJavaVisitor visitor = new GroovydocJavaVisitor(packagePath, links, properties);
         try {
             ParseResult<com.github.javaparser.ast.CompilationUnit> parseResult = javaParser.parse(src);
-            if (!parseResult.isSuccessful() || parseResult.getResult().isEmpty()) {
+            var cuOpt = parseResult.getResult();
+            if (!parseResult.isSuccessful() || cuOpt.isEmpty()) {
                 throw new ParseProblemException(parseResult.getProblems());
             }
-            visitor.visit(parseResult.getResult().get(), null);
+            visitor.visit(cuOpt.get(), null);
         } catch (Throwable t) {
             LOGGER.log(WARNING, "Attempting to ignore error parsing Java source file: {0}/{1}", packagePath, file);
             LOGGER.log(WARNING, "Consider reporting the error to the Groovy project: https://issues.apache.org/jira/browse/GROOVY");

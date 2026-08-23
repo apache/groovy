@@ -142,7 +142,7 @@ public class LoopVariantASTTransformation implements ASTTransformation, Compilat
             Statement declSeen = declS(localVarX(seenVarName, ClassHelper.boolean_TYPE), constX(false, true));
             declSeen.setSourcePosition(annotation);
             List<Statement> siblings = enclosingBlock.getStatements();
-            siblings.addAll(siblings.indexOf(loopStatement), List.of(declPrev, declSeen));
+            siblings.addAll(siblings.indexOf((Statement) loopStatement), List.of(declPrev, declSeen));
 
             Statement saveCurr = declS(localVarX(currVarName, ClassHelper.dynamicType()), variantExpression);
             saveCurr.setSourcePosition(annotation);

@@ -252,6 +252,11 @@ public class FieldNode extends AnnotatedNode implements Variable {
         return super.equals(obj);
     }
 
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
     /**
      * Returns the original declared type of this field before any transformations.
      * Useful for preserving type information through compilation phases that may modify types.

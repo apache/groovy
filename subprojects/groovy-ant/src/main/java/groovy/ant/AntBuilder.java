@@ -396,7 +396,11 @@ public class AntBuilder extends BuilderSupport {
             } catch (Exception e) {
                 BuildException be = new BuildException(e);
                 be.setLocation(task.getLocation());
-                throw be;
+                if (reason != null) {
+                    reason.addSuppressed(be);
+                } else {
+                    throw be;
+                }
             }
         }
     }
