@@ -568,12 +568,15 @@ import static groovy.test.GroovyAssert.shouldFail
         'Cannot set read-only property: foo','@ line 5, column 19'
     }
 
-    // GROOVY-11956
+    // GROOVY-11956, GROOVY-12290: the protected setter is out of scope and the
+    // private field is in a foreign nest, so the property is read-only in both
+    // type-checked and statically-compiled code
     @Test
     void testMapStyleConstructorWithInaccessibleSetter() {
-        assertScript """import ${Pojo11956.canonicalName}
+        shouldFailWithMessages """import ${Pojo11956.canonicalName}
             new Pojo11956(foo: 'bar')
-        """
+        """,
+        'Cannot set read-only property: foo'
     }
 
     // GROOVY-10787

@@ -49,6 +49,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.MultipleAssignmentMetadata;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
@@ -650,13 +651,27 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
+     * Determines if the two classes belong to the same nest, so a private-access
+     * bridge can be generated between them. Identity comparison is deliberate:
+     * nest-mates only arise within a single source unit, where the outer-class
+     * chain shares {@code ClassNode} instances; name-based {@code equals} could
+     * conflate same-named classes from different origins. Accessibility decisions
+     * ({@link #isFieldAccessible}) must use the same predicate as bridge marking
+     * ({@code checkOrMarkPrivateAccess}), or an access could be admitted for
+     * which no bridge is generated.
+     */
+    private static boolean inSameNest(final ClassNode a, final ClassNode b) {
+        return getNestHost(a) == getNestHost(b);
+    }
+
+    /**
      * Checks for private field access from closure or nestmate.
      */
     private void checkOrMarkPrivateAccess(final Expression source, final FieldNode fn, final boolean lhsOfAssignment) {
         if (fn != null && fn.isPrivate() && !fn.isSynthetic()) {
             ClassNode declaringClass = fn.getDeclaringClass();
             ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
-            if (declaringClass == enclosingClass ? typeCheckingContext.getEnclosingClosure() != null : getNestHost(declaringClass) == getNestHost(enclosingClass)) {
+            if (declaringClass == enclosingClass ? typeCheckingContext.getEnclosingClosure() != null : inSameNest(declaringClass, enclosingClass)) {
                 source.putNodeMetaData(lhsOfAssignment ? PV_FIELDS_MUTATION : PV_FIELDS_ACCESS, fn);
             }
         }
@@ -669,7 +684,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode declaringClass = mn.getDeclaringClass();
         ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
         if (declaringClass != enclosingClass || typeCheckingContext.getEnclosingClosure() != null) {
-            if (mn.isPrivate() && getNestHost(declaringClass) == getNestHost(enclosingClass)) {
+            if (mn.isPrivate() && inSameNest(declaringClass, enclosingClass)) {
                 if (source instanceof MethodReferenceExpression // GROOVY-11301: access bridge for lambda
                         && Float.parseFloat(getSourceUnit().getConfiguration().getTargetBytecode()) < 15)
                     declaringClass.getNodeMetaData(PV_METHODS_ACCESS, k -> new LinkedHashSet<MethodNode>()).add(mn);
@@ -2237,6 +2252,16 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     getter = getGetterMethod(current, getterName, checkUp);
                     getter = allowStaticAccessToMember(getter, staticOnly);
                 }
+                if (getter == null && current.isRecord()) {
+                    // GROOVY-12225: a precompiled record's component accessor is named for the
+                    // component (e.g. "x()"), so there is no get/is getter and no PropertyNode
+                    for (RecordComponentNode rcn : current.getRecordComponents()) {
+                        if (rcn.getName().equals(propertyName)) {
+                            getter = allowStaticAccessToMember(current.getDeclaredMethod(propertyName, Parameter.EMPTY_ARRAY), staticOnly);
+                            break;
+                        }
+                    }
+                }
                 if (getter != null && ((publicOnly && (!getter.isPublic() || propertyName.equals("class") || propertyName.equals("empty")))
                         // GROOVY-11319:
                         || !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), getter.getDeclaringClass(), getter.getModifiers()))) {
@@ -2280,7 +2305,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             }
                             pexp.removeNodeMetaData(READONLY_PROPERTY);
                             return true;
-                        } else if (getter != null && (field == null || field.isFinal()) && setters.isEmpty()) {
+                        } else if (getter != null && setters.isEmpty() && (field == null || field.isFinal()
+                                || !isFieldAccessible(field, receiverType, pexp, receiver.getData()))) { // GROOVY-12290: inaccessible field cannot make the property writable
                             pexp.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE); // GROOVY-9127
                         }
                     }
@@ -2522,10 +2548,32 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         return method instanceof ExtensionMethodNode ? ((ExtensionMethodNode) method).isStaticExtension() : method.isStatic();
     }
 
-    private boolean storeField(final FieldNode field, final PropertyExpression expressionToStoreOn, final ClassNode receiver, final ClassCodeVisitorSupport visitor, final String delegationData, final boolean lhsOfAssignment) {
-        boolean superField = isSuperExpression(expressionToStoreOn.getObjectExpression());
-        boolean accessible = (!superField && receiver.equals(field.getDeclaringClass()) && !field.getDeclaringClass().isAbstract()) // GROOVY-7300, GROOVY-11358
+    /**
+     * Determines if the field can back the given property (or attribute)
+     * expression: accessible by Java rules, or admitted by the receiver-type
+     * leniency (GROOVY-7300, GROOVY-11358) that models dynamic Groovy's
+     * permissive private access. Since GROOVY-12290 that leniency no longer
+     * admits plain property syntax to a private field of a foreign nest — a
+     * direct field access that static compilation cannot honour (no access
+     * bridge exists). The deliberate dynamic escape hatches remain: attribute
+     * access (.@), and closure bodies (GROOVY-9195) — including delegate-resolved
+     * access — whose property dispatch stays dynamic-capable under static compilation.
+     */
+    private boolean isFieldAccessible(final FieldNode field, final ClassNode receiver, final PropertyExpression expression, final String delegationData) {
+        boolean superField = isSuperExpression(expression.getObjectExpression());
+        boolean exactReceiver = (!superField && receiver.equals(field.getDeclaringClass()) && !field.getDeclaringClass().isAbstract()); // GROOVY-7300, GROOVY-11358
+        if (exactReceiver && field.isPrivate() && delegationData == null
+                && typeCheckingContext.getEnclosingClosure() == null
+                && !(expression instanceof AttributeExpression)
+                && !inSameNest(field.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode())) {
+            exactReceiver = false; // GROOVY-12290
+        }
+        return exactReceiver
                 || hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), field.getDeclaringClass(), field.getModifiers());
+    }
+
+    private boolean storeField(final FieldNode field, final PropertyExpression expressionToStoreOn, final ClassNode receiver, final ClassCodeVisitorSupport visitor, final String delegationData, final boolean lhsOfAssignment) {
+        boolean accessible = isFieldAccessible(field, receiver, expressionToStoreOn, delegationData);
         if (!accessible) {
             if (expressionToStoreOn instanceof AttributeExpression) {
                 addStaticTypeError("Cannot access field: " + field.getName() + " of class: " + prettyPrintTypeName(field.getDeclaringClass()), expressionToStoreOn.getProperty());

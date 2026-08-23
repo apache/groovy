@@ -1887,6 +1887,54 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'Cannot access field: f of class: A', 'No such property: f for class: A'
     }
 
+    // GROOVY-12290
+    @Test
+    void testPrivateFieldOfForeignNestViaPropertySyntax() {
+        shouldFailWithMessages '''
+            class P { private static final Map M = [a: 1] }
+            def m() { P.M }
+        ''',
+        'No such property: M for Class or static property for class: P'
+
+        shouldFailWithMessages '''
+            class P { private final Map f = [a: 1] }
+            def m() { new P().f }
+        ''',
+        'No such property: f for class: P'
+
+        shouldFailWithMessages '''
+            class P { private static Map W = [:] }
+            def m() { P.W = [b: 2] }
+        ''',
+        'No such property: W for Class or static property for class: P'
+    }
+
+    // GROOVY-12290: the deliberate escape hatches into dynamic private access
+    // keep working: attribute syntax and delegate-resolved access in closures
+    @Test
+    void testPrivateFieldOfForeignNestViaAttributeOrDelegate() {
+        assertScript '''
+            class P { private final Map f = [a: 1] }
+            assert new P().@f == [a: 1]
+        '''
+        assertScript '''
+            class P { private final Map f = [a: 1] }
+            assert new P().with { f } == [a: 1]
+        '''
+    }
+
+    // GROOVY-12290: nest-mates go through access bridges, not the receiver-type leniency
+    @Test
+    void testPrivateFieldOfNestMateViaPropertySyntax() {
+        assertScript '''
+            class Outer {
+                private static final Map M = [a: 1]
+                static class Inner { def m() { M } }
+            }
+            assert new Outer.Inner().m() == [a: 1]
+        '''
+    }
+
     // GROOVY-5737
     @Test
     void testGeneratedFieldAccessInClosure() {
