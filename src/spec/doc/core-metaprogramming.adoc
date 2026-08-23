@@ -2977,6 +2977,50 @@ then a later phase where information is more plentiful might be a good
 choice. If your transformation is concerned with writing AST, then an
 earlier phase where the tree is more sparse might be more convenient.
 
+[[transforms-static-compilation]]
+==== Transformations and static compilation
+
+The phase advice above is about convenience. If classes using your
+transformation may also use `@TypeChecked` or `@CompileStatic` — which for a
+transformation shipped by a library or framework is out of your hands — the
+phase you pick additionally decides whether the type checker sees the code you
+generate at all.
+
+Static type checking runs during instruction selection. Code that your
+transformation adds in an earlier phase is visited by the type checker exactly
+like code the user wrote: it is checked, and under static compilation every
+method call and property access in it is annotated with the resolution
+metadata the bytecode writers depend on, chiefly
+`StaticTypesMarker.DIRECT_METHOD_CALL_TARGET` (the resolved method) and
+`StaticTypesMarker.INFERRED_TYPE` (see
+gapi:org.codehaus.groovy.transform.stc.StaticTypesMarker[]). Code injected
+during or after instruction selection is never visited by the type checker.
+Dynamic Groovy and `@TypeChecked` classes do not care, because their bytecode
+dispatches dynamically either way — but under `@CompileStatic` the static
+writers have nothing to link against. The result is code that works
+dynamically and type-checked yet breaks statically compiled, typically with
+"Target method for method call expression hasn't been set", a
+`VerifyError`, or a "Cannot find matching method" error that only appears
+under `@CompileStatic`. If users of your transformation report errors like
+these, check what phase the generating code runs in before suspecting their
+code.
+
+The safe pattern is therefore to generate code before instruction selection —
+usually semantic analysis for local transformations — and let the type checker
+annotate it for you. If your transformation must run late, the options are to
+mark the generated methods with `@CompileDynamic` (or generate calls through
+the dynamic runtime deliberately), or to attach the required metadata
+yourself; the latter means hand-resolving targets the way the type checker
+would, which is expert territory for the same reasons described in
+<<{core-semantics}#ast-xform-as-extension,Transforming the AST in an extension>>.
+
+TIP: The mirror image of this problem — a type checking *extension* that
+vouches for dynamic code under `@TypeChecked`, leaving the static compiler
+nothing to link against — is covered in the type checking extensions
+documentation: prefer `makeDynamic` (see
+<<{core-semantics}#mixed-mode,mixed mode compilation>>) or resolve a real
+method target instead of simply setting `handled`.
+
 [[transforms-local]]
 ==== Local transformations
 
