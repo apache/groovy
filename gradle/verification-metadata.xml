@@ -1078,6 +1078,11 @@
             <pgp value="48B086A7D843CFA258E83286928FBF39003C0425"/>
          </artifact>
       </component>
+      <component group="io.projectreactor" name="reactor-core" version="3.8.7">
+         <artifact name="reactor-core-3.8.7.jar">
+            <pgp value="48B086A7D843CFA258E83286928FBF39003C0425"/>
+         </artifact>
+      </component>
       <component group="io.reactivex.rxjava3" name="rxjava" version="3.1.10">
          <artifact name="rxjava-3.1.10.jar">
             <pgp value="E9CC3CD1AE59E851E4DB3FA350FFD7487D34B5B9"/>
