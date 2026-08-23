@@ -198,6 +198,8 @@ public class FactorySupport {
         XMLInputFactory factory = XMLInputFactory.newFactory();
         setPropertyQuietly(factory, XMLInputFactory.SUPPORT_DTD, allowDocTypeDeclaration);
         setPropertyQuietly(factory, XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+        setPropertyQuietly(factory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        setPropertyQuietly(factory, XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
         return factory;
     }
 
@@ -247,6 +249,8 @@ public class FactorySupport {
     public static SchemaFactory createSchemaFactory(String schemaLanguage) {
         SchemaFactory factory = SchemaFactory.newInstance(schemaLanguage);
         setFeatureQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        setPropertyQuietly(factory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        setPropertyQuietly(factory, XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
         return factory;
     }
 
@@ -333,6 +337,14 @@ public class FactorySupport {
         try {
             factory.setProperty(property, value);
         } catch (IllegalArgumentException e) {
+            warnHardeningNotApplied(factory, property, value, e);
+        }
+    }
+
+    private static void setPropertyQuietly(SchemaFactory factory, String property, Object value) {
+        try {
+            factory.setProperty(property, value);
+        } catch (SAXNotRecognizedException | SAXNotSupportedException e) {
             warnHardeningNotApplied(factory, property, value, e);
         }
     }

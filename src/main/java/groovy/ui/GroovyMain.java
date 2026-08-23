@@ -54,6 +54,7 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -637,7 +638,7 @@ public class GroovyMain {
         } else {
             File backup;
             if (backupExtension == null) {
-                backup = File.createTempFile("groovy_", ".tmp");
+                backup = Files.createTempFile("groovy_", ".tmp").toFile();
                 backup.deleteOnExit();
             } else {
                 backup = new File(file.getPath() + backupExtension);

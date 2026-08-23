@@ -21,12 +21,14 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write         # gh-pages push
-  deployments: write
-  issues: write           # commit comments
+  contents: read
 
 jobs:
   benchmark:
+    permissions:
+      contents: write         # gh-pages push
+      deployments: write
+      issues: write           # commit comments
     strategy:
       fail-fast: false
       matrix:

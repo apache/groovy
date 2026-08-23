@@ -24,8 +24,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
-  issues: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -33,6 +31,10 @@ concurrency:
 
 jobs:
   test:
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
     if: >-
       contains(github.event.head_commit.message || '', 'GROOVY-') ||
       contains(github.event.pull_request.title || '', 'GROOVY-')
