@@ -30,6 +30,7 @@ class JsonSlurperLaxTest extends JsonSlurperTest {
         parser = new JsonSlurper().setType(JsonParserType.LAX)
     }
 
+    @Test
     @Override
     void exactly312Test() {
         assert parser.parseText('22').toValue() == 22
