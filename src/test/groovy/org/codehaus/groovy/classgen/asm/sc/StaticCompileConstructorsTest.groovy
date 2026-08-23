@@ -19,7 +19,6 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.ConstructorsSTCTest
-import groovy.transform.stc.Pojo11956
 import org.junit.jupiter.api.Test
 
 /**
@@ -128,12 +127,7 @@ final class StaticCompileConstructorsTest extends ConstructorsSTCTest implements
         assert !asserts.contains('INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.setGroovyObjectProperty')
     }
 
-    // GROOVY-11956
-    @Override @Test
-    void testMapStyleConstructorWithInaccessibleSetter() {
-        shouldFailWithMessages """import ${Pojo11956.canonicalName}
-            new Pojo11956(foo: 'bar')
-        """,
-        "Cannot access method: setFoo(java.lang.String) of class: ${Pojo11956.canonicalName} @ line 2, column 27"
-    }
+    // GROOVY-11956, GROOVY-12290: testMapStyleConstructorWithInaccessibleSetter is
+    // inherited: the read-only property error is now reported by the type checker,
+    // identically for @TypeChecked and @CompileStatic
 }

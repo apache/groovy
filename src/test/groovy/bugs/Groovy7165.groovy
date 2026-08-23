@@ -90,6 +90,7 @@ final class Groovy7165 {
             }
             assert false : 'compilation should fail'
         '''
-        assert err.message =~ /Access to A#CONST is forbidden/
+        // GROOVY-12290: reported by the type checker, no longer late by the static writer
+        assert err.message =~ /No such property: CONST for Class or static property for class: A/
     }
 }
