@@ -17,10 +17,13 @@
  *  under the License.
  */
 package groovy
+
+import org.junit.jupiter.api.Test
 // GROOVY-435
 
 class SingletonBugTest {
 
+    @Test
     public void testPrivate() {
         def x = SingletonBugPrivate.getInstance()
         def y = SingletonBugPrivate.getInstance()
@@ -30,6 +33,7 @@ class SingletonBugTest {
          SingletonBugPrivateSecond.doTestSecond()      // shouldFail? - super class has single private constructor
     }
 
+    @Test
     public void testProtected() {
         def x = SingletonBugProtected.getInstance()
         def y = SingletonBugProtected.getInstance()

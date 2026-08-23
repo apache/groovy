@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
+import org.junit.jupiter.api.Test
+
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -27,6 +29,7 @@ import static groovy.test.GroovyAssert.shouldFail
  */
 final class StaticCompileFieldAccessTest extends AbstractBytecodeTestCase {
 
+    @Test
     void testAccessProperty() {
         compile(method:'m', '''
             class A {
@@ -45,6 +48,7 @@ final class StaticCompileFieldAccessTest extends AbstractBytecodeTestCase {
         clazz.newInstance().run()
     }
 
+    @Test
     void testAccessField() {
         compile(method:'m', '''
             class A {
@@ -63,6 +67,7 @@ final class StaticCompileFieldAccessTest extends AbstractBytecodeTestCase {
         clazz.newInstance().run()
     }
 
+    @Test
     void testReturnProperty() {
         compile(method:'m', '''
             class A {
@@ -85,6 +90,7 @@ final class StaticCompileFieldAccessTest extends AbstractBytecodeTestCase {
         clazz.newInstance().run()
     }
 
+    @Test
     void testReturnPublicField() {
         compile(method:'m', '''
             class A {
@@ -107,6 +113,7 @@ final class StaticCompileFieldAccessTest extends AbstractBytecodeTestCase {
         clazz.newInstance().run()
     }
 
+    @Test
     void testReturnProtectedField() {
         compile(method:'m', '''
             class A {
@@ -129,6 +136,7 @@ final class StaticCompileFieldAccessTest extends AbstractBytecodeTestCase {
         clazz.newInstance().run()
     }
 
+    @Test
     void testReturnPublicFieldFromNonGroovyObject() {
         compile(method:'m', '''
             java.awt.Point a = [100,200]
@@ -148,6 +156,7 @@ final class StaticCompileFieldAccessTest extends AbstractBytecodeTestCase {
         clazz.newInstance().run()
     }
 
+    @Test
     void testReturnFieldFromNonGroovyObjectUsingGetter() {
         compile(method:'m', '''
             java.awt.Point a = [100,200]
@@ -167,6 +176,7 @@ final class StaticCompileFieldAccessTest extends AbstractBytecodeTestCase {
         clazz.newInstance().run()
     }
 
+    @Test
     void testReturnPropertyFromNonGroovyObject() {
         compile(method:'m', '''
             Object a = 'hello'
@@ -186,6 +196,7 @@ final class StaticCompileFieldAccessTest extends AbstractBytecodeTestCase {
         clazz.newInstance().run()
     }
 
+    @Test
     void testReturnPrivateFieldFromNonGroovyObjectAndNoGetter() {
         shouldFail {
             compile(method:'m', '''

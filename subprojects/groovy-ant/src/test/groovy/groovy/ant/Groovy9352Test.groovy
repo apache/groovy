@@ -18,8 +18,11 @@
  */
 package groovy.ant
 
+import org.junit.jupiter.api.Test
+
 final class Groovy9352Test extends AntTestCase {
 
+    @Test
     void test() {
         doInTmpDir { ant, baseDir ->
             baseDir.src {

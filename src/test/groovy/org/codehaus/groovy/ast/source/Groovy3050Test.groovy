@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.ast.source
 
+import org.junit.jupiter.api.Test
+
 
 class Groovy3050Test extends SourceBaseTestCase {
     def script = '''
@@ -25,6 +27,7 @@ class Groovy3050Test extends SourceBaseTestCase {
         [1,2].a
     '''
 
+    @Test
     void testLine2() {
         def statements = statements()
 
@@ -46,6 +49,7 @@ class Groovy3050Test extends SourceBaseTestCase {
         //assert sourceInfo(range.to) == [2,13, 2,13]
    }
 
+    @Test
     void testLine3() {
         def statements = statements()
         // [1,2].a

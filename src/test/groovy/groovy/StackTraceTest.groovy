@@ -17,6 +17,8 @@
  *  under the License.
  */
 package groovy
+
+import org.junit.jupiter.api.Test
 /**
  * This test case is added to ensure an exception thrown from inside
  * groovy does always contain a valid line number and file name for
@@ -27,6 +29,7 @@ package groovy
 class StackTraceTest {
 
 
+    @Test
     public void testTrace() {
         def className = this.class.name
         def assertDone = false
@@ -48,6 +51,7 @@ class StackTraceTest {
     }
 
 
+    @Test
     public void testMissingProperty() {
         def assertDone = false
         def script = new GroovyShell().parse('println(unknownProp)', 'testMissingProperty.tst')

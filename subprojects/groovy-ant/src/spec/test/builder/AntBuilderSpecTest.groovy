@@ -18,6 +18,8 @@
  */
 package builder
 
+import org.junit.jupiter.api.Test
+
 import groovy.ant.AntTestCase
 
 /**
@@ -25,6 +27,7 @@ import groovy.ant.AntTestCase
  */
 class AntBuilderSpecTest extends AntTestCase {
 
+    @Test
     void testEcho() {
         /*
         // tag::create_zip_builder[]
@@ -37,6 +40,7 @@ class AntBuilderSpecTest extends AntTestCase {
         // end::example_echo[]
     }
 
+    @Test
     void testCreateZip() {
         doInTmpDir { ant, baseDir ->
             baseDir.src {
@@ -48,6 +52,7 @@ class AntBuilderSpecTest extends AntTestCase {
         }
     }
 
+    @Test
     void testCopyFiles() {
         doInTmpDir {ant, baseDir ->
             baseDir.src {
@@ -85,6 +90,7 @@ class AntBuilderSpecTest extends AntTestCase {
         }
     }
 
+    @Test
     void testFileScanner() {
         doInTmpDir {ant, baseDir ->
             baseDir.src {
@@ -119,6 +125,7 @@ class AntBuilderSpecTest extends AntTestCase {
         }
     }
 
+    @Test
     void testExecuteJUnit() {
         doInTmpDir {ant, baseDir ->
             baseDir.some {
@@ -144,6 +151,7 @@ class AntBuilderSpecTest extends AntTestCase {
         }
     }
 
+    @Test
     void testCompileRunJava() {
         doInTmpDir {ant, baseDir ->
             // tag::compile_java[]

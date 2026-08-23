@@ -25,6 +25,7 @@ class DynamicMemberTest {
   def aTestMethod(o){o}
   def aProperty
 
+  @Test
   public void testGStringMethodCall(){
     def name = "aTestMethod"
     assert this."$name"(1) == 1
@@ -36,6 +37,7 @@ class DynamicMemberTest {
     assert this.("a"+name)(6) == 6
   }
 
+  @Test
   public void testGStringPropertyAccess(){
     def name = "aProperty"
     this.aProperty = "foo"
@@ -45,6 +47,7 @@ class DynamicMemberTest {
     assert "${name}" == "aProperty"
   }
 
+  @Test
   public void testStringMethodCallAndAttributeAccess() {
     this.aProperty = "String"
     assert this."aProperty" == "String"
@@ -52,6 +55,7 @@ class DynamicMemberTest {
     assert "aTestMethod"("String") == "String"
   }
 
+  @Test
   public void testDynamicAttributeAccess() {
     this.aProperty = "tada"
     def name = "aProperty"
@@ -59,6 +63,7 @@ class DynamicMemberTest {
     assert this.@"${name}" == "tada"
   }
 
+  @Test
   public void testDynamicMethodClosure() {
     def cl = this.&"aTestMethod"
     assert cl("String") == "String"

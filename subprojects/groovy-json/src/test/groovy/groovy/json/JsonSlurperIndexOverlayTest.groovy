@@ -19,11 +19,20 @@
 package groovy.json
 
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class JsonSlurperIndexOverlayTest extends JsonSlurperTest {
 
     @BeforeEach
     void setUp() {
         parser = new JsonSlurper().setType(JsonParserType.INDEX_OVERLAY)
+    }
+
+    @Test
+    @Override
+    void exactly312Test() {
+        assert parser.parseText('22').toValue() == 22
+        assert parser.parseText('-22').toValue() == -22
+        assert parser.parseText('-22.0065').toValue() == -22.0065
     }
 }

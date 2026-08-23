@@ -54,6 +54,7 @@ class ScriptCacheTest {
         packageDir.delete()
     }
 
+    @Test
     public void testScriptCaching() {
         def groovyClass1 = cl.loadClass(className, true, false)
         def groovyClass2 = cl.loadClass(className, true, false)

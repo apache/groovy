@@ -18,6 +18,8 @@
  */
 package groovy.ant
 
+import org.junit.jupiter.api.Test
+
 import static groovy.test.GroovyAssert.isAtLeastJdk
 
 class Groovy8872Test extends AntTestCase {
@@ -29,6 +31,7 @@ class Groovy8872Test extends AntTestCase {
         assert DummyClass.paramNames.addEvent == ['id', 'eventName', 'dateOfEvent']
     '''
 
+    @Test
     void testParameterNamesSeenInAST() {
         // parameter name inclusion in bytecode is a JDK8+ feature
         if (!isAtLeastJdk('1.8')) return

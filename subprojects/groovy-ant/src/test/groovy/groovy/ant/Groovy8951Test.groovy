@@ -18,7 +18,10 @@
  */
 package groovy.ant
 
+import org.junit.jupiter.api.Test
+
 class Groovy8951Test extends AntTestCase {
+    @Test
     void testSetterAppearsInTraitClass() {
 //        def debugLogger = new org.apache.tools.ant.DefaultLogger()
 //        debugLogger.setMessageOutputLevel(4)

@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.ast.builder
 
+import org.junit.jupiter.api.Test
+
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
@@ -97,6 +99,7 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC
  */
 class AstBuilderFromSpecificationTest {
 
+    @Test
     void testSimpleMethodCall() {
 
         def result = new AstBuilder().buildFromSpec {
@@ -119,6 +122,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testErrorHandling_TooManyArguments() {
 
         def message = shouldFail(IllegalArgumentException) {
@@ -136,6 +140,7 @@ class AstBuilderFromSpecificationTest {
         assertTrue(message.message.contains('but found'), "Unhelpful error message: $message")
     }
 
+    @Test
     void testErrorHandling_WrongArgumentTypes() {
 
         def message = shouldFail(IllegalArgumentException) {
@@ -154,6 +159,7 @@ class AstBuilderFromSpecificationTest {
         assertTrue(message.message.contains('but found'), "Unhelpful error message: $message")
     }
 
+    @Test
     void testAnnotationConstantExpression() {
 
         def result = new AstBuilder().buildFromSpec {
@@ -170,6 +176,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testArgumentListExpression_NoArgs() {
 
         def result = new AstBuilder().buildFromSpec {
@@ -180,6 +187,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testArgumentListExpression_OneListArg() {
 
         def result = new AstBuilder().buildFromSpec {
@@ -201,6 +209,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testAttributeExpression() {
 
         // represents foo.bar attribute invocation
@@ -222,6 +231,7 @@ class AstBuilderFromSpecificationTest {
      * Test for code:
      * if (foo == bar) println "Hello" else println "World"
      */
+    @Test
     void testIfStatement() {
         // if (foo == bar) println "Hello" else println "World"
         def result = new AstBuilder().buildFromSpec {
@@ -286,6 +296,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testDeclarationAndListExpression() {
 
         // represents def foo = [1, 2, 3]
@@ -313,6 +324,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testArrayExpression() {
 
         // new Integer[]{1, 2, 3}
@@ -334,6 +346,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testBitwiseNegationExpression() {
         def result = new AstBuilder().buildFromSpec {
             bitwiseNegation {
@@ -347,6 +360,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testCastExpression() {
         def result = new AstBuilder().buildFromSpec {
             cast(Integer) {
@@ -362,6 +376,7 @@ class AstBuilderFromSpecificationTest {
     }
 
 
+    @Test
     void testClosureExpression() {
 
         // { parm -> println parm }
@@ -405,6 +420,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testClosureExpression_MultipleParameters() {
 
         // { x,y,z -> println z }
@@ -451,6 +467,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testConstructorCallExpression() {
 
         // new Integer(4)
@@ -472,6 +489,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testNotExpression() {
         // !true
         def result = new AstBuilder().buildFromSpec {
@@ -487,6 +505,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testPostfixExpression() {
         // 1++
         def result = new AstBuilder().buildFromSpec {
@@ -504,6 +523,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testPrefixExpression() {
         // ++1
         def result = new AstBuilder().buildFromSpec {
@@ -521,6 +541,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testUnaryMinusExpression() {
         // (-foo)
         def result = new AstBuilder().buildFromSpec {
@@ -536,6 +557,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testUnaryPlusExpression() {
         // (+foo)
         def result = new AstBuilder().buildFromSpec {
@@ -552,6 +574,7 @@ class AstBuilderFromSpecificationTest {
     }
 
 
+    @Test
     void testClassExpression() {
         // def foo = String
         def result = new AstBuilder().buildFromSpec {
@@ -571,6 +594,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testFieldExpression() {
         // public static String foo = "a value"
         def result = new AstBuilder().buildFromSpec {
@@ -597,6 +621,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testMapAndMapEntryExpression() {
 
         // [foo: 'bar', baz: 'buz']
@@ -621,6 +646,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testMapAndMapEntryExpression_SimpleCase() {
 
         // [foo: 'bar', baz: 'buz']
@@ -642,6 +668,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testGStringExpression() {
         // "$foo"
         def result = new AstBuilder().buildFromSpec {
@@ -666,6 +693,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testMethodPointerExpression() {
         // Integer.&toString
         def result = new AstBuilder().buildFromSpec {
@@ -683,6 +711,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testRangeExpression() {
         // (0..10)
         def result = new AstBuilder().buildFromSpec {
@@ -702,6 +731,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testRangeExpression_Exclusive() {
         // (0..10)
         def result = new AstBuilder().buildFromSpec {
@@ -721,6 +751,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testRangeExpression_SimpleForm() {
         // (0..10)
         def result = new AstBuilder().buildFromSpec {
@@ -736,6 +767,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testPropertyExpression() {
         // foo.bar
         def result = new AstBuilder().buildFromSpec {
@@ -753,6 +785,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testSwitchAndCaseAndBreakStatements() {
         /*
                   switch (foo) {
@@ -851,6 +884,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testAssertStatement() {
         /*
                   assert true : "should always be true"
@@ -901,6 +935,7 @@ class AstBuilderFromSpecificationTest {
     }
 
 
+    @Test
     void testReturnAndSynchronizedStatement() {
         /*
                   synchronized (this) {
@@ -931,6 +966,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testTryCatchAndCatchAndThrowStatements() {
         /*
                   try {
@@ -983,6 +1019,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testFinallyStatement() {
         /*
                   try {
@@ -1039,6 +1076,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testForStatementAndClosureListExpression() {
         /*
               for (int x = 0; x < 10; x++) {
@@ -1118,6 +1156,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testStaticMethodCallExpression_MethodAsString() {
         // Math.min(1,2)
         def result = new AstBuilder().buildFromSpec {
@@ -1141,6 +1180,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testStaticMethodCallExpression_PassingMethodPointer() {
         // Math.min(1,2)
         def result = new AstBuilder().buildFromSpec {
@@ -1164,6 +1204,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testSpreadExpression() {
         // ['foo', *['bar','baz']]
         def result = new AstBuilder().buildFromSpec {
@@ -1191,6 +1232,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testSpreadMapExpression() {
         // func (*:m)
         def result = new AstBuilder().buildFromSpec {
@@ -1219,6 +1261,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testTernaryExpression() {
         // true ? "male" : "female"
         def result = new AstBuilder().buildFromSpec {
@@ -1240,14 +1283,17 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testDoWhileStatement() {
         // DoWhileStatement is not currently supported by Groovy syntax but is allowed in the AST
     }
 
+    @Test
     void testStatement() {
         // Statement is used as an abstract class within the groovy source and is never instantiated
     }
 
+    @Test
     void testWhileStatementAndContinueStatement() {
         /*
               while (true) {
@@ -1293,6 +1339,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testWhileStatementAndContinueToLabelStatement() {
         /*
               while (true) {
@@ -1340,6 +1387,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testElvisOperatorExpression() {
         // name ?: 'Anonymous'
         def result = new AstBuilder().buildFromSpec {
@@ -1357,6 +1405,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testNamedArgumentListExpression() {
         // new String(foo: 'bar')
 
@@ -1390,6 +1439,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testParameters_DefaultValues() {
         /*
           public String myMethod(String parameter = null) {
@@ -1429,6 +1479,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testParameters_VarArgs() {
         /*
           public String myMethod(String... parameters) {
@@ -1466,6 +1517,7 @@ class AstBuilderFromSpecificationTest {
 
     }
 
+    @Test
     void testInnerClassNode() {
         /*
             class Foo {
@@ -1509,10 +1561,12 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testAnnotatedNode() {
         // this class is never instantiated. It is used as an abstract class but not marked as such.
     }
 
+    @Test
     void testConstructorNode() {
 
         // public <init>(String foo, Integer bar) throws IOException, Exception {}
@@ -1547,6 +1601,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testGenericsType() {
         // class MyClass<T, U extends Number> {}
 
@@ -1580,6 +1635,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testClassWithMethods() {
         // class MyClass {
         //   String myProp = 'foo'
@@ -1659,6 +1715,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testGenericsType_WithLowerBounds() {
         // class MyClass<T, U extends Number> {}
 
@@ -1697,6 +1754,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testImportNode() {
         // what source will trigger this node?
         def result = new AstBuilder().buildFromSpec {
@@ -1712,6 +1770,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree(expected, result)
     }
 
+    @Test
     void testMethodNode() {
         /*
           @Override
@@ -1757,6 +1816,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testAnnotation_WithParameter() {
         // @org.junit.Test(timeout=50L) def myMethod() {}
         def result = new AstBuilder().buildFromSpec {
@@ -1789,6 +1849,7 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testMixinNode() {
 
         // todo: what source code will generate a MixinNode?
@@ -1829,10 +1890,12 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testModuleNode() {
         // todo: what source code creates a ModuleNode? ModuleNode has a ton of setters that aren't currently being tested. Should this even be part of the DSL?
     }
 
+    @Test
     void testPropertyNode() {
         //  def myField = "foo"
         def result = new AstBuilder().buildFromSpec {
@@ -1853,9 +1916,10 @@ class AstBuilderFromSpecificationTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
+    @Test
     void testMethodCallContract_TooManyArguments() {
 
-        def msg = shouldFail(IllegalArgumentException) {
+        def err = shouldFail(IllegalArgumentException) {
             new AstBuilder().buildFromSpec {
                 methodCall {
                     variable "this"
@@ -1867,14 +1931,15 @@ class AstBuilderFromSpecificationTest {
                 }
             }
         }
-        assertEquals("Wrong exception message",
-                "methodCall could not be invoked. Expected to receive parameters [class org.codehaus.groovy.ast.expr.Expression, class org.codehaus.groovy.ast.expr.Expression, class org.codehaus.groovy.ast.expr.Expression] but found [class org.codehaus.groovy.ast.expr.VariableExpression, class org.codehaus.groovy.ast.expr.ConstantExpression, class org.codehaus.groovy.ast.expr.ArgumentListExpression, class org.codehaus.groovy.ast.expr.ConstantExpression]",
-                msg)
+        assertEquals("methodCall could not be invoked. Expected to receive parameters [class org.codehaus.groovy.ast.expr.Expression, class org.codehaus.groovy.ast.expr.Expression, class org.codehaus.groovy.ast.expr.Expression] but found [class org.codehaus.groovy.ast.expr.VariableExpression, class org.codehaus.groovy.ast.expr.ConstantExpression, class org.codehaus.groovy.ast.expr.ArgumentListExpression, class org.codehaus.groovy.ast.expr.ConstantExpression]",
+                err.message,
+                "Wrong exception message")
     }
 
+    @Test
     void testMethodCallContract_TooFewArguments() {
 
-        def msg = shouldFail(IllegalArgumentException) {
+        def err = shouldFail(IllegalArgumentException) {
             new AstBuilder().buildFromSpec {
                 methodCall {
                     variable "this"
@@ -1883,11 +1948,12 @@ class AstBuilderFromSpecificationTest {
                 }
             }
         }
-        assertEquals("Wrong exception message",
-                "methodCall could not be invoked. Expected to receive parameters [class org.codehaus.groovy.ast.expr.Expression, class org.codehaus.groovy.ast.expr.Expression, class org.codehaus.groovy.ast.expr.Expression] but found [class org.codehaus.groovy.ast.expr.VariableExpression, class org.codehaus.groovy.ast.expr.ConstantExpression]",
-                msg)
+        assertEquals("methodCall could not be invoked. Expected to receive parameters [class org.codehaus.groovy.ast.expr.Expression, class org.codehaus.groovy.ast.expr.Expression, class org.codehaus.groovy.ast.expr.Expression] but found [class org.codehaus.groovy.ast.expr.VariableExpression, class org.codehaus.groovy.ast.expr.ConstantExpression]",
+                err.message,
+                "Wrong exception message")
     }
 
+    @Test
     void testAnnotationConstantExpressionContract_TooFewArguments() {
 
         shouldFail(IllegalArgumentException) {
@@ -1899,6 +1965,7 @@ class AstBuilderFromSpecificationTest {
         }
     }
 
+    @Test
     void testAnnotationConstantExpressionContract_TooManyArguments() {
 
         shouldFail(IllegalArgumentException) {
@@ -1911,6 +1978,7 @@ class AstBuilderFromSpecificationTest {
         }
     }
 
+    @Test
     void testConstructorCallExpressionContract_TooFewParameters() {
 
         shouldFail(IllegalArgumentException) {
@@ -1922,6 +1990,7 @@ class AstBuilderFromSpecificationTest {
         }
     }
 
+    @Test
     void testConstructorCallExpressionContract_TooManyParameters() {
 
         shouldFail(IllegalArgumentException) {

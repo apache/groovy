@@ -46,7 +46,8 @@ final class BooleanBug {
         return !field.isFoo();
     }
 
-    public testBooleanAsMethodArgumentFromCompare() {
+    @Test
+    void testBooleanAsMethodArgumentFromCompare() {
         assertScript """
             def foo(x){x}
             def i = 0

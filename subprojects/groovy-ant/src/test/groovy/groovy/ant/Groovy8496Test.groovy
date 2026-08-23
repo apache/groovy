@@ -18,9 +18,12 @@
  */
 package groovy.ant
 
+import org.junit.jupiter.api.Test
+
 import static groovy.test.GroovyAssert.isAtLeastJdk
 
 class Groovy8496Test extends AntTestCase {
+    @Test
     void testGetProperty() {
         if (isAtLeastJdk("18.0")) return; // GROOVY-10479
 //        def debugLogger = new org.apache.tools.ant.DefaultLogger()

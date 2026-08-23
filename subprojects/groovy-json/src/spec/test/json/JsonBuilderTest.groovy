@@ -71,6 +71,7 @@ final class JsonBuilderTest {
        """
     }
 
+    @Test
     void testJsonBuilderWithGenerator() {
         assertScript """
             // tag::json_builder_generator[]

@@ -18,6 +18,8 @@
  */
 package groovy.ant
 
+import org.junit.jupiter.api.Test
+
 class Groovy8669Test extends AntTestCase {
     private scriptAllOnPath = '''
     def anno = AnnotatedClass.annotations[0]
@@ -37,6 +39,7 @@ class Groovy8669Test extends AntTestCase {
     assert !AnnotatedClass.annotations
     '''
 
+    @Test
     void testCreateZip() {
 //        def debugLogger = new org.apache.tools.ant.DefaultLogger()
 //        debugLogger.setMessageOutputLevel(4)

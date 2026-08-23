@@ -29,10 +29,10 @@ abstract class SourceBaseTestCase {
     private classNode
 
     def classNode() {
-        if (classNode != null) return node
+        if (classNode != null) return classNode
         def cu = new CompilationUnit(null, null, new GroovyClassLoader(this.class.classLoader))
         def source = new StringReaderSource(script, cu.configuration)
-        cu.addSource(new SourceUnit("Script_" + this.name, source, cu.configuration, cu.classLoader, cu.errorCollector))
+        cu.addSource(new SourceUnit("Script_" + this.class.name, source, cu.configuration, cu.classLoader, cu.errorCollector))
         cu.compile(Phases.CONVERSION)
         classNode = cu.firstClassNode
         return classNode

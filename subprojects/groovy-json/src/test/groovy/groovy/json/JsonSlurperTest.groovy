@@ -197,6 +197,7 @@ class JsonSlurperTest {
         }
     }
 
+    @Test
     void exactly312Test() {
         assert parser.parseText('22') == 22
         assert parser.parseText('-22') == -22

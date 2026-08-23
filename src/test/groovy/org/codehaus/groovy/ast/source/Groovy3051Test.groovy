@@ -18,12 +18,15 @@
  */
 package org.codehaus.groovy.ast.source
 
+import org.junit.jupiter.api.Test
+
 class Groovy3051Test extends SourceBaseTestCase {
     def script = '''
         for(Object item in [1:1,2:2]) {}
         for(Object item in [1,2]) {}
     '''
 
+    @Test
     void testLine2() {
         def statements = statements()
 
@@ -54,6 +57,7 @@ class Groovy3051Test extends SourceBaseTestCase {
         assert sourceInfo(forStatement.loopBlock) == [2, 39, 2, 41]
     }
 
+    @Test
     void testLine3() {
         def statements = statements()
 

@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime.memoize
 
+import org.junit.jupiter.api.Test
+
 import java.lang.ref.SoftReference
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.TimeUnit
@@ -25,6 +27,7 @@ import java.util.concurrent.TimeUnit
 public class CacheCleanupTest {
     private static final Object ANCHOR = "I'm never gonna go"
 
+    @Test
     public void testUnlimitedCache() {
         checkCache(new UnlimitedConcurrentCache())
         checkCache(new LRUCache(10))
@@ -41,6 +44,7 @@ public class CacheCleanupTest {
         assert cache.@map.size() == 2
     }
 
+    @Test
     public void testUnlimitedCacheConcurrently() {
         checkCacheConcurrently(new UnlimitedConcurrentCache())
         checkCacheConcurrently(new LRUCache(2000))

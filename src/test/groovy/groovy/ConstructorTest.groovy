@@ -18,10 +18,13 @@
  */
 package groovy
 
+import org.junit.jupiter.api.Test
+
 class ConstructorTest {
 
     public ConstructorTest() { }
 
+    @Test
     public void testConstructor() {
         def foo = new ConstructorTest()
         assert foo != null

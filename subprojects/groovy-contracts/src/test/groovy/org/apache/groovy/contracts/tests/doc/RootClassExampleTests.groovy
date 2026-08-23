@@ -213,6 +213,7 @@ class RootClass {
         assertEquals 4, result
     }
 
+    @Test
     void test_postcond_with_result_and_old_variables_switched() {
         def root = create_instance_of(source, [1])
 

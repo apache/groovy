@@ -17,6 +17,9 @@
  *  under the License.
  */
 package gls.scope
+
+import org.junit.jupiter.api.Test
+
 /**
 *  test case based on GROOVY-3069
 */
@@ -24,24 +27,28 @@ class VariablePrecedenceTest {
     final String CLOSURE_STR = '[Closure]'
     final String CLASS_METHOD_STR = '[ClassMethod]'
 
-    def void testClosureParamPrecedenceExplicitClosureType() {
+    @Test
+    void testClosureParamPrecedenceExplicitClosureType() {
         def cl = { CLOSURE_STR }
         checkPrecendenceWithExplicitClosureType(cl)
     }
 
-    def void testClosureParamPrecedenceImplicitClosureType() {
+    @Test
+    void testClosureParamPrecedenceImplicitClosureType() {
         def cl = { CLOSURE_STR }
         checkPrecendenceWithImplicitClosureType(cl)
     }
 
-    def void testClosureLocalVarPrecedenceExplicitClosureType() {
+    @Test
+    void testClosureLocalVarPrecedenceExplicitClosureType() {
         Closure method = { CLOSURE_STR }
 
         assert method() == CLOSURE_STR
         assert this.method() == CLASS_METHOD_STR
     }
 
-    def void testClosureLocalVarPrecedenceImplicitClosureType() {
+    @Test
+    void testClosureLocalVarPrecedenceImplicitClosureType() {
         def method = { CLOSURE_STR }
 
         assert method() == CLOSURE_STR

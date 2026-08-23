@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.ast
 
+import org.junit.jupiter.api.Test
+
 import org.codehaus.groovy.ast.tools.GenericsUtils
 
 import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName
@@ -27,6 +29,7 @@ import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName
  */
 public class GenericsTypeTest extends GenericsTestCase {
 
+    @Test
     void testSimpleGenericsType() {
         // <Number>
         def generics = extractTypesFromCode('List<Number> type').generics[0]
@@ -52,6 +55,7 @@ public class GenericsTypeTest extends GenericsTestCase {
 
     }
 
+    @Test
     void testMultipleUpperBounds() {
         def generics = extractTypesFromCode('''public <T extends AbstractMap & SortedMap> List<T> type(){}''').generics[0]
         assert generics.toString() == 'T extends java.util.AbstractMap & java.util.SortedMap'
@@ -60,6 +64,7 @@ public class GenericsTypeTest extends GenericsTestCase {
         assert !generics.isCompatibleWith(ClassHelper.make(SortedMap))
     }
 
+    @Test
     void testMultipleUpperBounds2() {
         def generics = extractTypesFromCode('''public <U,V,T extends AbstractMap<U,V> & SortedMap<U,V>> List<T> type(){}''').generics[2]
         def type = extractTypesFromCode('''TreeMap<String,String> type''').type
@@ -71,6 +76,7 @@ public class GenericsTypeTest extends GenericsTestCase {
         assert generics.isCompatibleWith(type)
     }
 
+    @Test
     void testNestedGenerics() {
         def listStringType  = extractTypesFromCode('List<String> type').type
         def listIntegerType = extractTypesFromCode('List<Integer> type').type
@@ -90,6 +96,7 @@ public class GenericsTypeTest extends GenericsTestCase {
         assert !generics.isCompatibleWith(ClassHelper.OBJECT_TYPE)
     }
 
+    @Test
     void testNestedGenerics2() {
         def listOfStringListType = extractTypesFromCode('List<List<String>> type').type
         def listOfIntegerListType = extractTypesFromCode('List<List<Integer>> type').type
@@ -104,6 +111,7 @@ public class GenericsTypeTest extends GenericsTestCase {
         assert !generics.isCompatibleWith(listOfIntegerListType2)
     }
 
+    @Test
     void testGenericSignatureFromSort() {
         def generics = extractTypesFromCode('public <T extends Comparable<? super T>> List<T> type(){}').generics[0]
         def weirdComparable = extractTypesFromCode('List<org.codehaus.groovy.ast.GenericsTypeTest.WeirdComparable> type').type
@@ -113,6 +121,7 @@ public class GenericsTypeTest extends GenericsTestCase {
         assert !generics.isCompatibleWith(weirdComparable) // WeirdComparable implements Comparable<Integer>
     }
 
+    @Test
     void testMultipleGenericArguments() {
         def generics = extractTypesFromCode('List<Map<String,String>> type').generics[0]
         def stringToString = extractTypesFromCode('Map<String,String> type').type
@@ -123,6 +132,7 @@ public class GenericsTypeTest extends GenericsTestCase {
         assert !generics.isCompatibleWith(stringToInt)
     }
 
+    @Test
     void testMultipleNestedGenericArguments() {
         def generics = extractTypesFromCode('List<Map<String,Map<String,Integer>>> type').generics[0]
         def correctType = extractTypesFromCode('Map<String,Map<String,Integer>> type').type
@@ -133,12 +143,14 @@ public class GenericsTypeTest extends GenericsTestCase {
         assert !generics.isCompatibleWith(incorrectType)
     }
 
+    @Test
     void testPlaceholderExtract() {
         def type = extractTypesFromCode("List<String> type").type
         def placeholders = GenericsUtils.extractPlaceholders(type)
         assert placeholders[new GenericsTypeName('E')]?.type == ClassHelper.STRING_TYPE
     }
 
+    @Test
     void testPlaceholderExtract2() {
         def type = extractTypesFromCode("Map<String,Integer> type").type
         def placeholders = GenericsUtils.extractPlaceholders(type)
@@ -146,6 +158,7 @@ public class GenericsTypeTest extends GenericsTestCase {
         assert placeholders[new GenericsTypeName('V')]?.type == ClassHelper.Integer_TYPE
     }
 
+    @Test
     void testPlaceholderExtract3() {
         def type = extractTypesFromCode("List<Map<String,Integer>> type").type
         def placeholders = GenericsUtils.extractPlaceholders(type)

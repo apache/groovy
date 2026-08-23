@@ -20,9 +20,11 @@ package bugs
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.FileSystemCompiler
+import org.junit.jupiter.api.Test
 
 class Groovy6755Bug {
 
+    @Test
     public void testDeeepGenericJointCompilationImportResolution() {
         File workDir = new File("build/tmp/Groovy6755Bug")
         workDir.deleteDir()

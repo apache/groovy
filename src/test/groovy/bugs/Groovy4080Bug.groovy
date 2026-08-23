@@ -18,8 +18,10 @@
  */
 package bugs
 
+import org.junit.jupiter.api.Test
 
 class Groovy4080Bug {
+    @Test
     public void testClassGeneratedWithAnnotationHavingGrabOnImport() {
         GroovyShell shell = new GroovyShell(new GroovyClassLoader())
         shell.evaluate """

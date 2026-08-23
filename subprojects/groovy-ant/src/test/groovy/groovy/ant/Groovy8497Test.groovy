@@ -18,9 +18,12 @@
  */
 package groovy.ant
 
+import org.junit.jupiter.api.Test
+
 import static groovy.test.GroovyAssert.isAtLeastJdk
 
 class Groovy8497Test extends AntTestCase {
+    @Test
     void testGetProperty() {
 //        def debugLogger = new org.apache.tools.ant.DefaultLogger()
 //        debugLogger.setMessageOutputLevel(4)

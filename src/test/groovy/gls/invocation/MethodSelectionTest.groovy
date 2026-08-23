@@ -270,6 +270,7 @@ final class MethodSelectionTest extends CompilableTestSupport {
     }
 
     // GROOVY-3977
+    @Test
     void testBDandBIToFloatAutoConversionInMethodSelection() {
         assertScript '''
             class Foo3977 {

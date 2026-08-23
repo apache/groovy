@@ -18,6 +18,8 @@
  */
 package bugs
 
+import org.junit.jupiter.api.Test
+
 class Groovy779_Bug {
 
     def boolean exceptionCalled = false
@@ -30,6 +32,7 @@ class Groovy779_Bug {
         app.testAutoboxingProperty()
     }
 
+    @Test
     public void testFieldProperty() {
 
         try {
@@ -51,6 +54,7 @@ class Groovy779_Bug {
         // println("Success!")
     }
 
+    @Test
     public void testBeanProperty() {
 
         try {
@@ -72,6 +76,7 @@ class Groovy779_Bug {
         // println("Success!")
     }
 
+    @Test
     public void testAutoboxingProperty() {
         def p = new Groovy779OneProfit(signal: "bar", rate: 15)
         assert p.signal == "bar"

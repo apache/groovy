@@ -18,7 +18,10 @@
  */
 package groovy.util
 
+import org.junit.jupiter.api.Test
+
 public class ResourceBundleTest {
+    @Test
     public void testNoClassLoaderNoLocale() {
         def results = []
         // run test twice, call site optimizations result in call stack differences
@@ -30,6 +33,7 @@ public class ResourceBundleTest {
         assert results.size() == 2
     }
 
+    @Test
     public void testWithLocale() {
         def results = []
         // run test twice, call site optimizations result in call stack differences
@@ -52,6 +56,7 @@ public class ResourceBundleTest {
         assert results.size() == 4
     }
 
+    @Test
     public void testWithClassLoader() {
         def results = []
         ClassLoader cl = this.class.classLoader

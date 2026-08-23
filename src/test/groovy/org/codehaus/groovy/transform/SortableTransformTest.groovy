@@ -253,24 +253,28 @@ final class SortableTransformTest extends CompilableTestSupport {
         String str
     }
 
+    @Test
     void testSortableExtendingSortable1() {
         List<SortableChild1> unsortedList = [new SortableChild1(str: 'B', num: 1), new SortableChild1(str: 'A', num: 2)]
         List<SortableChild1> sortedList = unsortedList.toSorted()
         assert sortedList[0].str == 'A'
     }
 
+    @Test
     void testSortableExtendingSortable2() {
         List<SortableChild2> unsortedList = [new SortableChild2(str: 'B', num: 1), new SortableChild2(str: 'A', num: 2)]
         List<SortableChild2> sortedList = unsortedList.toSorted()
         assert sortedList[0].str == 'A'
     }
 
+    @Test
     void testSortableExtendingSortable3() {
         List<SortableChild3> unsortedList = [new SortableChild3(str: 'B', num: 1), new SortableChild3(str: 'A', num: 2)]
         List<SortableChild3> sortedList = unsortedList.toSorted()
         assert sortedList[0].str == 'A'
     }
 
+    @Test
     void testSortableExtendingSortable4() {
         List<SortableChild4> unsortedList = [new SortableChild4(str: 'B', num: 1), new SortableChild4(str: 'A', num: 2)]
         List<SortableChild4> sortedList = unsortedList.toSorted()

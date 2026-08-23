@@ -18,10 +18,13 @@
  */
 package org.codehaus.groovy.tools.rootloadersync
 
+import org.junit.jupiter.api.Test
+
 import static junit.framework.Assert.assertEquals
 
 public class SubclassingInGroovyTest{
 
+   @Test
    public void testSubclass() {
       OtherConcreteJavaSubclass unrelatedInstance = new OtherConcreteJavaSubclass();
       ConcreteJavaSubclass instance = new ConcreteJavaSubclass();
@@ -31,6 +34,7 @@ public class SubclassingInGroovyTest{
       assertEquals("string from subclass", instance.myAbstractMethod());  // works fine in java; throws ClassCastException in groovy
    }
 
+   @Test
    public void testGenericSubclassWithBafflingSymptom() {
       OtherConcreteGenericJavaSubclass unrelatedInstance = new OtherConcreteGenericJavaSubclass(new HashSet<String>())
       ConcreteGenericJavaSubclass instance = new ConcreteGenericJavaSubclass(new HashSet<String>());

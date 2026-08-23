@@ -1024,6 +1024,7 @@ final class AnnotationTest {
         shell.parse codeWithMetaAnnotationWithTarget('TYPE')
     }
 
+    @Test
     void testAnnotateAnnotationDefinitionWithAnnotationWithAnnotationTypeTarget() {
         shell.parse codeWithMetaAnnotationWithTarget('ANNOTATION_TYPE')
     }

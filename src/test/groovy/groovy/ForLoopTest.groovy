@@ -220,6 +220,7 @@ final class ForLoopTest {
     }
 
     // GROOVY-11601
+    @Test
     void testClassicForWithMultiAssignment2() {
         int foo, bar, baz = 0
         for (foo = 1, bar = 2; foo < 10; foo += 1, bar += 2) {

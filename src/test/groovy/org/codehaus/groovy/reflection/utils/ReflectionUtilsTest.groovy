@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.reflection.utils
 
+import org.junit.jupiter.api.Test
+
 import org.codehaus.groovy.reflection.ReflectionUtils
 
 // note, this must be in a package other than org.codehaus.groovy.reflection or else
@@ -33,6 +35,7 @@ class ReflectionUtilsTest {
         return ReflectionUtils.getCallingClass()
     }
 
+    @Test
     public void testMethodCallingClass() {
         if (ReflectionUtils.isCallingClassReflectionAvailable()) {
             assert privateCaller() == ReflectionUtilsTest
@@ -43,6 +46,7 @@ class ReflectionUtilsTest {
         }
     }
 
+    @Test
     public void testPogoMethodCallingClass() {
         if (ReflectionUtils.isCallingClassReflectionAvailable()) {
             assert PogoCalleTestClass.staticClassCaller() == ReflectionUtilsTest
@@ -50,6 +54,7 @@ class ReflectionUtilsTest {
         }
     }
 
+    @Test
     public void testPojoMethodCallingClass() {
         if (ReflectionUtils.isCallingClassReflectionAvailable()) {
             assert PojoCallerTestClass.staticClassCaller() == ReflectionUtilsTest
@@ -57,6 +62,7 @@ class ReflectionUtilsTest {
         }
     }
 
+    @Test
     public void testMetaMethodCallingClass() {
         if (ReflectionUtils.isCallingClassReflectionAvailable()) {
             MetaClassRegistry mcr = GroovySystem.getMetaClassRegistry()

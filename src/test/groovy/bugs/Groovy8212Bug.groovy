@@ -18,11 +18,14 @@
  */
 package bugs
 
+import org.junit.jupiter.api.Test
+
 
 import static groovy.test.GroovyAssert.assertScript
 
 
 class Groovy8212Bug {
+    @Test
     void test() {
         assertScript '''
         @groovy.transform.CompileStatic

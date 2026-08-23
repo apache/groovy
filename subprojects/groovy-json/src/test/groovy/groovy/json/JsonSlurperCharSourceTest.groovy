@@ -18,6 +18,8 @@
  */
 package groovy.json
 
+import org.junit.jupiter.api.Test
+
 import org.junit.jupiter.api.BeforeEach
 
 class JsonSlurperCharSourceTest extends JsonSlurperTest {
@@ -27,6 +29,7 @@ class JsonSlurperCharSourceTest extends JsonSlurperTest {
         parser = new JsonSlurper().setType(JsonParserType.CHARACTER_SOURCE)
     }
 
+    @Test
     void testParsingDecimalValue() {
         def num = parser.parseText('{"num": 123.40}').num
         assert num instanceof BigDecimal

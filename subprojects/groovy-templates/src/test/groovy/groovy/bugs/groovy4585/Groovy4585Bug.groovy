@@ -18,7 +18,10 @@
  */
 package groovy.bugs.groovy4585
 
+import org.junit.jupiter.api.Test
+
 class Groovy4585Bug {
+    @Test
     void test() {
         def engineForBuildXml = new groovy.text.SimpleTemplateEngine(false)
         engineForBuildXml.setEscapeBackslash(true)

@@ -81,6 +81,7 @@ final class StaticCompileFlowTypingTest {
     }
 
     // GROOVY-8946
+    @Test
     void testFlowTyping4() {
         assertScript '''
             /*@GrabResolver(name='grails', root='https://repo.grails.org/grails/core')

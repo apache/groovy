@@ -28,6 +28,7 @@ import static groovy.test.GroovyAssert.shouldFail
 
 class JsonTest {
 
+    @Test
     void testParseText() {
         // tag::parse_text[]
         def jsonSlurper = new JsonSlurper()
@@ -38,6 +39,7 @@ class JsonTest {
         // end::parse_text[]
     }
 
+    @Test
     void testParseTextWithNumber() {
         // tag::parse_number[]
         def jsonSlurper = new JsonSlurper()
@@ -54,6 +56,7 @@ class JsonTest {
         // end::parse_number[]
     }
 
+    @Test
     void testParseTextWithList() {
         // tag::parse_list[]
         def jsonSlurper = new JsonSlurper()
@@ -65,6 +68,7 @@ class JsonTest {
         // end::parse_list[]
     }
 
+    @Test
     void testSetType() {
         // tag::set_type[]
         def jsonSlurper = new JsonSlurper(type: JsonParserType.INDEX_OVERLAY)
@@ -76,6 +80,7 @@ class JsonTest {
         // end::set_type[]
     }
 
+    @Test
     void testJsonOutput() {
         // tag::json_output[]
         def json = JsonOutput.toJson([name: 'John Doe', age: 42])
@@ -84,6 +89,7 @@ class JsonTest {
         // end::json_output[]
     }
 
+    @Test
     void testJsonOutputPogo() {
         assertScript '''
         import groovy.json.*
@@ -98,6 +104,7 @@ class JsonTest {
         '''
     }
 
+    @Test
     void testJsonOutputWithGenerator() {
         assertScript '''
         import groovy.json.*
@@ -128,6 +135,7 @@ class JsonTest {
         '''
     }
 
+    @Test
     void testJsonOutputConverter() {
         assertScript '''
         import groovy.json.*
@@ -166,6 +174,7 @@ class JsonTest {
         '''
     }
 
+    @Test
     void testPrettyPrint() {
         // tag::pretty_print[]
         def json = JsonOutput.toJson([name: 'John Doe', age: 42])
@@ -197,6 +206,7 @@ class JsonTest {
     static class Item { String name; Color color }
     // end::typed_classes[]
 
+    @Test
     void testTypedCoercion() {
         // tag::typed_coercion[]
         def json = '{"host":"localhost","port":8080,"debug":true}'
@@ -209,6 +219,7 @@ class JsonTest {
         // end::typed_coercion[]
     }
 
+    @Test
     void testTypedCoercionNested() {
         // tag::typed_coercion_nested[]
         def json = '{"name":"myapp","server":{"host":"localhost","port":9090,"debug":false}}'
@@ -221,6 +232,7 @@ class JsonTest {
         // end::typed_coercion_nested[]
     }
 
+    @Test
     void testTypedCoercionEnum() {
         // tag::typed_coercion_enum[]
         def item = new JsonSlurper().parseText('{"name":"widget","color":"GREEN"}') as Item
@@ -228,6 +240,7 @@ class JsonTest {
         // end::typed_coercion_enum[]
     }
 
+    @Test
     void testJacksonDirectUsage() {
         // tag::jackson_direct[]
         // For advanced cases (typed collections, date parsing, @JsonProperty),

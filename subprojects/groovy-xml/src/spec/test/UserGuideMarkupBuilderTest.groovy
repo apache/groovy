@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test
  */
 class UserGuideMarkupBuilderTest {
 
+    @Test
     void createCarsTest() {
         // tag::createCarsTest[]
         def writer = new StringWriter()
@@ -44,8 +45,8 @@ class UserGuideMarkupBuilderTest {
 
         def records = new XmlSlurper().parseText(writer.toString()) // <3>
 
-        assert records.car.first().name.text() == 'HSV Maloo'
-        assert records.car.last().name.text() == 'Royale'
+        assert records.car.first().@name == 'HSV Maloo'
+        assert records.car.last().@name == 'Royale'
         // end::createCarsTest[]
     }
 
