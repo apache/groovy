@@ -393,11 +393,23 @@ so an association on a long-lived class such as `String` never releases its valu
 holds the Groovy class loader the value belongs to. In a container this shows up as metaspace
 growth on every redeployment, even after the old application is undeployed.
 
-Two supported measures release the class loader; either one suffices:
+Three supported measures release the class loader; any one suffices:
 
+* Start the JVM with `-Dgroovy.use.classvalue=soft`. Groovy keeps the `ClassValue` per-class
+  fast path but holds each association through a `SoftReference`, so immortal JDK classes no
+  longer hold a strong chain to the Groovy class loader. Metadata carrying state that cannot
+  be rebuilt — an installed or per-instance metaclass, registry-written extension methods —
+  is strong-rooted while in use, and associations cleared under memory pressure are rebuilt
+  on demand, with call-site guards remaining sound for `invokedynamic` and classic call sites
+  alike. This preserves default-mode dispatch performance while letting the collector reclaim
+  the loader.
 * Start the JVM with `-Dgroovy.use.classvalue=false`. Groovy then stores the associations in a
   weak-key map instead of `ClassValue`. The trade-off is a hash lookup where `ClassValue` has a
-  per-class fast path; for most applications the difference is not measurable.
+  per-class fast path. Compilation speed is unaffected (within 1% in our measurements), and for
+  applications that are not dispatch-heavy the difference is unlikely to be noticed; heavily
+  dynamic code, however, can see a few percent overall, with hot dynamic idioms on JDK-class
+  receivers (string coercions, ranges, safe navigation, map property access) up to roughly
+  1.4 times slower. Measure with your own workload if dispatch performance matters.
 * Clean up explicitly when the application is discarded (for example from
   `ServletContextListener#contextDestroyed`):
 +
