@@ -125,7 +125,6 @@ distribution {
             include 'hamcrest-license.txt'
             include 'jline3-license.txt'
             include 'jquery-js-license.txt'
-            include 'jsr166y-license.txt'
             include 'jsr223-license.txt'
             include 'jsvg-license.txt'
             include 'junit4-license.txt'

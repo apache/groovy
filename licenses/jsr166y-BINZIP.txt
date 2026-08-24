@@ -1,5 +1,0 @@
-JSR166y License (optionally used by the optional GPars dependency)
-
-This product bundles the jsr166y jar (containing works from
-the JSR-166 EG, Doug Lea, and Jason T. Greene) made available in
-the public domain.  For details, see licenses/jsr166y-license.txt.
