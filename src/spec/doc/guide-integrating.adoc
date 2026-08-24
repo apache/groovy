@@ -341,7 +341,11 @@ Two supported measures release the class loader; either one suffices:
 
 * Start the JVM with `-Dgroovy.use.classvalue=false`. Groovy then stores the associations in a
   weak-key map instead of `ClassValue`. The trade-off is a hash lookup where `ClassValue` has a
-  per-class fast path; for most applications the difference is not measurable.
+  per-class fast path. Compilation speed is unaffected (within 1% in our measurements), and for
+  applications that are not dispatch-heavy the difference is unlikely to be noticed; heavily
+  dynamic code, however, can see a few percent overall, with hot dynamic idioms on JDK-class
+  receivers (string coercions, ranges, safe navigation, map property access) up to roughly
+  1.4 times slower. Measure with your own workload if dispatch performance matters.
 * Clean up explicitly when the application is discarded (for example from
   `ServletContextListener#contextDestroyed`):
 +
