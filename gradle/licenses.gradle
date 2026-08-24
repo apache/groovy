@@ -30,10 +30,12 @@ tasks.register('updateLicenses') {
     ext.licenseDocFile = "${licensesDir}/LICENSE-DOC"
     ext.licenseDocsJarFile = "${licensesDir}/LICENSE-DOCSJAR"
     ext.licenseJarJarFile = "${licensesDir}/LICENSE-JARJAR"
+    ext.licenseAllSrcJarFile = "${licensesDir}/LICENSE-ALLSRCJAR"
     ext.licenseSdkFile = "${licensesDir}/LICENSE-SDK"
     inputs.files(licenseBaseFile, fileTree(licensesDir).include('*.txt'))
     outputs.files(licenseBinZipFile, licenseDocFile, licenseDocsJarFile, licenseJarJarFile,
-        licenseSrcFile, licenseGroovyDocFile, licenseJsr223File, licenseSdkFile)
+        licenseAllSrcJarFile, licenseSrcFile, licenseGroovyDocFile, licenseJsr223File,
+        licenseSdkFile)
 
     doLast {
         def srcFiles = fileTree(licensesDir).include('*-SRC*.txt').sort { it.name }
@@ -55,12 +57,19 @@ tasks.register('updateLicenses') {
         }.sort { it.name }
         def jsr223Files = fileTree(licensesDir).include('jsr223-BINZIP-SRC.txt')
         def jline3Files = fileTree(licensesDir).include('jline3-BINZIP-SRC.txt')
+        // for the aggregated sources jar, which carries the jline3- and jsr223-derived
+        // source files but none of the documentation assets the source zip also ships
+        def allSrcJarFiles = fileTree(licensesDir) {
+            include 'jline3-BINZIP-SRC.txt'
+            include 'jsr223-BINZIP-SRC.txt'
+        }.sort { it.name }
         def licenseHdr = '\n\n------------------------------------------------------------------------\n\n'
         [
             (licenseBinZipFile)      : binzipFiles,
             (licenseDocFile)         : docFiles,
             (licenseDocsJarFile)     : docsJarFiles,
             (licenseJarJarFile)      : jarjarFiles,
+            (licenseAllSrcJarFile)   : allSrcJarFiles,
             (licenseSrcFile)         : srcFiles,
             (licenseGroovyDocFile)   : groovydocFiles,
             (licenseJsr223File)      : jsr223Files,
@@ -93,10 +102,12 @@ tasks.register('updateNotices') {
     ext.noticeGrooidFile = "${noticesDir}/NOTICE-GROOID"
     ext.noticeGrooidJarJarFile = "${noticesDir}/NOTICE-GROOIDJARJAR"
     ext.noticeJarJarFile = "${noticesDir}/NOTICE-JARJAR"
+    ext.noticeSrcJarFile = "${noticesDir}/NOTICE-SRCJAR"
     ext.noticeSdkFile = "${noticesDir}/NOTICE-SDK"
     inputs.files(noticeBaseFile, fileTree(noticesDir).include('*.txt'))
     outputs.files(noticeBinZipFile, noticeGrooidFile, noticeGrooidJarJarFile,
-        noticeJarJarFile, noticeSrcFile, noticeGroovyConsoleFile, noticeSdkFile)
+        noticeJarJarFile, noticeSrcJarFile, noticeSrcFile, noticeGroovyConsoleFile,
+        noticeSdkFile)
 
     doLast {
         def srcFiles = fileTree(noticesDir).include('*-SRC*.txt').sort { it.name }
@@ -111,11 +122,18 @@ tasks.register('updateNotices') {
             include '*-GROOID*.txt'
             include '*-BINZIP*.txt'
         }.sort { it.name }
+        // for the sources jars, which carry the third-party-derived source files but
+        // none of the documentation assets the source zip also ships
+        def srcJarFiles = fileTree(noticesDir) {
+            include 'concurrentlinkedhashmap-SRC.txt'
+            include 'concurrentreferencehashmap-SRC.txt'
+        }.sort { it.name }
         [
             (noticeBinZipFile)       : binzipFiles,
             (noticeGrooidFile)       : grooidFiles,
             (noticeGrooidJarJarFile) : grooidJarjarFiles,
             (noticeJarJarFile)       : jarjarFiles,
+            (noticeSrcJarFile)       : srcJarFiles,
             (noticeSrcFile)          : srcFiles,
             (noticeGroovyConsoleFile): files(),
         ].each { outFile, inFiles ->

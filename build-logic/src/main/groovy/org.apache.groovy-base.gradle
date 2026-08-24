@@ -169,8 +169,11 @@ tasks.withType(Jar).configureEach { jar ->
     metaInf {
         // the root project's main jar provides its own JARJAR license/notice in its jar task
         if (jar.name in ['jar', 'sourcesJar'] && !(jar.name == 'jar' && project == rootProject)) {
+            // the root project's LICENSE/NOTICE cover the whole source zip, which ships
+            // documentation assets the core sources jar does not; give it the plain pair
+            def rootSourcesJar = jar.name == 'sourcesJar' && project == rootProject
             def licenseFile = file("${projectDir}/LICENSE")
-            if (licenseFile.exists()) {
+            if (licenseFile.exists() && !rootSourcesJar) {
                 from licenseFile
             } else {
                 licenseFile = file("${rootProject.projectDir}/licenses/LICENSE-BASE")
@@ -178,7 +181,11 @@ tasks.withType(Jar).configureEach { jar ->
                     rename 'LICENSE-BASE', 'LICENSE'
                 }
             }
-            if (file("${projectDir}/NOTICE").exists()) {
+            if (rootSourcesJar) {
+                from("${rootProject.projectDir}/notices/NOTICE-SRCJAR") {
+                    rename 'NOTICE-SRCJAR', 'NOTICE'
+                }
+            } else if (file("${projectDir}/NOTICE").exists()) {
                 from "${projectDir}/NOTICE"
             } else {
                 from("${rootProject.projectDir}/notices/NOTICE-BASE") {
