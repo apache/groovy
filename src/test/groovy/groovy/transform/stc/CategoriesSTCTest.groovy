@@ -32,6 +32,29 @@ final class CategoriesSTCTest extends StaticTypeCheckingTestCase {
                 1.day
             }
         ''',
+        'Due to their dynamic nature, usage of categories is not possible with static type checking active. Consider using an extension module, which is compatible with static type checking',
+        'No such property: day for class: java.lang.Integer'
+    }
+
+    @Test // GROOVY-12294
+    void testShouldNotAllowCategoryListForm() {
+        shouldFailWithMessages '''import groovy.time.TimeCategory
+            use([TimeCategory]) {
+                1.day
+            }
+        ''',
+        'Due to their dynamic nature, usage of categories is not possible with static type checking active',
+        'No such property: day for class: java.lang.Integer'
+    }
+
+    @Test // GROOVY-12294
+    void testShouldNotAllowCategoryVarargsForm() {
+        shouldFailWithMessages '''import groovy.time.TimeCategory
+            import org.codehaus.groovy.runtime.StringGroovyMethods
+            use(TimeCategory, StringGroovyMethods) {
+                1.day
+            }
+        ''',
         'Due to their dynamic nature, usage of categories is not possible with static type checking active',
         'No such property: day for class: java.lang.Integer'
     }
