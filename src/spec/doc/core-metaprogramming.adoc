@@ -406,6 +406,12 @@ first parameter. The target type class is given as an argument to the annotation
 [NOTE]
 There is a distinct section on `@Category` in the <<xform-Category,compile-time metaprogramming section>>.
 
+[NOTE]
+Because category methods are resolved dynamically at runtime, categories cannot be used in code under
+`@TypeChecked` or `@CompileStatic`; the type checker reports an error for `use` method calls.
+If you need statically checked code, consider an <<extension-modules,extension module>> instead,
+which provides methods in the same form as a category class but is compatible with type checking.
+
 === Metaclasses
 
 As explained earlier, Metaclasses play a central role in method resolution.
@@ -763,6 +769,7 @@ globally using the `ExpandoMetaClass.enableGlobally()` method before application
 include::../test/metaprogramming/ExpandoMetaClassTest.groovy[tags=emc_interface,indent=0]
 ----
 
+[[extension-modules]]
 === Extension modules
 ==== Extending existing classes
 

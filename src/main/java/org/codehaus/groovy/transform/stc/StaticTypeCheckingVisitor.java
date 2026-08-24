@@ -6072,7 +6072,7 @@ trying: for (ClassNode[] signature : signatures) {
      */
     protected boolean areCategoryMethodCalls(final List<MethodNode> foundMethods, final String name, final ClassNode[] args) {
         boolean category = false;
-        if ("use".equals(name) && args != null && args.length == 2 && args[1].equals(CLOSURE_TYPE)) {
+        if ("use".equals(name) && args != null && args.length >= 2 && args[args.length - 1].equals(CLOSURE_TYPE)) {
             category = true;
             for (MethodNode method : foundMethods) {
                 if (!isDefaultExtension(method)) {
@@ -7178,7 +7178,7 @@ out:    for (ClassNode type : todo) {
      * Reports that categories cannot be used under static type checking.
      */
     protected void addCategoryMethodCallError(final Expression call) {
-        addStaticTypeError("Due to their dynamic nature, usage of categories is not possible with static type checking active", call);
+        addStaticTypeError("Due to their dynamic nature, usage of categories is not possible with static type checking active. Consider using an extension module, which is compatible with static type checking", call);
     }
 
     /**
