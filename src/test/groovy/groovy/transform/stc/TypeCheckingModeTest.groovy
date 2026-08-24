@@ -18,7 +18,10 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Unit tests for static type checking : type checking mode.
@@ -141,5 +144,49 @@ class TypeCheckingModeTest extends StaticTypeCheckingTestCase {
                 println 'This is ok'
             }
         '''
+    }
+
+    // GROOVY-12292
+    @Test
+    void testTypeCheckedMethodInTypeCheckedSkipClass() {
+        def err = shouldFail(MultipleCompilationErrorsException) {
+            new GroovyShell().evaluate '''
+                import groovy.transform.TypeChecked
+                import static groovy.transform.TypeCheckingMode.SKIP
+
+                @TypeChecked(SKIP)
+                class C {
+                    @TypeChecked
+                    def m() {
+                        "".toStrings()
+                    }
+                }
+                new C()
+            '''
+        }
+        assert err.message.contains('Cannot find matching method java.lang.String#toStrings()')
+    }
+
+    // GROOVY-12292: @CompileStatic(SKIP) opts out of static compilation only;
+    // it does not exempt a method from an enclosing class's type checking
+    @Test
+    void testCompileStaticSkipMethodInTypeCheckedClassIsStillTypeChecked() {
+        def err = shouldFail(MultipleCompilationErrorsException) {
+            new GroovyShell().evaluate '''
+                import groovy.transform.CompileStatic
+                import groovy.transform.TypeChecked
+                import static groovy.transform.TypeCheckingMode.SKIP
+
+                @TypeChecked
+                class C {
+                    @CompileStatic(SKIP)
+                    def m() {
+                        "".toStrings()
+                    }
+                }
+                new C()
+            '''
+        }
+        assert err.message.contains('Cannot find matching method java.lang.String#toStrings()')
     }
 }

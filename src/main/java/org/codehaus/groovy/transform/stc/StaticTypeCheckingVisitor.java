@@ -603,9 +603,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     /**
      * Indicates whether the annotated node is configured for {@link TypeCheckingMode#SKIP}.
+     * <p>
+     * The most specific annotation wins: a node whose own type-checking annotation has a
+     * non-SKIP mode is never skipped, whatever an enclosing class or method declares.
+     * Without an annotation of its own, a node inherits skip mode from its enclosing scope.
      */
     public boolean isSkipMode(final AnnotatedNode node) {
         if (node == null) return false;
+        boolean explicitNonSkip = false;
         for (ClassNode tca : getTypeCheckingAnnotations()) {
             List<AnnotationNode> annotations = node.getAnnotations(tca);
             if (annotations != null) {
@@ -618,9 +623,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             if (TypeCheckingMode.SKIP.toString().equals(pe.getPropertyAsString())) return true;
                         }
                     }
+                    explicitNonSkip = true;
                 }
             }
         }
+        if (explicitNonSkip) return false; // GROOVY-12292
         if (node instanceof MethodNode) {
             return isSkipMode(node.getDeclaringClass());
         }

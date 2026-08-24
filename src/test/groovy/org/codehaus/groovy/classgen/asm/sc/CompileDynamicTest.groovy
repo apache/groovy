@@ -64,4 +64,63 @@ final class CompileDynamicTest extends StaticTypeCheckingTestCase implements Sta
             new C()
         '''
     }
+
+    // GROOVY-12292
+    @Test
+    void testCompileStaticMethodInCompileDynamicClass() {
+        shouldFailWithMessages '''
+            @CompileDynamic
+            class C {
+                @CompileStatic
+                def m() {
+                    "".toStrings()
+                }
+            }
+        ''', 'Cannot find matching method java.lang.String#toStrings()'
+    }
+
+    // GROOVY-12292
+    @Test
+    void testCompileStaticMethodInCompileStaticSkipClass() {
+        shouldFailWithMessages '''
+            @CompileStatic(groovy.transform.TypeCheckingMode.SKIP)
+            class C {
+                @CompileStatic
+                def m() {
+                    "".toStrings()
+                }
+            }
+        ''', 'Cannot find matching method java.lang.String#toStrings()'
+    }
+
+    // GROOVY-12292
+    @Test
+    void testCompileStaticMethodInTypeCheckedSkipClass() {
+        shouldFailWithMessages '''
+            @groovy.transform.TypeChecked(groovy.transform.TypeCheckingMode.SKIP)
+            class C {
+                @CompileStatic
+                def m() {
+                    "".toStrings()
+                }
+            }
+        ''', 'Cannot find matching method java.lang.String#toStrings()'
+    }
+
+    // GROOVY-12292
+    @Test
+    void testCompileStaticMethodInCompileDynamicClassIsStaticallyCompiled() {
+        assertScript '''
+            @CompileDynamic
+            class C {
+                @CompileStatic
+                String m() {
+                    'works'.toUpperCase()
+                }
+            }
+            assert new C().m() == 'WORKS'
+        '''
+        String bytecode = astTrees['C'][1]
+        assert bytecode.contains('INVOKEVIRTUAL java/lang/String.toUpperCase ()Ljava/lang/String;')
+    }
 }

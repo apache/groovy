@@ -1326,6 +1326,13 @@ type checker would normally complain and compilation would fail. Since the metho
 `TypeCheckingMode.SKIP`, type checking is _skipped_ for this method, so the code will compile, even if the rest of the
 class is type checked.
 
+The most specific annotation wins: a method or nested class whose own `@TypeChecked` or `@CompileStatic` annotation
+has the default (non-`SKIP`) mode is checked even when an enclosing class is marked with `SKIP` mode (or with
+`@CompileDynamic`). Conversely, a class-level `SKIP` acts as the default for members that carry no type-checking
+annotation of their own. Note that the two annotations opt out of different things: `@CompileStatic(TypeCheckingMode.SKIP)`
+(or `@CompileDynamic`) on a method disables static _compilation_ but does not exempt that method from an enclosing
+class's `@TypeChecked` checking; only `@TypeChecked(TypeCheckingMode.SKIP)` does that.
+
 The following sections describe the semantics of type checking in Groovy.
 
 ==== Type checking assignments

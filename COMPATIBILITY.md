@@ -342,6 +342,32 @@ which compiles a type checking DSL script — therefore pass `false`.
 configuration for a nested compilation**, and null-check the `SourceUnit`
 in any customizer that might be applied to one.
 
+### Groovy 6 — method-level type-checking annotations override class-level SKIP (GROOVY-12292)
+
+A method (or constructor) whose own `@TypeChecked` or `@CompileStatic`
+annotation has the default non-`SKIP` mode is now type checked — and for
+`@CompileStatic`, statically compiled — even when its declaring class is
+annotated with `@CompileDynamic`, `@CompileStatic(TypeCheckingMode.SKIP)`
+or `@TypeChecked(TypeCheckingMode.SKIP)`. Previously the class-level
+`SKIP` silently won and the method-level annotation was ignored. Nested
+classes already behaved this way (GROOVY-10238); this aligns methods
+with them: the most specific annotation wins, and a class-level `SKIP`
+is the default only for members without their own annotation.
+
+**Who is affected.** Code with a method-level opt-in under a class-level
+opt-out. Such methods may now raise type-checking errors that were
+previously not reported, and their bodies are statically compiled where
+they were previously dynamic. Remove the method-level annotation (or
+change it to `SKIP` mode) to retain the old behaviour.
+
+**What is unchanged.** The opt-out direction is untouched:
+`@CompileDynamic` / `SKIP`-mode methods inside checked classes are
+skipped exactly as before. Cross-family behaviour is also unchanged: a
+method-level `@CompileStatic(TypeCheckingMode.SKIP)` disables static
+compilation but does not exempt the method from an enclosing class's
+`@TypeChecked` checking; only `@TypeChecked(TypeCheckingMode.SKIP)`
+does that.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
