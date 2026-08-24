@@ -73,3 +73,23 @@ tasks.named('rat') {
                 '.jqwik-database'
     ]
 }
+
+// ASF release policy requires each bundled component's license to be either appended
+// to LICENSE or stored in the package with a pointer to it from LICENSE. Groovy's
+// generated LICENSE files use pointers of the form "licenses/<name>.txt", so every
+// archive packaging one of them must also ship the texts it points at, or the pointer
+// dangles. Deriving that list from the LICENSE itself keeps the two from drifting.
+ext.licensePointerTexts = { licenseFile ->
+    def source = rootProject.file(licenseFile)
+    if (!source.isFile()) {
+        return []
+    }
+    def referenced = (source.text =~ /licenses\/([A-Za-z0-9._-]+\.txt)/).collect { it[1] }
+    (referenced.unique() - 'LICENSE-2.0.txt').collect { name ->
+        def text = rootProject.file("licenses/$name")
+        if (!text.isFile()) {
+            throw new GradleException("$source refers to licenses/$name, which does not exist")
+        }
+        text
+    }
+}

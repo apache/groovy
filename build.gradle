@@ -185,10 +185,9 @@ allprojects {
 tasks.named('jar') {
     metaInf {
         from("$projectDir/licenses/LICENSE-JARJAR")
-        from("$projectDir/licenses") {
-            into('licenses')
-            include('asm-license.txt')
-            include('antlr4-license.txt')
+        // LICENSE-JARJAR points at licenses/*.txt; ship those texts
+        into('licenses') {
+            from project.ext.licensePointerTexts("$projectDir/licenses/LICENSE-JARJAR")
         }
         from("$projectDir/notices/NOTICE-JARJAR")
         rename '^([A-Z]+)-([^.]*)', '$1'

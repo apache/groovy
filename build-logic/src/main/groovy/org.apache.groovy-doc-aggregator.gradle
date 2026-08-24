@@ -73,6 +73,10 @@ def sourcesAllJar = tasks.register("sourcesAllJar", Jar) {
         // covered by the source distribution's LICENSE and NOTICE
         from rootProject.file('LICENSE')
         from rootProject.file('NOTICE')
+        // that LICENSE points at licenses/*.txt; ship those texts
+        into('licenses') {
+            from project.ext.licensePointerTexts(rootProject.file('LICENSE'))
+        }
     }
 }
 
@@ -140,8 +144,7 @@ def groovydocAllJar = tasks.register("groovydocAllJar", Jar) {
             rename 'NOTICE-BASE', 'NOTICE'
         }
         into('licenses') {
-            from rootProject.file('licenses/normalize-stylesheet-license.txt')
-            from rootProject.file('licenses/prism-license.txt')
+            from project.ext.licensePointerTexts(rootProject.file('licenses/LICENSE-DOCSJAR'))
         }
     }
 }

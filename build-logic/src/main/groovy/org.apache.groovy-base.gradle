@@ -165,13 +165,16 @@ tasks.withType(Jar).configureEach { jar ->
     if (jar instanceof RepackageJarTask) {
         return
     }
+    def licenseTexts = project.ext.licensePointerTexts
     metaInf {
         // the root project's main jar provides its own JARJAR license/notice in its jar task
         if (jar.name in ['jar', 'sourcesJar'] && !(jar.name == 'jar' && project == rootProject)) {
-            if (file("${projectDir}/LICENSE").exists()) {
-                from "${projectDir}/LICENSE"
+            def licenseFile = file("${projectDir}/LICENSE")
+            if (licenseFile.exists()) {
+                from licenseFile
             } else {
-                from("${rootProject.projectDir}/licenses/LICENSE-BASE") {
+                licenseFile = file("${rootProject.projectDir}/licenses/LICENSE-BASE")
+                from(licenseFile) {
                     rename 'LICENSE-BASE', 'LICENSE'
                 }
             }
@@ -182,6 +185,10 @@ tasks.withType(Jar).configureEach { jar ->
                     rename 'NOTICE-BASE', 'NOTICE'
                 }
             }
+            // the generated subproject LICENSE files point at licenses/*.txt; ship those texts
+            into('licenses') {
+                from licenseTexts(licenseFile)
+            }
         } else if (jar.name == 'groovydocJar') {
             // generated groovydoc bundles prism assets and a normalize-derived stylesheet
             from("${rootProject.projectDir}/licenses/LICENSE-DOCSJAR") {
@@ -191,8 +198,7 @@ tasks.withType(Jar).configureEach { jar ->
                 rename 'NOTICE-BASE', 'NOTICE'
             }
             into('licenses') {
-                from "${rootProject.projectDir}/licenses/normalize-stylesheet-license.txt"
-                from "${rootProject.projectDir}/licenses/prism-license.txt"
+                from licenseTexts("${rootProject.projectDir}/licenses/LICENSE-DOCSJAR")
             }
         } else if (jar.name == 'javadocJar') {
             // javadoc output bundles the JDK tool's own JS libraries (jquery etc.)
