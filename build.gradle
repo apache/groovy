@@ -182,7 +182,21 @@ allprojects {
     }
 }
 
+// The raw jar carries Groovy's own classes only; antlr4 and asm are shaded in later
+// by repackageJar, so the JARJAR licensing belongs on that artefact rather than here.
 tasks.named('jar') {
+    metaInf {
+        from("$projectDir/licenses/LICENSE-BASE")
+        from("$projectDir/notices/NOTICE-BASE")
+        rename '^([A-Z]+)-([^.]*)', '$1'
+    }
+    exclude '**/package-info.class'
+}
+
+tasks.named('repackageJar') {
+    // this artefact is the one that bundles the shaded antlr4 and asm, so it replaces
+    // the raw jar's plain pair with the JARJAR licensing
+    sourceExcludes = ['META-INF/LICENSE', 'META-INF/NOTICE']
     metaInf {
         from("$projectDir/licenses/LICENSE-JARJAR")
         // LICENSE-JARJAR points at licenses/*.txt; ship those texts
@@ -192,7 +206,6 @@ tasks.named('jar') {
         from("$projectDir/notices/NOTICE-JARJAR")
         rename '^([A-Z]+)-([^.]*)', '$1'
     }
-    exclude '**/package-info.class'
 }
 
 tasks.named('sourcesJar') {
