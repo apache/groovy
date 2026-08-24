@@ -4,10 +4,27 @@ Copyright 2003-2026 The Apache Software Foundation
 This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
 
+This product bundles the Apache Ant jars (ant.apache.org)
+which are available under the terms of the Apache License 2.0
+The <sync> task is based on code Copyright (c) 2002, Landmark
+Graphics Corp that has been kindly donated to the Apache Software Foundation.
+
 This product includes/uses ANTLR4 (https://github.com/antlr/antlr4)
 Copyright (c) 2012-2017 The ANTLR Project. All rights reserved.
 
 This product bundles the FlatLaf and FlatLaf Extras jars (formdev.com)
+which are available under the terms of the Apache License 2.0
+
+This product bundles the Apache Ivy jar (ant.apache.org/ivy)
+which is available under the terms of the Apache License 2.0
+Portions of Ivy were originally developed at Jayasoft SARL (jayasoft.fr)
+and are licensed to the Apache Software Foundation under the
+"Software Grant License Agreement"
+The Scp class is based on the SCPClient from the ganymed ssh library,
+which has a BSD style license.
+
+This product bundles several Jackson jars (github.com/FasterXML/jackson)
+Copyright 2007-, Tatu Saloranta (tatu.saloranta@iki.fi)
 which are available under the terms of the Apache License 2.0
 
 This product bundles the JavaParser jar (javaparser.org)
@@ -32,6 +49,11 @@ Contribution License Agreement" and for which the following copyright notices ap
     (C) Copyright 2005 Intel Corporation
     (C) Copyright 2005-2006 Intel Corporation
     (C) Copyright 2006 Intel Corporation
+
+This product bundles the plexus-utils and plexus-xml jars (codehaus-plexus.github.io)
+which are available under the terms of the Apache License 2.0
+They include software developed by the Indiana University Extreme! Lab
+(extreme.indiana.edu), ThoughtWorks (thoughtworks.com) and javolution (javolution.org).
 
 This product bundles Prism.js (prismjs.com)
 which is available under the terms of the MIT License.

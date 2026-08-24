@@ -1,0 +1,4 @@
+This product bundles the plexus-utils and plexus-xml jars (codehaus-plexus.github.io)
+which are available under the terms of the Apache License 2.0
+They include software developed by the Indiana University Extreme! Lab
+(extreme.indiana.edu), ThoughtWorks (thoughtworks.com) and javolution (javolution.org).
