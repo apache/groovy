@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.groovy.lang.annotation.Incubating;
@@ -36,6 +37,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -57,6 +60,7 @@ public class CsvSlurper {
     private char separator = ',';
     private char quoteChar = '"';
     private boolean useHeader = true;
+    private List<String> columns;
 
     /**
      * Creates a slurper that uses comma-separated columns, double quotes,
@@ -111,6 +115,33 @@ public class CsvSlurper {
     }
 
     /**
+     * Set explicit column names, typically for CSV without a header row.
+     * When column names are supplied and {@code useHeader} is true, the first
+     * row is still consumed as a header row but the supplied names take
+     * precedence over the names it contains.
+     *
+     * @param columns the column names
+     * @return this slurper for chaining
+     */
+    public CsvSlurper setColumns(String... columns) {
+        return setColumns(List.of(columns));
+    }
+
+    /**
+     * Set explicit column names, typically for CSV without a header row.
+     * When column names are supplied and {@code useHeader} is true, the first
+     * row is still consumed as a header row but the supplied names take
+     * precedence over the names it contains.
+     *
+     * @param columns the column names
+     * @return this slurper for chaining
+     */
+    public CsvSlurper setColumns(List<String> columns) {
+        this.columns = columns == null || columns.isEmpty() ? null : List.copyOf(columns);
+        return this;
+    }
+
+    /**
      * Parse the content of the specified CSV text.
      *
      * @param csv the CSV text
@@ -125,24 +156,43 @@ public class CsvSlurper {
 
     /**
      * Parse CSV from a reader.
-     * When {@code useHeader} is true (the default), each row is returned as a map keyed
-     * by column headers from the first row. When {@code useHeader} is false, maps are
-     * keyed by auto-generated column names.
+     * When explicit column names have been supplied via {@link #setColumns(String...)},
+     * each row is returned as a map keyed by those names. Otherwise, when
+     * {@code useHeader} is true (the default), maps are keyed by column headers from
+     * the first row. Otherwise, maps are keyed by generated column names
+     * {@code c1}, {@code c2}, ...
      *
      * @param reader the reader of CSV
      * @return a list of maps (one per row)
      */
     public List<Map<String, String>> parse(Reader reader) {
         try {
-            CsvSchema schema = buildSchema();
-            MappingIterator<Map<String, String>> it = mapper
-                    .readerFor(Map.class)
-                    .with(schema)
+            if (useHeader || columns != null) {
+                MappingIterator<Map<String, String>> it = mapper
+                        .readerFor(Map.class)
+                        .with(buildSchema())
+                        .readValues(reader);
+                List<Map<String, String>> result = it.readAll();
+                // Jackson may return a single empty map for header-only input
+                if (result.size() == 1 && result.get(0).isEmpty()) {
+                    result.clear();
+                }
+                return result;
+            }
+            // no header row and no explicit columns: generate column names per row
+            MappingIterator<String[]> it = mapper
+                    .readerFor(String[].class)
+                    .with(CsvParser.Feature.WRAP_AS_ARRAY)
+                    .with(buildSchema())
                     .readValues(reader);
-            List<Map<String, String>> result = it.readAll();
-            // Jackson may return a single empty map for header-only input
-            if (result.size() == 1 && result.get(0).isEmpty()) {
-                result.clear();
+            List<Map<String, String>> result = new ArrayList<>();
+            while (it.hasNext()) {
+                String[] row = it.next();
+                Map<String, String> map = new LinkedHashMap<>();
+                for (int i = 0; i < row.length; i++) {
+                    map.put("c" + (i + 1), row[i]);
+                }
+                result.add(map);
             }
             return result;
         } catch (IOException e) {
@@ -232,6 +282,12 @@ public class CsvSlurper {
 
     /**
      * Parse CSV from a reader into typed objects.
+     * When explicit column names have been supplied via {@link #setColumns(String...)},
+     * values are bound to properties of those names by position. Otherwise, when
+     * {@code useHeader} is true (the default), values are bound by the column names
+     * in the header row. Otherwise, positional columns are derived from the target
+     * type's properties; use {@code @JsonPropertyOrder} on the type to control the
+     * expected column order.
      *
      * @param type the target type
      * @param reader the reader of CSV
@@ -240,16 +296,22 @@ public class CsvSlurper {
      */
     public <T> List<T> parseAs(Class<T> type, Reader reader) {
         try {
-            // Use empty schema with header — Jackson matches columns by name
-            // rather than by position, allowing CSV column order to differ from field order
-            CsvSchema schema = CsvSchema.emptySchema();
-            if (useHeader) {
-                schema = schema.withHeader();
+            CsvSchema schema;
+            if (columns != null) {
+                schema = buildSchema();
+            } else if (useHeader) {
+                // Use empty schema with header — Jackson matches columns by name
+                // rather than by position, allowing CSV column order to differ from field order
+                schema = CsvSchema.emptySchema().withHeader().rebuild()
+                        .setColumnSeparator(separator)
+                        .setQuoteChar(quoteChar)
+                        .build();
+            } else {
+                schema = mapper.schemaFor(type).rebuild()
+                        .setColumnSeparator(separator)
+                        .setQuoteChar(quoteChar)
+                        .build();
             }
-            schema = schema.rebuild()
-                    .setColumnSeparator(separator)
-                    .setQuoteChar(quoteChar)
-                    .build();
             MappingIterator<T> it = mapper
                     .readerFor(type)
                     .with(schema)
@@ -316,6 +378,11 @@ public class CsvSlurper {
         CsvSchema.Builder builder = CsvSchema.builder()
                 .setColumnSeparator(separator)
                 .setQuoteChar(quoteChar);
+        if (columns != null) {
+            for (String column : columns) {
+                builder.addColumn(column);
+            }
+        }
         CsvSchema schema = builder.build();
         if (useHeader) {
             schema = schema.withHeader();

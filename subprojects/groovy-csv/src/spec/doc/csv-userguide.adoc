@@ -60,6 +60,27 @@ character are enclosed in quotes, with embedded quotes doubled:
 include::../test/groovy/csv/CsvSlurperTest.groovy[tags=quoted_fields,indent=0]
 ----
 
+=== CSV without a header row
+
+When the CSV has no header row, call `setUseHeader(false)`. Each row is returned
+as a map keyed by generated column names `c1`, `c2`, and so on:
+
+[source,groovy]
+----
+include::../test/groovy/csv/CsvSlurperTest.groovy[tags=no_header,indent=0]
+----
+
+Alternatively, supply explicit column names with `setColumns`:
+
+[source,groovy]
+----
+include::../test/groovy/csv/CsvSlurperTest.groovy[tags=explicit_columns,indent=0]
+----
+
+When explicit column names are supplied and `useHeader` remains true, the first
+row is still consumed as a header row but the supplied names take precedence
+over the names it contains.
+
 === Typed parsing
 
 `CsvSlurper` can parse CSV directly into typed objects using Jackson databinding.
@@ -76,6 +97,20 @@ include::../test/groovy/csv/CsvSlurperTest.groovy[tags=typed_parsing,indent=0]
 [source,groovy]
 ----
 include::../test/groovy/csv/CsvSlurperTest.groovy[tags=typed_parsing_usage,indent=0]
+----
+
+Headerless CSV can also be parsed into typed objects. Positional columns are
+derived from the target type's properties; use `@JsonPropertyOrder` to control
+the expected column order:
+
+[source,groovy]
+----
+include::../test/groovy/csv/CsvSlurperTest.groovy[tags=typed_no_header,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/groovy/csv/CsvSlurperTest.groovy[tags=typed_no_header_usage,indent=0]
 ----
 
 [NOTE]
