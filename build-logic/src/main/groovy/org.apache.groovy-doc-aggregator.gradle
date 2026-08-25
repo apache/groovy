@@ -68,6 +68,16 @@ def sourcesAllJar = tasks.register("sourcesAllJar", Jar) {
     dependsOn ':generateGrammarSource'
     from configurations.allSources
     archiveClassifier = 'sources'
+    metaInf {
+        // the aggregated sources include the third-party-derived source files
+        // covered by the source distribution's LICENSE and NOTICE
+        from rootProject.file('LICENSE')
+        from rootProject.file('NOTICE')
+        // that LICENSE points at licenses/*.txt; ship those texts
+        into('licenses') {
+            from project.ext.licensePointerTexts(rootProject.file('LICENSE'))
+        }
+    }
 }
 
 def javadocAll = tasks.register("javadocAll", Javadoc) {
@@ -82,6 +92,16 @@ def javadocAll = tasks.register("javadocAll", Javadoc) {
 def javadocAllJar = tasks.register("javadocAllJar", Jar) {
     from javadocAll
     archiveClassifier = 'javadoc'
+    metaInf {
+        // javadoc output bundles the JDK tool's own JS libraries (jquery etc.)
+        // whose licenses ship in the tool-generated legal/ directory
+        from(rootProject.file('licenses/LICENSE-BASE')) {
+            rename 'LICENSE-BASE', 'LICENSE'
+        }
+        from(rootProject.file('notices/NOTICE-BASE')) {
+            rename 'NOTICE-BASE', 'NOTICE'
+        }
+    }
 }
 
 def groovydocAll = tasks.register("groovydocAll", Groovydoc) {
@@ -96,6 +116,18 @@ def groovydocAll = tasks.register("groovydocAll", Groovydoc) {
 def groovydocAllJar = tasks.register("groovydocAllJar", Jar) {
     from groovydocAll
     archiveClassifier = 'groovydoc'
+    metaInf {
+        // generated groovydoc bundles a normalize-derived stylesheet
+        from(rootProject.file('licenses/LICENSE-DOCSJAR')) {
+            rename 'LICENSE-DOCSJAR', 'LICENSE'
+        }
+        from(rootProject.file('notices/NOTICE-BASE')) {
+            rename 'NOTICE-BASE', 'NOTICE'
+        }
+        into('licenses') {
+            from project.ext.licensePointerTexts(rootProject.file('licenses/LICENSE-DOCSJAR'))
+        }
+    }
 }
 
 class JavadocClasspathCompatibilityRule implements AttributeCompatibilityRule<Usage> {

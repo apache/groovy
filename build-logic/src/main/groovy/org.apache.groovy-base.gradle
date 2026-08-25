@@ -181,6 +181,26 @@ tasks.withType(Jar).configureEach { jar ->
             into('licenses') {
                 from licenseTexts(licenseFile)
             }
+        } else if (jar.name == 'groovydocJar') {
+            // generated groovydoc bundles a normalize-derived stylesheet
+            from("${rootProject.projectDir}/licenses/LICENSE-DOCSJAR") {
+                rename 'LICENSE-DOCSJAR', 'LICENSE'
+            }
+            from("${rootProject.projectDir}/notices/NOTICE-BASE") {
+                rename 'NOTICE-BASE', 'NOTICE'
+            }
+            into('licenses') {
+                from licenseTexts("${rootProject.projectDir}/licenses/LICENSE-DOCSJAR")
+            }
+        } else if (jar.name == 'javadocJar') {
+            // javadoc output bundles the JDK tool's own JS libraries (jquery etc.)
+            // whose licenses ship in the tool-generated legal/ directory
+            from("${rootProject.projectDir}/licenses/LICENSE-BASE") {
+                rename 'LICENSE-BASE', 'LICENSE'
+            }
+            from("${rootProject.projectDir}/notices/NOTICE-BASE") {
+                rename 'NOTICE-BASE', 'NOTICE'
+            }
         }
         from generateReleaseInfo
     }

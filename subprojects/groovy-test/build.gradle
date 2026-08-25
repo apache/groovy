@@ -41,7 +41,9 @@ groovyLibrary {
             ],
             ['META-INF/NOTICE', 'META-INF/INDEX.LIST'],
             [
-                    (project.relativePath(rootProject.file('notices/NOTICE-GROOIDJARJAR'))): 'META-INF/NOTICE'
+                    // absolute: a project-relative path from a subproject resolves to
+                    // ../../notices/... and the resource silently drops out of the jar
+                    (rootProject.file('notices/NOTICE-GROOIDJARJAR').absolutePath): 'META-INF/NOTICE'
             ]
     )
 }
