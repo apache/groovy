@@ -7,6 +7,7 @@ The following source files within this product:
     org/apache/groovy/groovysh/jline/Utils.groovy
     org/apache/groovy/groovysh/jline/JrtJavaBasePackages.java
     org/apache/groovy/groovysh/jline/PackageHelper.java
+    org/apache/groovy/groovysh/jline/SystemRegistryImpl.java
 
 were derived from similarly named files in the JLine3 source repository which
 have a BSD-style license.
