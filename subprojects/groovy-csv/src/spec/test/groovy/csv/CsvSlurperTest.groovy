@@ -18,6 +18,7 @@
  */
 package groovy.csv
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder
 import org.junit.jupiter.api.Test
 
 import java.nio.charset.StandardCharsets
@@ -64,6 +65,47 @@ class CsvSlurperTest {
         assert csv[0].note == 'hello, world'
         assert csv[1].note == 'say "hi"'
         // end::quoted_fields[]
+    }
+
+    @Test
+    void testNoHeaderGeneratedColumns() {
+        // tag::no_header[]
+        def csv = new CsvSlurper().setUseHeader(false).parseText('1,2\n3,4')
+        assert csv.size() == 2
+        assert csv[0].c1 == '1'
+        assert csv[1].c2 == '4'
+        // end::no_header[]
+    }
+
+    @Test
+    void testNoHeaderExplicitColumns() {
+        // tag::explicit_columns[]
+        def csv = new CsvSlurper().setUseHeader(false).setColumns('x', 'y').parseText('1,2\n3,4')
+        assert csv[0].x == '1'
+        assert csv[1].y == '4'
+        // end::explicit_columns[]
+    }
+
+    @Test
+    void testExplicitColumnsOverrideHeader() {
+        def csv = new CsvSlurper().setColumns('x', 'y').parseText('a,b\n1,2')
+        assert csv.size() == 1
+        assert csv[0].x == '1'
+        assert csv[0].y == '2'
+    }
+
+    @Test
+    void testNoHeaderRaggedRows() {
+        def csv = new CsvSlurper().setUseHeader(false).parseText('1,2\n3,4,5')
+        assert csv[0].keySet() == ['c1', 'c2'] as Set
+        assert csv[1].c3 == '5'
+    }
+
+    @Test
+    void testNoHeaderCustomSeparator() {
+        def csv = new CsvSlurper().setUseHeader(false).setSeparator((char) '\t').parseText('1\t2')
+        assert csv[0].c1 == '1'
+        assert csv[0].c2 == '2'
     }
 
     @Test
@@ -155,5 +197,32 @@ class CsvSlurperTest {
         def items = new CsvSlurper().parseAs(Sale, 'customer,amount\nAlice,99.99')
         assert items[0] instanceof Sale
         assert items[0].amount instanceof BigDecimal
+    }
+
+    // tag::typed_no_header[]
+    @JsonPropertyOrder(['customer', 'amount'])
+    static class Order {
+        String customer
+        BigDecimal amount
+    }
+    // end::typed_no_header[]
+
+    @Test
+    void testTypedParsingNoHeader() {
+        // tag::typed_no_header_usage[]
+        def orders = new CsvSlurper().setUseHeader(false)
+                .parseAs(Order, 'Acme,1500.00\nGlobex,250.50')
+        assert orders.size() == 2
+        assert orders[0].customer == 'Acme'
+        assert orders[1].amount == 250.50
+        // end::typed_no_header_usage[]
+    }
+
+    @Test
+    void testTypedParsingNoHeaderExplicitColumns() {
+        def sales = new CsvSlurper().setUseHeader(false).setColumns('amount', 'customer')
+                .parseAs(Sale, '99.99,Alice')
+        assert sales[0].customer == 'Alice'
+        assert sales[0].amount == 99.99
     }
 }
