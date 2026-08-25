@@ -175,7 +175,7 @@ assert new MyConcreteClass() != null"""
         file.text = 'hello\nworld\n'
         try {
             GroovyMain.main('-i', '-p', '-e', 'line.toUpperCase()', file.absolutePath)
-            assert file.text == 'HELLO\nWORLD\n'
+            assert file.text.normalize() == 'HELLO\nWORLD\n'
             def leftovers = dir.listFiles()?.findAll { it.name.startsWith('groovy_') && it.name.endsWith('.tmp') } ?: []
             assert leftovers.isEmpty() : leftovers
         } finally {
@@ -217,7 +217,7 @@ assert new MyConcreteClass() != null"""
         file.text = 'hello\n'
         try {
             GroovyMain.main('-i', '.bak', '-p', '-e', 'line.toUpperCase()', file.absolutePath)
-            assert file.text == 'HELLO\n'
+            assert file.text.normalize() == 'HELLO\n'
             def backup = new File(dir, 'input.txt.bak')
             assert backup.exists()
             assert backup.text == 'hello\n'
