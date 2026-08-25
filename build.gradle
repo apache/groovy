@@ -145,7 +145,7 @@ dependencies {
     tools "commons-io:commons-io:2.22.0"
     tools "org.apache.maven:maven-core:3.9.16"
     tools "org.apache.maven.shared:maven-shared-utils:3.4.2"
-    tools "org.codehaus.plexus:plexus-utils:4.0.3"
+    tools "org.codehaus.plexus:plexus-utils:4.1.0"
     // end
     tools "org.ow2.asm:asm:${versions.asm}"
     spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.14.0'
