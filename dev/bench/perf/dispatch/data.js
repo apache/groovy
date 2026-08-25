@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787555268453,
+  "lastUpdate": 1787641882201,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -2636,6 +2636,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.hidden",
             "value": 880,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1509,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "56964ab775786f5be385d4feb2aab9df028813d1",
+          "message": "GROOVY-12281: document the soft GroovyClassValue mode in the integration guide\n\nThe class-loader-release section still described two measures and called\nthe escape hatch's dispatch cost \"not measurable\". Add the shipped soft\nmode as a third measure — ClassValue fast path retained, associations\nheld softly, non-reconstructible state strong-rooted while in use — and\nstate the measured escape-hatch numbers (57 classic-dispatch JMH\nbenchmarks: +4.8% geomean, hot platform-receiver idioms up to ~1.4x,\ncompile time within 1%) so integrators can decide with their own\nworkload in mind.\n\nCompletes the documentation side of the GROOVY-12281 merge; the guide\nwording for the escape hatch matches the quantification recorded on the\ngroovy12281-investigation branch.",
+          "timestamp": "2026-08-24T21:06:36Z",
+          "url": "https://github.com/apache/groovy/commit/56964ab775786f5be385d4feb2aab9df028813d1"
+        },
+        "date": 1787641881560,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4018,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 457,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 879,
             "unit": "classes"
           },
           {
