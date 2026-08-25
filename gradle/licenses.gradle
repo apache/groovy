@@ -30,12 +30,13 @@ tasks.register('updateLicenses') {
     ext.licenseBinZipFile = "${licensesDir}/LICENSE-BINZIP"
     ext.licenseDocFile = "${licensesDir}/LICENSE-DOC"
     ext.licenseDocsJarFile = "${licensesDir}/LICENSE-DOCSJAR"
+    ext.licenseAllSrcJarFile = "${licensesDir}/LICENSE-ALLSRCJAR"
     ext.licenseJarJarFile = "${licensesDir}/LICENSE-JARJAR"
     ext.licenseSdkFile = "${licensesDir}/LICENSE-SDK"
     inputs.files(licenseBaseFile, fileTree(licensesDir).include('*.txt'))
-    outputs.files(licenseBinZipFile, licenseDocFile, licenseDocsJarFile, licenseJarJarFile,
-        licenseSrcFile, licenseDocGeneratorFile, licenseGroovyDocFile, licenseJsr223File,
-        licenseSdkFile)
+    outputs.files(licenseBinZipFile, licenseDocFile, licenseDocsJarFile, licenseAllSrcJarFile,
+        licenseJarJarFile, licenseSrcFile, licenseDocGeneratorFile, licenseGroovyDocFile,
+        licenseJsr223File, licenseSdkFile)
 
     doLast {
         def srcFiles = fileTree(licensesDir).include('*-SRC*.txt').sort { it.name }
@@ -50,6 +51,12 @@ tasks.register('updateLicenses') {
         def docsJarFiles = fileTree(licensesDir).include('normalize-stylesheet-BINZIP-DOC-SRC.txt')
         def docgeneratorFiles = fileTree(licensesDir).include('normalize-stylesheet-groovy-docgenerator.txt')
         def groovydocFiles = fileTree(licensesDir).include('normalize-stylesheet-groovy-groovydoc.txt')
+        // for the aggregated sources jar, which carries the jline3- and jsr223-derived
+        // source files but none of the documentation assets the source zip also ships
+        def allSrcJarFiles = fileTree(licensesDir) {
+            include 'jline3-BINZIP-SRC.txt'
+            include 'jsr223-BINZIP-SRC.txt'
+        }.sort { it.name }
         def jsr223Files = fileTree(licensesDir).include('jsr223-BINZIP-SRC.txt')
         def jline3Files = fileTree(licensesDir).include('jline3-BINZIP-SRC.txt')
         def licenseHdr = '\n\n------------------------------------------------------------------------\n\n'
@@ -57,6 +64,7 @@ tasks.register('updateLicenses') {
             (licenseBinZipFile)      : binzipFiles,
             (licenseDocFile)         : docFiles,
             (licenseDocsJarFile)     : docsJarFiles,
+            (licenseAllSrcJarFile)   : allSrcJarFiles,
             (licenseJarJarFile)      : jarjarFiles,
             (licenseSrcFile)         : srcFiles,
             (licenseDocGeneratorFile): docgeneratorFiles,
@@ -91,10 +99,12 @@ tasks.register('updateNotices') {
     ext.noticeGrooidFile = "${noticesDir}/NOTICE-GROOID"
     ext.noticeGrooidJarJarFile = "${noticesDir}/NOTICE-GROOIDJARJAR"
     ext.noticeJarJarFile = "${noticesDir}/NOTICE-JARJAR"
+    ext.noticeSrcJarFile = "${noticesDir}/NOTICE-SRCJAR"
     ext.noticeSdkFile = "${noticesDir}/NOTICE-SDK"
     inputs.files(noticeBaseFile, fileTree(noticesDir).include('*.txt'))
     outputs.files(noticeBinZipFile, noticeGrooidFile, noticeGrooidJarJarFile,
-        noticeJarJarFile, noticeSrcFile, noticeGroovyConsoleFile, noticeSdkFile)
+        noticeJarJarFile, noticeSrcJarFile, noticeSrcFile, noticeGroovyConsoleFile,
+        noticeSdkFile)
 
     doLast {
         def srcFiles = fileTree(noticesDir).include('*-SRC*.txt').sort { it.name }
@@ -109,12 +119,19 @@ tasks.register('updateNotices') {
             include '*-GROOID*.txt'
             include '*-BINZIP*.txt'
         }.sort { it.name }
+        // for the sources jars, which carry the third-party-derived source files but
+        // none of the assets (silk icons etc.) the source zip also ships
+        def srcJarFiles = fileTree(noticesDir) {
+            include 'concurrentlinkedhashmap-SRC.txt'
+            include 'concurrentreferencehashmap-SRC.txt'
+        }.sort { it.name }
         def groovyconsoleFiles = fileTree(noticesDir).include('silkicons-BINZIP-SRC.txt')
         [
             (noticeBinZipFile)       : binzipFiles,
             (noticeGrooidFile)       : grooidFiles,
             (noticeGrooidJarJarFile) : grooidJarjarFiles,
             (noticeJarJarFile)       : jarjarFiles,
+            (noticeSrcJarFile)       : srcJarFiles,
             (noticeSrcFile)          : srcFiles,
             (noticeGroovyConsoleFile): groovyconsoleFiles,
         ].each { outFile, inFiles ->

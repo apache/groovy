@@ -69,13 +69,17 @@ def sourcesAllJar = tasks.register("sourcesAllJar", Jar) {
     from configurations.allSources
     archiveClassifier = 'sources'
     metaInf {
-        // the aggregated sources include the third-party-derived source files
-        // covered by the source distribution's LICENSE and NOTICE
-        from rootProject.file('LICENSE')
-        from rootProject.file('NOTICE')
+        // the aggregated sources carry the jline3- and jsr223-derived source files, but
+        // not the documentation assets and icons the source zip's own LICENSE/NOTICE cover
+        from(rootProject.file('licenses/LICENSE-ALLSRCJAR')) {
+            rename 'LICENSE-ALLSRCJAR', 'LICENSE'
+        }
+        from(rootProject.file('notices/NOTICE-SRCJAR')) {
+            rename 'NOTICE-SRCJAR', 'NOTICE'
+        }
         // that LICENSE points at licenses/*.txt; ship those texts
         into('licenses') {
-            from project.ext.licensePointerTexts(rootProject.file('LICENSE'))
+            from project.ext.licensePointerTexts(rootProject.file('licenses/LICENSE-ALLSRCJAR'))
         }
     }
 }

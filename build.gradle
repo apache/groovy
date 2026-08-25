@@ -175,17 +175,28 @@ allprojects {
     }
 }
 
+// The raw jar carries Groovy's own classes only; antlr4 and asm are repackaged in later
+// by the jarjar task, so the JARJAR licensing belongs on that artefact rather than here.
 tasks.named('jar') {
     metaInf {
-        from("$projectDir/licenses/LICENSE-JARJAR")
-        // LICENSE-JARJAR points at licenses/*.txt; ship those texts
-        into('licenses') {
-            from project.ext.licensePointerTexts("$projectDir/licenses/LICENSE-JARJAR")
-        }
-        from("$projectDir/notices/NOTICE-JARJAR")
+        from("$projectDir/licenses/LICENSE-BASE")
+        from("$projectDir/notices/NOTICE-BASE")
         rename '^([A-Z]+)-([^.]*)', '$1'
     }
     exclude '**/package-info.class'
+}
+
+tasks.named('jarjar') {
+    // this artefact is the one that bundles the repackaged antlr4 and asm, so it replaces
+    // the raw jar's plain pair with the JARJAR licensing
+    excludes = ['META-INF/LICENSE', 'META-INF/NOTICE']
+    def jarjarLicense = file("$projectDir/licenses/LICENSE-JARJAR")
+    includedResources = [
+            (jarjarLicense.absolutePath)                       : 'META-INF/LICENSE',
+            (file("$projectDir/notices/NOTICE-JARJAR").absolutePath): 'META-INF/NOTICE'
+    ] + project.ext.licensePointerTexts(jarjarLicense).collectEntries {
+        [(it.absolutePath): "META-INF/licenses/${it.name}"]
+    }
 }
 
 
