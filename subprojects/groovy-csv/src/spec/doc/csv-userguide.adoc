@@ -148,6 +148,21 @@ include::../test/groovy/csv/CsvBuilderTest.groovy[tags=typed_writing,indent=0]
 include::../test/groovy/csv/CsvBuilderTest.groovy[tags=typed_writing_usage,indent=0]
 ----
 
+Columns for records appear in component declaration order:
+
+[source,groovy]
+----
+include::../test/groovy/csv/CsvBuilderTest.groovy[tags=record_column_order,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/groovy/csv/CsvBuilderTest.groovy[tags=record_column_order_usage,indent=0]
+----
+
+For other classes the column order is alphabetical. Use `@JsonPropertyOrder`
+on the type to set an explicit column order.
+
 === Round-trip
 
 CSV written by `CsvBuilder` can be read back with `CsvSlurper`:

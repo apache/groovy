@@ -19,6 +19,7 @@
 package groovy.csv;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
@@ -75,6 +76,9 @@ public class CsvSlurper {
             .addModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
+            // record components in declaration order rather than alphabetical,
+            // so schemas derived from a type match its declared column order
+            .enable(MapperFeature.SORT_CREATOR_PROPERTIES_BY_DECLARATION_ORDER)
             .build();
 
     static CsvMapper mapper() {
@@ -286,8 +290,9 @@ public class CsvSlurper {
      * values are bound to properties of those names by position. Otherwise, when
      * {@code useHeader} is true (the default), values are bound by the column names
      * in the header row. Otherwise, positional columns are derived from the target
-     * type's properties; use {@code @JsonPropertyOrder} on the type to control the
-     * expected column order.
+     * type's properties: component declaration order for records, alphabetical
+     * order for other classes. Use {@code @JsonPropertyOrder} on the type to set
+     * an explicit column order.
      *
      * @param type the target type
      * @param reader the reader of CSV

@@ -218,6 +218,15 @@ class CsvSlurperTest {
         // end::typed_no_header_usage[]
     }
 
+    record Sample(String label, BigDecimal amount) {}
+
+    @Test
+    void testTypedParsingNoHeaderRecordDeclarationOrder() {
+        def samples = new CsvSlurper().setUseHeader(false).parseAs(Sample, 'a,1.5\nb,2.5')
+        assert samples[0].label == 'a'
+        assert samples[1].amount == 2.5
+    }
+
     @Test
     void testTypedParsingNoHeaderExplicitColumns() {
         def sales = new CsvSlurper().setUseHeader(false).setColumns('amount', 'customer')

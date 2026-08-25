@@ -18,6 +18,7 @@
  */
 package groovy.csv
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder
 import org.junit.jupiter.api.Test
 
 class CsvBuilderTest {
@@ -105,6 +106,54 @@ class CsvBuilderTest {
         def parsed = new CsvSlurper().parseAs(Product, csv)
         assert parsed[0].name == 'Widget'
         assert parsed[0].price == 9.99
+    }
+
+    // tag::record_column_order[]
+    record Measurement(String name, BigDecimal value, String unit) {}
+    // end::record_column_order[]
+
+    @Test
+    void testRecordColumnsInDeclarationOrder() {
+        // tag::record_column_order_usage[]
+        def data = [new Measurement('temp', 21.5, 'C')]
+        def csv = CsvBuilder.toCsv(data, Measurement)
+        assert csv.startsWith('name,value,unit')
+        assert csv.contains('temp,21.5,C')
+        // end::record_column_order_usage[]
+    }
+
+    @Test
+    void testRecordRoundTrip() {
+        def data = [new Measurement('temp', 21.5, 'C')]
+        def csv = CsvBuilder.toCsv(data, Measurement)
+        def parsed = new CsvSlurper().parseAs(Measurement, csv)
+        assert parsed == data
+    }
+
+    @JsonPropertyOrder(['sku', 'price', 'name'])
+    static class Inventory {
+        String name
+        String sku
+        BigDecimal price
+    }
+
+    @Test
+    void testJsonPropertyOrderControlsColumns() {
+        def csv = CsvBuilder.toCsv([new Inventory(name: 'Widget', sku: 'W-1', price: 9.99)], Inventory)
+        assert csv.startsWith('sku,price,name')
+        assert csv.contains('W-1,9.99,Widget')
+    }
+
+    static class Reading {
+        String sensor
+        BigDecimal amount
+    }
+
+    @Test
+    void testPlainClassColumnsAlphabetical() {
+        def csv = CsvBuilder.toCsv([new Reading(sensor: 's1', amount: 1.5)], Reading)
+        assert csv.startsWith('amount,sensor')
+        assert csv.contains('1.5,s1')
     }
 
     // tag::temporal_class[]
