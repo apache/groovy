@@ -157,12 +157,16 @@ tasks.withType(AbstractArchiveTask).configureEach {
 }
 
 tasks.withType(Jar).configureEach { jar ->
+    def licenseTexts = project.ext.licensePointerTexts
     metaInf {
-        if (jar.name in ['jar', 'sourcesJar']) {
-            if (file("${projectDir}/LICENSE").exists()) {
-                from "${projectDir}/LICENSE"
+        // the root project's main jar provides its own JARJAR license/notice in its jar task
+        if (jar.name in ['jar', 'sourcesJar'] && !(jar.name == 'jar' && project == rootProject)) {
+            def licenseFile = file("${projectDir}/LICENSE")
+            if (licenseFile.exists()) {
+                from licenseFile
             } else {
-                from("${rootProject.projectDir}/licenses/LICENSE-BASE") {
+                licenseFile = file("${rootProject.projectDir}/licenses/LICENSE-BASE")
+                from(licenseFile) {
                     rename 'LICENSE-BASE', 'LICENSE'
                 }
             }
@@ -172,6 +176,10 @@ tasks.withType(Jar).configureEach { jar ->
                 from("${rootProject.projectDir}/notices/NOTICE-BASE") {
                     rename 'NOTICE-BASE', 'NOTICE'
                 }
+            }
+            // the generated LICENSE files point at licenses/*.txt; ship those texts
+            into('licenses') {
+                from licenseTexts(licenseFile)
             }
         }
         from generateReleaseInfo

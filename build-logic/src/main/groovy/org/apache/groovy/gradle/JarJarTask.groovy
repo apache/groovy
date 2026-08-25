@@ -161,6 +161,9 @@ class JarJarTask extends DefaultTask {
             if (untouchedFiles) {
                 zipfileset(src: from.get(), includes: untouchedFiles.join(','))
             }
+            // jarjar drops the nested META-INF/licenses/ directory, but the LICENSE it
+            // keeps points at those texts, so carry them over from the input jar
+            zipfileset(src: from.get(), includes: 'META-INF/licenses/**')
         }
 
         // Step 3: generate an OSGi manifest referencing the repackaged classes
