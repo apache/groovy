@@ -25,6 +25,7 @@ import java.lang.invoke.SwitchPoint
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertFalse
@@ -287,6 +288,20 @@ final class SwitchPointInvalidatorTest {
                 'live SwitchPoint missing from registry — a drain stranded it')
             assertFalse(live.hasBeenInvalidated())
         }
+    }
+
+    @Test
+    void reclaimAnchor_isHeldInAtomicReference() {
+        def inv = new SwitchPointInvalidator()
+        def anchor = new Object()
+        inv.setReclaimAnchor(anchor)
+        def field = SwitchPointInvalidator.getDeclaredField('reclaimAnchor')
+        field.accessible = true
+        def holder = field.get(inv)
+        assert holder instanceof AtomicReference
+        assertSame(anchor, holder.get())
+        inv.setReclaimAnchor(null)
+        assertNull(holder.get())
     }
 
     @Test

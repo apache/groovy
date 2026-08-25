@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test
 
 import java.lang.ref.SoftReference
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicReference
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -37,7 +38,15 @@ final class AwaitableAdapterRegistryCacheTest {
     private static ClassValue<SoftReference<?>> cache() {
         def field = AwaitableAdapterRegistry.getDeclaredField('awaitableCache')
         field.accessible = true
-        field.get(null) as ClassValue<SoftReference<?>>
+        (field.get(null) as AtomicReference<ClassValue<SoftReference<?>>>).get()
+    }
+
+    @Test
+    void testCacheIsPublishedThroughAnAtomicReference() {
+        def field = AwaitableAdapterRegistry.getDeclaredField('awaitableCache')
+        field.accessible = true
+        assert field.get(null) instanceof AtomicReference
+        assert cache() instanceof ClassValue
     }
 
     @Test

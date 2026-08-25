@@ -105,9 +105,12 @@ public final class SwitchPointInvalidator {
      * owner can park a cleanup reference here (e.g. {@code ClassInfo}'s domain
      * reclaim) and rely on it surviving the owner itself while a live
      * SwitchPoint remains registered.
+     * <p>
+     * Held through an {@link AtomicReference} so parking the reclaim is a
+     * volatile publication and stays reachable for as long as this invalidator
+     * does.
      */
-    @SuppressWarnings("unused")
-    private volatile Object reclaimAnchor;
+    private final AtomicReference<Object> reclaimAnchor = new AtomicReference<>();
 
     /**
      * Creates an invalidator with no live SwitchPoint until the first
@@ -124,7 +127,7 @@ public final class SwitchPointInvalidator {
      * @param anchor the object to keep reachable (may be {@code null} to clear)
      */
     public void setReclaimAnchor(final Object anchor) {
-        this.reclaimAnchor = anchor;
+        this.reclaimAnchor.set(anchor);
     }
 
     /**

@@ -37,4 +37,28 @@ final class CachedMethodTest {
 
         assert cachedMethod.isVargsMethod()
     }
+
+    @Test
+    void testIsCallerSensitive_plainMethodIsNot() {
+        def cachedMethod = new CachedMethod(String.getMethod('length'))
+        assert !cachedMethod.callerSensitive
+    }
+
+    @Test
+    void testIsCallerSensitive_jdkCallerSensitiveAnnotation() {
+        def cachedMethod = new CachedMethod(Class.getMethod('forName', String))
+        assert cachedMethod.callerSensitive
+    }
+
+    @Test
+    void testIsCallerSensitive_objectStreamDeclaringClass() {
+        def cachedMethod = new CachedMethod(ObjectInputStream.getDeclaredMethod('readObject'))
+        assert cachedMethod.callerSensitive
+    }
+
+    @Test
+    void testIsCallerSensitive_objectOutputStreamDeclaringClass() {
+        def cachedMethod = new CachedMethod(ObjectOutputStream.getDeclaredMethod('writeObject', Object))
+        assert cachedMethod.callerSensitive
+    }
 }

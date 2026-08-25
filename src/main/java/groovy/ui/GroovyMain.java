@@ -55,6 +55,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -636,23 +638,57 @@ public class GroovyMain {
                 writer.flush();
             }
         } else {
+            boolean unnamedScratch = backupExtension == null || backupExtension.isEmpty();
             File backup;
-            if (backupExtension == null) {
-                backup = Files.createTempFile("groovy_", ".tmp").toFile();
-                backup.deleteOnExit();
+            if (unnamedScratch) {
+                // unique sibling of the source: same-filesystem rename, and the
+                // parent is the user's file directory rather than java.io.tmpdir
+                backup = moveAsideForInPlaceEdit(file);
             } else {
                 backup = new File(file.getPath() + backupExtension);
+                if (backup.exists() && !backup.delete()) {
+                    throw new IOException("unable to remove existing backup " + backup);
+                }
+                if (!file.renameTo(backup)) {
+                    throw new IOException("unable to rename " + file + " to " + backup);
+                }
             }
-            backup.delete();
-            if (!file.renameTo(backup))
-                throw new IOException("unable to rename " + file + " to " + backup);
-
-
-            try(BufferedReader reader = new BufferedReader(new FileReader(backup));
-                PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(backup));
+                 PrintWriter writer = new PrintWriter(new FileWriter(file))) {
                 processReader(s, reader, writer);
             }
+            if (unnamedScratch) {
+                Files.deleteIfExists(backup.toPath());
+            }
         }
+    }
+
+    /**
+     * Moves {@code file} aside to a uniquely named sibling so the original path
+     * can be rewritten in place. The sibling is created in the source directory
+     * so the move stays on the same filesystem and the parent is not the
+     * process-wide publicly writable temp directory. The caller deletes the
+     * sibling after a successful rewrite; it is left in place on failure so the
+     * original contents remain recoverable.
+     */
+    private static File moveAsideForInPlaceEdit(final File file) throws IOException {
+        Path source = file.toPath();
+        Path directory = source.toAbsolutePath().getParent();
+        if (directory == null) {
+            throw new IOException("unable to resolve parent directory of " + file);
+        }
+        Path backup = Files.createTempFile(directory, "groovy_", ".tmp");
+        try {
+            Files.move(source, backup, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            try {
+                Files.deleteIfExists(backup);
+            } catch (IOException suppressed) {
+                e.addSuppressed(suppressed);
+            }
+            throw e;
+        }
+        return backup.toFile();
     }
 
     /**

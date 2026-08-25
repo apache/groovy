@@ -21,6 +21,8 @@ package groovy.ui
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.shouldFail
+
 final class GroovyMainTest {
 
     private baos = new ByteArrayOutputStream()
@@ -163,6 +165,90 @@ assert new MyConcreteClass() != null"""
                 System.clearProperty('groovy.source.encoding')
             }
             configScript.delete()
+        }
+    }
+
+    @Test
+    void testInPlaceEditWithoutBackupExtensionStaysInSourceDirectory() {
+        def dir = File.createTempDir('groovy-main-inplace-')
+        def file = new File(dir, 'input.txt')
+        file.text = 'hello\nworld\n'
+        try {
+            GroovyMain.main('-i', '-p', '-e', 'line.toUpperCase()', file.absolutePath)
+            assert file.text == 'HELLO\nWORLD\n'
+            def leftovers = dir.listFiles()?.findAll { it.name.startsWith('groovy_') && it.name.endsWith('.tmp') } ?: []
+            assert leftovers.isEmpty() : leftovers
+        } finally {
+            dir.listFiles()?.each { it.delete() }
+            dir.delete()
+        }
+    }
+
+    @Test
+    void testProcessFileFailureLeavesUnnamedSibling() {
+        def dir = File.createTempDir('groovy-main-inplace-fail-')
+        def file = new File(dir, 'input.txt')
+        file.text = 'hello\n'
+        def main = new GroovyMain()
+        main.@editFiles = true
+        main.@backupExtension = ''
+        def script = new GroovyShell().parse('throw new RuntimeException("boom")')
+        def method = GroovyMain.getDeclaredMethod('processFile', groovy.lang.Script, File)
+        method.accessible = true
+        try {
+            def thrown = shouldFail(java.lang.reflect.InvocationTargetException) {
+                method.invoke(main, script, file)
+            }
+            assert thrown.cause instanceof RuntimeException
+            def backups = dir.listFiles()?.findAll { it.name.startsWith('groovy_') && it.name.endsWith('.tmp') } ?: []
+            assert backups.size() == 1
+            assert backups[0].text == 'hello\n'
+            assert backups[0].parentFile.canonicalFile == dir.canonicalFile
+        } finally {
+            dir.listFiles()?.each { it.delete() }
+            dir.delete()
+        }
+    }
+
+    @Test
+    void testInPlaceEditWithBackupExtension() {
+        def dir = File.createTempDir('groovy-main-inplace-bak-')
+        def file = new File(dir, 'input.txt')
+        file.text = 'hello\n'
+        try {
+            GroovyMain.main('-i', '.bak', '-p', '-e', 'line.toUpperCase()', file.absolutePath)
+            assert file.text == 'HELLO\n'
+            def backup = new File(dir, 'input.txt.bak')
+            assert backup.exists()
+            assert backup.text == 'hello\n'
+        } finally {
+            dir.listFiles()?.each { it.delete() }
+            dir.delete()
+        }
+    }
+
+    @Test
+    void testMoveAsideForInPlaceEditCreatesSiblingNotSystemTemp() {
+        def dir = File.createTempDir('groovy-main-move-aside-')
+        def file = new File(dir, 'source.txt')
+        file.text = 'payload'
+        def tmpDir = new File(System.getProperty('java.io.tmpdir')).canonicalFile
+        try {
+            def method = GroovyMain.getDeclaredMethod('moveAsideForInPlaceEdit', File)
+            method.accessible = true
+            def backup = (File) method.invoke(null, file)
+            assert !file.exists()
+            assert backup.exists()
+            assert backup.text == 'payload'
+            assert backup.parentFile.canonicalFile == dir.canonicalFile
+            assert backup.name.startsWith('groovy_')
+            assert backup.name.endsWith('.tmp')
+            if (dir.canonicalFile != tmpDir) {
+                assert backup.canonicalFile.parentFile != tmpDir
+            }
+        } finally {
+            dir.listFiles()?.each { it.delete() }
+            dir.delete()
         }
     }
 

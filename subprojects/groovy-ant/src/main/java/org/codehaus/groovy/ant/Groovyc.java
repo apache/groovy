@@ -1383,12 +1383,23 @@ public class Groovyc extends MatchingTask {
         return tempPath.toFile();
     }
 
+    /**
+     * Best-effort owner-only access on filesystems that cannot apply POSIX
+     * permissions atomically at create time. Each {@link File} setter's
+     * boolean is consumed; failure is logged rather than treated as fatal
+     * because some stores cannot express owner-only bits.
+     */
     private static void restrictToOwner(File file) {
-        file.setReadable(false, false);
-        file.setWritable(false, false);
-        file.setExecutable(false, false);
-        file.setReadable(true, true);
-        file.setWritable(true, true);
+        boolean executeCleared = file.setExecutable(false, false);
+        boolean restricted = file.setReadable(false, false)
+                & file.setWritable(false, false)
+                & file.setReadable(true, true)
+                & file.setWritable(true, true);
+        if (!restricted) {
+            LOGGER.log(WARNING, () -> "Unable to restrict permissions on " + file);
+        } else if (!executeCleared) {
+            LOGGER.log(System.Logger.Level.DEBUG, () -> "Could not clear execute bit on " + file);
+        }
     }
 
     @SuppressFBWarnings(value = "DM_DEFAULT_ENCODING", justification = "This is only used to store filenames when exceeding a particular length limit when in fork mode")

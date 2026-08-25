@@ -24,6 +24,10 @@ import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -77,6 +81,14 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     private boolean makeAccessibleDone;
     private CachedMethod transformedMethod;
+
+    /**
+     * The JDK's {@code CallerSensitive} marker lives in {@code jdk.internal}
+     * and is not a compile-time dependency. Resolved once; {@code null} means
+     * the probe cannot see the annotation type and callers must be treated as
+     * caller-sensitive.
+     */
+    private static final Class<? extends Annotation> CALLER_SENSITIVE = findCallerSensitive();
 
     /**
      * Constructs a {@code CachedMethod} for the given method within a cached class.
@@ -426,24 +438,31 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return sensitive;
     }
 
+    @SuppressWarnings("unchecked")
+    private static Class<? extends Annotation> findCallerSensitive() {
+        try {
+            return (Class<? extends Annotation>) Class.forName("jdk.internal.reflect.CallerSensitive");
+        } catch (ClassNotFoundException | LinkageError ignore) {
+            return null;
+        }
+    }
+
     private static boolean computeCallerSensitive(final Method method) {
         // object serialization is caller-context sensitive without carrying
         // the annotation: its latestUserDefinedLoader walks the stack for the
         // class loader, so intermediary frames change its behavior
         Class<?> declaringClass = method.getDeclaringClass();
-        if (java.io.ObjectInput.class.isAssignableFrom(declaringClass)
-                || java.io.ObjectOutput.class.isAssignableFrom(declaringClass)
-                || java.io.ObjectInputStream.class.isAssignableFrom(declaringClass)
-                || java.io.ObjectOutputStream.class.isAssignableFrom(declaringClass)) {
+        if (ObjectInput.class.isAssignableFrom(declaringClass)
+                || ObjectOutput.class.isAssignableFrom(declaringClass)
+                || ObjectInputStream.class.isAssignableFrom(declaringClass)
+                || ObjectOutputStream.class.isAssignableFrom(declaringClass)) {
+            return true;
+        }
+        if (CALLER_SENSITIVE == null) {
             return true;
         }
         try {
-            for (Annotation annotation : method.getDeclaredAnnotations()) {
-                if ("jdk.internal.reflect.CallerSensitive".equals(annotation.annotationType().getName())) {
-                    return true;
-                }
-            }
-            return false;
+            return method.isAnnotationPresent(CALLER_SENSITIVE);
         } catch (Throwable ignore) {
             return true;
         }

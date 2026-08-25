@@ -32,6 +32,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Central registry for {@link AwaitableAdapter} instances.
@@ -74,9 +75,12 @@ public final class AwaitableAdapterRegistry {
      * {@link CompletableFuture}, so the value is held through a {@link SoftReference}:
      * the association then strongly reaches only {@code java.base} objects and never pins
      * the adapter's class loader (GROOVY-12280). A cleared reference is re-resolved from
-     * {@link #adapters} on the next lookup.
+     * {@link #adapters} on the next lookup. The {@link AtomicReference} swap is how
+     * {@link #register} / {@link #unregister} publish a fresh {@code ClassValue};
+     * {@code ClassValue} itself is already thread-safe for concurrent {@code get}.
      */
-    private static volatile ClassValue<SoftReference<AwaitableAdapter>> awaitableCache = buildAwaitableCache();
+    private static final AtomicReference<ClassValue<SoftReference<AwaitableAdapter>>> awaitableCache =
+            new AtomicReference<>(buildAwaitableCache());
 
     static {
         // Load SPI adapters
@@ -108,7 +112,7 @@ public final class AwaitableAdapterRegistry {
     public static void register(AwaitableAdapter adapter) {
         Objects.requireNonNull(adapter);
         adapters.add(0, adapter);
-        awaitableCache = buildAwaitableCache();
+        awaitableCache.set(buildAwaitableCache());
     }
 
     /**
@@ -116,7 +120,7 @@ public final class AwaitableAdapterRegistry {
      */
     public static void unregister(AwaitableAdapter adapter) {
         adapters.remove(adapter);
-        awaitableCache = buildAwaitableCache();
+        awaitableCache.set(buildAwaitableCache());
     }
 
     /**
@@ -146,7 +150,7 @@ public final class AwaitableAdapterRegistry {
      * so the lookup terminates under any memory pressure.
      */
     private static AwaitableAdapter adapterFor(Class<?> type) {
-        ClassValue<SoftReference<AwaitableAdapter>> cache = awaitableCache;
+        ClassValue<SoftReference<AwaitableAdapter>> cache = awaitableCache.get();
         AwaitableAdapter adapter = cache.get(type).get();
         if (adapter == null) {
             cache.remove(type);
