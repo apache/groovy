@@ -106,6 +106,9 @@ public class CsvBuilder implements Writable {
     /**
      * Convert a collection of typed objects to CSV using Jackson databinding.
      * Supports {@code @JsonProperty} and {@code @JsonFormat} annotations.
+     * Columns for records appear in component declaration order; for other
+     * classes the order is alphabetical. Use {@code @JsonPropertyOrder} on
+     * the type to set an explicit column order.
      *
      * @param data the collection of objects
      * @param type the object type (used to derive the schema)
