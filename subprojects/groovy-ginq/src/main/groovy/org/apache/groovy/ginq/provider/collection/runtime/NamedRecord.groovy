@@ -100,7 +100,7 @@ class NamedRecord<E, T> extends NamedTuple<E> {
      * @param sr the source record
      * @return this record
      */
-    @GroovyABI(since="4.0.0")
+    @GroovyABI(since = "4.0.0")
     NamedRecord<E, T> sourceRecord(T sr) {
         sourceRecord = new SourceRecord<>(sr, getAliasList())
         return this

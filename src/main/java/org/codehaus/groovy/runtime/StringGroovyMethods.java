@@ -2450,7 +2450,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @since 1.8.2
      */
-    @GroovyABI(since="3.0.0")
+    @GroovyABI(since = "3.0.0")
     public static String plus(final CharSequence left, final Object right) {
         return left + DefaultGroovyMethods.toString(right);
     }

@@ -73,7 +73,7 @@ public interface Queryable<T> {
      * @return the {@link Queryable} instance
      * @since 4.0.0
      */
-    @GroovyABI(since="4.0.0")
+    @GroovyABI(since = "4.0.0")
     static <T> Queryable<T> from(Iterable<T> iterable) {
         return new QueryableCollection<>(iterable);
     }
@@ -86,7 +86,7 @@ public interface Queryable<T> {
      * @return the {@link Queryable} instance
      * @since 4.0.0
      */
-    @GroovyABI(since="4.0.0")
+    @GroovyABI(since = "4.0.0")
     static <T> Queryable<T> from(T[] array) {
         return new QueryableCollection<>(Arrays.asList(array));
     }
@@ -99,7 +99,7 @@ public interface Queryable<T> {
      * @return the {@link Queryable} instance
      * @since 4.0.0
      */
-    @GroovyABI(since="4.0.0")
+    @GroovyABI(since = "4.0.0")
     static <T> Queryable<T> from(Stream<T> sourceStream) {
         return new QueryableCollection<>(sourceStream);
     }
@@ -112,7 +112,7 @@ public interface Queryable<T> {
      * @return the {@link Queryable} instance
      * @since 4.0.0
      */
-    @GroovyABI(since="4.0.0")
+    @GroovyABI(since = "4.0.0")
     static <T> Queryable<T> from(Queryable<T> queryable) {
         return queryable;
     }

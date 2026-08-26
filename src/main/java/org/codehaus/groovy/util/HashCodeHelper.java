@@ -27,7 +27,7 @@ import java.util.Arrays;
  * using an algorithm similar to that outlined in
  * "Effective Java, Joshua Bloch, 2nd Edition".
  */
-@GroovyABI(since="1.6.0")
+@GroovyABI(since = "1.6.0")
 public class HashCodeHelper {
     private static final int SEED = 127;
     private static final int MULT = 59;

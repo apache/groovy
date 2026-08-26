@@ -329,7 +329,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
      * This method exists to be binary compatible with 1.7 - 1.8.6 compiled code and is since 2.5.0 used
      * by code produced by ImmutablePropertyHandler
      */
-    @GroovyABI(since="1.7.0")
+    @GroovyABI(since = "1.7.0")
     public static Object checkImmutable(final String className, final String fieldName, final Object field) {
         if (field == null || field instanceof Enum || ImmutablePropertyUtils.isBuiltinImmutable(field.getClass().getName())) return field;
         if (field instanceof Collection) return DefaultGroovyMethods.asImmutable((Collection<?>) field);

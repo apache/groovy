@@ -70,7 +70,8 @@ That surface is marked with
   `"1.0"`), giving the first release in which the element joined the ABI.
 - **Placement:** prefer the class level when every reachable member shares
   the same `since`; annotate members when their `since` differs or only part
-  of the type is reachable.
+  of the type is reachable. Private fields and methods are never reachable by
+  compiler-emitted bytecode and must not be annotated.
 - **Retention:** `CLASS` — kept in published jars for build-time binary-
   compatibility checks.
 - **Scope guidance:** the marked set must be complete for a stated scope

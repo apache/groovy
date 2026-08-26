@@ -98,7 +98,7 @@ public class ConstructorNodeUtils {
      * @param props the properties accepted by the constructor
      * @return a statement that performs the validation
      */
-    @GroovyABI(since="4.0.0")
+    @GroovyABI(since = "4.0.0")
     public static Statement checkPropNamesS(final VariableExpression namedArgs, final boolean pojo, final List<PropertyNode> props) {
         if (!pojo) {
             return stmt(callX(IMMUTABLE_TYPE, "checkPropNames", args(varX("this"), namedArgs)));

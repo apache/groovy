@@ -123,7 +123,7 @@ public abstract class NumberMath {
      * @return the bitwise OR result
      * @throws UnsupportedOperationException if operands are not integral types
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static Number or(Number left, Number right) {
         return getMath(left, right).orImpl(left, right);
     }
@@ -136,7 +136,7 @@ public abstract class NumberMath {
      * @return the bitwise AND result
      * @throws UnsupportedOperationException if operands are not integral types
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static Number and(Number left, Number right) {
         return getMath(left, right).andImpl(left, right);
     }
@@ -149,7 +149,7 @@ public abstract class NumberMath {
      * @return the bitwise XOR result
      * @throws UnsupportedOperationException if operands are not integral types
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static Number xor(Number left, Number right) {
         return getMath(left, right).xorImpl(left, right);
     }
@@ -193,7 +193,7 @@ public abstract class NumberMath {
      * @return the remainder
      * @throws UnsupportedOperationException if operands don't support remainder operation
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static Number remainder(Number left, Number right) {
         return getMath(left, right).remainderImpl(left, right);
     }
@@ -209,7 +209,7 @@ public abstract class NumberMath {
      * @return the left-shifted value
      * @throws UnsupportedOperationException if shift distance is floating-point or BigDecimal
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static Number leftShift(Number left, Number right) {
         if (isFloatingPoint(right) || isBigDecimal(right)) {
             throw new UnsupportedOperationException("Shift distance must be an integral type, but " + right + " (" + right.getClass().getName() + ") was supplied");
@@ -228,7 +228,7 @@ public abstract class NumberMath {
      * @return the right-shifted value
      * @throws UnsupportedOperationException if shift distance is floating-point or BigDecimal
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static Number rightShift(Number left, Number right) {
         if (isFloatingPoint(right) || isBigDecimal(right)) {
             throw new UnsupportedOperationException("Shift distance must be an integral type, but " + right + " (" + right.getClass().getName() + ") was supplied");
@@ -247,7 +247,7 @@ public abstract class NumberMath {
      * @return the unsigned right-shifted value
      * @throws UnsupportedOperationException if shift distance is floating-point or BigDecimal
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static Number rightShiftUnsigned(Number left, Number right) {
         if (isFloatingPoint(right) || isBigDecimal(right)) {
             throw new UnsupportedOperationException("Shift distance must be an integral type, but " + right + " (" + right.getClass().getName() + ") was supplied");
