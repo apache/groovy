@@ -1024,13 +1024,37 @@ public class MetaClassHelper {
      */
     public static Object normalizeBoxedReturn(final Object value, final Class<?> returnType) {
         if (value == null || !returnType.isPrimitive()) return value; // null includes void
-        if (returnType == int.class) return Integer.valueOf(((Integer) value).intValue());
-        if (returnType == boolean.class) return Boolean.valueOf(((Boolean) value).booleanValue());
-        if (returnType == long.class) return Long.valueOf(((Long) value).longValue());
-        if (returnType == char.class) return Character.valueOf(((Character) value).charValue());
-        if (returnType == byte.class) return Byte.valueOf(((Byte) value).byteValue());
-        if (returnType == short.class) return Short.valueOf(((Short) value).shortValue());
+        if (returnType == int.class) return internInt((Integer) value);
+        if (returnType == boolean.class) return internBoolean((Boolean) value);
+        if (returnType == long.class) return internLong((Long) value);
+        if (returnType == char.class) return internChar((Character) value);
+        if (returnType == byte.class) return internByte((Byte) value);
+        if (returnType == short.class) return internShort((Short) value);
         return value; // float/double: valueOf does not cache on any path
+    }
+
+    private static Integer internInt(final int value) {
+        return Integer.valueOf(value);
+    }
+
+    private static Boolean internBoolean(final boolean value) {
+        return Boolean.valueOf(value);
+    }
+
+    private static Long internLong(final long value) {
+        return Long.valueOf(value);
+    }
+
+    private static Character internChar(final char value) {
+        return Character.valueOf(value);
+    }
+
+    private static Byte internByte(final byte value) {
+        return Byte.valueOf(value);
+    }
+
+    private static Short internShort(final short value) {
+        return Short.valueOf(value);
     }
 
     /**
