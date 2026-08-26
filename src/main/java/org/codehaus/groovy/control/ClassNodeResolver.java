@@ -28,13 +28,13 @@ import org.codehaus.groovy.ast.decompiled.AsmDecompiler;
 import org.codehaus.groovy.ast.decompiled.AsmReferenceResolver;
 import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.util.URLStreams;
 import org.objectweb.asm.Opcodes;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -505,6 +505,10 @@ public class ClassNodeResolver {
     /**
      * Returns true if the source in URL is newer than the class.
      * <p>
+     * {@code file:} URLs use {@link File#lastModified()} because
+     * {@link java.net.URLConnection#getLastModified()} often reports {@code -1}.
+     * Other protocols use {@link URLStreams#getUncachedLastModified(URL)}.
+     * <p>
      * NOTE: copied from GroovyClassLoader
      */
     private static boolean isSourceNewer(final URL source, final ClassNode cls) {
@@ -518,9 +522,7 @@ public class ClassNodeResolver {
                 File file = new File(path);
                 lastMod = file.lastModified();
             } else {
-                URLConnection conn = source.openConnection();
-                lastMod = conn.getLastModified();
-                conn.getInputStream().close();
+                lastMod = URLStreams.getUncachedLastModified(source);
             }
             return lastMod > getTimeStamp(cls);
         } catch (IOException e) {

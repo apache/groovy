@@ -146,7 +146,9 @@ in this compilation unit, can still be represented. Class-loader lookup is
 the fallback when decompilation is disabled or the class exists only in
 memory. `NoClassDefFoundError` on that fallback is recovered by decompiling
 the still-present bytecode or by compiling a groovy source of the same
-name; an unrecoverable error is not cached as a miss.
+name; an unrecoverable error is not cached as a miss. When a groovy source
+is also found for a class that came from another class loader, timestamps
+are compared.
 
 ### Static type checker (phase 6)
 

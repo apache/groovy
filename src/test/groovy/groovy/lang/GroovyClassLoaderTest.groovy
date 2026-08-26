@@ -295,6 +295,32 @@ final class GroovyClassLoaderTest {
         '''
         assert c.name.startsWith('Script_')
     }
+
+    @Test
+    void isSourceNewerDisablesUrlConnectionCaches() {
+        def recorded = new Boolean[1]
+        def handler = new URLStreamHandler() {
+            @Override
+            protected URLConnection openConnection(URL u) {
+                new URLConnection(u) {
+                    @Override
+                    void connect() { connected = true }
+                    @Override
+                    void setUseCaches(boolean usecaches) {
+                        recorded[0] = usecaches
+                        super.setUseCaches(usecaches)
+                    }
+                    @Override
+                    long getLastModified() { System.currentTimeMillis() }
+                    @Override
+                    InputStream getInputStream() { InputStream.nullInputStream() }
+                }
+            }
+        }
+        URL url = new URL('gcltrack', 'localhost', -1, '/Foo.groovy', handler)
+        classLoader.isSourceNewer(url, String)
+        assert recorded[0] == Boolean.FALSE
+    }
 }
 
 //------------------------------------------------------------------------------

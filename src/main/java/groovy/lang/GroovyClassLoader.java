@@ -55,7 +55,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.CodeSource;
@@ -875,6 +874,10 @@ public class GroovyClassLoader extends URLClassLoader {
 
     /**
      * Decides if the given source is newer than a class.
+     * <p>
+     * {@code file:} URLs use {@link File#lastModified()} because
+     * {@link java.net.URLConnection#getLastModified()} often reports {@code -1}.
+     * Other protocols use {@link URLStreams#getUncachedLastModified(URL)}.
      *
      * @param source the source we may want to compile
      * @param cls    the former class
@@ -896,9 +899,7 @@ public class GroovyClassLoader extends URLClassLoader {
             File file = new File(path);
             lastMod = file.lastModified();
         } else {
-            URLConnection conn = source.openConnection();
-            lastMod = conn.getLastModified();
-            conn.getInputStream().close();
+            lastMod = URLStreams.getUncachedLastModified(source);
         }
         long classTime = getTimeStamp(cls);
         return classTime + config.getMinimumRecompilationInterval() < lastMod;

@@ -705,7 +705,78 @@ class ClassNodeResolverTest {
             def unit = new CompilationUnit(config, null, loader)
             def result = new ClassNodeResolver().resolveName(name, unit)
             assert result.sourceUnit
+            assert result.getSourceUnit().name.contains('Jarred.groovy')
         }
+        // jar: connections must not pin the file: Windows cannot delete an open JAR,
+        // which is what fails JUnit @TempDir cleanup for this test.
+        Files.delete(jar)
+    }
+
+    @Test
+    void nonFileSourceUrlDisablesUrlConnectionCaches() {
+        String name = 'cnr.recompile.Tracked'
+        writeBytes(tempDir, name.replace('.', '/'), stampedClassBytes(name.replace('.', '/'), '0'))
+        def handler = new CacheTrackingURLStreamHandler(System.currentTimeMillis())
+        URL sourceUrl = new URL('cnrtrack', 'localhost', -1, '/' + name.replace('.', '/') + '.groovy', handler)
+        parentLoader(tempDir).withCloseable { parent ->
+            def config = configWith([:])
+            def loader = new GroovyClassLoader(parent, config)
+            loader.resourceLoader = { String filename ->
+                filename == name ? sourceUrl : null
+            } as GroovyResourceLoader
+            def unit = new CompilationUnit(config, null, loader)
+            def result = new ClassNodeResolver().resolveName(name, unit)
+            assert result.sourceUnit
+        }
+        assert handler.useCaches == Boolean.FALSE
+        assert handler.lastModifiedCalled
+        assert handler.inputStreamClosed
+    }
+
+    @Test
+    void olderNonFileSourceKeepsTheExistingClass() {
+        String name = 'cnr.recompile.TrackedOld'
+        writeBytes(tempDir, name.replace('.', '/'), stampedClassBytes(name.replace('.', '/'), '0'))
+        def handler = new CacheTrackingURLStreamHandler(0L)
+        URL sourceUrl = new URL('cnrtrack', 'localhost', -1, '/' + name.replace('.', '/') + '.groovy', handler)
+        parentLoader(tempDir).withCloseable { parent ->
+            def config = configWith([:])
+            def loader = new GroovyClassLoader(parent, config)
+            loader.resourceLoader = { String filename ->
+                filename == name ? sourceUrl : null
+            } as GroovyResourceLoader
+            def unit = new CompilationUnit(config, null, loader)
+            def result = new ClassNodeResolver().resolveName(name, unit)
+            assert result.classNode
+            assert result.getClassNode().name == name
+        }
+        assert handler.lastModifiedCalled
+        assert handler.useCaches == Boolean.FALSE
+    }
+
+    @Test
+    void missingJarEntryKeepsTheExistingClass() {
+        String name = 'cnr.recompile.MissingEntry'
+        writeBytes(tempDir, name.replace('.', '/'), stampedClassBytes(name.replace('.', '/'), '0'))
+        Path jar = tempDir.resolve('other.jar')
+        new java.util.jar.JarOutputStream(Files.newOutputStream(jar)).withCloseable { jos ->
+            jos.putNextEntry(new java.util.jar.JarEntry('unrelated.txt'))
+            jos.write('x'.bytes)
+            jos.closeEntry()
+        }
+        URL sourceUrl = new URL('jar:' + jar.toUri().toURL().toExternalForm() + '!/' + name.replace('.', '/') + '.groovy')
+        parentLoader(tempDir).withCloseable { parent ->
+            def config = configWith([:])
+            def loader = new GroovyClassLoader(parent, config)
+            loader.resourceLoader = { String filename ->
+                filename == name ? sourceUrl : null
+            } as GroovyResourceLoader
+            def unit = new CompilationUnit(config, null, loader)
+            def result = new ClassNodeResolver().resolveName(name, unit)
+            assert result.classNode
+            assert result.getClassNode().name == name
+        }
+        Files.delete(jar)
     }
 
     @Test
@@ -865,6 +936,63 @@ class ClassNodeResolverTest {
                 return resources.get(name)
             }
             return super.getResource(name)
+        }
+    }
+
+    /**
+     * Records how {@link ClassNodeResolver} opens a non-{@code file:} source URL
+     * for the freshness check: caching must be off, and the stream must be closed.
+     */
+    static class CacheTrackingURLStreamHandler extends URLStreamHandler {
+        final long lastModified
+        Boolean useCaches
+        boolean lastModifiedCalled
+        boolean inputStreamClosed
+
+        CacheTrackingURLStreamHandler(long lastModified) {
+            this.lastModified = lastModified
+        }
+
+        @Override
+        protected URLConnection openConnection(URL u) {
+            new CacheTrackingURLConnection(u, this)
+        }
+    }
+
+    private static class CacheTrackingURLConnection extends URLConnection {
+        private final CacheTrackingURLStreamHandler handler
+
+        CacheTrackingURLConnection(URL url, CacheTrackingURLStreamHandler handler) {
+            super(url)
+            this.handler = handler
+        }
+
+        @Override
+        void connect() {
+            connected = true
+        }
+
+        @Override
+        void setUseCaches(boolean usecaches) {
+            handler.useCaches = usecaches
+            super.setUseCaches(usecaches)
+        }
+
+        @Override
+        long getLastModified() {
+            handler.lastModifiedCalled = true
+            return handler.lastModified
+        }
+
+        @Override
+        InputStream getInputStream() {
+            return new FilterInputStream(InputStream.nullInputStream()) {
+                @Override
+                void close() throws IOException {
+                    handler.inputStreamClosed = true
+                    super.close()
+                }
+            }
         }
     }
 }
