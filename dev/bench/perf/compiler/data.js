@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787641867058,
+  "lastUpdate": 1787727825012,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -5198,6 +5198,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 472.20666666666665,
             "range": "±23.76",
+            "unit": "ms",
+            "extra": "5.1.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "b73d71c0b0b67d6296d1dcc57d3ffc5b7cd33629",
+          "message": "GROOVY-12296: CsvBuilder: toCsv(data, type) emits columns in alphabetical rather than declaration order",
+          "timestamp": "2026-08-25T22:17:15Z",
+          "url": "https://github.com/apache/groovy/commit/b73d71c0b0b67d6296d1dcc57d3ffc5b7cd33629"
+        },
+        "date": 1787727822029,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 464.7733333333333,
+            "range": "±22.59",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 592.0899999999999,
+            "range": "±206.43",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 511.46666666666664,
+            "range": "±135",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 431.4266666666666,
+            "range": "±24.59",
             "unit": "ms",
             "extra": "5.1.0"
           }
