@@ -1288,8 +1288,8 @@ public abstract class StaticTypeCheckingSupport {
                                 // GROOVY-10109, GROOVY-11341, GROOVY-11746: multi-level covariant and synthetic overrides
                                 if (isSynthetic(one, two) && !two.isAbstract() && !(two instanceof ExtensionMethodNode)) {
                                     ClassNode oneRT = one.getReturnType(), twoRT = two.getReturnType();
-                                    if (!oneRT.equals(twoRT) && isCovariant(twoRT, oneRT)) {
-                                        toBeRemoved.add(one); // edge case: two is covariant
+                                    if ((twoRT.isGenericsPlaceHolder() ? !oneRT.isGenericsPlaceHolder() : !oneRT.equals(twoRT)) && isCovariant(twoRT, oneRT)) {
+                                        toBeRemoved.add(one); // edge case: two is covariant or generic
                                         continue;
                                     }
                                 }

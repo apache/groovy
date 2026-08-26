@@ -21,6 +21,9 @@ package groovy.transform.stc
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.jupiter.api.Test
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Opcodes
 
 import static groovy.test.GroovyAssert.shouldFail
 import static org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder.withConfig
@@ -2128,6 +2131,68 @@ import static groovy.test.GroovyAssert.shouldFail
             cu.compile()
 
             loader.loadClass('D').main()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+        }
+    }
+
+    // GROOVY-12301
+    @Test
+    void testInheritedGenericMethodShadowedByErasedBridgeMethod() {
+        File parentDir = File.createTempDir()
+        config.with {
+            targetDirectory = File.createTempDir()
+            jointCompilationOptions = [memStub: true]
+        }
+        try {
+            def a = new File(parentDir, 'AbstractInit.java')
+            a.write '''
+                public abstract class AbstractInit {
+                    public static abstract class AbstractBuilder<I extends AbstractInit, T extends AbstractBuilder<I, T>> {
+                        protected abstract T self();
+                        public T inject(Object instance) { return self(); }
+                    }
+                }
+            '''
+            def b = new File(parentDir, 'Init.java')
+            b.write '''
+                public class Init extends AbstractInit {
+                    public static final class Builder extends AbstractInit.AbstractBuilder<Init, Builder> {
+                        protected Builder self() { return this; }
+                    }
+                    public static Builder from(Object source) { return new Builder(); }
+                }
+            '''
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+
+            // some compilers (ECJ for one) redeclare inherited generic methods as erased
+            // bridge methods in the subclass; javac does not, so retrofit one with ASM
+            def builderClass = new File(config.targetDirectory, 'Init$Builder.class')
+            def cr = new ClassReader(builderClass.bytes)
+            def cw = new ClassWriter(cr, 0)
+            cr.accept(cw, 0)
+            def mv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_BRIDGE | Opcodes.ACC_SYNTHETIC,
+                    'inject', '(Ljava/lang/Object;)LAbstractInit$AbstractBuilder;', null, null)
+            mv.visitCode()
+            mv.visitVarInsn(Opcodes.ALOAD, 0)
+            mv.visitVarInsn(Opcodes.ALOAD, 1)
+            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, 'AbstractInit$AbstractBuilder',
+                    'inject', '(Ljava/lang/Object;)LAbstractInit$AbstractBuilder;', false)
+            mv.visitInsn(Opcodes.ARETURN)
+            mv.visitMaxs(2, 2)
+            mv.visitEnd()
+            builderClass.bytes = cw.toByteArray()
+
+            def loader2 = new GroovyClassLoader(this.class.classLoader)
+            loader2.addClasspath(config.targetDirectory.absolutePath)
+            new GroovyShell(loader2, config).evaluate '''
+                Init.Builder builder = Init.from(null).inject(this) // Cannot assign value of type AbstractInit$AbstractBuilder to variable of type Init$Builder
+                assert builder.getClass().simpleName == 'Builder'
+            '''
         } finally {
             parentDir.deleteDir()
             config.targetDirectory.deleteDir()
