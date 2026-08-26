@@ -29,13 +29,62 @@ import java.util.jar.JarOutputStream
 import static groovy.test.GroovyAssert.shouldFail
 
 /**
- * Tests for {@link URLStreams}: uncached streams and last-modified lookups
- * must not pin {@code file:} / {@code jar:} handles.
+ * Tests for {@link URLStreams}: last-modified lookup, {@code file:} path
+ * mapping, and uncached streams that must not pin {@code file:} / {@code jar:}
+ * handles.
  */
 final class URLStreamsTest {
 
     @TempDir
     Path tempDir
+
+    @Test
+    void getLastModifiedUsesFileLastModifiedForFileUrls() {
+        Path file = tempDir.resolve('a.txt')
+        Files.writeString(file, 'x')
+        assert URLStreams.getLastModified(file.toUri().toURL()) == file.toFile().lastModified()
+        Files.delete(file)
+    }
+
+    @Test
+    void getLastModifiedDoesNotPinAJarFile() {
+        Path jar = tempDir.resolve('sources.jar')
+        new JarOutputStream(Files.newOutputStream(jar)).withCloseable { jos ->
+            jos.putNextEntry(new JarEntry('Foo.groovy'))
+            jos.write('class Foo {}'.bytes)
+            jos.closeEntry()
+        }
+        URL url = new URL('jar:' + jar.toUri().toURL().toExternalForm() + '!/Foo.groovy')
+        assert URLStreams.getLastModified(url) > 0
+        Files.delete(jar)
+    }
+
+    @Test
+    void getLastModifiedDisablesCachesForNonFileUrls() {
+        def handler = new TrackingHandler(1234L)
+        assert URLStreams.getLastModified(urlFor(handler)) == 1234L
+        assert handler.useCaches == Boolean.FALSE
+        assert handler.lastModifiedCalled
+        assert handler.inputStreamClosed
+    }
+
+    @Test
+    void getLastModifiedPropagatesFailureToOpenANonFileUrl() {
+        def handler = new TrackingHandler(99L)
+        handler.inputStreamError = new IOException('cannot open')
+        def error = shouldFail(IOException) {
+            URLStreams.getLastModified(urlFor(handler))
+        }
+        assert error.message == 'cannot open'
+    }
+
+    @Test
+    void toFileRewritesHistoricalWindowsDrivePipe() {
+        File file = URLStreams.toFile(new URL('file:///c|/Scripts/Hello.groovy'))
+        assert !file.path.contains('|')
+        assert file.path.contains('c:')
+        assert file.path.contains('Hello.groovy')
+    }
 
     @Test
     void getUncachedLastModifiedDisablesCachesAndClosesTheStream() {

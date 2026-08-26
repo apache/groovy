@@ -31,7 +31,6 @@ import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.util.URLStreams;
 import org.objectweb.asm.Opcodes;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -491,42 +490,24 @@ public class ClassNodeResolver {
     }
 
     /**
-     * Gets the time stamp of a class.
-     * <p>
-     * NOTE: copied from GroovyClassLoader
+     * Compilation timestamp of {@code cls}: decompiled nodes expose it without
+     * linking a {@link Class}; loaded types use {@link Verifier#getTimestamp(Class)}.
      */
     private static long getTimeStamp(final ClassNode cls) {
-        if (!(cls instanceof DecompiledClassNode)) {
-            return Verifier.getTimestamp(cls.getTypeClass());
+        if (cls instanceof DecompiledClassNode) {
+            return ((DecompiledClassNode) cls).getCompilationTimeStamp();
         }
-        return ((DecompiledClassNode) cls).getCompilationTimeStamp();
+        return Verifier.getTimestamp(cls.getTypeClass());
     }
 
     /**
-     * Returns true if the source in URL is newer than the class.
-     * <p>
-     * {@code file:} URLs use {@link File#lastModified()} because
-     * {@link java.net.URLConnection#getLastModified()} often reports {@code -1}.
-     * Other protocols use {@link URLStreams#getUncachedLastModified(URL)}.
-     * <p>
-     * NOTE: copied from GroovyClassLoader
+     * True if {@code source} is newer than {@code cls}.
+     * Unreadable sources are treated as not newer so the existing class is kept.
      */
     private static boolean isSourceNewer(final URL source, final ClassNode cls) {
         try {
-            long lastMod;
-            // Special handling for file:// protocol, as getLastModified() often reports
-            // incorrect results (-1)
-            if ("file".equals(source.getProtocol())) {
-                // Coerce the file URL to a File
-                String path = source.getPath().replace('/', File.separatorChar).replace('|', ':');
-                File file = new File(path);
-                lastMod = file.lastModified();
-            } else {
-                lastMod = URLStreams.getUncachedLastModified(source);
-            }
-            return lastMod > getTimeStamp(cls);
+            return URLStreams.getLastModified(source) > getTimeStamp(cls);
         } catch (IOException e) {
-            // if the stream can't be opened, let's keep the old reference
             return false;
         }
     }

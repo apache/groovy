@@ -874,10 +874,9 @@ public class GroovyClassLoader extends URLClassLoader {
 
     /**
      * Decides if the given source is newer than a class.
-     * <p>
-     * {@code file:} URLs use {@link File#lastModified()} because
-     * {@link java.net.URLConnection#getLastModified()} often reports {@code -1}.
-     * Other protocols use {@link URLStreams#getUncachedLastModified(URL)}.
+     * Last-modified is read via {@link URLStreams#getLastModified(URL)}. A
+     * class is considered current until the source is newer by more than
+     * {@link CompilerConfiguration#getMinimumRecompilationInterval()}.
      *
      * @param source the source we may want to compile
      * @param cls    the former class
@@ -887,22 +886,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #getTimeStamp(Class)
      */
     protected boolean isSourceNewer(final URL source, final Class cls) throws IOException {
-        long lastMod;
-
-        // Special handling for file:// protocol, as getLastModified() often reports
-        // incorrect results (-1)
-        if (isFile(source)) {
-            // Coerce the file URL to a File
-            // See ClassNodeResolver.isSourceNewer for another method that replaces '|' with ':'.
-            // WTF: Why is this done and where is it documented?
-            String path = source.getPath().replace('/', File.separatorChar).replace('|', ':');
-            File file = new File(path);
-            lastMod = file.lastModified();
-        } else {
-            lastMod = URLStreams.getUncachedLastModified(source);
-        }
-        long classTime = getTimeStamp(cls);
-        return classTime + config.getMinimumRecompilationInterval() < lastMod;
+        return getTimeStamp(cls) + config.getMinimumRecompilationInterval() < URLStreams.getLastModified(source);
     }
 
     /**

@@ -18,13 +18,15 @@
  */
 package org.codehaus.groovy.util;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
 /**
- * Utilities for opening URL connections with Groovy-specific defaults.
+ * Utilities for opening URL connections and reading last-modified times
+ * with Groovy-specific defaults.
  * <p>
  * Caching is disabled so {@code file:} and {@code jar:} URLs do not pin a
  * file handle. On Windows an open handle prevents the file from being deleted
@@ -44,6 +46,39 @@ public class URLStreams {
      */
     public static InputStream openUncachedStream(URL url) throws IOException {
         return openUncachedConnection(url).getInputStream();
+    }
+
+    /**
+     * Last-modified time of {@code url} for source-freshness checks used by
+     * {@link groovy.lang.GroovyClassLoader} and
+     * {@link org.codehaus.groovy.control.ClassNodeResolver}.
+     * <p>
+     * {@code file:} URLs use {@link File#lastModified()} because
+     * {@link URLConnection#getLastModified()} often reports {@code -1}. The
+     * path mapping includes the historical Windows form {@code file://c|/...}
+     * where {@code |} stood for {@code :}. Other protocols use
+     * {@link #getUncachedLastModified(URL)}.
+     *
+     * @param url the source URL
+     * @return the last-modified time in milliseconds since the epoch, or
+     *         {@code 0} if it is not known
+     * @throws IOException if a non-{@code file:} URL cannot be opened
+     */
+    public static long getLastModified(URL url) throws IOException {
+        if ("file".equals(url.getProtocol())) {
+            return toFile(url).lastModified();
+        }
+        return getUncachedLastModified(url);
+    }
+
+    /**
+     * Converts a {@code file:} URL to a {@link File}, including the historical
+     * Netscape Windows form {@code file://c|/...} where {@code |} stood for
+     * {@code :}.
+     */
+    static File toFile(URL url) {
+        String path = url.getPath().replace('/', File.separatorChar).replace('|', ':');
+        return new File(path);
     }
 
     /**

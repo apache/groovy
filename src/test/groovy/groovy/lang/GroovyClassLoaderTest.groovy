@@ -321,9 +321,58 @@ final class GroovyClassLoaderTest {
         classLoader.isSourceNewer(url, String)
         assert recorded[0] == Boolean.FALSE
     }
+
+    @Test
+    void isSourceNewerTreatsARealFileAsNewerThanTimestampZero() {
+        File src = File.createTempFile('gcl-src', '.groovy')
+        try {
+            src.write('class GclSrc {}')
+            assert classLoader.isSourceNewer(src.toURI().toURL(), GroovyClassLoaderTestTimestamp0)
+        } finally {
+            src.delete()
+        }
+    }
+
+    @Test
+    void isSourceNewerHonoursMinimumRecompilationInterval() {
+        def newer = trackingUrl(100L)
+        def config = new CompilerConfiguration()
+        config.minimumRecompilationInterval = 60
+        def loader = new GroovyClassLoader(null, config)
+        assert !loader.isSourceNewer(newer, GroovyClassLoaderTestTimestamp50)
+
+        config.minimumRecompilationInterval = 40
+        loader = new GroovyClassLoader(null, config)
+        assert loader.isSourceNewer(newer, GroovyClassLoaderTestTimestamp50)
+    }
+
+    private static URL trackingUrl(long lastModified) {
+        def handler = new URLStreamHandler() {
+            @Override
+            protected URLConnection openConnection(URL u) {
+                new URLConnection(u) {
+                    @Override
+                    void connect() { connected = true }
+                    @Override
+                    long getLastModified() { lastModified }
+                    @Override
+                    InputStream getInputStream() { InputStream.nullInputStream() }
+                }
+            }
+        }
+        new URL('gcltrack', 'localhost', -1, '/Foo.groovy', handler)
+    }
 }
 
 //------------------------------------------------------------------------------
+
+class GroovyClassLoaderTestTimestamp0 {
+    public static long __timeStamp__239_neverHappen0
+}
+
+class GroovyClassLoaderTestTimestamp50 {
+    public static long __timeStamp__239_neverHappen50
+}
 
 class GroovyClassLoaderTestFoo1 {}
 class GroovyClassLoaderTestFoo2 {}
