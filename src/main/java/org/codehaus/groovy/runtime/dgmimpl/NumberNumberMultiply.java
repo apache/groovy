@@ -32,7 +32,7 @@ public final class NumberNumberMultiply extends NumberNumberMetaMethod {
         return NumberMath.multiply((Number) object, (Number) arguments[0]);
     }
 
-    @GroovyABI(since="2.0.0")
+    @GroovyABI(since = "2.0.0")
     public static Number multiply(Number left, Number right) {
         return NumberMath.multiply(left, right);
     }

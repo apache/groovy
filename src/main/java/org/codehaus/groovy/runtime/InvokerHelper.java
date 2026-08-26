@@ -155,7 +155,7 @@ public class InvokerHelper {
         }
     }
 
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static Object getProperty(Object object, String property) {
         if (object == null) {
             object = NullObject.getNullObject();
@@ -170,7 +170,7 @@ public class InvokerHelper {
         }
     }
 
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static Object getPropertySafe(Object object, String property) {
         if (object != null) {
             return getProperty(object, property);
@@ -178,7 +178,7 @@ public class InvokerHelper {
         return null;
     }
 
-    @GroovyABI(since="1.0.0")
+    @GroovyABI(since = "1.0.0")
     public static void setProperty(Object object, String property, Object newValue) {
         if (object == null) {
             object = NullObject.getNullObject();
@@ -197,7 +197,7 @@ public class InvokerHelper {
      * This is so we don't have to reorder the stack when we call this method.
      * At some point a better name might be in order.
      */
-    @GroovyABI(since="1.0.0")
+    @GroovyABI(since = "1.0.0")
     public static void setProperty2(Object newValue, Object object, String property) {
         setProperty(object, property, newValue);
     }
@@ -206,12 +206,12 @@ public class InvokerHelper {
      * This is so we don't have to reorder the stack when we call this method.
      * At some point a better name might be in order.
      */
-    @GroovyABI(since="1.0.0")
+    @GroovyABI(since = "1.0.0")
     public static void setGroovyObjectProperty(Object newValue, GroovyObject object, String property) {
         object.setProperty(property, newValue);
     }
 
-    @GroovyABI(since="1.0.0")
+    @GroovyABI(since = "1.0.0")
     public static Object getGroovyObjectProperty(GroovyObject object, String property) {
         return object.getProperty(property);
     }
@@ -220,7 +220,7 @@ public class InvokerHelper {
      * This is so we don't have to reorder the stack when we call this method.
      * At some point a better name might be in order.
      */
-    @GroovyABI(since="1.0.0")
+    @GroovyABI(since = "1.0.0")
     public static void setPropertySafe2(Object newValue, Object object, String property) {
         if (object != null) {
             setProperty2(newValue, object, property);
@@ -592,7 +592,7 @@ public class InvokerHelper {
     /**
      * Invokes the given method on the object.
      */
-    @GroovyABI(since="5.0.0")
+    @GroovyABI(since = "5.0.0")
     public static Object invokeMethod(Object object, String methodName, Object arguments) {
         if (object == null) {
             object = NullObject.getNullObject();
@@ -695,7 +695,7 @@ public class InvokerHelper {
     }
 
     @Deprecated
-    @GroovyABI(since="1.0.0")
+    @GroovyABI(since = "1.0.0")
     public static String toString(Object arguments) {
         return FormatHelper.toString(arguments);
     }

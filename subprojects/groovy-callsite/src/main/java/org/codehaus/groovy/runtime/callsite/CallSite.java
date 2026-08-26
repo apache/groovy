@@ -33,9 +33,13 @@ public interface CallSite {
     String getName();
 
     Object getProperty(Object receiver) throws Throwable;
+    @GroovyABI(since = "1.6.0")
     Object callGetPropertySafe (Object receiver) throws Throwable;
+    @GroovyABI(since = "1.6.0")
     Object callGetProperty (Object receiver) throws Throwable;
+    @GroovyABI(since = "1.6.0")
     Object callGroovyObjectGetProperty (Object receiver) throws Throwable;
+    @GroovyABI(since = "1.6.0")
     Object callGroovyObjectGetPropertySafe (Object receiver) throws Throwable;
 
     @GroovyABI(since = "1.6.0")

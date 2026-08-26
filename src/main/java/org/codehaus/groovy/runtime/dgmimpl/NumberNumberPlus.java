@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.dgmimpl;
 
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
 public final class NumberNumberPlus extends NumberNumberMetaMethod {
@@ -38,6 +39,7 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
      * @param right another Number to add
      * @return the addition of both Numbers
      */
+    @GroovyABI(since = "2.0.0")
     public static Number plus(Number left, Number right) {
         return NumberMath.add(left, right);
     }

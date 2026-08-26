@@ -49,6 +49,11 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
  * {@link #since()} value; annotate members individually only when their
  * {@code since} differs or only part of the type is part of the ABI.
  *
+ * <p>Do not apply {@code @GroovyABI} to private fields or methods. The
+ * compiler-emitted bytecode that makes up this contract lives in a separate
+ * class, so it can never reference a private member of the runtime type; such
+ * members are not part of the binary ABI surface.
+ *
  * <p>{@code since} records the first Groovy release in which the element
  * became part of the binary ABI. It is mandatory and must use the full
  * three-part version form, e.g. {@code "1.0.0"}.
@@ -58,12 +63,14 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
  * compatibility tooling can rely on it.
  *
  * <p>Notes:
+ * <ul>
  * <li>groovy.*: These classes are part of the public API and are therefore not annotated.
  * <li>runtime packages: These classes are normally internal and subject to
  * removal or change. If any of their methods is referenced by the compiler,
  * it must be annotated so the reference becomes visible.
  * <li>AST helper classes not in runtime: Some AST transforms leverage helper
  * classes that are not in a runtime package. These classes must be annotated.
+ * </ul>
  */
 @Documented
 @Target({TYPE, METHOD, CONSTRUCTOR, FIELD})

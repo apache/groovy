@@ -39,7 +39,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.createSimi
  *
  * @since 6.0.0
  */
-@GroovyABI(since="6.0.0")
+@GroovyABI(since = "6.0.0")
 public final class MultipleAssignmentSupport {
 
     private MultipleAssignmentSupport() {}

@@ -39,7 +39,7 @@ public class FieldValues {
      * @throws IllegalAccessException if reflective access fails
      */
     @SuppressWarnings("unchecked")
-    @GroovyABI(since="4.0.0")
+    @GroovyABI(since = "4.0.0")
     public static <T> T fieldValue(Object obj, String fieldName, Class<T> type) throws IllegalAccessException {
         Validate.notNull(obj);
         Validate.notNull(fieldName);
@@ -57,7 +57,6 @@ public class FieldValues {
         return (T) f.get(target);
     }
 
-    @GroovyABI(since="4.0.0")
     private static Field findField(Class<?> clazz, String name) {
         Class<?> next = clazz;
         while (!Object.class.equals(next) && next != null) {

@@ -41,7 +41,7 @@ public class ViolationTracker {
     /**
      * Installs a fresh tracker for the current thread.
      */
-    @GroovyABI(since="4.0.0")
+    @GroovyABI(since = "4.0.0")
     public static void init() {
         INSTANCE.set(new ViolationTracker());
     }
@@ -49,7 +49,7 @@ public class ViolationTracker {
     /**
      * Removes the tracker associated with the current thread.
      */
-    @GroovyABI(since="4.0.0")
+    @GroovyABI(since = "4.0.0")
     public static void deinit() {
         INSTANCE.remove();
     }
@@ -59,7 +59,7 @@ public class ViolationTracker {
      *
      * @return {@code true} if a violation has been tracked for the current thread
      */
-    @GroovyABI(since="4.0.0")
+    @GroovyABI(since = "4.0.0")
     public static boolean violationsOccurred() {
         return INSTANCE.get().hasViolations();
     }
@@ -67,7 +67,7 @@ public class ViolationTracker {
     /**
      * Rethrows the earliest recorded violation for the current thread.
      */
-    @GroovyABI(since="4.0.0")
+    @GroovyABI(since = "4.0.0")
     public static void rethrowFirst() {
         throw INSTANCE.get().first();
     }
@@ -75,7 +75,7 @@ public class ViolationTracker {
     /**
      * Rethrows the most recently recorded violation for the current thread.
      */
-    @GroovyABI(since="4.0.0")
+    @GroovyABI(since = "4.0.0")
     public static void rethrowLast() {
         throw INSTANCE.get().last();
     }
@@ -87,7 +87,7 @@ public class ViolationTracker {
      *
      * @param assertionViolation the violation to store
      */
-    @GroovyABI(since="4.0.0")
+    @GroovyABI(since = "4.0.0")
     public void track(final AssertionViolation assertionViolation) {
         Validate.notNull(assertionViolation);
 
@@ -99,7 +99,7 @@ public class ViolationTracker {
      *
      * @return {@code true} if at least one violation has been recorded
      */
-    @GroovyABI(since="4.0.0")
+    @GroovyABI(since = "4.0.0")
     public boolean hasViolations() {
         return !violations.isEmpty();
     }
@@ -109,7 +109,7 @@ public class ViolationTracker {
      *
      * @return the first violation in encounter order
      */
-    @GroovyABI(since="4.0.0")
+    @GroovyABI(since = "4.0.0")
     public AssertionViolation first() {
         return violations.firstEntry().getValue();
     }
@@ -119,7 +119,7 @@ public class ViolationTracker {
      *
      * @return the last violation in encounter order
      */
-    @GroovyABI(since="4.0.0")
+    @GroovyABI(since = "4.0.0")
     public AssertionViolation last() {
         return violations.lastEntry().getValue();
     }

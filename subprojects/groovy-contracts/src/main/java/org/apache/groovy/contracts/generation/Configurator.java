@@ -104,7 +104,7 @@ public final class Configurator {
      * @param className the class name to look up in the assertion configuration
      * @return whether assertion checking is enabled or not
      */
-    @GroovyABI(since="4.0.0")
+    @GroovyABI(since = "4.0.0")
     public static boolean checkAssertionsEnabled(final String className) {
         return internalMethod(className);
     }

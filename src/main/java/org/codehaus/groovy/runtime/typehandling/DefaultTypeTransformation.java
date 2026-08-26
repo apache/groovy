@@ -1528,7 +1528,7 @@ public class DefaultTypeTransformation {
      * @param arrayType the target array type
      * @return an array of the specified type containing the varargs elements
      */
-    @GroovyABI(since="2.4.0")
+    @GroovyABI(since = "2.4.0")
     public static Object castToVargsArray(Object[] origin, int firstVargsPos, Class<?> arrayType) {
         Class<?> componentType = arrayType.getComponentType();
         if (firstVargsPos >= origin.length) return Array.newInstance(componentType, 0);

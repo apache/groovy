@@ -158,7 +158,7 @@ public class ContractExecutionTracker {
      * @param assertionType the logical contract kind
      * @param isStatic whether the executable is static
      */
-    @GroovyABI(since="4.0.0")
+    @GroovyABI(since = "4.0.0")
     public static void clear(String className, String methodIdentifier, String assertionType, boolean isStatic) {
         final Set<ContractExecution> contractExecutions = executions.get();
 

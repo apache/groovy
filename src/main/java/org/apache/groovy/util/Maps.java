@@ -33,7 +33,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -45,7 +45,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -58,7 +58,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -72,7 +72,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -87,7 +87,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -103,7 +103,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -120,7 +120,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -138,7 +138,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -157,7 +157,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -177,7 +177,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -198,7 +198,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -220,7 +220,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -243,7 +243,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -267,7 +267,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -292,7 +292,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -318,7 +318,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -345,7 +345,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -373,7 +373,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -402,7 +402,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -432,7 +432,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -463,7 +463,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -495,7 +495,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -528,7 +528,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -562,7 +562,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -597,7 +597,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -633,7 +633,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -670,7 +670,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -708,7 +708,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -747,7 +747,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -787,7 +787,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -828,7 +828,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -870,7 +870,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -913,7 +913,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -957,7 +957,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1002,7 +1002,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1048,7 +1048,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1095,7 +1095,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1143,7 +1143,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1192,7 +1192,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1242,7 +1242,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1293,7 +1293,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1345,7 +1345,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1398,7 +1398,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1452,7 +1452,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1507,7 +1507,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1563,7 +1563,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1620,7 +1620,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1678,7 +1678,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1737,7 +1737,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1797,7 +1797,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1858,7 +1858,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1920,7 +1920,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -1983,7 +1983,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -2047,7 +2047,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -2112,7 +2112,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -2178,7 +2178,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -2245,7 +2245,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -2313,7 +2313,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -2382,7 +2382,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -2452,7 +2452,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -2523,7 +2523,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -2595,7 +2595,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -2668,7 +2668,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -2742,7 +2742,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -2817,7 +2817,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -2893,7 +2893,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -2970,7 +2970,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -3048,7 +3048,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -3127,7 +3127,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -3207,7 +3207,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -3288,7 +3288,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -3370,7 +3370,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -3453,7 +3453,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -3537,7 +3537,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -3622,7 +3622,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -3708,7 +3708,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -3795,7 +3795,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -3883,7 +3883,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -3972,7 +3972,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -4062,7 +4062,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -4153,7 +4153,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -4245,7 +4245,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -4338,7 +4338,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82, K k83, V v83) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -4432,7 +4432,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82, K k83, V v83, K k84, V v84) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -4527,7 +4527,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82, K k83, V v83, K k84, V v84, K k85, V v85) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -4623,7 +4623,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82, K k83, V v83, K k84, V v84, K k85, V v85, K k86, V v86) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -4720,7 +4720,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82, K k83, V v83, K k84, V v84, K k85, V v85, K k86, V v86, K k87, V v87) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -4818,7 +4818,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82, K k83, V v83, K k84, V v84, K k85, V v85, K k86, V v86, K k87, V v87, K k88, V v88) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -4917,7 +4917,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82, K k83, V v83, K k84, V v84, K k85, V v85, K k86, V v86, K k87, V v87, K k88, V v88, K k89, V v89) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -5017,7 +5017,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82, K k83, V v83, K k84, V v84, K k85, V v85, K k86, V v86, K k87, V v87, K k88, V v88, K k89, V v89, K k90, V v90) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -5118,7 +5118,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82, K k83, V v83, K k84, V v84, K k85, V v85, K k86, V v86, K k87, V v87, K k88, V v88, K k89, V v89, K k90, V v90, K k91, V v91) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -5220,7 +5220,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82, K k83, V v83, K k84, V v84, K k85, V v85, K k86, V v86, K k87, V v87, K k88, V v88, K k89, V v89, K k90, V v90, K k91, V v91, K k92, V v92) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -5323,7 +5323,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82, K k83, V v83, K k84, V v84, K k85, V v85, K k86, V v86, K k87, V v87, K k88, V v88, K k89, V v89, K k90, V v90, K k91, V v91, K k92, V v92, K k93, V v93) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -5427,7 +5427,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82, K k83, V v83, K k84, V v84, K k85, V v85, K k86, V v86, K k87, V v87, K k88, V v88, K k89, V v89, K k90, V v90, K k91, V v91, K k92, V v92, K k93, V v93, K k94, V v94) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -5532,7 +5532,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82, K k83, V v83, K k84, V v84, K k85, V v85, K k86, V v86, K k87, V v87, K k88, V v88, K k89, V v89, K k90, V v90, K k91, V v91, K k92, V v92, K k93, V v93, K k94, V v94, K k95, V v95) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -5638,7 +5638,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82, K k83, V v83, K k84, V v84, K k85, V v85, K k86, V v86, K k87, V v87, K k88, V v88, K k89, V v89, K k90, V v90, K k91, V v91, K k92, V v92, K k93, V v93, K k94, V v94, K k95, V v95, K k96, V v96) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -5745,7 +5745,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82, K k83, V v83, K k84, V v84, K k85, V v85, K k86, V v86, K k87, V v87, K k88, V v88, K k89, V v89, K k90, V v90, K k91, V v91, K k92, V v92, K k93, V v93, K k94, V v94, K k95, V v95, K k96, V v96, K k97, V v97) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -5853,7 +5853,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82, K k83, V v83, K k84, V v84, K k85, V v85, K k86, V v86, K k87, V v87, K k88, V v88, K k89, V v89, K k90, V v90, K k91, V v91, K k92, V v92, K k93, V v93, K k94, V v94, K k95, V v95, K k96, V v96, K k97, V v97, K k98, V v98) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -5962,7 +5962,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82, K k83, V v83, K k84, V v84, K k85, V v85, K k86, V v86, K k87, V v87, K k88, V v88, K k89, V v89, K k90, V v90, K k91, V v91, K k92, V v92, K k93, V v93, K k94, V v94, K k95, V v95, K k96, V v96, K k97, V v97, K k98, V v98, K k99, V v99) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 
@@ -6072,7 +6072,7 @@ public class Maps {
     /**
      * Returns an immutable map containing the supplied key-value pairs in encounter order.
      */
-    @GroovyABI(since="2.5.0")
+    @GroovyABI(since = "2.5.0")
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10, K k11, V v11, K k12, V v12, K k13, V v13, K k14, V v14, K k15, V v15, K k16, V v16, K k17, V v17, K k18, V v18, K k19, V v19, K k20, V v20, K k21, V v21, K k22, V v22, K k23, V v23, K k24, V v24, K k25, V v25, K k26, V v26, K k27, V v27, K k28, V v28, K k29, V v29, K k30, V v30, K k31, V v31, K k32, V v32, K k33, V v33, K k34, V v34, K k35, V v35, K k36, V v36, K k37, V v37, K k38, V v38, K k39, V v39, K k40, V v40, K k41, V v41, K k42, V v42, K k43, V v43, K k44, V v44, K k45, V v45, K k46, V v46, K k47, V v47, K k48, V v48, K k49, V v49, K k50, V v50, K k51, V v51, K k52, V v52, K k53, V v53, K k54, V v54, K k55, V v55, K k56, V v56, K k57, V v57, K k58, V v58, K k59, V v59, K k60, V v60, K k61, V v61, K k62, V v62, K k63, V v63, K k64, V v64, K k65, V v65, K k66, V v66, K k67, V v67, K k68, V v68, K k69, V v69, K k70, V v70, K k71, V v71, K k72, V v72, K k73, V v73, K k74, V v74, K k75, V v75, K k76, V v76, K k77, V v77, K k78, V v78, K k79, V v79, K k80, V v80, K k81, V v81, K k82, V v82, K k83, V v83, K k84, V v84, K k85, V v85, K k86, V v86, K k87, V v87, K k88, V v88, K k89, V v89, K k90, V v90, K k91, V v91, K k92, V v92, K k93, V v93, K k94, V v94, K k95, V v95, K k96, V v96, K k97, V v97, K k98, V v98, K k99, V v99, K k100, V v100) {
         Map<K, V> map = new LinkedHashMap<K, V>();
 

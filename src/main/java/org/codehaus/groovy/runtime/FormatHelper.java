@@ -98,7 +98,7 @@ public class FormatHelper {
      * @param arguments the object to convert to a string
      * @return a string representation
      */
-    @GroovyABI(since="5.0.0")
+    @GroovyABI(since = "5.0.0")
     public static String toString(Object arguments) {
         return format(arguments, false, -1, false);
     }

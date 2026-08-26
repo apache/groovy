@@ -41,7 +41,7 @@ import java.util.Map;
  * @since 6.0.0
  */
 @Incubating
-@GroovyABI(since="6.0.0")
+@GroovyABI(since = "6.0.0")
 public final class NestedCopyWithSupport {
 
     private NestedCopyWithSupport() {
