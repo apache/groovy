@@ -40,22 +40,28 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This class is used as a pluggable way to resolve class names.
- * An instance of this class has to be added to {@link CompilationUnit} using
- * {@link CompilationUnit#setClassNodeResolver(ClassNodeResolver)}. The
- * CompilationUnit will then set the resolver on the {@link ResolveVisitor} each
- * time new. The ResolveVisitor will prepare name lookup and then finally ask
- * the resolver if the class exists. This resolver then can return either a
- * SourceUnit or a ClassNode. In case of a SourceUnit the compiler is notified
- * that a new source is to be added to the compilation queue. In case of a
- * ClassNode no further action than the resolving is done. The lookup result
- * is stored in the helper class {@link LookupResult}. This class provides a
- * class cache to cache lookups. If you don't want this, you have to override
- * the methods {@link ClassNodeResolver#cacheClass(String, ClassNode)} and
- * {@link ClassNodeResolver#getFromClassCache(String)}. Custom lookup logic is
- * supposed to go into the method
- * {@link ClassNodeResolver#findClassNode(String, CompilationUnit)} while the
- * entry method is {@link ClassNodeResolver#resolveName(String, CompilationUnit)}
+ * Pluggable lookup of class names to a {@link ClassNode} or a {@link SourceUnit}.
+ * <p>
+ * An instance is installed on a {@link CompilationUnit} via
+ * {@link CompilationUnit#setClassNodeResolver(ClassNodeResolver)}. The compilation
+ * unit then sets the resolver on {@link ResolveVisitor} for each resolving pass.
+ * {@link ResolveVisitor} prepares the name and asks this resolver whether the
+ * class exists. A {@link SourceUnit} result means the compiler should add that
+ * source to the compilation queue; a {@link ClassNode} result completes resolving
+ * for that name. The outcome is wrapped in {@link LookupResult}.
+ * <p>
+ * The default lookup prefers ASM decompilation of a {@code .class} resource so a
+ * type can be described without linking it in the JVM. Class-loader lookup is the
+ * fallback when decompilation is disabled or the class exists only in memory.
+ * {@link NoClassDefFoundError} during class-loader lookup is recovered by
+ * decompiling the still-present bytecode or by compiling a groovy source of the
+ * same name; an unrecoverable error is rethrown with the looked-up name in the
+ * message and is not cached as a miss.
+ * <p>
+ * Lookups are cached. Override {@link #cacheClass(String, ClassNode)} and
+ * {@link #getFromClassCache(String)} to disable or replace the cache. Custom
+ * lookup logic belongs in {@link #findClassNode(String, CompilationUnit)}; the
+ * entry point is {@link #resolveName(String, CompilationUnit)}.
  */
 public class ClassNodeResolver {
 
@@ -120,18 +126,19 @@ public class ClassNodeResolver {
     private static final PackageNode NO_PACKAGE = new PackageNode("NO_PACKAGE");
 
     /**
-     * Resolves the name of a class to a SourceUnit or ClassNode. If no
-     * class or source is found this method returns null. A lookup is done
-     * by first asking the cache if there is an entry for the class already available
-     * to then call {@link #findClassNode(String, CompilationUnit)}. The result
-     * of that method call will be cached if a ClassNode is found. If a SourceUnit
-     * is found, this method will not be asked later on again for that class, because
-     * ResolveVisitor will first ask the CompilationUnit for classes in the
-     * compilation queue and it will find the class for that SourceUnit there then.
-     * method return a ClassNode instead of a SourceUnit, the res
-     * @param name - the name of the class
-     * @param compilationUnit - the current CompilationUnit
-     * @return the LookupResult
+     * Resolves a class name to a {@link SourceUnit} or {@link ClassNode}.
+     * Returns {@code null} if neither is found.
+     * <p>
+     * The cache is consulted first. A cached {@link #NO_CLASS} is returned as
+     * {@code null}. On a cache miss {@link #findClassNode(String, CompilationUnit)}
+     * is called. A {@link ClassNode} result is cached; a {@link SourceUnit} result
+     * is not, because {@link ResolveVisitor} will subsequently find that class in
+     * the compilation queue. A miss is cached as {@link #NO_CLASS} so the slow
+     * lookup path is not repeated.
+     *
+     * @param name the fully qualified class name
+     * @param compilationUnit the current compilation unit
+     * @return the lookup result, or {@code null} if the name cannot be resolved
      */
     public LookupResult resolveName(final String name, final CompilationUnit compilationUnit) {
         ClassNode type = getFromClassCache(name);
@@ -209,7 +216,7 @@ public class ClassNodeResolver {
      * bytecode, so the existing decompiler pipeline reads them without special handling.
      *
      * @return a populated {@link PackageNode}, or {@code null} if there is no package-info, it has
-     *         no annotations, or it could not be read
+     *         no annotations, or it could not be read (including a class-format error)
      */
     private PackageNode findPackageInfo(final String packageName, final CompilationUnit compilationUnit) {
         GroovyClassLoader loader = compilationUnit.getClassLoader();
@@ -241,22 +248,28 @@ public class ClassNodeResolver {
         } catch (IOException e) {
             // fall through; treat as no package metadata available
             return null;
-        } catch (IllegalArgumentException e) {
-            // very likely a class format error or similar; ignore for resolution purposes
+        } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
+            // class format error or similar from ASM; ignore for resolution purposes
             return null;
         }
     }
 
     /**
-     * Extension point for custom lookup logic of finding ClassNodes. Per default
-     * this will use the CompilationUnit class loader to do a lookup on the class
-     * path and load the needed class using that loader. Or if a script is found
-     * and that script is seen as "newer", the script will be used instead of the
-     * class.
+     * Extension point for custom lookup logic. The default implementation uses
+     * the compilation unit class loader: ASM decompilation of a {@code .class}
+     * resource first, then {@link ClassLoader#loadClass(String)}, then a groovy
+     * source of the same name if that source is newer than the loaded class
+     * (or if no class was found).
+     * <p>
+     * {@link NoClassDefFoundError} from class loading is not treated as a miss.
+     * The class under lookup is present; a referenced type is not. The default
+     * implementation recovers by decompiling the still-present bytecode or by
+     * compiling a groovy source of the same name.
      *
-     * @param name - the name of the class
-     * @param compilationUnit - the current compilation unit
-     * @return the lookup result
+     * @param name the fully qualified class name
+     * @param compilationUnit the current compilation unit
+     * @return the lookup result, or {@code null} if {@code compilationUnit} is
+     *         {@code null} or the name cannot be resolved
      */
     public LookupResult findClassNode(final String name, final CompilationUnit compilationUnit) {
         return compilationUnit == null ? null : tryAsLoaderClassOrScript(name, compilationUnit);
@@ -271,6 +284,8 @@ public class ClassNodeResolver {
      * Two class search strategies are possible: by ASM decompilation or by usual Java classloading.
      * The latter is slower but is unavoidable for scripts executed in dynamic environments where
      * the referenced classes might only be available in the classloader, not on disk.
+     * Class loading that fails with {@link NoClassDefFoundError} is recovered without
+     * treating the name as absent.
      */
     private LookupResult tryAsLoaderClassOrScript(final String name, final CompilationUnit compilationUnit) {
         GroovyClassLoader loader = compilationUnit.getClassLoader();
@@ -292,9 +307,14 @@ public class ClassNodeResolver {
     }
 
     /**
-     * Search for classes using class loading
+     * Search for classes using class loading.
+     * <p>
+     * Script files are not considered by {@link GroovyClassLoader#loadClass(String, boolean, boolean)}
+     * here ({@code lookupScriptFiles} is {@code false}) so that loader cannot start a nested
+     * {@link CompilationUnit}. A {@link NoClassDefFoundError} means the class itself was found
+     * but could not be linked; {@link #recoverFromNoClassDefFoundError} handles that case.
      */
-    private static LookupResult findByClassLoading(final String name, final CompilationUnit compilationUnit, final GroovyClassLoader loader) {
+    private LookupResult findByClassLoading(final String name, final CompilationUnit compilationUnit, final GroovyClassLoader loader) {
         Class<?> cls;
         try {
             // NOTE: it's important to do no lookup against script files
@@ -304,26 +324,89 @@ public class ClassNodeResolver {
             return tryAsScript(name, compilationUnit, null);
         } catch (CompilationFailedException cfe) {
             throw new GroovyBugError("The lookup for " + name + " caused a failed compilation. There should not have been any compilation from this call.", cfe);
+        } catch (NoClassDefFoundError ncdfe) {
+            return recoverFromNoClassDefFoundError(name, compilationUnit, loader, ncdfe);
         }
-        //TODO: The case of a NoClassDefFoundError needs a bit more research;
-        // a simple recompilation is not possible it seems. The current class
-        // we are searching for is there, so we should mark that somehow.
-        // Basically the missing class needs to be completely compiled before
-        // we can again search for the current name.
-        /*catch (NoClassDefFoundError ncdfe) {
-            cachedClasses.put(name,SCRIPT);
-            return false;
-        }*/
         if (cls == null) return null;
-        //NOTE: we might return false here even if we found a class,
-        //      because  we want to give a possible script a chance to
-        //      recompile. This can only be done if the loader was not
-        //      the instance defining the class.
+        // NOTE: even if we found a class we still give a possible script a chance
+        // to recompile, but only when this loader was not the instance that defined it.
         ClassNode cn = ClassHelper.make(cls);
         if (cls.getClassLoader() != loader) {
             return tryAsScript(name, compilationUnit, cn);
         }
         return new LookupResult(null,cn);
+    }
+
+    /**
+     * Recovers from {@link NoClassDefFoundError} thrown while defining or linking
+     * {@code name}. The class being looked up is present — a referenced type is not —
+     * so treating the failure as a miss would poison {@link #resolveName} with
+     * {@link #NO_CLASS} and hide bytecode or a groovy source that can still be used.
+     * <p>
+     * Recovery order:
+     * <ol>
+     *   <li>ASM decompilation of matching bytecode, which does not link the class,
+     *       so a missing superclass or interface does not prevent producing a
+     *       {@link ClassNode}.</li>
+     *   <li>If a {@code .class} resource exists for this path but declares a
+     *       different binary name (the JVM {@code defineClass} name check, also
+     *       seen on case-insensitive filesystems), treat the lookup as a miss and
+     *       fall through to script lookup. Detection uses the bytecode name, not
+     *       {@link NoClassDefFoundError} text.</li>
+     *   <li>A groovy source of the same name, added to the compilation queue.</li>
+     * </ol>
+     * If none of those succeed the error is rethrown with {@code name} in the
+     * message so callers see both the class under lookup and the missing type.
+     */
+    private LookupResult recoverFromNoClassDefFoundError(final String name, final CompilationUnit compilationUnit,
+            final GroovyClassLoader loader, final NoClassDefFoundError ncdfe) {
+        LookupResult decompiled = findDecompiled(name, compilationUnit, loader, false);
+        if (decompiled != null) {
+            return decompiled;
+        }
+        LookupResult script = tryAsScript(name, compilationUnit, null);
+        if (script != null || classFileDeclaresDifferentName(name, compilationUnit, loader)) {
+            return script;
+        }
+        throw wrapNoClassDefFoundError(name, ncdfe);
+    }
+
+    /**
+     * True when a {@code .class} resource exists for {@code name}'s path but the
+     * bytecode's binary name is different. That is the JVM {@code defineClass}
+     * check (JVMS 5.3.5), without inspecting {@link NoClassDefFoundError} text:
+     * HotSpot's {@code "wrong name"} phrase is an English C format string, OpenJ9
+     * does not use it, and the message is not a stable API.
+     */
+    private boolean classFileDeclaresDifferentName(final String name, final CompilationUnit compilationUnit,
+            final GroovyClassLoader loader) {
+        String fileName = name.replace('.', '/') + ".class";
+        URL resource = loader.getResource(fileName);
+        if (resource == null) {
+            return false;
+        }
+        try {
+            DecompiledClassNode node = new DecompiledClassNode(
+                    AsmDecompiler.parseClass(resource), new AsmReferenceResolver(this, compilationUnit));
+            return !name.equals(node.getName());
+        } catch (IOException | IllegalArgumentException | IndexOutOfBoundsException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Wraps {@code cause} so the class under lookup is visible in the message.
+     * {@link NoClassDefFoundError#getMessage()} names the missing dependency,
+     * not the class that was being resolved.
+     */
+    private static NoClassDefFoundError wrapNoClassDefFoundError(final String name, final NoClassDefFoundError cause) {
+        String missing = cause.getMessage();
+        String message = (missing == null || missing.isEmpty())
+                ? "Unable to resolve class " + name + " due to a missing dependency"
+                : "Unable to resolve class " + name + " due to missing dependency " + missing;
+        NoClassDefFoundError error = new NoClassDefFoundError(message);
+        error.initCause(cause);
+        return error;
     }
 
     /**
@@ -347,11 +430,16 @@ public class ClassNodeResolver {
                 }
             } catch (IOException e) {
                 // fall through and attempt other search strategies
-            } catch (IllegalArgumentException e) {
-                // very likely resolving failed here due to a class format error or similar
-                // if we do not try other means we should report this error to the user
+            } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
+                // class format error or similar from ASM (unsupported version,
+                // truncated bytes, ...). If we do not try other means we should
+                // report this error to the user.
                 if (failOnUnexpectedParseClassException) {
-                    throw e;
+                    String detail = e.getMessage();
+                    String message = (detail == null || detail.isEmpty())
+                            ? "Failed to parse class " + name
+                            : "Failed to parse class " + name + ": " + detail;
+                    throw new IllegalArgumentException(message, e);
                 }
             }
         }
