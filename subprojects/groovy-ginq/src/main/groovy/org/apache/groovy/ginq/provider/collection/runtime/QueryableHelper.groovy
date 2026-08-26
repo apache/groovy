@@ -106,6 +106,7 @@ class QueryableHelper {
      * @param param the argument passed to the function
      * @return the asynchronous result
      */
+    @GroovyABI(since = "4.0.0")
     static <T, U> CompletableFuture<U> supplyAsync(Function<? super T, ? extends U> function, T param) {
         return CompletableFuture.supplyAsync(() -> { function.apply(param) }, ThreadPoolHolder.THREAD_POOL)
     }
@@ -167,6 +168,7 @@ class QueryableHelper {
      *
      * @param mode 0: immediate, 1: abort
      */
+    @GroovyABI(since = "4.0.0")
     static void shutdown(int mode) {
         if (0 == mode) {
             ThreadPoolHolder.FORKJOIN_POOL.shutdown()

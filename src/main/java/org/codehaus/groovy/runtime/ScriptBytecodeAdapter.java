@@ -687,6 +687,7 @@ public class ScriptBytecodeAdapter {
         return InvokerHelper.createMap(values);
     }
 
+    @GroovyABI(since = "4.0.0")
     public static List createRange(Object from, Object to, boolean exclusiveLeft, boolean exclusiveRight) throws Throwable {
         if (exclusiveLeft && exclusiveRight) {
             if (compareEqual(from, to)) {
@@ -749,7 +750,6 @@ public class ScriptBytecodeAdapter {
         return (T) n;
     }
 
-    @GroovyABI(since = "1.0.0")
     public static MetaClass initMetaClass(final Object object) {
         return InvokerHelper.getMetaClass(object.getClass());
     }
