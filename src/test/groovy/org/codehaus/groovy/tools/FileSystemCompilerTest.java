@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.ErrorFormat;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
@@ -43,6 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -210,6 +212,23 @@ public class FileSystemCompilerTest {
 
         FileSystemCompiler.commandLineCompile(new String[] {"-d", dir.toString(), file.getPath()});
         assertTrue(Files.exists(dir.resolve("CliCheckDemo.class")), "sanity: without --check the class file is written");
+    }
+
+    // GROOVY-12312: --error-format selects the diagnostic rendering; picocli accepts the
+    // lower-case toString() form as well as the enum name
+    @Test
+    public void testErrorFormatCommandLineOption() throws Exception {
+        assertEquals(ErrorFormat.FULL, parseErrorFormat(), "an absent option leaves the default in place");
+        assertEquals(ErrorFormat.SHORT, parseErrorFormat("--error-format", "short"));
+        assertEquals(ErrorFormat.SHORT, parseErrorFormat("--error-format=short"));
+        assertEquals(ErrorFormat.SHORT, parseErrorFormat("--error-format", "SHORT"));
+        assertEquals(ErrorFormat.FULL, parseErrorFormat("--error-format", "full"));
+    }
+
+    private static ErrorFormat parseErrorFormat(String... args) throws Exception {
+        FileSystemCompiler.CompilationOptions options = new FileSystemCompiler.CompilationOptions();
+        FileSystemCompiler.configureParser(options).parseArgs(args);
+        return options.toCompilerConfiguration().getErrorFormat();
     }
 
     // GROOVY-12311: --check stops after CLASS_GENERATION, so errors raised by class

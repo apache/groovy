@@ -21,6 +21,7 @@ package org.codehaus.groovy.tools;
 import groovy.lang.GroovySystem;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.ErrorFormat;
 import org.codehaus.groovy.control.ConfigurationException;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.Janitor;
@@ -557,6 +558,12 @@ public class FileSystemCompiler {
         @Option(names = {"--type-checked"}, description = "Use TypeChecked")
         private boolean typeChecked;
 
+        @Option(names = {"--error-format"}, paramLabel = "<format>",
+                description = "How errors and warnings are rendered: ${COMPLETION-CANDIDATES} (default: ${DEFAULT-VALUE}). "
+                        + "short emits one file:line:column: severity: message line per diagnostic.",
+                defaultValue = "full")
+        private ErrorFormat errorFormat;
+
         @Option(names = {"--check"}, description = "Check sources for errors without writing class files (runs every check, including class verification and bytecode generation)")
         private boolean checkOnly;
 
@@ -582,6 +589,7 @@ public class FileSystemCompiler {
             configuration.setPreviewFeatures(previewFeatures);
             configuration.setSourceEncoding(encoding);
             configuration.setScriptBaseClass(scriptBaseClass);
+            configuration.setErrorFormat(errorFormat);
             if (checkOnly) {
                 // do all phases except OUTPUT so that all checks are performed.
                 configuration.setTargetPhase(Phases.CLASS_GENERATION);

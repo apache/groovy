@@ -24,6 +24,7 @@ import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * How compilation errors and warnings are rendered (GROOVY-12312).
@@ -82,6 +83,16 @@ public enum ErrorFormat {
      */
     public abstract void write(PrintWriter writer, Janitor janitor, List<? extends Message> warnings,
                                List<? extends Message> errors, boolean debug);
+
+    /**
+     * The lower-case form used on the command line and in help text, e.g. {@code short}.
+     * picocli matches an option value against this as well as {@link #name()}, so
+     * {@code --error-format=short} and {@code --error-format=SHORT} both parse.
+     */
+    @Override
+    public String toString() {
+        return name().toLowerCase(Locale.ROOT);
+    }
 
     //--------------------------------------------------------------------------
 
