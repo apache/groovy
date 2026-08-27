@@ -39,7 +39,9 @@ import static org.objectweb.asm.Opcodes.V17
 /**
  * Tests for {@link ClassNodeResolver}: cache behaviour, ASM vs class-loader lookup,
  * package-info resolution, and recovery from {@link NoClassDefFoundError} when a
- * class is present but cannot be linked.
+ * class is present but cannot be linked. A groovy source may replace an existing
+ * class only when that class came from another loader; same-loader linkage
+ * failure is not treated as {@link ClassNotFoundException}.
  */
 class ClassNodeResolverTest {
 
@@ -397,6 +399,20 @@ class ClassNodeResolverTest {
     }
 
     @Test
+    void nameMismatchWithAsmResolvingOnIsAMissWithoutRethrowingNcdfe() {
+        String name = 'cnr.ncdfe.AsmMismatch'
+        Path file = writeBytes(tempDir, name.replace('.', '/'), simpleClassBytes('cnr/ncdfe/asmmismatch'))
+        def config = configWith([:]) // asmResolving defaults to on
+        def loader = new ControllableLoader(ClassNodeResolverTest.classLoader, config)
+        loader.loadResponses[name] = new NoClassDefFoundError('cnr/ncdfe/MissingDep')
+        loader.resources[name.replace('.', '/') + '.class'] = file.toUri().toURL()
+        def unit = new CompilationUnit(config, null, loader)
+        def resolver = new ClassNodeResolver()
+        assert resolver.resolveName(name, unit) == null
+        assert resolver.getFromClassCache(name).is(ClassNodeResolver.NO_CLASS)
+    }
+
+    @Test
     void nameMismatchIsDetectedWithoutInspectingNcdfeText() {
         String name = 'cnr.ncdfe.NomIncorrect'
         Path file = writeBytes(tempDir, name.replace('.', '/'), simpleClassBytes('cnr/ncdfe/nomincorrect'))
@@ -428,7 +444,7 @@ class ClassNodeResolverTest {
     }
 
     @Test
-    void ncdfeWithoutBytecodeFallsBackToAGroovySource() {
+    void ncdfeWithoutBytecodeIsRethrownEvenIfAGroovySourceExists() {
         Path source = tempDir.resolve('cnr/ncdfe/FromSource.groovy')
         Files.createDirectories(source.parent)
         Files.writeString(source, 'class FromSource {}')
@@ -439,10 +455,116 @@ class ClassNodeResolverTest {
             filename == 'cnr.ncdfe.FromSource' ? source.toUri().toURL() : null
         } as GroovyResourceLoader
         def unit = new CompilationUnit(config, null, loader)
-        def result = new ClassNodeResolver().resolveName('cnr.ncdfe.FromSource', unit)
-        assert result != null
-        assert result.sourceUnit
-        assert result.getSourceUnit().name.contains('FromSource.groovy')
+        def resolver = new ClassNodeResolver()
+        def error = shouldFail(NoClassDefFoundError) {
+            resolver.resolveName('cnr.ncdfe.FromSource', unit)
+        }
+        assert error.message.contains('cnr.ncdfe.FromSource')
+        assert error.cause instanceof NoClassDefFoundError
+        // must not have been cached as a miss — a retry still throws
+        assert resolver.getFromClassCache('cnr.ncdfe.FromSource') == null
+        shouldFail(NoClassDefFoundError) {
+            resolver.resolveName('cnr.ncdfe.FromSource', unit)
+        }
+    }
+
+    @Test
+    void sameLoaderUnlinkableClassIsNotReplacedByAGroovySource() {
+        String name = 'cnr.ncdfe.SameLoaderHasDep'
+        // timestamp 0 so a same-loader tryAsScript(oldClass) would take the source
+        writeBytes(tempDir, name.replace('.', '/'), unlinkableStampedClassBytes(name.replace('.', '/'), '0'))
+        Path source = tempDir.resolve(name.replace('.', '/') + '.groovy')
+        Files.createDirectories(source.parent)
+        Files.writeString(source, 'class SameLoaderHasDep {}')
+        def config = configWith(asmResolving: false)
+        def parent = new URLClassLoader(new URL[0], (ClassLoader) null)
+        parent.withCloseable {
+            def loader = new GroovyClassLoader(parent, config)
+            loader.addClasspath(tempDir.toAbsolutePath().toString())
+            loader.resourceLoader = { String filename ->
+                filename == name ? source.toUri().toURL() : null
+            } as GroovyResourceLoader
+            def unit = new CompilationUnit(config, null, loader)
+            def result = new ClassNodeResolver().resolveName(name, unit)
+            assert result.classNode
+            assert result.getClassNode().name == name
+            assert result.getClassNode() instanceof DecompiledClassNode
+        }
+    }
+
+    @Test
+    void parentUnlinkableClassWithOlderSourceIsKeptWhenAsmResolvingIsDisabled() {
+        String name = 'cnr.ncdfe.ParentOlder'
+        writeBytes(tempDir, name.replace('.', '/'), unlinkableStampedClassBytes(name.replace('.', '/'), Long.MAX_VALUE.toString()))
+        Path source = tempDir.resolve(name.replace('.', '/') + '.groovy')
+        Files.createDirectories(source.parent)
+        Files.writeString(source, 'class ParentOlder {}')
+        parentLoader(tempDir).withCloseable { parent ->
+            def config = configWith(asmResolving: false)
+            def loader = new GroovyClassLoader(parent, config)
+            loader.resourceLoader = { String filename ->
+                filename == name ? source.toUri().toURL() : null
+            } as GroovyResourceLoader
+            def unit = new CompilationUnit(config, null, loader)
+            def result = new ClassNodeResolver().resolveName(name, unit)
+            assert result.classNode
+            assert result.getClassNode().name == name
+            assert result.getClassNode() instanceof DecompiledClassNode
+        }
+    }
+
+    @Test
+    void parentUnlinkableClassWithNewerSourceIsReplacedWhenAsmResolvingIsDisabled() {
+        String name = 'cnr.ncdfe.ParentNewer'
+        writeBytes(tempDir, name.replace('.', '/'), unlinkableStampedClassBytes(name.replace('.', '/'), '0'))
+        Path source = tempDir.resolve(name.replace('.', '/') + '.groovy')
+        Files.createDirectories(source.parent)
+        Files.writeString(source, 'class ParentNewer {}')
+        parentLoader(tempDir).withCloseable { parent ->
+            def config = configWith(asmResolving: false)
+            def loader = new GroovyClassLoader(parent, config)
+            loader.resourceLoader = { String filename ->
+                filename == name ? source.toUri().toURL() : null
+            } as GroovyResourceLoader
+            def unit = new CompilationUnit(config, null, loader)
+            def result = new ClassNodeResolver().resolveName(name, unit)
+            assert result.sourceUnit
+            assert result.getSourceUnit().name.contains('ParentNewer.groovy')
+        }
+    }
+
+    @Test
+    void unrecoverableNcdfeWithAsmResolvingOnIsRethrown() {
+        def config = configWith([:]) // asmResolving defaults to on
+        def loader = new ControllableLoader(ClassNodeResolverTest.classLoader, config)
+        loader.loadResponses['cnr.ncdfe.AsmBroken'] = new NoClassDefFoundError('cnr/ncdfe/MissingDep')
+        def unit = new CompilationUnit(config, null, loader)
+        def resolver = new ClassNodeResolver()
+        def error = shouldFail(NoClassDefFoundError) {
+            resolver.resolveName('cnr.ncdfe.AsmBroken', unit)
+        }
+        assert error.message.contains('cnr.ncdfe.AsmBroken')
+        assert error.cause instanceof NoClassDefFoundError
+        assert resolver.getFromClassCache('cnr.ncdfe.AsmBroken') == null
+        shouldFail(NoClassDefFoundError) {
+            resolver.resolveName('cnr.ncdfe.AsmBroken', unit)
+        }
+    }
+
+    @Test
+    void definedClassIsFoundEvenWhenTheClassResourceHasADifferentBytecodeName() {
+        String name = 'cnr.ncdfe.DefinedDespiteMismatch'
+        Path foreign = writeBytes(tempDir, 'cnr/ncdfe/foreign', simpleClassBytes('cnr/ncdfe/foreign'))
+        def config = configWith([:])
+        def loader = new ControllableLoader(ClassNodeResolverTest.classLoader, config)
+        Class defined = loader.defineClass(name, simpleClassBytes(name.replace('.', '/')))
+        loader.resources[name.replace('.', '/') + '.class'] = foreign.toUri().toURL()
+        def unit = new CompilationUnit(config, null, loader)
+        def result = new ClassNodeResolver().resolveName(name, unit)
+        assert result.classNode
+        assert result.getClassNode().isResolved()
+        assert result.getClassNode().typeClass.is(defined)
+        assert !(result.getClassNode() instanceof DecompiledClassNode)
     }
 
     @Test
@@ -878,8 +1000,16 @@ class ClassNodeResolverTest {
     }
 
     private static byte[] stampedClassBytes(String internalName, String timestampSuffix) {
+        stampedClassBytes(internalName, timestampSuffix, 'java/lang/Object')
+    }
+
+    private static byte[] unlinkableStampedClassBytes(String internalName, String timestampSuffix) {
+        stampedClassBytes(internalName, timestampSuffix, 'cnr/ncdfe/MissingDep')
+    }
+
+    private static byte[] stampedClassBytes(String internalName, String timestampSuffix, String superInternalName) {
         def cw = new ClassWriter(0)
-        cw.visit(V17, ACC_PUBLIC, internalName, null, 'java/lang/Object', null)
+        cw.visit(V17, ACC_PUBLIC, internalName, null, superInternalName, null)
         cw.visitField(ACC_PUBLIC | org.objectweb.asm.Opcodes.ACC_STATIC | org.objectweb.asm.Opcodes.ACC_FINAL,
                 org.codehaus.groovy.classgen.Verifier.__TIMESTAMP__ + timestampSuffix,
                 'J', null, Long.valueOf(0)).visitEnd()

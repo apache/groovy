@@ -144,12 +144,14 @@ type can be described without linking it in the JVM — a class whose
 superclass or a referenced type is missing, or is still only groovy source
 in this compilation unit, can still be represented. Class-loader lookup is
 the fallback when decompilation is disabled or the class exists only in
-memory. `NoClassDefFoundError` on that fallback is recovered by decompiling
-the still-present bytecode or by compiling a groovy source of the same
-name; an unrecoverable error is not cached as a miss. When a groovy source
-is also found for a class that came from another class loader, timestamps
-are compared (`URLStreams.getLastModified`, shared with
-`GroovyClassLoader.isSourceNewer`).
+memory. `NoClassDefFoundError` on that fallback means the class was found
+but could not be linked: matching bytecode is decompiled once so a
+`ClassNode` can still be produced; a groovy source replaces that node only
+when the `.class` came from another class loader and the source is newer
+(`URLStreams.getLastModified`, shared with
+`GroovyClassLoader.isSourceNewer`). A `.class` resource whose bytecode
+name does not match is not this class. An unrecoverable error is not
+cached as a miss.
 
 ### Static type checker (phase 6)
 
