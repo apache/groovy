@@ -212,6 +212,41 @@ public class FileSystemCompilerTest {
         assertTrue(Files.exists(dir.resolve("CliCheckDemo.class")), "sanity: without --check the class file is written");
     }
 
+    // GROOVY-12311: --check stops after CLASS_GENERATION, so errors raised by class
+    // verification — which runs in that phase — must be reported rather than missed
+    @Test
+    public void testCheckCommandLineOptionReportsVerifierErrors(@TempDir Path dir) throws Exception {
+        File file = dir.resolve("CliVerifyDemo.groovy").toFile();
+        Files.write(file.toPath(), "class CliVerifyDemo { def foo() { 1 }\n def foo() { 2 } }".getBytes(StandardCharsets.UTF_8));
+
+        Exception e = assertThrows(Exception.class, () ->
+                FileSystemCompiler.commandLineCompile(new String[] {"--check", "-d", dir.toString(), file.getPath()}));
+        assertTrue(e.getMessage().contains("Repetitive method name/signature"),
+                "expected the verifier error but got: " + e.getMessage());
+        assertFalse(Files.exists(dir.resolve("CliVerifyDemo.class")), "--check must not write class files");
+
+        // control: a full compile rejects the same source, so --check agrees with it
+        assertThrows(Exception.class, () ->
+                FileSystemCompiler.commandLineCompile(new String[] {"-d", dir.toString(), file.getPath()}));
+    }
+
+    // GROOVY-12311: an earlier target phase remains selectable, and because config scripts are
+    // processed last it overrides --check. This is the only route back to a shallower check, so
+    // the ordering it depends on is pinned here.
+    @Test
+    public void testConfigScriptOverridesCheckTargetPhase(@TempDir Path dir) throws Exception {
+        File file = dir.resolve("CliPhaseDemo.groovy").toFile();
+        Files.write(file.toPath(), "class CliPhaseDemo { def foo() { 1 }\n def foo() { 2 } }".getBytes(StandardCharsets.UTF_8));
+        File script = dir.resolve("phase.groovy").toFile();
+        Files.write(script.toPath(), ("configuration.targetPhase = "
+                + "org.codehaus.groovy.control.Phases.INSTRUCTION_SELECTION").getBytes(StandardCharsets.UTF_8));
+
+        // stopping before CLASS_GENERATION skips verification, so the duplicate method goes unseen
+        FileSystemCompiler.commandLineCompile(new String[] {
+                "--check", "--configscript", script.getPath(), "-d", dir.toString(), file.getPath()});
+        assertFalse(Files.exists(dir.resolve("CliPhaseDemo.class")), "an earlier phase still writes no class files");
+    }
+
     @Test
     public void testDeleteRecursiveDoesNotFollowSymlink() throws Exception {
         File base = Files.createTempDirectory("deleteRecursiveSymlink").toFile();
