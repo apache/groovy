@@ -26,6 +26,7 @@ import groovy.lang.MetaProperty;
 import groovy.transform.Internal;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedField;
+import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.runtime.ArrayUtil;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
@@ -390,6 +391,7 @@ public class AbstractCallSite implements CallSite {
     }
 
     private CallSite createPojoMetaClassGetPropertySite(final Object receiver) {
+        final int version = ClassInfo.getClassInfo(receiver.getClass()).getVersion();
         final MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
 
         CallSite site;
@@ -407,8 +409,23 @@ public class AbstractCallSite implements CallSite {
             }
         }
 
-        array.array[index] = site;
+        installGetPropertySiteIfCurrent(site, receiver.getClass(), version);
         return site;
+    }
+
+    /**
+     * Installs the freshly created property site only when the receiver
+     * class's MOP version did not move while the site was being created
+     * (GROOVY-12307): a change landing mid-creation can pair a pre-change
+     * property selection with a post-change version stamp (or, for the
+     * identity-guarded Pogo sites, with a still-current MetaClass reference),
+     * which would dispatch stale until an unrelated future change. The site
+     * still serves the current invocation; the next call re-creates.
+     */
+    private void installGetPropertySiteIfCurrent(final CallSite site, final Class<?> receiverClass, final int preVersion) {
+        if (ClassInfo.getClassInfo(receiverClass).getVersion() == preVersion) {
+            array.array[index] = site;
+        }
     }
 
     private CallSite createClassMetaClassGetPropertySite(final Class<?> aClass) {
@@ -418,6 +435,7 @@ public class AbstractCallSite implements CallSite {
     }
 
     private CallSite createPogoMetaClassGetPropertySite(final GroovyObject receiver) {
+        final int version = ClassInfo.getClassInfo(receiver.getClass()).getVersion();
         MetaClass metaClass = receiver.getMetaClass();
 
         CallSite site;
@@ -435,7 +453,7 @@ public class AbstractCallSite implements CallSite {
             }
         }
 
-        array.array[index] = site;
+        installGetPropertySiteIfCurrent(site, receiver.getClass(), version);
         return site;
     }
 

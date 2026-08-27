@@ -68,28 +68,29 @@ public final class CallSiteArray {
         } catch (Exception e) {
             // force <clinit>
         }
+        int version = mopVersion(receiver);
         MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
         CallSite site =
                 metaClass instanceof MetaClassImpl
                         ? MetaClassCallSites.createStaticSite((MetaClassImpl) metaClass, callSite, args)
                         : new StaticMetaClassSite(callSite, metaClass);
 
-        replaceCallSite(callSite, site);
-        return site;
+        return installIfCurrent(callSite, site, receiver, version);
     }
 
     private static CallSite createCallConstructorSite(CallSite callSite, Class receiver, Object[] args) {
+        int version = mopVersion(receiver);
         MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
         CallSite site =
                 metaClass instanceof MetaClassImpl
                         ? MetaClassCallSites.createConstructorSite((MetaClassImpl) metaClass, callSite, args)
                         : new MetaClassConstructorSite(callSite, metaClass);
 
-        replaceCallSite(callSite, site);
-        return site;
+        return installIfCurrent(callSite, site, receiver, version);
     }
 
     private static CallSite createCallCurrentSite(CallSite callSite, GroovyObject receiver, Object[] args, Class sender) {
+        int version = mopVersion(receiver);
         CallSite site;
         if (receiver instanceof GroovyInterceptable) {
             site = new PogoInterceptableSite(callSite);
@@ -105,8 +106,7 @@ public final class CallSiteArray {
             }
         }
 
-        replaceCallSite(callSite, site);
-        return site;
+        return installIfCurrent(callSite, site, receiver, version);
     }
 
     // for MetaClassImpl we try to pick meta method,
@@ -150,6 +150,7 @@ public final class CallSiteArray {
             return new NullCallSite(callSite);
         }
 
+        int version = mopVersion(receiver);
         CallSite site;
         if (receiver instanceof Class) {
             site = createCallStaticSite(callSite, (Class) receiver, args);
@@ -159,8 +160,33 @@ public final class CallSiteArray {
             site = createPojoSite(callSite, receiver, args);
         }
 
-        replaceCallSite(callSite, site);
-        return site;
+        return installIfCurrent(callSite, site, receiver, version);
+    }
+
+    /**
+     * Class-level MOP version for the receiver's class, sampled before site
+     * creation first reads MOP state (GROOVY-12307).
+     */
+    private static int mopVersion(Object receiver) {
+        Class<?> type = receiver instanceof Class ? (Class<?>) receiver : receiver.getClass();
+        return ClassInfo.getClassInfo(type).getVersion();
+    }
+
+    /**
+     * Installs the freshly created site only when the receiver's MOP version
+     * did not move while the site was being created (GROOVY-12307). A change
+     * landing mid-creation — a concurrent MetaClass mutation, or the version
+     * bump of lazy MetaClass creation itself — can pair a pre-change method
+     * selection with a post-change version stamp, and caching that would
+     * dispatch stale until an unrelated future change. The site still serves
+     * the current invocation; the next call re-creates, converging as soon as
+     * one creation pass sees a stable version.
+     */
+    private static CallSite installIfCurrent(CallSite oldSite, CallSite newSite, Object receiver, int preVersion) {
+        if (mopVersion(receiver) == preVersion) {
+            replaceCallSite(oldSite, newSite);
+        }
+        return newSite;
     }
 
     private static void replaceCallSite(CallSite oldSite, CallSite newSite) {
