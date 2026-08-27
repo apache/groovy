@@ -368,6 +368,62 @@ compilation but does not exempt the method from an enclosing class's
 `@TypeChecked` checking; only `@TypeChecked(TypeCheckingMode.SKIP)`
 does that.
 
+### Groovy 6 — error tolerance applies to type checking errors (GROOVY-12306)
+
+The compiler's error tolerance — the number of non-fatal errors collected
+before compilation is abandoned, `CompilerConfiguration.getTolerance()`,
+`groovyc -t` — is now also enforced for errors reported through
+`ClassCodeVisitorSupport#addError`, which includes all static type
+checking errors. It previously covered only errors reported through
+`SourceUnit#addError` (parse and class generation); visitor errors went
+straight to `ErrorCollector#addErrorAndContinue` and were unbounded.
+
+The default is unchanged at 10 (now named
+`CompilerConfiguration.DEFAULT_TOLERANCE`). A tolerance of zero or less
+now means unlimited, which is the setting to reach for when every error
+is wanted; previously zero was indistinguishable from the option being
+absent on the command line, and would have bailed out on the first error
+if set through the API.
+
+**Who is affected.** Any compilation reporting more than the tolerance in
+type checking errors. Where 40 such errors were previously all reported,
+10 are now reported and compilation stops. Pass `-t 0` on the groovyc
+command line, set `tolerance="0"` on the Ant `<groovyc>` task, or set
+`configuration.tolerance = 0` in a compiler configuration script (the
+route Gradle users have, via `groovyOptions.configurationScript`) to
+restore full reporting.
+
+This is not limited to the compiler front ends: it applies to any caller
+driving a `ClassCodeVisitorSupport` subclass over a `SourceUnit` and
+counting the errors it collects — static analysers, IDE integrations and
+AST transformation test harnesses among them. Note in particular that
+`SourceUnit.create(String, String)` selects a tolerance of **1**, so a
+visitor driven over a source unit from that factory now stops at the
+first error. Use the three-argument overload to state the tolerance the
+caller actually wants.
+
+**What is unchanged.** The default of 10, so parse and class generation
+errors behave exactly as before. The temporary error collectors that
+`StaticTypeCheckingVisitor` pushes for speculative checks are also
+unaffected — they must keep collecting without bailing out, because their
+errors are routinely discarded once a candidate is ruled in or out, so
+tolerance is enforced only against the source unit's own collector.
+
+Errors that reach the collector without passing through an enforcing
+path also behave as before: direct calls to
+`ErrorCollector#addErrorAndContinue` — the route most AST
+transformations take, via `AbstractASTTransformation#addError` — and
+bulk merges via `ErrorCollector#addCollectorContents` (annotation
+checking in `ExtendedVerifier`, for example) report their errors and
+carry on regardless of the threshold. Such errors still count towards
+the error total, so the next error reported through an enforcing path
+takes them into account.
+
+Completeness remains per-phase, as it always has been: `failIfErrors()`
+runs at the end of each phase, so a single type checking error anywhere
+in the compilation still suppresses every class generation error,
+whatever the tolerance.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
