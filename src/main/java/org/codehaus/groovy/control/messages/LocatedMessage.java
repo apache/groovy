@@ -66,6 +66,11 @@ public class LocatedMessage extends SimpleMessage {
         return context;
     }
 
+    @Override
+    public Diagnostic toDiagnostic() {
+        return new Diagnostic(sourceName(owner), context.getStartLine(), context.getStartColumn(), message);
+    }
+
     /**
      * Writes the message together with source-location information.
      *

@@ -57,6 +57,15 @@ public class SyntaxErrorMessage extends Message {
     }
 
     /**
+     * The error's bare text with its position: {@link SyntaxException#getMessage()}
+     * appends {@code " @ line N, column M."}, which the position fields already carry.
+     */
+    @Override
+    public Diagnostic toDiagnostic() {
+        return new Diagnostic(source.getName(), cause.getStartLine(), cause.getStartColumn(), cause.getOriginalMessage());
+    }
+
+    /**
      * Writes out a nicely formatted summary of the syntax error.
      */
     @Override

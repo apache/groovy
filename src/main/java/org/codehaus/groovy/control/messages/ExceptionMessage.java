@@ -60,6 +60,17 @@ public class ExceptionMessage extends Message {
     }
 
     /**
+     * The exception summary without its stack trace, which only the full
+     * rendering includes.
+     */
+    @Override
+    public Diagnostic toDiagnostic() {
+        String message = cause.getMessage();
+        return new Diagnostic(null, -1, -1, "General error during " + owner.getPhaseDescription() + ": "
+                + Objects.requireNonNullElse(message, cause.toString()));
+    }
+
+    /**
      * Writes out a nicely formatted summary of the exception.
      */
     @Override
