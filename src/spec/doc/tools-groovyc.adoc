@@ -54,6 +54,7 @@ a number of command line switches:
 | -b | --basescript | Base class name for scripts (must derive from Script)|
 | | --configscript | Advanced compiler configuration script | groovyc --configscript config/config.groovy src/Person.groovy
 | | --error-format | How errors and warnings are rendered: `full` (the default, with the source line and a caret) or `short` (one `file:line:column: severity: message` line per diagnostic, for editors and CI log parsers). | groovyc --error-format=short Person.groovy
+| -t | --tolerance | The number of non-fatal errors to collect before compilation is abandoned. Defaults to `10`; use `0` for unlimited. | groovyc -t 0 Person.groovy
 | -Jproperty=value | | Properties to be passed to `javac` if joint compilation is enabled | groovyc -j -Jtarget=1.6 -Jsource=1.6 A.groovy B.java
 | -Fflag | | Flags to be passed to `javac` if joint compilation is enabled | groovyc -j -Fnowarn A.groovy B.java
 | -pa | --parameters | Generates metadata for reflection on method parameter names. Requires Java 8+. | groovyc --parameters Person.groovy

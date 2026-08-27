@@ -539,8 +539,9 @@ public class FileSystemCompiler {
         @Option(names = {"-cf", "--configscript"}, paramLabel = "<script>", description = "A script for tweaking the configuration options")
         private String configScript;
 
-        @Option(names = {"-t", "--tolerance"}, description = "The number of non-fatal errors to allow before bailing")
-        private int tolerance;
+        @Option(names = {"-t", "--tolerance"}, paramLabel = "<count>",
+                description = "The number of non-fatal errors to allow before bailing (default: 10; 0 for unlimited)")
+        private Integer tolerance;
 
         @Option(names = {"-h", "--help"}, usageHelp = true, description = "Show this help message and exit")
         private boolean helpRequested;
@@ -594,7 +595,7 @@ public class FileSystemCompiler {
                 // do all phases except OUTPUT so that all checks are performed.
                 configuration.setTargetPhase(Phases.CLASS_GENERATION);
             }
-            if (tolerance > 0) {
+            if (tolerance != null) {
                 configuration.setTolerance(tolerance);
             }
 
