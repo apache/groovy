@@ -1321,6 +1321,63 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12305
+    @Test
+    void testMapPropertyAccess19() {
+        assertScript '''
+            def test(Map foo) {
+                foo.a instanceof Map ? foo.a.b : foo.a
+            }
+            assert test(a: [b: 'c']) == 'c'
+            assert test(a: 'x') == 'x'
+        '''
+
+        assertScript '''
+            def test(Map foo) {
+                if (foo.a instanceof Map) {
+                    foo.a.b
+                } else {
+                    foo.a
+                }
+            }
+            assert test(a: [b: 'c']) == 'c'
+            assert test(a: 'x') == 'x'
+        '''
+
+        // generic receivers: declared, wildcard, bounded and type-variable
+        assertScript '''
+            def test1(Map<String,Object> foo) {
+                foo.a instanceof Map ? foo.a.b : foo.a
+            }
+            def test2(Map<String,?> foo) {
+                foo.a instanceof Map ? foo.a.b : foo.a
+            }
+            def test3(Map<String,Serializable> foo) {
+                foo.a instanceof Map ? foo.a.b : foo.a
+            }
+            class Box<T> { T item }
+            def test4(Box<Object> box) {
+                box.item instanceof Map ? box.item.b : box.item
+            }
+            def <T> test5(Box<T> box) {
+                box.item instanceof Map ? box.item.b : box.item
+            }
+            assert test1(a: [b: 'c']) == 'c' && test1(a: 'x') == 'x'
+            assert test2(a: [b: 'c']) == 'c' && test2(a: 'x') == 'x'
+            assert test3(a: [b: 'c']) == 'c' && test3(a: 'x') == 'x'
+            assert test4(new Box<Object>(item: [b: 'c'])) == 'c' && test4(new Box<Object>(item: 'x')) == 'x'
+            assert test5(new Box<Object>(item: [b: 'c'])) == 'c' && test5(new Box<Object>(item: 'x')) == 'x'
+        '''
+
+        // a redundant raw instanceof must not discard the declared generics
+        assertScript '''
+            def test(Map<String,List<String>> foo) {
+                foo.a instanceof List ? foo.a.first().toUpperCase() : ''
+            }
+            assert test(a: ['q']) == 'Q'
+        '''
+    }
+
     @Test
     void testTypeCheckerDoesNotThinkPropertyIsReadOnly() {
         assertScript '''
