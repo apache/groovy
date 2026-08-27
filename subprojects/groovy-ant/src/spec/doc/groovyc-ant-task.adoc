@@ -132,6 +132,9 @@ you need to set this flag to true. Defaults to false. |No
 |errorFormat |How errors and warnings are rendered: `full` (the default, with the source line
 and a caret) or `short` (one `file:line:column: severity: message` line per diagnostic). |No
 
+|tolerance |The number of non-fatal errors to collect before compilation is abandoned.
+Zero means unlimited. Defaults to 10. |No
+
 |parameters |Generates metadata for reflection on method parameter names on JDK 8 and above.
 Defaults to false. |No
 
