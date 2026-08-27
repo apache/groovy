@@ -434,7 +434,10 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     /** {@inheritDoc} */
     @Override
     protected void onSuperPropertyFoundInHierarchy(MetaBeanProperty property) {
-        addMetaBeanProperty(property);
+        // like addSuperMethodIfNotOverridden: this lazy memoization of an
+        // inherited expando property must run inside the mutation window,
+        // where the initialized guard of addMetaBeanProperty is lifted
+        performOperationOnMetaClass(() -> addMetaBeanProperty(property));
     }
 
     /** {@inheritDoc} */

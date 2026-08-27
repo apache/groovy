@@ -807,12 +807,18 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * Adds an instance method to this metaclass.
+     * Adds an instance method to this metaclass. Must not be called after
+     * initialization: call-site caches are never told about the change, so
+     * the method could remain invisible to already-linked call sites.
      *
      * @param method The method to be added
+     * @throws RuntimeException if this metaclass is already initialized
      */
     @Override
     public void addNewInstanceMethod(final Method method) {
+        if (isInitialized()) {
+            throw new RuntimeException("Already initialized, cannot add new method: " + method);
+        }
         CachedMethod cachedMethod = CachedMethod.find(method);
         NewInstanceMetaMethod newMethod = new NewInstanceMetaMethod(cachedMethod);
         addNewInstanceMethodToIndex(newMethod, metaMethodIndex.getHeader(newMethod.getDeclaringClass().getTheClass()));
@@ -826,12 +832,18 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * Adds a static method to this metaclass.
+     * Adds a static method to this metaclass. Must not be called after
+     * initialization: call-site caches are never told about the change, so
+     * the method could remain invisible to already-linked call sites.
      *
      * @param method The method to be added
+     * @throws RuntimeException if this metaclass is already initialized
      */
     @Override
     public void addNewStaticMethod(final Method method) {
+        if (isInitialized()) {
+            throw new RuntimeException("Already initialized, cannot add new method: " + method);
+        }
         CachedMethod cachedMethod = CachedMethod.find(method);
         NewStaticMetaMethod newMethod = new NewStaticMetaMethod(cachedMethod);
         addNewStaticMethodToIndex(newMethod, metaMethodIndex.getHeader(newMethod.getDeclaringClass().getTheClass()));
@@ -2922,12 +2934,20 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * Adds a new MetaBeanProperty to this MetaClass
+     * Adds a new MetaBeanProperty to this MetaClass. Must not be called after
+     * initialization (mirroring {@link #addMetaMethod}): the mutation bumps no
+     * version and fires no invalidation, so call-site caches would keep
+     * serving the metaclass's pre-change state. Runtime changes belong on
+     * {@link ExpandoMetaClass}, whose mutation window lifts the restriction.
      *
      * @param mp The MetaBeanProperty
+     * @throws RuntimeException if this metaclass is already initialized
      */
     @Override
     public void addMetaBeanProperty(MetaBeanProperty mp) {
+        if (isInitialized()) {
+            throw new RuntimeException("Already initialized, cannot add new property: " + mp.getName());
+        }
         MetaProperty staticProperty = establishStaticMetaProperty(mp);
         if (staticProperty != null) {
             staticPropertyIndex.put(mp.getName(), mp);
