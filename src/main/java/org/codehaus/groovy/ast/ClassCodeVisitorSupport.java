@@ -40,6 +40,7 @@ import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.ast.stmt.YieldStatement;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.Message;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.ErrorCollecting;
 
@@ -495,6 +496,12 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     /**
      * Adds an error message associated with an AST node to the source unit.
      * Errors are accumulated and reported after visitation completes.
+     * <p>
+     * The error counts towards the configured
+     * {@link org.codehaus.groovy.control.CompilerConfiguration#getTolerance() error tolerance},
+     * so visitation may be cut short once that many errors have been collected (GROOVY-12306).
+     * Use {@link org.codehaus.groovy.control.ErrorCollector#addErrorAndContinue(Message)}
+     * directly to report an error which must never bail out.
      *
      * @param error the error message to report
      * @param node the AST node associated with the error location
@@ -502,6 +509,8 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
      */
     @Override
     public void addError(final String error, final ASTNode node) {
-        getSourceUnit().addErrorAndContinue(new SyntaxException(error + '\n', node));
+        SourceUnit source = getSourceUnit();
+        source.getErrorCollector().addError(
+                Message.create(new SyntaxException(error + '\n', node), source));
     }
 }

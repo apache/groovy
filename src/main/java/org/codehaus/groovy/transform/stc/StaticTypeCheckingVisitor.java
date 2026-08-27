@@ -117,8 +117,10 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.Message;
 import org.codehaus.groovy.control.messages.WarningMessage;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
 import org.codehaus.groovy.transform.RecordTypeASTTransformation;
@@ -7234,7 +7236,17 @@ out:    for (ClassNode type : todo) {
     public void addError(final String msg, final ASTNode node) {
         Long err = ((long) node.getLineNumber()) << 16 + node.getColumnNumber();
         if ((DEBUG_GENERATED_CODE && node.getLineNumber() < 0) || !typeCheckingContext.reportedErrors.contains(err)) {
-            typeCheckingContext.getErrorCollector().addErrorAndContinue(msg + '\n', node, getSourceUnit());
+            SourceUnit source = getSourceUnit();
+            ErrorCollector collector = typeCheckingContext.getErrorCollector();
+            Message message = Message.create(new SyntaxException(msg + '\n', node), source);
+            // GROOVY-12306: only the source unit's own collector enforces the error tolerance.
+            // The temporary collectors pushed for speculative checks must never bail out, as
+            // their errors are routinely discarded once a candidate is ruled in or out.
+            if (collector == source.getErrorCollector()) {
+                collector.addError(message);
+            } else {
+                collector.addErrorAndContinue(message);
+            }
             typeCheckingContext.reportedErrors.add(err);
         }
     }
