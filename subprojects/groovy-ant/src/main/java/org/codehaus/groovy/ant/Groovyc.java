@@ -241,6 +241,7 @@ public class Groovyc extends MatchingTask {
     private String scriptBaseClass;
     private String configscript;
     private ErrorFormat errorFormat;
+    private Integer tolerance;
 
     // GROOVY-11995: forked-mode JVM args / system properties
     private final Commandline jvmArgs = new Commandline();
@@ -854,6 +855,28 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
+     * Get the number of non-fatal errors tolerated before compilation is aborted.
+     *
+     * @return the error tolerance, or {@code null} to use the compiler default
+     * @since 6.0.0
+     */
+    public Integer getTolerance() {
+        return tolerance;
+    }
+
+    /**
+     * Set the number of non-fatal errors tolerated before compilation is aborted.
+     * Zero means unlimited. When unset, the compiler default of
+     * {@value CompilerConfiguration#DEFAULT_TOLERANCE} applies.
+     *
+     * @param tolerance the error tolerance
+     * @since 6.0.0
+     */
+    public void setTolerance(final int tolerance) {
+        this.tolerance = tolerance;
+    }
+
+    /**
      * Set the stub directory into which the Java source stub
      * files should be generated. The directory need not exist
      * and will not be deleted automatically - though its contents
@@ -1346,6 +1369,10 @@ public class Groovyc extends MatchingTask {
         if (errorFormat != null) {
             commandLineList.add("--error-format");
             commandLineList.add(errorFormat.toString());
+        }
+        if (tolerance != null) {
+            commandLineList.add("-t");
+            commandLineList.add(String.valueOf(tolerance));
         }
     }
 
