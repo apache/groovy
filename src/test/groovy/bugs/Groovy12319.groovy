@@ -874,7 +874,7 @@ final class Groovy12319 {
         fieldType.genericsTypes = GenericsType.EMPTY_ARRAY
         def cn = new ClassNode('C', Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE)
         cn.addField(new FieldNode('f', Opcodes.ACC_PUBLIC, fieldType, cn, null))
-        def source = SourceUnit.create('C.groovy', '')
+        def source = SourceUnit.create('C.groovy', '', 0) // GROOVY-12306: unlimited tolerance, the visitor must not bail out
         new GenericsVisitor(source).visitClass(cn)
         assert source.errorCollector.errorCount > 0
         assert source.errorCollector.errors.any { it.cause.message.contains('invalid Diamond') }
