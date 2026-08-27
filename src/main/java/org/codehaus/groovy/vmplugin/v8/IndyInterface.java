@@ -34,6 +34,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
+import java.lang.invoke.SwitchPoint;
 import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.function.Function;
@@ -308,18 +309,22 @@ public class IndyInterface {
      * Production call-site wiring ({@link Selector}, {@link IndyCompoundAssign})
      * enters here so the bytecode bootstrap surface owns how handles are guarded.
      * <p>
-     * Domain resolution (receiver → class → class-level MetaClass instance
-     * SwitchPoint, or always-relink when none is installed) and invalidation
+     * The caller supplies the class-domain SwitchPoint, captured — via
+     * {@link IndyInvalidation#classSwitchPointFor} — <em>before</em> its
+     * selection first read MOP state: a MetaClass change racing the selection
+     * then invalidates the captured token, so the installed guard routes to
+     * the fallback and re-links instead of publishing the stale selection
+     * under the post-change SwitchPoint. Domain resolution and invalidation
      * policy stay in {@link IndyInvalidation}; this method only binds the
-     * resolved SwitchPoint with {@code guardWithTest}.
+     * token with {@code guardWithTest}.
      *
-     * @param handle   fast-path handle
-     * @param fallback re-link handle
-     * @param receiver call receiver (may be {@code null})
+     * @param handle      fast-path handle
+     * @param fallback    re-link handle
+     * @param switchPoint class-domain SwitchPoint captured before selection
      * @return guarded handle
      */
-    static MethodHandle applyMopSwitchPoints(final MethodHandle handle, final MethodHandle fallback, final Object receiver) {
-        return IndyInvalidation.classSwitchPointFor(receiver).guardWithTest(handle, fallback);
+    static MethodHandle applyMopSwitchPoints(final MethodHandle handle, final MethodHandle fallback, final SwitchPoint switchPoint) {
+        return switchPoint.guardWithTest(handle, fallback);
     }
 
     /**
@@ -560,10 +565,10 @@ public class IndyInterface {
      * predate the change while its construction-time stamp postdates it, so caching it
      * could dispatch stale until an unrelated future invalidation; the sentinel is stored
      * instead, forcing re-selection on the next hit. (SwitchPoint guards are immune to
-     * this race because the token is acquired during selection and mutated by the
-     * invalidation itself; the stamp is compared against a sample, so the sample must be
-     * taken on the far side of the selection.) Uncacheable selections store the sentinel
-     * as always. On a non-AOT site this is exactly the historical put.
+     * this race because the token is acquired before the selection reads any MOP state
+     * and mutated by the invalidation itself; the stamp is compared against a sample, so
+     * the sample must be taken on the far side of the selection.) Uncacheable selections
+     * store the sentinel as always. On a non-AOT site this is exactly the historical put.
      */
     static void putSelected(CacheableCallSite callSite, String className, MethodHandleWrapper mhw, long preSelectionStamp) {
         boolean selectionSpansInvalidation = callSite.isAotLinked() && AotDispatch.stamp() != preSelectionStamp;

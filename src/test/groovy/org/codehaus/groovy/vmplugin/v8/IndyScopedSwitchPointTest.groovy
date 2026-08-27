@@ -74,9 +74,25 @@ final class IndyScopedSwitchPointTest {
         def target = MethodHandles.constant(int, 1)
         def fallback = MethodHandles.constant(int, 2)
         def receiver = new ApplyHost()
-        def guarded = IndyInterface.applyMopSwitchPoints(target, fallback, receiver)
+        def guarded = IndyInterface.applyMopSwitchPoints(target, fallback, IndyInvalidation.classSwitchPointFor(receiver))
         assertEquals(1, guarded.invokeWithArguments())
         IndyInvalidation.invalidateClass(ApplyHost)
+        assertEquals(2, guarded.invokeWithArguments())
+    }
+
+    @Test
+    void applyMopSwitchPoints_preSelectionTokenSeesMidSelectionMutation() {
+        // Simulates a re-link racing a MetaClass change: the token is captured
+        // before selection reads MOP state, the class is invalidated while the
+        // (stale) target is being built, and the guard installed afterwards must
+        // route to the fallback — never publish the stale selection under the
+        // fresh SwitchPoint, where it would dispatch until the next mutation.
+        def stale = MethodHandles.constant(int, 1)
+        def fallback = MethodHandles.constant(int, 2)
+        def receiver = new ApplyHost()
+        def token = IndyInvalidation.classSwitchPointFor(receiver)
+        IndyInvalidation.invalidateClass(ApplyHost) // mutation lands mid-selection
+        def guarded = IndyInterface.applyMopSwitchPoints(stale, fallback, token)
         assertEquals(2, guarded.invokeWithArguments())
     }
 
@@ -87,7 +103,7 @@ final class IndyScopedSwitchPointTest {
         def target = MethodHandles.constant(int, 7)
         def fallback = MethodHandles.constant(int, 8)
         def receiver = new ApplyHost()
-        def viaInterface = IndyInterface.applyMopSwitchPoints(target, fallback, receiver)
+        def viaInterface = IndyInterface.applyMopSwitchPoints(target, fallback, IndyInvalidation.classSwitchPointFor(receiver))
         def viaInvalidation = IndyInvalidation.guardWithMopSwitchPoints(target, fallback, receiver)
         assertEquals(7, viaInterface.invokeWithArguments())
         assertEquals(7, viaInvalidation.invokeWithArguments())

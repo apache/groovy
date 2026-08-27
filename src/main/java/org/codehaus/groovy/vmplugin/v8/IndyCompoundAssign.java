@@ -19,6 +19,7 @@
 package org.codehaus.groovy.vmplugin.v8;
 
 import groovy.lang.MetaClass;
+import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -27,6 +28,7 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.SwitchPoint;
 
 /**
  * GEP-15: resolver for dynamic compound-assignment operators
@@ -123,7 +125,22 @@ public final class IndyCompoundAssign {
 
         if (receiver == null) return genericWrapper(assignName, baseName); // legacy helper handles null receiver
 
-        MetaClass mc = InvokerHelper.getMetaClass(receiver);
+        // Class-domain SwitchPoint token, captured before respondsTo/selection
+        // read MOP state (see IndyInterface.applyMopSwitchPoints). Re-capture
+        // when the token dies during metaclass resolution: lazy MetaClass
+        // creation bumps the class generation, so the first pass's token is
+        // born invalid and the next pass finds the cached instance. Bounded
+        // like Selector.captureTokenAndGetMetaClass — resolutions that
+        // re-create the MetaClass on every lookup can never yield a live
+        // token and fall through to the uncacheable legacy helper.
+        SwitchPoint mopSwitchPoint = null;
+        MetaClass mc = null;
+        for (int attempt = 0; attempt < 3 && mopSwitchPoint == null; attempt++) {
+            mopSwitchPoint = IndyInvalidation.classSwitchPointFor(receiver);
+            mc = InvokerHelper.getMetaClass(receiver);
+            if (mopSwitchPoint.hasBeenInvalidated()) mopSwitchPoint = null;
+        }
+        if (mopSwitchPoint == null) return genericWrapper(assignName, baseName);
         boolean useAssign;
         String name;
         if (!mc.respondsTo(receiver, assignName, new Object[]{arg}).isEmpty()) {
@@ -147,7 +164,7 @@ public final class IndyCompoundAssign {
         MethodHandle test = MethodHandles.insertArguments(GUARD, 0, rc, ac);
         MethodHandle guarded = MethodHandles.guardWithTest(test, invoke, elseTarget);
         // Per-class SwitchPoint, same domain as a normal indy call (GROOVY-12191).
-        guarded = IndyInterface.applyMopSwitchPoints(guarded, elseTarget, receiver);
+        guarded = IndyInterface.applyMopSwitchPoints(guarded, elseTarget, mopSwitchPoint);
 
         // Per-instance metaclasses make a class-keyed cache unsound, so mark such
         // shapes uncacheable (the wrapper is still used for the current call) —

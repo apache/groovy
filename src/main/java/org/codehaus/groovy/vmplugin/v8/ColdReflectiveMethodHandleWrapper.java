@@ -21,9 +21,7 @@ package org.codehaus.groovy.vmplugin.v8;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
-import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.codehaus.groovy.reflection.CachedMethod;
-import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
@@ -155,8 +153,10 @@ class ColdReflectiveMethodHandleWrapper extends MethodHandleWrapper {
             if (a instanceof Wrapper) return null; // cast markers need the full coercion path
             argClasses[i] = (a == null) ? null : a.getClass();
         }
-        Object receiver = arguments[0];
-        SwitchPoint classSp = ClassInfo.getClassInfo(IndyInvalidation.switchPointClassFor(receiver)).getIndySwitchPoint();
+        // the token the selector captured before selection read MOP state; a
+        // MetaClass change racing the selection has invalidated it, so
+        // isValidFor rejects the wrapper instead of serving the stale selection
+        SwitchPoint classSp = selector.mopSwitchPoint;
         return new ColdReflectiveMethodHandleWrapper(cm, callSite, sender, methodName, callID,
                 safeNavigation, thisCall, spreadCall, mc, classSp, argClasses);
     }
