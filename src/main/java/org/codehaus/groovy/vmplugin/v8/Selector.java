@@ -33,6 +33,7 @@ import groovy.lang.MetaProperty;
 import groovy.lang.MissingMethodException;
 import groovy.lang.ProxyMetaClass;
 import groovy.transform.Internal;
+import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -59,6 +60,7 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.SwitchPoint;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -171,6 +173,13 @@ public abstract class Selector {
      * Call-site category associated with this selector.
      */
     public CallType callType;
+
+    /**
+     * Receiver's class-domain MetaClass SwitchPoint, captured before
+     * selection reads MOP state (see {@code captureTokenAndGetMetaClass});
+     * {@code null} until then.
+     */
+    SwitchPoint mopSwitchPoint;
 
     /**
      * Cache values for read-only access
@@ -899,6 +908,37 @@ public abstract class Selector {
         }
 
         /**
+         * Captures the receiver's class-domain SwitchPoint into
+         * {@link #mopSwitchPoint} and resolves the metaclass under it,
+         * re-capturing when the token is invalidated by the resolution
+         * itself (lazy MetaClass creation bumps the class generation — the
+         * next pass finds the cached instance and converges) or by a racing
+         * MetaClass change. Selection thus starts with a token that was live
+         * after the metaclass reference was read: a change landing anywhere
+         * after that read invalidates the token, and the guard installed with
+         * it routes to the fallback and re-links, instead of publishing the
+         * stale selection under the post-change SwitchPoint where it would
+         * dispatch until an unrelated future invalidation.
+         * <p>
+         * The retry is bounded: some resolutions re-create the MetaClass on
+         * <em>every</em> lookup (e.g. ClosureMetaClass under
+         * {@code ExpandoMetaClass.enableGlobally()}, which
+         * {@code isValidWeakMetaClass} always rejects), each time bumping the
+         * generation, so no pass can ever end with a live token. Such
+         * selections degrade to uncacheable: no guards are installed and
+         * every call re-selects — always fresh, and free of the link-time
+         * livelock and the fallback recursion a dead-token guard would cause.
+         */
+        final void captureTokenAndGetMetaClass() {
+            for (int attempt = 0; attempt < 3; attempt++) {
+                mopSwitchPoint = IndyInvalidation.classSwitchPointFor(args[0]);
+                getMetaClass();
+                if (!mopSwitchPoint.hasBeenInvalidated()) return;
+            }
+            cache = false;
+        }
+
+        /**
          * Uses the metaclass to get a meta method for a method call.
          * There will be no meta method selected, if the metaclass is no MetaClassImpl
          * or the metaclass is an AdaptingMetaClass.
@@ -1290,8 +1330,10 @@ public abstract class Selector {
 
             // Per-class MetaClass SwitchPoint (GROOVY-12191). Category enter/leave
             // bulk-invalidates class SwitchPoints so sites re-link without a second
-            // hot-path guard.
-            handle = applyMopSwitchPoints(handle, fallback, receiver);
+            // hot-path guard. The token is the one captured before selection first
+            // read MOP state; cast paths that consulted none capture lazily here.
+            handle = applyMopSwitchPoints(handle, fallback,
+                    mopSwitchPoint != null ? mopSwitchPoint : IndyInvalidation.classSwitchPointFor(receiver));
             if (LOG_ENABLED) LOG.info("added class switch point guard");
 
             Predicate<Class<?>> nonFinalOrNullUnsafe = (t) -> {
@@ -1392,7 +1434,7 @@ public abstract class Selector {
          */
         void buildInvokeHandle() {
             if (!setNullForSafeNavigation() && !setInterceptor()) {
-                getMetaClass();
+                captureTokenAndGetMetaClass();
                 setSelectionBase();
                 MetaClassImpl mci = getMetaClassImpl(mc, callType != CallType.GET);
                 chooseMeta(mci);
@@ -1430,7 +1472,7 @@ public abstract class Selector {
                     || args[0] instanceof Class || args[0] instanceof GroovyInterceptable) {
                 return null;
             }
-            getMetaClass();
+            captureTokenAndGetMetaClass();
             if (!cache) return null; // e.g. per-instance metaclasses in play
             setSelectionBase();
             MetaClassImpl mci = getMetaClassImpl(mc, true);
