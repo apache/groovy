@@ -48,7 +48,9 @@ import static org.objectweb.asm.Opcodes.ACC_VOLATILE;
 
 final class ClassCompletionVerifierTest {
 
-    private final SourceUnit sourceUnit = SourceUnit.create("dummy.groovy", "");
+    // GROOVY-12306: these tests collect and count every error the verifier reports, so they need
+    // unlimited tolerance; the two-argument SourceUnit.create factory asks for fail-fast (1)
+    private final SourceUnit sourceUnit = SourceUnit.create("dummy.groovy", "", 0);
     private final ClassCompletionVerifier verifier = new ClassCompletionVerifier(sourceUnit);
 
     @Test
