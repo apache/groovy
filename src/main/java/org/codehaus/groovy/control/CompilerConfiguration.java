@@ -189,6 +189,14 @@ public class CompilerConfiguration {
     public static final String DEFAULT_SOURCE_ENCODING = "UTF-8";
 
     /**
+     * The default number of non-fatal errors tolerated before compilation is aborted.
+     *
+     * @see #setTolerance(int)
+     * @since 6.0.0
+     */
+    public static final int DEFAULT_TOLERANCE = 10;
+
+    /**
      *  A convenience for getting a default configuration.  Do not modify it!
      *  See {@link #CompilerConfiguration(Properties)} for an example on how to
      *  make a suitable copy to modify.  But if you're really starting from a
@@ -577,7 +585,7 @@ public class CompilerConfiguration {
     public CompilerConfiguration() {
         classpath = new LinkedList<>();
 
-        tolerance = 10;
+        tolerance = DEFAULT_TOLERANCE;
         minimumRecompilationInterval = 100;
         warningLevel = WarningMessage.LIKELY_ERRORS;
         parameters = getBooleanSafe("groovy.parameters");
@@ -952,8 +960,8 @@ public class CompilerConfiguration {
         text = configuration.getProperty("groovy.output.debug");
         if (text != null) setDebug("true".equalsIgnoreCase(text));
 
-        numeric = 10;
-        text = configuration.getProperty("groovy.errors.tolerance", "10");
+        numeric = DEFAULT_TOLERANCE;
+        text = configuration.getProperty("groovy.errors.tolerance", Integer.toString(DEFAULT_TOLERANCE));
         try {
             numeric = Integer.parseInt(text);
         } catch (NumberFormatException e) {
@@ -1139,7 +1147,9 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Returns the requested error tolerance.
+     * Returns the requested error tolerance. Zero or less means unlimited.
+     *
+     * @see #setTolerance(int)
      */
     public int getTolerance() {
         return this.tolerance;
@@ -1148,7 +1158,11 @@ public class CompilerConfiguration {
     /**
      * Sets the error tolerance, which is the number of
      * non-fatal errors (per unit) that should be tolerated before
-     * compilation is aborted.
+     * compilation is aborted. Defaults to {@value #DEFAULT_TOLERANCE}.
+     * <p>
+     * A value of zero or less means unlimited: every error is collected and
+     * reported, and compilation is never cut short by the error count alone
+     * (GROOVY-12306).
      */
     public void setTolerance(final int tolerance) {
         this.tolerance = tolerance;

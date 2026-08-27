@@ -122,11 +122,15 @@ public class ErrorCollector implements Serializable {
      * Adds a non-fatal error to the message set, which may cause a failure if the error threshold is exceeded.
      * The message is not required to have a source line and column specified, but it is best practice to try
      * and include that information.
+     * <p>
+     * A {@link CompilerConfiguration#getTolerance() tolerance} of zero or less means unlimited:
+     * every error is collected and the threshold never triggers a failure (GROOVY-12306).
      */
     public void addError(final Message message) throws CompilationFailedException {
         addErrorAndContinue(message);
 
-        if (errors != null && errors.size() >= configuration.getTolerance()) {
+        int tolerance = configuration.getTolerance();
+        if (tolerance > 0 && errors != null && errors.size() >= tolerance) {
             failIfErrors();
         }
     }

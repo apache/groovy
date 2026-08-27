@@ -266,6 +266,23 @@ public class FileSystemCompilerTest {
         assertFalse(Files.exists(dir.resolve("CliPhaseDemo.class")), "an earlier phase still writes no class files");
     }
 
+    // GROOVY-12306: -t 0 asks for unlimited error reporting; it used to be discarded as
+    // indistinguishable from the option being absent, silently leaving the default in place
+    @Test
+    public void testToleranceCommandLineOption() throws Exception {
+        assertEquals(CompilerConfiguration.DEFAULT_TOLERANCE, parseTolerance(),
+                "an absent -t must leave the compiler default in place");
+        assertEquals(0, parseTolerance("-t", "0"));
+        assertEquals(0, parseTolerance("--tolerance", "0"));
+        assertEquals(3, parseTolerance("-t", "3"));
+    }
+
+    private static int parseTolerance(String... args) throws Exception {
+        FileSystemCompiler.CompilationOptions options = new FileSystemCompiler.CompilationOptions();
+        FileSystemCompiler.configureParser(options).parseArgs(args);
+        return options.toCompilerConfiguration().getTolerance();
+    }
+
     @Test
     public void testDeleteRecursiveDoesNotFollowSymlink() throws Exception {
         File base = Files.createTempDirectory("deleteRecursiveSymlink").toFile();
