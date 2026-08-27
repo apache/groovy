@@ -557,7 +557,7 @@ public class FileSystemCompiler {
         @Option(names = {"--type-checked"}, description = "Use TypeChecked")
         private boolean typeChecked;
 
-        @Option(names = {"--check"}, description = "Check sources for errors without generating class files (stops compilation after static analysis)")
+        @Option(names = {"--check"}, description = "Check sources for errors without writing class files (runs every check, including class verification and bytecode generation)")
         private boolean checkOnly;
 
         /**
@@ -583,7 +583,8 @@ public class FileSystemCompiler {
             configuration.setSourceEncoding(encoding);
             configuration.setScriptBaseClass(scriptBaseClass);
             if (checkOnly) {
-                configuration.setTargetPhase(Phases.INSTRUCTION_SELECTION);
+                // do all phases except OUTPUT so that all checks are performed.
+                configuration.setTargetPhase(Phases.CLASS_GENERATION);
             }
             if (tolerance > 0) {
                 configuration.setTolerance(tolerance);

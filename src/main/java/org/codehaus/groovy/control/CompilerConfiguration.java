@@ -504,11 +504,16 @@ public class CompilerConfiguration {
 
     /**
      * The target compile phase: the last phase to be processed when
-     * {@link CompilationUnit#compile()} is called without an explicit phase
-     * (GROOVY-12204). Defaults to {@link Phases#ALL}. An earlier phase, such as
-     * {@link Phases#INSTRUCTION_SELECTION}, gives a check-only compilation
-     * which reports parse, resolution, and static type-checking errors without
-     * generating class files.
+     * {@link CompilationUnit#compile()} is called without an explicit phase.
+     * Defaults to {@link Phases#ALL}.
+     * <p>
+     * {@link Phases#CLASS_GENERATION} gives a check-only compilation: every check runs,
+     * but the class files are never written, because that happens in {@link Phases#OUTPUT}.
+     * This is what {@code groovyc --check} selects.
+     * <p>
+     * Earlier phases stop sooner and so report fewer errors. {@link Phases#INSTRUCTION_SELECTION}
+     * reports parse, resolution, and static type-checking errors, but not those raised
+     * during class verification or bytecode generation.
      */
     private int targetPhase = Phases.ALL;
 
@@ -1588,8 +1593,8 @@ public class CompilerConfiguration {
 
     /**
      * Gets the target compile phase: the last phase to be processed when
-     * {@link CompilationUnit#compile()} is called without an explicit phase
-     * (GROOVY-12204). Defaults to {@link Phases#ALL}.
+     * {@link CompilationUnit#compile()} is called without an explicit phase.
+     * Defaults to {@link Phases#ALL}.
      *
      * @return the target phase number, one of the {@link Phases} constants
      * @see #setTargetPhase(int)
@@ -1601,15 +1606,12 @@ public class CompilerConfiguration {
 
     /**
      * Sets the target compile phase: the last phase to be processed when
-     * {@link CompilationUnit#compile()} is called without an explicit phase
-     * (GROOVY-12204). Values outside
-     * the range of the {@link Phases} constants are clamped into range.
-     * Setting {@link Phases#INSTRUCTION_SELECTION} gives a check-only
-     * compilation, as used by the {@code groovyc --check} option: parse,
-     * resolution, and static type-checking errors are reported but no class
-     * files are generated. Callers that pass an explicit phase to
-     * {@link CompilationUnit#compile(int)}, such as the AST browser, are
-     * unaffected by this setting.
+     * {@link CompilationUnit#compile()} is called without an explicit phase.
+     * Values outside the range of the {@link Phases} constants are clamped into range.
+     * Setting {@link Phases#CLASS_GENERATION} gives a check-only
+     * compilation, as used by the {@code groovyc --check} option.
+     * Callers that pass an explicit phase to {@link CompilationUnit#compile(int)},
+     * such as the AST browser, are unaffected by this setting.
      *
      * @param targetPhase the target phase number, one of the {@link Phases} constants
      * @see #getTargetPhase()
