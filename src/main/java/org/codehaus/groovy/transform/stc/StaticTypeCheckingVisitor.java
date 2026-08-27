@@ -861,6 +861,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         boolean readOnly = !typeCheckingContext.isTargetOfEnclosingAssignment(expression);
         if (existsProperty(expression, readOnly)
                 || extension.handleUnresolvedProperty(expression)) {
+            if (readOnly) { // GROOVY-12305: record narrowed type of instanceof-guarded receiver for later use
+                ClassNode temporaryType = getInferredTypeFromTempInfo(expression, expression.getNodeMetaData(INFERRED_TYPE));
+                if (temporaryType != null && !isObjectType(temporaryType)) {
+                    expression.putNodeMetaData(INFERRED_TYPE, temporaryType);
+                }
+            }
             return; // resolved or excused
         }
         recordMissingProperty(expression);
@@ -7428,7 +7434,7 @@ out:    for (ClassNode type : todo) {
     }
 
     private ClassNode getInferredTypeFromTempInfo(final Expression expression, final ClassNode expressionType) {
-        if (expression instanceof VariableExpression && !isPrimitiveType(expressionType)) {
+        if ((expression instanceof VariableExpression || expression instanceof PropertyExpression) && !isPrimitiveType(expressionType)) {
             List<ClassNode> tempTypes = getTemporaryTypesForExpression(expression);
             if (!tempTypes.isEmpty()) {
                 ClassNode   superclass;
