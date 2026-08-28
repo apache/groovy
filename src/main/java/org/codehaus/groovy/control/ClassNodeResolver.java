@@ -445,20 +445,12 @@ public class ClassNodeResolver {
      * is not the requested name. {@code null} on the first-pass local is
      * “not attempted”, not {@link #ABSENT}.
      */
-    private static final class ClassFile {
+    private record ClassFile(DecompiledClassNode node, boolean mismatch) {
         static final ClassFile ABSENT = new ClassFile(null, false);
         static final ClassFile MISMATCH = new ClassFile(null, true);
 
-        private final DecompiledClassNode node;
-        private final boolean mismatch;
-
         static ClassFile of(final DecompiledClassNode node) {
             return new ClassFile(node, false);
-        }
-
-        private ClassFile(final DecompiledClassNode node, final boolean mismatch) {
-            this.node = node;
-            this.mismatch = mismatch;
         }
     }
 
