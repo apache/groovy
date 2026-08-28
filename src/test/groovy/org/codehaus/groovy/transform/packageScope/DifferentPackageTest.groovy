@@ -367,7 +367,8 @@ final class DifferentPackageTest {
                 '''
             )
         }
-        assert err.message =~ /Access to p.One#value is forbidden/
+        // GROOVY-12314: rejected by the type checker, no longer during class generation
+        assert err.message =~ /No such property: value for class: p.One/
     }
 
     // GROOVY-9093
@@ -431,7 +432,8 @@ final class DifferentPackageTest {
                 '''
             )
         }
-        assert err.message =~ /Access to p.One#CONST is forbidden/
+        // GROOVY-12314: rejected by the type checker, no longer during class generation
+        assert err.message =~ /No such property: CONST for Class or static property for class: p.One/
     }
 
     @Test
