@@ -308,6 +308,39 @@ import static groovy.test.GroovyAssert.shouldFail
         """
     }
 
+    // GROOVY-5001, GROOVY-5491, GROOVY-11367, GROOVY-12314
+    @ParameterizedTest @ValueSource(strings=['','static'])
+    void testMapSubclassPropertyAccess(String mode) {
+        assertScript """import groovy.transform.*
+            class M extends HashMap { // just like GROOVY-662, GROOVY-8065, GROOVY-8074
+                def           $mode v = 'v'
+                public        $mode w = 'w'
+                protected     $mode x = 'x'
+                @PackageScope $mode y = 'y'
+                private       $mode z = 'z'
+            }
+
+            def map = new M()
+            assert map.v == 'v'  // property accessor before map entry
+            assert map.w == 'w'  // public field before map entry
+            assert map.x == null // non-public field: map entry, even though absent
+            assert map.y == null // and even though the caller is in the same package
+            assert map.z == null
+
+            ['v','w','x','y','z'].each { map.put(it, 'entry') }
+
+            assert map.v == 'v'
+            assert map.w == 'w'
+            assert map.x == 'entry'
+            assert map.y == 'entry'
+            assert map.z == 'entry'
+
+            assert map.@x == 'x' // attribute access still reaches the field
+            assert map.@y == 'y'
+            assert map.@z == 'z'
+        """
+    }
+
     @Test
     void testMapLeftShift() {
         def map = [a:1, b:2]

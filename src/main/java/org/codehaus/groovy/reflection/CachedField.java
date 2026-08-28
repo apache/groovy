@@ -46,10 +46,19 @@ public class CachedField extends MetaProperty {
     }
 
     private final Field field;
-    private boolean madeAccessible;
+    private volatile boolean madeAccessible;
+    private boolean accessAttempted; // guarded by synchronization on this
     private void makeAccessible() {
-        ReflectionUtils.makeAccessibleInPrivilegedAction(field);
-        madeAccessible = true;
+        // at most one attempt, remembering either outcome: a failed attempt (strongly
+        // encapsulated declaring class) cannot succeed later. The attempt is recorded
+        // only once it has completed, under synchronization, so a concurrent caller
+        // waits instead of reading the field before setAccessible has taken effect.
+        synchronized (this) {
+            if (!accessAttempted) {
+                madeAccessible = ReflectionUtils.makeAccessibleInPrivilegedAction(field).isPresent();
+                accessAttempted = true;
+            }
+        }
     }
 
     /**

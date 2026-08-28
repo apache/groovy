@@ -367,7 +367,8 @@ final class DifferentPackageTest {
                 '''
             )
         }
-        assert err.message =~ /Access to p.One#value is forbidden/
+        // GROOVY-12314: rejected by the type checker as an access violation, no longer during class generation
+        assert err.message =~ /Cannot access field: value of class: p.One from class: q.Two/
     }
 
     // GROOVY-9093
@@ -431,7 +432,8 @@ final class DifferentPackageTest {
                 '''
             )
         }
-        assert err.message =~ /Access to p.One#CONST is forbidden/
+        // GROOVY-12314: rejected by the type checker as an access violation, no longer during class generation
+        assert err.message =~ /Cannot access field: CONST of class: p.One from class: q.Other/
     }
 
     @Test

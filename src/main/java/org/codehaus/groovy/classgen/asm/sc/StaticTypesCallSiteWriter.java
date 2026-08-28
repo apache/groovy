@@ -61,7 +61,6 @@ import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.COLLECTION_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Iterator_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
@@ -123,7 +122,6 @@ import static org.objectweb.asm.Opcodes.PUTSTATIC;
 public class StaticTypesCallSiteWriter extends CallSiteWriter {
 
     private static final ClassNode  INVOKERHELPER_TYPE = ClassHelper.make(InvokerHelper.class);
-    private static final MethodNode COLLECTION_SIZE_METHOD = COLLECTION_TYPE.getMethod("size", Parameter.EMPTY_ARRAY);
     private static final MethodNode MAP_GET_METHOD = MAP_TYPE.getMethod("get", new Parameter[]{new Parameter(OBJECT_TYPE, "key")});
     private static final MethodNode GROOVYOBJECT_GETPROPERTY_METHOD = GROOVY_OBJECT_TYPE.getMethod("getProperty", new Parameter[]{new Parameter(STRING_TYPE, "propertyName")});
     private static final MethodNode INVOKERHELPER_GETPROPERTY_METHOD = INVOKERHELPER_TYPE.getMethod("getProperty", new Parameter[]{new Parameter(OBJECT_TYPE, "object"), new Parameter(STRING_TYPE, "propertyName")});
@@ -175,14 +173,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             controller.getMethodVisitor().visitInsn(ARRAYLENGTH);
             controller.getOperandStack().replace(int_TYPE);
             return;
-        } else if (isOrImplements(receiverType, COLLECTION_TYPE) && ("size".equals(propertyName) || "length".equals(propertyName))) {
-            MethodCallExpression expr = callX(receiver, "size");
-            expr.setMethodTarget(COLLECTION_SIZE_METHOD);
-            expr.setImplicitThis(implicitThis);
-            expr.setSafe(safe);
-            expr.visit(controller.getAcg());
-            return;
         }
+        // GROOVY-12314: no special case for "size"/"length" on Collection receivers: the
+        // type checker no longer admits either name unless a genuine member backs it, and
+        // rewriting an admitted member to size() produced silently wrong values
 
         if (makeGetPropertyWithGetter(receiver, receiverType, propertyName, safe, implicitThis)) return;
 
@@ -883,8 +877,16 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
     }*/
 
     private void addPropertyAccessError(final Expression receiver, final String propertyName, final ClassNode receiverType) {
-        String receiverName = (receiver instanceof ClassExpression ? receiver.getType() : receiverType).toString(false);
-        String message = "Access to " + receiverName + "#" + propertyName + " is forbidden";
-        controller.getSourceUnit().addError(new SyntaxException(message, receiver));
+        ClassNode receiverNode = (receiver instanceof ClassExpression ? receiver.getType() : receiverType);
+        // GROOVY-12314: report a placeholder's erasure, not "E"; an unconditional redirect would
+        // instead degrade a parameterized receiver to its declaration's type parameters ("List<E>")
+        if (receiverNode.isGenericsPlaceHolder()) receiverNode = receiverNode.redirect();
+        String message = "Access to " + receiverNode.toString(false) + "#" + propertyName + " is forbidden";
+        int line = receiver.getLineNumber(), column = receiver.getColumnNumber();
+        if (line < 1) { // GROOVY-12314: synthetic receiver: fall back to the current statement position
+            line = controller.getLineNumber();
+            column = 1;
+        }
+        controller.getSourceUnit().addError(new SyntaxException(message, line, column));
     }
 }

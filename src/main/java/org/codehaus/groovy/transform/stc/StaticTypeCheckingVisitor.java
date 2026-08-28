@@ -892,6 +892,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void recordMissingProperty(final PropertyExpression expression) {
+        FieldNode inaccessibleField = expression.getNodeMetaData("inaccessible field");
+        if (inaccessibleField != null) { // GROOVY-12314: the property exists but Java access rules reject it
+            addStaticTypeError("Cannot access field: " + inaccessibleField.getName() + " of class: " + prettyPrintTypeName(inaccessibleField.getDeclaringClass())
+                    + " from class: " + prettyPrintTypeName(typeCheckingContext.getEnclosingClassNode()), expression.getLineNumber() > 0 ? expression : expression.getProperty());
+            return;
+        }
+
         var objectExpression = expression.getObjectExpression();
         var objectExpressionType = findCurrentInstanceOfClass(objectExpression, getType(objectExpression));
 
@@ -2482,6 +2489,21 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         return false;
     }
 
+    /**
+     * Determines if the given type itself may be referenced from the accessor
+     * (JLS 6.6.1): a member of an inaccessible type is out of reach no matter
+     * what the member's own modifiers say, because resolving any reference to
+     * the type fails first. A nested type is accessible when its enclosing
+     * type is and its own modifiers admit the accessor.
+     */
+    private static boolean hasAccessToClass(final ClassNode accessor, final ClassNode type) {
+        ClassNode outer = type.getOuterClass();
+        if (outer != null && !hasAccessToClass(accessor, outer)) {
+            return false;
+        }
+        return hasAccessToMember(accessor, outer != null ? outer : type, type.getModifiers());
+    }
+
     private ClassNode getTypeForMultiValueExpression(final ClassNode compositeType, final Expression prop) {
         GenericsType[] gts = compositeType.getGenericsTypes();
         ClassNode itemType = (gts != null && gts.length == 1 ? getCombinedBoundType(gts[0]) : OBJECT_TYPE);
@@ -2594,19 +2616,27 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * Determines if the field can back the given property (or attribute)
      * expression: accessible by Java rules, or admitted by the receiver-type
      * leniency (GROOVY-7300, GROOVY-11358) that models dynamic Groovy's
-     * permissive private access. Since GROOVY-12290 that leniency no longer
-     * admits plain property syntax to a private field of a foreign nest — a
+     * permissive private access. Since GROOVY-12290 (private) and GROOVY-12314
+     * (package-private, protected) that leniency no longer admits plain property
+     * syntax to a field of a foreign nest that Java rules would reject — a
      * direct field access that static compilation cannot honour (no access
      * bridge exists). The deliberate dynamic escape hatches remain: attribute
      * access (.@), and closure bodies (GROOVY-9195) — including delegate-resolved
      * access — whose property dispatch stays dynamic-capable under static compilation.
      */
     private boolean isFieldAccessible(final FieldNode field, final ClassNode receiver, final PropertyExpression expression, final String delegationData) {
+        // GROOVY-12310: when the qualifying type itself is out of reach (e.g. a public
+        // enum constant of a package-private nested enum), no static emission can name
+        // it -- the JVM rejects the class resolution before it looks at the member
+        if (!hasAccessToClass(typeCheckingContext.getEnclosingClassNode(), receiver)) {
+            return false;
+        }
         boolean superField = isSuperExpression(expression.getObjectExpression());
         boolean exactReceiver = (!superField && receiver.equals(field.getDeclaringClass()) && !field.getDeclaringClass().isAbstract()); // GROOVY-7300, GROOVY-11358
-        if (exactReceiver && field.isPrivate() && delegationData == null
+        if (exactReceiver && delegationData == null
                 && typeCheckingContext.getEnclosingClosure() == null
                 && !(expression instanceof AttributeExpression)
+                && !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), field.getDeclaringClass(), field.getModifiers()) // GROOVY-12314
                 && !inSameNest(field.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode())) {
             exactReceiver = false; // GROOVY-12290
         }
@@ -2619,7 +2649,15 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (!accessible) {
             if (expressionToStoreOn instanceof AttributeExpression) {
                 addStaticTypeError("Cannot access field: " + field.getName() + " of class: " + prettyPrintTypeName(field.getDeclaringClass()), expressionToStoreOn.getProperty());
-            } else if (!field.isProtected()) { // private or package-private
+            } else { // GROOVY-12314: fall through to accessor, extension or map/list resolution
+                // remember a rejected package-private or protected field declared by the
+                // receiver's own class: if nothing else resolves the property, the error
+                // reports the access violation rather than a missing property. A private
+                // field stays hidden (GROOVY-12290), and an inaccessible inherited field is
+                // not a member of the subclass (JLS 8.2; GROOVY-9093, GROOVY-9293).
+                if (!field.isPrivate() && receiver.equals(field.getDeclaringClass())) {
+                    expressionToStoreOn.putNodeMetaData("inaccessible field", field);
+                }
                 return false;
             }
         }
