@@ -877,8 +877,14 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
     }*/
 
     private void addPropertyAccessError(final Expression receiver, final String propertyName, final ClassNode receiverType) {
-        String receiverName = (receiver instanceof ClassExpression ? receiver.getType() : receiverType).toString(false);
-        String message = "Access to " + receiverName + "#" + propertyName + " is forbidden";
-        controller.getSourceUnit().addError(new SyntaxException(message, receiver));
+        ClassNode receiverNode = (receiver instanceof ClassExpression ? receiver.getType() : receiverType);
+        if (receiverNode.isGenericsPlaceHolder()) receiverNode = receiverNode.redirect(); // GROOVY-12314: report the erasure, not "E"
+        String message = "Access to " + receiverNode.toString(false) + "#" + propertyName + " is forbidden";
+        int line = receiver.getLineNumber(), column = receiver.getColumnNumber();
+        if (line < 1) { // GROOVY-12314: synthetic receiver: fall back to the current statement position
+            line = controller.getLineNumber();
+            column = 1;
+        }
+        controller.getSourceUnit().addError(new SyntaxException(message, line, column));
     }
 }
