@@ -47,9 +47,28 @@ public class CachedField extends MetaProperty {
 
     private final Field field;
     private boolean madeAccessible;
+    private Boolean accessEstablishable;
     private void makeAccessible() {
         ReflectionUtils.makeAccessibleInPrivilegedAction(field);
         madeAccessible = true;
+    }
+
+    /**
+     * Determines if reflective access to the underlying field can actually be
+     * established: accessibility has already been forced, or forcing it can
+     * succeed (the declaring class lives in an open package or module). A
+     * non-public field of a strongly encapsulated class — e.g. a JDK class
+     * without {@code --add-opens} — reports {@code false}, which lets the MOP
+     * treat the field as absent instead of failing when it is read or written.
+     *
+     * @since 6.0.0
+     */
+    public boolean isAccessEstablishable() {
+        if (madeAccessible) return true;
+        if (accessEstablishable == null) {
+            accessEstablishable = ReflectionUtils.checkCanSetAccessible(field, CachedField.class);
+        }
+        return accessEstablishable;
     }
 
     /**

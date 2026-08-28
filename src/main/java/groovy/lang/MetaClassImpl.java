@@ -2221,6 +2221,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param useSuper whether the lookup should start at the super class
      * @return the effective readable meta property
      */
+    /**
+     * GROOVY-12314: a non-public field whose access cannot be established (e.g.
+     * one declared by a strongly encapsulated JDK class) would only fail when it
+     * is read or written, so treat it as absent and let the normal missing-member
+     * handling apply instead.
+     */
+    private static boolean isAccessEstablishable(final MetaProperty mp) {
+        return !(mp instanceof CachedField cf) || cf.isAccessEstablishable();
+    }
+
     public MetaProperty getEffectiveGetMetaProperty(final Class sender, final Object object, final String name, final boolean useSuper) {
 
         //----------------------------------------------------------------------
@@ -2271,7 +2281,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             //------------------------------------------------------------------
             // non-public field
             //------------------------------------------------------------------
-            if (prop != null) {
+            if (prop != null && isAccessEstablishable(prop)) { // GROOVY-12314
                 return prop;
             }
         }
@@ -3021,11 +3031,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (mp instanceof MetaBeanProperty mbp) {
                 method = mbp.getSetter();
                 MetaProperty f = mbp.getField();
+                if (f != null && !isAccessEstablishable(f)) f = null; // GROOVY-12314
                 if (method != null || (f != null && !f.isFinal())) {
                     arguments = new Object[]{newValue};
                     field = f;
                 }
-            } else {
+            } else if (isAccessEstablishable(mp)) { // GROOVY-12314
                 field = mp;
             }
         }
@@ -3226,6 +3237,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (mp instanceof MetaBeanProperty mbp) {
                 mp = mbp.getField();
             }
+            if (mp != null && !isAccessEstablishable(mp)) { // GROOVY-12314: unreachable field reports missing
+                mp = null;
+            }
             try {
                 // delegate the get operation to the metaproperty
                 if (mp != null) return mp.getProperty(object);
@@ -3266,6 +3280,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (mp != null) {
             if (mp instanceof MetaBeanProperty mbp) {
                 mp = mbp.getField();
+            }
+            if (mp != null && !isAccessEstablishable(mp)) { // GROOVY-12314: unreachable field reports missing
+                mp = null;
             }
             if (mp != null) {
                 mp.setProperty(object, newValue);

@@ -443,7 +443,9 @@ public abstract class Selector {
                     MethodHandles.Lookup lookup = ((Java8) VMPluginFactory.getPlugin()).newLookup(sender);
                     handle = ((CachedField) mp).asAccessMethod(lookup);
                 } catch (IllegalAccessException e) {
-                    throw new GroovyBugError(e);
+                    // GROOVY-12314: refusal is an access-control outcome, not an internal
+                    // error; invoke the MetaProperty generically like any other property
+                    handle = META_PROPERTY_GETTER.bindTo(mp);
                 }
             } else {
                 handle = META_PROPERTY_GETTER.bindTo(mp);
@@ -610,7 +612,9 @@ public abstract class Selector {
                 handle = field.asWriteAccessMethod(lookup);
                 if (LOG_ENABLED) LOG.info("direct field write handle set for property write");
             } catch (IllegalAccessException e) {
-                throw new GroovyBugError(e);
+                // GROOVY-12314: refusal is an access-control outcome, not an internal
+                // error; leave handle unset so the sender-aware adapter path applies
+                if (LOG_ENABLED) LOG.info("direct field write refused, using adapter path");
             }
         }
 
