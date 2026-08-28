@@ -143,15 +143,14 @@ The default resolver prefers ASM decompilation of a `.class` resource so a
 type can be described without linking it in the JVM — a class whose
 superclass or a referenced type is missing, or is still only groovy source
 in this compilation unit, can still be represented. Class-loader lookup is
-the fallback when decompilation is disabled or the class exists only in
-memory. `NoClassDefFoundError` on that fallback means the class was found
-but could not be linked: matching bytecode is decompiled once so a
-`ClassNode` can still be produced; a groovy source replaces that node only
-when the `.class` came from another class loader and the source is newer
-(`URLStreams.getLastModified`, shared with
-`GroovyClassLoader.isSourceNewer`). A `.class` resource whose bytecode
-name does not match is not this class. An unrecoverable error is not
-cached as a miss.
+a separate strategy, used when ASM is off or the type exists only in
+memory. The four-mode matrix (`asmResolving` × `classLoaderResolving`)
+and the rules for script fallback, class-format errors, and
+`NoClassDefFoundError` live on
+`org.codehaus.groovy.control.ClassNodeResolver`. When a groovy source is
+also found for a class that came from another class loader, timestamps
+are compared (`URLStreams.getLastModified`, shared with
+`GroovyClassLoader.isSourceNewer`).
 
 ### Static type checker (phase 6)
 
