@@ -2225,7 +2225,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * GROOVY-12314: a non-public field whose access cannot be established (e.g.
      * one declared by a strongly encapsulated JDK class) would only fail when it
      * is read or written, so treat it as absent and let the normal missing-member
-     * handling apply instead.
+     * handling apply instead. (The indy property-get path separately retries an
+     * inherited protected field through the sender's own lookup: see the
+     * GROOVY-12314 fallback in Selector.PropertySelector#chooseMeta.)
      */
     private static boolean isAccessEstablishable(final MetaProperty mp) {
         return !(mp instanceof CachedField cf) || cf.isAccessEstablishable();

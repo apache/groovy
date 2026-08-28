@@ -448,8 +448,30 @@ public abstract class Selector {
                     handle = META_PROPERTY_GETTER.bindTo(mp);
                 }
             } else {
+                // GROOVY-12314: the effective lookup skips fields whose access reflection
+                // cannot force, but this sender's own lookup may still reach an inherited
+                // protected (or same-package) field, e.g. FilterReader#in from a subclass
+                MetaProperty rawMp = mci.getMetaProperty(name);
+                if (rawMp instanceof CachedField cf && !cf.isStatic()
+                        && !cf.isAccessEstablishable() && senderPassesJavaAccessRules(cf)) {
+                    try {
+                        @SuppressWarnings("removal")
+                        MethodHandles.Lookup lookup = ((Java8) VMPluginFactory.getPlugin()).newLookup(sender);
+                        handle = cf.asAccessMethod(lookup);
+                        return;
+                    } catch (IllegalAccessException ignore) {
+                        // fall through to the generic MetaProperty invocation
+                    }
+                }
                 handle = META_PROPERTY_GETTER.bindTo(mp);
             }
+        }
+
+        private boolean senderPassesJavaAccessRules(final CachedField cf) {
+            int modifiers = cf.getModifiers();
+            Class<?> declarer = cf.getDeclaringClass();
+            if (Modifier.isProtected(modifiers) && declarer.isAssignableFrom(sender)) return true;
+            return !Modifier.isPrivate(modifiers) && sender.getPackageName().equals(declarer.getPackageName());
         }
 
         private boolean isMarkedInternal(Method reflectionMethod) {
