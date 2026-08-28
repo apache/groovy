@@ -1956,6 +1956,42 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'No such property: modCount for class: java.util.ArrayList'
     }
 
+    // GROOVY-12314: "size" and "length" are methods, not properties, of collections
+    @Test
+    void testCollectionSizeIsNotAProperty() {
+        shouldFailWithMessages '''
+            List list = [1, 2]
+            list.size
+        ''',
+        'No such property: size for class: java.util.ArrayList'
+
+        shouldFailWithMessages '''
+            List list = [1, 2]
+            list.length
+        ''',
+        'No such property: length for class: java.util.ArrayList'
+    }
+
+    // GROOVY-12314: a public field named "size" or "length" on a Java collection
+    // type is honoured; it is not rewritten to Collection#size()
+    @Test
+    void testPublicSizeOrLengthFieldOfCollectionType() {
+        assertScript '''
+            def j = new bugs.Groovy12314Support()
+            j.add(1)
+            assert j.size == 42
+            assert j.length == 99
+        '''
+        assertScript '''
+            class SizedGroovy extends ArrayList<Object> {
+                public int size = 42
+            }
+            def g = new SizedGroovy()
+            g.add(1)
+            assert g.size == 42
+        '''
+    }
+
     // GROOVY-12314: Java access rules still admit these
     @Test
     void testAccessibleNonPublicFieldViaPropertySyntax() {
