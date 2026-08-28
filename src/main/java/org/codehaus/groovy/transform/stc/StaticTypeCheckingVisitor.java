@@ -2563,8 +2563,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * Determines if the field can back the given property (or attribute)
      * expression: accessible by Java rules, or admitted by the receiver-type
      * leniency (GROOVY-7300, GROOVY-11358) that models dynamic Groovy's
-     * permissive private access. Since GROOVY-12290 that leniency no longer
-     * admits plain property syntax to a private field of a foreign nest — a
+     * permissive private access. Since GROOVY-12290 (private) and GROOVY-12314
+     * (package-private, protected) that leniency no longer admits plain property
+     * syntax to a field of a foreign nest that Java rules would reject — a
      * direct field access that static compilation cannot honour (no access
      * bridge exists). The deliberate dynamic escape hatches remain: attribute
      * access (.@), and closure bodies (GROOVY-9195) — including delegate-resolved
@@ -2573,9 +2574,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     private boolean isFieldAccessible(final FieldNode field, final ClassNode receiver, final PropertyExpression expression, final String delegationData) {
         boolean superField = isSuperExpression(expression.getObjectExpression());
         boolean exactReceiver = (!superField && receiver.equals(field.getDeclaringClass()) && !field.getDeclaringClass().isAbstract()); // GROOVY-7300, GROOVY-11358
-        if (exactReceiver && field.isPrivate() && delegationData == null
+        if (exactReceiver && delegationData == null
                 && typeCheckingContext.getEnclosingClosure() == null
                 && !(expression instanceof AttributeExpression)
+                && !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), field.getDeclaringClass(), field.getModifiers()) // GROOVY-12314
                 && !inSameNest(field.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode())) {
             exactReceiver = false; // GROOVY-12290
         }
@@ -2588,7 +2590,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (!accessible) {
             if (expressionToStoreOn instanceof AttributeExpression) {
                 addStaticTypeError("Cannot access field: " + field.getName() + " of class: " + prettyPrintTypeName(field.getDeclaringClass()), expressionToStoreOn.getProperty());
-            } else if (!field.isProtected()) { // private or package-private
+            } else { // GROOVY-12314: fall through to accessor, extension or map/list resolution
                 return false;
             }
         }

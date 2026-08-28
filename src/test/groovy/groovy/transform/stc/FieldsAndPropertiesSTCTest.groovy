@@ -1935,6 +1935,47 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12314: package-private and protected fields that Java access rules
+    // reject are not admitted via property syntax either; at runtime the dynamic
+    // MOP treats such strongly encapsulated fields as absent
+    @Test
+    void testNonPublicForeignFieldViaPropertySyntax() {
+        shouldFailWithMessages '''
+            def m(ArrayList list) { list.modCount }   // protected, java.util.AbstractList
+        ''',
+        'No such property: modCount for class: java.util.ArrayList'
+
+        shouldFailWithMessages '''
+            def m(ArrayList list) { list.elementData } // package-private, java.util.ArrayList
+        ''',
+        'No such property: elementData for class: java.util.ArrayList'
+
+        shouldFailWithMessages '''
+            def m(ArrayList list) { list.modCount = 1 }
+        ''',
+        'No such property: modCount for class: java.util.ArrayList'
+    }
+
+    // GROOVY-12314: Java access rules still admit these
+    @Test
+    void testAccessibleNonPublicFieldViaPropertySyntax() {
+        assertScript '''
+            class A { protected int x = 1 }
+            class B extends A { def m() { x + this.x } }
+            assert new B().m() == 2
+        '''
+        assertScript '''
+            class A { protected int x = 1 }
+            class B { def m(A a) { a.x } } // same package
+            assert new B().m(new A()) == 1
+        '''
+        assertScript '''
+            class A { @groovy.transform.PackageScope int x = 1 }
+            class B { def m(A a) { a.x } } // same package
+            assert new B().m(new A()) == 1
+        '''
+    }
+
     // GROOVY-5737
     @Test
     void testGeneratedFieldAccessInClosure() {
