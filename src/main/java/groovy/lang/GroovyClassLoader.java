@@ -171,6 +171,7 @@ public class GroovyClassLoader extends URLClassLoader {
             // Keep the same default source encoding as #parseClass(InputStream,String)
             // TODO Should we use CompilerConfiguration.DEFAULT_SOURCE_ENCODING instead?
             .orElseGet(() -> groovy.util.CharsetToolkit.getDefaultSystemCharset().name());
+        this.recompile = null;
     }
 
     //--------------------------------------------------------------------------
