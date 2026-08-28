@@ -438,12 +438,16 @@ public abstract class Selector {
                 insertName = true; // pass "name" field as argument
             } else if (mp instanceof CachedField && !mp.isStatic()) {
                 try {
-                    // GROOVY-9144, GROOVY-9596: get lookup for sender and unreflect before forcing access
-                    @SuppressWarnings("removal")
-                    MethodHandles.Lookup lookup = ((Java8) VMPluginFactory.getPlugin()).newLookup(sender);
-                    handle = ((CachedField) mp).asAccessMethod(lookup);
+                    // GROOVY-9144, GROOVY-9596: unreflect against the call-site lookup before
+                    // forcing access; the lookup carries the caller's own access rights, exactly
+                    // as the bytecode a Java compiler would emit, so it may still reach e.g. an
+                    // inherited protected field (FilterReader#in from a subclass)
+                    handle = ((CachedField) mp).asAccessMethod(callSite.getLookup());
                 } catch (IllegalAccessException e) {
-                    throw new GroovyBugError(e);
+                    // GROOVY-12314: refusal is an access-control outcome, not an internal
+                    // error; leave the handle unset so the full MOP path applies -- it
+                    // retries the reflective route and converts a reflective failure
+                    // into the normal missing-member handling
                 }
             } else {
                 handle = META_PROPERTY_GETTER.bindTo(mp);
@@ -604,13 +608,13 @@ public abstract class Selector {
                                               : TypeHelper.getWrapperClass(fieldType).isInstance(value);
             if (!accepts) return; // needs coercion: adapter path
             try {
-                // like the property-get field path: lookup for the sender, then unreflect
-                @SuppressWarnings("removal")
-                MethodHandles.Lookup lookup = ((Java8) VMPluginFactory.getPlugin()).newLookup(sender);
-                handle = field.asWriteAccessMethod(lookup);
+                // like the property-get field path: unreflect against the call-site lookup
+                handle = field.asWriteAccessMethod(callSite.getLookup());
                 if (LOG_ENABLED) LOG.info("direct field write handle set for property write");
             } catch (IllegalAccessException e) {
-                throw new GroovyBugError(e);
+                // GROOVY-12314: refusal is an access-control outcome, not an internal
+                // error; leave handle unset so the sender-aware adapter path applies
+                if (LOG_ENABLED) LOG.info("direct field write refused, using adapter path");
             }
         }
 

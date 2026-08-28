@@ -1451,7 +1451,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         Object value = null;
         if (!(metaProperty instanceof ReadOnlyMetaProperty)) {
-            value = metaProperty.getProperty(object);
+            try {
+                value = metaProperty.getProperty(object);
+            } catch (GroovyRuntimeException gre) {
+                // GROOVY-12314: a field the reflective path cannot force access to
+                // (strongly encapsulated declaring class) is treated as absent
+                if (!(gre.getCause() instanceof IllegalAccessException)) throw gre;
+            }
         } else if (object instanceof Map<?, ?> map) {
             value = map.get(methodName);
         } else if (object instanceof Script script) {
@@ -3071,8 +3077,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 && (!isMap || isStatic // GROOVY-8065
                     || field.isPublic())) { // GROOVY-11367
             if (!field.isFinal()) {
-                field.setProperty(object, newValue);
-                return;
+                try {
+                    field.setProperty(object, newValue);
+                    return;
+                } catch (GroovyRuntimeException gre) {
+                    // GROOVY-12314: the reflective path cannot force access (strongly
+                    // encapsulated declaring class): continue as if the field were absent
+                    if (!(gre.getCause() instanceof IllegalAccessException)) throw gre;
+                }
             } else {
                 throw new ReadOnlyPropertyException(name, theClass); // GROOVY-5985
             }
@@ -3229,6 +3241,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             try {
                 // delegate the get operation to the metaproperty
                 if (mp != null) return mp.getProperty(object);
+            } catch (GroovyRuntimeException gre) {
+                // GROOVY-12314: a field the reflective path cannot force access to
+                // (strongly encapsulated declaring class) reports missing instead
+                if (!(gre.getCause() instanceof IllegalAccessException)) {
+                    throw new GroovyRuntimeException("Cannot read field: " + attribute, gre);
+                }
             } catch (Exception e) {
                 throw new GroovyRuntimeException("Cannot read field: " + attribute, e);
             }
@@ -3268,8 +3286,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 mp = mbp.getField();
             }
             if (mp != null) {
-                mp.setProperty(object, newValue);
-                return;
+                try {
+                    mp.setProperty(object, newValue);
+                    return;
+                } catch (GroovyRuntimeException gre) {
+                    // GROOVY-12314: a field the reflective path cannot force access to
+                    // (strongly encapsulated declaring class) reports missing instead
+                    if (!(gre.getCause() instanceof IllegalAccessException)) throw gre;
+                }
             }
         }
 
