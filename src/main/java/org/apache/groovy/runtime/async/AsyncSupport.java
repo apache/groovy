@@ -44,6 +44,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -448,14 +449,21 @@ public class AsyncSupport {
     public static <T> Awaitable<T> orTimeout(Object source, long timeout, TimeUnit unit) {
         CompletableFuture<T> future = (CompletableFuture<T>) Awaitable.from(source).toCompletableFuture();
         CompletableFuture<T> result = new CompletableFuture<>();
+        AtomicBoolean timedOut = new AtomicBoolean();
         ScheduledFuture<?> timer = AsyncExecutors.getScheduler().schedule(() -> {
-            if (!result.isDone()) {
-                result.completeExceptionally(new TimeoutException("Timed out after " + timeout + " " + unit));
-                future.cancel(true);
+            if (!result.isDone() && timedOut.compareAndSet(false, true)) {
+                // withdraw the source before failing the result, so a consuming
+                // source (a channel receive or select) cannot take a value the
+                // caller will never see; a source that refuses the cancellation
+                // has already committed to a value and completes the result itself
+                if (future.cancel(true)) {
+                    result.completeExceptionally(new TimeoutException("Timed out after " + timeout + " " + unit));
+                }
             }
         }, timeout, unit);
         future.whenComplete((v, e) -> {
             timer.cancel(false);
+            if (e instanceof CancellationException && timedOut.get()) return; // our own cancellation
             if (e != null) result.completeExceptionally(e);
             else result.complete(v);
         });
@@ -475,14 +483,17 @@ public class AsyncSupport {
     public static <T> Awaitable<T> completeOnTimeout(Object source, T fallback, long timeout, TimeUnit unit) {
         CompletableFuture<T> future = (CompletableFuture<T>) Awaitable.from(source).toCompletableFuture();
         CompletableFuture<T> result = new CompletableFuture<>();
+        AtomicBoolean timedOut = new AtomicBoolean();
         ScheduledFuture<?> timer = AsyncExecutors.getScheduler().schedule(() -> {
-            if (!result.isDone()) {
-                result.complete(fallback);
-                future.cancel(true);
+            if (!result.isDone() && timedOut.compareAndSet(false, true)) {
+                if (future.cancel(true)) { // see orTimeout: withdraw the source first
+                    result.complete(fallback);
+                }
             }
         }, timeout, unit);
         future.whenComplete((v, e) -> {
             timer.cancel(false);
+            if (e instanceof CancellationException && timedOut.get()) return; // our own cancellation
             if (e != null) result.completeExceptionally(e);
             else result.complete(v);
         });

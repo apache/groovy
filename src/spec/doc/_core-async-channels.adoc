@@ -129,6 +129,11 @@ def result = await sel.select()
 println "Channel ${result.index}: ${result.value}"
 ----
 
+A select takes exactly one value from exactly one channel; the other
+channels are left untouched. When several channels already have a value
+waiting, the one listed first is taken. If every channel is closed and
+drained, `select()` fails with `ChannelClosedException`.
+
 [[async-broadcast-channel]]
 == BroadcastChannel
 
