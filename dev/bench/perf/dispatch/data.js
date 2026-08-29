@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787913660701,
+  "lastUpdate": 1787986874786,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -2844,6 +2844,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.hidden",
             "value": 878,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1509,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "83ecaa04ddaa2ff6f8ef2f90228c1ecdd82549d2",
+          "message": "GROOVY-12301: STC: don't let an erased bridge method shadow the inherited generic method it delegates to\n\nSome compilers (ECJ for one) redeclare inherited generic methods as erased\nsynthetic bridge methods directly on the subclass. The synthetic-override\nguard in removeCovariantsAndInterfaceEquivalents was meant to keep the\ngeneric original in that case, but a type variable's ClassNode compares\nequal to its own erasure via redirect, so the guard never fired and the\nbridge's raw return type was inferred (e.g. weld-spock's self-recursive\nBuilder: \"Cannot assign value of type AbstractWeldInitiator$AbstractBuilder\nto variable of type WeldInitiator$Builder\").",
+          "timestamp": "2026-08-26T10:51:49Z",
+          "url": "https://github.com/apache/groovy/commit/83ecaa04ddaa2ff6f8ef2f90228c1ecdd82549d2"
+        },
+        "date": 1787986874199,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4013,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 454,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 876,
             "unit": "classes"
           },
           {
