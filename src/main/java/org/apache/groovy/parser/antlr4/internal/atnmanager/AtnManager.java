@@ -19,9 +19,11 @@
 package org.apache.groovy.parser.antlr4.internal.atnmanager;
 
 import org.antlr.v4.runtime.atn.ATN;
+import org.antlr.v4.runtime.dfa.DFA;
 import org.apache.groovy.util.SystemUtil;
 
 import java.lang.ref.SoftReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -46,17 +48,60 @@ public abstract class AtnManager {
     private static final ReentrantReadWriteLock.WriteLock WRITE_LOCK = RRWL.writeLock();
     public static final ReentrantReadWriteLock.ReadLock READ_LOCK = RRWL.readLock();
     private static final String DFA_CACHE_THRESHOLD_OPT = "groovy.antlr4.cache.threshold";
+    /**
+     * Parses between deterministic clears when {@value #DFA_CACHE_THRESHOLD_OPT} is not set.
+     * <p>
+     * The GC canary alone is not sufficient out of the box: it is only observed on the parse
+     * path, so under sustained pressure the cache can grow unchecked between observations —
+     * a long-lived daemon parsing concurrently across many modules then spends its time in GC
+     * rather than parsing. A deterministic ceiling bounds the cache regardless of collector
+     * timing. Set the property to {@code 0} to restore canary-only behaviour, or to a negative
+     * value to disable clearing altogether.
+     * <p>
+     * Off by default: a blind parse counter cannot tell a large cache from a small warm one, so
+     * it clears regardless and taxes builds that were never in trouble. {@link
+     * #DFA_CACHE_SIZE_LIMIT_OPT} bounds the cache by what it actually holds instead. This
+     * remains available for workloads that want a fixed, predictable clearing cadence.
+     */
+    private static final long DFA_CACHE_THRESHOLD_DEFAULT = 0L;
     private static final long DFA_CACHE_THRESHOLD;
     private static final boolean GC_CANARY_ENABLED;
+    private static final String DFA_CACHE_SIZE_LIMIT_OPT = "groovy.antlr4.cache.size";
+    /**
+     * DFA states retained across the shared ATN before the cache is dropped.
+     * <p>
+     * This is the default ceiling because it is the only one of the three mechanisms that costs
+     * nothing when the cache is small: a project that never reaches the limit never clears, so
+     * it keeps a fully warm cache, while a long-lived daemon parsing at scale stays bounded.
+     * Unlike the GC canary it does not depend on {@code SoftReference} policy, so it behaves
+     * identically on HotSpot and on SubstrateVM, where that policy differs; and unlike the
+     * removed cleaner thread it starts nothing, so it cannot pin a container's class loader
+     * (GROOVY-12142).
+     * <p>
+     * Calibration: parsing 6849 Groovy sources with no ceiling grows the cache to ~179,000
+     * states / ~13.5M ATNConfigs. States track configs at a stable ~1:75, so this limit bounds
+     * the cache at roughly 1.5M configs. Set the property to {@code 0} or a negative value to
+     * disable the size ceiling.
+     */
+    private static final long DFA_CACHE_SIZE_LIMIT_DEFAULT = 20_000L;
+    private static final long DFA_CACHE_SIZE_LIMIT;
     private SoftReference<AtnWrapper> atnWrapperSoftReference;
 
     static {
-        long t = SystemUtil.getLongSafe(DFA_CACHE_THRESHOLD_OPT, 0L);
+        long t = SystemUtil.getLongSafe(DFA_CACHE_THRESHOLD_OPT, DFA_CACHE_THRESHOLD_DEFAULT);
         // A negative threshold has always meant "never clear the DFA cache". Preserve that
         // escape hatch explicitly: it now switches off both mechanisms, because the canary
         // is no longer implied by a zero threshold.
         GC_CANARY_ENABLED = gcCanaryEnabled(t);
         DFA_CACHE_THRESHOLD = counterThreshold(t);
+
+        long limit = SystemUtil.getLongSafe(DFA_CACHE_SIZE_LIMIT_OPT, DFA_CACHE_SIZE_LIMIT_DEFAULT);
+        DFA_CACHE_SIZE_LIMIT = Math.max(limit, 0L);
+    }
+
+    /** Whether the cache is bounded by how much it holds. Zero disables the ceiling. */
+    private static boolean isSizeLimitEnabled() {
+        return 0 != DFA_CACHE_SIZE_LIMIT;
     }
 
     /**
@@ -124,23 +169,63 @@ public abstract class AtnManager {
     protected class AtnWrapper {
         private final ATN atn;
         private final AtomicLong counter = new AtomicLong(0);
+        private final AtomicBoolean clearing = new AtomicBoolean();
 
         public AtnWrapper(ATN atn) {
             this.atn = atn;
         }
 
         public ATN checkAndClear() {
-            if (!shouldClearDfaCache() || !isThresholdCleanupEnabled()) {
+            if (!shouldClearDfaCache()) {
                 return atn;
             }
 
-            if (0 != counter.incrementAndGet() % DFA_CACHE_THRESHOLD) {
+            if (isThresholdCleanupEnabled() && 0 == counter.incrementAndGet() % DFA_CACHE_THRESHOLD) {
+                clearDFA();
                 return atn;
             }
 
-            clearDFA();
+            // Exactly one thread clears per crossing. Without the guard every concurrent
+            // parser sees the same over-limit count and queues its own clear on the fair
+            // write lock, so a single crossing becomes a herd of clear-and-rebuild cycles
+            // that blocks every reader and churns the whole cache repeatedly.
+            if (isSizeLimitEnabled() && dfaStateCount() > DFA_CACHE_SIZE_LIMIT
+                    && clearing.compareAndSet(false, true)) {
+                try {
+                    clearDfaIfStillOverLimit();
+                } finally {
+                    clearing.set(false);
+                }
+            }
 
             return atn;
+        }
+
+        /**
+         * States currently retained across the shared ATN's decision DFAs. Cheap enough to read
+         * on every parse: one size read per decision, against a whole source unit's parsing.
+         */
+        private long dfaStateCount() {
+            long n = 0;
+            DFA[] decisionToDFA = atn.decisionToDFA;
+            if (null != decisionToDFA) {
+                for (DFA dfa : decisionToDFA) {
+                    if (null != dfa) n += dfa.states.size();
+                }
+            }
+            return n;
+        }
+
+        private void clearDfaIfStillOverLimit() {
+            WRITE_LOCK.lock();
+            try {
+                // re-check: a clear may have completed while this thread queued for the lock
+                if (dfaStateCount() > DFA_CACHE_SIZE_LIMIT) {
+                    atn.clearDFA();
+                }
+            } finally {
+                WRITE_LOCK.unlock();
+            }
         }
 
         public void clearDFA() {
