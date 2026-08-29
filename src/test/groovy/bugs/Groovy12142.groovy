@@ -126,6 +126,75 @@ final class Groovy12142 {
         }
     }
 
+    /**
+     * Out of the box the DFA cache must have a ceiling. The GC canary alone is only observed on
+     * the parse path, so under sustained pressure the cache grows unchecked between
+     * observations and the JVM spends its time collecting rather than parsing.
+     */
+    @Test
+    void testDfaCacheHasADefaultCeiling() {
+        assertTrue(defaultSizeLimit() > 0L,
+                "the DFA cache must be bounded by default, was ${defaultSizeLimit()}")
+        // the size ceiling is the default; the parse counter stays opt-in
+        assertEquals(0L, defaultThreshold(), 'the blind parse counter must not be on by default')
+        // ...and the canary must remain live alongside it
+        assertTrue(gcCanaryEnabled(defaultThreshold()), 'the default must keep the GC canary on')
+    }
+
+    /** The size ceiling must actually bound the cache, not merely be configured. */
+    @Test
+    void testSizeCeilingBoundsTheCache() {
+        def javaBin = new File(System.getProperty('java.home'), 'bin/java').absolutePath
+        def proc = [javaBin, '-Xmx512m', '-Dgroovy.antlr4.cache.size=200',
+                    '-cp', System.getProperty('java.class.path'),
+                    'bugs.Groovy12142$SizeCeilingProbe'].execute()
+        def out = new StringBuilder(), err = new StringBuilder()
+        proc.waitForProcessOutput(out, err)
+        assertEquals(0, proc.exitValue(),
+                "size ceiling must bound the parser DFA cache (exit=${proc.exitValue()})\nout: $out\nerr: $err")
+    }
+
+    /**
+     * Forked with a deliberately small ceiling so it is crossed quickly. The cache must be
+     * dropped when it exceeds the limit, and must not run away.
+     * Exit 0 = bounded and cleared, 1 = never cleared, 2 = grew far past the limit.
+     */
+    static class SizeCeilingProbe {
+        static void main(String[] args) {
+            long limit = 200L
+            // Build the cache past the ceiling with varied sources...
+            for (int i = 0; i < 20; i++) parseVariedSource(i)
+            int peak = parserDfaStateCount()
+            if (peak <= limit) System.exit(2)   // scaffolding never crossed the ceiling
+
+            // ...then parse a trivial script. The ceiling is checked before each parse, so the
+            // clear lands first and a trivial script cannot refill what was dropped. (A varied
+            // source refills to the same fixed point in one parse, which would mask it.)
+            int low = peak
+            for (int i = 0; i < 5; i++) {
+                new GroovyShell().parse('1')
+                low = Math.min(low, parserDfaStateCount())
+            }
+            System.err.println("limit=$limit peak=$peak low=$low")
+            System.exit(low < peak ? 0 : 1)
+        }
+    }
+
+    private static long defaultThreshold() {
+        atnManagerLongField('DFA_CACHE_THRESHOLD_DEFAULT')
+    }
+
+    private static long defaultSizeLimit() {
+        atnManagerLongField('DFA_CACHE_SIZE_LIMIT_DEFAULT')
+    }
+
+    private static long atnManagerLongField(String name) {
+        def f = Class.forName('org.apache.groovy.parser.antlr4.internal.atnmanager.AtnManager')
+                .getDeclaredField(name)
+        f.accessible = true
+        (long) f.get(null)
+    }
+
     /** Counts live states in the shared parser DFA cache. */
     private static int parserDfaStateCount() {
         def atn = org.apache.groovy.parser.antlr4.GroovyParser._ATN
