@@ -134,6 +134,27 @@ channels are left untouched. When several channels already have a value
 waiting, the one listed first is taken. If every channel is closed and
 drained, `select()` fails with `ChannelClosedException`.
 
+That priority by list order means a channel that always has a value
+waiting starves the channels listed after it. `fair()` returns a select
+that rotates instead — each call starts at the channel after the one
+that last won, like JCSP's `fairSelect` — so keep the instance across
+calls:
+
+[source,groovy]
+----
+def sel = ChannelSelect.from(requests, control).fair()
+while (true) {
+    def result = await sel.select()
+    // control is served even while requests never runs dry
+}
+----
+
+`random()` chooses uniformly at random among the ready channels instead,
+as Go's `select` does. It keeps no state between calls, so it is equally
+fair from any number of threads, but it gives no bound on how long a
+ready channel may be passed over; `fair()` guarantees every ready channel
+is taken within _n_ calls.
+
 [[async-broadcast-channel]]
 == BroadcastChannel
 

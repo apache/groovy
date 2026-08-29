@@ -24,6 +24,7 @@ import org.apache.groovy.runtime.async.GroovyPromise;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -51,10 +52,18 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class ChannelSelect {
 
-    private final List<AsyncChannel<?>> channels;
+    /** How to choose when several channels are ready at the same time. */
+    private enum Policy { PRIORITY, FAIR, RANDOM }
 
-    private ChannelSelect(List<AsyncChannel<?>> channels) {
+    private final List<AsyncChannel<?>> channels;
+    private final Policy policy;
+    /** index of the last winner; only maintained under {@link Policy#FAIR} */
+    private final AtomicInteger lastWinner;
+
+    private ChannelSelect(List<AsyncChannel<?>> channels, Policy policy) {
         this.channels = channels;
+        this.policy = policy;
+        this.lastWinner = policy == Policy.FAIR ? new AtomicInteger(-1) : null;
     }
 
     /**
@@ -69,7 +78,50 @@ public final class ChannelSelect {
         if (channels.length == 0) {
             throw new IllegalArgumentException("At least one channel is required");
         }
-        return new ChannelSelect(List.of(channels));
+        return new ChannelSelect(List.of(channels), Policy.PRIORITY);
+    }
+
+    /**
+     * Returns a select over the same channels that chooses fairly among
+     * channels that are ready at the same time.
+     * <p>
+     * By default {@link #select()} prefers the channel listed first, so a
+     * channel that always has a value waiting starves the ones after it. A
+     * fair select instead starts each call at the channel after the one
+     * that last won, so every channel that is ready is taken within
+     * {@code n} calls, where {@code n} is the number of channels. This is
+     * the rotating policy of JCSP's {@code fairSelect}. When no channel is
+     * ready, the first value to arrive wins under either policy.
+     * <p>
+     * The rotation state lives in the returned instance, so keep and reuse
+     * it across calls (typically in a loop); a shared instance may be used
+     * from several threads, in which case the rotation is best effort.
+     *
+     * @return a fair ChannelSelect over the same channels
+     * @see #random()
+     * @since 6.0.0
+     */
+    public ChannelSelect fair() {
+        return new ChannelSelect(channels, Policy.FAIR);
+    }
+
+    /**
+     * Returns a select over the same channels that chooses uniformly at
+     * random among channels that are ready at the same time.
+     * <p>
+     * This is the policy of Go's {@code select} and GPars' {@code Select}.
+     * Unlike {@link #fair()} it keeps no state between calls, so it is
+     * exactly as fair from any number of threads and cannot fall into
+     * lock-step with the producers, but it offers no bound on how long a
+     * ready channel may be passed over. When no channel is ready, the first
+     * value to arrive wins under either policy.
+     *
+     * @return a randomly choosing ChannelSelect over the same channels
+     * @see #fair()
+     * @since 6.0.0
+     */
+    public ChannelSelect random() {
+        return new ChannelSelect(channels, Policy.RANDOM);
     }
 
     /**
@@ -82,7 +134,9 @@ public final class ChannelSelect {
      * channels are left untouched: their contents and order are preserved,
      * and nothing remains registered on them once the result completes.
      * When several channels already hold a value, the one listed first is
-     * taken. Cancelling the result (for example through
+     * taken (see {@link #fair()} for a rotating choice and {@link #random()}
+     * for a random one). Cancelling the
+     * result (for example through
      * {@link Awaitable#orTimeout(long, java.util.concurrent.TimeUnit)})
      * withdraws the pending receives, so a timed-out select consumes
      * nothing.
@@ -104,8 +158,13 @@ public final class ChannelSelect {
         AtomicInteger closedCount = new AtomicInteger();
         Awaitable<?>[] branches = new Awaitable<?>[count];
 
-        for (int i = 0; i < count && !winner.isDone(); i++) {
-            final int index = i;
+        // a ready channel completes synchronously during registration, so the
+        // registration order is the priority order: rotate it under fair(),
+        // shuffle it under random() (a random start alone would favour a
+        // ready channel by the run of not-ready channels before it)
+        int[] order = registrationOrder(count);
+        for (int k = 0; k < count && !winner.isDone(); k++) {
+            final int index = order[k];
             AsyncChannel<?> ch = channels.get(index);
             final boolean claimable = ch instanceof DefaultAsyncChannel;
             Awaitable<?> branch = claimable
@@ -128,8 +187,33 @@ public final class ChannelSelect {
             });
         }
         // branches registered after the win, and cancellation of the result itself
-        winner.whenComplete((result, error) -> withdraw(branches));
+        winner.whenComplete((result, error) -> {
+            withdraw(branches);
+            if (result != null && lastWinner != null) lastWinner.set(result.index);
+        });
         return GroovyPromise.of(winner);
+    }
+
+    private int[] registrationOrder(int count) {
+        int[] order = new int[count];
+        switch (policy) {
+            case PRIORITY -> {
+                for (int i = 0; i < count; i++) order[i] = i;
+            }
+            case FAIR -> {
+                int start = Math.floorMod(lastWinner.get() + 1, count);
+                for (int i = 0; i < count; i++) order[i] = (start + i) % count;
+            }
+            case RANDOM -> { // Fisher-Yates: every ready channel is equally likely to be met first
+                ThreadLocalRandom random = ThreadLocalRandom.current();
+                for (int i = 0; i < count; i++) {
+                    int j = random.nextInt(i + 1);
+                    order[i] = order[j];
+                    order[j] = i;
+                }
+            }
+        }
+        return order;
     }
 
     private static void withdraw(Awaitable<?>[] branches) {

@@ -300,6 +300,113 @@ final class ChannelSelectTest {
     }
 
     @Test
+    void testFairSelectRotatesAmongReadyChannels() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelSelect
+
+            def a = AsyncChannel.create(20)
+            def b = AsyncChannel.create(20)
+            def c = AsyncChannel.create(20)
+            for (i in 0..<20) { a.send('a' + i); b.send('b' + i); c.send('c' + i) }
+
+            def sel = ChannelSelect.from(a, b, c).fair()
+            def order = []
+            for (i in 0..<9) {
+                order << (await sel.select()).index
+            }
+            assert order == [0, 1, 2, 0, 1, 2, 0, 1, 2]
+
+            // each channel gave up its values in order
+            assert [await(a.receive()), await(b.receive()), await(c.receive())] == ['a3', 'b3', 'c3']
+
+            // a continuously ready channel cannot starve a ready peer
+            def busy = AsyncChannel.create(1000)
+            def peer = AsyncChannel.create(1)
+            for (i in 0..<1000) busy.send(i)
+            peer.send('me too')
+            def fairSel = ChannelSelect.from(busy, peer).fair()
+            def taken = (0..<2).collect { (await fairSel.select()).index }
+            assert taken.contains(1)
+
+            // the default policy is priority by list order
+            def prio = ChannelSelect.from(a, b, c)
+            assert (0..<5).collect { (await prio.select()).index } == [0, 0, 0, 0, 0]
+        '''
+    }
+
+    @Test
+    void testRandomSelectSpreadsAmongReadyChannels() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelSelect
+
+            int rounds = 300
+            def a = AsyncChannel.create(rounds)
+            def b = AsyncChannel.create(rounds)
+            def c = AsyncChannel.create(rounds)
+            for (i in 0..<rounds) { a.send('a' + i); b.send('b' + i); c.send('c' + i) }
+
+            def sel = ChannelSelect.from(a, b, c).random()
+            def wins = [0, 0, 0]
+            def taken = [[], [], []]
+            for (i in 0..<rounds) {
+                def result = await sel.select()
+                wins[result.index]++
+                taken[result.index] << result.value
+            }
+            // every channel is chosen (the chance of one being skipped in 300 draws is (2/3)^300)
+            assert wins.every { it > 0 }
+            // and each channel gave up its values in order
+            taken.eachWithIndex { values, index ->
+                assert values == (0..<values.size()).collect { 'abc'[index] + it }
+            }
+        '''
+
+        // uniform among the ready channels, not weighted by the not-ready gaps between them
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelSelect
+
+            int rounds = 600
+            def a = AsyncChannel.create(rounds)
+            def b = AsyncChannel.create(rounds)
+            def empty = AsyncChannel.create(1)
+            for (i in 0..<rounds) { a.send(i); b.send(i) }
+
+            // a random start with a cyclic scan would give a two thirds, b one third
+            def sel = ChannelSelect.from(a, b, empty).random()
+            def wins = [0, 0, 0]
+            for (i in 0..<rounds) {
+                wins[(await sel.select()).index]++
+            }
+            // expected 300 each with a standard deviation of about 12; 230 is 6 sigma below
+            assert wins[2] == 0 && wins[0] >= 230 && wins[1] >= 230 : wins
+        '''
+    }
+
+    @Test
+    void testFairSelectStillTakesTheFirstArrival() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelSelect
+
+            def a = AsyncChannel.create(4)
+            def b = AsyncChannel.create(4)
+            def sel = ChannelSelect.from(a, b).fair()
+
+            async { Thread.sleep(50); b.send('b-first') }
+            def result = await sel.select()
+            assert result.index == 1 && result.value == 'b-first'
+            assert a.toString().contains('waitingReceivers=0')
+
+            async { Thread.sleep(50); a.send('a-next') }
+            result = await sel.select()
+            assert result.index == 0 && result.value == 'a-next'
+        '''
+    }
+
+    @Test
     void testConcurrentSelectsDeliverEveryValueExactlyOnce() {
         assertScript '''
             import groovy.concurrent.AsyncChannel
