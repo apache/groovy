@@ -161,6 +161,21 @@ public final class ClassNodeTest {
         assertEquals(0, classNode.getTypeAnnotations().size());
     }
 
+    @Test // GROOVY-12319
+    public void testOuterClassTypeCopiedOnPlainReference() {
+        ClassNode outer = ClassHelper.makeWithoutCaching("Outer");
+        outer.setGenericsTypes(new GenericsType[]{new GenericsType(ClassHelper.STRING_TYPE)});
+        classNode.setOuterClassType(outer);
+
+        assertEquals(outer, classNode.getOuterClassType());
+        ClassNode plain = classNode.getPlainNodeReference();
+        assertEquals(outer, plain.getOuterClassType());
+
+        classNode.setOuterClassType(null);
+        assertNull(classNode.getOuterClassType());
+        assertNull(classNode.getPlainNodeReference().getOuterClassType());
+    }
+
     @Test
     public void testPermittedSubclasses() throws Exception {
         assumeTrue(Runtime.version().feature() >= 17);

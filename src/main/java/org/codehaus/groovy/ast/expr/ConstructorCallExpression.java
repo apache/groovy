@@ -20,6 +20,7 @@ package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
@@ -28,6 +29,8 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * as well as special constructor calls like {@code this()} and {@code super()} calls within constructors.
  * The constructor is identified by the type being constructed, and the arguments are wrapped in a {@link TupleExpression}.
  * May optionally use an anonymous inner class.
+ * Explicit constructor type arguments ({@code new <T>Box(t)}, {@code <T>this(t)}, {@code <T>super(t)})
+ * are stored separately from the constructed type's own type arguments.
  * 
  * @see {@link MethodCall} for the method interface this class implements
  * @see {@link TupleExpression} for argument representation
@@ -44,6 +47,10 @@ public class ConstructorCallExpression extends Expression implements MethodCall 
      * Whether this constructor call uses an anonymous inner class declaration.
      */
     private boolean usesAnonymousInnerClass;
+    /**
+     * Explicit constructor type arguments, e.g. {@code new <String>Box("x")} or {@code <T>super(t)}.
+     */
+    private GenericsType[] genericsTypes;
 
     /**
      * Creates a constructor call expression.
@@ -71,6 +78,7 @@ public class ConstructorCallExpression extends Expression implements MethodCall 
     public Expression transformExpression(ExpressionTransformer transformer) {
         ConstructorCallExpression answer = new ConstructorCallExpression(getType(), transformer.transform(arguments));
         answer.setUsingAnonymousInnerClass(isUsingAnonymousInnerClass());
+        answer.setGenericsTypes(genericsTypes);
         answer.setSourcePosition(this);
         answer.copyNodeMetaData(this);
         return answer;
@@ -98,15 +106,63 @@ public class ConstructorCallExpression extends Expression implements MethodCall 
 
     @Override
     public String getText() {
-        String text;
+        StringBuilder builder = new StringBuilder(64);
         if (isSuperCall()) {
-            text = "super ";
+            appendTypeArguments(builder);
+            builder.append("super ");
         } else if (isThisCall()) {
-            text = "this ";
+            appendTypeArguments(builder);
+            builder.append("this ");
         } else {
-            text = "new " + getType().toString(false);
+            builder.append("new ");
+            appendTypeArguments(builder);
+            builder.append(getType().toString(false));
         }
-        return text + getArguments().getText();
+        return builder.append(getArguments().getText()).toString();
+    }
+
+    private void appendTypeArguments(final StringBuilder builder) {
+        if (!isUsingGenerics()) return;
+        builder.append('<');
+        boolean first = true;
+        for (GenericsType t : genericsTypes) {
+            if (!first) builder.append(", ");
+            else first = false;
+            builder.append(t);
+        }
+        builder.append('>');
+    }
+
+    /**
+     * Returns the explicit constructor type arguments, if specified.
+     * Used for generic constructor invocations such as {@code new <String>Box("x")},
+     * {@code <T>this(t)} and {@code <T>super(t)}.
+     *
+     * @return an array of {@link GenericsType} parameters, or {@code null} if none are specified
+     * @since 6.0.0
+     */
+    public GenericsType[] getGenericsTypes() {
+        return genericsTypes;
+    }
+
+    /**
+     * Sets the explicit constructor type arguments.
+     *
+     * @param genericsTypes an array of {@link GenericsType} parameters; may be {@code null}
+     * @since 6.0.0
+     */
+    public void setGenericsTypes(final GenericsType[] genericsTypes) {
+        this.genericsTypes = genericsTypes;
+    }
+
+    /**
+     * Indicates whether explicit constructor type arguments are specified.
+     *
+     * @return {@code true} if type arguments are present; {@code false} otherwise
+     * @since 6.0.0
+     */
+    public boolean isUsingGenerics() {
+        return genericsTypes != null && genericsTypes.length > 0;
     }
 
     /**

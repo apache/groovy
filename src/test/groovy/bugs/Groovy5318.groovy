@@ -26,11 +26,12 @@ import static groovy.test.GroovyAssert.shouldFail
 final class Groovy5318 {
 
     @Test
-    void testTypeArgumentsOnlyOnTheLastComponent() {
+    void testTypeArgumentsOnNonClassQualifier() {
         def err = shouldFail '''
             def a = new java.util<Integer>.ArrayList<ArrayList<Integer>>()
         '''
 
-        assert err.message =~ 'Unexpected input: \'.\''
+        // GROOVY-12319: parsed as a rare type; java.util is a package, not a class
+        assert err.message.contains('unable to resolve class java.util')
     }
 }

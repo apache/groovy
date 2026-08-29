@@ -1856,7 +1856,7 @@ public abstract class StaticTypeCheckingSupport {
 
         } else if (type.equals(target)) {
             extractGenericsConnections(connections, type.getGenericsTypes(), target.getGenericsTypes());
-            extractGenericsConnections(connections, type.getNodeMetaData("outer.class"), target.getOuterClass()); //GROOVY-10646
+            extractGenericsConnections(connections, type.getOuterClassType(), target.getOuterClass()); //GROOVY-10646
 
         } else if (implementsInterfaceOrIsSubclassOf(type, target)) {
             ClassNode superClass = getNextSuperClass(type, target);
@@ -2021,7 +2021,7 @@ public abstract class StaticTypeCheckingSupport {
                 Optional.ofNullable(type.getOuterClass())
                     .filter(oc -> oc.getGenericsTypes()!=null)
                     .map(oc -> applyGenericsContext(ctx, spec, oc))
-                    .ifPresent(oc -> newType.putNodeMetaData("outer.class", oc));
+                    .ifPresent(newType::setOuterClassType);
             }
         }
         return new GenericsType(newType);
@@ -2078,6 +2078,9 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         GenericsType[] gt = type.getGenericsTypes();
+        if (gt == null && type.isGenericsPlaceHolder()) {
+            gt = new GenericsType[]{type.asGenericsType()};
+        }
         if (asBoolean(spec)) {
             gt = applyGenericsContext(ctx, spec, gt);
         }
@@ -2087,16 +2090,18 @@ public abstract class StaticTypeCheckingSupport {
             return cn;
         }
 
-        if (!gt[0].isPlaceholder()) { // convert T to Type or Type<...>
-            return getCombinedBoundType(gt[0]);
-        }
+        if (gt != null && gt.length > 0) {
+            if (!gt[0].isPlaceholder()) { // convert T to Type or Type<...>
+                return getCombinedBoundType(gt[0]);
+            }
 
-        if (type.getGenericsTypes()[0] != gt[0]) { // convert T to X
-            ClassNode cn = make(gt[0].getName()) , erasure = getCombinedBoundType(gt[0]).redirect();
-            cn.setGenericsPlaceHolder(true);
-            cn.setGenericsTypes(gt);
-            cn.setRedirect(erasure);
-            return cn;
+            if (type.getGenericsTypes() == null || type.getGenericsTypes()[0] != gt[0]) { // convert T to X
+                ClassNode cn = make(gt[0].getName()), erasure = getCombinedBoundType(gt[0]).redirect();
+                cn.setGenericsPlaceHolder(true);
+                cn.setGenericsTypes(gt);
+                cn.setRedirect(erasure);
+                return cn;
+            }
         }
 
         return type; // nothing to do

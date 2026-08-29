@@ -122,8 +122,10 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.addMethodGenerics;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.applyGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.inferGenericsSpecFromOverrides;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.parameterizeType;
 import static org.codehaus.groovy.ast.tools.PropertyNodeUtils.adjustPropertyModifiersForMethod;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
@@ -1783,7 +1785,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private void addCovariantMethods(final ClassNode classNode, final List<MethodNode> declaredMethods, final Map<String, MethodNode> interfaceMethods, final Map<String, MethodNode> methodsToAdd, final Map<String, ClassNode> oldGenericsSpec) {
         ClassNode sc = classNode.getUnresolvedSuperClass(false);
         if (sc != null) {
-            Map<String, ClassNode> genericsSpec = createGenericsSpec(sc, oldGenericsSpec);
+            Map<String, ClassNode> genericsSpec = genericsSpecForSuperType(classNode, sc, oldGenericsSpec);
             List<MethodNode> scMethods = sc.getMethods();
             // add bridge methods in original class for overridden methods with changed signature
             storeMissingCovariantMethods(declaredMethods, methodsToAdd, genericsSpec, scMethods);
@@ -1807,14 +1809,35 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         for (ClassNode anInterface : classNode.getInterfaces()) {
             List<MethodNode> ifaceMethods = anInterface.getMethods();
-            Map<String, ClassNode> genericsSpec = createGenericsSpec(anInterface, oldGenericsSpec);
+            Map<String, ClassNode> genericsSpec = genericsSpecForSuperType(classNode, anInterface, oldGenericsSpec);
             storeMissingCovariantMethods(declaredMethods, methodsToAdd, genericsSpec, ifaceMethods);
             addCovariantMethods(anInterface, declaredMethods, interfaceMethods, methodsToAdd, genericsSpec);
         }
     }
 
+    /**
+     * Diamond AIC types may still carry {@code Super<>} at classgen when no
+     * assignment target filled them. Recover the spec from overrides (GROOVY-12319)
+     * and write it onto {@code superType} so covariant bridges see the same
+     * parameterization as the anonymous body.
+     */
+    private static Map<String, ClassNode> genericsSpecForSuperType(final ClassNode classNode, final ClassNode superType, final Map<String, ClassNode> oldGenericsSpec) {
+        Map<String, ClassNode> genericsSpec = createGenericsSpec(superType, oldGenericsSpec);
+        GenericsType[] usage = superType.getGenericsTypes();
+        // Only an actual diamond (<>) is inferred here. A raw AIC of a generic
+        // super type (gt == null) must not pay override reconstruction.
+        if (classNode instanceof InnerClassNode && ((InnerClassNode) classNode).isAnonymous()
+                && usage != null && usage.length == 0) {
+            genericsSpec = inferGenericsSpecFromOverrides(classNode, superType, oldGenericsSpec);
+            if (!genericsSpec.isEmpty()) {
+                applyGenericsSpec(superType, genericsSpec);
+            }
+        }
+        return genericsSpec;
+    }
+
     private static boolean isPossibleOverride(final MethodNode methodNode) {
-        return (methodNode.getModifiers() & (ACC_BRIDGE | ACC_PRIVATE | ACC_STATIC)) == 0;
+        return !(methodNode.isBridge() || methodNode.isPrivate() || methodNode.isStatic());
     }
 
     private void storeMissingCovariantMethods(final List<MethodNode> declaredMethods, final Map<String, MethodNode> methodsToAdd, final Map<String, ClassNode> genericsSpec, final List<MethodNode> superClassMethods) {

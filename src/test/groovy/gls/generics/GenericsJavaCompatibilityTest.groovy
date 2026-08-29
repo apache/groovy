@@ -50,13 +50,37 @@ import static groovy.test.GroovyAssert.shouldFail
  * reflective Signature surface ({@link Class#getTypeParameters()},
  * {@link Class#getGenericSuperclass()}, {@link Method#getGenericReturnType()},
  * and so on) plus observable compile / run behaviour.
+ *
+ * Spec citations are the Java Language Specification, Java SE 25 Edition.
+ * The suite is organised around the four JCK/JLS dimensions for generics:
+ * <ol>
+ * <li>compile-time type safety and erasure, including bridge methods
+ *     (JLS 4.6, 8.4.8.3);</li>
+ * <li>advanced syntax and bounds — wildcards, F-bounds, nested and
+ *     multi-parameter types (JLS 4.4–4.5, 4.9);</li>
+ * <li>runtime reflection of {@code Signature} attributes
+ *     ({@link Class#getGenericSuperclass()},
+ *     {@link java.lang.reflect.ParameterizedType#getActualTypeArguments()},
+ *     {@link java.lang.reflect.GenericArrayType});</li>
+ * <li>raw-type backward compatibility (JLS 4.8, 5.1.9).</li>
+ * </ol>
+ * Categories 1–15 below map onto those dimensions. Category 16 spells out
+ * the JCK-shaped cases that were not previously a dedicated test.
+ * Each test method names the JLS sections it exercises. Gaps where static
+ * Groovy currently diverges from javac are marked {@link org.junit.jupiter.api.Disabled}.
+ * The oracle is javac as shipped with Java SE 25.
  */
 final class GenericsJavaCompatibilityTest {
 
     // =========================================================================
-    // Category 1: Generic Class & Interface Declarations and Type Bounds
+    // Category 1: Generic class and interface declarations and type bounds (JLS 4.4, 8.1.2, 9.1.2)
     // =========================================================================
 
+    /**
+     * JLS 8.1.2, 4.4, 4.5: a generic class {@code Box<T>} declares a type parameter
+     * that each parameterization substitutes. {@code new Box<>("...")} uses diamond
+     * inference (JLS 15.9.3).
+     */
     @Test
     void testGenericClassSingleTypeParameter() {
         final String className = 'gls.generics.test.SingleTypeParam'
@@ -79,6 +103,11 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'Apache Groovy Generics', true)
     }
 
+    /**
+     * JLS 8.1.2, 4.5: a generic class may declare several type parameters
+     * ({@code Pair<K, V>}); the parameterization must supply exactly that many
+     * arguments.
+     */
     @Test
     void testGenericClassMultipleTypeParameters() {
         final String className = 'gls.generics.test.MultipleTypeParams'
@@ -105,6 +134,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'score=100', true)
     }
 
+    /**
+     * JLS 9.1.2, 8.1.5, 8.4.8.1: a class may implement a parameterization of a
+     * generic interface and override its methods with the substituted argument types.
+     */
     @Test
     void testGenericInterfaceImplementation() {
         final String className = 'gls.generics.test.GenericInterfaceImpl'
@@ -129,6 +162,11 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 21, true)
     }
 
+    /**
+     * JLS 4.4: a type-variable bound {@code T extends Number} restricts each
+     * type argument to a subtype of that bound; members of {@code Number} are
+     * available on values of type {@code T}.
+     */
     @Test
     void testSingleUpperBound() {
         final String className = 'gls.generics.test.SingleUpperBound'
@@ -151,6 +189,11 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 45.14d, true)
     }
 
+    /**
+     * JLS 4.4, 4.9: an intersection bound {@code T extends Number & Comparable<T> & Serializable}
+     * requires a class type (or type variable) first, then interfaces. The erasure of
+     * {@code T} is the leftmost bound.
+     */
     @Test
     void testMultipleBounds() {
         final String className = 'gls.generics.test.MultipleBounds'
@@ -182,6 +225,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 29.0d, true)
     }
 
+    /**
+     * JLS 4.4, 8.4.4: F-bounded polymorphism {@code T extends Comparable<T>} lets a
+     * generic method compare elements of {@code List<T>} using the bound's members.
+     */
     @Test
     void testRecursiveTypeBoundsFBounded() {
         final String className = 'gls.generics.test.RecursiveBounds'
@@ -210,9 +257,13 @@ final class GenericsJavaCompatibilityTest {
     }
 
     // =========================================================================
-    // Category 2: Generic Methods & Constructors
+    // Category 2: Generic methods and constructors (JLS 8.4.4, 8.8.4, 15.12, 18.5)
     // =========================================================================
 
+    /**
+     * JLS 8.4.4, 18.5.1, 18.5.2: invocation of a generic method {@code <T> List<T> makePairList(T, T)}
+     * infers {@code T} from the argument types and the assignment target.
+     */
     @Test
     void testGenericMethodInference() {
         final String className = 'gls.generics.test.MethodInference'
@@ -236,6 +287,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 4)
     }
 
+    /**
+     * JLS 15.12.2: type arguments of a generic method may be written explicitly
+     * ({@code Helper.<String>identity(...)}) instead of being inferred.
+     */
     @Test
     void testGenericMethodExplicitTypeArguments() {
         final String className = 'gls.generics.test.ExplicitTypeArgs'
@@ -261,6 +316,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'Explicit:123')
     }
 
+    /**
+     * JLS 8.8.4, 15.9.3: a constructor may declare its own type parameters, independent
+     * of any class type parameters, and callers may pass explicit constructor type arguments.
+     */
     @Test
     void testGenericConstructors() {
         final String className = 'gls.generics.test.GenericConstructors'
@@ -275,8 +334,8 @@ final class GenericsJavaCompatibilityTest {
                     public String getTypeName() { return typeName; }
                 }
                 public static String test() {
-                    TypeHolder h1 = new TypeHolder("text");
-                    TypeHolder h2 = new TypeHolder(42);
+                    TypeHolder h1 = new <String>TypeHolder("text");
+                    TypeHolder h2 = new <Integer>TypeHolder(42);
                     return h1.getTypeName() + "-" + h2.getTypeName();
                 }
             }
@@ -284,6 +343,11 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'String-Integer')
     }
 
+    /**
+     * JLS 8.4.1, 9.6.4.7: a generic varargs method {@code <T> List<T> collect(T...)} is
+     * applicable by variable-arity invocation (JLS 15.12.2.4). {@code @SafeVarargs}
+     * documents that the heap-pollution risk is contained.
+     */
     @Test
     void testGenericVarargs() {
         final String className = 'gls.generics.test.GenericVarargs'
@@ -313,9 +377,14 @@ final class GenericsJavaCompatibilityTest {
     }
 
     // =========================================================================
-    // Category 3: Wildcards & PECS
+    // Category 3: Wildcards, containment and capture conversion (JLS 4.5.1, 5.1.10)
     // =========================================================================
 
+    /**
+     * JLS 4.5.1 (Example 4.5.1-1): {@code Collection<?>} accepts any parameterization.
+     * {@code ? extends Object} is equivalent to unbounded {@code ?}. Elements are
+     * readable as {@code Object}.
+     */
     @Test
     void testUnboundedWildcard() {
         final String className = 'gls.generics.test.UnboundedWildcard'
@@ -340,6 +409,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 6)
     }
 
+    /**
+     * JLS 4.5.1: {@code List<? extends Number>} is a producer (contains {@code Integer},
+     * {@code Double}, ...). Subtyping follows containment: {@code List<Integer> <= List<? extends Number>}.
+     */
     @Test
     void testUpperBoundedWildcardProducer() {
         final String className = 'gls.generics.test.UpperBoundedWildcard'
@@ -364,6 +437,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 10.0d)
     }
 
+    /**
+     * JLS 4.5.1: {@code List<? super Integer>} is a consumer; {@code Integer} may be
+     * added because the unknown element type is a supertype of {@code Integer}.
+     */
     @Test
     void testLowerBoundedWildcardConsumer() {
         final String className = 'gls.generics.test.LowerBoundedWildcard'
@@ -390,6 +467,78 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 9)
     }
 
+    /**
+     * JLS 4.5: a wildcard type argument is within bounds of {@code T extends Number}
+     * when capture conversion yields a well-formed glb with {@code Number}.
+     * Unbounded {@code ?} is always within bounds. {@code ? extends Object} is
+     * also legal: {@code glb(Object, Number)} is {@code Number}. javac 25 accepts
+     * both; it does <em>not</em> reject {@code NumberBox<? extends Object>}.
+     */
+    @Test
+    void testBoundedTypeParameterAcceptsUnboundedAndObjectWildcards() {
+        final String className = 'gls.generics.test.NumberBoxWildcards'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class NumberBoxWildcards {
+                public static class NumberBox<T extends Number> {
+                    public final T value;
+                    public NumberBox(T value) { this.value = value; }
+                }
+                public static int test() {
+                    NumberBox<Integer> box = new NumberBox<Integer>(Integer.valueOf(7));
+                    NumberBox<?> unbounded = box;
+                    NumberBox<? extends Object> objectBound = box;
+                    NumberBox<? extends Number> numberBound = box;
+                    NumberBox<? extends Integer> integerBound = box;
+                    NumberBox<? super Integer> superInteger = box;
+                    NumberBox<? super Number> superNumber = new NumberBox<Number>(Integer.valueOf(1));
+                    return (unbounded != null && objectBound != null && numberBound != null
+                            && integerBound != null && superInteger != null && superNumber != null) ? 1 : 0;
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 1)
+    }
+
+    /**
+     * JLS 4.5: {@code ? extends String} is not within bounds of {@code T extends Number}
+     * because {@code glb(String, Number)} is an empty intersection of two classes.
+     * javac 25: "type argument ? extends String is not within bounds of type-variable T".
+     */
+    @Test
+    void testNegativeWildcardUpperBoundDisjointFromTypeParameterBound() {
+        final String className = 'gls.generics.test.NumberBoxExtendsString'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class NumberBoxExtendsString {
+                public static class NumberBox<T extends Number> {}
+                public NumberBox<? extends String> field;
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "not within bounds", "not a valid substitute for the bounded parameter")
+    }
+
+    /**
+     * JLS 4.5: {@code ? super Object} is not within bounds of {@code T extends Number}
+     * because the lower bound {@code Object} is not a subtype of {@code Number}.
+     */
+    @Test
+    void testNegativeWildcardLowerBoundOutsideTypeParameterBound() {
+        final String className = 'gls.generics.test.NumberBoxSuperObject'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class NumberBoxSuperObject {
+                public static class NumberBox<T extends Number> {}
+                public NumberBox<? super Object> field;
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "not within bounds", "not a valid substitute for the bounded parameter")
+    }
+
+    /**
+     * JLS 5.1.10: capture conversion turns {@code List<?>} into {@code List<capture#1-of ?>}
+     * so a helper {@code <T> void swapHelper(List<T>, ...)} can read and write the same {@code T}.
+     */
     @Test
     void testWildcardCaptureHelper() {
         final String className = 'gls.generics.test.WildcardCapture'
@@ -416,9 +565,13 @@ final class GenericsJavaCompatibilityTest {
     }
 
     // =========================================================================
-    // Category 4: Diamond Operator <> & Type Inference
+    // Category 4: Diamond and target-type inference (JLS 15.9.3, 18.5.2)
     // =========================================================================
 
+    /**
+     * JLS 15.9.1, 15.9.3, 18.5.2: diamond {@code <>} infers nested type arguments of
+     * {@code Map<String, List<Map<Integer, String>>>} from the assignment target.
+     */
     @Test
     void testDiamondOperatorWithNestedGenerics() {
         final String className = 'gls.generics.test.NestedDiamond'
@@ -440,6 +593,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 3)
     }
 
+    /**
+     * JLS 15.9.3, 15.9.5 (JEP 213): diamond is legal on an anonymous class
+     * {@code new Processor<>() { ... }} when the target type supplies the type arguments.
+     */
     @Test
     void testDiamondAnonymousInnerClass() {
         final String className = 'gls.generics.test.DiamondAnonymous'
@@ -461,10 +618,14 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        // Groovy cannot use diamond <> with anonymous inner classes; keep the rest identical.
-        compileAndCompare(className, javaSrc, toGroovy(javaSrc.replace('new Processor<>()', 'new Processor<String>()')), 'Processed: Data', false)
+        assertPositive(className, javaSrc, 'Processed: Data')
     }
 
+    /**
+     * JLS 18.5.2: the assignment target of a poly invocation {@code <T> List<T> empty()}
+     * is a witness for {@code T}, so {@code List<String> s = empty()} and
+     * {@code List<Integer> i = empty()} are both well-typed.
+     */
     @Test
     void testTargetTypeInference() {
         final String className = 'gls.generics.test.TargetTypeInference'
@@ -486,9 +647,14 @@ final class GenericsJavaCompatibilityTest {
     }
 
     // =========================================================================
-    // Category 5: Covariance, Bridge Methods & Overriding
+    // Category 5: Covariant returns and bridges (JLS 8.4.8.3, 15.12.4.5)
     // =========================================================================
 
+    /**
+     * JLS 8.4.8.3 (covariant returns) and 15.12.4.5: {@code String get()} overrides
+     * {@code T get()} of {@code Supplier<String>}. A bridge with the erased signature
+     * is invoked through a raw {@code Supplier} and still returns the {@code String}.
+     */
     @Test
     void testCovariantReturnAndBridgeMethod() {
         final String className = 'gls.generics.test.BridgeAndCovariance'
@@ -517,9 +683,14 @@ final class GenericsJavaCompatibilityTest {
     }
 
     // =========================================================================
-    // Category 6: Raw Types & Interoperability
+    // Category 6: Raw types and unchecked conversion (JLS 4.8, 5.1.9)
     // =========================================================================
 
+    /**
+     * JLS 4.8, 5.1.9: assignment of a parameterized type to a raw type (and the reverse)
+     * is an unchecked conversion. The raw {@code List} may be mutated without compile-time
+     * argument checks.
+     */
     @Test
     void testRawTypeInterop() {
         final String className = 'gls.generics.test.RawTypeInterop'
@@ -542,9 +713,14 @@ final class GenericsJavaCompatibilityTest {
     }
 
     // =========================================================================
-    // Category 7: Generic Exceptions & Parametric Throwables
+    // Category 7: Type variables in throws (JLS 8.4.6)
     // =========================================================================
 
+    /**
+     * JLS 8.4.6 (Example 8.4.6-1): a type variable whose bound is a subtype of
+     * {@code Throwable} may appear in a {@code throws} clause, so
+     * {@code <E extends Exception> void runAction(Action<E>) throws E} is legal.
+     */
     @Test
     void testGenericThrowsClause() {
         final String className = 'gls.generics.test.GenericThrows'
@@ -579,13 +755,15 @@ final class GenericsJavaCompatibilityTest {
     }
 
     // =========================================================================
-    // Category 8: Strict Negative Verification (Compile-time & Runtime)
+    // Category 8: Negative well-formedness (JLS 4.5, 4.10.2, 8.1.2, 8.1.4, 8.1.5)
     // =========================================================================
 
+    /**
+     * JLS 8.1.2: it is a compile-time error if a generic class is a direct or
+     * indirect subclass of {@code Throwable}.
+     */
     @Test
     void testNegativeGenericSubclassOfThrowable() {
-        // JLS 8.1.2: a generic class may not extend Throwable. javac rejects this;
-        // static Groovy currently accepts the equivalent source, so only the Java side is asserted.
         final String className = 'gls.generics.test.GenEx'
         final String javaSrc = '''
             package gls.generics.test;
@@ -593,14 +771,13 @@ final class GenericsJavaCompatibilityTest {
                 private T info;
             }
         '''
-        JavaShell js = new JavaShell()
-        Throwable javaEx = shouldFail(JavaShellCompilationException) {
-            js.compile(className, javaSrc)
-        }
-        assert javaEx.message.contains("generic class may not extend 'java.lang.Throwable'") ||
-            javaEx.message.contains("a generic class may not extend java.lang.Throwable")
+        assertNegativeCompile(className, javaSrc, "generic class may not extend", "generic class may not extend")
     }
 
+    /**
+     * JLS 4.5: a parameterized type is well-formed only if the number of type
+     * arguments equals the number of type parameters ({@code List} has one).
+     */
     @Test
     void testNegativeTypeArityMismatch() {
         final String className = 'gls.generics.test.ArityMismatch'
@@ -614,6 +791,10 @@ final class GenericsJavaCompatibilityTest {
         assertNegativeCompile(className, javaSrc, "wrong number of type arguments", "supplied with 2 type parameters")
     }
 
+    /**
+     * JLS 4.5: the same arity rule applies wherever a parameterized type is used,
+     * including a method formal ({@code Map} has two type parameters).
+     */
     @Test
     void testNegativeMethodParamArityMismatch() {
         final String className = 'gls.generics.test.MethodArityMismatch'
@@ -627,6 +808,10 @@ final class GenericsJavaCompatibilityTest {
         assertNegativeCompile(className, javaSrc, "wrong number of type arguments", "supplied with 1 type parameter")
     }
 
+    /**
+     * JLS 4.10.2: parameterized types are invariant in their type arguments.
+     * {@code ArrayList<Integer>} is not a subtype of {@code List<Number>}.
+     */
     @Test
     void testNegativeGenericInvarianceAssignment() {
         final String className = 'gls.generics.test.InvarianceFail'
@@ -642,6 +827,11 @@ final class GenericsJavaCompatibilityTest {
         assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
     }
 
+    /**
+     * JLS 4.5, 4.4: a type argument must be a subtype of every type in the
+     * corresponding bound after substitution. {@code Object} is not a
+     * {@code Number & Comparable<Object>}.
+     */
     @Test
     void testNegativeMultipleBoundsMismatch() {
         final String className = 'gls.generics.test.MultiBoundFail'
@@ -657,6 +847,10 @@ final class GenericsJavaCompatibilityTest {
         assertNegativeCompile(className, javaSrc, "not within bounds", "not a valid substitute for the bounded parameter")
     }
 
+    /**
+     * JLS 8.1.4 (and 8.1.5): if a superclass or superinterface type has type
+     * arguments, none of those arguments may be wildcards.
+     */
     @Test
     void testNegativeWildcardInExtendsClause() {
         final String className = 'gls.generics.test.WildcardSuper'
@@ -669,6 +863,26 @@ final class GenericsJavaCompatibilityTest {
         assertNegativeCompile(className, javaSrc, "unexpected type", "A supertype may not specify a wildcard type")
     }
 
+    /**
+     * JLS 8.1.5: a superinterface type may not specify a wildcard
+     * ({@code implements List<?>}).
+     */
+    @Test
+    void testNegativeWildcardInImplementsClause() {
+        final String className = 'gls.generics.test.WildcardImplements'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class WildcardImplements implements List<?> {
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "unexpected type", "A supertype may not specify a wildcard type")
+    }
+
+    /**
+     * JLS 4.5: a parameterized type {@code C<T1,...,Tn>} is well-formed only if
+     * {@code C} names a generic class or interface. {@code Date} takes no type parameters.
+     */
     @Test
     void testNegativeParametricTypeForNonGenericClass() {
         final String className = 'gls.generics.test.NonGenericParameterized'
@@ -684,6 +898,11 @@ final class GenericsJavaCompatibilityTest {
         assertNegativeCompile(className, javaSrc, "does not take parameters", "which takes no parameters")
     }
 
+    /**
+     * JLS 8.1.5 (Example 8.1.5-3): a class may not implement two different
+     * parameterizations of the same generic interface (needed for translation by
+     * erasure, JLS 4.6).
+     */
     @Test
     void testNegativeDuplicateGenericInterfaceInheritance() {
         final String className = 'gls.generics.test.InterfaceConflict'
@@ -697,6 +916,10 @@ final class GenericsJavaCompatibilityTest {
         assertNegativeCompile(className, javaSrc, "different arguments", "Duplicate interfaces in implements list")
     }
 
+    /**
+     * JLS 5.3, 4.5.2: invocation of {@code List<String>#add} requires an argument
+     * compatible with the substituted element type {@code String}.
+     */
     @Test
     void testNegativeMethodArgumentTypeMismatch() {
         final String className = 'gls.generics.test.CallMismatch'
@@ -713,6 +936,11 @@ final class GenericsJavaCompatibilityTest {
         assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call")
     }
 
+    /**
+     * JLS 4.8, 4.12.2, 5.1.9: heap pollution through a raw {@code Sink} makes a later
+     * use of the erased {@code accept(T)} throw {@code ClassCastException} at the
+     * compiler-inserted cast (JLS 15.5).
+     */
     @Test
     void testNegativeHeapPollutionClassCastException() {
         final String className = 'gls.generics.test.HeapPollution'
@@ -742,9 +970,13 @@ final class GenericsJavaCompatibilityTest {
     }
 
     // =========================================================================
-    // Category 9: Inheritance, enclosing types, and bound forwarding
+    // Category 9: Inheritance, enclosing types and bound forwarding (JLS 8.1.3–8.1.5, 4.5)
     // =========================================================================
 
+    /**
+     * JLS 8.1.4, 4.5.2: a non-generic subclass may extend a parameterization
+     * ({@code Named extends Holder<String>}); inherited members have the substituted types.
+     */
     @Test
     void testGenericClassExtendsParameterizedType() {
         final String className = 'gls.generics.test.ExtendsParameterized'
@@ -768,6 +1000,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'ok', true)
     }
 
+    /**
+     * JLS 8.1.2, 4.5.2: a subclass may forward its type parameter to a generic
+     * superclass ({@code Box<T> extends Holder<T>}).
+     */
     @Test
     void testTypeParameterForwardedToSuperclass() {
         final String className = 'gls.generics.test.ForwardTypeParam'
@@ -791,6 +1027,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'fwd', true)
     }
 
+    /**
+     * JLS 9.1.2, 9.1.3: a generic interface may extend a parameterization of
+     * another generic interface ({@code SrcNum extends Src<Number>}).
+     */
     @Test
     void testGenericInterfaceExtendsGenericInterface() {
         final String className = 'gls.generics.test.GenericIfaceExtends'
@@ -815,6 +1055,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 7, true)
     }
 
+    /**
+     * JLS 8.1.3, 6.5.5.1: a non-static inner class is not a static context, so it
+     * may refer to a type parameter of the enclosing generic class.
+     */
     @Test
     void testNonStaticInnerClassUsesEnclosingTypeParameter() {
         final String className = 'gls.generics.test.EnclosingTypeParam'
@@ -836,6 +1080,116 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'inner')
     }
 
+    /**
+     * JLS 4.5: a nested parameterization such as {@code Outer<String>.Inner<Integer>}
+     * (a "rare" type) is well-formed when both the enclosing type and the member
+     * type are generic.
+     */
+    @Test
+    void testRareTypeQualifiedInnerClass() {
+        final String className = 'gls.generics.test.RareTypeInner'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class RareTypeInner {
+                public static class Outer<T> {
+                    public class Inner<U> {
+                        private final U u;
+                        Inner(U u) { this.u = u; }
+                        public U getU() { return u; }
+                    }
+                    public Inner<Integer> make(Integer u) { return new Inner<Integer>(u); }
+                }
+                public static String test() {
+                    Outer<String> outer = new Outer<String>();
+                    Outer<String>.Inner<Integer> inner = outer.make(Integer.valueOf(7));
+                    return String.valueOf(inner.getU());
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, '7')
+    }
+
+    /**
+     * JLS 4.5, 4.11: a rare type may appear as a field type and a method parameter
+     * or return type; the Signature attribute records the enclosing type arguments.
+     */
+    @Test
+    void testRareTypeFieldAndMethodSignatures() {
+        final String className = 'gls.generics.test.RareTypeSignatures'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class RareTypeSignatures {
+                public static class Outer<T> {
+                    public class Inner<U> {
+                        public U u;
+                    }
+                }
+                public Outer<String>.Inner<Integer> field;
+                public Outer<String>.Inner<Integer> echo(Outer<String>.Inner<Integer> p) { return p; }
+                public static String test() { return "ok"; }
+            }
+        '''
+        assertPositive(className, javaSrc, 'ok', true)
+    }
+
+    /**
+     * JLS 4.5: {@code A<String>.B.C<Integer>} is a parameterized type even though
+     * the middle member {@code B} is not generic, because type arguments appear
+     * in the enclosing type.
+     */
+    @Test
+    void testRareTypeUnparameterizedMiddleSignatures() {
+        final String className = 'gls.generics.test.RareTypeMiddle'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class RareTypeMiddle {
+                public static class A<T> {
+                    public class B {
+                        public class C<U> {
+                            public U u;
+                        }
+                    }
+                }
+                public A<String>.B.C<Integer> field;
+                public static String test() { return "ok"; }
+            }
+        '''
+        assertPositive(className, javaSrc, 'ok', true)
+    }
+
+    /**
+     * JLS 15.9, 8.1.3: a qualified class instance creation
+     * {@code new Outer<T>.Inner<Integer>(...)} instantiates the inner class of the
+     * enclosing parameterization.
+     */
+    @Test
+    void testRareTypeInstanceCreationInsideOuter() {
+        final String className = 'gls.generics.test.RareTypeNew'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class RareTypeNew {
+                public static class Outer<T> {
+                    public class Inner<U> {
+                        private final U u;
+                        Inner(U u) { this.u = u; }
+                        public U getU() { return u; }
+                    }
+                    public Inner<Integer> make() {
+                        return new Outer<T>.Inner<Integer>(Integer.valueOf(7));
+                    }
+                }
+                public static String test() {
+                    return String.valueOf(new Outer<String>().make().getU());
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, '7')
+    }
+
+    /**
+     * JLS 8.1.1.4, 8.1.2: a {@code static} nested class has no enclosing instance
+     * and must not depend on the outer class's type parameters; it may declare its own.
+     */
     @Test
     void testStaticNestedClassHasIndependentTypeParameters() {
         final String className = 'gls.generics.test.StaticNestedIndependent'
@@ -858,6 +1212,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, '42', true)
     }
 
+    /**
+     * JLS 4.4: a type-variable bound may itself be a type variable
+     * ({@code U extends T}). {@code T} is inferred as a supertype of the argument.
+     */
     @Test
     void testTypeParameterUsedAsBoundOfAnother() {
         final String className = 'gls.generics.test.TypeParamAsBound'
@@ -876,6 +1234,11 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'bound')
     }
 
+    /**
+     * JLS 8.1.2 (Example 8.1.2-1): type parameters in one section may mention each
+     * other, including a later parameter ({@code T extends List<X>, X extends Number}).
+     * A parameter may not depend on itself.
+     */
     @Test
     void testForwardReferencedTypeParameterBounds() {
         final String className = 'gls.generics.test.ForwardRefBounds'
@@ -900,6 +1263,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 9.0d, true)
     }
 
+    /**
+     * JLS 4.4: an F-bound {@code T extends Entity<T>} encodes a self type so
+     * {@code fluent()} can return the concrete subclass rather than the raw base.
+     */
     @Test
     void testFBoundedSelfType() {
         final String className = 'gls.generics.test.FBoundedSelfType'
@@ -923,6 +1290,11 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'user', true)
     }
 
+    /**
+     * JLS 4.4 (Example 4.4-1), 4.9: the members of {@code T extends Number & Comparable<T>}
+     * are the members of that intersection, so both {@code intValue()} and
+     * {@code compareTo} are applicable.
+     */
     @Test
     void testIntersectionBoundUsedAsBothTypes() {
         final String className = 'gls.generics.test.IntersectionDispatch'
@@ -940,6 +1312,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'Integer:5:0')
     }
 
+    /**
+     * JLS 4.4, 8.1.2: independent type parameters may each carry their own bound
+     * ({@code A extends CharSequence, B extends Number}).
+     */
     @Test
     void testIndependentBoundedTypeParameters() {
         final String className = 'gls.generics.test.IndependentBoundedParams'
@@ -961,9 +1337,13 @@ final class GenericsJavaCompatibilityTest {
     }
 
     // =========================================================================
-    // Category 10: Generic methods on generic types, arrays as type arguments
+    // Category 10: Generic methods of generic types; arrays as type arguments (JLS 8.4.4, 4.5.1)
     // =========================================================================
 
+    /**
+     * JLS 8.4.4: a generic method of a generic class introduces method type
+     * parameters distinct from the class's ({@code Box<T>#<U> U map(Function<T, U>)}).
+     */
     @Test
     void testGenericMethodOnGenericClass() {
         final String className = 'gls.generics.test.GenericMethodOnGenericClass'
@@ -987,6 +1367,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 4)
     }
 
+    /**
+     * JLS 4.5.1: a type argument is a reference type or a wildcard. An array type
+     * such as {@code String[]} is a reference type, so {@code List<String[]>} is well-formed.
+     */
     @Test
     void testArrayAsTypeArgument() {
         final String className = 'gls.generics.test.ArrayAsTypeArg'
@@ -1005,6 +1389,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 2)
     }
 
+    /**
+     * JLS 18.5.2: nested poly invocations {@code id(id("ok"))} constrain the inner
+     * and outer inference variables from the same target type.
+     */
     @Test
     void testChainedGenericMethodInference() {
         final String className = 'gls.generics.test.ChainedInference'
@@ -1022,6 +1410,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'ok')
     }
 
+    /**
+     * JLS 8.4.2, 8.4.8.1: a generic method overrides another when the signatures are
+     * override-equivalent, including after renaming type parameters with matching bounds.
+     */
     @Test
     void testOverrideGenericMethodWithMatchingBounds() {
         final String className = 'gls.generics.test.OverrideMatchingBounds'
@@ -1047,9 +1439,13 @@ final class GenericsJavaCompatibilityTest {
     }
 
     // =========================================================================
-    // Category 11: PECS, nested wildcards, function variance
+    // Category 11: PECS, nested wildcards and function variance (JLS 4.5.1, 4.10.2)
     // =========================================================================
 
+    /**
+     * JLS 4.5.1 containment and 4.10.2: {@code Collections.copy(List<? super T>, List<? extends T>)}
+     * is the PECS form of a copy — destination is a consumer, source is a producer.
+     */
     @Test
     void testPecsCollectionsCopy() {
         final String className = 'gls.generics.test.PecsCopy'
@@ -1074,6 +1470,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, '1,3')
     }
 
+    /**
+     * JLS 4.5.1: wildcards nest. {@code List<? extends List<? extends Number>>} contains
+     * {@code List<List<Integer>>} by applying containment recursively.
+     */
     @Test
     void testNestedWildcards() {
         final String className = 'gls.generics.test.NestedWildcards'
@@ -1101,6 +1501,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 3)
     }
 
+    /**
+     * JLS 4.5.1: {@code List<Integer>#sort} accepts {@code Comparator<? super Integer>},
+     * so a {@code Comparator<Number>} may order a list of {@code Integer}.
+     */
     @Test
     void testComparatorSuperBoundSort() {
         final String className = 'gls.generics.test.ComparatorSuperBound'
@@ -1124,6 +1528,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, '1,2,3')
     }
 
+    /**
+     * JLS 4.5.1, 9.9: {@code Function<? super T, ? extends R>} is the flexible function
+     * type — argument consumer, result producer — used by {@code apply}.
+     */
     @Test
     void testFunctionWildcardVariance() {
         final String className = 'gls.generics.test.FunctionVariance'
@@ -1143,6 +1551,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 3)
     }
 
+    /**
+     * JLS 4.5.2, 5.1.10: capture of {@code List<? super Integer>} yields an unknown
+     * supertype of {@code Integer}; reading an element therefore has type {@code Object}.
+     */
     @Test
     void testLowerBoundedWildcardGetReturnsObject() {
         final String className = 'gls.generics.test.LowerBoundGet'
@@ -1162,6 +1574,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, '8')
     }
 
+    /**
+     * JLS 4.5.1, 5.2: the null reference is assignment-compatible with every reference
+     * type, so {@code list.add(null)} is legal even on {@code List<?>}.
+     */
     @Test
     void testWildcardAllowsAddingNull() {
         final String className = 'gls.generics.test.WildcardAddNull'
@@ -1181,9 +1597,13 @@ final class GenericsJavaCompatibilityTest {
     }
 
     // =========================================================================
-    // Category 12: Diamond target typing, unchecked conversion, raw assignment
+    // Category 12: Invocation-context diamond, unchecked casts, nested members (JLS 15.9.3, 5.1.9, 4.5)
     // =========================================================================
 
+    /**
+     * JLS 15.9.3, 18.5.2, 5.3: the invocation context of {@code len(List<String>)} is a
+     * target-type witness for {@code new ArrayList<>()}.
+     */
     @Test
     void testDiamondInferredFromMethodArgument() {
         final String className = 'gls.generics.test.DiamondMethodArg'
@@ -1203,6 +1623,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 0)
     }
 
+    /**
+     * JLS 5.5, 5.1.9: a cast to a non-reifiable parameterized type is unchecked.
+     * The value is then used as {@code List<String>} at compile time.
+     */
     @Test
     void testUncheckedCastToParameterizedType() {
         final String className = 'gls.generics.test.UncheckedCast'
@@ -1222,6 +1646,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'cast')
     }
 
+    /**
+     * JLS 5.1.9, 4.8: assigning a raw type to a parameterization is an unchecked
+     * conversion; subsequent uses see the parameterized type.
+     */
     @Test
     void testRawTypeAssignedToParameterizedType() {
         final String className = 'gls.generics.test.RawToParameterized'
@@ -1242,6 +1670,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 1)
     }
 
+    /**
+     * JLS 4.5, 9.5: {@code Map.Entry<K, V>} is a member interface of a generic type.
+     * {@code Map.Entry<String, Integer>} is a parameterization of that member.
+     */
     @Test
     void testMapEntryParameterizedInnerInterface() {
         final String className = 'gls.generics.test.MapEntryInner'
@@ -1264,9 +1696,13 @@ final class GenericsJavaCompatibilityTest {
     }
 
     // =========================================================================
-    // Category 13: Covariant override, conditional lub, records, instanceof
+    // Category 13: Covariant override, lub, generic records, reifiable instanceof (JLS 8.4.8.3, 4.10.4, 8.10, 4.7)
     // =========================================================================
 
+    /**
+     * JLS 8.4.8.3: {@code String id(String)} in {@code Child extends Parent<String>}
+     * is return-type-substitutable for {@code T id(T)} and overrides it.
+     */
     @Test
     void testCovariantOverrideInGenericClassHierarchy() {
         final String className = 'gls.generics.test.CovariantClassOverride'
@@ -1289,6 +1725,11 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'ok!', true)
     }
 
+    /**
+     * JLS 15.25.3, 4.10.4: a reference conditional expression has the lub of its
+     * operand types ({@code Class<?>} for class literals, {@code CharSequence} for
+     * {@code String} and {@code StringBuilder}).
+     */
     @Test
     void testConditionalExpressionLubsClassLiterals() {
         final String className = 'gls.generics.test.ConditionalLub'
@@ -1306,6 +1747,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'Integerhello')
     }
 
+    /**
+     * JLS 8.10, 8.1.2: a record class may be generic. Canonical accessors and the
+     * compact constructor use the substituted component types.
+     */
     @Test
     void testGenericRecord() {
         final String className = 'gls.generics.test.GenericRecordPair'
@@ -1323,6 +1768,10 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'a1', true)
     }
 
+    /**
+     * JLS 4.7, 15.20.2: {@code List<?>} and {@code Class<?>} are reifiable (unbounded
+     * wildcards), so they may appear as the {@code instanceof} reference type.
+     */
     @Test
     void testReifiableInstanceofUnboundedWildcard() {
         final String className = 'gls.generics.test.ReifiableInstanceof'
@@ -1341,6 +1790,11 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, true)
     }
 
+    /**
+     * JLS 4.4, 4.5.1, 8.4.4, 13.1: the reflective Signature of type parameters,
+     * bounds, wildcards, generic methods and generic superclasses must match
+     * between javac and static Groovy.
+     */
     @Test
     void testDeclaredGenericSignaturesMatch() {
         final String className = 'gls.generics.test.SignatureCatalog'
@@ -1381,9 +1835,13 @@ final class GenericsJavaCompatibilityTest {
     }
 
     // =========================================================================
-    // Category 14: Additional negative cases (JLS restrictions both sides share)
+    // Category 14: Additional negatives both compilers share (JLS 4.7, 6.5.5.1, 4.5.1)
     // =========================================================================
 
+    /**
+     * JLS 4.7, 15.20.2: {@code List<String>} is not reifiable, so
+     * {@code o instanceof List<String>} is a compile-time error.
+     */
     @Test
     void testNegativeNonReifiableInstanceof() {
         final String className = 'gls.generics.test.NonReifiableInstanceof'
@@ -1399,6 +1857,10 @@ final class GenericsJavaCompatibilityTest {
         assertNegativeCompile(className, javaSrc, "cannot be safely cast", "Cannot perform instanceof")
     }
 
+    /**
+     * JLS 4.7, 15.20.2: {@code Class<C>} is not reifiable (the type argument is not
+     * an unbounded wildcard), so it may not be used with {@code instanceof}.
+     */
     @Test
     void testNegativeInstanceofParameterizedClassLiteral() {
         final String className = 'gls.generics.test.InstanceofClassParam'
@@ -1413,6 +1875,10 @@ final class GenericsJavaCompatibilityTest {
         assertNegativeCompile(className, javaSrc, "cannot be converted", "Cannot perform instanceof")
     }
 
+    /**
+     * JLS 6.5.5.1, 8.1.2: a type parameter of the enclosing class is not in scope
+     * from a static nested class.
+     */
     @Test
     void testNegativeTypeParameterReferencedFromStaticNestedClass() {
         final String className = 'gls.generics.test.StaticNestedOuterTp'
@@ -1427,6 +1893,10 @@ final class GenericsJavaCompatibilityTest {
         assertNegativeCompile(className, javaSrc, "non-static type variable", "unable to resolve class T")
     }
 
+    /**
+     * JLS 8.3.1.1, 6.5.5.1: a {@code static} field is a static context and may not
+     * refer to a type parameter of the enclosing class.
+     */
     @Test
     void testNegativeTypeParameterStaticField() {
         final String className = 'gls.generics.test.StaticTypeParamField'
@@ -1439,6 +1909,11 @@ final class GenericsJavaCompatibilityTest {
         assertNegativeCompile(className, javaSrc, "non-static type variable", "unable to resolve class T")
     }
 
+    /**
+     * JLS 4.5.1, 5.1.10: after capture, the element type of {@code List<? extends Number>}
+     * is an unknown subtype of {@code Number}; {@code Integer} is not a subtype of that
+     * capture, so {@code add} is rejected.
+     */
     @Test
     void testNegativeWildcardWriteThroughExtends() {
         final String className = 'gls.generics.test.WildcardWriteExtends'
@@ -1448,6 +1923,932 @@ final class GenericsJavaCompatibilityTest {
             public class WildcardWriteExtends {
                 public static void test(List<? extends Number> list) {
                     list.add(Integer.valueOf(1));
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call")
+    }
+
+    // =========================================================================
+    // Category 15: Erasure, reifiable arrays, static members, remaining JLS restrictions
+    // =========================================================================
+
+    /**
+     * JLS 4.6, 8.1.2: the erasure of {@code G<T1,...,Tn>} is {@code |G|}. All
+     * parameterizations of a generic class therefore share one run-time class.
+     */
+    @Test
+    void testErasureSharesRuntimeClass() {
+        final String className = 'gls.generics.test.ErasureRuntimeClass'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class ErasureRuntimeClass {
+                public static class Box<T> {
+                    public final T value;
+                    public Box(T value) { this.value = value; }
+                }
+                public static boolean test() {
+                    Box<String> strings = new Box<>("a");
+                    Box<Integer> ints = new Box<>(Integer.valueOf(1));
+                    return strings.getClass() == ints.getClass();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, true, true)
+    }
+
+    /**
+     * JLS 4.5.1 containment and 4.10.2: {@code List<Integer>} is a subtype of
+     * {@code List<? extends Number>} even though it is not a subtype of
+     * {@code List<Number>} (invariance is covered by
+     * {@link #testNegativeGenericInvarianceAssignment()}).
+     */
+    @Test
+    void testWildcardContainmentAssignment() {
+        final String className = 'gls.generics.test.WildcardContainment'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.ArrayList;
+            import java.util.List;
+            public class WildcardContainment {
+                public static int test() {
+                    List<Integer> ints = new ArrayList<Integer>();
+                    ints.add(Integer.valueOf(4));
+                    List<? extends Number> nums = ints;
+                    List<?> any = ints;
+                    return nums.get(0).intValue() + any.size();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 5)
+    }
+
+    /**
+     * JLS 15.10.1, 4.7: an array creation is legal when the component type is
+     * reifiable. {@code List<?>} is reifiable, so {@code new List<?>[n]} is allowed.
+     */
+    @Test
+    void testReifiableGenericArrayCreation() {
+        final String className = 'gls.generics.test.ReifiableArrayCreation'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.ArrayList;
+            import java.util.List;
+            public class ReifiableArrayCreation {
+                public static int test() {
+                    List<?>[] lists = new List<?>[1];
+                    lists[0] = new ArrayList<String>();
+                    return lists.length;
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 1)
+    }
+
+    /**
+     * JLS 4.8: the type of a member of a raw type is the erasure of that member
+     * as declared. {@code Box.get()} therefore has return type {@code Object}.
+     */
+    @Test
+    void testRawTypeMemberErasure() {
+        final String className = 'gls.generics.test.RawMemberErasure'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class RawMemberErasure {
+                public static class Box<T> {
+                    private final T value;
+                    public Box(T value) { this.value = value; }
+                    public T get() { return value; }
+                }
+                @SuppressWarnings({"rawtypes", "unchecked"})
+                public static String test() {
+                    Box raw = new Box("raw");
+                    Object value = raw.get();
+                    return value.getClass().getSimpleName();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'String')
+    }
+
+    /**
+     * JLS 4.5.2: a static member of a generic type must be referred to using the
+     * generic type name, not a parameterization ({@code Cell.id()}, not
+     * {@code Cell<String>.id()}).
+     */
+    @Test
+    void testStaticMemberViaGenericTypeName() {
+        final String className = 'gls.generics.test.StaticViaGenericName'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class StaticViaGenericName {
+                public static class Cell<T> {
+                    public static String id() { return "cell"; }
+                }
+                public static String test() {
+                    return Cell.id();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'cell', true)
+    }
+
+    /**
+     * JLS 15.8.3: in a generic class {@code C<F1,...,Fn>}, the type of {@code this}
+     * is {@code C<F1,...,Fn>}, so a method may return {@code this} at that type.
+     */
+    @Test
+    void testThisTypeInGenericClass() {
+        final String className = 'gls.generics.test.GenericThisType'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GenericThisType {
+                public static class Box<T> {
+                    public T value;
+                    public Box(T value) { this.value = value; }
+                    public Box<T> self() { return this; }
+                }
+                public static String test() {
+                    return new Box<String>("me").self().value;
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'me', true)
+    }
+
+    /**
+     * JLS 15.9.3, 18.5.2: a diamond class instance creation in a return context
+     * takes the method result type as its target type.
+     */
+    @Test
+    void testDiamondInferredFromReturnType() {
+        final String className = 'gls.generics.test.DiamondReturn'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.ArrayList;
+            import java.util.List;
+            public class DiamondReturn {
+                public static List<String> empty() {
+                    return new ArrayList<>();
+                }
+                public static int test() {
+                    return empty().size();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 0)
+    }
+
+    /**
+     * JLS 4.5: primitive types cannot be type arguments ({@code List<int>} is
+     * not well-formed). The corresponding boxed reference type must be used.
+     */
+    @Test
+    void testNegativePrimitiveTypeArgument() {
+        final String className = 'gls.generics.test.PrimitiveTypeArg'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class PrimitiveTypeArg {
+                public List<int> list;
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "unexpected type", "primitive type")
+    }
+
+    /**
+     * JLS 15.10.1, 4.7: it is a compile-time error to create an array whose
+     * component type is not reifiable ({@code new List<String>[n]}).
+     */
+    @Test
+    void testNegativeNonReifiableArrayCreation() {
+        final String className = 'gls.generics.test.GenericArrayCreation'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class GenericArrayCreation {
+                public static Object test() {
+                    return new List<String>[1];
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "generic array creation", "generic array creation")
+    }
+
+    /**
+     * JLS 15.10.1, 4.7: a parameterized type is reifiable only when every type
+     * argument is an unbounded wildcard. {@code List<? extends Number>} is not
+     * reifiable, so {@code new List<? extends Number>[n]} is a compile-time error.
+     * The legal counterpart is {@link #testReifiableGenericArrayCreation()}.
+     */
+    @Test
+    void testNegativeBoundedWildcardArrayCreation() {
+        final String className = 'gls.generics.test.BoundedWildcardArrayCreation'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class BoundedWildcardArrayCreation {
+                public static Object test() {
+                    return new List<? extends Number>[1];
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "generic array creation", "generic array creation")
+    }
+
+    /**
+     * JLS 4.7, 15.10.1: {@code Outer<?>} is reifiable and a non-static member
+     * type of a reifiable type is reifiable, so {@code new Outer<?>.Inner[n]}
+     * is a legal array creation. javac 25 accepts this; Groovy must as well.
+     */
+    @Test
+    void testReifiableRareTypeArrayCreation() {
+        final String className = 'gls.generics.test.RareTypeReifiableArray'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class RareTypeReifiableArray {
+                public static class Outer<T> {
+                    public class Inner {}
+                }
+                public static int test() {
+                    Outer<?>.Inner[] arr = new Outer<?>.Inner[0];
+                    return arr.length;
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 0)
+    }
+
+    /**
+     * JLS 4.7, 15.10.1: the generic-member counterpart is also reifiable when
+     * every type argument is an unbounded wildcard
+     * ({@code new Outer<?>.InnerG<?>[n]}).
+     */
+    @Test
+    void testReifiableRareTypeGenericInnerArrayCreation() {
+        final String className = 'gls.generics.test.RareTypeReifiableGenericInnerArray'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class RareTypeReifiableGenericInnerArray {
+                public static class Outer<T> {
+                    public class InnerG<U> {}
+                }
+                public static int test() {
+                    Outer<?>.InnerG<?>[] arr = new Outer<?>.InnerG<?>[0];
+                    return arr.length;
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 0)
+    }
+
+    /**
+     * JLS 4.5.2, 6.5.5: a static member type may not be selected from a
+     * parameterized type ({@code new Outer<?>.Nested[n]}).
+     */
+    @Test
+    void testNegativeStaticNestedTypeViaParameterizedEnclosing() {
+        final String className = 'gls.generics.test.StaticNestedViaParameterized'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class StaticNestedViaParameterized {
+                public static class Outer<T> {
+                    public static class Nested {}
+                }
+                public static Object test() {
+                    return new Outer<?>.Nested[0];
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot select a static class from a parameterized type", "parameterization")
+    }
+
+    /**
+     * JLS 9.5, 6.5.5: a nested interface is implicitly static, so
+     * {@code implements Outer<String>.Inner} is the same error as
+     * {@code new Outer<?>.Nested[n]}.
+     */
+    @Test
+    void testNegativeImplementsStaticNestedViaParameterizedEnclosing() {
+        final String className = 'gls.generics.test.ImplementsStaticNestedViaParameterized'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class ImplementsStaticNestedViaParameterized {
+                public static class Outer<T> {
+                    public interface Inner<U> {
+                        U id(U u);
+                    }
+                }
+                public static class Impl implements Outer<String>.Inner<Integer> {
+                    public Integer id(Integer u) { return u; }
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot select a static class from a parameterized type", "parameterization")
+    }
+
+    /**
+     * JLS 9.5, 6.5.5: {@code Map.Entry} is a nested interface, so
+     * {@code new Map<?,?>.Entry[n]} cannot select it from a parameterization.
+     */
+    @Test
+    void testNegativeMapEntryViaParameterizedEnclosing() {
+        final String className = 'gls.generics.test.MapEntryViaParameterized'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.Map;
+            public class MapEntryViaParameterized {
+                public static Object test() {
+                    return new Map<?,?>.Entry[0];
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot select a static class from a parameterized type", "parameterization")
+    }
+
+    /**
+     * A generic member type used raw under a parameterized enclosing type is
+     * malformed ({@code new Outer<?>.InnerG[n]}).
+     */
+    @Test
+    void testNegativeRawGenericMemberOfParameterizedEnclosing() {
+        final String className = 'gls.generics.test.RawMemberOfParameterized'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class RawMemberOfParameterized {
+                public static class Outer<T> {
+                    public class InnerG<U> {}
+                }
+                public static Object test() {
+                    return new Outer<?>.InnerG[0];
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "improperly formed type", "parameterized enclosing type")
+    }
+
+    /**
+     * JLS 15.9.1: a class instance creation may not instantiate a type variable
+     * ({@code new T()}).
+     */
+    @Test
+    void testNegativeInstantiateTypeVariable() {
+        final String className = 'gls.generics.test.NewTypeVariable'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class NewTypeVariable {
+                public static <T> T make() {
+                    return new T();
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "type parameter", "type parameter")
+    }
+
+    /**
+     * JLS 15.8.2: a class literal's {@code TypeName} may not denote a type
+     * variable ({@code T.class}).
+     */
+    @Test
+    void testNegativeTypeVariableClassLiteral() {
+        final String className = 'gls.generics.test.TypeVarClassLiteral'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class TypeVarClassLiteral {
+                public static <T> Class<T> token() {
+                    return T.class;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot select from a type variable", "type parameter")
+    }
+
+    /**
+     * JLS 4.5.2: it is illegal to refer to a static member of a generic type
+     * through a parameterization ({@code Cell<String>.id()}).
+     */
+    @Test
+    void testNegativeStaticMemberViaParameterizedType() {
+        final String className = 'gls.generics.test.StaticViaParameterized'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class StaticViaParameterized {
+                public static class Cell<T> {
+                    public static String id() { return "cell"; }
+                }
+                public static String test() {
+                    return Cell<String>.id();
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "illegal start of type", "parameterization")
+    }
+
+    /**
+     * JLS 8.4.2, 8.4.8.3 (Example 8.4.8.3-4): two methods of a class may not
+     * have override-equivalent signatures after erasure
+     * ({@code m(List<String>)} and {@code m(List<Integer>)} both erase to {@code m(List)}).
+     */
+    @Test
+    void testNegativeSameErasureOverload() {
+        final String className = 'gls.generics.test.SameErasureOverload'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class SameErasureOverload {
+                public void m(List<String> a) {}
+                public void m(List<Integer> a) {}
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "erasure", "duplicates another method")
+    }
+
+    /**
+     * JLS 15.9: a wildcard may not appear after {@code new} in a class instance
+     * creation expression ({@code new ArrayList<?>()}).
+     */
+    @Test
+    void testNegativeWildcardAfterNew() {
+        final String className = 'gls.generics.test.WildcardAfterNew'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.ArrayList;
+            public class WildcardAfterNew {
+                public static Object test() {
+                    return new ArrayList<?>();
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "unexpected type", "wildcard type")
+    }
+
+    /**
+     * JLS 15.9: diamond {@code <>} may not be combined with explicit constructor
+     * type arguments.
+     */
+    @Test
+    void testNegativeDiamondAndConstructorTypeArguments() {
+        final String className = 'gls.generics.test.DiamondAndCtorArgs'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class DiamondAndCtorArgs {
+                public static class Box<T> {
+                    public final T value;
+                    public <U> Box(T value, U extra) { this.value = value; }
+                }
+                public static Object test() {
+                    return new <Integer>Box<>("x", Integer.valueOf(1));
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "explicit type parameters for constructor", "Cannot use diamond")
+    }
+
+    /**
+     * JLS 8.9: an enum class may not declare type parameters.
+     */
+    @Test
+    void testNegativeGenericEnum() {
+        final String className = 'gls.generics.test.GenericEnum'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GenericEnum {
+                public enum Kind<T> { A }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "enum", "enum")
+    }
+
+    /**
+     * JLS 4.4: a class type or type variable may appear only as the first type
+     * of a bound; additional bounds must be interfaces
+     * ({@code T extends Comparable<T> & Number} is illegal).
+     */
+    @Test
+    void testNegativeClassTypeNotFirstInBound() {
+        final String className = 'gls.generics.test.ClassBoundNotFirst'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class ClassBoundNotFirst {
+                public static <T extends Comparable<T> & Number> T id(T value) {
+                    return value;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "interface", "interface")
+    }
+
+    /**
+     * JLS 15.10.1: the component type of an array creation may not be a type
+     * variable ({@code new T[n]}).
+     */
+    @Test
+    void testNegativeTypeParameterArrayCreation() {
+        final String className = 'gls.generics.test.TypeParamArray'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class TypeParamArray {
+                public static <T> T[] make(int n) {
+                    return new T[n];
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "generic array creation", "generic array creation")
+    }
+
+    // =========================================================================
+    // Category 16: JCK four-dimension coverage (Java SE 25)
+    //   1. erasure and bridges    2. multi-parameter / nested syntax
+    //   3. Signature reflection   4. raw-type backward compatibility
+    // =========================================================================
+
+    /**
+     * JLS 4.6: the erasure of an unbounded type variable is {@code Object};
+     * the erasure of {@code T extends Number} is {@code Number}. The generic
+     * return type remains a {@link TypeVariable}.
+     */
+    @Test
+    void testErasureOfUnboundedAndBoundedTypeVariables() {
+        final String className = 'gls.generics.test.ErasureOfTypeVariables'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.lang.reflect.Method;
+            import java.lang.reflect.TypeVariable;
+            public class ErasureOfTypeVariables {
+                public static class Box<T> {
+                    public T id(T t) { return t; }
+                }
+                public static class NumBox<T extends Number> {
+                    public T id(T t) { return t; }
+                }
+                public static String test() throws Exception {
+                    Method boxId = Box.class.getMethod("id", Object.class);
+                    Method numId = NumBox.class.getMethod("id", Number.class);
+                    boolean boxErasure = boxId.getReturnType() == Object.class
+                            && boxId.getGenericReturnType() instanceof TypeVariable;
+                    boolean numErasure = numId.getReturnType() == Number.class
+                            && numId.getGenericReturnType() instanceof TypeVariable;
+                    return (boxErasure && numErasure) ? "ok" : "fail";
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'ok', true)
+    }
+
+    /**
+     * JLS 8.4.8.3, 15.12.4.5: a covariant override of {@code T get()} as
+     * {@code String get()} is compiled with a bridge {@code Object get()} so a
+     * raw or erased invoke still reaches the specialized method.
+     */
+    @Test
+    void testCovariantOverrideDeclaresBridgeMethod() {
+        final String className = 'gls.generics.test.CovariantBridgePresent'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.lang.reflect.Method;
+            public class CovariantBridgePresent {
+                public interface Supplier<T> {
+                    T get();
+                }
+                public static class StringSupplier implements Supplier<String> {
+                    @Override
+                    public String get() { return "bridged"; }
+                }
+                public static String test() {
+                    boolean bridge = false;
+                    boolean specialized = false;
+                    for (Method m : StringSupplier.class.getDeclaredMethods()) {
+                        if (!"get".equals(m.getName()) || m.getParameterCount() != 0) {
+                            continue;
+                        }
+                        if (m.isBridge() && m.getReturnType() == Object.class) {
+                            bridge = true;
+                        }
+                        if (!m.isBridge() && m.getReturnType() == String.class) {
+                            specialized = true;
+                        }
+                    }
+                    Supplier raw = new StringSupplier();
+                    Object viaErased = raw.get();
+                    return (bridge && specialized && "bridged".equals(viaErased)) ? "ok" : "fail";
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'ok')
+    }
+
+    /**
+     * JLS 8.1.2: three independent class type parameters {@code Triple<A, B, C>}
+     * are substituted together; diamond infers all three from the constructor
+     * arguments and the assignment target.
+     */
+    @Test
+    void testTripleTypeParameters() {
+        final String className = 'gls.generics.test.TripleTypeParams'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class TripleTypeParams {
+                public static class Triple<A, B, C> {
+                    public final A a;
+                    public final B b;
+                    public final C c;
+                    public Triple(A a, B b, C c) {
+                        this.a = a;
+                        this.b = b;
+                        this.c = c;
+                    }
+                }
+                public static String test() {
+                    Triple<String, Integer, Double> t = new Triple<>("k", Integer.valueOf(1), Double.valueOf(2.0d));
+                    return t.a + t.b + t.c.intValue();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'k12', true)
+    }
+
+    /**
+     * JLS 4.5, 13.1: {@code Class#getGenericSuperclass()} of a class that
+     * extends {@code Box<String>} is the parameterized type {@code Box<String>},
+     * and {@code getActualTypeArguments()[0]} is {@code String.class}.
+     */
+    @Test
+    void testGenericSuperclassActualTypeArguments() {
+        final String className = 'gls.generics.test.GenericSuperclassArgs'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.lang.reflect.ParameterizedType;
+            import java.lang.reflect.Type;
+            public class GenericSuperclassArgs {
+                public static class Box<T> {}
+                public static class NamedBox extends Box<String> {}
+                public static class StringIterable implements Iterable<String> {
+                    @Override
+                    public java.util.Iterator<String> iterator() {
+                        return java.util.Collections.emptyIterator();
+                    }
+                }
+                public static String test() {
+                    Type sc = NamedBox.class.getGenericSuperclass();
+                    ParameterizedType box = (ParameterizedType) sc;
+                    Class<?> arg = (Class<?>) box.getActualTypeArguments()[0];
+                    String ifaceArg = "missing";
+                    for (Type t : StringIterable.class.getGenericInterfaces()) {
+                        if (t instanceof ParameterizedType) {
+                            ParameterizedType p = (ParameterizedType) t;
+                            if (p.getRawType() == Iterable.class) {
+                                ifaceArg = ((Class<?>) p.getActualTypeArguments()[0]).getSimpleName();
+                            }
+                        }
+                    }
+                    return arg.getName() + "|" + ifaceArg;
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'java.lang.String|String', true)
+    }
+
+    /**
+     * JLS 4.5, 10.1, 13.1: a field of type {@code List<String>[]} is a generic
+     * array type in the Signature attribute. {@link GenericArrayType} reports
+     * the component as {@code List<String>}. Creation of such an array remains
+     * illegal; see {@link #testNegativeNonReifiableArrayCreation()}.
+     */
+    @Test
+    void testGenericArrayTypeFieldSignature() {
+        final String className = 'gls.generics.test.GenericArrayField'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.lang.reflect.GenericArrayType;
+            import java.lang.reflect.ParameterizedType;
+            import java.lang.reflect.Type;
+            import java.util.List;
+            public class GenericArrayField {
+                public List<String>[] rows;
+                public static String test() throws Exception {
+                    Type t = GenericArrayField.class.getField("rows").getGenericType();
+                    if (!(t instanceof GenericArrayType)) {
+                        return "not-array:" + t;
+                    }
+                    Type component = ((GenericArrayType) t).getGenericComponentType();
+                    if (!(component instanceof ParameterizedType)) {
+                        return "not-param:" + component;
+                    }
+                    return ((Class<?>) ((ParameterizedType) component).getActualTypeArguments()[0]).getSimpleName();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'String', true)
+    }
+
+    /**
+     * JLS 8.8.4, 13.1: a generic constructor {@code <T> CtorBox(T)} records its
+     * type parameter on the constructor, independent of any class type parameters.
+     */
+    @Test
+    void testGenericConstructorTypeParameterSignature() {
+        final String className = 'gls.generics.test.GenericCtorSignature'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.lang.reflect.Constructor;
+            import java.lang.reflect.TypeVariable;
+            public class GenericCtorSignature {
+                public static class CtorBox {
+                    public final Object value;
+                    public <T> CtorBox(T t) { this.value = t; }
+                }
+                public static int test() {
+                    int found = 0;
+                    for (Constructor<?> c : CtorBox.class.getDeclaredConstructors()) {
+                        if (c.getParameterCount() == 1) {
+                            TypeVariable<?>[] tps = c.getTypeParameters();
+                            if (tps.length == 1 && "T".equals(tps[0].getName())) {
+                                found++;
+                            }
+                        }
+                    }
+                    return found;
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 1, true)
+    }
+
+    /**
+     * JLS 4.8: a raw subclass {@code class Raw extends Box} uses the erasure of
+     * {@code Box}. {@code get()} therefore has compile-time type {@code Object}.
+     */
+    @Test
+    void testRawSubclassOfGenericClass() {
+        final String className = 'gls.generics.test.RawSubclass'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class RawSubclass {
+                public static class Box<T> {
+                    public final T value;
+                    public Box(T value) { this.value = value; }
+                    public T get() { return value; }
+                }
+                @SuppressWarnings({"rawtypes", "unchecked"})
+                public static class Raw extends Box {
+                    public Raw(Object value) { super(value); }
+                }
+                @SuppressWarnings({"rawtypes", "unchecked"})
+                public static String test() {
+                    Raw raw = new Raw("hi");
+                    Object value = raw.get();
+                    return value.toString();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'hi')
+    }
+
+    /**
+     * JLS 8.4.8.1, 4.8, 5.1.9: a raw subclass may override {@code name(T)} with
+     * {@code name(Object)} (the erasure). Invocation through {@code Super<String>}
+     * still dispatches to the subclass. javac 25 accepts this as an unchecked override.
+     */
+    @Test
+    void testUncheckedOverrideOfGenericMethod() {
+        final String className = 'gls.generics.test.UncheckedOverride'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class UncheckedOverride {
+                public static class Super<T> {
+                    public String name(T t) { return "super"; }
+                }
+                @SuppressWarnings({"rawtypes", "unchecked"})
+                public static class Child extends Super {
+                    public String name(Object t) { return "child"; }
+                }
+                public static String test() {
+                    Super<String> s = new Child();
+                    return s.name("x");
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'child')
+    }
+
+    // =========================================================================
+    // Category 17: Overload resolution against erasure; F-bounded copy; intersection
+    // erasure; Collection<Object> vs Collection<?> (JLS 4.4–4.6, 4.8, 5.1.10, 15.12.2)
+    // =========================================================================
+
+    /**
+     * JLS 4.6, 15.12.2: inside {@code <T> generic(T t)} the compile-time type of
+     * {@code t} is the erasure of {@code T} ({@code Object}), so {@code f(t)} binds
+     * to {@code f(Object)} even when the invocation is {@code generic("string")}.
+     */
+    @Test
+    void testGenericMethodOverloadResolvesAgainstErasure() {
+        final String className = 'gls.generics.test.GenericOverloadErasure'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GenericOverloadErasure {
+                public static String f(Object s) { return "object"; }
+                public static String f(String s) { return "string"; }
+                public static <T> String generic(T t) { return f(t); }
+                public static String test() {
+                    return generic("string");
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'object')
+    }
+
+    /**
+     * JLS 4.4: {@code Copyable<T extends Copyable<T>>} with {@code T copy()} makes
+     * {@code node.copy().copy()} well-typed, because the result of {@code copy()}
+     * is the same F-bounded type.
+     */
+    @Test
+    void testFBoundedCopyAllowsChainedCopy() {
+        final String className = 'gls.generics.test.FBoundedCopy'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class FBoundedCopy {
+                public interface Copyable<T extends Copyable<T>> {
+                    T copy();
+                }
+                public static class Node implements Copyable<Node> {
+                    @Override
+                    public Node copy() { return this; }
+                    public String id() { return "n"; }
+                }
+                public static String test() {
+                    return new Node().copy().copy().id();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'n', true)
+    }
+
+    /**
+     * JLS 4.4, 4.6, 4.9: the {@code Collections.max} shape
+     * {@code <T extends Object & Comparable<? super T>> T max(Collection<? extends T>)}
+     * erases the return type to the leftmost bound {@code Object}.
+     */
+    @Test
+    void testIntersectionMaxErasureIsLeftmostBound() {
+        final String className = 'gls.generics.test.IntersectionMaxErasure'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.lang.reflect.Method;
+            import java.util.Collection;
+            public class IntersectionMaxErasure {
+                public static <T extends Object & Comparable<? super T>> T max(Collection<? extends T> coll) {
+                    return null;
+                }
+                public static String test() throws Exception {
+                    Method m = IntersectionMaxErasure.class.getMethod("max", Collection.class);
+                    return m.getReturnType() == Object.class ? "ok" : m.getReturnType().getName();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'ok')
+    }
+
+    /**
+     * JLS 4.5, 4.8: {@code Collection<Object>} accepts any reference.
+     * {@code Collection<?>} is a capture of some unknown element type; see
+     * {@link #testNegativeAddNonNullThroughUnboundedWildcard()}.
+     */
+    @Test
+    void testCollectionObjectIsHeterogeneous() {
+        final String className = 'gls.generics.test.HeterogeneousCollectionObject'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.ArrayList;
+            import java.util.Collection;
+            public class HeterogeneousCollectionObject {
+                public static int test() {
+                    Collection<Object> hetero = new ArrayList<Object>();
+                    hetero.add("a");
+                    hetero.add(Integer.valueOf(1));
+                    return hetero.size();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 2)
+    }
+
+    /**
+     * JLS 5.1.10: after capture, the element type of {@code Collection<?>} is a
+     * fresh type variable; {@code String} is not a subtype of that capture, so
+     * {@code add("x")} is a compile-time error. {@code add(null)} remains legal
+     * ({@link #testWildcardAllowsAddingNull()}).
+     */
+    @Test
+    void testNegativeAddNonNullThroughUnboundedWildcard() {
+        final String className = 'gls.generics.test.UnboundedWildcardAdd'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.Collection;
+            public class UnboundedWildcardAdd {
+                public static void test(Collection<?> c) {
+                    c.add("x");
                 }
             }
         '''
@@ -1637,11 +3038,15 @@ final class GenericsJavaCompatibilityTest {
         if (type instanceof ParameterizedType) {
             ParameterizedType p = (ParameterizedType) type
             Type[] typeArgs = p.actualTypeArguments
-            String raw = typeDesc(p.rawType)
-            if (typeArgs == null || typeArgs.length == 0) {
-                return raw
+            String args = (typeArgs == null || typeArgs.length == 0) ? '' :
+                '<' + typeArgs.collect { typeDesc(it) }.join(', ') + '>'
+            if (p.ownerType != null) {
+                String raw = rawName(p.rawType)
+                int cut = Math.max(raw.lastIndexOf('$'), raw.lastIndexOf('.'))
+                String simple = cut < 0 ? raw : raw.substring(cut + 1)
+                return typeDesc(p.ownerType) + '$' + simple + args
             }
-            return raw + '<' + typeArgs.collect { typeDesc(it) }.join(', ') + '>'
+            return typeDesc(p.rawType) + args
         }
         if (type instanceof WildcardType) {
             WildcardType w = (WildcardType) type

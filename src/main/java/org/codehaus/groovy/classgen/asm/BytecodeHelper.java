@@ -337,7 +337,10 @@ public class BytecodeHelper {
     }
 
     private static boolean hasGenerics(ClassNode type) {
-        return type.isArray() ? hasGenerics(type.getComponentType()) : type.getGenericsTypes() != null;
+        if (type.isArray()) return hasGenerics(type.getComponentType());
+        if (type.getGenericsTypes() != null && type.getGenericsTypes().length > 0) return true;
+        ClassNode outer = type.getOuterClassType();
+        return outer != null && hasGenerics(outer);
     }
 
     /**
@@ -393,18 +396,13 @@ public class BytecodeHelper {
     public static String getTypeGenericsSignature(ClassNode node) {
         if (!usesGenericsInTypeSignature(node)) return null;
         StringBuilder ret = new StringBuilder(100);
-        ret.append(getTypeDescription(node.getPlainNodeReference(), false));
-        addSubTypes(ret, node.getGenericsTypes(), "<", ">");
+        writeParameterizedClass(ret, node);
         ret.append(";");
-
         return ret.toString();
     }
 
     private static boolean usesGenericsInTypeSignature(ClassNode node) {
-        if (!node.isUsingGenerics()) return false;
-        if (hasGenerics(node)) return true;
-
-        return false;
+        return hasGenerics(node);
     }
 
     /**
@@ -429,7 +427,7 @@ public class BytecodeHelper {
     }
 
     private static void getGenericsTypeSpec(StringBuilder ret, GenericsType[] genericsTypes) {
-        if (genericsTypes == null) return;
+        if (genericsTypes == null || genericsTypes.length == 0) return;
         ret.append('<');
         for (GenericsType genericsType : genericsTypes) {
             String name = genericsType.getName();
@@ -447,8 +445,11 @@ public class BytecodeHelper {
      * @return the bounds signature, or {@code null} if none is needed
      */
     public static String getGenericsBounds(ClassNode type) {
-        GenericsType[] genericsTypes = type.getGenericsTypes();
-        if (genericsTypes == null) return null;
+        if (type.isArray()) {
+            String component = getGenericsBounds(type.getComponentType());
+            return component == null ? null : "[" + component;
+        }
+        if (!hasGenerics(type)) return null;
         StringBuilder ret = new StringBuilder(100);
         if (type.isGenericsPlaceHolder()) {
             addSubTypes(ret, type.getGenericsTypes(), "", "");
@@ -466,10 +467,39 @@ public class BytecodeHelper {
             ret.append(printType.getGenericsTypes()[0].getName());
             ret.append(";");
         } else {
-            ret.append(getTypeDescription(printType, false));
-            addSubTypes(ret, printType.getGenericsTypes(), "<", ">");
+            writeParameterizedClass(ret, printType);
             if (!isPrimitiveType(printType)) ret.append(";");
         }
+    }
+
+    /**
+     * Writes a class type and its type arguments, using the JLS 4.5 nested form
+     * {@code LOuter&lt;...&gt;.Inner&lt;...&gt;} when an enclosing rare type is present.
+     */
+    private static void writeParameterizedClass(StringBuilder ret, ClassNode printType) {
+        ClassNode owner = printType.getOuterClassType();
+        if (owner != null) {
+            writeParameterizedClass(ret, owner);
+            ret.append('.');
+            ret.append(innerClassSimpleName(printType, owner));
+            addSubTypes(ret, printType.getGenericsTypes(), "<", ">");
+            return;
+        }
+        ret.append(getTypeDescription(printType, false));
+        addSubTypes(ret, printType.getGenericsTypes(), "<", ">");
+    }
+
+    private static String innerClassSimpleName(final ClassNode inner, final ClassNode owner) {
+        String innerName = inner.getName();
+        String ownerName = owner.getName();
+        if (innerName.startsWith(ownerName) && innerName.length() > ownerName.length()) {
+            char sep = innerName.charAt(ownerName.length());
+            if (sep == '.' || sep == '$') {
+                return innerName.substring(ownerName.length() + 1).replace('$', '.');
+            }
+        }
+        int dot = Math.max(innerName.lastIndexOf('.'), innerName.lastIndexOf('$'));
+        return dot < 0 ? innerName : innerName.substring(dot + 1);
     }
 
     private static void writeGenericsBounds(StringBuilder ret, GenericsType type, boolean writeInterfaceMarker) {
@@ -487,6 +517,7 @@ public class BytecodeHelper {
 
     private static void addSubTypes(StringBuilder ret, GenericsType[] types, String start, String end) {
         if (types == null) return;
+        if (types.length == 0 && "<".equals(start)) return;
         ret.append(start);
         for (GenericsType type : types) {
             if (type.getType().isArray()) {

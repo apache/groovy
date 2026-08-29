@@ -347,8 +347,9 @@ primitiveType
     :   BuiltInPrimitiveType
     ;
 
+// GROOVY-12319: JLS 4.5 "rare" types (Outer<T>.Inner after the outer type arguments)
 referenceType
-    :   qualifiedClassName typeArguments?
+    :   qualifiedClassName (typeArguments (DOT identifier typeArguments?)*)?
     ;
 
 matchingType // see: instanceof / !instanceof type patterns (JEP 394)
@@ -374,7 +375,7 @@ options { baseContext = type; }
 
 standardClassOrInterfaceType
 options { baseContext = referenceType; }
-    :   qualifiedStandardClassName typeArguments?
+    :   qualifiedStandardClassName (typeArguments (DOT className typeArguments?)*)?
     ;
 
 typeArguments
@@ -990,7 +991,7 @@ pathElement returns [int t]
     :   NL*
         (
             DOT NL*
-            (   NEW creator[1]
+            (   NEW nonWildcardTypeArguments? creator[1]  // GROOVY-12319: outer.new <T>Inner(...)
                 { $t = 6; }
             |
                 // AT: foo.@bar selects the field (or attribute), not property
@@ -1086,9 +1087,10 @@ primary
         identifier typeArguments?                                                           #identifierPrmrAlt
     |   literal                                                                             #literalPrmrAlt
     |   gstring                                                                             #gstringPrmrAlt
-    |   NEW NL* creator[0]                                                                  #newPrmrAlt
-    |   THIS                                                                                #thisPrmrAlt
-    |   SUPER                                                                               #superPrmrAlt
+    // GROOVY-12319: JLS 15.9 / 8.8.7.1 constructor type arguments (new <T>C(), <T>this(), <T>super())
+    |   NEW NL* nonWildcardTypeArguments? creator[0]                                        #newPrmrAlt
+    |   nonWildcardTypeArguments? THIS                                                      #thisPrmrAlt
+    |   nonWildcardTypeArguments? SUPER                                                     #superPrmrAlt
     |   parExpression                                                                       #parenPrmrAlt
     |   closureOrLambdaExpression                                                           #closureOrLambdaExpressionPrmrAlt
     |   list                                                                                #listPrmrAlt
@@ -1213,7 +1215,8 @@ anonymousInnerClassDeclaration[int t]
 createdName
     :   annotationsOpt
         (   primitiveType
-        |   qualifiedClassName typeArgumentsOrDiamond?
+        |   // GROOVY-12319: JLS 15.9 ClassOrInterfaceTypeToInstantiate (new Outer<T>.Inner<U>(...))
+            qualifiedClassName (typeArgumentsOrDiamond (DOT identifier typeArgumentsOrDiamond?)*)?
         )
     ;
 

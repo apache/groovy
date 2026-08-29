@@ -20,6 +20,7 @@ package org.codehaus.groovy.classgen
 
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.GenericsType
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.stmt.EmptyStatement
@@ -79,6 +80,55 @@ class BytecodeHelperTest extends AbstractBytecodeTestCase {
                 BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.short_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], EmptyStatement.INSTANCE)))
         assertEquals("()Z",
                 BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.boolean_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], EmptyStatement.INSTANCE)))
+    }
+
+    @Test // GROOVY-12319
+    void testRareTypeAndArrayGenericsSignatures() {
+        ClassNode outer = ClassHelper.makeWithoutCaching('com.example.Outer')
+        outer.genericsTypes = [new GenericsType(ClassHelper.STRING_TYPE)] as GenericsType[]
+        ClassNode inner = ClassHelper.makeWithoutCaching('com.example.Outer$Inner')
+        inner.outerClassType = outer
+        inner.genericsTypes = [new GenericsType(ClassHelper.Integer_TYPE)] as GenericsType[]
+
+        String typeSig = BytecodeHelper.getTypeGenericsSignature(inner)
+        assert typeSig.contains('Outer')
+        assert typeSig.contains('Inner')
+        assert typeSig.contains('String')
+
+        ClassNode list = ClassHelper.LIST_TYPE.getPlainNodeReference()
+        list.genericsTypes = [new GenericsType(ClassHelper.STRING_TYPE)] as GenericsType[]
+        String arrayBounds = BytecodeHelper.getGenericsBounds(list.makeArray())
+        assert arrayBounds.startsWith('[')
+        assert arrayBounds.contains('String')
+
+        assert BytecodeHelper.getGenericsBounds(ClassHelper.STRING_TYPE.makeArray()) == null
+
+        ClassNode diamond = ClassHelper.LIST_TYPE.getPlainNodeReference()
+        diamond.genericsTypes = GenericsType.EMPTY_ARRAY
+        assert BytecodeHelper.getTypeGenericsSignature(diamond) == null
+
+        ClassNode placeholder = ClassHelper.makeWithoutCaching('T')
+        placeholder.genericsPlaceHolder = true
+        placeholder.genericsTypes = [new GenericsType(placeholder)] as GenericsType[]
+        placeholder.redirect = ClassHelper.OBJECT_TYPE
+        assert BytecodeHelper.getGenericsBounds(placeholder) != null
+
+        ClassNode mismatchedInner = ClassHelper.makeWithoutCaching('totally.Different$Item')
+        mismatchedInner.outerClassType = outer
+        mismatchedInner.genericsTypes = [new GenericsType(ClassHelper.Integer_TYPE)] as GenericsType[]
+        String fallback = BytecodeHelper.getTypeGenericsSignature(mismatchedInner)
+        assert fallback.contains('Item')
+
+        ClassNode superDiamond = ClassHelper.LIST_TYPE.getPlainNodeReference()
+        superDiamond.genericsTypes = GenericsType.EMPTY_ARRAY
+        ClassNode t = ClassHelper.makeWithoutCaching('T')
+        t.genericsPlaceHolder = true
+        ClassNode genericClass = new ClassNode('C', ACC_PUBLIC, superDiamond)
+        genericClass.genericsTypes = [new GenericsType(t)] as GenericsType[]
+        assert BytecodeHelper.getGenericsSignature(genericClass) != null
+
+        MethodNode mn = new MethodNode('echo', 0, inner, [new Parameter(inner, 'p')] as Parameter[], [] as ClassNode[], EmptyStatement.INSTANCE)
+        assert BytecodeHelper.getGenericsMethodSignature(mn).contains('Outer')
     }
 
     @Test

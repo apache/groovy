@@ -420,6 +420,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (type.isRedirectNode() || !type.isPrimaryClassNode()) {
             visitTypeAnnotations(type); // JSR 308 support
         }
+        ClassNode oc = type.getOuterClassType(); // GROOVY-10646, GROOVY-12319: Outer<T>.Inner
+        if (oc != null) {
+            resolveOrFail(oc, msg, node, preferImports);
+            resolveGenericsTypes(oc.getGenericsTypes());
+        }
         if (preferImports && !type.isResolved() && !type.isPrimaryClassNode()) {
             resolveGenericsTypes(type.getGenericsTypes());
             if (resolveAliasFromModule(type)) return;
@@ -483,6 +488,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     protected boolean resolve(final ClassNode type, final boolean testModuleImports, final boolean testDefaultImports, final boolean testStaticInnerClasses) {
         GenericsType[] genericsTypes = type.getGenericsTypes();
         resolveGenericsTypes(genericsTypes);
+        ClassNode oc = type.getOuterClassType();
+        if (oc != null) {
+            if (!resolve(oc, testModuleImports, testDefaultImports, testStaticInnerClasses)) {
+                return false;
+            }
+            resolveGenericsTypes(oc.getGenericsTypes());
+        }
 
         if (type.isPrimaryClassNode()) return true;
         if (type.isArray()) {
@@ -1347,6 +1359,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 addError("You cannot create an instance from the abstract " + getDescription(cceType) + ".", cce);
             }
         }
+        resolveGenericsTypes(cce.getGenericsTypes());
 
         return cce.transformExpression(this);
     }

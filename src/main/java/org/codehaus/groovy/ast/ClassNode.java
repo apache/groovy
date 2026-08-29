@@ -257,17 +257,15 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * Constructs a non-primary array {@code ClassNode} when no real array class is available.
-     * This internal constructor is used by {@code makeArray()} to create a synthetic array ClassNode.
-     * The resulting node represents an array type with appropriate interfaces and modifiers.
-     *
-     * @param componentType the {@link ClassNode} representing the element type of the array
+     * Synthetic array {@code ClassNode} used by {@link #makeArray()} when no real
+     * array class is available. {@code componentType} is the element type.
      */
-    private ClassNode(final ClassNode componentType) {
-        this(componentType.getName() + "[]", ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC, ClassHelper.OBJECT_TYPE,
+    private static ClassNode syntheticArray(final ClassNode componentType) {
+        ClassNode node = new ClassNode(componentType.getName() + "[]", ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC, ClassHelper.OBJECT_TYPE,
           new ClassNode[]{ClassHelper.CLONEABLE_TYPE, ClassHelper.SERIALIZABLE_TYPE}, MixinNode.EMPTY_ARRAY);
-        this.componentType = componentType.redirect();
-        this.isPrimaryNode = false;
+        node.componentType = componentType.redirect();
+        node.isPrimaryNode = false;
+        return node;
     }
 
     //--------------------------------------------------------------------------
@@ -338,6 +336,10 @@ public class ClassNode extends AnnotatedNode {
         n.setRedirect(redirect());
         if (isArray()) {
             n.componentType = redirect().getComponentType();
+        }
+        ClassNode outerType = getOuterClassType();
+        if (outerType != null) {
+            n.setOuterClassType(outerType);
         }
         return n;
     }
@@ -503,6 +505,7 @@ public class ClassNode extends AnnotatedNode {
      * @return the modifier flags as an integer bitmask
      * @see #setModifiers(int)
      * @see #isAbstract()
+     * @see #isStatic()
      * @see #isInterface()
      * @see #isEnum()
      */
@@ -1862,6 +1865,22 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
     }
 
     /**
+     * Returns whether this {@link ClassNode} represents a static class.
+     * A class is static if the {@code ACC_STATIC} modifier flag is set in its modifiers.
+     * Static nested classes have no enclosing instance; they can be used without an instance of the enclosing class.
+     * This method checks the actual modifier bits, independent of the source code syntax.
+     *
+     * @return {@code true} if this class has the static modifier set; {@code false} otherwise
+     * @see #getModifiers()
+     * @see #setModifiers(int)
+     *
+     * @since 6.0.0
+     */
+    public boolean isStatic() {
+        return (getModifiers() & ACC_STATIC) != 0;
+    }
+
+    /**
      * Returns whether this {@link ClassNode} represents an interface type.
      * A class is an interface if the {@code ACC_INTERFACE} modifier flag is set in its modifiers.
      * Interfaces define contracts for implementing classes without providing implementation details.
@@ -1980,7 +1999,7 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
             // don't use the ClassHelper here!
             node = new ClassNode(type, this);
         } else {
-            node = new ClassNode(this);
+            node = syntheticArray(this);
         }
         return node;
     }
@@ -2032,6 +2051,28 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
         } while ((outer = outer.getOuterClass()) != null);
 
         return result;
+    }
+
+    /**
+     * For a JLS 4.5 rare type {@code Outer<T>.Inner}, the parameterized enclosing
+     * type. Distinct from {@link #getOuterClass()}, which is the enclosing class
+     * of a nested class <em>declaration</em>.
+     *
+     * @return the parameterized enclosing type, or {@code null} if this is not a rare type
+     * @since 6.0.0
+     */
+    public ClassNode getOuterClassType() {
+        return getNodeMetaData("outer.class");
+    }
+
+    /**
+     * Records the parameterized enclosing type of a JLS 4.5 rare type.
+     *
+     * @param outer the parameterized {@code Outer<T>} node; {@code null} clears it
+     * @since 6.0.0
+     */
+    public void setOuterClassType(final ClassNode outer) {
+        putNodeMetaData("outer.class", outer);
     }
 
     /**
@@ -2247,6 +2288,7 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
      *
      * @return {@code true} if this class is declared in a static method; {@code false} otherwise
      * @see #setStaticClass(boolean)
+     * @see #isStatic()
      * @see #isScriptBody()
      */
     public boolean isStaticClass() {
@@ -2261,6 +2303,7 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
      *
      * @param staticClass {@code true} to mark as defined in a static context; {@code false} otherwise
      * @see #isStaticClass()
+     * @see #isStatic()
      * @see #setScriptBody(boolean)
      */
     public void setStaticClass(boolean staticClass) {

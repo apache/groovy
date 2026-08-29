@@ -2878,6 +2878,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         } else if (asBoolean(ctx.creator())) {
             CreatorContext creatorContext = ctx.creator();
             creatorContext.putNodeMetaData(ENCLOSING_INSTANCE_EXPRESSION, baseExpr);
+            if (asBoolean(ctx.nonWildcardTypeArguments())) {
+                creatorContext.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES, this.visitNonWildcardTypeArguments(ctx.nonWildcardTypeArguments()));
+            }
             return configureAST(this.visitCreator(creatorContext), ctx);
         } else if (asBoolean(ctx.indexPropertyArgs())) { // e.g. list[1, 3, 5]
             Tuple2<Token, Expression> tuple = this.visitIndexPropertyArgs(ctx.indexPropertyArgs());
@@ -2969,14 +2972,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                                 ctx);
                     }
 
-                    return configureAST(
-                            new ConstructorCallExpression(
-                                    SUPER_STR.equals(baseExprText)
-                                            ? ClassNode.SUPER
-                                            : ClassNode.THIS,
-                                    argumentsExpr
-                            ),
-                            ctx);
+                    ConstructorCallExpression constructorCallExpression = new ConstructorCallExpression(
+                            SUPER_STR.equals(baseExprText)
+                                    ? ClassNode.SUPER
+                                    : ClassNode.THIS,
+                            argumentsExpr
+                    );
+                    constructorCallExpression.setGenericsTypes(baseExpr.getNodeMetaData(PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES));
+                    return configureAST(constructorCallExpression, ctx);
                 }
 
                 MethodCallExpression methodCallExpression = this.createMethodCallExpression(baseExpr, argumentsExpr);
@@ -3861,17 +3864,28 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public Expression visitNewPrmrAlt(final NewPrmrAltContext ctx) {
+        if (asBoolean(ctx.nonWildcardTypeArguments())) {
+            ctx.creator().putNodeMetaData(PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES, this.visitNonWildcardTypeArguments(ctx.nonWildcardTypeArguments()));
+        }
         return configureAST(this.visitCreator(ctx.creator()), ctx);
     }
 
     @Override
     public VariableExpression visitThisPrmrAlt(final ThisPrmrAltContext ctx) {
-        return configureAST(new VariableExpression(ctx.THIS().getText()), ctx);
+        VariableExpression varExpr = configureAST(new VariableExpression(ctx.THIS().getText()), ctx);
+        if (asBoolean(ctx.nonWildcardTypeArguments())) {
+            varExpr.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES, this.visitNonWildcardTypeArguments(ctx.nonWildcardTypeArguments()));
+        }
+        return varExpr;
     }
 
     @Override
     public VariableExpression visitSuperPrmrAlt(final SuperPrmrAltContext ctx) {
-        return configureAST(new VariableExpression(ctx.SUPER().getText()), ctx);
+        VariableExpression varExpr = configureAST(new VariableExpression(ctx.SUPER().getText()), ctx);
+        if (asBoolean(ctx.nonWildcardTypeArguments())) {
+            varExpr.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES, this.visitNonWildcardTypeArguments(ctx.nonWildcardTypeArguments()));
+        }
+        return varExpr;
     }
 
     // } primary ---------------------------------------------------------------
@@ -3883,6 +3897,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (asBoolean(ctx.arguments())) { // create instance of class
             Expression arguments = this.visitArguments(ctx.arguments());
             Expression enclosingInstanceExpression = ctx.getNodeMetaData(ENCLOSING_INSTANCE_EXPRESSION);
+            GenericsType[] constructorGenerics = ctx.getNodeMetaData(PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES);
 
             if (enclosingInstanceExpression != null) {
                 if (arguments instanceof ArgumentListExpression) {
@@ -3910,10 +3925,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
                 ConstructorCallExpression constructorCallExpression = new ConstructorCallExpression(anonymousInnerClassNode, arguments);
                 constructorCallExpression.setUsingAnonymousInnerClass(true);
+                if (constructorGenerics != null) {
+                    constructorCallExpression.setGenericsTypes(constructorGenerics);
+                }
                 return configureAST(constructorCallExpression, ctx);
             }
 
             ConstructorCallExpression constructorCallExpression = new ConstructorCallExpression(classNode, arguments);
+            if (constructorGenerics != null) {
+                constructorCallExpression.setGenericsTypes(constructorGenerics);
+            }
             return configureAST(constructorCallExpression, ctx);
         }
 
@@ -3963,16 +3984,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public ClassNode visitCreatedName(final CreatedNameContext ctx) {
-        ClassNode classNode = null;
-        if (asBoolean(ctx.qualifiedClassName())) {
-            classNode = this.visitQualifiedClassName(ctx.qualifiedClassName());
-            if (asBoolean(ctx.typeArgumentsOrDiamond())) {
-                classNode.setGenericsTypes(
-                        this.visitTypeArgumentsOrDiamond(ctx.typeArgumentsOrDiamond()));
+        ClassNode classNode;
+        if (asBoolean(ctx.primitiveType())) {
+            classNode = configureAST(this.visitPrimitiveType(ctx.primitiveType()), ctx);
+        } else {
+            classNode = this.visitParameterizedClassType(ctx);
+            if (classNode != null) {
                 configureAST(classNode, ctx);
             }
-        } else if (asBoolean(ctx.primitiveType())) {
-            classNode = configureAST(this.visitPrimitiveType(ctx.primitiveType()), ctx);
         }
         if (classNode == null) {
             throw createParsingFailedException("Unsupported created name: " + ctx.getText(), ctx);
@@ -4647,29 +4666,52 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public ClassNode visitReferenceType(final ReferenceTypeContext ctx) {
-        ClassNode classNode;
-        if (asBoolean(ctx.qualifiedClassName())) {
-            if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR)) {
-                ctx.qualifiedClassName().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
-            }
-            classNode = this.visitQualifiedClassName(ctx.qualifiedClassName());
-        } else {
-            if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR)) {
-                ctx.qualifiedStandardClassName().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
-            }
-            classNode = this.visitQualifiedStandardClassName(ctx.qualifiedStandardClassName());
-        }
+        return configureAST(this.visitParameterizedClassType(ctx), ctx);
+    }
 
-        if (asBoolean(ctx.typeArguments())) {
-            GenericsType[] generics = this.visitTypeArguments(ctx.typeArguments());
-            classNode.setGenericsTypes(generics);
-            if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR) && Arrays.stream(generics).anyMatch(gt ->
-                    !gt.isWildcard() || asBoolean(gt.getLowerBound()) || ArrayGroovyMethods.asBoolean(gt.getUpperBounds()))) { // GROOVY-11585
-                throw this.createParsingFailedException("Cannot perform instanceof check against parameterized type " + classNode, ctx);
+    /**
+     * Builds a class type that may include JLS 4.5 rare types ({@code Outer<T>.Inner<U>}).
+     * Shared by {@code referenceType} (type arguments only) and {@code createdName}
+     * (type arguments or diamond).
+     */
+    private ClassNode visitParameterizedClassType(final GroovyParserRuleContext ctx) {
+        ClassNode classNode = null;
+        for (int i = 0, n = ctx.getChildCount(); i < n; i += 1) {
+            ParseTree child = ctx.getChild(i);
+            if (child instanceof QualifiedClassNameContext qcn) {
+                if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR)) {
+                    qcn.putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
+                }
+                classNode = this.visitQualifiedClassName(qcn);
+            } else if (child instanceof QualifiedStandardClassNameContext qscn) {
+                if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR)) {
+                    qscn.putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
+                }
+                classNode = this.visitQualifiedStandardClassName(qscn);
+            } else if (child instanceof TypeArgumentsContext tac) {
+                GenericsType[] generics = this.visitTypeArguments(tac);
+                classNode.setGenericsTypes(generics);
+                rejectParameterizedInstanceof(ctx, classNode, generics);
+            } else if (child instanceof TypeArgumentsOrDiamondContext tad) {
+                classNode.setGenericsTypes(this.visitTypeArgumentsOrDiamond(tad));
+            } else if (child instanceof IdentifierContext || child instanceof ClassNameContext) {
+                ClassNode outer = classNode;
+                ClassNode inner = ClassHelper.makeWithoutCaching(outer.getName() + '.' + child.getText());
+                if (!isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR)) {
+                    inner = this.proxyClassNode(inner);
+                }
+                inner.setOuterClassType(outer); // GROOVY-10646, GROOVY-12319
+                classNode = configureAST(inner, (GroovyParserRuleContext) child);
             }
         }
+        return classNode;
+    }
 
-        return configureAST(classNode, ctx);
+    private void rejectParameterizedInstanceof(final GroovyParserRuleContext ctx, final ClassNode classNode, final GenericsType[] generics) {
+        if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR) && Arrays.stream(generics).anyMatch(gt ->
+                !gt.isWildcard() || asBoolean(gt.getLowerBound()) || ArrayGroovyMethods.asBoolean(gt.getUpperBounds()))) { // GROOVY-11585
+            throw this.createParsingFailedException("Cannot perform instanceof check against parameterized type " + classNode, ctx);
+        }
     }
 
     @Override

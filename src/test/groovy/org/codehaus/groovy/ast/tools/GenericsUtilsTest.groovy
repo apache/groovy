@@ -22,9 +22,18 @@ package org.codehaus.groovy.ast.tools
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.GenericsType
+import org.codehaus.groovy.ast.InnerClassNode
+import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.Parameter
+import org.codehaus.groovy.ast.expr.ArgumentListExpression
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression
+import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor
 import org.junit.jupiter.api.Test
+import org.objectweb.asm.Opcodes
+
+import static org.junit.jupiter.api.Assertions.assertThrows
 
 final class GenericsUtilsTest {
 
@@ -381,5 +390,140 @@ final class GenericsUtilsTest {
         assert listType.genericsTypes[0].name == '#E'
         assert listType.genericsTypes[0].type.unresolvedName == '#E'
         assert listType.genericsTypes[0].type.name == 'java.lang.Object'
+    }
+
+    @Test // GROOVY-12319
+    void testApplyGenericsSpecFillsMissingFromBounds() {
+        def classNodes = compile '''
+            class BoundBox<T extends Number> {}
+        '''
+        ClassNode boundBox = findClassNode('BoundBox', classNodes).getPlainNodeReference()
+        boundBox.redirect = findClassNode('BoundBox', classNodes)
+        GenericsUtils.applyGenericsSpec(boundBox, [:])
+        assert boundBox.genericsTypes[0].type.name.contains('Number')
+
+        ClassNode list = ClassHelper.LIST_TYPE.getPlainNodeReference()
+        GenericsUtils.applyGenericsSpec(list, [:])
+        assert list.genericsTypes.length == 1
+        assert list.genericsTypes[0].type == ClassHelper.OBJECT_TYPE
+
+        GenericsUtils.applyGenericsSpec(list, [E: ClassHelper.STRING_TYPE])
+        assert list.genericsTypes[0].type == ClassHelper.STRING_TYPE
+
+        ClassNode object = ClassHelper.OBJECT_TYPE.getPlainNodeReference()
+        GenericsUtils.applyGenericsSpec(object, [E: ClassHelper.STRING_TYPE])
+        assert object.genericsTypes == null
+    }
+
+    @Test // GROOVY-12319
+    void testInferGenericsSpecFromOverridesAndDiamondTarget() {
+        assert GenericsUtils.diamondTargetOfAnonymousClass(null) == null
+
+        ClassNode noDiamond = new InnerClassNode(ClassHelper.OBJECT_TYPE, 'C$1', Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE)
+        noDiamond.anonymous = true
+        assert GenericsUtils.diamondTargetOfAnonymousClass(noDiamond) == null
+
+        ClassNode diamondIface = ClassHelper.LIST_TYPE.getPlainNodeReference()
+        diamondIface.genericsTypes = GenericsType.EMPTY_ARRAY
+        ClassNode anon = new InnerClassNode(ClassHelper.OBJECT_TYPE, 'C$2', Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE, [diamondIface] as ClassNode[], org.codehaus.groovy.ast.MixinNode.EMPTY_ARRAY)
+        anon.anonymous = true
+        assert GenericsUtils.diamondTargetOfAnonymousClass(anon) === diamondIface
+
+        Map empty = GenericsUtils.inferGenericsSpecFromOverrides(anon, ClassHelper.OBJECT_TYPE.getPlainNodeReference(), [:])
+        assert empty.isEmpty()
+
+        def classNodes = compile '''
+            interface Box<T> {
+                T get()
+            }
+            class Host {
+                def m() {
+                    new Box<>() {
+                        @Override
+                        int get() { 1 }
+                    }
+                }
+            }
+        '''
+        ClassNode host = findClassNode('Host', classNodes)
+        ClassNode aic = host.innerClasses.next()
+        ClassNode target = GenericsUtils.diamondTargetOfAnonymousClass(aic) ?: aic.unresolvedInterfaces[0]
+        Map spec = GenericsUtils.inferGenericsSpecFromOverrides(aic, target, [:])
+        assert spec.T == ClassHelper.Integer_TYPE || spec.T?.name == 'java.lang.Integer'
+    }
+
+    @Test // GROOVY-12319
+    void testPushEnclosingConstructorCall() {
+        def classNodes = compile '''
+            class C {}
+        '''
+        def visitor = new StaticTypeCheckingVisitor(classNodes[0].module.context, classNodes[0])
+        def ctx = visitor.typeCheckingContext
+        def ctor = new ConstructorCallExpression(ClassHelper.OBJECT_TYPE, new ArgumentListExpression())
+        ctx.pushEnclosingMethodCall(ctor)
+        assert ctx.getEnclosingMethodCall() === ctor
+        ctx.popEnclosingMethodCall()
+
+        def ex = assertThrows(IllegalArgumentException) {
+            ctx.pushEnclosingMethodCall(new ConstantExpression('x'))
+        }
+        assert ex.message.contains('constructor call')
+    }
+
+    @Test // GROOVY-12319
+    void testInferOverridesSkipsUnrelatedNameAndArityMatches() {
+        ClassNode box = ClassHelper.makeWithoutCaching('Box')
+        def t = ClassHelper.makeWithoutCaching('T')
+        t.genericsPlaceHolder = true
+        box.genericsTypes = [new GenericsType(t)] as GenericsType[]
+        def declared = new MethodNode('convert', Opcodes.ACC_PUBLIC, ClassHelper.STRING_TYPE,
+                [new Parameter(ClassHelper.STRING_TYPE, 's')] as Parameter[], ClassNode.EMPTY_ARRAY, null)
+        def unrelated = new MethodNode('convert', Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE,
+                [new Parameter(ClassHelper.MAP_TYPE, 'm')] as Parameter[], ClassNode.EMPTY_ARRAY, null)
+        def superMethod = new MethodNode('convert', Opcodes.ACC_PUBLIC, t,
+                [new Parameter(t, 'v')] as Parameter[], ClassNode.EMPTY_ARRAY, null)
+        ClassNode impl = ClassHelper.makeWithoutCaching('Impl')
+        impl.addMethod(declared)
+        impl.addMethod(unrelated)
+        ClassNode superType = ClassHelper.makeWithoutCaching('Super')
+        superType.redirect = box
+        superType.addMethod(superMethod)
+        Map spec = GenericsUtils.inferGenericsSpecFromOverrides(impl, superType, [:])
+        assert spec['T'] == ClassHelper.STRING_TYPE
+    }
+
+    @Test // GROOVY-12319
+    void testInferOverridesSkipsUnrelatedParameterErasure() {
+        def t = ClassHelper.makeWithoutCaching('T')
+        t.genericsPlaceHolder = true
+        ClassNode box = ClassHelper.makeWithoutCaching('Box2')
+        box.genericsTypes = [new GenericsType(t)] as GenericsType[]
+        ClassNode listOfT = ClassHelper.LIST_TYPE.getPlainNodeReference()
+        listOfT.genericsTypes = [new GenericsType(t)] as GenericsType[]
+        ClassNode superList = ClassHelper.makeWithoutCaching('SuperList')
+        superList.redirect = box
+        superList.addMethod(new MethodNode('convert', Opcodes.ACC_PUBLIC, t,
+                [new Parameter(listOfT, 'xs')] as Parameter[], ClassNode.EMPTY_ARRAY, null))
+        ClassNode impl2 = ClassHelper.makeWithoutCaching('Impl2')
+        impl2.addMethod(new MethodNode('convert', Opcodes.ACC_PUBLIC, ClassHelper.STRING_TYPE,
+                [new Parameter(ClassHelper.Integer_TYPE, 'n')] as Parameter[], ClassNode.EMPTY_ARRAY, null))
+        Map skipped = GenericsUtils.inferGenericsSpecFromOverrides(impl2, superList, [:])
+        assert skipped['T'] == null
+    }
+
+    @Test // GROOVY-12319
+    void testInferOverridesBoxesPrimitiveActualType() {
+        def t = ClassHelper.makeWithoutCaching('T')
+        t.genericsPlaceHolder = true
+        t.redirect = ClassHelper.OBJECT_TYPE
+        ClassNode box = ClassHelper.makeWithoutCaching('Box')
+        box.genericsTypes = [new GenericsType(t)] as GenericsType[]
+        ClassNode superType = ClassHelper.makeWithoutCaching('Super')
+        superType.redirect = box
+        superType.addMethod(new MethodNode('n', Opcodes.ACC_PUBLIC, t, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null))
+        ClassNode impl = ClassHelper.makeWithoutCaching('Impl')
+        impl.addMethod(new MethodNode('n', Opcodes.ACC_PUBLIC, ClassHelper.int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null))
+        Map spec = GenericsUtils.inferGenericsSpecFromOverrides(impl, superType, [:])
+        assert spec['T'] == ClassHelper.Integer_TYPE
     }
 }

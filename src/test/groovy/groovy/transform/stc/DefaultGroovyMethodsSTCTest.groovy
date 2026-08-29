@@ -234,7 +234,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     @Test
     void testSortMethodsWithComparatorAcceptingSubclass() {
         assertScript '''
-            class SecondLetterComparator implements Comparator<? extends CharSequence> {
+            class SecondLetterComparator implements Comparator<CharSequence> {
                 int compare(CharSequence cs1, CharSequence cs2) {
                     cs1.charAt(1) <=> cs2.charAt(1)
                 }
