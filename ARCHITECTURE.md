@@ -253,6 +253,16 @@ above. Each bites contributors quickly if missed:
   `@ASTTest` is the one first-party transform needing this: it
   rebuilds its closure from the raw source text and compiles it in
   a separate shell, so that code never appears in the AST at all.
+- **Use the call-site `MethodHandles.Lookup` for access checks.**
+  In indy linkage, member accessibility is determined by the
+  access context of the call site, not by whether Groovy's own
+  reflection context can make the member accessible. Prefer the
+  `Lookup` associated with the caller when creating method handles;
+  do not use `ReflectionUtils.makeAccessible` or cache a
+  caller-independent accessibility result as a substitute. Do not
+  reproduce Java/module access rules manually when a `Lookup` can
+  perform the check. The cached member representation describes
+  the member; the call site supplies the access context.
 
 ## Operator families
 
