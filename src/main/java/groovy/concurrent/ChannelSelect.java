@@ -18,12 +18,14 @@
  */
 package groovy.concurrent;
 
+import org.apache.groovy.runtime.async.DefaultAsyncChannel;
 import org.apache.groovy.runtime.async.GroovyPromise;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Selects the first available value from multiple {@link AsyncChannel}s.
@@ -76,34 +78,86 @@ public final class ChannelSelect {
      * Returns an {@link Awaitable} that completes with a {@link Result}
      * containing the channel index and the received value.
      * <p>
-     * Values consumed by non-winning channels are re-sent back to those
-     * channels to prevent message loss. This may reorder values within
-     * a channel but guarantees no values are silently dropped.
+     * Exactly one value is taken, from exactly one channel. The other
+     * channels are left untouched: their contents and order are preserved,
+     * and nothing remains registered on them once the result completes.
+     * When several channels already hold a value, the one listed first is
+     * taken. Cancelling the result (for example through
+     * {@link Awaitable#orTimeout(long, java.util.concurrent.TimeUnit)})
+     * withdraws the pending receives, so a timed-out select consumes
+     * nothing.
+     * <p>
+     * If every channel is closed and drained, the result fails with
+     * {@link ChannelClosedException}.
+     * <p>
+     * Only channels created by {@link AsyncChannel#create} take part in the
+     * claim protocol that makes this possible. Any other {@code AsyncChannel}
+     * implementation consumes a value before the select can decide; if that
+     * value loses, it is re-sent to its channel, which preserves it but may
+     * reorder that channel.
      *
      * @return an awaitable result indicating which channel produced the value
      */
-    @SuppressWarnings("unchecked")
     public Awaitable<Result> select() {
-        CompletableFuture<Result> winner = new CompletableFuture<>();
-        AtomicBoolean won = new AtomicBoolean();
-        for (int i = 0; i < channels.size(); i++) {
+        int count = channels.size();
+        Winner winner = new Winner();
+        AtomicInteger closedCount = new AtomicInteger();
+        Awaitable<?>[] branches = new Awaitable<?>[count];
+
+        for (int i = 0; i < count && !winner.isDone(); i++) {
             final int index = i;
-            AsyncChannel<?> ch = channels.get(i);
-            ch.receive().toCompletableFuture().whenComplete((value, error) -> {
-                if (error != null) return;
-                if (won.compareAndSet(false, true)) {
-                    winner.complete(new Result(index, value));
-                } else {
-                    // Re-send the consumed value back to avoid message loss
-                    try {
-                        ((AsyncChannel<Object>) ch).send(value);
-                    } catch (ChannelClosedException ignored) {
-                        // Channel was closed; value cannot be preserved
+            AsyncChannel<?> ch = channels.get(index);
+            final boolean claimable = ch instanceof DefaultAsyncChannel;
+            Awaitable<?> branch = claimable
+                    ? ((DefaultAsyncChannel<?>) ch).receiveIfUnclaimed(winner.claim)
+                    : ch.receive();
+            branches[index] = branch;
+            branch.toCompletableFuture().whenComplete((value, error) -> {
+                if (error == null) {
+                    // a claimable channel took the claim as it delivered; any other
+                    // channel has consumed a value and must compete for it now
+                    if (claimable || winner.claim.compareAndSet(false, true)) {
+                        withdraw(branches); // losers registered so far, before the caller sees the result
+                        winner.complete(new Result(index, value)); // holding the claim, this cannot fail
+                    } else {
+                        resend(ch, value);
                     }
+                } else if (error instanceof ChannelClosedException && closedCount.incrementAndGet() == count) {
+                    winner.completeExceptionally(new ChannelClosedException("all channels are closed"));
                 }
             });
         }
+        // branches registered after the win, and cancellation of the result itself
+        winner.whenComplete((result, error) -> withdraw(branches));
         return GroovyPromise.of(winner);
+    }
+
+    private static void withdraw(Awaitable<?>[] branches) {
+        for (Awaitable<?> branch : branches) {
+            if (branch != null) branch.cancel();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void resend(AsyncChannel<?> ch, Object value) {
+        // best effort: if the channel has since been closed the value cannot be preserved
+        ((AsyncChannel<Object>) ch).send(value);
+    }
+
+    /**
+     * The result of one select. Its {@link #claim} is the single winner
+     * state: a channel takes it as it hands a value over, and cancelling
+     * the result competes for the same claim, so a cancel arriving after a
+     * delivery has claimed is refused and the value reaches the caller,
+     * while a cancel that wins the claim guarantees no channel delivers.
+     */
+    private static final class Winner extends CompletableFuture<Result> {
+        final AtomicBoolean claim = new AtomicBoolean();
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return claim.compareAndSet(false, true) && super.cancel(mayInterruptIfRunning);
+        }
     }
 
     /**
