@@ -82,6 +82,43 @@ final class GroovycTempFileTest {
         assertFalse(missing.exists());
     }
 
+    @Test
+    void restrictToOwner_invokesEverySetterEvenWhenAnEarlierOneFails() throws Exception {
+        CountingFile file = new CountingFile("build/tmp/groovyc-restrict-count-" + System.nanoTime() + ".txt");
+        invokeRestrictToOwner(file);
+        assertEquals(1, file.executableCalls);
+        assertEquals(2, file.readableCalls);
+        assertEquals(2, file.writableCalls);
+    }
+
+    private static final class CountingFile extends File {
+        int readableCalls;
+        int writableCalls;
+        int executableCalls;
+
+        CountingFile(String pathname) {
+            super(pathname);
+        }
+
+        @Override
+        public boolean setReadable(boolean readable, boolean ownerOnly) {
+            readableCalls++;
+            return false;
+        }
+
+        @Override
+        public boolean setWritable(boolean writable, boolean ownerOnly) {
+            writableCalls++;
+            return false;
+        }
+
+        @Override
+        public boolean setExecutable(boolean executable, boolean ownerOnly) {
+            executableCalls++;
+            return false;
+        }
+    }
+
     private static File invokeCreateOwnerOnlyTempFile(Path directory) throws Exception {
         Method method = Groovyc.class.getDeclaredMethod("createOwnerOnlyTempFile", Path.class, String.class, String.class);
         method.setAccessible(true);
