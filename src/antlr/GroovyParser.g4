@@ -98,7 +98,7 @@ options {
 
 // starting point for parsing a groovy file
 compilationUnit
-    :   nls (packageDeclaration sep?)? scriptStatements? EOF
+    :   NL* (packageDeclaration sep?)? scriptStatements? EOF
     ;
 
 scriptStatements
@@ -143,21 +143,19 @@ modifier
     ;
 
 modifiersOpt
-    :   (modifiers nls)?
+    :   (modifiers NL*)?
     ;
 
 modifiers
-    :   modifier (nls modifier)*
+    :   modifier (NL* modifier)*
     ;
 
 classOrInterfaceModifiersOpt
-    :   (classOrInterfaceModifiers
-            NL* /* Use `NL*` here for better performance, so DON'T replace it with `nls` */
-        )?
+    :   (classOrInterfaceModifiers NL*)?
     ;
 
 classOrInterfaceModifiers
-    :   classOrInterfaceModifier (nls classOrInterfaceModifier)*
+    :   classOrInterfaceModifier (NL* classOrInterfaceModifier)*
     ;
 
 classOrInterfaceModifier
@@ -196,27 +194,27 @@ variableModifier
     ;
 
 variableModifiersOpt
-    :   (variableModifiers nls)?
+    :   (variableModifiers NL*)?
     ;
 
 variableModifiers
-    :   variableModifier (nls variableModifier)*
+    :   variableModifier (NL* variableModifier)*
     ;
 
 typeParameters
-    :   LT nls typeParameter (COMMA nls typeParameter)* nls GT
+    :   LT NL* typeParameter (COMMA NL* typeParameter)* NL* GT
     ;
 
 typeParameter
-    :   annotationsOpt className (EXTENDS nls typeBound)?
+    :   annotationsOpt className (EXTENDS NL* typeBound)?
     ;
 
 typeBound
-    :   type (BITAND nls type)*
+    :   type (BITAND NL* type)*
     ;
 
 typeList
-    :   type (COMMA nls type)*
+    :   type (COMMA NL* type)*
     ;
 
 
@@ -233,23 +231,23 @@ locals[ int t ]
         |   RECORD       { $t = 5; }
         )
         identifier
-        (nls typeParameters)?
-        (nls formalParameters)?
-        (nls EXTENDS nls scs=typeList)?
-        (nls IMPLEMENTS nls is=typeList)?
-        (nls PERMITS nls ps=typeList)?
-        nls classBody[$t]
+        (NL* typeParameters)?
+        (NL* formalParameters)?
+        (NL* EXTENDS NL* scs=typeList)?
+        (NL* IMPLEMENTS NL* is=typeList)?
+        (NL* PERMITS NL* ps=typeList)?
+        NL* classBody[$t]
     ;
 
 classBody[int t]
-    :   LBRACE nls
+    :   LBRACE NL*
         (
             { $t == 2 }?
             enumConstants (
-                (nls COMMA)?
+                (NL* COMMA)?
             |
                 // GROOVY-7773, GROOVY-9306:
-                ((nls COMMA)? nls SEMI)? nls
+                ((NL* COMMA)? NL* SEMI)? NL*
                 classBodyDeclaration[$t] (sep classBodyDeclaration[$t])*
             )
         |
@@ -259,7 +257,7 @@ classBody[int t]
     ;
 
 enumConstants
-    :   enumConstant (nls COMMA nls enumConstant)*
+    :   enumConstant (NL* COMMA NL* enumConstant)*
     ;
 
 enumConstant
@@ -267,7 +265,7 @@ enumConstant
     ;
 
 classBodyDeclaration[int t]
-    :   (STATIC nls)? block
+    :   (STATIC NL*)? block
     |   memberDeclaration[$t]
     ;
 
@@ -287,19 +285,19 @@ memberDeclaration[int t]
  *  ct  9: script, other see the comment of classDeclaration
  */
 methodDeclaration[int t, int ct]
-    :   modifiersOpt typeParameters? (returnType[$ct] nls)?
+    :   modifiersOpt typeParameters? (returnType[$ct] NL*)?
         methodName formalParameters
         (   { $ct == 3 }? // GROOVY-11208: @interface only
-            (DEFAULT nls elementValue)
+            (DEFAULT NL* elementValue)
         |
-            nls THROWS nls qualifiedClassNameList (nls methodBody)?
+            NL* THROWS NL* qualifiedClassNameList (NL* methodBody)?
         |
-            nls methodBody
+            NL* methodBody
         )?
     ;
 
 compactConstructorDeclaration
-    :   methodName nls methodBody
+    :   methodName NL* methodBody
     ;
 
 methodName
@@ -318,11 +316,11 @@ fieldDeclaration
     ;
 
 variableDeclarators
-    :   variableDeclarator (COMMA nls variableDeclarator)*
+    :   variableDeclarator (COMMA NL* variableDeclarator)*
     ;
 
 variableDeclarator
-    :   variableDeclaratorId (nls ASSIGN nls variableInitializer)?
+    :   variableDeclaratorId (NL* ASSIGN NL* variableInitializer)?
     ;
 
 variableDeclaratorId
@@ -380,12 +378,12 @@ options { baseContext = referenceType; }
     ;
 
 typeArguments
-    :   LT nls typeArgument (COMMA nls typeArgument)* nls GT
+    :   LT NL* typeArgument (COMMA NL* typeArgument)* NL* GT
     ;
 
 typeArgument
     :   type
-    |   annotationsOpt QUESTION ((EXTENDS | SUPER) nls type)?
+    |   annotationsOpt QUESTION ((EXTENDS | SUPER) NL* type)?
     ;
 
 annotatedQualifiedClassName
@@ -393,7 +391,7 @@ annotatedQualifiedClassName
     ;
 
 qualifiedClassNameList
-    :   annotatedQualifiedClassName (COMMA nls annotatedQualifiedClassName)*
+    :   annotatedQualifiedClassName (COMMA NL* annotatedQualifiedClassName)*
     ;
 
 formalParameters
@@ -401,7 +399,7 @@ formalParameters
     ;
 
 formalParameterList
-    :   (formalParameter | thisFormalParameter) (COMMA nls formalParameter)*
+    :   (formalParameter | thisFormalParameter) (COMMA NL* formalParameter)*
     ;
 
 thisFormalParameter
@@ -409,7 +407,7 @@ thisFormalParameter
     ;
 
 formalParameter
-    :   variableModifiersOpt type? ELLIPSIS? variableDeclaratorId (nls ASSIGN nls expression)?
+    :   variableModifiersOpt type? ELLIPSIS? variableDeclaratorId (NL* ASSIGN NL* expression)?
     ;
 
 methodBody
@@ -471,12 +469,12 @@ gstringPath
 // LAMBDA EXPRESSION
 lambdaExpression
 options { baseContext = standardLambdaExpression; }
-    :   lambdaParameters nls ARROW nls lambdaBody
+    :   lambdaParameters NL* ARROW NL* lambdaBody
     ;
 
 // JAVA STANDARD LAMBDA EXPRESSION
 standardLambdaExpression
-    :   standardLambdaParameters nls ARROW nls lambdaBody
+    :   standardLambdaParameters NL* ARROW NL* lambdaBody
     ;
 
 lambdaParameters
@@ -500,7 +498,7 @@ lambdaBody
 
 // CLOSURE
 closure
-    :   LBRACE (nls (formalParameterList nls)? ARROW)? sep? blockStatementsOpt RBRACE
+    :   LBRACE (NL* (formalParameterList NL*)? ARROW)? sep? blockStatementsOpt RBRACE
     ;
 
 // GROOVY-8991: Difference in behaviour with closure and lambda
@@ -520,11 +518,11 @@ blockStatements
 // ANNOTATIONS
 
 annotationsOpt
-    :   (annotation (nls annotation)* nls)?
+    :   (annotation (NL* annotation)* NL*)?
     ;
 
 annotation
-    :   AT annotationName (nls LPAREN elementValues? RPAREN)?
+    :   AT annotationName (NL* LPAREN elementValues? RPAREN)?
     ;
 
 elementValues
@@ -539,7 +537,7 @@ elementValuePairs
     ;
 
 elementValuePair
-    :   elementValuePairName nls ASSIGN nls elementValue
+    :   elementValuePairName NL* ASSIGN NL* elementValue
     ;
 
 elementValuePairName
@@ -578,9 +576,9 @@ localVariableDeclaration
  *  t   0: local variable declaration; 1: field declaration
  */
 variableDeclaration[int t]
-    :   modifiers nls
+    :   modifiers NL*
         (   type? variableDeclarators
-        |   typeNamePairs nls ASSIGN nls variableInitializer
+        |   typeNamePairs NL* ASSIGN NL* variableInitializer
         )
     |
         type variableDeclarators
@@ -612,17 +610,17 @@ conditionalStatement
     ;
 
 ifElseStatement
-    :   IF expressionInPar nls tb=statement ((nls | sep) ELSE nls fb=statement)?
+    :   IF expressionInPar NL* tb=statement ((NL* | sep) ELSE NL* fb=statement)?
     ;
 
 switchStatement
-    :   SWITCH expressionInPar nls LBRACE nls (switchBlockStatementGroup+ nls)? RBRACE
+    :   SWITCH expressionInPar NL* LBRACE NL* (switchBlockStatementGroup+ NL*)? RBRACE
     ;
 
 loopStatement
-    :   annotationsOpt FOR AWAIT? LPAREN forControl RPAREN nls statement                                      #forStmtAlt
-    |   annotationsOpt WHILE expressionInPar nls statement                                                    #whileStmtAlt
-    |   annotationsOpt DO nls statement nls WHILE expressionInPar                                             #doWhileStmtAlt
+    :   annotationsOpt FOR AWAIT? LPAREN forControl RPAREN NL* statement                                      #forStmtAlt
+    |   annotationsOpt WHILE expressionInPar NL* statement                                                    #whileStmtAlt
+    |   annotationsOpt DO NL* statement NL* WHILE expressionInPar                                             #doWhileStmtAlt
     ;
 
 continueStatement
@@ -641,13 +639,13 @@ yieldStatement
     ;
 
 tryCatchStatement
-    :   TRY resources? nls block
-        (nls catchClause)*
-        (nls finallyBlock)?
+    :   TRY resources? NL* block
+        (NL* catchClause)*
+        (NL* finallyBlock)?
     ;
 
 assertStatement
-    :   ASSERT ce=expression (nls (COLON | COMMA) nls me=expression)?
+    :   ASSERT ce=expression (NL* (COLON | COMMA) NL* me=expression)?
     ;
 
 statement
@@ -655,17 +653,17 @@ statement
     |   conditionalStatement                                                                                #conditionalStmtAlt
     |   loopStatement                                                                                       #loopStmtAlt
     |   tryCatchStatement                                                                                   #tryCatchStmtAlt
-    |   SYNCHRONIZED expressionInPar nls block                                                              #synchronizedStmtAlt
+    |   SYNCHRONIZED expressionInPar NL* block                                                              #synchronizedStmtAlt
     |   RETURN expression?                                                                                  #returnStmtAlt
     |   THROW expression                                                                                    #throwStmtAlt
     |   breakStatement                                                                                      #breakStmtAlt
     |   continueStatement                                                                                   #continueStmtAlt
     |   { inSwitchExpressionLevel > 0 }?
         yieldStatement                                                                                      #yieldStmtAlt
-    |   YIELD RETURN nls expression                                                                         #yieldReturnStmtAlt
+    |   YIELD RETURN NL* expression                                                                         #yieldReturnStmtAlt
     |   { inAsyncClosureLevel > 0 }?
-        DEFER nls statementExpression                                                                       #deferStmtAlt
-    |   identifier COLON nls statement                                                                      #labeledStmtAlt
+        DEFER NL* statementExpression                                                                       #deferStmtAlt
+    |   identifier COLON NL* statement                                                                      #labeledStmtAlt
     |   assertStatement                                                                                     #assertStmtAlt
     |   localVariableDeclaration                                                                            #localVariableDeclarationStmtAlt
     |   statementExpression                                                                                 #expressionStmtAlt
@@ -673,7 +671,7 @@ statement
     ;
 
 catchClause
-    :   CATCH LPAREN variableModifiersOpt catchType? identifier RPAREN nls block
+    :   CATCH LPAREN variableModifiersOpt catchType? identifier RPAREN NL* block
     ;
 
 catchType
@@ -681,11 +679,11 @@ catchType
     ;
 
 finallyBlock
-    :   FINALLY nls block
+    :   FINALLY NL* block
     ;
 
 resources
-    :   LPAREN nls resourceList sep? RPAREN
+    :   LPAREN NL* resourceList sep? RPAREN
     ;
 
 resourceList
@@ -702,7 +700,7 @@ resource
  *  To handle empty cases at the end, we add switchLabel* to statement.
  */
 switchBlockStatementGroup
-    :   switchLabel (nls switchLabel)* nls blockStatements
+    :   switchLabel (NL* switchLabel)* NL* blockStatements
     ;
 
 switchLabel
@@ -744,7 +742,7 @@ castParExpression
     ;
 
 intersectionType
-    :   type (BITAND nls type)*
+    :   type (BITAND NL* type)*
     ;
 
 coercionType
@@ -761,7 +759,7 @@ expressionInPar
     ;
 
 expressionList[boolean canSpread]
-    :   expressionListElement[$canSpread] (COMMA nls expressionListElement[$canSpread])*
+    :   expressionListElement[$canSpread] (COMMA NL* expressionListElement[$canSpread])*
     ;
 
 expressionListElement[boolean canSpread]
@@ -793,11 +791,11 @@ switchExpression
 @after {
     inSwitchExpressionLevel--;
 }
-    :   SWITCH expressionInPar nls LBRACE nls switchBlockStatementExpressionGroup* nls RBRACE
+    :   SWITCH expressionInPar NL* LBRACE NL* switchBlockStatementExpressionGroup* NL* RBRACE
     ;
 
 switchBlockStatementExpressionGroup
-    :   (switchExpressionLabel nls)+ blockStatements
+    :   (switchExpressionLabel NL*)+ blockStatements
     ;
 
 switchExpressionLabel
@@ -811,11 +809,11 @@ expression
     :   castParExpression castOperandExpression                                             #castExprAlt
 
     // async closure/lambda must come before postfixExpression to resolve ambiguity with method call, e.g. async { ... }
-    |   ASYNC nls { inAsyncClosureLevel++; } closureOrLambdaExpression { inAsyncClosureLevel--; }   #asyncClosureExprAlt
+    |   ASYNC NL* { inAsyncClosureLevel++; } closureOrLambdaExpression { inAsyncClosureLevel--; }   #asyncClosureExprAlt
 
     // await expression: single-arg or multi-arg (parenthesized or unparenthesized)
-    |   AWAIT nls ( LPAREN expression (COMMA nls expression)* RPAREN
-                  | expression (COMMA nls expression)*
+    |   AWAIT NL* ( LPAREN expression (COMMA NL* expression)* RPAREN
+                  | expression (COMMA NL* expression)*
                   )                                                                         #awaitExprAlt
 
     // qualified names, array expressions, method invocation, post inc/dec
@@ -824,22 +822,22 @@ expression
     |   switchExpression                                                                    #switchExprAlt
 
     // ~(BNOT)/!(LNOT) (level 1)
-    |   (BITNOT | NOT) nls expression                                                       #unaryNotExprAlt
+    |   (BITNOT | NOT) NL* expression                                                       #unaryNotExprAlt
 
     // math power operator (**) (level 2)
-    |   left=expression op=POWER nls right=expression                                       #powerExprAlt
+    |   left=expression op=POWER NL* right=expression                                       #powerExprAlt
 
     // ++(prefix)/--(prefix)/+(unary)/-(unary) (level 3)
     |   op=(INC | DEC | ADD | SUB) expression                                               #unaryAddExprAlt
 
     // multiplication/division/modulo (level 4)
-    |   left=expression nls op=(MUL | DIV | MOD) nls right=expression                       #multiplicativeExprAlt
+    |   left=expression NL* op=(MUL | DIV | MOD) NL* right=expression                       #multiplicativeExprAlt
 
     // binary addition/subtraction (level 5)
-    |   left=expression op=(ADD | SUB) nls right=expression                                 #additiveExprAlt
+    |   left=expression op=(ADD | SUB) NL* right=expression                                 #additiveExprAlt
 
     // bit shift expressions (level 6)
-    |   left=expression nls
+    |   left=expression NL*
             (           (   dlOp=LT LT
                         |   tgOp=GT GT GT
                         |   dgOp=GT GT
@@ -849,59 +847,59 @@ expression
                         |    RANGE_EXCLUSIVE_RIGHT
                         |    RANGE_EXCLUSIVE_FULL
                         )
-            ) nls
+            ) NL*
         right=expression                                                                    #shiftExprAlt
 
     // boolean relational expressions (level 7)
-    |   left=expression nls op=INSTANCEOF nls matchingType                                  #relationalExprAlt
-    |   left=expression nls op=NOT_INSTANCEOF nls notInstanceofType                         #relationalExprAlt
-    |   left=expression nls op=AS nls coercionType                                          #relationalExprAlt
-    |   left=expression nls op=(LE | GE | GT | LT | IN | NOT_IN) nls right=expression       #relationalExprAlt
+    |   left=expression NL* op=INSTANCEOF NL* matchingType                                  #relationalExprAlt
+    |   left=expression NL* op=NOT_INSTANCEOF NL* notInstanceofType                         #relationalExprAlt
+    |   left=expression NL* op=AS NL* coercionType                                          #relationalExprAlt
+    |   left=expression NL* op=(LE | GE | GT | LT | IN | NOT_IN) NL* right=expression       #relationalExprAlt
 
     // equality/inequality (==/!=) (level 8)
-    |   left=expression nls
+    |   left=expression NL*
             op=(    IDENTICAL
                |    NOT_IDENTICAL
                |    EQUAL
                |    NOTEQUAL
                |    SPACESHIP
-               ) nls
+               ) NL*
         right=expression                                                                    #equalityExprAlt
 
     // regex find and match (=~ and ==~) (level 8.5)
     // jez: moved =~ closer to precedence of == etc, as...
     // 'if (foo =~ "a.c")' is very close in intent to 'if (foo == "abc")'
-    |   left=expression nls op=(REGEX_FIND | REGEX_MATCH) nls right=expression              #regexExprAlt
+    |   left=expression NL* op=(REGEX_FIND | REGEX_MATCH) NL* right=expression              #regexExprAlt
 
     // bitwise or non-short-circuiting and (&)  (level 9)
-    |   left=expression nls op=BITAND nls right=expression                                  #andExprAlt
+    |   left=expression NL* op=BITAND NL* right=expression                                  #andExprAlt
 
     // exclusive or (^)  (level 10)
-    |   left=expression nls op=XOR nls right=expression                                     #exclusiveOrExprAlt
+    |   left=expression NL* op=XOR NL* right=expression                                     #exclusiveOrExprAlt
 
     // bitwise or non-short-circuiting or (|)  (level 11)
-    |   left=expression nls op=BITOR nls right=expression                                   #inclusiveOrExprAlt
+    |   left=expression NL* op=BITOR NL* right=expression                                   #inclusiveOrExprAlt
 
     // logical and (&&)  (level 12)
-    |   left=expression nls op=AND nls right=expression                                     #logicalAndExprAlt
+    |   left=expression NL* op=AND NL* right=expression                                     #logicalAndExprAlt
 
     // logical or (||)  (level 13)
-    |   left=expression nls op=OR nls right=expression                                      #logicalOrExprAlt
+    |   left=expression NL* op=OR NL* right=expression                                      #logicalOrExprAlt
 
     // implication (==>)  (level 13.5)
-    |   <assoc=right> left=expression nls op=IMPLIES nls right=expression                   #implicationExprAlt
+    |   <assoc=right> left=expression NL* op=IMPLIES NL* right=expression                   #implicationExprAlt
 
     // conditional test (level 14)
-    |   <assoc=right> con=expression nls
-        (   QUESTION nls tb=expression nls COLON nls
-        |   ELVIS nls
+    |   <assoc=right> con=expression NL*
+        (   QUESTION NL* tb=expression NL* COLON NL*
+        |   ELVIS NL*
         )
         fb=expression                                                                       #conditionalExprAlt
 
     // assignment expression (level 15)
     // "(a) = [1]" is a special case of multipleAssignmentExprAlt, it will be handle by assignmentExprAlt
-    |   <assoc=right> left=variableNames nls op=ASSIGN nls right=statementExpression        #multipleAssignmentExprAlt
-    |   <assoc=right> left=expression nls
+    |   <assoc=right> left=variableNames NL* op=ASSIGN NL* right=statementExpression        #multipleAssignmentExprAlt
+    |   <assoc=right> left=expression NL*
                         op=(   ASSIGN
                            |   ADD_ASSIGN
                            |   SUB_ASSIGN
@@ -916,7 +914,7 @@ expression
                            |   MOD_ASSIGN
                            |   POWER_ASSIGN
                            |   ELVIS_ASSIGN
-                           ) nls
+                           ) NL*
                      right=enhancedStatementExpression                                      #assignmentExprAlt
     ;
 
@@ -927,7 +925,7 @@ options { baseContext = expression; }
     |   postfixExpression                                                                   #postfixExprAlt
 
     // ~(BNOT)/!(LNOT)
-    |   (BITNOT | NOT) nls castOperandExpression                                            #unaryNotExprAlt
+    |   (BITNOT | NOT) NL* castOperandExpression                                            #unaryNotExprAlt
 
     // ++(prefix)/--(prefix)/+(unary)/-(unary)
     |   op=(INC | DEC | ADD | SUB) castOperandExpression                                    #unaryAddExprAlt
@@ -989,9 +987,9 @@ pathExpression returns [int t]
     ;
 
 pathElement returns [int t]
-    :   nls
+    :   NL*
         (
-            DOT nls
+            DOT NL*
             (   NEW creator[1]
                 { $t = 6; }
             |
@@ -1005,15 +1003,15 @@ pathElement returns [int t]
             (   SPREAD_DOT          // Spread operator:  x*.y  ===  x?.collect{it.y}
             |   SAFE_DOT            // Optional-null operator:  x?.y  === (x==null)?null:x.y
             |   SAFE_CHAIN_DOT      // Optional-null chain operator:  x??.y.z  === x?.y?.z
-            ) nls (AT | nonWildcardTypeArguments)?
+            ) NL* (AT | nonWildcardTypeArguments)?
             namePart
             { $t = 1; }
         |
-            METHOD_POINTER nls      // Method pointer operator: foo.&y == foo.metaClass.getMethodPointer(foo, "y")
+            METHOD_POINTER NL*      // Method pointer operator: foo.&y == foo.metaClass.getMethodPointer(foo, "y")
             namePart
             { $t = 1; }
         |
-            METHOD_REFERENCE nls (nonWildcardTypeArguments)?  // Method reference: System.out::println
+            METHOD_REFERENCE NL* (nonWildcardTypeArguments)?  // Method reference: System.out::println
             namePart
             { $t = 1; }
 
@@ -1088,7 +1086,7 @@ primary
         identifier typeArguments?                                                           #identifierPrmrAlt
     |   literal                                                                             #literalPrmrAlt
     |   gstring                                                                             #gstringPrmrAlt
-    |   NEW nls creator[0]                                                                  #newPrmrAlt
+    |   NEW NL* creator[0]                                                                  #newPrmrAlt
     |   THIS                                                                                #thisPrmrAlt
     |   SUPER                                                                               #superPrmrAlt
     |   parExpression                                                                       #parenPrmrAlt
@@ -1144,20 +1142,20 @@ options { baseContext = mapEntryList; }
     ;
 
 mapEntry
-    :   mapEntryLabel COLON nls enhancedExpression
-    |   MUL COLON nls enhancedExpression
+    :   mapEntryLabel COLON NL* enhancedExpression
+    |   MUL COLON NL* enhancedExpression
     ;
 
 namedPropertyArg
 options { baseContext = mapEntry; }
-    :   namedPropertyArgLabel COLON nls enhancedExpression
-    |   MUL COLON nls enhancedExpression
+    :   namedPropertyArgLabel COLON NL* enhancedExpression
+    |   MUL COLON NL* enhancedExpression
     ;
 
 namedArg
 options { baseContext = mapEntry; }
-    :   namedArgLabel COLON nls enhancedExpression
-    |   MUL COLON nls enhancedExpression
+    :   namedArgLabel COLON NL* enhancedExpression
+    |   MUL COLON NL* enhancedExpression
     ;
 
 mapEntryLabel
@@ -1182,8 +1180,8 @@ options { baseContext = mapEntryLabel; }
  */
 creator[int t]
     :   createdName
-        (   nls arguments anonymousInnerClassDeclaration[0]?
-        |   dim0+ nls arrayInitializer
+        (   NL* arguments anonymousInnerClassDeclaration[0]?
+        |   dim0+ NL* arrayInitializer
         |   dim1+ dim0*
         )
     ;
@@ -1197,12 +1195,12 @@ dim1
     ;
 
 arrayInitializer
-    :   LBRACE nls (
-            (arrayInitializer | variableInitializer) nls
-          (COMMA nls
-            (arrayInitializer | variableInitializer) nls
+    :   LBRACE NL* (
+            (arrayInitializer | variableInitializer) NL*
+          (COMMA NL*
+            (arrayInitializer | variableInitializer) NL*
           )*
-        )? COMMA? nls RBRACE
+        )? COMMA? NL* RBRACE
     ;
 
 /**
@@ -1220,7 +1218,7 @@ createdName
     ;
 
 nonWildcardTypeArguments
-    :   LT nls typeList nls GT
+    :   LT NL* typeList NL* GT
     ;
 
 typeArgumentsOrDiamond
@@ -1235,14 +1233,14 @@ arguments
 argumentList
 options { baseContext = enhancedArgumentListInPar; }
     :   firstArgumentListElement
-        (   COMMA nls
+        (   COMMA NL*
             argumentListElement
         )*
     ;
 
 enhancedArgumentListInPar
     :   enhancedArgumentListElement
-        (   COMMA nls
+        (   COMMA NL*
             enhancedArgumentListElement
         )*
     ;
@@ -1360,10 +1358,6 @@ keywords
     |   PUBLIC
     |   PROTECTED
     |   PRIVATE
-    ;
-
-nls
-    :   NL*
     ;
 
 sep :   (NL | SEMI)+
