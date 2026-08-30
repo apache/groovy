@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast.decompiled;
 
 import groovy.lang.GroovyRuntimeException;
+import groovy.transform.Internal;
 import org.codehaus.groovy.util.URLStreams;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
@@ -100,6 +101,16 @@ public abstract class AsmDecompiler {
             stubCache.put(uri, new SoftReference<>(stub));
         }
         return stub;
+    }
+
+    /**
+     * Reads the binary name of the class at {@code url} after {@link #parseClass(URL)}.
+     * Hits the stub cache, so a resolver that already decompiled {@code url}
+     * does not parse again when a class loader later asks the same question.
+     */
+    @Internal
+    public static String readClassName(final URL url) throws IOException {
+        return parseClass(url).className;
     }
 
     private static AnnotationReader readAnnotationMembers(final AnnotationStub stub) {

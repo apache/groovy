@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.decompiled.AsmDecompiler;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.Verifier;
@@ -704,7 +705,11 @@ public class GroovyClassLoader extends URLClassLoader {
         } catch (ClassNotFoundException cnfe) {
             last = cnfe;
         } catch (NoClassDefFoundError ncdfe) {
-            if (ncdfe.getMessage().indexOf("wrong name") > 0) {
+            // JVMS 5.3.5 / case-insensitive getResource. Do not inspect
+            // ncdfe.getMessage(): it can be null or localized. Only a confirmed
+            // bytecode-name mismatch becomes ClassNotFoundException so a groovy
+            // source of the requested name can still be compiled.
+            if (isConfirmedBytecodeNameMismatch(name)) {
                 last = new ClassNotFoundException(name);
                 last.addSuppressed(ncdfe);
             } else {
@@ -758,6 +763,23 @@ public class GroovyClassLoader extends URLClassLoader {
             throw last;
         }
         return cls;
+    }
+
+    /**
+     * True only when a {@code .class} resource exists and decompiles to a
+     * different binary name. Missing or unreadable resources are not a
+     * confirmed mismatch: the linking {@link NoClassDefFoundError} is kept.
+     */
+    private boolean isConfirmedBytecodeNameMismatch(final String name) {
+        URL resource = getResource(name.replace('.', '/') + ".class");
+        if (resource == null) {
+            return false;
+        }
+        try {
+            return !name.equals(AsmDecompiler.readClassName(resource));
+        } catch (IOException | IllegalArgumentException | IndexOutOfBoundsException | GroovyRuntimeException e) {
+            return false;
+        }
     }
 
     /**

@@ -372,6 +372,20 @@ class ClassNodeResolverTest {
     }
 
     @Test
+    void loaderOnlyNameMismatchIsAMiss() {
+        String name = 'cnr.ncdfe.LoaderOnlyMismatch'
+        writeBytes(tempDir, name.replace('.', '/'), simpleClassBytes('cnr/ncdfe/loaderonlyactual'))
+        parentLoader(tempDir).withCloseable { parent ->
+            def config = configWith(asmResolving: false)
+            def loader = new GroovyClassLoader(parent, config)
+            def resolver = new ClassNodeResolver()
+            def unit = new CompilationUnit(config, null, loader)
+            assert resolver.resolveName(name, unit) == null
+            assert resolver.getFromClassCache(name).is(ClassNodeResolver.NO_CLASS)
+        }
+    }
+
+    @Test
     void nameMismatchIsAMissWithoutUsingNcdfeText() {
         String name = 'cnr.ncdfe.AsmMismatch'
         Path file = writeBytes(tempDir, name.replace('.', '/'), simpleClassBytes('cnr/ncdfe/asmmismatch'))
@@ -547,7 +561,7 @@ class ClassNodeResolverTest {
     }
 
     @Test
-    void findDecompiledIgnoresAResourceWhoseBytecodeNameDoesNotMatch() {
+    void readClassFileIgnoresAResourceWhoseBytecodeNameDoesNotMatch() {
         String actual = 'cnr.decompiled.Actual'
         Path file = writeBytes(tempDir, actual.replace('.', '/'), simpleClassBytes(actual.replace('.', '/')))
         def config = configWith(asmResolving: true, classLoaderResolving: false)
@@ -558,7 +572,7 @@ class ClassNodeResolverTest {
     }
 
     @Test
-    void findDecompiledSwallowsUnreadableClassFilesWhenClassLoaderResolvingIsOn() {
+    void readClassFileSwallowsUnreadableClassFilesWhenClassLoaderResolvingIsOn() {
         def config = configWith([:])
         def loader = new ControllableLoader(ClassNodeResolverTest.classLoader, config)
         loader.resources['cnr/decompiled/Unreadable.class'] = new URL('file:///definitely/does/not/exist/Unreadable.class')
@@ -568,7 +582,7 @@ class ClassNodeResolverTest {
     }
 
     @Test
-    void findDecompiledRethrowsIllegalArgumentExceptionFromATruncatedClassFile() {
+    void readClassFileRethrowsIllegalArgumentExceptionFromATruncatedClassFile() {
         Path tiny = tempDir.resolve('cnr/decompiled/Tiny.class')
         Files.createDirectories(tiny.parent)
         Files.write(tiny, [0xCA, 0xFE] as byte[])
@@ -582,7 +596,7 @@ class ClassNodeResolverTest {
     }
 
     @Test
-    void findDecompiledRethrowsParseErrorsWhenClassLoaderResolvingIsOff() {
+    void readClassFileRethrowsParseErrorsWhenClassLoaderResolvingIsOff() {
         Path garbage = tempDir.resolve('cnr/decompiled/Garbage.class')
         Files.createDirectories(garbage.parent)
         Files.write(garbage, [0, 1, 2, 3, 4] as byte[])
@@ -598,7 +612,7 @@ class ClassNodeResolverTest {
     }
 
     @Test
-    void findDecompiledSwallowsParseErrorsWhenClassLoaderResolvingIsOn() {
+    void readClassFileSwallowsParseErrorsWhenClassLoaderResolvingIsOn() {
         Path garbage = tempDir.resolve('cnr/decompiled/Garbage2.class')
         Files.createDirectories(garbage.parent)
         Files.write(garbage, [0, 1, 2, 3, 4] as byte[])
@@ -821,7 +835,7 @@ class ClassNodeResolverTest {
     }
 
     @Test
-    void findDecompiledRethrowsIllegalArgumentExceptionFromAsm() {
+    void readClassFileRethrowsIllegalArgumentExceptionFromAsm() {
         // long enough to pass ASM's size check, too broken to parse: ClassReader throws IAE
         byte[] bytes = new byte[24]
         bytes[0] = (byte) 0xCA

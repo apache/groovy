@@ -238,8 +238,7 @@ public class ClassNodeResolver {
         if (loader == null) {
             return null;
         }
-        String fileName = packageName.replace('.', '/') + "/package-info.class";
-        URL resource = loader.getResource(fileName);
+        URL resource = loader.getResource(toClassFileName(packageName + ".package-info"));
         if (resource == null) {
             return null;
         }
@@ -260,11 +259,8 @@ public class ClassNodeResolver {
             PackageNode packageNode = new PackageNode(packageName + ".");
             packageNode.addAnnotations(annotations);
             return packageNode;
-        } catch (IOException e) {
-            // fall through; treat as no package metadata available
-            return null;
-        } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
-            // class format error or similar from ASM; ignore for resolution purposes
+        } catch (IOException | IllegalArgumentException | IndexOutOfBoundsException e) {
+            // unreadable or malformed package-info: treat as no package metadata
             return null;
         }
     }
@@ -323,7 +319,7 @@ public class ClassNodeResolver {
         }
 
         if (cl) {
-            return findByClassLoading(name, compilationUnit, loader, parsed != null && parsed.mismatch);
+            return findByClassLoading(name, compilationUnit, loader, parsed != null && parsed.bytecodeNameMismatch());
         }
 
         return tryAsScript(name, compilationUnit, null);
@@ -336,12 +332,12 @@ public class ClassNodeResolver {
      * here ({@code lookupScriptFiles} is {@code false}) so that loader cannot start a nested
      * {@link CompilationUnit}. A {@link NoClassDefFoundError} means the class itself was found
      * but could not be linked. It is wrapped and rethrown, except when ASM already
-     * classified the resource as a bytecode-name mismatch ({@code mismatch} is
-     * {@code true}): that name never existed, so script lookup follows
-     * {@link ClassNotFoundException}. This method does not decompile.
+     * classified the resource as a bytecode-name mismatch: that name never existed,
+     * so script lookup follows {@link ClassNotFoundException}. This method does
+     * not decompile.
      */
     private LookupResult findByClassLoading(final String name, final CompilationUnit compilationUnit,
-            final GroovyClassLoader loader, final boolean mismatch) {
+            final GroovyClassLoader loader, final boolean bytecodeNameMismatch) {
         Class<?> cls;
         try {
             // NOTE: it's important to do no lookup against script files
@@ -352,7 +348,7 @@ public class ClassNodeResolver {
         } catch (CompilationFailedException cfe) {
             throw new GroovyBugError("The lookup for " + name + " caused a failed compilation. There should not have been any compilation from this call.", cfe);
         } catch (NoClassDefFoundError ncdfe) {
-            if (mismatch) {
+            if (bytecodeNameMismatch) {
                 return tryAsScript(name, compilationUnit, null);
             }
             throw wrapNoClassDefFoundError(name, ncdfe);
@@ -386,22 +382,22 @@ public class ClassNodeResolver {
      * One ASM read of {@code name}'s {@code .class} resource. Distinguishes a
      * matching node from a bytecode-name mismatch (JVMS 5.3.5 / case-insensitive
      * {@link ClassLoader#getResource}) from a missing or unreadable resource.
-     * Does not decide script replacement.
+     * Does not decide script replacement. The bytecode name is
+     * {@link DecompiledClassNode#getName()} after {@link AsmDecompiler#parseClass(URL)}.
      *
      * @param failOnParse if true, class-format errors are thrown rather than
      *                    returned as {@link ClassFile#ABSENT}
      */
     private ClassFile readClassFile(final String name, final CompilationUnit compilationUnit,
             final GroovyClassLoader loader, final boolean failOnParse) {
-        String fileName = name.replace('.', '/') + ".class";
-        URL resource = loader.getResource(fileName);
+        URL resource = loader.getResource(toClassFileName(name));
         if (resource == null) {
             return ClassFile.ABSENT;
         }
         try {
             DecompiledClassNode asmClass = new DecompiledClassNode(
                     AsmDecompiler.parseClass(resource), new AsmReferenceResolver(this, compilationUnit));
-            if (!asmClass.getName().equals(name)) {
+            if (!name.equals(asmClass.getName())) {
                 // this may happen under Windows because getResource is case-insensitive under that OS!
                 return ClassFile.MISMATCH;
             }
@@ -432,8 +428,7 @@ public class ClassNodeResolver {
     private static LookupResult lookupFromClassFile(final String name, final CompilationUnit compilationUnit,
             final GroovyClassLoader loader, final ClassFile file) {
         DecompiledClassNode node = file.node;
-        String fileName = name.replace('.', '/') + ".class";
-        if (isFromAnotherClassLoader(loader, fileName)) {
+        if (isFromAnotherClassLoader(loader, name)) {
             return tryAsScript(name, compilationUnit, node);
         }
         return new LookupResult(null, node);
@@ -445,7 +440,7 @@ public class ClassNodeResolver {
      * is not the requested name. {@code null} on the first-pass local is
      * “not attempted”, not {@link #ABSENT}.
      */
-    private record ClassFile(DecompiledClassNode node, boolean mismatch) {
+    private record ClassFile(DecompiledClassNode node, boolean bytecodeNameMismatch) {
         static final ClassFile ABSENT = new ClassFile(null, false);
         static final ClassFile MISMATCH = new ClassFile(null, true);
 
@@ -454,9 +449,13 @@ public class ClassNodeResolver {
         }
     }
 
-    private static boolean isFromAnotherClassLoader(final GroovyClassLoader loader, final String fileName) {
+    private static boolean isFromAnotherClassLoader(final GroovyClassLoader loader, final String binaryName) {
         ClassLoader parent = loader.getParent();
-        return parent != null && parent.getResource(fileName) != null;
+        return parent != null && parent.getResource(toClassFileName(binaryName)) != null;
+    }
+
+    private static String toClassFileName(final String binaryName) {
+        return binaryName.replace('.', '/') + ".class";
     }
 
     /**
@@ -495,8 +494,8 @@ public class ClassNodeResolver {
      * linking a {@link Class}; loaded types use {@link Verifier#getTimestamp(Class)}.
      */
     private static long getTimeStamp(final ClassNode cls) {
-        if (cls instanceof DecompiledClassNode) {
-            return ((DecompiledClassNode) cls).getCompilationTimeStamp();
+        if (cls instanceof DecompiledClassNode decompiled) {
+            return decompiled.getCompilationTimeStamp();
         }
         return Verifier.getTimestamp(cls.getTypeClass());
     }
