@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.decompiled.AsmDecompiler;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.Verifier;
@@ -55,7 +56,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.CodeSource;
@@ -172,6 +172,7 @@ public class GroovyClassLoader extends URLClassLoader {
             // Keep the same default source encoding as #parseClass(InputStream,String)
             // TODO Should we use CompilerConfiguration.DEFAULT_SOURCE_ENCODING instead?
             .orElseGet(() -> groovy.util.CharsetToolkit.getDefaultSystemCharset().name());
+        this.recompile = null;
     }
 
     //--------------------------------------------------------------------------
@@ -704,7 +705,11 @@ public class GroovyClassLoader extends URLClassLoader {
         } catch (ClassNotFoundException cnfe) {
             last = cnfe;
         } catch (NoClassDefFoundError ncdfe) {
-            if (ncdfe.getMessage().indexOf("wrong name") > 0) {
+            // JVMS 5.3.5 / case-insensitive getResource. Do not inspect
+            // ncdfe.getMessage(): it can be null or localized. Only a confirmed
+            // bytecode-name mismatch becomes ClassNotFoundException so a groovy
+            // source of the requested name can still be compiled.
+            if (isConfirmedBytecodeNameMismatch(name)) {
                 last = new ClassNotFoundException(name);
                 last.addSuppressed(ncdfe);
             } else {
@@ -758,6 +763,37 @@ public class GroovyClassLoader extends URLClassLoader {
             throw last;
         }
         return cls;
+    }
+
+    /**
+     * True only when a {@code .class} resource exists and decompiles to a
+     * different binary name. Missing or unreadable resources are not a
+     * confirmed mismatch: the linking {@link NoClassDefFoundError} is kept.
+     */
+    private boolean isConfirmedBytecodeNameMismatch(final String name) {
+        if (name == null || name.isEmpty() || name.contains("/") || name.contains("\\") || name.contains("..")) {
+            return false;
+        }
+        for (String part : name.split("\\.")) {
+            if (part.isEmpty() || !Character.isJavaIdentifierStart(part.charAt(0))) {
+                return false;
+            }
+            for (int i = 1; i < part.length(); i += 1) {
+                if (!Character.isJavaIdentifierPart(part.charAt(i))) {
+                    return false;
+                }
+            }
+        }
+
+        URL resource = getResource(name.replace('.', '/') + ".class");
+        if (resource == null) {
+            return false;
+        }
+        try {
+            return !name.equals(AsmDecompiler.readClassName(resource));
+        } catch (IOException | IllegalArgumentException | IndexOutOfBoundsException | GroovyRuntimeException e) {
+            return false;
+        }
     }
 
     /**
@@ -875,6 +911,9 @@ public class GroovyClassLoader extends URLClassLoader {
 
     /**
      * Decides if the given source is newer than a class.
+     * Last-modified is read via {@link URLStreams#getLastModified(URL)}. A
+     * class is considered current until the source is newer by more than
+     * {@link CompilerConfiguration#getMinimumRecompilationInterval()}.
      *
      * @param source the source we may want to compile
      * @param cls    the former class
@@ -884,24 +923,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #getTimeStamp(Class)
      */
     protected boolean isSourceNewer(final URL source, final Class cls) throws IOException {
-        long lastMod;
-
-        // Special handling for file:// protocol, as getLastModified() often reports
-        // incorrect results (-1)
-        if (isFile(source)) {
-            // Coerce the file URL to a File
-            // See ClassNodeResolver.isSourceNewer for another method that replaces '|' with ':'.
-            // WTF: Why is this done and where is it documented?
-            String path = source.getPath().replace('/', File.separatorChar).replace('|', ':');
-            File file = new File(path);
-            lastMod = file.lastModified();
-        } else {
-            URLConnection conn = source.openConnection();
-            lastMod = conn.getLastModified();
-            conn.getInputStream().close();
-        }
-        long classTime = getTimeStamp(cls);
-        return classTime + config.getMinimumRecompilationInterval() < lastMod;
+        return getTimeStamp(cls) + config.getMinimumRecompilationInterval() < URLStreams.getLastModified(source);
     }
 
     /**

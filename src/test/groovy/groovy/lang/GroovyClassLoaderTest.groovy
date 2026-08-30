@@ -32,15 +32,24 @@ import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import org.objectweb.asm.ClassWriter
 
+import java.nio.file.Files
+import java.nio.file.Path
 import java.security.CodeSource
 import java.util.concurrent.atomic.AtomicInteger
 
+import static groovy.test.GroovyAssert.shouldFail
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
+import static org.objectweb.asm.Opcodes.V17
 
 final class GroovyClassLoaderTest {
 
     private final GroovyClassLoader classLoader = new GroovyClassLoader()
+
+    @TempDir
+    Path tempDir
 
     private static boolean contains(String[] paths, String eval) {
         try {
@@ -295,9 +304,186 @@ final class GroovyClassLoaderTest {
         '''
         assert c.name.startsWith('Script_')
     }
+
+    @Test
+    void isSourceNewerDisablesUrlConnectionCaches() {
+        def recorded = new Boolean[1]
+        def handler = new URLStreamHandler() {
+            @Override
+            protected URLConnection openConnection(URL u) {
+                new URLConnection(u) {
+                    @Override
+                    void connect() { connected = true }
+                    @Override
+                    void setUseCaches(boolean usecaches) {
+                        recorded[0] = usecaches
+                        super.setUseCaches(usecaches)
+                    }
+                    @Override
+                    long getLastModified() { System.currentTimeMillis() }
+                    @Override
+                    InputStream getInputStream() { InputStream.nullInputStream() }
+                }
+            }
+        }
+        URL url = new URL('gcltrack', 'localhost', -1, '/Foo.groovy', handler)
+        classLoader.isSourceNewer(url, String)
+        assert recorded[0] == Boolean.FALSE
+    }
+
+    @Test
+    void isSourceNewerTreatsARealFileAsNewerThanTimestampZero() {
+        File src = File.createTempFile('gcl-src', '.groovy')
+        try {
+            src.write('class GclSrc {}')
+            assert classLoader.isSourceNewer(src.toURI().toURL(), GroovyClassLoaderTestTimestamp0)
+        } finally {
+            src.delete()
+        }
+    }
+
+    @Test
+    void isSourceNewerHonoursMinimumRecompilationInterval() {
+        def newer = trackingUrl(100L)
+        def config = new CompilerConfiguration()
+        config.minimumRecompilationInterval = 60
+        def loader = new GroovyClassLoader(null, config)
+        assert !loader.isSourceNewer(newer, GroovyClassLoaderTestTimestamp50)
+
+        config.minimumRecompilationInterval = 40
+        loader = new GroovyClassLoader(null, config)
+        assert loader.isSourceNewer(newer, GroovyClassLoaderTestTimestamp50)
+    }
+
+    // GROOVY-12303: bytecode-name mismatch is not detected from NCDFE text
+
+    @Test
+    void loadClassTreatsABytecodeNameMismatchAsClassNotFound() {
+        String name = 'gcl.ncdfe.Requested'
+        writeBytes(tempDir, name.replace('.', '/'), simpleClassBytes('gcl/ncdfe/actual'))
+        parentLoader(tempDir).withCloseable { parent ->
+            def gcl = new GroovyClassLoader(parent, new CompilerConfiguration(), false)
+            shouldFail(ClassNotFoundException) {
+                gcl.loadClass(name)
+            }
+        }
+    }
+
+    @Test
+    void loadClassRethrowsNcdfeWhenAMatchingClassCannotBeLinked() {
+        String name = 'gcl.ncdfe.Unlinkable'
+        writeBytes(tempDir, name.replace('.', '/'), simpleClassBytes(name.replace('.', '/'), 'gcl/ncdfe/MissingDep'))
+        parentLoader(tempDir).withCloseable { parent ->
+            def gcl = new GroovyClassLoader(parent, new CompilerConfiguration(), false)
+            def error = shouldFail(NoClassDefFoundError) {
+                gcl.loadClass(name)
+            }
+            assert error.message.contains('MissingDep')
+        }
+    }
+
+    @Test
+    void loadClassRethrowsNcdfeWhenTheMessageIsNull() {
+        def parent = new ClassLoader((ClassLoader) null) {
+            @Override
+            protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+                if (name == 'gcl.ncdfe.NullMsg') {
+                    throw new NoClassDefFoundError()
+                }
+                throw new ClassNotFoundException(name)
+            }
+        }
+        def gcl = new GroovyClassLoader(parent, new CompilerConfiguration(), false)
+        def error = shouldFail(NoClassDefFoundError) {
+            gcl.loadClass('gcl.ncdfe.NullMsg')
+        }
+        assert error.message == null
+    }
+
+    @Test
+    void loadClassDoesNotInspectNcdfeTextForABytecodeNameMismatch() {
+        String name = 'gcl.ncdfe.Localized'
+        writeBytes(tempDir, name.replace('.', '/'), simpleClassBytes('gcl/ncdfe/localizedactual'))
+        def parent = new URLClassLoader(tempDir.toUri().toURL() as URL[], (ClassLoader) null) {
+            @Override
+            protected Class<?> loadClass(String n, boolean resolve) throws ClassNotFoundException {
+                if (n == name) {
+                    throw new NoClassDefFoundError(n + ' (nom incorrect: gcl/ncdfe/localizedactual)')
+                }
+                return super.loadClass(n, resolve)
+            }
+        }
+        parent.withCloseable {
+            def gcl = new GroovyClassLoader(parent, new CompilerConfiguration(), false)
+            shouldFail(ClassNotFoundException) {
+                gcl.loadClass(name)
+            }
+        }
+    }
+
+    @Test
+    void loadClassCompilesGroovySourceWhenBytecodeNameMismatches() {
+        String name = 'gcl.ncdfe.FromSource'
+        writeBytes(tempDir, name.replace('.', '/'), simpleClassBytes('gcl/ncdfe/foreign'))
+        Path source = tempDir.resolve(name.replace('.', '/') + '.groovy')
+        Files.createDirectories(source.parent)
+        Files.writeString(source, 'package gcl.ncdfe\nclass FromSource { static int marker() { 42 } }')
+        // Parent must see both the mismatched .class and groovy.lang.GroovyObject
+        new URLClassLoader(tempDir.toUri().toURL() as URL[], GroovyClassLoaderTest.classLoader).withCloseable { parent ->
+            def gcl = new GroovyClassLoader(parent, new CompilerConfiguration(), false)
+            gcl.resourceLoader = { String filename ->
+                filename == name ? source.toUri().toURL() : null
+            } as GroovyResourceLoader
+            Class cls = gcl.loadClass(name)
+            assert cls.getMethod('marker').invoke(null) == 42
+        }
+    }
+
+    private static URLClassLoader parentLoader(Path dir) {
+        new URLClassLoader(dir.toUri().toURL() as URL[], (ClassLoader) null)
+    }
+
+    private static Path writeBytes(Path dir, String internalName, byte[] bytes) {
+        Path file = dir.resolve(internalName + '.class')
+        Files.createDirectories(file.parent)
+        Files.write(file, bytes)
+        file
+    }
+
+    private static byte[] simpleClassBytes(String internalName, String superInternalName = 'java/lang/Object') {
+        def cw = new ClassWriter(0)
+        cw.visit(V17, ACC_PUBLIC, internalName, null, superInternalName, null)
+        cw.visitEnd()
+        cw.toByteArray()
+    }
+
+    private static URL trackingUrl(long lastModified) {
+        def handler = new URLStreamHandler() {
+            @Override
+            protected URLConnection openConnection(URL u) {
+                new URLConnection(u) {
+                    @Override
+                    void connect() { connected = true }
+                    @Override
+                    long getLastModified() { lastModified }
+                    @Override
+                    InputStream getInputStream() { InputStream.nullInputStream() }
+                }
+            }
+        }
+        new URL('gcltrack', 'localhost', -1, '/Foo.groovy', handler)
+    }
 }
 
 //------------------------------------------------------------------------------
+
+class GroovyClassLoaderTestTimestamp0 {
+    public static long __timeStamp__239_neverHappen0
+}
+
+class GroovyClassLoaderTestTimestamp50 {
+    public static long __timeStamp__239_neverHappen50
+}
 
 class GroovyClassLoaderTestFoo1 {}
 class GroovyClassLoaderTestFoo2 {}

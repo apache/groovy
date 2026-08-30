@@ -73,7 +73,7 @@ enum that AST transformations and customizers attach to:
 | 1 | `INITIALIZATION` | Source files opened, `CompilationUnit` configured, customizers applied                  | `CompilationUnit`, `CompilerConfiguration` |
 | 2 | `PARSING` | ANTLR4 lexer + parser produce a CST (parse tree)                                        | `Antlr4ParserPlugin`, `GroovyLangLexer`, `GroovyLangParser` |
 | 3 | `CONVERSION` | CST → AST (`ModuleNode` / `ClassNode` / `MethodNode` / ...)                             | `AstBuilder` |
-| 4 | `SEMANTIC_ANALYSIS` | Class resolution, import handling, validity checks the grammar can't catch              | `ResolveVisitor`, `StaticImportVisitor`, `AnnotationConstantsVisitor` |
+| 4 | `SEMANTIC_ANALYSIS` | Class resolution, import handling, validity checks the grammar can't catch              | `ResolveVisitor`, `ClassNodeResolver`, `StaticImportVisitor`, `AnnotationConstantsVisitor` |
 | 5 | `CANONICALIZATION` | Fill in the AST: synthesized members, generic types, most local AST transforms run here | `ASTTransformationVisitor`, `GenericsVisitor` |
 | 6 | `INSTRUCTION_SELECTION` | Optimisations and instruction-set selection; `@CompileStatic` / `@TypeChecked` run here | `OptimizerVisitor`, `StaticTypeCheckingVisitor` |
 | 7 | `CLASS_GENERATION` | AST → bytecode in memory                                                                | `AsmClassGenerator`, `Verifier`, classes under `classgen/asm/` |
@@ -130,6 +130,27 @@ verbatim keeps the reference precise; paraphrasing tends to drift.
   / `CodeVisitorSupport` as bases, and
   `ClassCodeExpressionTransformer` for transforms that rewrite
   expressions in place.
+
+### Class resolution (phase 4)
+
+`ResolveVisitor` walks the AST and asks
+`org.codehaus.groovy.control.ClassNodeResolver` to map a name to either a
+`ClassNode` (already compiled, or on the class path) or a `SourceUnit`
+(a groovy source that should join the compilation queue).
+`CompilationUnit.setClassNodeResolver` is the extension point.
+
+The default resolver prefers ASM decompilation of a `.class` resource so a
+type can be described without linking it in the JVM — a class whose
+superclass or a referenced type is missing, or is still only groovy source
+in this compilation unit, can still be represented. Class-loader lookup is
+a separate strategy, used when ASM is off or the type exists only in
+memory. The four-mode matrix (`asmResolving` × `classLoaderResolving`)
+and the rules for script fallback, class-format errors, and
+`NoClassDefFoundError` live on
+`org.codehaus.groovy.control.ClassNodeResolver`. When a groovy source is
+also found for a class that came from another class loader, timestamps
+are compared (`URLStreams.getLastModified`, shared with
+`GroovyClassLoader.isSourceNewer`).
 
 ### Static type checker (phase 6)
 
