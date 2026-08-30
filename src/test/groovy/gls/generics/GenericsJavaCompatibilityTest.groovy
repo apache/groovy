@@ -913,7 +913,7 @@ final class GenericsJavaCompatibilityTest {
                 public int compareTo(Integer o) { return 0; }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "different arguments", "Duplicate interfaces in implements list")
+        assertNegativeCompile(className, javaSrc, "different arguments", "cannot be implemented more than once with different arguments")
     }
 
     /**
@@ -2220,7 +2220,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "non-static type variable", "unable to resolve class T")
+        assertNegativeCompile(className, javaSrc, "non-static type variable", "cannot be referenced from a static context")
     }
 
     /**
@@ -2236,7 +2236,7 @@ final class GenericsJavaCompatibilityTest {
                 static T field;
             }
         '''
-        assertNegativeCompile(className, javaSrc, "non-static type variable", "unable to resolve class T")
+        assertNegativeCompile(className, javaSrc, "non-static type variable", "cannot be referenced from a static context")
     }
 
     /**
@@ -2550,7 +2550,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "cannot select a static class from a parameterized type", "parameterization")
+        assertNegativeCompile(className, javaSrc, "cannot select a static class from a parameterized type", "static nested type")
     }
 
     /**
@@ -2574,7 +2574,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "cannot select a static class from a parameterized type", "parameterization")
+        assertNegativeCompile(className, javaSrc, "cannot select a static class from a parameterized type", "static nested type")
     }
 
     /**
@@ -2593,7 +2593,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "cannot select a static class from a parameterized type", "parameterization")
+        assertNegativeCompile(className, javaSrc, "cannot select a static class from a parameterized type", "static nested type")
     }
 
     /**

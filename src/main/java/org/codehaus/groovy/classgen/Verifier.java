@@ -474,7 +474,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         if (nInterfaces > 1) {
             List<String> interfaceNames = new ArrayList<>(nInterfaces);
-            for (ClassNode in : interfaces) interfaceNames.add(in.getName());
+            for (ClassNode in : interfaces) interfaceNames.add(in.toString(false));
             if (interfaceNames.size() != new HashSet<>(interfaceNames).size()) {
                 throw new RuntimeParserException("Duplicate interfaces in implements list: " + interfaceNames, cn);
             }

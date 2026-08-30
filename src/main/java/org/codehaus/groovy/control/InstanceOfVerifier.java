@@ -57,7 +57,7 @@ public abstract class InstanceOfVerifier extends ClassCodeVisitorSupport {
                 // resolved ClassNodes often still carry declaration placeholders
                 // (List<E>). The grammar allows type arguments so instanceof List<?>
                 // can parse; non-reifiable uses are rejected at parse by
-                // AstBuilder.rejectParameterizedInstanceof (JLS 15.20.2).
+                // AstBuilder.rejectNonReifiableInstanceof (JLS 15.20.2).
             }
         }
         super.visitBinaryExpression(expression);

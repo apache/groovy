@@ -191,7 +191,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     public void visitArrayExpression(final ArrayExpression expression) {
         ClassNode elementType = expression.getElementType();
         if (!isReifiable(elementType)) {
-            addError("generic array creation", expression);
+            addError("generic array creation of " + describeTypeUse(elementType), expression);
         }
         checkGenericsUsage(expression.getType());
 
@@ -218,7 +218,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
      * {@link #checkGenericsUsage(ClassNode)} so nested-type well-formedness
      * applies ({@code Outer<?>.Inner} with a generic {@code Inner},
      * {@code Outer.Inner<?>}). Parameterized {@code instanceof} is handled at
-     * parse ({@code AstBuilder.rejectParameterizedInstanceof}): the grammar
+     * parse ({@code AstBuilder#rejectNonReifiableInstanceof}): the grammar
      * allows type arguments so {@code instanceof List<?>} can parse, while
      * {@code instanceof Map<String,Integer>} is rejected (JLS 15.20.2).
      * {@link InstanceOfVerifier} then checks primitives and type-parameter targets.
@@ -303,12 +303,12 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
             // enclosing type ({@code Outer.Inner<?>}) are also illegal.
             if (isParameterizedEnclosingType(oc)) {
                 if (isStaticMemberType(cn)) {
-                    addError("Cannot refer to a static member of a generic type through a parameterization", cn);
+                    addError("Cannot select a static nested type from a parameterized type", cn);
                 } else if (cn.getGenericsTypes() == null && rn.getGenericsTypes() != null) {
-                    addError("A raw member type may not be used with a parameterized enclosing type", cn);
+                    addError("A raw member type may not be used with a parameterized enclosing type: " + describeTypeUse(cn), cn);
                 }
             } else if (cn.getGenericsTypes() != null && isRawGenericType(oc) && !isStaticMemberType(cn)) {
-                addError("Type arguments cannot be given on a raw nested type", cn);
+                addError("Type arguments cannot be given on a raw nested type: " + describeTypeUse(cn), cn);
             }
         }
         GenericsType[] cnTypes = cn.getGenericsTypes();
@@ -347,7 +347,8 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
             // check nested type parameters
             checkGenericsUsage(cnType);
             if (!isTypeArgumentWithinBounds(cnTypes[i], rnTypes[i])) {
-                addError("The type " + cnTypes[i].getName() + " is not a valid substitute for the bounded parameter <" + rnTypes[i] + ">", cnTypes[i]);
+                String argument = cnTypes[i].isWildcard() ? cnTypes[i].toString() : cnTypes[i].getName();
+                addError("The type " + argument + " is not a valid substitute for the bounded parameter <" + rnTypes[i] + ">", cnTypes[i]);
             }
         }
     }
@@ -452,6 +453,35 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
      */
     private static boolean isRawGenericType(final ClassNode type) {
         return type.getGenericsTypes() == null && type.redirect().getGenericsTypes() != null;
+    }
+
+    /**
+     * Source-like display of a type use, including rare enclosing arguments.
+     */
+    private static String describeTypeUse(final ClassNode type) {
+        if (type.isArray()) {
+            return describeTypeUse(type.getComponentType()) + "[]";
+        }
+        StringBuilder sb = new StringBuilder();
+        ClassNode outer = type.getOuterClassType();
+        if (outer != null) {
+            sb.append(describeTypeUse(outer)).append('.');
+            String name = type.getName();
+            int sep = Math.max(name.lastIndexOf('.'), name.lastIndexOf('$'));
+            sb.append(sep < 0 ? name : name.substring(sep + 1));
+        } else {
+            sb.append(type.getNameWithoutPackage());
+        }
+        GenericsType[] generics = type.getGenericsTypes();
+        if (generics != null && generics.length > 0 && !type.isGenericsPlaceHolder()) {
+            sb.append('<');
+            for (int i = 0; i < generics.length; i++) {
+                if (i > 0) sb.append(", ");
+                sb.append(generics[i]);
+            }
+            sb.append('>');
+        }
+        return sb.toString();
     }
 
     /**

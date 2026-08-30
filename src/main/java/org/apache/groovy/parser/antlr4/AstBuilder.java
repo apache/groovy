@@ -4656,6 +4656,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             classNode = this.createArrayType(classNode, typeAnnotations);
         }
 
+        if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR)) {
+            rejectNonReifiableInstanceof(ctx, classNode);
+        }
+
         return configureAST(classNode, ctx);
     }
 
@@ -4694,7 +4698,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     attachRawEnclosingIfQualified(classNode);
                 }
                 classNode.setGenericsTypes(generics);
-                rejectParameterizedInstanceof(ctx, classNode, generics);
+                if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR) && isNonReifiableSourceArgs(generics)) {
+                    classNode.putNodeMetaData(NON_REIFIABLE_INSTANCEOF, Boolean.TRUE);
+                }
             } else if (child instanceof TypeArgumentsOrDiamondContext tad) {
                 if (attachRawEnclosing) {
                     attachRawEnclosingIfQualified(classNode);
@@ -4728,14 +4734,68 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     /**
      * {@code instanceof} type arguments are legal in the grammar so {@code List<?>}
-     * can parse (JLS 15.20.2 / 4.7). Concrete arguments such as
-     * {@code Map<String,Integer>} are not reifiable and are rejected here.
+     * can parse (JLS 15.20.2 / 4.7). Non-reifiable uses such as
+     * {@code Map<String,Integer>}, {@code Outer<String>.Inner} and
+     * {@code List<String>[]} are rejected once the full type (nesting and
+     * array dimensions) is built.
      */
-    private void rejectParameterizedInstanceof(final GroovyParserRuleContext ctx, final ClassNode classNode, final GenericsType[] generics) {
-        if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR) && Arrays.stream(generics).anyMatch(gt ->
-                !gt.isWildcard() || asBoolean(gt.getLowerBound()) || ArrayGroovyMethods.asBoolean(gt.getUpperBounds()))) { // GROOVY-11585
-            throw this.createParsingFailedException("Cannot perform instanceof check against parameterized type " + classNode, ctx);
+    private void rejectNonReifiableInstanceof(final GroovyParserRuleContext ctx, final ClassNode classNode) {
+        if (carriesNonReifiableInstanceofArg(classNode)) { // GROOVY-11585
+            throw this.createParsingFailedException(
+                    "Cannot perform instanceof check against parameterized type " + describeTypeUse(classNode)
+                            + " since further generic type information will be erased at runtime", ctx);
         }
+    }
+
+    /**
+     * True when the source wrote a non-reifiable type argument (not merely a
+     * resolved ClassNode still carrying declaration placeholders such as
+     * {@code List<E>}).
+     */
+    private static boolean isNonReifiableSourceArgs(final GenericsType[] generics) {
+        return Arrays.stream(generics).anyMatch(gt ->
+                !gt.isWildcard() || asBoolean(gt.getLowerBound()) || ArrayGroovyMethods.asBoolean(gt.getUpperBounds()));
+    }
+
+    private static boolean carriesNonReifiableInstanceofArg(ClassNode type) {
+        while (type.isArray()) {
+            type = type.getComponentType();
+        }
+        if (Boolean.TRUE.equals(type.getNodeMetaData(NON_REIFIABLE_INSTANCEOF))) {
+            return true;
+        }
+        ClassNode outer = type.getOuterClassType();
+        return outer != null && carriesNonReifiableInstanceofArg(outer);
+    }
+
+    /**
+     * Source-like display of a type use, including rare enclosing arguments
+     * ({@code Outer<String>.Inner}) and array brackets.
+     */
+    private static String describeTypeUse(final ClassNode type) {
+        if (type.isArray()) {
+            return describeTypeUse(type.getComponentType()) + "[]";
+        }
+        StringBuilder sb = new StringBuilder();
+        ClassNode outer = type.getOuterClassType();
+        if (outer != null) {
+            sb.append(describeTypeUse(outer)).append('.');
+            String name = type.getName();
+            int sep = Math.max(name.lastIndexOf('.'), name.lastIndexOf('$'));
+            sb.append(sep < 0 ? name : name.substring(sep + 1));
+        } else {
+            sb.append(type.getNameWithoutPackage());
+        }
+        GenericsType[] generics = type.getGenericsTypes();
+        if (generics != null && generics.length > 0 && !type.isGenericsPlaceHolder()) {
+            sb.append('<');
+            for (int i = 0; i < generics.length; i++) {
+                if (i > 0) sb.append(", ");
+                sb.append(generics[i]);
+            }
+            sb.append('>');
+        }
+        return sb.toString();
     }
 
     @Override
@@ -5552,6 +5612,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static final String CLASS_NAME = "_CLASS_NAME";
     private static final String INSIDE_PARENTHESES_LEVEL = "_INSIDE_PARENTHESES_LEVEL";
     private static final String IS_INSIDE_INSTANCEOF_EXPR = "_IS_INSIDE_INSTANCEOF_EXPR";
+    private static final String NON_REIFIABLE_INSTANCEOF = "_NON_REIFIABLE_INSTANCEOF";
     private static final String IS_SWITCH_DEFAULT = "_IS_SWITCH_DEFAULT";
     private static final String IS_NUMERIC = "_IS_NUMERIC";
     private static final String IS_STRING = "_IS_STRING";

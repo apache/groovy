@@ -918,7 +918,7 @@ final class Groovy12319 {
             }
             new Outer<?>.Nested[0]
         '''
-        assert err.message.contains('parameterization')
+        assert err.message.contains('static nested type')
 
         err = shouldFail CompilationFailedException, '''
             class Outer<T> {
@@ -926,14 +926,14 @@ final class Groovy12319 {
             }
             Outer<?>.Nested x
         '''
-        assert err.message.contains('parameterization')
+        assert err.message.contains('static nested type')
 
         // Nested interfaces are implicitly static (JLS 9.5); Map.Entry is the
         // JDK example of the same rule.
         err = shouldFail CompilationFailedException, '''
             new java.util.Map<?,?>.Entry[0]
         '''
-        assert err.message.contains('parameterization')
+        assert err.message.contains('static nested type')
     }
 
     @Test
@@ -1008,7 +1008,7 @@ final class Groovy12319 {
                 Integer id(Integer u) { u }
             }
         '''
-        assert err.message.contains('parameterization')
+        assert err.message.contains('static nested type')
     }
 
     @Test

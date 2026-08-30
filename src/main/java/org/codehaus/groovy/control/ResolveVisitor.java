@@ -439,7 +439,32 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (resolve(type)) return;
         if (resolveToInner(type)) return;
 
+        if (!type.hasPackageName() && isTypeParameterHiddenByStatic(type.getUnresolvedName())) {
+            addError("The non-static type parameter " + type.getUnresolvedName() + " cannot be referenced from a static context", node);
+            return;
+        }
         addError("unable to resolve class " + type.toString(false) + msg, node);
+    }
+
+    /**
+     * True when {@code name} is a type parameter of {@code currentClass} or an
+     * enclosing class, but is not in {@link #genericParameterNames} because the
+     * current context is static (JLS 6.5.5.1).
+     */
+    private boolean isTypeParameterHiddenByStatic(final String name) {
+        if (genericParameterNames.containsKey(new GenericsTypeName(name))) {
+            return false;
+        }
+        for (ClassNode cn = currentClass; cn != null; cn = cn.getOuterClass()) {
+            GenericsType[] typeParameters = cn.getGenericsTypes();
+            if (typeParameters == null) continue;
+            for (GenericsType typeParameter : typeParameters) {
+                if (name.equals(typeParameter.getName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
