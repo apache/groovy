@@ -1936,24 +1936,32 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-12314: package-private and protected fields that Java access rules
-    // reject are not admitted via property syntax either; at runtime the dynamic
-    // MOP treats such strongly encapsulated fields as absent
+    // reject are not admitted via property syntax either; resolution falls
+    // through to accessors, extensions and map/list handling. When nothing else
+    // resolves the property, a field declared by the receiver's own class is
+    // reported as an access violation (as javac does), while an inaccessible
+    // inherited field is not a member of the subclass (JLS 8.2) and stays missing
     @Test
     void testNonPublicForeignFieldViaPropertySyntax() {
         shouldFailWithMessages '''
-            def m(ArrayList list) { list.modCount }   // protected, java.util.AbstractList
+            def m(ArrayList list) { list.modCount }   // protected, inherited from java.util.AbstractList
         ''',
         'No such property: modCount for class: java.util.ArrayList'
 
         shouldFailWithMessages '''
-            def m(ArrayList list) { list.elementData } // package-private, java.util.ArrayList
+            def m(ArrayList list) { list.elementData } // package-private, declared by java.util.ArrayList
         ''',
-        'No such property: elementData for class: java.util.ArrayList'
+        'Cannot access field: elementData of class: java.util.ArrayList from class: '
 
         shouldFailWithMessages '''
             def m(ArrayList list) { list.modCount = 1 }
         ''',
         'No such property: modCount for class: java.util.ArrayList'
+
+        shouldFailWithMessages '''
+            def m(ArrayList list) { list.elementData = null }
+        ''',
+        'Cannot access field: elementData of class: java.util.ArrayList from class: '
     }
 
     // GROOVY-12314: "size" and "length" are methods, not properties, of collections

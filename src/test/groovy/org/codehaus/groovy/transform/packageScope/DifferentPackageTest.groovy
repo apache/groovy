@@ -367,8 +367,8 @@ final class DifferentPackageTest {
                 '''
             )
         }
-        // GROOVY-12314: rejected by the type checker, no longer during class generation
-        assert err.message =~ /No such property: value for class: p.One/
+        // GROOVY-12314: rejected by the type checker as an access violation, no longer during class generation
+        assert err.message =~ /Cannot access field: value of class: p.One from class: q.Two/
     }
 
     // GROOVY-9093
@@ -432,8 +432,8 @@ final class DifferentPackageTest {
                 '''
             )
         }
-        // GROOVY-12314: rejected by the type checker, no longer during class generation
-        assert err.message =~ /No such property: CONST for Class or static property for class: p.One/
+        // GROOVY-12314: rejected by the type checker as an access violation, no longer during class generation
+        assert err.message =~ /Cannot access field: CONST of class: p.One from class: q.Other/
     }
 
     @Test

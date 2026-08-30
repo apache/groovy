@@ -878,6 +878,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void recordMissingProperty(final PropertyExpression expression) {
+        FieldNode inaccessibleField = expression.getNodeMetaData("inaccessible field");
+        if (inaccessibleField != null) { // GROOVY-12314: the property exists but Java access rules reject it
+            addStaticTypeError("Cannot access field: " + inaccessibleField.getName() + " of class: " + prettyPrintTypeName(inaccessibleField.getDeclaringClass())
+                    + " from class: " + prettyPrintTypeName(typeCheckingContext.getEnclosingClassNode()), expression.getLineNumber() > 0 ? expression : expression.getProperty());
+            return;
+        }
+
         var objectExpression = expression.getObjectExpression();
         var objectExpressionType = findCurrentInstanceOfClass(objectExpression, getType(objectExpression));
 
@@ -2591,6 +2598,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             if (expressionToStoreOn instanceof AttributeExpression) {
                 addStaticTypeError("Cannot access field: " + field.getName() + " of class: " + prettyPrintTypeName(field.getDeclaringClass()), expressionToStoreOn.getProperty());
             } else { // GROOVY-12314: fall through to accessor, extension or map/list resolution
+                // remember a rejected package-private or protected field declared by the
+                // receiver's own class: if nothing else resolves the property, the error
+                // reports the access violation rather than a missing property. A private
+                // field stays hidden (GROOVY-12290), and an inaccessible inherited field is
+                // not a member of the subclass (JLS 8.2; GROOVY-9093, GROOVY-9293).
+                if (!field.isPrivate() && receiver.equals(field.getDeclaringClass())) {
+                    expressionToStoreOn.putNodeMetaData("inaccessible field", field);
+                }
                 return false;
             }
         }
