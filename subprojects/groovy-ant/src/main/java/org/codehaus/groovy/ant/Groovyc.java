@@ -39,6 +39,7 @@ import org.apache.tools.ant.util.SourceFileScanner;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.ErrorFormat;
 import org.codehaus.groovy.control.SourceExtensionHandler;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.tools.ErrorReporter;
@@ -62,6 +63,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -238,6 +240,7 @@ public class Groovyc extends MatchingTask {
     private boolean forceLookupUnnamedFiles;
     private String scriptBaseClass;
     private String configscript;
+    private ErrorFormat errorFormat;
 
     // GROOVY-11995: forked-mode JVM args / system properties
     private final Commandline jvmArgs = new Commandline();
@@ -829,6 +832,28 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
+     * Get how errors and warnings are rendered.
+     *
+     * @return the error format, or {@code null} to use the compiler default
+     * @since 6.0.0
+     */
+    public ErrorFormat getErrorFormat() {
+        return errorFormat;
+    }
+
+    /**
+     * Set how errors and warnings are rendered. {@code full}, the default, keeps the
+     * source line and caret; {@code short} emits one
+     * {@code file:line:column: severity: message} line per diagnostic.
+     *
+     * @param errorFormat the error format, case-insensitive
+     * @since 6.0.0
+     */
+    public void setErrorFormat(final String errorFormat) {
+        this.errorFormat = ErrorFormat.valueOf(errorFormat.toUpperCase(Locale.ROOT));
+    }
+
+    /**
      * Set the stub directory into which the Java source stub
      * files should be generated. The directory need not exist
      * and will not be deleted automatically - though its contents
@@ -1317,6 +1342,10 @@ public class Groovyc extends MatchingTask {
         if (configscript != null) {
             commandLineList.add("--configscript");
             commandLineList.add(configscript);
+        }
+        if (errorFormat != null) {
+            commandLineList.add("--error-format");
+            commandLineList.add(errorFormat.toString());
         }
     }
 

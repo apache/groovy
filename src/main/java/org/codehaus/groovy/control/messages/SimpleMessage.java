@@ -72,6 +72,11 @@ public class SimpleMessage extends Message {
         return message;
     }
 
+    @Override
+    public Diagnostic toDiagnostic() {
+        return new Diagnostic(sourceName(owner), -1, -1, message);
+    }
+
     /**
      * Writes this message, prefixing it with the source name when available.
      *

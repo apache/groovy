@@ -337,6 +337,11 @@ public class CompilerConfiguration {
         }
 
         @Override
+        public void setErrorFormat(final ErrorFormat errorFormat) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void setTargetPhase(final int targetPhase) {
             throw new UnsupportedOperationException();
         }
@@ -517,6 +522,12 @@ public class CompilerConfiguration {
      */
     private int targetPhase = Phases.ALL;
 
+    /**
+     * How compilation errors and warnings are rendered (GROOVY-12312).
+     * Defaults to {@link ErrorFormat#FULL}.
+     */
+    private ErrorFormat errorFormat = ErrorFormat.FULL;
+
     private final List<CompilationCustomizer> compilationCustomizers = new LinkedList<>();
 
     /**
@@ -649,6 +660,7 @@ public class CompilerConfiguration {
         setMinimumRecompilationInterval(configuration.getMinimumRecompilationInterval());
         setTargetBytecode(configuration.getTargetBytecode());
         setTargetPhase(configuration.getTargetPhase());
+        setErrorFormat(configuration.getErrorFormat());
         setPreviewFeatures(configuration.isPreviewFeatures());
         setLogClassgen(configuration.isLogClassgen());
         setLogClassgenStackTraceMaxDepth(configuration.getLogClassgenStackTraceMaxDepth());
@@ -1631,5 +1643,30 @@ public class CompilerConfiguration {
      */
     public void setTargetPhase(final CompilePhase targetPhase) {
         setTargetPhase(targetPhase.getPhaseNumber());
+    }
+
+    /**
+     * Returns how compilation errors and warnings are rendered.
+     *
+     * @return the error format, never {@code null}
+     * @see #setErrorFormat(ErrorFormat)
+     * @since 6.0.0
+     */
+    public ErrorFormat getErrorFormat() {
+        return this.errorFormat;
+    }
+
+    /**
+     * Sets how compilation errors and warnings are rendered. {@link ErrorFormat#FULL},
+     * the default, keeps the human-oriented rendering with the offending source line
+     * and a caret. {@link ErrorFormat#SHORT} emits one
+     * {@code file:line:column: severity: message} line per diagnostic, which suits
+     * editors, CI log parsers, and other tools (GROOVY-12312).
+     *
+     * @param errorFormat the error format; {@code null} selects the default
+     * @since 6.0.0
+     */
+    public void setErrorFormat(final ErrorFormat errorFormat) {
+        this.errorFormat = (errorFormat != null ? errorFormat : ErrorFormat.FULL);
     }
 }

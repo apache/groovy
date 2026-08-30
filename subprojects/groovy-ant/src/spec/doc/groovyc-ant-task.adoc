@@ -129,6 +129,9 @@ you need to set this flag to true. Defaults to false. |No
 
 |configscript |Set the configuration file used to customize the compilation configuration. |No
 
+|errorFormat |How errors and warnings are rendered: `full` (the default, with the source line
+and a caret) or `short` (one `file:line:column: severity: message` line per diagnostic). |No
+
 |parameters |Generates metadata for reflection on method parameter names on JDK 8 and above.
 Defaults to false. |No
 
