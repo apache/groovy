@@ -771,6 +771,20 @@ public class GroovyClassLoader extends URLClassLoader {
      * confirmed mismatch: the linking {@link NoClassDefFoundError} is kept.
      */
     private boolean isConfirmedBytecodeNameMismatch(final String name) {
+        if (name == null || name.isEmpty() || name.contains("/") || name.contains("\\") || name.contains("..")) {
+            return false;
+        }
+        for (String part : name.split("\\.")) {
+            if (part.isEmpty() || !Character.isJavaIdentifierStart(part.charAt(0))) {
+                return false;
+            }
+            for (int i = 1; i < part.length(); i += 1) {
+                if (!Character.isJavaIdentifierPart(part.charAt(i))) {
+                    return false;
+                }
+            }
+        }
+
         URL resource = getResource(name.replace('.', '/') + ".class");
         if (resource == null) {
             return false;
