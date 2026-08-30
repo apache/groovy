@@ -49,8 +49,9 @@ public class CachedField extends MetaProperty {
     private boolean madeAccessible;
     private Boolean accessEstablishable;
     private void makeAccessible() {
-        ReflectionUtils.makeAccessibleInPrivilegedAction(field);
-        madeAccessible = true;
+        // GROOVY-12314: only record success; a failed attempt (strongly encapsulated
+        // declaring class) must not make isAccessEstablishable() report the field reachable
+        madeAccessible = ReflectionUtils.makeAccessibleInPrivilegedAction(field).isPresent();
     }
 
     /**
