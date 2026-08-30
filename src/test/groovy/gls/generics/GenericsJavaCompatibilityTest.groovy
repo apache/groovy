@@ -1769,8 +1769,11 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
-     * JLS 4.7, 15.20.2: {@code List<?>} and {@code Class<?>} are reifiable (unbounded
-     * wildcards), so they may appear as the {@code instanceof} reference type.
+     * JLS 4.7, 15.20.2: {@code List<?>}, {@code ArrayList<?>}, {@code Class<?>}
+     * and {@code Map<?,?>} are reifiable (every type argument is an unbounded
+     * wildcard), as is the raw type {@code List}. A parameterized left operand
+     * such as {@code List<String> list} is legal; {@code null instanceof List<?>}
+     * is well-typed and yields {@code false}.
      */
     @Test
     void testReifiableInstanceofUnboundedWildcard() {
@@ -1778,12 +1781,88 @@ final class GenericsJavaCompatibilityTest {
         final String javaSrc = '''
             package gls.generics.test;
             import java.util.ArrayList;
+            import java.util.HashMap;
             import java.util.List;
+            import java.util.Map;
             public class ReifiableInstanceof {
                 public static boolean test() {
-                    Object list = new ArrayList<String>();
-                    Object cls = ReifiableInstanceof.class.getClass();
-                    return (list instanceof List<?>) && (cls instanceof Class<?>);
+                    List<String> list = new ArrayList<String>();
+                    List<?> wildcard = list;
+                    Map<String, Integer> map = new HashMap<String, Integer>();
+                    Class<?> cls = ReifiableInstanceof.class.getClass();
+                    List<String> none = null;
+                    return (list instanceof List<?>)
+                            && (list instanceof ArrayList<?>)
+                            && (list instanceof List)
+                            && (wildcard instanceof List<?>)
+                            && (map instanceof Map<?, ?>)
+                            && (cls instanceof Class<?>)
+                            && !(none instanceof List<?>);
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, true)
+    }
+
+    /**
+     * JLS 4.7, 15.20.2: an array type is reifiable when its element type is
+     * reifiable, so {@code o instanceof List<?>[]} is legal.
+     */
+    @Test
+    void testReifiableInstanceofArrayOfUnboundedWildcard() {
+        final String className = 'gls.generics.test.ReifiableInstanceofArray'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class ReifiableInstanceofArray {
+                public static boolean test() {
+                    Object o = new List[0];
+                    return o instanceof List<?>[];
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, true)
+    }
+
+    /**
+     * JLS 4.7, 15.20.2: a non-static member type of a reifiable type is itself
+     * reifiable, so {@code o instanceof Outer<?>.Inner} is legal when {@code Inner}
+     * is not generic.
+     */
+    @Test
+    void testReifiableInstanceofRareTypeUnboundedEnclosing() {
+        final String className = 'gls.generics.test.ReifiableRareInstanceof'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class ReifiableRareInstanceof {
+                public static class Outer<T> {
+                    public class Inner {}
+                }
+                public static boolean test() {
+                    return !(null instanceof Outer<?>.Inner);
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, true)
+    }
+
+    /**
+     * JLS 4.7, 15.20.2 / JDK {@code T6665356}: when both the enclosing type and
+     * the member are generic, {@code Outer.Inner} (raw) and
+     * {@code Outer<?>.Inner<?>} (all unbounded wildcards) are reifiable.
+     */
+    @Test
+    void testReifiableInstanceofRawAndFullyWildcardNested() {
+        final String className = 'gls.generics.test.ReifiableNestedInstanceof'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class ReifiableNestedInstanceof {
+                public static class Outer<T> {
+                    public class Inner<U> {}
+                }
+                public static boolean test() {
+                    return !(null instanceof Outer.Inner)
+                            && !(null instanceof Outer<?>.Inner<?>);
                 }
             }
         '''
@@ -1858,6 +1937,239 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 4.7, 15.20.2: {@code Map<String,Integer>} is not reifiable.
+     */
+    @Test
+    void testNegativeNonReifiableInstanceofMap() {
+        final String className = 'gls.generics.test.NonReifiableInstanceofMap'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.Map;
+            public class NonReifiableInstanceofMap {
+                public static boolean test(Object o) {
+                    return o instanceof Map<String, Integer>;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be safely cast", "Cannot perform instanceof")
+    }
+
+    /**
+     * JLS 15.20.2: a non-reifiable {@code instanceof} is still illegal when the
+     * check is negated ({@code !(o instanceof Map<String,Integer>)}).
+     */
+    @Test
+    void testNegativeNegatedNonReifiableInstanceof() {
+        final String className = 'gls.generics.test.NegatedNonReifiableInstanceof'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.Map;
+            public class NegatedNonReifiableInstanceof {
+                public static boolean test(Object o) {
+                    return !(o instanceof Map<String, Integer>);
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be safely cast", "Cannot perform instanceof")
+    }
+
+    /**
+     * JLS 4.7, 15.20.2: {@code List<? extends CharSequence>} is not reifiable
+     * because the wildcard is bounded (GROOVY-11585).
+     */
+    @Test
+    void testNegativeInstanceofUpperBoundedWildcard() {
+        final String className = 'gls.generics.test.InstanceofUpperBoundedWildcard'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class InstanceofUpperBoundedWildcard {
+                public static boolean test(Object o) {
+                    return o instanceof List<? extends CharSequence>;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be safely cast", "Cannot perform instanceof")
+    }
+
+    /**
+     * JLS 4.7, 15.20.2: {@code List<? super Integer>} is not reifiable because
+     * the wildcard is bounded (GROOVY-11585).
+     */
+    @Test
+    void testNegativeInstanceofLowerBoundedWildcard() {
+        final String className = 'gls.generics.test.InstanceofLowerBoundedWildcard'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class InstanceofLowerBoundedWildcard {
+                public static boolean test(Object o) {
+                    return o instanceof List<? super Integer>;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be safely cast", "Cannot perform instanceof")
+    }
+
+    /**
+     * JLS 4.7, 15.20.2: {@code Outer<String>.Inner} is not reifiable — a nested
+     * type is reifiable only as a non-static member of a reifiable type, and
+     * {@code Outer<String>} is not. Contrast
+     * {@link #testReifiableInstanceofRareTypeUnboundedEnclosing()}.
+     */
+    @Test
+    void testNegativeInstanceofRareType() {
+        final String className = 'gls.generics.test.InstanceofRareType'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class InstanceofRareType {
+                public static class Outer<T> {
+                    public class Inner {}
+                }
+                public static boolean test(Object o) {
+                    return o instanceof Outer<String>.Inner;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be safely cast", "Cannot perform instanceof")
+    }
+
+    /**
+     * JLS 4.7, 15.20.2: {@code List<String>[]} is not reifiable (the component
+     * type is not).
+     */
+    @Test
+    void testNegativeInstanceofArrayOfParameterizedType() {
+        final String className = 'gls.generics.test.InstanceofGenericArray'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class InstanceofGenericArray {
+                public static boolean test(Object o) {
+                    return o instanceof List<String>[];
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be safely cast", "Cannot perform instanceof")
+    }
+
+    /**
+     * JLS 4.7, 15.20.2: {@code Map<?,String>} is not reifiable — every type
+     * argument must be an unbounded wildcard.
+     */
+    @Test
+    void testNegativeInstanceofMixedWildcard() {
+        final String className = 'gls.generics.test.InstanceofMixedWildcard'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.Map;
+            public class InstanceofMixedWildcard {
+                public static boolean test(Object o) {
+                    return o instanceof Map<?, String>;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be safely cast", "Cannot perform instanceof")
+    }
+
+    /**
+     * JLS 4.7, 15.20.2: a type variable is not reifiable, so {@code o instanceof T}
+     * is a compile-time error.
+     */
+    @Test
+    void testNegativeInstanceofTypeParameter() {
+        final String className = 'gls.generics.test.InstanceofTypeParameter'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class InstanceofTypeParameter {
+                public static <T> boolean test(Object o) {
+                    return o instanceof T;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be safely cast", "type parameter")
+    }
+
+    /**
+     * JLS 4.7, 15.20.2: an array of a type variable is not reifiable
+     * ({@code o instanceof T[]}).
+     */
+    @Test
+    void testNegativeInstanceofTypeParameterArray() {
+        final String className = 'gls.generics.test.InstanceofTypeParameterArray'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class InstanceofTypeParameterArray {
+                public static <T> boolean test(Object o) {
+                    return o instanceof T[];
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be safely cast", "type parameter")
+    }
+
+    /**
+     * JLS 4.5 / JDK {@code T6665356}: {@code Outer<?>.Inner} is malformed when
+     * {@code Inner} is generic (raw member of a parameterized enclosing type).
+     */
+    @Test
+    void testNegativeInstanceofRawGenericMemberOfParameterizedEnclosing() {
+        final String className = 'gls.generics.test.InstanceofRawMemberOfParameterized'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class InstanceofRawMemberOfParameterized {
+                public static class Outer<T> {
+                    public class Inner<U> {}
+                }
+                public static boolean test(Object o) {
+                    return o instanceof Outer<?>.Inner;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "improperly formed type", "parameterized enclosing type")
+    }
+
+    /**
+     * JLS 4.8 / JDK {@code T6665356}: {@code Outer.Inner<?>} gives type arguments
+     * on a member of a raw type.
+     */
+    @Test
+    void testNegativeInstanceofTypeArgsOnRawNested() {
+        final String className = 'gls.generics.test.InstanceofParamOnRawNested'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class InstanceofParamOnRawNested {
+                public static class Outer<T> {
+                    public class Inner<U> {}
+                }
+                public static boolean test(Object o) {
+                    return o instanceof Outer.Inner<?>;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "improperly formed type", "raw")
+    }
+
+    /**
+     * JLS 4.8 / JDK {@code T6665356}: the same malformed type is illegal as a
+     * field type, not only as an {@code instanceof} operand.
+     */
+    @Test
+    void testNegativeTypeArgsOnRawNestedField() {
+        final String className = 'gls.generics.test.RawNestedField'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class RawNestedField {
+                public static class Outer<T> {
+                    public class Inner<U> {}
+                }
+                public Outer.Inner<?> field;
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "improperly formed type", "raw")
+    }
+
+    /**
      * JLS 4.7, 15.20.2: {@code Class<C>} is not reifiable (the type argument is not
      * an unbounded wildcard), so it may not be used with {@code instanceof}.
      */
@@ -1869,6 +2181,24 @@ final class GenericsJavaCompatibilityTest {
             public class InstanceofClassParam {
                 public static boolean test() {
                     return InstanceofClassParam.class.getClass() instanceof Class<InstanceofClassParam>;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted", "Cannot perform instanceof")
+    }
+
+    /**
+     * JLS 4.7, 15.20.2 / JDK {@code InstanceOf3}: {@code Class<? extends C>} is
+     * not reifiable (the wildcard is bounded).
+     */
+    @Test
+    void testNegativeInstanceofClassUpperBoundedWildcard() {
+        final String className = 'gls.generics.test.InstanceofClassUpperBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class InstanceofClassUpperBound {
+                public static boolean test() {
+                    return InstanceofClassUpperBound.class.getClass() instanceof Class<? extends InstanceofClassUpperBound>;
                 }
             }
         '''

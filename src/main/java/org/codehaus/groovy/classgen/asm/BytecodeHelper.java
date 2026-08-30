@@ -478,7 +478,9 @@ public class BytecodeHelper {
      */
     private static void writeParameterizedClass(StringBuilder ret, ClassNode printType) {
         ClassNode owner = printType.getOuterClassType();
-        if (owner != null) {
+        // JVMS 4.7.9.1 nested form is only for a parameterized enclosing type.
+        // A raw enclosing type must keep the binary name (Outer$Inner<...>).
+        if (owner != null && hasGenerics(owner)) {
             writeParameterizedClass(ret, owner);
             ret.append('.');
             ret.append(innerClassSimpleName(printType, owner));
@@ -489,17 +491,39 @@ public class BytecodeHelper {
         addSubTypes(ret, printType.getGenericsTypes(), "<", ">");
     }
 
+    /**
+     * Simple name of {@code inner} relative to {@code owner} for a JVMS 4.7.9.1
+     * nested type signature. Accepts both {@code Outer.Inner} (parser) and
+     * {@code Outer$Inner} (binary name after resolve); {@code Foo$1} is the
+     * same prefix path. If {@code inner} is not nested under {@code owner},
+     * the result is the last identifier only — never extra qualification of
+     * {@code owner} (so owner {@code Foo} and inner {@code Bar.X} yield {@code X}).
+     */
     private static String innerClassSimpleName(final ClassNode inner, final ClassNode owner) {
         String innerName = inner.getName();
         String ownerName = owner.getName();
-        if (innerName.startsWith(ownerName) && innerName.length() > ownerName.length()) {
-            char sep = innerName.charAt(ownerName.length());
-            if (sep == '.' || sep == '$') {
-                return innerName.substring(ownerName.length() + 1).replace('$', '.');
-            }
+        String nested = nestedNameAfterOwner(innerName, ownerName);
+        if (nested != null) {
+            return nested.replace('$', '.');
         }
-        int dot = Math.max(innerName.lastIndexOf('.'), innerName.lastIndexOf('$'));
-        return dot < 0 ? innerName : innerName.substring(dot + 1);
+        int sep = Math.max(innerName.lastIndexOf('.'), innerName.lastIndexOf('$'));
+        return sep < 0 ? innerName : innerName.substring(sep + 1);
+    }
+
+    /**
+     * Remainder of {@code innerName} after {@code ownerName} when nested under
+     * it ({@code .} or {@code $} separator); otherwise {@code null}.
+     */
+    private static String nestedNameAfterOwner(final String innerName, final String ownerName) {
+        int ownerLen = ownerName.length();
+        if (innerName.length() <= ownerLen || !innerName.startsWith(ownerName)) {
+            return null;
+        }
+        char sep = innerName.charAt(ownerLen);
+        if (sep != '.' && sep != '$') {
+            return null;
+        }
+        return innerName.substring(ownerLen + 1);
     }
 
     private static void writeGenericsBounds(StringBuilder ret, GenericsType type, boolean writeInterfaceMarker) {

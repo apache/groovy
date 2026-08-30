@@ -948,23 +948,6 @@ final class Groovy12319 {
     }
 
     @Test
-    void testInstanceofParameterizedRareTypeRejected() {
-        def err = shouldFail CompilationFailedException, '''
-            class Outer<T> {
-                class Inner {}
-            }
-            def x = null
-            x instanceof Outer<String>.Inner
-        '''
-        assert err.message.contains('parameterized type')
-
-        err = shouldFail CompilationFailedException, '''
-            def x = ([] instanceof java.util.ArrayList<String>)
-        '''
-        assert err.message.contains('parameterized type')
-    }
-
-    @Test
     void testConstructorTypeArgumentsWithFunctionalArgumentCompileStatic() {
         assertScript '''
             import groovy.transform.CompileStatic

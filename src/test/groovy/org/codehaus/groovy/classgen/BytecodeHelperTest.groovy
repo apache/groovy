@@ -91,9 +91,7 @@ class BytecodeHelperTest extends AbstractBytecodeTestCase {
         inner.genericsTypes = [new GenericsType(ClassHelper.Integer_TYPE)] as GenericsType[]
 
         String typeSig = BytecodeHelper.getTypeGenericsSignature(inner)
-        assert typeSig.contains('Outer')
-        assert typeSig.contains('Inner')
-        assert typeSig.contains('String')
+        assert typeSig == 'Lcom/example/Outer<Ljava/lang/String;>.Inner<Ljava/lang/Integer;>;'
 
         ClassNode list = ClassHelper.LIST_TYPE.getPlainNodeReference()
         list.genericsTypes = [new GenericsType(ClassHelper.STRING_TYPE)] as GenericsType[]
@@ -116,8 +114,61 @@ class BytecodeHelperTest extends AbstractBytecodeTestCase {
         ClassNode mismatchedInner = ClassHelper.makeWithoutCaching('totally.Different$Item')
         mismatchedInner.outerClassType = outer
         mismatchedInner.genericsTypes = [new GenericsType(ClassHelper.Integer_TYPE)] as GenericsType[]
-        String fallback = BytecodeHelper.getTypeGenericsSignature(mismatchedInner)
-        assert fallback.contains('Item')
+        assert BytecodeHelper.getTypeGenericsSignature(mismatchedInner) == 'Lcom/example/Outer<Ljava/lang/String;>.Item<Ljava/lang/Integer;>;'
+
+        // Parser records Outer.Inner; after resolve the name is Outer$Inner.
+        ClassNode dottedInner = ClassHelper.makeWithoutCaching('com.example.Outer.Inner')
+        dottedInner.outerClassType = outer
+        dottedInner.genericsTypes = [new GenericsType(ClassHelper.Integer_TYPE)] as GenericsType[]
+        assert BytecodeHelper.getTypeGenericsSignature(dottedInner) == 'Lcom/example/Outer<Ljava/lang/String;>.Inner<Ljava/lang/Integer;>;'
+
+        ClassNode dollarInner = ClassHelper.makeWithoutCaching('com.example.Outer$Inner')
+        dollarInner.outerClassType = outer
+        dollarInner.genericsTypes = [new GenericsType(ClassHelper.Integer_TYPE)] as GenericsType[]
+        assert BytecodeHelper.getTypeGenericsSignature(dollarInner) == 'Lcom/example/Outer<Ljava/lang/String;>.Inner<Ljava/lang/Integer;>;'
+
+        // Anonymous: owner Foo, inner Foo$1 — still a prefix, not the fallback.
+        ClassNode anonOwner = ClassHelper.makeWithoutCaching('com.example.Foo')
+        anonOwner.genericsTypes = [new GenericsType(ClassHelper.STRING_TYPE)] as GenericsType[]
+        ClassNode anon = ClassHelper.makeWithoutCaching('com.example.Foo$1')
+        anon.outerClassType = anonOwner
+        assert BytecodeHelper.getTypeGenericsSignature(anon) == 'Lcom/example/Foo<Ljava/lang/String;>.1;'
+
+        // Unrelated inner name Bar.X is not extra qualification of owner Foo.
+        ClassNode unrelated = ClassHelper.makeWithoutCaching('Bar.X')
+        unrelated.outerClassType = anonOwner
+        assert BytecodeHelper.getTypeGenericsSignature(unrelated) == 'Lcom/example/Foo<Ljava/lang/String;>.X;'
+
+        // Simple identifier with no '.' / '$' (fallback sep < 0).
+        ClassNode simple = ClassHelper.makeWithoutCaching('Item')
+        simple.outerClassType = anonOwner
+        assert BytecodeHelper.getTypeGenericsSignature(simple) == 'Lcom/example/Foo<Ljava/lang/String;>.Item;'
+
+        // Equal names: not nested (length <= owner).
+        ClassNode sameName = ClassHelper.makeWithoutCaching('com.example.Foo')
+        sameName.outerClassType = anonOwner
+        sameName.genericsTypes = [new GenericsType(ClassHelper.Integer_TYPE)] as GenericsType[]
+        assert BytecodeHelper.getTypeGenericsSignature(sameName) == 'Lcom/example/Foo<Ljava/lang/String;>.Foo<Ljava/lang/Integer;>;'
+
+        // Prefix that is not a nesting separator (Foo vs FooBar).
+        ClassNode notNested = ClassHelper.makeWithoutCaching('com.example.FooBar')
+        notNested.outerClassType = anonOwner
+        assert BytecodeHelper.getTypeGenericsSignature(notNested) == 'Lcom/example/Foo<Ljava/lang/String;>.FooBar;'
+
+        // Remainder after owner may contain further $ nesting.
+        ClassNode deepRemainder = ClassHelper.makeWithoutCaching('com.example.Outer$Middle$Inner')
+        deepRemainder.outerClassType = outer
+        deepRemainder.genericsTypes = [new GenericsType(ClassHelper.Integer_TYPE)] as GenericsType[]
+        assert BytecodeHelper.getTypeGenericsSignature(deepRemainder) == 'Lcom/example/Outer<Ljava/lang/String;>.Middle.Inner<Ljava/lang/Integer;>;'
+
+        // Recursive enclosing types: Outer<T>.Middle<U>.Inner<V>.
+        ClassNode middle = ClassHelper.makeWithoutCaching('com.example.Outer$Middle')
+        middle.outerClassType = outer
+        middle.genericsTypes = [new GenericsType(ClassHelper.Integer_TYPE)] as GenericsType[]
+        ClassNode inner2 = ClassHelper.makeWithoutCaching('com.example.Outer$Middle$Inner')
+        inner2.outerClassType = middle
+        inner2.genericsTypes = [new GenericsType(ClassHelper.Long_TYPE)] as GenericsType[]
+        assert BytecodeHelper.getTypeGenericsSignature(inner2) == 'Lcom/example/Outer<Ljava/lang/String;>.Middle<Ljava/lang/Integer;>.Inner<Ljava/lang/Long;>;'
 
         ClassNode superDiamond = ClassHelper.LIST_TYPE.getPlainNodeReference()
         superDiamond.genericsTypes = GenericsType.EMPTY_ARRAY

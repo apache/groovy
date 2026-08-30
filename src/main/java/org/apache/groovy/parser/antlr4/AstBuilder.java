@@ -3988,7 +3988,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (asBoolean(ctx.primitiveType())) {
             classNode = configureAST(this.visitPrimitiveType(ctx.primitiveType()), ctx);
         } else {
-            classNode = this.visitParameterizedClassType(ctx);
+            classNode = this.visitParameterizedClassType(ctx, false);
             if (classNode != null) {
                 configureAST(classNode, ctx);
             }
@@ -4666,7 +4666,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public ClassNode visitReferenceType(final ReferenceTypeContext ctx) {
-        return configureAST(this.visitParameterizedClassType(ctx), ctx);
+        return configureAST(this.visitParameterizedClassType(ctx, true), ctx);
     }
 
     /**
@@ -4674,7 +4674,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
      * Shared by {@code referenceType} (type arguments only) and {@code createdName}
      * (type arguments or diamond).
      */
-    private ClassNode visitParameterizedClassType(final GroovyParserRuleContext ctx) {
+    private ClassNode visitParameterizedClassType(final GroovyParserRuleContext ctx, final boolean attachRawEnclosing) {
         ClassNode classNode = null;
         for (int i = 0, n = ctx.getChildCount(); i < n; i += 1) {
             ParseTree child = ctx.getChild(i);
@@ -4690,9 +4690,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 classNode = this.visitQualifiedStandardClassName(qscn);
             } else if (child instanceof TypeArgumentsContext tac) {
                 GenericsType[] generics = this.visitTypeArguments(tac);
+                if (attachRawEnclosing) {
+                    attachRawEnclosingIfQualified(classNode);
+                }
                 classNode.setGenericsTypes(generics);
                 rejectParameterizedInstanceof(ctx, classNode, generics);
             } else if (child instanceof TypeArgumentsOrDiamondContext tad) {
+                if (attachRawEnclosing) {
+                    attachRawEnclosingIfQualified(classNode);
+                }
                 classNode.setGenericsTypes(this.visitTypeArgumentsOrDiamond(tad));
             } else if (child instanceof IdentifierContext || child instanceof ClassNameContext) {
                 ClassNode outer = classNode;
@@ -4707,6 +4713,24 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return classNode;
     }
 
+    /**
+     * {@code Outer.Inner<?>} is one qualified name plus type arguments, so the
+     * nested-type loop never runs. Record a raw enclosing type from the name
+     * prefix; {@code ResolveVisitor} drops it if that prefix is only a package.
+     */
+    private static void attachRawEnclosingIfQualified(final ClassNode classNode) {
+        if (classNode == null || classNode.getOuterClassType() != null) return;
+        String name = classNode.getName();
+        int sep = Math.max(name.lastIndexOf('.'), name.lastIndexOf('$'));
+        if (sep <= 0) return;
+        classNode.setOuterClassType(ClassHelper.makeWithoutCaching(name.substring(0, sep)));
+    }
+
+    /**
+     * {@code instanceof} type arguments are legal in the grammar so {@code List<?>}
+     * can parse (JLS 15.20.2 / 4.7). Concrete arguments such as
+     * {@code Map<String,Integer>} are not reifiable and are rejected here.
+     */
     private void rejectParameterizedInstanceof(final GroovyParserRuleContext ctx, final ClassNode classNode, final GenericsType[] generics) {
         if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR) && Arrays.stream(generics).anyMatch(gt ->
                 !gt.isWildcard() || asBoolean(gt.getLowerBound()) || ArrayGroovyMethods.asBoolean(gt.getUpperBounds()))) { // GROOVY-11585

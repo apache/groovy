@@ -422,8 +422,15 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
         ClassNode oc = type.getOuterClassType(); // GROOVY-10646, GROOVY-12319: Outer<T>.Inner
         if (oc != null) {
-            resolveOrFail(oc, msg, node, preferImports);
-            resolveGenericsTypes(oc.getGenericsTypes());
+            if (oc.getGenericsTypes() != null) {
+                resolveOrFail(oc, msg, node, preferImports);
+                resolveGenericsTypes(oc.getGenericsTypes());
+            } else if (resolve(oc, true, true, true)) {
+                resolveGenericsTypes(oc.getGenericsTypes());
+            } else {
+                // Prefix of a dotted name was a package, not a class (List<?>).
+                type.setOuterClassType(null);
+            }
         }
         if (preferImports && !type.isResolved() && !type.isPrimaryClassNode()) {
             resolveGenericsTypes(type.getGenericsTypes());
@@ -490,10 +497,16 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         resolveGenericsTypes(genericsTypes);
         ClassNode oc = type.getOuterClassType();
         if (oc != null) {
-            if (!resolve(oc, testModuleImports, testDefaultImports, testStaticInnerClasses)) {
-                return false;
+            if (oc.getGenericsTypes() != null) {
+                if (!resolve(oc, testModuleImports, testDefaultImports, testStaticInnerClasses)) {
+                    return false;
+                }
+                resolveGenericsTypes(oc.getGenericsTypes());
+            } else if (resolve(oc, testModuleImports, testDefaultImports, testStaticInnerClasses)) {
+                resolveGenericsTypes(oc.getGenericsTypes());
+            } else {
+                type.setOuterClassType(null);
             }
-            resolveGenericsTypes(oc.getGenericsTypes());
         }
 
         if (type.isPrimaryClassNode()) return true;

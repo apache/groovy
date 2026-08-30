@@ -174,6 +174,25 @@ public final class ClassNodeTest {
         classNode.setOuterClassType(null);
         assertNull(classNode.getOuterClassType());
         assertNull(classNode.getPlainNodeReference().getOuterClassType());
+
+        // A leftover metadata key must not be treated as the enclosing type.
+        classNode.putNodeMetaData("outer.class", outer);
+        assertNull(classNode.getOuterClassType());
+        assertNull(classNode.getPlainNodeReference().getOuterClassType());
+        classNode.setOuterClassType(outer);
+        assertEquals(outer, classNode.getOuterClassType());
+        classNode.setOuterClassType(null);
+        assertNull(classNode.getOuterClassType());
+        assertEquals(outer, classNode.getNodeMetaData("outer.class"));
+
+        // Type-use field is not proxied through redirect, like getGenericsTypes().
+        ClassNode proxy = ClassHelper.makeWithoutCaching("Foo$Inner");
+        proxy.setRedirect(classNode);
+        classNode.setOuterClassType(outer);
+        assertNull(proxy.getOuterClassType());
+        proxy.setOuterClassType(outer);
+        assertEquals(outer, proxy.getOuterClassType());
+        assertEquals(outer, classNode.getOuterClassType());
     }
 
     @Test

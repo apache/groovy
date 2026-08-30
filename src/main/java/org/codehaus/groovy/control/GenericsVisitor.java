@@ -212,14 +212,23 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
 
     /**
      * Groovy represents the type operand of {@code instanceof} as a
-     * {@link ClassExpression}, but it is not a class literal. Skip it so
-     * {@link InstanceOfVerifier} can diagnose JLS 15.20.2.
+     * {@link ClassExpression}, but it is not a class literal ({@code T.class}).
+     * Do not visit that operand as a class expression (that would reject
+     * {@code instanceof T} as {@code T.class}). Still run
+     * {@link #checkGenericsUsage(ClassNode)} so nested-type well-formedness
+     * applies ({@code Outer<?>.Inner} with a generic {@code Inner},
+     * {@code Outer.Inner<?>}). Parameterized {@code instanceof} is handled at
+     * parse ({@code AstBuilder.rejectParameterizedInstanceof}): the grammar
+     * allows type arguments so {@code instanceof List<?>} can parse, while
+     * {@code instanceof Map<String,Integer>} is rejected (JLS 15.20.2).
+     * {@link InstanceOfVerifier} then checks primitives and type-parameter targets.
      */
     @Override
     public void visitBinaryExpression(final BinaryExpression expression) {
         if (expression.getOperation().isA(Types.INSTANCEOF_OPERATOR)
                 && expression.getRightExpression() instanceof ClassExpression) {
             expression.getLeftExpression().visit(this);
+            checkGenericsUsage(expression.getRightExpression().getType());
             return;
         }
         super.visitBinaryExpression(expression);
@@ -288,14 +297,18 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         ClassNode oc = cn.getOuterClassType(); // GROOVY-12319: Outer<T>.Inner
         if (oc != null) {
             checkGenericsUsage(oc);
-            // JLS 4.5 / 6.5.5: a parameterized enclosing type may only select a
-            // non-static member type, and a generic member must be parameterized.
+            // JLS 4.5 / 4.8 / 6.5.5: a parameterized enclosing type may only
+            // select a non-static member type, and a generic member must be
+            // parameterized. Type arguments on a non-static member of a raw
+            // enclosing type ({@code Outer.Inner<?>}) are also illegal.
             if (isParameterizedEnclosingType(oc)) {
                 if (isStaticMemberType(cn)) {
                     addError("Cannot refer to a static member of a generic type through a parameterization", cn);
                 } else if (cn.getGenericsTypes() == null && rn.getGenericsTypes() != null) {
                     addError("A raw member type may not be used with a parameterized enclosing type", cn);
                 }
+            } else if (cn.getGenericsTypes() != null && isRawGenericType(oc) && !isStaticMemberType(cn)) {
+                addError("Type arguments cannot be given on a raw nested type", cn);
             }
         }
         GenericsType[] cnTypes = cn.getGenericsTypes();
@@ -431,6 +444,14 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     private static boolean isParameterizedEnclosingType(final ClassNode type) {
         GenericsType[] gt = type.getGenericsTypes();
         return gt != null && gt.length > 0 && !type.isGenericsPlaceHolder();
+    }
+
+    /**
+     * True when {@code type} is a raw use of a generic declaration ({@code Outer}
+     * for {@code class Outer<T>}).
+     */
+    private static boolean isRawGenericType(final ClassNode type) {
+        return type.getGenericsTypes() == null && type.redirect().getGenericsTypes() != null;
     }
 
     /**

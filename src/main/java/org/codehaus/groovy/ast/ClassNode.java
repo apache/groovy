@@ -118,6 +118,11 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
  * they describe the type signature used at the point of declaration or the
  * type signatures provided by the class. If the type signatures provided
  * by the class are needed, then a call to {@link #redirect()} will help.
+ * {@link #getOuterClassType()} / {@link #setOuterClassType(ClassNode)} are
+ * likewise not proxied: they record the parameterized enclosing type of a
+ * JLS 4.5 rare type <em>use</em> ({@code Outer<T>.Inner}), distinct from
+ * {@link #getOuterClass()} which is the enclosing class of a nested class
+ * declaration.
  *
  * @see org.codehaus.groovy.ast.ClassHelper
  */
@@ -190,6 +195,8 @@ public class ClassNode extends AnnotatedNode {
     protected Class<?> clazz;
     // if not null then this instance is an array
     private ClassNode componentType;
+    // parameterized enclosing type of a JLS 4.5 rare type (Outer<T>.Inner); type-use, not declaration
+    private ClassNode outerClassType;
     // if not null then this instance is handled as proxy for the redirect
     private ClassNode redirect;
 
@@ -2055,24 +2062,27 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
 
     /**
      * For a JLS 4.5 rare type {@code Outer<T>.Inner}, the parameterized enclosing
-     * type. Distinct from {@link #getOuterClass()}, which is the enclosing class
-     * of a nested class <em>declaration</em>.
+     * type stored on this node (type-use, not declaration; not node metadata and
+     * not redirected). Distinct from {@link #getOuterClass()}, which is the
+     * enclosing class of a nested class <em>declaration</em>. Copied by
+     * {@link #getPlainNodeReference()}.
      *
      * @return the parameterized enclosing type, or {@code null} if this is not a rare type
      * @since 6.0.0
      */
     public ClassNode getOuterClassType() {
-        return getNodeMetaData("outer.class");
+        return outerClassType;
     }
 
     /**
-     * Records the parameterized enclosing type of a JLS 4.5 rare type.
+     * Records the parameterized enclosing type of a JLS 4.5 rare type on this
+     * node. Does not write through {@link #redirect()}.
      *
      * @param outer the parameterized {@code Outer<T>} node; {@code null} clears it
      * @since 6.0.0
      */
     public void setOuterClassType(final ClassNode outer) {
-        putNodeMetaData("outer.class", outer);
+        this.outerClassType = outer;
     }
 
     /**
