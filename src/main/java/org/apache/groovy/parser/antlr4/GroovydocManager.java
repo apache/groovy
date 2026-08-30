@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -149,15 +150,9 @@ public class GroovydocManager {
                 continue;
             }
 
-            if (!(child instanceof GroovyParser.NlsContext || child instanceof GroovyParser.SepContext)) {
-                continue;
-            }
-
-            // doc comments are treated as NL
-            List<? extends TerminalNode> nlList =
-                    child instanceof GroovyParser.NlsContext
-                            ? ((GroovyParser.NlsContext) child).NL()
-                            : ((GroovyParser.SepContext) child).NL();
+            // Doc comments are lexed as NL. After inlining `nls : NL*`, those
+            // tokens are direct children; `sep` still wraps mixed NL / SEMI.
+            List<? extends TerminalNode> nlList = newlineNodes(child);
 
             int nlListSize = nlList.size();
             if (0 == nlListSize) {
@@ -182,5 +177,15 @@ public class GroovydocManager {
         }
 
         throw new GroovyBugError("node can not be found: " + node.getText()); // The exception should never be thrown!
+    }
+
+    private static List<? extends TerminalNode> newlineNodes(ParseTree child) {
+        if (child instanceof GroovyParser.SepContext sepContext) {
+            return sepContext.NL();
+        }
+        if (child instanceof TerminalNode terminal && terminal.getSymbol().getType() == GroovyParser.NL) {
+            return Collections.singletonList(terminal);
+        }
+        return Collections.emptyList();
     }
 }
