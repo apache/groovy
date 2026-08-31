@@ -963,6 +963,7 @@ public class GenericsUtils {
                     ClassNode newPlaceHolder = ClassHelper.make(old.getName());
                     GenericsType gt = new GenericsType(newPlaceHolder, newUpper, newLower);
                     gt.setPlaceholder(true);
+                    gt.setGenericDeclaration(old.getGenericDeclaration());
                     newTypes[i] = gt;
                 }
             }

@@ -45,6 +45,14 @@ import org.codehaus.groovy.transform.trait.Traits;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.apache.groovy.ast.tools.TypeUseUtils.describeTypeUse;
+import static org.apache.groovy.ast.tools.TypeUseUtils.hasWildcardTypeArgument;
+import static org.apache.groovy.ast.tools.TypeUseUtils.isParameterizedEnclosingType;
+import static org.apache.groovy.ast.tools.TypeUseUtils.isParameterizedTypeUsage;
+import static org.apache.groovy.ast.tools.TypeUseUtils.isParameterizedTypeUsageIncludingEnclosing;
+import static org.apache.groovy.ast.tools.TypeUseUtils.isRawGenericType;
+import static org.apache.groovy.ast.tools.TypeUseUtils.isReifiable;
+import static org.apache.groovy.ast.tools.TypeUseUtils.isStaticMemberType;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.diamondTargetOfAnonymousClass;
@@ -102,10 +110,10 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         if (checkWildcard(sc)) return;
 
         boolean isAIC = node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous();
-        checkGenericsUsage(sc, sc.redirect(), isAIC ? Boolean.TRUE : null);
+        checkGenericsUsage(sc, sc.redirect(), isAIC);
         for (ClassNode face : node.getInterfaces()) {
             checkWildcard(face); // JLS 8.1.5: superinterfaces may not specify a wildcard
-            checkGenericsUsage(face, face.redirect(), isAIC ? Boolean.TRUE : null);
+            checkGenericsUsage(face, face.redirect(), isAIC);
         }
 
         visitObjectInitializerStatements(node);
@@ -178,7 +186,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         }
         boolean isAIC = type instanceof InnerClassNode
                 && ((InnerClassNode) type).isAnonymous();
-        checkGenericsUsage(type, type.redirect(), isAIC);
+        checkGenericsUsage(type, type.redirect(), true);
         if (expression.isUsingGenerics()) {
             ClassNode created = isAIC ? diamondTargetOfAnonymousClass(type) : type;
             if (created != null && created.getGenericsTypes() != null && created.getGenericsTypes().length == 0) {
@@ -224,26 +232,20 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * Depth of {@link ClassExpression} qualifiers that are not class
-     * literals ({@code Cell<String>.ID}, {@code Cell<String>.id()}).
-     * {@link #visitClassExpression} skips the JLS 15.8.2 check while
-     * this is positive so those sites keep the JLS 4.5.2 diagnostic.
-     */
-    private int suppressClassLiteralChecks;
-
-    /**
      * JLS 15.8.2: a class literal may not name a type variable or a
      * parameterized type ({@code T.class}, {@code Cell<String>.class}).
      * After resolve, {@code Foo.class} is a {@link ClassExpression};
      * {@code Foo<String>.class} may still be a {@link PropertyExpression}
      * whose object is that class expression — see
-     * {@link #visitPropertyExpression}.
+     * {@link #visitPropertyExpression}. {@link ClassExpression} is also
+     * the TypeName of a static qualifier, {@code instanceof} operand, or
+     * method reference; those parents visit the type without entering
+     * this method, so a class-literal check here is only for an actual
+     * class literal.
      */
     @Override
     public void visitClassExpression(final ClassExpression expression) {
-        if (suppressClassLiteralChecks == 0) {
-            checkClassLiteral(expression.getType(), expression);
-        }
+        checkClassLiteral(expression.getType(), expression);
         super.visitClassExpression(expression);
     }
 
@@ -280,12 +282,9 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         Expression object = call.getObjectExpression();
         checkStaticMemberViaParameterizedType(object, call);
         if (object instanceof ClassExpression) {
-            suppressClassLiteralChecks++;
-            try {
-                super.visitMethodCallExpression(call);
-            } finally {
-                suppressClassLiteralChecks--;
-            }
+            // TypeName of a static qualifier, not a class literal.
+            call.getMethod().visit(this);
+            call.getArguments().visit(this);
         } else {
             super.visitMethodCallExpression(call);
         }
@@ -306,17 +305,13 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
             expression.getProperty().visit(this);
             return;
         }
-        checkStaticMemberViaParameterizedType(object, expression);
         if (object instanceof ClassExpression) {
-            suppressClassLiteralChecks++;
-            try {
-                super.visitPropertyExpression(expression);
-            } finally {
-                suppressClassLiteralChecks--;
-            }
-        } else {
-            super.visitPropertyExpression(expression);
+            // TypeName of a static qualifier, not a class literal.
+            checkStaticMemberViaParameterizedType(object, expression);
+            expression.getProperty().visit(this);
+            return;
         }
+        super.visitPropertyExpression(expression);
     }
 
     /**
@@ -330,13 +325,9 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     public void visitMethodPointerExpression(final MethodPointerExpression expression) {
         Expression object = expression.getExpression();
         if (object instanceof ClassExpression) {
+            // TypeName of a method or constructor reference, not a class literal.
             checkGenericsUsage(object.getType());
-            suppressClassLiteralChecks++;
-            try {
-                super.visitMethodPointerExpression(expression);
-            } finally {
-                suppressClassLiteralChecks--;
-            }
+            expression.getMethodName().visit(this);
         } else {
             super.visitMethodPointerExpression(expression);
         }
@@ -376,23 +367,13 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
             addError("Cannot select from a type parameter " + element.getUnresolvedName(), location);
             return;
         }
-        if (isParameterizedClassLiteralType(element)) {
+        if (isParameterizedTypeUsageIncludingEnclosing(element)) {
             addError("Cannot select from a parameterized type", location);
         }
     }
 
     private static boolean isClassLiteralProperty(final PropertyExpression expression) {
         return "class".equals(expression.getPropertyAsString());
-    }
-
-    private static boolean isParameterizedClassLiteralType(final ClassNode type) {
-        if (isParameterizedTypeUsage(type)) {
-            return true;
-        }
-        ClassNode oc = type.getOuterClassType();
-        // Use-site parameterization only (Outer<String>.Inner.class).
-        // Declaration formals on Map must not make Map.Entry a class-literal error.
-        return oc != null && (isParameterizedTypeUsage(oc) || isParameterizedClassLiteralType(oc));
     }
 
     private boolean checkWildcard(final ClassNode sn) {
@@ -411,10 +392,10 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     private void checkGenericsUsage(ClassNode cn) {
         while (cn.isArray())
             cn = cn.getComponentType();
-        checkGenericsUsage(cn, cn.redirect(), null);
+        checkGenericsUsage(cn, cn.redirect(), false);
     }
 
-    private void checkGenericsUsage(final ClassNode cn, final ClassNode rn, final Boolean isAIC) {
+    private void checkGenericsUsage(final ClassNode cn, final ClassNode rn, final boolean allowDiamond) {
         if (cn.isGenericsPlaceHolder()) return;
         ClassNode oc = cn.getOuterClassType(); // GROOVY-12319: Outer<T>.Inner
         if (oc != null) {
@@ -449,7 +430,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         }
         // parameterize a type by using all the parameters only
         if (cnTypes.length != rnTypes.length) {
-            if (isAIC != null && cnTypes.length == 0) {
+            if (allowDiamond && cnTypes.length == 0) {
                 return; // diamond on constructor calls, including anonymous classes (GROOVY-12319 / JEP 213)
             }
             String message = "The class " + cn.toString(false) + " (supplied with " + plural("type parameter", cnTypes.length) +
@@ -574,107 +555,6 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
             return;
         }
         addError("The type parameter " + type.getUnresolvedName() + " is not a valid type for a throws clause", location);
-    }
-
-    /**
-     * True when {@code type} is a parameterized usage ({@code Cell<String>}), as
-     * opposed to the generic type name ({@code Cell}) or the class declaration
-     * node (whose {@link ClassNode#getGenericsTypes()} are the formals).
-     */
-    private static boolean isParameterizedTypeUsage(final ClassNode type) {
-        GenericsType[] gt = type.getGenericsTypes();
-        return gt != null && gt.length > 0 && type.isRedirectNode() && !type.isGenericsPlaceHolder();
-    }
-
-    /**
-     * True when {@code type} carries type arguments, including wildcards
-     * ({@code Outer<?>}). Raw names ({@code Outer}) are not parameterized.
-     */
-    private static boolean isParameterizedEnclosingType(final ClassNode type) {
-        GenericsType[] gt = type.getGenericsTypes();
-        return gt != null && gt.length > 0 && !type.isGenericsPlaceHolder();
-    }
-
-    /**
-     * True when {@code type} is a raw use of a generic declaration ({@code Outer}
-     * for {@code class Outer<T>}).
-     */
-    private static boolean isRawGenericType(final ClassNode type) {
-        return type.getGenericsTypes() == null && type.redirect().getGenericsTypes() != null;
-    }
-
-    /**
-     * Source-like display of a type use, including rare enclosing arguments.
-     */
-    private static String describeTypeUse(final ClassNode type) {
-        if (type.isArray()) {
-            return describeTypeUse(type.getComponentType()) + "[]";
-        }
-        if (type.isGenericsPlaceHolder()) {
-            return type.getUnresolvedName();
-        }
-        StringBuilder sb = new StringBuilder();
-        ClassNode outer = type.getOuterClassType();
-        if (outer != null) {
-            sb.append(describeTypeUse(outer)).append('.');
-            String name = type.getName();
-            int sep = Math.max(name.lastIndexOf('.'), name.lastIndexOf('$'));
-            sb.append(sep < 0 ? name : name.substring(sep + 1));
-        } else {
-            sb.append(type.getNameWithoutPackage());
-        }
-        GenericsType[] generics = type.getGenericsTypes();
-        if (generics != null && generics.length > 0 && !type.isGenericsPlaceHolder()) {
-            sb.append('<');
-            for (int i = 0; i < generics.length; i++) {
-                if (i > 0) sb.append(", ");
-                sb.append(generics[i]);
-            }
-            sb.append('>');
-        }
-        return sb.toString();
-    }
-
-    /**
-     * Nested interfaces and enums are implicitly static; otherwise the
-     * {@code ACC_STATIC} bit on the declaration is authoritative.
-     */
-    private static boolean isStaticMemberType(final ClassNode type) {
-        ClassNode declared = type.redirect();
-        return declared.isStatic()
-                || declared.isInterface()
-                || declared.isEnum();
-    }
-
-    private static boolean hasWildcardTypeArgument(final ClassNode type) {
-        GenericsType[] gt = type.getGenericsTypes();
-        if (gt == null) return false;
-        for (GenericsType t : gt) {
-            if (t.isWildcard()) return true;
-        }
-        ClassNode oc = type.getOuterClassType();
-        return oc != null && hasWildcardTypeArgument(oc);
-    }
-
-    /**
-     * JLS 4.7: types available in full at run time. Used for array creation
-     * (JLS 15.10.1), which requires a reifiable component type.
-     */
-    private static boolean isReifiable(ClassNode type) {
-        while (type.isArray()) {
-            type = type.getComponentType();
-        }
-        if (type.isGenericsPlaceHolder()) return false;
-        if (isPrimitiveType(type)) return true;
-        GenericsType[] gt = type.getGenericsTypes();
-        if (gt != null) {
-            if (gt.length == 0) return false;
-            for (GenericsType t : gt) {
-                if (!isUnboundedWildcard(t)) return false;
-            }
-        }
-        ClassNode oc = type.getOuterClassType();
-        return oc == null || isReifiable(oc);
     }
 
     private static String plural(final String string, final int count) {

@@ -2168,7 +2168,11 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
             return genericsTypes[0];
         } else {
             ClassNode upper = (redirect != null ? redirect : this);
-            return new GenericsType(this, new ClassNode[]{upper}, null);
+            GenericsType gt = new GenericsType(this, new ClassNode[]{upper}, null);
+            if (genericsTypes != null && genericsTypes[0] != null) {
+                gt.setGenericDeclaration(genericsTypes[0].getGenericDeclaration());
+            }
+            return gt;
         }
     }
 

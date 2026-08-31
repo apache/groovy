@@ -86,6 +86,7 @@ import java.util.function.Predicate;
 
 import static groovy.lang.Tuple.tuple;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
+import static org.apache.groovy.ast.tools.TypeUseUtils.isParameterizedTypeUsage;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 
 /**
@@ -1199,15 +1200,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 || (!Modifier.isPrivate(modifiers) && Objects.equals(innerType.getPackageName(), outerType.getPackageName()));
     }
 
-    /**
-     * True for a use-site parameterization such as {@code Outer<String>}, not
-     * the generic type name {@code Map} whose {@code getGenericsTypes()} are
-     * declaration formals.
-     */
-    private static boolean isParameterizedTypeUsage(final ClassNode type) {
-        GenericsType[] gt = type.getGenericsTypes();
-        return gt != null && gt.length > 0 && type.isRedirectNode() && !type.isGenericsPlaceHolder();
-    }
+
 
     private boolean directlyImplementsTrait(final ClassNode trait) {
         ClassNode[] interfaces = currentClass.getInterfaces();
@@ -1746,23 +1739,22 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return resolved;
     }
 
+    /**
+     * Resolves a type-parameter section (class, method or constructor header).
+     * Bound type arguments such as {@code T} in {@code T extends Comparable<T>}
+     * are uses, not declarations, and go through {@link #resolveGenericsType}.
+     */
     private void resolveGenericsHeader(final GenericsType[] types, final AnnotatedNode declaration) {
-        if (types != null) resolveGenericsHeader(types, null, 0, declaration);
-    }
-
-    private void resolveGenericsHeader(final GenericsType[] types, final GenericsType rootType, final int level, final AnnotatedNode declaration) {
+        if (types == null) return;
         currentClass.setUsingGenerics(true);
         List<Tuple2<ClassNode, ClassNode>> upperBoundsToResolve = new LinkedList<>();
-        List<Tuple2<ClassNode, GenericsType>> upperBoundsWithGenerics = new LinkedList<>();
+        List<ClassNode> upperBoundsWithGenerics = new LinkedList<>();
         for (GenericsType type : types) {
-            if (level > 0 && type.getName().equals(rootType.getName())) continue; // cycle!
-
             String name = type.getName();
             ClassNode typeType = type.getType();
             visitTypeAnnotations(typeType); // JSR 308 support
             GenericsTypeName gtn = new GenericsTypeName(name);
             boolean isWildcardGT = QUESTION_MARK.equals(name);
-            boolean dealWithGenerics = (level == 0 || (level > 0 && genericParameterNames.get(gtn) != null));
 
             if (type.getUpperBounds() != null) {
                 boolean nameAdded = false;
@@ -1771,33 +1763,26 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
                     if (!isWildcardGT) {
                         if (!nameAdded || !resolve(typeType)) {
-                            if (dealWithGenerics) {
-                                type.setPlaceholder(true);
-                                typeType.setRedirect(upperBound);
-                                genericParameterNames.put(gtn, type);
-                                if (level == 0) type.setGenericDeclaration(declaration);
-                                nameAdded = true;
-                            }
+                            type.setPlaceholder(true);
+                            typeType.setRedirect(upperBound);
+                            genericParameterNames.put(gtn, type);
+                            type.setGenericDeclaration(declaration);
+                            nameAdded = true;
                         }
                         upperBoundsToResolve.add(tuple(upperBound, typeType));
                     }
                     if (upperBound.getGenericsTypes() != null) {
-                        upperBoundsWithGenerics.add(tuple(upperBound, type));
+                        upperBoundsWithGenerics.add(upperBound);
                     }
                 }
-            } else if (dealWithGenerics && !isWildcardGT) {
+            } else if (!isWildcardGT) {
                 type.setPlaceholder(true);
-                GenericsType last = genericParameterNames.put(gtn, type);
-                if (level == 0) {
-                    // A new type-parameter declaration must not inherit a
-                    // shadowed variable's erasure. Unbounded T erases to
-                    // Object even when an enclosing T extends Number.
-                    typeType.setRedirect(ClassHelper.OBJECT_TYPE);
-                    type.setGenericDeclaration(declaration);
-                } else {
-                    typeType.setRedirect(last != null ? last.getType().redirect() : ClassHelper.OBJECT_TYPE);
-                    if (last != null) type.setGenericDeclaration(last.getGenericDeclaration());
-                }
+                genericParameterNames.put(gtn, type);
+                // A new type-parameter declaration must not inherit a
+                // shadowed variable's erasure. Unbounded T erases to
+                // Object even when an enclosing T extends Number.
+                typeType.setRedirect(ClassHelper.OBJECT_TYPE);
+                type.setGenericDeclaration(declaration);
             }
         }
 
@@ -1810,9 +1795,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
         }
 
-        for (var tuple : upperBoundsWithGenerics) {
-            GenericsType[] bounds = tuple.getV1().getGenericsTypes();
-            resolveGenericsHeader(bounds, level == 0 ? tuple.getV2() : rootType, level + 1, declaration);
+        for (ClassNode upperBound : upperBoundsWithGenerics) {
+            resolveGenericsTypes(upperBound.getGenericsTypes());
         }
     }
 

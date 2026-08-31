@@ -218,7 +218,7 @@ public class BytecodeHelper {
      *
      * @return the ASM type description
      */
-    private static String getTypeDescription(ClassNode c, boolean end) {
+    static String getTypeDescription(ClassNode c, boolean end) {
         ClassNode d = c;
         if (isPrimitiveType(d.redirect())) {
             d = d.redirect();
@@ -336,7 +336,7 @@ public class BytecodeHelper {
         return false;
     }
 
-    private static boolean hasGenerics(ClassNode type) {
+    static boolean hasGenerics(ClassNode type) {
         if (type.isArray()) return hasGenerics(type.getComponentType());
         if (type.getGenericsTypes() != null && type.getGenericsTypes().length > 0) return true;
         ClassNode outer = type.getOuterClassType();
@@ -396,7 +396,7 @@ public class BytecodeHelper {
     public static String getTypeGenericsSignature(ClassNode node) {
         if (!usesGenericsInTypeSignature(node)) return null;
         StringBuilder ret = new StringBuilder(100);
-        writeParameterizedClass(ret, node);
+        TypeSignatureWriter.writeParameterizedClass(ret, node);
         ret.append(";");
         return ret.toString();
     }
@@ -467,63 +467,9 @@ public class BytecodeHelper {
             ret.append(printType.getGenericsTypes()[0].getName());
             ret.append(";");
         } else {
-            writeParameterizedClass(ret, printType);
+            TypeSignatureWriter.writeParameterizedClass(ret, printType);
             if (!isPrimitiveType(printType)) ret.append(";");
         }
-    }
-
-    /**
-     * Writes a class type and its type arguments, using the JLS 4.5 nested form
-     * {@code LOuter&lt;...&gt;.Inner&lt;...&gt;} when an enclosing rare type is present.
-     */
-    private static void writeParameterizedClass(StringBuilder ret, ClassNode printType) {
-        ClassNode owner = printType.getOuterClassType();
-        // JVMS 4.7.9.1 nested form is only for a parameterized enclosing type.
-        // A raw enclosing type must keep the binary name (Outer$Inner<...>).
-        if (owner != null && hasGenerics(owner)) {
-            writeParameterizedClass(ret, owner);
-            ret.append('.');
-            ret.append(innerClassSimpleName(printType, owner));
-            addSubTypes(ret, printType.getGenericsTypes(), "<", ">");
-            return;
-        }
-        ret.append(getTypeDescription(printType, false));
-        addSubTypes(ret, printType.getGenericsTypes(), "<", ">");
-    }
-
-    /**
-     * Simple name of {@code inner} relative to {@code owner} for a JVMS 4.7.9.1
-     * nested type signature. Accepts both {@code Outer.Inner} (parser) and
-     * {@code Outer$Inner} (binary name after resolve); {@code Foo$1} is the
-     * same prefix path. If {@code inner} is not nested under {@code owner},
-     * the result is the last identifier only — never extra qualification of
-     * {@code owner} (so owner {@code Foo} and inner {@code Bar.X} yield {@code X}).
-     */
-    private static String innerClassSimpleName(final ClassNode inner, final ClassNode owner) {
-        String innerName = inner.getName();
-        String ownerName = owner.getName();
-        String nested = nestedNameAfterOwner(innerName, ownerName);
-        if (nested != null) {
-            return nested.replace('$', '.');
-        }
-        int sep = Math.max(innerName.lastIndexOf('.'), innerName.lastIndexOf('$'));
-        return sep < 0 ? innerName : innerName.substring(sep + 1);
-    }
-
-    /**
-     * Remainder of {@code innerName} after {@code ownerName} when nested under
-     * it ({@code .} or {@code $} separator); otherwise {@code null}.
-     */
-    private static String nestedNameAfterOwner(final String innerName, final String ownerName) {
-        int ownerLen = ownerName.length();
-        if (innerName.length() <= ownerLen || !innerName.startsWith(ownerName)) {
-            return null;
-        }
-        char sep = innerName.charAt(ownerLen);
-        if (sep != '.' && sep != '$') {
-            return null;
-        }
-        return innerName.substring(ownerLen + 1);
     }
 
     private static void writeGenericsBounds(StringBuilder ret, GenericsType type, boolean writeInterfaceMarker) {
@@ -539,7 +485,7 @@ public class BytecodeHelper {
         }
     }
 
-    private static void addSubTypes(StringBuilder ret, GenericsType[] types, String start, String end) {
+    static void addSubTypes(StringBuilder ret, GenericsType[] types, String start, String end) {
         if (types == null) return;
         if (types.length == 0 && "<".equals(start)) return;
         ret.append(start);

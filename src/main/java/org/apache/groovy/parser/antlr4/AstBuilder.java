@@ -38,6 +38,7 @@ import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.groovy.ast.tools.TypeUseUtils;
 import org.apache.groovy.parser.antlr4.internal.DescriptiveErrorStrategy;
 import org.apache.groovy.parser.antlr4.internal.atnmanager.AtnManager;
 import org.apache.groovy.parser.antlr4.util.StringUtils;
@@ -4742,7 +4743,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private void rejectNonReifiableInstanceof(final GroovyParserRuleContext ctx, final ClassNode classNode) {
         if (carriesNonReifiableInstanceofArg(classNode)) { // GROOVY-11585
             throw this.createParsingFailedException(
-                    "Cannot perform instanceof check against parameterized type " + describeTypeUse(classNode)
+                    "Cannot perform instanceof check against parameterized type " + TypeUseUtils.describeTypeUse(classNode)
                             + " since further generic type information will be erased at runtime", ctx);
         }
     }
@@ -4766,36 +4767,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
         ClassNode outer = type.getOuterClassType();
         return outer != null && carriesNonReifiableInstanceofArg(outer);
-    }
-
-    /**
-     * Source-like display of a type use, including rare enclosing arguments
-     * ({@code Outer<String>.Inner}) and array brackets.
-     */
-    private static String describeTypeUse(final ClassNode type) {
-        if (type.isArray()) {
-            return describeTypeUse(type.getComponentType()) + "[]";
-        }
-        StringBuilder sb = new StringBuilder();
-        ClassNode outer = type.getOuterClassType();
-        if (outer != null) {
-            sb.append(describeTypeUse(outer)).append('.');
-            String name = type.getName();
-            int sep = Math.max(name.lastIndexOf('.'), name.lastIndexOf('$'));
-            sb.append(sep < 0 ? name : name.substring(sep + 1));
-        } else {
-            sb.append(type.getNameWithoutPackage());
-        }
-        GenericsType[] generics = type.getGenericsTypes();
-        if (generics != null && generics.length > 0 && !type.isGenericsPlaceHolder()) {
-            sb.append('<');
-            for (int i = 0; i < generics.length; i++) {
-                if (i > 0) sb.append(", ");
-                sb.append(generics[i]);
-            }
-            sb.append('>');
-        }
-        return sb.toString();
     }
 
     @Override

@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -193,6 +194,23 @@ public final class ClassNodeTest {
         proxy.setOuterClassType(outer);
         assertEquals(outer, proxy.getOuterClassType());
         assertEquals(outer, classNode.getOuterClassType());
+    }
+
+    @Test // GROOVY-12319
+    public void testAsGenericsTypeCopiesGenericDeclaration() {
+        MethodNode method = new MethodNode("m", ACC_PUBLIC, ClassHelper.OBJECT_TYPE,
+                Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+        ClassNode placeholder = ClassHelper.makeWithoutCaching("T");
+        placeholder.setGenericsPlaceHolder(true);
+        placeholder.setRedirect(ClassHelper.OBJECT_TYPE);
+        GenericsType header = new GenericsType(placeholder, null, null);
+        header.setPlaceholder(true);
+        header.setGenericDeclaration(method);
+        placeholder.setGenericsTypes(new GenericsType[]{header});
+
+        GenericsType copied = placeholder.asGenericsType();
+        assertEquals(method, copied.getGenericDeclaration());
+        assertTrue(copied.isPlaceholder());
     }
 
     @Test

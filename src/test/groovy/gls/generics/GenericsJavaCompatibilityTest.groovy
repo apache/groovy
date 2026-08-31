@@ -3428,7 +3428,7 @@ final class GenericsJavaCompatibilityTest {
     }
 
     // =========================================================================
-    // Category 17: Parameter-type bridges, capture conversion, varargs heap
+    // Category 17 (continued): Parameter-type bridges, capture conversion, varargs heap
     //   pollution, catch of a type variable, nested type arguments, extra
     //   interface type parameters, and diamond on a generic class with a
     //   generic constructor (JLS 4.5, 4.12.2, 5.1.10, 8.4.8.3, 8.8.4, 14.20)

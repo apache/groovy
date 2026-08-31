@@ -5720,6 +5720,8 @@ trying: for (ClassNode[] signature : signatures) {
             }
         }
 
+        cn = withRareTypeFromOrigin(exp, cn);
+
         ClassNode oldValue = (ClassNode) exp.putNodeMetaData(INFERRED_TYPE, cn);
         if (oldValue != null) {
             // this may happen when a variable declaration type is wider than the subsequent assignment values
@@ -5754,6 +5756,29 @@ trying: for (ClassNode[] signature : signatures) {
                 pushInstanceOfTypeInfo(var, classX(VOID_TYPE));
             }
         }
+    }
+
+    /**
+     * Rare types ({@code Outer<T>.Inner}) store the enclosing parameterization
+     * on the origin type. Inference often produces a redirect of {@code Inner}
+     * without that field; copy it at the {@link #storeType} write site so
+     * {@link #getType} does not have to reconstruct it.
+     */
+    private static ClassNode withRareTypeFromOrigin(final Expression exp, final ClassNode cn) {
+        if (cn == null || cn.getOuterClassType() != null) {
+            return cn;
+        }
+        ClassNode origin = null;
+        if (exp instanceof VariableExpression vexp) {
+            origin = vexp.getOriginType();
+        }
+        if (origin == null || origin.getOuterClassType() == null) {
+            return cn;
+        }
+        ClassNode copy = cn.getPlainNodeReference();
+        copy.setGenericsTypes(origin.getGenericsTypes());
+        copy.setOuterClassType(origin.getOuterClassType());
+        return copy;
     }
 
     /**
@@ -6367,13 +6392,6 @@ trying: for (ClassNode[] signature : signatures) {
     protected ClassNode getType(final ASTNode node) {
         ClassNode type = node.getNodeMetaData(INFERRED_TYPE);
         if (type != null) {
-            if (node instanceof VariableExpression vexp && vexp.getOriginType() != null && vexp.getOriginType().getOuterClassType() != null) {
-                if (type.getOuterClassType() == null) {
-                    type = type.getPlainNodeReference();
-                    type.setGenericsTypes(vexp.getOriginType().getGenericsTypes());
-                    type.setOuterClassType(vexp.getOriginType().getOuterClassType());
-                }
-            }
             return type;
         }
 
@@ -6398,15 +6416,7 @@ trying: for (ClassNode[] signature : signatures) {
                 return fieldType;
             }
             if (variable != vexp && variable instanceof VariableExpression) {
-                type = getType((VariableExpression) variable);
-                ClassNode originType = ((VariableExpression) variable).getOriginType();
-                if (originType != null && originType.getOuterClassType() != null && type != null
-                        && type.getOuterClassType() == null) {
-                    type = type.getPlainNodeReference();
-                    type.setGenericsTypes(originType.getGenericsTypes());
-                    type.setOuterClassType(originType.getOuterClassType());
-                }
-                return type;
+                return getType((VariableExpression) variable);
             }
             if (variable instanceof Parameter parameter) {
                 if (getTemporaryTypesForExpression(vexp).isEmpty()) { // not instanceof
@@ -7142,9 +7152,6 @@ out:    for (ClassNode type : todo) {
             }
             result = extractPlaceHolders(receiver, declaring);
             ClassNode oc = receiver.getOuterClassType();
-            if (oc == null && receiver.redirect() != null) {
-                oc = receiver.redirect().getOuterClassType();
-            }
             if (oc == null && argument instanceof VariableExpression vexp && vexp.getOriginType() != null) {
                 oc = vexp.getOriginType().getOuterClassType();
             }
