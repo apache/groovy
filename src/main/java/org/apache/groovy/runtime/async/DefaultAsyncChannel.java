@@ -30,7 +30,6 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -41,8 +40,16 @@ import java.util.concurrent.locks.ReentrantLock;
  * {@link Awaitable} immediately; the underlying {@link CompletableFuture}
  * is completed asynchronously when matching counterparts arrive.
  * <p>
- * The waiting-receiver queue is a concurrent deque so that a cancelled
- * receive can withdraw itself without taking the channel lock: a
+ * Every operation is arbitrated by a {@link SelectClaim}: the branches of a
+ * {@link groovy.concurrent.ChannelSelect} share their select's claim, and a
+ * plain operation carries a private one. The claim is the sole owner of a
+ * parked operation's fate — a delivery commits it before it completes the
+ * future, and cancellation must commit it before it may touch the future —
+ * so a select over sends and receives on several channels commits exactly
+ * one transfer, and a losing branch never disturbs its channel.
+ * <p>
+ * Both waiting queues are concurrent deques so that a cancelled operation
+ * can withdraw itself without taking the channel lock: a
  * {@link groovy.concurrent.ChannelSelect} withdraws its losing branches from
  * inside the winning channel's delivery, and taking a second channel's lock
  * there could deadlock against a select completing on that channel.
@@ -55,8 +62,8 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
 
     private final ReentrantLock lock = new ReentrantLock();
     private final Deque<T> buffer = new ArrayDeque<>();
-    private final Deque<PendingSend<T>> waitingSenders = new ArrayDeque<>();
-    private final Deque<PendingReceive<T>> waitingReceivers = new ConcurrentLinkedDeque<>();
+    private final Deque<PendingSend<T>> waitingSenders = new ConcurrentLinkedDeque<>();
+    private final Deque<PendingOp<T>> waitingReceivers = new ConcurrentLinkedDeque<>();
     private final int capacity;
     private volatile boolean closed;
 
@@ -97,27 +104,56 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
 
     @Override
     public Awaitable<Void> send(T value) {
+        return send(value, null);
+    }
+
+    /**
+     * Offers {@code value}, but only if {@code claim} commits to this branch
+     * at the moment the channel could accept it: when a waiting receiver takes
+     * it, or when buffer space holds it. A group of offers sharing one claim
+     * (the branches of a {@link groovy.concurrent.ChannelSelect}) commits
+     * exactly one between them; an offer whose claim was committed elsewhere
+     * is retired without any effect on the channel — no buffered residue, no
+     * lingering waiting sender.
+     * <p>
+     * Internal support for {@code ChannelSelect}; not part of the channel
+     * contract.
+     *
+     * @param value the value offered for transfer
+     * @param claim the claim shared by the competing offers
+     * @return an Awaitable that completes when the send committed, or is
+     *         cancelled if the claim was taken elsewhere first
+     */
+    @Internal
+    public Awaitable<Void> sendIfUnclaimed(T value, SelectClaim claim) {
+        Objects.requireNonNull(claim, "claim must not be null");
+        return send(value, claim);
+    }
+
+    private Awaitable<Void> send(T value, SelectClaim claim) {
         Objects.requireNonNull(value, "channel does not support null values");
 
-        CompletableFuture<Void> completion = new CompletableFuture<>();
-        PendingSend<T> pending = new PendingSend<>(value, completion);
-        boolean queued;
+        PendingOp<Void> completion = new PendingOp<>(claim);
+        boolean queued = false;
 
         lock.lock();
         try {
             if (closed) {
                 completion.completeExceptionally(closedForSend());
-                queued = false;
-            } else if (deliverToWaitingReceiver(value)) {
-                completion.complete(null);
-                queued = false;
-            } else if (buffer.size() < capacity) {
-                buffer.addLast(value);
-                completion.complete(null);
-                queued = false;
-            } else {
-                waitingSenders.addLast(pending);
-                queued = true;
+            } else if (!resolveAgainstReceivers(completion, value)) {
+                if (buffer.size() < capacity) {
+                    if (completion.claim.tryCommit(completion)) {
+                        buffer.addLast(value);
+                        completion.complete(null);
+                    } else {
+                        completion.internalCancel();
+                    }
+                } else if (completion.claim.isCommitted()) {
+                    completion.internalCancel();
+                } else {
+                    waitingSenders.addLast(new PendingSend<>(value, completion));
+                    queued = true;
+                }
             }
         } finally {
             lock.unlock();
@@ -126,7 +162,8 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
         if (queued) {
             completion.whenComplete((ignored, error) -> {
                 if (error != null || completion.isCancelled()) {
-                    removePendingSender(pending);
+                    // lock-free on purpose: may run while another channel's lock is held
+                    waitingSenders.removeIf(pending -> pending.completion == completion);
                 }
             });
         }
@@ -140,53 +177,46 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
     }
 
     /**
-     * Receives the next value, but only if {@code claim} can be switched from
-     * {@code false} to {@code true} at the moment this channel would hand the
-     * value over. The claim is tested under the channel lock immediately
-     * before the value is dequeued, so a group of receives sharing one claim
-     * (the branches of a {@link groovy.concurrent.ChannelSelect}) takes
-     * exactly one value between them: a branch that loses the claim never
-     * touches its channel's contents and is completed as cancelled.
+     * Receives the next value, but only if {@code claim} commits to this
+     * branch at the moment this channel would hand the value over. The claim
+     * is resolved under the channel lock immediately before the value is
+     * dequeued, so a group of offers sharing one claim (the branches of a
+     * {@link groovy.concurrent.ChannelSelect}) takes exactly one value between
+     * them: a branch that loses the claim never touches its channel's contents
+     * and is completed as cancelled.
      * <p>
      * Internal support for {@code ChannelSelect}; not part of the channel
      * contract.
      *
-     * @param claim the claim shared by the competing receives
+     * @param claim the claim shared by the competing offers
      * @return an Awaitable that yields the next value, or is cancelled if the
      *         claim was taken elsewhere first
      */
     @Internal
-    public Awaitable<T> receiveIfUnclaimed(AtomicBoolean claim) {
+    public Awaitable<T> receiveIfUnclaimed(SelectClaim claim) {
         Objects.requireNonNull(claim, "claim must not be null");
         return receive(claim);
     }
 
-    private Awaitable<T> receive(AtomicBoolean claim) {
-        CompletableFuture<T> completion = new CompletableFuture<>();
+    private Awaitable<T> receive(SelectClaim claim) {
+        PendingOp<T> completion = new PendingOp<>(claim);
         boolean queued = false;
 
         lock.lock();
         try {
             if (!buffer.isEmpty()) {
-                if (tryClaim(claim)) {
+                if (completion.claim.tryCommit(completion)) {
                     completion.complete(pollBuffer());
                 } else {
-                    completion.cancel(false);
+                    completion.internalCancel();
                 }
-            } else {
-                PendingSend<T> sender = peekPendingSender();
-                if (sender != null) {
-                    if (tryClaim(claim)) {
-                        waitingSenders.removeFirst();
-                        sender.completion.complete(null);
-                        completion.complete(sender.value);
-                    } else {
-                        completion.cancel(false);
-                    }
-                } else if (closed) {
+            } else if (!resolveAgainstSenders(completion)) {
+                if (closed) {
                     completion.completeExceptionally(closedForReceive());
+                } else if (completion.claim.isCommitted()) {
+                    completion.internalCancel();
                 } else {
-                    waitingReceivers.addLast(new PendingReceive<>(completion, claim));
+                    waitingReceivers.addLast(completion);
                     queued = true;
                 }
             }
@@ -197,7 +227,8 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
         if (queued) {
             completion.whenComplete((ignored, error) -> {
                 if (error != null || completion.isCancelled()) {
-                    removePendingReceiver(completion);
+                    // lock-free on purpose: may run while another channel's lock is held
+                    waitingReceivers.removeIf(pending -> pending == completion);
                 }
             });
         }
@@ -214,11 +245,11 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
 
             drainBufferToReceivers();
 
-            for (PendingReceive<T> receiver; (receiver = waitingReceivers.pollFirst()) != null; ) {
-                receiver.completion.completeExceptionally(closedForReceive());
+            for (PendingOp<T> receiver; (receiver = waitingReceivers.pollFirst()) != null; ) {
+                receiver.completeExceptionally(closedForReceive());
             }
-            while (!waitingSenders.isEmpty()) {
-                waitingSenders.removeFirst().completion.completeExceptionally(closedForSend());
+            for (PendingSend<T> sender; (sender = waitingSenders.pollFirst()) != null; ) {
+                sender.completion.completeExceptionally(closedForSend());
             }
 
             return true;
@@ -283,17 +314,84 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
 
     // ---- Internal -------------------------------------------------------
 
-    // Hand-over discipline for a waiting receiver: claim, then complete, and
-    // only dequeue the value once the completion succeeded. A receiver that
-    // lost its claim is discarded (cancelled) and the value stays in place
-    // for the next receiver.
+    // Hand-over discipline: resolve the claims first, then act. A pairing of
+    // two parties reserves both claims (in id order, via SelectClaim.pendBoth),
+    // commits both, and only then completes the futures; a single-party commit
+    // happens only when the outcome is guaranteed under the channel lock. Once
+    // an operation's claim is committed to it, its future cannot be cancelled
+    // (the claim gates cancel), so a post-commit completion cannot fail. No
+    // future is ever completed, and no lock ever taken, while a reservation is
+    // held.
 
-    private boolean deliverToWaitingReceiver(T value) {
-        for (PendingReceive<T> receiver; (receiver = waitingReceivers.pollFirst()) != null; ) {
-            if (receiver.tryClaim()) {
-                if (receiver.completion.complete(value)) return true;
+    /**
+     * Tries to hand {@code value} to a waiting receiver, pairing the sender's
+     * claim with each candidate's in turn.
+     *
+     * @return whether the send was resolved: delivered, or retired because its
+     *         own claim was committed elsewhere; {@code false} when no viable
+     *         receiver remains and the send must buffer or park
+     */
+    private boolean resolveAgainstReceivers(PendingOp<Void> completion, T value) {
+        Object[] tokens = new Object[2];
+        for (Iterator<PendingOp<T>> it = waitingReceivers.iterator(); it.hasNext(); ) {
+            PendingOp<T> receiver = it.next();
+            if (receiver.isDone()) {
+                it.remove();
+            } else if (receiver.claim == completion.claim) {
+                // a sibling branch of the same select never pairs with it
             } else {
-                receiver.completion.cancel(false);
+                switch (SelectClaim.pendBoth(completion.claim, receiver.claim, tokens)) {
+                    case 0 -> {
+                        completion.claim.commit(tokens[0], completion);
+                        receiver.claim.commit(tokens[1], receiver);
+                        it.remove();
+                        receiver.complete(value);
+                        completion.complete(null);
+                        return true;
+                    }
+                    case 1 -> {
+                        completion.internalCancel();
+                        return true;
+                    }
+                    case 2 -> it.remove();
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Tries to take a value from a waiting sender, pairing the receiver's
+     * claim with each candidate's in turn.
+     *
+     * @return whether the receive was resolved: a value taken, or the branch
+     *         retired because its own claim was committed elsewhere;
+     *         {@code false} when no viable sender remains
+     */
+    private boolean resolveAgainstSenders(PendingOp<T> completion) {
+        Object[] tokens = new Object[2];
+        for (Iterator<PendingSend<T>> it = waitingSenders.iterator(); it.hasNext(); ) {
+            PendingSend<T> sender = it.next();
+            if (sender.completion.isDone()) {
+                it.remove();
+            } else if (sender.completion.claim == completion.claim) {
+                // a sibling branch of the same select never pairs with it
+            } else {
+                switch (SelectClaim.pendBoth(completion.claim, sender.completion.claim, tokens)) {
+                    case 0 -> {
+                        completion.claim.commit(tokens[0], completion);
+                        sender.completion.claim.commit(tokens[1], sender.completion);
+                        it.remove();
+                        sender.completion.complete(null);
+                        completion.complete(sender.value);
+                        return true;
+                    }
+                    case 1 -> {
+                        completion.internalCancel();
+                        return true;
+                    }
+                    case 2 -> it.remove();
+                }
             }
         }
         return false;
@@ -301,61 +399,34 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
 
     private void drainBufferToReceivers() {
         while (!buffer.isEmpty()) {
-            PendingReceive<T> receiver = waitingReceivers.pollFirst();
+            PendingOp<T> receiver = pollCommittableReceiver();
             if (receiver == null) return;
-            if (receiver.tryClaim()) {
-                if (receiver.completion.complete(buffer.peekFirst())) {
-                    buffer.removeFirst();
-                }
-            } else {
-                receiver.completion.cancel(false);
-            }
+            receiver.complete(buffer.removeFirst());
         }
     }
 
-    private static boolean tryClaim(AtomicBoolean claim) {
-        return claim == null || claim.compareAndSet(false, true);
+    private PendingOp<T> pollCommittableReceiver() {
+        for (PendingOp<T> receiver; (receiver = waitingReceivers.pollFirst()) != null; ) {
+            if (!receiver.isDone() && receiver.claim.tryCommit(receiver)) return receiver;
+        }
+        return null;
     }
 
     private T pollBuffer() {
-        if (buffer.isEmpty()) return null;
         T value = buffer.removeFirst();
         refillBufferFromWaitingSenders();
         return value;
     }
 
     private void refillBufferFromWaitingSenders() {
-        while (buffer.size() < capacity) {
-            PendingSend<T> sender = pollPendingSender();
-            if (sender == null) return;
-            buffer.addLast(sender.value);
-            sender.completion.complete(null);
+        for (Iterator<PendingSend<T>> it = waitingSenders.iterator(); buffer.size() < capacity && it.hasNext(); ) {
+            PendingSend<T> sender = it.next();
+            it.remove();
+            if (!sender.completion.isDone() && sender.completion.claim.tryCommit(sender.completion)) {
+                buffer.addLast(sender.value);
+                sender.completion.complete(null);
+            }
         }
-    }
-
-    private PendingSend<T> pollPendingSender() {
-        PendingSend<T> sender = peekPendingSender();
-        if (sender != null) waitingSenders.removeFirst();
-        return sender;
-    }
-
-    private PendingSend<T> peekPendingSender() {
-        while (!waitingSenders.isEmpty()) {
-            PendingSend<T> sender = waitingSenders.peekFirst();
-            if (!sender.completion.isDone()) return sender;
-            waitingSenders.removeFirst();
-        }
-        return null;
-    }
-
-    private void removePendingSender(PendingSend<T> sender) {
-        lock.lock();
-        try { waitingSenders.remove(sender); } finally { lock.unlock(); }
-    }
-
-    private void removePendingReceiver(CompletableFuture<T> receiver) {
-        // lock-free on purpose: may run while another channel's lock is held
-        waitingReceivers.removeIf(pending -> pending.completion == receiver);
     }
 
     private static ChannelClosedException closedForSend() {
@@ -366,12 +437,31 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
         return new ChannelClosedException("channel is closed");
     }
 
-    private record PendingSend<T>(T value, CompletableFuture<Void> completion) {}
+    /**
+     * A channel operation's completion, arbitrated by its {@link SelectClaim}:
+     * the claim owns the operation's fate, so cancellation must commit the
+     * claim before it may touch the future, and a pairing that committed the
+     * claim to this operation owns the completion outright. A plain operation
+     * carries a private claim; the branches of one select share the select's.
+     */
+    private static final class PendingOp<V> extends CompletableFuture<V> {
+        final SelectClaim claim;
 
-    /** A waiting receiver; {@code claim} is {@code null} for an ordinary receive. */
-    private record PendingReceive<T>(CompletableFuture<T> completion, AtomicBoolean claim) {
-        boolean tryClaim() {
-            return DefaultAsyncChannel.tryClaim(claim);
+        PendingOp(SelectClaim claim) {
+            this.claim = claim != null ? claim : new SelectClaim();
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return claim.allowCancel(this) && super.cancel(mayInterruptIfRunning);
+        }
+
+        /** retires the branch of a claim that was committed elsewhere */
+        boolean internalCancel() {
+            return super.cancel(false);
         }
     }
+
+    /** A waiting sender: the offered value and its arbitrated completion. */
+    private record PendingSend<T>(T value, PendingOp<Void> completion) {}
 }

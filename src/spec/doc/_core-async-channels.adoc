@@ -155,6 +155,40 @@ fair from any number of threads, but it gives no bound on how long a
 ready channel may be passed over; `fair()` guarantees every ready channel
 is taken within _n_ calls.
 
+=== Mixed offers
+
+A select may also _offer to send_ — the mixed choice of the CSP
+literature: "I will send my opener, or take my peer's if it sends
+first". Offers are built with the static factories `send` and `receive`
+and combined with `offers`, mirroring the send cases of Go's `select`:
+
+[source,groovy]
+----
+import static groovy.concurrent.ChannelSelect.*
+
+def result = await offers(send(ping, 1), receive(pong)).select()
+if (result.send) {
+    // my opener committed: continue the ping branch
+} else {
+    // my peer opened first: result.value is the pong opener
+}
+----
+
+Exactly one offer commits; a committed send behaves exactly like
+`ping.send(1)`, while a retired one leaves no trace — no buffered
+residue, no waiting sender — just as a losing receive leaves its channel
+untouched. `fair()` and `random()` order the scan over offers exactly as
+they do over channels, and send offers require channels created by
+`AsyncChannel.create`.
+
+A send offer commits as soon as its channel can accept the value: when a
+receiver is waiting, or when buffer space holds it. Two peers racing a
+mixed choice against each other therefore agree on a single opener only
+over rendezvous (capacity-0) channels, where a send cannot complete
+unilaterally; over buffered channels with space, each peer's send offer
+commits at once under its own select and the peers proceed down
+different branches of the same conversation.
+
 [[async-broadcast-channel]]
 == BroadcastChannel
 

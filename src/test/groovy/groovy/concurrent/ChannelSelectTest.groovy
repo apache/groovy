@@ -406,6 +406,277 @@ final class ChannelSelectTest {
         '''
     }
 
+    // GROOVY-12323: mixed offers — a select may offer to send as well as to receive
+
+    @Test
+    void testSendOfferCommitsWhenAReceiverIsWaiting() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def out = AsyncChannel.create()        // rendezvous
+            def other = AsyncChannel.create(4)
+
+            def taken = out.receive()              // a receiver is already waiting
+            def result = await offers(send(out, 'opener'), receive(other)).select()
+            assert result.index == 0 && result.send && result.value == 'opener'
+            assert (await taken) == 'opener'
+            assert other.toString().contains('waitingReceivers=0')
+        '''
+    }
+
+    @Test
+    void testSendOfferCommitsIntoFreeBufferSpace() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def out = AsyncChannel.create(4)
+            def other = AsyncChannel.create(4)
+
+            // documented caveat: with buffer space the send commits unilaterally,
+            // so cross-select mixed-choice coherence needs capacity-0 channels
+            def result = await offers(send(out, 'v'), receive(other)).select()
+            assert result.index == 0 && result.send && result.value == 'v'
+            assert out.bufferedSize == 1
+            assert (await out.receive()) == 'v'
+            assert other.toString().contains('waitingReceivers=0')
+        '''
+    }
+
+    @Test
+    void testRetiredSendOfferLeavesNoResidue() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def quiet = AsyncChannel.create()      // rendezvous: the send cannot complete alone
+            def ready = AsyncChannel.create(4)
+            ready.send('r1'); ready.send('r2')
+
+            def result = await offers(send(quiet, 'never'), receive(ready)).select()
+            assert result.index == 1 && !result.send && result.value == 'r1'
+            assert ready.bufferedSize == 1
+
+            // the losing offer left nothing behind: no waiting sender, no value
+            assert quiet.toString().contains('waitingSenders=0')
+            def probe = quiet.receive()
+            assert !probe.toCompletableFuture().isDone()
+            probe.cancel()
+        '''
+    }
+
+    @Test
+    void testTimedOutMixedSelectSendsNothing() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import java.util.concurrent.TimeoutException
+            import static groovy.concurrent.ChannelSelect.*
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def a = AsyncChannel.create()          // rendezvous
+            def b = AsyncChannel.create()
+
+            shouldFail(TimeoutException) {
+                await offers(send(a, 'x'), receive(b)).select().orTimeoutMillis(50)
+            }
+            assert a.toString().contains('waitingSenders=0')
+            assert b.toString().contains('waitingReceivers=0')
+
+            // the send never happened
+            def probe = a.receive()
+            assert !probe.toCompletableFuture().isDone()
+            probe.cancel()
+        '''
+    }
+
+    @Test
+    void testMixedSelectFailsWhenAllChannelsAreClosed() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelClosedException
+            import static groovy.concurrent.ChannelSelect.*
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def a = AsyncChannel.create(1)
+            def b = AsyncChannel.create(1)
+            a.close(); b.close()
+            shouldFail(ChannelClosedException) {
+                await offers(send(a, 'x'), receive(b)).select().orTimeoutMillis(1000)
+            }
+
+            // closed later, while the offers are parked
+            def c = AsyncChannel.create()          // rendezvous so the send offer parks
+            def d = AsyncChannel.create()
+            async { Thread.sleep(50); c.close(); d.close() }
+            shouldFail(ChannelClosedException) {
+                await offers(send(c, 'x'), receive(d)).select().orTimeoutMillis(1000)
+            }
+        '''
+    }
+
+    @Test
+    void testMixedSelectStillWaitsWhileOneChannelIsOpen() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def closed = AsyncChannel.create()
+            closed.close()
+            def open = AsyncChannel.create(4)
+
+            async { Thread.sleep(50); open.send('still here') }
+            def result = await offers(send(closed, 'x'), receive(open)).select()
+            assert result.index == 1 && !result.send && result.value == 'still here'
+        '''
+    }
+
+    @Test
+    void testSendOfferRequiresBuiltInChannel() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelSelect
+            import static groovy.test.GroovyAssert.shouldFail
+
+            class Wrapped<T> implements AsyncChannel<T> {
+                @Delegate AsyncChannel<T> inner
+            }
+            shouldFail(IllegalArgumentException) {
+                ChannelSelect.send(new Wrapped(inner: AsyncChannel.create(4)), 'x')
+            }
+        '''
+    }
+
+    @Test
+    void testMixedChoicePeersCommitExactlyOneCoherentBranch() {
+        // the arbitrated mixed choice: either peer may open; over rendezvous
+        // channels exactly one opener commits and both peers agree on it
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+            import static org.apache.groovy.runtime.async.AsyncSupport.await as awaitFor
+
+            int trials = 200
+            int leftOpens = 0, rightOpens = 0
+            for (t in 0..<trials) {
+                def ping = AsyncChannel.create()   // left -> right, rendezvous
+                def pong = AsyncChannel.create()   // right -> left, rendezvous
+                def results = new Object[2]
+                def left = Thread.start {
+                    results[0] = awaitFor(offers(send(ping, 1), receive(pong)).select())
+                }
+                def right = Thread.start {
+                    results[1] = awaitFor(offers(send(pong, 2), receive(ping)).select())
+                }
+                left.join(10_000); right.join(10_000)
+                assert !left.alive && !right.alive
+
+                def l = results[0], r = results[1]
+                if (l.index == 0) {                // left opened: ping transferred
+                    assert l.send && !r.send && r.index == 1 && r.value == 1
+                    leftOpens++
+                } else {                           // right opened: pong transferred
+                    assert !l.send && l.value == 2 && r.send && r.index == 0
+                    rightOpens++
+                }
+                for (ch in [ping, pong]) {
+                    def state = ch.toString()
+                    assert state.contains('waitingSenders=0') && state.contains('waitingReceivers=0')
+                    assert ch.bufferedSize == 0
+                }
+            }
+            assert leftOpens + rightOpens == trials
+        '''
+    }
+
+    @Test
+    void testTimeoutRacingADeliveryNeverLosesATransfer() {
+        // orTimeout withdraws the select through Winner.cancel, which competes
+        // for the claim: a delivery that already committed refuses the cancel
+        // and the result reaches the caller, while a timeout that wins the
+        // claim guarantees nothing was sent — never both, never neither
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import java.util.concurrent.TimeoutException
+            import java.util.concurrent.ThreadLocalRandom
+            import static groovy.concurrent.ChannelSelect.*
+            import static org.apache.groovy.runtime.async.AsyncSupport.await as awaitFor
+
+            int trials = 50
+            int delivered = 0, timedOut = 0
+            for (t in 0..<trials) {
+                def rz = AsyncChannel.create()     // rendezvous: the send offer parks
+                def quiet = AsyncChannel.create()
+                def peerProbe = null
+                def peer = Thread.start {
+                    Thread.sleep(ThreadLocalRandom.current().nextInt(10))
+                    peerProbe = rz.receive()       // may arrive before or after the timeout
+                }
+                def outcome
+                try {
+                    outcome = awaitFor(offers(send(rz, 42), receive(quiet)).select().orTimeoutMillis(5))
+                } catch (TimeoutException e) {
+                    outcome = e
+                }
+                peer.join(10_000)
+                assert !peer.alive
+
+                if (outcome instanceof TimeoutException) {
+                    timedOut++
+                    // the timeout won the claim: the send must never happen,
+                    // so the peer's receive must still be waiting
+                    Thread.sleep(20)
+                    assert !peerProbe.toCompletableFuture().isDone()
+                    peerProbe.cancel()
+                } else {
+                    delivered++
+                    // the delivery won the claim: the caller sees the committed
+                    // send and the peer holds the transferred value
+                    assert outcome.index == 0 && outcome.send && outcome.value == 42
+                    assert awaitFor(peerProbe) == 42
+                }
+                for (ch in [rz, quiet]) {
+                    def state = ch.toString()
+                    assert state.contains('waitingSenders=0')
+                }
+            }
+            assert delivered + timedOut == trials
+        '''
+    }
+
+    @Test
+    void testContendedMixedOffersOnOneChannelPairExactly() {
+        // 2N selects all offering both to send into and to receive from ONE
+        // rendezvous channel: every commit pairs one select's send with
+        // another's receive (never its own), so exactly N transfers happen
+        // and every select commits exactly one branch
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import java.util.concurrent.ConcurrentLinkedQueue
+            import static groovy.concurrent.ChannelSelect.*
+            import static org.apache.groovy.runtime.async.AsyncSupport.await as awaitFor
+
+            int pairs = 50
+            def ch = AsyncChannel.create()          // one rendezvous channel for everyone
+            def sent = new ConcurrentLinkedQueue<Integer>()
+            def received = new ConcurrentLinkedQueue<Integer>()
+            def threads = (0..<2 * pairs).collect { n ->
+                Thread.start {
+                    def result = awaitFor(offers(send(ch, n), receive(ch)).select())
+                    if (result.send) sent << n else received << (int) result.value
+                }
+            }
+            threads.each { it.join(20_000) }
+            assert threads.every { !it.alive }
+
+            assert sent.size() == pairs && received.size() == pairs
+            assert sent.toList().sort() == received.toList().sort()
+            def state = ch.toString()
+            assert state.contains('waitingSenders=0') && state.contains('waitingReceivers=0')
+            assert ch.bufferedSize == 0
+        '''
+    }
+
     @Test
     void testConcurrentSelectsDeliverEveryValueExactlyOnce() {
         assertScript '''
