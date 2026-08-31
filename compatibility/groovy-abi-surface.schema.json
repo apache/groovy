@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://groovy.apache.org/schema/groovy-abi-surface.schema.json",
+  "title": "Groovy compiler-referenced ABI surface registry",
+  "description": "Authoritative registry of the elements marked with @org.apache.groovy.lang.annotation.GroovyABI across the modules that make up the hidden compiler-to-runtime binary ABI contract. See COMPATIBILITY.md for the governing policy.",
+  "type": "object",
+  "required": ["abiSchema", "version", "modules"],
+  "properties": {
+    "abiSchema": {
+      "const": "1"
+    },
+    "version": {
+      "description": "The Groovy version this registry snapshot belongs to (or \"SNAPSHOT\").",
+      "$ref": "#/$defs/versionString"
+    },
+    "modules": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/module" }
+    }
+  },
+  "$defs": {
+    "versionString": {
+      "type": "string",
+      "oneOf": [
+        { "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$" },
+        { "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)-SNAPSHOT$" },
+        { "const": "SNAPSHOT" }
+      ]
+    },
+    "module": {
+      "type": "object",
+      "description": "One Gradle module (project) whose compiled classes carry @GroovyABI. The module owns its elements by nesting.",
+      "required": ["name", "elements"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Gradle project name, e.g. \"groovy\", \"groovy-callsite\"."
+        },
+        "elements": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/abiElement" }
+        }
+      }
+    },
+    "abiElement": {
+      "type": "object",
+      "required": ["kind", "name", "descriptor", "since", "deprecated-since", "tombstone"],
+      "properties": {
+        "kind": {
+          "enum": ["method", "field", "constructor"]
+        },
+        "name": {
+          "type": "string",
+          "description": "Member name; for constructors the simple class name."
+        },
+        "descriptor": {
+          "type": "string",
+          "description": "JVM descriptor of the member, the exact signature emitted bytecode binds to."
+        },
+        "since": {
+          "$ref": "#/$defs/versionString"
+        },
+        "deprecated-since": {
+          "description": "The previous-major-line release in which the element was marked @Deprecated, authorizing a later intentional break. Null when not deprecated.",
+          "anyOf": [
+            { "$ref": "#/$defs/versionString" },
+            { "type": "null" }
+          ]
+        },
+        "tombstone": {
+          "description": "Non-null when this element is a recorded intentional break: the entry stays in the registry after the live ABI entry is gone, marking where it used to be.",
+          "anyOf": [
+            { "$ref": "#/$defs/tombstone" },
+            { "type": "null" }
+          ]
+        },
+        "type": {
+          "type": "string",
+          "description": "Optional fully-qualified type name, used as documentation and for human review. The authoritative owner is the enclosing module."
+        }
+      }
+    },
+    "tombstone": {
+      "type": "object",
+      "required": ["type", "version"],
+      "properties": {
+        "type": {
+          "enum": ["removed", "annotation-removed", "version-changed"]
+        },
+        "version": {
+          "description": "The release in which the intentional break lands.",
+          "$ref": "#/$defs/versionString"
+        },
+        "previous-since": {
+          "description": "Required for version-changed: the since value before the change.",
+          "$ref": "#/$defs/versionString"
+        },
+        "note": {
+          "type": "string",
+          "description": "Human-readable reason for the intentional break."
+        }
+      }
+    }
+  }
+}
