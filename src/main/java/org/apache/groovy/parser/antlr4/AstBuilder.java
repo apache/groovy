@@ -40,7 +40,6 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.groovy.parser.antlr4.internal.DescriptiveErrorStrategy;
-import org.apache.groovy.parser.antlr4.internal.atnmanager.AtnManager;
 import org.apache.groovy.parser.antlr4.util.StringUtils;
 import org.apache.groovy.util.Maps;
 import org.apache.groovy.util.SystemUtil;
@@ -206,30 +205,26 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         GroovyParserRuleContext result;
 
         try {
-            // parsing have to wait util clearing is complete.
-            AtnManager.READ_LOCK.lock();
-            try {
-                final TokenStream tokenStream = parser.getInputStream();
-                if (SLL_THRESHOLD >= 0 && tokenStream.size() > SLL_THRESHOLD) {
-                    // The more tokens to parse, the more possibility SLL will fail and the more parsing time will waste.
-                    // The option `groovy.antlr4.sll.threshold` could be tuned for better parsing performance, but it is disabled by default.
-                    // If the token count is greater than `groovy.antlr4.sll.threshold`, use LL directly.
-                    result = buildCST(PredictionMode.LL);
-                } else {
-                    try {
-                        result = buildCST(PredictionMode.SLL);
-                    } catch (Throwable t) {
-                        // if some syntax error occurred in the lexer, no need to retry the powerful LL mode
-                        if (t instanceof GroovySyntaxError && GroovySyntaxError.LEXER == ((GroovySyntaxError) t).getSource()) {
-                            throw t;
-                        }
-
-                        tokenStream.seek(0);
-                        result = buildCST(PredictionMode.LL);
+            // an over-limit DFA cache is replaced rather than cleared in place, so parsing
+            // proceeds on its own ATN without coordinating with other parsers
+            final TokenStream tokenStream = parser.getInputStream();
+            if (SLL_THRESHOLD >= 0 && tokenStream.size() > SLL_THRESHOLD) {
+                // The more tokens to parse, the more possibility SLL will fail and the more parsing time will waste.
+                // The option `groovy.antlr4.sll.threshold` could be tuned for better parsing performance, but it is disabled by default.
+                // If the token count is greater than `groovy.antlr4.sll.threshold`, use LL directly.
+                result = buildCST(PredictionMode.LL);
+            } else {
+                try {
+                    result = buildCST(PredictionMode.SLL);
+                } catch (Throwable t) {
+                    // if some syntax error occurred in the lexer, no need to retry the powerful LL mode
+                    if (t instanceof GroovySyntaxError && GroovySyntaxError.LEXER == ((GroovySyntaxError) t).getSource()) {
+                        throw t;
                     }
+
+                    tokenStream.seek(0);
+                    result = buildCST(PredictionMode.LL);
                 }
-            } finally {
-                AtnManager.READ_LOCK.unlock();
             }
         } catch (Throwable t) {
             throw convertException(t);
