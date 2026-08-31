@@ -1,0 +1,123 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+import org.apache.groovy.gradle.GroovyABICheckTask
+
+/*
+ * Registers the @GroovyABI surface checks on the root project:
+ *   - generateGroovyABIRegistry : regenerate compatibility/groovy-abi-surface.json from compiled classes
+ *   - checkGroovyABISync         : fail if compiled classes and the committed registry disagree
+ *   - checkGroovyABIAgainstBaseline : PR gate - compare committed registry vs a baseline registry JSON
+ *   - checkGroovyABIAgainstPreviousRelease : release gate - same, with the previous release's registry
+ *
+ * The scanner covers every module with a `java` (or `groovy`) main source set so that an
+ * @GroovyABI appearing in a module that is neither tracked nor ignored becomes an error.
+ */
+def abiRegistry = rootProject.file('compatibility/groovy-abi-surface.json')
+def abiSchema = rootProject.file('compatibility/groovy-abi-surface.schema.json')
+
+// Modules that are intentionally never tracked (kept here for explicitness).
+def abiIgnoredModules = [] as Set<String>
+
+// Explicit allow-list of modules that carry the @GroovyABI contract and are tracked in the
+// registry. Keeping this here (rather than deriving only from the registry) lets the first
+// generate bootstrap, and makes "annotation outside the allow-list = error" meaningful even
+// before a registry file exists. Keep in sync with the registry's modules.
+def abiTrackedModules = ['groovy', 'groovy-callsite', 'groovy-contracts', 'groovy-ginq', 'groovy-macro']
+
+// The class dirs of every project with a main java/groovy source set.
+def moduleDirsProvider = providers.provider {
+    def out = []
+    rootProject.allprojects.each { p ->
+        def ics2 = p.extensions.findByName('sourceSets')
+        if (ics2 == null) {
+            return
+        }
+        def main = ics2.findByName('main')
+        if (main == null || main.output == null) {
+            return
+        }
+        try {
+            def dirs = main.output.classesDirs.files
+            dirs.each { d ->
+                if (d.isDirectory()) {
+                    out.add("${p.name}=${d.absolutePath}")
+                }
+            }
+        } catch (Exception ignored) {
+            // output may not be resolvable yet; skip this project
+        }
+    }
+    out
+}
+
+tasks.register('generateGroovyABIRegistry', GroovyABICheckTask) { t ->
+    t.group = 'verification'
+    t.description = 'Regenerate compatibility/groovy-abi-surface.json from the compiled @GroovyABI classes.'
+    t.mode = 'generate'
+    t.moduleClassDirs.set(moduleDirsProvider)
+    t.trackedModules.set(abiTrackedModules)
+    t.ignoredModules.set(abiIgnoredModules)
+    t.registryFile.set(abiRegistry)
+    t.schemaFile.set(abiSchema)
+    t.version.set(providers.provider { sharedConfiguration.groovyVersion.get() })
+}
+
+tasks.register('checkGroovyABISync', GroovyABICheckTask) { t ->
+    t.group = 'verification'
+    t.description = 'Fail if the compiled @GroovyABI classes and the committed registry disagree.'
+    t.mode = 'sync'
+    t.trackedModules.set(abiTrackedModules)
+    t.moduleClassDirs.set(moduleDirsProvider)
+    t.ignoredModules.set(abiIgnoredModules)
+    t.registryFile.set(abiRegistry)
+    t.schemaFile.set(abiSchema)
+    t.version.set(providers.provider { sharedConfiguration.groovyVersion.get() })
+    t.baselineRegistryJson.set('')
+}
+
+tasks.register('checkGroovyABIAgainstBaseline', GroovyABICheckTask) { t ->
+    t.group = 'verification'
+    t.description = 'PR gate: compare the committed @GroovyABI registry against a baseline registry (merge-base).'
+    t.trackedModules.set(abiTrackedModules)
+    t.mode = 'change'
+    t.moduleClassDirs.set([])
+    t.ignoredModules.set(abiIgnoredModules)
+    t.registryFile.set(abiRegistry)
+    t.schemaFile.set(abiSchema)
+    t.version.set(providers.provider { sharedConfiguration.groovyVersion.get() })
+    // Baseline JSON is provided via -PgroovyAbiBaselineRegistry=<path or JSON>; empty means Case A (no prior).
+    t.baselineRegistryJson.set(providers.provider { project.findProperty('groovyAbiBaselineRegistry') as String ?: '' })
+}
+
+tasks.register('checkGroovyABIAgainstPreviousRelease', GroovyABICheckTask) { t ->
+    t.group = 'verification'
+    t.trackedModules.set(abiTrackedModules)
+    t.description = 'Release gate: compare the committed registry against the previous release tag registry.'
+    t.mode = 'release'
+    t.moduleClassDirs.set([])
+    t.ignoredModules.set(abiIgnoredModules)
+    t.registryFile.set(abiRegistry)
+    t.schemaFile.set(abiSchema)
+    t.version.set(providers.provider { sharedConfiguration.groovyVersion.get() })
+    t.baselineRegistryJson.set(providers.provider { project.findProperty('groovyAbiBaselineRegistry') as String ?: '' })
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('checkGroovyABISync')
+}

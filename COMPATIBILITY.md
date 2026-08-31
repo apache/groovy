@@ -83,6 +83,69 @@ Removing or changing an `@GroovyABI`-marked element is a breaking change to
 compiled Groovy code, handled like any other break via the release-management
 process below.
 
+### The `@GroovyABI` registry and enforcement
+
+The complete annotated surface is recorded in
+[`compatibility/groovy-abi-surface.json`](compatibility/groovy-abi-surface.json),
+one entry per annotated element (method / field / constructor), keyed by JVM
+descriptor — the exact signature emitted bytecode binds to. The file's schema
+is `compatibility/groovy-abi-surface.schema.json`.
+
+- **Modules:** the registry is a list of modules, each owning its elements by
+  nesting. Module ownership is explicit (never derived by package prefix), so a
+  whole-module removal (e.g. dropping `groovy-callsite`) is visible as that
+  module block disappearing rather than as scattered per-element breaks.
+- **Allow-list:** an `@GroovyABI` may appear only in a tracked module (listed
+  in the registry) or in an explicitly ignored module. `checkGroovyABISync`
+  fails if an annotation shows up anywhere else.
+- **`since`** is the historical version that introduced each element, recorded
+  alongside it; for class-level annotations every covered public method
+  inherits the class `since` unless it carries its own.
+
+#### The checks
+
+- **`checkGroovyABISync`** (part of `check`): scans the compiled classes with
+  ASM and fails if they disagree with the committed registry — an element
+  removed, its descriptor changed, its annotation dropped (while the method
+  still exists), or a `since` decreased without authorisation.
+- **`checkGroovyABIAgainstBaseline`** (PR mode): compares the committed
+  registry against a baseline registry, e.g. from the merge-base
+  (`git show <base>:compatibility/groovy-abi-surface.json`), passed via
+  `-PgroovyAbiBaselineRegistry=<file or JSON>`.
+- **`checkGroovyABIAgainstPreviousRelease`** (release mode): the same check
+  against the previous `X.Y.Z` release tag's registry. When no previous
+  registry exists (a release first creating the file, or a baseline before the
+  file was introduced) the prior is treated as empty: only additions are
+  expected, and the inaugural file must not contain tombstones.
+
+#### Intentional breaks ("tombstones")
+
+The registry is also how intentional breaks are expressed and reviewed. An
+element that is deliberately removed, loses its annotation, or has its `since`
+changed is not deleted from the file — it stays as a **`tombstone`** record
+marking where it used to be and why:
+
+```json
+"tombstone": {
+  "type": "removed",            // removed | annotation-removed | version-changed
+  "version": "6.1.0",           // the release the break lands in
+  "previous-since": "2.0.0",    // only for version-changed
+  "note": "replaced by ..."
+}
+```
+
+An unmarked removal / annotation drop / `since` change fails the check; a
+`tombstone` authorizes it. The PR that breaks compatibility *is* the PR that
+edits the registry, so the diff is the review surface.
+
+**Hard rule:** a `removed` or `annotation-removed` tombstone requires
+`deprecated-since` — the element must have been marked `@Deprecated` in the
+previous major version line (for 6.x, the latest 5.y) before the break is
+accepted. `version-changed` tombstones must record `previous-since`. This is
+enforced mechanically once both sides have the file; at the 5.y→6.0 transition
+the evidence has to come from the 5.y source (`@Deprecated` present there) and
+human review, since 6.0 is the inaugural file.
+
 ## Incubating features
 
 `@Incubating` reduces the formal stability guarantee — it tells users
