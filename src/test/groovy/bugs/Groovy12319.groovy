@@ -849,6 +849,47 @@ final class Groovy12319 {
             Cell<String>.ID
         '''
         assert err.message.contains('parameterization')
+        assert !err.message.contains('Cannot select from a parameterized type')
+    }
+
+    @Test
+    void testValueClassPropertyRemainsLegal() {
+        assertScript '''
+            def values = [1, 'x']
+            assert values*.class == [Integer, String]
+            assert values[0].class == Integer
+        '''
+    }
+
+    @Test
+    void testParameterizedClassLiteralRejected() {
+        def err = shouldFail CompilationFailedException, '''
+            class Cell<T> {}
+            Cell<String>.class
+        '''
+        assert err.message.contains('Cannot select from a parameterized type')
+        assert !err.message.contains('static member')
+
+        err = shouldFail CompilationFailedException, '''
+            class Outer<T> {
+                class Inner {}
+            }
+            Outer<String>.Inner.class
+        '''
+        assert err.message.contains('Cannot select from a parameterized type')
+        assert !err.message.contains('static member')
+    }
+
+    @Test
+    void testTypeParameterArrayCreationNamesTypeVariable() {
+        def err = shouldFail CompilationFailedException, '''
+            class Stack<T> {
+                T[] items
+                Stack(int n) { items = new T[n] }
+            }
+        '''
+        assert err.message.contains('generic array creation of T')
+        assert !err.message.contains('of Object')
     }
 
     @Test

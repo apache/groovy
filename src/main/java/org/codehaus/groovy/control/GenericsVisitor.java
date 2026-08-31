@@ -199,13 +199,25 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * JLS 15.8.2: a class literal may not name a type variable.
+     * Depth of {@link ClassExpression} qualifiers that are not class
+     * literals ({@code Cell<String>.ID}, {@code Cell<String>.id()}).
+     * {@link #visitClassExpression} skips the JLS 15.8.2 check while
+     * this is positive so those sites keep the JLS 4.5.2 diagnostic.
+     */
+    private int suppressClassLiteralChecks;
+
+    /**
+     * JLS 15.8.2: a class literal may not name a type variable or a
+     * parameterized type ({@code T.class}, {@code Cell<String>.class}).
+     * After resolve, {@code Foo.class} is a {@link ClassExpression};
+     * {@code Foo<String>.class} may still be a {@link PropertyExpression}
+     * whose object is that class expression — see
+     * {@link #visitPropertyExpression}.
      */
     @Override
     public void visitClassExpression(final ClassExpression expression) {
-        ClassNode type = expression.getType();
-        if (type.isGenericsPlaceHolder()) {
-            addError("Cannot select from a type parameter " + type.getUnresolvedName(), expression);
+        if (suppressClassLiteralChecks == 0) {
+            checkClassLiteral(expression.getType(), expression);
         }
         super.visitClassExpression(expression);
     }
@@ -240,17 +252,46 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
      */
     @Override
     public void visitMethodCallExpression(final MethodCallExpression call) {
-        checkStaticMemberViaParameterizedType(call.getObjectExpression(), call);
-        super.visitMethodCallExpression(call);
+        Expression object = call.getObjectExpression();
+        checkStaticMemberViaParameterizedType(object, call);
+        if (object instanceof ClassExpression) {
+            suppressClassLiteralChecks++;
+            try {
+                super.visitMethodCallExpression(call);
+            } finally {
+                suppressClassLiteralChecks--;
+            }
+        } else {
+            super.visitMethodCallExpression(call);
+        }
     }
 
     /**
      * JLS 4.5.2 also applies to static fields accessed as {@code Cell<String>.ID}.
+     * JLS 15.8.2: {@code Cell<String>.class} is a class literal, not a static
+     * member selection — do not use the 4.5.2 diagnostic for {@code .class}.
      */
     @Override
     public void visitPropertyExpression(final PropertyExpression expression) {
-        checkStaticMemberViaParameterizedType(expression.getObjectExpression(), expression);
-        super.visitPropertyExpression(expression);
+        Expression object = expression.getObjectExpression();
+        // Only TypeName.class is a class literal (JLS 15.8.2).
+        // value.class / value*.class is getClass() and must stay legal.
+        if (isClassLiteralProperty(expression) && object instanceof ClassExpression) {
+            checkClassLiteral(object.getType(), expression);
+            expression.getProperty().visit(this);
+            return;
+        }
+        checkStaticMemberViaParameterizedType(object, expression);
+        if (object instanceof ClassExpression) {
+            suppressClassLiteralChecks++;
+            try {
+                super.visitPropertyExpression(expression);
+            } finally {
+                suppressClassLiteralChecks--;
+            }
+        } else {
+            super.visitPropertyExpression(expression);
+        }
     }
 
     /**
@@ -271,6 +312,37 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         if (object instanceof ClassExpression && isParameterizedTypeUsage(object.getType())) {
             addError("Cannot refer to a static member of a generic type through a parameterization", location);
         }
+    }
+
+    /**
+     * JLS 15.8.2: {@code TypeName} in a class literal may not denote a type
+     * variable or a parameterized type (including a rare type whose enclosing
+     * type is parameterized). Arrays of those types are likewise illegal.
+     */
+    private void checkClassLiteral(final ClassNode type, final Expression location) {
+        ClassNode element = type;
+        while (element.isArray()) {
+            element = element.getComponentType();
+        }
+        if (element.isGenericsPlaceHolder()) {
+            addError("Cannot select from a type parameter " + element.getUnresolvedName(), location);
+            return;
+        }
+        if (isParameterizedClassLiteralType(element)) {
+            addError("Cannot select from a parameterized type", location);
+        }
+    }
+
+    private static boolean isClassLiteralProperty(final PropertyExpression expression) {
+        return "class".equals(expression.getPropertyAsString());
+    }
+
+    private static boolean isParameterizedClassLiteralType(final ClassNode type) {
+        if (isParameterizedTypeUsage(type)) {
+            return true;
+        }
+        ClassNode oc = type.getOuterClassType();
+        return oc != null && (isParameterizedEnclosingType(oc) || isParameterizedClassLiteralType(oc));
     }
 
     private boolean checkWildcard(final ClassNode sn) {
@@ -461,6 +533,9 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     private static String describeTypeUse(final ClassNode type) {
         if (type.isArray()) {
             return describeTypeUse(type.getComponentType()) + "[]";
+        }
+        if (type.isGenericsPlaceHolder()) {
+            return type.getUnresolvedName();
         }
         StringBuilder sb = new StringBuilder();
         ClassNode outer = type.getOuterClassType();

@@ -2654,6 +2654,27 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 15.8.2: a class literal's {@code TypeName} may not include type
+     * arguments ({@code Cell<String>.class}). javac rejects this in the
+     * parser ({@code <identifier> expected}); Groovy reports the semantic
+     * 15.8.2 diagnostic.
+     */
+    @Test
+    void testNegativeParameterizedClassLiteral() {
+        final String className = 'gls.generics.test.ParameterizedClassLiteral'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class ParameterizedClassLiteral {
+                public static class Cell<T> {}
+                public static Class<?> test() {
+                    return Cell<String>.class;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "<identifier> expected", "parameterized type")
+    }
+
+    /**
      * JLS 4.5.2: it is illegal to refer to a static member of a generic type
      * through a parameterization ({@code Cell<String>.id()}).
      */

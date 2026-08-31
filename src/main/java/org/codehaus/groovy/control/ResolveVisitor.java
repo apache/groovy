@@ -1173,6 +1173,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 ClassNode type = new ConstructedNestedClass(propertyOwner, xe.getPropertyAsString());
                 if (resolve(type, false, false, false)) {
                     if (propertyOwner == objectExpression.getType() || isVisibleNestedClass(type, objectExpression.getType())) {
+                        // Preserve Outer<T>.Inner as a rare type use so
+                        // Outer<String>.Inner.class is a parameterized class
+                        // literal (JLS 15.8.2), not a raw Inner.
+                        ClassNode owner = objectExpression.getType();
+                        if ((owner.getGenericsTypes() != null && owner.getGenericsTypes().length > 0)
+                                || owner.getOuterClassType() != null) {
+                            type.setOuterClassType(owner);
+                        }
                         return new ClassExpression(type);
                     }
                 }
