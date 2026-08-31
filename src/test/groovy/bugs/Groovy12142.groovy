@@ -82,11 +82,35 @@ final class Groovy12142 {
         assertTrue(populated > 0, 'precondition: parsing must populate the parser DFA cache')
 
         forceSoftReferenceClearing()
-        new GroovyShell().parse('1') // the clear happens on the next parse
+        // no parse in between: the caches live on the softly referenced wrapper's private
+        // ATN, so collection releases them directly — an idle runtime copy included
 
         int afterClear = parserDfaStateCount()
         assertTrue(afterClear < populated,
                 "parser DFA cache must shrink after soft references are cleared, was $populated now $afterClear")
+    }
+
+    /**
+     * The whole cache graph must be collectable while the runtime copy is idle — no
+     * parse may be needed to release it. A build daemon holds one runtime copy per
+     * distinct classpath; a copy whose tasks are done never parses again, and with a
+     * clear-on-next-parse design its fully warmed cache stayed strongly reachable for
+     * the life of the daemon (multiplied per copy, the heap filled with dead caches).
+     */
+    @Test
+    void testIdleCopyCacheGraphIsCollectableWithoutAParse() {
+        (1..12).each { n -> parseVariedSource(n) }
+        def atnRef = new WeakReference(currentParserWrapperAtn())
+        assertTrue(atnRef.get() != null, 'precondition: a live wrapper ATN must exist')
+
+        clearParserWrapperSoftReference()
+        boolean collected = false
+        for (int i = 0; i < 100 && !collected; i++) {
+            System.gc()
+            collected = atnRef.get() == null
+            if (!collected) Thread.sleep(10)
+        }
+        assertTrue(collected, 'an idle copy must not strongly retain its parser DFA cache graph')
     }
 
     /**
@@ -118,7 +142,7 @@ final class Groovy12142 {
             if (populated <= 0) System.exit(2)
 
             forceSoftReferenceClearing()
-            new GroovyShell().parse('1') // the canary is observed on the next parse
+            // the softly referenced wrapper owns the caches, so collection released them
 
             int afterClear = parserDfaStateCount()
             System.err.println("populated=$populated afterClear=$afterClear")
@@ -162,14 +186,19 @@ final class Groovy12142 {
     static class SizeCeilingProbe {
         static void main(String[] args) {
             long limit = 200L
-            // Build the cache past the ceiling with varied sources...
-            for (int i = 0; i < 20; i++) parseVariedSource(i)
-            int peak = parserDfaStateCount()
+            // Build the cache past the ceiling with varied sources, sampling as it grows:
+            // an over-limit wrapper is replaced (not cleared in place) when the next parse
+            // observes the crossing, so only a sample taken between parses can see the peak.
+            int peak = 0
+            for (int i = 0; i < 20; i++) {
+                parseVariedSource(i)
+                peak = Math.max(peak, parserDfaStateCount())
+            }
             if (peak <= limit) System.exit(2)   // scaffolding never crossed the ceiling
 
-            // ...then parse a trivial script. The ceiling is checked before each parse, so the
-            // clear lands first and a trivial script cannot refill what was dropped. (A varied
-            // source refills to the same fixed point in one parse, which would mask it.)
+            // ...then parse a trivial script. Its parser observes the crossing and retires the
+            // wrapper, and a trivial script cannot refill what was dropped. (A varied source
+            // refills to the same fixed point in one parse, which would mask it.)
             int low = peak
             for (int i = 0; i < 5; i++) {
                 new GroovyShell().parse('1')
@@ -195,11 +224,37 @@ final class Groovy12142 {
         (long) f.get(null)
     }
 
-    /** Counts live states in the shared parser DFA cache. */
+    /**
+     * Counts live states in the shared parser DFA cache. Reads the manager's current
+     * wrapper without creating one: the caches live on the wrapper's private ATN (the
+     * generated parser's static ATN stays cold), and an absent wrapper is an empty cache.
+     */
     private static int parserDfaStateCount() {
-        def atn = org.apache.groovy.parser.antlr4.GroovyParser._ATN
+        def atn = currentParserWrapperAtn()
+        if (atn == null) return 0
         def dfas = atn.decisionToDFA.findAll { it != null }
         dfas.isEmpty() ? 0 : (int) dfas.sum { it.states.size() }
+    }
+
+    /** The parser manager's current wrapper ATN, or null when none is live. */
+    private static Object currentParserWrapperAtn() {
+        def wrapper = parserWrapperSoftReference()?.get()
+        if (wrapper == null) return null
+        def atnField = wrapper.getClass().getDeclaredField('atn')
+        atnField.accessible = true
+        atnField.get(wrapper)
+    }
+
+    private static void clearParserWrapperSoftReference() {
+        parserWrapperSoftReference()?.clear()
+    }
+
+    private static java.lang.ref.SoftReference parserWrapperSoftReference() {
+        def manager = Class.forName('org.apache.groovy.parser.antlr4.internal.atnmanager.ParserAtnManager').INSTANCE
+        def refField = Class.forName('org.apache.groovy.parser.antlr4.internal.atnmanager.AtnManager')
+                .getDeclaredField('atnWrapperSoftReference')
+        refField.accessible = true
+        (java.lang.ref.SoftReference) refField.get(manager)
     }
 
     private static void parseVariedSource(int n) {

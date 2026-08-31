@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.parser.antlr4.internal.atnmanager;
 
+import org.antlr.v4.runtime.atn.ATNDeserializer;
 import org.apache.groovy.parser.antlr4.GroovyLangLexer;
 import org.apache.groovy.util.SystemUtil;
 
@@ -35,7 +36,11 @@ public class LexerAtnManager extends AtnManager {
 
     @Override
     protected AtnWrapper createAtnWrapper() {
-        return new AtnWrapper(GroovyLangLexer._ATN);
+        // Dropping is opt-in for the lexer (its DFA stays in the hundreds of states), so by
+        // default the wrapper shares the static ATN and the warm lexer cache persists.
+        return new AtnWrapper(droppingEnabled()
+                ? new ATNDeserializer().deserialize(GroovyLangLexer._serializedATN)
+                : GroovyLangLexer._ATN);
     }
 
     @Override
