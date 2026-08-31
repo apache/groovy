@@ -20,22 +20,24 @@ package groovy.concurrent;
 
 import org.apache.groovy.runtime.async.DefaultAsyncChannel;
 import org.apache.groovy.runtime.async.GroovyPromise;
+import org.apache.groovy.runtime.async.SelectClaim;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Selects the first available value from multiple {@link AsyncChannel}s.
+ * Selects the first offer that can complete among multiple
+ * {@link AsyncChannel} operations.
  * <p>
  * This is the channel equivalent of {@link Awaitable#any(Object...)} —
  * while {@code Awaitable.any} races futures, {@code ChannelSelect} races
- * channel receives. Each call to {@link #select()} returns an
+ * channel operations. Each call to {@link #select()} returns an
  * {@link Awaitable} that completes with a {@link Result} indicating
- * which channel produced the value and what it was.
+ * which offer committed and, for a receive, what value arrived.
  *
  * <pre>{@code
  * def prices = AsyncChannel.create(10)
@@ -46,28 +48,51 @@ import java.util.concurrent.atomic.AtomicInteger;
  * println "Channel ${result.index}: ${result.value}"
  * }</pre>
  * <p>
- * Inspired by GPars' {@code Select} and Go's {@code select} statement.
+ * A select may also mix input and output guards — the <em>mixed choice</em>
+ * of the CSP literature: "I will send my opener, or take my peer's if it
+ * sends first". Offers to send are created with
+ * {@link #send(AsyncChannel, Object)}, offers to receive with
+ * {@link #receive(AsyncChannel)}, and combined with {@link #offers(Offer...)}:
+ *
+ * <pre>{@code
+ * import static groovy.concurrent.ChannelSelect.*
+ *
+ * def result = await offers(send(ping, 1), receive(pong)).select()
+ * if (result.send) { ... my opener committed ... }
+ * else            { ... my peer opened first: result.value ... }
+ * }</pre>
+ * <p>
+ * A send offer commits as soon as its channel can accept the value: when a
+ * receiver is waiting, or when buffer space holds it. Two peers racing a
+ * mixed choice are therefore coherent — exactly one of the two openers
+ * commits — only over rendezvous (capacity-0) channels, where a send cannot
+ * complete unilaterally; over buffered channels with space, each peer's send
+ * offer commits immediately under its own select, and the two proceed down
+ * different branches of the same session.
+ * <p>
+ * Inspired by GPars' {@code Select} and Go's {@code select} statement
+ * (whose send cases these offers mirror).
  *
  * @since 6.0.0
  */
 public final class ChannelSelect {
 
-    /** How to choose when several channels are ready at the same time. */
+    /** How to choose when several offers are ready at the same time. */
     private enum Policy { PRIORITY, FAIR, RANDOM }
 
-    private final List<AsyncChannel<?>> channels;
+    private final List<Offer> offers;
     private final Policy policy;
     /** index of the last winner; only maintained under {@link Policy#FAIR} */
     private final AtomicInteger lastWinner;
 
-    private ChannelSelect(List<AsyncChannel<?>> channels, Policy policy) {
-        this.channels = channels;
+    private ChannelSelect(List<Offer> offers, Policy policy) {
+        this.offers = offers;
         this.policy = policy;
         this.lastWinner = policy == Policy.FAIR ? new AtomicInteger(-1) : null;
     }
 
     /**
-     * Creates a select over the given channels.
+     * Creates a select over receives from the given channels.
      *
      * @param channels the channels to select from
      * @return a new ChannelSelect
@@ -78,106 +103,176 @@ public final class ChannelSelect {
         if (channels.length == 0) {
             throw new IllegalArgumentException("At least one channel is required");
         }
-        return new ChannelSelect(List.of(channels), Policy.PRIORITY);
+        List<Offer> offers = new ArrayList<>(channels.length);
+        for (AsyncChannel<?> channel : channels) {
+            offers.add(receive(channel));
+        }
+        return new ChannelSelect(List.copyOf(offers), Policy.PRIORITY);
     }
 
     /**
-     * Returns a select over the same channels that chooses fairly among
-     * channels that are ready at the same time.
+     * Creates a select over the given offers, which may mix sends and
+     * receives.
+     *
+     * @param offers the offers to select among
+     * @return a new ChannelSelect
+     * @see #send(AsyncChannel, Object)
+     * @see #receive(AsyncChannel)
+     * @since 6.0.0
+     */
+    public static ChannelSelect offers(Offer... offers) {
+        Objects.requireNonNull(offers, "offers must not be null");
+        if (offers.length == 0) {
+            throw new IllegalArgumentException("At least one offer is required");
+        }
+        return new ChannelSelect(List.of(offers), Policy.PRIORITY);
+    }
+
+    /**
+     * An offer to transfer {@code value} into {@code channel}: an output
+     * guard. It commits when the channel can accept the value — a waiting
+     * receiver takes it, or buffer space holds it — and a committed offer
+     * behaves exactly like {@code channel.send(value)}. A retired offer has
+     * no effect on the channel.
      * <p>
-     * By default {@link #select()} prefers the channel listed first, so a
+     * Only channels created by {@link AsyncChannel#create} can take part in
+     * the claim protocol that makes an effect-free retired send possible, so
+     * only they may carry send offers.
+     *
+     * @param channel the channel to send into
+     * @param value   the value to transfer
+     * @param <V>     the payload type
+     * @return the send offer
+     * @throws IllegalArgumentException if the channel is not a built-in one
+     * @since 6.0.0
+     */
+    public static <V> Offer send(AsyncChannel<V> channel, V value) {
+        Objects.requireNonNull(channel, "channel must not be null");
+        Objects.requireNonNull(value, "channel does not support null values");
+        if (!(channel instanceof DefaultAsyncChannel)) {
+            throw new IllegalArgumentException("send offers require a channel created by AsyncChannel.create");
+        }
+        return new Offer(channel, value, true);
+    }
+
+    /**
+     * An offer to receive the next value from {@code channel}: an input
+     * guard, the branch a plain {@link #from(AsyncChannel...)} select is
+     * made of.
+     *
+     * @param channel the channel to receive from
+     * @return the receive offer
+     * @since 6.0.0
+     */
+    public static Offer receive(AsyncChannel<?> channel) {
+        Objects.requireNonNull(channel, "channel must not be null");
+        return new Offer(channel, null, false);
+    }
+
+    /**
+     * Returns a select over the same offers that chooses fairly among
+     * offers that are ready at the same time.
+     * <p>
+     * By default {@link #select()} prefers the offer listed first, so a
      * channel that always has a value waiting starves the ones after it. A
-     * fair select instead starts each call at the channel after the one
-     * that last won, so every channel that is ready is taken within
-     * {@code n} calls, where {@code n} is the number of channels. This is
-     * the rotating policy of JCSP's {@code fairSelect}. When no channel is
-     * ready, the first value to arrive wins under either policy.
+     * fair select instead starts each call at the offer after the one
+     * that last won, so every offer that is ready is taken within
+     * {@code n} calls, where {@code n} is the number of offers. This is
+     * the rotating policy of JCSP's {@code fairSelect}. When no offer is
+     * ready, the first to become completable wins under either policy.
      * <p>
      * The rotation state lives in the returned instance, so keep and reuse
      * it across calls (typically in a loop); a shared instance may be used
      * from several threads, in which case the rotation is best effort.
      *
-     * @return a fair ChannelSelect over the same channels
+     * @return a fair ChannelSelect over the same offers
      * @see #random()
      * @since 6.0.0
      */
     public ChannelSelect fair() {
-        return new ChannelSelect(channels, Policy.FAIR);
+        return new ChannelSelect(offers, Policy.FAIR);
     }
 
     /**
-     * Returns a select over the same channels that chooses uniformly at
-     * random among channels that are ready at the same time.
+     * Returns a select over the same offers that chooses uniformly at
+     * random among offers that are ready at the same time.
      * <p>
      * This is the policy of Go's {@code select} and GPars' {@code Select}.
      * Unlike {@link #fair()} it keeps no state between calls, so it is
      * exactly as fair from any number of threads and cannot fall into
      * lock-step with the producers, but it offers no bound on how long a
-     * ready channel may be passed over. When no channel is ready, the first
-     * value to arrive wins under either policy.
+     * ready offer may be passed over. When no offer is ready, the first
+     * to become completable wins under either policy.
      *
-     * @return a randomly choosing ChannelSelect over the same channels
+     * @return a randomly choosing ChannelSelect over the same offers
      * @see #fair()
      * @since 6.0.0
      */
     public ChannelSelect random() {
-        return new ChannelSelect(channels, Policy.RANDOM);
+        return new ChannelSelect(offers, Policy.RANDOM);
     }
 
     /**
-     * Waits for the first value available from any of the channels.
+     * Waits for the first offer that can complete.
      * <p>
      * Returns an {@link Awaitable} that completes with a {@link Result}
-     * containing the channel index and the received value.
+     * naming the committed offer: the received value for an input guard,
+     * the sent value for an output guard.
      * <p>
-     * Exactly one value is taken, from exactly one channel. The other
-     * channels are left untouched: their contents and order are preserved,
-     * and nothing remains registered on them once the result completes.
-     * When several channels already hold a value, the one listed first is
-     * taken (see {@link #fair()} for a rotating choice and {@link #random()}
-     * for a random one). Cancelling the
+     * Exactly one offer commits. The other channels are left untouched:
+     * their contents and order are preserved, and nothing remains registered
+     * on them once the result completes — a retired send offer in particular
+     * leaves no buffered residue and no waiting sender. When several offers
+     * are ready, the one listed first commits (see {@link #fair()} for a
+     * rotating choice and {@link #random()} for a random one). Cancelling the
      * result (for example through
      * {@link Awaitable#orTimeout(long, java.util.concurrent.TimeUnit)})
-     * withdraws the pending receives, so a timed-out select consumes
-     * nothing.
+     * withdraws the pending offers, so a timed-out select consumes nothing
+     * and sends nothing.
      * <p>
-     * If every channel is closed and drained, the result fails with
+     * If every offer's channel is closed, the result fails with
      * {@link ChannelClosedException}.
      * <p>
      * Only channels created by {@link AsyncChannel#create} take part in the
      * claim protocol that makes this possible. Any other {@code AsyncChannel}
      * implementation consumes a value before the select can decide; if that
      * value loses, it is re-sent to its channel, which preserves it but may
-     * reorder that channel.
+     * reorder that channel. Send offers are limited to built-in channels for
+     * the same reason.
      *
-     * @return an awaitable result indicating which channel produced the value
+     * @return an awaitable result indicating which offer committed
      */
     public Awaitable<Result> select() {
-        int count = channels.size();
+        int count = offers.size();
         Winner winner = new Winner();
         AtomicInteger closedCount = new AtomicInteger();
         Awaitable<?>[] branches = new Awaitable<?>[count];
 
-        // a ready channel completes synchronously during registration, so the
+        // a ready offer completes synchronously during registration, so the
         // registration order is the priority order: rotate it under fair(),
         // shuffle it under random() (a random start alone would favour a
-        // ready channel by the run of not-ready channels before it)
+        // ready offer by the run of not-ready offers before it)
         int[] order = registrationOrder(count);
         for (int k = 0; k < count && !winner.isDone(); k++) {
             final int index = order[k];
-            AsyncChannel<?> ch = channels.get(index);
+            final Offer offer = offers.get(index);
+            AsyncChannel<?> ch = offer.channel;
             final boolean claimable = ch instanceof DefaultAsyncChannel;
-            Awaitable<?> branch = claimable
-                    ? ((DefaultAsyncChannel<?>) ch).receiveIfUnclaimed(winner.claim)
-                    : ch.receive();
+            @SuppressWarnings("unchecked")
+            Awaitable<?> branch = offer.send
+                    ? ((DefaultAsyncChannel<Object>) ch).sendIfUnclaimed(offer.value, winner.claim)
+                    : claimable
+                        ? ((DefaultAsyncChannel<?>) ch).receiveIfUnclaimed(winner.claim)
+                        : ch.receive();
             branches[index] = branch;
-            branch.toCompletableFuture().whenComplete((value, error) -> {
+            CompletableFuture<?> future = branch.toCompletableFuture();
+            future.whenComplete((value, error) -> {
                 if (error == null) {
-                    // a claimable channel took the claim as it delivered; any other
-                    // channel has consumed a value and must compete for it now
-                    if (claimable || winner.claim.compareAndSet(false, true)) {
+                    // a claimable channel committed the claim as it completed; any
+                    // other channel has consumed a value and must compete for it now
+                    if (claimable || winner.claim.tryCommit(future)) {
                         withdraw(branches); // losers registered so far, before the caller sees the result
-                        winner.complete(new Result(index, value)); // holding the claim, this cannot fail
+                        winner.complete(new Result(index, offer.send ? offer.value : value, offer.send)); // holding the claim, this cannot fail
                     } else {
                         resend(ch, value);
                     }
@@ -204,7 +299,7 @@ public final class ChannelSelect {
                 int start = Math.floorMod(lastWinner.get() + 1, count);
                 for (int i = 0; i < count; i++) order[i] = (start + i) % count;
             }
-            case RANDOM -> { // Fisher-Yates: every ready channel is equally likely to be met first
+            case RANDOM -> { // Fisher-Yates: every ready offer is equally likely to be met first
                 ThreadLocalRandom random = ThreadLocalRandom.current();
                 for (int i = 0; i < count; i++) {
                     int j = random.nextInt(i + 1);
@@ -229,48 +324,81 @@ public final class ChannelSelect {
     }
 
     /**
+     * One branch of a select: an input guard created by
+     * {@link #receive(AsyncChannel)}, or an output guard created by
+     * {@link #send(AsyncChannel, Object)}. Immutable and freely reusable
+     * across selects.
+     *
+     * @since 6.0.0
+     */
+    public static final class Offer {
+        private final AsyncChannel<?> channel;
+        private final Object value;
+        private final boolean send;
+
+        private Offer(AsyncChannel<?> channel, Object value, boolean send) {
+            this.channel = channel;
+            this.value = value;
+            this.send = send;
+        }
+    }
+
+    /**
      * The result of one select. Its {@link #claim} is the single winner
-     * state: a channel takes it as it hands a value over, and cancelling
-     * the result competes for the same claim, so a cancel arriving after a
-     * delivery has claimed is refused and the value reaches the caller,
-     * while a cancel that wins the claim guarantees no channel delivers.
+     * state: an offer takes it as its channel commits the transfer, and
+     * cancelling the result competes for the same claim, so a cancel arriving
+     * after a commit has claimed is refused and the result reaches the
+     * caller, while a cancel that wins the claim guarantees no offer commits.
      */
     private static final class Winner extends CompletableFuture<Result> {
-        final AtomicBoolean claim = new AtomicBoolean();
+        final SelectClaim claim = new SelectClaim();
 
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
-            return claim.compareAndSet(false, true) && super.cancel(mayInterruptIfRunning);
+            return claim.tryCommitCancel() && super.cancel(mayInterruptIfRunning);
         }
     }
 
     /**
      * The result of a {@link #select()} operation, indicating which
-     * channel produced the value.
+     * offer committed.
      *
      * @since 6.0.0
      */
     public static final class Result {
         private final int index;
         private final Object value;
+        private final boolean send;
 
         /**
          * Creates a selection result.
          *
-         * @param index the zero-based index of the selected channel
-         * @param value the received value
+         * @param index the zero-based index of the committed offer
+         * @param value the received value, or the sent value for a send offer
+         * @param send  whether the committed offer was a send
          */
-        Result(int index, Object value) {
+        Result(int index, Object value, boolean send) {
             this.index = index;
             this.value = value;
+            this.send = send;
         }
 
-        /** The zero-based index of the channel that produced the value. */
+        /** The zero-based index of the offer that committed. */
         public int getIndex() { return index; }
 
-        /** The received value. */
+        /**
+         * The transferred value: what arrived, for a receive offer; what was
+         * sent, for a send offer.
+         */
         @SuppressWarnings("unchecked")
         public <T> T getValue() { return (T) value; }
+
+        /**
+         * Whether the committed offer was a send (an output guard).
+         *
+         * @since 6.0.0
+         */
+        public boolean isSend() { return send; }
 
         /**
          * Returns a diagnostic representation of this selection result.
@@ -279,7 +407,7 @@ public final class ChannelSelect {
          */
         @Override
         public String toString() {
-            return "SelectResult[channel=" + index + ", value=" + value + "]";
+            return "SelectResult[" + (send ? "sent to channel=" : "channel=") + index + ", value=" + value + "]";
         }
     }
 }
