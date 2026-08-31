@@ -52,9 +52,12 @@ public abstract class InstanceOfVerifier extends ClassCodeVisitorSupport {
                 if (referenceType.isGenericsPlaceHolder()) {
                     addTypeError(expression.getRightExpression(), "type parameter " + referenceType.getUnresolvedName() +
                         ". Use its erasure " + referenceType.getNameWithoutPackage() + " instead since further generic type information will be erased at runtime");
-                } else if (referenceType.getGenericsTypes() != null) {
-                    // TODO: Cannot perform instanceof check against parameterized type Class<Type>. Use the form Class<?> instead since further generic type information will be erased at runtime
                 }
+                // Parameterized uses (Map<String,Integer>) are not rejected here:
+                // resolved ClassNodes often still carry declaration placeholders
+                // (List<E>). The grammar allows type arguments so instanceof List<?>
+                // can parse; non-reifiable uses are rejected at parse by
+                // AstBuilder.rejectNonReifiableInstanceof (JLS 15.20.2).
             }
         }
         super.visitBinaryExpression(expression);

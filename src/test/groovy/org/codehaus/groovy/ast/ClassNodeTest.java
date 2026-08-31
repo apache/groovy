@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -159,6 +160,57 @@ public final class ClassNodeTest {
         reference.addTypeAnnotation(annotation);
         assertEquals(1, reference.getTypeAnnotations().size());
         assertEquals(0, classNode.getTypeAnnotations().size());
+    }
+
+    @Test // GROOVY-12319
+    public void testOuterClassTypeCopiedOnPlainReference() {
+        ClassNode outer = ClassHelper.makeWithoutCaching("Outer");
+        outer.setGenericsTypes(new GenericsType[]{new GenericsType(ClassHelper.STRING_TYPE)});
+        classNode.setOuterClassType(outer);
+
+        assertEquals(outer, classNode.getOuterClassType());
+        ClassNode plain = classNode.getPlainNodeReference();
+        assertEquals(outer, plain.getOuterClassType());
+
+        classNode.setOuterClassType(null);
+        assertNull(classNode.getOuterClassType());
+        assertNull(classNode.getPlainNodeReference().getOuterClassType());
+
+        // A leftover metadata key must not be treated as the enclosing type.
+        classNode.putNodeMetaData("outer.class", outer);
+        assertNull(classNode.getOuterClassType());
+        assertNull(classNode.getPlainNodeReference().getOuterClassType());
+        classNode.setOuterClassType(outer);
+        assertEquals(outer, classNode.getOuterClassType());
+        classNode.setOuterClassType(null);
+        assertNull(classNode.getOuterClassType());
+        assertEquals(outer, classNode.getNodeMetaData("outer.class"));
+
+        // Type-use field is not proxied through redirect, like getGenericsTypes().
+        ClassNode proxy = ClassHelper.makeWithoutCaching("Foo$Inner");
+        proxy.setRedirect(classNode);
+        classNode.setOuterClassType(outer);
+        assertNull(proxy.getOuterClassType());
+        proxy.setOuterClassType(outer);
+        assertEquals(outer, proxy.getOuterClassType());
+        assertEquals(outer, classNode.getOuterClassType());
+    }
+
+    @Test // GROOVY-12319
+    public void testAsGenericsTypeCopiesGenericDeclaration() {
+        MethodNode method = new MethodNode("m", ACC_PUBLIC, ClassHelper.OBJECT_TYPE,
+                Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+        ClassNode placeholder = ClassHelper.makeWithoutCaching("T");
+        placeholder.setGenericsPlaceHolder(true);
+        placeholder.setRedirect(ClassHelper.OBJECT_TYPE);
+        GenericsType header = new GenericsType(placeholder, null, null);
+        header.setPlaceholder(true);
+        header.setGenericDeclaration(method);
+        placeholder.setGenericsTypes(new GenericsType[]{header});
+
+        GenericsType copied = placeholder.asGenericsType();
+        assertEquals(method, copied.getGenericDeclaration());
+        assertTrue(copied.isPlaceholder());
     }
 
     @Test

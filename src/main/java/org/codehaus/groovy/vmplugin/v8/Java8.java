@@ -158,7 +158,7 @@ public class Java8 implements VMPlugin {
     /** {@inheritDoc} */
     @Override
     public void setAdditionalClassInformation(final ClassNode cn) {
-        cn.setGenericsTypes(configureTypeParameters(cn.getTypeClass().getTypeParameters()));
+        cn.setGenericsTypes(configureTypeParameters(cn.getTypeClass().getTypeParameters(), cn));
     }
 
     private ClassNode[] configureTypes(final Type[] types) {
@@ -246,7 +246,7 @@ public class Java8 implements VMPlugin {
         return gts;
     }
 
-    private GenericsType[] configureTypeParameters(final TypeVariable<?>[] tp) {
+    private GenericsType[] configureTypeParameters(final TypeVariable<?>[] tp, final AnnotatedNode declaration) {
         final int n = tp.length;
         if (n == 0) return null;
         GenericsType[] gt = new GenericsType[n];
@@ -254,6 +254,7 @@ public class Java8 implements VMPlugin {
             ClassNode t = configureTypeVariableReference(tp[i].getName());
             ClassNode[] bounds = configureTypes(tp[i].getBounds());
             gt[i] = configureTypeVariableDefinition(t, bounds);
+            gt[i].setGenericDeclaration(declaration);
             for (Annotation annotation : tp[i].getAnnotations()) {
                 gt[i].setType(addTypeAnnotation(gt[i].getType(), annotation));
             }
@@ -373,7 +374,7 @@ public class Java8 implements VMPlugin {
                     mn.setAnnotationDefault(true); // GROOVY-10862
                     mn.setCode(new ReturnStatement(new ConstantExpression(m.getDefaultValue(), true)));
                 }
-                mn.setGenericsTypes(configureTypeParameters(m.getTypeParameters()));
+                mn.setGenericsTypes(configureTypeParameters(m.getTypeParameters(), mn));
                 mn.setSynthetic(m.isSynthetic());
                 classNode.addMethod(mn);
             }
@@ -384,6 +385,10 @@ public class Java8 implements VMPlugin {
                 applyExceptionTypeAnnotations(c, exceptions);
                 ConstructorNode cn = classNode.addConstructor(c.getModifiers(), params, exceptions, null);
                 setAnnotationMetaData(c.getAnnotations(), cn);
+                GenericsType[] constructorTypeParameters = configureTypeParameters(c.getTypeParameters(), cn);
+                if (constructorTypeParameters != null) {
+                    cn.setGenericsTypes(constructorTypeParameters);
+                }
             }
 
             Class<?> sc = clazz.getSuperclass();

@@ -20,6 +20,7 @@ package org.codehaus.groovy.ast.tools;
 
 import groovy.lang.Tuple2;
 import groovy.transform.stc.IncorrectTypeHintException;
+import groovy.transform.Internal;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -573,7 +574,7 @@ public class GenericsUtils {
         // class C<T extends Number> extends A<T,Object,String> { }
         // the type "A<T,Object,String> -> A<X,Y,Z>" will produce [X:Number,Y:Object,Z:String]
 
-        ClassNode oc = type.getNodeMetaData("outer.class"); // GROOVY-10646: outer class type parameters
+        ClassNode oc = type.getOuterClassType(); // GROOVY-10646: outer class type parameters
         Map<String, ClassNode> newSpec = oc != null ? createGenericsSpec(oc, oldSpec) : new HashMap<>();
         GenericsType[] gt = type.getGenericsTypes(), rgt = type.redirect().getGenericsTypes();
         if (gt != null && rgt != null) {
@@ -582,6 +583,150 @@ public class GenericsUtils {
             }
         }
         return newSpec;
+    }
+
+    /**
+     * Writes {@code genericsSpec} onto {@code type} as an explicit type-argument
+     * list, filling any missing parameter from its bound (or {@code Object}).
+     * Mutates {@code type} in place; callers must pass a per-use copy such as
+     * an anonymous class's diamond super type, not a shared redirect.
+     *
+     * @since 6.0.0
+     */
+    @Internal
+    public static void applyGenericsSpec(final ClassNode type, final Map<String, ClassNode> genericsSpec) {
+        GenericsType[] rgt = type.redirect().getGenericsTypes();
+        if (rgt == null || rgt.length == 0) return;
+        GenericsType[] newGt = new GenericsType[rgt.length];
+        for (int i = 0; i < rgt.length; i += 1) {
+            ClassNode resolved = genericsSpec.get(rgt[i].getName());
+            if (resolved == null) {
+                resolved = rgt[i].getUpperBounds() != null && rgt[i].getUpperBounds().length > 0
+                        ? rgt[i].getUpperBounds()[0] : ClassHelper.OBJECT_TYPE;
+            }
+            newGt[i] = new GenericsType(resolved);
+        }
+        type.setGenericsTypes(newGt);
+    }
+
+    /**
+     * Recovers a {@link #createGenericsSpec(ClassNode, Map) generics specification}
+     * for {@code superType} from {@code impl}'s instance methods. Used for diamond
+     * anonymous classes (GROOVY-12319 / JEP 213): type arguments of {@code Super<>}
+     * are not written in source, so they are read back from overrides such as
+     * {@code String process(String)} for {@code T process(T)}.
+     * <p>
+     * The result uses the same {@code Map<String, ClassNode>} protocol as
+     * {@link #createGenericsSpec(ClassNode, Map)} and {@link #applyGenericsSpec(ClassNode, Map)}.
+     * Assignment / target typing remains the primary JLS 15.9.3 witness; this is
+     * the fallback used when the diamond is still empty.
+     *
+     * @since 6.0.0
+     */
+    @Internal
+    public static Map<String, ClassNode> inferGenericsSpecFromOverrides(final ClassNode impl, final ClassNode superType, final Map<String, ClassNode> oldSpec) {
+        Map<String, ClassNode> spec = new HashMap<>(oldSpec);
+        GenericsType[] rgt = superType.redirect().getGenericsTypes();
+        if (rgt == null || rgt.length == 0) return spec;
+
+        Set<String> typeParameterNames = new HashSet<>();
+        for (GenericsType gt : rgt) {
+            typeParameterNames.add(gt.getName());
+        }
+
+        Map<String, List<MethodNode>> declaredByName = new HashMap<>();
+        for (MethodNode declaredMethod : impl.getMethods()) {
+            if (!isPossibleOverride(declaredMethod)) continue;
+            declaredByName.computeIfAbsent(declaredMethod.getName(), k -> new ArrayList<>()).add(declaredMethod);
+        }
+        for (MethodNode superMethod : superType.getMethods()) {
+            if (!isPossibleOverride(superMethod)) continue;
+            List<MethodNode> candidates = declaredByName.get(superMethod.getName());
+            if (candidates == null) continue;
+            for (MethodNode declaredMethod : candidates) {
+                if (declaredMethod.getParameters().length != superMethod.getParameters().length) continue;
+                Map<String, ClassNode> extracted = new HashMap<>();
+                Parameter[] sp = superMethod.getParameters();
+                Parameter[] dp = declaredMethod.getParameters();
+                boolean plausibleOverride = true;
+                for (int i = 0; i < sp.length; i += 1) {
+                    if (!extractOverrideConnection(dp[i].getType(), sp[i].getType(), extracted)) {
+                        plausibleOverride = false;
+                        break;
+                    }
+                }
+                if (!plausibleOverride) continue;
+                extractOverrideConnection(declaredMethod.getReturnType(), superMethod.getReturnType(), extracted);
+                for (Map.Entry<String, ClassNode> entry : extracted.entrySet()) {
+                    if (typeParameterNames.contains(entry.getKey())) {
+                        spec.putIfAbsent(entry.getKey(), entry.getValue());
+                    }
+                }
+            }
+        }
+        return spec;
+    }
+
+    /**
+     * Connects an override's actual type to a super-type parameter that may
+     * contain placeholders. Primitive types are boxed so they can appear as
+     * type arguments; {@link ClassHelper#getWrapper(ClassNode)} is not used
+     * because it redirects and would drop type arguments such as
+     * {@code List<String>}.
+     * <p>
+     * Only declared types that still mention a placeholder are considered, and
+     * only when {@code actual} is related to the erasure of {@code declared},
+     * so coincidental name-and-arity matches are skipped without catching
+     * {@link GroovyBugError}.
+     *
+     * @return {@code false} when the pair cannot be an override because the
+     *         erasures are unrelated; {@code true} otherwise
+     */
+    private static boolean extractOverrideConnection(final ClassNode actual, final ClassNode declared, final Map<String, ClassNode> extracted) {
+        if (actual == null || declared == null) return true;
+        if (!declared.isGenericsPlaceHolder() && !hasUnresolvedGenerics(declared)) return true;
+        ClassNode boxed = ClassHelper.isPrimitiveType(actual) ? ClassHelper.getWrapper(actual) : actual;
+        ClassNode erasure = declared.redirect();
+        if (!declared.isGenericsPlaceHolder()
+                && !boxed.equals(erasure)
+                && !implementsInterfaceOrIsSubclassOf(boxed, erasure)
+                && !implementsInterfaceOrIsSubclassOf(erasure, boxed)) {
+            return false;
+        }
+        extractSuperClassGenerics(boxed, declared, extracted);
+        return true;
+    }
+
+    private static boolean isPossibleOverride(final MethodNode method) {
+        return !(method.isStatic() || method.isPrivate() || method.isBridge());
+    }
+
+    /**
+     * Diamond {@code <>} of an anonymous class is stored on its super type,
+     * or on an interface once {@code InnerClassVisitor} has moved an interface
+     * super type. Returns that node, or {@code null} if none still carries a
+     * diamond.
+     *
+     * @since 6.0.0
+     */
+    @Internal
+    public static ClassNode diamondTargetOfAnonymousClass(final ClassNode anonType) {
+        if (anonType == null) return null;
+        ClassNode sc = anonType.getUnresolvedSuperClass(false);
+        if (isEmptyDiamond(sc)) return sc;
+        ClassNode[] ifaces = anonType.getInterfaces();
+        if (ifaces != null) {
+            for (ClassNode iface : ifaces) {
+                if (isEmptyDiamond(iface)) return iface;
+            }
+        }
+        return null;
+    }
+
+    private static boolean isEmptyDiamond(final ClassNode type) {
+        if (type == null) return false;
+        GenericsType[] gt = type.getGenericsTypes();
+        return gt != null && gt.length == 0;
     }
 
     /**
@@ -818,6 +963,7 @@ public class GenericsUtils {
                     ClassNode newPlaceHolder = ClassHelper.make(old.getName());
                     GenericsType gt = new GenericsType(newPlaceHolder, newUpper, newLower);
                     gt.setPlaceholder(true);
+                    gt.setGenericDeclaration(old.getGenericDeclaration());
                     newTypes[i] = gt;
                 }
             }

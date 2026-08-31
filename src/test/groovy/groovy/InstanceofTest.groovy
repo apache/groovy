@@ -68,7 +68,9 @@ final class InstanceofTest {
        assert !new Object() instanceof Boolean
     }
 
-    // GROOVY-11585
+    // GROOVY-11585 — full Java-vs-Groovy matrix is GenericsJavaCompatibilityTest
+    // (reifiable List<?>/Map<?,?>, non-reifiable List<String>/Map<String,Integer>,
+    // bounded wildcards, rare types). This is the named regression only.
     @Test
     void testGenerics() {
         assert [] instanceof List<?>

@@ -120,9 +120,83 @@ List<String> roles = ['Trinity', 'Morpheus']
 ----
 
 Java employs type erasure for backwards compatibility with earlier versions of Java.
-Dynamic Groovy can be thought of as more aggressively applying type erasure.
-In general,  less generics type information will be checked at compile time.
-Groovy's static nature employs similar checks to Java with regard to generics information.
+From Groovy 6, every compilation unit — dynamic Groovy and scripts included —
+requires generic types to be well-formed, following the same JLS rules as Java.
+Dynamic Groovy still does not check generic invariance, inference, or
+unchecked conversions; those remain the domain of
+`@TypeChecked` / `@CompileStatic`.
+
+[[generics-well-formedness]]
+==== Well-formedness (Groovy 6)
+
+The constructs below compiled on Groovy 4 and 5 (typically by silently using
+the erasure). They are compile errors from Groovy 6, in both dynamic and
+static compilation. `new List<?>[n]` remains legal: an unbounded wildcard is
+reifiable.
+
+[cols="2,3,3"]
+.Generic well-formedness rejected in Groovy 6
+|====
+| Construct
+| Why
+| Workaround
+
+| `new T[n]` / `new T[]{ t }`
+| JLS 15.10.1, 4.7: array creation requires a reifiable component type. Groovy 4/5 emitted `Object[]` (or the bound) typed as `T[]`.
+| `(T[]) new Object[n]`, or `(T[]) new Bound[n]` when `T extends Bound`; or `Array.newInstance` with a `Class<T>` token
+
+| `class E<T> extends Exception`
+| JLS 8.1.2: a generic class may not extend `Throwable`
+| Move the type parameter onto an accessor or factory; catch the erased class
+
+| `new List<String>[n]`
+| JLS 15.10.1: a parameterized component type is not reifiable (`ArrayStoreException` cannot see the type argument)
+| `new List<?>[n]`, or an explicit `(List<String>[]) new List[n]`
+
+| `List<int>` (and nested)
+| JLS 4.5: a type argument must be a reference type (a primitive cannot appear in a `Signature` attribute)
+| `List<Integer>` (`List<int[]>` is already legal)
+
+| `new T()` / `T.class`
+| JLS 15.9.1 / 15.8.2: a type variable is not a class that can be instantiated or named by a class literal
+| Pass a `Class<T>` token
+
+| `implements X<? extends …>`
+| JLS 8.1.5: a superinterface may not specify a wildcard (the superclass form was already rejected)
+| A concrete type argument, or the raw type
+
+| `new ArrayList<?>()`
+| JLS 15.9: a class instance creation may not mention a wildcard
+| `new ArrayList<>()` or `new ArrayList<Object>()`
+
+| `<T extends A & B>` with a class type not first
+| JLS 4.4: only the first bound may be a class or type variable; additional bounds are interfaces
+| Put the class bound first: `<T extends C & I>`
+
+| `Foo<String>.class`
+| JLS 15.8.2: a class literal may not name a parameterized type (there is one `Class` per erasure)
+| `Foo.class`
+
+| `Outer.Inner<String>` with raw generic `Outer`
+| JLS 4.8: a non-static member of a raw type is raw
+| `Outer<?>.Inner<String>`
+|====
+
+Generic array creation is not a Groovy shortcut for an unchecked cast.
+Write the Java idiom:
+
+[source,groovy]
+----
+include::../test/objectorientation/GenericsTest.groovy[tags=generic_array_workaround,indent=0]
+----
+
+A generic class may not extend `Throwable`. Move the type parameter onto an
+accessor if a typed payload is needed:
+
+[source,groovy]
+----
+include::../test/objectorientation/GenericsTest.groovy[tags=generic_throwable_workaround,indent=0]
+----
 
 == Classes
 

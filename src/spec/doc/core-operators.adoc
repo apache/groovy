@@ -909,6 +909,13 @@ same name in Java 7. It is used to indicate that generic types should be inferre
 include::../test/OperatorsTest.groovy[tags=diamond_op,indent=0]
 ----
 
+As of GROOVY-12319, diamond may also be used when creating an anonymous inner class, matching Java 9 (JEP 213):
+
+[source,groovy]
+----
+include::../test/OperatorsTest.groovy[tags=diamond_op_aic,indent=0]
+----
+
 In dynamic Groovy, this is totally unused. In statically type checked Groovy, it is also optional since the Groovy
 type checker performs type inference whether this operator is present or not.
 

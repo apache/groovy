@@ -1565,7 +1565,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             class C<T> {
             }
-            def <T,T> T m(C<T> c) {
+            def <T> T m(C<T> c) {
             }
             Number n = m(new C<>())
         '''
@@ -3309,12 +3309,13 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12319
     @Test
     void testInferDiamondUsingAIC() {
-        shouldFailWithMessages '''
+        assertScript '''
             Map<String,Date> map = new HashMap<>() {}
-        ''',
-            'Cannot use diamond <> with anonymous inner classes'
+            assert map instanceof Map
+        '''
     }
 
     // GROOVY-5614

@@ -744,6 +744,21 @@ assert function(*args,5,6) == 26
     }
 
     @Test
+    void testDiamondOperatorOnAnonymousInnerClass() {
+        assertScript '''
+        // tag::diamond_op_aic[]
+        interface Processor<T> {
+            T process(T val)
+        }
+        Processor<String> p = new Processor<>() {
+            String process(String val) { val.toUpperCase() }
+        }
+        assert p.process('ok') == 'OK'
+        // end::diamond_op_aic[]
+        '''
+    }
+
+    @Test
     void testCallOperator() {
         assertScript '''
         // tag::call_op[]

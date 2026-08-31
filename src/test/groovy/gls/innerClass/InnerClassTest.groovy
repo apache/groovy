@@ -2170,8 +2170,8 @@ final class InnerClassTest {
             })
             void bar(Runnable runner = new Runnable() {
                 @Override void run() {
-                    def comparator = new Comparator<int>() {
-                        int compare(int one, int two) {
+                    def comparator = new Comparator<Integer>() {
+                        int compare(Integer one, Integer two) {
                         }
                     }
                 }

@@ -21,6 +21,7 @@ package org.codehaus.groovy.ast
 import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.control.CompilePhase
 import org.junit.jupiter.api.Test
+import org.objectweb.asm.Opcodes
 
 final class MethodNodeTest {
 
@@ -70,6 +71,15 @@ final class MethodNodeTest {
             assert type == ClassHelper.STRING_TYPE
             assert value == ''
         }
+    }
+
+    @Test // GROOVY-12319
+    void testIsBridge() {
+        def ordinary = new MethodNode('foo', Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null)
+        assert !ordinary.isBridge()
+
+        def bridge = new MethodNode('foo', Opcodes.ACC_PUBLIC | Opcodes.ACC_BRIDGE, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null)
+        assert bridge.isBridge()
     }
 
     @Test

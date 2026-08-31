@@ -28,14 +28,14 @@ int[][] b = new int[length()][2 * 8];
 ArrayList[] c = new ArrayList[10];
 ArrayList[][] cc = new ArrayList[10][size()];
 java.util.ArrayList[] d = new java.util.ArrayList[10];
-ArrayList[] e = new ArrayList<String>[10];
-java.util.ArrayList[] f = new java.util.ArrayList<String>[10];
-java.util.ArrayList[] g = new java.util.ArrayList<String>[size()];
+ArrayList[] e = new ArrayList<?>[10];
+java.util.ArrayList[] f = new java.util.ArrayList<?>[10];
+java.util.ArrayList[] g = new java.util.ArrayList<?>[size()];
 
 int[][] h = new int[10][];
 int[][][] i = new int[10][][];
 ArrayList[][] j = new ArrayList[10][];
-ArrayList[][] k = new ArrayList<String>[10][];
+ArrayList[][] k = new ArrayList<?>[10][];
 
 def bb = new A.B();
 def bb2 = new A.B[0];

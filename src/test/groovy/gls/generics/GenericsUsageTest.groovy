@@ -323,10 +323,9 @@ final class GenericsUsageTest {
         // constructor call
         assertScript '''
             List<String> list = new LinkedList<>()
+            def aic = new LinkedList<>() { }
+            assert aic instanceof LinkedList
         '''
-        shouldFailCompilationWithMessage '''
-            new LinkedList<>() { }
-        ''', 'Cannot use diamond <> with anonymous inner classes'
         shouldFailCompilationWithMessages '''
             new LinkedList<Integer, String>()
         ''', '(supplied with 2 type parameters)', 'which takes 1 parameter'

@@ -218,7 +218,7 @@ public class BytecodeHelper {
      *
      * @return the ASM type description
      */
-    private static String getTypeDescription(ClassNode c, boolean end) {
+    static String getTypeDescription(ClassNode c, boolean end) {
         ClassNode d = c;
         if (isPrimitiveType(d.redirect())) {
             d = d.redirect();
@@ -336,8 +336,11 @@ public class BytecodeHelper {
         return false;
     }
 
-    private static boolean hasGenerics(ClassNode type) {
-        return type.isArray() ? hasGenerics(type.getComponentType()) : type.getGenericsTypes() != null;
+    static boolean hasGenerics(ClassNode type) {
+        if (type.isArray()) return hasGenerics(type.getComponentType());
+        if (type.getGenericsTypes() != null && type.getGenericsTypes().length > 0) return true;
+        ClassNode outer = type.getOuterClassType();
+        return outer != null && hasGenerics(outer);
     }
 
     /**
@@ -393,18 +396,13 @@ public class BytecodeHelper {
     public static String getTypeGenericsSignature(ClassNode node) {
         if (!usesGenericsInTypeSignature(node)) return null;
         StringBuilder ret = new StringBuilder(100);
-        ret.append(getTypeDescription(node.getPlainNodeReference(), false));
-        addSubTypes(ret, node.getGenericsTypes(), "<", ">");
+        TypeSignatureWriter.writeParameterizedClass(ret, node);
         ret.append(";");
-
         return ret.toString();
     }
 
     private static boolean usesGenericsInTypeSignature(ClassNode node) {
-        if (!node.isUsingGenerics()) return false;
-        if (hasGenerics(node)) return true;
-
-        return false;
+        return hasGenerics(node);
     }
 
     /**
@@ -429,7 +427,7 @@ public class BytecodeHelper {
     }
 
     private static void getGenericsTypeSpec(StringBuilder ret, GenericsType[] genericsTypes) {
-        if (genericsTypes == null) return;
+        if (genericsTypes == null || genericsTypes.length == 0) return;
         ret.append('<');
         for (GenericsType genericsType : genericsTypes) {
             String name = genericsType.getName();
@@ -447,8 +445,11 @@ public class BytecodeHelper {
      * @return the bounds signature, or {@code null} if none is needed
      */
     public static String getGenericsBounds(ClassNode type) {
-        GenericsType[] genericsTypes = type.getGenericsTypes();
-        if (genericsTypes == null) return null;
+        if (type.isArray()) {
+            String component = getGenericsBounds(type.getComponentType());
+            return component == null ? null : "[" + component;
+        }
+        if (!hasGenerics(type)) return null;
         StringBuilder ret = new StringBuilder(100);
         if (type.isGenericsPlaceHolder()) {
             addSubTypes(ret, type.getGenericsTypes(), "", "");
@@ -466,8 +467,7 @@ public class BytecodeHelper {
             ret.append(printType.getGenericsTypes()[0].getName());
             ret.append(";");
         } else {
-            ret.append(getTypeDescription(printType, false));
-            addSubTypes(ret, printType.getGenericsTypes(), "<", ">");
+            TypeSignatureWriter.writeParameterizedClass(ret, printType);
             if (!isPrimitiveType(printType)) ret.append(";");
         }
     }
@@ -485,8 +485,9 @@ public class BytecodeHelper {
         }
     }
 
-    private static void addSubTypes(StringBuilder ret, GenericsType[] types, String start, String end) {
+    static void addSubTypes(StringBuilder ret, GenericsType[] types, String start, String end) {
         if (types == null) return;
+        if (types.length == 0 && "<".equals(start)) return;
         ret.append(start);
         for (GenericsType type : types) {
             if (type.getType().isArray()) {

@@ -250,6 +250,7 @@ class MemberSignatureParser {
         }
         if (typeParameters != null && typeParameters.length > 0) {
             result.setGenericsTypes(typeParameters);
+            GenericsType.setGenericDeclaration(typeParameters, result);
         }
         return result;
     }

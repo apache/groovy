@@ -82,13 +82,17 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-10111
     @Test
     void testBoundedComponentTypeInArrayInitializer() {
-        assertScript '''
+        // JLS 15.10.1 / 4.7: a type variable is not reifiable, so
+        // `new X[]{...}` is generic array creation even when X is bounded.
+        // Initializer conversion is checked only for well-formed creations.
+        shouldFailWithMessages '''
             class C<X, Y> {
             }
             def <X extends C<Number, String>> X[] m() {
                 new X[]{new C<Number, String>()}
             }
-        '''
+        ''',
+        'generic array creation'
     }
 
     @Test

@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
@@ -383,13 +384,13 @@ public class TypeCheckingContext {
     /**
      * Pushes a method call into the method call stack.
      *
-     * @param call the call expression to be pushed, either a {@link MethodCallExpression} or a {@link StaticMethodCallExpression}
+     * @param call the call expression to be pushed, either a {@link MethodCallExpression}, {@link StaticMethodCallExpression}, or {@link ConstructorCallExpression}
      */
     public void pushEnclosingMethodCall(final Expression call) {
-        if (call instanceof MethodCallExpression || call instanceof StaticMethodCallExpression) {
+        if (call instanceof MethodCallExpression || call instanceof StaticMethodCallExpression || call instanceof ConstructorCallExpression) {
             enclosingMethodCalls.addFirst(call);
         } else {
-            throw new IllegalArgumentException("Expression must be a method call or a static method call");
+            throw new IllegalArgumentException("Expression must be a method call, a static method call or a constructor call");
         }
     }
 

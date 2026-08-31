@@ -309,7 +309,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 }
             }
         } else if (staticWrtCurrent && isSuperExpression(object)) {
-            Expression result = new MethodCallExpression(new ClassExpression(currentClass.getSuperClass()), method, args);
+            Expression result = new MethodCallExpression(new ClassExpression(currentClass.getSuperClass().getPlainNodeReference()), method, args);
             result.setSourcePosition(mce);
             return result;
         }
@@ -416,7 +416,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (currentMethod != null && currentMethod.isStatic()
                 && isSuperExpression(pe.getObjectExpression())) {
             PropertyExpression pexp = new PropertyExpression(
-                    new ClassExpression(currentClass.getUnresolvedSuperClass()),
+                    new ClassExpression(currentClass.getUnresolvedSuperClass().getPlainNodeReference()),
                     transform(pe.getProperty())
             );
             pexp.setSourcePosition(pe);

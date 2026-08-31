@@ -473,7 +473,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         // call stack — the stack-walk depth is tuned for the compile-time path, not the
         // generated static-initializer path, and would overshoot into java.lang.reflect frames.
         basicArgs.addMapEntryExpression(constX("classLoader"),
-                callX(new ClassExpression(classNode), "getClassLoader"));
+                callX(new ClassExpression(classNode.getPlainNodeReference()), "getClassLoader"));
         if (autoDownload != null)  {
             basicArgs.addMapEntryExpression(constX(AUTO_DOWNLOAD_SETTING), constX(autoDownload));
         }

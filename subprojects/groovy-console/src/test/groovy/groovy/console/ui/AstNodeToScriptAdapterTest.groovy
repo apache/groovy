@@ -208,14 +208,20 @@ b $$v"""/$,
 
     @Test
     void testGenericBoundsOnClass() {
+        // JLS 8.1.5: a superinterface may not specify a wildcard, so Callable<Number>
+        // is the well-formed implements type. Wildcard bounds are still exercised on
+        // the field, which is a legal type position for ? super Number.
         String script = '''import java.util.concurrent.Callable
-            abstract class MyClass<T extends String & Callable<String>, U extends Integer> extends AbstractList<String> implements Callable<? super Number> { }
+            abstract class MyClass<T extends String & Callable<String>, U extends Integer> extends AbstractList<String> implements Callable<Number> {
+                Callable<? super Number> callback
+            }
         '''
         String result = compileToScript(script)
 
         assert result.contains('MyClass<T extends java.lang.String & java.util.concurrent.Callable<String>, U extends java.lang.Integer> ' +
                 'extends java.util.AbstractList<String> ' +
-                'implements java.util.concurrent.Callable<? super java.lang.Number> {')
+                'implements java.util.concurrent.Callable<Number> {')
+        assert result.contains('java.util.concurrent.Callable<? super java.lang.Number>')
     }
 
     @Test
