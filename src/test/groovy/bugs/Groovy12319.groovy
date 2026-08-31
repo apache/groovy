@@ -623,29 +623,6 @@ final class Groovy12319 {
     }
 
     @Test
-    void testInvalidDiamondUsageStillFails() {
-        shouldFail CompilationFailedException, '''
-            class MyList extends ArrayList<> {}
-        '''
-
-        shouldFail CompilationFailedException, '''
-            class Test {
-                List<> list
-            }
-        '''
-    }
-
-    @Test
-    void testConstructorTypeArgumentsAndDiamondRejected() {
-        shouldFail CompilationFailedException, '''
-            class Box {
-                <T> Box(T t) {}
-            }
-            new <String>Box<>("x")
-        '''
-    }
-
-    @Test
     void testConstructorTypeArgumentsAndDiamondRejectedOnInterfaceAIC() {
         shouldFail CompilationFailedException, '''
             interface Processor<T> {
@@ -654,23 +631,6 @@ final class Groovy12319 {
             new <String>Processor<>() {
                 String process(String val) { val }
             }
-        '''
-    }
-
-    @Test
-    void testDiamondOnNonGenericAnonymousClassRejected() {
-        shouldFail CompilationFailedException, '''
-            new Object<>() {}
-        '''
-    }
-
-    @Test
-    void testRareTypeArityMismatchRejected() {
-        shouldFail CompilationFailedException, '''
-            class Outer<T> {
-                class Inner<U> {}
-            }
-            Outer<String, Integer>.Inner<Integer> x
         '''
     }
 
@@ -841,43 +801,12 @@ final class Groovy12319 {
     }
 
     @Test
-    void testStaticFieldViaParameterizedTypeRejected() {
-        def err = shouldFail CompilationFailedException, '''
-            class Cell<T> {
-                static final String ID = 'cell'
-            }
-            Cell<String>.ID
-        '''
-        assert err.message.contains('parameterization')
-        assert !err.message.contains('Cannot select from a parameterized type')
-    }
-
-    @Test
     void testValueClassPropertyRemainsLegal() {
         assertScript '''
             def values = [1, 'x']
             assert values*.class == [Integer, String]
             assert values[0].class == Integer
         '''
-    }
-
-    @Test
-    void testParameterizedClassLiteralRejected() {
-        def err = shouldFail CompilationFailedException, '''
-            class Cell<T> {}
-            Cell<String>.class
-        '''
-        assert err.message.contains('Cannot select from a parameterized type')
-        assert !err.message.contains('static member')
-
-        err = shouldFail CompilationFailedException, '''
-            class Outer<T> {
-                class Inner {}
-            }
-            Outer<String>.Inner.class
-        '''
-        assert err.message.contains('Cannot select from a parameterized type')
-        assert !err.message.contains('static member')
     }
 
     @Test
@@ -890,102 +819,6 @@ final class Groovy12319 {
         '''
         assert err.message.contains('generic array creation of T')
         assert !err.message.contains('of Object')
-    }
-
-    @Test
-    void testMethodTypeParameterAdditionalBoundMustBeInterface() {
-        def err = shouldFail CompilationFailedException, '''
-            class C {
-                <T extends Number & String> void m() {}
-            }
-        '''
-        assert err.message.contains('interfaces')
-    }
-
-    @Test
-    void testWildcardOnEnclosingConstructorTypeRejected() {
-        def err = shouldFail CompilationFailedException, '''
-            class Outer<T> {
-                static class Inner<U> {}
-            }
-            new Outer<?>.Inner<Integer>()
-        '''
-        assert err.message.contains('wildcard type')
-    }
-
-    @Test
-    void testGenericArrayCreationOfRareTypeRejected() {
-        def err = shouldFail CompilationFailedException, '''
-            class Outer<T> {
-                class Inner {}
-            }
-            new Outer<String>.Inner[1]
-        '''
-        assert err.message.contains('generic array creation')
-    }
-
-    @Test
-    void testReifiableArrayOfUnboundedWildcardEnclosingType() {
-        // javac accepts this: Inner is a non-static member type of the reifiable
-        // enclosing type Outer<?> (JLS 4.7 / 15.10.1). The static nested
-        // counterpart Outer<?>.Nested is rejected — see the next test.
-        assertScript '''
-            class Outer<T> {
-                class Inner {}
-            }
-            def arr = new Outer<?>.Inner[0]
-            assert arr.length == 0
-        '''
-    }
-
-    @Test
-    void testReifiableArrayOfUnboundedWildcardGenericInner() {
-        // javac also accepts the generic-member form when every type argument
-        // is an unbounded wildcard (JLS 4.7).
-        assertScript '''
-            class Outer<T> {
-                class InnerG<U> {}
-            }
-            def arr = new Outer<?>.InnerG<?>[0]
-            assert arr.length == 0
-        '''
-    }
-
-    @Test
-    void testStaticNestedTypeViaParameterizedEnclosingRejected() {
-        def err = shouldFail CompilationFailedException, '''
-            class Outer<T> {
-                static class Nested {}
-            }
-            new Outer<?>.Nested[0]
-        '''
-        assert err.message.contains('static nested type')
-
-        err = shouldFail CompilationFailedException, '''
-            class Outer<T> {
-                static class Nested {}
-            }
-            Outer<?>.Nested x
-        '''
-        assert err.message.contains('static nested type')
-
-        // Nested interfaces are implicitly static (JLS 9.5); Map.Entry is the
-        // JDK example of the same rule.
-        err = shouldFail CompilationFailedException, '''
-            new java.util.Map<?,?>.Entry[0]
-        '''
-        assert err.message.contains('static nested type')
-    }
-
-    @Test
-    void testRawGenericMemberOfParameterizedEnclosingRejected() {
-        def err = shouldFail CompilationFailedException, '''
-            class Outer<T> {
-                class InnerG<U> {}
-            }
-            new Outer<?>.InnerG[0]
-        '''
-        assert err.message.contains('parameterized enclosing type')
     }
 
     @Test
@@ -1032,40 +865,6 @@ final class Groovy12319 {
                 }
             }
             assert Tester.run() == 9
-        '''
-    }
-
-    @Test
-    void testImplementsStaticNestedViaParameterizedEnclosingRejected() {
-        // Nested interfaces are implicitly static, so Outer<String>.Inner is
-        // the same JLS 6.5.5 error as Outer<?>.Nested. javac 25 rejects this.
-        def err = shouldFail CompilationFailedException, '''
-            class Outer<T> {
-                interface Inner<U> {
-                    U id(U u)
-                }
-            }
-            class Impl implements Outer<String>.Inner<Integer> {
-                Integer id(Integer u) { u }
-            }
-        '''
-        assert err.message.contains('static nested type')
-    }
-
-    @Test
-    void testImplementsNestedInterfaceOfRawEnclosing() {
-        // The legal counterpart: select the nested interface from the raw
-        // enclosing type name (JLS 4.5.2 / 6.5.5).
-        assertScript '''
-            class Outer<T> {
-                interface Inner<U> {
-                    U id(U u)
-                }
-            }
-            class Impl implements Outer.Inner<Integer> {
-                Integer id(Integer u) { u }
-            }
-            assert new Impl().id(3) == 3
         '''
     }
 

@@ -356,7 +356,9 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
             return true;
         }
         ClassNode oc = type.getOuterClassType();
-        return oc != null && (isParameterizedEnclosingType(oc) || isParameterizedClassLiteralType(oc));
+        // Use-site parameterization only (Outer<String>.Inner.class).
+        // Declaration formals on Map must not make Map.Entry a class-literal error.
+        return oc != null && (isParameterizedTypeUsage(oc) || isParameterizedClassLiteralType(oc));
     }
 
     private boolean checkWildcard(final ClassNode sn) {

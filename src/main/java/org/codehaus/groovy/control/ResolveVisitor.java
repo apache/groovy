@@ -1173,12 +1173,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 ClassNode type = new ConstructedNestedClass(propertyOwner, xe.getPropertyAsString());
                 if (resolve(type, false, false, false)) {
                     if (propertyOwner == objectExpression.getType() || isVisibleNestedClass(type, objectExpression.getType())) {
-                        // Preserve Outer<T>.Inner as a rare type use so
+                        // Preserve Outer<String>.Inner as a rare type use so
                         // Outer<String>.Inner.class is a parameterized class
-                        // literal (JLS 15.8.2), not a raw Inner.
+                        // literal (JLS 15.8.2). Do not copy declaration formals
+                        // from Map onto Map.Entry — that is the generic type
+                        // name, not a parameterization.
                         ClassNode owner = objectExpression.getType();
-                        if ((owner.getGenericsTypes() != null && owner.getGenericsTypes().length > 0)
-                                || owner.getOuterClassType() != null) {
+                        if (isParameterizedTypeUsage(owner) || owner.getOuterClassType() != null) {
                             type.setOuterClassType(owner);
                         }
                         return new ClassExpression(type);
@@ -1195,6 +1196,16 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         int modifiers = innerType.getModifiers();
         return Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)
                 || (!Modifier.isPrivate(modifiers) && Objects.equals(innerType.getPackageName(), outerType.getPackageName()));
+    }
+
+    /**
+     * True for a use-site parameterization such as {@code Outer<String>}, not
+     * the generic type name {@code Map} whose {@code getGenericsTypes()} are
+     * declaration formals.
+     */
+    private static boolean isParameterizedTypeUsage(final ClassNode type) {
+        GenericsType[] gt = type.getGenericsTypes();
+        return gt != null && gt.length > 0 && type.isRedirectNode() && !type.isGenericsPlaceHolder();
     }
 
     private boolean directlyImplementsTrait(final ClassNode trait) {

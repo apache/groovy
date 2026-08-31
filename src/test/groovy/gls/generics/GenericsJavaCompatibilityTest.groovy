@@ -2533,6 +2533,27 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 15.10.1, 4.7: {@code Outer<String>.Inner} is not reifiable, so
+     * {@code new Outer<String>.Inner[n]} is generic array creation.
+     */
+    @Test
+    void testNegativeNonReifiableRareTypeArrayCreation() {
+        final String className = 'gls.generics.test.RareTypeGenericArray'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class RareTypeGenericArray {
+                public static class Outer<T> {
+                    public class Inner {}
+                }
+                public static Object test() {
+                    return new Outer<String>.Inner[1];
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "generic array creation", "generic array creation")
+    }
+
+    /**
      * JLS 4.5.2, 6.5.5: a static member type may not be selected from a
      * parameterized type ({@code new Outer<?>.Nested[n]}).
      */
@@ -2575,6 +2596,69 @@ final class GenericsJavaCompatibilityTest {
             }
         '''
         assertNegativeCompile(className, javaSrc, "cannot select a static class from a parameterized type", "static nested type")
+    }
+
+    /**
+     * JLS 4.5.2, 6.5.5: the same static-member rule applies to a type use
+     * ({@code Outer<?>.Nested x}), not only array creation.
+     */
+    @Test
+    void testNegativeStaticNestedTypeUseViaParameterizedEnclosing() {
+        final String className = 'gls.generics.test.StaticNestedTypeUse'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class StaticNestedTypeUse {
+                public static class Outer<T> {
+                    public static class Nested {}
+                }
+                public Outer<?>.Nested field;
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot select a static class from a parameterized type", "static nested type")
+    }
+
+    /**
+     * JLS 4.5.2 / 6.5.5: selecting a nested interface from the raw enclosing
+     * type name ({@code Outer.Inner<Integer>}) is legal.
+     */
+    @Test
+    void testImplementsNestedInterfaceOfRawEnclosing() {
+        final String className = 'gls.generics.test.ImplementsRawEnclosingNested'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class ImplementsRawEnclosingNested {
+                public static class Outer<T> {
+                    public interface Inner<U> {
+                        U id(U u);
+                    }
+                }
+                public static class Impl implements Outer.Inner<Integer> {
+                    public Integer id(Integer u) { return u; }
+                }
+                public static int test() {
+                    return new Impl().id(Integer.valueOf(3));
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 3, true)
+    }
+
+    /**
+     * JLS 4.5: enclosing arity must match ({@code Outer} has one type parameter).
+     */
+    @Test
+    void testNegativeRareTypeEnclosingArityMismatch() {
+        final String className = 'gls.generics.test.RareTypeEnclosingArity'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class RareTypeEnclosingArity {
+                public static class Outer<T> {
+                    public class Inner<U> {}
+                }
+                public Outer<String, Integer>.Inner<Integer> field;
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "wrong number of type arguments", "supplied with 2 type parameters")
     }
 
     /**
@@ -2675,6 +2759,52 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 15.8.2: a class literal may name a generic type ({@code Map.class},
+     * {@code Cell.class}) or a raw nested type ({@code Map.Entry.class}).
+     * Declaration formals on {@code Map} are not enclosing type arguments.
+     */
+    @Test
+    void testGenericTypeNameAndRawNestedClassLiteral() {
+        final String className = 'gls.generics.test.GenericTypeNameClassLiteral'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.Map;
+            public class GenericTypeNameClassLiteral {
+                public static class Cell<T> {}
+                public static String test() {
+                    Class<?> map = Map.class;
+                    Class<?> entry = Map.Entry.class;
+                    Class<?> cell = Cell.class;
+                    boolean ok = map == Map.class && entry == Map.Entry.class && cell == Cell.class;
+                    return ok ? entry.getName() : "fail";
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'java.util.Map$Entry', true)
+    }
+
+    /**
+     * JLS 15.8.2: {@code Outer<String>.Inner.class} names a parameterized
+     * (rare) type. javac rejects this in the parser; Groovy reports 15.8.2.
+     */
+    @Test
+    void testNegativeRareTypeClassLiteral() {
+        final String className = 'gls.generics.test.RareTypeClassLiteral'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class RareTypeClassLiteral {
+                public static class Outer<T> {
+                    public class Inner {}
+                }
+                public static Class<?> test() {
+                    return Outer<String>.Inner.class;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "<identifier> expected", "parameterized type")
+    }
+
+    /**
      * JLS 4.5.2: it is illegal to refer to a static member of a generic type
      * through a parameterization ({@code Cell<String>.id()}).
      */
@@ -2734,6 +2864,27 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 15.9: a wildcard in the enclosing type of a class instance creation
+     * ({@code new Outer<?>.Inner<Integer>()}) is illegal.
+     */
+    @Test
+    void testNegativeWildcardEnclosingConstructorType() {
+        final String className = 'gls.generics.test.WildcardEnclosingCtor'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class WildcardEnclosingCtor {
+                public static class Outer<T> {
+                    public static class Inner<U> {}
+                }
+                public static Object test() {
+                    return new Outer<?>.Inner<Integer>();
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot select a static class from a parameterized type", "wildcard type")
+    }
+
+    /**
      * JLS 15.9: diamond {@code <>} may not be combined with explicit constructor
      * type arguments.
      */
@@ -2753,6 +2904,41 @@ final class GenericsJavaCompatibilityTest {
             }
         '''
         assertNegativeCompile(className, javaSrc, "explicit type parameters for constructor", "Cannot use diamond")
+    }
+
+    /**
+     * JLS 15.9: diamond may not be used with a non-generic type.
+     */
+    @Test
+    void testNegativeDiamondOnNonGenericClass() {
+        final String className = 'gls.generics.test.DiamondOnNonGeneric'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class DiamondOnNonGeneric {
+                public static Object test() {
+                    return new Object<>();
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot use '<>' with non-generic class", "which takes no parameters")
+    }
+
+    /**
+     * JLS 4.5 / 15.9: diamond is only legal in a class instance creation, not
+     * as a type ({@code List<>} as a field type). javac reports a parse error;
+     * Groovy rejects it at parse as well.
+     */
+    @Test
+    void testNegativeDiamondInTypePosition() {
+        final String className = 'gls.generics.test.DiamondInTypePosition'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class DiamondInTypePosition {
+                public List<> list;
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "illegal start of type", "Unexpected input")
     }
 
     /**
