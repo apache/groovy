@@ -196,6 +196,7 @@ class ClassSignatureParser {
                 }
             }
             classNode.setGenericsTypes(typeParameters);
+            GenericsType.setGenericDeclaration(typeParameters, classNode);
         }
     }
 }

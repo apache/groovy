@@ -22,6 +22,7 @@ import groovy.lang.Tuple2;
 import groovy.transform.Internal;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -374,7 +375,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 canSeeTypeVars(node.getModifiers(), node.getDeclaringClass())
                     ? new HashMap<>(genericParameterNames) : new HashMap<>();
         try {
-            resolveGenericsHeader(node.getGenericsTypes());
+            resolveGenericsHeader(node.getGenericsTypes(), node);
 
             {
                 ClassNode t = node.getReturnType();
@@ -1599,7 +1600,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             } else {
                 genericParameterNames.clear(); // outer class: new generic namespace
             }
-            resolveGenericsHeader(node.getGenericsTypes());
+            resolveGenericsHeader(node.getGenericsTypes(), node);
             switch (phase) { // GROOVY-9866, GROOVY-10466
               case 0:
               case 1:
@@ -1622,7 +1623,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     if (cn.isAnonymous()) {
                         MethodNode enclosingMethod = cn.getEnclosingMethod();
                         if (enclosingMethod != null) {
-                            resolveGenericsHeader(enclosingMethod.getGenericsTypes()); // GROOVY-6977
+                            resolveGenericsHeader(enclosingMethod.getGenericsTypes(), enclosingMethod); // GROOVY-6977
                         }
                         resolveOrFail(cn.getUnresolvedSuperClass(false), cn); // GROOVY-9642
                     }
@@ -1745,11 +1746,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return resolved;
     }
 
-    private void resolveGenericsHeader(final GenericsType[] types) {
-        if (types != null) resolveGenericsHeader(types, null, 0);
+    private void resolveGenericsHeader(final GenericsType[] types, final AnnotatedNode declaration) {
+        if (types != null) resolveGenericsHeader(types, null, 0, declaration);
     }
 
-    private void resolveGenericsHeader(final GenericsType[] types, final GenericsType rootType, final int level) {
+    private void resolveGenericsHeader(final GenericsType[] types, final GenericsType rootType, final int level, final AnnotatedNode declaration) {
         currentClass.setUsingGenerics(true);
         List<Tuple2<ClassNode, ClassNode>> upperBoundsToResolve = new LinkedList<>();
         List<Tuple2<ClassNode, GenericsType>> upperBoundsWithGenerics = new LinkedList<>();
@@ -1774,6 +1775,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                                 type.setPlaceholder(true);
                                 typeType.setRedirect(upperBound);
                                 genericParameterNames.put(gtn, type);
+                                if (level == 0) type.setGenericDeclaration(declaration);
                                 nameAdded = true;
                             }
                         }
@@ -1786,7 +1788,16 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             } else if (dealWithGenerics && !isWildcardGT) {
                 type.setPlaceholder(true);
                 GenericsType last = genericParameterNames.put(gtn, type);
-                typeType.setRedirect(last != null ? last.getType().redirect() : ClassHelper.OBJECT_TYPE);
+                if (level == 0) {
+                    // A new type-parameter declaration must not inherit a
+                    // shadowed variable's erasure. Unbounded T erases to
+                    // Object even when an enclosing T extends Number.
+                    typeType.setRedirect(ClassHelper.OBJECT_TYPE);
+                    type.setGenericDeclaration(declaration);
+                } else {
+                    typeType.setRedirect(last != null ? last.getType().redirect() : ClassHelper.OBJECT_TYPE);
+                    if (last != null) type.setGenericDeclaration(last.getGenericDeclaration());
+                }
             }
         }
 
@@ -1801,7 +1812,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         for (var tuple : upperBoundsWithGenerics) {
             GenericsType[] bounds = tuple.getV1().getGenericsTypes();
-            resolveGenericsHeader(bounds, level == 0 ? tuple.getV2() : rootType, level + 1);
+            resolveGenericsHeader(bounds, level == 0 ? tuple.getV2() : rootType, level + 1, declaration);
         }
     }
 
@@ -1823,6 +1834,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 type.setRedirect(tp.getType());
             }
             genericsType.setPlaceholder(true);
+            genericsType.setGenericDeclaration(tp.getGenericDeclaration());
         } else {
             ClassNode[] upperBounds = genericsType.getUpperBounds();
             if (upperBounds != null) {

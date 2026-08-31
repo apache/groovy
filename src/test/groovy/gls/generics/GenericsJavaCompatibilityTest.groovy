@@ -26,7 +26,9 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.junit.jupiter.api.Test
 
+import java.lang.reflect.Constructor
 import java.lang.reflect.GenericArrayType
+import java.lang.reflect.GenericDeclaration
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
@@ -66,6 +68,9 @@ import static groovy.test.GroovyAssert.shouldFail
  * </ol>
  * Categories 1–15 below map onto those dimensions. Category 16 spells out
  * the JCK-shaped cases that were not previously a dedicated test.
+ * Category 18 is type-variable identity (JLS 4.4, 6.3, 6.4.1) plus remaining
+ * cheap well-formedness of type-parameter sections (duplicate names, cyclic
+ * bounds, {@code throws} of a type variable).
  * Each test method names the JLS sections it exercises. Gaps where static
  * Groovy currently diverges from javac are marked {@link org.junit.jupiter.api.Disabled}.
  * The oracle is javac as shipped with Java SE 25.
@@ -2784,6 +2789,36 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 15.13: a method or constructor reference may parameterize
+     * {@code TypeName}. That is not a class literal, so
+     * {@code HashMap<String,Integer>::new} and
+     * {@code Iterable<String>::iterator} are well-formed.
+     */
+    @Test
+    void testParameterizedTypeMethodAndConstructorReferences() {
+        final String className = 'gls.generics.test.ParameterizedTypeRefs'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.HashMap;
+            import java.util.Iterator;
+            import java.util.List;
+            import java.util.function.Function;
+            import java.util.function.Supplier;
+            public class ParameterizedTypeRefs {
+                public static String test() {
+                    Supplier<HashMap<String, Integer>> supplier = HashMap<String, Integer>::new;
+                    Function<Iterable<String>, Iterator<String>> iterate = Iterable<String>::iterator;
+                    HashMap<String, Integer> map = supplier.get();
+                    map.put("k", Integer.valueOf(1));
+                    String first = iterate.apply(List.of("ok")).next();
+                    return first + map.get("k").intValue();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'ok1')
+    }
+
+    /**
      * JLS 15.8.2: {@code Outer<String>.Inner.class} names a parameterized
      * (rare) type. javac rejects this in the parser; Groovy reports 15.8.2.
      */
@@ -3693,6 +3728,338 @@ final class GenericsJavaCompatibilityTest {
     }
 
     // =========================================================================
+    // Category 18: Type-variable identity and type-parameter section
+    //   well-formedness (JLS 4.4, 6.3, 6.4.1, 8.1.2, 8.4.4, 8.4.6)
+    // =========================================================================
+
+    /**
+     * JLS 6.4.1, 8.4.4: a method type parameter {@code T} shadows the class
+     * type parameter {@code T}. They are distinct types; a value of the method
+     * {@code T} cannot be assigned to a field of the class {@code T}.
+     */
+    @Test
+    void testNegativeMethodTAssignedToClassT() {
+        final String className = 'gls.generics.test.MethodTAssignedToClassT'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class MethodTAssignedToClassT {
+                public static class C<T> {
+                    public T field;
+                    public <T> void m(T t) { field = t; }
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+    }
+
+    /**
+     * JLS 4.4, 6.4.1: even when bounds differ, the method {@code T} and the
+     * class {@code T} remain distinct. {@code CharSequence} is not a
+     * {@code Number}.
+     */
+    @Test
+    void testNegativeBoundedMethodTAssignedToBoundedClassT() {
+        final String className = 'gls.generics.test.BoundedMethodTVsClassT'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class BoundedMethodTVsClassT {
+                public static class C<T extends Number> {
+                    public T n;
+                    public <T extends CharSequence> T m(T x) { n = x; return x; }
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+    }
+
+    /**
+     * JLS 6.4.1, 8.4.4: the method type parameter is independent of the class
+     * type parameter. {@code new C<String>().m(1)} infers the method {@code T}
+     * as {@code Integer}, not {@code String}.
+     */
+    @Test
+    void testMethodTIndependentOfClassT() {
+        final String className = 'gls.generics.test.MethodTIndependentOfClassT'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class MethodTIndependentOfClassT {
+                public static class C<T> {
+                    public <T> T m(T t) { return t; }
+                }
+                public static int test() {
+                    return new C<String>().m(Integer.valueOf(1)).intValue();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 1, true)
+    }
+
+    /**
+     * JLS 18.5.2, 8.4.4: a helper whose method type parameter is inferred as
+     * the class {@code T} may legally return the field. This is inference of a
+     * distinct variable, not identity of the two {@code T}s.
+     */
+    @Test
+    void testInferMethodUAsClassT() {
+        final String className = 'gls.generics.test.InferMethodUAsClassT'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class InferMethodUAsClassT<T> {
+                public T field;
+                public static <U> U id(U u) { return u; }
+                public T m() { return id(field); }
+                public static String test() {
+                    InferMethodUAsClassT<String> c = new InferMethodUAsClassT<String>();
+                    c.field = "ok";
+                    return c.m();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'ok')
+    }
+
+    /**
+     * JLS 4.4, 4.6, 8.4.4: an unbounded method type parameter that shadows a
+     * bounded class type parameter still erases to {@code Object}, not to the
+     * class bound. Callers may therefore pass a {@code String} where the class
+     * {@code T} is {@code Number}.
+     */
+    @Test
+    void testShadowedMethodTErasesToObject() {
+        final String className = 'gls.generics.test.ShadowedMethodTErasure'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.lang.reflect.Method;
+            import java.lang.reflect.TypeVariable;
+            public class ShadowedMethodTErasure {
+                public static class C<T extends Number> {
+                    public <T> T m(T x) { return x; }
+                }
+                public static String test() throws Exception {
+                    Method m = C.class.getDeclaredMethod("m", Object.class);
+                    TypeVariable<?> tv = (TypeVariable<?>) m.getGenericParameterTypes()[0];
+                    boolean declIsMethod = tv.getGenericDeclaration().equals(m);
+                    boolean boundIsObject = tv.getBounds().length == 1 && tv.getBounds()[0] == Object.class;
+                    String value = new C<Integer>().m("ok");
+                    return (declIsMethod && boundIsObject && "ok".equals(value)) ? "ok" : "fail";
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'ok', true)
+    }
+
+    /**
+     * JLS 4.4, 4.6, 8.1.2: an inner class that redeclares {@code T} does not
+     * inherit the outer bound. {@code Outer<Integer>.Inner<String>} is legal
+     * when the inner {@code T} is unbounded.
+     */
+    @Test
+    void testShadowedInnerTErasesToObject() {
+        final String className = 'gls.generics.test.ShadowedInnerTErasure'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.lang.reflect.Field;
+            import java.lang.reflect.TypeVariable;
+            public class ShadowedInnerTErasure<T extends Number> {
+                public class Inner<T> {
+                    public T x;
+                }
+                public Inner makeInner() { return new Inner(); }
+                public static String test() throws Exception {
+                    ShadowedInnerTErasure<Integer> outer = new ShadowedInnerTErasure<Integer>();
+                    Object inner = outer.makeInner();
+                    Field f = inner.getClass().getDeclaredField("x");
+                    TypeVariable<?> tv = (TypeVariable<?>) f.getGenericType();
+                    boolean declIsInner = tv.getGenericDeclaration() == inner.getClass();
+                    boolean boundIsObject = tv.getBounds().length == 1 && tv.getBounds()[0] == Object.class;
+                    f.setAccessible(true);
+                    f.set(inner, "ok");
+                    return (declIsInner && boundIsObject && "ok".equals(f.get(inner))) ? "ok" : "fail";
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'ok')
+    }
+
+    /**
+     * JLS 6.3, 8.1.2: an inner class that does not redeclare {@code T} still
+     * sees the enclosing class type parameter.
+     */
+    @Test
+    void testInnerClassUsesEnclosingTypeParameter() {
+        final String className = 'gls.generics.test.InnerUsesEnclosingT'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.lang.reflect.Field;
+            import java.lang.reflect.TypeVariable;
+            public class InnerUsesEnclosingT<T> {
+                public class Inner {
+                    public T x;
+                }
+                public Inner make() { return new Inner(); }
+                public static String test() throws Exception {
+                    InnerUsesEnclosingT<String> outer = new InnerUsesEnclosingT<String>();
+                    InnerUsesEnclosingT<String>.Inner inner = outer.make();
+                    Field f = inner.getClass().getDeclaredField("x");
+                    TypeVariable<?> tv = (TypeVariable<?>) f.getGenericType();
+                    boolean declIsOuter = tv.getGenericDeclaration() == InnerUsesEnclosingT.class;
+                    inner.x = "ok";
+                    return (declIsOuter && "ok".equals(inner.x)) ? "ok" : "fail";
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'ok')
+    }
+
+    /**
+     * JLS 8.4.4: a method type parameter with an interface bound uses that
+     * bound as its erasure. Shadowing a class {@code T extends Number} does
+     * not steal the class bound.
+     */
+    @Test
+    void testShadowedMethodTWithOwnInterfaceBound() {
+        final String className = 'gls.generics.test.ShadowedMethodTInterfaceBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.lang.reflect.Method;
+            import java.lang.reflect.TypeVariable;
+            public class ShadowedMethodTInterfaceBound {
+                public static class C<T extends Number> {
+                    public <T extends CharSequence> T m(T x) { return x; }
+                }
+                public static String test() throws Exception {
+                    Method m = C.class.getDeclaredMethod("m", CharSequence.class);
+                    TypeVariable<?> tv = (TypeVariable<?>) m.getGenericParameterTypes()[0];
+                    boolean declIsMethod = tv.getGenericDeclaration().equals(m);
+                    boolean boundIsCharSeq = tv.getBounds().length == 1 && tv.getBounds()[0] == CharSequence.class;
+                    String value = new C<Integer>().m("ok");
+                    return (declIsMethod && boundIsCharSeq && "ok".equals(value)) ? "ok" : "fail";
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'ok', true)
+    }
+
+    /**
+     * JLS 4.4: two type parameters in one section must have distinct names.
+     */
+    @Test
+    void testNegativeDuplicateClassTypeParameters() {
+        final String className = 'gls.generics.test.DupClassTypeParams'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class DupClassTypeParams<T, T> {
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "already defined", "Duplicate type parameter")
+    }
+
+    /**
+     * JLS 8.4.4: the same name may not appear twice in a method type-parameter
+     * section.
+     */
+    @Test
+    void testNegativeDuplicateMethodTypeParameters() {
+        final String className = 'gls.generics.test.DupMethodTypeParams'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class DupMethodTypeParams {
+                public <T, T> void m() {}
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "already defined", "Duplicate type parameter")
+    }
+
+    /**
+     * JLS 4.4: a type variable may not be a bound of itself.
+     * {@code T extends Comparable<T>} remains legal
+     * ({@link #testRecursiveTypeBoundsFBounded()}).
+     */
+    @Test
+    void testNegativeSelfBoundTypeParameter() {
+        final String className = 'gls.generics.test.SelfBoundTypeParam'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class SelfBoundTypeParam<T extends T> {
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cyclic inheritance", "Cycle detected")
+    }
+
+    /**
+     * JLS 4.4: mutually recursive type-variable bounds without an intervening
+     * class type are cyclic.
+     */
+    @Test
+    void testNegativeMutualTypeParameterBounds() {
+        final String className = 'gls.generics.test.MutualTypeParamBounds'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class MutualTypeParamBounds<T extends U, U extends T> {
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cyclic inheritance", "Cycle detected")
+    }
+
+    /**
+     * JLS 8.4.6: a type variable may appear in {@code throws} only when its
+     * bound is a subtype of {@code Throwable}. An unbounded {@code T}
+     * erases to {@code Object}.
+     */
+    @Test
+    void testNegativeThrowsUnboundedTypeParameter() {
+        final String className = 'gls.generics.test.ThrowsUnboundedT'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class ThrowsUnboundedT {
+                public <T> void m() throws T {}
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted to Throwable", "not a valid type for a throws clause")
+    }
+
+    /**
+     * JLS 8.4.6: {@code T extends Object} is still not a {@code Throwable}.
+     */
+    @Test
+    void testNegativeThrowsObjectBoundedTypeParameter() {
+        final String className = 'gls.generics.test.ThrowsObjectBoundedT'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class ThrowsObjectBoundedT {
+                public <T extends Object> void m() throws T {}
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted to Throwable", "not a valid type for a throws clause")
+    }
+
+    /**
+     * JLS 8.4.6: a type variable whose bound is itself a type variable bounded
+     * by {@code Exception} may appear in {@code throws}.
+     */
+    @Test
+    void testThrowsTypeParameterBoundedByTypeParameter() {
+        final String className = 'gls.generics.test.ThrowsTBoundedByE'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class ThrowsTBoundedByE {
+                public static <E extends Exception, T extends E> void m(T t) throws T {
+                    throw t;
+                }
+                public static String test() {
+                    try {
+                        m(new Exception("ok"));
+                        return "fail";
+                    } catch (Exception e) {
+                        return e.getMessage();
+                    }
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'ok')
+    }
+
+    // =========================================================================
     // Test Harness Helper Methods
     // =========================================================================
 
@@ -3854,6 +4221,26 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * Reflective identity of a type variable's generic declaration, recovered
+     * from the Signature attribute (JVMS 4.7.9.1) rather than from a qualifier
+     * in the class file. Distinguishes class {@code T} from method {@code T}.
+     */
+    private static String genericDeclarationDesc(GenericDeclaration declaration) {
+        if (declaration instanceof Class) {
+            return 'declared in class ' + ((Class<?>) declaration).name
+        }
+        if (declaration instanceof Method) {
+            Method method = (Method) declaration
+            return 'declared in method ' + method.declaringClass.name + '.' + method.name
+        }
+        if (declaration instanceof Constructor) {
+            Constructor<?> constructor = (Constructor<?>) declaration
+            return 'declared in constructor ' + constructor.declaringClass.name
+        }
+        return 'declared in ' + String.valueOf(declaration)
+    }
+
+    /**
      * Canonical, JDK-stable description of a reflective {@link Type}. Uses binary
      * class names and type-variable names rather than {@code Type.toString()}, which
      * has changed wording across JDK releases.
@@ -3870,7 +4257,8 @@ final class GenericsJavaCompatibilityTest {
             return c.name
         }
         if (type instanceof TypeVariable) {
-            return ((TypeVariable<?>) type).name
+            TypeVariable<?> tv = (TypeVariable<?>) type
+            return tv.name + ' ' + genericDeclarationDesc(tv.genericDeclaration)
         }
         if (type instanceof ParameterizedType) {
             ParameterizedType p = (ParameterizedType) type

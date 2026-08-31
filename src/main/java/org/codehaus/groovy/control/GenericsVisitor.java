@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.control;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -34,11 +35,15 @@ import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.trait.Traits;
+
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
@@ -146,6 +151,12 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         }
         if (!isConstructor) {
             checkGenericsUsage(node.getReturnType());
+        }
+        ClassNode[] exceptions = node.getExceptions();
+        if (exceptions != null) {
+            for (ClassNode exception : exceptions) {
+                checkThrowsType(exception, node);
+            }
         }
 
         super.visitConstructorOrMethod(node, isConstructor);
@@ -305,6 +316,29 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
             }
         } else {
             super.visitPropertyExpression(expression);
+        }
+    }
+
+    /**
+     * JLS 15.13: {@code TypeName::m} and {@code TypeName::new} are method or
+     * constructor references, not class literals. A parameterization of
+     * {@code TypeName} is legal for an instance method or constructor
+     * reference ({@code Iterable<String>::asCollection},
+     * {@code HashMap<String,Integer>::new}).
+     */
+    @Override
+    public void visitMethodPointerExpression(final MethodPointerExpression expression) {
+        Expression object = expression.getExpression();
+        if (object instanceof ClassExpression) {
+            checkGenericsUsage(object.getType());
+            suppressClassLiteralChecks++;
+            try {
+                super.visitMethodPointerExpression(expression);
+            } finally {
+                suppressClassLiteralChecks--;
+            }
+        } else {
+            super.visitMethodPointerExpression(expression);
         }
     }
 
@@ -500,20 +534,46 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
 
     /**
      * JLS 4.4: a class type or type variable may appear only as the first type
-     * of a bound; additional bounds must be interfaces.
+     * of a bound; additional bounds must be interfaces. Type-parameter names
+     * in one section must be distinct. A primitive type is not a legal bound.
      */
     private void checkTypeParameterBounds(final GenericsType[] typeParameters) {
         if (typeParameters == null) return;
+        Set<String> names = new HashSet<>();
         for (GenericsType tp : typeParameters) {
+            if (!names.add(tp.getName())) {
+                addError("Duplicate type parameter " + tp.getName(), tp);
+            }
             ClassNode[] bounds = tp.getUpperBounds();
             if (bounds == null) continue;
-            for (int i = 1; i < bounds.length; i++) {
+            for (int i = 0; i < bounds.length; i++) {
                 ClassNode bound = bounds[i];
-                if (bound != null && !bound.isInterface() && !Traits.isTrait(bound)) {
+                if (bound == null) continue;
+                if (isPrimitiveType(bound)) {
+                    addError("The bound of type parameter " + tp.getName() + " must be a class type, not the primitive type " + bound.getName(), tp);
+                    continue;
+                }
+                if (i > 0 && !bound.isInterface() && !Traits.isTrait(bound)) {
                     addError("Additional bounds of a type parameter must be interfaces", tp);
                 }
             }
         }
+    }
+
+    /**
+     * JLS 8.4.6: a type variable may appear in {@code throws} only when its
+     * erasure is a subtype of {@code Throwable}. An unbounded {@code T}
+     * erases to {@code Object}.
+     */
+    private void checkThrowsType(final ClassNode type, final ASTNode location) {
+        if (type == null || !type.isGenericsPlaceHolder()) return;
+        ClassNode erasure = type.redirect();
+        if (erasure != null && !isObjectType(erasure)
+                && (erasure.isDerivedFrom(ClassHelper.THROWABLE_TYPE)
+                    || erasure.implementsInterface(ClassHelper.THROWABLE_TYPE))) {
+            return;
+        }
+        addError("The type parameter " + type.getUnresolvedName() + " is not a valid type for a throws clause", location);
     }
 
     /**

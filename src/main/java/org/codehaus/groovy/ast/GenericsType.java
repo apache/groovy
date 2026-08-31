@@ -47,6 +47,15 @@ public class GenericsType extends ASTNode {
     private final ClassNode lowerBound;
     private final ClassNode[] upperBounds;
     private boolean placeholder, resolved, wildcard;
+    /**
+     * The generic declaration that introduced this type variable
+     * ({@link ClassNode} or {@link MethodNode}), or {@code null} when
+     * unknown (capture, inference, or a use that has not yet been bound).
+     * Analogous to {@code java.lang.reflect.TypeVariable#getGenericDeclaration()}.
+     * Not used as a {@link GenericsTypeName} map key: those maps are
+     * in-scope name lookup and stay name-only (JLS 6.4.1).
+     */
+    private AnnotatedNode genericDeclaration;
 
     /**
      * Creates a generics type with optional upper and lower bounds.
@@ -216,6 +225,79 @@ public class GenericsType extends ASTNode {
      */
     public boolean isPlaceholder() {
         return placeholder;
+    }
+
+    /**
+     * Returns the generic declaration that introduced this type variable, or
+     * {@code null} if this is not a type-variable placeholder or the
+     * declaration is unknown.
+     *
+     * @return the declaring {@link ClassNode} or {@link MethodNode}, or {@code null}
+     * @since 6.0.0
+     */
+    public AnnotatedNode getGenericDeclaration() {
+        return genericDeclaration;
+    }
+
+    /**
+     * Records the generic declaration that introduced this type variable.
+     * Callers must pass the class, method or constructor that owns the
+     * type-parameter section, not a use-site {@link ClassNode}.
+     *
+     * @param genericDeclaration the declaring {@link ClassNode} or {@link MethodNode}
+     * @since 6.0.0
+     */
+    public void setGenericDeclaration(final AnnotatedNode genericDeclaration) {
+        this.genericDeclaration = genericDeclaration;
+    }
+
+    /**
+     * Stamps every placeholder in {@code types} with {@code declaration}.
+     *
+     * @since 6.0.0
+     */
+    public static void setGenericDeclaration(final GenericsType[] types, final AnnotatedNode declaration) {
+        if (types == null || declaration == null) return;
+        for (GenericsType type : types) {
+            if (type != null && type.isPlaceholder()) {
+                type.setGenericDeclaration(declaration);
+            }
+        }
+    }
+
+    /**
+     * The generic declaration recorded on a placeholder {@link ClassNode}, or
+     * {@code null} if {@code type} is not a type variable or has no stamp.
+     *
+     * @since 6.0.0
+     */
+    public static AnnotatedNode genericDeclarationOf(final ClassNode type) {
+        if (type == null || !type.isGenericsPlaceHolder()) return null;
+        GenericsType[] genericsTypes = type.getGenericsTypes();
+        if (genericsTypes != null && genericsTypes.length > 0 && genericsTypes[0] != null) {
+            return genericsTypes[0].getGenericDeclaration();
+        }
+        return null;
+    }
+
+    /**
+     * True when both nodes are type-variable placeholders with the same
+     * spelling but known, different generic declarations (class {@code T}
+     * vs method {@code T}). Different names are left to the existing bound
+     * and redirect checks. Unstamped placeholders keep name-only behaviour.
+     *
+     * @since 6.0.0
+     */
+    public static boolean areDistinctTypeVariables(final ClassNode left, final ClassNode right) {
+        if (left == null || right == null || !left.isGenericsPlaceHolder() || !right.isGenericsPlaceHolder()) {
+            return false;
+        }
+        if (!left.getUnresolvedName().equals(right.getUnresolvedName())) {
+            return false;
+        }
+        AnnotatedNode leftDeclaration = genericDeclarationOf(left);
+        AnnotatedNode rightDeclaration = genericDeclarationOf(right);
+        return leftDeclaration != null && rightDeclaration != null && leftDeclaration != rightDeclaration;
     }
 
     /**
@@ -530,17 +612,15 @@ public class GenericsType extends ASTNode {
     }
 
     /**
-     * Represents the name of a {@link GenericsType} for use as a map key or in generic type comparisons.
-     * This inner class provides value-based equality and hashing for generic type name matching.
+     * Represents the name of a {@link GenericsType} for use as a map key.
+     * Equality and hashing are name-only: that is the JLS 6.4.1 in-scope
+     * lookup rule and the JVMS 4.7.9.1 {@code TypeVariableSignature} spelling.
      *
-     * <p>TODO: In order to distinguish GenericsType with same name, we should add a property to keep the declaring class.
-     * <ol>
-     * <li> change the signature of constructor GenericsTypeName to `GenericsTypeName(String name, ClassNode declaringClass)`
-     * <li> try to fix all compilation errors(if `GenericsType` has declaringClass property, the step would be a bit easy to fix...)
-     * <li> run all tests to see whether the change breaks anything
-     * <li> if all tests pass, congratulations! but if some tests are broken, try to debug and find why...
-     * </ol>
-     * We should find a way to set declaring class for `GenericsType` first, it can be completed at the resolving phase.
+     * <p>Type-variable <em>identity</em> (class {@code T} vs method {@code T})
+     * lives on {@link GenericsType#getGenericDeclaration()}, not on this key.
+     * Do not add a declaring class to {@code equals}/{@code hashCode}: mixed
+     * null-owner keys are not an equivalence, and substitution maps that mean
+     * "in this scope, name T means String" would stop matching uses.
      */
     public static class GenericsTypeName {
         private final String name;

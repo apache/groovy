@@ -1565,7 +1565,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             class C<T> {
             }
-            def <T,T> T m(C<T> c) {
+            def <T> T m(C<T> c) {
             }
             Number n = m(new C<>())
         '''

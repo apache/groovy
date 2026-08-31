@@ -691,6 +691,12 @@ public abstract class StaticTypeCheckingSupport {
 
         ClassNode leftRedirect = left.redirect();
         ClassNode rightRedirect = right.redirect();
+        // JLS 4.4: two type variables are the same type only when they come
+        // from the same declaration. Unbounded variables share the Object
+        // erasure, so redirect identity is not type-variable identity.
+        if (GenericsType.areDistinctTypeVariables(left, right)) {
+            return false;
+        }
         if (leftRedirect == rightRedirect) return true;
 
         if (leftRedirect == VOID_TYPE) return rightRedirect == void_WRAPPER_TYPE;
@@ -1989,6 +1995,7 @@ public abstract class StaticTypeCheckingSupport {
                 try {
                     GenericsType newGT = new GenericsType(type, applyGenericsContext(ctx, spec, gt.getUpperBounds()), applyGenericsContext(ctx, spec, gt.getLowerBound()));
                     newGT.setPlaceholder(true);
+                    newGT.setGenericDeclaration(gt.getGenericDeclaration());
                     return newGT;
                 } finally {
                     ctx.exit();
