@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.trait.Traits;
 
@@ -116,6 +117,19 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         checkGenericsUsage(node.getType());
 
         super.visitField(node);
+    }
+
+    /**
+     * JLS 14.20: a catch type must be a reifiable class or union; a type
+     * parameter is not reifiable and may not be caught.
+     */
+    @Override
+    public void visitCatchStatement(final CatchStatement statement) {
+        ClassNode type = statement.getExceptionType();
+        if (type != null && type.isGenericsPlaceHolder()) {
+            addError("Cannot catch type parameter " + type.getUnresolvedName(), statement);
+        }
+        super.visitCatchStatement(statement);
     }
 
     /**

@@ -3207,6 +3207,306 @@ final class GenericsJavaCompatibilityTest {
     }
 
     // =========================================================================
+    // Category 17: Parameter-type bridges, capture conversion, varargs heap
+    //   pollution, catch of a type variable, nested type arguments, extra
+    //   interface type parameters, and diamond on a generic class with a
+    //   generic constructor (JLS 4.5, 4.12.2, 5.1.10, 8.4.8.3, 8.8.4, 14.20)
+    // =========================================================================
+
+    /**
+     * JLS 8.4.8.3, 15.12.4.5: {@code IntCell.put(Integer)} does not override
+     * the erasure {@code Cell.put(Object)}. The compiler emits a bridge
+     * {@code put(Object)} that casts to {@code Integer} and delegates. A raw
+     * {@code Cell} call with a {@code String} therefore throws
+     * {@code ClassCastException} at the bridge. This is a parameter-type
+     * bridge, distinct from the covariant-return bridges in
+     * {@link #testCovariantOverrideDeclaresBridgeMethod()}.
+     */
+    @Test
+    void testParameterTypeBridgeMethod() {
+        final String className = 'gls.generics.test.ParameterTypeBridge'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.lang.reflect.Method;
+            public class ParameterTypeBridge {
+                public static class Cell<T> {
+                    public T value;
+                    public Cell(T value) { this.value = value; }
+                    public void put(T value) { this.value = value; }
+                }
+                public static class IntCell extends Cell<Integer> {
+                    public IntCell(Integer value) { super(value); }
+                    public void put(Integer value) { super.put(value); }
+                }
+                public static String test() {
+                    boolean bridge = false;
+                    boolean specialized = false;
+                    for (Method m : IntCell.class.getDeclaredMethods()) {
+                        if (!"put".equals(m.getName()) || m.getParameterCount() != 1) {
+                            continue;
+                        }
+                        if (m.isBridge() && m.getParameterTypes()[0] == Object.class) {
+                            bridge = true;
+                        }
+                        if (!m.isBridge() && m.getParameterTypes()[0] == Integer.class) {
+                            specialized = true;
+                        }
+                    }
+                    IntCell cell = new IntCell(Integer.valueOf(5));
+                    Cell<Integer> typed = cell;
+                    typed.put(Integer.valueOf(7));
+                    boolean cce = false;
+                    try {
+                        invokeRaw(cell, "Hello");
+                    } catch (ClassCastException e) {
+                        cce = true;
+                    }
+                    return (bridge && specialized && Integer.valueOf(7).equals(cell.value) && cce) ? "ok" : "fail";
+                }
+                @SuppressWarnings({"rawtypes", "unchecked"})
+                public static void invokeRaw(Cell cell, Object item) {
+                    cell.put(item);
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'ok', true)
+    }
+
+    /**
+     * JLS 5.1.10: {@code list.set(0, list.get(0))} on {@code List<?>} is a
+     * capture error — {@code get} yields {@code Object}, which is not the
+     * fresh capture of {@code ?}. A helper {@code <T> void f(List<T>)} is
+     * the legal workaround ({@link #testWildcardCaptureHelper()}).
+     */
+    @Test
+    void testNegativeWildcardCaptureWriteWithoutHelper() {
+        final String className = 'gls.generics.test.WildcardCaptureWrite'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class WildcardCaptureWrite {
+                public static void test(List<?> list) {
+                    list.set(0, list.get(0));
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call")
+    }
+
+    /**
+     * JLS 5.1.10: two {@code List<? extends Number>} formals capture independently.
+     * An element taken from one cannot be stored in the other, even though both
+     * bounds are {@code Number}.
+     */
+    @Test
+    void testNegativeIndependentWildcardCaptures() {
+        final String className = 'gls.generics.test.IndependentCaptures'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class IndependentCaptures {
+                public static void test(List<? extends Number> from, List<? extends Number> to) {
+                    to.set(0, from.get(0));
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call")
+    }
+
+    /**
+     * JLS 4.10.2, 4.5.1: {@code List<? extends Integer>} is a subtype of
+     * {@code List<? extends Number>} (containment of upper bounds), even though
+     * {@code List<Integer>} is not a subtype of {@code List<Number>}.
+     */
+    @Test
+    void testUpperBoundedWildcardSubtyping() {
+        final String className = 'gls.generics.test.UpperBoundedWildcardSubtyping'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.ArrayList;
+            import java.util.List;
+            public class UpperBoundedWildcardSubtyping {
+                public static int test() {
+                    List<? extends Integer> ints = new ArrayList<Integer>();
+                    List<? extends Number> nums = ints;
+                    return nums.size();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 0)
+    }
+
+    /**
+     * JLS 8.4.4, 4.4: a generic method may invoke members of an F-bound
+     * ({@code <T extends Comparable<T>> int countGreater(T[], T)} uses
+     * {@code compareTo}, not a primitive {@code >}).
+     */
+    @Test
+    void testGenericMethodUsesFBoundMembers() {
+        final String className = 'gls.generics.test.CountGreaterThan'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class CountGreaterThan {
+                public static <T extends Comparable<T>> int countGreaterThan(T[] values, T elem) {
+                    int n = 0;
+                    for (T value : values) {
+                        if (value.compareTo(elem) > 0) {
+                            n++;
+                        }
+                    }
+                    return n;
+                }
+                public static int test() {
+                    return countGreaterThan(new Integer[] {1, 5, 3, 8}, Integer.valueOf(4));
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 2)
+    }
+
+    /**
+     * JLS 4.5: a type argument may itself be parameterized
+     * ({@code Pair<String, Box<Integer>>}).
+     */
+    @Test
+    void testNestedParameterizedTypeArgument() {
+        final String className = 'gls.generics.test.NestedTypeArgument'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class NestedTypeArgument {
+                public static class Box<T> {
+                    public final T value;
+                    public Box(T value) { this.value = value; }
+                }
+                public static class Pair<K, V> {
+                    public final K key;
+                    public final V value;
+                    public Pair(K key, V value) { this.key = key; this.value = value; }
+                }
+                public static int test() {
+                    Pair<String, Box<Integer>> pair = new Pair<>("n", new Box<>(Integer.valueOf(9)));
+                    return pair.key.length() + pair.value.value.intValue();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 10)
+    }
+
+    /**
+     * JLS 15.9.3, 8.8.4: diamond infers the class type parameter from the
+     * assignment target and the constructor type parameter from the argument
+     * ({@code class Holder<X> { <T> Holder(T t, X x) }} instantiated as
+     * {@code new Holder<>("tag", 9)}).
+     */
+    @Test
+    void testDiamondGenericConstructorOfGenericClass() {
+        final String className = 'gls.generics.test.GenericClassGenericCtor'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GenericClassGenericCtor {
+                public static class Holder<X> {
+                    public final X x;
+                    public final String tag;
+                    public <T> Holder(T t, X x) {
+                        this.tag = t.toString();
+                        this.x = x;
+                    }
+                }
+                public static String test() {
+                    Holder<Integer> h = new Holder<>("n", Integer.valueOf(9));
+                    return h.tag + h.x.intValue();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'n9')
+    }
+
+    /**
+     * JLS 9.1.2, 4.10.2: an interface may add a type parameter while extending
+     * a parameterization of another generic interface. {@code Tagged<E, P>
+     * extends Cell<E>} makes {@code Tagged<String, Integer>} a subtype of
+     * {@code Cell<String>}.
+     */
+    @Test
+    void testInterfaceAddsTypeParameterWhenExtending() {
+        final String className = 'gls.generics.test.TaggedCell'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class TaggedCell {
+                public interface Cell<E> {
+                    E get();
+                }
+                public interface Tagged<E, P> extends Cell<E> {
+                    P tag();
+                }
+                public static class Impl implements Tagged<String, Integer> {
+                    @Override public String get() { return "x"; }
+                    @Override public Integer tag() { return Integer.valueOf(3); }
+                }
+                public static String test() {
+                    Cell<String> cell = new Impl();
+                    Tagged<String, Integer> tagged = new Impl();
+                    return cell.get() + tagged.tag().intValue();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'x3', true)
+    }
+
+    /**
+     * JLS 4.12.2, 8.4.1: a varargs formal of a parameterized type is compiled
+     * as an array of the erasure. Assigning that array to {@code Object[]} and
+     * storing a {@code List<Integer>} pollutes a {@code List<String>...}, so a
+     * later {@code get(0)} as {@code String} throws {@code ClassCastException}.
+     */
+    @Test
+    void testVarargsHeapPollutionClassCastException() {
+        final String className = 'gls.generics.test.VarargsHeapPollution'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.Arrays;
+            import java.util.List;
+            public class VarargsHeapPollution {
+                @SuppressWarnings({"unchecked", "varargs"})
+                public static void pollute(List<String>... lists) {
+                    store(lists, Arrays.asList(Integer.valueOf(42)));
+                    int n = lists[0].get(0).length();
+                    throw new AssertionError(Integer.valueOf(n));
+                }
+                @SuppressWarnings({"rawtypes", "unchecked"})
+                public static void store(Object[] dest, Object value) {
+                    dest[0] = value;
+                }
+                public static void test() {
+                    pollute(Arrays.asList("a"), Arrays.asList("b"));
+                }
+            }
+        '''
+        assertNegativeRuntime(className, javaSrc, ClassCastException.class)
+    }
+
+    /**
+     * JLS 14.20: a catch type must be a reifiable class or union. A type
+     * parameter, even when bounded by {@code Exception}, is not reifiable.
+     */
+    @Test
+    void testNegativeCatchTypeParameter() {
+        final String className = 'gls.generics.test.CatchTypeParameter'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class CatchTypeParameter {
+                public static <E extends Exception> void test() {
+                    try {
+                        throw new Exception();
+                    } catch (E e) {
+                    }
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "type parameter", "Cannot catch type parameter")
+    }
+
+    // =========================================================================
     // Test Harness Helper Methods
     // =========================================================================
 
