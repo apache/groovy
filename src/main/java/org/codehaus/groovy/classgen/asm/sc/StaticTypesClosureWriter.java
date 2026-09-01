@@ -220,7 +220,8 @@ public class StaticTypesClosureWriter extends ClosureWriter {
             throw new GroovyBugError("Expected to find one (1) doCall method on generated closure, but found " + doCalls.size());
         }
         MethodNode doCallMethod = doCalls.get(0);
-        if (methods.isEmpty() && doCallMethod.getParameters().length == 1) {
+        if (methods.isEmpty() && doCallMethod.getParameters().length == 1
+                && !doCallMethod.getParameters()[0].getType().isArray()) {
             createDirectCallMethod(closureClass, doCallMethod);
         }
         MethodTargetCompletionVisitor visitor = new MethodTargetCompletionVisitor(doCallMethod);
