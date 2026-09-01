@@ -719,4 +719,201 @@ final class ChannelSelectTest {
             assert b.toString().contains('waitingReceivers=0')
         '''
     }
+
+    @Test
+    void testDisabledOfferIsNotRegisteredAndIndicesAreUnchanged() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def first = AsyncChannel.create(4)
+            def second = AsyncChannel.create(4)
+            first.send('f1'); second.send('s1')
+
+            // both ready, but the first branch is masked off: the second wins
+            // and still calls itself index 1
+            def sel = offers(receive(first), receive(second))
+            def result = await sel.select(false, true)
+            assert result.index == 1 && result.value == 's1'
+
+            // the disabled branch was never registered: nothing taken, no receiver left
+            assert first.bufferedSize == 1
+            assert first.toString().contains('waitingReceivers=0')
+
+            // unmasking it restores the priority order
+            assert (await sel.select(true, true)).index == 0
+        '''
+    }
+
+    @Test
+    void testDisabledSendOfferTransfersNothing() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def out = AsyncChannel.create(4)      // room to spare: the send would commit at once
+            def input = AsyncChannel.create(4)
+            input.send('i1')
+
+            def result = await offers(send(out, 'v'), receive(input)).select(false, true)
+            assert result.index == 1 && !result.send && result.value == 'i1'
+            assert out.bufferedSize == 0
+            assert out.toString().contains('waitingSenders=0')
+        '''
+    }
+
+    @Test
+    void testSelectWithEveryOfferDisabledFails() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelSelect
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def a = AsyncChannel.create(4)
+            def b = AsyncChannel.create(4)
+            a.send('ready')
+
+            def sel = ChannelSelect.from(a, b)
+            shouldFail(IllegalStateException) {
+                await sel.select(false, false)
+            }
+            // the ready channel was left alone
+            assert a.bufferedSize == 1
+            assert a.toString().contains('waitingReceivers=0')
+        '''
+    }
+
+    @Test
+    void testSelectRejectsAPreconditionCountThatIsNotTheOfferCount() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelSelect
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def sel = ChannelSelect.from(AsyncChannel.create(4), AsyncChannel.create(4))
+            shouldFail(IllegalArgumentException) { sel.select(true) }
+            shouldFail(IllegalArgumentException) { sel.select(true, true, true) }
+        '''
+    }
+
+    @Test
+    void testFairSelectRotatesAmongTheEnabledOffersOnly() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelSelect
+
+            def a = AsyncChannel.create(20)
+            def b = AsyncChannel.create(20)
+            def c = AsyncChannel.create(20)
+            for (i in 0..<10) { a.send('a'); b.send('b'); c.send('c') }
+
+            // b stays masked off, so the rotation alternates between a and c
+            def sel = ChannelSelect.from(a, b, c).fair()
+            def indices = (0..<6).collect { (await sel.select(true, false, true)).index }
+            assert indices.toSet() == [0, 2] as Set
+            assert indices.count { it == 0 } == 3 && indices.count { it == 2 } == 3
+            assert b.bufferedSize == 10
+        '''
+    }
+
+    @Test
+    void testSelectWaitsOnTheEnabledOffersWhileADisabledOneIsReady() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelSelect
+
+            def masked = AsyncChannel.create(4)
+            def live = AsyncChannel.create(4)
+            masked.send('ignored')
+
+            async { Thread.sleep(50); live.send('late') }
+            def result = await ChannelSelect.from(masked, live).select(false, true).orTimeoutMillis(5000)
+            assert result.index == 1 && result.value == 'late'
+            assert masked.bufferedSize == 1
+        '''
+    }
+
+    @Test
+    void testSelectFailsOnlyWhenEveryEnabledChannelIsClosed() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelClosedException
+            import groovy.concurrent.ChannelSelect
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def open = AsyncChannel.create(4)
+            def closed = AsyncChannel.create(4)
+            closed.close()
+
+            // the open channel is masked off, so the closed one decides the result
+            shouldFail(ChannelClosedException) {
+                await ChannelSelect.from(open, closed).select(false, true).orTimeoutMillis(1000)
+            }
+        '''
+    }
+
+    @Test
+    void testResultNamesTheWinningChannel() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def input = AsyncChannel.create(4)
+            def output = AsyncChannel.create(4)
+            input.send('i1')
+
+            def received = await offers(receive(input), send(output, 'o1')).select()
+            assert received.channel.is(input) && received.value == 'i1'
+
+            def sent = await offers(receive(input), send(output, 'o1')).select(false, true)
+            assert sent.channel.is(output) && sent.send
+            assert (await output.receive()) == 'o1'
+        '''
+    }
+
+    @Test
+    void testGuardedBoundedBuffer() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelClosedException
+            import static groovy.concurrent.ChannelSelect.*
+            import static org.apache.groovy.runtime.async.AsyncSupport.await as awaitFor
+
+            // Kerridge's bounded buffer: accept input only while there is room,
+            // answer a request only while the buffer holds something
+            int capacity = 3
+            def input = AsyncChannel.create()       // rendezvous, so a producer past capacity really blocks
+            def request = AsyncChannel.create()
+            def reply = AsyncChannel.create()
+
+            def buffer = Thread.start {
+                def held = new LinkedList()
+                def sel = offers(receive(input), receive(request))
+                while (true) {
+                    try {
+                        def result = awaitFor(sel.select(held.size() < capacity, !held.isEmpty()))
+                        if (result.index == 0) held.addLast(result.value)
+                        else awaitFor(reply.send(held.removeFirst()))
+                    } catch (ChannelClosedException e) {
+                        break
+                    }
+                }
+            }
+
+            // a fourth value would block while the buffer is full, so interleave
+            for (i in 1..3) awaitFor(input.send(i))
+            awaitFor(request.send('next'))
+            assert awaitFor(reply.receive()) == 1
+            awaitFor(input.send(4))
+
+            for (expected in 2..4) {
+                awaitFor(request.send('next'))
+                assert awaitFor(reply.receive()) == expected
+            }
+
+            input.close(); request.close()
+            buffer.join(10_000)
+            assert !buffer.alive
+        '''
+    }
 }

@@ -189,6 +189,38 @@ unilaterally; over buffered channels with space, each peer's send offer
 commits at once under its own select and the peers proceed down
 different branches of the same conversation.
 
+=== Preconditions
+
+Each branch may also carry a _precondition_ — the guarded choice of CSP.
+`select` takes one flag per offer: a disabled offer is not registered on
+its channel, so nothing is taken from it and nothing is sent to it, but
+it keeps its position, so `result.index` denotes the same branch whatever
+the mask:
+
+[source,groovy]
+----
+def sel = offers(receive(input), receive(request))
+while (true) {
+    def result = await sel.select(size < capacity, size > 0)  // <1>
+    if (result.index == 0) {
+        // room to spare: buffer result.value
+    } else {
+        // something to hand over: reply with the oldest value
+    }
+}
+----
+<1> take input only while there is room, answer requests only while there
+is something to hand over
+
+Dropping an offer from the argument list instead would renumber every
+branch after it, silently changing what an index denotes. Enabling no
+branch at all is a deadlock rather than a wait, so `select` fails with
+`IllegalStateException`; passing the wrong number of flags is an
+`IllegalArgumentException`.
+
+A branch can also be recognised by identity instead of by position:
+`result.channel` is the channel the winning offer transferred over.
+
 [[async-broadcast-channel]]
 == BroadcastChannel
 
