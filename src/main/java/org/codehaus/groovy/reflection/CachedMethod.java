@@ -20,6 +20,9 @@ package org.codehaus.groovy.reflection;
 
 import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
+import org.apache.groovy.internal.runtime.invoke.DirectInvoker;
+import org.apache.groovy.internal.runtime.invoke.InvokerFactory;
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
@@ -31,6 +34,7 @@ import java.io.ObjectOutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 
 /**
@@ -81,6 +85,25 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     private boolean makeAccessibleDone;
     private CachedMethod transformedMethod;
+
+    /**
+     * Installed JIT-constant trampoline, or {@code null} if not yet generated
+     * / sticky-failed. Volatile: the fast path reads it outside the generation
+     * lock.
+     */
+    private transient volatile DirectInvoker invoker;
+    /**
+     * Racy hit counter. {@code long} to match
+     * {@code IndyInterface.INDY_OPTIMIZE_THRESHOLD}. Over-counting
+     * generates slightly early; under-counting (lost increments)
+     * delays generation. Both harmless.
+     */
+    private transient long invokeHits;
+    /**
+     * Sticky failure: {@link InvokerFactory#tryCreate} returned {@code null}.
+     * Volatile because the fast path reads it outside the generation lock.
+     */
+    private transient volatile boolean invokerAttempted;
 
     /**
      * The JDK's {@code CallerSensitive} marker lives in {@code jdk.internal}
@@ -377,23 +400,98 @@ public class CachedMethod extends MetaMethod implements Comparable {
      * Invokes this method on the given object with the specified arguments.
      * Handles accessibility, exception wrapping, and method invocation.
      *
+     * <p>After {@code groovy.cachedmethod.invoker.threshold} hits (default 100)
+     * a {@link DirectInvoker} may be installed so the call is a JIT-constant
+     * {@code INVOKE*} / classData {@code invokeExact} rather than
+     * {@link Method#invoke}. Caller-sensitive and abstract methods stay
+     * reflective. This is the MOP "Groovy as caller" path — the trampoline
+     * must not be used as an invokedynamic target.
+     *
      * @param object the target object (may be {@code null} for static methods)
      * @param arguments the arguments to pass to the method
      * @return the result of the method invocation
      * @throws InvokerInvocationException if the method raises a checked exception or illegal access occurs
      * @throws RuntimeException if the method raises an uncaught exception (except MissingMethodException)
+     * @throws ClassCastException on the generated path when an argument cannot
+     *         be {@code CHECKCAST} to the parameter type (the reflective path
+     *         wraps {@code IllegalArgumentException} in {@code InvokerInvocationException}
+     *         instead; same delta as DGM / {@code CallSiteGenerator}). Wrong
+     *         arity does not take that shortcut: too few or extra arguments
+     *         fall back to {@link Method#invoke} so the wrapped
+     *         {@code IllegalArgumentException} is preserved.
      */
     @Override
     public final Object invoke(final Object object, final Object[] arguments) {
         makeAccessibleIfNecessary();
+        DirectInvoker di = invoker;
+        if (di != null) {
+            return invokeGenerated(di, object, arguments);
+        }
+        if (shouldAttemptGeneration()) {
+            synchronized (this) {
+                if (invoker == null && !invokerAttempted) {
+                    DirectInvoker created = InvokerFactory.tryCreate(this);
+                    if (created != null) {
+                        invoker = created;
+                    } else {
+                        invokerAttempted = true;
+                    }
+                }
+                di = invoker;
+            }
+            if (di != null) {
+                return invokeGenerated(di, object, arguments);
+            }
+        }
+        return invokeReflective(object, arguments);
+    }
 
+    private boolean shouldAttemptGeneration() {
+        if (invokerAttempted) {
+            return false;
+        }
+        if (!InvokerFactory.generationAllowed()) {
+            return false;
+        }
+        if (isCallerSensitive() || Modifier.isAbstract(getModifiers())) {
+            invokerAttempted = true;
+            return false;
+        }
+        long hits = ++invokeHits;
+        return hits > SystemUtil.getLongSafe(InvokerFactory.PROPERTY_THRESHOLD, 100L);
+    }
+
+    private Object invokeGenerated(final DirectInvoker di, final Object object, final Object[] arguments) {
+        Object[] args = (arguments != null) ? arguments : MetaClassHelper.EMPTY_ARRAY;
+        // Generated trampolines index declared slots only: too few would
+        // AALOAD-AIOOBE, extra would be ignored. Method.invoke rejects both
+        // (and packs varargs). Mismatch is the error / spread-varargs path.
+        if (args.length != cachedMethod.getParameterCount()) {
+            return invokeReflective(object, arguments);
+        }
+        try {
+            return normalizeBoxedReturn(di.invoke(object, args));
+        } catch (Throwable t) {
+            // Match Method.invoke / ITE policy: RuntimeException other than
+            // MissingMethodException is rethrown; Error, checked, and MME become
+            // InvokerInvocationException (ITE used to wrap those as its cause).
+            if (t instanceof RuntimeException && !(t instanceof MissingMethodException)) {
+                throw (RuntimeException) t;
+            }
+            throw new InvokerInvocationException(t);
+        }
+    }
+
+    private Object invokeReflective(final Object object, final Object[] arguments) {
         try {
             return normalizeBoxedReturn(cachedMethod.invoke(object, arguments));
         } catch (IllegalArgumentException | IllegalAccessException e) {
             throw new InvokerInvocationException(e);
         } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
-            throw (cause instanceof RuntimeException && !(cause instanceof MissingMethodException)) ? (RuntimeException) cause : new InvokerInvocationException(e);
+            throw (cause instanceof RuntimeException && !(cause instanceof MissingMethodException))
+                    ? (RuntimeException) cause
+                    : new InvokerInvocationException(e);
         }
     }
 
