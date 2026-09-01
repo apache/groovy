@@ -23,6 +23,7 @@ import org.apache.groovy.runtime.async.GroovyPromise;
 import org.apache.groovy.runtime.async.SelectClaim;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -69,6 +70,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * complete unilaterally; over buffered channels with space, each peer's send
  * offer commits immediately under its own select, and the two proceed down
  * different branches of the same session.
+ * <p>
+ * Any branch may also carry a precondition — the <em>guarded choice</em> of
+ * CSP — by passing one flag per offer to {@link #select(boolean...)}. A
+ * disabled offer is left unregistered while the enabled ones keep their
+ * positions, so a guard can be masked off without renumbering the branches
+ * around it.
  * <p>
  * Inspired by GPars' {@code Select} and Go's {@code select} statement
  * (whose send cases these offers mirror).
@@ -243,16 +250,69 @@ public final class ChannelSelect {
      * @return an awaitable result indicating which offer committed
      */
     public Awaitable<Result> select() {
-        int count = offers.size();
+        return select(registrationOrder(null));
+    }
+
+    /**
+     * Waits for the first offer that can complete among those its
+     * precondition enables: the guarded choice of the CSP literature, where
+     * a branch is masked off for this call without disturbing the others.
+     * <p>
+     * Flag {@code i} enables offer {@code i}. A disabled offer is not
+     * registered on its channel — nothing is consumed from it and nothing is
+     * sent to it — but it keeps its position, so {@link Result#getIndex()}
+     * still denotes the same branch whatever the mask. That positional
+     * stability is the point: dropping an offer from the argument list
+     * instead would silently renumber the branches after it.
+     *
+     * <pre>{@code
+     * // the classic bounded buffer: take input only while there is room,
+     * // answer requests only while there is something to hand over
+     * def sel = offers(receive(input), receive(request))
+     * while (true) {
+     *     def result = await sel.select(size < capacity, size > 0)
+     *     if (result.index == 0) { ... buffer result.value ... }
+     *     else                   { ... reply with the oldest value ... }
+     * }
+     * }</pre>
+     * <p>
+     * In every other respect this behaves as {@link #select()}: the enabled
+     * offers are scanned in the order the choice policy dictates, and exactly
+     * one commits.
+     *
+     * @param enabled one flag per offer, in offer order
+     * @return an awaitable result indicating which offer committed, or one
+     *         that fails with {@link IllegalStateException} if every offer is
+     *         disabled
+     * @throws IllegalArgumentException if the number of flags is not the
+     *         number of offers
+     * @since 6.0.0
+     */
+    public Awaitable<Result> select(boolean... enabled) {
+        Objects.requireNonNull(enabled, "enabled must not be null");
+        if (enabled.length != offers.size()) {
+            throw new IllegalArgumentException("Expected " + offers.size()
+                    + " precondition(s), one per offer, but got " + enabled.length);
+        }
+        int[] order = registrationOrder(enabled);
+        if (order.length == 0) {
+            CompletableFuture<Result> failed = new CompletableFuture<>();
+            failed.completeExceptionally(new IllegalStateException("every offer of the select is disabled"));
+            return GroovyPromise.of(failed);
+        }
+        return select(order);
+    }
+
+    private Awaitable<Result> select(int[] order) {
+        int count = order.length;
         Winner winner = new Winner();
         AtomicInteger closedCount = new AtomicInteger();
-        Awaitable<?>[] branches = new Awaitable<?>[count];
+        Awaitable<?>[] branches = new Awaitable<?>[offers.size()];
 
         // a ready offer completes synchronously during registration, so the
         // registration order is the priority order: rotate it under fair(),
         // shuffle it under random() (a random start alone would favour a
         // ready offer by the run of not-ready offers before it)
-        int[] order = registrationOrder(count);
         for (int k = 0; k < count && !winner.isDone(); k++) {
             final int index = order[k];
             final Offer offer = offers.get(index);
@@ -272,7 +332,7 @@ public final class ChannelSelect {
                     // other channel has consumed a value and must compete for it now
                     if (claimable || winner.claim.tryCommit(future)) {
                         withdraw(branches); // losers registered so far, before the caller sees the result
-                        winner.complete(new Result(index, offer.send ? offer.value : value, offer.send)); // holding the claim, this cannot fail
+                        winner.complete(new Result(index, offer.send ? offer.value : value, offer.send, ch)); // holding the claim, this cannot fail
                     } else {
                         resend(ch, value);
                     }
@@ -289,26 +349,38 @@ public final class ChannelSelect {
         return GroovyPromise.of(winner);
     }
 
-    private int[] registrationOrder(int count) {
+    /**
+     * The offer indices to register, in registration order, omitting those
+     * the given preconditions disable ({@code null} enables every offer).
+     */
+    private int[] registrationOrder(boolean[] enabled) {
+        int count = offers.size();
         int[] order = new int[count];
+        int size = 0;
         switch (policy) {
             case PRIORITY -> {
-                for (int i = 0; i < count; i++) order[i] = i;
+                for (int i = 0; i < count; i++) {
+                    if (enabled == null || enabled[i]) order[size++] = i;
+                }
             }
             case FAIR -> {
                 int start = Math.floorMod(lastWinner.get() + 1, count);
-                for (int i = 0; i < count; i++) order[i] = (start + i) % count;
+                for (int i = 0; i < count; i++) {
+                    int index = (start + i) % count;
+                    if (enabled == null || enabled[index]) order[size++] = index;
+                }
             }
             case RANDOM -> { // Fisher-Yates: every ready offer is equally likely to be met first
                 ThreadLocalRandom random = ThreadLocalRandom.current();
                 for (int i = 0; i < count; i++) {
-                    int j = random.nextInt(i + 1);
-                    order[i] = order[j];
+                    if (enabled != null && !enabled[i]) continue;
+                    int j = random.nextInt(size + 1);
+                    order[size++] = order[j];
                     order[j] = i;
                 }
             }
         }
-        return order;
+        return size == count ? order : Arrays.copyOf(order, size);
     }
 
     private static void withdraw(Awaitable<?>[] branches) {
@@ -369,22 +441,36 @@ public final class ChannelSelect {
         private final int index;
         private final Object value;
         private final boolean send;
+        private final AsyncChannel<?> channel;
 
         /**
          * Creates a selection result.
          *
-         * @param index the zero-based index of the committed offer
-         * @param value the received value, or the sent value for a send offer
-         * @param send  whether the committed offer was a send
+         * @param index   the zero-based index of the committed offer
+         * @param value   the received value, or the sent value for a send offer
+         * @param send    whether the committed offer was a send
+         * @param channel the channel the committed offer transferred over
          */
-        Result(int index, Object value, boolean send) {
+        Result(int index, Object value, boolean send, AsyncChannel<?> channel) {
             this.index = index;
             this.value = value;
             this.send = send;
+            this.channel = channel;
         }
 
         /** The zero-based index of the offer that committed. */
         public int getIndex() { return index; }
+
+        /**
+         * The channel the committed offer transferred over: the one received
+         * from, or the one sent to. Lets a branch be recognised by identity
+         * rather than by position, which suits a select whose offers are
+         * assembled dynamically.
+         *
+         * @return the winning channel
+         * @since 6.0.0
+         */
+        public AsyncChannel<?> getChannel() { return channel; }
 
         /**
          * The transferred value: what arrived, for a receive offer; what was
