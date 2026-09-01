@@ -201,6 +201,87 @@ public final class HiddenClassDefiner {
     }
 
     /**
+     * Like {@link #tryDefineNestmate(Lookup, byte[], boolean)}, but returns the
+     * hidden {@link Lookup} so the caller can {@code findConstructor} / read
+     * classData without a public-constructor round-trip.
+     *
+     * <p>{@link ExceptionInInitializerError} and {@link NoClassDefFoundError}
+     * are sticky-failed as {@code null} (in addition to the usual soft-fail
+     * set). Needed from {@code InvokerFactory} in another package; not user API.
+     *
+     * @param lookup     full-privilege lookup for the nest host
+     * @param bytes      class-file bytes
+     * @param initialize {@code true} to run {@code <clinit>} immediately
+     * @return the hidden lookup, or {@code null} if definition is not possible
+     * @since 6.0.0
+     */
+    @Internal
+    public static Lookup tryDefineNestmateLookup(
+            final Lookup lookup,
+            final byte[] bytes,
+            final boolean initialize) {
+        return defineHidden(lookup, bytes, initialize, /*classData*/ null, false);
+    }
+
+    /**
+     * Foreign host: {@code privateLookupIn(host, LOOKUP)} then the
+     * Lookup-returning define. Nest host is {@code host}, not this utility.
+     *
+     * @param host       nest host and class-loader / package donor
+     * @param bytes      class-file bytes
+     * @param initialize {@code true} to run {@code <clinit>} immediately
+     * @return the hidden lookup, or {@code null} if private lookup or definition fails
+     * @since 6.0.0
+     */
+    @Internal
+    public static Lookup tryDefineNestmateLookup(
+            final Class<?> host,
+            final byte[] bytes,
+            final boolean initialize) {
+        if (!isEnabled() || !canAttemptPrivateLookup(host) || bytes == null) {
+            return null;
+        }
+        try {
+            final Lookup hostLookup = MethodHandles.privateLookupIn(host, LOOKUP);
+            return tryDefineNestmateLookup(hostLookup, bytes, initialize);
+        } catch (IllegalAccessException | SecurityException e) {
+            return null;
+        } catch (Error e) {
+            if (isUnsupportedFeatureError(e)) {
+                return null;
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Defines {@code bytes} as a hidden nestmate of {@code lookup.lookupClass()}
+     * with {@code classData} attached ({@link Lookup#defineHiddenClassWithClassData}).
+     * Returns the hidden {@link Lookup}. Initialization errors sticky-fail as
+     * {@code null}. Needed from {@code InvokerFactory} in another package; not
+     * user API.
+     *
+     * @param lookup     full-privilege lookup for the nest host
+     * @param bytes      class-file bytes
+     * @param classData  value retrieved by {@link MethodHandles#classData} /
+     *                   {@code ConstantDynamic} in the hidden class
+     * @param initialize {@code true} to run {@code <clinit>} immediately
+     * @return the hidden lookup, or {@code null} if definition is not possible
+     * @since 6.0.0
+     */
+    @Internal
+    public static Lookup tryDefineNestmateWithClassData(
+            final Lookup lookup,
+            final byte[] bytes,
+            final Object classData,
+            final boolean initialize) {
+        if (classData == null) {
+            return null;
+        }
+        return defineHidden(lookup, bytes, initialize, classData, true);
+    }
+
+    /**
      * Internal policy: whether {@code privateLookupIn} from this utility into
      * {@code host} is worth attempting.
      *
@@ -247,6 +328,43 @@ public final class HiddenClassDefiner {
             return null;
         }
         throw e;
+    }
+
+    /**
+     * Shared hidden-class define. {@code withClassData == false} uses
+     * {@link Lookup#defineHiddenClass}; otherwise
+     * {@link Lookup#defineHiddenClassWithClassData}. {@link LinkageError}
+     * (including {@link ExceptionInInitializerError} and
+     * {@link NoClassDefFoundError} on current JDKs) sticky-fails as {@code null}.
+     */
+    private static Lookup defineHidden(
+            final Lookup lookup,
+            final byte[] bytes,
+            final boolean initialize,
+            final Object classData,
+            final boolean withClassData) {
+        if (!isEnabled() || lookup == null || bytes == null) {
+            return null;
+        }
+        try {
+            final byte[] aligned = alignPackage(bytes, lookup.lookupClass());
+            if (withClassData) {
+                return lookup.defineHiddenClassWithClassData(
+                        aligned, classData, initialize, NESTMATE_WEAK);
+            }
+            return lookup.defineHiddenClass(aligned, initialize, NESTMATE_WEAK);
+        } catch (IllegalAccessException | SecurityException | LinkageError e) {
+            // LinkageError includes NoClassDefFoundError and, on current JDKs,
+            // ExceptionInInitializerError — both sticky-fail as null.
+            return null;
+        } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
+            return null;
+        } catch (Error e) {
+            if (e instanceof ExceptionInInitializerError || isUnsupportedFeatureError(e)) {
+                return null;
+            }
+            throw e;
+        }
     }
 
     /**

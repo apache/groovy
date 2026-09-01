@@ -22,6 +22,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.ResourceLock
 import org.junit.jupiter.api.parallel.Resources
 import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.ConstantDynamic
+import org.objectweb.asm.Handle
 
 import java.lang.invoke.MethodHandles
 import java.lang.invoke.MethodHandles.Lookup
@@ -34,8 +36,14 @@ import static org.junit.jupiter.api.Assertions.assertSame
 import static org.junit.jupiter.api.Assertions.assertThrows
 import static org.junit.jupiter.api.Assertions.assertTrue
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
+import static org.objectweb.asm.Opcodes.ACC_STATIC
 import static org.objectweb.asm.Opcodes.ALOAD
+import static org.objectweb.asm.Opcodes.ARETURN
+import static org.objectweb.asm.Opcodes.ATHROW
+import static org.objectweb.asm.Opcodes.DUP
+import static org.objectweb.asm.Opcodes.H_INVOKESTATIC
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL
+import static org.objectweb.asm.Opcodes.NEW
 import static org.objectweb.asm.Opcodes.RETURN
 import static org.objectweb.asm.Opcodes.V17
 
@@ -323,5 +331,117 @@ class HiddenClassDefinerTest {
     @Test
     void testForeignHostNullBytesRejected() {
         assertNull(HiddenClassDefiner.tryDefineNestmate(HiddenClassDefinerTest, null, true))
+    }
+
+    // -------------------------------------------------------------------------
+    // Lookup-returning / classData overloads (DirectInvoker support)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void testTryDefineNestmateLookupReturnsHiddenLookup() {
+        byte[] bytes = minimalClassBytes('org/apache/groovy/util/LookupRet1')
+        Lookup hidden = HiddenClassDefiner.tryDefineNestmateLookup(LOOKUP, bytes, true)
+        assertNotNull(hidden)
+        assertTrue(hidden.lookupClass().hidden)
+        assertEquals(HiddenClassDefinerTest.nestHost, hidden.lookupClass().nestHost)
+        assertNotNull(hidden.lookupClass().getConstructor().newInstance())
+    }
+
+    @Test
+    void testTryDefineNestmateLookupForeignHost() {
+        byte[] bytes = minimalClassBytes('org/apache/groovy/util/LookupRetForeign')
+        Lookup hidden = HiddenClassDefiner.tryDefineNestmateLookup(HiddenClassDefinerTest, bytes, true)
+        assertNotNull(hidden)
+        assertEquals(HiddenClassDefinerTest.nestHost, hidden.lookupClass().nestHost)
+    }
+
+    @Test
+    void testTryDefineNestmateLookupRejectsNulls() {
+        byte[] bytes = minimalClassBytes('org/apache/groovy/util/LookupRetNull')
+        assertNull(HiddenClassDefiner.tryDefineNestmateLookup((Lookup) null, bytes, true))
+        assertNull(HiddenClassDefiner.tryDefineNestmateLookup(LOOKUP, null, true))
+        assertNull(HiddenClassDefiner.tryDefineNestmateLookup((Class) null, bytes, true))
+        assertNull(HiddenClassDefiner.tryDefineNestmateLookup(HiddenClassDefinerTest, null, true))
+        assertNull(HiddenClassDefiner.tryDefineNestmateLookup(LOOKUP, new byte[]{0, 1, 2, 3}, true))
+    }
+
+    @Test
+    void testTryDefineNestmateLookupStickyFailsClinitError() {
+        byte[] bytes = throwingClinitBytes('org/apache/groovy/util/LookupRetClinit')
+        assertNull(HiddenClassDefiner.tryDefineNestmateLookup(LOOKUP, bytes, true))
+    }
+
+    @Test
+    void testTryDefineNestmateWithClassDataRoundTrip() {
+        byte[] bytes = classDataGetterBytes('org/apache/groovy/util/ClassData1')
+        Lookup hidden = HiddenClassDefiner.tryDefineNestmateWithClassData(
+                LOOKUP, bytes, 'payload', true)
+        assertNotNull(hidden)
+        Object inst = hidden.lookupClass().getConstructor().newInstance()
+        assertEquals('payload', hidden.lookupClass().getMethod('get').invoke(inst))
+    }
+
+    @Test
+    void testTryDefineNestmateWithClassDataRejectsNullClassData() {
+        byte[] bytes = classDataGetterBytes('org/apache/groovy/util/ClassDataNull')
+        assertNull(HiddenClassDefiner.tryDefineNestmateWithClassData(LOOKUP, bytes, null, true))
+        assertNull(HiddenClassDefiner.tryDefineNestmateWithClassData(null, bytes, 'x', true))
+        assertNull(HiddenClassDefiner.tryDefineNestmateWithClassData(LOOKUP, null, 'x', true))
+    }
+
+    @Test
+    void testTryDefineNestmateLookupIntoJavaBaseDoesNotThrow() {
+        byte[] bytes = minimalClassBytes('java/lang/ShouldNotAppearLookup')
+        Lookup result = HiddenClassDefiner.tryDefineNestmateLookup(String, bytes, true)
+        if (!HiddenClassDefiner.canAttemptPrivateLookup(String)) {
+            assertNull(result, 'unopened java.lang must soft-fail to null')
+        } else if (result != null) {
+            assertTrue(result.lookupClass().hidden)
+        }
+    }
+
+    private static byte[] throwingClinitBytes(String internalName) {
+        def cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES)
+        cw.visit(V17, ACC_PUBLIC, internalName, null, 'java/lang/Object', null)
+        def init = cw.visitMethod(ACC_PUBLIC, '<init>', '()V', null, null)
+        init.visitCode()
+        init.visitVarInsn(ALOAD, 0)
+        init.visitMethodInsn(INVOKESPECIAL, 'java/lang/Object', '<init>', '()V', false)
+        init.visitInsn(RETURN)
+        init.visitMaxs(0, 0)
+        init.visitEnd()
+        def clinit = cw.visitMethod(ACC_STATIC, '<clinit>', '()V', null, null)
+        clinit.visitCode()
+        clinit.visitTypeInsn(NEW, 'java/lang/RuntimeException')
+        clinit.visitInsn(DUP)
+        clinit.visitLdcInsn('clinit-boom')
+        clinit.visitMethodInsn(INVOKESPECIAL, 'java/lang/RuntimeException', '<init>', '(Ljava/lang/String;)V', false)
+        clinit.visitInsn(ATHROW)
+        clinit.visitMaxs(0, 0)
+        clinit.visitEnd()
+        cw.visitEnd()
+        cw.toByteArray()
+    }
+
+    private static byte[] classDataGetterBytes(String internalName) {
+        def cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES)
+        cw.visit(V17, ACC_PUBLIC, internalName, null, 'java/lang/Object', null)
+        def init = cw.visitMethod(ACC_PUBLIC, '<init>', '()V', null, null)
+        init.visitCode()
+        init.visitVarInsn(ALOAD, 0)
+        init.visitMethodInsn(INVOKESPECIAL, 'java/lang/Object', '<init>', '()V', false)
+        init.visitInsn(RETURN)
+        init.visitMaxs(0, 0)
+        init.visitEnd()
+        def bsm = new Handle(H_INVOKESTATIC, 'java/lang/invoke/MethodHandles', 'classData',
+                '(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;', false)
+        def get = cw.visitMethod(ACC_PUBLIC, 'get', '()Ljava/lang/Object;', null, null)
+        get.visitCode()
+        get.visitLdcInsn(new ConstantDynamic('_', 'Ljava/lang/String;', bsm))
+        get.visitInsn(ARETURN)
+        get.visitMaxs(0, 0)
+        get.visitEnd()
+        cw.visitEnd()
+        cw.toByteArray()
     }
 }
