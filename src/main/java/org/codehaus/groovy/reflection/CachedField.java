@@ -46,19 +46,27 @@ public class CachedField extends MetaProperty {
     }
 
     private final Field field;
-    private volatile boolean madeAccessible;
-    private boolean accessAttempted; // guarded by synchronization on this
-    private void makeAccessible() {
-        // at most one attempt, remembering either outcome: a failed attempt (strongly
-        // encapsulated declaring class) cannot succeed later. The attempt is recorded
-        // only once it has completed, under synchronization, so a concurrent caller
-        // waits instead of reading the field before setAccessible has taken effect.
-        synchronized (this) {
-            if (!accessAttempted) {
-                madeAccessible = ReflectionUtils.makeAccessibleInPrivilegedAction(field).isPresent();
-                accessAttempted = true;
-            }
+    private volatile boolean madeAccessible;  // outcome of the deep-reflection attempt
+    private volatile boolean accessAttempted; // Groovy's deep-reflection path has been tried
+    private volatile MethodHandle getter, setter; // deep-reflection handles, which are
+        // caller-independent and so may be cached; a handle obtained from a caller's
+        // lookup carries that caller's access rights and is never cached
+
+    /**
+     * Tries once to establish deep-reflection access to the field, remembering
+     * either outcome: a failed attempt (strongly encapsulated declaring class)
+     * cannot succeed later. Lock-free: a concurrent duplicate attempt is benign
+     * (both threads force the same {@code Field}, idempotently), and the attempt
+     * is recorded only after it completed, so a thread that observes
+     * {@code accessAttempted} also observes the outcome and the field's
+     * accessibility.
+     */
+    private boolean makeAccessible() {
+        if (!accessAttempted) {
+            madeAccessible = ReflectionUtils.makeAccessibleInPrivilegedAction(field).isPresent();
+            accessAttempted = true;
         }
+        return madeAccessible;
     }
 
     /**
@@ -130,53 +138,39 @@ public class CachedField extends MetaProperty {
 
     /**
      * Creates a method handle that provides getter access to this field via MethodHandles API.
-     * Attempts to unreflect the field, automatically making it accessible if needed.
+     * When deep-reflection access can be established ({@code setAccessible} on the field),
+     * the resulting handle is caller-independent and is created once and cached; otherwise
+     * the given caller lookup decides, and its handle -- which carries that caller's access
+     * rights -- is never cached.
      *
-     * @param lookup the method handles lookup context
+     * @param lookup the method handles lookup context of the caller
      * @return a method handle providing getter access to this field
-     * @throws IllegalAccessException if the field cannot be accessed even with accessibility adjustments
+     * @throws IllegalAccessException if neither deep reflection nor the caller's lookup can access the field
      */
     public MethodHandle asAccessMethod(final MethodHandles.Lookup lookup) throws IllegalAccessException {
-        try {
-            return lookup.unreflectGetter(field);
-        } catch (IllegalAccessException e) {
-            if (!madeAccessible) {
-                try {
-                    makeAccessible();
-                    return lookup.unreflectGetter(field);
-                } catch (IllegalAccessException ignore) {
-                } catch (Throwable t) {
-                    e.addSuppressed(t);
-                }
-            }
-            throw e;
+        MethodHandle h = getter;
+        if (h == null && makeAccessible()) {
+            h = getter = MethodHandles.lookup().unreflectGetter(field); // cannot fail: access was forced
         }
+        return h != null ? h : lookup.unreflectGetter(field);
     }
 
     /**
      * Creates a method handle that writes this field via the MethodHandles API,
-     * the mutating counterpart of {@link #asAccessMethod(MethodHandles.Lookup)}.
-     * Attempts to unreflect the field, automatically making it accessible if needed.
+     * the mutating counterpart of {@link #asAccessMethod(MethodHandles.Lookup)},
+     * with the same caching policy. No deep-reflection handle is created for a
+     * final field: writing it must keep failing the caller's access check.
      *
-     * @param lookup the method handles lookup context
+     * @param lookup the method handles lookup context of the caller
      * @return a setter handle of type {@code (declaringClass, fieldType)void}
-     * @throws IllegalAccessException if the field cannot be accessed even with accessibility adjustments
+     * @throws IllegalAccessException if neither deep reflection nor the caller's lookup can write the field
      * @since 6.0.0
      */
     public MethodHandle asWriteAccessMethod(final MethodHandles.Lookup lookup) throws IllegalAccessException {
-        try {
-            return lookup.unreflectSetter(field);
-        } catch (IllegalAccessException e) {
-            if (!madeAccessible) {
-                try {
-                    makeAccessible();
-                    return lookup.unreflectSetter(field);
-                } catch (IllegalAccessException ignore) {
-                } catch (Throwable t) {
-                    e.addSuppressed(t);
-                }
-            }
-            throw e;
+        MethodHandle h = setter;
+        if (h == null && !isFinal() && makeAccessible()) {
+            h = setter = MethodHandles.lookup().unreflectSetter(field); // cannot fail: access was forced
         }
+        return h != null ? h : lookup.unreflectSetter(field);
     }
 }
