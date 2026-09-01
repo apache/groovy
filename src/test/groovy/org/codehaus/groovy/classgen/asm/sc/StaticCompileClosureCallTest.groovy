@@ -122,6 +122,20 @@ final class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    // GROOVY-12309
+    @Test
+    void testClosureCallWithObjectArrayParameter() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Foo {
+                static Object[] foo() {
+                    { Object[] args -> args }.call(new Object[] {'foo'})
+                }
+            }
+            assert Foo.foo() == ['foo'] as Object[]
+        '''
+    }
+
     @Test
     void testWriteSharedVariableInClosure() {
         def bytecode = compile([method:'m'],'''
