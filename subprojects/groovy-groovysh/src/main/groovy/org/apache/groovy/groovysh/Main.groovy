@@ -373,7 +373,29 @@ class Main {
                 } else {
                     Files.createFile(file)
                 }
-            } else if (posixFileSystem() && !FILE_OWNER_ONLY.containsAll(Files.getPosixFilePermissions(file))) {
+            }
+        } catch (IOException | UnsupportedOperationException ignored) {
+            // best effort: a state file we cannot create is reported by whoever needs to write it
+        }
+        tightenStateFile(file)
+    }
+
+    /**
+     * Restricts an existing state file to its owner when it is currently more permissive, and does
+     * nothing at all when the file is absent.
+     * <p>
+     * JLine warns about an over-permissive history file rather than changing it, so as not to
+     * surprise the user. This is the one place groovysh goes further: the file records what was
+     * typed at a shell prompt, the warning is easy to miss in a log, and the directory it lives in
+     * belongs to groovysh. A mode stricter than owner-only is still left alone.
+     *
+     * @param file the state file
+     * @return the same path, for chaining
+     */
+    static Path tightenStateFile(Path file) {
+        try {
+            if (posixFileSystem() && Files.exists(file)
+                    && !FILE_OWNER_ONLY.containsAll(Files.getPosixFilePermissions(file))) {
                 Files.setPosixFilePermissions(file, FILE_OWNER_ONLY)
             }
         } catch (IOException | UnsupportedOperationException ignored) {
@@ -489,10 +511,12 @@ class Main {
                 .variable(LineReader.SECONDARY_PROMPT_PATTERN, "%M%P > ")
                 .variable(LineReader.INDENTATION, 2)
                 .variable(LineReader.LIST_MAX, 100)
-                // created before JLine opens it, so the history lands in an owner-only file rather
-                // than whatever the ambient umask allows
+                // Left for JLine to create: DefaultHistory creates the history file owner-only,
+                // handles the concurrent-creation race, and falls back on non-POSIX file systems.
+                // Creating it here first is what used to defeat that and leave it at the umask
+                // default. Only an already-open file is adjusted.
                 .variable(LineReader.HISTORY_FILE,
-                    createOwnerOnlyStateFile(userStateDirectory.resolve('groovysh_history')))
+                    tightenStateFile(userStateDirectory.resolve('groovysh_history')))
                 .option(Option.INSERT_BRACKET, true)
                 .option(Option.EMPTY_WORD_OPTIONS, false)
                 .option(Option.USE_FORWARD_SLASH, true)

@@ -64,12 +64,23 @@ class MainStateFileTest {
 
     // GROOVY-12335
     @Test
+    void tighteningDoesNotCreateAMissingFile(@TempDir Path dir) {
+        // the history file is left for JLine to create, which does so owner-only and handles the
+        // races; creating it here first is what used to defeat that
+        def file = dir.resolve('groovysh_history')
+
+        assert Main.tightenStateFile(file) == file
+        assert !Files.exists(file)
+    }
+
+    // GROOVY-12335
+    @Test
     void existingFileLeftTooOpenIsTightened(@TempDir Path dir) {
         assumeTrue(posix())
         def file = Files.createFile(dir.resolve('groovysh_history'))
         Files.setPosixFilePermissions(file, PosixFilePermissions.fromString('rw-r--r--'))
 
-        Main.createOwnerOnlyStateFile(file)
+        Main.tightenStateFile(file)
 
         assert modeOf(file) == 'rw-------'
     }
