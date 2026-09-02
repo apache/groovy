@@ -435,9 +435,19 @@ which it holds, and what its violation would look like.
   `PreparedStatement` bind parameters rather than string concatenation, so
   the idiomatic `sql.rows("select * from p where name = $name")` is
   parameterized. *Condition:* the GString/bind APIs are used (not a
-  hand-concatenated `String`). *Violation:* a GString placeholder reaching
-  the driver as literal SQL. CWE-89. *Indicative severity if violated:
-  High.* *(documented — verified in `groovy-sql`)*
+  hand-concatenated `String`). An API qualifies when it has a GString form
+  that binds; a SQL-accepting method with no such form is outside P1, and
+  a `GString` handed to one is coerced to text like any other argument.
+  `BatchingStatementWrapper.addBatch` inside `withBatch { … }` is the case
+  in the module: a JDBC `Statement` batch may hold different statements, so
+  there is nothing to bind against and no parameterized equivalent to
+  redirect callers to. Such a surface is not a P1 violation, but the
+  absence is a hazard where the surrounding module makes GString binding
+  the norm, so it must say so in its documentation and report the coercion
+  rather than perform it silently (GROOVY-12342). *Violation:* a GString
+  placeholder reaching the driver as literal SQL *from an API that has a
+  binding GString form*. CWE-89. *Indicative severity if violated: High.*
+  *(documented — verified in `groovy-sql`)*
 - **P2 — Hardened XML parsing by default.** `XmlParser`, `XmlSlurper`,
   `XmlUtil`, and the DOM/SAX/StAX/Transformer factories created via
   `groovy.xml.FactorySupport` enable `FEATURE_SECURE_PROCESSING`, disable

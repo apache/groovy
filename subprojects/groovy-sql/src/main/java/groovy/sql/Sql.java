@@ -183,6 +183,14 @@ import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
  * <code>sql.firstRow("select * from PersonTable where SurnameColumn = $userInput")</code>
  * or the named parameter variants discussed next.
  * <p>
+ * That conversion belongs to the query methods on this class. It does <b>not</b> apply to
+ * {@link groovy.sql.BatchingStatementWrapper#addBatch(String) addBatch} inside
+ * <code>withBatch { ... }</code>: a JDBC <code>Statement</code> batch may hold different statements,
+ * so there is nothing to bind against and the command is used as SQL text. An interpolated value
+ * there is composed into the statement, and Groovy logs a warning saying so. To bind values in a
+ * batch, batch against a single statement with {@link #withBatch(String, Closure)}, whose wrapper
+ * takes parameters instead of text.
+ * <p>
  * When using the GString variants, do <b>not</b> surround an interpolated expression with SQL quotes,
  * e.g. <code>sql.firstRow("select * from PersonTable where SurnameColumn = '$userInput'")</code>.
  * Such quoting prevents Groovy from using a JDBC PreparedStatement placeholder for the value and would
@@ -4152,6 +4160,12 @@ public class Sql implements AutoCloseable {
      * }
      * </pre>
      *
+     * <p>
+     * The commands added inside the closure are used as SQL <b>text</b>. A GString interpolated
+     * there is composed into the statement rather than bound, because a JDBC <code>Statement</code>
+     * batch may hold different statements and so has nothing to bind against; Groovy logs a warning
+     * when that happens. Use {@link #withBatch(String, Closure)} to bind values instead.
+     *
      * @param closure the closure containing batch and optionally other statements
      * @return an array of update counts containing one element for each
      *         command in the batch.  The elements of the array are ordered according
@@ -4195,6 +4209,12 @@ public class Sql implements AutoCloseable {
      *     ...
      * }
      * </pre>
+     *
+     * <p>
+     * The commands added inside the closure are used as SQL <b>text</b>. A GString interpolated
+     * there is composed into the statement rather than bound, because a JDBC <code>Statement</code>
+     * batch may hold different statements and so has nothing to bind against; Groovy logs a warning
+     * when that happens. Use {@link #withBatch(String, Closure)} to bind values instead.
      *
      * @param batchSize partition the batch into batchSize pieces, i.e. after batchSize
      *                  <code>addBatch()</code> invocations, call <code>executeBatch()</code> automatically;

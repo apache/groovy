@@ -18,6 +18,7 @@
  */
 package groovy.sql;
 
+import groovy.lang.GString;
 import groovy.lang.GroovyObjectSupport;
 import org.codehaus.groovy.runtime.ArrayGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -43,6 +44,8 @@ public class BatchingStatementWrapper extends GroovyObjectSupport implements Aut
     protected Logger log;
     /** Accumulated update counts across delegate batch executions. */
     protected List<Integer> results;
+    /** Whether the interpolation warning has already been logged for this wrapper. */
+    private boolean interpolationWarned;
 
     /**
      * Creates a batching wrapper for a statement.
@@ -80,6 +83,13 @@ public class BatchingStatementWrapper extends GroovyObjectSupport implements Aut
 
     /**
      * Adds a SQL command to the current batch.
+     * <p>
+     * The command is used as SQL text. Unlike the query methods on {@link Sql}, a {@link GString}
+     * passed here is <b>not</b> converted into {@code PreparedStatement} placeholders: a JDBC
+     * {@link Statement} batch may hold different statements, so there is nothing to bind against.
+     * Interpolating an untrusted value therefore composes it into the SQL. To bind values, batch
+     * against a single statement with {@link Sql#withBatch(String, groovy.lang.Closure)}, whose
+     * wrapper takes parameters rather than text.
      *
      * @param sql the SQL command to add
      * @throws SQLException if the command cannot be added
@@ -87,6 +97,85 @@ public class BatchingStatementWrapper extends GroovyObjectSupport implements Aut
     public void addBatch(String sql) throws SQLException {
         delegate.addBatch(sql);
         incrementBatchCount();
+    }
+
+    /**
+     * Adds a SQL command to the current batch, composed from a {@link GString}.
+     * <p>
+     * Present so the coercion is visible rather than silent: the {@code GString} is rendered to text
+     * and added as SQL, and a warning is logged the first time this happens with an interpolated
+     * value that is not a {@link Sql#expand deliberate expansion}. It is not rejected, because a
+     * {@link Statement} batch has no parameterised equivalent to redirect callers to &mdash; batching
+     * heterogeneous statements, generated DDL or identifiers that cannot be bound are all legitimate
+     * uses of this method.
+     *
+     * @param sql the SQL command to add
+     * @throws SQLException if the command cannot be added
+     * @since 6.0.0
+     */
+    public void addBatch(GString sql) throws SQLException {
+        warnIfInterpolated(sql);
+        addBatch(render(sql));
+    }
+
+    /**
+     * Renders the command to text, substituting the value behind any {@link Sql#expand deliberate
+     * expansion} rather than the marker object itself, as {@link Sql#asSql} does. A command with no
+     * expansions renders exactly as the {@code GString} would on its own, leaving the long-standing
+     * behaviour of this method untouched.
+     *
+     * @param sql the command to render
+     * @return the SQL text
+     */
+    private static String render(GString sql) {
+        Object[] values = sql.getValues();
+        boolean expanded = false;
+        for (Object value : values) {
+            if (value instanceof ExpandedVariable) {
+                expanded = true;
+                break;
+            }
+        }
+        if (!expanded) {
+            return sql.toString();
+        }
+        String[] strings = sql.getStrings();
+        StringBuilder buffer = new StringBuilder();
+        for (int i = 0; i < strings.length; i++) {
+            buffer.append(strings[i]);
+            if (i < values.length) {
+                Object value = values[i];
+                buffer.append(value instanceof ExpandedVariable ? ((ExpandedVariable) value).getObject() : value);
+            }
+        }
+        return buffer.toString();
+    }
+
+    /**
+     * Logs, at most once per wrapper, that a value has been composed into batch SQL as text.
+     * <p>
+     * Mirrors what {@link Sql#asSql} does when it inlines rather than binds: wherever Groovy puts a
+     * dynamic value into SQL text, it says so. A {@code GString} with no values, or whose values are
+     * all {@link ExpandedVariable}, is deliberate and passes quietly.
+     *
+     * @param sql the command being added
+     */
+    private void warnIfInterpolated(GString sql) {
+        if (interpolationWarned) {
+            return;
+        }
+        for (Object value : sql.getValues()) {
+            if (!(value instanceof ExpandedVariable)) {
+                log.warning("A dynamic expression (one starting with $) was composed into batch SQL as text. " +
+                        "A JDBC Statement batch cannot bind parameters, so the value is part of the statement " +
+                        "and an untrusted value here is a SQL injection vulnerability. To bind values, batch " +
+                        "against a single statement using Sql.withBatch(String, Closure). If the interpolation " +
+                        "is deliberate, wrap the value in Sql.expand(...) to say so and silence this warning. " +
+                        "The statement so far is: " + sql);
+                interpolationWarned = true;
+                return;
+            }
+        }
     }
 
     /**
