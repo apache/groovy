@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
 
 /**
  * Selects the first offer that can complete among multiple
@@ -72,10 +73,16 @@ import java.util.concurrent.atomic.AtomicInteger;
  * different branches of the same session.
  * <p>
  * Any branch may also carry a precondition — the <em>guarded choice</em> of
- * CSP — by passing one flag per offer to {@link #select(boolean...)}. A
- * disabled offer is left unregistered while the enabled ones keep their
- * positions, so a guard can be masked off without renumbering the branches
- * around it.
+ * CSP — either written onto the offer itself with
+ * {@link Offer#when(BooleanSupplier)} or passed positionally to
+ * {@link #select(boolean...)}. A disabled offer is left unregistered while
+ * the enabled ones keep their positions, so a guard can be masked off
+ * without renumbering the branches around it.
+ *
+ * <pre>{@code
+ * def result = await offers(receive(input).when { size < capacity },
+ *                           receive(request).when { size > 0 }).select()
+ * }</pre>
  * <p>
  * Inspired by GPars' {@code Select} and Go's {@code select} statement
  * (whose send cases these offers mirror).
@@ -159,7 +166,7 @@ public final class ChannelSelect {
         if (!(channel instanceof DefaultAsyncChannel)) {
             throw new IllegalArgumentException("send offers require a channel created by AsyncChannel.create");
         }
-        return new Offer(channel, value, true);
+        return new Offer(channel, value, true, null);
     }
 
     /**
@@ -173,7 +180,7 @@ public final class ChannelSelect {
      */
     public static Offer receive(AsyncChannel<?> channel) {
         Objects.requireNonNull(channel, "channel must not be null");
-        return new Offer(channel, null, false);
+        return new Offer(channel, null, false, null);
     }
 
     /**
@@ -238,7 +245,9 @@ public final class ChannelSelect {
      * and sends nothing.
      * <p>
      * If every offer's channel is closed, the result fails with
-     * {@link ChannelClosedException}.
+     * {@link ChannelClosedException}. If every offer is guarded off (see
+     * {@link Offer#when(BooleanSupplier)}) there is nothing to wait for and
+     * the result fails with {@link IllegalStateException}.
      * <p>
      * Only channels created by {@link AsyncChannel#create} take part in the
      * claim protocol that makes this possible. Any other {@code AsyncChannel}
@@ -250,7 +259,7 @@ public final class ChannelSelect {
      * @return an awaitable result indicating which offer committed
      */
     public Awaitable<Result> select() {
-        return select(registrationOrder(null));
+        return start(registrationOrder(null));
     }
 
     /**
@@ -258,12 +267,13 @@ public final class ChannelSelect {
      * precondition enables: the guarded choice of the CSP literature, where
      * a branch is masked off for this call without disturbing the others.
      * <p>
-     * Flag {@code i} enables offer {@code i}. A disabled offer is not
-     * registered on its channel — nothing is consumed from it and nothing is
-     * sent to it — but it keeps its position, so {@link Result#getIndex()}
-     * still denotes the same branch whatever the mask. That positional
-     * stability is the point: dropping an offer from the argument list
-     * instead would silently renumber the branches after it.
+     * Flag {@code i} enables offer {@code i}, and is conjoined with any guard
+     * the offer carries of its own: an offer is registered only if both hold.
+     * A disabled offer is not registered on its channel — nothing is consumed
+     * from it and nothing is sent to it — but it keeps its position, so
+     * {@link Result#getIndex()} still denotes the same branch whatever the
+     * mask. That positional stability is the point: dropping an offer from
+     * the argument list instead would silently renumber the branches after it.
      *
      * <pre>{@code
      * // the classic bounded buffer: take input only while there is room,
@@ -286,6 +296,7 @@ public final class ChannelSelect {
      *         disabled
      * @throws IllegalArgumentException if the number of flags is not the
      *         number of offers
+     * @see Offer#when(BooleanSupplier)
      * @since 6.0.0
      */
     public Awaitable<Result> select(boolean... enabled) {
@@ -294,17 +305,16 @@ public final class ChannelSelect {
             throw new IllegalArgumentException("Expected " + offers.size()
                     + " precondition(s), one per offer, but got " + enabled.length);
         }
-        int[] order = registrationOrder(enabled);
-        if (order.length == 0) {
+        return start(registrationOrder(enabled));
+    }
+
+    private Awaitable<Result> start(int[] order) {
+        int count = order.length;
+        if (count == 0) {
             CompletableFuture<Result> failed = new CompletableFuture<>();
             failed.completeExceptionally(new IllegalStateException("every offer of the select is disabled"));
             return GroovyPromise.of(failed);
         }
-        return select(order);
-    }
-
-    private Awaitable<Result> select(int[] order) {
-        int count = order.length;
         Winner winner = new Winner();
         AtomicInteger closedCount = new AtomicInteger();
         Awaitable<?>[] branches = new Awaitable<?>[offers.size()];
@@ -351,7 +361,8 @@ public final class ChannelSelect {
 
     /**
      * The offer indices to register, in registration order, omitting those
-     * the given preconditions disable ({@code null} enables every offer).
+     * disabled by the positional preconditions ({@code null} enables every
+     * position) or by a guard the offer carries.
      */
     private int[] registrationOrder(boolean[] enabled) {
         int count = offers.size();
@@ -360,20 +371,20 @@ public final class ChannelSelect {
         switch (policy) {
             case PRIORITY -> {
                 for (int i = 0; i < count; i++) {
-                    if (enabled == null || enabled[i]) order[size++] = i;
+                    if (isEnabled(i, enabled)) order[size++] = i;
                 }
             }
             case FAIR -> {
                 int start = Math.floorMod(lastWinner.get() + 1, count);
                 for (int i = 0; i < count; i++) {
                     int index = (start + i) % count;
-                    if (enabled == null || enabled[index]) order[size++] = index;
+                    if (isEnabled(index, enabled)) order[size++] = index;
                 }
             }
             case RANDOM -> { // Fisher-Yates: every ready offer is equally likely to be met first
                 ThreadLocalRandom random = ThreadLocalRandom.current();
                 for (int i = 0; i < count; i++) {
-                    if (enabled != null && !enabled[i]) continue;
+                    if (!isEnabled(i, enabled)) continue;
                     int j = random.nextInt(size + 1);
                     order[size++] = order[j];
                     order[j] = i;
@@ -381,6 +392,17 @@ public final class ChannelSelect {
             }
         }
         return size == count ? order : Arrays.copyOf(order, size);
+    }
+
+    /**
+     * Whether offer {@code index} takes part in this select: its positional
+     * precondition and its own guard must both hold. Each guard is consulted
+     * once per {@link #select()} call, in offer order under
+     * {@link Policy#PRIORITY} and {@link Policy#RANDOM} and in rotation order
+     * under {@link Policy#FAIR}.
+     */
+    private boolean isEnabled(int index, boolean[] enabled) {
+        return (enabled == null || enabled[index]) && offers.get(index).isEnabled();
     }
 
     private static void withdraw(Awaitable<?>[] branches) {
@@ -407,11 +429,56 @@ public final class ChannelSelect {
         private final AsyncChannel<?> channel;
         private final Object value;
         private final boolean send;
+        /** the guard, or {@code null} when the offer is unconditional */
+        private final BooleanSupplier guard;
 
-        private Offer(AsyncChannel<?> channel, Object value, boolean send) {
+        private Offer(AsyncChannel<?> channel, Object value, boolean send, BooleanSupplier guard) {
             this.channel = channel;
             this.value = value;
             this.send = send;
+            this.guard = guard;
+        }
+
+        /**
+         * Returns a copy of this offer guarded by {@code condition}: the
+         * precondition written onto the branch itself, as occam, Ada, Erlang
+         * and Kotlin write it, rather than passed positionally to
+         * {@link ChannelSelect#select(boolean...)}.
+         *
+         * <pre>{@code
+         * def sel = offers(receive(input).when { size < capacity },
+         *                  receive(request).when { size > 0 })
+         * def result = await sel.select()
+         * }</pre>
+         * <p>
+         * The condition is evaluated afresh on every {@link
+         * ChannelSelect#select()} call — that is why it is a supplier and not
+         * a boolean — so one guarded select may be held and reused as the
+         * state it guards on changes. When it does not hold, the offer is not
+         * registered on its channel: nothing is taken from it and nothing is
+         * sent to it, and the remaining offers keep their positions, so
+         * {@link Result#getIndex()} denotes the same branch either way.
+         * <p>
+         * Guards conjoin: over a second {@code when} both conditions must
+         * hold, as must the corresponding flag of a
+         * {@link ChannelSelect#select(boolean...)} call. If no offer of a
+         * select is enabled the result fails with
+         * {@link IllegalStateException}, since there is nothing left to wait
+         * for.
+         *
+         * @param condition the guard, consulted once per select
+         * @return a guarded copy of this offer
+         * @since 6.0.0
+         */
+        public Offer when(BooleanSupplier condition) {
+            Objects.requireNonNull(condition, "condition must not be null");
+            BooleanSupplier outer = guard;
+            return new Offer(channel, value, send,
+                    outer == null ? condition : () -> outer.getAsBoolean() && condition.getAsBoolean());
+        }
+
+        boolean isEnabled() {
+            return guard == null || guard.getAsBoolean();
         }
     }
 

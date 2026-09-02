@@ -192,31 +192,50 @@ different branches of the same conversation.
 === Preconditions
 
 Each branch may also carry a _precondition_ — the guarded choice of CSP.
-`select` takes one flag per offer: a disabled offer is not registered on
-its channel, so nothing is taken from it and nothing is sent to it, but
-it keeps its position, so `result.index` denotes the same branch whatever
-the mask:
+`when` writes the guard onto the offer itself, as occam, Ada, Erlang and
+Kotlin do:
 
 [source,groovy]
 ----
-def sel = offers(receive(input), receive(request))
+def sel = offers(receive(input).when { held.size() < capacity },   // <1>
+                 receive(request).when { !held.isEmpty() })        // <2>
 while (true) {
-    def result = await sel.select(size < capacity, size > 0)  // <1>
+    def result = await sel.select()
     if (result.index == 0) {
-        // room to spare: buffer result.value
+        held.addLast(result.value)
     } else {
-        // something to hand over: reply with the oldest value
+        await reply.send(held.removeFirst())
     }
 }
 ----
-<1> take input only while there is room, answer requests only while there
-is something to hand over
+<1> take input only while there is room
+<2> answer a request only while there is something to hand over
 
-Dropping an offer from the argument list instead would renumber every
-branch after it, silently changing what an index denotes. Enabling no
+A guarded-off offer is not registered on its channel, so nothing is taken
+from it and nothing is sent to it, but it keeps its position, so
+`result.index` denotes the same branch either way. Dropping an offer from
+the argument list instead would renumber every branch after it, silently
+changing what an index denotes.
+
+The guard is a closure rather than a boolean because it is consulted
+afresh on every `select` call — that is what lets one select be built
+once and reused as the state it guards on changes. `when` returns a
+guarded copy, leaving the original offer alone, and guards conjoin: over
+a second `when`, both must hold.
+
+`select` also accepts the same preconditions positionally, one flag per
+offer, which suits a mask computed as a whole:
+
+[source,groovy]
+----
+def result = await sel.select(held.size() < capacity, !held.isEmpty())
+----
+
+A flag is conjoined with whatever guard its offer carries — both must
+hold for the offer to be registered — and passing a number of flags other
+than the number of offers is an `IllegalArgumentException`. Enabling no
 branch at all is a deadlock rather than a wait, so `select` fails with
-`IllegalStateException`; passing the wrong number of flags is an
-`IllegalArgumentException`.
+`IllegalStateException`.
 
 A branch can also be recognised by identity instead of by position:
 `result.channel` is the channel the winning offer transferred over.
