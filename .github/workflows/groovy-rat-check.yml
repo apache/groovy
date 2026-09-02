@@ -65,6 +65,13 @@ jobs:
         # dists are cached by the explicit branch-keyed step above instead.
         with:
           cache-disabled: true
+      - name: "TEMP f024 probe"
+        run: |
+          if [ "$DEVELOCITY_ACCESS_KEY" = '${{ secrets.DEVELOCITY_ACCESS_KEY }}' ]; then
+            echo "SAME - long-lived key still in env, visible to later steps"
+          else
+            echo "REPLACED - short-lived token, long-lived key hidden"
+          fi
       - name: Check licenses with rat
         run: ./gradlew rat
         timeout-minutes: 60
