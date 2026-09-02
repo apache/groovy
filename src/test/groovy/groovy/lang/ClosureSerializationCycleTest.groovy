@@ -18,10 +18,14 @@
  */
 package groovy.lang
 
+import org.apache.groovy.util.Closures
 import org.codehaus.groovy.runtime.CurriedClosure
 import org.junit.jupiter.api.Test
 
 import java.io.InvalidObjectException
+import java.util.function.Consumer
+import java.util.function.Function
+import java.util.function.Predicate
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -140,6 +144,68 @@ final class ClosureSerializationCycleTest {
         assert err.message.contains('additionalReferences() must not return null')
     }
 
+    // GROOVY-12339
+    @Test
+    void testWritableClosureCycleRejected() {
+        // asWritable() wraps the closure it writes through as its owner, so a forged owner cycle
+        // recurses on the first call or render
+        byte[] bytes = Holder.serializeCyclicWritable()
+        def err = shouldFail(InvalidObjectException) { deserialize(bytes) }
+        assert err.message.contains('cycle')
+    }
+
+    // GROOVY-12339
+    @Test
+    void testWritableClosureCyclicOuterRejected() {
+        byte[] bytes = Holder.serializeWritableWithCyclicOuter()
+        def err = shouldFail(InvalidObjectException) { deserialize(bytes) }
+        assert err.message.contains('cycle')
+    }
+
+    // GROOVY-12339
+    @Test
+    void testMemoizedClosureCycleRejected() {
+        // the memoized closure is held in a 'closure' field, outside the default walk
+        byte[] bytes = Holder.serializeCyclicMemoized()
+        def err = shouldFail(InvalidObjectException) { deserialize(bytes) }
+        assert err.message.contains('cycle')
+    }
+
+    // GROOVY-12339
+    @Test
+    void testSoftReferenceMemoizedClosureCycleRejected() {
+        // readResolve is private and therefore not inherited: the subclass needs its own
+        byte[] bytes = Holder.serializeCyclicSoftMemoized()
+        def err = shouldFail(InvalidObjectException) { deserialize(bytes) }
+        assert err.message.contains('cycle')
+    }
+
+    // GROOVY-12339
+    @Test
+    void testFunctionalHybridClosureCyclesRejected() {
+        // PredicateClosure/FunctionClosure/ConsumerClosure each dispatch through a 'delegate'
+        // field outside the default walk
+        ['Predicate', 'Function', 'Consumer'].each { kind ->
+            byte[] bytes = Holder."serializeCyclic${kind}Closure"()
+            def err = shouldFail(InvalidObjectException) { deserialize(bytes) }
+            assert err.message.contains('cycle'), kind
+        }
+    }
+
+    // GROOVY-12339
+    @Test
+    void testLegitimateMemoizedClosureRoundTrips() {
+        byte[] bytes = Holder.serializeMemoized()
+        assert deserialize(bytes).call(4) == 8
+    }
+
+    // GROOVY-12339
+    @Test
+    void testLegitimateFunctionalHybridRoundTrips() {
+        byte[] bytes = Holder.serializePredicateClosure()
+        assert deserialize(bytes).call(4) == true
+    }
+
     @Test
     void testLegitimateTrampolineRoundTrips() {
         byte[] bytes = Holder.serializeTrampoline()
@@ -213,6 +279,64 @@ final class ClosureSerializationCycleTest {
             def trampoline = { x -> x }.trampoline()
             setDeclaredField(trampoline, 'original', trampoline)
             serialize(trampoline)
+        }
+
+        static byte[] serializeWritableWithCyclicOuter() {
+            // the synthetic outer reference the forwarding methods read, forged to point at the
+            // wrapper itself while owner is left acyclic
+            def writable = { x -> x }.asWritable()
+            setDeclaredField(writable, 'this$0', writable)
+            serialize(writable)
+        }
+
+        static byte[] serializeCyclicWritable() {
+            def writable = { x -> x }.asWritable()
+            setDeclaredField(writable, 'owner', writable)
+            setDeclaredField(writable, 'delegate', writable)
+            serialize(writable)
+        }
+
+        static byte[] serializeMemoized() {
+            serialize({ x -> x * 2 }.memoize())
+        }
+
+        static byte[] serializeCyclicMemoized() {
+            def memoized = { x -> x * 2 }.memoize()
+            setDeclaredField(memoized, 'closure', memoized)
+            serialize(memoized)
+        }
+
+        static byte[] serializeCyclicSoftMemoized() {
+            // A real instance cannot be serialized: it holds a non-transient ReferenceQueue. A forged
+            // gadget stream is hand-written and under no such constraint, so the unserializable fields
+            // are cleared here to produce the stream an attacker would simply author.
+            def memoized = { x -> x * 2 }.memoizeAtLeast(4)
+            setDeclaredField(memoized, 'queue', null)
+            setDeclaredField(memoized, 'lruProtectionStorage', null)
+            setDeclaredField(memoized, 'closure', memoized)
+            serialize(memoized)
+        }
+
+        static byte[] serializePredicateClosure() {
+            serialize(Closures.from({ n -> n % 2 == 0 } as Predicate))
+        }
+
+        static byte[] serializeCyclicPredicateClosure() {
+            def pc = Closures.from({ n -> n % 2 == 0 } as Predicate)
+            setDeclaredField(pc, 'delegate', pc)
+            serialize(pc)
+        }
+
+        static byte[] serializeCyclicFunctionClosure() {
+            def fc = Closures.from({ n -> n * 2 } as Function)
+            setDeclaredField(fc, 'delegate', fc)
+            serialize(fc)
+        }
+
+        static byte[] serializeCyclicConsumerClosure() {
+            def cc = Closures.from({ n -> } as Consumer)
+            setDeclaredField(cc, 'delegate', cc)
+            serialize(cc)
         }
 
         static byte[] serializeCurriedOverNullRefsClosure() {
