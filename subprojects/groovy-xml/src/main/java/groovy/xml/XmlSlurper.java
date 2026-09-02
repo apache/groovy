@@ -193,7 +193,7 @@ public class XmlSlurper extends DefaultHandler {
         SAXParserFactory factory = FactorySupport.createSaxParserFactory(allowDocTypeDeclaration);
         factory.setNamespaceAware(namespaceAware);
         factory.setValidating(validating);
-        reader = factory.newSAXParser().getXMLReader();
+        reader = FactorySupport.createSaxParser(factory).getXMLReader();
     }
 
     private XMLReader getReader() throws ParserConfigurationException, SAXException {

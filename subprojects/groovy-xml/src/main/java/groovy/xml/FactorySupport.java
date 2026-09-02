@@ -18,12 +18,14 @@
  */
 package groovy.xml;
 
+import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.transform.TransformerConfigurationException;
@@ -47,6 +49,28 @@ public class FactorySupport {
     private static final Logger LOG = Logger.getLogger(FactorySupport.class.getName());
 
     private static final String DISALLOW_DOCTYPE_DECL_FEATURE = "http://apache.org/xml/features/disallow-doctype-decl";
+
+    private static final String MAX_ELEMENT_DEPTH_LIMIT = "jdk.xml.maxElementDepth";
+
+    /**
+     * Default bound on how deeply elements may nest in a parsed document.
+     * <p>
+     * {@link XMLConstants#FEATURE_SECURE_PROCESSING} does not bound element depth: the JAXP
+     * {@code jdk.xml.maxElementDepth} limit defaults to {@code 0}, meaning unlimited. The parse
+     * itself survives an arbitrarily deep document, because SAX tracks nesting on the heap, but the
+     * first consumer to walk the result recursively &mdash; {@code Node.text()},
+     * {@code XmlNodePrinter}, {@code GPathResult.toString()}, {@code XmlUtil.serialize} &mdash;
+     * runs one stack frame per level and dies with a {@link StackOverflowError}. That is an
+     * {@link Error}, so it escapes the {@code catch (Exception)} an application would reasonably
+     * use to handle a malformed document. Bounding the depth at parse time turns it into an
+     * ordinary parse failure, at one check point, before any of those consumers is reached.
+     * <p>
+     * The value matches {@code groovy.json}'s nesting bound, and sits far above any realistic
+     * document.
+     *
+     * @since 6.0.0
+     */
+    public static final int DEFAULT_MAX_ELEMENT_DEPTH = 1000;
 
     /**
      * Logs that a security-hardening setting could not be applied to a JAXP factory. These settings
@@ -122,6 +146,7 @@ public class FactorySupport {
         DocumentBuilderFactory factory = (DocumentBuilderFactory) createFactory(DocumentBuilderFactory::newInstance);
         setFeatureQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
         setFeatureQuietly(factory, DISALLOW_DOCTYPE_DECL_FEATURE, !allowDocTypeDeclaration);
+        setMaxElementDepthQuietly(factory);
         factory.setXIncludeAware(false);
         factory.setExpandEntityReferences(false);
         return factory;
@@ -267,6 +292,64 @@ public class FactorySupport {
         XPathFactory factory = XPathFactory.newInstance();
         setFeatureQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
         return factory;
+    }
+
+    /**
+     * Creates a {@link SAXParser} from the supplied factory, bounded by
+     * {@link #DEFAULT_MAX_ELEMENT_DEPTH}.
+     * <p>
+     * The depth limit cannot be set on a {@link SAXParserFactory} &mdash; it is a parser property
+     * &mdash; so SAX callers should obtain their parser here rather than calling
+     * {@link SAXParserFactory#newSAXParser()} directly, or the bound will not be applied.
+     *
+     * @param factory the factory to create the parser from
+     * @return a newly created parser with the element-depth bound applied
+     * @throws ParserConfigurationException if the parser cannot be created
+     * @throws SAXException if the parser cannot be created
+     * @since 6.0.0
+     */
+    public static SAXParser createSaxParser(SAXParserFactory factory) throws ParserConfigurationException, SAXException {
+        SAXParser parser = factory.newSAXParser();
+        setMaxElementDepthQuietly(parser);
+        return parser;
+    }
+
+    /**
+     * The element-depth bound to apply, or {@code null} to leave the parser's own default in place.
+     * <p>
+     * A value supplied through the standard {@code jdk.xml.maxElementDepth} system property is the
+     * user's choice of bound, and JAXP would let an explicitly set parser property override it, so
+     * nothing is applied when that property is present &mdash; including a deliberate {@code 0},
+     * which restores unlimited depth.
+     */
+    private static String maxElementDepthLimit() {
+        return System.getProperty(MAX_ELEMENT_DEPTH_LIMIT) == null
+                ? Integer.toString(DEFAULT_MAX_ELEMENT_DEPTH)
+                : null;
+    }
+
+    private static void setMaxElementDepthQuietly(DocumentBuilderFactory factory) {
+        String limit = maxElementDepthLimit();
+        if (limit == null) {
+            return;
+        }
+        try {
+            factory.setAttribute(MAX_ELEMENT_DEPTH_LIMIT, limit);
+        } catch (IllegalArgumentException e) {
+            warnHardeningNotApplied(factory, MAX_ELEMENT_DEPTH_LIMIT, limit, e);
+        }
+    }
+
+    private static void setMaxElementDepthQuietly(SAXParser parser) {
+        String limit = maxElementDepthLimit();
+        if (limit == null) {
+            return;
+        }
+        try {
+            parser.setProperty(MAX_ELEMENT_DEPTH_LIMIT, limit);
+        } catch (SAXNotRecognizedException | SAXNotSupportedException e) {
+            warnHardeningNotApplied(parser, MAX_ELEMENT_DEPTH_LIMIT, limit, e);
+        }
     }
 
     // package-private for testing

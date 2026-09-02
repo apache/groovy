@@ -154,7 +154,7 @@ public class XmlParser implements ContentHandler {
         SAXParserFactory factory = FactorySupport.createSaxParserFactory(allowDocTypeDeclaration);
         factory.setNamespaceAware(namespaceAware);
         factory.setValidating(validating);
-        reader = factory.newSAXParser().getXMLReader();
+        reader = FactorySupport.createSaxParser(factory).getXMLReader();
     }
 
     private XMLReader ensureReader() {
