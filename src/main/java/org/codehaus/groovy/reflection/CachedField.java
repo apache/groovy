@@ -70,6 +70,21 @@ public class CachedField extends MetaProperty {
     }
 
     /**
+     * Determines whether the reflective access path ({@code Field.get}/{@code set})
+     * can reach this field: deep access has been, or can now be, established. The
+     * reflective path's callers use this to treat an unreachable field (strongly
+     * encapsulated declaring class) as absent instead of failing when it is read
+     * or written. It says nothing about what a caller's own {@code Lookup} may
+     * reach -- see {@link #asAccessMethod(MethodHandles.Lookup)} -- and so must
+     * not be used to decide member selection or call-site linkage.
+     *
+     * @since 6.0.0
+     */
+    public boolean canAccessViaReflection() {
+        return makeAccessible();
+    }
+
+    /**
      * Returns the underlying Java {@code Field} object, making it accessible if necessary.
      *
      * @return the cached field with accessibility ensured
