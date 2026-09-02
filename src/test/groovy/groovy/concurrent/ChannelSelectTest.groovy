@@ -916,4 +916,196 @@ final class ChannelSelectTest {
             assert !buffer.alive
         '''
     }
+
+    @Test
+    void testGuardedOfferIsNotRegisteredAndIndicesAreUnchanged() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def first = AsyncChannel.create(4)
+            def second = AsyncChannel.create(4)
+            first.send('f1'); second.send('s1')
+
+            // both ready, but the first branch is guarded off: the second wins
+            // and still calls itself index 1
+            def result = await offers(receive(first).when { false }, receive(second)).select()
+            assert result.index == 1 && result.value == 's1'
+
+            // the guarded branch was never registered: nothing taken, no receiver left
+            assert first.bufferedSize == 1
+            assert first.toString().contains('waitingReceivers=0')
+        '''
+    }
+
+    @Test
+    void testGuardIsConsultedOnEverySelect() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def a = AsyncChannel.create(20)
+            def b = AsyncChannel.create(20)
+            for (i in 0..<4) { a.send('a' + i); b.send('b' + i) }
+
+            // one held select whose guard tracks changing state
+            boolean takeA = false
+            def sel = offers(receive(a).when { takeA }, receive(b))
+
+            assert (await sel.select()).value == 'b0'
+            takeA = true
+            assert (await sel.select()).value == 'a0'
+            takeA = false
+            assert (await sel.select()).value == 'b1'
+            takeA = true
+            assert (await sel.select()).value == 'a1'
+        '''
+    }
+
+    @Test
+    void testGuardedSendOfferTransfersNothing() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def out = AsyncChannel.create(4)      // room to spare: the send would commit at once
+            def input = AsyncChannel.create(4)
+            input.send('i1')
+
+            def result = await offers(send(out, 'v').when { false }, receive(input)).select()
+            assert result.index == 1 && !result.send && result.value == 'i1'
+            assert out.bufferedSize == 0
+            assert out.toString().contains('waitingSenders=0')
+        '''
+    }
+
+    @Test
+    void testGuardsConjoinWithEachOtherAndWithThePreconditionMask() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def a = AsyncChannel.create(20)
+            def b = AsyncChannel.create(20)
+            for (i in 0..<6) { a.send('a' + i); b.send('b' + i) }
+
+            // chained guards must both hold
+            boolean one = true, two = true
+            def sel = offers(receive(a).when { one }.when { two }, receive(b))
+            assert (await sel.select()).index == 0
+            two = false
+            assert (await sel.select()).index == 1
+            two = true; one = false
+            assert (await sel.select()).index == 1
+
+            // an enabled guard is still overridden by a false mask flag
+            one = true
+            assert (await sel.select(false, true)).index == 1
+            assert (await sel.select(true, true)).index == 0
+        '''
+    }
+
+    @Test
+    void testSelectWithEveryOfferGuardedOffFails() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def a = AsyncChannel.create(4)
+            def b = AsyncChannel.create(4)
+            a.send('ready')
+
+            def sel = offers(receive(a).when { false }, receive(b).when { false })
+            shouldFail(IllegalStateException) { await sel.select() }
+            shouldFail(IllegalStateException) { await sel.select(true, true) }
+
+            // the ready channel was left alone
+            assert a.bufferedSize == 1
+            assert a.toString().contains('waitingReceivers=0')
+        '''
+    }
+
+    @Test
+    void testGuardedOfferIsReusableAndLeavesTheOriginalUnguarded() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def a = AsyncChannel.create(20)
+            def b = AsyncChannel.create(20)
+            for (i in 0..<2) { a.send('a' + i); b.send('b' + i) }
+
+            def plain = receive(a)
+            def guarded = plain.when { false }        // when() copies, it does not mutate
+
+            assert (await offers(guarded, receive(b)).select()).index == 1
+            assert (await offers(plain, receive(b)).select()).index == 0
+        '''
+    }
+
+    @Test
+    void testFairSelectRotatesAmongTheUnguardedOffersOnly() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def a = AsyncChannel.create(20)
+            def b = AsyncChannel.create(20)
+            def c = AsyncChannel.create(20)
+            for (i in 0..<10) { a.send('a'); b.send('b'); c.send('c') }
+
+            // b stays guarded off, so the rotation alternates between a and c
+            def sel = offers(receive(a), receive(b).when { false }, receive(c)).fair()
+            def indices = (0..<6).collect { (await sel.select()).index }
+            assert indices.toSet() == [0, 2] as Set
+            assert indices.count { it == 0 } == 3 && indices.count { it == 2 } == 3
+            assert b.bufferedSize == 10
+        '''
+    }
+
+    @Test
+    void testGuardedBoundedBufferWithWhen() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelClosedException
+            import static groovy.concurrent.ChannelSelect.*
+            import static org.apache.groovy.runtime.async.AsyncSupport.await as awaitFor
+
+            // the same bounded buffer, with the guards written onto the branches
+            int capacity = 3
+            def input = AsyncChannel.create()       // rendezvous
+            def request = AsyncChannel.create()
+            def reply = AsyncChannel.create()
+            def held = new LinkedList()
+
+            def buffer = Thread.start {
+                def sel = offers(receive(input).when { held.size() < capacity },
+                                 receive(request).when { !held.isEmpty() })
+                while (true) {
+                    try {
+                        def result = awaitFor(sel.select())
+                        if (result.index == 0) held.addLast(result.value)
+                        else awaitFor(reply.send(held.removeFirst()))
+                    } catch (ChannelClosedException e) {
+                        break
+                    }
+                }
+            }
+
+            for (i in 1..3) awaitFor(input.send(i))
+            awaitFor(request.send('next'))
+            assert awaitFor(reply.receive()) == 1
+            awaitFor(input.send(4))
+
+            for (expected in 2..4) {
+                awaitFor(request.send('next'))
+                assert awaitFor(reply.receive()) == expected
+            }
+
+            input.close(); request.close()
+            buffer.join(10_000)
+            assert !buffer.alive
+        '''
+    }
 }
