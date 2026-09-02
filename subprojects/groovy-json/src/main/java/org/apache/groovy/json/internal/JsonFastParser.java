@@ -242,6 +242,10 @@ public class JsonFastParser extends JsonParserCharArray {
 
         Type type = doubleFloat ? Type.DOUBLE : Type.INTEGER;
 
+        // Checked here rather than in NumberValue: the overlay defers conversion to first access,
+        // and a document over the limit should be rejected by the parse that read it.
+        checkNumberLength(__index - startIndex);
+
         return new NumberValue(chop, type, startIndex, __index, this.charArray);
     }
 

@@ -37,6 +37,7 @@ import static groovy.json.JsonTokenType.CLOSE_CURLY;
 import static groovy.json.JsonTokenType.COLON;
 import static groovy.json.JsonTokenType.COMMA;
 import static groovy.json.JsonTokenType.NULL;
+import static groovy.json.JsonTokenType.NUMBER;
 import static groovy.json.JsonTokenType.OPEN_BRACKET;
 import static groovy.json.JsonTokenType.OPEN_CURLY;
 import static groovy.json.JsonTokenType.STRING;
@@ -91,6 +92,60 @@ public class JsonSlurperClassic {
      */
     public void setMaxNestingDepth(int maxNestingDepth) {
         this.maxNestingDepth = maxNestingDepth;
+    }
+
+    /**
+     * Maximum length, in characters, of a single number token accepted before a
+     * {@link JsonException} is thrown. Converting a digit run past the {@code long} range builds a
+     * {@link java.math.BigInteger} or {@link java.math.BigDecimal}, and decimal conversion is
+     * superlinear in the digit count. A value of {@code 0} or less disables the check. Defaults to
+     * {@link org.apache.groovy.json.internal.BaseJsonParser#DEFAULT_MAX_NUMBER_LENGTH}, and can be
+     * overridden globally with the {@code groovy.json.maxNumberLength} system property.
+     */
+    private int maxNumberLength = Integer.getInteger("groovy.json.maxNumberLength",
+            org.apache.groovy.json.internal.BaseJsonParser.DEFAULT_MAX_NUMBER_LENGTH);
+
+    /**
+     * Returns the maximum length permitted for a single number token.
+     *
+     * @return the maximum number token length, or a value {@code <= 0} when the check is disabled
+     * @since 6.0.0
+     */
+    public int getMaxNumberLength() {
+        return maxNumberLength;
+    }
+
+    /**
+     * Sets the maximum length, in characters, of a single number token the parser will accept
+     * before throwing a {@link JsonException}. A value of {@code 0} or less disables the check.
+     *
+     * @param maxNumberLength maximum number of characters in a number token
+     * @since 6.0.0
+     */
+    public void setMaxNumberLength(int maxNumberLength) {
+        this.maxNumberLength = maxNumberLength;
+    }
+
+    /**
+     * Reads a token's value, enforcing {@link #maxNumberLength} before a number token is converted.
+     *
+     * @param token the token to read
+     * @param lexer the lexer, used for positional detail in the error
+     * @return the token's value
+     * @throws JsonException if a number token is longer than the configured maximum
+     */
+    private Object valueOf(JsonToken token, JsonLexer lexer) {
+        if (maxNumberLength > 0 && token.getType() == NUMBER) {
+            int length = token.getText().length();
+            if (length > maxNumberLength) {
+                throw new JsonException(
+                        "JSON number length of " + length + " exceeds the maximum of " + maxNumberLength +
+                                " on line: " + lexer.getReader().getLine() + ", " +
+                                "column: " + lexer.getReader().getColumn() + "."
+                );
+            }
+        }
+        return token.getValue();
     }
 
     /**
@@ -338,7 +393,7 @@ public class JsonSlurperClassic {
             } else if (currentToken.getType() == OPEN_BRACKET) {
                 content.add(parseArray(lexer, depth + 1));
             } else if (currentToken.getType().ordinal() >= NULL.ordinal()) {
-                content.add(currentToken.getValue());
+                content.add(valueOf(currentToken, lexer));
             } else if (currentToken.getType() == CLOSE_BRACKET) {
                 return content;
             } else {
@@ -417,7 +472,7 @@ public class JsonSlurperClassic {
                 );
             }
 
-            String mapKey = (String) currentToken.getValue();
+            String mapKey = (String) valueOf(currentToken, lexer);
 
             currentToken = lexer.nextToken();
 
@@ -459,7 +514,7 @@ public class JsonSlurperClassic {
             } else if (currentToken.getType() == OPEN_BRACKET) {
                 content.put(mapKey, parseArray(lexer, depth + 1));
             } else if (currentToken.getType().ordinal() >= NULL.ordinal()) {
-                content.put(mapKey, currentToken.getValue());
+                content.put(mapKey, valueOf(currentToken, lexer));
             } else {
                 throw new JsonException(
                         "Expected a value, an array, or an object " +

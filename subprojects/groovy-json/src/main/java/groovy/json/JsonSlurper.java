@@ -102,6 +102,7 @@ public class JsonSlurper {
     private boolean lazyChop = true;
     private boolean checkDates = true;
     private int maxNestingDepth = Integer.getInteger("groovy.json.maxNestingDepth", BaseJsonParser.DEFAULT_MAX_NESTING_DEPTH);
+    private int maxNumberLength = Integer.getInteger("groovy.json.maxNumberLength", BaseJsonParser.DEFAULT_MAX_NUMBER_LENGTH);
 
     private JsonParserType type = JsonParserType.CHAR_BUFFER;
 
@@ -249,6 +250,36 @@ public class JsonSlurper {
     }
 
     /**
+     * The maximum length, in characters, of a single number token the parser will accept before
+     * throwing a {@link JsonException}. Converting a digit run past the {@code long} range builds
+     * a {@link java.math.BigInteger} or {@link java.math.BigDecimal}, and decimal conversion is
+     * superlinear in the digit count, so an uncapped token lets a small document cost quadratic
+     * CPU. A value of {@code 0} or less disables the check (restoring the previous, unbounded
+     * behaviour). Defaults to
+     * {@link org.apache.groovy.json.internal.BaseJsonParser#DEFAULT_MAX_NUMBER_LENGTH}, and can
+     * be overridden globally with the {@code groovy.json.maxNumberLength} system property.
+     *
+     * @return the maximum number token length
+     * @since 6.0.0
+     */
+    public int getMaxNumberLength() {
+        return maxNumberLength;
+    }
+
+    /**
+     * Sets the maximum length, in characters, of a single number token the parser will accept
+     * before throwing a {@link JsonException}. A value of {@code 0} or less disables the check.
+     *
+     * @param maxNumberLength maximum number of characters in a number token
+     * @return this {@code JsonSlurper}
+     * @since 6.0.0
+     */
+    public JsonSlurper setMaxNumberLength(int maxNumberLength) {
+        this.maxNumberLength = maxNumberLength;
+        return this;
+    }
+
+    /**
      * Parse a text representation of a JSON data structure
      *
      * @param text JSON text to parse
@@ -382,6 +413,7 @@ public class JsonSlurper {
             default -> new JsonParserCharArray();
         };
         parser.setMaxNestingDepth(maxNestingDepth);
+        parser.setMaxNumberLength(maxNumberLength);
         return parser;
     }
 
@@ -435,6 +467,7 @@ public class JsonSlurper {
         } else {
             JsonParserUsingCharacterSource parser = new JsonParserUsingCharacterSource();
             parser.setMaxNestingDepth(maxNestingDepth);
+            parser.setMaxNumberLength(maxNumberLength);
             return parser.parse(file, charset);
         }
     }

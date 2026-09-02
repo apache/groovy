@@ -147,6 +147,7 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
 
     private Object decodeNumber(boolean negative) {
         char[] chars = characterSource.readNumber();
+        checkNumberLength(chars.length);
         Object value;
 
         try {

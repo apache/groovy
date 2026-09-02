@@ -18,6 +18,8 @@
  */
 package org.apache.groovy.json.internal;
 
+import groovy.json.JsonException;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -459,6 +461,39 @@ public class CharScanner {
      * @return the parsed {@link Number}
      */
     public static Number parseJsonNumber(char[] buffer, int from, int max, int[] size) {
+        return parseJsonNumber(buffer, from, max, size, 0);
+    }
+
+    /**
+     * Enforces a maximum length for a single number token, ahead of the conversion that would
+     * otherwise pay for it. {@link BigInteger}/{@link BigDecimal} decimal conversion is
+     * superlinear in the digit count, so an unbounded token turns a small document into
+     * quadratic CPU.
+     *
+     * @param length the length, in characters, of the number token
+     * @param maxNumberLength the maximum permitted length; {@code 0} or less disables the check
+     * @throws JsonException if the token is longer than {@code maxNumberLength}
+     */
+    static void checkNumberLength(int length, int maxNumberLength) {
+        if (maxNumberLength > 0 && length > maxNumberLength) {
+            throw new JsonException("JSON number length of " + length
+                    + " exceeds the maximum of " + maxNumberLength);
+        }
+    }
+
+    /**
+     * Parses a JSON number and optionally reports the stopping index, bounding the length of the
+     * number token.
+     *
+     * @param buffer the character array containing the number
+     * @param from the inclusive range start
+     * @param max the exclusive scan limit
+     * @param size optional single-element output array receiving the stopping index
+     * @param maxNumberLength the maximum permitted token length; {@code 0} or less disables the check
+     * @return the parsed {@link Number}
+     * @throws JsonException if the number token is longer than {@code maxNumberLength}
+     */
+    public static Number parseJsonNumber(char[] buffer, int from, int max, int[] size, int maxNumberLength) {
         Number value;
         boolean simple = true;
         int digitsPastPoint = 0;
@@ -498,6 +533,8 @@ public class CharScanner {
         }
 
         final int length = index - from;
+
+        checkNumberLength(length, maxNumberLength);
 
         try {
             if (!foundDot && simple) {
