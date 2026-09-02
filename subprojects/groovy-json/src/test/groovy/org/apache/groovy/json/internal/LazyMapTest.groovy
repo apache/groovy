@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.json.internal
 
+import groovy.json.JsonSlurper
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -382,5 +383,65 @@ class LazyMapTest {
 
         assertEquals(1, map.size())
         assertEquals("value3", map.get("key"))
+    }
+
+    // GROOVY-12327
+    @Test
+    void testBackingMapBuiltOnceEntriesPassLinearScanThreshold() {
+        32.times { i -> map.put("key$i".toString(), i) }
+        assert map.@map == null
+
+        map.put("key32", 32)
+        assert map.@map != null
+        assertEquals(33, map.size())
+    }
+
+    // GROOVY-12327
+    @Test
+    void testWideMapKeepsInsertionOrderAndValues() {
+        200.times { i -> assertNull(map.put("key$i".toString(), i)) }
+
+        assertEquals(200, map.size())
+        assertEquals((0..<200).collect { "key$it".toString() }, map.keySet() as List)
+        assertEquals(0, map.get("key0"))
+        assertEquals(199, map.get("key199"))
+    }
+
+    // GROOVY-12327
+    @Test
+    void testReplaceSemanticsSpanTheLinearScanThreshold() {
+        200.times { i -> map.put("key$i".toString(), i) }
+
+        // a key stored while the compact representation was still active...
+        assertEquals(5, map.put("key5", -5))
+        // ...and one stored after the switch to the backing map
+        assertEquals(150, map.put("key150", -150))
+
+        assertEquals(200, map.size())
+        assertEquals(-5, map.get("key5"))
+        assertEquals(-150, map.get("key150"))
+        assertEquals((0..<200).collect { "key$it".toString() }, map.keySet() as List)
+    }
+
+    // GROOVY-12327
+    @Test
+    void testDuplicateKeyHandlingAfterBuild() {
+        40.times { i -> map.put("key$i".toString(), i) }
+        map.put("key1", "replaced")
+
+        assertEquals(40, map.size())
+        assertEquals("replaced", map.get("key1"))
+        assertEquals((0..<40).collect { "key$it".toString() }, map.keySet() as List)
+    }
+
+    // GROOVY-12327
+    @Test
+    void testWideObjectParsesWithDuplicateKeySpanningThreshold() {
+        def json = '{' + (0..<40).collect { "\"key$it\":$it" }.join(',') + ',"key1":99}'
+        def parsed = new JsonSlurper().parseText(json)
+
+        assertEquals(40, parsed.size())
+        assertEquals(99, parsed.key1)
+        assertEquals((0..<40).collect { "key$it".toString() }, parsed.keySet() as List)
     }
 }
