@@ -465,7 +465,9 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         checkArgCount(input, [0, 1, 2])
         if (maybePrintHelp(input, '/save')) return
         if (input.args().length == 0) {
-            def out = Main.userStateDirectory.resolve('groovysh.ser')
+            // holds whatever the session had bound, so it is created owner-only rather than at the
+            // ambient umask
+            def out = Main.createOwnerOnlyStateFile(Main.userStateDirectory.resolve('groovysh.ser'))
             out.text = engine.toJson(engine.sharedData)
             return
         }
