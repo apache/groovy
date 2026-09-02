@@ -179,6 +179,9 @@ public class JsonOutput {
      * nesting &mdash; is rejected with a {@link JsonException} rather than expanded into an output
      * quadratically larger than itself. A property value of {@code 0} or less disables the check.
      *
+     * <p>
+     * Use {@link #prettyPrint(String, boolean, int)} to bound a single call instead.
+     *
      * @param jsonPayload a JSON payload
      * @return a pretty representation of JSON payload.
      */
@@ -197,14 +200,42 @@ public class JsonOutput {
      * nesting &mdash; is rejected with a {@link JsonException} rather than expanded into an output
      * quadratically larger than itself. A property value of {@code 0} or less disables the check.
      *
+     * <p>
+     * Use {@link #prettyPrint(String, boolean, int)} to bound a single call instead.
+     *
      * @param jsonPayload a JSON payload
      * @param disableUnicodeEscaping whether to disable unicode escaping
      * @return a pretty representation of JSON payload.
      * @since 4.0.19
      */
     public static String prettyPrint(String jsonPayload, boolean disableUnicodeEscaping) {
-        final int maxNestingDepth = Integer.getInteger("groovy.json.maxNestingDepth",
-                BaseJsonParser.DEFAULT_MAX_NESTING_DEPTH);
+        return prettyPrint(jsonPayload, disableUnicodeEscaping,
+                Integer.getInteger("groovy.json.maxNestingDepth", BaseJsonParser.DEFAULT_MAX_NESTING_DEPTH));
+    }
+
+    /**
+     * Pretty print a JSON payload, bounding its nesting depth explicitly.
+     *
+     * <p>
+     * Every nesting level adds to the indent of each line it encloses, so output size grows with
+     * the square of the payload's nesting and an unbounded payload can exhaust memory. A payload
+     * nested deeper than {@code maxNestingDepth} &mdash; or left unbalanced, which the lexer cannot
+     * distinguish from nesting &mdash; is rejected with a {@link JsonException}. Pass {@code 0} or
+     * less to disable the check.
+     *
+     * <p>
+     * The other overloads take this bound from the {@code groovy.json.maxNestingDepth} system
+     * property, which applies process-wide; prefer this method to format a deeply nested payload
+     * without changing how the rest of the process parses JSON.
+     *
+     * @param jsonPayload a JSON payload
+     * @param disableUnicodeEscaping whether to disable unicode escaping
+     * @param maxNestingDepth the maximum nesting depth to accept; {@code 0} or less disables the check
+     * @return a pretty representation of JSON payload.
+     * @throws JsonException if the payload nests deeper than {@code maxNestingDepth}
+     * @since 6.0.0
+     */
+    public static String prettyPrint(String jsonPayload, boolean disableUnicodeEscaping, int maxNestingDepth) {
         int indentSize = 0;
         int nestingDepth = 0;
         // Just a guess that the pretty view will take 20 percent more than original.
