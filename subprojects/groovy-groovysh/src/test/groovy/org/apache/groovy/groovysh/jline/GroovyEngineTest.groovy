@@ -30,6 +30,42 @@ class GroovyEngineTest {
 
     private final GroovyEngine engine = new GroovyEngine()
 
+    // GROOVY-12334
+    @Test
+    void autoDeserializeNeverEvaluatesTheValue() {
+        // a bracketed payload used to reach execute(); the shape of the document must not decide
+        // whether it is treated as data or as code
+        engine.execute('sideEffect = 0')
+        engine.deserialize("[sideEffect = 1, 'x']", 'AUTO')
+        assert engine.execute('sideEffect') == 0
+
+        // and the same for the curly form, which was already parse-only
+        engine.deserialize("{'a': sideEffect = 2}", 'AUTO')
+        assert engine.execute('sideEffect') == 0
+    }
+
+    // GROOVY-12334
+    @Test
+    void autoDeserializeStillParsesJson() {
+        assert engine.deserialize('[1, 2, 3]', 'AUTO').toString() == '[1, 2, 3]'
+        assert engine.deserialize('{"a": 1}', 'AUTO')['a'] == 1
+    }
+
+    // GROOVY-12334
+    @Test
+    void autoDeserializeReturnsUnrecognisedTextUnchanged() {
+        assert engine.deserialize('just some text', 'AUTO') == 'just some text'
+    }
+
+    // GROOVY-12334
+    @Test
+    void groovyFormatStillEvaluates() {
+        // the explicit opt-in is unchanged: -f GROOVY is the documented way to evaluate content
+        engine.execute('marker = 0')
+        engine.deserialize('[marker = 7]', 'GROOVY')
+        assert engine.execute('marker') == 7
+    }
+
     @Test
     void executeReturnsLastValue() {
         assert engine.execute('1 + 1') == 2

@@ -1186,7 +1186,7 @@ It supports most of the common formats, including JSON, XML, YAML, CSV, TOML, Ma
 image:{reldir_groovysh}/assets/img/repl_slurp.png[Usage of the /slurp command, width=80%]
 
 As you can see in the usage information at the end of the above image,
-you can also provide an encoding and a format. If no format is given,
+you can also provide an encoding and a format. If no encoding is given,
 `UTF_8` is the default. If no format is given, the shell will try to
 determine the format from the extension of the file (if given).
 If no format or file extension is given, the `/slurp` command makes
@@ -1194,6 +1194,17 @@ a rudimentary attempt to determine the format by looking at the content,
 e.g. the json format is determined in the following example:
 
 image:{reldir_groovysh}/assets/img/repl_slurp_url.png[Usage of the /slurp command with a URL, width=75%]
+
+That content-based fallback *parses*; it never evaluates. It recognises JSON
+and otherwise hands back the text unchanged, so a document cannot decide for
+itself that it should be run. Evaluating content is a separate, explicit
+request: pass `-f GROOVY`, or name a local `.groovy` file.
+
+For a URL, the extension of the URL path selects the format in the same way
+as a filename does, but only ever a data format &#8212; `GROOVY` is not inferred
+from an address, because the extension is part of the URL you typed while the
+bytes are whatever the server chooses to return. Use `-f GROOVY` if you really
+do want to evaluate what a URL serves.
 
 Although the details of the exact object returned are an implementation
 detail which may change in the future, the current behavior is as follows:
@@ -1212,6 +1223,8 @@ create a list (the rows) of maps from column name to value.
 `MarkdownDocument` (an `Iterable<Map<String, Object>>` of structured elements). Triggered
 by `.md` and `.markdown` extensions.
 | TEXT | Reads the file as raw lines (or argument as a line).
+| GROOVY | *Evaluates* the content as a Groovy script and returns its result. Selected by `-f GROOVY`,
+or by a local `.groovy` file extension. Never selected automatically from content, nor from a URL.
 | NONE | If you want the raw text rather than parsed content.
 |===
 

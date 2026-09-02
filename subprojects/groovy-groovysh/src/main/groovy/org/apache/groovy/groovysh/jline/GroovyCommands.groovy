@@ -679,30 +679,18 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
             if (path && Files.exists(path)) {
                 source = Files.newBufferedReader(path, encoding)
                 if (!format) {
-                    def ext = path.extension
-                    if (ext.equalsIgnoreCase('json')) {
-                        format = 'JSON'
-                    } else if (ext.equalsIgnoreCase('yaml') || ext.equalsIgnoreCase('yml')) {
-                        format = 'YAML'
-                    } else if (ext.equalsIgnoreCase('xml') || ext.equalsIgnoreCase('rdf')) {
-                        format = 'XML'
-                    } else if (ext.equalsIgnoreCase('groovy')) {
-                        format = 'GROOVY'
-                    } else if (ext.equalsIgnoreCase('toml')) {
-                        format = 'TOML'
-                    } else if (ext.equalsIgnoreCase('properties')) {
-                        format = 'PROPERTIES'
-                    } else if (ext.equalsIgnoreCase('csv')) {
-                        format = 'CSV'
-                    } else if (ext.equalsIgnoreCase('md') || ext.equalsIgnoreCase('markdown')) {
-                        format = 'MARKDOWN'
-                    } else if (ext.equalsIgnoreCase('txt') || ext.equalsIgnoreCase('text')) {
-                        format = 'TEXT'
-                    }
+                    format = formatForExtension(path.extension, true)
                 }
             }
             if (!source && (arg.startsWith('http://') || arg.startsWith('https://'))) {
                 URL url = new URL(arg)
+                if (!format) {
+                    // A remote extension names a data format only. GROOVY is deliberately not
+                    // derivable here: the extension is part of a URL the user typed, but the bytes
+                    // it returns are the server's, so evaluating them has to be asked for with
+                    // -f GROOVY rather than inferred from the address.
+                    format = formatForExtension(extensionOf(url.path), false)
+                }
                 source = new InputStreamReader(url.openStream(), encoding)
             }
             if (source) {
@@ -739,6 +727,45 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         }
         engine.put("_", out)
         out
+    }
+
+    /**
+     * Maps a file extension onto a slurp format, or {@code null} when nothing matches (leaving the
+     * caller to fall back on AUTO, which parses but never evaluates).
+     *
+     * @param ext the extension, without the dot
+     * @param allowCode whether {@code .groovy} may select the evaluating GROOVY format; true for a
+     *                  local file the user named, false for content fetched over the network
+     * @return the format name, or {@code null}
+     */
+    private static String formatForExtension(String ext, boolean allowCode) {
+        if (!ext) return null
+        switch (ext.toLowerCase(Locale.ROOT)) {
+            case 'json': return 'JSON'
+            case 'yaml': case 'yml': return 'YAML'
+            case 'xml': case 'rdf': return 'XML'
+            case 'groovy': return allowCode ? 'GROOVY' : null
+            case 'toml': return 'TOML'
+            case 'properties': return 'PROPERTIES'
+            case 'csv': return 'CSV'
+            case 'md': case 'markdown': return 'MARKDOWN'
+            case 'txt': case 'text': return 'TEXT'
+            default: return null
+        }
+    }
+
+    /**
+     * The extension of a URL path, ignoring any query or fragment already stripped by {@code URL}.
+     *
+     * @param path the URL path
+     * @return the extension without the dot, or {@code null} when the last segment has none
+     */
+    private static String extensionOf(String path) {
+        if (!path) return null
+        int slash = path.lastIndexOf('/')
+        String name = slash < 0 ? path : path.substring(slash + 1)
+        int dot = name.lastIndexOf('.')
+        return dot > 0 ? name.substring(dot + 1) : null
     }
 
     private static final String GROOVY_CSV_SLURPER = 'groovy.csv.CsvSlurper'
@@ -1065,7 +1092,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         ], [], [
             '-? --help'               : doDescription('Displays command help'),
             '-e --encoding=ENCODING'  : doDescription('Encoding (default UTF-8)'),
-            '-f --format=FORMAT'      : doDescription('Serialization format')
+            '-f --format=FORMAT'      : doDescription('Parse format; GROOVY evaluates the content, the default never does')
         ])
     }
 
