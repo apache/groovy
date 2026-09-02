@@ -210,6 +210,79 @@ assert new MyConcreteClass() != null"""
         }
     }
 
+    private static boolean posix() {
+        java.nio.file.FileSystems.default.supportedFileAttributeViews().contains('posix')
+    }
+
+    private static String modeOf(File f) {
+        java.nio.file.attribute.PosixFilePermissions.toString(
+            java.nio.file.Files.getPosixFilePermissions(f.toPath()))
+    }
+
+    private static void setMode(File f, String mode) {
+        java.nio.file.Files.setPosixFilePermissions(f.toPath(),
+            java.nio.file.attribute.PosixFilePermissions.fromString(mode))
+    }
+
+    // GROOVY-12337
+    @Test
+    void testInPlaceEditPreservesRestrictivePermissions() {
+        org.junit.jupiter.api.Assumptions.assumeTrue(posix())
+        def dir = File.createTempDir('groovy-main-inplace-perm-')
+        def file = new File(dir, 'secret.txt')
+        file.text = 'hello\n'
+        setMode(file, 'rw-------')
+        try {
+            GroovyMain.main('-i', '-p', '-e', 'line.toUpperCase()', file.absolutePath)
+
+            assert file.text.normalize() == 'HELLO\n'
+            // a rewrite must not widen access to content that was deliberately restricted
+            assert modeOf(file) == 'rw-------'
+        } finally {
+            dir.listFiles()?.each { it.delete() }
+            dir.delete()
+        }
+    }
+
+    // GROOVY-12337
+    @Test
+    void testInPlaceEditWithBackupExtensionPreservesPermissions() {
+        org.junit.jupiter.api.Assumptions.assumeTrue(posix())
+        def dir = File.createTempDir('groovy-main-inplace-bakperm-')
+        def file = new File(dir, 'secret.txt')
+        file.text = 'hello\n'
+        setMode(file, 'rw-------')
+        try {
+            GroovyMain.main('-i', '.bak', '-p', '-e', 'line.toUpperCase()', file.absolutePath)
+
+            assert modeOf(file) == 'rw-------'
+            // the moved-aside original keeps its own mode too
+            assert modeOf(new File(dir, 'secret.txt.bak')) == 'rw-------'
+        } finally {
+            dir.listFiles()?.each { it.delete() }
+            dir.delete()
+        }
+    }
+
+    // GROOVY-12337
+    @Test
+    void testInPlaceEditPreservesAnExecutableMode() {
+        org.junit.jupiter.api.Assumptions.assumeTrue(posix())
+        def dir = File.createTempDir('groovy-main-inplace-exec-')
+        def file = new File(dir, 'script.sh')
+        file.text = 'echo hi\n'
+        setMode(file, 'rwxr-x---')
+        try {
+            GroovyMain.main('-i', '-p', '-e', 'line.toUpperCase()', file.absolutePath)
+
+            // preserving means preserving, not just restricting
+            assert modeOf(file) == 'rwxr-x---'
+        } finally {
+            dir.listFiles()?.each { it.delete() }
+            dir.delete()
+        }
+    }
+
     @Test
     void testInPlaceEditWithBackupExtension() {
         def dir = File.createTempDir('groovy-main-inplace-bak-')

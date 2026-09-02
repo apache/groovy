@@ -54,14 +54,18 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import static java.lang.System.Logger.Level.ERROR;
@@ -639,6 +643,10 @@ public class GroovyMain {
             }
         } else {
             boolean unnamedScratch = backupExtension == null || backupExtension.isEmpty();
+            // Read before the original is moved aside: the rewrite creates a new file at the same
+            // path, which would otherwise take the ambient umask and could widen access to content
+            // that was deliberately restricted. sed and perl preserve the mode for the same reason.
+            Set<PosixFilePermission> permissions = posixPermissionsOf(file.toPath());
             File backup;
             if (unnamedScratch) {
                 // unique sibling of the source: same-filesystem rename, and the
@@ -653,6 +661,7 @@ public class GroovyMain {
                     throw new IOException("unable to rename " + file + " to " + backup);
                 }
             }
+            createWithPermissions(file.toPath(), permissions);
             try (BufferedReader reader = new BufferedReader(new FileReader(backup));
                  PrintWriter writer = new PrintWriter(new FileWriter(file))) {
                 processReader(s, reader, writer);
@@ -660,6 +669,47 @@ public class GroovyMain {
             if (unnamedScratch) {
                 Files.deleteIfExists(backup.toPath());
             }
+        }
+    }
+
+    /**
+     * The POSIX permissions of an existing file, or {@code null} where the file system does not
+     * record them.
+     *
+     * @param path the file to inspect
+     * @return the permissions, or {@code null} when unavailable
+     */
+    private static Set<PosixFilePermission> posixPermissionsOf(final Path path) {
+        try {
+            return Files.getPosixFilePermissions(path);
+        } catch (IOException | UnsupportedOperationException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Creates the file that the in-place rewrite is about to fill, carrying the permissions the
+     * original had.
+     * <p>
+     * The file is created with those permissions rather than created and then adjusted, so its
+     * contents are never briefly readable by anyone the original excluded. Where permissions are
+     * unavailable, the file is left for the writer to create as before.
+     *
+     * @param path the file to create
+     * @param permissions the permissions to give it, or {@code null} to leave creation to the writer
+     * @throws IOException if the file cannot be created
+     */
+    private static void createWithPermissions(final Path path, final Set<PosixFilePermission> permissions)
+            throws IOException {
+        if (permissions == null) {
+            return;
+        }
+        try {
+            Files.createFile(path, PosixFilePermissions.asFileAttribute(permissions));
+        } catch (FileAlreadyExistsException e) {
+            Files.setPosixFilePermissions(path, permissions);
+        } catch (UnsupportedOperationException e) {
+            // no POSIX support after all; the writer creates the file
         }
     }
 
