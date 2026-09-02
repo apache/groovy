@@ -21,6 +21,7 @@ package org.apache.groovy.json.internal;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.Arrays;
 
 /**
  * Buffered {@link CharacterSource} implementation backed by a {@link Reader}.
@@ -230,7 +231,12 @@ public class ReaderCharacterSource implements CharacterSource {
 
             int start = index;
 
+            // A value that fits inside one buffer is taken in a single copy; only one that spans a
+            // refill needs the accumulator, which appends each further chunk instead of re-copying
+            // everything collected so far. Re-copying per refill would cost O(n^2) in the length of
+            // the value, on the parser JsonSlurper selects for its largest inputs.
             char[] results = null;
+            CharBuf spanning = null;
             boolean foundEnd = false;
             boolean wasEscaped = false;
             while (!foundEnd) {
@@ -247,11 +253,15 @@ public class ReaderCharacterSource implements CharacterSource {
                     }
                 }
 
-                if (results != null) {
-                    results = Chr.add(results, ArrayUtils.copyRange(readBuf, start, index));
-                }
-                else {
+                if (results == null && spanning == null) {
                     results = ArrayUtils.copyRange(readBuf, start, index);
+                } else {
+                    if (spanning == null) {
+                        spanning = CharBuf.create(results.length + readAheadSize);
+                        spanning.add(results);
+                        results = null;
+                    }
+                    spanning.add(ArrayUtils.copyRange(readBuf, start, index));
                 }
 
                 ensureBuffer();
@@ -265,6 +275,10 @@ public class ReaderCharacterSource implements CharacterSource {
                 if (done) {
                     break;
                 }
+            }
+
+            if (spanning != null) {
+                results = Arrays.copyOf(spanning.toCharArray(), spanning.len());
             }
 
             // done will only be true if we ran out of data without seeing the match character
