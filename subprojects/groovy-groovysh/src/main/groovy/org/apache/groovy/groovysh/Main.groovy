@@ -68,9 +68,12 @@ import org.jline.widget.TailTipWidgets
 import org.jline.widget.TailTipWidgets.TipType
 import org.jline.widget.Widgets
 
+import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.attribute.PosixFilePermission
+import java.nio.file.attribute.PosixFilePermissions
 import java.util.function.Function
 import java.util.function.Supplier
 
@@ -321,10 +324,62 @@ class Main {
      */
     static Path getUserStateDirectory() {
         Path.of(System.getProperty('user.home'), '.groovy').tap { groovyHome ->
-            if (!groovyHome) {
-                Files.createDirectories(groovyHome)
+            if (!Files.exists(groovyHome)) {
+                createDirectoryOwnerOnly(groovyHome)
             }
         }
+    }
+
+    private static final Set<PosixFilePermission> FILE_OWNER_ONLY = PosixFilePermissions.fromString('rw-------')
+    private static final Set<PosixFilePermission> DIRECTORY_OWNER_ONLY = PosixFilePermissions.fromString('rwx------')
+
+    /**
+     * Whether the default file system records POSIX permissions. Windows and other non-POSIX file
+     * systems carry their own access control, which this code does not attempt to second-guess.
+     */
+    private static boolean posixFileSystem() {
+        FileSystems.default.supportedFileAttributeViews().contains('posix')
+    }
+
+    private static void createDirectoryOwnerOnly(Path dir) {
+        if (posixFileSystem()) {
+            Files.createDirectories(dir, PosixFilePermissions.asFileAttribute(DIRECTORY_OWNER_ONLY))
+        } else {
+            Files.createDirectories(dir)
+        }
+    }
+
+    /**
+     * Ensures a file under the user state directory exists and is readable only by its owner.
+     * <p>
+     * These files record what was typed at the shell and the values it held, so on a shared host
+     * they should not be left at whatever the ambient umask happens to permit. A file that already
+     * exists is tightened only when it is currently more permissive than owner-only, so a
+     * deliberately-chosen mode is left alone. Failing to adjust permissions is not fatal: the file
+     * is still usable, and the shell should not refuse to start over it.
+     *
+     * @param file the state file
+     * @return the same path, for chaining
+     */
+    static Path createOwnerOnlyStateFile(Path file) {
+        try {
+            Path parent = file.parent
+            if (parent != null && !Files.exists(parent)) {
+                createDirectoryOwnerOnly(parent)
+            }
+            if (!Files.exists(file)) {
+                if (posixFileSystem()) {
+                    Files.createFile(file, PosixFilePermissions.asFileAttribute(FILE_OWNER_ONLY))
+                } else {
+                    Files.createFile(file)
+                }
+            } else if (posixFileSystem() && !FILE_OWNER_ONLY.containsAll(Files.getPosixFilePermissions(file))) {
+                Files.setPosixFilePermissions(file, FILE_OWNER_ONLY)
+            }
+        } catch (IOException | UnsupportedOperationException ignored) {
+            // best effort: a state file we cannot tighten is still a usable state file
+        }
+        file
     }
 
     /**
@@ -434,7 +489,10 @@ class Main {
                 .variable(LineReader.SECONDARY_PROMPT_PATTERN, "%M%P > ")
                 .variable(LineReader.INDENTATION, 2)
                 .variable(LineReader.LIST_MAX, 100)
-                .variable(LineReader.HISTORY_FILE, configPath.getUserConfig('groovysh_history', true))
+                // created before JLine opens it, so the history lands in an owner-only file rather
+                // than whatever the ambient umask allows
+                .variable(LineReader.HISTORY_FILE,
+                    createOwnerOnlyStateFile(userStateDirectory.resolve('groovysh_history')))
                 .option(Option.INSERT_BRACKET, true)
                 .option(Option.EMPTY_WORD_OPTIONS, false)
                 .option(Option.USE_FORWARD_SLASH, true)
