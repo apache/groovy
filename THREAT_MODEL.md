@@ -300,6 +300,7 @@ hunt for the former and discount the latter.
 | `XmlParser` / `XmlSlurper` / `XmlUtil` `allowDocTypeDeclaration` | `false` | When `false`, DOCTYPE is rejected and secure processing is on → XXE / entity-expansion mitigated. Setting `true` re-introduces XXE risk for untrusted XML. *(documented)* |
 | `groovy.json.maxNestingDepth` (per-instance: `JsonSlurper.setMaxNestingDepth`) | `1000` | Caps the array/object nesting depth `JsonSlurper`/`JsonSlurperClassic` accept; a small but deeply-nested document throws a `JsonException` instead of driving a `StackOverflowError`. A value `<= 0` disables the check (restoring the previous unbounded behaviour). Available from 6.0.0. *(documented — verified in `groovy-json` `BaseJsonParser`)* |
 | `jdk.xml.maxElementDepth` | `1000` (Groovy's default; the JAXP default is `0`, unlimited) | Caps the element nesting depth `XmlParser`/`XmlSlurper`/`DOMBuilder` accept, so a deeply nested document fails the parse rather than driving a `StackOverflowError` in the first consumer that walks the result. Set the property yourself to choose another bound, including `0` for unlimited; a caller-supplied parser is left alone. Available from 6.0.0. *(documented — verified in `groovy-xml` `FactorySupport`)* |
+| `jdk.serialFilter` (per stream: `ObjectInputStream.setObjectInputFilter`) | none | The platform's allow/deny list for deserialization, and the control to reach for when an application must read semi-trusted streams. It bounds the whole gadget surface at once rather than one class at a time &mdash; e.g. `!org.codehaus.groovy.runtime.ConversionHandler;*` refuses the serializable proxy handlers described in [§11](#11-known-misuse-patterns) while leaving ordinary closure serialization intact. Groovy sets no filter of its own: the choice of what a given application may deserialize is not one a library can make for it. *(documented — JEP 290)* |
 | Grape / `@Grab` resolution | enabled in the runtime; **off** in AI/automation tooling via `-Dgroovy.grape.enable=false` | Controls whether a script may fetch and load remote dependencies. Keep off for untrusted scripts. *(documented — see [`AGENTS.md`](AGENTS.md))* |
 | `groovy.asttest.enable` | `true` | When `false`, `@ASTTest` becomes a no-op instead of evaluating its closure during compilation. Since the closure runs at compile time, this matters wherever attacker-influenced source is *compiled*, whether or not the result is then run. Keep off for untrusted source. Available from 5.1.0 and 6.0.0. *(documented — verified in `ASTTestTransformation`)* |
 | `CliBuilder.expandArgumentFiles` | `true` | When `true`, an argv token `@file` expands to the contents of `file` (the javac/picocli `@argfile` convention). The argument vector is developer-supplied and trusted ([§6](#6-assumptions-about-inputs)), so this reads only files the invoker named; set `false` (or call `setExpandArgumentFiles(false)`) to disable. *(documented — verified in `CliBuilderInternal`)* |
@@ -679,6 +680,17 @@ vulnerability is in the integration, not the language):
   vulnerability (you must not deserialize untrusted data), while
   defense-in-depth hardening of serializable runtime types is a reasonable
   *VALID-HARDENING* improvement to pursue in the open. *(maintainer)*
+  <br>Worth knowing concretely: a stream can rebuild a `java.lang.reflect.Proxy`
+  backed by `ConversionHandler` (`ConvertedClosure`, `ConvertedMap`), whose
+  interface calls route into closures the stream supplied. `ConvertedMap`
+  dispatches on **method names taken from the stream**, `toString()` among
+  them, so merely logging or interpolating such an object can invoke that
+  code — no call to a business method required. This is deliberate,
+  supported behaviour on the way in (`closure as SomeInterface` round-trips,
+  which distributed-compute and caching users rely on), so it is not gated;
+  bound it where you deserialize, with a JDK serial filter
+  ([§5a](#5a-build-time--configuration-knobs-that-affect-this-model)).
+  *(maintainer)*
 - Hand-concatenating untrusted values into a SQL `String` instead of using
   the GString/bind forms (P1).
 - Building a command line from untrusted input and calling `.execute()`.
@@ -758,6 +770,18 @@ capability gaps without stopping users doing legitimate serialization:
 The hinge is bucket 1 vs. 3: *does the report name a capability primitive to
 gate, or merely exploit that object graphs deserialize?* Only the former
 carries a hardening obligation.
+
+Bucket 1 requires **both** of its conditions, and the second does real work:
+a named primitive that is *also* a supported feature is a bucket 1/2
+collision, not a bucket 1 finding. Gate a capability by default only where
+no legitimate round-trip is lost — that is what made the `MethodClosure`
+fixes the right call. Where a legitimate use does exist, keep it, say so,
+and record how to bound it: a JDK serial filter
+([§5a](#5a-build-time--configuration-knobs-that-affect-this-model)) is the
+control that belongs to the application making the risk decision, and it
+bounds every such class at once. Adding a Groovy-specific switch beside it
+would be the same whack-a-mole bucket 3 warns about, in a knob fewer people
+will find. *(maintainer)*
 
 ---
 
