@@ -116,6 +116,46 @@ class JsonOutputPrettyPrintDepthTest {
 
     // GROOVY-12330
     @Test
+    void testExplicitLimitBoundsASingleCall() {
+        assertEquals(10, JsonOutput.prettyPrint(nested(10), false, 10).count('['))
+
+        def e = shouldFail(JsonException) { JsonOutput.prettyPrint(nested(11), false, 10) }
+        assertTrue(e.message.contains('Maximum JSON nesting depth of 10 exceeded'), e.message)
+    }
+
+    // GROOVY-12330
+    @Test
+    void testExplicitLimitOverridesTheSystemProperty() {
+        withMaxNestingDepth(5) {
+            // above the property, which the other overloads would apply
+            assertEquals(50, JsonOutput.prettyPrint(nested(50), false, 100).count('['))
+            shouldFail(JsonException) { JsonOutput.prettyPrint(nested(50)) }
+
+            // and below it
+            shouldFail(JsonException) { JsonOutput.prettyPrint(nested(4), false, 3) }
+            assertEquals(4, JsonOutput.prettyPrint(nested(4)).count('['))
+        }
+    }
+
+    // GROOVY-12330
+    @Test
+    void testExplicitLimitDisablesTheCheckWhenNonPositive() {
+        withMaxNestingDepth(5) {
+            assertEquals(200, JsonOutput.prettyPrint(nested(200), false, 0).count('['))
+            assertEquals(200, JsonOutput.prettyPrint(nested(200), false, -1).count('['))
+        }
+    }
+
+    // GROOVY-12330
+    @Test
+    void testExplicitLimitStillHonoursUnicodeEscapingFlag() {
+        String payload = '{"a":"\u00e9"}'
+        assertEquals(JsonOutput.prettyPrint(payload, true), JsonOutput.prettyPrint(payload, true, 100))
+        assertEquals(JsonOutput.prettyPrint(payload, false), JsonOutput.prettyPrint(payload, false, 100))
+    }
+
+    // GROOVY-12330
+    @Test
     void testOrdinaryDocumentIsFormattedUnchanged() {
         String pretty = JsonOutput.prettyPrint('{"a":[1,2,{"b":"c"}],"d":null}')
         assertEquals('''{
