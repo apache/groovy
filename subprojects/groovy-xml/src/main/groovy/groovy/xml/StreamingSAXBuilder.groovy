@@ -33,6 +33,9 @@ class StreamingSAXBuilder extends AbstractStreamingBuilder {
 
     /** Closure backing {@code mkp.comment} for SAX handlers supporting lexical events. */
     def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
+        // Checked before the handler type is consulted: a handler that is not a LexicalHandler drops
+        // the comment, and silently discarding malformed content is worse than reporting it.
+        checkCommentText(body)
         if (contentHandler instanceof LexicalHandler) {
             contentHandler.comment(body.toCharArray(), 0, body.size())
         }
@@ -41,9 +44,12 @@ class StreamingSAXBuilder extends AbstractStreamingBuilder {
     /** Closure backing {@code mkp.pi} for emitting processing instructions. */
     def piClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
         attrs.each {target, instruction ->
+            checkProcessingInstruction(target)
             if (instruction instanceof Map) {
+                // toMapStringClosure rejects '?>' in the names and values it assembles
                 contentHandler.processingInstruction(target, toMapStringClosure(instruction))
             } else {
+                checkProcessingInstruction(instruction)
                 contentHandler.processingInstruction(target, instruction)
             }
         }

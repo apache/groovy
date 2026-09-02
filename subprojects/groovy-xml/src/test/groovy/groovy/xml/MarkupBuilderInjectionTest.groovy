@@ -126,4 +126,64 @@ final class MarkupBuilderInjectionTest {
             new StreamingDOMBuilder().bind { mkp.comment('a -- b'); root('x') }()
         }
     }
+
+    /** Serialising SAX handler, so the emitted document can be inspected as text. */
+    private static saxHandlerTo(ByteArrayOutputStream out) {
+        def handler = javax.xml.transform.TransformerFactory.newInstance().newTransformerHandler()
+        handler.setResult(new javax.xml.transform.stream.StreamResult(out))
+        handler
+    }
+
+    // GROOVY-12338
+    @Test
+    void streamingSaxCommentRejectsCommentTerminator() {
+        assertThrows(GroovyRuntimeException) {
+            new StreamingSAXBuilder().bind { mkp.comment('legit --> <injected/>'); root('x') }(saxHandlerTo(new ByteArrayOutputStream()))
+        }
+        assertThrows(GroovyRuntimeException) {
+            new StreamingSAXBuilder().bind { mkp.comment('a -- b'); root('x') }(saxHandlerTo(new ByteArrayOutputStream()))
+        }
+        assertThrows(GroovyRuntimeException) {
+            new StreamingSAXBuilder().bind { mkp.comment('trailing hyphen-'); root('x') }(saxHandlerTo(new ByteArrayOutputStream()))
+        }
+    }
+
+    // GROOVY-12338
+    @Test
+    void streamingSaxCommentIsCheckedEvenWhenTheHandlerWouldDropIt() {
+        // a handler that is not a LexicalHandler discards comments; malformed content should still
+        // be reported rather than silently thrown away
+        def plainHandler = new org.xml.sax.helpers.DefaultHandler()
+        assertThrows(GroovyRuntimeException) {
+            new StreamingSAXBuilder().bind { mkp.comment('a -- b'); root('x') }(plainHandler)
+        }
+    }
+
+    // GROOVY-12338
+    @Test
+    void streamingSaxProcessingInstructionRejectsTerminator() {
+        assertThrows(GroovyRuntimeException) {
+            new StreamingSAXBuilder().bind { mkp.pi('xml-stylesheet': [href: 'a?><injected/>']); root('x') }(saxHandlerTo(new ByteArrayOutputStream()))
+        }
+        assertThrows(GroovyRuntimeException) {
+            new StreamingSAXBuilder().bind { mkp.pi('x?><injected/>': [href: 'a']); root('x') }(saxHandlerTo(new ByteArrayOutputStream()))
+        }
+        assertThrows(GroovyRuntimeException) {
+            new StreamingSAXBuilder().bind { mkp.pi('target': 'data?><injected/>'); root('x') }(saxHandlerTo(new ByteArrayOutputStream()))
+        }
+    }
+
+    // GROOVY-12338
+    @Test
+    void streamingSaxKeepsPlainCommentAndProcessingInstruction() {
+        def out = new ByteArrayOutputStream()
+        new StreamingSAXBuilder().bind {
+            mkp.pi('xml-stylesheet': [href: 'style.css', type: 'text/css'])
+            root { mkp.comment('plain > & < text') }
+        }(saxHandlerTo(out))
+        def result = out.toString()
+
+        assertTrue(result.contains('style.css'), result)
+        assertTrue(result.contains('plain'), result)
+    }
 }
