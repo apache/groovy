@@ -26,6 +26,7 @@ import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
+import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
@@ -39,6 +40,20 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * This class is a general adapter to map a call to a Java interface
  * to a given delegate.
+ * <p>
+ * Instances are {@link Serializable}, so {@code closure as SomeInterface} survives a round trip
+ * through {@link ObjectOutputStream} and back &mdash; behaviour distributed-compute and
+ * caching users depend on, and deliberately not gated.
+ * <p>
+ * The same property means a <em>crafted</em> stream can rebuild one of these proxies with a delegate
+ * it chose, and every interface call then routes into that delegate. {@link ConvertedMap} looks up
+ * its closure by the invoked method's name, so a stream naming {@code toString} supplies code that
+ * runs when the object is merely logged or interpolated, with no call to a declared method.
+ * Deserializing untrusted bytes is out of scope for this project ({@code THREAT_MODEL.md} §3) and no
+ * change to this class makes it safe; where an application must read semi-trusted streams, bound
+ * them with a JDK serial filter, for example
+ * {@code -Djdk.serialFilter='!org.codehaus.groovy.runtime.ConversionHandler;*'}, which refuses these
+ * handlers while leaving ordinary closure serialization intact.
  */
 public abstract class ConversionHandler implements InvocationHandler, Serializable {
     @Serial private static final long serialVersionUID = 1162833717190835227L;
