@@ -27,8 +27,9 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * This maps only builds once you ask for a key for the first time.
- * It is designed to not incur the overhead of creating a map unless needed.
+ * A map that defers creating its backing map, so the small objects that dominate JSON documents
+ * do not incur that overhead. Entries are held in parallel key/value arrays until the first
+ * lookup, or until the entry count passes the linear-scan threshold, whichever comes first.
  */
 public class LazyMap extends AbstractMap<String, Object> {
 
@@ -36,6 +37,15 @@ public class LazyMap extends AbstractMap<String, Object> {
      * System property controlling alternative hashing support in older JDK map implementations.
      */
     static final String JDK_MAP_ALTHASHING_SYSPROP = System.getProperty("jdk.map.althashing.threshold");
+
+    /*
+     * Entry count past which put(String, Object) stops detecting duplicate keys with a linear scan
+     * of the key array and delegates to the backing map instead. The scan costs O(size) comparisons
+     * per insertion, so an object with many keys would otherwise cost O(size^2) to populate; a
+     * crafted document whose keys share a long common prefix makes each of those comparisons
+     * expensive too. Small objects stay on the compact representation the class exists for.
+     */
+    private static final int LINEAR_SCAN_THRESHOLD = 32;
 
     /* Holds the actual map that will be lazily created. */
     private Map<String, Object> map;
@@ -66,6 +76,8 @@ public class LazyMap extends AbstractMap<String, Object> {
 
     /**
      * Stores a mapping while keeping the compact array-backed representation until hydration is needed.
+     * Once the entry count passes the linear-scan threshold, the backing map is built and delegated
+     * to, keeping insertion amortized constant-time for wide objects.
      *
      * @param key entry key
      * @param value entry value
@@ -74,6 +86,10 @@ public class LazyMap extends AbstractMap<String, Object> {
     @Override
     public Object put(String key, Object value) {
         if (map == null) {
+            if (size >= LINEAR_SCAN_THRESHOLD) {
+                buildIfNeeded();
+                return map.put(key, value);
+            }
             for (int i = 0; i < size; i++) {
                 String curKey = keys[i];
                 if ((key == null && curKey == null)
@@ -174,9 +190,12 @@ public class LazyMap extends AbstractMap<String, Object> {
 
     private void buildIfNeeded() {
         if (map == null) {
-            // added to avoid hash collision attack
+            // A TreeMap keeps lookups logarithmic where the runtime's String-keyed hash buckets are
+            // not collision-hardened; later runtimes treeify a heavily-collided bucket themselves, so
+            // a LinkedHashMap sized for its entries is enough. Capacity leaves room for the default
+            // load factor, so hydration fills the table without rehashing it.
             if (Sys.is1_8OrLater() || (Sys.is1_7() && JDK_MAP_ALTHASHING_SYSPROP != null)) {
-                map = new LinkedHashMap<String, Object>(size, 0.01f);
+                map = new LinkedHashMap<String, Object>((int) (size / 0.75f) + 1);
             } else {
                 map = new TreeMap<String, Object>();
             }
