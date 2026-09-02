@@ -33,8 +33,6 @@ jobs:
   test:
     permissions:
       contents: read
-      pull-requests: write
-      issues: write
     if: >-
       contains(github.event.head_commit.message || '', 'GROOVY-') ||
       contains(github.event.pull_request.title || '', 'GROOVY-')
@@ -96,6 +94,9 @@ jobs:
 
   summary:
     needs: test
+    permissions:
+      contents: read
+      pull-requests: write   # jmh-summary.py upserts the regression comment
     if: >-
       always() &&
       (contains(github.event.head_commit.message || '', 'GROOVY-') ||
