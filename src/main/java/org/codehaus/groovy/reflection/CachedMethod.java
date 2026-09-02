@@ -409,7 +409,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
      * Invokes this method on the given object with the specified arguments.
      * Handles accessibility, exception wrapping, and method invocation.
      *
-     * <p>After {@code groovy.cachedmethod.invoker.threshold} hits (default 100)
+     * <p>After {@code groovy.cachedmethod.invoker.threshold} hits (default 1000)
      * a {@link DirectInvoker} may be installed so the call is a JIT-constant
      * {@code INVOKE*} / classData {@code invokeExact} rather than
      * {@link Method#invoke}. Caller-sensitive and abstract methods stay
@@ -472,7 +472,8 @@ public class CachedMethod extends MetaMethod implements Comparable {
         long hits = ++invokeHits;
         long threshold = cachedThreshold;
         if (threshold == Long.MIN_VALUE) {
-            threshold = SystemUtil.getLongSafe(InvokerFactory.PROPERTY_THRESHOLD, 100L);
+            threshold = SystemUtil.getLongSafe(
+                    InvokerFactory.PROPERTY_THRESHOLD, InvokerFactory.DEFAULT_THRESHOLD);
             cachedThreshold = threshold;
         }
         return hits > threshold;

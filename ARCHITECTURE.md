@@ -289,7 +289,7 @@ above. Each bites contributors quickly if missed:
   caller). Indy already uses a linked `CallSite` and must keep the
   call-site `Lookup`; DGM / `CallSiteGenerator` already emit
   `INVOKE*`. After
-  `groovy.cachedmethod.invoker.threshold` hits (default 100) a
+  `groovy.cachedmethod.invoker.threshold` hits (default 1000) a
   generated `DirectInvoker` (direct `INVOKE*` or a classData
   `MethodHandle`) is installed so the invoke is a JIT-constant
   call. Generation cost is paid once per inflated method; the

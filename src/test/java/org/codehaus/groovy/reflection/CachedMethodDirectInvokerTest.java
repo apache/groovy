@@ -213,7 +213,7 @@ final class CachedMethodDirectInvokerTest {
             System.clearProperty(InvokerFactory.PROPERTY_THRESHOLD);
             // echo(String) with a non-String: reflective wraps IAE, generated
             // rethrows ClassCastException. The exception type is the probe that
-            // the first call (hits=1, default threshold 100) stayed reflective.
+            // the first call (hits=1, default threshold 1000) stayed reflective.
             CachedMethod cm = new CachedMethod(
                     DirectInvokerSubjects.class.getMethod("echo", String.class));
             DirectInvokerSubjects subject = new DirectInvokerSubjects();
