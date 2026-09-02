@@ -18,6 +18,7 @@
  */
 package groovy.json;
 
+import org.apache.groovy.json.internal.BaseJsonParser;
 import org.apache.groovy.json.internal.CharBuf;
 import org.apache.groovy.json.internal.Chr;
 import groovy.lang.Closure;
@@ -170,6 +171,14 @@ public class JsonOutput {
     /**
      * Pretty print a JSON payload.
      *
+     * <p>
+     * Nesting depth is bounded by the {@code groovy.json.maxNestingDepth} system property
+     * (default {@link BaseJsonParser#DEFAULT_MAX_NESTING_DEPTH}), matching the bound the slurpers
+     * enforce, so a payload this method will format is one {@link JsonSlurper} would parse. A
+     * payload nested deeper &mdash; or left unbalanced, which the lexer cannot distinguish from
+     * nesting &mdash; is rejected with a {@link JsonException} rather than expanded into an output
+     * quadratically larger than itself. A property value of {@code 0} or less disables the check.
+     *
      * @param jsonPayload a JSON payload
      * @return a pretty representation of JSON payload.
      */
@@ -180,13 +189,24 @@ public class JsonOutput {
     /**
      * Pretty print a JSON payload.
      *
+     * <p>
+     * Nesting depth is bounded by the {@code groovy.json.maxNestingDepth} system property
+     * (default {@link BaseJsonParser#DEFAULT_MAX_NESTING_DEPTH}), matching the bound the slurpers
+     * enforce, so a payload this method will format is one {@link JsonSlurper} would parse. A
+     * payload nested deeper &mdash; or left unbalanced, which the lexer cannot distinguish from
+     * nesting &mdash; is rejected with a {@link JsonException} rather than expanded into an output
+     * quadratically larger than itself. A property value of {@code 0} or less disables the check.
+     *
      * @param jsonPayload a JSON payload
      * @param disableUnicodeEscaping whether to disable unicode escaping
      * @return a pretty representation of JSON payload.
      * @since 4.0.19
      */
     public static String prettyPrint(String jsonPayload, boolean disableUnicodeEscaping) {
+        final int maxNestingDepth = Integer.getInteger("groovy.json.maxNestingDepth",
+                BaseJsonParser.DEFAULT_MAX_NESTING_DEPTH);
         int indentSize = 0;
+        int nestingDepth = 0;
         // Just a guess that the pretty view will take 20 percent more than original.
         final CharBuf output = CharBuf.create((int) (jsonPayload.length() * 1.2));
 
@@ -197,11 +217,15 @@ public class JsonOutput {
             JsonToken token = lexer.next();
             switch (token.getType()) {
                 case OPEN_CURLY:
+                    nestingDepth = enterNesting(nestingDepth, maxNestingDepth);
                     indentSize += 4;
                     output.addChars(Chr.array(OPEN_BRACE, NEW_LINE)).addChars(getIndent(indentSize, indentCache));
 
                     break;
                 case CLOSE_CURLY:
+                    if (nestingDepth > 0) {
+                        nestingDepth--;
+                    }
                     indentSize -= 4;
                     output.addChar(NEW_LINE);
                     if (indentSize > 0) {
@@ -211,11 +235,15 @@ public class JsonOutput {
 
                     break;
                 case OPEN_BRACKET:
+                    nestingDepth = enterNesting(nestingDepth, maxNestingDepth);
                     indentSize += 4;
                     output.addChars(Chr.array(OPEN_BRACKET, NEW_LINE)).addChars(getIndent(indentSize, indentCache));
 
                     break;
                 case CLOSE_BRACKET:
+                    if (nestingDepth > 0) {
+                        nestingDepth--;
+                    }
                     indentSize -= 4;
                     output.addChar(NEW_LINE);
                     if (indentSize > 0) {
@@ -248,6 +276,24 @@ public class JsonOutput {
         }
 
         return output.toString();
+    }
+
+    /**
+     * Records entry into a nested array or object, enforcing the configured maximum nesting depth.
+     * Bounding the depth also bounds the indent cache and the size of the output: each level adds
+     * four characters to every indent it encloses, so an unbounded document costs memory quadratic
+     * in its own nesting.
+     *
+     * @param nestingDepth the depth before this token
+     * @param maxNestingDepth the maximum permitted depth; {@code 0} or less disables the check
+     * @return the depth after this token
+     * @throws JsonException if the configured maximum nesting depth would be exceeded
+     */
+    private static int enterNesting(int nestingDepth, int maxNestingDepth) {
+        if (maxNestingDepth > 0 && nestingDepth + 1 > maxNestingDepth) {
+            throw new JsonException("Maximum JSON nesting depth of " + maxNestingDepth + " exceeded");
+        }
+        return nestingDepth + 1;
     }
 
     /**
