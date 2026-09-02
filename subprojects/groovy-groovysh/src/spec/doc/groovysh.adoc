@@ -1203,8 +1203,17 @@ request: pass `-f GROOVY`, or name a local `.groovy` file.
 For a URL, the extension of the URL path selects the format in the same way
 as a filename does, but only ever a data format &#8212; `GROOVY` is not inferred
 from an address, because the extension is part of the URL you typed while the
-bytes are whatever the server chooses to return. Use `-f GROOVY` if you really
-do want to evaluate what a URL serves.
+bytes are whatever the server chooses to return.
+
+WARNING: `-f GROOVY` against a URL runs whatever that server returns, with your
+privileges, in this session. It is not a safer way to evaluate remote content
+than the old content sniffing was &#8212; it is the *authorised* way, and the
+difference is only that you chose it rather than the payload choosing for you.
+Redirects are followed, so the address you typed is not necessarily where the
+code came from; `/slurp` prints the URL it was actually served from before
+evaluating it. Treat it as you would piping a download straight into a shell, and prefer
+fetching the content first (without `-f`) so you can read it before deciding
+to run it.
 
 Although the details of the exact object returned are an implementation
 detail which may change in the future, the current behavior is as follows:

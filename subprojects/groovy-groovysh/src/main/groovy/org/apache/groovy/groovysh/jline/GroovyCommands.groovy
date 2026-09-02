@@ -45,6 +45,8 @@ import org.jline.terminal.Terminal
 import org.jline.terminal.impl.TerminalGraphics
 import org.jline.terminal.impl.TerminalGraphicsManager
 import org.jline.utils.AttributedString
+import org.jline.utils.AttributedStringBuilder
+import org.jline.utils.AttributedStyle
 
 import javax.imageio.ImageIO
 import javax.swing.ImageIcon
@@ -691,7 +693,11 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                     // -f GROOVY rather than inferred from the address.
                     format = formatForExtension(extensionOf(url.path), false)
                 }
-                source = new InputStreamReader(url.openStream(), encoding)
+                URLConnection connection = url.openConnection()
+                source = new InputStreamReader(connection.inputStream, encoding)
+                if (format == 'GROOVY') {
+                    noteEvaluatingRemoteContent(input, url, connection)
+                }
             }
             if (source) {
                 if (format == 'TEXT') {
@@ -730,6 +736,46 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
     }
 
     /**
+     * Reports that content fetched over the network is about to be evaluated, naming where it was
+     * actually served from.
+     * <p>
+     * Asking for {@code -f GROOVY} grants the server code execution in this session, and redirects
+     * are followed, so the address typed is not necessarily the source the code came from. The
+     * decision is the user's to make, but it should be made visible at the point it is taken.
+     *
+     * @param input the command input, for terminal access
+     * @param requested the URL the user named
+     * @param connection the open connection, whose URL reflects any redirects followed
+     */
+    private static void noteEvaluatingRemoteContent(CommandInput input, URL requested, URLConnection connection) {
+        String message = remoteEvaluationNotice(requested, connection.URL)
+        def writer = input.terminal()?.writer()
+        if (writer) {
+            writer.println(new AttributedStringBuilder()
+                .style(AttributedStyle.DEFAULT.foreground(AttributedStyle.YELLOW))
+                .append("/slurp: $message")
+                .style(AttributedStyle.DEFAULT)
+                .toAnsi(input.terminal()))
+            writer.flush()
+        }
+    }
+
+    /**
+     * The notice shown before remote content is evaluated, naming the URL actually served from and,
+     * when redirects moved it, the one that was asked for.
+     *
+     * @param requested the URL the user named
+     * @param served the URL the content came from, or {@code null} if unknown
+     * @return the message to display
+     */
+    // package-private for testing
+    static String remoteEvaluationNotice(URL requested, URL served) {
+        served && served.toString() != requested.toString()
+            ? "evaluating Groovy fetched from $served (redirected from $requested)"
+            : "evaluating Groovy fetched from $requested"
+    }
+
+    /**
      * Maps a file extension onto a slurp format, or {@code null} when nothing matches (leaving the
      * caller to fall back on AUTO, which parses but never evaluates).
      *
@@ -738,7 +784,8 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
      *                  local file the user named, false for content fetched over the network
      * @return the format name, or {@code null}
      */
-    private static String formatForExtension(String ext, boolean allowCode) {
+    // package-private for testing
+    static String formatForExtension(String ext, boolean allowCode) {
         if (!ext) return null
         switch (ext.toLowerCase(Locale.ROOT)) {
             case 'json': return 'JSON'
@@ -760,7 +807,8 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
      * @param path the URL path
      * @return the extension without the dot, or {@code null} when the last segment has none
      */
-    private static String extensionOf(String path) {
+    // package-private for testing
+    static String extensionOf(String path) {
         if (!path) return null
         int slash = path.lastIndexOf('/')
         String name = slash < 0 ? path : path.substring(slash + 1)
