@@ -100,47 +100,11 @@ public final class InvokerFactory {
             return null;
         }
         try {
-            final Method m = method.getCachedMethod();
-            final Class<?> declaring = m.getDeclaringClass();
-            final Class<?>[] params = m.getParameterTypes();
-            final Class<?> returnType = m.getReturnType();
-
-            // Step 1: InvokerFactory nestmate + INVOKE* (String.startsWith).
-            if (isPubliclyInvocableFromInvokerFactory(method)
-                    && canResolveInvokeTypes(LOOKUP.lookupClass(), declaring, params, returnType)) {
-                final DirectInvoker step1 = defineInvokeStarOnLookup(m, LOOKUP);
-                if (step1 != null) {
-                    return step1;
-                }
-            }
-
-            // Step 2: declaring-class nestmate + INVOKE*.
-            if (HiddenClassDefiner.canAttemptPrivateLookup(declaring)
-                    && loaderCanResolve(declaring, DirectInvoker.class)) {
-                final DirectInvoker step2 = defineInvokeStarOnDeclaringClass(m, declaring);
-                if (step2 != null) {
-                    return step2;
-                }
-            }
-
-            // Step 3: InvokerFactory nestmate + classData MH.
-            if (canResolveInvokeTypes(LOOKUP.lookupClass(), declaring, params, returnType)) {
-                final DirectInvoker step3 = tryCreateClassData(method);
-                if (step3 != null) {
-                    return step3;
-                }
-            }
-
-            // Step 4: visible artifact, never for bootstrap hosts.
-            if (declaring.getClassLoader() != null
-                    && loaderCanResolve(declaring, DirectInvoker.class)
-                    && isPubliclyInvocableFromInvokerFactory(method)) {
-                return defineVisibleArtifact(method, m);
-            }
-            return null;
-        } catch (Exception ignored) {
-            // Sticky-fail expected define/link/access problems. Do not swallow
-            // Error (OOME / SOE): those must not permanently disable this method.
+            return defineSteps(method);
+        } catch (Exception | LinkageError ignored) {
+            // Sticky-fail expected define/link/access problems, including
+            // VerifyError / NoClassDefFoundError from Step 4 defineClass.
+            // Do not swallow VirtualMachineError (OOME / SOE).
             return null;
         }
     }
@@ -238,12 +202,94 @@ public final class InvokerFactory {
             final Lookup hidden = HiddenClassDefiner.tryDefineNestmateWithClassData(
                     LOOKUP, bytes, mh, true);
             return instantiate(hidden);
-        } catch (Exception ignored) {
+        } catch (Exception | LinkageError ignored) {
+            return null;
+        }
+    }
+
+    /**
+     * Step 4 encoding, package-visible so tests can exercise a visible
+     * {@link ClassLoaderForClassArtifacts} artifact without waiting for
+     * Steps 1–3 to fail (unnamed modules usually succeed at Step 2).
+     *
+     * @param method the cached method
+     * @return a visible-class trampoline, or {@code null}
+     */
+    static DirectInvoker tryCreateVisibleArtifact(final CachedMethod method) {
+        if (method == null || !generationAllowed()) {
+            return null;
+        }
+        try {
+            return defineVisibleArtifact(method, method.getCachedMethod());
+        } catch (Exception | LinkageError ignored) {
             return null;
         }
     }
 
     // -------------------------------------------------------------------------
+
+    private static DirectInvoker defineSteps(final CachedMethod method) {
+        final Method m = method.getCachedMethod();
+        final Class<?> declaring = m.getDeclaringClass();
+        final Class<?>[] params = m.getParameterTypes();
+        final Class<?> returnType = m.getReturnType();
+
+        DirectInvoker di = tryStep1(method, m, declaring, params, returnType);
+        if (di != null) {
+            return di;
+        }
+        di = tryStep2(m, declaring);
+        if (di != null) {
+            return di;
+        }
+        di = tryStep3(method, declaring, params, returnType);
+        if (di != null) {
+            return di;
+        }
+        return tryStep4(method, m, declaring);
+    }
+
+    private static DirectInvoker tryStep1(
+            final CachedMethod method,
+            final Method m,
+            final Class<?> declaring,
+            final Class<?>[] params,
+            final Class<?> returnType) {
+        if (isPubliclyInvocableFromInvokerFactory(method)
+                && canResolveInvokeTypes(LOOKUP.lookupClass(), declaring, params, returnType)) {
+            return defineInvokeStarOnLookup(m, LOOKUP);
+        }
+        return null;
+    }
+
+    private static DirectInvoker tryStep2(final Method m, final Class<?> declaring) {
+        if (HiddenClassDefiner.canAttemptPrivateLookup(declaring)
+                && loaderCanResolve(declaring, DirectInvoker.class)) {
+            return defineInvokeStarOnDeclaringClass(m, declaring);
+        }
+        return null;
+    }
+
+    private static DirectInvoker tryStep3(
+            final CachedMethod method,
+            final Class<?> declaring,
+            final Class<?>[] params,
+            final Class<?> returnType) {
+        if (canResolveInvokeTypes(LOOKUP.lookupClass(), declaring, params, returnType)) {
+            return tryCreateClassData(method);
+        }
+        return null;
+    }
+
+    private static DirectInvoker tryStep4(
+            final CachedMethod method, final Method m, final Class<?> declaring) {
+        if (declaring.getClassLoader() != null
+                && loaderCanResolve(declaring, DirectInvoker.class)
+                && isPubliclyInvocableFromInvokerFactory(method)) {
+            return defineVisibleArtifact(method, m);
+        }
+        return null;
+    }
 
     private static boolean canResolveInvokeTypes(
             final Class<?> host,
@@ -304,7 +350,7 @@ public final class InvokerFactory {
                 return null;
             }
             return (DirectInvoker) ctor.newInstance();
-        } catch (Exception ignored) {
+        } catch (Exception | LinkageError ignored) {
             return null;
         }
     }
@@ -315,7 +361,7 @@ public final class InvokerFactory {
         }
         try {
             return (DirectInvoker) cls.getConstructor().newInstance();
-        } catch (Exception ignored) {
+        } catch (Exception | LinkageError ignored) {
             return null;
         }
     }

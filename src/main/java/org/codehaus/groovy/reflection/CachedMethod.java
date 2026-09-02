@@ -88,10 +88,12 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     /**
      * Installed JIT-constant trampoline, or {@code null} if not yet generated
-     * / sticky-failed. Volatile: the fast path reads it outside the generation
-     * lock.
+     * / sticky-failed. Volatile publishes an immutable referent (the generated
+     * class has no mutable fields); the fast path reads it outside the
+     * generation lock. Not an {@code AtomicReference}: every {@code CachedMethod}
+     * would pay an extra object, including those that never inflate.
      */
-    private transient volatile DirectInvoker invoker;
+    private transient volatile DirectInvoker invoker; // NOSONAR java:S3077 — immutable trampoline, volatile for publication only
     /**
      * Racy hit counter. {@code long} to match
      * {@code IndyInterface.INDY_OPTIMIZE_THRESHOLD}. Over-counting
@@ -99,6 +101,13 @@ public class CachedMethod extends MetaMethod implements Comparable {
      * delays generation. Both harmless.
      */
     private transient long invokeHits;
+    /**
+     * Cached {@link InvokerFactory#PROPERTY_THRESHOLD} so lukewarm invokes
+     * do not call {@code Long.getLong} every time. {@link Long#MIN_VALUE}
+     * means unread. Tests construct a fresh {@code CachedMethod} after
+     * changing the property.
+     */
+    private transient long cachedThreshold = Long.MIN_VALUE;
     /**
      * Sticky failure: {@link InvokerFactory#tryCreate} returned {@code null}.
      * Volatile because the fast path reads it outside the generation lock.
@@ -451,6 +460,9 @@ public class CachedMethod extends MetaMethod implements Comparable {
             return false;
         }
         if (!InvokerFactory.generationAllowed()) {
+            // Sticky: do not re-read disable / hidden-class / Android flags
+            // on every subsequent invoke. Kill switches are process-level.
+            invokerAttempted = true;
             return false;
         }
         if (isCallerSensitive() || Modifier.isAbstract(getModifiers())) {
@@ -458,7 +470,12 @@ public class CachedMethod extends MetaMethod implements Comparable {
             return false;
         }
         long hits = ++invokeHits;
-        return hits > SystemUtil.getLongSafe(InvokerFactory.PROPERTY_THRESHOLD, 100L);
+        long threshold = cachedThreshold;
+        if (threshold == Long.MIN_VALUE) {
+            threshold = SystemUtil.getLongSafe(InvokerFactory.PROPERTY_THRESHOLD, 100L);
+            cachedThreshold = threshold;
+        }
+        return hits > threshold;
     }
 
     private Object invokeGenerated(final DirectInvoker di, final Object object, final Object[] arguments) {

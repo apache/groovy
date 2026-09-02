@@ -85,8 +85,9 @@ final class CachedMethodDirectInvokerTest {
     void testRuntimeExceptionIsRethrown() throws Exception {
         withThreshold(0L, () -> {
             CachedMethod cm = new CachedMethod(DirectInvokerSubjects.class.getMethod("boomRuntime"));
+            DirectInvokerSubjects subject = new DirectInvokerSubjects();
             IllegalStateException ex = assertThrows(IllegalStateException.class,
-                    () -> cm.invoke(new DirectInvokerSubjects(), null));
+                    () -> cm.invoke(subject, null));
             assertEquals("runtime-boom", ex.getMessage());
         });
     }
@@ -96,8 +97,9 @@ final class CachedMethodDirectInvokerTest {
     void testMissingMethodExceptionIsWrapped() throws Exception {
         withThreshold(0L, () -> {
             CachedMethod cm = new CachedMethod(DirectInvokerSubjects.class.getMethod("boomMme"));
+            DirectInvokerSubjects subject = new DirectInvokerSubjects();
             InvokerInvocationException ex = assertThrows(InvokerInvocationException.class,
-                    () -> cm.invoke(new DirectInvokerSubjects(), null));
+                    () -> cm.invoke(subject, null));
             assertInstanceOf(MissingMethodException.class, ex.getCause());
         });
     }
@@ -107,8 +109,9 @@ final class CachedMethodDirectInvokerTest {
     void testErrorFromTargetIsWrapped() throws Exception {
         withThreshold(0L, () -> {
             CachedMethod cm = new CachedMethod(DirectInvokerSubjects.class.getMethod("boomError"));
+            DirectInvokerSubjects subject = new DirectInvokerSubjects();
             InvokerInvocationException ex = assertThrows(InvokerInvocationException.class,
-                    () -> cm.invoke(new DirectInvokerSubjects(), null));
+                    () -> cm.invoke(subject, null));
             assertInstanceOf(AssertionError.class, ex.getCause());
             assertEquals("error-boom", ex.getCause().getMessage());
         });
@@ -119,8 +122,9 @@ final class CachedMethodDirectInvokerTest {
     void testCheckedExceptionIsWrapped() throws Exception {
         withThreshold(0L, () -> {
             CachedMethod cm = new CachedMethod(DirectInvokerSubjects.class.getMethod("boomChecked"));
+            DirectInvokerSubjects subject = new DirectInvokerSubjects();
             InvokerInvocationException ex = assertThrows(InvokerInvocationException.class,
-                    () -> cm.invoke(new DirectInvokerSubjects(), null));
+                    () -> cm.invoke(subject, null));
             assertInstanceOf(IOException.class, ex.getCause());
             assertEquals("checked-boom", ex.getCause().getMessage());
         });
@@ -132,8 +136,9 @@ final class CachedMethodDirectInvokerTest {
         withDisable(() -> {
             CachedMethod cm = new CachedMethod(
                     DirectInvokerSubjects.class.getMethod("echo", String.class));
+            DirectInvokerSubjects subject = new DirectInvokerSubjects();
             InvokerInvocationException ex = assertThrows(InvokerInvocationException.class,
-                    () -> cm.invoke(new DirectInvokerSubjects(), new Object[]{1}));
+                    () -> cm.invoke(subject, new Object[]{1}));
             assertInstanceOf(IllegalArgumentException.class, ex.getCause());
         });
     }
@@ -144,8 +149,9 @@ final class CachedMethodDirectInvokerTest {
         withThreshold(0L, () -> {
             CachedMethod cm = new CachedMethod(
                     DirectInvokerSubjects.class.getMethod("echo", String.class));
+            DirectInvokerSubjects subject = new DirectInvokerSubjects();
             assertThrows(ClassCastException.class,
-                    () -> cm.invoke(new DirectInvokerSubjects(), new Object[]{1}));
+                    () -> cm.invoke(subject, new Object[]{1}));
         });
     }
 
@@ -155,8 +161,9 @@ final class CachedMethodDirectInvokerTest {
         withThreshold(0L, () -> {
             CachedMethod cm = new CachedMethod(
                     DirectInvokerSubjects.class.getMethod("echo", String.class));
+            DirectInvokerSubjects subject = new DirectInvokerSubjects();
             InvokerInvocationException ex = assertThrows(InvokerInvocationException.class,
-                    () -> cm.invoke(new DirectInvokerSubjects(), new Object[0]));
+                    () -> cm.invoke(subject, new Object[0]));
             assertInstanceOf(IllegalArgumentException.class, ex.getCause());
         });
     }
@@ -167,11 +174,11 @@ final class CachedMethodDirectInvokerTest {
         withThreshold(0L, () -> {
             CachedMethod cm = new CachedMethod(
                     DirectInvokerSubjects.class.getMethod("echo", String.class));
+            DirectInvokerSubjects subject = new DirectInvokerSubjects();
             InvokerInvocationException ex = assertThrows(InvokerInvocationException.class,
-                    () -> cm.invoke(new DirectInvokerSubjects(), new Object[]{"a", "b"}));
+                    () -> cm.invoke(subject, new Object[]{"a", "b"}));
             assertInstanceOf(IllegalArgumentException.class, ex.getCause());
             // Fallback must not sticky-fail the trampoline.
-            DirectInvokerSubjects subject = new DirectInvokerSubjects();
             assertEquals("x", cm.invoke(subject, new Object[]{"x"}));
             assertThrows(ClassCastException.class,
                     () -> cm.invoke(subject, new Object[]{1}));
@@ -209,12 +216,33 @@ final class CachedMethodDirectInvokerTest {
             // the first call (hits=1, default threshold 100) stayed reflective.
             CachedMethod cm = new CachedMethod(
                     DirectInvokerSubjects.class.getMethod("echo", String.class));
+            DirectInvokerSubjects subject = new DirectInvokerSubjects();
             InvokerInvocationException ex = assertThrows(InvokerInvocationException.class,
-                    () -> cm.invoke(new DirectInvokerSubjects(), new Object[]{1}));
+                    () -> cm.invoke(subject, new Object[]{1}));
             assertInstanceOf(IllegalArgumentException.class, ex.getCause());
         } finally {
             restore(InvokerFactory.PROPERTY_THRESHOLD, previous);
         }
+    }
+
+    @Test
+    @ResourceLock(Resources.SYSTEM_PROPERTIES)
+    void testThresholdCrossingInstallsGeneratedPath() throws Exception {
+        withThreshold(2L, () -> {
+            CachedMethod cm = new CachedMethod(
+                    DirectInvokerSubjects.class.getMethod("echo", String.class));
+            DirectInvokerSubjects subject = new DirectInvokerSubjects();
+            Object[] bad = new Object[]{1};
+            // hits 1 and 2:  n > 2 is false, stay reflective (wrapped IAE).
+            InvokerInvocationException first = assertThrows(InvokerInvocationException.class,
+                    () -> cm.invoke(subject, bad));
+            assertInstanceOf(IllegalArgumentException.class, first.getCause());
+            InvokerInvocationException second = assertThrows(InvokerInvocationException.class,
+                    () -> cm.invoke(subject, bad));
+            assertInstanceOf(IllegalArgumentException.class, second.getCause());
+            // hit 3: generate, then CHECKCAST fails with ClassCastException.
+            assertThrows(ClassCastException.class, () -> cm.invoke(subject, bad));
+        });
     }
 
     @Test
