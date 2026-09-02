@@ -228,7 +228,7 @@ public class GroovyPosixCommands {
             if (showWords) result.append(String.format("%8d", words));
             if (showChars) result.append(String.format("%8d", chars));
             if (showBytes) result.append(String.format("%8d", bytes));
-            result.append(" ").append(source.getName());
+            result.append(" ").append(stripControlChars(source.getName()));
 
             context.out().println(result);
             context.out().flush();
@@ -302,7 +302,7 @@ public class GroovyPosixCommands {
                 if (!first) {
                     context.out().println();
                 }
-                context.out().println("==> " + nis.getName() + " <==");
+                context.out().println("==> " + stripControlChars(nis.getName()) + " <==");
             }
             doHead(context, nis.getInputStream(), nbLines, nbBytes);
             first = false;
@@ -373,7 +373,7 @@ public class GroovyPosixCommands {
         }
         for (NamedInputStream nis : sources) {
             if (filenameHeader) {
-                context.out().println("==> " + nis.getName() + " <==");
+                context.out().println("==> " + stripControlChars(nis.getName()) + " <==");
             }
             tailInputStream(context, nis.getInputStream(), lines, bytes);
         }
@@ -548,7 +548,7 @@ public class GroovyPosixCommands {
                     suffix = "@";
                     try {
                         Path l = Files.readSymbolicLink(abs);
-                        link = " -> " + l.toString();
+                        link = " -> " + stripControlChars(l.toString());
                     } catch (IOException e) {
                         // ignore
                     }
@@ -566,7 +566,7 @@ public class GroovyPosixCommands {
                     suffix = "";
                 }
                 boolean addSuffix = opt.isSet("F");
-                return applyStyle(path.toString(), colors, type) + (addSuffix ? suffix : "") + link;
+                return applyStyle(stripControlChars(path.toString()), colors, type) + (addSuffix ? suffix : "") + link;
             }
 
             /**
@@ -728,7 +728,7 @@ public class GroovyPosixCommands {
             space = true;
             Path path = currentDir.resolve(entry.path);
             if (expanded.size() > 1) {
-                out.println(currentDir.relativize(path).toString() + ":");
+                out.println(stripControlChars(currentDir.relativize(path).toString()) + ":");
             }
             try (Stream<Path> pathStream = Files.list(path)) {
                 display.accept(Stream.concat(Stream.of(".", "..").map(path::resolve), pathStream)
@@ -898,7 +898,7 @@ public class GroovyPosixCommands {
                                     if (colored) {
                                         applyStyle(sbl, colors, "fn");
                                     }
-                                    sbl.append(src.getName());
+                                    sbl.append(stripControlChars(src.getName()));
                                     if (colored) {
                                         applyStyle(sbl, colors, "se");
                                     }
@@ -942,7 +942,7 @@ public class GroovyPosixCommands {
                                 if (colored) {
                                     applyStyle(sbl, colors, "fn");
                                 }
-                                sbl.append(src.getName());
+                                sbl.append(stripControlChars(src.getName()));
                                 if (colored) {
                                     applyStyle(sbl, colors, "se");
                                 }
@@ -967,7 +967,7 @@ public class GroovyPosixCommands {
                                 if (colored) {
                                     applyStyle(sbl, colors, "fn");
                                 }
-                                sbl.append(src.getName());
+                                sbl.append(stripControlChars(src.getName()));
                                 if (colored) {
                                     applyStyle(sbl, colors, "se");
                                 }
@@ -1020,7 +1020,7 @@ public class GroovyPosixCommands {
                                 if (colored) {
                                     applyStyle(sbl, colors, "fn");
                                 }
-                                sbl.append(src.getName());
+                                sbl.append(stripControlChars(src.getName()));
                                 if (colored) {
                                     applyStyle(sbl, colors, "se");
                                 }
@@ -1228,6 +1228,31 @@ public class GroovyPosixCommands {
             }
         }
         return false;
+    }
+
+    /**
+     * Removes control characters from text that is about to be written to the terminal.
+     * <p>
+     * File names, symlink targets and the like are data supplied by whoever created them, not text
+     * the user asked to render, so an escape sequence embedded in a name would otherwise be executed
+     * by the terminal &mdash; hiding output, spoofing what is displayed, or reaching an emulator bug.
+     * <p>
+     * Ported verbatim from JLine's {@code PosixCommands} (jline#2200), which this class is derived
+     * from, so that the two stay diffable. Upstream strips rather than quoting as coreutils does; the
+     * behaviour is matched deliberately rather than improved on, because divergence here is what
+     * caused this fix to be missed in the first place.
+     */
+    private static String stripControlChars(String s) {
+        if (s == null) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder(s.length());
+        s.codePoints().forEach(cp -> {
+            if (!Character.isISOControl(cp)) {
+                sb.appendCodePoint(cp);
+            }
+        });
+        return sb.toString();
     }
 
     private static Set<PosixFilePermission> getPermissionsFromFile(Path f) {

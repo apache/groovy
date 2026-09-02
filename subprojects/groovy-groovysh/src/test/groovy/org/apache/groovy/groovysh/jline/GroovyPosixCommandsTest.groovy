@@ -80,6 +80,67 @@ class GroovyPosixCommandsTest {
         new String(out.toByteArray(), StandardCharsets.UTF_8).normalize()
     }
 
+    /** A name carrying an escape sequence the terminal would otherwise act on. */
+    private static final String HOSTILE_NAME = "ok\u001B[2Ktrap.txt"
+
+    /**
+     * What the name looks like once neutralised. Stripping removes the ESC that makes the sequence a
+     * command; the printable remainder stays and is inert, which is what upstream does. Note the
+     * output legitimately contains other ESCs of its own for colour, so the assertion has to name the
+     * injected sequence rather than look for ESC in general.
+     */
+    private static final String NEUTRALISED_NAME = 'ok[2Ktrap.txt'
+
+    // GROOVY-12341
+    @Test
+    void lsStripsControlCharactersFromFileNames() {
+        Files.writeString(tempDir.resolve(HOSTILE_NAME), 'x\n')
+        GroovyPosixCommands.ls(context(), ['/ls'] as Object[])
+        def output = stdout()
+
+        assert !output.contains('\u001B[2K')
+        assert output.contains(NEUTRALISED_NAME)
+    }
+
+    // GROOVY-12341
+    @Test
+    void lsStripsControlCharactersFromSymlinkTargets() {
+        Path target = Files.writeString(tempDir.resolve(HOSTILE_NAME), 'x\n')
+        try {
+            Files.createSymbolicLink(tempDir.resolve('link.txt'), target)
+        } catch (UnsupportedOperationException | IOException ignored) {
+            return // symlinks unavailable (e.g. Windows without privilege)
+        }
+        GroovyPosixCommands.ls(context(), ['/ls', '-l'] as Object[])
+
+        assert !stdout().contains('\u001B[2K')
+    }
+
+    // GROOVY-12341
+    @Test
+    void headAndGrepAndWcStripControlCharactersFromNames() {
+        // the same treatment upstream applies to every command that echoes a source name
+        Path file = Files.writeString(tempDir.resolve(HOSTILE_NAME), 'alpha\nbeta\n')
+        Path plain = Files.writeString(tempDir.resolve('plain.txt'), 'alpha\n')
+
+        GroovyPosixCommands.head(context(), ['/head', file.toString(), plain.toString()] as Object[])
+        GroovyPosixCommands.grep(context(), ['/grep', '--color=never', 'alpha', file.toString(), plain.toString()] as Object[])
+        GroovyPosixCommands.wc(context(), ['/wc', file.toString()] as Object[])
+        def output = stdout()
+
+        assert !output.contains('\u001B[2K')
+        assert output.contains(NEUTRALISED_NAME)
+    }
+
+    // GROOVY-12341
+    @Test
+    void ordinaryNamesAreUnchanged() {
+        Files.writeString(tempDir.resolve('ordinary-name.txt'), 'x\n')
+        GroovyPosixCommands.ls(context(), ['/ls'] as Object[])
+
+        assert stdout().contains('ordinary-name.txt')
+    }
+
     @Test
     void catReadsFileContents() {
         Path file = Files.writeString(tempDir.resolve('hello.txt'), "first line\nsecond line\n")
