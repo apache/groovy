@@ -381,6 +381,28 @@ class Main {
     }
 
     /**
+     * The state files JLine writes into the same directory, which it creates at the ambient umask.
+     */
+    private static final List<String> JLINE_STATE_FILES = ['aliases.json', 'pipeline-names.json']
+
+    /**
+     * Restricts JLine's own state files to their owner once they exist.
+     * <p>
+     * JLine creates them through {@code ConfigurationPath.getUserConfig}, which calls
+     * {@code Files.createFile} with no permission attributes; as of 4.4.1 that is still the case,
+     * even though {@code DefaultHistory} was hardened for exactly this. They are not created here,
+     * because handing JLine an empty file to parse as JSON would be worse than leaving the mode
+     * alone. A file JLine creates during this session is therefore tightened on the next startup
+     * rather than this one.
+     * <p>
+     * The lasting fix belongs upstream, in {@code getUserConfig} itself.
+     */
+    private static void tightenJLineStateFiles() {
+        Path stateDirectory = userStateDirectory
+        JLINE_STATE_FILES.each { name -> tightenStateFile(stateDirectory.resolve(name)) }
+    }
+
+    /**
      * Restricts an existing state file to its owner when it is currently more permissive, and does
      * nothing at all when the file is absent.
      * <p>
@@ -535,6 +557,7 @@ class Main {
 
             ConsoleEngine consoleEngine = new GroovyConsoleEngine(scriptEngine, printer, workDir, configPath, reader)
             consoleEngine.setConsoleOption('docs', new DocFinder())
+            tightenJLineStateFiles()
 
             CommandRegistry builtins = new GroovyBuiltins(scriptEngine, workDir, configPath, reader, (String fun) ->
                 new ConsoleEngine.WidgetCreator(consoleEngine, fun)
