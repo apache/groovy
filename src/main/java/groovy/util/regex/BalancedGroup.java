@@ -74,20 +74,21 @@ public final class BalancedGroup {
             }
         };
 
-    private final String matchedString;
+    private final CharSequence source;
     private final int start;
     private final int end;
     private final int fullStart;
     private final int fullEnd;
     private final List<BalancedGroup> children;
     private BalancedGroup parent;
-    /** Nesting depth; set once when this node is attached as a child (O(1) {@link #getDepth()}). */
-    private int depth;
+    private static final int DEPTH_UNRESOLVED = -1;
+    /** Nesting depth, resolved on first request from the parent chain and then cached. */
+    private int depth = DEPTH_UNRESOLVED;
 
     /**
-     * Package-private constructor: builds a node with offsets relative to
-     * {@code matchedString} ({@code start = 0}, {@code end = matchedString.length()},
-     * and the same for the full span). Prefer {@link #find} for public use.
+     * Package-private constructor: builds a node whose text is its own source
+     * ({@code start = 0}, {@code end = matchedString.length()}, and the same for the full span).
+     * Prefer {@link #find} for public use.
      * Wires each child's parent link (one-shot: a child may not already have a parent).
      *
      * @param matchedString the text captured for this group (never {@code null})
@@ -105,30 +106,36 @@ public final class BalancedGroup {
      * Prefer {@link #find} for public use. Wires each child's parent link and depth
      * (one-shot: a child may not already have a parent).
      *
-     * @param matchedString the text captured for this group (never {@code null});
-     *                      may include or exclude boundary delimiters depending on
-     *                      {@link MatchOptions#includeEdges()}
-     * @param start         start index of {@code matchedString} in the source (inclusive)
-     * @param end           end index of {@code matchedString} in the source (exclusive)
+     * <p>
+     * The node keeps the source and slices its text on demand rather than holding a copy: in a
+     * deeply nested document the groups' spans overlap, so a copy per node makes retention
+     * quadratic in the nesting. The source must be effectively immutable for the node's lifetime,
+     * which {@link #find} guarantees by flattening its input to a {@code String} first.
+     *
+     * @param source        the text the offsets index into (never {@code null})
+     * @param start         start index of this group's text (inclusive); includes or excludes the
+     *                      boundary delimiters depending on {@link MatchOptions#includeEdges()}
+     * @param end           end index of this group's text (exclusive)
      * @param fullStart     start index of the full pair including open delimiter
      * @param fullEnd       end index of the full pair including close delimiter (exclusive)
      * @param children      immediate nested groups, or {@code null}/empty for a leaf
-     * @throws NullPointerException     if {@code matchedString} is {@code null}, or
+     * @throws NullPointerException     if {@code source} is {@code null}, or
      *                                  {@code children} contains {@code null}
-     * @throws IllegalArgumentException if ranges are invalid or a child already has a parent
+     * @throws IllegalArgumentException if ranges are invalid or out of bounds for {@code source},
+     *                                  or a child already has a parent
      */
-    BalancedGroup(String matchedString, int start, int end, int fullStart, int fullEnd,
+    BalancedGroup(CharSequence source, int start, int end, int fullStart, int fullEnd,
                   List<BalancedGroup> children) {
-        this.matchedString = Objects.requireNonNull(matchedString, "matchedString");
+        this.source = Objects.requireNonNull(source, "source");
         if (start < 0 || end < start) {
             throw new IllegalArgumentException("invalid match range: [" + start + ", " + end + ")");
         }
         if (fullStart < 0 || fullEnd < fullStart) {
             throw new IllegalArgumentException("invalid full range: [" + fullStart + ", " + fullEnd + ")");
         }
-        if (end - start != matchedString.length()) {
+        if (end > source.length()) {
             throw new IllegalArgumentException(
-                "matchedString length " + matchedString.length() + " != range length " + (end - start));
+                "match range [" + start + ", " + end + ") exceeds source length " + source.length());
         }
         this.start = start;
         this.end = end;
@@ -143,21 +150,32 @@ public final class BalancedGroup {
                     throw new IllegalArgumentException("child BalancedGroup already has a parent");
                 }
                 child.parent = this;
-                // Bottom-up assembly: this node may later be attached under a grandparent,
-                // so depth is assigned (and cascaded) here and again when we are attached.
-                child.assignDepth(this.depth + 1);
+                // A depth read before assembly finished is cached against a parent chain that is
+                // about to change; drop it so it resolves against the new one. find() never reads a
+                // depth while assembling, so nothing is cached yet on that path.
+                if (child.depth != DEPTH_UNRESOLVED) {
+                    child.clearResolvedDepths();
+                }
             }
         }
     }
 
     /**
-     * Sets this node's depth and cascades to descendants. Invoked only during the
-     * one-shot parent-wiring phase of construction (tree is not yet published).
+     * Drops the cached depth of this node and of every descendant holding one. Iterative, and
+     * prunes at any node that never had its depth read.
      */
-    private void assignDepth(int newDepth) {
-        this.depth = newDepth;
-        for (BalancedGroup child : children) {
-            child.assignDepth(newDepth + 1);
+    private void clearResolvedDepths() {
+        Deque<BalancedGroup> pending = new ArrayDeque<>();
+        pending.push(this);
+        while (!pending.isEmpty()) {
+            BalancedGroup node = pending.pop();
+            if (node.depth == DEPTH_UNRESOLVED) {
+                continue;
+            }
+            node.depth = DEPTH_UNRESOLVED;
+            for (BalancedGroup child : node.children) {
+                pending.push(child);
+            }
         }
     }
 
@@ -268,11 +286,10 @@ public final class BalancedGroup {
                 if (matchStart > matchEnd) {
                     matchStart = matchEnd;
                 }
-                String matchStr = source.substring(matchStart, matchEnd);
-
-                // Constructor wires child → parent links.
+                // Constructor wires child → parent links. The source is shared, not sliced per
+                // node: the groups' spans overlap, so a copy each would be quadratic in the nesting.
                 BalancedGroup completedNode = new BalancedGroup(
-                    matchStr, matchStart, matchEnd, openStart, closeEnd, openGroup.children());
+                    source, matchStart, matchEnd, openStart, closeEnd, openGroup.children());
                 stack.peek().addChild(completedNode);
             }
         }
@@ -319,7 +336,7 @@ public final class BalancedGroup {
      *         delimiters depending on {@link MatchOptions#includeEdges()}
      */
     public String getMatchedString() {
-        return matchedString;
+        return source.subSequence(start, end).toString();
     }
 
     /**
@@ -389,11 +406,30 @@ public final class BalancedGroup {
 
     /**
      * Nesting depth of this node (0 for a root).
-     * Computed once when the parent link is wired; O(1).
+     * <p>
+     * Resolved from the parent chain on first request and cached, along with every ancestor walked
+     * on the way, so resolving the depth of every node in a tree costs O(n) overall and any single
+     * node is O(1) once resolved. Assigning eagerly during construction would instead re-walk each
+     * subtree every time it is attached to a new parent, which the bottom-up assembly in
+     * {@link #find} does once per closing delimiter &mdash; quadratic in the nesting. The walk is
+     * iterative because a deeply nested document must not consume a stack frame per level.
      *
      * @return the number of ancestors
      */
     public int getDepth() {
+        if (depth != DEPTH_UNRESOLVED) {
+            return depth;
+        }
+        Deque<BalancedGroup> pending = new ArrayDeque<>();
+        BalancedGroup node = this;
+        while (node.depth == DEPTH_UNRESOLVED && node.parent != null) {
+            pending.push(node);
+            node = node.parent;
+        }
+        int resolved = node.depth == DEPTH_UNRESOLVED ? (node.depth = 0) : node.depth;
+        while (!pending.isEmpty()) {
+            pending.pop().depth = ++resolved;
+        }
         return depth;
     }
 
@@ -404,7 +440,7 @@ public final class BalancedGroup {
      */
     @Override
     public String toString() {
-        return matchedString;
+        return source.subSequence(start, end).toString();
     }
 
     /**

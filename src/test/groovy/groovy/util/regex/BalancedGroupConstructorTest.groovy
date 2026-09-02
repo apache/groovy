@@ -49,7 +49,7 @@ final class BalancedGroupConstructorTest {
 
         assertThrows(IllegalArgumentException, () -> new BalancedGroup('other', [child]))
         assertThrows(NullPointerException, () -> new BalancedGroup(null, null))
-        assertThrows(IllegalArgumentException, () -> new BalancedGroup('ab', 0, 1, 0, 1, null)) // length mismatch
+        assertThrows(IllegalArgumentException, () -> new BalancedGroup('ab', 0, 3, 0, 3, null)) // past end of source
         assertThrows(IllegalArgumentException, () -> new BalancedGroup('a', -1, 1, 0, 1, null))
     }
 
@@ -71,7 +71,8 @@ final class BalancedGroupConstructorTest {
         assertEquals(4, leaf.fullEnd)
         assertEquals(0, leaf.depth)
 
-        BalancedGroup absolute = new BalancedGroup('xy', 10, 12, 8, 15, null)
+        // offsets index into the source the node keeps, so the source must span them
+        BalancedGroup absolute = new BalancedGroup('0123456789xy---', 10, 12, 8, 15, null)
         assertEquals('xy', absolute.matchedString)
         assertEquals(10, absolute.start)
         assertEquals(12, absolute.end)
