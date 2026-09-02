@@ -353,13 +353,14 @@ public final class HiddenClassDefiner {
                         aligned, classData, initialize, NESTMATE_WEAK);
             }
             return lookup.defineHiddenClass(aligned, initialize, NESTMATE_WEAK);
-        } catch (IllegalAccessException | SecurityException | LinkageError e) {
+        } catch (IllegalAccessException | SecurityException | LinkageError
+                 | IllegalArgumentException | IndexOutOfBoundsException e) {
             // LinkageError includes NoClassDefFoundError and, on current JDKs,
             // ExceptionInInitializerError — both sticky-fail as null.
-            return null;
-        } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
+            // IllegalArgumentException / IndexOutOfBoundsException: bad class-file.
             return null;
         } catch (Error e) {
+            // Graal's unsupported-feature signal is an Error, not Exception.
             if (e instanceof ExceptionInInitializerError || isUnsupportedFeatureError(e)) {
                 return null;
             }

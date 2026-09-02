@@ -50,7 +50,9 @@ public interface DirectInvoker {
      * @param receiver  the receiver, ignored for static methods
      * @param arguments the positional arguments (non-null; empty if none)
      * @return the boxed result, or {@code null} for {@code void}
-     * @throws Throwable the target's thrown exception, unwrapped
+     * @throws Throwable the target's thrown exception, unwrapped. A narrower
+     *                   type would wrap {@code Error} and checked exceptions
+     *                   the reflective path leaves as {@code ITE} causes.
      */
-    Object invoke(Object receiver, Object[] arguments) throws Throwable;
+    Object invoke(Object receiver, Object[] arguments) throws Throwable; // NOSONAR java:S112 — must match Method.invoke / ITE unwrapping
 }

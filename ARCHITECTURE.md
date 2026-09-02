@@ -284,15 +284,18 @@ above. Each bites contributors quickly if missed:
   reproduce Java/module access rules manually when a `Lookup` can
   perform the check. The cached member representation describes
   the member; the call site supplies the access context.
-- **JIT-constant invoke for MOP internals.** After a call target
-  is selected and stable, `CachedMethod.invoke` may install a
+- **JIT-constant invoke for MOP internals.** `CachedMethod.invoke`
+  is the remaining `Method.invoke` hole on the MOP (Groovy as
+  caller). Indy already uses a linked `CallSite` and must keep the
+  call-site `Lookup`; DGM / `CallSiteGenerator` already emit
+  `INVOKE*`. After
+  `groovy.cachedmethod.invoker.threshold` hits (default 100) a
   generated `DirectInvoker` (direct `INVOKE*` or a classData
-  `MethodHandle`) so the invoke is a JIT-constant call rather than
-  `Method.invoke`. This is the MOP "Groovy as caller" path; indy
-  continues to use the call-site `Lookup` and must not be fed the
-  trampoline. Kill switch:
-  `groovy.cachedmethod.invoker.disable`. Hit threshold:
-  `groovy.cachedmethod.invoker.threshold` (default 100). See
+  `MethodHandle`) is installed so the invoke is a JIT-constant
+  call. Generation cost is paid once per inflated method; the
+  performance baseline for the change is reflective
+  `CachedMethod.invoke`, not a Java direct call. Kill switch:
+  `groovy.cachedmethod.invoker.disable`. See
   `org.apache.groovy.internal.runtime.invoke`.
 
 ## Operator families

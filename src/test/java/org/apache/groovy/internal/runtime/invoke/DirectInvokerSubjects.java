@@ -36,7 +36,13 @@ public class DirectInvokerSubjects {
         return "static-pong";
     }
 
+    /** Void-return fixture so the trampoline's {@code ACONST_NULL} path is exercised. */
     public void noop() {
+        // intentionally empty
+    }
+
+    public String takesPackageHost(final PackageHost host) {
+        return host.visible();
     }
 
     public int add(final int a, final int b) {
@@ -74,10 +80,12 @@ public class DirectInvokerSubjects {
         throw new MissingMethodException("missing", DirectInvokerSubjects.class, null);
     }
 
+    @SuppressWarnings("unused") // InvokerFactoryTest via getDeclaredMethod
     private String secret() {
         return "secret";
     }
 
+    @SuppressWarnings("unused") // InvokerFactoryTest via getDeclaredMethod
     private static String staticSecret() {
         return "static-secret";
     }
@@ -95,6 +103,7 @@ public class DirectInvokerSubjects {
             return "hello";
         }
 
+        @SuppressWarnings("unused") // InvokerFactoryTest via getDeclaredMethod
         private String hidden() {
             return "hidden-iface";
         }

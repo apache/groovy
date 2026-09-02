@@ -229,6 +229,27 @@ final class InvokerFactoryTest {
     }
 
     // -------------------------------------------------------------------------
+    // Step 4 — visible ClassLoaderForClassArtifacts (forced)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void testVisibleArtifactEncodingOnGroovyClassLoaderHost() {
+        GroovyClassLoader gcl = new GroovyClassLoader(InvokerFactory.classLoader)
+        try {
+            Class<?> host = gcl.parseClass('''
+                package gcl.directinvoker
+                class GclVisibleArtifactHost { String ping() { "gcl-visible" } }
+            ''')
+            DirectInvoker di = InvokerFactory.tryCreateVisibleArtifact(cm(host.getMethod('ping')))
+            assertNotNull(di, 'Step 4 must define a visible artifact for a GCL host')
+            assertFalse(di.class.hidden)
+            assertEquals('gcl-visible', di.invoke(host.getDeclaredConstructor().newInstance(), null))
+        } finally {
+            gcl.close()
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Gates
     // -------------------------------------------------------------------------
 
@@ -247,6 +268,7 @@ final class InvokerFactoryTest {
     void testNullMethodIsNotGenerated() {
         assertNull(InvokerFactory.tryCreate(null))
         assertNull(InvokerFactory.tryCreateClassData(null))
+        assertNull(InvokerFactory.tryCreateVisibleArtifact(null))
     }
 
     @Test
@@ -309,6 +331,8 @@ final class InvokerFactoryTest {
                 cm(DirectInvokerSubjects.getDeclaredMethod('secret'))))
         assertFalse(InvokerFactory.isPubliclyInvocableFromInvokerFactory(
                 cm(DirectInvokerSubjects.PackageHost.getMethod('visible'))))
+        assertFalse(InvokerFactory.isPubliclyInvocableFromInvokerFactory(
+                cm(DirectInvokerSubjects.getMethod('takesPackageHost', DirectInvokerSubjects.PackageHost))))
     }
 
     @Test
