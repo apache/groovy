@@ -546,7 +546,8 @@ If you embed or script with Groovy, **you** own these:
    documents (P2). Only enable DOCTYPE/external resources for content you
    trust.
 8. **Keep the classpath, AST transforms, and extension modules trusted** —
-   compiling source executes whatever transforms are on the classpath.
+   compiling source executes whatever transforms are on the classpath. Keep
+   it *minimal* as well as trusted (item 11).
 9. **Validate/encode at your own boundaries** (output encoding, URL
    allow-lists, path canonicalization) — Groovy returns data faithfully,
    it does not sanitize it for your sink. The "sink" includes an **AI agent**
@@ -555,6 +556,23 @@ If you embed or script with Groovy, **you** own these:
    injection), so a consumer that feeds this output to an LLM must treat it
    as data, never as instructions (see [`AGENTS.md`](AGENTS.md)).
 10. **Stay on a supported version** ([`SECURITY.md`](.github/SECURITY.md)).
+11. **Ship only the modules you use.** `org.apache.groovy:groovy` is the
+    core runtime and compiler. `groovy-all` is an aggregate that also brings
+    in the interactive and developer tooling — `groovy-groovysh`,
+    `groovy-console`, `groovy-swing`, `groovy-servlet`, `groovy-jmx`,
+    `groovy-groovydoc`, `groovy-docgenerator` — and both Grape engines;
+    a server-side application rarely needs any of them. This is not only
+    about what an attacker can reach. A module changes behavior by being
+    present, because services are discovered from the classpath:
+    `groovy-macro` registers **global AST transformations** that run on
+    every compilation, `groovy-grape-ivy`/`groovy-grape-maven` register the
+    `GrapeEngine` that makes `@Grab` resolve at all (item 5), and
+    `groovy-jsr223` registers a `ScriptEngineFactory` that any
+    `ScriptEngineManager` lookup in the JVM can find. Dropping a module you
+    do not use removes that behavior along with the code. **This reduces
+    your exposure, not Groovy's obligations** — a defect in a tool module is
+    still a defect, and the interactive user is a caller role in this model
+    ([§2](#2-scope-and-intended-use)), not an out-of-scope one.
 
 ---
 
