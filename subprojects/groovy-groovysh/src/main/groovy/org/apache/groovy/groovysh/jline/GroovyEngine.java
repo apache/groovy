@@ -374,7 +374,9 @@ public class GroovyEngine implements ScriptEngine {
      * Deserializes a string value according to the specified format.
      *
      * @param value the string to deserialize
-     * @param formatStr the format name (JSON, GROOVY, NONE, or AUTO)
+     * @param formatStr the format name (JSON, GROOVY, NONE, or AUTO). {@code AUTO} parses only:
+     *                  it recognises JSON and otherwise returns the text unchanged, and never
+     *                  evaluates the value as Groovy. Use {@code GROOVY} to evaluate.
      * @return the deserialized object
      */
     @Override
@@ -392,32 +394,19 @@ public class GroovyEngine implements ScriptEngine {
                 throw new IllegalArgumentException(e.getMessage());
             }
         } else {
+            // AUTO parses, it does not evaluate. Whether a document is data or code would otherwise
+            // be decided by the shape of the document itself -- a "[...]" payload was evaluated as
+            // Groovy where a "{...}" one was only ever parsed as JSON -- which hands that choice to
+            // whoever supplied the bytes. Evaluating content stays available, but only when the user
+            // asks for it: -f GROOVY, or a .groovy file named explicitly.
             value = value.trim();
-            boolean hasCurly = value.contains("{") && value.contains("}");
             try {
-                if (value.startsWith("[") && value.endsWith("]")) {
-                    try {
-                        if (hasCurly) {
-                            out = Utils.toObject(value); // try json
-                        } else {
-                            out = execute(value);
-                        }
-                    } catch (Exception e) {
-                        if (hasCurly) {
-                            try {
-                                out = execute(value);
-                            } catch (Exception e2) {
-                                // ignore
-                            }
-                        } else {
-                            out = Utils.toObject(value); // try json
-                        }
-                    }
-                } else if (value.startsWith("{") && value.endsWith("}")) {
+                if ((value.startsWith("[") && value.endsWith("]"))
+                        || (value.startsWith("{") && value.endsWith("}"))) {
                     out = Utils.toObject(value);
                 }
             } catch (Exception e) {
-                // ignore
+                // not JSON either; the raw text is the best answer available
             }
         }
         return out;
