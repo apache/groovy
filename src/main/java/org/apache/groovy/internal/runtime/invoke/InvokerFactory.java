@@ -63,11 +63,15 @@ import java.lang.reflect.Modifier;
 public final class InvokerFactory {
 
     /**
-     * Hits before generation. Default 100 — below
-     * {@code groovy.indy.optimize.threshold} (1000) so cold indy still sits on
-     * {@code doMethodInvoke} when the trampoline appears.
+     * Hits before generation. Default {@link #DEFAULT_THRESHOLD} — the same
+     * order as {@code groovy.indy.optimize.threshold}, so a method that stays
+     * on {@code doMethodInvoke} long enough to look hot also qualifies for a
+     * trampoline.
      */
     public static final String PROPERTY_THRESHOLD = "groovy.cachedmethod.invoker.threshold";
+
+    /** Default for {@link #PROPERTY_THRESHOLD}. */
+    public static final long DEFAULT_THRESHOLD = 1000L;
 
     /** Kill switch. Default {@code false}. */
     public static final String PROPERTY_DISABLE = "groovy.cachedmethod.invoker.disable";

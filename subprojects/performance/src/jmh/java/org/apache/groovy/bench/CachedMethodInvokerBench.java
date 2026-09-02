@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  * Generated rows are {@code threshold=0} after a warmup invoke so measurement
  * is steady-state. {@code generate_*} rows use a fresh {@code CachedMethod}
  * per invocation to price hidden-class definition. {@code burst_*} rows walk
- * the default threshold (100) so the break-even vs reflective is visible.
+ * the default threshold (1000) so the break-even vs reflective is visible.
  * <p>
  * Guard ratios, not absolute nanoseconds. Run with
  * {@code :performance:jmh -PbenchInclude=CachedMethodInvoker}.
@@ -214,12 +214,12 @@ public class CachedMethodInvokerBench {
     }
 
     /**
-     * Burst of invokes on a fresh {@code CachedMethod}. {@code calls=100} stays
-     * under the default threshold; {@code calls=250} inflates at hit 101.
+     * Burst of invokes on a fresh {@code CachedMethod}. {@code calls=1000} stays
+     * under the default threshold; {@code calls=1500} inflates at hit 1001.
      */
     @State(Scope.Thread)
     public static class Burst {
-        @Param({"100", "250"})
+        @Param({"1000", "1500"})
         public int calls;
 
         @Param("abcdef")
@@ -244,7 +244,7 @@ public class CachedMethodInvokerBench {
     }
 
     /**
-     * Default threshold (100), generation enabled. Break-even vs
+     * Default threshold (1000), generation enabled. Break-even vs
      * {@link #burst_reflective}.
      *
      * @param state burst length and fresh {@code CachedMethod}
