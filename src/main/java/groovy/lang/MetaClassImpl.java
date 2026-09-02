@@ -1444,6 +1444,18 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
+     * Determines whether the reflective access path can actually reach the given
+     * property, treating a field of a strongly encapsulated declaring class as
+     * absent at the point of use so the normal missing-member handling applies.
+     * This is a use-site decision only: member <em>selection</em> (see
+     * {@code getEffectiveGetMetaProperty}) and indy linkage stay unfiltered, so a
+     * call-site {@code Lookup} with its own rights can still reach such a field.
+     */
+    private static boolean isReflectivelyAccessible(final MetaProperty mp) {
+        return !(mp instanceof CachedField cf) || cf.canAccessViaReflection();
+    }
+
+    /**
      * Tries to find a callable property and make the call.
      */
     private Object invokePropertyOrMissing(final Class<?> sender, final Object object, final String methodName, final Object[] originalArguments, final boolean fromInsideClass, final boolean isCallToSuper) {
@@ -1451,12 +1463,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         Object value = null;
         if (!(metaProperty instanceof ReadOnlyMetaProperty)) {
-            try {
+            if (isReflectivelyAccessible(metaProperty)) { // GROOVY-12314: unreachable field is absent
                 value = metaProperty.getProperty(object);
-            } catch (GroovyRuntimeException gre) {
-                // GROOVY-12314: a field the reflective path cannot force access to
-                // (strongly encapsulated declaring class) is treated as absent
-                if (!(gre.getCause() instanceof IllegalAccessException)) throw gre;
             }
         } else if (object instanceof Map<?, ?> map) {
             value = map.get(methodName);
@@ -3075,16 +3083,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         if (field != null && (method == null || isVisibleProperty(field, method, sender))
                 && (!isMap || isStatic // GROOVY-8065
-                    || field.isPublic())) { // GROOVY-11367
+                    || field.isPublic()) // GROOVY-11367
+                && isReflectivelyAccessible(field)) { // GROOVY-12314: unreachable field is absent
             if (!field.isFinal()) {
-                try {
-                    field.setProperty(object, newValue);
-                    return;
-                } catch (GroovyRuntimeException gre) {
-                    // GROOVY-12314: the reflective path cannot force access (strongly
-                    // encapsulated declaring class): continue as if the field were absent
-                    if (!(gre.getCause() instanceof IllegalAccessException)) throw gre;
-                }
+                field.setProperty(object, newValue);
+                return;
             } else {
                 throw new ReadOnlyPropertyException(name, theClass); // GROOVY-5985
             }
@@ -3240,12 +3243,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
             try {
                 // delegate the get operation to the metaproperty
-                if (mp != null) return mp.getProperty(object);
-            } catch (GroovyRuntimeException gre) {
-                // GROOVY-12314: a field the reflective path cannot force access to
-                // (strongly encapsulated declaring class) reports missing instead
-                if (!(gre.getCause() instanceof IllegalAccessException)) {
-                    throw new GroovyRuntimeException("Cannot read field: " + attribute, gre);
+                if (mp != null && isReflectivelyAccessible(mp)) { // GROOVY-12314: unreachable field reports missing
+                    return mp.getProperty(object);
                 }
             } catch (Exception e) {
                 throw new GroovyRuntimeException("Cannot read field: " + attribute, e);
@@ -3285,15 +3284,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (mp instanceof MetaBeanProperty mbp) {
                 mp = mbp.getField();
             }
-            if (mp != null) {
-                try {
-                    mp.setProperty(object, newValue);
-                    return;
-                } catch (GroovyRuntimeException gre) {
-                    // GROOVY-12314: a field the reflective path cannot force access to
-                    // (strongly encapsulated declaring class) reports missing instead
-                    if (!(gre.getCause() instanceof IllegalAccessException)) throw gre;
-                }
+            if (mp != null && isReflectivelyAccessible(mp)) { // GROOVY-12314: unreachable field reports missing
+                mp.setProperty(object, newValue);
+                return;
             }
         }
 
