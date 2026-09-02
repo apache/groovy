@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788246086965,
+  "lastUpdate": 1788333205752,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -5548,6 +5548,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 302.8266666666667,
             "range": "±16.87",
+            "unit": "ms",
+            "extra": "5.1.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "c251a839e3e6182d068b1981aed2a4c4d635371d",
+          "message": "GROOVY-12326: ChannelSelect: guard an offer directly with receive(c).when(cond)\n\nOffer.when(BooleanSupplier) writes the precondition onto the branch it\nbelongs to, as occam, Ada, Erlang and Kotlin do, instead of leaving the\nassociation to the position of a flag. It returns a guarded copy, so\noffers stay immutable and reusable, and guards conjoin — with each other\nand with the flags of select(boolean...).\n\nThe condition is a supplier rather than a boolean because it is consulted\nonce per select() call: that is what lets a guarded select be built once\nand reused as the state it guards on changes. A guarded-off offer is not\nregistered on its channel and keeps its position, and a select with no\nenabled offer fails with IllegalStateException whether the offers were\ndisabled by guard or by flag.",
+          "timestamp": "2026-09-02T00:05:09Z",
+          "url": "https://github.com/apache/groovy/commit/c251a839e3e6182d068b1981aed2a4c4d635371d"
+        },
+        "date": 1788333201974,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 518.6733333333334,
+            "range": "±20.43",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 629.9166666666666,
+            "range": "±214.73",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 559.3333333333333,
+            "range": "±143.63",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 464.22333333333336,
+            "range": "±21.67",
             "unit": "ms",
             "extra": "5.1.0"
           }
