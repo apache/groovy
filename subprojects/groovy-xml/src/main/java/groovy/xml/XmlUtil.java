@@ -469,7 +469,7 @@ public class XmlUtil {
             SchemaFactory schemaFactory = FactorySupport.createSchemaFactory(schemaLanguage);
             factory.setSchema(schemaFactory.newSchema(schemas));
         }
-        SAXParser saxParser = factory.newSAXParser();
+        SAXParser saxParser = FactorySupport.createSaxParser(factory);
         if (schemas.length == 0) {
             saxParser.setProperty("http://java.sun.com/xml/jaxp/properties/schemaLanguage", schemaLanguage);
         }
@@ -624,7 +624,7 @@ public class XmlUtil {
     private static SAXParser newSAXParser(boolean namespaceAware, boolean validating, Schema schema1) throws ParserConfigurationException, SAXException {
         SAXParserFactory factory = newFactoryInstance(namespaceAware, validating, false);
         factory.setSchema(schema1);
-        return factory.newSAXParser();
+        return FactorySupport.createSaxParser(factory);
     }
 
     private static String asString(Node node) {
