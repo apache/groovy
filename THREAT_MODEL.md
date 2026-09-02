@@ -299,6 +299,7 @@ hunt for the former and discount the latter.
 |---|---|---|
 | `XmlParser` / `XmlSlurper` / `XmlUtil` `allowDocTypeDeclaration` | `false` | When `false`, DOCTYPE is rejected and secure processing is on → XXE / entity-expansion mitigated. Setting `true` re-introduces XXE risk for untrusted XML. *(documented)* |
 | `groovy.json.maxNestingDepth` (per-instance: `JsonSlurper.setMaxNestingDepth`) | `1000` | Caps the array/object nesting depth `JsonSlurper`/`JsonSlurperClassic` accept; a small but deeply-nested document throws a `JsonException` instead of driving a `StackOverflowError`. A value `<= 0` disables the check (restoring the previous unbounded behaviour). Available from 6.0.0. *(documented — verified in `groovy-json` `BaseJsonParser`)* |
+| `jdk.xml.maxElementDepth` | `1000` (Groovy's default; the JAXP default is `0`, unlimited) | Caps the element nesting depth `XmlParser`/`XmlSlurper`/`DOMBuilder` accept, so a deeply nested document fails the parse rather than driving a `StackOverflowError` in the first consumer that walks the result. Set the property yourself to choose another bound, including `0` for unlimited; a caller-supplied parser is left alone. Available from 6.0.0. *(documented — verified in `groovy-xml` `FactorySupport`)* |
 | Grape / `@Grab` resolution | enabled in the runtime; **off** in AI/automation tooling via `-Dgroovy.grape.enable=false` | Controls whether a script may fetch and load remote dependencies. Keep off for untrusted scripts. *(documented — see [`AGENTS.md`](AGENTS.md))* |
 | `groovy.asttest.enable` | `true` | When `false`, `@ASTTest` becomes a no-op instead of evaluating its closure during compilation. Since the closure runs at compile time, this matters wherever attacker-influenced source is *compiled*, whether or not the result is then run. Keep off for untrusted source. Available from 5.1.0 and 6.0.0. *(documented — verified in `ASTTestTransformation`)* |
 | `SecureASTCustomizer` allow/deny lists | none unless configured | A *partial* grammar restriction, not a sandbox. *(documented)* |
@@ -321,9 +322,9 @@ Size/shape: parsers and GDK operations process inputs of developer-chosen
 size. Groovy does **not** impose universal limits on collection size, regex
 backtracking, hash-key cardinality, or numeric magnitude; bounding untrusted
 input is a downstream responsibility ([§10](#10-downstream-responsibilities)).
-The one exception is **document nesting depth in `JsonSlurper`**, now capped
-by default (see the parser table below) — the rest still need bounding by the
-caller.
+The exceptions are **document nesting depth in `JsonSlurper` and in
+`XmlParser`/`XmlSlurper`**, both now capped by default (see the parser table
+below) — the rest still need bounding by the caller.
 
 **Groovy's own data parsers are a distinct concern.** `JsonSlurper`,
 `XmlSlurper`/`XmlParser`, and the `groovy-yaml`/`groovy-toml`/`groovy-csv`
@@ -340,16 +341,17 @@ All of Groovy's own data parsers now bound nesting depth by default:
 
 | Parser | Resource-bound state |
 |---|---|
-| `XmlSlurper` / `XmlParser` | Mitigated by default — `FEATURE_SECURE_PROCESSING` + DOCTYPE disabled (**P2**) cap entity expansion and depth via the JAXP limits. |
+| `XmlSlurper` / `XmlParser` | **Now bounded explicitly (6.0.0+).** `FEATURE_SECURE_PROCESSING` + DOCTYPE disabled (**P2**) cap entity expansion but **not** element depth — the JAXP limit that governs depth, `jdk.xml.maxElementDepth`, defaults to `0` (unlimited) — so `FactorySupport` now sets it to `1000` on the parsers it creates. Unbounded, the SAX parse itself survives an arbitrarily deep document (nesting is tracked on the heap) and the first consumer to walk the result recursively — `Node.text()`, `XmlNodePrinter`, `GPathResult.toString()`, `XmlUtil.serialize` — dies with a `StackOverflowError`, an `Error` that escapes a caller's `catch (Exception)`. Setting `jdk.xml.maxElementDepth` yourself takes precedence, including `0` to restore unlimited depth. *(documented — GROOVY-12331)* |
 | `YamlSlurper` / `TomlSlurper` / `CsvSlurper` | Bounded *implicitly* by the Jackson runtime's `StreamReadConstraints` (nesting-depth / length caps) and the YAML layer's alias limits — i.e. by the dependency's defaults, not an explicit Groovy decision. |
 | `JsonSlurper` | **Now bounded explicitly (6.0.0+).** Its recursive-descent parsers (`decodeValue` → `decodeJsonObject`/`decodeJsonArray` → `decodeValue`) enforce a Groovy-level nesting-depth cap (`BaseJsonParser`, default `1000`, configurable via `setMaxNestingDepth` or `-Dgroovy.json.maxNestingDepth`), throwing a `JsonException` rather than overflowing the stack. The default matches Jackson's `StreamReadConstraints`, so JSON is now bounded consistently with the Jackson-backed slurpers. *(documented — GROOVY-12064)* |
 
 This is separate from the Groovy *language* parser (`groovyc`/Antlr), which
 only ever parses trusted source — compiling untrusted Groovy is already out
 of model ([§3](#3-out-of-scope-explicit-non-goals)) — so its robustness
-carries no equivalent obligation. The `JsonSlurper` nesting cap (GROOVY-12064)
-closed the last gap here for the 6.0.0 line; on the 3.0.x/4.0.x/5.0.x branches,
-where it is not (yet) available, depth-bounding untrusted JSON remains a
+carries no equivalent obligation. The XML element-depth bound (GROOVY-12331)
+closed the last gap here for the 6.0.0 line, after the `JsonSlurper` nesting cap
+(GROOVY-12064) closed the JSON one; on the 3.0.x/4.0.x/5.0.x branches, where
+neither is available, depth-bounding untrusted JSON **and XML** remains a
 downstream responsibility ([§10](#10-downstream-responsibilities)).
 
 **Proportionate size is not amplification.** The `VALID-HARDENING` obligation above is for
@@ -604,7 +606,7 @@ vulnerabilities** unless a concrete, in-model data-boundary crossing
 | `@Grab`/Grape fetching and loading artifacts | By design dependency resolution — `OUT-OF-MODEL` |
 | Temp-file/dir creation | Now NIO owner-only (P4) — `KNOWN-NON-FINDING` |
 | Regex, `BigInteger`/`BigDecimal` parsing, hash-collision flooding (JDK treeifies heavily-collided `String`-keyed buckets since Java 8) | DoS bounded by developer-chosen input — `OUT-OF-MODEL: downstream-responsibility` |
-| Deep recursion / unbounded input in Groovy's *own* data parsers (`JsonSlurper`, `XmlSlurper`/`XmlParser`, `groovy-yaml`/`-toml`/`-csv`) | Robustness of code meant to consume untrusted input — **`VALID-HARDENING`** *(maintainer)*; nesting depth is now bounded by default in all of them (JSON via the 6.0.0 `maxNestingDepth` cap, GROOVY-12064), per-parser exposure in [§6](#6-assumptions-about-inputs) |
+| Deep recursion / unbounded input in Groovy's *own* data parsers (`JsonSlurper`, `XmlSlurper`/`XmlParser`, `groovy-yaml`/`-toml`/`-csv`) | Robustness of code meant to consume untrusted input — **`VALID-HARDENING`** *(maintainer)*; nesting depth is now bounded by default in all of them (JSON via the 6.0.0 `maxNestingDepth` cap, GROOVY-12064; XML via the 6.0.0 `jdk.xml.maxElementDepth` bound, GROOVY-12331), per-parser exposure in [§6](#6-assumptions-about-inputs) |
 | Proportionate memory use from a *large* (not amplified) document handed to `JsonSlurper`/`XmlSlurper`/`XmlParser` | Cost proportional to input size; bound the input or use a streaming/Jackson parser ([§6](#6-assumptions-about-inputs)) — `OUT-OF-MODEL: downstream-responsibility` |
 | `groovy-servlet` building a filesystem path from the request URI (`GroovyServlet`/`TemplateServlet`/`AbstractHttpServlet`) | Groovlets/templates are operator-deployed code ([§3](#3-out-of-scope-explicit-non-goals)); request-path normalization is the servlet container's responsibility — `OUT-OF-MODEL: downstream-responsibility` |
 | Missing response security headers (HSTS/CSP/…) from `groovy-servlet` | Transport/edge concern set at the TLS-terminating proxy or container ([§10](#10-downstream-responsibilities)) — `OUT-OF-MODEL: downstream-responsibility` |
