@@ -38,6 +38,7 @@ import org.codehaus.groovy.runtime.metaclass.PackedClosureMetaClass;
 
 import java.io.IOException;
 import java.io.InvalidObjectException;
+import java.io.ObjectStreamException;
 import java.io.Serial;
 import java.io.Serializable;
 import java.io.Writer;
@@ -1360,6 +1361,30 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         @Override
         public int getResolveStrategy() {
             return Closure.this.getResolveStrategy();
+        }
+
+        /**
+         * Reports the enclosing closure so the cycle check reaches it.
+         * <p>
+         * The constructor passes it as {@code owner} as well, so for an instance this class built
+         * the two are the same object and the walk merely meets it twice, which it tolerates. They
+         * are separate fields on the wire though, and every forwarding method above reads this one
+         * rather than {@code owner}, so a forged stream that made only this one self-referential
+         * would recurse on the first forwarded call while leaving an owner walk none the wiser.
+         */
+        @Override
+        protected Object[] additionalReferences() {
+            return new Object[]{Closure.this};
+        }
+
+        /**
+         * Rejects a deserialized closure whose references form a cycle, which would otherwise
+         * recurse indefinitely on invocation. See {@link Closure#checkForReferenceCycle}.
+         */
+        @Serial
+        private Object readResolve() throws ObjectStreamException {
+            Closure.checkForReferenceCycle(this);
+            return this;
         }
     }
 

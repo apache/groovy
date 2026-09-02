@@ -20,6 +20,7 @@ package org.codehaus.groovy.runtime.memoize;
 
 import groovy.lang.Closure;
 
+import java.io.ObjectStreamException;
 import java.io.Serial;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
@@ -147,6 +148,25 @@ public abstract class Memoize {
         public V doCall(final Object... args) {
             return call(args);
         }
+
+        /**
+         * Exposes the memoized closure, which {@code call} dispatches to but which is held outside the
+         * {@code owner}/{@code delegate}/{@code thisObject} references the cycle check walks by default.
+         */
+        @Override
+        protected Object[] additionalReferences() {
+            return new Object[]{closure};
+        }
+
+        /**
+         * Rejects a deserialized closure whose references form a cycle, which would otherwise recurse
+         * indefinitely on invocation. See {@link Closure#checkForReferenceCycle}.
+         */
+        @Serial
+        private Object readResolve() throws ObjectStreamException {
+            Closure.checkForReferenceCycle(this);
+            return this;
+        }
     }
 
     private static class SoftReferenceMemoizeFunction<V> extends MemoizeFunction<V> {
@@ -187,6 +207,17 @@ public abstract class Memoize {
         private static void cleanUpNullReferences(final MemoizeCache<Object, Object> cache, final ReferenceQueue queue) {
             while(queue.poll() != null) {}  //empty the reference queue
             cache.cleanUpNullReferences();
+        }
+
+        /**
+         * Declared again rather than inherited: {@code readResolve} is private, so it is not inherited
+         * and a subclass that does not declare its own is deserialized unchecked.
+         * See {@link Closure#checkForReferenceCycle}.
+         */
+        @Serial
+        private Object readResolve() throws ObjectStreamException {
+            Closure.checkForReferenceCycle(this);
+            return this;
         }
     }
 }

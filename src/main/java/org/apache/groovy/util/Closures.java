@@ -20,6 +20,7 @@ package org.apache.groovy.util;
 
 import groovy.lang.Closure;
 
+import java.io.ObjectStreamException;
 import java.io.Serial;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -157,6 +158,26 @@ public class Closures {
         public Boolean call(Object... args) {
             return test((T) args[0]);
         }
+
+        /**
+         * Exposes the wrapped Predicate, which the call methods dispatch to but which is held outside the
+         * {@code owner}/{@code delegate}/{@code thisObject} references the cycle check walks by default.
+         * Only {@code Closure}-valued links are followed, so a plain Predicate contributes nothing.
+         */
+        @Override
+        protected Object[] additionalReferences() {
+            return new Object[]{delegate};
+        }
+
+        /**
+         * Rejects a deserialized closure whose references form a cycle, which would otherwise recurse
+         * indefinitely on invocation. See {@link Closure#checkForReferenceCycle}.
+         */
+        @Serial
+        private Object readResolve() throws ObjectStreamException {
+            Closure.checkForReferenceCycle(this);
+            return this;
+        }
     }
 
     /**
@@ -191,6 +212,26 @@ public class Closures {
         @SuppressWarnings("unchecked")
         public R call(Object... args) {
             return apply((T) args[0]);
+        }
+
+        /**
+         * Exposes the wrapped Function, which the call methods dispatch to but which is held outside the
+         * {@code owner}/{@code delegate}/{@code thisObject} references the cycle check walks by
+         * default. Only {@code Closure}-valued links are followed, so a plain Function contributes nothing.
+         */
+        @Override
+        protected Object[] additionalReferences() {
+            return new Object[]{delegate};
+        }
+
+        /**
+         * Rejects a deserialized closure whose references form a cycle, which would otherwise recurse
+         * indefinitely on invocation. See {@link Closure#checkForReferenceCycle}.
+         */
+        @Serial
+        private Object readResolve() throws ObjectStreamException {
+            Closure.checkForReferenceCycle(this);
+            return this;
         }
     }
 
@@ -228,6 +269,26 @@ public class Closures {
         public Void call(Object... args) {
             accept((T) args[0]);
             return null;
+        }
+
+        /**
+         * Exposes the wrapped Consumer, which the call methods dispatch to but which is held outside the
+         * {@code owner}/{@code delegate}/{@code thisObject} references the cycle check walks by
+         * default. Only {@code Closure}-valued links are followed, so a plain Consumer contributes nothing.
+         */
+        @Override
+        protected Object[] additionalReferences() {
+            return new Object[]{delegate};
+        }
+
+        /**
+         * Rejects a deserialized closure whose references form a cycle, which would otherwise recurse
+         * indefinitely on invocation. See {@link Closure#checkForReferenceCycle}.
+         */
+        @Serial
+        private Object readResolve() throws ObjectStreamException {
+            Closure.checkForReferenceCycle(this);
+            return this;
         }
     }
 }
