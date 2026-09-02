@@ -150,6 +150,23 @@ public abstract class BaseJsonParser implements JsonParser {
     protected int maxNestingDepth = Integer.getInteger("groovy.json.maxNestingDepth", DEFAULT_MAX_NESTING_DEPTH);
 
     /**
+     * Default maximum length, in characters, of a single JSON number token. Converting a digit
+     * run past the {@code long} range builds a {@link java.math.BigInteger} (or
+     * {@link java.math.BigDecimal}), and decimal conversion is superlinear in the digit count,
+     * so an uncapped token lets a small document cost quadratic CPU. Chosen to match Jackson's
+     * {@code StreamReadConstraints} default, while sitting far above any realistic number.
+     */
+    public static final int DEFAULT_MAX_NUMBER_LENGTH = 1000;
+
+    /**
+     * Maximum length permitted for a single number token. A value of {@code 0} or less disables
+     * the check (restoring the previous, unbounded behaviour). Defaults to
+     * {@link #DEFAULT_MAX_NUMBER_LENGTH}, overridable globally via the
+     * {@code groovy.json.maxNumberLength} system property.
+     */
+    protected int maxNumberLength = Integer.getInteger("groovy.json.maxNumberLength", DEFAULT_MAX_NUMBER_LENGTH);
+
+    /**
      * Current nesting depth while decoding; incremented on entry to an array/object and
      * decremented on exit.
      */
@@ -236,6 +253,35 @@ public abstract class BaseJsonParser implements JsonParser {
      */
     public void setMaxNestingDepth(int maxNestingDepth) {
         this.maxNestingDepth = maxNestingDepth;
+    }
+
+    /**
+     * Returns the maximum length permitted for a single number token.
+     *
+     * @return the maximum number length, or a value {@code <= 0} when the check is disabled
+     */
+    public int getMaxNumberLength() {
+        return maxNumberLength;
+    }
+
+    /**
+     * Sets the maximum length permitted for a single number token. A value of {@code 0} or less
+     * disables the check.
+     *
+     * @param maxNumberLength maximum number of characters in a number token
+     */
+    public void setMaxNumberLength(int maxNumberLength) {
+        this.maxNumberLength = maxNumberLength;
+    }
+
+    /**
+     * Enforces {@link #maxNumberLength} against a number token about to be converted.
+     *
+     * @param length the length, in characters, of the number token
+     * @throws JsonException if the configured maximum number length would be exceeded
+     */
+    protected final void checkNumberLength(int length) {
+        CharScanner.checkNumberLength(length, maxNumberLength);
     }
 
     /**
