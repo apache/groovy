@@ -21,7 +21,11 @@ package groovy.concurrent;
 import org.apache.groovy.runtime.async.AsyncSupport;
 import org.apache.groovy.runtime.async.DefaultAsyncChannel;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -72,6 +76,63 @@ public interface AsyncChannel<T> extends Iterable<T> {
      */
     static <T> AsyncChannel<T> create(int capacity) {
         return new DefaultAsyncChannel<>(capacity);
+    }
+
+    /**
+     * Creates a timer channel: a capacity-1 channel that delivers a single
+     * value, the {@link Instant} at which it fired, once {@code millis} has
+     * elapsed from this call, and then closes.
+     * <p>
+     * Its purpose is to make a deadline a branch of a {@link ChannelSelect},
+     * the way Go's {@code time.After} does, rather than an exception thrown
+     * around the whole select by {@link Awaitable#orTimeout(long, TimeUnit)}:
+     * <pre>{@code
+     * def result = await ChannelSelect.from(work, AsyncChannel.after(100)).select()
+     * if (result.index == 1) {
+     *     // timed out: result.value is the Instant the timer fired
+     * }
+     * }</pre>
+     * As a channel, a timer composes with everything a select offers: several
+     * timers give per-branch deadlines, a timer may be guarded with
+     * {@link ChannelSelect.Offer#when}, and {@link ChannelSelect#fair()} and
+     * {@link ChannelSelect#random()} treat it like any other ready branch.
+     * <p>
+     * The clock starts now, not at the first receive, so a timer created
+     * once and reused across selects is a fixed deadline shared by every
+     * round. For a per-round timeout that re-arms on each call of a select
+     * that is held and reused, use the timer offer
+     * {@link ChannelSelect#after(long)} instead. A timer that loses a select keeps
+     * its value: it fires all the same and holds the instant until received.
+     * Once the value has been taken, further receives fail with
+     * {@link ChannelClosedException} rather than waiting forever, and
+     * {@link #isClosed()} reports that the timer has fired. Closing a timer
+     * before it fires cancels it. A delay that is not positive has already
+     * elapsed, so the channel is returned already holding its instant: it
+     * is ready at once, which suits a deadline computed from an absolute
+     * time that has already passed.
+     *
+     * @param millis how long to wait before firing, in milliseconds
+     * @return a channel that delivers the firing instant and then closes
+     * @see #after(Duration)
+     * @see ChannelSelect
+     * @since 6.0.0
+     */
+    static AsyncChannel<Instant> after(long millis) {
+        return DefaultAsyncChannel.after(millis, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Creates a timer channel that fires once {@code duration} has elapsed;
+     * see {@link #after(long)}.
+     *
+     * @param duration how long to wait before firing
+     * @return a channel that delivers the firing instant and then closes
+     * @throws NullPointerException if duration is null
+     * @since 6.0.0
+     */
+    static AsyncChannel<Instant> after(Duration duration) {
+        Objects.requireNonNull(duration, "duration must not be null");
+        return DefaultAsyncChannel.after(duration.toNanos(), TimeUnit.NANOSECONDS);
     }
 
     /** Returns this channel's buffer capacity. */

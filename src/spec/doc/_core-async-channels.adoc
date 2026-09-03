@@ -240,6 +240,94 @@ branch at all is a deadlock rather than a wait, so `select` fails with
 A branch can also be recognised by identity instead of by position:
 `result.channel` is the channel the winning offer transferred over.
 
+=== Timeouts
+
+A deadline can be a branch of the select, as it is in Go, Rust, Clojure
+and Kotlin, instead of an exception thrown around the whole select by
+`orTimeout`. There are two forms, one for a timeout that re-arms on every
+round and one for a fixed deadline.
+
+The _timer offer_ `after` arms a fresh timer each time `select` is called
+and commits, with the `Instant` it fired, if no channel offer could
+commit first. It is the "wait for work, but not forever" branch of a
+select that is built once and reused, and because the timer lives inside
+the call, the held instance keeps its `fair()` rotation from round to
+round:
+
+[source,groovy]
+----
+import static groovy.concurrent.ChannelSelect.*
+
+def sel = offers(receive(work), after(100)).fair()
+while (true) {
+    def result = await sel.select()
+    if (result.timeout) {
+        // nothing arrived within 100 ms of this call: result.value is the Instant
+    } else {
+        handle(result.value)
+    }
+}
+----
+
+A timer offer that loses its round is cancelled with the other losing
+branches, so it leaves nothing armed. It reports `result.timeout` rather
+than a channel: `result.channel` is `null` for a timeout, and `result.index`
+still names the branch. So a select that carries a timer offer and
+dispatches on `result.channel` must test `result.timeout` first, as the
+loop above does. Like any offer it can be guarded with `when`, and
+a guarded-off timer offer arms nothing. Several timer offers give
+per-branch deadlines.
+
+A timer offer with a positive delay is never ready at the moment the
+select registers its offers, so the choice policy considers only the
+channel offers that are ready at once; the timer commits only when none
+was. A delay that is not positive has already elapsed, so that offer is
+ready at registration and the policy treats it like any other ready
+branch: priority takes whichever is listed first, and `fair()` rotates
+over it. Listed last, `after(0)` is the `default` clause of Go's
+`select` — take a transfer if one can complete at once, otherwise
+proceed without waiting:
+
+[source,groovy]
+----
+def result = await offers(receive(work), after(0)).select()
+if (result.timeout) {
+    // nothing was ready; do something else and come back
+}
+----
+
+The _timer channel_ `AsyncChannel.after` is the fixed-deadline form: a
+capacity-1 channel that delivers one value, the `Instant` it fired, once
+the given delay has elapsed from its creation, and then closes, as Go's
+`time.After` does. Received from within a select, it is a deadline shared
+by every round that selects on it:
+
+[source,groovy]
+----
+def deadline = AsyncChannel.after(5000)
+def sel = ChannelSelect.from(work, deadline)
+while (true) {
+    def result = await sel.select()
+    if (result.index == 1) break    // five seconds since the deadline was set
+    handle(result.value)
+}
+----
+
+Because it is an ordinary channel, a timer channel composes with
+everything a channel does: it can be guarded with `when`, and once fired
+`fair()` and `random()` treat it like any other ready channel. A timer
+channel that loses a select keeps its value: it fires all the same and
+holds the instant until received. Once that value has been taken, further
+receives fail with `ChannelClosedException` rather than waiting forever,
+and `isClosed()` reports that the timer has fired. Closing a timer channel
+before it fires cancels it.
+
+Both forms accept a `java.time.Duration` in place of milliseconds, and in
+both a delay that is not positive has already elapsed: the timer channel
+is created already holding its instant, and the timer offer is ready at
+registration. That suits a deadline computed from an absolute time that
+has already passed.
+
 [[async-broadcast-channel]]
 == BroadcastChannel
 

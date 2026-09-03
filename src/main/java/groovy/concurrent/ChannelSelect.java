@@ -22,12 +22,15 @@ import org.apache.groovy.runtime.async.DefaultAsyncChannel;
 import org.apache.groovy.runtime.async.GroovyPromise;
 import org.apache.groovy.runtime.async.SelectClaim;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 
@@ -84,6 +87,23 @@ import java.util.function.BooleanSupplier;
  *                           receive(request).when { size > 0 }).select()
  * }</pre>
  * <p>
+ * A deadline is just another branch. The timer offer {@link #after(long)}
+ * arms a fresh timer on every {@link #select()} call, so a select held
+ * across rounds waits for work, but not forever, and keeps its choice
+ * policy state while it does:
+ *
+ * <pre>{@code
+ * def sel = offers(receive(work), after(100)).fair()
+ * while (true) {
+ *     def result = await sel.select()
+ *     if (result.timeout) { ... nothing arrived this round ... }
+ * }
+ * }</pre>
+ *
+ * For a fixed deadline across rounds, receive from a timer channel
+ * instead: {@link AsyncChannel#after(long)} starts its clock when it is
+ * created and delivers the instant it fired.
+ * <p>
  * Inspired by GPars' {@code Select} and Go's {@code select} statement
  * (whose send cases these offers mirror).
  *
@@ -94,15 +114,21 @@ public final class ChannelSelect {
     /** How to choose when several offers are ready at the same time. */
     private enum Policy { PRIORITY, FAIR, RANDOM }
 
+    /** What an offer does when it commits. */
+    private enum Kind { SEND, RECEIVE, TIMER }
+
     private final List<Offer> offers;
     private final Policy policy;
     /** index of the last winner; only maintained under {@link Policy#FAIR} */
     private final AtomicInteger lastWinner;
+    /** how many offers are timers, so a select without any allocates nothing for them */
+    private final int timerCount;
 
     private ChannelSelect(List<Offer> offers, Policy policy) {
         this.offers = offers;
         this.policy = policy;
         this.lastWinner = policy == Policy.FAIR ? new AtomicInteger(-1) : null;
+        this.timerCount = (int) offers.stream().filter(o -> o.kind == Kind.TIMER).count();
     }
 
     /**
@@ -166,7 +192,7 @@ public final class ChannelSelect {
         if (!(channel instanceof DefaultAsyncChannel)) {
             throw new IllegalArgumentException("send offers require a channel created by AsyncChannel.create");
         }
-        return new Offer(channel, value, true, null);
+        return new Offer(channel, value, Kind.SEND, 0, null);
     }
 
     /**
@@ -180,7 +206,67 @@ public final class ChannelSelect {
      */
     public static Offer receive(AsyncChannel<?> channel) {
         Objects.requireNonNull(channel, "channel must not be null");
-        return new Offer(channel, null, false, null);
+        return new Offer(channel, null, Kind.RECEIVE, 0, null);
+    }
+
+    /**
+     * An offer that commits once {@code millis} has elapsed from the start
+     * of the {@link #select()} call it takes part in: a timeout as a branch
+     * of the choice, rather than an exception thrown around it by
+     * {@link Awaitable#orTimeout(long, TimeUnit)}. It commits with the
+     * {@link Instant} at which it fired.
+     * <p>
+     * Semantically it is a receive from a timer channel that the select
+     * creates and, if the offer loses, cancels on every call — the
+     * difference from {@code receive(AsyncChannel.after(millis))}, whose
+     * clock starts once, when the channel is created. The timer offer is
+     * therefore the "wait for work, but not forever" branch of a select
+     * that is held and reused, where it re-arms each round while the
+     * instance keeps its {@link #fair()} rotation. The channel form is
+     * the fixed deadline shared by every round. Like any other offer it
+     * may be guarded with {@link Offer#when}; a guarded-off timer offer
+     * arms nothing.
+     * <p>
+     * A timer offer with a positive delay is never ready at the moment of
+     * registration, so among offers that are ready at once the choice
+     * policy considers only the channel offers; the timer commits only when
+     * no channel offer could before it fired. A delay that is not positive
+     * has already elapsed, so that offer is ready at registration and takes
+     * part in the choice among ready offers like any other: under the
+     * default priority it wins if listed before every ready channel offer
+     * and loses to one listed before it, and {@link #fair()} rotates over it.
+     * Listed last, {@code after(0)} is therefore the {@code default} clause
+     * of Go's {@code select}: take a transfer if one can complete at once,
+     * otherwise proceed without waiting.
+     *
+     * <pre>{@code
+     * def result = await offers(receive(work), after(0)).select()
+     * if (result.timeout) { ... nothing was ready ... }
+     * }</pre>
+     *
+     * @param millis how long to wait, in milliseconds, from the start of
+     *               each select call
+     * @return the timer offer
+     * @see #after(Duration)
+     * @see Result#isTimeout()
+     * @since 6.0.0
+     */
+    public static Offer after(long millis) {
+        return new Offer(null, null, Kind.TIMER, TimeUnit.MILLISECONDS.toNanos(millis), null);
+    }
+
+    /**
+     * An offer that commits once {@code duration} has elapsed from the
+     * start of the select call it takes part in; see {@link #after(long)}.
+     *
+     * @param duration how long to wait from the start of each select call
+     * @return the timer offer
+     * @throws NullPointerException if duration is null
+     * @since 6.0.0
+     */
+    public static Offer after(Duration duration) {
+        Objects.requireNonNull(duration, "duration must not be null");
+        return new Offer(null, null, Kind.TIMER, duration.toNanos(), null);
     }
 
     /**
@@ -242,7 +328,9 @@ public final class ChannelSelect {
      * result (for example through
      * {@link Awaitable#orTimeout(long, java.util.concurrent.TimeUnit)})
      * withdraws the pending offers, so a timed-out select consumes nothing
-     * and sends nothing.
+     * and sends nothing. To take a timeout as a branch instead of an
+     * exception, add a timer offer from {@link #after(long)} or receive
+     * from a timer channel from {@link AsyncChannel#after(long)}.
      * <p>
      * If every offer's channel is closed, the result fails with
      * {@link ChannelClosedException}. If every offer is guarded off (see
@@ -318,6 +406,8 @@ public final class ChannelSelect {
         Winner winner = new Winner();
         AtomicInteger closedCount = new AtomicInteger();
         Awaitable<?>[] branches = new Awaitable<?>[offers.size()];
+        // the timers armed for this call, closed (and so cancelled) with the losers
+        AsyncChannel<?>[] timers = timerCount == 0 ? null : new AsyncChannel<?>[offers.size()];
 
         // a ready offer completes synchronously during registration, so the
         // registration order is the priority order: rotate it under fair(),
@@ -326,23 +416,28 @@ public final class ChannelSelect {
         for (int k = 0; k < count && !winner.isDone(); k++) {
             final int index = order[k];
             final Offer offer = offers.get(index);
-            AsyncChannel<?> ch = offer.channel;
+            final boolean timer = offer.kind == Kind.TIMER;
+            final AsyncChannel<?> ch = timer
+                    ? DefaultAsyncChannel.after(offer.delayNanos, TimeUnit.NANOSECONDS)
+                    : offer.channel;
             final boolean claimable = ch instanceof DefaultAsyncChannel;
             @SuppressWarnings("unchecked")
-            Awaitable<?> branch = offer.send
+            Awaitable<?> branch = offer.kind == Kind.SEND
                     ? ((DefaultAsyncChannel<Object>) ch).sendIfUnclaimed(offer.value, winner.claim)
                     : claimable
                         ? ((DefaultAsyncChannel<?>) ch).receiveIfUnclaimed(winner.claim)
                         : ch.receive();
             branches[index] = branch;
+            if (timer) timers[index] = ch;
             CompletableFuture<?> future = branch.toCompletableFuture();
             future.whenComplete((value, error) -> {
                 if (error == null) {
                     // a claimable channel committed the claim as it completed; any
                     // other channel has consumed a value and must compete for it now
                     if (claimable || winner.claim.tryCommit(future)) {
-                        withdraw(branches); // losers registered so far, before the caller sees the result
-                        winner.complete(new Result(index, offer.send ? offer.value : value, offer.send, ch)); // holding the claim, this cannot fail
+                        withdraw(branches, timers); // losers registered so far, before the caller sees the result
+                        winner.complete(new Result(index, offer.kind == Kind.SEND ? offer.value : value,
+                                offer.kind, timer ? null : ch)); // holding the claim, this cannot fail
                     } else {
                         resend(ch, value);
                     }
@@ -353,7 +448,7 @@ public final class ChannelSelect {
         }
         // branches registered after the win, and cancellation of the result itself
         winner.whenComplete((result, error) -> {
-            withdraw(branches);
+            withdraw(branches, timers);
             if (result != null && lastWinner != null) lastWinner.set(result.index);
         });
         return GroovyPromise.of(winner);
@@ -405,9 +500,23 @@ public final class ChannelSelect {
         return (enabled == null || enabled[index]) && offers.get(index).isEnabled();
     }
 
-    private static void withdraw(Awaitable<?>[] branches) {
+    /**
+     * Withdraws every registered branch, and closes every timer armed for
+     * the call so its scheduled firing is cancelled. Branches go first: a
+     * timer's receive is then already cancelled when the close would fail
+     * it, so the close counts no spurious closed branch. Closing takes the
+     * timer's lock, which is safe from inside another channel's delivery
+     * because a firing timer does only lock-free work while it holds it and
+     * never takes another channel's lock.
+     */
+    private static void withdraw(Awaitable<?>[] branches, AsyncChannel<?>[] timers) {
         for (Awaitable<?> branch : branches) {
             if (branch != null) branch.cancel();
+        }
+        if (timers != null) {
+            for (AsyncChannel<?> timer : timers) {
+                if (timer != null) timer.close();
+            }
         }
     }
 
@@ -419,23 +528,27 @@ public final class ChannelSelect {
 
     /**
      * One branch of a select: an input guard created by
-     * {@link #receive(AsyncChannel)}, or an output guard created by
-     * {@link #send(AsyncChannel, Object)}. Immutable and freely reusable
-     * across selects.
+     * {@link #receive(AsyncChannel)}, an output guard created by
+     * {@link #send(AsyncChannel, Object)}, or a timeout created by
+     * {@link #after(long)}. Immutable and freely reusable across selects.
      *
      * @since 6.0.0
      */
     public static final class Offer {
+        /** the channel operated on, or {@code null} for a timer */
         private final AsyncChannel<?> channel;
         private final Object value;
-        private final boolean send;
+        private final Kind kind;
+        /** the timer delay; meaningful only when {@link #kind} is {@link Kind#TIMER} */
+        private final long delayNanos;
         /** the guard, or {@code null} when the offer is unconditional */
         private final BooleanSupplier guard;
 
-        private Offer(AsyncChannel<?> channel, Object value, boolean send, BooleanSupplier guard) {
+        private Offer(AsyncChannel<?> channel, Object value, Kind kind, long delayNanos, BooleanSupplier guard) {
             this.channel = channel;
             this.value = value;
-            this.send = send;
+            this.kind = kind;
+            this.delayNanos = delayNanos;
             this.guard = guard;
         }
 
@@ -473,7 +586,7 @@ public final class ChannelSelect {
         public Offer when(BooleanSupplier condition) {
             Objects.requireNonNull(condition, "condition must not be null");
             BooleanSupplier outer = guard;
-            return new Offer(channel, value, send,
+            return new Offer(channel, value, kind, delayNanos,
                     outer == null ? condition : () -> outer.getAsBoolean() && condition.getAsBoolean());
         }
 
@@ -507,21 +620,23 @@ public final class ChannelSelect {
     public static final class Result {
         private final int index;
         private final Object value;
-        private final boolean send;
+        private final Kind kind;
         private final AsyncChannel<?> channel;
 
         /**
          * Creates a selection result.
          *
          * @param index   the zero-based index of the committed offer
-         * @param value   the received value, or the sent value for a send offer
-         * @param send    whether the committed offer was a send
-         * @param channel the channel the committed offer transferred over
+         * @param value   the received value, the sent value for a send offer,
+         *                or the firing instant for a timer offer
+         * @param kind    what the committed offer did
+         * @param channel the channel the committed offer transferred over, or
+         *                {@code null} for a timer offer
          */
-        Result(int index, Object value, boolean send, AsyncChannel<?> channel) {
+        Result(int index, Object value, Kind kind, AsyncChannel<?> channel) {
             this.index = index;
             this.value = value;
-            this.send = send;
+            this.kind = kind;
             this.channel = channel;
         }
 
@@ -532,16 +647,22 @@ public final class ChannelSelect {
          * The channel the committed offer transferred over: the one received
          * from, or the one sent to. Lets a branch be recognised by identity
          * rather than by position, which suits a select whose offers are
-         * assembled dynamically.
+         * assembled dynamically. A timer offer transfers over no channel of
+         * the caller's, so for a timeout this is {@code null}: a select that
+         * carries a timer offer and dispatches on the channel must test
+         * {@link #isTimeout()} first, and dereference the channel only when
+         * that is {@code false}.
          *
-         * @return the winning channel
+         * @return the winning channel, or {@code null} for a timeout
+         * @see #isTimeout()
          * @since 6.0.0
          */
-        public AsyncChannel<?> getChannel() { return channel; }
+        public /*@Nullable*/ AsyncChannel<?> getChannel() { return channel; }
 
         /**
          * The transferred value: what arrived, for a receive offer; what was
-         * sent, for a send offer.
+         * sent, for a send offer; the {@link Instant} it fired, for a timer
+         * offer.
          */
         @SuppressWarnings("unchecked")
         public <T> T getValue() { return (T) value; }
@@ -551,7 +672,16 @@ public final class ChannelSelect {
          *
          * @since 6.0.0
          */
-        public boolean isSend() { return send; }
+        public boolean isSend() { return kind == Kind.SEND; }
+
+        /**
+         * Whether the committed offer was a timer created by
+         * {@link ChannelSelect#after(long)}: the select timed out, and
+         * {@link #getValue()} is the instant at which it did.
+         *
+         * @since 6.0.0
+         */
+        public boolean isTimeout() { return kind == Kind.TIMER; }
 
         /**
          * Returns a diagnostic representation of this selection result.
@@ -560,7 +690,11 @@ public final class ChannelSelect {
          */
         @Override
         public String toString() {
-            return "SelectResult[" + (send ? "sent to channel=" : "channel=") + index + ", value=" + value + "]";
+            return switch (kind) {
+                case SEND -> "SelectResult[sent to channel=" + index + ", value=" + value + "]";
+                case RECEIVE -> "SelectResult[channel=" + index + ", value=" + value + "]";
+                case TIMER -> "SelectResult[timeout=" + index + ", at=" + value + "]";
+            };
         }
     }
 }
