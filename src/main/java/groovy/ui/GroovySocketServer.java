@@ -28,11 +28,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 /**
@@ -60,9 +60,15 @@ import java.util.regex.Pattern;
  * <li>out - The output PrintWriter, should you need it for some reason.</li>
  * <li>socket - The socket, should you need it for some reason.</li>
  * </ul>
+ * <p>
+ * The constructors that take a port bind the listening socket to the loopback
+ * address, so only clients on the same host can connect. To accept connections
+ * from other hosts, pass an explicit {@link InetSocketAddress}; note that doing
+ * so exposes the script to any peer that can reach the port, and this class
+ * performs no authentication of its own.
  */
 public class GroovySocketServer implements Runnable {
-    private URL url;
+    private final InetSocketAddress bindAddress;
     private final GroovyShell groovy;
     private final GroovyCodeSource source;
     private final boolean autoOutput;
@@ -81,7 +87,7 @@ public class GroovySocketServer implements Runnable {
      * @param autoOutput
      *       whether output should be automatically echoed back to the client
      * @param port
-     *       the port to listen on
+     *       the port to listen on, bound to the loopback address
      *
      */
     public GroovySocketServer(GroovyShell groovy, boolean isScriptFile, String scriptFilenameOrText, boolean autoOutput, int port) {
@@ -129,20 +135,50 @@ public class GroovySocketServer implements Runnable {
     * @param autoOutput
     *       whether output should be automatically echoed back to the client
     * @param port
-    *       the port to listen on
+    *       the port to listen on, bound to the loopback address
     * @since 2.3.0
     */
     public GroovySocketServer(GroovyShell groovy, GroovyCodeSource source, boolean autoOutput, int port) {
+        this(groovy, source, autoOutput, new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
+    }
+
+    /**
+    * This creates and starts the socket server on a new Thread. There is no need to call run or spawn
+    * a new thread yourself.
+    * <p>
+    * Binding to anything other than a loopback address accepts connections from other hosts. The
+    * script is run once per line received, and this class performs no authentication, so the port
+    * should be reachable only by peers the script is prepared to serve.
+    * @param groovy
+    *       The GroovyShell object that evaluates the incoming text. If you need additional classes in the
+    *       classloader then configure that through this object.
+    * @param source
+    *       GroovyCodeSource for the Groovy script
+    * @param autoOutput
+    *       whether output should be automatically echoed back to the client
+    * @param bindAddress
+    *       the address and port to listen on
+    * @since 6.0.0
+    */
+    public GroovySocketServer(GroovyShell groovy, GroovyCodeSource source, boolean autoOutput, InetSocketAddress bindAddress) {
         this.groovy = groovy;
         this.source = source;
         this.autoOutput = autoOutput;
-        try {
-            url = new URI("http", null, InetAddress.getLocalHost().getHostAddress(), port, "/", null, null).toURL();
-            System.out.println("groovy is listening on port " + port);
-        } catch (IOException | URISyntaxException e) {
-            e.printStackTrace();
+        if (bindAddress.isUnresolved()) {
+            throw new IllegalArgumentException("Cannot listen on unresolved address: " + bindAddress);
+        }
+        this.bindAddress = bindAddress;
+        System.out.println("groovy is listening on " + describe(bindAddress));
+        if (!bindAddress.getAddress().isLoopbackAddress()) {
+            System.out.println("warning: this port accepts connections from other hosts and is not authenticated");
         }
         new Thread(this).start();
+    }
+
+    private static String describe(InetSocketAddress address) {
+        InetAddress host = address.getAddress();
+        String where = host.isAnyLocalAddress() ? "all interfaces" : host.getHostAddress();
+        return where + " port " + address.getPort();
     }
 
     /**
@@ -151,7 +187,7 @@ public class GroovySocketServer implements Runnable {
     */
     @Override
     public void run() {
-        try (ServerSocket serverSocket = new ServerSocket(url.getPort())) {
+        try (ServerSocket serverSocket = new ServerSocket(bindAddress.getPort(), 0, bindAddress.getAddress())) {
             while (true) {
                 // Create one script per socket connection.
                 // This is purposefully not caching the Script

@@ -51,6 +51,8 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -104,8 +106,8 @@ public class GroovyMain {
     // process sockets
     private boolean processSockets;
 
-    // port to listen on when processing sockets
-    private int port;
+    // address and port to listen on when processing sockets
+    private InetSocketAddress bindAddress;
 
     // backup input files with extension
     private String backupExtension;
@@ -242,7 +244,7 @@ public class GroovyMain {
         @Option(names = {"-pr", "--enable-preview"}, description = "Enable preview Java features (jdk12+ only)")
         private boolean previewFeatures;
 
-        @Option(names = "-l", arity = "0..1", paramLabel = "<port>", description = "Listen on a port and process inbound lines (default: 1960)")
+        @Option(names = "-l", arity = "0..1", paramLabel = "<[host:]port>", description = "Listen on a port and process inbound lines (default: 1960). Binds the loopback address unless a host is given; use 0.0.0.0 to accept connections from other hosts")
         private String port;
 
         @Option(names = {"-a", "--autosplit"}, arity = "0..1", paramLabel = "<splitPattern>", description = "Split lines using splitPattern (default '\\s') using implicit 'split' variable")
@@ -320,7 +322,11 @@ public class GroovyMain {
             main.processSockets = port != null;
             if (main.processSockets) {
                 String p = !port.trim().isEmpty() ? port : "1960"; // default port to listen to
-                main.port = Integer.parseInt(p);
+                try {
+                    main.bindAddress = parseBindAddress(p);
+                } catch (IllegalArgumentException e) {
+                    throw new ParameterException(parser, e.getMessage());
+                }
             }
 
             for (String optimization : disableopt) {
@@ -461,11 +467,62 @@ public class GroovyMain {
     }
 
     /**
+     * Parses the {@code -l} argument, which is either a bare port or a host and a port
+     * separated by a colon. An IPv6 literal host must be enclosed in square brackets, as
+     * in {@code [::1]:1960}. A bare port binds the loopback address, so the listener is
+     * reachable from other hosts only when one is asked for explicitly.
+     *
+     * @param value the option argument
+     * @return the address to bind the listening socket to
+     * @throws IllegalArgumentException if the argument is not a port, or names a host that cannot be resolved
+     */
+    static InetSocketAddress parseBindAddress(String value) {
+        String host;
+        String portText;
+        if (value.startsWith("[")) {
+            int close = value.indexOf(']');
+            if (close < 0 || close + 1 >= value.length() || value.charAt(close + 1) != ':') {
+                throw new IllegalArgumentException("Invalid value for option '-l': expected '[host]:port' but was '" + value + "'");
+            }
+            host = value.substring(1, close);
+            portText = value.substring(close + 2);
+        } else {
+            int colon = value.indexOf(':');
+            if (colon < 0) {
+                host = null;
+                portText = value;
+            } else if (value.indexOf(':', colon + 1) >= 0) {
+                throw new IllegalArgumentException("Invalid value for option '-l': enclose an IPv6 address in square brackets, as in '[::1]:1960', but was '" + value + "'");
+            } else {
+                host = value.substring(0, colon);
+                portText = value.substring(colon + 1);
+            }
+        }
+        int portNumber;
+        try {
+            portNumber = Integer.parseInt(portText.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid value for option '-l': '" + portText + "' is not a port number");
+        }
+        if (portNumber < 0 || portNumber > 65535) {
+            throw new IllegalArgumentException("Invalid value for option '-l': port " + portNumber + " is out of range");
+        }
+        if (host == null || host.isEmpty()) {
+            return new InetSocketAddress(InetAddress.getLoopbackAddress(), portNumber);
+        }
+        InetSocketAddress address = new InetSocketAddress(host, portNumber);
+        if (address.isUnresolved()) {
+            throw new IllegalArgumentException("Invalid value for option '-l': cannot resolve host '" + host + "'");
+        }
+        return address;
+    }
+
+    /**
      * Process Sockets.
      */
     private void processSockets() throws CompilationFailedException, IOException, URISyntaxException {
         GroovyShell groovy = new GroovyShell(conf);
-        new GroovySocketServer(groovy, getScriptSource(isScriptFile, script), autoOutput, port);
+        new GroovySocketServer(groovy, getScriptSource(isScriptFile, script), autoOutput, bindAddress);
     }
 
     /**
