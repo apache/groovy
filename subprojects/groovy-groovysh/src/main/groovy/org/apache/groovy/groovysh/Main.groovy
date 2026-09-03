@@ -145,6 +145,7 @@ class Main {
             posix.register('/cd', PosixCommands::cd)
             posix.register('/pwd', PosixCommands::pwd)
             posix.register('/date', PosixCommands::date)
+            posix.register('/echo', PosixCommands::echo)
             registerCommands(cmds)
         }
 
@@ -253,19 +254,7 @@ class Main {
         }
 
         private void echo(CommandInput input) {
-            final String[] usage = [
-                "/echo - echos a value",
-                "Usage:  /echo [-h] <args>",
-                "  -? --help                        Displays command help",
-            ]
-            try {
-                Options opt = parseOptions(usage, input.args())
-                if (!opt.args().isEmpty()) {
-                    terminal().writer().println(String.join(" ", opt.args()))
-                }
-            } catch (Exception e) {
-                saveException(e)
-            }
+            posix(adjustUsage('echo', '/echo'), input)
         }
 
         private static void executeCommand(List<String> args) throws Exception {
