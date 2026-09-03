@@ -57,6 +57,46 @@ public class DirectInvokerSubjects {
         return s;
     }
 
+    public Object identity(final Object value) {
+        return value;
+    }
+
+    public static void staticNoop() {
+        // intentionally empty — static void trampoline encoding
+    }
+
+    public PackageHost getPackageHost() {
+        return new PackageHost();
+    }
+
+    public byte boxedByte(final byte v) {
+        return v;
+    }
+
+    public short boxedShort(final short v) {
+        return v;
+    }
+
+    public char boxedChar(final char v) {
+        return v;
+    }
+
+    public long boxedLong(final long v) {
+        return v;
+    }
+
+    public float boxedFloat(final float v) {
+        return v;
+    }
+
+    public double boxedDouble(final double v) {
+        return v;
+    }
+
+    public int[] copyInts(final int[] values) {
+        return values;
+    }
+
     public String join(final String a, final String... rest) {
         if (rest == null || rest.length == 0) {
             return a;
@@ -123,6 +163,24 @@ public class DirectInvokerSubjects {
     static final class PackageHost {
         public String visible() {
             return "pkg-visible";
+        }
+    }
+
+    /**
+     * Public no-arg constructor throws {@link Error} so
+     * {@code InvokerFactory.instantiate(Lookup)} rethrows rather than sticky-failing.
+     */
+    public static final class ThrowsErrorOnConstruct {
+        public ThrowsErrorOnConstruct() {
+            throw new AssertionError("ctor-error");
+        }
+    }
+
+    /**
+     * Only a parameterized constructor so {@code findConstructor().void} / {@code getConstructor()} fail.
+     */
+    public static final class NoNoArgConstructor {
+        public NoNoArgConstructor(final String ignored) {
         }
     }
 }

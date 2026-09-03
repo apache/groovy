@@ -30,6 +30,7 @@ import java.lang.invoke.MethodHandles.Lookup
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertInstanceOf
 import static org.junit.jupiter.api.Assertions.assertNotNull
 import static org.junit.jupiter.api.Assertions.assertNull
 import static org.junit.jupiter.api.Assertions.assertSame
@@ -400,6 +401,113 @@ class HiddenClassDefinerTest {
         }
     }
 
+    @Test
+    @ResourceLock(Resources.SYSTEM_PROPERTIES)
+    void testTryDefineNestmateLookupClassHonoursKillSwitch() {
+        String previous = System.getProperty(HiddenClassDefiner.PROPERTY_DISABLE)
+        byte[] bytes = minimalClassBytes('org/apache/groovy/util/LookupRetKill')
+        try {
+            System.setProperty(HiddenClassDefiner.PROPERTY_DISABLE, 'true')
+            assertNull(HiddenClassDefiner.tryDefineNestmateLookup(HiddenClassDefinerTest, bytes, true))
+            assertNull(HiddenClassDefiner.tryDefineNestmateWithClassData(LOOKUP, bytes, 'payload', true))
+        } finally {
+            if (previous == null) {
+                System.clearProperty(HiddenClassDefiner.PROPERTY_DISABLE)
+            } else {
+                System.setProperty(HiddenClassDefiner.PROPERTY_DISABLE, previous)
+            }
+        }
+    }
+
+    @Test
+    @ResourceLock(Resources.SYSTEM_PROPERTIES)
+    void testTryDefineNestmateLookupClassHonoursNativeImageProperty() {
+        String previous = System.getProperty(HiddenClassDefiner.PROPERTY_NATIVE_IMAGE_CODE)
+        byte[] bytes = minimalClassBytes('org/apache/groovy/util/LookupRetNative')
+        try {
+            System.setProperty(HiddenClassDefiner.PROPERTY_NATIVE_IMAGE_CODE,
+                    HiddenClassDefiner.NATIVE_IMAGE_CODE_RUNTIME)
+            assertNull(HiddenClassDefiner.tryDefineNestmateLookup(HiddenClassDefinerTest, bytes, true))
+            assertNull(HiddenClassDefiner.tryDefineNestmateWithClassData(LOOKUP, bytes, 'payload', true))
+        } finally {
+            if (previous == null) {
+                System.clearProperty(HiddenClassDefiner.PROPERTY_NATIVE_IMAGE_CODE)
+            } else {
+                System.setProperty(HiddenClassDefiner.PROPERTY_NATIVE_IMAGE_CODE, previous)
+            }
+        }
+    }
+
+    @Test
+    void testTryDefineNestmateLookupWithoutInitializeDefersClinit() {
+        byte[] bytes = throwingClinitBytes('org/apache/groovy/util/LookupRetClinitDeferred')
+        Lookup hidden = HiddenClassDefiner.tryDefineNestmateLookup(LOOKUP, bytes, false)
+        assertNotNull(hidden, 'initialize=false must not run <clinit>')
+        assertTrue(hidden.lookupClass().hidden)
+        ExceptionInInitializerError thrown = assertThrows(ExceptionInInitializerError) {
+            hidden.lookupClass().getConstructor().newInstance()
+        }
+        assertInstanceOf(RuntimeException, thrown.cause)
+        assertEquals('clinit-boom', thrown.cause.message)
+    }
+
+    @Test
+    void testTryDefineNestmateWithClassDataRejectsCorruptBytes() {
+        byte[] garbage = [0, 1, 2, 3, 4, 5, 6, 7] as byte[]
+        assertNull(HiddenClassDefiner.tryDefineNestmateWithClassData(LOOKUP, garbage, 'payload', true))
+    }
+
+    @Test
+    void testTryDefineNestmateWithClassDataStickyFailsClinitError() {
+        byte[] bytes = throwingClinitBytes('org/apache/groovy/util/ClassDataClinit')
+        assertNull(HiddenClassDefiner.tryDefineNestmateWithClassData(LOOKUP, bytes, 'payload', true))
+    }
+
+    @Test
+    void testTryDefineNestmateLookupForeignHostRejectsUnusableTypes() {
+        byte[] bytes = minimalClassBytes('org/apache/groovy/util/LookupRetUnusable')
+        assertNull(HiddenClassDefiner.tryDefineNestmateLookup(Integer.TYPE, bytes, true))
+        assertNull(HiddenClassDefiner.tryDefineNestmateLookup(String[].class, bytes, true))
+        Class<?> hidden = HiddenClassDefiner.tryDefineNestmate(LOOKUP, bytes, true)
+        assertNotNull(hidden)
+        assertNull(HiddenClassDefiner.tryDefineNestmateLookup(hidden, bytes, true))
+    }
+
+    @Test
+    void testDefineHiddenRewritesDefaultPackageHost() {
+        Class<?> defPkg = Class.forName('DefaultPackageClassSupport')
+        Lookup defLookup = MethodHandles.privateLookupIn(defPkg, LOOKUP)
+        byte[] bytes = minimalClassBytes('unrelated/pkg/DefaultPkgHidden')
+        Lookup hidden = HiddenClassDefiner.tryDefineNestmateLookup(defLookup, bytes, true)
+        assertNotNull(hidden)
+        assertEquals('', hidden.lookupClass().packageName)
+        assertEquals(defPkg.nestHost, hidden.lookupClass().nestHost)
+        assertNotNull(hidden.lookupClass().getConstructor().newInstance())
+    }
+
+    @Test
+    void testTryDefineNestmateLookupClassSuccessAndNullBytes() {
+        byte[] bytes = minimalClassBytes('org/apache/groovy/util/LookupRetClassOk')
+        Lookup hidden = HiddenClassDefiner.tryDefineNestmateLookup(HiddenClassDefinerTest, bytes, true)
+        assertNotNull(hidden)
+        assertTrue(hidden.lookupClass().hidden)
+        assertEquals(HiddenClassDefinerTest.nestHost, hidden.lookupClass().nestHost)
+        assertNull(HiddenClassDefiner.tryDefineNestmateLookup(HiddenClassDefinerTest, (byte[]) null, true))
+    }
+
+    @Test
+    void testClinitAssertionErrorIsSoftFailedOrPropagated() {
+        byte[] bytes = assertionErrorClinitBytes('org/apache/groovy/util/LookupRetClinitError')
+        try {
+            Lookup result = HiddenClassDefiner.tryDefineNestmateLookup(LOOKUP, bytes, true)
+            // Wrapped as ExceptionInInitializerError / LinkageError → sticky null
+            assertNull(result)
+        } catch (AssertionError e) {
+            // Some JDKs propagate the Error from <clinit> unchanged
+            assertEquals('clinit-error', e.message)
+        }
+    }
+
     private static byte[] throwingClinitBytes(String internalName) {
         def cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES)
         cw.visit(V17, ACC_PUBLIC, internalName, null, 'java/lang/Object', null)
@@ -416,6 +524,29 @@ class HiddenClassDefinerTest {
         clinit.visitInsn(DUP)
         clinit.visitLdcInsn('clinit-boom')
         clinit.visitMethodInsn(INVOKESPECIAL, 'java/lang/RuntimeException', '<init>', '(Ljava/lang/String;)V', false)
+        clinit.visitInsn(ATHROW)
+        clinit.visitMaxs(0, 0)
+        clinit.visitEnd()
+        cw.visitEnd()
+        cw.toByteArray()
+    }
+
+    private static byte[] assertionErrorClinitBytes(String internalName) {
+        def cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES)
+        cw.visit(V17, ACC_PUBLIC, internalName, null, 'java/lang/Object', null)
+        def init = cw.visitMethod(ACC_PUBLIC, '<init>', '()V', null, null)
+        init.visitCode()
+        init.visitVarInsn(ALOAD, 0)
+        init.visitMethodInsn(INVOKESPECIAL, 'java/lang/Object', '<init>', '()V', false)
+        init.visitInsn(RETURN)
+        init.visitMaxs(0, 0)
+        init.visitEnd()
+        def clinit = cw.visitMethod(ACC_STATIC, '<clinit>', '()V', null, null)
+        clinit.visitCode()
+        clinit.visitTypeInsn(NEW, 'java/lang/AssertionError')
+        clinit.visitInsn(DUP)
+        clinit.visitLdcInsn('clinit-error')
+        clinit.visitMethodInsn(INVOKESPECIAL, 'java/lang/AssertionError', '<init>', '(Ljava/lang/Object;)V', false)
         clinit.visitInsn(ATHROW)
         clinit.visitMaxs(0, 0)
         clinit.visitEnd()
