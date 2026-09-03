@@ -29,6 +29,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.function.Function
 
+import static org.junit.jupiter.api.Assumptions.assumeFalse
+
 /**
  * Direct unit tests for static methods in {@link GroovyPosixCommands} — the
  * Apache-licensed fork of JLine's PosixCommands. Bypasses the registry stack
@@ -94,6 +96,8 @@ class GroovyPosixCommandsTest {
     // GROOVY-12341
     @Test
     void lsStripsControlCharactersFromFileNames() {
+        assumeFalse(System.getProperty('os.name').containsIgnoreCase('windows'),
+                'Windows file names cannot contain control characters')
         Files.writeString(tempDir.resolve(HOSTILE_NAME), 'x\n')
         GroovyPosixCommands.ls(context(), ['/ls'] as Object[])
         def output = stdout()
@@ -105,6 +109,8 @@ class GroovyPosixCommandsTest {
     // GROOVY-12341
     @Test
     void lsStripsControlCharactersFromSymlinkTargets() {
+        assumeFalse(System.getProperty('os.name').containsIgnoreCase('windows'),
+                'Windows file names cannot contain control characters')
         Path target = Files.writeString(tempDir.resolve(HOSTILE_NAME), 'x\n')
         try {
             Files.createSymbolicLink(tempDir.resolve('link.txt'), target)
@@ -119,6 +125,8 @@ class GroovyPosixCommandsTest {
     // GROOVY-12341
     @Test
     void headAndGrepAndWcStripControlCharactersFromNames() {
+        assumeFalse(System.getProperty('os.name').containsIgnoreCase('windows'),
+                'Windows file names cannot contain control characters')
         // the same treatment upstream applies to every command that echoes a source name
         Path file = Files.writeString(tempDir.resolve(HOSTILE_NAME), 'alpha\nbeta\n')
         Path plain = Files.writeString(tempDir.resolve('plain.txt'), 'alpha\n')

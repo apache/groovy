@@ -1314,18 +1314,27 @@ final class ChannelSelectTest {
     void testTimerOfferReArmsOnEveryRound() {
         assertScript '''
             import groovy.concurrent.AsyncChannel
+            import java.util.concurrent.SynchronousQueue
             import static groovy.concurrent.ChannelSelect.*
 
             def work = AsyncChannel.create()
-            def sel = offers(receive(work), after(150))
+            def sel = offers(receive(work), after(300))
+            def rounds = new SynchronousQueue()
 
-            // each round's value arrives well inside the round's own deadline
-            // but well past the first round's: a fixed deadline would time out
+            // Signal the sender only after select has armed its branches. Each
+            // value is well within its own deadline but all four exceed a
+            // single fixed deadline started before the first round.
             async {
-                for (i in 0..<4) { Thread.sleep(60); work.send(i) }
+                for (i in 0..<4) {
+                    rounds.take()
+                    Thread.sleep(100)
+                    work.send(i)
+                }
             }
             def received = (0..<4).collect {
-                def result = await sel.select()
+                def pending = sel.select()
+                rounds.put(it)
+                def result = await pending
                 assert !result.timeout && result.channel.is(work)
                 result.value
             }
