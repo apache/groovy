@@ -90,7 +90,7 @@ not deployed as a network service of its own. The shapes that matter:
 | **Embedded runtime** | An application puts `groovy-*` jars on its classpath and calls Groovy APIs (GDK methods, `groovy.sql.Sql`, parsers, builders) and/or evaluates Groovy it authored. |
 | **Dynamic evaluation host** | An application uses `GroovyShell`, `Eval`, `GroovyClassLoader`, `GroovyScriptEngine`, JSR-223 (`groovy-jsr223`), or the template engines to run Groovy decided at runtime. |
 | **Build / compile** | `groovyc`, the Gradle/Maven integrations, and AST transforms compile developer-authored source. |
-| **Interactive / CLI tools** | `groovy`, `groovysh`, `groovyConsole`, `groovydoc`, `groovy-servlet` run on inputs the operator provides. |
+| **Interactive / CLI tools** | `groovy`, `groovysh`, `groovyConsole`, `groovydoc`, `groovy-servlet` run on inputs the operator provides. `groovy -l` and `JmxBuilder`'s connector server belong here too: they take those inputs from a socket rather than a terminal, bound to loopback unless the operator widens them ([§7](#7-adversary-model)). |
 
 ### Caller roles
 
@@ -385,12 +385,28 @@ single "remote attacker." The adversaries that matter:
 - **A local user on a shared host.** Can read predictable or
   world-readable artifacts that Groovy tooling writes (the class of issue
   behind CVE-2020-17521).
+- **A peer of a listener the operator started.** Two development tools
+  listen on a socket when asked to: `groovy -l`, which runs the operator's
+  script once per line received with the line supplied as the `line`
+  binding, and `JmxBuilder`'s connector server, which exposes an MBean
+  server. Both exist only where an operator started one, both bind the
+  loopback address unless given a wider one, and neither evaluates what a
+  peer sends as code. For `groovy -l` this is the data supplier above
+  reached over a socket Groovy opened rather than through the embedding
+  application, carrying the same capability and no more; what a peer
+  achieves is whatever the operator's script does with `line`, and a script
+  that evaluates it has opted into [§3](#3-out-of-scope-explicit-non-goals).
+  A connector server is the wider of the two: it offers whatever the MBean
+  server holds, and the default is the platform server, whose beans can dump
+  the heap and run diagnostic commands. Widening either past loopback puts
+  that within reach of any peer that can route to the port.
 
 **Capabilities the in-scope adversary has (closed list).** Supplying bytes
 to a data parser; supplying values bound as data (SQL parameters, template
 *bindings* — not template *text*); supplying oversized, deeply-nested, or
-syntactically adversarial *data*; and, for the local adversary, reading
-files on the shared host subject to OS permissions. **A finding that
+syntactically adversarial *data*; connecting to a listener the operator
+started and sending it lines or MBean requests; and, for the local
+adversary, reading files on the shared host subject to OS permissions. **A finding that
 requires any capability not on this list is out of model**
 ([§11b](#11b-scanner-calibration-default-downgrade-rules)).
 
@@ -499,6 +515,11 @@ Groovy does **not** claim, and you must not assume, any of the following.
   objects.** See [§3](#3-out-of-scope-explicit-non-goals).
 - **`SecurityManager`-based confinement.** The JDK `SecurityManager` is
   deprecated/removed; Groovy does not rely on it and neither can you.
+- **Authentication or transport security for the listeners.** Neither
+  `groovy -l` nor a `JmxBuilder` connector authenticates a peer by default,
+  and neither encrypts unless configured to. Binding loopback by default
+  limits who can arrive; beyond loopback the operator owns authentication,
+  and the port belongs behind whatever the deployment already uses.
 
 ### False friends — features that look like security but are not
 
@@ -508,7 +529,8 @@ Groovy does **not** claim, and you must not assume, any of the following.
 | `@ThreadInterrupt` / `@TimedInterrupt` / `@ConditionInterrupt` | Cooperative interruption checks woven into loops/methods to tame *runaway* (buggy) scripts | Cooperative and removable by the code being run; no defense against deliberately malicious scripts. |
 | `@CompileStatic` / `@TypeChecked` | Compile-time type checking for correctness and performance | Not a security control; statically-compiled code is exactly as privileged. |
 | `groovy.sql.Sql` (beyond P1) | Convenience SQL access | Only the GString/bind forms parameterize. A `String` you concatenate yourself, dynamic identifiers via `Sql.expand`, or `DataSet` table/column names, are **not** protected (CWE-89). |
-| The Groovy "shell"/console tools | Developer/operator conveniences | `groovysh`/`groovyConsole` run code with the user's full privileges; they are not multi-tenant or sandboxed. |
+| The Groovy "shell"/console tools | Developer/operator conveniences | `groovysh`/`groovyConsole` run code with the user's full privileges; they are not multi-tenant or sandboxed. `groovy -l` is the same kind of tool with a socket for an input channel instead of a terminal &mdash; an aid to experimenting with a line-driven script, not an application server. |
+| `JmxBuilder` connector servers | A development and experimentation aid | Every connector security property was assembled and discarded from 2008 until 2026, so no configuration produced a secured connector in that window and none can have been relied upon. It exposes an MBean server rather than being a managed service, and authenticates nobody unless told to. |
 
 Well-known attack classes Groovy does **not** defend against on the
 application's behalf: command injection from app-built command strings
@@ -575,6 +597,13 @@ If you embed or script with Groovy, **you** own these:
     your exposure, not Groovy's obligations** — a defect in a tool module is
     still a defect, and the interactive user is a caller role in this model
     ([§2](#2-scope-and-intended-use)), not an out-of-scope one.
+12. **If you start a listener, you own the exposure.** `groovy -l` and
+    `JmxBuilder` connector servers bind loopback unless you pass a wider
+    address, and neither authenticates anyone. Give one a reachable address
+    only where the peers are ones it is prepared to serve, and put
+    authentication in front of the port. A connector server reaches whatever
+    its MBean server holds, so prefer a purpose-built server over the
+    platform one when the port is not confined to the host.
 
 ---
 
@@ -682,9 +711,16 @@ carries a hardening obligation.
   classes (would create a deserialization surface that *is* in model).
 - Changing the secure-by-default XML posture (P2) or temp-artifact
   permissions (P4).
-- A new tool or subproject that accepts input over the network as a
-  service (would introduce a remote network adversary the current model
-  does not have).
+- A new tool or subproject that accepts input over the network **as a
+  service** (would introduce a remote network adversary the current model
+  does not have). `groovy -l` and `JmxBuilder` connector servers do not
+  meet this: they are development tools of the
+  [§9](#9-security-properties-the-project-does-not-provide) shell/console
+  family, bound to loopback by default, and their peer is covered by the
+  listener bullet in [§7](#7-adversary-model). What would meet it is a
+  surface accepting something richer — code, serialized objects, or
+  commands Groovy itself interprets rather than the operator's script — or
+  one listening beyond loopback by default.
 - Hardening of serializable runtime types (e.g. making closure fields
   transient, or removing `Serializable`) — would move some [§11a](#11a-known-non-findings-recurring-false-positives)
   items into scope as defense-in-depth.
