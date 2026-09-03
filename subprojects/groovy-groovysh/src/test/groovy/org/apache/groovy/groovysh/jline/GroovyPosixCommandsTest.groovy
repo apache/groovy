@@ -83,6 +83,15 @@ class GroovyPosixCommandsTest {
         new String(out.toByteArray(), StandardCharsets.UTF_8).normalize()
     }
 
+    /**
+     * Standard output with SGR sequences removed. grep highlights matches when colouring is
+     * on, and that highlighting is the path through {@code SafeRegex.matcher}, so the tests
+     * leave it enabled and strip the rendering rather than turning it off.
+     */
+    private String plainStdout() {
+        stdout().replaceAll('\u001B\\[[0-9;]*m', '')
+    }
+
     /** A name carrying an escape sequence the terminal would otherwise act on. */
     private static final String HOSTILE_NAME = "ok\u001B[2Ktrap.txt"
 
@@ -113,6 +122,31 @@ class GroovyPosixCommandsTest {
     void echoJoinsArgumentsWithSingleSpaces() {
         PosixCommands.echo(context(), ['echo', 'hello', 'world'] as Object[])
         assert stdout() == 'hello world\n'
+    }
+
+    // GROOVY-12349: grep wrapped the pattern as ".*" + p + ".*" and matched it against the
+    // whole line. Upstream dropped the wrapping for find(), because the wrapping both
+    // misstates the intent and gives a backtracking engine more to chew on. These pin the
+    // two paths that split apart as a result.
+    @Test
+    void grepFindsAPatternAnywhereInTheLine() {
+        Path f = Files.writeString(tempDir.resolve('g.txt'), 'alpha beta\ngamma\n')
+        GroovyPosixCommands.grep(context(), ['grep', 'beta', f.toString()] as Object[])
+        assert plainStdout().readLines() == ['alpha beta']
+    }
+
+    @Test
+    void grepWithLineRegexpMatchesWholeLinesOnly() {
+        Path f = Files.writeString(tempDir.resolve('g.txt'), 'alpha beta\nbeta\n')
+        GroovyPosixCommands.grep(context(), ['grep', '-x', 'beta', f.toString()] as Object[])
+        assert plainStdout().readLines() == ['beta']
+    }
+
+    @Test
+    void grepInvertStillSelectsNonMatchingLines() {
+        Path f = Files.writeString(tempDir.resolve('g.txt'), 'alpha beta\ngamma\n')
+        GroovyPosixCommands.grep(context(), ['grep', '-v', 'beta', f.toString()] as Object[])
+        assert plainStdout().readLines() == ['gamma']
     }
 
     // GROOVY-12341
