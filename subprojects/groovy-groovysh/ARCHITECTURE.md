@@ -51,14 +51,30 @@ forks of JLine sources:
 Plus `GroovyPosixCommands.java`, similarly derived but diverged
 enough from upstream that it is Apache-licensed in-tree.
 
-**Fork bases.** The five BSD-licensed files were forked in
-`ed73546ad9` (2025-06-23), when this project depended on JLine
-**3.30.4**; `GroovyPosixCommands.java` was forked in `4cc59b2ba1`
-(2025-08-19), against **3.30.5**. Record the base here whenever a
-file is added or re-derived, because the sync procedure below
-cannot be carried out without it — and note the gap to the version
-in `versions.properties`, which is what the forks have to be read
-against.
+**Fork bases and last sync.** Both are needed: what a file was
+taken from, and how far it has since been carried forward.
+
+| File(s) | Forked | Last synced |
+|---|---|---|
+| `GroovyEngine`, `PackageHelper`, `JrtJavaBasePackages`, `ObjectInspector`, `Utils` | `ed73546ad9` (2025-06-23) against **3.30.4** | never |
+| `GroovyPosixCommands` | `4cc59b2ba1` (2025-08-19) against **3.30.5** | `b90ebb9923` (2025-09-21) against **3.30.6**, plus one fix ported in `b2561621f1` at 4.4.1 |
+
+Record both here whenever a file is added, re-derived or synced,
+because the procedure below cannot be carried out without them,
+and note the gap to the version in `versions.properties` — that is
+what the forks have to be read against.
+
+The five BSD-licensed files have never been synced, and as of
+**4.4.1** they do not need to be: upstream changed only copyright
+headers, an import expansion and two `Paths.get` calls across all
+five between 3.30.4 and 4.4.1, with `ObjectInspector` and `Utils`
+untouched. Re-check when the base moves rather than repeating that
+comparison.
+
+`GroovyPosixCommands` is the one that drifts, because it is the one
+in use: upstream has moved by roughly 800 lines over 21 commits
+since 3.30.6, of which only the control-character fix has been
+taken.
 
 These are kept in-tree because the upstream artefact
 (`org.jline:jline-groovy`) depends on `org.apache.groovy:groovy`,
