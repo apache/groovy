@@ -62,7 +62,11 @@ int (disable any int based optimizations) |
 | -pr | --enable-preview | Enable preview Java features (jdk12+ only). | groovy --enable-preview Person.groovy
 |=======================================================================
 
-The `-l` option runs the given script once for every line a client sends, with the
+The `-l` option is a developer convenience for experimenting with a line-driven
+script, in the same spirit as `groovysh` but reading from a socket instead of a
+terminal. It is not an application server.
+
+It runs the given script once for every line a client sends, with the
 line available as the implicit `line` variable and the connection as `out` and
 `socket`. The listening socket is bound to the loopback address, so only clients on
 the same machine can connect. Supply a host to listen more widely -- `0.0.0.0:1960`
