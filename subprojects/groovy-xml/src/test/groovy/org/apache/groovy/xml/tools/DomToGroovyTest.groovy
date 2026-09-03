@@ -19,6 +19,7 @@
 package org.apache.groovy.xml.tools
 
 import groovy.test.StringTestUtil
+import groovy.xml.XmlSlurper
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.w3c.dom.Document
@@ -105,6 +106,62 @@ class DomToGroovyTest {
         checkConversion(TEST_XML_3, EXPECTED_BUILDER_SCRIPT_3)
         checkConversion(TEST_XML_4, EXPECTED_BUILDER_SCRIPT_4)
         checkConversion(TEST_XML_5, EXPECTED_BUILDER_SCRIPT_5)
+    }
+
+    @Test
+    void multilineTextSurvivesTheRoundTrip() {
+        // multi-line content is emitted in a triple-quoted literal, where a backslash
+        // still starts an escape sequence and a run of quotes can close the literal early
+        ['line one\nC:\\temp\\new',
+         'line one\n' + "'" * 3,
+         "line one\nends with a quote'",
+         "line one\ndon't touch ordinary prose"].each { text ->
+            assert roundTrip(text) == text
+        }
+    }
+
+    @Test
+    void apostrophesInProseAreNotEscaped() {
+        // the generated source is meant to be read and edited, so only quotes that would
+        // run into the closing delimiter are escaped
+        assert generate("line one\ndon't split ordinary prose").contains("don't split")
+    }
+
+    @Test
+    void commentContentCannotCloseTheGeneratedComment() {
+        String generated = generateFrom('<a><!-- */ marker() /* --><b>ok</b></a>')
+        assert !generated.contains('*/ marker')
+        assert generated.contains('* /')
+    }
+
+    @Test
+    void processingInstructionDataIsQuoted() {
+        String generated = generateFrom("<a><?target it's data?><b>ok</b></a>")
+        // the apostrophe must not close the literal the data sits in
+        assert generated.contains("it\\'s data")
+    }
+
+    private String generateFrom(String xml) {
+        Document document = builder.parse(new ByteArrayInputStream(xml.bytes))
+        StringWriter writer = new StringWriter()
+        new DomToGroovy(new PrintWriter(writer)).print(document)
+        writer.toString().trim()
+    }
+
+    private String roundTrip(String text) {
+        String recovered = new GroovyShell().evaluate(
+                'def out = new StringWriter()\n' +
+                'def mb = new groovy.xml.MarkupBuilder(out)\n' +
+                'mb.' + generate(text) + '\n' +
+                'out.toString()')
+        new XmlSlurper().parseText(recovered).b.text()
+    }
+
+    private String generate(String text) {
+        Document document = builder.parse(new ByteArrayInputStream("<a><b>${text}</b></a>".bytes))
+        StringWriter writer = new StringWriter()
+        new DomToGroovy(new PrintWriter(writer)).print(document)
+        writer.toString().trim()
     }
 
     private void checkConversion(String testXml, String expectedScript) throws SAXException, IOException {
