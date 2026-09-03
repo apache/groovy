@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.groovysh.jline
 
+import org.jline.builtins.PosixCommands
 import org.jline.terminal.Terminal
 import org.jline.terminal.TerminalBuilder
 import org.junit.jupiter.api.AfterEach
@@ -92,6 +93,27 @@ class GroovyPosixCommandsTest {
      * injected sequence rather than look for ESC in general.
      */
     private static final String NEUTRALISED_NAME = 'ok[2Ktrap.txt'
+
+    // GROOVY-12349: /echo delegates to JLine's PosixCommands.echo instead of the local
+    // implementation it used to carry, so these pin the semantics that delegation now
+    // advertises — and would fail if a bump changed them under us.
+    @Test
+    void echoInterpretsEscapeSequences() {
+        PosixCommands.echo(context(), ['echo', 'tab\\there'] as Object[])
+        assert stdout() == "tab\there\n"
+    }
+
+    @Test
+    void echoSuppressesTrailingNewlineForMinusN() {
+        PosixCommands.echo(context(), ['echo', '-n', 'no-newline'] as Object[])
+        assert stdout() == 'no-newline'
+    }
+
+    @Test
+    void echoJoinsArgumentsWithSingleSpaces() {
+        PosixCommands.echo(context(), ['echo', 'hello', 'world'] as Object[])
+        assert stdout() == 'hello world\n'
+    }
 
     // GROOVY-12341
     @Test
