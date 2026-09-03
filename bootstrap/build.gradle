@@ -26,6 +26,15 @@ defaultTasks 'bootstrap'
 
 tasks.withType(Wrapper).configureEach {
     gradleVersion = props.gradle_version
+    // Regenerating here always writes a fresh gradle-wrapper.properties -- the previous one was
+    // moved to the root by the bootstrap task -- so the Wrapper task sees no existing file and its
+    // safeguard against dropping an established distributionSha256Sum cannot fire. Carrying the
+    // checksum in gradle.properties keeps it declarative and beside the version it belongs to,
+    // rather than depending on someone passing --gradle-distribution-sha256-sum.
+    def distributionSha = props.gradle_distribution_sha256?.trim()
+    if (distributionSha) {
+        distributionSha256Sum = distributionSha
+    }
 }
 
 tasks.register('bootstrap') {
