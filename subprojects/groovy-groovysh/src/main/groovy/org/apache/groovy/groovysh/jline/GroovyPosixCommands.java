@@ -36,6 +36,8 @@ import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.InputStreamReader;
 import org.jline.utils.OSUtils;
+import org.jline.utils.RegexTimeoutException;
+import org.jline.utils.SafeRegex;
 
 import static org.jline.builtins.PosixCommands.*;
 
@@ -826,10 +828,9 @@ public class GroovyPosixCommands {
         if (opt.isSet("word-regexp")) {
             regexp = "\\b" + regexp + "\\b";
         }
-        if (opt.isSet("line-regexp")) {
+        boolean lineRegexp = opt.isSet("line-regexp");
+        if (lineRegexp) {
             regexp = "^" + regexp + "$";
-        } else {
-            regexp = ".*" + regexp + ".*";
         }
         Pattern p;
         Pattern p2;
@@ -886,7 +887,7 @@ public class GroovyPosixCommands {
                     int lineno = 1;
                     int lineMatch = 0;
                     while ((line = r.readLine()) != null) {
-                        boolean matches = p.matcher(line).matches();
+                        boolean matches = lineRegexp ? SafeRegex.matches(p, line) : SafeRegex.find(p, line);
                         if (invert) {
                             matches = !matches;
                         }
@@ -915,15 +916,19 @@ public class GroovyPosixCommands {
                                     sbl.append(":");
                                 }
                                 if (colored) {
-                                    Matcher matcher2 = p2.matcher(line);
+                                    Matcher matcher2 = SafeRegex.matcher(p2, line);
                                     int cur = 0;
-                                    while (matcher2.find()) {
-                                        applyStyle(sbl, colors, "se");
-                                        sbl.append(line, cur, matcher2.start());
-                                        applyStyle(sbl, colors, "ms");
-                                        sbl.append(line, matcher2.start(), matcher2.end());
-                                        applyStyle(sbl, colors, "se");
-                                        cur = matcher2.end();
+                                    try {
+                                        while (matcher2.find()) {
+                                            applyStyle(sbl, colors, "se");
+                                            sbl.append(line, cur, matcher2.start());
+                                            applyStyle(sbl, colors, "ms");
+                                            sbl.append(line, matcher2.start(), matcher2.end());
+                                            applyStyle(sbl, colors, "se");
+                                            cur = matcher2.end();
+                                        }
+                                    } catch (RegexTimeoutException e) {
+                                        // append the remainder without highlighting
                                     }
                                     sbl.append(line, cur, line.length());
                                 } else {
