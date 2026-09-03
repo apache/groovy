@@ -47,7 +47,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A SAX handler for turning XML into Groovy scripts
+ * Turns a DOM document into the {@link groovy.xml.MarkupBuilder} calls that would produce
+ * it, as an aid to writing builder code by hand. The result is a starting point to edit
+ * rather than a finished script: names that are not valid Groovy identifiers are quoted,
+ * and the layout is meant to be read.
+ * <p>
+ * The output is Groovy source. Generating it from a document and then evaluating it runs
+ * whatever that document produced, so generation belongs in authoring, not in a runtime
+ * path fed by documents the author does not control.
  */
 public class DomToGroovy {
 
@@ -289,7 +296,7 @@ public class DomToGroovy {
     protected void printQuoted(String text) {
         if (text.contains("\n")) {
             print("'''");
-            print(text);
+            print(escapeTripleQuote(text));
             print("'''");
         } else {
             print(qt);
@@ -306,11 +313,11 @@ public class DomToGroovy {
      */
     protected void printPI(ProcessingInstruction instruction, boolean endWithComma) {
         printIndent();
-        print("mkp.pi(" + qt);
-        print(instruction.getTarget());
-        print(qt + ", " + qt);
-        print(instruction.getData());
-        printEnd(qt + ");", endWithComma);
+        print("mkp.pi(");
+        printQuoted(instruction.getTarget());
+        print(", ");
+        printQuoted(instruction.getData());
+        printEnd(");", endWithComma);
     }
 
     /**
@@ -324,7 +331,9 @@ public class DomToGroovy {
         if (!text.isEmpty()) {
             printIndent();
             print("/* ");
-            print(text);
+            // a comment carrying the block-comment terminator would close this comment
+            // early and leave the rest of the document standing as code
+            print(text.replace("*/", "* /"));
             printEnd(" */", endWithComma);
         }
     }
@@ -353,6 +362,27 @@ public class DomToGroovy {
      */
     protected String escapeQuote(String text) {
         return text.replaceAll("\\\\", "\\\\\\\\").replaceAll(qt, "\\\\" + qt);
+    }
+
+    /**
+     * Escapes text for a triple-quoted Groovy string literal. A backslash always starts an
+     * escape sequence and so needs escaping; a quote needs it only where it would otherwise
+     * run into the closing delimiter, which leaves apostrophes in ordinary prose alone.
+     *
+     * @param text raw text
+     * @return escaped text
+     */
+    protected String escapeTripleQuote(String text) {
+        String escaped = text.replace("\\", "\\\\");
+        StringBuilder result = new StringBuilder(escaped.length());
+        for (int i = 0; i < escaped.length(); i += 1) {
+            char c = escaped.charAt(i);
+            if (c == '\'' && (i + 1 == escaped.length() || escaped.charAt(i + 1) == '\'')) {
+                result.append('\\');
+            }
+            result.append(c);
+        }
+        return result.toString();
     }
 
     /**

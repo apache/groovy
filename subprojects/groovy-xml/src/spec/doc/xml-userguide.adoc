@@ -510,20 +510,26 @@ include::../test/UserGuideStreamingMarkupBuilderTest.groovy[tags=testMkp,indent=
 `mkp.yield`
 <2> Checking the values later on with `XmlSlurper`
 
-=== DOMToGroovy
+=== DomToGroovy
 
-Suppose we have an existing XML document and we want to automate
-generation of the markup without having to type it all in? We just
-need to use `org.codehaus.groovy.tools.xml.DOMToGroovy` as shown in
+Suppose we have an existing XML document and we want a head start on
+writing the markup rather than typing it all in? We just
+need to use `org.apache.groovy.xml.tools.DomToGroovy` as shown in
 the following example:
 
+`DomToGroovy` is an authoring aid. It produces builder code to read and edit,
+so the generated source is a starting point rather than a finished script.
+The example below evaluates it directly to show that the round trip works;
+do that only for documents you control, since evaluating generated source
+runs whatever the document produced.
+
 [source,groovy]
-.Building MarkupBuilder from DOMToGroovy
+.Building MarkupBuilder from DomToGroovy
 ----
 include::../test/UserGuideMarkupBuilderTest.groovy[tags=testDOMToGroovy,indent=0]
 ----
 
-<1> Creating `DOMToGroovy` instance
+<1> Creating `DomToGroovy` instance
 <2> Converts the XML to `MarkupBuilder` calls which are available in the output `StringWriter`
 <3> Using `output` variable to create the whole MarkupBuilder
 <4> Back to XML string
