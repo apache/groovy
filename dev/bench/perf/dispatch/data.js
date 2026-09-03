@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788333218913,
+  "lastUpdate": 1788419494889,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -3109,6 +3109,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.groovyRuntime",
             "value": 1514,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "0a2d6ac61f035d5875efbe3f2fd1f32482ad93a7",
+          "message": "GROOVY-12347: DomToGroovy: escape document text on its way into generated source\n\nThree places wrote document content into the generated script without\nescaping it, so text that was ordinary in XML became syntax in Groovy.\n\nprintQuoted escaped the single-line branch and not the triple-quoted one,\nwhere a backslash still starts an escape sequence: XML text holding a\nWindows path round-tripped as a tab, a newline and the remains of the\npath, and text holding three quotes produced source that did not compile.\nIt now escapes backslashes, and quotes only where they would run into the\nclosing delimiter, so apostrophes in prose stay readable.\n\nprintComment wrote a comment's data into a Groovy block comment, so a\ncomment carrying the terminator closed it early and left the rest of the\ndocument standing as code. The terminator is now broken up.\n\nprintPI placed a processing instruction's target and data between quotes\nit did not escape. Both now go through printQuoted, which quotes them,\nescapes them, and handles data spanning lines.\n\nThe class javadoc described a SAX handler; the class takes a DOM Document\nand produces MarkupBuilder calls to read and edit. It now says so, and\nsays that generating from a document and evaluating the result runs\nwhatever that document produced.\n\nThe user guide offered the conversion as a way to \"automate generation\"\nand demonstrated evaluating the output directly. It now presents the tool\nas an authoring aid whose output is a starting point, and qualifies the\nevaluation in the example. Its class name and package were left over from\nbefore the 2019 rename.",
+          "timestamp": "2026-09-03T04:13:05Z",
+          "url": "https://github.com/apache/groovy/commit/0a2d6ac61f035d5875efbe3f2fd1f32482ad93a7"
+        },
+        "date": 1788419494221,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4029,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 457,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 879,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1517,
             "unit": "classes"
           },
           {
