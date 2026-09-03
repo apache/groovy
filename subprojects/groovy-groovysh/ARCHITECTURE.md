@@ -51,6 +51,15 @@ forks of JLine sources:
 Plus `GroovyPosixCommands.java`, similarly derived but diverged
 enough from upstream that it is Apache-licensed in-tree.
 
+**Fork bases.** The five BSD-licensed files were forked in
+`ed73546ad9` (2025-06-23), when this project depended on JLine
+**3.30.4**; `GroovyPosixCommands.java` was forked in `4cc59b2ba1`
+(2025-08-19), against **3.30.5**. Record the base here whenever a
+file is added or re-derived, because the sync procedure below
+cannot be carried out without it — and note the gap to the version
+in `versions.properties`, which is what the forks have to be read
+against.
+
 These are kept in-tree because the upstream artefact
 (`org.jline:jline-groovy`) depends on `org.apache.groovy:groovy`,
 which would create a circular dependency. If our customisations
@@ -63,11 +72,26 @@ Provenance for the BSD-licensed vendored files is in
 [`LICENSE`](LICENSE).
 
 **Syncing the forks with upstream:** diff against the *fork-base*
-tag (the JLine version we originally forked from), not just
-current upstream. Otherwise our renames look like upstream
-additions. The small files are tightly coupled to the
+tag recorded above, not just current upstream. Otherwise our
+renames look like upstream additions. Concretely, for each file:
+
+    git -C <jline-checkout> diff jline-3.30.4 4.4.1 -- <upstream/path>
+
+and read that against our copy, rather than diffing the two copies
+directly. Upstream renamed its tags at the 4.0 boundary — 3.x
+releases are tagged `jline-3.30.4`, 4.x ones are the bare version
+`4.4.1` — so the fork-base tag and the target tag are not spelled
+the same way. The small files are tightly coupled to the
 `GroovyEngine` deep fork — they reference `GroovyEngine.Format`
 etc. — so don't delete one without re-deriving the coupling.
+
+The forks receive no upstream fix automatically, and the gap is
+already wide enough to matter: jline#2200, which strips control
+characters from file names in the posix builtins, shipped in 4.4.1
+and had to be ported by hand because `Main.posixCommand` dispatches
+to `GroovyPosixCommands` rather than to JLine's own implementation.
+Treat a JLine bump as landing new *dependency* code, not as
+updating the forks.
 
 ## Test infrastructure
 
