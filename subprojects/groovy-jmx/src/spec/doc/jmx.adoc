@@ -411,17 +411,26 @@ include::../test/JmxTest.groovy[tags=connector_server,indent=0]
 
 The snippet above returns an RMI connector that will start listening on port 9000. By default, the builder will internally generate URL **"service:jmx:rmi:///jndi/rmi://localhost:9000/jmxrmi"**.
 
-__NOTE: Sadly you are as likely to get something like the following when attempting to run the previous snippet of code (example is incomplete, see below):__
+The snippet on its own fails, because it does not create the RMI registry the connector binds
+its stub into:
 
 ----
-Caught: java.io.IOException: Cannot bind to URL [rmi://localhost:9000/jmxrmi]: javax.naming.ServiceUnavailableException [Root exception is java.rmi.ConnectException: Connection refused to host: localhost; nested exception is:
-?????? java.net.ConnectException: Connection refused]
-??
+Caught: java.io.IOException: Cannot bind to URL [rmi://localhost:9000/jmxrmi]:
+javax.naming.ServiceUnavailableException [Root exception is java.rmi.ConnectException:
+Connection refused to host: localhost; ...]
 ----
 
-__This occurs on Mac and Linux (CentOS 5) with Groovy 1.6 installed. Perhaps there were assumptions made about the configuration of the /etc/hosts file?__
+NOTE: __The corrected example, which creates the registry first, is shown below.__
 
-NOTE: __The correct example is shown below.__
+The connector listens on the host it was given, which is `localhost` unless you say otherwise,
+so by default only clients on the same machine can reach it. Pass a `host` to listen more
+widely -- `0.0.0.0` for every interface, or a single address to pick one.
+
+WARNING: A connector exposes the MBean server, and the default MBean server is the platform
+one, whose beans can dump the heap and run diagnostic commands. It authenticates nobody unless
+you configure it to, so a connector reachable from other hosts hands that to any peer that can
+reach the port. `JmxBuilder` is a development and experimentation aid; treat a connector left
+open the way you would treat an open shell on the host.
 
 **Connector Example (Corrected) - Connector Server**
 
