@@ -52,6 +52,63 @@ class JmxServerConnectorFactoryTest {
         JmxConnectorHelper.destroyRmiRegistry(rmi.registry)
     }
 
+    // GROOVY-12348: the exported RMI object must listen where the connector was asked to,
+    // rather than on every interface whatever host the service URL names.
+    @Test
+    void testConnectorConfinedToLoopbackByDefault() {
+        def factory = new JmxServerConnectorFactory()
+        def env = factory.confineToHost(null, 'localhost')
+
+        def ssf = env.get(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE)
+        assert ssf != null
+        def socket = ssf.createServerSocket(0)
+        try {
+            assert socket.inetAddress.loopbackAddress
+        } finally {
+            socket.close()
+        }
+    }
+
+    @Test
+    void testConfinementSuppliesBothHalves() {
+        // the stub carries the client factory; without it a client dials the host RMI
+        // advertises rather than the bound one, and finds nothing listening
+        def env = new JmxServerConnectorFactory().confineToHost(null, 'localhost')
+        assert env.get(RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE) != null
+        assert env.get(RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE) instanceof Serializable
+    }
+
+    @Test
+    void testWildcardHostIsLeftUnconfined() {
+        def env = new JmxServerConnectorFactory().confineToHost(null, '0.0.0.0')
+        assert env.get(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE) == null
+    }
+
+    @Test
+    void testSuppliedSocketFactoryIsKept() {
+        def mine = new SslRMIServerSocketFactory()
+        def env = new JmxServerConnectorFactory().confineToHost(
+                [(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE): mine], 'localhost')
+        assert env.get(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE).is(mine)
+    }
+
+    @Test
+    void testLoopbackConnectorStillServesLocalClients() {
+        def connector = builder.connectorServer(port: rmi.port)
+        connector.start()
+        try {
+            def client = JMXConnectorFactory.connect(
+                    new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:${rmi.port}/jmxrmi"), null)
+            try {
+                assert client.MBeanServerConnection.getMBeanCount() > 0
+            } finally {
+                client.close()
+            }
+        } finally {
+            connector.stop()
+        }
+    }
+
     // GROOVY-12270: authentication properties must land on the keys a connector server
     // consumes, not on the JDK management agent's names, which it ignores.
     @Test
