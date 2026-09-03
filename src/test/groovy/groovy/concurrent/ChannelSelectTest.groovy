@@ -1108,4 +1108,363 @@ final class ChannelSelectTest {
             assert !buffer.alive
         '''
     }
+
+    // GROOVY-12343: a deadline as a branch of the select
+
+    @Test
+    void testTimerBranchWinsAQuietSelect() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelSelect
+            import java.time.Instant
+
+            def work = AsyncChannel.create(4)
+            def before = Instant.now()
+            def result = await ChannelSelect.from(work, AsyncChannel.after(50)).select()
+
+            assert result.index == 1
+            assert result.value instanceof Instant
+            assert !result.value.isBefore(before)
+            assert work.toString().contains('waitingReceivers=0')
+        '''
+    }
+
+    @Test
+    void testDataBeatsTheTimerAndTheTimerStillFires() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelClosedException
+            import groovy.concurrent.ChannelSelect
+            import java.time.Instant
+
+            def work = AsyncChannel.create(4)
+            def timer = AsyncChannel.after(100)
+            async { Thread.sleep(20); work.send('done') }
+
+            def result = await ChannelSelect.from(work, timer).select()
+            assert result.index == 0 && result.value == 'done'
+
+            // the losing timer was withdrawn, not consumed: it fires all the
+            // same, holds its instant until received, and then closes
+            assert !timer.closed
+            def fired = await timer.receive()
+            assert fired instanceof Instant
+            assert timer.closed
+            try {
+                await timer.receive()
+                assert false
+            } catch (ChannelClosedException expected) {
+            }
+        '''
+    }
+
+    @Test
+    void testPerBranchDeadlines() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def fast = AsyncChannel.create()
+            def slow = AsyncChannel.create()
+            def sel = offers(receive(fast), receive(AsyncChannel.after(30)),
+                             receive(slow), receive(AsyncChannel.after(2000)))
+
+            def result = await sel.select()
+            assert result.index == 1
+        '''
+    }
+
+    @Test
+    void testTimerCreatedOnceIsAFixedDeadlineAcrossSelects() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelSelect
+
+            def work = AsyncChannel.create(16)
+            def deadline = AsyncChannel.after(200)
+            def sel = ChannelSelect.from(work, deadline)
+
+            async {
+                for (i in 0..<3) { work.send(i); Thread.sleep(10) }
+            }
+
+            def received = []
+            while (true) {
+                def result = await sel.select()
+                if (result.index == 1) break
+                received << result.value
+            }
+            assert received == [0, 1, 2]
+            assert deadline.closed
+        '''
+    }
+
+    @Test
+    void testGuardedTimerIsNotRegisteredWhileItsGuardIsOff() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def work = AsyncChannel.create(4)
+            def timer = AsyncChannel.after(10)
+            boolean armed = false
+            def sel = offers(receive(work), receive(timer).when { armed })
+
+            Thread.sleep(30)     // the timer has fired and holds its instant
+            async { Thread.sleep(20); work.send('x') }
+            def first = await sel.select()
+            assert first.index == 0 && first.value == 'x'
+            assert timer.bufferedSize == 1
+
+            armed = true
+            def second = await sel.select()
+            assert second.index == 1
+            assert timer.bufferedSize == 0
+        '''
+    }
+
+    @Test
+    void testFairSelectServesAFiredTimerLikeAnyReadyBranch() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelSelect
+
+            def busy = AsyncChannel.create(8)
+            for (i in 0..<8) busy.send(i)
+            def timer = AsyncChannel.after(0)
+            Thread.sleep(30)
+
+            // busy never runs dry, yet the fired timer is served within n calls
+            def sel = ChannelSelect.from(busy, timer).fair()
+            def indices = (0..<4).collect { (await sel.select()).index }
+            assert indices.count { it == 1 } == 1
+        '''
+    }
+
+    @Test
+    void testClosingATimerBeforeItFiresCancelsIt() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelClosedException
+
+            def timer = AsyncChannel.after(50)
+            assert timer.close()
+            assert !timer.close()
+            Thread.sleep(100)
+            assert timer.bufferedSize == 0
+            try {
+                await timer.receive()
+                assert false
+            } catch (ChannelClosedException expected) {
+            }
+        '''
+    }
+
+    @Test
+    void testDurationAndNegativeDelays() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import java.time.Duration
+            import java.time.Instant
+
+            def before = Instant.now()
+            def byDuration = await AsyncChannel.after(Duration.ofMillis(20)).receive()
+            assert byDuration instanceof Instant && !byDuration.isBefore(before)
+
+            // a deadline that has already passed is created already fired
+            def overdue = AsyncChannel.after(-1000)
+            assert overdue.bufferedSize == 1 && overdue.closed
+            assert (await overdue.receive()) instanceof Instant
+            def zero = AsyncChannel.after(Duration.ZERO)
+            assert zero.bufferedSize == 1 && zero.closed
+            assert (await zero.receive()) instanceof Instant
+
+            try {
+                AsyncChannel.after((Duration) null)
+                assert false
+            } catch (NullPointerException expected) {
+            }
+        '''
+    }
+
+    // GROOVY-12343: the timer offer re-arms on every select call
+
+    @Test
+    void testTimerOfferWinsAQuietSelect() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import java.time.Instant
+            import static groovy.concurrent.ChannelSelect.*
+
+            def work = AsyncChannel.create(4)
+            def before = Instant.now()
+            def result = await offers(receive(work), after(50)).select()
+
+            assert result.index == 1
+            assert result.timeout && !result.send
+            assert result.channel == null
+            assert result.value instanceof Instant
+            assert !result.value.isBefore(before)
+            assert result.toString().startsWith('SelectResult[timeout=1, at=')
+            assert work.toString().contains('waitingReceivers=0')
+        '''
+    }
+
+    @Test
+    void testTimerOfferReArmsOnEveryRound() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def work = AsyncChannel.create()
+            def sel = offers(receive(work), after(150))
+
+            // each round's value arrives well inside the round's own deadline
+            // but well past the first round's: a fixed deadline would time out
+            async {
+                for (i in 0..<4) { Thread.sleep(60); work.send(i) }
+            }
+            def received = (0..<4).collect {
+                def result = await sel.select()
+                assert !result.timeout && result.channel.is(work)
+                result.value
+            }
+            assert received == [0, 1, 2, 3]
+
+            // and a round in which nothing arrives times out
+            def result = await sel.select()
+            assert result.timeout && result.index == 1
+        '''
+    }
+
+    @Test
+    void testElapsedTimerOfferIsReadyAtRegistrationAndThePolicyDecides() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def work = AsyncChannel.create(4)
+            work.send('ready')
+
+            // listed last, after(0) is Go's default clause: a ready channel wins...
+            def result = await offers(receive(work), after(0)).select()
+            assert result.index == 0 && result.value == 'ready'
+
+            // ...and with nothing ready the select completes without waiting
+            def polled = offers(receive(work), after(0)).select()
+            assert polled.toCompletableFuture().isDone()
+            assert (await polled).timeout
+            assert work.toString().contains('waitingReceivers=0')
+
+            // listed first, the elapsed timer is the ready offer with priority
+            work.send('ready')
+            result = await offers(after(0), receive(work)).select()
+            assert result.timeout && result.index == 0
+            assert work.bufferedSize == 1
+        '''
+    }
+
+    @Test
+    void testFairSelectRotatesOverAnElapsedTimerOffer() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def work = AsyncChannel.create(8)
+            for (i in 0..<8) work.send(i)
+
+            def sel = offers(receive(work), after(0)).fair()
+            def indices = (0..<4).collect { (await sel.select()).index }
+            assert indices == [0, 1, 0, 1]
+            assert work.bufferedSize == 6
+        '''
+    }
+
+    @Test
+    void testFairRotationSurvivesATimedOutRound() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def a = AsyncChannel.create(4)
+            def c = AsyncChannel.create(4)
+            def sel = offers(receive(a), after(20), receive(c)).fair()
+
+            a.send('a1'); c.send('c1')
+            assert (await sel.select()).index == 0      // starts at a
+            assert (await sel.select()).index == 2      // rotation: c, the timer is not ready
+            assert (await sel.select()).timeout          // nothing ready: the timer fires
+
+            // the rotation continues from the timer's branch, so c is served
+            // before a even though a is listed first
+            a.send('a2'); c.send('c2')
+            assert (await sel.select()).index == 2
+            assert (await sel.select()).index == 0
+        '''
+    }
+
+    @Test
+    void testGuardedTimerOfferArmsNothing() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import java.util.concurrent.TimeoutException
+            import static groovy.concurrent.ChannelSelect.*
+
+            def work = AsyncChannel.create(4)
+            boolean armed = false
+            def sel = offers(receive(work), after(10).when { armed })
+
+            // with the timer guarded off the select waits on work alone
+            try {
+                await sel.select().orTimeoutMillis(100)
+                assert false
+            } catch (TimeoutException expected) {
+            }
+            assert work.toString().contains('waitingReceivers=0')
+
+            armed = true
+            def result = await sel.select()
+            assert result.timeout && result.index == 1
+        '''
+    }
+
+    @Test
+    void testPerBranchTimerOffersAndDurations() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import java.time.Duration
+            import static groovy.concurrent.ChannelSelect.*
+
+            def fast = AsyncChannel.create()
+            def slow = AsyncChannel.create()
+            def sel = offers(receive(fast), after(Duration.ofMillis(30)),
+                             receive(slow), after(Duration.ofSeconds(2)))
+
+            def result = await sel.select()
+            assert result.timeout && result.index == 1
+
+            try {
+                after((Duration) null)
+                assert false
+            } catch (NullPointerException expected) {
+            }
+        '''
+    }
+
+    @Test
+    void testTimerOfferWithinPositionalPreconditions() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import static groovy.concurrent.ChannelSelect.*
+
+            def work = AsyncChannel.create(4)
+            def sel = offers(receive(work), after(10))
+            work.send('x')
+
+            // the timer masked off: the value is taken
+            assert (await sel.select(true, false)).value == 'x'
+            // work masked off: only the timer can commit
+            assert (await sel.select(false, true)).timeout
+        '''
+    }
 }

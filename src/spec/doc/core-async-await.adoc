@@ -529,6 +529,12 @@ type, e.g. `AtomicInteger` for a shared counter, or thread-safe types from
 | `AsyncChannel.create(n)`
 | Create a buffered (or unbuffered) channel for inter-task communication.
 
+| `ChannelSelect.after(ms)`
+| Timer offer: a `ChannelSelect` branch that re-arms each round and commits with the `Instant` it fired.
+
+| `AsyncChannel.after(ms)`
+| Timer channel: delivers the `Instant` it fired, then closes. A fixed deadline as a `ChannelSelect` branch.
+
 | `AsyncScope.withScope { ... }`
 | Structured concurrency — all children complete (or are cancelled) on scope exit.
 

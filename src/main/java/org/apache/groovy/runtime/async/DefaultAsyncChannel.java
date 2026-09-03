@@ -23,6 +23,7 @@ import groovy.concurrent.Awaitable;
 import groovy.concurrent.ChannelClosedException;
 import groovy.transform.Internal;
 
+import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
@@ -30,6 +31,8 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -66,6 +69,8 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
     private final Deque<PendingOp<T>> waitingReceivers = new ConcurrentLinkedDeque<>();
     private final int capacity;
     private volatile boolean closed;
+    /** run once, outside the lock, by the call that closes the channel; {@code null} for none */
+    private volatile Runnable onClose;
 
     public DefaultAsyncChannel() {
         this(0);
@@ -76,6 +81,41 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
             throw new IllegalArgumentException("channel capacity must not be negative: " + capacity);
         }
         this.capacity = capacity;
+    }
+
+    /**
+     * Creates a timer channel: a capacity-1 channel that delivers one value,
+     * the {@link Instant} at which it fired, once {@code delay} has elapsed
+     * from this call, and then closes. Closing the channel before it fires
+     * cancels the timer, so a timer that is no longer wanted holds no
+     * scheduler slot. A delay that is not positive has already elapsed, so
+     * the channel is returned already holding its instant and closed: it is
+     * ready to a receiver or a select at once, with no scheduler hop.
+     * <p>
+     * Implementation of {@link AsyncChannel#after(long)}; not part of the
+     * channel contract.
+     *
+     * @param delay how long to wait before firing
+     * @param unit  the unit of {@code delay}
+     * @return the timer channel
+     */
+    @Internal
+    public static DefaultAsyncChannel<Instant> after(long delay, TimeUnit unit) {
+        Objects.requireNonNull(unit, "unit must not be null");
+        DefaultAsyncChannel<Instant> timer = new DefaultAsyncChannel<>(1);
+        if (delay <= 0) {
+            timer.send(Instant.now());
+            timer.close();
+            return timer;
+        }
+        ScheduledFuture<?> firing = AsyncExecutors.getScheduler().schedule(() -> {
+            // the only sender into a capacity-1 buffer: the send buffers or
+            // delivers at once, never parks, and only fails if already closed
+            timer.send(Instant.now());
+            timer.close();
+        }, delay, unit);
+        timer.onClose = () -> firing.cancel(false);
+        return timer;
     }
 
     // ---- Query ----------------------------------------------------------
@@ -251,11 +291,13 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
             for (PendingSend<T> sender; (sender = waitingSenders.pollFirst()) != null; ) {
                 sender.completion.completeExceptionally(closedForSend());
             }
-
-            return true;
         } finally {
             lock.unlock();
         }
+
+        Runnable hook = onClose;
+        if (hook != null) hook.run();
+        return true;
     }
 
     // ---- Iterable (for await / for loop) --------------------------------

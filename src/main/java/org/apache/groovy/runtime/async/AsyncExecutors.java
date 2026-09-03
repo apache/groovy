@@ -25,6 +25,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -86,12 +87,7 @@ final class AsyncExecutors {
     private static final AtomicReference<Executor> defaultExecutor =
             new AtomicReference<>(createDefaultExecutor());
 
-    private static final ScheduledExecutorService SCHEDULER =
-            Executors.newSingleThreadScheduledExecutor(r -> {
-                Thread t = new Thread(r, "groovy-async-scheduler");
-                t.setDaemon(true);
-                return t;
-            });
+    private static final ScheduledExecutorService SCHEDULER = createScheduler();
 
     private AsyncExecutors() { }
 
@@ -121,6 +117,24 @@ final class AsyncExecutors {
 
     private static Executor createDefaultExecutor() {
         return VIRTUAL_THREADS_AVAILABLE ? VIRTUAL_THREAD_EXECUTOR : FALLBACK_EXECUTOR;
+    }
+
+    /**
+     * A single daemon scheduler thread. Cancelled tasks are removed from
+     * the delay queue at once rather than on expiry: a timeout that its task
+     * beat, or a timer branch of a select that lost its round, otherwise
+     * leaves a stale entry queued for the whole of its delay, and a busy
+     * loop with long deadlines would accumulate them. The handle is
+     * unconfigurable, as the {@link Executors} factory's is.
+     */
+    private static ScheduledExecutorService createScheduler() {
+        ScheduledThreadPoolExecutor scheduler = new ScheduledThreadPoolExecutor(1, r -> {
+            Thread t = new Thread(r, "groovy-async-scheduler");
+            t.setDaemon(true);
+            return t;
+        });
+        scheduler.setRemoveOnCancelPolicy(true);
+        return Executors.unconfigurableScheduledExecutorService(scheduler);
     }
 
     private static int getIntegerSafe(String name, int defaultValue) {
