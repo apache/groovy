@@ -37,7 +37,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.Date;
 import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A generic servlet for serving (mostly HTML) templates.
@@ -187,7 +187,7 @@ public class TemplateServlet extends AbstractHttpServlet {
      * Create new TemplateServlet.
      */
     public TemplateServlet() {
-        this.cache = new WeakHashMap<String, TemplateCacheEntry>();
+        this.cache = new ConcurrentHashMap<String, TemplateCacheEntry>();
         this.engine = null; // assigned later by init()
         this.generateBy = true; // may be changed by init()
         this.fileEncodingParamVal = null; // may be changed by init()
@@ -281,7 +281,7 @@ public class TemplateServlet extends AbstractHttpServlet {
      * Gets the template created by the underlying engine parsing the request.
      *
      * <p>
-     * This method looks up a simple (weak) hash map for an existing template
+     * This method looks up a simple concurrent hash map for an existing template
      * object that matches the source file. If the source file didn't change in
      * length and its last modified stamp hasn't changed compared to a precompiled
      * template object, this template is used. Otherwise, there is no or an
@@ -315,7 +315,7 @@ public class TemplateServlet extends AbstractHttpServlet {
      * Gets the template created by the underlying engine parsing the request.
      *
      * <p>
-     * This method looks up a simple (weak) hash map for an existing template
+     * This method looks up a simple concurrent hash map for an existing template
      * object that matches the source URL. If there is no cache entry, a new one is
      * created by the underlying template engine. This new instance is put
      * to the cache for consecutive calls.

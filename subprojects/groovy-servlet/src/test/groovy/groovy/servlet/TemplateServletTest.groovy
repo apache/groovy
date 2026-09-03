@@ -69,6 +69,34 @@ class TemplateServletTest {
         assert responseData.status == null
     }
 
+    @Test
+    void test_compiled_template_is_cached_across_garbage_collection() {
+        def templateFile = new File(temporaryFolder, 'cached.gsp').tap { write 'hello' }
+        def url = templateFile.toURI().toURL()
+        servlet.init(mockServletConfigForUrlResource(url))
+
+        def first = servlet.getTemplate(url)
+        forceGarbageCollection()
+        def second = servlet.getTemplate(url)
+
+        assert second.is(first)
+    }
+
+    /**
+     * The cache key is a fresh string on every lookup and nothing outside the cache
+     * refers to it, so a cache holding its keys weakly discards every entry as soon
+     * as the collector runs. Force a collection to tell such a cache apart from one
+     * that retains what it stored.
+     */
+    private static void forceGarbageCollection() {
+        def canary = new java.lang.ref.WeakReference<Object>(new Object())
+        for (int i = 0; canary.get() != null && i < 100; i++) {
+            System.gc()
+            Thread.sleep(10)
+        }
+        assert canary.get() == null : 'could not force a garbage collection'
+    }
+
     private mockRequest() {
         return [
                 getAttribute     : { null },
