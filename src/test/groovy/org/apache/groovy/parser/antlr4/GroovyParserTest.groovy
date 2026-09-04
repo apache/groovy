@@ -489,6 +489,11 @@ final class GroovyParserTest {
     }
 
     @Test
+    void 'groovy core - block comments'() {
+        doRunAndTestAntlr4('core/Comment_01x.groovy')
+    }
+
+    @Test
     void 'groovy core - var'() {
         doRunAndTestAntlr4('core/Var_01x.groovy')
     }

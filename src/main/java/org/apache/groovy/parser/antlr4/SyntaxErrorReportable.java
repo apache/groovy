@@ -56,6 +56,13 @@ public interface SyntaxErrorReportable {
     default void throwSyntaxError(String msg, int offset, boolean toAttachPositionInfo) {
         throwSyntaxError(msg, Tuple.tuple(0, offset), toAttachPositionInfo);
     }
+    /**
+     * @param toAttachPositionInfo if {@code true}, append {@code " @ line N, column M"}
+     *                             to the exception message. Leave {@code false} when the
+     *                             error will be wrapped in {@link org.codehaus.groovy.syntax.SyntaxException},
+     *                             which already appends the same location (otherwise the
+     *                             displayed message repeats the position).
+     */
     default void throwSyntaxError(String msg, Tuple2<Integer, Integer> offset, boolean toAttachPositionInfo) {
         PositionInfo positionInfo = this.genPositionInfo(offset);
         throw new GroovySyntaxError(msg + (toAttachPositionInfo ? positionInfo.toString() : ""),

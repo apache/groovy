@@ -125,6 +125,12 @@ include::../test/SyntaxTest.groovy[tags=reserved_keywords,indent=0]
 |===
 
 Of these, `const`, `goto`, `strictfp`, and `threadsafe` are not currently in use.
+Using `const`, `goto`, or `threadsafe` is a compilation error: the diagnostic
+names the reserved keyword and, for `const`, points at `val` (locals; preferred
+over `final` in Groovy 6) or `static final` (class constants). A `default:` or
+`default ->` clause outside a `switch` is reported as `'default' outside of switch`.
+Unexpected Unicode spaces (for example a no-break space copied from a word
+processor) are named with a `\u` escape rather than an empty-looking glyph.
 
 The reserved keywords can't in general be used for variable, field and method names.
 
