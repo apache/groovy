@@ -18,6 +18,9 @@
  */
 package groovy.servlet
 
+import groovy.text.SimpleTemplateEngine
+import groovy.text.Template
+import groovy.text.TemplateEngine
 import jakarta.servlet.ServletConfig
 import jakarta.servlet.ServletContext
 import jakarta.servlet.http.HttpServletRequest
@@ -39,7 +42,7 @@ class TemplateServletTest {
     }
 
     @Test
-    void test_service_for_existing_resource() {
+    void servesAnExistingResource() {
         def templateFile = new File(temporaryFolder, 'template.gsp').tap { createNewFile() }
         def url = templateFile.toURI().toURL()
         def servletConfig = mockServletConfigForUrlResource(url)
@@ -55,7 +58,7 @@ class TemplateServletTest {
     }
 
     @Test
-    void test_service_for_missing_resource() {
+    void sendsNotFoundForAMissingResource() {
         def url = null
         def servletConfig = mockServletConfigForUrlResource(url)
         HttpServletRequest request = mockRequest()
@@ -67,6 +70,58 @@ class TemplateServletTest {
         assert responseData.error == HttpServletResponse.SC_NOT_FOUND
         assert responseData.writer.toString() == ''
         assert responseData.status == null
+    }
+
+    @Test
+    void templateIsNotCompiledAgainAfterGarbageCollection() {
+        def templateFile = new File(temporaryFolder, 'cached.gsp').tap { write 'hello' }
+        def url = templateFile.toURI().toURL()
+        def servlet = new CountingServlet()
+        servlet.init(mockServletConfigForUrlResource(url))
+
+        servlet.getTemplate(url)
+        forceGarbageCollection()
+        servlet.getTemplate(url)
+
+        // the cache this replaced held its keys weakly and nothing else referred to them, so the
+        // entry went at the collection and the second request compiled the template again
+        assert servlet.engine.compilations == 1
+    }
+
+    /** Reports how many times a template was compiled, which is what the cache exists to avoid. */
+    private static class CountingEngine extends TemplateEngine {
+        private final TemplateEngine delegate = new SimpleTemplateEngine()
+        int compilations = 0
+
+        @Override
+        Template createTemplate(Reader reader) {
+            compilations++
+            delegate.createTemplate(reader)
+        }
+    }
+
+    private static class CountingServlet extends TemplateServlet {
+        final CountingEngine engine = new CountingEngine()
+
+        @Override
+        protected TemplateEngine initTemplateEngine(ServletConfig config) {
+            engine
+        }
+    }
+
+    /**
+     * The cache key is a fresh string on every lookup and nothing outside the cache
+     * refers to it, so a cache holding its keys weakly discards every entry as soon
+     * as the collector runs. Force a collection to tell such a cache apart from one
+     * that retains what it stored.
+     */
+    private static void forceGarbageCollection() {
+        def canary = new java.lang.ref.WeakReference<Object>(new Object())
+        for (int i = 0; canary.get() != null && i < 100; i++) {
+            System.gc()
+            Thread.sleep(10)
+        }
+        assert canary.get() == null : 'could not force a garbage collection'
     }
 
     private mockRequest() {
