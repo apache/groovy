@@ -70,8 +70,9 @@ It runs the given script once for every line a client sends, with the
 line available as the implicit `line` variable and the connection as `out` and
 `socket`. The listening socket is bound to the loopback address, so only clients on
 the same machine can connect. Supply a host to listen more widely -- `0.0.0.0:1960`
-for every interface, or a single address to pick one. The script is re-read for each
-connection, so editing it takes effect without a restart.
+for every interface, or a single address to pick one. The script is read once, when the
+listener starts, and recompiled for each connection so that one connection cannot leave
+state behind for the next; editing the file has no effect until the listener is restarted.
 
 WARNING: A listener bound beyond loopback accepts connections from any peer that can
 reach the port. Groovy performs no authentication and the connection is not encrypted,

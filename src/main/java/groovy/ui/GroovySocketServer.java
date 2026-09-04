@@ -168,17 +168,23 @@ public class GroovySocketServer implements Runnable {
             throw new IllegalArgumentException("Cannot listen on unresolved address: " + bindAddress);
         }
         this.bindAddress = bindAddress;
-        System.out.println("groovy is listening on " + describe(bindAddress));
-        if (!bindAddress.getAddress().isLoopbackAddress()) {
-            System.out.println("warning: this port accepts connections from other hosts and is not authenticated");
-        }
         new Thread(this).start();
     }
 
-    private static String describe(InetSocketAddress address) {
-        InetAddress host = address.getAddress();
+    /**
+     * Reports where the server is listening, once it is. Reporting the requested address before
+     * binding would announce a server that failed to start, and would name port 0 rather than the
+     * one the system chose for it.
+     *
+     * @param serverSocket the bound socket
+     */
+    private static void announce(ServerSocket serverSocket) {
+        InetAddress host = serverSocket.getInetAddress();
         String where = host.isAnyLocalAddress() ? "all interfaces" : host.getHostAddress();
-        return where + " port " + address.getPort();
+        System.out.println("groovy is listening on " + where + " port " + serverSocket.getLocalPort());
+        if (!host.isLoopbackAddress()) {
+            System.out.println("warning: this port accepts connections from other hosts and is not authenticated");
+        }
     }
 
     /**
@@ -188,14 +194,11 @@ public class GroovySocketServer implements Runnable {
     @Override
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(bindAddress.getPort(), 0, bindAddress.getAddress())) {
+            announce(serverSocket);
             while (true) {
-                // Create one script per socket connection.
-                // This is purposefully not caching the Script
-                // so that the script source file can be changed on the fly,
-                // as each connection is made to the server.
-                //FIXME: Groovy has other mechanisms specifically for watching to see if source code changes.
-                // We should probably be using that here.
-                // See also the comment about the fact we recompile a script that can't change.
+                // A script per connection, so that one connection cannot leave state behind for
+                // the next. The source itself is read once, when the code source is built, so
+                // this recompiles the same text every time rather than picking up an edit.
                 Script script = groovy.parse(source);
                 new GroovyClientConnection(script, autoOutput, serverSocket.accept());
             }
