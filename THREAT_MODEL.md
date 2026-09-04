@@ -463,8 +463,14 @@ which it holds, and what its violation would look like.
   mode that instantiates document-named classes, so parsing untrusted input
   does not itself construct gadget types. Verified for `JsonSlurper` (all
   four `JsonParserType` variants — `CHAR_BUFFER`, `INDEX_OVERLAY`,
-  `CHARACTER_SOURCE`, `LAX` — return only such values; the variant changes
-  only the parsing strategy) and for the untyped `parse(...)` paths of
+  `CHARACTER_SOURCE`, `LAX` — with one addition to the list of values:
+  `INDEX_OVERLAY` and `LAX` also return a date for a string in a full
+  ISO-8601 or JSON-date form, which the other two variants never do and
+  which `JsonSlurper` can be told not to do. That widens the list of values,
+  not this property: the date is built from a validated lexical form, never
+  from a class the document names, so no document chooses what gets
+  constructed. GROOVY-12352 turns that switch into a choice of which type to
+  produce) and for the untyped `parse(...)` paths of
   `YamlSlurper`, `TomlSlurper`, and `CsvSlurper`, which read via Jackson into
   untyped `Object`/`Map`/`List`. The YAML path notably uses Jackson's
   untyped binding (`YamlConverter`), **not** SnakeYAML's `Yaml.load()`, so
