@@ -57,8 +57,18 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>
  * Comments and processing instructions
  * will be removed as part of processing and special XML characters such as
- * &lt;, &gt;, &quot; and &apos; will be escaped using the respective XML notation.
+ * &lt;, &gt;, &quot; and &apos; <em>in the text of the template</em> will be escaped
+ * using the respective XML notation.
  * The output will also be indented using standard XML pretty printing.
+ * <p>
+ * That escaping is applied to the template as it is read, and deliberately not to the
+ * <code>${expression}</code> and <code>$variable</code> insertions, which have to survive
+ * as Groovy for the value to be computed at all. Whatever such an insertion produces is
+ * written as it stands: a value carrying <code>&lt;</code> or <code>&amp;</code> reaches
+ * the output as markup rather than as text, and can leave it neither well-formed nor what
+ * the template intended. Escape a value that may contain either, with
+ * {@link groovy.xml.XmlUtil#escapeXml(String)} or otherwise, before binding it &mdash;
+ * always for a value that came from somewhere you do not control.
  * <p>
  * The xmlns namespace definition for <code>gsp:</code> tags will be removed
  * but other namespace definitions will be preserved (but may change to an
