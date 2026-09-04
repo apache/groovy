@@ -149,6 +149,38 @@ class GroovyPosixCommandsTest {
         assert plainStdout().readLines() == ['gamma']
     }
 
+    // GROOVY-12349: the directory scanner reports matches relative to its base directory,
+    // which is the shell's working directory rather than the JVM's. Leaving them relative
+    // made every glob fail once the two differed, which is to say after any /cd. The
+    // context here uses tempDir, so these exercise exactly that difference.
+    @Test
+    void globResolvesAgainstTheShellWorkingDirectory() {
+        Files.writeString(tempDir.resolve('top.txt'), 'x\n')
+        GroovyPosixCommands.ls(context(), ['ls', '*.txt'] as Object[])
+        assert plainStdout().contains('top.txt')
+    }
+
+    @Test
+    void globMatchesAcrossNestedDirectories() {
+        Files.createDirectories(tempDir.resolve('a/b'))
+        Files.writeString(tempDir.resolve('top.txt'), 'x\n')
+        Files.writeString(tempDir.resolve('a/mid.txt'), 'x\n')
+        Files.writeString(tempDir.resolve('a/b/deep.txt'), 'x\n')
+        GroovyPosixCommands.ls(context(), ['ls', '**/*.txt'] as Object[])
+        String shown = plainStdout()
+        assert shown.contains('deep.txt') && shown.contains('mid.txt') && shown.contains('top.txt')
+    }
+
+    @Test
+    void globWithADirectoryPrefixMatchesOnlyThere() {
+        Files.createDirectories(tempDir.resolve('a'))
+        Files.writeString(tempDir.resolve('top.txt'), 'x\n')
+        Files.writeString(tempDir.resolve('a/mid.txt'), 'x\n')
+        GroovyPosixCommands.ls(context(), ['ls', 'a/*.txt'] as Object[])
+        String shown = plainStdout()
+        assert shown.contains('mid.txt') && !shown.contains('top.txt')
+    }
+
     // GROOVY-12341
     @Test
     void lsStripsControlCharactersFromFileNames() {

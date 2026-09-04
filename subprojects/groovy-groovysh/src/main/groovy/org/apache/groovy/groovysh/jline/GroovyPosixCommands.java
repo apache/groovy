@@ -1309,14 +1309,16 @@ public class GroovyPosixCommands {
             String[] includedFiles = (String[]) getIncludedFilesMethod.invoke(scanner);
 
             for (String file : includedFiles) {
-                result.add(Path.of(file));
+                // the scanner reports matches relative to its base directory, which is the
+                // shell's working directory and not necessarily the JVM's
+                result.add(context.currentDir().resolve(file));
             }
 
             Method getIncludedDirsMethod = directoryScannerClass.getMethod("getIncludedDirectories");
             String[] includedDirs = (String[]) getIncludedDirsMethod.invoke(scanner);
 
             for (String dir : includedDirs) {
-                result.add(Path.of(dir));
+                result.add(context.currentDir().resolve(dir));
             }
             return result;
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InstantiationException |
