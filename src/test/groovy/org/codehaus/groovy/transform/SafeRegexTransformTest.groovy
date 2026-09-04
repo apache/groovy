@@ -98,6 +98,32 @@ class SafeRegexTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    void testClassLevelAnnotationCoversNestedAndAnonymousClasses() {
+        // inner classes are separate class nodes, so a walk of the annotated class alone
+        // leaves them unguarded while the annotation reads as though it covered them
+        assertScript '''
+            import static groovy.test.GroovyAssert.shouldFail
+
+            @groovy.transform.SafeRegex(millis = 100)
+            class Outer {
+                static class Nested {
+                    boolean check(String input) { input ==~ /(.*,){16}X/ }
+                }
+                class Inner {
+                    boolean check(String input) { input ==~ /(.*,){16}X/ }
+                }
+                boolean viaAnonymous(String input) {
+                    new Object() { boolean go() { input ==~ /(.*,){16}X/ } }.go()
+                }
+            }
+
+            def evil = '1,' * 40
+            shouldFail(groovy.util.regex.RegexTimeoutException) { new Outer.Nested().check(evil) }
+            shouldFail(groovy.util.regex.RegexTimeoutException) { new Outer.Inner(new Outer()).check(evil) }
+            shouldFail(groovy.util.regex.RegexTimeoutException) { new Outer().viaAnonymous(evil) }
+        '''
+    }
+
     void testClosureWithinScopeIsRewritten() {
         assertScript '''
             import static groovy.test.GroovyAssert.shouldFail
