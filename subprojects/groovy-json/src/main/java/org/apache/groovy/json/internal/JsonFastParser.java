@@ -18,6 +18,8 @@
  */
 package org.apache.groovy.json.internal;
 
+import groovy.json.JsonDateHandling;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +32,7 @@ public class JsonFastParser extends JsonParserCharArray {
     private final boolean useValues;
     private final boolean chop;
     private final boolean lazyChop;
-    private final boolean checkDates;
+    private final JsonDateHandling dateHandling;
 
     /**
      * Creates a parser with eager value containers and lazy chopping.
@@ -66,7 +68,7 @@ public class JsonFastParser extends JsonParserCharArray {
      * @param lazyChop whether to defer chopping until values are accessed
      */
     public JsonFastParser(boolean useValues, boolean chop, boolean lazyChop) {
-        this(useValues, chop, lazyChop, true);
+        this(useValues, chop, lazyChop, JsonDateHandling.UTIL_DATE);
     }
 
     /**
@@ -75,13 +77,13 @@ public class JsonFastParser extends JsonParserCharArray {
      * @param useValues whether to use eager {@link Value} containers
      * @param chop whether to eagerly copy overlay slices
      * @param lazyChop whether to defer chopping until values are accessed
-     * @param checkDates whether strings should be tested for supported date formats
+     * @param dateHandling what a date-like string should become
      */
-    public JsonFastParser(boolean useValues, boolean chop, boolean lazyChop, boolean checkDates) {
+    public JsonFastParser(boolean useValues, boolean chop, boolean lazyChop, JsonDateHandling dateHandling) {
         this.useValues = useValues;
         this.chop = chop;
         this.lazyChop = lazyChop;
-        this.checkDates = checkDates;
+        this.dateHandling = dateHandling;
     }
 
     /**
@@ -267,7 +269,7 @@ public class JsonFastParser extends JsonParserCharArray {
             index = findEndQuote(array, index);
         }
 
-        Value value = new CharSequenceValue(chop, Type.STRING, startIndex, index, array, encoded, checkDates);
+        Value value = new CharSequenceValue(chop, Type.STRING, startIndex, index, array, encoded, dateHandling);
 
         if (index < array.length) {
             index++;

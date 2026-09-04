@@ -23,6 +23,9 @@ import groovy.json.JsonException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
+import groovy.json.JsonDateHandling;
+
+import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
@@ -38,7 +41,7 @@ import static org.apache.groovy.json.internal.Exceptions.die;
 public class CharSequenceValue implements Value, CharSequence {
 
     private final Type type;
-    private final boolean checkDate;
+    private final JsonDateHandling dateHandling;
     private final boolean decodeStrings;
 
     private char[] buffer;
@@ -56,12 +59,31 @@ public class CharSequenceValue implements Value, CharSequence {
      * @param endIndex slice end
      * @param buffer backing buffer
      * @param encoded whether string decoding should be applied
-     * @param checkDate whether string values should be probed for date conversion
+     * @param dateHandling what a date-like string should become
      */
+    /**
+     * Retained so that the boolean form of this constructor keeps working.
+     *
+     * @param chop whether to eagerly copy the slice out of the buffer
+     * @param type token type
+     * @param startIndex start index, inclusive
+     * @param endIndex end index, exclusive
+     * @param buffer buffer holding the token
+     * @param encoded whether the token carries escapes
+     * @param checkDate whether a date-like string should become a {@link Date}
+     * @deprecated use the constructor taking a {@link JsonDateHandling}
+     */
+    @Deprecated
     public CharSequenceValue(boolean chop, Type type, int startIndex, int endIndex, char[] buffer,
                              boolean encoded, boolean checkDate) {
+        this(chop, type, startIndex, endIndex, buffer, encoded,
+                checkDate ? JsonDateHandling.UTIL_DATE : JsonDateHandling.STRING);
+    }
+
+    public CharSequenceValue(boolean chop, Type type, int startIndex, int endIndex, char[] buffer,
+                             boolean encoded, JsonDateHandling dateHandling) {
         this.type = type;
-        this.checkDate = checkDate;
+        this.dateHandling = dateHandling;
         this.decodeStrings = encoded;
 
         if (chop) {
@@ -174,22 +196,28 @@ public class CharSequenceValue implements Value, CharSequence {
                     return longValue();
                 }
             case STRING:
-                if (checkDate) {
-                    Date date = null;
-                    if (Dates.isISO8601QuickCheck(buffer, startIndex, endIndex)) {
-                        if (Dates.isJsonDate(buffer, startIndex, endIndex)) {
-                            date = Dates.fromJsonDate(buffer, startIndex, endIndex);
-                        } else if (Dates.isISO8601(buffer, startIndex, endIndex)) {
-                            date = Dates.fromISO8601(buffer, startIndex, endIndex);
-                        } else {
+                if (dateHandling != JsonDateHandling.STRING
+                        && Dates.isISO8601QuickCheck(buffer, startIndex, endIndex)) {
+                    OffsetDateTime moment;
+                    if (Dates.isJsonDate(buffer, startIndex, endIndex)) {
+                        moment = Dates.offsetDateTimeFromJsonDate(buffer, startIndex, endIndex);
+                    } else if (Dates.isISO8601(buffer, startIndex, endIndex)) {
+                        moment = Dates.offsetDateTimeFromISO8601(buffer, startIndex, endIndex);
+                    } else {
+                        return stringValue();
+                    }
+                    if (moment == null) {
+                        return stringValue();
+                    }
+                    switch (dateHandling) {
+                        case OFFSET_DATE_TIME:
+                            return moment;
+                        case INSTANT:
+                            return moment.toInstant();
+                        case UTIL_DATE:
+                            return Date.from(moment.toInstant());
+                        default:
                             return stringValue();
-                        }
-
-                        if (date == null) {
-                            return stringValue();
-                        } else {
-                            return date;
-                        }
                     }
                 }
                 return stringValue();
@@ -264,7 +292,7 @@ public class CharSequenceValue implements Value, CharSequence {
      */
     @Override
     public final CharSequence subSequence(int start, int end) {
-        return new CharSequenceValue(false, type, start, end, buffer, decodeStrings, checkDate);
+        return new CharSequenceValue(false, type, start, end, buffer, decodeStrings, dateHandling);
     }
 
     /**

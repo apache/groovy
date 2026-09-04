@@ -100,7 +100,8 @@ public class JsonSlurper {
     private int maxSizeForInMemory = 2000000;
     private boolean chop = false;
     private boolean lazyChop = true;
-    private boolean checkDates = true;
+    private JsonDateHandling dateHandling = JsonDateHandling.UTIL_DATE;
+    private boolean dateHandlingChosen;
     private int maxNestingDepth = Integer.getInteger("groovy.json.maxNestingDepth", BaseJsonParser.DEFAULT_MAX_NESTING_DEPTH);
     private int maxNumberLength = Integer.getInteger("groovy.json.maxNumberLength", BaseJsonParser.DEFAULT_MAX_NUMBER_LENGTH);
 
@@ -203,21 +204,77 @@ public class JsonSlurper {
     }
 
     /**
-     * Determine if slurper will automatically parse strings it recognizes as dates. Index overlay only.
-     * @return on or off
+     * Whether a string in a full ISO-8601 or JSON-date form is returned as a
+     * {@link java.util.Date} rather than as a {@code String}. On by default.
+     * <p>
+     * This applies to {@link JsonParserType#INDEX_OVERLAY} and
+     * {@link JsonParserType#LAX}; the other two parser types return the string either
+     * way, so setting this has no effect on them. A date without a time, such as
+     * {@code "2026-09-04"}, is left as a {@code String} by all four.
+     *
+     * @return whether date-like strings are converted
      * @since 2.3
+     * @deprecated a boolean cannot say which type is wanted; use {@link #getDateHandling()}
      */
+    @Deprecated
     public boolean isCheckDates() {
-        return checkDates;
+        return dateHandling != JsonDateHandling.STRING;
     }
 
     /**
-     * Determine if slurper will automatically parse strings it recognizes as dates. Index overlay only.
-     * @return on or off
+     * Sets whether a string in a full ISO-8601 or JSON-date form is returned as a
+     * {@link java.util.Date} rather than as a {@code String}. On by default.
+     * <p>
+     * This applies to {@link JsonParserType#INDEX_OVERLAY} and
+     * {@link JsonParserType#LAX}; the other two parser types return the string either
+     * way, so setting this has no effect on them. Note that a {@code Date} is an
+     * instant, so an offset in the source is not preserved by the conversion.
+     *
+     * Has no effect once {@link #setDateHandling(JsonDateHandling)} has been called on this
+     * slurper, so that a choice made through the wider option is not undone by this one.
+     *
+     * @param checkDates whether date-like strings should be converted
+     * @return this slurper, for chaining
      * @since 2.3
+     * @deprecated a boolean cannot say which type is wanted; use
+     *             {@link #setDateHandling(JsonDateHandling)}
      */
+    @Deprecated
     public JsonSlurper setCheckDates(boolean checkDates) {
-        this.checkDates = checkDates;
+        if (!dateHandlingChosen) {
+            this.dateHandling = checkDates ? JsonDateHandling.UTIL_DATE : JsonDateHandling.STRING;
+        }
+        return this;
+    }
+
+    /**
+     * What a string in a full ISO-8601 or JSON-date form is turned into.
+     *
+     * @return the handling in effect
+     * @since 6.0.0
+     */
+    public JsonDateHandling getDateHandling() {
+        return dateHandling;
+    }
+
+    /**
+     * Sets what a string in a full ISO-8601 or JSON-date form is turned into. Defaults to
+     * {@link JsonDateHandling#UTIL_DATE}, which is what a slurper has always produced.
+     * <p>
+     * This applies to {@link JsonParserType#INDEX_OVERLAY} and {@link JsonParserType#LAX};
+     * the other two parser types return the string whatever is set here. A date carrying no
+     * time, such as {@code "2026-09-04"}, is left as a {@code String} by all four.
+     *
+     * Calling this also makes {@link #setCheckDates(boolean)} a no-op on this slurper,
+     * whichever order the two are called in.
+     *
+     * @param dateHandling what a date-like string should become
+     * @return this slurper, for chaining
+     * @since 6.0.0
+     */
+    public JsonSlurper setDateHandling(JsonDateHandling dateHandling) {
+        this.dateHandling = dateHandling == null ? JsonDateHandling.STRING : dateHandling;
+        this.dateHandlingChosen = true;
         return this;
     }
 
@@ -406,10 +463,10 @@ public class JsonSlurper {
 
     private JsonParser createParser() {
         BaseJsonParser parser = switch (type) {
-            case LAX -> new JsonParserLax(false, chop, lazyChop, checkDates);
+            case LAX -> new JsonParserLax(false, chop, lazyChop, dateHandling);
             case CHAR_BUFFER -> new JsonParserCharArray();
             case CHARACTER_SOURCE -> new JsonParserUsingCharacterSource();
-            case INDEX_OVERLAY -> new JsonFastParser(false, chop, lazyChop, checkDates);
+            case INDEX_OVERLAY -> new JsonFastParser(false, chop, lazyChop, dateHandling);
             default -> new JsonParserCharArray();
         };
         parser.setMaxNestingDepth(maxNestingDepth);

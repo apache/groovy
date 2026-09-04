@@ -19,6 +19,7 @@
 package json
 
 import groovy.json.JsonOutput
+import groovy.json.JsonDateHandling
 import groovy.json.JsonParserType
 import groovy.json.JsonSlurper
 import org.junit.jupiter.api.Test
@@ -78,6 +79,65 @@ class JsonTest {
         assert object.myList instanceof List
         assert object.myList == [4, 8, 15, 16, 23, 42]
         // end::set_type[]
+    }
+
+    @Test
+    void testCheckDates() {
+        // tag::check_dates[]
+        def json = '{"when":"2026-09-04T10:00:00.000Z"}'
+
+        assert new JsonSlurper(type: JsonParserType.INDEX_OVERLAY)
+                .parseText(json).when instanceof Date
+
+        assert new JsonSlurper(type: JsonParserType.INDEX_OVERLAY)
+                .setCheckDates(false)
+                .parseText(json).when instanceof String
+
+        assert new JsonSlurper(type: JsonParserType.CHAR_BUFFER)
+                .parseText(json).when instanceof String        // never converts
+        // end::check_dates[]
+
+        // tag::date_handling[]
+        def offsetJson = '{"when":"2026-09-04T10:00:00+10:00"}'
+        def slurp = { JsonDateHandling h ->
+            new JsonSlurper(type: JsonParserType.INDEX_OVERLAY)
+                    .setDateHandling(h)
+                    .parseText(offsetJson).when
+        }
+
+        assert slurp(JsonDateHandling.STRING) instanceof String
+        assert slurp(JsonDateHandling.UTIL_DATE) instanceof Date              // the default
+        assert slurp(JsonDateHandling.INSTANT) instanceof java.time.Instant
+
+        // only OFFSET_DATE_TIME keeps the offset the document carried
+        def odt = slurp(JsonDateHandling.OFFSET_DATE_TIME)
+        assert odt instanceof java.time.OffsetDateTime
+        assert odt.offset == java.time.ZoneOffset.ofHours(10)
+        // end::date_handling[]
+
+        // the deprecated boolean maps onto two of the four, on its own
+        def fresh = { new JsonSlurper(type: JsonParserType.INDEX_OVERLAY) }
+        assert fresh().dateHandling == JsonDateHandling.UTIL_DATE
+        assert fresh().setCheckDates(false).dateHandling == JsonDateHandling.STRING
+        assert fresh().setCheckDates(true).dateHandling == JsonDateHandling.UTIL_DATE
+
+        // but it cannot undo a choice made through setDateHandling, in either order
+        def wider = JsonDateHandling.OFFSET_DATE_TIME
+        assert fresh().setDateHandling(wider).setCheckDates(true).dateHandling == wider
+        assert fresh().setDateHandling(wider).setCheckDates(false).dateHandling == wider
+        assert fresh().setCheckDates(true).setDateHandling(wider).dateHandling == wider
+
+        // isCheckDates reports the handling in effect
+        assert !fresh().setDateHandling(JsonDateHandling.STRING).isCheckDates()
+        assert fresh().setDateHandling(JsonDateHandling.INSTANT).isCheckDates()
+
+        // a date carrying no time is left alone by every parser type
+        JsonParserType.values().each {
+            assert new JsonSlurper(type: it).parseText('{"d":"2026-09-04"}').d instanceof String
+        }
+        // LAX converts as INDEX_OVERLAY does; CHARACTER_SOURCE does not
+        assert new JsonSlurper(type: JsonParserType.LAX).parseText(json).when instanceof Date
+        assert new JsonSlurper(type: JsonParserType.CHARACTER_SOURCE).parseText(json).when instanceof String
     }
 
     @Test
