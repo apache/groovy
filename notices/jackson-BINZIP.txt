@@ -1,0 +1,3 @@
+This product bundles several Jackson jars (github.com/FasterXML/jackson)
+Copyright 2007-, Tatu Saloranta (tatu.saloranta@iki.fi)
+which are available under the terms of the Apache License 2.0

@@ -1,0 +1,4 @@
+This product bundles the GPars jar (gpars.org)
+Copyright 2008-2013 Vaclav Pech and the original author or authors
+which is available under the terms of the Apache License 2.0
+This product includes software developed by Vaclav Pech

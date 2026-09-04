@@ -1,0 +1,4 @@
+This product bundles the Apache Ant jars (ant.apache.org)
+which are available under the terms of the Apache License 2.0
+The <sync> task is based on code Copyright (c) 2002, Landmark
+Graphics Corp that has been kindly donated to the Apache Software Foundation.

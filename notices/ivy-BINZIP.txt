@@ -1,0 +1,7 @@
+This product bundles the Apache Ivy jar (ant.apache.org/ivy)
+which is available under the terms of the Apache License 2.0
+Portions of Ivy were originally developed at Jayasoft SARL (jayasoft.fr)
+and are licensed to the Apache Software Foundation under the
+"Software Grant License Agreement"
+The Scp class is based on the SCPClient from the ganymed ssh library,
+which has a BSD style license.
