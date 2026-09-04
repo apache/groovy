@@ -103,10 +103,11 @@ public interface AsyncChannel<T> extends Iterable<T> {
      * that is held and reused, use the timer offer
      * {@link ChannelSelect#after(long)} instead. A timer that loses a select keeps
      * its value: it fires all the same and holds the instant until received.
-     * Once the value has been taken, further receives fail with
-     * {@link ChannelClosedException} rather than waiting forever, and
-     * {@link #isClosed()} reports that the timer has fired. Closing a timer
-     * before it fires cancels it. A delay that is not positive has already
+     * Firing is one event — the instant is offered and the channel is closed
+     * together — so a receiver that takes the value observes
+     * {@link #isClosed()} as true, and further receives fail with
+     * {@link ChannelClosedException} rather than waiting forever. Closing a
+     * timer before it fires cancels it. A delay that is not positive has already
      * elapsed, so the channel is returned already holding its instant: it
      * is ready at once, which suits a deadline computed from an absolute
      * time that has already passed.

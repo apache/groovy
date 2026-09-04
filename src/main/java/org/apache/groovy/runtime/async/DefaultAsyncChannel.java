@@ -86,11 +86,14 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
     /**
      * Creates a timer channel: a capacity-1 channel that delivers one value,
      * the {@link Instant} at which it fired, once {@code delay} has elapsed
-     * from this call, and then closes. Closing the channel before it fires
-     * cancels the timer, so a timer that is no longer wanted holds no
-     * scheduler slot. A delay that is not positive has already elapsed, so
-     * the channel is returned already holding its instant and closed: it is
-     * ready to a receiver or a select at once, with no scheduler hop.
+     * from this call, and then closes. Firing buffers the instant and closes
+     * in one critical section, so a waiter that takes the value observes
+     * {@link #isClosed()} as true rather than racing a later {@link #close()}.
+     * Closing the channel before it fires cancels the timer, so a timer that
+     * is no longer wanted holds no scheduler slot. A delay that is not
+     * positive has already elapsed, so the channel is returned already
+     * holding its instant and closed: it is ready to a receiver or a select
+     * at once, with no scheduler hop.
      * <p>
      * Implementation of {@link AsyncChannel#after(long)}; not part of the
      * channel contract.
@@ -104,15 +107,14 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
         Objects.requireNonNull(unit, "unit must not be null");
         DefaultAsyncChannel<Instant> timer = new DefaultAsyncChannel<>(1);
         if (delay <= 0) {
-            timer.send(Instant.now());
-            timer.close();
+            timer.sendAndClose(Instant.now());
             return timer;
         }
         ScheduledFuture<?> firing = AsyncExecutors.getScheduler().schedule(() -> {
-            // the only sender into a capacity-1 buffer: the send buffers or
-            // delivers at once, never parks, and only fails if already closed
-            timer.send(Instant.now());
-            timer.close();
+            // one event: the instant is buffered and the channel is closed
+            // under the same lock, so a waiter that takes the value observes
+            // isClosed() as true. no-op if already cancelled.
+            timer.sendAndClose(Instant.now());
         }, delay, unit);
         timer.onClose = () -> firing.cancel(false);
         return timer;
@@ -282,22 +284,53 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
         try {
             if (closed) return false;
             closed = true;
-
-            drainBufferToReceivers();
-
-            for (PendingOp<T> receiver; (receiver = waitingReceivers.pollFirst()) != null; ) {
-                receiver.completeExceptionally(closedForReceive());
-            }
-            for (PendingSend<T> sender; (sender = waitingSenders.pollFirst()) != null; ) {
-                sender.completion.completeExceptionally(closedForSend());
-            }
+            finishCloseLocked();
         } finally {
             lock.unlock();
         }
+        runCloseHook();
+        return true;
+    }
 
+    /**
+     * Buffers {@code value} and closes in one critical section, so a waiter
+     * that takes the value observes {@link #isClosed()} as true. Used by
+     * {@link #after(long, TimeUnit)} so firing is one event rather than a
+     * send followed by a later close the receiver can race. No-op if already
+     * closed (a timer cancelled before it fired). The value is dropped only
+     * if the buffer is already full, which a timer never is.
+     */
+    private boolean sendAndClose(T value) {
+        Objects.requireNonNull(value, "channel does not support null values");
+        lock.lock();
+        try {
+            if (closed) return false;
+            if (buffer.size() < capacity) {
+                buffer.addLast(value);
+            }
+            closed = true;
+            finishCloseLocked();
+        } finally {
+            lock.unlock();
+        }
+        runCloseHook();
+        return true;
+    }
+
+    /** Caller holds {@link #lock} and has just set {@link #closed}. */
+    private void finishCloseLocked() {
+        drainBufferToReceivers();
+        for (PendingOp<T> receiver; (receiver = waitingReceivers.pollFirst()) != null; ) {
+            receiver.completeExceptionally(closedForReceive());
+        }
+        for (PendingSend<T> sender; (sender = waitingSenders.pollFirst()) != null; ) {
+            sender.completion.completeExceptionally(closedForSend());
+        }
+    }
+
+    private void runCloseHook() {
         Runnable hook = onClose;
         if (hook != null) hook.run();
-        return true;
     }
 
     // ---- Iterable (for await / for loop) --------------------------------
