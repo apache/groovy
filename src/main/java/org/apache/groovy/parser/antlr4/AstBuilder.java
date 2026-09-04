@@ -4502,7 +4502,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         for (int i = 0, n = formalParameterList.size(); i < n - 1; i += 1) {
             FormalParameterContext formalParameterContext = formalParameterList.get(i);
             if (asBoolean(formalParameterContext.ELLIPSIS())) {
-                throw createParsingFailedException("The var-arg parameter strs must be the last parameter", formalParameterContext);
+                String name = formalParameterContext.variableDeclaratorId().getText();
+                throw createParsingFailedException("The var-arg parameter " + name + " must be the last parameter", formalParameterContext);
             }
         }
     }

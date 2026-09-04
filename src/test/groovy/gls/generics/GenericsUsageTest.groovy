@@ -193,7 +193,7 @@ final class GenericsUsageTest {
     void testCompilationWithMissingClosingBracketsInGenerics() {
         shouldFailCompilationWithMessage '''
             def list1 = new ArrayList<Integer()
-        ''', "Unexpected input: '('"
+        ''', "Missing '>'"
 
         shouldFailCompilationWithMessage '''
             List<Integer list2 = new ArrayList<Integer>()
@@ -210,7 +210,7 @@ final class GenericsUsageTest {
 
         shouldFailCompilationWithMessage '''
             abstract class ArrayList1<E extends AbstractList<E> implements List<E> {}
-        ''', "Unexpected input: 'implements'"
+        ''', "Missing '>'"
 
         shouldFailCompilationWithMessage '''
             abstract class ArrayList2<E> extends AbstractList<E implements List<E> {}
@@ -226,7 +226,7 @@ final class GenericsUsageTest {
 
         shouldFailCompilationWithMessage '''
             def List<List<Integer>> history = new ArrayList<List<Integer>()
-        ''', "Unexpected input: '('"
+        ''', "Missing '>'"
     }
 
     // GROOVY-3975

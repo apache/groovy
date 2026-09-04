@@ -41,11 +41,14 @@ package org.apache.groovy.parser.antlr4
     import org.codehaus.groovy.ast.stmt.ReturnStatement
     import org.codehaus.groovy.ast.stmt.ThrowStatement
     import org.codehaus.groovy.ast.stmt.WhileStatement
+    import org.codehaus.groovy.control.CompilationUnit
     import org.codehaus.groovy.control.CompilerConfiguration
     import org.codehaus.groovy.control.ParserPlugin
     import org.codehaus.groovy.control.ParserPluginFactory
+    import org.codehaus.groovy.control.Phases
     import org.codehaus.groovy.control.SourceUnit
     import org.codehaus.groovy.syntax.Token
+    import org.junit.jupiter.api.Assertions
 
     import java.util.logging.Level
     import java.util.zip.ZipEntry
@@ -107,6 +110,57 @@ final class TestUtils {
 //        if (diffInMillis >= 500) {
 //            log.warning "${path}\t\t\t\t\tdiff:${diffInMillis / 1000}s,\tnew:${newElapsedTime / 1000}s,\told:${oldElapsedTime / 1000}s."
 //        }
+    }
+
+    /**
+     * Compile {@code source} through CONVERSION and return the diagnostic
+     * text. Fails the test if the source parses. Shared by
+     * {@code SyntaxErrorTest} and {@code CommonSyntaxErrorTest}.
+     */
+    @CompileDynamic
+    static String compileMessage(String source) {
+        try {
+            new CompilationUnit().with {
+                addSource('test.groovy', source)
+                compile(Phases.CONVERSION)
+                getAST()
+            }
+            Assertions.fail('expected parse to fail')
+            return ''
+        } catch (e) {
+            return (e.message ?: e.toString()).replace('\r\n', '\n')
+        }
+    }
+
+    /**
+     * Compile {@code source} through CONVERSION and assert the full
+     * {@code startup failed:} diagnostic matches {@code expect} (which must
+     * contain {@code @ line N,}).
+     */
+    @CompileDynamic
+    static void expectParseError(String source, String expect) {
+        def line = (expect =~ /@ line (\d+),/)[0][1]
+        Assertions.assertEquals("startup failed:\ntest.groovy: $line: $expect".toString(), compileMessage(source))
+    }
+
+    /**
+     * Compile {@code source} through CONVERSION and assert the diagnostic
+     * contains {@code fragment}.
+     */
+    static void expectContains(String source, String fragment) {
+        String msg = compileMessage(source)
+        Assertions.assertTrue(msg.contains(fragment), "expected '$fragment' in:\n$msg")
+    }
+
+    /**
+     * Like {@link #expectContains} and also require {@code @ line } to appear
+     * once (no duplicated position from {@code toAttachPositionInfo}).
+     */
+    @CompileDynamic
+    static void expectContainsOnce(String source, String fragment) {
+        String msg = compileMessage(source)
+        Assertions.assertTrue(msg.contains(fragment), "expected '$fragment' in:\n$msg")
+        Assertions.assertEquals(1, (msg =~ /@ line /).count, "position must appear once, got: $msg")
     }
 
     /*
