@@ -31,7 +31,8 @@ import java.util.List;
  * <p>
  * The SQL is walked character-by-character so that {@code ?} characters
  * appearing inside single-quoted strings, double-quoted identifiers, line
- * comments, and block comments are ignored.
+ * comments, block comments, and a doubled {@code ??} operator escape are
+ * ignored.
  * <p>
  * Package-private; consumed by {@link Sql} prior to {@code prepareStatement}.
  */
@@ -82,6 +83,16 @@ final class InListExpander {
                     }
                     break;
                 case '?':
+                    // A doubled '?' is how a driver escapes a literal '?' operator — PostgreSQL's
+                    // json/hstore operators ? ?| ?& collide with the placeholder, so pgjdbc reads
+                    // '??' as one of them and binds nothing to it. Two adjacent placeholders are
+                    // not valid SQL in any case, so there is nothing else this can mean. Passing it
+                    // through untouched leaves the driver to unescape it.
+                    if (i + 1 < len && sql.charAt(i + 1) == '?') {
+                        out.append("??");
+                        i += 2;
+                        break;
+                    }
                     if (paramIdx < params.size() && params.get(paramIdx) instanceof InListParameter) {
                         Collection<?> values = ((InListParameter) params.get(paramIdx)).getValues();
                         // Sql.inList(...) enforces non-empty, but the interface is public
