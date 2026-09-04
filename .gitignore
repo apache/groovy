@@ -21,6 +21,7 @@ out/
 .classpath
 .project
 
+.claude
 .fleet
 .shelf
 .vscode
