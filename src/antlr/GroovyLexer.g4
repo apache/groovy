@@ -515,10 +515,10 @@ IntegerLiteral
         |   HexIntegerLiteral
         |   OctalIntegerLiteral
         |   BinaryIntegerLiteral
-        ) (Underscore { require(errorIgnored, "Number ending with underscores is invalid", -1, true); })?
+        ) (Underscore { require(errorIgnored, "Number ending with underscores is invalid", -1, false); })?
 
     // !!! Error Alternative !!!
-    |   Zero ([0-9] { invalidDigitCount++; })+ { require(errorIgnored, "Invalid octal number", -(invalidDigitCount + 1), true); } IntegerTypeSuffix?
+    |   Zero ([0-9] { invalidDigitCount++; })+ { require(errorIgnored, "Invalid octal number", -(invalidDigitCount + 1), false); } IntegerTypeSuffix?
     ;
 
 fragment
@@ -657,7 +657,7 @@ BinaryDigitOrUnderscore
 FloatingPointLiteral
     :   (   DecimalFloatingPointLiteral
         |   HexadecimalFloatingPointLiteral
-        ) (Underscore { require(errorIgnored, "Number ending with underscores is invalid", -1, true); })?
+        ) (Underscore { require(errorIgnored, "Number ending with underscores is invalid", -1, false); })?
     ;
 
 fragment
@@ -997,9 +997,14 @@ WS  : ([ \t]+ | LineEscape+) -> skip
 NL  : LineTerminator   { ignoreTokenInsideParens(); }
     ;
 
-// Multiple-line comments (including groovydoc comments)
+// Multiple-line comments (including groovydoc comments).
+// One outermost alt so `-> type(NL)` is legal. `.*?` then (`*/` | EOF) stops
+// at the first closer; a *separate* lexer rule for unclosed comments would
+// win by longest-match and swallow trailing source. javac reports
+// "unclosed comment" at the opener; requireUnclosedComment keeps the caret there.
 ML_COMMENT
-    :   '/*' .*? '*/'       { addComment(0); ignoreMultiLineCommentConditionally(); } -> type(NL)
+    :   '/*' .*? ('*/' | EOF { requireUnclosedComment(errorIgnored); })
+        { addComment(0); ignoreMultiLineCommentConditionally(); } -> type(NL)
     ;
 
 // Single-line comments
@@ -1010,10 +1015,12 @@ SL_COMMENT
 // Script-header comments.
 // The very first characters of the file may be "#!".  If so, ignore the first line.
 SH_COMMENT
-    :   '#!' { require(errorIgnored || 0 == this.tokenIndex, "Shebang comment should appear at the first line", -2, true); } ShCommand (LineTerminator '#!' ShCommand)* -> skip
+    :   '#!' { require(errorIgnored || 0 == this.tokenIndex, "Shebang comment should appear at the first line", -2, false); } ShCommand (LineTerminator '#!' ShCommand)* -> skip
     ;
 
-// Unexpected characters will be handled by groovy parser later.
+// Unexpected characters (and unclosed quotes). Display goes through
+// AbstractLexer#getCharErrorDisplay; an unexpected quote is reported as
+// an unclosed string literal.
 UNEXPECTED_CHAR
-    :   . { require(errorIgnored, "Unexpected character: '" + getText().replace("'", "\\'") + "'", -1, false); }
+    :   . { require(errorIgnored, unexpectedCharacterMessage(), -1, false); }
     ;

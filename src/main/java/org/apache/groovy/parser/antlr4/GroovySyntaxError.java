@@ -19,7 +19,19 @@
 package org.apache.groovy.parser.antlr4;
 
 /**
- * Represents a syntax error of groovy program
+ * Represents a syntax error of a Groovy program, raised by the lexer or parser.
+ * <p>
+ * The message is the diagnostic as produced by the recogniser (for example
+ * {@code Unclosed string literal} or {@code Unexpected character: '\u005cu200b'}).
+ * Line and column are 1-based caret coordinates. On the compiler's normal lexer
+ * path ({@link SyntaxErrorReportable#require} with {@code toAttachPositionInfo}
+ * false), the location is not part of the message string —
+ * {@link org.codehaus.groovy.syntax.SyntaxException} appends
+ * {@code @ line N, column M} when wrapping the error. The public
+ * {@link SyntaxErrorReportable#throwSyntaxError} path can still append
+ * {@link PositionInfo} when {@code toAttachPositionInfo} is true (IDE /
+ * highlighter callers).
+ * </p>
  */
 public class GroovySyntaxError extends AssertionError {
     public static final int LEXER = 0;

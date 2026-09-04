@@ -17,16 +17,18 @@
  *  under the License.
  */
 
-/**
- * Internal utilities for the ANTLR4 (Parrot) parser: ATN management, friendly
- * error strategies ({@link DescriptiveErrorStrategy} fail-fast,
- * {@link RecoveringDescriptiveErrorStrategy} multi-error), and related
- * diagnostics ({@link MissingDelimiterDiagnostic} for relocated missing-closer
- * carets; fallback wording lives on {@link AbstractFriendlyErrorStrategy},
- * including reserved keywords, a leading {@code ?[} without a path to
- * attach to, and a singleton expected-punctuation token after optional
- * newlines are ignored). Reporting is one listener dispatch
- * after locate/refine. Diagnostic helpers run only after recognition has
- * already failed so they do not affect steady-state parse performance.
- */
-package org.apache.groovy.parser.antlr4.internal;
+/* leading */
+def x = 1
+assert x == 1
+
+/** groovydoc-looking */
+def y = 2
+assert y == 2
+
+/* inner /* is just text */
+assert true
+
+/* empty closer follows */
+/**/
+def z = 3
+assert z == 3
