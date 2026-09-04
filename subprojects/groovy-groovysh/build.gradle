@@ -37,6 +37,10 @@ dependencies {
     testImplementation projects.groovyCsv         // for /slurp .csv default coverage
     testImplementation projects.groovyMarkdown    // for /slurp .md default coverage
     testImplementation projects.groovyTestJunit6  // for @ForkedJvm in CSV fallback tests
+    // glob expansion uses Ant's DirectoryScanner when it is on the classpath, which the
+    // distribution supplies but this module deliberately does not depend on; supply it to
+    // the tests so that path is exercised rather than skipped
+    testRuntimeOnly "org.apache.ant:ant:${versions.ant}"
     implementation "net.java.dev.jna:jna:${versions.jna}"
     implementation "org.jline:jansi:${versions.jline}"
     implementation "org.jline:jline-builtins:${versions.jline}"
