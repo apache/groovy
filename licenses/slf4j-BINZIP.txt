@@ -1,0 +1,5 @@
+SLF4J License (the slf4j-api jar is a dependency of the optional
+groovy-testng module)
+
+This product bundles the slf4j-api jar, which is available under the
+MIT License.  For details, see licenses/slf4j-license.txt.

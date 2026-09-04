@@ -1,0 +1,5 @@
+JNA License (dependency used with groovysh)
+
+This product bundles the JNA jar, which is dual-licensed under the
+Apache License 2.0 and the LGPL v2.1.  It is distributed here under
+the Apache License 2.0, the text of which appears at the top of this file.

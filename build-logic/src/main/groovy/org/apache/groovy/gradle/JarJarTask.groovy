@@ -24,6 +24,7 @@ import javax.inject.Inject
 
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.RegularFileProperty
@@ -59,6 +60,7 @@ class JarJarTask extends DefaultTask {
     final protected osgi = project.rootProject.extensions.osgi
 
     final protected String projectName = project.name
+    final protected File projectDir = project.projectDir
 
     @InputFiles
     @Classpath
@@ -128,9 +130,16 @@ class JarJarTask extends DefaultTask {
             jarjar(jarfile: tmpJar, filesonly: true, modificationtime: tstamp) {
                 zipfileset(src: from.get(), excludes: (untouchedFiles + excludes).join(','))
                 includedResources.each { String resource, String path ->
-                    String dir = resource.substring(0, resource.lastIndexOf('/') + 1)
-                    String filename = resource.substring(resource.lastIndexOf('/') + 1)
-                    zipfileset(dir: dir, includes: filename, fullpath: path)
+                    // resolve like project.file(): keys may be absolute or project-relative and, on
+                    // Windows, backslash-separated - splitting on '/' silently dropped those
+                    File src = new File(resource)
+                    if (!src.absolute) {
+                        src = new File(projectDir, resource)
+                    }
+                    if (!src.file) {
+                        throw new GradleException("includedResources entry not found: $resource")
+                    }
+                    zipfileset(file: src, fullpath: path)
                 }
                 repackagedLibraries.files.each { File library ->
                     def libraryName = JarJarTask.baseName(library)
