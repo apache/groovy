@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
@@ -38,6 +39,8 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+
+import java.util.Iterator;
 
 import java.util.Arrays;
 
@@ -83,7 +86,7 @@ public class SafeRegexASTTransformation extends ClassCodeExpressionTransformer i
         }
 
         if (parent instanceof ClassNode) {
-            super.visitClass((ClassNode) parent);
+            visitClassAndItsInnerClasses((ClassNode) parent);
         } else if (parent instanceof ConstructorNode) {
             super.visitConstructorOrMethod((MethodNode) parent, true);
         } else if (parent instanceof MethodNode) {
@@ -96,6 +99,20 @@ public class SafeRegexASTTransformation extends ClassCodeExpressionTransformer i
             if (fn.hasInitialExpression()) {
                 fn.setInitialValueExpression(transform(fn.getInitialValueExpression()));
             }
+        }
+    }
+
+    /**
+     * Visits a class and the classes declared within it. Inner classes are separate class nodes
+     * rather than part of the body of the class they sit in, so visiting only the annotated one
+     * would leave a regex written a level down unguarded while reading as though it were covered.
+     *
+     * @param node the annotated class
+     */
+    private void visitClassAndItsInnerClasses(ClassNode node) {
+        super.visitClass(node);
+        for (Iterator<InnerClassNode> it = node.getInnerClasses(); it.hasNext(); ) {
+            visitClassAndItsInnerClasses(it.next());
         }
     }
 
