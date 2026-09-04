@@ -43,7 +43,6 @@ import static org.jline.builtins.PosixCommands.*;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -66,9 +65,11 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -388,29 +389,39 @@ public class GroovyPosixCommands {
     }
 
     private static void tailInputStream(Context context, InputStream is, int lines, int bytes) throws IOException {
+        // Both branches keep only what is going to be printed. Reading the input into memory
+        // first and taking the end of it costs the size of the input, which for the logs this
+        // is pointed at is the whole point of asking for the last few lines of them.
         if (bytes > 0) {
-            // Read all and keep last bytes
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] buffer = new byte[8192];
+            byte[] window = new byte[bytes];
+            int held = 0;
+            byte[] chunk = new byte[8192];
             int n;
-            while ((n = is.read(buffer)) != -1) {
-                baos.write(buffer, 0, n);
+            while ((n = is.read(chunk)) != -1) {
+                if (n >= bytes) {
+                    System.arraycopy(chunk, n - bytes, window, 0, bytes);
+                    held = bytes;
+                } else {
+                    int kept = Math.min(held, bytes - n);
+                    System.arraycopy(window, held - kept, window, 0, kept);
+                    System.arraycopy(chunk, 0, window, kept, n);
+                    held = kept + n;
+                }
             }
-            byte[] data = baos.toByteArray();
-            int start = Math.max(0, data.length - bytes);
-            context.out().write(data, start, data.length - start);
+            context.out().write(window, 0, held);
         } else {
-            // Read all and keep last lines
-            List<String> allLines = new ArrayList<>();
+            Deque<String> tail = new ArrayDeque<>();
             try (BufferedReader reader = new BufferedReader(new java.io.InputStreamReader(is))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    allLines.add(line);
+                    tail.addLast(line);
+                    if (tail.size() > lines) {
+                        tail.removeFirst();
+                    }
                 }
             }
-            int start = Math.max(0, allLines.size() - lines);
-            for (int i = start; i < allLines.size(); i++) {
-                context.out().println(allLines.get(i));
+            for (String line : tail) {
+                context.out().println(line);
             }
         }
     }
