@@ -181,6 +181,22 @@ class GroovyPosixCommandsTest {
         assert shown.contains('mid.txt') && !shown.contains('top.txt')
     }
 
+    // GROOVY-12349: a lone count was padded to eight as though it had a column to line up
+    // with, which just indents it away from the name. Ported from JLine 28e0be76.
+    @Test
+    void wcPadsCountsOnlyWhenThereAreSeveral() {
+        Path f = Files.writeString(tempDir.resolve('w.txt'), 'one\ntwo\nthree\n')
+        GroovyPosixCommands.wc(context(), ['wc', '-l', f.toString()] as Object[])
+        assert plainStdout().startsWith('3 ')
+    }
+
+    @Test
+    void wcKeepsColumnsAlignedForSeveralCounts() {
+        Path f = Files.writeString(tempDir.resolve('w.txt'), 'one\ntwo\nthree\n')
+        GroovyPosixCommands.wc(context(), ['wc', f.toString()] as Object[])
+        assert plainStdout() =~ /^ {7}3 {7}3 {6}14 /
+    }
+
     // GROOVY-12341
     @Test
     void lsStripsControlCharactersFromFileNames() {

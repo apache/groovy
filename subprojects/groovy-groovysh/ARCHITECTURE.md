@@ -57,7 +57,7 @@ taken from, and how far it has since been carried forward.
 | File(s) | Forked | Last synced |
 |---|---|---|
 | `GroovyEngine`, `PackageHelper`, `JrtJavaBasePackages`, `ObjectInspector`, `Utils` | `ed73546ad9` (2025-06-23) against **3.30.4** | never |
-| `GroovyPosixCommands` | `4cc59b2ba1` (2025-08-19) against **3.30.5** | `b90ebb9923` (2025-09-21) against **3.30.6**, plus one fix ported in `b2561621f1` at 4.4.1 |
+| `GroovyPosixCommands` | `4cc59b2ba1` (2025-08-19) against **3.30.5** | `b90ebb9923` (2025-09-21) against upstream **master** of that date, which was ahead of 3.30.6; plus one fix ported in `b2561621f1` at 4.4.1 |
 
 Record both here whenever a file is added, re-derived or synced,
 because the procedure below cannot be carried out without them,
@@ -72,9 +72,13 @@ untouched. Re-check when the base moves rather than repeating that
 comparison.
 
 `GroovyPosixCommands` is the one that drifts, because it is the one
-in use: upstream has moved by roughly 800 lines over 21 commits
-since 3.30.6, of which only the control-character fix has been
-taken.
+in use. Measuring that drift needs care, and a plain
+`git log <tag>..<tag>` overstates it twice over. A third of the
+commits it lists originated here and went upstream, so they are
+already present; and the 2025-09-21 sync took from master rather
+than from a tag, so it holds changes no release tag of that era
+contains. Check the author and check the code before treating a
+commit as outstanding.
 
 These are kept in-tree because the upstream artefact
 (`org.jline:jline-groovy`) depends on `org.apache.groovy:groovy`,

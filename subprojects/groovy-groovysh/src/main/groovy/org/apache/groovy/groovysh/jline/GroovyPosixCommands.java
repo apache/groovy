@@ -196,6 +196,12 @@ public class GroovyPosixCommands {
             showLines = showWords = showBytes = true;
         }
 
+        // a lone count needs no column to line up with, and padding it to eight just
+        // indents the number away from the name, which is not what wc does
+        boolean severalCounts =
+            (showLines ? 1 : 0) + (showWords ? 1 : 0) + (showChars ? 1 : 0) + (showBytes ? 1 : 0) > 1;
+        String countFormat = severalCounts ? "%8d" : "%d";
+
         long totalLines = 0, totalWords = 0, totalChars = 0, totalBytes = 0;
 
         for (NamedInputStream source : sources) {
@@ -226,10 +232,10 @@ public class GroovyPosixCommands {
             if (only) continue;
             // Print results for this file
             StringBuilder result = new StringBuilder();
-            if (showLines) result.append(String.format("%8d", lines));
-            if (showWords) result.append(String.format("%8d", words));
-            if (showChars) result.append(String.format("%8d", chars));
-            if (showBytes) result.append(String.format("%8d", bytes));
+            if (showLines) result.append(String.format(countFormat, lines));
+            if (showWords) result.append(String.format(countFormat, words));
+            if (showChars) result.append(String.format(countFormat, chars));
+            if (showBytes) result.append(String.format(countFormat, bytes));
             result.append(" ").append(stripControlChars(source.getName()));
 
             context.out().println(result);
@@ -239,10 +245,10 @@ public class GroovyPosixCommands {
         // Print totals if multiple files
         if (total) {
             StringBuilder result = new StringBuilder();
-            if (showLines) result.append(String.format("%8d", totalLines));
-            if (showWords) result.append(String.format("%8d", totalWords));
-            if (showChars) result.append(String.format("%8d", totalChars));
-            if (showBytes) result.append(String.format("%8d", totalBytes));
+            if (showLines) result.append(String.format(countFormat, totalLines));
+            if (showWords) result.append(String.format(countFormat, totalWords));
+            if (showChars) result.append(String.format(countFormat, totalChars));
+            if (showBytes) result.append(String.format(countFormat, totalBytes));
             result.append(" total");
 
             context.out().println(result);
