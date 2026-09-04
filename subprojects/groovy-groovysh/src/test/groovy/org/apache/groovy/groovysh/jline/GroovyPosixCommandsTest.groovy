@@ -197,6 +197,46 @@ class GroovyPosixCommandsTest {
         assert plainStdout() =~ /^ {7}3 {7}3 {6}14 /
     }
 
+    // GROOVY-12349: tail read its whole input before taking the end of it, so asking for the
+    // last two lines of a large log cost the size of the log. Both branches now hold only
+    // what they are going to print.
+    @Test
+    void tailKeepsOnlyTheRequestedLines() {
+        Path f = tempDir.resolve('t.txt')
+        Files.writeString(f, (1..5000).collect { "line $it" }.join('\n') + '\n')
+        GroovyPosixCommands.tail(context(), ['tail', '-n', '2', f.toString()] as Object[])
+        assert plainStdout().readLines() == ['line 4999', 'line 5000']
+    }
+
+    @Test
+    void tailCountsAFinalLineWithoutANewline() {
+        Path f = Files.writeString(tempDir.resolve('t.txt'), 'one\ntwo\nthree')
+        GroovyPosixCommands.tail(context(), ['tail', '-n', '2', f.toString()] as Object[])
+        assert plainStdout().readLines() == ['two', 'three']
+    }
+
+    @Test
+    void tailAsksForMoreLinesThanExist() {
+        Path f = Files.writeString(tempDir.resolve('t.txt'), 'one\ntwo\n')
+        GroovyPosixCommands.tail(context(), ['tail', '-n', '99', f.toString()] as Object[])
+        assert plainStdout().readLines() == ['one', 'two']
+    }
+
+    @Test
+    void tailByBytesTakesTheEndOfTheInput() {
+        // spans several read chunks, so the window has to carry bytes between them
+        Path f = Files.writeString(tempDir.resolve('t.txt'), 'x' * 30000 + 'TAIL')
+        GroovyPosixCommands.tail(context(), ['tail', '-c', '4', f.toString()] as Object[])
+        assert plainStdout() == 'TAIL'
+    }
+
+    @Test
+    void tailByBytesAsksForMoreThanExist() {
+        Path f = Files.writeString(tempDir.resolve('t.txt'), 'abc')
+        GroovyPosixCommands.tail(context(), ['tail', '-c', '99', f.toString()] as Object[])
+        assert plainStdout() == 'abc'
+    }
+
     // GROOVY-12341
     @Test
     void lsStripsControlCharactersFromFileNames() {
