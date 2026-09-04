@@ -18,6 +18,9 @@
  */
 package groovy.servlet
 
+import groovy.text.SimpleTemplateEngine
+import groovy.text.Template
+import groovy.text.TemplateEngine
 import jakarta.servlet.ServletConfig
 import jakarta.servlet.ServletContext
 import jakarta.servlet.http.HttpServletRequest
@@ -39,7 +42,7 @@ class TemplateServletTest {
     }
 
     @Test
-    void test_service_for_existing_resource() {
+    void servesAnExistingResource() {
         def templateFile = new File(temporaryFolder, 'template.gsp').tap { createNewFile() }
         def url = templateFile.toURI().toURL()
         def servletConfig = mockServletConfigForUrlResource(url)
@@ -55,7 +58,7 @@ class TemplateServletTest {
     }
 
     @Test
-    void test_service_for_missing_resource() {
+    void sendsNotFoundForAMissingResource() {
         def url = null
         def servletConfig = mockServletConfigForUrlResource(url)
         HttpServletRequest request = mockRequest()
@@ -70,16 +73,40 @@ class TemplateServletTest {
     }
 
     @Test
-    void test_compiled_template_is_cached_across_garbage_collection() {
+    void templateIsNotCompiledAgainAfterGarbageCollection() {
         def templateFile = new File(temporaryFolder, 'cached.gsp').tap { write 'hello' }
         def url = templateFile.toURI().toURL()
+        def servlet = new CountingServlet()
         servlet.init(mockServletConfigForUrlResource(url))
 
-        def first = servlet.getTemplate(url)
+        servlet.getTemplate(url)
         forceGarbageCollection()
-        def second = servlet.getTemplate(url)
+        servlet.getTemplate(url)
 
-        assert second.is(first)
+        // the cache this replaced held its keys weakly and nothing else referred to them, so the
+        // entry went at the collection and the second request compiled the template again
+        assert servlet.engine.compilations == 1
+    }
+
+    /** Reports how many times a template was compiled, which is what the cache exists to avoid. */
+    private static class CountingEngine extends TemplateEngine {
+        private final TemplateEngine delegate = new SimpleTemplateEngine()
+        int compilations = 0
+
+        @Override
+        Template createTemplate(Reader reader) {
+            compilations++
+            delegate.createTemplate(reader)
+        }
+    }
+
+    private static class CountingServlet extends TemplateServlet {
+        final CountingEngine engine = new CountingEngine()
+
+        @Override
+        protected TemplateEngine initTemplateEngine(ServletConfig config) {
+            engine
+        }
     }
 
     /**
