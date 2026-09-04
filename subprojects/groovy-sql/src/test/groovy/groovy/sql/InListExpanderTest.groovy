@@ -61,6 +61,56 @@ class InListExpanderTest {
     }
 
     @Test
+    void doubledQuestionMarkIsAnOperatorNotAPlaceholder() {
+        // PostgreSQL's driver takes ?? as an escaped literal ? operator, for the JSON
+        // operators ? ?| ?&, so it consumes no parameter
+        def result = InListExpander.expand(
+            "SELECT * FROM t WHERE data ?? 'k' AND id IN (?)",
+            [Sql.inList([1, 2, 3])])
+        assert result.sql == "SELECT * FROM t WHERE data ?? 'k' AND id IN (?, ?, ?)"
+        assert result.params == [1, 2, 3]
+    }
+
+    @Test
+    void escapedOperatorLeavesLaterParametersAligned() {
+        def result = InListExpander.expand(
+            "SELECT * FROM t WHERE data ?? 'k' AND id IN (?) AND active = ?",
+            [Sql.inList([1, 2]), true])
+        assert result.sql == "SELECT * FROM t WHERE data ?? 'k' AND id IN (?, ?) AND active = ?"
+        assert result.params == [1, 2, true]
+    }
+
+    @Test
+    void escapedFormsOfTheOtherJsonOperatorsArePreserved() {
+        // ?| and ?& escape as ??| and ??&; the list has two values so that an expansion
+        // landing on the operator instead of the marker is visible
+        def result = InListExpander.expand(
+            "SELECT * FROM t WHERE tags ??| ARRAY['a'] AND keys ??& ARRAY['b'] AND id IN (?)",
+            [Sql.inList([7, 8])])
+        assert result.sql == "SELECT * FROM t WHERE tags ??| ARRAY['a'] AND keys ??& ARRAY['b'] AND id IN (?, ?)"
+        assert result.params == [7, 8]
+    }
+
+    @Test
+    void anOddRunOfQuestionMarksIsAnEscapeThenAPlaceholder() {
+        // a list has to be present or expand returns before the walk begins
+        def result = InListExpander.expand(
+            'SELECT * FROM t WHERE data ??? AND id IN (?)',
+            ['x', Sql.inList([1, 2])])
+        assert result.sql == 'SELECT * FROM t WHERE data ??? AND id IN (?, ?)'
+        assert result.params == ['x', 1, 2]
+    }
+
+    @Test
+    void doubledQuestionMarkInsideAStringIsStillJustText() {
+        def result = InListExpander.expand(
+            "SELECT * FROM t WHERE note = '??' AND id IN (?)",
+            [Sql.inList([1, 2])])
+        assert result.sql == "SELECT * FROM t WHERE note = '??' AND id IN (?, ?)"
+        assert result.params == [1, 2]
+    }
+
+    @Test
     void questionMarkInsideSingleQuotedStringIsNotExpanded() {
         def result = InListExpander.expand(
             "SELECT 'what?' FROM t WHERE id IN (?)",
