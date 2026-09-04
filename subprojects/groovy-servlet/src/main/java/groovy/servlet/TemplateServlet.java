@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -165,9 +166,11 @@ public class TemplateServlet extends AbstractHttpServlet {
     }
 
     /**
-     * Simple file name to template cache map.
+     * File name to template cache, safe for concurrent use. Entries are held softly, so a
+     * template survives ordinary collection but can be reclaimed under memory pressure and
+     * compiled again on the next request.
      */
-    private final Map<String, TemplateCacheEntry> cache;
+    private final Map<String, SoftReference<TemplateCacheEntry>> cache;
 
     /**
      * Underlying template engine used to evaluate template source files.
@@ -187,7 +190,7 @@ public class TemplateServlet extends AbstractHttpServlet {
      * Create new TemplateServlet.
      */
     public TemplateServlet() {
-        this.cache = new ConcurrentHashMap<String, TemplateCacheEntry>();
+        this.cache = new ConcurrentHashMap<String, SoftReference<TemplateCacheEntry>>();
         this.engine = null; // assigned later by init()
         this.generateBy = true; // may be changed by init()
         this.fileEncodingParamVal = null; // may be changed by init()
@@ -211,7 +214,13 @@ public class TemplateServlet extends AbstractHttpServlet {
             log("Looking for cached template by key \"" + key + "\"");
         }
 
-        TemplateCacheEntry entry = (TemplateCacheEntry) cache.get(key);
+        SoftReference<TemplateCacheEntry> reference = cache.get(key);
+        TemplateCacheEntry entry = reference == null ? null : reference.get();
+        if (entry == null && reference != null) {
+            // the collector reclaimed the template under memory pressure; drop the husk so the
+            // map does not accumulate keys pointing at nothing
+            cache.remove(key, reference);
+        }
         if (entry != null) {
             if (entry.validate(file)) {
                 if (verbose) {
@@ -254,10 +263,10 @@ public class TemplateServlet extends AbstractHttpServlet {
             reader = fileEncoding == null ? new InputStreamReader(inputStream) : new InputStreamReader(inputStream, fileEncoding);
             Template template = engine.createTemplate(reader);
 
-            cache.put(key, new TemplateCacheEntry(file, template, verbose));
+            cache.put(key, new SoftReference<>(new TemplateCacheEntry(file, template, verbose)));
 
             if (verbose) {
-                log("Created and added template to cache. [key=" + key + "] " + cache.get(key));
+                log("Created and added template to cache. [key=" + key + "]");
             }
 
             //
@@ -281,13 +290,11 @@ public class TemplateServlet extends AbstractHttpServlet {
      * Gets the template created by the underlying engine parsing the request.
      *
      * <p>
-     * This method looks up a simple concurrent hash map for an existing template
-     * object that matches the source file. If the source file didn't change in
-     * length and its last modified stamp hasn't changed compared to a precompiled
-     * template object, this template is used. Otherwise, there is no or an
-     * invalid template object cache entry, a new one is created by the underlying
-     * template engine. This new instance is put to the cache for consecutive
-     * calls.
+     * A template already compiled for this file is reused while it remains current: the
+     * file's length and last modified stamp are compared with those it was compiled from,
+     * and it is compiled again if either has moved. A template may also be dropped and
+     * compiled again at any point, so do not rely on being given the same instance twice,
+     * and expect the one you are given to be serving other requests at the same time.
      *
      * @return The template that will produce the response text.
      * @param file The file containing the template source.
@@ -315,10 +322,11 @@ public class TemplateServlet extends AbstractHttpServlet {
      * Gets the template created by the underlying engine parsing the request.
      *
      * <p>
-     * This method looks up a simple concurrent hash map for an existing template
-     * object that matches the source URL. If there is no cache entry, a new one is
-     * created by the underlying template engine. This new instance is put
-     * to the cache for consecutive calls.
+     * A template already compiled for this URL is reused. There is nothing to check it
+     * against, unlike the file form above, so a change behind the URL is not noticed. A
+     * template may be dropped and compiled again at any point, so do not rely on being
+     * given the same instance twice, and expect the one you are given to be serving other
+     * requests at the same time.
      *
      * @return The template that will produce the response text.
      * @param url The URL containing the template source..
