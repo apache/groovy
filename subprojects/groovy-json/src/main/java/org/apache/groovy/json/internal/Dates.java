@@ -20,6 +20,8 @@ package org.apache.groovy.json.internal;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -120,6 +122,64 @@ public class Dates {
      * @param to exclusive end index
      * @return parsed date, or {@code null} when the slice is not a supported ISO-8601 value
      */
+    /**
+     * Reads an ISO-8601 form as an offset date-time, keeping the offset the text carried.
+     * Reads the same fields as {@link #fromISO8601(char[], int, int)} rather than handing the
+     * text to a formatter, so that the scan stays as cheap as the one the parsers already do.
+     *
+     * @param charArray buffer holding the token
+     * @param from start index, inclusive
+     * @param to end index, exclusive
+     * @return the value, or {@code null} if the text is not in this form
+     */
+    public static OffsetDateTime offsetDateTimeFromISO8601(char[] charArray, int from, int to) {
+        try {
+            if (!isISO8601(charArray, from, to)) {
+                return null;
+            }
+            int year = CharScanner.parseIntFromTo(charArray, from, from + 4);
+            int month = CharScanner.parseIntFromTo(charArray, from + 5, from + 7);
+            int day = CharScanner.parseIntFromTo(charArray, from + 8, from + 10);
+            int hour = CharScanner.parseIntFromTo(charArray, from + 11, from + 13);
+            int minute = CharScanner.parseIntFromTo(charArray, from + 14, from + 16);
+            int second = CharScanner.parseIntFromTo(charArray, from + 17, from + 19);
+            ZoneOffset offset = charArray[from + 19] == 'Z'
+                    ? ZoneOffset.UTC
+                    : ZoneOffset.of(String.valueOf(charArray, from + 19, 6));
+            return OffsetDateTime.of(year, month, day, hour, minute, second, 0, offset);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    /**
+     * Reads a JSON-date form as an offset date-time. That form carries no offset of its own
+     * and is read as UTC, as {@link #fromJsonDate(char[], int, int)} reads it.
+     *
+     * @param charArray buffer holding the token
+     * @param from start index, inclusive
+     * @param to end index, exclusive
+     * @return the value, or {@code null} if the text is not in this form
+     */
+    public static OffsetDateTime offsetDateTimeFromJsonDate(char[] charArray, int from, int to) {
+        try {
+            if (!isJsonDate(charArray, from, to)) {
+                return null;
+            }
+            int year = CharScanner.parseIntFromTo(charArray, from, from + 4);
+            int month = CharScanner.parseIntFromTo(charArray, from + 5, from + 7);
+            int day = CharScanner.parseIntFromTo(charArray, from + 8, from + 10);
+            int hour = CharScanner.parseIntFromTo(charArray, from + 11, from + 13);
+            int minute = CharScanner.parseIntFromTo(charArray, from + 14, from + 16);
+            int second = CharScanner.parseIntFromTo(charArray, from + 17, from + 19);
+            int milliseconds = CharScanner.parseIntFromTo(charArray, from + 20, from + 23);
+            return OffsetDateTime.of(year, month, day, hour, minute, second,
+                    (int) java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(milliseconds), ZoneOffset.UTC);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
     public static Date fromISO8601(char[] charArray, int from, int to) {
         try {
             if (isISO8601(charArray, from, to)) {

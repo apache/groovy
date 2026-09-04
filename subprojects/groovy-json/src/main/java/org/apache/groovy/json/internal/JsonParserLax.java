@@ -18,6 +18,8 @@
  */
 package org.apache.groovy.json.internal;
 
+import groovy.json.JsonDateHandling;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +31,7 @@ public class JsonParserLax extends JsonParserCharArray {
     private final boolean useValues;
     private final boolean chop;
     private final boolean lazyChop;
-    private final boolean defaultCheckDates;
+    private final JsonDateHandling defaultDateHandling;
 
     /**
      * Creates a lax parser with eager value containers and lazy chopping.
@@ -65,7 +67,7 @@ public class JsonParserLax extends JsonParserCharArray {
      * @param lazyChop whether to defer chopping until values are accessed
      */
     public JsonParserLax(boolean useValues, boolean chop, boolean lazyChop) {
-        this(useValues, chop, lazyChop, true);
+        this(useValues, chop, lazyChop, JsonDateHandling.UTIL_DATE);
     }
 
     /**
@@ -74,13 +76,13 @@ public class JsonParserLax extends JsonParserCharArray {
      * @param useValues whether to use eager {@link Value} containers
      * @param chop whether to eagerly copy overlay slices
      * @param lazyChop whether to defer chopping until values are accessed
-     * @param defaultCheckDates whether strings should be tested for supported date formats
+     * @param defaultDateHandling what a date-like string should become
      */
-    public JsonParserLax(boolean useValues, boolean chop, boolean lazyChop, boolean defaultCheckDates) {
+    public JsonParserLax(boolean useValues, boolean chop, boolean lazyChop, JsonDateHandling defaultDateHandling) {
         this.useValues = useValues;
         this.chop = chop;
         this.lazyChop = lazyChop;
-        this.defaultCheckDates = defaultCheckDates;
+        this.defaultDateHandling = defaultDateHandling;
     }
 
     @SuppressWarnings("unchecked")
@@ -110,7 +112,7 @@ public class JsonParserLax extends JsonParserCharArray {
                         startIndexOfKey++;
                     }
 
-                    key = extractLaxString(startIndexOfKey, __index - 1, false, false);
+                    key = extractLaxString(startIndexOfKey, __index - 1, false, JsonDateHandling.STRING);
                     __index++; //skip :
 
                     item = decodeValueInternal();
@@ -208,7 +210,7 @@ public class JsonParserLax extends JsonParserCharArray {
         }
     }
 
-    private Value extractLaxString(int startIndexOfKey, int end, boolean encoded, boolean checkDate) {
+    private Value extractLaxString(int startIndexOfKey, int end, boolean encoded, JsonDateHandling dateHandling) {
         char startChar;
         startIndexLookup:
         for (; startIndexOfKey < __index && startIndexOfKey < charArray.length; startIndexOfKey++) {
@@ -245,7 +247,7 @@ public class JsonParserLax extends JsonParserCharArray {
                     break endIndexLookup;
             }
         }
-        return new CharSequenceValue(chop, Type.STRING, startIndexOfKey, endIndex + 1, this.charArray, encoded, checkDate);
+        return new CharSequenceValue(chop, Type.STRING, startIndexOfKey, endIndex + 1, this.charArray, encoded, dateHandling);
     }
 
     /**
@@ -535,7 +537,7 @@ public class JsonParserLax extends JsonParserCharArray {
             else if (currentChar == '\\') break;
         }
 
-        Value value = this.extractLaxString(startIndex, index, encoded, defaultCheckDates);
+        Value value = this.extractLaxString(startIndex, index, encoded, defaultDateHandling);
 
         __index = index;
         return value;
@@ -574,7 +576,7 @@ public class JsonParserLax extends JsonParserCharArray {
             escape = false;
         }
 
-        Value value = new CharSequenceValue(chop, Type.STRING, startIndex, __index, this.charArray, encoded, defaultCheckDates);
+        Value value = new CharSequenceValue(chop, Type.STRING, startIndex, __index, this.charArray, encoded, defaultDateHandling);
 
         if (__index < charArray.length) {
             __index++;
@@ -625,9 +627,10 @@ public class JsonParserLax extends JsonParserCharArray {
             escape = false;
         }
 
-        boolean checkDates = defaultCheckDates && !encoded && minusCount >= 2 && colonCount >= 2;
+        JsonDateHandling dateHandling = (!encoded && minusCount >= 2 && colonCount >= 2)
+                ? defaultDateHandling : JsonDateHandling.STRING;
 
-        Value value = new CharSequenceValue(chop, Type.STRING, startIndex, __index, this.charArray, encoded, checkDates);
+        Value value = new CharSequenceValue(chop, Type.STRING, startIndex, __index, this.charArray, encoded, dateHandling);
 
         if (__index < charArray.length) {
             __index++;

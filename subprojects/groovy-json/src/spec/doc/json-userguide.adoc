@@ -159,6 +159,33 @@ Changing the parser implementation is as easy as setting the `JsonParserType` wi
 include::../test/json/JsonTest.groovy[tags=set_type,indent=0]
 ----
 
+=== Date-like strings
+
+`JsonParserType#INDEX_OVERLAY` and `JsonParserType#LAX` return a `java.util.Date` for a string
+in a full ISO-8601 or JSON-date form, rather than the `String` the other two parser types return
+for the same document. It is on by default and `JsonSlurper#setCheckDates(false)` turns it off:
+
+[source,groovy]
+----
+include::../test/json/JsonTest.groovy[tags=check_dates,indent=0]
+----
+
+A date carrying no time, such as `"2026-09-04"`, is left as a `String` by all four.
+
+`JsonSlurper#setDateHandling(JsonDateHandling)` says which type to produce, rather than only
+whether to convert. A `Date` is an instant, as is an `Instant`, so neither keeps an offset the
+document carried; `OFFSET_DATE_TIME` does:
+
+[source,groovy]
+----
+include::../test/json/JsonTest.groovy[tags=date_handling,indent=0]
+----
+
+`setCheckDates(boolean)` remains, mapping onto `UTIL_DATE` and `STRING`, and is deprecated.
+Once `setDateHandling` has been called on a slurper the boolean has no further effect on it,
+whichever order the two are used in, so a choice made through the wider option is not undone
+by the narrower one.
+
 == JsonOutput
 
 `JsonOutput` is responsible for serializing Groovy objects into JSON strings. It can be seen as companion object to
