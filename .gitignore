@@ -26,4 +26,5 @@ out/
 .shelf
 .vscode
 .jqwik-database
-verification-metadata.dryrun.xml
+gradle/verification-metadata.dryrun.xml
+gradle/verification-keyring.dryrun.keys
