@@ -21,7 +21,7 @@ package org.codehaus.groovy.reflection.stdclasses;
 import org.codehaus.groovy.reflection.ClassInfo;
 
 /**
- * Provides optimized reflection caching for {@code long} and {@link java.lang.Long}.
+ * Provides optimized reflection caching for {@code long} and {@link Long}.
  * Coerces numeric arguments to long values for type-safe method invocation.
  * Optionally allows {@code null} values for the boxed {@link Long} class variant.
  */

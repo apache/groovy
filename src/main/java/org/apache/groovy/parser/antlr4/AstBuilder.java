@@ -127,6 +127,7 @@ import org.codehaus.groovy.ast.tools.ClosureUtils;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ModuleImportHelper;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
@@ -157,6 +158,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -459,7 +461,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             throw createParsingFailedException(e.getMessage(), ctx);
         }
         Set<String> skip = new HashSet<>(Arrays.asList(
-                org.codehaus.groovy.control.ResolveVisitor.DEFAULT_IMPORTS));
+                ResolveVisitor.DEFAULT_IMPORTS));
         moduleNode.getStarImports().stream().map(ImportNode::getPackageName).forEach(skip::add);
         moduleNode.getModuleStarImports().stream().map(ImportNode::getPackageName).forEach(skip::add);
         ImportNode lastImport = null;
@@ -2784,7 +2786,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         Expression expression = this.visitExpressionInPar(ctx.expressionInPar());
 
         expression.getNodeMetaData(INSIDE_PARENTHESES_LEVEL,
-                k -> new java.util.concurrent.atomic.AtomicInteger()).getAndAdd(1);
+                k -> new AtomicInteger()).getAndAdd(1);
 
         return configureAST(expression, ctx);
     }
@@ -5515,7 +5517,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private final GroovyLangParser parser;
     private final GroovydocManager groovydocManager;
     private final TryWithResourcesASTTransformation tryWithResourcesASTTransformation;
-    /** {@code true} when {@link org.codehaus.groovy.control.CompilerConfiguration#ERROR_RECOVERY} is enabled. */
+    /** {@code true} when {@link CompilerConfiguration#ERROR_RECOVERY} is enabled. */
     private final boolean errorRecovery;
 
     private final List<ClassNode> classNodeList = new ArrayList<>();

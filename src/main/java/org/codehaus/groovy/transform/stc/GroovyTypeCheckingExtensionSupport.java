@@ -23,14 +23,50 @@ import groovy.lang.Closure;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
+import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.AttributeExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.BitwiseNegationExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
+import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.GStringExpression;
+import org.codehaus.groovy.ast.expr.LambdaExpression;
+import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.MapEntryExpression;
+import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCall;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.MethodPointerExpression;
+import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
+import org.codehaus.groovy.ast.expr.NamedArgumentListExpression;
+import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PostfixExpression;
+import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.RangeExpression;
+import org.codehaus.groovy.ast.expr.SpreadExpression;
+import org.codehaus.groovy.ast.expr.SpreadMapExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.TernaryExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
+import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.control.CompilationFailedException;
@@ -65,7 +101,7 @@ import java.util.Objects;
 public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExtension {
 
     // method name to DSL name
-    private static final Map<String, String> METHOD_ALIASES = org.apache.groovy.util.Maps.of(
+    private static final Map<String, String> METHOD_ALIASES = Maps.of(
             "onMethodSelection",      "onMethodSelection",
             "afterMethodCall",        "afterMethodCall",
             "beforeMethodCall",       "beforeMethodCall",
@@ -527,51 +563,51 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
      *
      * Expression categorization:
      * <dl>
-     *   <dt>isAnnotationConstantExpression</dt> <dd>Determines if argument is an {@link org.codehaus.groovy.ast.expr.AnnotationConstantExpression AnnotationConstantExpression}</dd>
-     *   <dt>isArgumentListExpression</dt>       <dd>Determines if argument is an {@link org.codehaus.groovy.ast.expr.ArgumentListExpression ArgumentListExpression}</dd>
-     *   <dt>isArrayExpression</dt>              <dd>Determines if argument is an {@link org.codehaus.groovy.ast.expr.ArrayExpression ArrayExpression}</dd>
-     *   <dt>isAttributeExpression</dt>          <dd>Determines if argument is an {@link org.codehaus.groovy.ast.expr.AttributeExpression AttributeExpression}</dd>
-     *   <dt>isBinaryExpression</dt>             <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.BinaryExpression BinaryExpression}</dd>
-     *   <dt>isBitwiseNegationExpression</dt>    <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.BitwiseNegationExpression BitwiseNegationExpression}</dd>
-     *   <dt>isBooleanExpression</dt>            <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.BooleanExpression BooleanExpression}</dd>
-     *   <dt>isCastExpression</dt>               <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.CastExpression CastExpression}</dd>
-     *   <dt>isClassExpression</dt>              <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.ClassExpression ClassExpression}</dd>
-     *   <dt>isClosureExpression</dt>            <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.ClosureExpression ClosureExpression}</dd>
-     *   <dt>isConstantExpression</dt>           <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.ConstantExpression ConstantExpression}</dd>
-     *   <dt>isConstructorCallExpression</dt>    <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.ConstructorCallExpression ConstructorCallExpression}</dd>
-     *   <dt>isDeclarationExpression</dt>        <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.DeclarationExpression DeclarationExpression}</dd>
-     *   <dt>isElvisOperatorExpression</dt>      <dd>Determines if argument is an {@link org.codehaus.groovy.ast.expr.ElvisOperatorExpression ElvisOperatorExpression}</dd>
-     *   <dt>isEmptyExpression</dt>              <dd>Determines if argument is an {@link org.codehaus.groovy.ast.expr.EmptyExpression EmptyExpression}</dd>
-     *   <dt>isFieldExpression</dt>              <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.FieldExpression FieldExpression}</dd>
-     *   <dt>isGStringExpression</dt>            <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.GStringExpression GStringExpression}</dd>
-     *   <dt>isLambdaExpression</dt>             <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.LambdaExpression LambdaExpression}</dd>
-     *   <dt>isListExpression</dt>               <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.ListExpression ListExpression}</dd>
-     *   <dt>isMapExpression</dt>                <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.MapExpression MapExpression}</dd>
-     *   <dt>isMapEntryExpression</dt>           <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.MapEntryExpression MapEntryExpression}</dd>
-     *   <dt>isMethodCallExpression</dt>         <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.MethodCallExpression MethodCallExpression}</dd>
-     *   <dt>isMethodPointerExpression</dt>      <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.MethodPointerExpression MethodPointerExpression}</dd>
-     *   <dt>isMethodReferenceExpression</dt>    <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.MethodReferenceExpression MethodReferenceExpression}</dd>
-     *   <dt>isNamedArgumentListExpression</dt>  <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.NamedArgumentListExpression NamedArgumentListExpression}</dd>
-     *   <dt>isNotExpression</dt>                <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.NotExpression NotExpression}</dd>
-     *   <dt>isPostfixExpression</dt>            <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.PostfixExpression PostfixExpression}</dd>
-     *   <dt>isPrefixExpression</dt>             <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.PrefixExpression PrefixExpression}</dd>
-     *   <dt>isPropertyExpression</dt>           <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.PropertyExpression PropertyExpression}</dd>
-     *   <dt>isRangeExpression</dt>              <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.RangeExpression RangeExpression}</dd>
-     *   <dt>isSpreadExpression</dt>             <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.SpreadExpression SpreadExpression}</dd>
-     *   <dt>isSpreadMapExpression</dt>          <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.SpreadMapExpression SpreadMapExpression}</dd>
-     *   <dt>isStaticMethodCallExpression</dt>   <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.StaticMethodCallExpression StaticMethodCallExpression}</dd>
-     *   <dt>isTernaryExpression</dt>            <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.TernaryExpression TernaryExpression}</dd>
-     *   <dt>isTupleExpression</dt>              <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.TupleExpression TupleExpression}</dd>
-     *   <dt>isUnaryMinusExpression</dt>         <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.UnaryMinusExpression UnaryMinusExpression}</dd>
-     *   <dt>isUnaryPlusExpression</dt>          <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.UnaryPlusExpression UnaryPlusExpression}</dd>
-     *   <dt>isVariableExpression</dt>           <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.VariableExpression VariableExpression}</dd>
+     *   <dt>isAnnotationConstantExpression</dt> <dd>Determines if argument is an {@link AnnotationConstantExpression AnnotationConstantExpression}</dd>
+     *   <dt>isArgumentListExpression</dt>       <dd>Determines if argument is an {@link ArgumentListExpression ArgumentListExpression}</dd>
+     *   <dt>isArrayExpression</dt>              <dd>Determines if argument is an {@link ArrayExpression ArrayExpression}</dd>
+     *   <dt>isAttributeExpression</dt>          <dd>Determines if argument is an {@link AttributeExpression AttributeExpression}</dd>
+     *   <dt>isBinaryExpression</dt>             <dd>Determines if argument is a  {@link BinaryExpression BinaryExpression}</dd>
+     *   <dt>isBitwiseNegationExpression</dt>    <dd>Determines if argument is a  {@link BitwiseNegationExpression BitwiseNegationExpression}</dd>
+     *   <dt>isBooleanExpression</dt>            <dd>Determines if argument is a  {@link BooleanExpression BooleanExpression}</dd>
+     *   <dt>isCastExpression</dt>               <dd>Determines if argument is a  {@link CastExpression CastExpression}</dd>
+     *   <dt>isClassExpression</dt>              <dd>Determines if argument is a  {@link ClassExpression ClassExpression}</dd>
+     *   <dt>isClosureExpression</dt>            <dd>Determines if argument is a  {@link ClosureExpression ClosureExpression}</dd>
+     *   <dt>isConstantExpression</dt>           <dd>Determines if argument is a  {@link ConstantExpression ConstantExpression}</dd>
+     *   <dt>isConstructorCallExpression</dt>    <dd>Determines if argument is a  {@link ConstructorCallExpression ConstructorCallExpression}</dd>
+     *   <dt>isDeclarationExpression</dt>        <dd>Determines if argument is a  {@link DeclarationExpression DeclarationExpression}</dd>
+     *   <dt>isElvisOperatorExpression</dt>      <dd>Determines if argument is an {@link ElvisOperatorExpression ElvisOperatorExpression}</dd>
+     *   <dt>isEmptyExpression</dt>              <dd>Determines if argument is an {@link EmptyExpression EmptyExpression}</dd>
+     *   <dt>isFieldExpression</dt>              <dd>Determines if argument is a  {@link FieldExpression FieldExpression}</dd>
+     *   <dt>isGStringExpression</dt>            <dd>Determines if argument is a  {@link GStringExpression GStringExpression}</dd>
+     *   <dt>isLambdaExpression</dt>             <dd>Determines if argument is a  {@link LambdaExpression LambdaExpression}</dd>
+     *   <dt>isListExpression</dt>               <dd>Determines if argument is a  {@link ListExpression ListExpression}</dd>
+     *   <dt>isMapExpression</dt>                <dd>Determines if argument is a  {@link MapExpression MapExpression}</dd>
+     *   <dt>isMapEntryExpression</dt>           <dd>Determines if argument is a  {@link MapEntryExpression MapEntryExpression}</dd>
+     *   <dt>isMethodCallExpression</dt>         <dd>Determines if argument is a  {@link MethodCallExpression MethodCallExpression}</dd>
+     *   <dt>isMethodPointerExpression</dt>      <dd>Determines if argument is a  {@link MethodPointerExpression MethodPointerExpression}</dd>
+     *   <dt>isMethodReferenceExpression</dt>    <dd>Determines if argument is a  {@link MethodReferenceExpression MethodReferenceExpression}</dd>
+     *   <dt>isNamedArgumentListExpression</dt>  <dd>Determines if argument is a  {@link NamedArgumentListExpression NamedArgumentListExpression}</dd>
+     *   <dt>isNotExpression</dt>                <dd>Determines if argument is a  {@link NotExpression NotExpression}</dd>
+     *   <dt>isPostfixExpression</dt>            <dd>Determines if argument is a  {@link PostfixExpression PostfixExpression}</dd>
+     *   <dt>isPrefixExpression</dt>             <dd>Determines if argument is a  {@link PrefixExpression PrefixExpression}</dd>
+     *   <dt>isPropertyExpression</dt>           <dd>Determines if argument is a  {@link PropertyExpression PropertyExpression}</dd>
+     *   <dt>isRangeExpression</dt>              <dd>Determines if argument is a  {@link RangeExpression RangeExpression}</dd>
+     *   <dt>isSpreadExpression</dt>             <dd>Determines if argument is a  {@link SpreadExpression SpreadExpression}</dd>
+     *   <dt>isSpreadMapExpression</dt>          <dd>Determines if argument is a  {@link SpreadMapExpression SpreadMapExpression}</dd>
+     *   <dt>isStaticMethodCallExpression</dt>   <dd>Determines if argument is a  {@link StaticMethodCallExpression StaticMethodCallExpression}</dd>
+     *   <dt>isTernaryExpression</dt>            <dd>Determines if argument is a  {@link TernaryExpression TernaryExpression}</dd>
+     *   <dt>isTupleExpression</dt>              <dd>Determines if argument is a  {@link TupleExpression TupleExpression}</dd>
+     *   <dt>isUnaryMinusExpression</dt>         <dd>Determines if argument is a  {@link UnaryMinusExpression UnaryMinusExpression}</dd>
+     *   <dt>isUnaryPlusExpression</dt>          <dd>Determines if argument is a  {@link UnaryPlusExpression UnaryPlusExpression}</dd>
+     *   <dt>isVariableExpression</dt>           <dd>Determines if argument is a  {@link VariableExpression VariableExpression}</dd>
      * </dl>
      *
      * General utility:
      * <ul>
      *   <li>Delegates to {@link AbstractTypeCheckingExtension}</li>
-     *   <li>Imports static members of {@link org.codehaus.groovy.ast.ClassHelper ClassHelper}</li>
-     *   <li>Imports static members of {@link org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport StaticTypeCheckingSupport}</li>
+     *   <li>Imports static members of {@link ClassHelper ClassHelper}</li>
+     *   <li>Imports static members of {@link StaticTypeCheckingSupport StaticTypeCheckingSupport}</li>
      * </ul>
      *
      * @see <a href="https://docs.groovy-lang.org/latest/html/documentation/#_a_dsl_for_type_checking">Groovy Language Documentation</a>

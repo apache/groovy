@@ -44,11 +44,13 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.ToIntFunction;
 
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.joining;
@@ -144,7 +146,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         ClassNode[] inferredParameterTypes = methodReferenceExpression.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
         // GROOVY-11998: pick up intersection-cast markers populated by STC
         @SuppressWarnings("unchecked")
-        java.util.List<ClassNode> rawMarkers = (java.util.List<ClassNode>) methodReferenceExpression.getNodeMetaData(StaticTypesMarker.LAMBDA_MARKERS);
+        List<ClassNode> rawMarkers = (List<ClassNode>) methodReferenceExpression.getNodeMetaData(StaticTypesMarker.LAMBDA_MARKERS);
         boolean fromIntersection = rawMarkers != null && rawMarkers.stream().anyMatch(m ->
                 m != null && (m.equals(ClassHelper.SERIALIZABLE_TYPE) || m.implementsInterface(ClassHelper.SERIALIZABLE_TYPE)));
         boolean serializable = functionalType.implementsInterface(ClassHelper.SERIALIZABLE_TYPE) || fromIntersection;
@@ -159,9 +161,9 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         );
     }
 
-    private static ClassNode[] filterMarkers(final java.util.List<ClassNode> raw, final ClassNode functionalType) {
+    private static ClassNode[] filterMarkers(final List<ClassNode> raw, final ClassNode functionalType) {
         if (raw == null || raw.isEmpty()) return ClassNode.EMPTY_ARRAY;
-        java.util.List<ClassNode> out = new java.util.ArrayList<>(raw.size());
+        List<ClassNode> out = new ArrayList<>(raw.size());
         for (ClassNode m : raw) {
             if (m == null || !m.isInterface()) continue;
             if (m.equals(ClassHelper.SERIALIZABLE_TYPE)
@@ -490,7 +492,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     private MethodNode findMethodRefMethod(final String methodName, final Parameter[] samParameters, final Expression typeOrTargetRef, final ClassNode typeOrTargetRefType) {
         List<MethodNode> methods = findVisibleMethods(methodName, typeOrTargetRefType);
 
-        java.util.function.ToIntFunction<Parameter[]> distance = (parameters) -> { // GROOVY-10972: select from closest matches
+        ToIntFunction<Parameter[]> distance = (parameters) -> { // GROOVY-10972: select from closest matches
             return allParametersAndArgumentsMatch(parameters, Arrays.stream(samParameters).map(Parameter::getType).toArray(ClassNode[]::new));
         };
 

@@ -20,12 +20,14 @@ package org.apache.groovy.dateutil
 
 import org.junit.jupiter.api.Test
 
+import java.time.temporal.ChronoUnit
+
 import static java.util.Calendar.DAY_OF_YEAR
 import static java.util.Calendar.MONTH
 import static org.junit.jupiter.api.Assertions.assertTrue
 
 /**
- * Tests the {@link org.apache.groovy.dateutil.TimeCategory} class, the dequirked
+ * Tests the {@link TimeCategory} class, the dequirked
  * {@code java.util.Date}-flavored parallel to the legacy {@code groovy.time.TimeCategory}.
  * The arithmetic assertions are ported verbatim from the legacy suite; the final section
  * exercises the two behaviors that were intentionally changed ("dequirked").
@@ -277,7 +279,7 @@ class TimeCategoryTest {
             assert 1.year.toMilliseconds() == 12.months.toMilliseconds()
             assert 2.weeks.toMilliseconds() == 14.days.toMilliseconds()
             assert 5.months.toMilliseconds() ==
-                    5 * java.time.temporal.ChronoUnit.MONTHS.duration.toMillis()
+                    5 * ChronoUnit.MONTHS.duration.toMillis()
         }
     }
 }

@@ -18,6 +18,7 @@
  */
 package groovy.typecheckers
 
+import groovy.util.regex.RegexGuard
 import org.apache.groovy.typecheckers.CheckingVisitor
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
@@ -104,7 +105,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkC
 class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
 
     private static final ClassNode MATCHER_TYPE = ClassHelper.make(Matcher)
-    private static final ClassNode REGEX_GUARD_TYPE = ClassHelper.make(groovy.util.regex.RegexGuard)
+    private static final ClassNode REGEX_GUARD_TYPE = ClassHelper.make(RegexGuard)
     private static final String REGEX_GROUP_COUNT = RegexChecker.getSimpleName() + '_INFERRED_GROUP_COUNT'
     private static final String REGEX_MATCHER_RESULT_TYPE = RegexChecker.getSimpleName() + '_MATCHER_RESULT_INFERRED_TYPE'
     // String-receiver methods whose first argument is a regex; covers both the JDK methods

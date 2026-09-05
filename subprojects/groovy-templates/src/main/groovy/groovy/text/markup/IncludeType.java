@@ -19,7 +19,7 @@
 package groovy.text.markup;
 
 /**
- * An enumeration used internally to map include types to {@link groovy.text.markup.BaseTemplate} method calls.
+ * An enumeration used internally to map include types to {@link BaseTemplate} method calls.
  */
 enum IncludeType {
     /**

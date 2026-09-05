@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Processes template source files substituting variables and expressions into
  * placeholders in a template source text to produce the desired output using a
  * closure based approach. This engine has equivalent functionality to the
- * {@link groovy.text.SimpleTemplateEngine} but creates the template using
+ * {@link SimpleTemplateEngine} but creates the template using
  * writable closures making it more scalable for large templates.
  * <p>
  * Specifically this template engine can handle strings larger than 64k which
@@ -179,7 +179,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
      *
      * <strong>Technical detail</strong><br />
      * Under the hood the returned template is represented as a four argument
-     * closure where the three first arguments are {@link groovy.lang.Closure#curry curried} in
+     * closure where the three first arguments are {@link Closure#curry curried} in
      * while generating the template. <br />
      * <br />
      * In essence we start with a closure on the form:
@@ -208,8 +208,8 @@ public class StreamingTemplateEngine extends TemplateEngine {
      *   }
      * </pre>
      * <p>
-     * This only leaves the 'out' argument unbound. The only method on the {@link groovy.lang.Writable writable} interface is
-     * {@link groovy.lang.Writable#writeTo writeTo(Writer out)} so groovy rules about casting a closure to a one-method-interface
+     * This only leaves the 'out' argument unbound. The only method on the {@link Writable writable} interface is
+     * {@link Writable#writeTo writeTo(Writer out)} so groovy rules about casting a closure to a one-method-interface
      * apply and the above works. I.e. we return the now one argument closure as the Writable
      * which can be serialized to System.out, a file, etc according to the Writable interface contract.
      *

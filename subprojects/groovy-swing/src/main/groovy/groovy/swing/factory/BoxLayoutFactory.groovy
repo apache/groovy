@@ -48,7 +48,7 @@ public class BoxLayoutFactory extends AbstractFactory {
                 axis = i.intValue();
             }
 
-            Container target = groovy.swing.factory.LayoutFactory.getLayoutTarget(parent);
+            Container target = LayoutFactory.getLayoutTarget(parent);
             BoxLayout answer = new BoxLayout(target, axis);
 
             // now let's try to set the layout property
@@ -68,7 +68,7 @@ public class BoxLayoutFactory extends AbstractFactory {
      */
     public void setParent(FactoryBuilderSupport builder, Object parent, Object child) {
         if (parent instanceof Container) {
-            Container target = groovy.swing.factory.LayoutFactory.getLayoutTarget(parent);
+            Container target = LayoutFactory.getLayoutTarget(parent);
             InvokerHelper.setProperty(target, "layout", child);
         }
     }

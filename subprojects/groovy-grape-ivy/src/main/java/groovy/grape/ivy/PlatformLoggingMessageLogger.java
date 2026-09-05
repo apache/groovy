@@ -20,6 +20,10 @@ package groovy.grape.ivy;
 
 import org.apache.ivy.util.AbstractMessageLogger;
 import org.apache.ivy.util.Message;
+import org.apache.ivy.util.MessageLogger;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
@@ -28,7 +32,7 @@ import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.WARNING;
 
 /**
- * An Ivy {@link org.apache.ivy.util.MessageLogger} that delegates to JDK Platform Logging
+ * An Ivy {@link MessageLogger} that delegates to JDK Platform Logging
  * ({@code System.Logger}), so that Ivy log output can be controlled through
  * {@code logging.properties} alongside other Groovy diagnostic messages.
  *
@@ -55,9 +59,9 @@ class PlatformLoggingMessageLogger extends AbstractMessageLogger {
         // Default to WARNING to match the previous behaviour (DefaultMessageLogger
         // at level -1 suppressed everything). Users can raise verbosity via
         // ~/.groovy/logging.properties or the grape -i/-V/-d flags.
-        var julLogger = java.util.logging.Logger.getLogger(LOGGER_NAME);
+        var julLogger = Logger.getLogger(LOGGER_NAME);
         if (julLogger.getLevel() == null) {
-            julLogger.setLevel(java.util.logging.Level.WARNING);
+            julLogger.setLevel(Level.WARNING);
         }
     }
 

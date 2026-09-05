@@ -20,6 +20,8 @@ package org.codehaus.groovy.runtime
 
 import org.junit.jupiter.api.Test
 
+import java.io.Serializable
+
 import static org.junit.jupiter.api.Assertions.*
 
 /**
@@ -166,7 +168,7 @@ class NumberAwareComparatorTest {
     @Test
     void testIsSerializable() {
         def comparator = new NumberAwareComparator<Integer>()
-        assertTrue(comparator instanceof java.io.Serializable)
+        assertTrue(comparator instanceof Serializable)
     }
 
     @Test

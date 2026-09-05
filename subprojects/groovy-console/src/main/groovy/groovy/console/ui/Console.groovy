@@ -18,6 +18,7 @@
  */
 package groovy.console.ui
 
+import com.formdev.flatlaf.FlatLaf
 import com.github.javaparser.ParseProblemException
 import com.github.javaparser.StaticJavaParser
 import com.github.javaparser.ast.CompilationUnit
@@ -59,6 +60,7 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory
 
 import javax.swing.Action
 import javax.swing.Icon
+import javax.swing.JDialog
 import javax.swing.JFileChooser
 import javax.swing.JFrame
 import javax.swing.JLabel
@@ -76,14 +78,18 @@ import javax.swing.event.HyperlinkEvent
 import javax.swing.event.HyperlinkListener
 import javax.swing.filechooser.FileFilter
 import javax.swing.text.AttributeSet
+import javax.swing.text.DefaultStyledDocument
 import javax.swing.text.Document
 import javax.swing.text.Element
 import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.Style
 import javax.swing.text.StyleConstants
+import javax.swing.text.StyleContext
 import javax.swing.text.html.HTML
 import java.awt.BorderLayout
+import java.awt.Color
 import java.awt.Component
+import java.awt.Container
 import java.awt.Dimension
 import java.awt.EventQueue
 import java.awt.Font
@@ -94,6 +100,7 @@ import java.awt.event.ComponentEvent
 import java.awt.event.ComponentListener
 import java.awt.event.FocusEvent
 import java.awt.event.FocusListener
+import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.awt.event.WindowFocusListener
 import java.util.logging.Logger
@@ -907,10 +914,10 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
         // update output area styles
         def doc = outputArea.styledDocument
-        def applyStyle = { javax.swing.text.Style style, Map values ->
+        def applyStyle = { Style style, Map values ->
             // remove old foreground/background before applying new
-            style.removeAttribute(javax.swing.text.StyleConstants.Foreground)
-            style.removeAttribute(javax.swing.text.StyleConstants.Background)
+            style.removeAttribute(StyleConstants.Foreground)
+            style.removeAttribute(StyleConstants.Background)
             values.each { k, v -> style.addAttribute(k, v) }
         }
         def regularStyle = doc.getStyle('regular')
@@ -937,25 +944,25 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         inputArea.background = ThemeManager.inputBackground
 
         // update input area syntax highlighting styles (GroovyFilter styles)
-        def styleContext = javax.swing.text.StyleContext.defaultStyleContext
+        def styleContext = StyleContext.defaultStyleContext
         newStyles.each { styleName, defs ->
             def style = styleContext.getStyle(styleName)
             if (style) {
-                style.removeAttribute(javax.swing.text.StyleConstants.Foreground)
-                style.removeAttribute(javax.swing.text.StyleConstants.Background)
+                style.removeAttribute(StyleConstants.Foreground)
+                style.removeAttribute(StyleConstants.Background)
                 defs.each { k, v -> style.addAttribute(k, v) }
             }
         }
 
         // update SmartDocumentFilter styles (ANTLR token-based highlighting)
-        groovy.console.ui.text.SmartDocumentFilter.updateStyles()
+        SmartDocumentFilter.updateStyles()
 
         // force re-parse to apply new colors to existing text — suppress
         // undo capture so the user's Undo history isn't polluted with a
         // theme-driven attribute flip (otherwise an Undo after a theme
         // switch would partially revert the new colors)
-        def docFilter = (inputArea.document as javax.swing.text.DefaultStyledDocument).documentFilter
-        if (docFilter instanceof groovy.console.ui.text.SmartDocumentFilter) {
+        def docFilter = (inputArea.document as DefaultStyledDocument).documentFilter
+        if (docFilter instanceof SmartDocumentFilter) {
             def um = inputEditor.undoManager
             um?.recording = false
             try {
@@ -966,13 +973,13 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         }
 
         // let FlatLaf update all Swing component UI delegates
-        com.formdev.flatlaf.FlatLaf.updateUI()
+        FlatLaf.updateUI()
 
         // rebuild SVG icon rasters so accent-coloured and foreground-tracking icons pick up the new theme
         Icons.refreshAll()
 
         // update cycle theme button tooltip, menu radio buttons, and status
-        swing.cycleThemeAction.putValue(javax.swing.Action.SHORT_DESCRIPTION, 'Cycle theme (' + ThemeManager.themeLabel + ')')
+        swing.cycleThemeAction.putValue(Action.SHORT_DESCRIPTION, 'Cycle theme (' + ThemeManager.themeLabel + ')')
         swing.lightThemeMenuItem.selected = (currentTheme == 'LIGHT')
         swing.darkThemeMenuItem.selected = (currentTheme == 'DARK')
         swing.systemThemeMenuItem.selected = (currentTheme == 'SYSTEM')
@@ -1378,19 +1385,19 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         def future = Trees.inspect(tree, parser)
         Thread.start {
             def dialog = future.get()
-            javax.swing.SwingUtilities.invokeLater { themeCstDialog(dialog) }
+            SwingUtilities.invokeLater { themeCstDialog(dialog) }
         }
     }
 
-    private void themeCstDialog(javax.swing.JDialog dialog) {
+    private void themeCstDialog(JDialog dialog) {
         TreeViewer viewer = findTreeViewer(dialog)
         if (!viewer) return
         applyCstColors(viewer)
         // track theme switches so an already-open CST dialog keeps pace
-        def listener = { javax.swing.SwingUtilities.invokeLater { applyCstColors(viewer); viewer.repaint() } } as Runnable
+        def listener = { SwingUtilities.invokeLater { applyCstColors(viewer); viewer.repaint() } } as Runnable
         ThemeManager.addThemeChangeListener(listener)
-        dialog.addWindowListener(new java.awt.event.WindowAdapter() {
-            @Override void windowClosed(java.awt.event.WindowEvent e) {
+        dialog.addWindowListener(new WindowAdapter() {
+            @Override void windowClosed(WindowEvent e) {
                 ThemeManager.removeThemeChangeListener(listener)
             }
         })
@@ -1398,18 +1405,18 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     private static void applyCstColors(TreeViewer viewer) {
         boolean dark = ThemeManager.isDark()
-        viewer.textColor = dark ? new java.awt.Color(210, 210, 210) : java.awt.Color.BLACK
-        viewer.boxColor = dark ? new java.awt.Color(50, 55, 65) : java.awt.Color.WHITE
+        viewer.textColor = dark ? new Color(210, 210, 210) : Color.BLACK
+        viewer.boxColor = dark ? new Color(50, 55, 65) : Color.WHITE
         viewer.borderColor = null  // null = no box outline around each label (TreeViewer default)
-        viewer.highlightedBoxColor = dark ? new java.awt.Color(80, 120, 80) : new java.awt.Color(200, 255, 200)
-        viewer.background = dark ? new java.awt.Color(43, 43, 43) : java.awt.Color.WHITE
+        viewer.highlightedBoxColor = dark ? new Color(80, 120, 80) : new Color(200, 255, 200)
+        viewer.background = dark ? new Color(43, 43, 43) : Color.WHITE
     }
 
-    private static TreeViewer findTreeViewer(java.awt.Container container) {
+    private static TreeViewer findTreeViewer(Container container) {
         for (Component comp : container.components) {
             if (comp instanceof TreeViewer) return (TreeViewer) comp
-            if (comp instanceof java.awt.Container) {
-                TreeViewer found = findTreeViewer((java.awt.Container) comp)
+            if (comp instanceof Container) {
+                TreeViewer found = findTreeViewer((Container) comp)
                 if (found) return found
             }
         }
@@ -2233,12 +2240,12 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         def doc = outputArea.styledDocument
         ['regular', 'prompt', 'command', 'output', 'result', 'stacktrace', 'hyperlink'].each { name ->
             def s = doc.getStyle(name)
-            if (s) javax.swing.text.StyleConstants.setFontSize(s, outputFontSize)
+            if (s) StyleConstants.setFontSize(s, outputFontSize)
         }
         int docLen = doc.length
         if (docLen > 0) {
-            def sizeAttr = new javax.swing.text.SimpleAttributeSet()
-            javax.swing.text.StyleConstants.setFontSize(sizeAttr, outputFontSize)
+            def sizeAttr = new SimpleAttributeSet()
+            StyleConstants.setFontSize(sizeAttr, outputFontSize)
             doc.setCharacterAttributes(0, docLen, sizeAttr, false)
         }
 

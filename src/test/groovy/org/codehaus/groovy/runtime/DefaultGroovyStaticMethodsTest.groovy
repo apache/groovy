@@ -20,6 +20,8 @@ package org.codehaus.groovy.runtime
 
 import org.junit.jupiter.api.Test
 
+import java.time.Duration
+
 
 /**
  * Tests for DefaultGroovyStaticMethods
@@ -66,7 +68,7 @@ class DefaultGroovyStaticMethodsTest {
         assert t.result == 500500
         assert t.nanos >= 0
         assert t.millis == t.nanos.intdiv(1_000_000)
-        assert t.duration == java.time.Duration.ofNanos(t.nanos)
+        assert t.duration == Duration.ofNanos(t.nanos)
     }
 
     @Test

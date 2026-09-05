@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform;
 
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
 /**
@@ -28,7 +29,7 @@ import org.codehaus.groovy.control.SourceUnit;
  * marker is encountered.
  * <p>
  * You must annotate this class with {@link GroovyASTTransformation} so that Groovy knows which
- * {@link org.codehaus.groovy.control.CompilePhase} to run in.
+ * {@link CompilePhase} to run in.
  *
  * @see GroovyASTTransformation
  */

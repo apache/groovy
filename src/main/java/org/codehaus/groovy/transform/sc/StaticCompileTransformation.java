@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.sc;
 
+import groovy.transform.CompileStatic;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -41,7 +42,7 @@ import java.util.Map;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
 
 /**
- * Handles the implementation of the {@link groovy.transform.CompileStatic} transformation.
+ * Handles the implementation of the {@link CompileStatic} transformation.
  */
 @GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)
 public class StaticCompileTransformation extends StaticTypesTransformation {

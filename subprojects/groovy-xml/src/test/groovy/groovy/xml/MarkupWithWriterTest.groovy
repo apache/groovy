@@ -20,6 +20,8 @@ package groovy.xml
 
 import org.junit.jupiter.api.Test
 
+import java.io.StringWriter
+
 import static org.junit.jupiter.api.Assertions.assertEquals
 
 /**
@@ -29,7 +31,7 @@ final class MarkupWithWriterTest extends TestXmlSupport {
 
     @Test
     void smallTreeWithStringWriter() {
-        def writer = new java.io.StringWriter()
+        def writer = new StringWriter()
         def b = new MarkupBuilder(writer)
 
         b.root1(a:5, b:7) {

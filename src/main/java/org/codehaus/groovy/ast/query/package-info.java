@@ -19,10 +19,12 @@
 
 /**
  * A small, read-only fluent query API over the Groovy AST, intended as a declarative alternative to
- * hand-written {@link org.codehaus.groovy.ast.ClassCodeVisitorSupport} subclasses for the common
+ * hand-written {@link ClassCodeVisitorSupport} subclasses for the common
  * "find / collect / detect" cases that arise in AST transformations and compiler checks.
  *
  * @see org.codehaus.groovy.ast.query.AstQuery
  * @since 6.0.0
  */
 package org.codehaus.groovy.ast.query;
+
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;

@@ -19,13 +19,17 @@
 package org.apache.groovy.nio.extensions
 
 import groovy.io.FileType
+import org.apache.groovy.nio.runtime.WritablePath
 import org.opentest4j.TestAbortedException
 import spock.lang.Specification
 import spock.lang.TempDir
 
 import java.nio.file.Files
 import java.nio.file.LinkOption
+import java.nio.file.NoSuchFileException
 import java.nio.file.StandardCopyOption
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.TimeUnit
 
 class NioExtensionsTest extends Specification {
 
@@ -1305,7 +1309,7 @@ class NioExtensionsTest extends Specification {
 
         then:
         writable != null
-        writable instanceof org.apache.groovy.nio.runtime.WritablePath
+        writable instanceof WritablePath
     }
 
     def testAsWritableWithCharset() {
@@ -1318,7 +1322,7 @@ class NioExtensionsTest extends Specification {
 
         then:
         writable != null
-        writable instanceof org.apache.groovy.nio.runtime.WritablePath
+        writable instanceof WritablePath
     }
 
     def testReadLinesWithCharset() {
@@ -1402,7 +1406,7 @@ class NioExtensionsTest extends Specification {
         def future = path.textAsync
 
         then:
-        future.get(5, java.util.concurrent.TimeUnit.SECONDS) == 'Hello async'
+        future.get(5, TimeUnit.SECONDS) == 'Hello async'
     }
 
     def testGetTextAsyncWithCharset() {
@@ -1414,7 +1418,7 @@ class NioExtensionsTest extends Specification {
         def future = path.getTextAsync('UTF-8')
 
         then:
-        future.get(5, java.util.concurrent.TimeUnit.SECONDS) == 'Héllo àsync'
+        future.get(5, TimeUnit.SECONDS) == 'Héllo àsync'
     }
 
     def testGetBytesAsync() {
@@ -1426,7 +1430,7 @@ class NioExtensionsTest extends Specification {
         def future = path.bytesAsync
 
         then:
-        future.get(5, java.util.concurrent.TimeUnit.SECONDS) == [72, 101, 108, 108, 111] as byte[]
+        future.get(5, TimeUnit.SECONDS) == [72, 101, 108, 108, 111] as byte[]
     }
 
     def testWriteAsync() {
@@ -1434,7 +1438,7 @@ class NioExtensionsTest extends Specification {
         def path = tempFile.toPath()
 
         when:
-        path.writeAsync('Hello async').get(5, java.util.concurrent.TimeUnit.SECONDS)
+        path.writeAsync('Hello async').get(5, TimeUnit.SECONDS)
 
         then:
         path.text == 'Hello async'
@@ -1445,7 +1449,7 @@ class NioExtensionsTest extends Specification {
         def path = tempFile.toPath()
 
         when:
-        path.writeAsync('Héllo àsync', 'UTF-8').get(5, java.util.concurrent.TimeUnit.SECONDS)
+        path.writeAsync('Héllo àsync', 'UTF-8').get(5, TimeUnit.SECONDS)
 
         then:
         path.getText('UTF-8') == 'Héllo àsync'
@@ -1456,7 +1460,7 @@ class NioExtensionsTest extends Specification {
         def path = tempFile.toPath()
 
         when:
-        path.writeBytesAsync([72, 105] as byte[]).get(5, java.util.concurrent.TimeUnit.SECONDS)
+        path.writeBytesAsync([72, 105] as byte[]).get(5, TimeUnit.SECONDS)
 
         then:
         path.bytes == [72, 105] as byte[]
@@ -1471,7 +1475,7 @@ class NioExtensionsTest extends Specification {
         def future = path.textAsync
 
         then:
-        future.get(5, java.util.concurrent.TimeUnit.SECONDS) == ''
+        future.get(5, TimeUnit.SECONDS) == ''
     }
 
     def testGetBytesAsyncNonExistentFile() {
@@ -1479,10 +1483,10 @@ class NioExtensionsTest extends Specification {
         def path = tempDir.toPath().resolve('does-not-exist.txt')
 
         when:
-        path.bytesAsync.get(5, java.util.concurrent.TimeUnit.SECONDS)
+        path.bytesAsync.get(5, TimeUnit.SECONDS)
 
         then:
-        def e = thrown(java.util.concurrent.ExecutionException)
-        e.cause instanceof java.nio.file.NoSuchFileException
+        def e = thrown(ExecutionException)
+        e.cause instanceof NoSuchFileException
     }
 }

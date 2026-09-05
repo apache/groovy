@@ -51,7 +51,7 @@ import java.util.Map;
 
 /**
  * <p>This AST transformer is responsible for modifying a source template into something which can be compiled as a
- * {@link groovy.text.markup.BaseTemplate} subclass.</p>
+ * {@link BaseTemplate} subclass.</p>
  * <p/>
  * <p>It performs the following operations:</p>
  * <p/>

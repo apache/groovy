@@ -50,13 +50,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.logging.Logger;
 
 /**
  * <p>Custom type checking extensions may extend this method in order to benefit from a lot
  * of support methods.</p>
  *
  * <p>The methods found in this class are made directly available in type checking scripts
- * through the {@link org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport} class.</p>
+ * through the {@link GroovyTypeCheckingExtensionSupport} class.</p>
  *
  * @since 2.3.0
  */
@@ -423,7 +424,7 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
      * Logs a type-checking extension message.
      */
     public void log(final String message) {
-        java.util.logging.Logger logger = java.util.logging.Logger.getLogger(GroovyTypeCheckingExtensionSupport.class.getName());
+        Logger logger = Logger.getLogger(GroovyTypeCheckingExtensionSupport.class.getName());
         logger.info(message);
     }
 

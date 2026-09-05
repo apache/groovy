@@ -18,6 +18,7 @@
  */
 package groovy.typecheckers
 
+import groovy.transform.TypeChecked
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.junit.jupiter.api.BeforeAll
@@ -44,7 +45,7 @@ final class CombinerCheckerTest {
     private static GroovyShell makeShell(String mode) {
         String ext = mode ? "groovy.typecheckers.CombinerChecker(mode: '${mode}')" : 'groovy.typecheckers.CombinerChecker'
         new GroovyShell(new CompilerConfiguration().tap {
-            def customizer = new ASTTransformationCustomizer(groovy.transform.TypeChecked)
+            def customizer = new ASTTransformationCustomizer(TypeChecked)
             customizer.annotationParameters = [extensions: ext]
             addCompilationCustomizers(customizer)
         })

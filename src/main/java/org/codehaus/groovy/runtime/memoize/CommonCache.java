@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Represents a simple key-value cache, which is NOT thread safe and backed by a {@link java.util.Map} instance
+ * Represents a simple key-value cache, which is NOT thread safe and backed by a {@link Map} instance
  *
  * @param <K> type of the keys
  * @param <V> type of the values
@@ -64,7 +64,7 @@ public class CommonCache<K, V> implements FlexibleCache<K, V>, ValueConvertable<
      *
      * @param initialCapacity  initial capacity of the cache
      * @param maxSize          max size of the cache
-     * @param evictionStrategy LRU or FIFO, see {@link org.codehaus.groovy.runtime.memoize.EvictableCache.EvictionStrategy}
+     * @param evictionStrategy LRU or FIFO, see {@link EvictableCache.EvictionStrategy}
      */
     public CommonCache(final int initialCapacity, final int maxSize, final EvictionStrategy evictionStrategy) {
         this(createMap(initialCapacity, maxSize, evictionStrategy));
@@ -111,9 +111,9 @@ public class CommonCache<K, V> implements FlexibleCache<K, V>, ValueConvertable<
     }
 
     /**
-     * Constructs a cache backed by the specified {@link java.util.Map} instance
+     * Constructs a cache backed by the specified {@link Map} instance
      *
-     * @param map the {@link java.util.Map} instance
+     * @param map the {@link Map} instance
      */
     public CommonCache(Map<K, V> map) {
         this.map = map;

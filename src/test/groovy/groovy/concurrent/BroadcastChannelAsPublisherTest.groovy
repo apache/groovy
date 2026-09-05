@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Flow
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 import static groovy.test.GroovyAssert.assertScript
 
@@ -103,7 +104,7 @@ final class BroadcastChannelAsPublisherTest {
         List<Integer> received = []
         CountDownLatch firstBatch = new CountDownLatch(2)
         CountDownLatch done = new CountDownLatch(1)
-        def subscriptionRef = new java.util.concurrent.atomic.AtomicReference<Flow.Subscription>()
+        def subscriptionRef = new AtomicReference<Flow.Subscription>()
 
         publisher.subscribe(new Flow.Subscriber<Integer>() {
             @Override void onSubscribe(Flow.Subscription s) { subscriptionRef.set(s); s.request(2) }
@@ -142,7 +143,7 @@ final class BroadcastChannelAsPublisherTest {
         int n = 10
         def subs = []
         n.times {
-            def ref = new java.util.concurrent.atomic.AtomicReference<Flow.Subscription>()
+            def ref = new AtomicReference<Flow.Subscription>()
             publisher.subscribe(new Flow.Subscriber<Integer>() {
                 @Override void onSubscribe(Flow.Subscription s) { ref.set(s); s.request(Long.MAX_VALUE) }
                 @Override void onNext(Integer item) {}
@@ -165,7 +166,7 @@ final class BroadcastChannelAsPublisherTest {
         Flow.Publisher<Integer> publisher = broadcast.asPublisher()
 
         List<Integer> received = []
-        def subRef = new java.util.concurrent.atomic.AtomicReference<Flow.Subscription>()
+        def subRef = new AtomicReference<Flow.Subscription>()
         CountDownLatch cancelled = new CountDownLatch(1)
 
         publisher.subscribe(new Flow.Subscriber<Integer>() {

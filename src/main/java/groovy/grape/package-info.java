@@ -21,7 +21,7 @@
  * Dynamic dependency resolution and management.
  *
  * <p>
- * {@link groovy.grape.Grape} provides static methods for {@code grab()} and {@code resolve()},
+ * {@link Grape} provides static methods for {@code grab()} and {@code resolve()},
  * backed by pluggable engines (Ivy or Maven Resolver).
  * </p>
  */

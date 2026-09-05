@@ -18,8 +18,10 @@
  */
 
 /**
- * A small DSL and supporting types over the JDK {@link java.net.http.HttpClient} API.
+ * A small DSL and supporting types over the JDK {@link HttpClient} API.
  *
  * @since 6.0.0
  */
 package groovy.http;
+
+import java.net.http.HttpClient;

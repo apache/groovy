@@ -25,6 +25,7 @@ import org.codehaus.groovy.tools.shell.util.MessageSource
 import javax.swing.JDialog
 import javax.swing.JFileChooser
 import javax.swing.JOptionPane
+import javax.swing.UIManager
 import javax.swing.filechooser.FileNameExtensionFilter
 import java.awt.Dimension
 
@@ -370,7 +371,7 @@ class ConsolePreferences {
      * @param args ignored command-line arguments
      */
     static void main(args) {
-        javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName())
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
         def c = new Expando().with {
             swing = new SwingBuilder()
             frame = swing.frame(title: 'foo', size: [800, 800])

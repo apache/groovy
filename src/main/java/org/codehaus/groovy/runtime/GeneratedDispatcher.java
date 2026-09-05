@@ -28,7 +28,7 @@ import java.lang.invoke.MethodType;
 
 /**
  * A per-class table of compiler-generated dispatch targets, reached by a compact
- * integer id instead of a {@link java.lang.invoke.MethodHandle}.
+ * integer id instead of a {@link MethodHandle}.
  * <p>
  * The compiler emits per class: an array-shaped table ({@code $packedDispatch$(int, Object[])},
  * covering every target) plus array-free per-arity tables ({@code $packedDispatch1$},

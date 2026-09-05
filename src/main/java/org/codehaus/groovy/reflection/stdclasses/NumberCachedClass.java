@@ -21,12 +21,13 @@ package org.codehaus.groovy.reflection.stdclasses;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 
 /**
  * Base class for optimized reflection caching of numeric types.
  * Provides common type coercion logic for primitive and boxed numeric types,
- * as well as {@link java.math.BigInteger} and {@link java.math.BigDecimal}.
+ * as well as {@link BigInteger} and {@link BigDecimal}.
  */
 public class NumberCachedClass extends CachedClass {
 

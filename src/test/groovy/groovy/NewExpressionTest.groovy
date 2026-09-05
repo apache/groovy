@@ -21,6 +21,8 @@ package groovy
 import org.codehaus.groovy.runtime.DummyBean
 import org.junit.jupiter.api.Test
 
+import java.io.File
+
 class NewExpressionTest {
 
     @Test
@@ -53,14 +55,14 @@ class NewExpressionTest {
 
     @Test
     void testNewInstanceWithFullyQualifiedName() {
-        def bean = new org.codehaus.groovy.runtime.DummyBean("Bob", 1707)
+        def bean = new DummyBean("Bob", 1707)
         assert bean.name == "Bob"
         assert bean.i == 1707
     }
 
     @Test
     void testNewInstanceWithFullyQualifiedNameNotImported() {
-        def bean = new java.io.File("Foo")
+        def bean = new File("Foo")
 
         assert bean != null
     }

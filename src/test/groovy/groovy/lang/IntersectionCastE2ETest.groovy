@@ -20,6 +20,8 @@ package groovy.lang
 
 import org.junit.jupiter.api.Test
 
+import java.io.Serializable
+
 /**
  * End-to-end tests for intersection-cast lambdas and method references
  * (GROOVY-11998 PR3).
@@ -29,7 +31,7 @@ import org.junit.jupiter.api.Test
  * <ul>
  *   <li>Implement every component interface ({@code instanceof} succeeds)</li>
  *   <li>Are serialisable when the intersection contains
- *       {@link java.io.Serializable}</li>
+ *       {@link Serializable}</li>
  *   <li>Invoke the SAM correctly</li>
  * </ul>
  */

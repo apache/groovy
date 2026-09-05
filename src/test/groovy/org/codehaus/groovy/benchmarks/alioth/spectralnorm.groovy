@@ -1,3 +1,5 @@
+
+import java.text.NumberFormat
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -80,7 +82,7 @@ long start = System.currentTimeMillis ()
 assert start >= 0
 
 def n = (args.length == 0 ? 100 : args[0/*(int)0.0d*/].toInteger())
-def nf = java.text.NumberFormat.getInstance()
+def nf = NumberFormat.getInstance()
 nf.setMaximumFractionDigits(9)
 nf.setMinimumFractionDigits(9)
 nf.setGroupingUsed(false)

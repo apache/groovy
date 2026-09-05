@@ -18,6 +18,7 @@
  */
 package groovy.lang;
 
+import groovy.util.CharsetToolkit;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -171,7 +172,7 @@ public class GroovyClassLoader extends URLClassLoader {
         this.sourceEncoding = Optional.ofNullable(this.config.getSourceEncoding())
             // Keep the same default source encoding as #parseClass(InputStream,String)
             // TODO Should we use CompilerConfiguration.DEFAULT_SOURCE_ENCODING instead?
-            .orElseGet(() -> groovy.util.CharsetToolkit.getDefaultSystemCharset().name());
+            .orElseGet(() -> CharsetToolkit.getDefaultSystemCharset().name());
         this.recompile = null;
     }
 
@@ -645,7 +646,7 @@ public class GroovyClassLoader extends URLClassLoader {
     /**
      * {@inheritDoc}
      *
-     * @see ClassLoader#loadClass(java.lang.String,boolean)
+     * @see ClassLoader#loadClass(String,boolean)
      */
     @Override
     public Class<?> loadClass(final String name) throws ClassNotFoundException {
@@ -683,7 +684,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @param name                  of the class to be loaded
      * @param lookupScriptFiles     if false no lookup at files is done at all
      * @param preferClassOverScript if true the file lookup is only done if there is no class
-     * @param resolve               see {@link java.lang.ClassLoader#loadClass(java.lang.String, boolean)}
+     * @param resolve               see {@link ClassLoader#loadClass(String, boolean)}
      * @return the class found or the class created from a file lookup
      * @throws ClassNotFoundException     if class could not be found
      * @throws CompilationFailedException if compilation of script failed

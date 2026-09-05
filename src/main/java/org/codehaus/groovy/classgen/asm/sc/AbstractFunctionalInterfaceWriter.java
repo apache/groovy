@@ -37,6 +37,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import java.lang.invoke.SerializedLambda;
 import java.util.Arrays;
 
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
@@ -381,7 +382,7 @@ public interface AbstractFunctionalInterfaceWriter {
      * correct synthetic helper for a serialized lambda/method reference.
      * <p>
      * The generated expression is a conjunction over all stable
-     * {@link java.lang.invoke.SerializedLambda} identity fields we emit via
+     * {@link SerializedLambda} identity fields we emit via
      * {@link #createSerializedLambdaFingerprint(String, ClassNode, int, ClassNode, MethodNode, Parameter[], ClassNode, MethodNode, int)}:
      * capturing class, implementation kind/class/name/signature, functional interface class/SAM method/signature,
      * instantiated method type, and captured argument count.
@@ -431,7 +432,7 @@ public interface AbstractFunctionalInterfaceWriter {
     }
 
     /**
-     * Creates a direct {@link java.lang.invoke.SerializedLambda} accessor call for the generated
+     * Creates a direct {@link SerializedLambda} accessor call for the generated
      * deserialization dispatcher.
      * <p>
      * The dispatcher is emitted during bytecode generation rather than type checking, so it must

@@ -26,7 +26,10 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
+import java.net.http.HttpClient
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 class HttpBuilderClientTest {
 
@@ -462,8 +465,8 @@ class HttpBuilderClientTest {
     void testImperativeAsync() {
         def http = HttpBuilder.http("http://127.0.0.1:${port}")
         def future = http.getAsync('/users/alice')
-        assert future instanceof java.util.concurrent.CompletableFuture
-        def result = future.get(5, java.util.concurrent.TimeUnit.SECONDS)
+        assert future instanceof CompletableFuture
+        def result = future.get(5, TimeUnit.SECONDS)
         assert result.json.name == 'alice'
     }
 
@@ -474,7 +477,7 @@ class HttpBuilderClientTest {
             baseUri "http://127.0.0.1:${port}"
             clientConfig { builder ->
                 // Can set authenticator, SSL, proxy, etc.
-                builder.followRedirects(java.net.http.HttpClient.Redirect.NORMAL)
+                builder.followRedirects(HttpClient.Redirect.NORMAL)
             }
         }
         def result = http.get('/users/alice')

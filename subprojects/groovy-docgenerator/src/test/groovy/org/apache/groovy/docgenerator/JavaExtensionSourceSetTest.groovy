@@ -28,6 +28,8 @@ import com.github.javaparser.ast.type.WildcardType
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
+import java.util.Map
+
 import static org.junit.jupiter.api.Assertions.assertThrows
 
 class JavaExtensionSourceSetTest {
@@ -130,7 +132,7 @@ class JavaExtensionSourceSetTest {
 
         assert JavaExtensionSourceSet.tryLoad(null) == null
         assert JavaExtensionSourceSet.tryLoad('') == null
-        assert JavaExtensionSourceSet.tryLoad('java.util.Map.Entry') == java.util.Map.Entry
+        assert JavaExtensionSourceSet.tryLoad('java.util.Map.Entry') == Map.Entry
         assert JavaExtensionSourceSet.tryLoad('no.such.Type') == null
     }
 

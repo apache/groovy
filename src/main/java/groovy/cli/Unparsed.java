@@ -18,6 +18,7 @@
  */
 package groovy.cli;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -26,7 +27,7 @@ import java.lang.annotation.Target;
 /**
  * Indicates that a method or property will contain the remaining arguments.
  */
-@java.lang.annotation.Documented
+@Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface Unparsed {

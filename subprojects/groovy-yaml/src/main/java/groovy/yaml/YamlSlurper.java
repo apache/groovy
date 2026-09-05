@@ -93,7 +93,7 @@ public class YamlSlurper {
      * @param file the reader of yaml
      * @return the root node of the parsed tree of Nodes
      */
-    public Object parse(java.io.File file) throws IOException {
+    public Object parse(File file) throws IOException {
         return parse(file.toPath());
     }
 

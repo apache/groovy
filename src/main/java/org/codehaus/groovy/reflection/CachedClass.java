@@ -33,6 +33,7 @@ import org.codehaus.groovy.util.ReferenceBundle;
 import java.io.Serial;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Member;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -239,7 +240,7 @@ public class CachedClass {
     public final boolean isPrimitive;
     /**
      * The modifiers of this class (e.g., public, final, abstract).
-     * See {@link java.lang.reflect.Modifier} for constants.
+     * See {@link Modifier} for constants.
      */
     public final int modifiers;
     /**
@@ -376,7 +377,7 @@ public class CachedClass {
     /**
      * Returns the access modifier flags for this class.
      *
-     * @return the modifiers as an integer, see {@link java.lang.reflect.Modifier}
+     * @return the modifiers as an integer, see {@link Modifier}
      */
     public int getModifiers() {
         return modifiers;

@@ -72,6 +72,7 @@ import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
+import javax.annotation.Nullable;
 import java.beans.BeanInfo;
 import java.beans.EventSetDescriptor;
 import java.beans.Introspector;
@@ -100,6 +101,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 import static groovy.lang.Tuple.tuple;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isValidAccessorName;
@@ -1916,7 +1918,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      *
      * @since 2.1.0
      */
-    @groovy.transform.Internal
+    @Internal
     public static final class MetaConstructor extends MetaMethod {
         private final CachedConstructor cc;
         private final boolean beanConstructor;
@@ -1982,7 +1984,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      *
      * @since 2.1.0
      */
-    @groovy.transform.Internal
+    @Internal
     public MetaMethod retrieveConstructor(Object[] arguments) {
         checkInitalised();
         if (arguments == null) arguments = EMPTY_ARGUMENTS;
@@ -2477,7 +2479,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         );
     }
 
-    private static CategoryMethod findCategoryMethod(final String name, final Class<?> sender, final java.util.function.Predicate<CachedClass[]> paramFilter) {
+    private static CategoryMethod findCategoryMethod(final String name, final Class<?> sender, final Predicate<CachedClass[]> paramFilter) {
         List<CategoryMethod> categoryMethods = GroovyCategorySupport.getCategoryMethods(name);
         if (categoryMethods != null) {
             List<CategoryMethod> choices = new ArrayList<>();
@@ -2816,7 +2818,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private static void copyNonPrivateFields(Map<String, MetaProperty> from, Map<String, MetaProperty> to, @javax.annotation.Nullable CachedClass klass) {
+    private static void copyNonPrivateFields(Map<String, MetaProperty> from, Map<String, MetaProperty> to, @Nullable CachedClass klass) {
         for (Map.Entry<String, MetaProperty> entry : from.entrySet()) {
             if (entry.getValue() instanceof CachedField field && (field.isPublic() || field.isProtected()
                     || (!field.isPrivate() && klass != null && inSamePackage(field.getDeclaringClass(), klass.getTheClass())))) {

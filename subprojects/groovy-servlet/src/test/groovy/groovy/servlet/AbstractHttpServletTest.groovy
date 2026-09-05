@@ -21,6 +21,8 @@ package groovy.servlet
 import jakarta.servlet.ServletConfig
 import jakarta.servlet.ServletContext
 import jakarta.servlet.http.HttpServletRequest
+import java.net.URL
+import groovy.util.ResourceException
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -172,7 +174,7 @@ class AbstractHttpServletTest {
         // servlet config is used to find resources
         servlet.init(servletConfig)
 
-        shouldFail(groovy.util.ResourceException) {
+        shouldFail(ResourceException) {
             servlet.getResourceConnection('someresource')
         }
     }
@@ -182,7 +184,7 @@ class AbstractHttpServletTest {
      */
     @Test
     void testGetResourceConnection_FoundInCurrentDir() {
-        def urlStub = new java.net.URL('file:realPath/someresource')
+        def urlStub = new URL('file:realPath/someresource')
         def servletContext = [
                 getRealPath: { arg -> 'realPath' + arg },
                 getResource: { arg -> arg == '/someresource' ? urlStub : null }
@@ -206,7 +208,7 @@ class AbstractHttpServletTest {
      */
     @Test
     void testGetResourceConnection_FoundInWebInf() {
-        def urlStub = new java.net.URL('file:realPath/WEB-INF/groovy/someresource')
+        def urlStub = new URL('file:realPath/WEB-INF/groovy/someresource')
         def servletContext = [
                 getRealPath: { arg -> 'realPath' + arg },
                 getResource: { arg -> arg == '/WEB-INF/groovy/someresource' ? urlStub : null }

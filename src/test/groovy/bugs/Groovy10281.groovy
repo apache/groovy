@@ -24,6 +24,7 @@ import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
 
 import java.util.logging.Handler
+import java.util.logging.Level
 import java.util.logging.LogRecord
 import java.util.logging.Logger
 
@@ -63,13 +64,13 @@ final class Groovy10281 {
         def loggerName = 'org.codehaus.groovy.classgen.asm.util.LoggableTextifier'
         def julLogger = Logger.getLogger(loggerName)
         def originalLevel = julLogger.level
-        julLogger.level = java.util.logging.Level.ALL
+        julLogger.level = Level.ALL
         def handler = new Handler() {
             void publish(LogRecord record) { result.append(record.message) }
             void flush() {}
             void close() {}
         }
-        handler.level = java.util.logging.Level.ALL
+        handler.level = Level.ALL
         julLogger.addHandler(handler)
 
         try {

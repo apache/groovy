@@ -37,6 +37,7 @@ import org.codehaus.groovy.control.messages.SyntaxErrorMessage
 import org.codehaus.groovy.syntax.SyntaxException
 import org.codehaus.groovy.transform.ASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
+import org.codehaus.groovy.transform.StubberSupport
 import org.objectweb.asm.Opcodes
 
 import static org.codehaus.groovy.ast.stmt.ReturnStatement.RETURN_NULL_OR_VOID
@@ -68,7 +69,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 @SuppressWarnings('ParameterCount')
 class ListenerListASTTransformation implements ASTTransformation, Opcodes {
-    private static final Class MY_CLASS = groovy.beans.ListenerList
+    private static final Class MY_CLASS = ListenerList
     private static final ClassNode COLLECTION_TYPE = ClassHelper.make(Collection)
 
     /** {@inheritDoc} */
@@ -87,7 +88,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         // catch only genuine user-written method conflicts, not the stubber's
         // own placeholders. Use removeMethod() rather than removeIf() on the
         // list, since ClassNode keeps a parallel name->methods map.
-        def stubs = declaringClass.methods.findAll { org.codehaus.groovy.transform.StubberSupport.isStub(it) }
+        def stubs = declaringClass.methods.findAll { StubberSupport.isStub(it) }
         stubs.each { declaringClass.removeMethod(it) }
 
         boolean isCollection = parentClass.isDerivedFrom(COLLECTION_TYPE) || parentClass.implementsInterface(COLLECTION_TYPE)

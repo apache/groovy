@@ -20,21 +20,25 @@ package groovy.console.ui
 
 import org.junit.jupiter.api.Test
 
+import java.text.SimpleDateFormat
+
 class HistoryRecordGetTextToRunTests {
+
+    private static final Class IMPORTED = SimpleDateFormat
 
     @Test
     void testImport() {
-        assert java.text.SimpleDateFormat == runSelected('import java.text.SimpleDateFormat', 'return SimpleDateFormat')
+        assert IMPORTED == runSelected('import java.text.SimpleDateFormat', 'return SimpleDateFormat')
     }
 
     @Test
     void testImportWithAlias() {
-        assert java.text.SimpleDateFormat == runSelected('import java.text.SimpleDateFormat as SF', 'return SF')
+        assert IMPORTED == runSelected('import java.text.SimpleDateFormat as SF', 'return SF')
     }
 
     @Test
     void testImportPackage() {
-        assert java.text.SimpleDateFormat == runSelected('import java.text.*', 'return SimpleDateFormat')
+        assert IMPORTED == runSelected('import java.text.*', 'return SimpleDateFormat')
     }
 
     @Test

@@ -23,6 +23,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.jar.JarFile;
+import groovy.lang.GroovyClassLoader;
+import org.codehaus.groovy.control.ClassNodeResolver;
+
 
 /**
  * Utilities for opening URL connections and reading last-modified times
@@ -50,8 +54,8 @@ public class URLStreams {
 
     /**
      * Last-modified time of {@code url} for source-freshness checks used by
-     * {@link groovy.lang.GroovyClassLoader} and
-     * {@link org.codehaus.groovy.control.ClassNodeResolver}.
+     * {@link GroovyClassLoader} and
+     * {@link ClassNodeResolver}.
      * <p>
      * {@code file:} URLs use {@link File#lastModified()} because
      * {@link URLConnection#getLastModified()} often reports {@code -1}. The
@@ -85,7 +89,7 @@ public class URLStreams {
      * Returns {@link URLConnection#getLastModified()} for {@code url} without
      * caching the connection, then closes it.
      * <p>
-     * {@code jar:} URLs otherwise keep a cached {@link java.util.jar.JarFile}
+     * {@code jar:} URLs otherwise keep a cached {@link JarFile}
      * open after {@link URLConnection#getInputStream()} is closed, which on
      * Windows locks the JAR until the JVM exits. A failure to open the stream
      * (missing JAR entry, unreachable URL) is propagated so callers can treat

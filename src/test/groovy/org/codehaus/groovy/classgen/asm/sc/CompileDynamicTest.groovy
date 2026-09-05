@@ -18,12 +18,13 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
+import groovy.transform.CompileDynamic
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.junit.jupiter.api.Test
 
 /**
- * Test case for {@link groovy.transform.CompileDynamic}.
+ * Test case for {@link CompileDynamic}.
  */
 final class CompileDynamicTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 

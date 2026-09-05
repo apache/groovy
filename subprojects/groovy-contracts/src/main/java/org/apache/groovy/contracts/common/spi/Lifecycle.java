@@ -18,8 +18,11 @@
  */
 package org.apache.groovy.contracts.common.spi;
 
+import groovy.lang.Closure;
+import org.apache.groovy.contracts.domain.Contract;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 
 /**
  * <p>Specifies life-cycle hook-ins for applying AST transformation logic before and
@@ -37,14 +40,14 @@ import org.codehaus.groovy.ast.MethodNode;
  * <h3>Generation of closure classes</h3>
  *
  * <p>In order to support Groovy 1.7.x GContracts backported Groovy 1.8 handling of annotation closures. This is done
- * by extracting {@link org.codehaus.groovy.ast.expr.ClosureExpression} from annotations and creating {@link groovy.lang.Closure}
+ * by extracting {@link ClosureExpression} from annotations and creating {@link Closure}
  * implementation classes.</p>
  *
  * <h3>Handling of AnnotationProcessor implementation classes</h3>
  *
  * <p>{@link AnnotationProcessor} implementations are used to modify domain classes found in <tt>org.apache.groovy.contracts.domain</tt>. For that
  * reason, concrete annotation processor often don't modify AST nodes directly, but simply work with domain classes like
- * {@link org.apache.groovy.contracts.domain.Contract}. Whenever an annotation processor is done, it has finished its work on the
+ * {@link Contract}. Whenever an annotation processor is done, it has finished its work on the
  * underlying domain model. </p>
  *
  * <p>{@link #beforeProcessingClassNode(ProcessingContextInformation, org.codehaus.groovy.ast.ClassNode)},

@@ -20,6 +20,7 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+import java.awt.Image
 import java.beans.BeanDescriptor
 import java.beans.BeanInfo
 import java.beans.EventSetDescriptor
@@ -74,7 +75,7 @@ final class Groovy596 {
             new BeanInfo[0]
         }
 
-        java.awt.Image getIcon(int iconKind) {
+        Image getIcon(int iconKind) {
             null
         }
     }

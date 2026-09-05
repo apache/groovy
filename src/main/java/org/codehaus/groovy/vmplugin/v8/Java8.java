@@ -43,6 +43,7 @@ import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
+import org.codehaus.groovy.vmplugin.v17.Java17;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
@@ -58,6 +59,7 @@ import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.AnnotatedWildcardType;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericSignatureFormatError;
@@ -77,7 +79,7 @@ import java.util.List;
  * Java 8 based functions.
  *
  * @since 2.5.0
- * @deprecated Use {@link org.codehaus.groovy.vmplugin.v17.Java17} instead. Groovy 6.0 requires JDK 17+.
+ * @deprecated Use {@link Java17} instead. Groovy 6.0 requires JDK 17+.
  */
 @Deprecated(since = "6.0.0", forRemoval = true)
 public class Java8 implements VMPlugin {
@@ -644,7 +646,7 @@ public class Java8 implements VMPlugin {
             }
             // synthetic parameters (e.g. of inner class constructors) may not be
             // included in the annotated parameter types; skip on length mismatch
-            AnnotatedType[] annotatedTypes = ((java.lang.reflect.Executable) member).getAnnotatedParameterTypes();
+            AnnotatedType[] annotatedTypes = ((Executable) member).getAnnotatedParameterTypes();
             if (annotatedTypes.length == n) {
                 for (int i = 0; i < n; i += 1) {
                     params[i].setType(applyTypeAnnotations(annotatedTypes[i], params[i].getType()));
@@ -661,7 +663,7 @@ public class Java8 implements VMPlugin {
      * @param member the reflective executable member
      * @param exceptions the exception class nodes created for the member
      */
-    private void applyExceptionTypeAnnotations(final java.lang.reflect.Executable member, final ClassNode[] exceptions) {
+    private void applyExceptionTypeAnnotations(final Executable member, final ClassNode[] exceptions) {
         AnnotatedType[] annotatedTypes = member.getAnnotatedExceptionTypes();
         for (int i = 0, n = Math.min(annotatedTypes.length, exceptions.length); i < n; i += 1) {
             exceptions[i] = applyTypeAnnotations(annotatedTypes[i], exceptions[i]);
@@ -676,7 +678,7 @@ public class Java8 implements VMPlugin {
      */
     protected void fillParameterNames(final String[] names, final Member member) {
         try {
-            java.lang.reflect.Parameter[] parameters = ((java.lang.reflect.Executable) member).getParameters();
+            java.lang.reflect.Parameter[] parameters = ((Executable) member).getParameters();
             for (int i = 0, n = names.length; i < n; i += 1) {
                 names[i] = parameters[i].getName();
             }

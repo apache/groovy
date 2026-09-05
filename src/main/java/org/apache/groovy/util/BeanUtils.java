@@ -18,6 +18,8 @@
  */
 package org.apache.groovy.util;
 
+import java.beans.Introspector;
+
 /**
  * Utility methods for working with JavaBean-style property names.
  */
@@ -29,7 +31,7 @@ public class BeanUtils {
      * In particular, if the first two letters are both uppercase, e.g. URL,
      * then no change of case occurs.
      * <p>
-     * Originally inspired by the method with the same name in {@link java.beans.Introspector}.
+     * Originally inspired by the method with the same name in {@link Introspector}.
      *
      * @param property a string representing the name of a JavaBean-like property
      * @return the decapitalized string

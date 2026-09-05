@@ -20,6 +20,9 @@ package groovy.operator
 
 import org.junit.jupiter.api.Test
 
+import java.math.BigInteger
+import java.util.regex.Pattern
+
 
 /**
  * Test Bitwise Operations
@@ -263,10 +266,10 @@ class BitwiseOperatorsTest {
         assert x.class == java.lang.Integer
 
         def y = ~"foo"
-        assert y.class == java.util.regex.Pattern
+        assert y.class == Pattern
 
         def z = ~"${x}"
-        assert z.class == java.util.regex.Pattern
+        assert z.class == Pattern
     }
 
     @Test
@@ -282,17 +285,17 @@ class BitwiseOperatorsTest {
         assert neg(2L) == ~2
 
         // BigInteger test
-        assert neg(new java.math.BigInteger("2")).class == java.math.BigInteger
-        assert neg(new java.math.BigInteger("2")) instanceof java.math.BigInteger
-        assert neg(new java.math.BigInteger("2")) == ~2
+        assert neg(new BigInteger("2")).class == BigInteger
+        assert neg(new BigInteger("2")) instanceof BigInteger
+        assert neg(new BigInteger("2")) == ~2
 
         // BigInteger test
-        assert neg(2G).class == java.math.BigInteger
-        assert neg(2G) instanceof java.math.BigInteger
+        assert neg(2G).class == BigInteger
+        assert neg(2G) instanceof BigInteger
         assert neg(2G) == ~2
 
-        assert neg("foo").class == java.util.regex.Pattern
-        assert neg("foo") instanceof java.util.regex.Pattern
+        assert neg("foo").class == Pattern
+        assert neg("foo") instanceof Pattern
     }
 
     @Test
@@ -314,7 +317,7 @@ class BitwiseOperatorsTest {
         if (n instanceof java.lang.Long) {
             return ~n
         }
-        if (n instanceof java.math.BigInteger) {
+        if (n instanceof BigInteger) {
             return ~n
         }
         return ~n.toString()

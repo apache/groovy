@@ -21,6 +21,7 @@ package org.apache.groovy.runtime.async;
 import groovy.concurrent.AsyncChannel;
 import groovy.concurrent.Awaitable;
 import groovy.concurrent.ChannelClosedException;
+import groovy.concurrent.ChannelSelect;
 import groovy.transform.Internal;
 
 import java.time.Instant;
@@ -45,7 +46,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * is completed asynchronously when matching counterparts arrive.
  * <p>
  * Every operation is arbitrated by a {@link SelectClaim}: the branches of a
- * {@link groovy.concurrent.ChannelSelect} share their select's claim, and a
+ * {@link ChannelSelect} share their select's claim, and a
  * plain operation carries a private one. The claim is the sole owner of a
  * parked operation's fate — a delivery commits it before it completes the
  * future, and cancellation must commit it before it may touch the future —
@@ -54,7 +55,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * <p>
  * Both waiting queues are concurrent deques so that a cancelled operation
  * can withdraw itself without taking the channel lock: a
- * {@link groovy.concurrent.ChannelSelect} withdraws its losing branches from
+ * {@link ChannelSelect} withdraws its losing branches from
  * inside the winning channel's delivery, and taking a second channel's lock
  * there could deadlock against a select completing on that channel.
  *
@@ -158,7 +159,7 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
      * Offers {@code value}, but only if {@code claim} commits to this branch
      * at the moment the channel could accept it: when a waiting receiver takes
      * it, or when buffer space holds it. A group of offers sharing one claim
-     * (the branches of a {@link groovy.concurrent.ChannelSelect}) commits
+     * (the branches of a {@link ChannelSelect}) commits
      * exactly one between them; an offer whose claim was committed elsewhere
      * is retired without any effect on the channel — no buffered residue, no
      * lingering waiting sender.
@@ -228,7 +229,7 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
      * branch at the moment this channel would hand the value over. The claim
      * is resolved under the channel lock immediately before the value is
      * dequeued, so a group of offers sharing one claim (the branches of a
-     * {@link groovy.concurrent.ChannelSelect}) takes exactly one value between
+     * {@link ChannelSelect}) takes exactly one value between
      * them: a branch that loses the claim never touches its channel's contents
      * and is completed as cancelled.
      * <p>

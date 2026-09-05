@@ -23,6 +23,7 @@ import groovy.lang.GeneratedGroovyProxy;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
+import org.apache.groovy.util.HiddenClassDefiner;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
@@ -129,7 +130,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
 
     /**
      * Full-privilege lookup for this class — last-resort nest host when no
-     * foreign host is suitable. See {@link org.apache.groovy.util.HiddenClassDefiner}.
+     * foreign host is suitable. See {@link HiddenClassDefiner}.
      */
     private static final Lookup LOOKUP = MethodHandles.lookup();
 

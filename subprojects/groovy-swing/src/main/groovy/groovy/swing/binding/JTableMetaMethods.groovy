@@ -21,6 +21,7 @@ package groovy.swing.binding
 import org.codehaus.groovy.runtime.InvokerHelper
 
 import javax.swing.JTable
+import javax.swing.table.DefaultTableModel
 import javax.swing.table.TableColumn
 import javax.swing.table.TableColumnModel
 import javax.swing.table.TableModel
@@ -40,7 +41,7 @@ class JTableMetaMethods {
 
             getElements:{->
                 def model = delegate.model;
-                if (model instanceof javax.swing.table.DefaultTableModel) {
+                if (model instanceof DefaultTableModel) {
                     return Collections.unmodifiableList(model.getDataVector())
                 } else if (model instanceof groovy.swing.model.DefaultTableModel) {
                     return Collections.unmodifiableList(model.rows)
@@ -71,7 +72,7 @@ class JTableMetaMethods {
             return null
         }
         TableModel model = table.model
-        if (model instanceof javax.swing.table.DefaultTableModel) {
+        if (model instanceof DefaultTableModel) {
             // could be groovier, but it works and is a well understood idiom
             Map value = [:]
             TableColumnModel cmodel = table.columnModel

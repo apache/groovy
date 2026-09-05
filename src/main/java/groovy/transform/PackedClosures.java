@@ -19,6 +19,7 @@
 package groovy.transform;
 
 import org.apache.groovy.lang.annotation.Incubating;
+import org.codehaus.groovy.runtime.PackedClosure;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -28,7 +29,7 @@ import java.lang.annotation.Target;
 /**
  * Opt-in for compact closure compilation: within the annotated class or method, an eligible closure
  * literal's body is hoisted into a synthetic method on the enclosing class and the literal is replaced
- * by a shared {@link org.codehaus.groovy.runtime.PackedClosure} adapter, instead of generating one
+ * by a shared {@link PackedClosure} adapter, instead of generating one
  * inner class per closure. The value stays a real {@code groovy.lang.Closure}, so {@code curry},
  * {@code memoize}, {@code trampoline} and iteration keep working; captured values are threaded by
  * value (read-only) or via a shared {@code groovy.lang.Reference} (when written), so a packed closure

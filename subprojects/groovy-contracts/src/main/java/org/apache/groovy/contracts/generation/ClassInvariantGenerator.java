@@ -67,7 +67,7 @@ public class ClassInvariantGenerator extends BaseGenerator {
      * method holding this class invariant. This is used for heir calls to find out about inherited class
      * invariants.
      *
-     * @param type           the current {@link org.codehaus.groovy.ast.ClassNode}
+     * @param type           the current {@link ClassNode}
      * @param classInvariant the {@link org.apache.groovy.contracts.domain.ClassInvariant} the assertion statement should be generated from
      */
     public void generateInvariantAssertionStatement(final ClassNode type, final org.apache.groovy.contracts.domain.ClassInvariant classInvariant) {
@@ -94,8 +94,8 @@ public class ClassInvariantGenerator extends BaseGenerator {
     /**
      * Adds the current class-invariant to the given <tt>method</tt>.
      *
-     * @param type   the {@link org.codehaus.groovy.ast.ClassNode} which declared the given {@link org.codehaus.groovy.ast.MethodNode}
-     * @param method the current {@link org.codehaus.groovy.ast.MethodNode}
+     * @param type   the {@link ClassNode} which declared the given {@link MethodNode}
+     * @param method the current {@link MethodNode}
      */
     public void addInvariantAssertionStatement(final ClassNode type, final MethodNode method) {
 

@@ -18,6 +18,7 @@
  */
 package groovy.typecheckers
 
+import groovy.transform.TypeChecked
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.junit.jupiter.api.BeforeAll
@@ -33,7 +34,7 @@ final class ModifiesCheckerTest {
     @BeforeAll
     static void setUp() {
         shell = new GroovyShell(new CompilerConfiguration().tap {
-            def customizer = new ASTTransformationCustomizer(groovy.transform.TypeChecked)
+            def customizer = new ASTTransformationCustomizer(TypeChecked)
             customizer.annotationParameters = [extensions: 'groovy.typecheckers.ModifiesChecker']
             addCompilationCustomizers(customizer)
         })

@@ -64,6 +64,7 @@ import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.ast.query.AstQuery
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.ForStatement
@@ -149,7 +150,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     /**
      * Returns a {@link Predicate} that tests whether a node matches the supplied pattern AST. This
      * is the bridge between exemplar pattern matching and the fluent
-     * {@link org.codehaus.groovy.ast.query.AstQuery} API, letting a pattern be used as a filter:
+     * {@link AstQuery} API, letting a pattern be used as a filter:
      * <pre>
      * import static org.codehaus.groovy.macro.matcher.ASTMatcher.matching
      * AstQuery.from(node).descendants(MethodCallExpression).where(matching(macro { _.foo() })).list()

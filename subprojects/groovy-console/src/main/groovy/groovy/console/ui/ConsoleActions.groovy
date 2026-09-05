@@ -492,7 +492,7 @@ cycleThemeAction = action(
         name: 'Theme',
         closure: controller.&cycleTheme,
         smallIcon: Icons.menu('refresh'),
-        shortDescription: 'Cycle theme (' + groovy.console.ui.ThemeManager.themeLabel + ')'
+        shortDescription: 'Cycle theme (' + ThemeManager.themeLabel + ')'
 )
 
 smallIconsAction = action(

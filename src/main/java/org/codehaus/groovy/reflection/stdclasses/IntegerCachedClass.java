@@ -23,7 +23,7 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import java.math.BigInteger;
 
 /**
- * Provides optimized reflection caching for {@code int} and {@link java.lang.Integer}.
+ * Provides optimized reflection caching for {@code int} and {@link Integer}.
  * Coerces numeric arguments to int values for type-safe method invocation.
  * Optionally allows {@code null} values for the boxed {@link Integer} class variant.
  */

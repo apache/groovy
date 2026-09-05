@@ -45,7 +45,7 @@ public class ConcurrentSoftCache<K, V> extends ConcurrentCommonCache<K, SoftRefe
      *
      * @param initialCapacity  initial capacity of the cache
      * @param maxSize          max size of the cache
-     * @param evictionStrategy LRU or FIFO, see {@link org.codehaus.groovy.runtime.memoize.EvictableCache.EvictionStrategy}
+     * @param evictionStrategy LRU or FIFO, see {@link EvictableCache.EvictionStrategy}
      */
     public ConcurrentSoftCache(int initialCapacity, int maxSize, EvictionStrategy evictionStrategy) {
         super(initialCapacity, maxSize, evictionStrategy);
@@ -73,9 +73,9 @@ public class ConcurrentSoftCache<K, V> extends ConcurrentCommonCache<K, SoftRefe
     }
 
     /**
-     * Constructs a cache backed by the specified {@link java.util.Map} instance
+     * Constructs a cache backed by the specified {@link Map} instance
      *
-     * @param map the {@link java.util.Map} instance
+     * @param map the {@link Map} instance
      */
     public ConcurrentSoftCache(Map<K, SoftReference<V>> map) {
         super(map);

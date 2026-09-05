@@ -18,9 +18,11 @@
  */
 package groovy.transform;
 
+import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 import groovy.lang.annotation.ExtendedElementType;
 import groovy.lang.annotation.ExtendedTarget;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.Documented;
@@ -32,11 +34,11 @@ import java.lang.annotation.Target;
 /**
  * Variable annotation used for changing the base script class of the current script.
  * <p>
- * The type of the variable annotated with {@code @BaseScript} must extend {@link groovy.lang.Script}.
+ * The type of the variable annotated with {@code @BaseScript} must extend {@link Script}.
  * It will be used as the base script class.
  * The annotated variable will become shortcut to <code>this</code> object.
  * Using this annotation will override base script set by Groovy compiler or
- * {@link org.codehaus.groovy.control.CompilerConfiguration} of {@link groovy.lang.GroovyShell}
+ * {@link CompilerConfiguration} of {@link GroovyShell}
  * Example usage:
  * <pre>
  * abstract class CustomScript extends Script {

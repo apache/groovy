@@ -23,19 +23,21 @@
  * <p>
  * Layout:
  * <ul>
- *   <li>{@link org.apache.groovy.runtime.async.AsyncSupport} — public entry
+ *   <li>{@link AsyncSupport} — public entry
  *       point used by compiler-generated code and by
- *       {@link groovy.concurrent.Awaitable}</li>
+ *       {@link Awaitable}</li>
  *   <li>{@code AsyncExecutors} — executor/scheduler configuration</li>
  *   <li>{@code AwaitCombinators} — {@code all}/{@code any}/{@code first}/
  *       {@code allSettled} joining algorithms</li>
- *   <li>{@link org.apache.groovy.runtime.async.GroovyPromise} — default
- *       {@link groovy.concurrent.Awaitable} implementation</li>
- *   <li>{@link org.apache.groovy.runtime.async.GeneratorBridge} —
+ *   <li>{@link GroovyPromise} — default
+ *       {@link Awaitable} implementation</li>
+ *   <li>{@link GeneratorBridge} —
  *       producer/consumer bridge for {@code yield return}</li>
- *   <li>{@link org.apache.groovy.runtime.async.DefaultAsyncScope},
- *       {@link org.apache.groovy.runtime.async.DefaultAsyncChannel} —
+ *   <li>{@link DefaultAsyncScope},
+ *       {@link DefaultAsyncChannel} —
  *       structured concurrency and CSP channel implementations</li>
  * </ul>
  */
 package org.apache.groovy.runtime.async;
+
+import groovy.concurrent.Awaitable;

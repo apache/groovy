@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.transform.AutoFinal
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.junit.jupiter.api.Test
 
@@ -127,7 +128,7 @@ final class AutoFinalTransformTest {
 
     @Test // GROOVY-10585
     void testAutoFinalOnMethodButDisabledViaConfig() {
-        shell.@config.addCompilationCustomizers(new ASTTransformationCustomizer(groovy.transform.AutoFinal, enabled: false))
+        shell.@config.addCompilationCustomizers(new ASTTransformationCustomizer(AutoFinal, enabled: false))
         def err = shouldFail shell, '''
             class C {
                 void one(x) {

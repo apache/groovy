@@ -18,6 +18,9 @@
  */
 package org.codehaus.groovy.control;
 
+import groovy.lang.Groovydoc;
+import groovy.lang.Reference;
+import groovy.transform.stc.ClassTag;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.GroovyBugError;
@@ -59,7 +62,7 @@ public class CompilerConfiguration {
     /** Optimization Option for enabling attaching groovydoc as AST node metadata. */
     public static final String GROOVYDOC = "groovydoc";
 
-    /** Optimization Option for enabling attaching {@link groovy.lang.Groovydoc} annotation. */
+    /** Optimization Option for enabling attaching {@link Groovydoc} annotation. */
     public static final String RUNTIME_GROOVYDOC = "runtimeGroovydoc";
 
     /** Optimization Option for enabling parallel parsing. */
@@ -453,7 +456,7 @@ public class CompilerConfiguration {
     private Set<String> scriptExtensions = new LinkedHashSet<>();
 
     /**
-     * Global consumer opt-out for {@link groovy.transform.stc.ClassTag @ClassTag} preemption under
+     * Global consumer opt-out for {@link ClassTag @ClassTag} preemption under
      * static compilation (GROOVY-12115). Preemption is declared by the API author
      * ({@code @ClassTag(preempt=true)}) and contained to the declaring class; setting this flag
      * lets the consuming build veto every preemptive upgrade anyway. Additive injection (supplying
@@ -506,7 +509,7 @@ public class CompilerConfiguration {
     /**
      * Language-compatibility flag (GROOVY-11792): when {@code true} (the default),
      * for-in loop variables shared with closures, lambdas, or anonymous inner
-     * classes receive a fresh {@link groovy.lang.Reference} each iteration.
+     * classes receive a fresh {@link Reference} each iteration.
      * Classic {@code for} / {@code while} loops are unaffected. Independent of
      * {@link #getOptimizationOptions()} (including {@code "all"} → false).
      *
@@ -1233,7 +1236,7 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Whether {@link groovy.transform.stc.ClassTag @ClassTag} preemption is disabled globally
+     * Whether {@link ClassTag @ClassTag} preemption is disabled globally
      * under static compilation (GROOVY-12115). Preemption requires the API author's declared
      * intent ({@code @ClassTag(preempt=true)}) and is contained to the declaring class; this flag
      * lets the consuming build veto every preemptive upgrade anyway. Additive injection, such as
@@ -1248,7 +1251,7 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Disables (or re-enables) {@link groovy.transform.stc.ClassTag @ClassTag} preemption
+     * Disables (or re-enables) {@link ClassTag @ClassTag} preemption
      * globally under static compilation (GROOVY-12115).
      *
      * @param classTagPreemptionDisabled whether to disable preemption
@@ -1508,8 +1511,8 @@ public class CompilerConfiguration {
      * transformations, that is to say transformations defined in a
      * META-INF/services/org.codehaus.groovy.transform.ASTTransformation file.
      * If you explicitly add a global AST transformation in your compilation process,
-     * for example using the {@link org.codehaus.groovy.control.customizers.ASTTransformationCustomizer} or
-     * using a {@link org.codehaus.groovy.control.CompilationUnit.IPrimaryClassNodeOperation},
+     * for example using the {@code ASTTransformationCustomizer} or
+     * using a {@link CompilationUnit.IPrimaryClassNodeOperation},
      * then nothing will prevent the transformation from being loaded.
      *
      * @param disabledGlobalASTTransformations a set of fully qualified class names of global AST transformations
@@ -1591,7 +1594,7 @@ public class CompilerConfiguration {
      * default. Disable via system property {@code groovy.forin.per.iteration.capture=false}
      * or {@link #setForInPerIterationCaptureEnabled(boolean) setForInPerIterationCaptureEnabled(false)},
      * which restores the historical behaviour where a single shared
-     * {@link groovy.lang.Reference} is updated across for-in iterations.
+     * {@link Reference} is updated across for-in iterations.
      *
      * @return {@code true} if each for-in iteration should allocate a fresh
      *         reference for loop variables shared with closures, lambdas, or
@@ -1607,7 +1610,7 @@ public class CompilerConfiguration {
      * loop variables shared with closures, lambdas, or anonymous inner classes
      * (GROOVY-11792). Classic {@code for} and {@code while} loops are not
      * affected. Default is {@code true}. Setting {@code false} restores the
-     * historical single shared {@link groovy.lang.Reference} across iterations.
+     * historical single shared {@link Reference} across iterations.
      *
      * @param forInPerIterationCapture {@code true} to allocate a fresh reference each
      *        for-in iteration for shared loop variables

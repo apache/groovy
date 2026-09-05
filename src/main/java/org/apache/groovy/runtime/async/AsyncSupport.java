@@ -54,7 +54,7 @@ import java.util.function.Supplier;
  * <p>
  * This class is the entry point invoked by compiler-generated code and also
  * exposes the combinator and configuration surface used by
- * {@link groovy.concurrent.Awaitable}. Combinator algorithms live in
+ * {@link Awaitable}. Combinator algorithms live in
  * {@link AwaitCombinators}; executor/scheduler configuration lives in
  * {@link AsyncExecutors}.
  * <p>
@@ -72,7 +72,7 @@ import java.util.function.Supplier;
  * <b>Exception handling</b> follows a transparency principle: the
  * <em>original</em> exception is rethrown without being wrapped.
  *
- * @see groovy.concurrent.Awaitable
+ * @see Awaitable
  * @since 6.0.0
  */
 public class AsyncSupport {

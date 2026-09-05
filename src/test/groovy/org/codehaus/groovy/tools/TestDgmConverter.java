@@ -19,6 +19,8 @@
 package org.codehaus.groovy.tools;
 
 import groovy.lang.MetaMethod;
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -483,9 +485,9 @@ public class TestDgmConverter extends TestCase {
             // The record.parameters includes the receiver as the first element
             // The declaring class is the class that contains the static method
             Class<?> declaringClass = dgmMethodRecord.parameters[0];
-            for (java.lang.reflect.Method m : declaringClass.getMethods()) {
+            for (Method m : declaringClass.getMethods()) {
                 if (m.getName().equals(dgmMethodRecord.methodName)
-                        && java.util.Arrays.equals(m.getParameterTypes(), dgmMethodRecord.parameters)) {
+                        && Arrays.equals(m.getParameterTypes(), dgmMethodRecord.parameters)) {
                     assertFalse(
                             "Deprecated method " + dgmMethodRecord.methodName + " on " + declaringClass.getName()
                                     + " should not be in DGM records",
@@ -531,7 +533,7 @@ public class TestDgmConverter extends TestCase {
 
             // Load back from the temp file by reading the raw bytes and creating a
             // DataInputStream to verify the format
-            try (var in = new java.io.DataInputStream(new java.io.BufferedInputStream(new FileInputStream(tempFile.toFile())))) {
+            try (var in = new DataInputStream(new BufferedInputStream(new FileInputStream(tempFile.toFile())))) {
                 // Read the class table (skipping primitives)
                 int classCount = 0;
                 while (true) {

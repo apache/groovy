@@ -18,6 +18,7 @@
  */
 package groovy.contracts;
 
+import org.apache.groovy.contracts.PreconditionViolation;
 import org.apache.groovy.contracts.annotations.meta.AnnotationProcessorImplementation;
 import org.apache.groovy.contracts.annotations.meta.Precondition;
 import org.apache.groovy.contracts.common.impl.RequiresAnnotationProcessor;
@@ -73,7 +74,7 @@ public @interface Requires {
     /**
      * {@code true} (default): weave the precondition assertion — the current
      * behaviour, a violating caller observes a
-     * {@link org.apache.groovy.contracts.PreconditionViolation}.
+     * {@link PreconditionViolation}.
      * {@code false}: the obligation is <em>already enforced</em> (see
      * {@code direct} for where) — no assertion is generated, and a violating
      * caller observes whatever the existing enforcement does (for example the

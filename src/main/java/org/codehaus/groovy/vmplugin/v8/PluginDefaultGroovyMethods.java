@@ -30,6 +30,7 @@ import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.RangeInfo;
 import org.codehaus.groovy.runtime.StreamGroovyMethods;
 
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -604,7 +605,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 4.0.0
      */
     public static String getPid(final Runtime self) {
-        String name = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
+        String name = ManagementFactory.getRuntimeMXBean().getName();
         int index = name.indexOf('@');
         if (index == -1) { // should never happen
             return name;

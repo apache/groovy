@@ -26,7 +26,7 @@ import java.time.LocalDateTime
 import java.time.Period
 
 /**
- * Tests the {@code java.time}-based {@link org.apache.groovy.datetime.TimeCategory} DSL.
+ * Tests the {@code java.time}-based {@link TimeCategory} DSL.
  */
 class TimeCategoryTest {
 

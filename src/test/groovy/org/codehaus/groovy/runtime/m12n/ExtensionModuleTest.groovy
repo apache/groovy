@@ -21,6 +21,9 @@ package org.codehaus.groovy.runtime.m12n
 import groovy.junit6.plugin.ForkedJvm
 import org.junit.jupiter.api.Test
 
+import java.time.LocalDate
+import java.time.LocalDateTime
+
 import static groovy.test.GroovyAssert.assertScript
 
 /**
@@ -125,9 +128,9 @@ final class ExtensionModuleTest {
      */
     @Test
     void testOverrideLocalDateTimeCompareTo() {
-        def d1 = java.time.LocalDateTime.now()
-        def d2 = java.time.LocalDate.now().plusDays(42)
-        def d3 = java.time.LocalDate.now().minusDays(42)
+        def d1 = LocalDateTime.now()
+        def d2 = LocalDate.now().plusDays(42)
+        def d3 = LocalDate.now().minusDays(42)
 
         assert d1 < d2
         assert d1 > d3

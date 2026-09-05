@@ -18,6 +18,7 @@
  */
 package groovy.concurrent
 
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -105,7 +106,7 @@ final class ChannelCompositionTest {
         '''
     }
 
-    @Test @org.junit.jupiter.api.Disabled("split cleanup issue when run with other tests")
+    @Test @Disabled("split cleanup issue when run with other tests")
     void testSplit() {
         assertScript '''
             import groovy.concurrent.AsyncChannel

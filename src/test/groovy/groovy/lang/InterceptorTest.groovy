@@ -18,6 +18,7 @@
  */
 package groovy.lang
 
+import groovy.mock.example.CheeseSlicer
 import org.codehaus.groovy.runtime.StringBufferWriter
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -94,7 +95,7 @@ after  java.lang.String.valueOf(java.lang.Boolean)
 
     @Test
     void testInterceptionOfGroovyClasses() {
-        def slicer = new groovy.mock.example.CheeseSlicer()
+        def slicer = new CheeseSlicer()
         def proxy = ProxyMetaClass.getInstance(slicer.class)
         proxy.setInterceptor(interceptor)
         proxy.use(slicer) {

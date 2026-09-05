@@ -31,6 +31,7 @@ import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -40,6 +41,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -78,7 +80,7 @@ import static org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Concurre
  * times or failures as a side effect of the listener being notified. Execution
  * safety and a fast turn around time can be achieved by performing the
  * operation asynchronously, such as by submitting a task to an
- * {@link java.util.concurrent.ExecutorService}.
+ * {@link ExecutorService}.
  * <p>
  * The <tt>concurrency level</tt> determines the number of threads that can
  * concurrently modify the table. Using a significantly higher or lower value
@@ -91,7 +93,7 @@ import static org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Concurre
  * <em>optional</em> methods of the {@link Map} and {@link Iterator}
  * interfaces.
  * <p>
- * Like {@link java.util.Hashtable} but unlike {@link HashMap}, this class
+ * Like {@link Hashtable} but unlike {@link HashMap}, this class
  * does <em>not</em> allow <tt>null</tt> to be used as a key or value. Unlike
  * {@link LinkedHashMap}, this class does <em>not</em> provide
  * predictable iteration order. A snapshot of the keys and entries may be

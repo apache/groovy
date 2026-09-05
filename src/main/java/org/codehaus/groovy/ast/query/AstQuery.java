@@ -26,8 +26,60 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
+import org.codehaus.groovy.ast.expr.AttributeExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.BitwiseNegationExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ClosureListExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.GStringExpression;
+import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.MapEntryExpression;
+import org.codehaus.groovy.ast.expr.MapExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.MethodPointerExpression;
+import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PostfixExpression;
+import org.codehaus.groovy.ast.expr.PrefixExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.RangeExpression;
+import org.codehaus.groovy.ast.expr.SpreadExpression;
+import org.codehaus.groovy.ast.expr.SpreadMapExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
+import org.codehaus.groovy.ast.expr.TernaryExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
+import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.AssertStatement;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.BreakStatement;
+import org.codehaus.groovy.ast.stmt.CaseStatement;
+import org.codehaus.groovy.ast.stmt.CatchStatement;
+import org.codehaus.groovy.ast.stmt.ContinueStatement;
+import org.codehaus.groovy.ast.stmt.DoWhileStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.SwitchStatement;
+import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
+import org.codehaus.groovy.ast.stmt.ThrowStatement;
+import org.codehaus.groovy.ast.stmt.TryCatchStatement;
+import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.stmt.YieldStatement;
+import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayDeque;
@@ -452,61 +504,61 @@ public final class AstQuery<T extends ASTNode> {
 
         // ---- statements ----
 
-        @Override public void visitBlockStatement(org.codehaus.groovy.ast.stmt.BlockStatement s) { enter(s, () -> super.visitBlockStatement(s)); }
-        @Override public void visitForLoop(org.codehaus.groovy.ast.stmt.ForStatement s) { enter(s, () -> super.visitForLoop(s)); }
-        @Override public void visitWhileLoop(org.codehaus.groovy.ast.stmt.WhileStatement s) { enter(s, () -> super.visitWhileLoop(s)); }
-        @Override public void visitDoWhileLoop(org.codehaus.groovy.ast.stmt.DoWhileStatement s) { enter(s, () -> super.visitDoWhileLoop(s)); }
-        @Override public void visitIfElse(org.codehaus.groovy.ast.stmt.IfStatement s) { enter(s, () -> super.visitIfElse(s)); }
-        @Override public void visitExpressionStatement(org.codehaus.groovy.ast.stmt.ExpressionStatement s) { enter(s, () -> super.visitExpressionStatement(s)); }
-        @Override public void visitReturnStatement(org.codehaus.groovy.ast.stmt.ReturnStatement s) { enter(s, () -> super.visitReturnStatement(s)); }
-        @Override public void visitAssertStatement(org.codehaus.groovy.ast.stmt.AssertStatement s) { enter(s, () -> super.visitAssertStatement(s)); }
-        @Override public void visitTryCatchFinally(org.codehaus.groovy.ast.stmt.TryCatchStatement s) { enter(s, () -> super.visitTryCatchFinally(s)); }
-        @Override public void visitSwitch(org.codehaus.groovy.ast.stmt.SwitchStatement s) { enter(s, () -> super.visitSwitch(s)); }
-        @Override public void visitCaseStatement(org.codehaus.groovy.ast.stmt.CaseStatement s) { enter(s, () -> super.visitCaseStatement(s)); }
-        @Override public void visitBreakStatement(org.codehaus.groovy.ast.stmt.BreakStatement s) { enter(s, () -> super.visitBreakStatement(s)); }
-        @Override public void visitContinueStatement(org.codehaus.groovy.ast.stmt.ContinueStatement s) { enter(s, () -> super.visitContinueStatement(s)); }
-        @Override public void visitThrowStatement(org.codehaus.groovy.ast.stmt.ThrowStatement s) { enter(s, () -> super.visitThrowStatement(s)); }
-        @Override public void visitSynchronizedStatement(org.codehaus.groovy.ast.stmt.SynchronizedStatement s) { enter(s, () -> super.visitSynchronizedStatement(s)); }
-        @Override public void visitCatchStatement(org.codehaus.groovy.ast.stmt.CatchStatement s) { enter(s, () -> super.visitCatchStatement(s)); }
-        @Override public void visitEmptyStatement(org.codehaus.groovy.ast.stmt.EmptyStatement s) { enter(s, () -> super.visitEmptyStatement(s)); }
-        @Override public void visitYieldStatement(org.codehaus.groovy.ast.stmt.YieldStatement s) { enter(s, () -> super.visitYieldStatement(s)); }
-        @Override public void visitSwitchExpression(org.codehaus.groovy.ast.expr.SwitchExpression e) { enter(e, () -> super.visitSwitchExpression(e)); }
+        @Override public void visitBlockStatement(BlockStatement s) { enter(s, () -> super.visitBlockStatement(s)); }
+        @Override public void visitForLoop(ForStatement s) { enter(s, () -> super.visitForLoop(s)); }
+        @Override public void visitWhileLoop(WhileStatement s) { enter(s, () -> super.visitWhileLoop(s)); }
+        @Override public void visitDoWhileLoop(DoWhileStatement s) { enter(s, () -> super.visitDoWhileLoop(s)); }
+        @Override public void visitIfElse(IfStatement s) { enter(s, () -> super.visitIfElse(s)); }
+        @Override public void visitExpressionStatement(ExpressionStatement s) { enter(s, () -> super.visitExpressionStatement(s)); }
+        @Override public void visitReturnStatement(ReturnStatement s) { enter(s, () -> super.visitReturnStatement(s)); }
+        @Override public void visitAssertStatement(AssertStatement s) { enter(s, () -> super.visitAssertStatement(s)); }
+        @Override public void visitTryCatchFinally(TryCatchStatement s) { enter(s, () -> super.visitTryCatchFinally(s)); }
+        @Override public void visitSwitch(SwitchStatement s) { enter(s, () -> super.visitSwitch(s)); }
+        @Override public void visitCaseStatement(CaseStatement s) { enter(s, () -> super.visitCaseStatement(s)); }
+        @Override public void visitBreakStatement(BreakStatement s) { enter(s, () -> super.visitBreakStatement(s)); }
+        @Override public void visitContinueStatement(ContinueStatement s) { enter(s, () -> super.visitContinueStatement(s)); }
+        @Override public void visitThrowStatement(ThrowStatement s) { enter(s, () -> super.visitThrowStatement(s)); }
+        @Override public void visitSynchronizedStatement(SynchronizedStatement s) { enter(s, () -> super.visitSynchronizedStatement(s)); }
+        @Override public void visitCatchStatement(CatchStatement s) { enter(s, () -> super.visitCatchStatement(s)); }
+        @Override public void visitEmptyStatement(EmptyStatement s) { enter(s, () -> super.visitEmptyStatement(s)); }
+        @Override public void visitYieldStatement(YieldStatement s) { enter(s, () -> super.visitYieldStatement(s)); }
+        @Override public void visitSwitchExpression(SwitchExpression e) { enter(e, () -> super.visitSwitchExpression(e)); }
 
         // ---- expressions (sinks only; wrappers funnel into these) ----
 
-        @Override public void visitMethodCallExpression(org.codehaus.groovy.ast.expr.MethodCallExpression e) { enter(e, () -> super.visitMethodCallExpression(e)); }
-        @Override public void visitStaticMethodCallExpression(org.codehaus.groovy.ast.expr.StaticMethodCallExpression e) { enter(e, () -> super.visitStaticMethodCallExpression(e)); }
-        @Override public void visitConstructorCallExpression(org.codehaus.groovy.ast.expr.ConstructorCallExpression e) { enter(e, () -> super.visitConstructorCallExpression(e)); }
-        @Override public void visitBinaryExpression(org.codehaus.groovy.ast.expr.BinaryExpression e) { enter(e, () -> super.visitBinaryExpression(e)); }
-        @Override public void visitTernaryExpression(org.codehaus.groovy.ast.expr.TernaryExpression e) { enter(e, () -> super.visitTernaryExpression(e)); }
-        @Override public void visitPrefixExpression(org.codehaus.groovy.ast.expr.PrefixExpression e) { enter(e, () -> super.visitPrefixExpression(e)); }
-        @Override public void visitPostfixExpression(org.codehaus.groovy.ast.expr.PostfixExpression e) { enter(e, () -> super.visitPostfixExpression(e)); }
-        @Override public void visitBooleanExpression(org.codehaus.groovy.ast.expr.BooleanExpression e) { enter(e, () -> super.visitBooleanExpression(e)); }
-        @Override public void visitClosureExpression(org.codehaus.groovy.ast.expr.ClosureExpression e) { enter(e, () -> super.visitClosureExpression(e)); }
-        @Override public void visitTupleExpression(org.codehaus.groovy.ast.expr.TupleExpression e) { enter(e, () -> super.visitTupleExpression(e)); }
-        @Override public void visitListExpression(org.codehaus.groovy.ast.expr.ListExpression e) { enter(e, () -> super.visitListExpression(e)); }
-        @Override public void visitMapExpression(org.codehaus.groovy.ast.expr.MapExpression e) { enter(e, () -> super.visitMapExpression(e)); }
-        @Override public void visitMapEntryExpression(org.codehaus.groovy.ast.expr.MapEntryExpression e) { enter(e, () -> super.visitMapEntryExpression(e)); }
-        @Override public void visitRangeExpression(org.codehaus.groovy.ast.expr.RangeExpression e) { enter(e, () -> super.visitRangeExpression(e)); }
-        @Override public void visitPropertyExpression(org.codehaus.groovy.ast.expr.PropertyExpression e) { enter(e, () -> super.visitPropertyExpression(e)); }
-        @Override public void visitAttributeExpression(org.codehaus.groovy.ast.expr.AttributeExpression e) { enter(e, () -> super.visitAttributeExpression(e)); }
-        @Override public void visitFieldExpression(org.codehaus.groovy.ast.expr.FieldExpression e) { enter(e, () -> super.visitFieldExpression(e)); }
+        @Override public void visitMethodCallExpression(MethodCallExpression e) { enter(e, () -> super.visitMethodCallExpression(e)); }
+        @Override public void visitStaticMethodCallExpression(StaticMethodCallExpression e) { enter(e, () -> super.visitStaticMethodCallExpression(e)); }
+        @Override public void visitConstructorCallExpression(ConstructorCallExpression e) { enter(e, () -> super.visitConstructorCallExpression(e)); }
+        @Override public void visitBinaryExpression(BinaryExpression e) { enter(e, () -> super.visitBinaryExpression(e)); }
+        @Override public void visitTernaryExpression(TernaryExpression e) { enter(e, () -> super.visitTernaryExpression(e)); }
+        @Override public void visitPrefixExpression(PrefixExpression e) { enter(e, () -> super.visitPrefixExpression(e)); }
+        @Override public void visitPostfixExpression(PostfixExpression e) { enter(e, () -> super.visitPostfixExpression(e)); }
+        @Override public void visitBooleanExpression(BooleanExpression e) { enter(e, () -> super.visitBooleanExpression(e)); }
+        @Override public void visitClosureExpression(ClosureExpression e) { enter(e, () -> super.visitClosureExpression(e)); }
+        @Override public void visitTupleExpression(TupleExpression e) { enter(e, () -> super.visitTupleExpression(e)); }
+        @Override public void visitListExpression(ListExpression e) { enter(e, () -> super.visitListExpression(e)); }
+        @Override public void visitMapExpression(MapExpression e) { enter(e, () -> super.visitMapExpression(e)); }
+        @Override public void visitMapEntryExpression(MapEntryExpression e) { enter(e, () -> super.visitMapEntryExpression(e)); }
+        @Override public void visitRangeExpression(RangeExpression e) { enter(e, () -> super.visitRangeExpression(e)); }
+        @Override public void visitPropertyExpression(PropertyExpression e) { enter(e, () -> super.visitPropertyExpression(e)); }
+        @Override public void visitAttributeExpression(AttributeExpression e) { enter(e, () -> super.visitAttributeExpression(e)); }
+        @Override public void visitFieldExpression(FieldExpression e) { enter(e, () -> super.visitFieldExpression(e)); }
 
-        @Override public void visitMethodPointerExpression(org.codehaus.groovy.ast.expr.MethodPointerExpression e) { enter(e, () -> super.visitMethodPointerExpression(e)); }
-        @Override public void visitConstantExpression(org.codehaus.groovy.ast.expr.ConstantExpression e) { enter(e, () -> super.visitConstantExpression(e)); }
-        @Override public void visitClassExpression(org.codehaus.groovy.ast.expr.ClassExpression e) { enter(e, () -> super.visitClassExpression(e)); }
-        @Override public void visitVariableExpression(org.codehaus.groovy.ast.expr.VariableExpression e) { enter(e, () -> super.visitVariableExpression(e)); }
-        @Override public void visitGStringExpression(org.codehaus.groovy.ast.expr.GStringExpression e) { enter(e, () -> super.visitGStringExpression(e)); }
-        @Override public void visitArrayExpression(org.codehaus.groovy.ast.expr.ArrayExpression e) { enter(e, () -> super.visitArrayExpression(e)); }
-        @Override public void visitSpreadExpression(org.codehaus.groovy.ast.expr.SpreadExpression e) { enter(e, () -> super.visitSpreadExpression(e)); }
-        @Override public void visitSpreadMapExpression(org.codehaus.groovy.ast.expr.SpreadMapExpression e) { enter(e, () -> super.visitSpreadMapExpression(e)); }
-        @Override public void visitNotExpression(org.codehaus.groovy.ast.expr.NotExpression e) { enter(e, () -> super.visitNotExpression(e)); }
-        @Override public void visitUnaryMinusExpression(org.codehaus.groovy.ast.expr.UnaryMinusExpression e) { enter(e, () -> super.visitUnaryMinusExpression(e)); }
-        @Override public void visitUnaryPlusExpression(org.codehaus.groovy.ast.expr.UnaryPlusExpression e) { enter(e, () -> super.visitUnaryPlusExpression(e)); }
-        @Override public void visitBitwiseNegationExpression(org.codehaus.groovy.ast.expr.BitwiseNegationExpression e) { enter(e, () -> super.visitBitwiseNegationExpression(e)); }
-        @Override public void visitCastExpression(org.codehaus.groovy.ast.expr.CastExpression e) { enter(e, () -> super.visitCastExpression(e)); }
-        @Override public void visitClosureListExpression(org.codehaus.groovy.ast.expr.ClosureListExpression e) { enter(e, () -> super.visitClosureListExpression(e)); }
-        @Override public void visitBytecodeExpression(org.codehaus.groovy.classgen.BytecodeExpression e) { enter(e, () -> super.visitBytecodeExpression(e)); }
-        @Override public void visitEmptyExpression(org.codehaus.groovy.ast.expr.EmptyExpression e) { test(e); /* leaf: no children */ }
+        @Override public void visitMethodPointerExpression(MethodPointerExpression e) { enter(e, () -> super.visitMethodPointerExpression(e)); }
+        @Override public void visitConstantExpression(ConstantExpression e) { enter(e, () -> super.visitConstantExpression(e)); }
+        @Override public void visitClassExpression(ClassExpression e) { enter(e, () -> super.visitClassExpression(e)); }
+        @Override public void visitVariableExpression(VariableExpression e) { enter(e, () -> super.visitVariableExpression(e)); }
+        @Override public void visitGStringExpression(GStringExpression e) { enter(e, () -> super.visitGStringExpression(e)); }
+        @Override public void visitArrayExpression(ArrayExpression e) { enter(e, () -> super.visitArrayExpression(e)); }
+        @Override public void visitSpreadExpression(SpreadExpression e) { enter(e, () -> super.visitSpreadExpression(e)); }
+        @Override public void visitSpreadMapExpression(SpreadMapExpression e) { enter(e, () -> super.visitSpreadMapExpression(e)); }
+        @Override public void visitNotExpression(NotExpression e) { enter(e, () -> super.visitNotExpression(e)); }
+        @Override public void visitUnaryMinusExpression(UnaryMinusExpression e) { enter(e, () -> super.visitUnaryMinusExpression(e)); }
+        @Override public void visitUnaryPlusExpression(UnaryPlusExpression e) { enter(e, () -> super.visitUnaryPlusExpression(e)); }
+        @Override public void visitBitwiseNegationExpression(BitwiseNegationExpression e) { enter(e, () -> super.visitBitwiseNegationExpression(e)); }
+        @Override public void visitCastExpression(CastExpression e) { enter(e, () -> super.visitCastExpression(e)); }
+        @Override public void visitClosureListExpression(ClosureListExpression e) { enter(e, () -> super.visitClosureListExpression(e)); }
+        @Override public void visitBytecodeExpression(BytecodeExpression e) { enter(e, () -> super.visitBytecodeExpression(e)); }
+        @Override public void visitEmptyExpression(EmptyExpression e) { test(e); /* leaf: no children */ }
     }
 }

@@ -23,7 +23,7 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import java.math.BigInteger;
 
 /**
- * Provides optimized reflection caching for {@link java.math.BigInteger}.
+ * Provides optimized reflection caching for {@link BigInteger}.
  * Coerces integral and big numeric types to {@link BigInteger} for type-safe method invocation.
  */
 public class BigIntegerCachedClass extends NumberCachedClass {

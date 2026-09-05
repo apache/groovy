@@ -18,6 +18,7 @@
  */
 package bugs;
 
+import groovy.lang.MissingMethodException;
 import org.junit.jupiter.api.Test;
 
 import static groovy.test.GroovyAssert.assertScript;
@@ -39,7 +40,7 @@ public final class Groovy8164 {
 
     @Test
     public void testStaticMethods1() throws Exception {
-        shouldFail(groovy.lang.MissingMethodException.class,
+        shouldFail(MissingMethodException.class,
             "class C implements " + I.class.getName() + ", " + J.class.getName() + " {\n" +
             "}\n" +
             "C.m()\n"

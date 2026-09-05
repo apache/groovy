@@ -21,6 +21,8 @@ package groovy.json
 import groovy.transform.CompileStatic
 import org.junit.jupiter.api.Test
 
+import java.util.concurrent.atomic.AtomicBoolean
+
 import static groovy.test.GroovyAssert.shouldFail
 
 class StreamingJsonBuilderTest {
@@ -534,7 +536,7 @@ class StreamingJsonBuilderTest {
                 .dateFormat('yyyyMM')
                 .excludeFieldsByName('secretKey', 'creditCardNumber')
                 .excludeFieldsByType(URL)
-                .addConverter(java.util.concurrent.atomic.AtomicBoolean) { ab -> ab.get() }
+                .addConverter(AtomicBoolean) { ab -> ab.get() }
                 .build()
 
         new StringWriter().with { w ->
@@ -546,7 +548,7 @@ class StreamingJsonBuilderTest {
                 secretKey 'J79-A25'
                 creditCardNumber '123-444-789-2233'
                 site new URL('http://groovy-lang.org')
-                isActive new java.util.concurrent.atomic.AtomicBoolean(true)
+                isActive new AtomicBoolean(true)
             }
 
             assert w.toString() == '{"payload":{"id":"YT-1234","isActive":true}}'
@@ -561,7 +563,7 @@ class StreamingJsonBuilderTest {
                 .dateFormat('yyyyMM')
                 .excludeFieldsByName('secretKey', 'creditCardNumber')
                 .excludeFieldsByType(URL)
-                .addConverter(java.util.concurrent.atomic.AtomicBoolean) { ab -> ab.get() }
+                .addConverter(AtomicBoolean) { ab -> ab.get() }
                 .build()
 
         new StringWriter().with { w ->
@@ -572,7 +574,7 @@ class StreamingJsonBuilderTest {
                 call 'secretKey', 'J79-A25'
                 call 'creditCardNumber', '123-444-789-2233'
                 call 'site', new URL('http://groovy-lang.org')
-                call 'isActive', new java.util.concurrent.atomic.AtomicBoolean(true)
+                call 'isActive', new AtomicBoolean(true)
             }
 
             assert w.toString() == '{"payload":{"id":"YT-1234","isActive":true}}'

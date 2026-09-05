@@ -24,10 +24,11 @@ import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 /**
- * Represents a Method on a Java object a little like {@link java.lang.reflect.Method}
+ * Represents a Method on a Java object a little like {@link Method}
  * except without using reflection to invoke the method
  */
 public abstract class MetaMethod extends ParameterTypes implements MetaMember, Cloneable {

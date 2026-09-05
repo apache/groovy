@@ -18,6 +18,8 @@
  */
 package groovy.xml
 
+import groovy.util.Node
+
 class MixedMarkupTestSupport {
 
     private static final mixedXml = '''
@@ -65,6 +67,6 @@ class MixedMarkupTestSupport {
     }
 
     private static boolean isParser(node) {
-        return (node instanceof groovy.util.Node)
+        return (node instanceof Node)
     }
 }

@@ -21,8 +21,8 @@
  * Command-line entry point for Groovy script execution.
  *
  * <p>
- * {@link groovy.ui.GroovyMain} provides picocli-based CLI for executing scripts from files,
- * stdin, or sockets. {@link groovy.ui.GroovySocketServer} enables network script services.
+ * {@link GroovyMain} provides picocli-based CLI for executing scripts from files,
+ * stdin, or sockets. {@link GroovySocketServer} enables network script services.
  * </p>
  */
 package groovy.ui;

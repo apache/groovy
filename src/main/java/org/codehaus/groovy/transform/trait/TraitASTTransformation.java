@@ -23,6 +23,7 @@ import groovy.lang.MissingMethodException;
 import groovy.transform.CompilationUnitAware;
 import groovy.transform.Sealed;
 import groovy.transform.Trait;
+import groovy.transform.Virtual;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -116,7 +117,7 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 public class TraitASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
 
     /** Marker annotation type for {@code @Virtual} trait static methods. */
-    private static final ClassNode VIRTUAL_TYPE = ClassHelper.make(groovy.transform.Virtual.class);
+    private static final ClassNode VIRTUAL_TYPE = ClassHelper.make(Virtual.class);
 
     /**
      * Metadata key that marks trait-generated calls requiring dynamic dispatch.

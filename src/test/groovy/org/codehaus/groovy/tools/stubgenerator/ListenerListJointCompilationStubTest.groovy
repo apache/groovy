@@ -18,6 +18,9 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
+import java.awt.event.ActionEvent
+import java.awt.event.ActionListener
+
 /**
  * Captures the joint-compilation surface for {@code @ListenerList}.
  *
@@ -27,7 +30,7 @@ package org.codehaus.groovy.tools.stubgenerator
  * {@code fireYyy} APIs that the full transform produces at
  * CANONICALIZATION.
  *
- * <p>This spike uses {@link java.awt.event.ActionListener} (a small,
+ * <p>This spike uses {@link ActionListener} (a small,
  * classpath-resolvable single-method listener) so the listener's method
  * set is fully known at CONVERSION.
  */
@@ -75,14 +78,14 @@ final class ListenerListJointCompilationStubTest extends StringSourcesStubTestCa
         Class buttonClass = loader.loadClass('foo.Button')
         def button = buttonClass.newInstance()
 
-        List<java.awt.event.ActionEvent> received = []
-        java.awt.event.ActionListener listener = { java.awt.event.ActionEvent e -> received << e }
-                as java.awt.event.ActionListener
+        List<ActionEvent> received = []
+        ActionListener listener = { ActionEvent e -> received << e }
+                as ActionListener
 
         button.addActionListener(listener)
         assert button.actionListeners.length == 1
 
-        def ev = new java.awt.event.ActionEvent(button, 0, 'click')
+        def ev = new ActionEvent(button, 0, 'click')
         button.fireActionPerformed(ev)
         assert received.size() == 1
         assert received[0] == ev

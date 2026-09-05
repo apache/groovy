@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.expr.PostfixExpression
 import org.codehaus.groovy.ast.expr.PrefixExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
+import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
 import org.codehaus.groovy.transform.stc.StaticTypesMarker
@@ -337,7 +338,7 @@ class ModifiesChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL
                 if (contractMutates != null && !contractMutates.isEmpty()) {
                     // Static methods can't mutate "this", but can mutate params
                     def args = call.arguments
-                    if (args instanceof org.codehaus.groovy.ast.expr.TupleExpression) {
+                    if (args instanceof TupleExpression) {
                         def argList = args.expressions
                         def params = targetMethod.parameters
                         for (int i = 0; i < params.length && i < argList.size(); i++) {
@@ -358,7 +359,7 @@ class ModifiesChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL
              */
             private void checkContractParamMutations(Set<String> contractMutates, MethodNode callee, MethodCallExpression call) {
                 def args = call.arguments
-                if (!(args instanceof org.codehaus.groovy.ast.expr.TupleExpression)) return
+                if (!(args instanceof TupleExpression)) return
                 def argList = args.expressions
                 def params = callee.parameters
 

@@ -18,6 +18,7 @@
  */
 package bugs
 
+import groovy.transform.PackageScope
 import org.junit.jupiter.api.Test
 
 
@@ -30,7 +31,7 @@ class Groovy4861Bug {
     }
 }
 
-@groovy.transform.PackageScope class Foo4861 {
+@PackageScope class Foo4861 {
     static interface A {
         static Integer j = 3
         static Integer j2 = j + 4

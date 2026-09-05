@@ -215,7 +215,7 @@ public class AntBuilder extends BuilderSupport {
 
         final BuildLogger logger = new NoBannerLogger();
 
-        logger.setMessageOutputLevel(org.apache.tools.ant.Project.MSG_INFO);
+        logger.setMessageOutputLevel(Project.MSG_INFO);
         logger.setOutputPrintStream(System.out);
         logger.setErrorPrintStream(System.err);
 

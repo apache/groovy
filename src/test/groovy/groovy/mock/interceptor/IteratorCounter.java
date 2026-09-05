@@ -18,8 +18,10 @@
  */
 package groovy.mock.interceptor;
 
+import java.util.Iterator;
+
 public class IteratorCounter {
-    public int count(java.util.Iterator it) {
+    public int count(Iterator it) {
         int count = 0;
         while (it.hasNext()) count++;
         return count;

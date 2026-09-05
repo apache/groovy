@@ -20,6 +20,7 @@ package org.codehaus.groovy.ast.tools;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -591,7 +592,7 @@ public class WideningCategories {
      * extends A,  C extends A and both C and B implement a common interface not
      * implemented by A, then we use this class to represent the bound.
      * <p>
-     * At compile time, some classes like {@link org.codehaus.groovy.classgen.AsmClassGenerator AsmClassGenerator}
+     * At compile time, some classes like {@link AsmClassGenerator AsmClassGenerator}
      * need to know about a real class node, so we compute a "compile time" node
      * which will be used to return a name and a type class.
      */

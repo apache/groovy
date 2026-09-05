@@ -21,7 +21,7 @@
  * CLI parsing using Picocli library for advanced command-line applications.
  *
  * <p>
- * {@link groovy.cli.picocli.CliBuilder} wraps Picocli with DSL and annotation support.
+ * {@link CliBuilder} wraps Picocli with DSL and annotation support.
  * Features: POSIX compliance, usage generation, type conversion, shell completion, subcommands.
  * Recommended for production CLI applications.
  * </p>

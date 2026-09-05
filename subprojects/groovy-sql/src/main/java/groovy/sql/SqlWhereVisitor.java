@@ -20,6 +20,7 @@ package groovy.sql;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
+import groovy.lang.Reference;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
@@ -31,6 +32,7 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -139,14 +141,14 @@ public class SqlWhereVisitor extends CodeVisitorSupport {
         if (closure != null) {
             String name = expression.getName();
             try {
-                java.lang.reflect.Field field = closure.getClass().getDeclaredField(name);
+                Field field = closure.getClass().getDeclaredField(name);
                 if (!field.trySetAccessible()) {
                     throw new GroovyRuntimeException("DataSet unable to access captured variable '" + name + "'");
                 }
                 Object value = field.get(closure);
                 // Groovy wraps shared (mutable) variables in a Reference
-                if (value instanceof groovy.lang.Reference) {
-                    value = ((groovy.lang.Reference<?>) value).get();
+                if (value instanceof Reference) {
+                    value = ((Reference<?>) value).get();
                 }
                 getParameters().add(value);
                 buffer.append("?");

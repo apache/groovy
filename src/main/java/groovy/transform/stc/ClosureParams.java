@@ -23,6 +23,10 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Map;
+import groovy.lang.Closure;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+
 
 /**
  * Parameter annotation aimed at helping IDEs or the static type checker to infer the
@@ -39,14 +43,14 @@ import java.lang.annotation.Target;
  * (like not being able to use generics placeholder as annotation values) that prevent us from expressing the
  * type directly.</p>
  * <p>Additionally, closures are polymorphic. This means that a single closure can be used with different, valid,
- * parameter signatures. A typical use case can be found when a closure accepts either a {@link java.util.Map.Entry}
- * or a (key,value) pair, like the {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#each(java.util.Map, groovy.lang.Closure)}
+ * parameter signatures. A typical use case can be found when a closure accepts either a {@link Map.Entry}
+ * or a (key,value) pair, like the {@link DefaultGroovyMethods#each(Map, Closure)}
  * method.</p>
  * <p>For those reasons, the {@link ClosureParams} annotation takes these arguments:
  * <ul>
- *     <li>{@link ClosureParams#value()} defines a {@link groovy.transform.stc.ClosureSignatureHint} hint class
+ *     <li>{@link ClosureParams#value()} defines a {@link ClosureSignatureHint} hint class
  *     that the compiler will use to infer the parameter types</li>
- *     <li>{@link ClosureParams#conflictResolutionStrategy()} defines a {@link groovy.transform.stc.ClosureSignatureConflictResolver} resolver
+ *     <li>{@link ClosureParams#conflictResolutionStrategy()} defines a {@link ClosureSignatureConflictResolver} resolver
  *     class that the compiler will use to potentially reduce ambiguities remaining after initial inference calculations</li>
  *     <li>{@link ClosureParams#options()}, a set of options that are passed to the hint when the type is inferred (and also available to the resolver)</li>
  * </ul>

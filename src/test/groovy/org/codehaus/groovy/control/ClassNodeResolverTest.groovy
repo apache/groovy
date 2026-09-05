@@ -22,6 +22,7 @@ package org.codehaus.groovy.control
 import org.codehaus.groovy.GroovyBugError
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.decompiled.DecompiledClassNode
+import org.codehaus.groovy.classgen.Verifier
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
@@ -30,9 +31,12 @@ import org.junit.jupiter.params.provider.MethodSource
 import org.junit.jupiter.params.provider.NullAndEmptySource
 import org.junit.jupiter.params.provider.ValueSource
 import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Opcodes
 
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.jar.JarEntry
+import java.util.jar.JarOutputStream
 
 import static groovy.test.GroovyAssert.shouldFail
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT
@@ -711,8 +715,8 @@ class ClassNodeResolverTest {
         String name = 'cnr.recompile.Jarred'
         writeBytes(tempDir, name.replace('.', '/'), stampedClassBytes(name.replace('.', '/'), '0'))
         Path jar = tempDir.resolve('sources.jar')
-        new java.util.jar.JarOutputStream(Files.newOutputStream(jar)).withCloseable { jos ->
-            jos.putNextEntry(new java.util.jar.JarEntry(name.replace('.', '/') + '.groovy'))
+        new JarOutputStream(Files.newOutputStream(jar)).withCloseable { jos ->
+            jos.putNextEntry(new JarEntry(name.replace('.', '/') + '.groovy'))
             jos.write('class Jarred {}'.bytes)
             jos.closeEntry()
         }
@@ -780,8 +784,8 @@ class ClassNodeResolverTest {
         String name = 'cnr.recompile.MissingEntry'
         writeBytes(tempDir, name.replace('.', '/'), stampedClassBytes(name.replace('.', '/'), '0'))
         Path jar = tempDir.resolve('other.jar')
-        new java.util.jar.JarOutputStream(Files.newOutputStream(jar)).withCloseable { jos ->
-            jos.putNextEntry(new java.util.jar.JarEntry('unrelated.txt'))
+        new JarOutputStream(Files.newOutputStream(jar)).withCloseable { jos ->
+            jos.putNextEntry(new JarEntry('unrelated.txt'))
             jos.write('x'.bytes)
             jos.closeEntry()
         }
@@ -901,8 +905,8 @@ class ClassNodeResolverTest {
     private static byte[] stampedClassBytes(String internalName, String timestampSuffix) {
         def cw = new ClassWriter(0)
         cw.visit(V17, ACC_PUBLIC, internalName, null, 'java/lang/Object', null)
-        cw.visitField(ACC_PUBLIC | org.objectweb.asm.Opcodes.ACC_STATIC | org.objectweb.asm.Opcodes.ACC_FINAL,
-                org.codehaus.groovy.classgen.Verifier.__TIMESTAMP__ + timestampSuffix,
+        cw.visitField(ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+                Verifier.__TIMESTAMP__ + timestampSuffix,
                 'J', null, Long.valueOf(0)).visitEnd()
         cw.visitEnd()
         cw.toByteArray()

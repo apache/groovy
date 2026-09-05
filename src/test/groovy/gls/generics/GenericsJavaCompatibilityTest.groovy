@@ -24,6 +24,7 @@ import org.apache.groovy.util.JavaShellCompilationException
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 import java.lang.reflect.Constructor
@@ -62,8 +63,8 @@ import static groovy.test.GroovyAssert.shouldFail
  *     multi-parameter types (JLS 4.4–4.5, 4.9);</li>
  * <li>runtime reflection of {@code Signature} attributes
  *     ({@link Class#getGenericSuperclass()},
- *     {@link java.lang.reflect.ParameterizedType#getActualTypeArguments()},
- *     {@link java.lang.reflect.GenericArrayType});</li>
+ *     {@link ParameterizedType#getActualTypeArguments()},
+ *     {@link GenericArrayType});</li>
  * <li>raw-type backward compatibility (JLS 4.8, 5.1.9).</li>
  * </ol>
  * Categories 1–15 below map onto those dimensions. Category 16 spells out
@@ -72,7 +73,7 @@ import static groovy.test.GroovyAssert.shouldFail
  * cheap well-formedness of type-parameter sections (duplicate names, cyclic
  * bounds, {@code throws} of a type variable).
  * Each test method names the JLS sections it exercises. Gaps where static
- * Groovy currently diverges from javac are marked {@link org.junit.jupiter.api.Disabled}.
+ * Groovy currently diverges from javac are marked {@link Disabled}.
  * The oracle is javac as shipped with Java SE 25.
  */
 final class GenericsJavaCompatibilityTest {

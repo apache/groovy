@@ -19,6 +19,7 @@
 package org.apache.groovy.parser.antlr4.internal;
 
 import org.antlr.v4.runtime.ANTLRErrorStrategy;
+import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.FailedPredicateException;
 import org.antlr.v4.runtime.InputMismatchException;
@@ -29,12 +30,13 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
+import org.codehaus.groovy.control.ErrorCollector;
 
 /**
  * Fail-fast parser error strategy with friendly diagnostics (default Parrot mode).
  * <p>
  * Cancels the parse with {@link ParseCancellationException} after reporting,
- * matching {@link org.antlr.v4.runtime.BailErrorStrategy}. {@link #sync} is a
+ * matching {@link BailErrorStrategy}. {@link #sync} is a
  * no-op so the SLL stage of two-stage parsing stays cheap. Diagnostics are
  * emitted from {@link #recover}: after a failed SLL probe the strategy may still
  * be in ANTLR's internal recovery mode, which suppresses
@@ -44,7 +46,7 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
  * For IDE multi-error collection use {@link #create(CharStream, boolean)} with
  * {@code recover == true}, which selects
  * {@link RecoveringDescriptiveErrorStrategy}. Hosts should treat
- * {@link org.codehaus.groovy.control.ErrorCollector} as the multi-error source
+ * {@link ErrorCollector} as the multi-error source
  * of truth: recovery may still produce a partial tree that fails later during
  * AST building.
  * </p>
@@ -128,7 +130,7 @@ public class DescriptiveErrorStrategy extends AbstractFriendlyErrorStrategy {
     /**
      * {@inheritDoc}
      * <p>
-     * No-op (matches {@link org.antlr.v4.runtime.BailErrorStrategy}) so SLL stays cheap.
+     * No-op (matches {@link BailErrorStrategy}) so SLL stays cheap.
      * </p>
      */
     @Override

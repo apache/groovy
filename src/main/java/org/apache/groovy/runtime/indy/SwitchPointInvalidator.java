@@ -19,6 +19,7 @@
 package org.apache.groovy.runtime.indy;
 
 import groovy.transform.Internal;
+import org.codehaus.groovy.reflection.ClassInfo;
 
 import java.lang.invoke.SwitchPoint;
 import java.util.List;
@@ -58,7 +59,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * <h2>Layering</h2>
  * This is the <em>mechanism</em> half of the MOP invalidation subsystem and
  * makes no policy decisions. It has exactly two supported consumers:
- * {@link org.codehaus.groovy.reflection.ClassInfo}, which owns domain
+ * {@link ClassInfo}, which owns domain
  * instances (allocation, local invalidate, detach), and
  * {@link IndyInvalidation}, which owns invalidation width policy, reclaim
  * anchoring and per-Class domain continuity. On its own this class guarantees

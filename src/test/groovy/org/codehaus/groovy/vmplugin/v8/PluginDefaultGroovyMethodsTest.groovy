@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.vmplugin.v8
 
+import groovy.transform.CompileStatic
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -25,7 +26,7 @@ import static groovy.test.GroovyAssert.assertScript
 final class PluginDefaultGroovyMethodsTest {
 
     private final GroovyShell shell = GroovyShell.withConfig {
-        ast(groovy.transform.CompileStatic)
+        ast(CompileStatic)
     }
 
     // GROOVY-7611

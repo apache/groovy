@@ -49,7 +49,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A shell for compiling or running pure Java code in-memory using the platform's
- * {@link javax.tools.JavaCompiler}. Compiled bytes are kept in a backing class loader
+ * {@link JavaCompiler}. Compiled bytes are kept in a backing class loader
  * (see {@link #getClassLoader()}) and can optionally be written to disk via
  * {@link #compileAllTo(String, Iterable, String, Path)}.
  *

@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyRuntimeException;
+import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -109,6 +110,7 @@ import org.codehaus.groovy.classgen.asm.PeepholeOptimizingMethodVisitor;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.IntersectionCastSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.objectweb.asm.AnnotationVisitor;
@@ -1172,7 +1174,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     /**
-     * Emits a call to {@link org.codehaus.groovy.runtime.IntersectionCastSupport}
+     * Emits a call to {@link IntersectionCastSupport}
      * for an intersection-target cast or coercion on a non-functional source.
      *
      * Bytecode layout:
@@ -1415,7 +1417,7 @@ public class AsmClassGenerator extends ClassGenerator {
         Expression objectExpression = expression.getObjectExpression();
         if (objectExpression instanceof ClassExpression) return false;
 
-        if (org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression(objectExpression)
+        if (ExpressionUtils.isThisExpression(objectExpression)
                 && !(expression.isImplicitThis() && controller.isInGeneratedFunction())) {
             return !controller.isStaticContext(); // TODO: not @POJO
         }
@@ -1426,7 +1428,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private boolean isThisExpression(final Expression expression) {
-        return org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression(expression)
+        return ExpressionUtils.isThisExpression(expression)
             // GROOVY-10695: "Type.name" within body of Type should get explicit-this treatment
             || (expression instanceof ClassExpression && expression.getType().equals(controller.getClassNode()));
     }

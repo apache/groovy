@@ -21,6 +21,7 @@ package org.codehaus.groovy.reflection;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaProperty;
 
+import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
@@ -110,7 +111,7 @@ public class CachedField extends MetaProperty {
      *
      * @since 6.0.0
      */
-    public boolean isAnnotationPresent(Class<? extends java.lang.annotation.Annotation> annotationType) {
+    public boolean isAnnotationPresent(Class<? extends Annotation> annotationType) {
         return field.isAnnotationPresent(annotationType);
     }
 

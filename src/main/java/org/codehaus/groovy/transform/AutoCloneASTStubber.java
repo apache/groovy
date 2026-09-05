@@ -28,6 +28,8 @@ import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
+import java.util.HashMap;
+
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
@@ -49,7 +51,7 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  * <p>The placeholder's {@code throws} clause is computed by
  * {@link AutoCloneASTTransformation#cloneExceptionsFor(ClassNode)} so it
  * is a legal Java override of the superclass {@code clone()} (e.g. a
- * subclass of {@link java.util.HashMap} must not declare
+ * subclass of {@link HashMap} must not declare
  * {@link CloneNotSupportedException} since {@code HashMap.clone()} doesn't).
  *
  * <p>The full {@link AutoCloneASTTransformation} at CANONICALIZATION

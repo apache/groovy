@@ -18,21 +18,25 @@
  */
 package groovy.transform;
 
+import groovy.concurrent.ParallelScope;
+import groovy.concurrent.Pool;
 import groovy.lang.annotation.ExtendedElementType;
 import groovy.lang.annotation.ExtendedTarget;
 import org.apache.groovy.lang.annotation.Incubating;
+import org.codehaus.groovy.runtime.ParallelCollectionExtensions;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.function.Function;
 
 /**
  * Runs each iteration of an annotated {@code for} loop in parallel
  * using the current pool or default executor, with structured completion.
  * <p>
- * Uses {@link groovy.concurrent.Pool#current()} if inside a
- * {@link groovy.concurrent.ParallelScope#withPool} block, otherwise
+ * Uses {@link Pool#current()} if inside a
+ * {@link ParallelScope#withPool} block, otherwise
  * falls back to {@code ForkJoinPool.commonPool()}.
  * <p>
  * While {@code @Parallel} provides a convenient way to parallelise
@@ -42,9 +46,9 @@ import java.lang.annotation.RetentionPolicy;
  * internal variable renaming in its generated code.
  * <p>
  * Blocking loop bodies should run inside
- * {@link groovy.concurrent.ParallelScope#withPool(int, java.util.function.Function)
+ * {@link ParallelScope#withPool(int, Function)
  * ParallelScope.withPool(n)} (or an I/O pool); see
- * {@link org.codehaus.groovy.runtime.ParallelCollectionExtensions}.
+ * {@link ParallelCollectionExtensions}.
  *
  * @since 6.0.0
  * @see org.codehaus.groovy.transform.ParallelASTTransformation

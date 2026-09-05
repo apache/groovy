@@ -21,7 +21,7 @@ package org.codehaus.groovy.reflection.stdclasses;
 import org.codehaus.groovy.reflection.ClassInfo;
 
 /**
- * Provides optimized reflection caching for {@code short} and {@link java.lang.Short}.
+ * Provides optimized reflection caching for {@code short} and {@link Short}.
  * Coerces numeric arguments to short values for type-safe method invocation.
  * Optionally allows {@code null} values for the boxed {@link Short} class variant.
  */

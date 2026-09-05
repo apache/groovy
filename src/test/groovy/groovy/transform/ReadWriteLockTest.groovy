@@ -20,6 +20,8 @@ package groovy.transform
 
 import org.junit.jupiter.api.Test
 
+import java.util.concurrent.locks.ReentrantReadWriteLock
+
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -217,7 +219,7 @@ final class ReadWriteLockTest {
         def staticReaderMethod2Called = false
         def staticWriterMethod1Called = false
         def staticWriterMethod2Called = false
-        def myLock = new java.util.concurrent.locks.ReentrantReadWriteLock()
+        def myLock = new ReentrantReadWriteLock()
 
         @WithReadLock
         void readerMethod1() {

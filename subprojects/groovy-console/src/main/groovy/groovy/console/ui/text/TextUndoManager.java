@@ -20,6 +20,8 @@ package groovy.console.ui.text;
 
 import javax.swing.event.SwingPropertyChangeSupport;
 import javax.swing.event.UndoableEditEvent;
+import javax.swing.undo.CannotRedoException;
+import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.CompoundEdit;
 import javax.swing.undo.UndoManager;
 import javax.swing.undo.UndoableEdit;
@@ -121,7 +123,7 @@ public class TextUndoManager extends UndoManager {
      * {@inheritDoc}
      */
     @Override
-    public void redo() throws javax.swing.undo.CannotRedoException {
+    public void redo() throws CannotRedoException {
         compoundEdit.end();
 
         if (firstModified == 0) {
@@ -194,7 +196,7 @@ public class TextUndoManager extends UndoManager {
      * {@inheritDoc}
      */
     @Override
-    public void undo() throws javax.swing.undo.CannotUndoException {
+    public void undo() throws CannotUndoException {
         compoundEdit.end();
 
         UndoableEdit edit = editToBeUndone();

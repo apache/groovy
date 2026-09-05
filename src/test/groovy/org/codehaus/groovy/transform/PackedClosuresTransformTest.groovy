@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.transform.PackedClosures
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
@@ -29,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows
 import static org.junit.jupiter.api.Assertions.assertTrue
 
 /**
- * Tests for {@link groovy.transform.PackedClosures}: eligible closure literals are
+ * Tests for {@link PackedClosures}: eligible closure literals are
  * hoisted into synthetic methods on the enclosing class and replaced by a single shared
  * {@code PackedClosure} adapter, so no per-closure inner class is generated. Ineligible
  * closures are left exactly as they are today.

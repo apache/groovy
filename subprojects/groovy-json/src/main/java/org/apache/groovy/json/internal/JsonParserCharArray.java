@@ -208,7 +208,7 @@ public class JsonParserCharArray extends BaseJsonParser {
     }
 
     /**
-     * Throws a {@link groovy.json.JsonException} for the current location.
+     * Throws a {@link JsonException} for the current location.
      *
      * @param complaint message describing the parse failure
      */

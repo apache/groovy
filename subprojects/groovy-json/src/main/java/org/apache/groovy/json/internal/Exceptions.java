@@ -69,7 +69,7 @@ public class Exceptions {
      *
      * @param e the exception to wrap
      */
-    public static void handle(java.lang.Exception e) {
+    public static void handle(Exception e) {
         throw new JsonInternalException(e);
     }
 
@@ -81,7 +81,7 @@ public class Exceptions {
      * @param <T> the generic return type
      * @return never returns normally
      */
-    public static <T> T handle(Class<T> clazz, java.lang.Exception e) {
+    public static <T> T handle(Class<T> clazz, Exception e) {
         if (e instanceof JsonInternalException) {
             throw (JsonInternalException) e;
         }

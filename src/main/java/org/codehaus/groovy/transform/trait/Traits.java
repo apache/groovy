@@ -470,7 +470,7 @@ public abstract class Traits {
     /**
      * Converts a class implementing some trait into a target class. If the trait is a dynamic proxy and
      * that the target class is assignable to the target object of the proxy, then the target object is
-     * returned. Otherwise, falls back to {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#asType(java.lang.Object, Class)}
+     * returned. Otherwise, falls back to {@link DefaultGroovyMethods#asType(Object, Class)}
      *
      * @param self an object to be coerced to some class
      * @param clazz the class to be coerced to

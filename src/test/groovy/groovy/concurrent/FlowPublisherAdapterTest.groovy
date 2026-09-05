@@ -18,6 +18,7 @@
  */
 package groovy.concurrent
 
+import org.apache.groovy.runtime.async.AsyncSupport
 import org.junit.jupiter.api.Test
 
 import java.util.concurrent.CountDownLatch
@@ -75,7 +76,7 @@ final class FlowPublisherAdapterTest {
             new Thread({
                 publisher.closeExceptionally(boom)
             }).start()
-            org.apache.groovy.runtime.async.AsyncSupport.await(groovy.concurrent.Awaitable.from(publisher))
+            AsyncSupport.await(Awaitable.from(publisher))
         }
         assert thrown.message == 'boom'
     }
@@ -159,7 +160,7 @@ final class FlowPublisherAdapterTest {
         } as Flow.Publisher<Object>
 
         def thrown = shouldFail NullPointerException, {
-            org.apache.groovy.runtime.async.AsyncSupport.await(groovy.concurrent.Awaitable.from(publisher))
+            AsyncSupport.await(Awaitable.from(publisher))
         }
         assert thrown.message.contains('§2.13')
     }

@@ -22,7 +22,7 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
 
 /**
- * Provides optimized reflection caching for {@code boolean} and {@link java.lang.Boolean}.
+ * Provides optimized reflection caching for {@code boolean} and {@link Boolean}.
  * Optionally allows {@code null} values for the boxed {@link Boolean} class variant.
  */
 public class BooleanCachedClass extends CachedClass {

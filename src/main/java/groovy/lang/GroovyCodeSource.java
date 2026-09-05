@@ -187,7 +187,7 @@ public class GroovyCodeSource {
         this.url = url;
         // TODO: GROOVY-6561: GroovyMain got the name this way: script.substring(script.lastIndexOf('/') + 1)
         this.name = url.toExternalForm();
-        this.codeSource = new CodeSource(url, (java.security.cert.Certificate[]) null);
+        this.codeSource = new CodeSource(url, (Certificate[]) null);
         try {
             String contentEncoding = getContentEncoding(url);
             if (contentEncoding != null) {
@@ -293,7 +293,7 @@ public class GroovyCodeSource {
         }
         try {
             String path = codeBase.startsWith("/") ? codeBase : "/" + codeBase;
-            return new CodeSource(new URI("file", "", path, null).toURL(), (java.security.cert.Certificate[]) null);
+            return new CodeSource(new URI("file", "", path, null).toURL(), (Certificate[]) null);
         }
         catch (MalformedURLException | URISyntaxException e) {
             throw new RuntimeException("A CodeSource file URL cannot be constructed from the supplied codeBase: " + codeBase);

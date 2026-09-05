@@ -22,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 
+import javax.sql.DataSource
 import java.sql.Connection
 import java.sql.SQLException
 
@@ -262,7 +263,7 @@ final class SqlTest {
     //--------------------------------------------------------------------------
 
     private Sql createSql() {
-        javax.sql.DataSource ds = DB_DATASOURCE.newInstance(
+        DataSource ds = DB_DATASOURCE.newInstance(
                 (DB_DS_KEY): DB_URL_PREFIX + testMethodName,
                 user: DB_USER, password: DB_PASSWORD)
         sql = new Sql(ds.connection)

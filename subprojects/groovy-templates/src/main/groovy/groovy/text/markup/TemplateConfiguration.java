@@ -21,7 +21,7 @@ package groovy.text.markup;
 import java.util.Locale;
 
 /**
- * Configuration options for the {@link groovy.text.markup.MarkupTemplateEngine markup template engine}.
+ * Configuration options for the {@link MarkupTemplateEngine markup template engine}.
  */
 public class TemplateConfiguration {
 
@@ -129,7 +129,7 @@ public class TemplateConfiguration {
     }
 
     /**
-     * @return true if variables in the model which are assignable to {@link java.lang.CharSequence} should be
+     * @return true if variables in the model which are assignable to {@link CharSequence} should be
      * automatically escaped.
      */
     public boolean isAutoEscape() {
@@ -137,7 +137,7 @@ public class TemplateConfiguration {
     }
 
     /**
-     * Set to true if you want variables in the model which are assignable to {@link java.lang.CharSequence} to
+     * Set to true if you want variables in the model which are assignable to {@link CharSequence} to
      * be escaped automatically in templates. If this flag is set to true and that you want a value not to be
      * automatically escaped, then you need to use <i>${unescaped.variable}</i> instead of <i>$variable</i>
      * @param autoEscape value if the autoEscape flag
@@ -155,7 +155,7 @@ public class TemplateConfiguration {
 
     /**
      * Set this to true if you want the template engine to render indents automatically. In that case,
-     * the supplied writer is wrapped into a {@link groovy.text.markup.DelegatingIndentWriter} and indents
+     * the supplied writer is wrapped into a {@link DelegatingIndentWriter} and indents
      * are inserted after each call to newLine.
      * @param autoIndent the auto-indent flag
      */
@@ -212,7 +212,7 @@ public class TemplateConfiguration {
      * Set the template base class. You can use a distinct template class to provide more
      * statically available data to your templates.
      *
-     * @param baseTemplateClass a class extending {@link groovy.text.markup.BaseTemplate}
+     * @param baseTemplateClass a class extending {@link BaseTemplate}
      */
     public void setBaseTemplateClass(final Class<? extends BaseTemplate> baseTemplateClass) {
         this.baseTemplateClass = baseTemplateClass;

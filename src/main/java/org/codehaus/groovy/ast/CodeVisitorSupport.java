@@ -328,7 +328,7 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     }
 
     /**
-     * Visits a {@link org.codehaus.groovy.ast.expr.MethodCallExpression}, traversing the object expression,
+     * Visits a {@link MethodCallExpression}, traversing the object expression,
      * method expression, and argument list.
      *
      * @param call the method call expression
@@ -592,7 +592,7 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     }
 
     /**
-     * Visits a {@link org.codehaus.groovy.ast.expr.MethodReferenceExpression}, treating it as a method pointer.
+     * Visits a {@link MethodReferenceExpression}, treating it as a method pointer.
      *
      * @param expression the method reference expression
      */

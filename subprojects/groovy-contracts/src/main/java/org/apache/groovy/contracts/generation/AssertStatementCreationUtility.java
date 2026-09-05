@@ -46,10 +46,10 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 
 /**
- * Central place to create {@link org.codehaus.groovy.ast.stmt.AssertStatement} instances in groovy-contracts.
+ * Central place to create {@link AssertStatement} instances in groovy-contracts.
  * Utilized to centralize {@link AssertionError} message generation.
  *
- * @see org.codehaus.groovy.ast.stmt.AssertStatement
+ * @see AssertStatement
  * @see AssertionError
  */
 public final class AssertStatementCreationUtility {
@@ -57,8 +57,8 @@ public final class AssertStatementCreationUtility {
     /**
      * Reusable method for creating assert statements for the given <tt>booleanExpression</tt>.
      *
-     * @param booleanExpressions the assertion's {@link org.codehaus.groovy.ast.expr.BooleanExpression} instances
-     * @return a newly created {@link org.codehaus.groovy.ast.stmt.AssertStatement}
+     * @param booleanExpressions the assertion's {@link BooleanExpression} instances
+     * @return a newly created {@link AssertStatement}
      */
     public static BlockStatement getAssertionStatements(final List<BooleanExpression> booleanExpressions) {
 
@@ -76,8 +76,8 @@ public final class AssertStatementCreationUtility {
     /**
      * Reusable method for creating assert statements for the given <tt>booleanExpression</tt>.
      *
-     * @param booleanExpression the assertion's {@link org.codehaus.groovy.ast.expr.BooleanExpression}
-     * @return a newly created {@link org.codehaus.groovy.ast.stmt.AssertStatement}
+     * @param booleanExpression the assertion's {@link BooleanExpression}
+     * @return a newly created {@link AssertStatement}
      */
     public static AssertStatement getAssertionStatement(final BooleanExpression booleanExpression) {
 
@@ -89,10 +89,10 @@ public final class AssertStatementCreationUtility {
     }
 
     /**
-     * Gets a list of {@link org.codehaus.groovy.ast.stmt.ReturnStatement} instances from the given {@link MethodNode}.
+     * Gets a list of {@link ReturnStatement} instances from the given {@link MethodNode}.
      *
-     * @param method the {@link org.codehaus.groovy.ast.MethodNode} that holds the given <tt>lastStatement</tt>
-     * @return a {@link org.codehaus.groovy.ast.stmt.ReturnStatement} or <tt>null</tt>
+     * @param method the {@link MethodNode} that holds the given <tt>lastStatement</tt>
+     * @return a {@link ReturnStatement} or <tt>null</tt>
      */
     public static List<ReturnStatement> getReturnStatements(MethodNode method) {
 

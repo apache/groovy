@@ -19,6 +19,7 @@
 package groovy.lang
 
 import groovy.transform.CompileStatic
+import org.codehaus.groovy.reflection.ClassInfo
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -34,7 +35,7 @@ final class MixinTest {
     @BeforeEach
     @CompileStatic
     void setUp() {
-        org.codehaus.groovy.reflection.ClassInfo.clearModifiedExpandos()
+        ClassInfo.clearModifiedExpandos()
     }
 
     @AfterEach

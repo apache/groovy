@@ -24,7 +24,7 @@ import java.awt.*
 /**
  * Base factory for creating layout managers and exposing layout constants.
  */
-class LayoutFactory extends groovy.swing.factory.BeanFactory {
+class LayoutFactory extends BeanFactory {
 
     /**
      * Cached layout constants copied into the builder context.

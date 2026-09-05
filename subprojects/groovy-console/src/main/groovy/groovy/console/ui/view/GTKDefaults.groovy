@@ -19,8 +19,10 @@
 package groovy.console.ui.view
 
 import groovy.console.ui.Console
+import javax.print.attribute.standard.OrientationRequested
 import javax.swing.text.StyleConstants
 import javax.swing.text.StyleContext
+import java.awt.print.PrinterJob
 import java.util.prefs.Preferences
 
 build(Defaults)
@@ -35,13 +37,13 @@ styles[StyleContext.DEFAULT_STYLE][StyleConstants.FontFamily] = fontFamily
 // some current distros (Ubuntu 7.10) have broken printing support :(
 // detect it and disable it
 try {
-    pj = java.awt.print.PrinterJob.getPrinterJob()
+    pj = PrinterJob.getPrinterJob()
     ps = pj.getPrintService()
     ps.getAttributes()
     docFlav  = (ps.getSupportedDocFlavors() as List).find {it.mimeType == 'application/vnd.cups-postscript' }
     attrset = ps.getAttributes()
-    orient = attrset.get(javax.print.attribute.standard.OrientationRequested) ?:
-             ps.getDefaultAttributeValue(javax.print.attribute.standard.OrientationRequested)
+    orient = attrset.get(OrientationRequested) ?:
+             ps.getDefaultAttributeValue(OrientationRequested)
     ps.isAttributeValueSupported(orient, docFlav, attrset)
 } catch (NullPointerException npe) {
     //print will bomb out... replace with disabled print action

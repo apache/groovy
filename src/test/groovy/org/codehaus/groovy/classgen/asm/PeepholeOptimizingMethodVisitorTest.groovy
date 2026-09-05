@@ -22,11 +22,13 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 import org.junit.jupiter.api.Test
 import org.objectweb.asm.Attribute
+import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.ConstantDynamic
 import org.objectweb.asm.Handle
 import org.objectweb.asm.Label
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes
+import org.objectweb.asm.Type
 import org.objectweb.asm.tree.AbstractInsnNode
 import org.objectweb.asm.tree.FieldInsnNode
 import org.objectweb.asm.tree.IincInsnNode
@@ -586,7 +588,7 @@ final class PeepholeOptimizingMethodVisitorTest extends AbstractBytecodeTestCase
     @Test
     void classVisitorWrapsEveryMethodAndSkipsNullDelegates() {
         def written = []
-        def delegate = new org.objectweb.asm.ClassVisitor(CompilerConfiguration.ASM_API_VERSION) {
+        def delegate = new ClassVisitor(CompilerConfiguration.ASM_API_VERSION) {
             @Override
             MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
                 if (name == 'skip') {
@@ -661,7 +663,7 @@ final class PeepholeOptimizingMethodVisitorTest extends AbstractBytecodeTestCase
 
     @Test
     void attachesCheckcastToReferenceConstantsAndPreservesDiscardedCasts() {
-        def type = org.objectweb.asm.Type.getType(String)
+        def type = Type.getType(String)
         def handle = new Handle(Opcodes.H_INVOKESTATIC, 'Owner', 'boot', '()V', false)
         def bytecode = sequenceFor {
             visitLdcInsn('text')

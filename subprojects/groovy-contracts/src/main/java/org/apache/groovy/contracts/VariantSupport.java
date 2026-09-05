@@ -18,12 +18,13 @@
  */
 package org.apache.groovy.contracts;
 
+import groovy.contracts.Decreases;
 import org.apache.groovy.contracts.generation.Configurator;
 
 import java.util.List;
 
 /**
- * Shared runtime support for {@link groovy.contracts.Decreases} termination
+ * Shared runtime support for {@link Decreases} termination
  * measures, used by both the loop variant ({@code @Decreases} on a loop) and the
  * recursion variant ({@code @Decreases} on a method, via {@link MethodVariantSupport}).
  * <p>

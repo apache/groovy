@@ -69,6 +69,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -346,7 +347,7 @@ public class StaticInvocationWriter extends InvocationWriter {
     }
 
     private void writeMethodAccessError(final MethodNode target, final Expression origin) {
-        var descriptor = new java.util.StringJoiner(", ", target.getName() + "(", ")");
+        var descriptor = new StringJoiner(", ", target.getName() + "(", ")");
         for (Parameter parameter : target.getParameters()) {
             descriptor.add(formatTypeName(parameter.getOriginType()));
         }

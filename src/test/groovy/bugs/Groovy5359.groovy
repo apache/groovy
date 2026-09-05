@@ -18,6 +18,7 @@
  */
 package bugs
 
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack
 import org.junit.jupiter.api.Test
 
@@ -33,7 +34,7 @@ final class Groovy5359 {
     static class C extends A {
     }
 
-    @groovy.transform.CompileStatic
+    @CompileStatic
     private long measure(Number count, Closure block) {
         long t0 = System.currentTimeMillis()
         count.times(block)

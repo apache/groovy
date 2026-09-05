@@ -18,7 +18,13 @@
  */
 package org.codehaus.groovy.ast.decompiled;
 
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.TypePath;
+import org.objectweb.asm.TypeReference;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -34,7 +40,7 @@ import java.util.Map;
  * full AST nodes by {@link DecompiledClassNode}.
  *
  * <p>ClassStub instances are not AST nodes themselves; they are data containers that facilitate
- * lazy loading of class members. The actual {@link org.codehaus.groovy.ast.ClassNode} representation
+ * lazy loading of class members. The actual {@link ClassNode} representation
  * is created by {@link DecompiledClassNode}, which uses this stub to populate fields and methods
  * on demand via {@link LazyFieldNode}, {@link LazyMethodNode}, and {@link LazyConstructorNode}.
  *
@@ -51,7 +57,7 @@ public class ClassStub extends MemberStub {
     final String className;
 
     /**
-     * JVM access modifiers for the class (combination of ASM {@link org.objectweb.asm.Opcodes} flags
+     * JVM access modifiers for the class (combination of ASM {@link Opcodes} flags
      * such as {@code ACC_PUBLIC}, {@code ACC_FINAL}, {@code ACC_ABSTRACT}, etc.).
      * For inner classes, see {@link #innerClassModifiers}.
      */
@@ -194,8 +200,8 @@ class MemberStub implements AnnotatedStub, AnnotatedTypeStub {
      * Adds a type annotation to this member stub, preserving its position information.
      *
      * @param desc the annotation descriptor (JVMS format)
-     * @param typeRef the ASM {@link org.objectweb.asm.TypeReference} value
-     * @param typePath the {@link org.objectweb.asm.TypePath} or {@code null} for the type itself
+     * @param typeRef the ASM {@link TypeReference} value
+     * @param typePath the {@link TypePath} or {@code null} for the type itself
      * @return the newly created {@link TypeAnnotationStub}
      */
     TypeAnnotationStub addTypeAnnotation(String desc, int typeRef, TypePath typePath) {
@@ -219,7 +225,7 @@ class MemberStub implements AnnotatedStub, AnnotatedTypeStub {
 /**
  * Bytecode stub for a method or constructor extracted from compiled bytecode.
  * Contains access modifiers, descriptors, signatures, and parameter information necessary
- * to reconstruct a {@link org.codehaus.groovy.ast.MethodNode} or {@link org.codehaus.groovy.ast.ConstructorNode}.
+ * to reconstruct a {@link MethodNode} or {@link ConstructorNode}.
  */
 class MethodStub extends MemberStub {
     /**
@@ -288,7 +294,7 @@ class MethodStub extends MemberStub {
 
 /**
  * Bytecode stub for a field extracted from compiled bytecode.
- * Contains type information and modifiers necessary to reconstruct a {@link org.codehaus.groovy.ast.FieldNode}.
+ * Contains type information and modifiers necessary to reconstruct a {@link FieldNode}.
  */
 class FieldStub extends MemberStub {
     /**
@@ -382,14 +388,14 @@ class AnnotationStub {
  */
 class TypeAnnotationStub extends AnnotationStub {
     /**
-     * The annotated type position as an ASM {@link org.objectweb.asm.TypeReference} value
+     * The annotated type position as an ASM {@link TypeReference} value
      * (JVMS 4.7.20 target_type and target_info).
      */
     final int typeRef;
 
     /**
      * The path to the annotated type argument, wildcard bound, array element type or static
-     * inner type within the type given by {@link #typeRef}, in {@link org.objectweb.asm.TypePath}
+     * inner type within the type given by {@link #typeRef}, in {@link TypePath}
      * string format, or {@code null} if the annotation targets the type itself (JVMS 4.7.20.2).
      */
     final String typePath;
@@ -398,7 +404,7 @@ class TypeAnnotationStub extends AnnotationStub {
      * Creates a type annotation stub from its type and position information.
      *
      * @param className the fully qualified annotation class name
-     * @param typeRef the ASM {@link org.objectweb.asm.TypeReference} value
+     * @param typeRef the ASM {@link TypeReference} value
      * @param typePath the type path in string format, or {@code null} for the type itself
      */
     public TypeAnnotationStub(String className, int typeRef, String typePath) {

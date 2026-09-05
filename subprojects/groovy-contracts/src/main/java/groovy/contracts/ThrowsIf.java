@@ -18,6 +18,7 @@
  */
 package groovy.contracts;
 
+import org.apache.groovy.contracts.ThrowsIfViolation;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
@@ -99,7 +100,7 @@ import java.lang.annotation.Target;
  * (must-throw), and an escaping exception matching some arm's type must be
  * justified by a matching arm's condition having held on entry (only-when —
  * checked only for {@code exhaustive} arm-sets). A broken implementation raises
- * {@link org.apache.groovy.contracts.ThrowsIfViolation} — never the declared
+ * {@link ThrowsIfViolation} — never the declared
  * exception, which is defined behaviour delivered at entry; a justified throw
  * always propagates untouched. {@code checked} is <em>set-level</em>: if any arm
  * is {@code checked}, the whole arm-set is checked — every non-woven arm is
@@ -172,7 +173,7 @@ public @interface ThrowsIf {
      * gates the escaping-throw check: {@code true} (default) claims the listed
      * conditions are the <em>only</em> reasons a matching exception is thrown,
      * so an escaping match with no condition held is a
-     * {@link org.apache.groovy.contracts.ThrowsIfViolation}; {@code false}
+     * {@link ThrowsIfViolation}; {@code false}
      * says the method may throw the same exception for other, unlisted reasons
      * — escaping throws are never judged (and verification tools likewise skip
      * the only-when direction). One {@code false} arm disclaims the check for
@@ -192,7 +193,7 @@ public @interface ThrowsIf {
      * {@link Ensures} — a normal return with a non-woven arm's condition held, or
      * an unjustified escaping throw of a matching type ({@code exhaustive}
      * arm-sets only), raises a
-     * {@link org.apache.groovy.contracts.ThrowsIfViolation}. {@code false}
+     * {@link ThrowsIfViolation}. {@code false}
      * (default): no runtime checking beyond any {@code WOVEN} guard.
      *
      * @return whether the contract is runtime-checked

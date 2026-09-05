@@ -22,9 +22,15 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonToken
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.RecognitionException
+import org.antlr.v4.runtime.RuleContext
 import org.antlr.v4.runtime.Token
+import org.antlr.v4.runtime.TokenSource
+import org.antlr.v4.runtime.TokenStream
+import org.antlr.v4.runtime.misc.Interval
 import org.antlr.v4.runtime.misc.IntervalSet
 import org.apache.groovy.parser.antlr4.GroovyLangLexer
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
 
 import java.lang.reflect.Method
@@ -728,9 +734,9 @@ final class MissingDelimiterDiagnosticTest {
 
     private static String compileError(String source) {
         try {
-            def cu = new org.codehaus.groovy.control.CompilationUnit()
+            def cu = new CompilationUnit()
             cu.addSource('t.groovy', source)
-            cu.compile(org.codehaus.groovy.control.Phases.CONVERSION)
+            cu.compile(Phases.CONVERSION)
             return ''
         } catch (Throwable e) {
             return e.message ?: ''
@@ -766,7 +772,7 @@ final class MissingDelimiterDiagnosticTest {
      * Token stream that throws {@link IllegalArgumentException} on {@code get},
      * covering the non-IndexOutOfBounds defensive catch branch.
      */
-    private static final class IllegalArgTokenStream implements org.antlr.v4.runtime.TokenStream {
+    private static final class IllegalArgTokenStream implements TokenStream {
         @Override
         Token LT(int k) { throw new IllegalArgumentException('test') }
 
@@ -774,16 +780,16 @@ final class MissingDelimiterDiagnosticTest {
         Token get(int index) { throw new IllegalArgumentException('test') }
 
         @Override
-        org.antlr.v4.runtime.TokenSource getTokenSource() { null }
+        TokenSource getTokenSource() { null }
 
         @Override
-        String getText(org.antlr.v4.runtime.misc.Interval interval) { '' }
+        String getText(Interval interval) { '' }
 
         @Override
         String getText() { '' }
 
         @Override
-        String getText(org.antlr.v4.runtime.RuleContext ctx) { '' }
+        String getText(RuleContext ctx) { '' }
 
         @Override
         String getText(Object start, Object stop) { '' }

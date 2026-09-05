@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.transform.ASTTest
 import groovy.transform.CompilationUnitAware
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotationNode
@@ -46,13 +47,13 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
 import static org.codehaus.groovy.control.CompilePhase.fromPhaseNumber as toCompilePhase
 
 /**
- * Implements {@link groovy.transform.ASTTest} by scheduling the supplied test closure across compilation phases.
+ * Implements {@link ASTTest} by scheduling the supplied test closure across compilation phases.
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 class ASTTestTransformation implements ASTTransformation, CompilationUnitAware {
 
     /**
-     * System property which, when set to {@code false}, makes {@link groovy.transform.ASTTest} a no-op.
+     * System property which, when set to {@code false}, makes {@link ASTTest} a no-op.
      * Compiling source containing the annotation then no longer evaluates its closure. Mirrors the
      * {@code groovy.grape.enable} switch for {@code @Grab}.
      */

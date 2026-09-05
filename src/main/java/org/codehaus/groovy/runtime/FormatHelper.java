@@ -40,6 +40,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.lang.Math.max;
 import static java.util.Arrays.stream;
@@ -419,7 +420,7 @@ public class FormatHelper {
         if (maxSize < 0) {
             return stream(arguments)
                     .map(arg -> arg != null ? typeName(arg) : "null")
-                    .collect(java.util.stream.Collectors.joining(", "));
+                    .collect(Collectors.joining(", "));
         }
 
         var plainForm = new StringBuilder();

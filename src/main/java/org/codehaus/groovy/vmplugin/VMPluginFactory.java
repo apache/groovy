@@ -22,6 +22,8 @@ import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Factory class to get functionality based on the VM version.
@@ -45,8 +47,8 @@ public class VMPluginFactory {
                 try {
                     return (VMPlugin) loader.loadClass(fullName).getDeclaredConstructor().newInstance();
                 } catch (Throwable t) {
-                    var log = java.util.logging.Logger.getLogger(VMPluginFactory.class.getName());
-                    if (log.isLoggable(java.util.logging.Level.FINE)) {
+                    var log = Logger.getLogger(VMPluginFactory.class.getName());
+                    if (log.isLoggable(Level.FINE)) {
                         log.fine("Trying to create VM plugin `" + fullName + "`, but failed:\n" + DefaultGroovyMethods.asString(t));
                     }
                     return null;

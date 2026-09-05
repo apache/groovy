@@ -24,21 +24,21 @@
  * Stable annotations:
  * </p>
  * <ul>
- *   <li>{@link groovy.contracts.Requires @Requires} &ndash; method precondition</li>
- *   <li>{@link groovy.contracts.Ensures @Ensures} &ndash; method postcondition; closures
+ *   <li>{@link Requires @Requires} &ndash; method precondition</li>
+ *   <li>{@link Ensures @Ensures} &ndash; method postcondition; closures
  *       may reference {@code result} and {@code old}</li>
- *   <li>{@link groovy.contracts.Invariant @Invariant} &ndash; class invariant, also usable
+ *   <li>{@link Invariant @Invariant} &ndash; class invariant, also usable
  *       as a loop invariant on {@code for} / {@code while} / {@code do-while} loops</li>
- *   <li>{@link groovy.contracts.Contracted @Contracted} &ndash; package- or class-level
+ *   <li>{@link Contracted @Contracted} &ndash; package- or class-level
  *       opt-in marker that enables contract processing</li>
  * </ul>
  * <p>
  * Incubating in 6.0.0 (semantics may evolve in a subsequent 6.x release):
  * </p>
  * <ul>
- *   <li>{@link groovy.contracts.Modifies @Modifies} &ndash; frame condition declaring
+ *   <li>{@link Modifies @Modifies} &ndash; frame condition declaring
  *       which fields and parameters a method may modify</li>
- *   <li>{@link groovy.contracts.Decreases @Decreases} &ndash; a termination measure (a
+ *   <li>{@link Decreases @Decreases} &ndash; a termination measure (a
  *       strictly-decreasing, well-founded variant) for a loop (per iteration) or a
  *       recursive method (per recursive re-entry)</li>
  * </ul>

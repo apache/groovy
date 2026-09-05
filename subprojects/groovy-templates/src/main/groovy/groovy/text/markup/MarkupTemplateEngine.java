@@ -24,6 +24,7 @@ import groovy.lang.Writable;
 import groovy.text.Template;
 import groovy.text.TemplateEngine;
 import groovy.transform.TypeChecked;
+import groovy.xml.StreamingMarkupBuilder;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
@@ -53,7 +54,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * A template engine which leverages {@link groovy.xml.StreamingMarkupBuilder} to generate XML/XHTML.
+ * A template engine which leverages {@link StreamingMarkupBuilder} to generate XML/XHTML.
  */
 public class MarkupTemplateEngine extends TemplateEngine {
 
@@ -338,7 +339,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
     }
 
     /**
-     * Implements the {@link groovy.text.Template} interface by caching a compiled template script and keeping a
+     * Implements the {@link Template} interface by caching a compiled template script and keeping a
      * reference to the optional map of types of the model elements.
      */
     private class MarkupTemplateMaker implements Template {

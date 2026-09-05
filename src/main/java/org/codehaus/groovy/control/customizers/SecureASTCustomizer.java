@@ -91,6 +91,7 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.Types;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -130,12 +131,12 @@ import java.util.Map;
  * <p>
  * The statement and expression lists are matched by exact class, so naming a class does not name its
  * subclasses. Several language constructs are modelled as a subclass of another: a lambda is a
- * {@link org.codehaus.groovy.ast.expr.LambdaExpression}, which extends
- * {@link org.codehaus.groovy.ast.expr.ClosureExpression}; the {@code ::} form of a method reference is
- * a {@link org.codehaus.groovy.ast.expr.MethodReferenceExpression}, which extends
- * {@link org.codehaus.groovy.ast.expr.MethodPointerExpression}; and attribute access is an
- * {@link org.codehaus.groovy.ast.expr.AttributeExpression}, which extends
- * {@link org.codehaus.groovy.ast.expr.PropertyExpression}. Each has to be listed in its own right.
+ * {@link LambdaExpression}, which extends
+ * {@link ClosureExpression}; the {@code ::} form of a method reference is
+ * a {@link MethodReferenceExpression}, which extends
+ * {@link MethodPointerExpression}; and attribute access is an
+ * {@link AttributeExpression}, which extends
+ * {@link PropertyExpression}. Each has to be listed in its own right.
  * This is another reason to prefer allowed lists, which refuse an unlisted subclass rather than
  * admitting one.
  * <p>
@@ -235,14 +236,14 @@ import java.util.Map;
  *  within the code this customizer visits.
  *  <p>
  *  Where this customizer sits in the compilation explains both of the limitations above and one
- *  more. It runs at {@link org.codehaus.groovy.control.CompilePhase#CANONICALIZATION}, which is after
+ *  more. It runs at {@link CompilePhase#CANONICALIZATION}, which is after
  *  the phases in which annotations that execute have already done so, and before the phase in which
  *  types are inferred. So the type this customizer sees for an expression is the type the source
  *  states, and for anything left to the runtime that is {@code java.lang.Object}: in
  *  {@code def r = java.lang.Runtime; r.getRuntime()} the receiver of the call is {@code Object}, not
  *  {@code Runtime}, and a receiver list naming {@code Runtime} does not match it. Compiling statically
  *  does not change this, since {@code @CompileStatic} and {@code @TypeChecked} run at
- *  {@link org.codehaus.groovy.control.CompilePhase#INSTRUCTION_SELECTION}, three phases later.
+ *  {@link CompilePhase#INSTRUCTION_SELECTION}, three phases later.
  *  <p>
  *  More fundamentally, <i>compiling</i> Groovy source is itself code execution, whether or not you
  *  subsequently run the result: global AST transforms found on the compile classpath,
@@ -888,7 +889,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Sets the list of tokens which are not permitted.
      *
-     * @param disallowedTokens the tokens. The values of the tokens must be those of {@link org.codehaus.groovy.syntax.Types}
+     * @param disallowedTokens the tokens. The values of the tokens must be those of {@link Types}
      */
     public void setDisallowedTokens(final List<Integer> disallowedTokens) {
         if (allowedTokens != null) {
@@ -925,7 +926,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Sets the list of tokens which are permitted.
      *
-     * @param allowedTokens the tokens. The values of the tokens must be those of {@link org.codehaus.groovy.syntax.Types}
+     * @param allowedTokens the tokens. The values of the tokens must be those of {@link Types}
      */
     public void setAllowedTokens(final List<Integer> allowedTokens) {
         if (disallowedTokens != null) {
@@ -1093,8 +1094,8 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * simple to bypass any disallowed list unless the disallowed receivers list contains, at
      * a minimum, Object, Script, GroovyShell, and Eval. Additionally,
      * the disallowed expressions list must contain both
-     * {@link org.codehaus.groovy.ast.expr.MethodPointerExpression} and
-     * {@link org.codehaus.groovy.ast.expr.MethodReferenceExpression} for the disallowed
+     * {@link MethodPointerExpression} and
+     * {@link MethodReferenceExpression} for the disallowed
      * receivers list to function as a security check. Both are needed because the expression
      * lists are matched by exact class: naming a class does not name its subclasses, and the
      * {@code ::} form of a method reference is a subclass of the {@code .&amp;} form.

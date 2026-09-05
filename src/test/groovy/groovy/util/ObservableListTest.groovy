@@ -315,7 +315,7 @@ class ObservableListTest {
             // and size property changed from 1 to 0
             assertNotNull(sizeListener.event)
             sizeListener.event.with {
-                assert it instanceof java.beans.PropertyChangeEvent
+                assert it instanceof PropertyChangeEvent
                 assert source == list
                 assert propertyName == 'size'
                 assert oldValue == 1

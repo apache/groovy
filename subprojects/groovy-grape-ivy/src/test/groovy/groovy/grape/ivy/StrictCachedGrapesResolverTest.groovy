@@ -23,6 +23,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
+import java.util.jar.JarOutputStream
+import java.util.zip.ZipEntry
+
 import static org.junit.jupiter.api.Assertions.assertFalse
 import static org.junit.jupiter.api.Assertions.assertTrue
 
@@ -131,9 +134,9 @@ final class StrictCachedGrapesResolverTest {
         File jarsDir = new File(moduleDir, 'jars')
         jarsDir.mkdirs()
         File jar = new File(jarsDir, "${mod}-${rev}.jar")
-        def jos = new java.util.jar.JarOutputStream(new FileOutputStream(jar))
+        def jos = new JarOutputStream(new FileOutputStream(jar))
         try {
-            jos.putNextEntry(new java.util.zip.ZipEntry('META-INF/MANIFEST.MF'))
+            jos.putNextEntry(new ZipEntry('META-INF/MANIFEST.MF'))
             jos.write('Manifest-Version: 1.0\n'.bytes)
             jos.closeEntry()
         } finally {

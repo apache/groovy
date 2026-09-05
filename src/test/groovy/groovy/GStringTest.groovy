@@ -19,6 +19,7 @@
 package groovy
 
 import groovy.test.GroovyTestCase
+import groovy.transform.Immutable
 import groovy.transform.Pure
 
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -709,7 +710,7 @@ class GStringTest extends GroovyTestCase {
         '''
     }
 
-    @groovy.transform.Immutable
+    @Immutable
     static class GroovyImmutableValue {
         private final String v = '123'
         String toString() { v }

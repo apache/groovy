@@ -156,8 +156,8 @@ public class ClassHelper {
             Float_TYPE = makeCached(Float.class),
             Double_TYPE = makeCached(Double.class),
             Boolean_TYPE = makeCached(Boolean.class),
-            BigInteger_TYPE = makeCached(java.math.BigInteger.class),
-            BigDecimal_TYPE = makeCached(java.math.BigDecimal.class),
+            BigInteger_TYPE = makeCached(BigInteger.class),
+            BigDecimal_TYPE = makeCached(BigDecimal.class),
             Number_TYPE = makeCached(Number.class),
 
             VOID_TYPE = makeCached(Void.TYPE),

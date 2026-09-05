@@ -84,9 +84,13 @@ import javax.swing.SpringLayout
 import javax.swing.SwingUtilities
 import javax.swing.UIManager
 import javax.swing.border.TitledBorder
+import javax.swing.plaf.metal.MetalComboBoxIcon
+import javax.swing.plaf.metal.MetalIconFactory
 import javax.swing.plaf.metal.MetalLookAndFeel
 import javax.swing.text.DateFormatter
 import javax.swing.text.NumberFormatter
+import java.util.logging.Level
+import java.util.logging.Logger
 
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -813,9 +817,9 @@ final class SwingBuilderTest {
     @Test
     void testFactoryLogging() {
         runInEDT {
-            def logger = java.util.logging.Logger.getLogger(SwingBuilder.class.name)
+            def logger = Logger.getLogger(SwingBuilder.class.name)
             def oldLevel = logger.getLevel()
-            logger.setLevel(java.util.logging.Level.FINE)
+            logger.setLevel(Level.FINE)
             def swing = new SwingBuilder()
             swing.label()
             logger.setLevel(oldLevel)
@@ -828,7 +832,7 @@ final class SwingBuilderTest {
             // elements that take an action, icon, string, GString,
             // or their own type as a value arg
             def anAction = swing.action(name: 'test action')
-            def icon = new javax.swing.plaf.metal.MetalComboBoxIcon()
+            def icon = new MetalComboBoxIcon()
             def richActionItems = [
                     'button',
                     'checkBox',
@@ -1427,7 +1431,7 @@ final class SwingBuilderTest {
                 swing.lookAndFeel('crossPlatform')
 
                 // test alternate invocations...
-                swing.lookAndFeel(new javax.swing.plaf.metal.MetalLookAndFeel())
+                swing.lookAndFeel(new MetalLookAndFeel())
                 shouldFail {
                     swing.lookAndFeel(this)
                 }
@@ -1534,8 +1538,8 @@ final class SwingBuilderTest {
                 compoundBorder([titledBorder('outer'), titledBorder('middle'), titledBorder('inner')], parent: true)
                 matteBorder(Color.MAGENTA, size: 7, parent: true)
                 matteBorder(7, color: Color.MAGENTA, parent: true)
-                matteBorder(javax.swing.plaf.metal.MetalIconFactory.getCheckBoxIcon(), size: 9, parent: true)
-                matteBorder(9, icon: javax.swing.plaf.metal.MetalIconFactory.getCheckBoxIcon(), parent: true)
+                matteBorder(MetalIconFactory.getCheckBoxIcon(), size: 9, parent: true)
+                matteBorder(9, icon: MetalIconFactory.getCheckBoxIcon(), parent: true)
 
                 lineBorder(color: Color.BLACK)
                 lineBorder(color: Color.BLACK, thickness: 4)
@@ -1576,8 +1580,8 @@ final class SwingBuilderTest {
                 compoundBorder([titledBorder('outer'), titledBorder('middle'), titledBorder('inner')])
                 matteBorder(Color.MAGENTA, size: 7)
                 matteBorder(7, color: Color.MAGENTA)
-                matteBorder(javax.swing.plaf.metal.MetalIconFactory.getCheckBoxIcon(), size: 9)
-                matteBorder(9, icon: javax.swing.plaf.metal.MetalIconFactory.getCheckBoxIcon())
+                matteBorder(MetalIconFactory.getCheckBoxIcon(), size: 9)
+                matteBorder(9, icon: MetalIconFactory.getCheckBoxIcon())
             }
         }
     }
@@ -1634,8 +1638,8 @@ final class SwingBuilderTest {
                 }
             }
 
-            assert lcr2.getListCellRendererComponent(swing.ls, 'x', 0, false, false) instanceof javax.swing.JLabel
-            assert lcr2.getListCellRendererComponent(swing.ls, 'x', 1, false, false) instanceof javax.swing.JButton
+            assert lcr2.getListCellRendererComponent(swing.ls, 'x', 0, false, false) instanceof JLabel
+            assert lcr2.getListCellRendererComponent(swing.ls, 'x', 1, false, false) instanceof JButton
         }
     }
 

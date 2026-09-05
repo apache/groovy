@@ -42,10 +42,12 @@ import org.codehaus.groovy.util.ManagedConcurrentLinkedQueue;
 import org.codehaus.groovy.util.ReferenceBundle;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -118,7 +120,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
     }
 
     /**
-     * @param useAccessible defines whether the {@link java.lang.reflect.AccessibleObject#setAccessible(boolean)}
+     * @param useAccessible defines whether the {@link AccessibleObject#setAccessible(boolean)}
      *                      method will be called to enable access to all methods when using reflection
      */
     public MetaClassRegistryImpl(boolean useAccessible) {
@@ -236,7 +238,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
         try {
             ClassLoader cl = MetaClassRegistryImpl.class.getClassLoader();
             if (cl == null) return;
-            var locations = java.util.Collections.list(cl.getResources("groovy/concurrent/AsyncScope.class"));
+            var locations = Collections.list(cl.getResources("groovy/concurrent/AsyncScope.class"));
             // Only count packaged (jar) locations — a classes/ directory on the
             // classpath alongside a jar is normal during the Groovy bootstrap
             // build and not a deployment problem users can fix.

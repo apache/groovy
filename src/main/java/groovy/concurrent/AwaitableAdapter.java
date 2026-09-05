@@ -18,12 +18,14 @@
  */
 package groovy.concurrent;
 
+import java.util.ServiceLoader;
+
 /**
  * Service Provider Interface (SPI) for adapting third-party asynchronous types
  * to Groovy's {@link Awaitable} abstraction and to iterables for
  * {@code for await} loops.
  * <p>
- * Implementations are discovered automatically via {@link java.util.ServiceLoader}.
+ * Implementations are discovered automatically via {@link ServiceLoader}.
  * To register an adapter, create a file
  * {@code META-INF/services/groovy.concurrent.AwaitableAdapter} containing the
  * fully-qualified class name of your implementation.

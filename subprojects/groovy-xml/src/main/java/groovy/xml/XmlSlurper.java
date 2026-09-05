@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -512,7 +513,7 @@ public class XmlSlurper extends DefaultHandler {
     }
 
     /**
-     * Installs an {@link org.xml.sax.EntityResolver} that resolves an entity's system identifier
+     * Installs an {@link EntityResolver} that resolves an entity's system identifier
      * against the supplied URL as the base for <em>relative</em> system identifiers.
      * <p>
      * <strong>This does not sandbox or restrict entity resolution.</strong> It is a convenience for
@@ -520,7 +521,7 @@ public class XmlSlurper extends DefaultHandler {
      * <ul>
      *   <li>an <em>absolute</em> system identifier (e.g. {@code SYSTEM "file:///etc/passwd"} or
      *       {@code "http://host/x"}) is used unchanged &mdash; {@code base} is ignored, since
-     *       {@link java.net.URI#resolve(String)} returns an already-absolute URI as-is; and</li>
+     *       {@link URI#resolve(String)} returns an already-absolute URI as-is; and</li>
      *   <li>no scheme allow-list or containment check is applied, so the resolved reference is
      *       fetched whatever its scheme or location.</li>
      * </ul>
@@ -528,8 +529,8 @@ public class XmlSlurper extends DefaultHandler {
      * DOCTYPE declarations to have been enabled (see {@link #setAllowDocTypeDeclaration(boolean)});
      * that is off by default. Do not rely on this method to confine resolution of untrusted XML:
      * keep {@code allowDocTypeDeclaration} {@code false} for untrusted input, and if you need real
-     * confinement install your own {@link org.xml.sax.EntityResolver} via
-     * {@link #setEntityResolver(org.xml.sax.EntityResolver)} that validates the resolved location
+     * confinement install your own {@link EntityResolver} via
+     * {@link #setEntityResolver(EntityResolver)} that validates the resolved location
      * and scheme.
      *
      * @param base The URL used as the base for resolving relative system identifiers

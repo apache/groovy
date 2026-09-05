@@ -22,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 import java.lang.ref.ReferenceQueue
+import java.lang.ref.SoftReference
 
 final class ReferenceManagerTest {
 
@@ -153,7 +154,7 @@ final class ReferenceManagerTest {
     }
 
     private class TestReference<T>
-            extends java.lang.ref.SoftReference<T>
+            extends SoftReference<T>
             implements Reference<T, Finalizable> {
 
         final Finalizable handler

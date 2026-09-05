@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform.stc
 
 import groovy.transform.CompileStatic
+import groovy.transform.stc.ClassTagStaticTest
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
@@ -37,7 +38,7 @@ import static groovy.test.GroovyAssert.shouldFail
 /**
  * Integration tests for {@code @ClassTag} (GROOVY-12115) against a <em>precompiled</em> extension
  * module supplied as a jar - the situation of a library on the compile classpath, as opposed to
- * the same-unit sources covered by {@link groovy.transform.stc.ClassTagStaticTest}. Chiefly the
+ * the same-unit sources covered by {@link ClassTagStaticTest}. Chiefly the
  * containment invariant: a module can preempt callers of <em>its own</em> lenient API, but a jar
  * on the compile classpath can never capture existing calls owned by another module (here: a
  * hostile {@code each} overload that must not re-route DGM's {@code each}), plus the fail-soft

@@ -32,6 +32,9 @@ import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -85,9 +88,9 @@ public final class AsyncTransformHelper {
      * Single-arg form casts to {@link Object} so static/dynamic overload
      * selection targets {@link AsyncSupport#await(Object)}, avoiding
      * ambiguity when the argument implements multiple async interfaces
-     * (e.g. {@link java.util.concurrent.CompletableFuture} implements both
-     * {@link java.util.concurrent.CompletionStage} and
-     * {@link java.util.concurrent.Future}).
+     * (e.g. {@link CompletableFuture} implements both
+     * {@link CompletionStage} and
+     * {@link Future}).
      */
     public static Expression buildAwaitCall(Expression arg) {
         if (arg instanceof ArgumentListExpression args && args.getExpressions().size() > 1) {

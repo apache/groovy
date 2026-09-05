@@ -76,12 +76,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * <h4>Template engine configuration</h4>
  * <p>
- * By default, the TemplateServer uses the {@link groovy.text.SimpleTemplateEngine}
+ * By default, the TemplateServer uses the {@link SimpleTemplateEngine}
  * which interprets JSP-like templates. The init parameter <code>template.engine</code>
  * defines the fully qualified class name of the template to use:
  * <pre>
- *   template.engine = [empty] - equals groovy.text.SimpleTemplateEngine
- *   template.engine = groovy.text.SimpleTemplateEngine
+ *   template.engine = [empty] - equals SimpleTemplateEngine
+ *   template.engine = SimpleTemplateEngine
  *   template.engine = groovy.text.GStringTemplateEngine
  *   template.engine = groovy.text.XmlTemplateEngine
  * </pre>
@@ -384,7 +384,7 @@ public class TemplateServlet extends AbstractHttpServlet {
      * Creates the template engine.
      * <p>
      * Called by {@link TemplateServlet#init(ServletConfig)} and returns just
-     * <code>new groovy.text.SimpleTemplateEngine()</code> if the init parameter
+     * <code>new SimpleTemplateEngine()</code> if the init parameter
      * <code>template.engine</code> is not set by the container configuration.
      *
      * @param config Current servlet configuration passed by the container.

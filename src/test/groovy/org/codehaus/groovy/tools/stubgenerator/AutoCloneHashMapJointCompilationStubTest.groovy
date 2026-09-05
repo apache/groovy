@@ -18,9 +18,11 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
+import java.util.LinkedHashMap
+
 /**
  * GROOVY-11980: when {@code @AutoClone} is applied to a class that
- * extends {@link java.util.LinkedHashMap} (or anything in the
+ * extends {@link LinkedHashMap} (or anything in the
  * {@code HashMap} family), the generated {@code clone()} override
  * must not declare {@code throws CloneNotSupportedException} — the
  * parent's {@code clone()} doesn't declare it, and Java forbids an

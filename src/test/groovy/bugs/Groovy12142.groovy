@@ -20,7 +20,10 @@ package bugs
 
 import org.codehaus.groovy.reflection.GroovyClassValue
 import org.junit.jupiter.api.Test
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Opcodes
 
+import java.lang.ref.SoftReference
 import java.lang.ref.WeakReference
 
 import static org.junit.jupiter.api.Assertions.assertEquals
@@ -249,12 +252,12 @@ final class Groovy12142 {
         parserWrapperSoftReference()?.clear()
     }
 
-    private static java.lang.ref.SoftReference parserWrapperSoftReference() {
+    private static SoftReference parserWrapperSoftReference() {
         def manager = Class.forName('org.apache.groovy.parser.antlr4.internal.atnmanager.ParserAtnManager').INSTANCE
         def refField = Class.forName('org.apache.groovy.parser.antlr4.internal.atnmanager.AtnManager')
                 .getDeclaredField('atnWrapperSoftReference')
         refField.accessible = true
-        (java.lang.ref.SoftReference) refField.get(manager)
+        (SoftReference) refField.get(manager)
     }
 
     private static void parseVariedSource(int n) {
@@ -382,9 +385,9 @@ final class Groovy12142 {
      * GroovyClassValue under test holds an association.
      */
     private static WeakReference<Class<?>> loadThrowawayClass(GroovyClassValue gcv) {
-        def cw = new org.objectweb.asm.ClassWriter(0)
+        def cw = new ClassWriter(0)
         // V11 (the Groovy 5 minimum): loadable on every JRE the test may run on
-        cw.visit(org.objectweb.asm.Opcodes.V11, org.objectweb.asm.Opcodes.ACC_PUBLIC,
+        cw.visit(Opcodes.V11, Opcodes.ACC_PUBLIC,
                 'ThrowawayClassValueHost', null, 'java/lang/Object', null)
         cw.visitEnd()
         byte[] bytes = cw.toByteArray()

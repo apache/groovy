@@ -30,23 +30,25 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.io.ReaderSource;
+import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Evaluates {@link org.codehaus.groovy.ast.expr.ClosureExpression} instances in annotation parameters and
+ * Evaluates {@link ClosureExpression} instances in annotation parameters and
  * generates special contract closure classes from them.
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class ClosureExpressionEvaluationASTTransformation extends BaseASTTransformation {
 
     /**
-     * {@link org.codehaus.groovy.transform.ASTTransformation#visit(org.codehaus.groovy.ast.ASTNode[], org.codehaus.groovy.control.SourceUnit)}
+     * {@link ASTTransformation#visit(ASTNode[], SourceUnit)}
      */
     @Override
     public void visit(ASTNode[] nodes, SourceUnit unit) {

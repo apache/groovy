@@ -19,16 +19,17 @@
 package groovy.util.function;
 
 import java.util.Objects;
+import java.util.function.UnaryOperator;
 
 /**
  * Represents an operation that takes a {@code float}-valued operand and produces
  * a {@code float}-valued result.  This is a specialization of
- * {@link java.util.function.UnaryOperator} for {@code float}.
+ * {@link UnaryOperator} for {@code float}.
  *
  * <p>This is a <a href="package-summary.html">functional interface</a>
  * whose functional method is {@link #applyAsFloat(float)}.
  *
- * @see java.util.function.UnaryOperator
+ * @see UnaryOperator
  * @since 5.0.0
  */
 @FunctionalInterface

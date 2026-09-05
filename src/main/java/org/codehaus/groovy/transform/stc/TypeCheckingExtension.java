@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.stc;
 
+import groovy.transform.TypeCheckingMode;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
@@ -28,6 +29,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -195,7 +197,7 @@ public class TypeCheckingExtension {
      * Allows the extension to perform additional tasks before the type checker actually visits a method node.
      * Compared to a custom visitor, this method ensures that the node being visited is a node which would have
      * been visited by the type checker. This is in particular important for nodes which are marked with
-     * {@link groovy.transform.TypeCheckingMode#SKIP}.
+     * {@link TypeCheckingMode#SKIP}.
      * @param node a method node
      * @return false if the type checker should visit the node, or true if this extension replaces what the
      * type checker would do with the method.
@@ -208,7 +210,7 @@ public class TypeCheckingExtension {
      * Allows the extension to perform additional tasks after the type checker actually visited a method node.
      * Compared to a custom visitor, this method ensures that the node being visited is a node which would have
      * been visited by the type checker. This is in particular important for nodes which are marked with
-     * {@link groovy.transform.TypeCheckingMode#SKIP}.
+     * {@link TypeCheckingMode#SKIP}.
      * @param node a method node
      */
     public void afterVisitMethod(MethodNode node) {
@@ -218,7 +220,7 @@ public class TypeCheckingExtension {
      * Allows the extension to perform additional tasks before the type checker actually visits a class node.
      * Compared to a custom visitor, this method ensures that the node being visited is a node which would have
      * been visited by the type checker. This is in particular important for nodes which are marked with
-     * {@link groovy.transform.TypeCheckingMode#SKIP}.
+     * {@link TypeCheckingMode#SKIP}.
      * @param node a class node
      * @return false if the type checker should visit the node, or true if this extension replaces what the
      * type checker would do with the class.
@@ -231,7 +233,7 @@ public class TypeCheckingExtension {
      * Allows the extension to perform additional tasks after the type checker actually visited a class node.
      * Compared to a custom visitor, this method ensures that the node being visited is a node which would have
      * been visited by the type checker. This is in particular important for nodes which are marked with
-     * {@link groovy.transform.TypeCheckingMode#SKIP}.
+     * {@link TypeCheckingMode#SKIP}.
      * @param node a class node
      */
     public void afterVisitClass(ClassNode node) {
@@ -241,9 +243,9 @@ public class TypeCheckingExtension {
      * Allows the extension to perform additional tasks before the type checker actually visits a method call.
      * Compared to a custom visitor, this method ensures that the node being visited is a node which would have
      * been visited by the type checker. This is in particular important for nodes which are marked with
-     * {@link groovy.transform.TypeCheckingMode#SKIP}.
+     * {@link TypeCheckingMode#SKIP}.
      *
-     * @param call a method call, either a {@link org.codehaus.groovy.ast.expr.MethodCallExpression}, {@link org.codehaus.groovy.ast.expr.StaticMethodCallExpression}, or {@link org.codehaus.groovy.ast.expr.ConstructorCallExpression}
+     * @param call a method call, either a {@link MethodCallExpression}, {@link StaticMethodCallExpression}, or {@link ConstructorCallExpression}
      * @return false if the type checker should visit the node, or true if this extension replaces what the
      * type checker would do with the method call.
      */
@@ -255,8 +257,8 @@ public class TypeCheckingExtension {
      * Allows the extension to perform additional tasks after the type checker actually visits a method call.
      * Compared to a custom visitor, this method ensures that the node being visited is a node which would have
      * been visited by the type checker. This is in particular important for nodes which are marked with
-     * {@link groovy.transform.TypeCheckingMode#SKIP}.
-     * @param call a method call, either a {@link org.codehaus.groovy.ast.expr.MethodCallExpression}, {@link org.codehaus.groovy.ast.expr.StaticMethodCallExpression}, or {@link org.codehaus.groovy.ast.expr.ConstructorCallExpression}
+     * {@link TypeCheckingMode#SKIP}.
+     * @param call a method call, either a {@link MethodCallExpression}, {@link StaticMethodCallExpression}, or {@link ConstructorCallExpression}
      */
     public void afterMethodCall(MethodCall call) {
     }

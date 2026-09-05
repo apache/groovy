@@ -27,6 +27,7 @@ import org.codehaus.groovy.util.FastArray;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 /**
  * An index of metamethods for a class, organized by method name and signature.
@@ -369,7 +370,7 @@ public class MetaMethodIndex {
         });
     }
 
-    private java.util.stream.Stream<Cache> allEntries() {
+    private Stream<Cache> allEntries() {
         return indexMap.values().stream().flatMap(map -> map.values().stream());
     }
 

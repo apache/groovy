@@ -18,17 +18,19 @@
  */
 package org.codehaus.groovy.runtime.m12n;
 
+import java.util.List;
+
 public class TestStringExtension {
 
     public static String reverseToUpperCase(String self) {
         return new StringBuilder(self.toUpperCase()).reverse().toString();
     }
 
-    public static String getString(java.util.List<String> self) {
+    public static String getString(List<String> self) {
         return self.get(0);
     }
 
-    public static <CS extends CharSequence> CharSequence getSequence(java.util.List<CS> self) {
+    public static <CS extends CharSequence> CharSequence getSequence(List<CS> self) {
         return self.get(0);
     }
 }

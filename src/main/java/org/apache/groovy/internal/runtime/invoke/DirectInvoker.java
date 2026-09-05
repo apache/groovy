@@ -20,8 +20,10 @@ package org.apache.groovy.internal.runtime.invoke;
 
 import groovy.transform.Internal;
 
+import java.lang.reflect.Method;
+
 /**
- * JIT-constant trampoline for a single {@link java.lang.reflect.Method}.
+ * JIT-constant trampoline for a single {@link Method}.
  *
  * <p>Not user API. Not an invokedynamic target. Valid for the {@code Method}
  * lifetime, not across {@code MetaMethod} wrappers.

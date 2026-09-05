@@ -1011,7 +1011,7 @@ public class MetaClassHelper {
 
     /**
      * Re-normalizes a reflectively boxed primitive return value through the
-     * {@code valueOf} caches. {@link java.lang.reflect.Method#invoke} boxes
+     * {@code valueOf} caches. {@link Method#invoke} boxes
      * primitive returns with fresh instances, unlike MethodHandle-based and
      * generated-bytecode invocation, which box through the caches; without
      * normalization, reference identity ({@code ===}) of primitive returns

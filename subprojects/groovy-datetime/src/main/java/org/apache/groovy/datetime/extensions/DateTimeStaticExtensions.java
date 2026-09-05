@@ -44,7 +44,7 @@ public final class DateTimeStaticExtensions {
     }
 
     /**
-     * Parse text into a {@link java.time.LocalDate} using the provided pattern.
+     * Parse text into a {@link LocalDate} using the provided pattern.
      *
      * Note: the order of parameters differs from versions of this method for the legacy Date class.
      *
@@ -55,7 +55,7 @@ public final class DateTimeStaticExtensions {
      * @throws java.lang.IllegalArgumentException if the pattern is invalid
      * @throws java.time.format.DateTimeParseException if the text cannot be parsed
      * @see java.time.format.DateTimeFormatter
-     * @see java.time.LocalDate#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
+     * @see LocalDate#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
      * @since 2.5.0
      */
     public static LocalDate parse(final LocalDate type, CharSequence text, String pattern) {
@@ -63,7 +63,7 @@ public final class DateTimeStaticExtensions {
     }
 
     /**
-     * Parse text into a {@link java.time.LocalDateTime} using the provided pattern.
+     * Parse text into a {@link LocalDateTime} using the provided pattern.
      *
      * Note: the order of parameters differs from versions of this method for the legacy Date class.
      *
@@ -74,7 +74,7 @@ public final class DateTimeStaticExtensions {
      * @throws java.lang.IllegalArgumentException if the pattern is invalid
      * @throws java.time.format.DateTimeParseException if the text cannot be parsed
      * @see java.time.format.DateTimeFormatter
-     * @see java.time.LocalDateTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
+     * @see LocalDateTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
      * @since 2.5.0
      */
     public static LocalDateTime parse(final LocalDateTime type, CharSequence text, String pattern) {
@@ -82,7 +82,7 @@ public final class DateTimeStaticExtensions {
     }
 
     /**
-     * Parse text into a {@link java.time.LocalTime} using the provided pattern.
+     * Parse text into a {@link LocalTime} using the provided pattern.
      *
      * @param type    placeholder variable used by Groovy categories; ignored for default static methods
      * @param text    String to be parsed to create the date instance
@@ -91,7 +91,7 @@ public final class DateTimeStaticExtensions {
      * @throws java.lang.IllegalArgumentException if the pattern is invalid
      * @throws java.time.format.DateTimeParseException if the text cannot be parsed
      * @see java.time.format.DateTimeFormatter
-     * @see java.time.LocalTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
+     * @see LocalTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
      * @since 2.5.0
      */
     public static LocalTime parse(final LocalTime type, CharSequence text, String pattern) {
@@ -99,7 +99,7 @@ public final class DateTimeStaticExtensions {
     }
 
     /**
-     * Parse text into a {@link java.time.MonthDay} using the provided pattern.
+     * Parse text into a {@link MonthDay} using the provided pattern.
      *
      * @param type    placeholder variable used by Groovy categories; ignored for default static methods
      * @param text    String to be parsed to create the date instance
@@ -108,7 +108,7 @@ public final class DateTimeStaticExtensions {
      * @throws java.lang.IllegalArgumentException if the pattern is invalid
      * @throws java.time.format.DateTimeParseException if the text cannot be parsed
      * @see java.time.format.DateTimeFormatter
-     * @see java.time.MonthDay#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
+     * @see MonthDay#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
      * @since 2.5.0
      */
     public static MonthDay parse(final MonthDay type, CharSequence text, String pattern) {
@@ -116,7 +116,7 @@ public final class DateTimeStaticExtensions {
     }
 
     /**
-     * Parse text into an {@link java.time.OffsetDateTime} using the provided pattern.
+     * Parse text into an {@link OffsetDateTime} using the provided pattern.
      *
      * @param type    placeholder variable used by Groovy categories; ignored for default static methods
      * @param text    String to be parsed to create the date instance
@@ -125,7 +125,7 @@ public final class DateTimeStaticExtensions {
      * @throws java.lang.IllegalArgumentException if the pattern is invalid
      * @throws java.time.format.DateTimeParseException if the text cannot be parsed
      * @see java.time.format.DateTimeFormatter
-     * @see java.time.OffsetDateTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
+     * @see OffsetDateTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
      * @since 2.5.0
      */
     public static OffsetDateTime parse(final OffsetDateTime type, CharSequence text, String pattern) {
@@ -133,7 +133,7 @@ public final class DateTimeStaticExtensions {
     }
 
     /**
-     * Parse text into an {@link java.time.OffsetTime} using the provided pattern.
+     * Parse text into an {@link OffsetTime} using the provided pattern.
      *
      * @param type    placeholder variable used by Groovy categories; ignored for default static methods
      * @param text    String to be parsed to create the date instance
@@ -142,7 +142,7 @@ public final class DateTimeStaticExtensions {
      * @throws java.lang.IllegalArgumentException if the pattern is invalid
      * @throws java.time.format.DateTimeParseException if the text cannot be parsed
      * @see java.time.format.DateTimeFormatter
-     * @see java.time.OffsetTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
+     * @see OffsetTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
      * @since 2.5.0
      */
     public static OffsetTime parse(final OffsetTime type, CharSequence text, String pattern) {
@@ -150,7 +150,7 @@ public final class DateTimeStaticExtensions {
     }
 
     /**
-     * Parse text into a {@link java.time.Year} using the provided pattern.
+     * Parse text into a {@link Year} using the provided pattern.
      *
      * @param type    placeholder variable used by Groovy categories; ignored for default static methods
      * @param text    String to be parsed to create the date instance
@@ -159,7 +159,7 @@ public final class DateTimeStaticExtensions {
      * @throws java.lang.IllegalArgumentException if the pattern is invalid
      * @throws java.time.format.DateTimeParseException if the text cannot be parsed
      * @see java.time.format.DateTimeFormatter
-     * @see java.time.Year#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
+     * @see Year#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
      * @since 2.5.0
      */
     public static Year parse(final Year type, CharSequence text, String pattern) {
@@ -167,7 +167,7 @@ public final class DateTimeStaticExtensions {
     }
 
     /**
-     * Parse text into a {@link java.time.YearMonth} using the provided pattern.
+     * Parse text into a {@link YearMonth} using the provided pattern.
      *
      * @param type    placeholder variable used by Groovy categories; ignored for default static methods
      * @param text    String to be parsed to create the date instance
@@ -176,7 +176,7 @@ public final class DateTimeStaticExtensions {
      * @throws java.lang.IllegalArgumentException if the pattern is invalid
      * @throws java.time.format.DateTimeParseException if the text cannot be parsed
      * @see java.time.format.DateTimeFormatter
-     * @see java.time.YearMonth#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
+     * @see YearMonth#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
      * @since 2.5.0
      */
     public static YearMonth parse(final YearMonth type, CharSequence text, String pattern) {
@@ -184,7 +184,7 @@ public final class DateTimeStaticExtensions {
     }
 
     /**
-     * Parse text into a {@link java.time.ZonedDateTime} using the provided pattern.
+     * Parse text into a {@link ZonedDateTime} using the provided pattern.
      *
      * @param type    placeholder variable used by Groovy categories; ignored for default static methods
      * @param text    String to be parsed to create the date instance
@@ -193,7 +193,7 @@ public final class DateTimeStaticExtensions {
      * @throws java.lang.IllegalArgumentException if the pattern is invalid
      * @throws java.time.format.DateTimeParseException if the text cannot be parsed
      * @see java.time.format.DateTimeFormatter
-     * @see java.time.ZonedDateTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
+     * @see ZonedDateTime#parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)
      * @since 2.5.0
      */
     public static ZonedDateTime parse(final ZonedDateTime type, CharSequence text, String pattern) {
@@ -201,11 +201,11 @@ public final class DateTimeStaticExtensions {
     }
 
     /**
-     * Returns the {@link java.time.ZoneOffset} currently associated with the system default {@link java.time.ZoneId}.
+     * Returns the {@link ZoneOffset} currently associated with the system default {@link ZoneId}.
      *
      * @param type placeholder variable used by Groovy categories; ignored for default static methods
      * @return a ZoneOffset
-     * @see java.time.ZoneId#systemDefault()
+     * @see ZoneId#systemDefault()
      * @since 2.5.0
      */
     public static ZoneOffset systemDefault(final ZoneOffset type) {
@@ -213,13 +213,13 @@ public final class DateTimeStaticExtensions {
     }
 
     /**
-     * Obtains a Period consisting of the number of years between two {@link java.time.Year} instances.
+     * Obtains a Period consisting of the number of years between two {@link Year} instances.
      * The months and days of the Period will be zero.
      * The result of this method can be a negative period if the end is before the start.
      *
      * @param type           placeholder variable used by Groovy categories; ignored for default static methods
-     * @param startInclusive the start {@link java.time.Year}, inclusive, not null
-     * @param endExclusive   the end {@link java.time.Year}, exclusive, not null
+     * @param startInclusive the start {@link Year}, inclusive, not null
+     * @param endExclusive   the end {@link Year}, exclusive, not null
      * @return a Period between the years
      * @see java.time.Period#between(LocalDate, LocalDate)
      */
@@ -233,13 +233,13 @@ public final class DateTimeStaticExtensions {
     }
 
     /**
-     * Obtains a Period consisting of the number of years and months between two {@link java.time.YearMonth} instances.
+     * Obtains a Period consisting of the number of years and months between two {@link YearMonth} instances.
      * The days of the Period will be zero.
      * The result of this method can be a negative period if the end is before the start.
      *
      * @param type           placeholder variable used by Groovy categories; ignored for default static methods
-     * @param startInclusive the start {@link java.time.YearMonth}, inclusive, not null
-     * @param endExclusive   the end {@link java.time.YearMonth}, exclusive, not null
+     * @param startInclusive the start {@link YearMonth}, inclusive, not null
+     * @param endExclusive   the end {@link YearMonth}, exclusive, not null
      * @return a Period between the year/months
      * @see java.time.Period#between(LocalDate, LocalDate)
      */

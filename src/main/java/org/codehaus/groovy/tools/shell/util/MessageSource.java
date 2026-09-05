@@ -25,7 +25,7 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 /**
- * Message source backed up by one or more {@link java.util.ResourceBundle}
+ * Message source backed up by one or more {@link ResourceBundle}
  * instances for simple i18n support.
  */
 public class MessageSource

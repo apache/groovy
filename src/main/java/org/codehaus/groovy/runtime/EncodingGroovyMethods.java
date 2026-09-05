@@ -178,12 +178,12 @@ public class EncodingGroovyMethods {
      * Base 64 Encoding with URL and Filename Safe Alphabet</code>.
      * <p>
      * The method omits padding and is equivalent to calling
-     * {@link org.codehaus.groovy.runtime.EncodingGroovyMethods#encodeBase64Url(Byte[], boolean)} with a
+     * {@link EncodingGroovyMethods#encodeBase64Url(Byte[], boolean)} with a
      * value of {@code false}.
      *
      * @param data Byte array to be encoded
      * @return object which will write the Base64 URL and Filename Safe encoding of the byte array
-     * @see org.codehaus.groovy.runtime.EncodingGroovyMethods#encodeBase64Url(Byte[], boolean)
+     * @see EncodingGroovyMethods#encodeBase64Url(Byte[], boolean)
      * @since 2.5.0
      */
     public static Writable encodeBase64Url(Byte[] data) {
@@ -212,12 +212,12 @@ public class EncodingGroovyMethods {
      * Base 64 Encoding with URL and Filename Safe Alphabet</code>.
      * <p>
      * The method omits padding and is equivalent to calling
-     * {@link org.codehaus.groovy.runtime.EncodingGroovyMethods#encodeBase64Url(byte[], boolean)} with a
+     * {@link EncodingGroovyMethods#encodeBase64Url(byte[], boolean)} with a
      * value of {@code false}.
      *
      * @param data Byte array to be encoded
      * @return object which will write the Base64 URL and Filename Safe encoding of the byte array
-     * @see org.codehaus.groovy.runtime.EncodingGroovyMethods#encodeBase64Url(byte[], boolean)
+     * @see EncodingGroovyMethods#encodeBase64Url(byte[], boolean)
      * @since 2.5.0
      */
     public static Writable encodeBase64Url(final byte[] data) {

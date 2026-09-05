@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen;
 
+import groovy.transform.NonSealed;
 import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.apache.groovy.ast.tools.MethodNodeUtils;
@@ -326,7 +327,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     private void checkClassForExtendingFinalOrSealed(final ClassNode cn) {
         boolean isFinal = isFinal(cn.getModifiers());
         boolean isSealed = AnnotatedNodeUtils.hasAnnotation(cn, ClassHelper.SEALED_TYPE);
-        boolean isNonSealed = AnnotatedNodeUtils.hasAnnotation(cn, new ClassNode(groovy.transform.NonSealed.class)); // GROOVY-11768
+        boolean isNonSealed = AnnotatedNodeUtils.hasAnnotation(cn, new ClassNode(NonSealed.class)); // GROOVY-11768
 
         ClassNode sc = cn.getSuperClass();
         if (sc != null && isFinal(sc.getModifiers())) {

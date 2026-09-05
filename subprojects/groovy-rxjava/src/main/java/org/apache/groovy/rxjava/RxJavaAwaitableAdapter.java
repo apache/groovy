@@ -27,6 +27,7 @@ import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Single;
 import org.apache.groovy.runtime.async.GroovyPromise;
 
+import java.util.ServiceLoader;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -39,7 +40,7 @@ import java.util.concurrent.CompletableFuture;
  *   <li>{@code for await (item in flowable)} — iterates over a {@link Flowable}</li>
  * </ul>
  * <p>
- * Auto-discovered via {@link java.util.ServiceLoader} when {@code groovy-rxjava}
+ * Auto-discovered via {@link ServiceLoader} when {@code groovy-rxjava}
  * is on the classpath.
  *
  * @since 6.0.0

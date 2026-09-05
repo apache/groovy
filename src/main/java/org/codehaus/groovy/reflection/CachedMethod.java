@@ -304,7 +304,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     /**
      * Returns the modifiers of this method (e.g., public, static, synchronized).
-     * See {@link java.lang.reflect.Modifier} for modifier constants.
+     * See {@link Modifier} for modifier constants.
      *
      * @return the method modifiers
      */

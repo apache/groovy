@@ -62,12 +62,14 @@ import org.codehaus.groovy.runtime.GeneratedDispatcher;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.codehaus.groovy.transform.trait.Traits;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -90,6 +92,9 @@ import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STA
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_RETURN_TYPE;
 import org.objectweb.asm.ConstantDynamic;
 import org.objectweb.asm.Handle;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -817,12 +822,12 @@ public class ClosureWriter {
     // NB: metaClass resolves against the closure object ITSELF (per-closure-class identity), which
     // the shared adapter cannot reproduce, so it declines like the other closure pseudo-properties.
     private static final Set<String> FORBIDDEN_CLOSURE_NAMES =
-            new HashSet<>(java.util.Arrays.asList("owner", "delegate", "thisObject", "directive",
+            new HashSet<>(Arrays.asList("owner", "delegate", "thisObject", "directive",
                     "resolveStrategy", "metaClass"));
 
     /** Accessor/mutator forms of the same pseudo-properties, called with implicit this. */
     private static final Set<String> FORBIDDEN_CLOSURE_CALLS =
-            new HashSet<>(java.util.Arrays.asList("getOwner", "getDelegate", "getThisObject", "getDirective",
+            new HashSet<>(Arrays.asList("getOwner", "getDelegate", "getThisObject", "getDirective",
                     "getResolveStrategy", "setDelegate", "setDirective", "setResolveStrategy",
                     "getMaximumNumberOfParameters", "getParameterTypes", "getMetaClass", "setMetaClass",
                     "invokeMethod", "getProperty", "setProperty"));
@@ -1055,11 +1060,11 @@ public class ClosureWriter {
         // statically (StaticTypesClosureWriter) or syntactically (SYNTACTIC_PACK, dynamic) --
         // stores-and-ignores a caller-set delegate, like a @CompileStatic closure class.
         boolean strict = packedClosureUsesDelegateGuard() && expression.getNodeMetaData(SYNTACTIC_PACK) == null;
-        mv.visitInsn(strict ? org.objectweb.asm.Opcodes.ICONST_1 : org.objectweb.asm.Opcodes.ICONST_0);
+        mv.visitInsn(strict ? Opcodes.ICONST_1 : Opcodes.ICONST_0);
         os.push(ClassHelper.boolean_TYPE);
-        mv.visitInsn(implicitParam ? org.objectweb.asm.Opcodes.ICONST_1 : org.objectweb.asm.Opcodes.ICONST_0);
+        mv.visitInsn(implicitParam ? Opcodes.ICONST_1 : Opcodes.ICONST_0);
         os.push(ClassHelper.boolean_TYPE);
-        mv.visitInsn(varargShape ? org.objectweb.asm.Opcodes.ICONST_1 : org.objectweb.asm.Opcodes.ICONST_0);
+        mv.visitInsn(varargShape ? Opcodes.ICONST_1 : Opcodes.ICONST_0);
         os.push(ClassHelper.boolean_TYPE);
         // one factory call on ScriptBytecodeAdapter, not a hard-wired NEW of the arity-specific
         // subclass (GROOVY-12151 review): the Fixed* family is chosen inside PackedClosure.create,
@@ -1089,7 +1094,7 @@ public class ClosureWriter {
         if (targets == null || targets.isEmpty()) return;
         enclosing.removeNodeMetaData(PACKED_TARGETS);
         String internal = BytecodeHelper.getClassInternalName(enclosing);
-        org.objectweb.asm.ClassVisitor cv = controller.getClassVisitor();
+        ClassVisitor cv = controller.getClassVisitor();
 
         // the accessor: return INDY packedDispatchers()Object — IndyInterface.packedDispatchers
         // (delegating to GeneratedDispatcher.bootstrap) invokes this class's emitted factory
@@ -1138,9 +1143,9 @@ public class ClosureWriter {
             int chunks = (n + DISPATCH_CHUNK - 1) / DISPATCH_CHUNK;
             mv = cv.visitMethod(ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, DISPATCH_METHOD, DISPATCH_DESC, null, null);
             mv.visitCode();
-            org.objectweb.asm.Label dflt = new org.objectweb.asm.Label();
-            org.objectweb.asm.Label[] labels = new org.objectweb.asm.Label[chunks];
-            for (int c = 0; c < chunks; c += 1) labels[c] = new org.objectweb.asm.Label();
+            Label dflt = new Label();
+            Label[] labels = new Label[chunks];
+            for (int c = 0; c < chunks; c += 1) labels[c] = new Label();
             mv.visitVarInsn(ILOAD, 0);
             BytecodeHelper.pushConstant(mv, Integer.numberOfTrailingZeros(DISPATCH_CHUNK));
             mv.visitInsn(ISHR);
@@ -1168,9 +1173,9 @@ public class ClosureWriter {
 
     /** A dispatch table slice: a tableswitch over ids {@code [lo, hi)} into direct target invocations. */
     private static void writeDispatchSwitch(final MethodVisitor mv, final String internal, final ClassNode enclosing, final List<MethodNode> targets, final int lo, final int hi) {
-        org.objectweb.asm.Label dflt = new org.objectweb.asm.Label();
-        org.objectweb.asm.Label[] labels = new org.objectweb.asm.Label[hi - lo];
-        for (int i = 0; i < hi - lo; i += 1) labels[i] = new org.objectweb.asm.Label();
+        Label dflt = new Label();
+        Label[] labels = new Label[hi - lo];
+        for (int i = 0; i < hi - lo; i += 1) labels[i] = new Label();
         mv.visitVarInsn(ILOAD, 0);
         mv.visitTableSwitchInsn(lo, hi - 1, dflt, labels);
         for (int k = lo; k < hi; k += 1) {
@@ -1232,7 +1237,7 @@ public class ClosureWriter {
      * class's own private tables directly, so no {@code Lookup.findStatic} — and hence no
      * per-class reflection metadata — is needed either (GROOVY-12227).
      */
-    private static void writeDispatchersFactory(final org.objectweb.asm.ClassVisitor cv, final String internal) {
+    private static void writeDispatchersFactory(final ClassVisitor cv, final String internal) {
         MethodVisitor mv = cv.visitMethod(ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, DISPATCHERS_FACTORY, DISPATCHERS_GETTER_DESC, null, null);
         mv.visitCode();
         mv.visitTypeInsn(NEW, BUNDLE_TYPE);
@@ -1255,12 +1260,12 @@ public class ClosureWriter {
     private static void emitLambda(final MethodVisitor mv, final String internal, final String samName,
             final String ifaceType, final String tableMethod, final String tableDesc) {
         mv.visitInvokeDynamicInsn(samName, "()L" + ifaceType + ";", LMF_BOOTSTRAP,
-                org.objectweb.asm.Type.getMethodType(tableDesc),
+                Type.getMethodType(tableDesc),
                 new Handle(H_INVOKESTATIC, internal, tableMethod, tableDesc, false),
-                org.objectweb.asm.Type.getMethodType(tableDesc));
+                Type.getMethodType(tableDesc));
     }
 
-    private static void writeArityTable(final org.objectweb.asm.ClassVisitor cv, final String internal,
+    private static void writeArityTable(final ClassVisitor cv, final String internal,
             final ClassNode enclosing, final List<MethodNode> targets, final int paramCount,
             final String tableMethod, final String tableDesc) {
         List<Integer> memberIds = new ArrayList<>();
@@ -1280,11 +1285,11 @@ public class ClosureWriter {
         List<List<Integer>> byChunk = new ArrayList<>(chunks);
         for (int c = 0; c < chunks; c += 1) byChunk.add(new ArrayList<>());
         for (int memberId : memberIds) byChunk.get(memberId >> shift).add(memberId);
-        org.objectweb.asm.Label dflt = new org.objectweb.asm.Label();
-        org.objectweb.asm.Label[] labels = new org.objectweb.asm.Label[chunks];
+        Label dflt = new Label();
+        Label[] labels = new Label[chunks];
         for (int c = 0; c < chunks; c += 1) {
             // an id-range with no members of this arity shares the default (compiler-bug) label
-            labels[c] = byChunk.get(c).isEmpty() ? dflt : new org.objectweb.asm.Label();
+            labels[c] = byChunk.get(c).isEmpty() ? dflt : new Label();
         }
         mv.visitVarInsn(ILOAD, 0);
         BytecodeHelper.pushConstant(mv, shift);
@@ -1317,13 +1322,13 @@ public class ClosureWriter {
     /** An arity-table slice: a lookupswitch over the given member ids into direct target invocations. */
     private static void writeAritySwitch(final MethodVisitor mv, final String internal,
             final ClassNode enclosing, final List<MethodNode> targets, final List<Integer> memberIds, final int paramCount) {
-        org.objectweb.asm.Label dflt = new org.objectweb.asm.Label();
+        Label dflt = new Label();
         int members = memberIds.size();
         int[] keys = new int[members];
-        org.objectweb.asm.Label[] labels = new org.objectweb.asm.Label[members];
+        Label[] labels = new Label[members];
         for (int i = 0; i < members; i += 1) {
             keys[i] = memberIds.get(i); // ids are claimed in ascending order, as lookupswitch requires
-            labels[i] = new org.objectweb.asm.Label();
+            labels[i] = new Label();
         }
         mv.visitVarInsn(ILOAD, 0);
         mv.visitLookupSwitchInsn(dflt, keys, labels);
@@ -1635,8 +1640,8 @@ public class ClosureWriter {
     }
 
     /**
-     * Visitor that rewrites {@link org.codehaus.groovy.ast.expr.VariableExpression} nodes
-     * whose accessed variable is a {@link org.codehaus.groovy.ast.FieldNode} in an outer class
+     * Visitor that rewrites {@link VariableExpression} nodes
+     * whose accessed variable is a {@link FieldNode} in an outer class
      * to instead reference the corresponding field in the generated closure inner class.
      */
     protected static class CorrectAccessedVariableVisitor extends CodeVisitorSupport {

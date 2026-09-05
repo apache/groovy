@@ -19,10 +19,11 @@
 package groovy.util
 
 import gls.CompilableTestSupport
+import groovy.lang.Script
 import org.junit.jupiter.api.Test
 
 /**
- * Miscellaneous tests for {@link groovy.lang.Script}.
+ * Miscellaneous tests for {@link Script}.
  */
 final class MiscScriptTest extends CompilableTestSupport {
 

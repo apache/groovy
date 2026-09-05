@@ -22,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
+import java.math.BigDecimal
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -89,7 +90,7 @@ class JsonSlurperClassicTest {
         assertEquals("hello", result.get("string"))
         assertEquals(42, result.get("number"))
         // JsonSlurperClassic uses BigDecimal for decimals
-        assertEquals(new java.math.BigDecimal("3.14"), result.get("float"))
+        assertEquals(new BigDecimal("3.14"), result.get("float"))
         assertEquals(true, result.get("bool"))
         assertNull(result.get("null"))
     }
@@ -213,7 +214,7 @@ class JsonSlurperClassicTest {
         def result = (Map) slurper.parseText(json)
         assertEquals(-42, result.get("value"))
         // JsonSlurperClassic uses BigDecimal for decimals
-        assertEquals(new java.math.BigDecimal("-3.14"), result.get("float"))
+        assertEquals(new BigDecimal("-3.14"), result.get("float"))
     }
 
     @Test
@@ -221,7 +222,7 @@ class JsonSlurperClassicTest {
         def json = '{"value":1.23e10}'
         def result = (Map) slurper.parseText(json)
         // JsonSlurperClassic uses BigDecimal for decimal notation
-        assertEquals(new java.math.BigDecimal("1.23E+10"), result.get("value"))
+        assertEquals(new BigDecimal("1.23E+10"), result.get("value"))
     }
 
     @Test

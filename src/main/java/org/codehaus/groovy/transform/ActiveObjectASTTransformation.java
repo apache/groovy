@@ -30,8 +30,11 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -145,10 +148,10 @@ public class ActiveObjectASTTransformation extends AbstractASTTransformation {
 
         Statement body = returnS(invokeCall);
 
-        org.codehaus.groovy.ast.expr.ClosureExpression closure =
-                new org.codehaus.groovy.ast.expr.ClosureExpression(
+        ClosureExpression closure =
+                new ClosureExpression(
                         new Parameter[]{msgParam}, body);
-        closure.setVariableScope(new org.codehaus.groovy.ast.VariableScope());
+        closure.setVariableScope(new VariableScope());
 
         return closure;
     }
@@ -186,7 +189,7 @@ public class ActiveObjectASTTransformation extends AbstractASTTransformation {
         messageElements.add(varX("this"));
         messageElements.add(constX(originalName));
         messageElements.add(argsArray);
-        Expression message = new org.codehaus.groovy.ast.expr.ListExpression(messageElements);
+        Expression message = new ListExpression(messageElements);
 
         // actor.sendAndGet(message)
         Expression sendCall = callX(

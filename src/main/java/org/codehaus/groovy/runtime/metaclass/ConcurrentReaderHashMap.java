@@ -19,6 +19,8 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.AbstractCollection;
@@ -167,7 +169,7 @@ public class ConcurrentReaderHashMap
   */
 
   /** A Serializable class for barrier lock **/
-  protected static class BarrierLock implements java.io.Serializable {
+  protected static class BarrierLock implements Serializable {
       @Serial private static final long serialVersionUID = -2159505361622844863L;
   }
 
@@ -1313,7 +1315,7 @@ public class ConcurrentReaderHashMap
    * The key-value mappings are emitted in no particular order.
    */
   @Serial
-  private synchronized void writeObject(java.io.ObjectOutputStream s)
+  private synchronized void writeObject(ObjectOutputStream s)
     throws IOException  {
     // Write out the threshold, loadfactor, and any hidden stuff
     s.defaultWriteObject();
@@ -1344,7 +1346,7 @@ public class ConcurrentReaderHashMap
    * @param s the stream
    */
   @Serial
-  private synchronized void readObject(java.io.ObjectInputStream s)
+  private synchronized void readObject(ObjectInputStream s)
     throws IOException, ClassNotFoundException  {
     // Read in the threshold, loadfactor, and any hidden stuff
     s.defaultReadObject();

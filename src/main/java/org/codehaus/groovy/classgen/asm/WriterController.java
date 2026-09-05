@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import groovy.lang.Reference;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -81,7 +82,7 @@ public class WriterController {
     /**
      * Language-compatibility flag (GROOVY-11792): when {@code true} (the default),
      * for-in loop variables shared with closures, lambdas, or anonymous inner
-     * classes get a fresh {@link groovy.lang.Reference} each iteration. Cached
+     * classes get a fresh {@link Reference} each iteration. Cached
      * from {@link CompilerConfiguration#isForInPerIterationCaptureEnabled()} at
      * {@link #init}. Independent of optimization options (including {@code "all"}).
      */

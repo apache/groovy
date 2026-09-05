@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
  * structural convention ({@code flatMap}/{@code map}). When both are omitted, the
  * annotation merely opts the type in and the structural defaults apply.
  * <p>
- * Modelled on {@link groovy.transform.Reducer}: a pure marker, read by tooling,
+ * Modelled on {@link Reducer}: a pure marker, read by tooling,
  * with no AST transformation. The runtime dispatcher and the type checker match
  * this annotation <em>by simple name</em> ({@code Monadic}), exactly as
  * {@code groovy.typecheckers.CombinerChecker} matches {@code @Reducer}/{@code @Associative}.

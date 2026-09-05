@@ -18,6 +18,8 @@
  */
 package gls.invocation
 
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -350,7 +352,7 @@ final class CovariantReturnTest {
     // GROOVY-4410
     @Test
     void testCovariantReturnFromMultipleInterfaces() {
-        def config = new org.codehaus.groovy.control.CompilerConfiguration(
+        def config = new CompilerConfiguration(
             jointCompilationOptions: [memStub: true],
             targetDirectory: File.createTempDir()
         )
@@ -422,7 +424,7 @@ final class CovariantReturnTest {
             '''
 
             def loader = new GroovyClassLoader(this.class.classLoader)
-            def cu = new org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit(config, loader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
             cu.addSources(a, b, c, d, e)
             cu.compile()
 

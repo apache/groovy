@@ -21,11 +21,11 @@
  * Compile-time AST transformations for code generation and type checking.
  *
  * <p>
- * Key annotations: {@link groovy.transform.CompileStatic @CompileStatic} (static compilation),
- * {@link groovy.transform.TypeChecked @TypeChecked} (type checking),
- * {@link groovy.transform.ToString @ToString}, {@link groovy.transform.EqualsAndHashCode @EqualsAndHashCode},
- * {@link groovy.transform.Immutable @Immutable}, {@link groovy.transform.TupleConstructor @TupleConstructor},
- * {@link groovy.lang.Lazy @Lazy}, {@link groovy.transform.Synchronized @Synchronized},
+ * Key annotations: {@link CompileStatic @CompileStatic} (static compilation),
+ * {@link TypeChecked @TypeChecked} (type checking),
+ * {@link ToString @ToString}, {@link EqualsAndHashCode @EqualsAndHashCode},
+ * {@link Immutable @Immutable}, {@link TupleConstructor @TupleConstructor},
+ * {@link Lazy @Lazy}, {@link Synchronized @Synchronized},
  * and many others for traits, records, sealing, and property handling.
  * </p>
  *
@@ -36,3 +36,5 @@
  * </p>
  */
 package groovy.transform;
+
+import groovy.lang.Lazy;

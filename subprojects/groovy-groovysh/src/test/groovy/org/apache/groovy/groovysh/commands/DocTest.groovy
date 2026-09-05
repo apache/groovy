@@ -20,11 +20,13 @@ package org.apache.groovy.groovysh.commands
 
 import org.junit.jupiter.api.Test
 
+import java.awt.Desktop
+
 import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Tests for the {@code /doc} command. The command opens documentation in
- * a browser via {@link java.awt.Desktop} when configured, but the early
+ * a browser via {@link Desktop} when configured, but the early
  * exit and error paths (no args, missing config, headless JVM) are
  * deterministic and cheap to cover.
  */

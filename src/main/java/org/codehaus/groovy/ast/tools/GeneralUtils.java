@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast.tools;
 
 import groovy.lang.MetaProperty;
+import groovy.transform.Generated;
 import groovy.transform.Internal;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -86,6 +87,7 @@ import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.objectweb.asm.MethodVisitor;
 
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1839,21 +1841,21 @@ public class GeneralUtils {
     }
 
     /**
-     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link java.lang.annotation.RetentionPolicy#RUNTIME}
-     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.
+     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link RetentionPolicy#RUNTIME}
+     * and {@link RetentionPolicy#CLASS}.
      * <p>
-     * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported at present.
+     * Annotations with {@link GeneratedClosure} members are not supported at present.
      */
     public static void copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, final List<AnnotationNode> copied, final List<AnnotationNode> notCopied) {
         copyAnnotatedNodeAnnotations(annotatedNode, copied, notCopied, true);
     }
 
     /**
-     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link java.lang.annotation.RetentionPolicy#RUNTIME}
-     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.
-     * {@link groovy.transform.Generated} annotations will be copied if {@code includeGenerated} is true.
+     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link RetentionPolicy#RUNTIME}
+     * and {@link RetentionPolicy#CLASS}.
+     * {@link Generated} annotations will be copied if {@code includeGenerated} is true.
      * <p>
-     * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported at present.
+     * Annotations with {@link GeneratedClosure} members are not supported at present.
      */
     public static void copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, final List<AnnotationNode> copied, final List<AnnotationNode> notCopied, final boolean includeGenerated) {
         List<AnnotationNode> annotationList = annotatedNode.getAnnotations();

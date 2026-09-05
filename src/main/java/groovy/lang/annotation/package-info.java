@@ -21,7 +21,7 @@
  * Extended annotation support for Groovy-specific language constructs.
  *
  * <p>
- * {@link groovy.lang.annotation.ExtendedElementType} extends JDK targets to support
+ * {@link ExtendedElementType} extends JDK targets to support
  * annotations on imports and loops.
  * </p>
  */

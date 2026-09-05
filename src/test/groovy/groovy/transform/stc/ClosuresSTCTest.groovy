@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.messages.WarningMessage
 import org.junit.jupiter.api.Test
 
 /**
@@ -1061,7 +1063,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-11360
     @Test
     void testLexicalScopeVersusGetDynamicProperty() {
-        config.warningLevel = org.codehaus.groovy.control.messages.WarningMessage.POSSIBLE_ERRORS
+        config.warningLevel = WarningMessage.POSSIBLE_ERRORS
         config.targetDirectory = File.createTempDir()
         def parentDir = File.createTempDir()
         try {
@@ -1092,7 +1094,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             '''
 
             def loader = new GroovyClassLoader(this.class.classLoader)
-            new org.codehaus.groovy.control.CompilationUnit(config, null, loader).with {
+            new CompilationUnit(config, null, loader).with {
                 addSources(c, d, e)
                 compile()
 

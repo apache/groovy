@@ -30,6 +30,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.BooleanClosureWrapper;
+import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.memoize.ConcurrentCommonCache;
 import org.codehaus.groovy.runtime.memoize.ConcurrentSoftCache;
 import org.codehaus.groovy.runtime.memoize.LRUCache;
@@ -39,6 +40,7 @@ import org.codehaus.groovy.runtime.metaclass.PackedClosureMetaClass;
 
 import java.io.IOException;
 import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
 import java.io.Serial;
 import java.io.Serializable;
@@ -685,7 +687,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * quick-exit counter read, cheap enough for per-element dispatch lanes.
      */
     protected final boolean mopUnperturbed() {
-        return !mopPerturbed && !org.codehaus.groovy.runtime.GroovyCategorySupport.hasCategoryInCurrentThread();
+        return !mopPerturbed && !GroovyCategorySupport.hasCategoryInCurrentThread();
     }
 
     /**
@@ -1456,7 +1458,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      *       generated subclasses, which would force every existing subclass that declares the idiomatic
      *       {@code private readResolve()} to widen its visibility and fail to compile;</li>
      *   <li>a {@code readObject} hook would additionally interpose this (core-loaded) class on the stack
-     *       while a closure's fields are read, shifting {@link java.io.ObjectInputStream}'s
+     *       while a closure's fields are read, shifting {@link ObjectInputStream}'s
      *       latest-user-defined loader away from the loader that defined the closure's captured types.</li>
      * </ul>
      * Groovy's own serializable gadget closures ({@link CurriedClosure},

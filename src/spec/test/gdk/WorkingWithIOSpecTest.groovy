@@ -92,7 +92,7 @@ Le bruit de l'eau.''')
             println future.get()                  // blocks until content is available
             // end::async_read[]
             */
-            println future.get(5, java.util.concurrent.TimeUnit.SECONDS)
+            println future.get(5, TimeUnit.SECONDS)
         }
     }
 

@@ -21,13 +21,14 @@ package org.codehaus.groovy.ast
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.ListExpression
+import org.codehaus.groovy.runtime.ResourceGroovyMethods
 import org.junit.jupiter.api.Test
 
 final class Groovy9871 {
 
     @Test
     void testAnnotationConstantExpression() {
-        ClassNode cn = new ClassNode(org.codehaus.groovy.runtime.ResourceGroovyMethods)
+        ClassNode cn = new ClassNode(ResourceGroovyMethods)
         // method with @NamedParam annotations that should be wrapped in @NamedParams container
         MethodNode mn = cn.getMethod('getText', new Parameter(ClassHelper.make(URL), 'url'), new Parameter(ClassHelper.MAP_TYPE, 'map'))
 

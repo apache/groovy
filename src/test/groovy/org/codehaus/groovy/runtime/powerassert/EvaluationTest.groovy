@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.powerassert
 
+import groovy.transform.PackageScope
 import org.junit.jupiter.api.Test
 
 import static java.lang.Math.max
@@ -327,16 +328,16 @@ final class EvaluationTest {
     */
 }
 
-@groovy.transform.PackageScope class Properties {
+@PackageScope class Properties {
     def getNext() { this }
     def x
 }
 
-@groovy.transform.PackageScope class Attributes {
+@PackageScope class Attributes {
     def x
     def y
 }
 
-@groovy.transform.PackageScope class MethodPointers {
+@PackageScope class MethodPointers {
     def inc(x) { x + 1 }
 }

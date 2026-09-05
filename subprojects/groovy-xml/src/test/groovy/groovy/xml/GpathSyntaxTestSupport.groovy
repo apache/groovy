@@ -18,8 +18,10 @@
  */
 package groovy.xml
 
+import groovy.util.Node
 import org.custommonkey.xmlunit.Diff
 import org.custommonkey.xmlunit.XMLUnit
+import org.w3c.dom.Document
 
 class GpathSyntaxTestSupport {
 
@@ -296,7 +298,7 @@ class GpathSyntaxTestSupport {
         } else if (isParser(root)) {
             assert root.parent() == null
         } else if (isDom(root)) {
-            assert (root.parent() instanceof org.w3c.dom.Document)
+            assert (root.parent() instanceof Document)
         }
     }
 
@@ -442,7 +444,7 @@ class GpathSyntaxTestSupport {
     }
 
     private static boolean isParser(node) {
-        return (node instanceof groovy.util.Node)
+        return (node instanceof Node)
     }
 
     private static boolean isDom(node) {

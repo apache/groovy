@@ -48,7 +48,7 @@ import java.lang.annotation.Target;
  * </pre>
  *
  * The closure code is executed after the specified phase has completed. If no phase is provided, then the
- * code is executed after the {@link org.codehaus.groovy.control.CompilePhase#SEMANTIC_ANALYSIS semantic analysis} phase
+ * code is executed after the {@link CompilePhase#SEMANTIC_ANALYSIS semantic analysis} phase
  * and each subsequent phase.
  * <p>
  * The <code>node</code> variable refers to the AST node where the AST test annotation is put. In the previous example,

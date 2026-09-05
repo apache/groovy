@@ -21,7 +21,7 @@
  * Testing utilities and base classes for Groovy test development.
  *
  * <p>
- * {@link groovy.test.GroovyTestCase} (JUnit 3 base), {@link groovy.test.GroovyAssert} (JUnit 4/5),
+ * {@link GroovyTestCase} (JUnit 3 base), {@link GroovyAssert} (JUnit 4/5),
  * AgileDox naming, mock/stub utilities via {@code groovy.mock.interceptor}.
  * </p>
  */

@@ -18,6 +18,9 @@
  */
 package groovy.sql
 
+import org.hsqldb.jdbc.JDBCDataSource
+import org.hsqldb.jdbc.JDBCDriver
+
 // trick to handle pesky lower case class names
 //import org.hsqldb.jdbcDriver as Driver
 //import org.hsqldb.jdbc.jdbcDataSource as DataSource
@@ -36,8 +39,8 @@ class SqlTestConstants {
     //// currently causing JVM crash under JDK15 on Bamboo CI server
     public static final String DB_URL_PREFIX = 'jdbc:hsqldb:mem:testDB'
     public static final String DB_URL_SUFFIX = ''
-    public static final Class DB_DATASOURCE = org.hsqldb.jdbc.JDBCDataSource
-    public static final Class DB_DRIVER = org.hsqldb.jdbc.JDBCDriver
+    public static final Class DB_DATASOURCE = JDBCDataSource
+    public static final Class DB_DRIVER = JDBCDriver
     public static final String DB_USER = 'sa'
     public static final String DB_PASSWORD = ''
     public static final String DB_DS_KEY = 'database'

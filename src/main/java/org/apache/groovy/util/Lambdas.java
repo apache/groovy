@@ -24,11 +24,13 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import groovy.lang.Closure;
+
 
 /**
  * Helpers that return {@link java.util.function} types.
  * <p>
- * For variants whose results are also {@link groovy.lang.Closure}
+ * For variants whose results are also {@link Closure}
  * instances, see {@link Closures}.
  *
  * @since 6.0.0

@@ -34,6 +34,7 @@ import org.objectweb.asm.util.TraceClassVisitor
 import javax.swing.Action
 import javax.swing.JSplitPane
 import javax.swing.KeyStroke
+import javax.swing.SwingUtilities
 import javax.swing.UIManager
 import javax.swing.WindowConstants
 import javax.swing.event.TreeSelectionEvent
@@ -42,6 +43,7 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreeNode
 import javax.swing.tree.TreeSelectionModel
+import java.awt.Color
 import java.awt.Cursor
 import java.awt.Font
 import java.awt.Toolkit
@@ -389,7 +391,7 @@ class AstBrowser {
     }
 
     private void applyCurrentThemeToSelf() {
-        def fg = ThemeManager.isDark() ? new java.awt.Color(204, 204, 204) : java.awt.Color.BLACK
+        def fg = ThemeManager.isDark() ? new Color(204, 204, 204) : Color.BLACK
         def bg = ThemeManager.inputBackground
         [decompiledSource, bytecodeView, asmifierView].each { editor ->
             if (!editor) return
@@ -402,7 +404,7 @@ class AstBrowser {
         // cascade — resets leaf/closed/open icons to LaF defaults, wiping our
         // custom green circle. Defer re-apply onto the EDT so it runs after
         // the cascade settles.
-        javax.swing.SwingUtilities.invokeLater {
+        SwingUtilities.invokeLater {
             if (jTree?.cellRenderer) {
                 try { jTree.cellRenderer.leafIcon = Console.nodeIcon } catch (ignored) {}
                 jTree.repaint()

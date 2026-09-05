@@ -18,6 +18,7 @@
  */
 package groovy.servlet
 
+import groovy.json.StreamingJsonBuilder
 import groovy.xml.MarkupBuilder
 import jakarta.servlet.ServletContext
 import jakarta.servlet.ServletOutputStream
@@ -177,7 +178,7 @@ class ServletBindingTest {
         assert binding.getVariable('out') instanceof PrintWriter
         assert binding.getVariable('html') instanceof MarkupBuilder
         assert binding.getVariable('sout') instanceof ServletOutputStream
-        assert binding.getVariable('json') instanceof groovy.json.StreamingJsonBuilder
+        assert binding.getVariable('json') instanceof StreamingJsonBuilder
     }
 
     @Test

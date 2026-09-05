@@ -117,7 +117,7 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
     }
 
     /**
-     * Throws a {@link groovy.json.JsonException} for the current source location.
+     * Throws a {@link JsonException} for the current source location.
      *
      * @param complaint message describing the parse failure
      */

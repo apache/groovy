@@ -22,6 +22,8 @@ import groovy.transform.PackageScope
 import org.junit.jupiter.api.Test
 
 import java.awt.Font
+import java.awt.HeadlessException
+import java.awt.Toolkit
 import java.lang.annotation.RetentionPolicy
 
 import static groovy.test.GroovyAssert.assertScript
@@ -180,8 +182,8 @@ final class IllegalAccessTests {
     @Test
     void testGetProperty() {
         try {
-            java.awt.Toolkit.defaultToolkit.systemClipboard
-        } catch (java.awt.HeadlessException ignore) {
+            Toolkit.defaultToolkit.systemClipboard
+        } catch (HeadlessException ignore) {
         }
     }
 

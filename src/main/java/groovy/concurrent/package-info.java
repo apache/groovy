@@ -23,19 +23,19 @@
  * <p>
  * Language-facing async types:
  * <ul>
- *   <li>{@link groovy.concurrent.Awaitable} — async computation handle and
+ *   <li>{@link Awaitable} — async computation handle and
  *       static combinator surface used with the {@code await} keyword</li>
- *   <li>{@link groovy.concurrent.AwaitResult} — success/failure value from
- *       {@link groovy.concurrent.Awaitable#allSettled(Object...)}</li>
- *   <li>{@link groovy.concurrent.AsyncScope} — structured concurrency</li>
- *   <li>{@link groovy.concurrent.AsyncChannel} — CSP-style async channel</li>
- *   <li>{@link groovy.concurrent.AwaitableAdapter} /
- *       {@link groovy.concurrent.AwaitableAdapterRegistry} — SPI for
+ *   <li>{@link AwaitResult} — success/failure value from
+ *       {@link Awaitable#allSettled(Object...)}</li>
+ *   <li>{@link AsyncScope} — structured concurrency</li>
+ *   <li>{@link AsyncChannel} — CSP-style async channel</li>
+ *   <li>{@link AwaitableAdapter} /
+ *       {@link AwaitableAdapterRegistry} — SPI for
  *       third-party async types (RxJava, Reactor, …)</li>
  * </ul>
- * Additional high-level primitives: {@link groovy.concurrent.Actor}
- * (message-passing), {@link groovy.concurrent.Pool} (thread management),
- * and {@link groovy.concurrent.ParallelScope} (combined async+parallel).
+ * Additional high-level primitives: {@link Actor}
+ * (message-passing), {@link Pool} (thread management),
+ * and {@link ParallelScope} (combined async+parallel).
  * Supports virtual threads (JDK 21+) and fail-fast exception handling.
  * Runtime implementation details live in {@code org.apache.groovy.runtime.async}.
  * </p>

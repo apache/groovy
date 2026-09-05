@@ -21,8 +21,8 @@
  * Static type checking support with closure signature hints and validation.
  *
  * <p>
- * {@link groovy.transform.stc.ClosureParams @ClosureParams} provides compile-time type hints
- * for closures. {@link groovy.transform.stc.ClosureSignatureHint} is the base for custom hints.
+ * {@link ClosureParams @ClosureParams} provides compile-time type hints
+ * for closures. {@link ClosureSignatureHint} is the base for custom hints.
  * Powers static type checking for higher-order functions and DSLs.
  * </p>
  */

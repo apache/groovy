@@ -27,6 +27,7 @@ import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
 import org.codehaus.groovy.groovydoc.GroovyType;
 
+import java.io.Serializable;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
@@ -292,7 +293,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public boolean isSerializable() {
-        return java.io.Serializable.class.isAssignableFrom(externalClass);
+        return Serializable.class.isAssignableFrom(externalClass);
     }
 
     /**

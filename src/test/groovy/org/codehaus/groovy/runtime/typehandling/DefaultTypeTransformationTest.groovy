@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.typehandling
 
+import org.codehaus.groovy.util.ArrayIterable
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -150,7 +151,7 @@ final class DefaultTypeTransformationTest {
     // GROOVY-11378
     @Test
     void testCastToType7() {
-        Object input = new org.codehaus.groovy.util.ArrayIterable<Integer>(0,1), result
+        Object input = new ArrayIterable<Integer>(0,1), result
 
         result = DefaultTypeTransformation.castToType(input, Number[])
         assert result instanceof Number[]

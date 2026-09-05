@@ -95,7 +95,7 @@ import java.util.function.Supplier;
  *
  * <h2>Timestamp Extraction</h2>
  * <p>Groovy embeds compilation timestamps in synthetic static field names for change detection.
- * {@link #getCompilationTimeStamp()} decodes this metadata using {@link org.codehaus.groovy.classgen.Verifier#getTimestampFromFieldName(String)}.
+ * {@link #getCompilationTimeStamp()} decodes this metadata using {@link Verifier#getTimestampFromFieldName(String)}.
  *
  * @see AsmDecompiler#parseClass(java.net.URL)
  * @see AsmReferenceResolver
@@ -142,7 +142,7 @@ public class DecompiledClassNode extends ClassNode {
      * Groovy embeds compilation timestamps in synthetic static field names using a special encoding.
      *
      * @return the compilation timestamp in milliseconds, or {@code Long.MAX_VALUE} if not available
-     * @see org.codehaus.groovy.classgen.Verifier#getTimestampFromFieldName(String)
+     * @see Verifier#getTimestampFromFieldName(String)
      */
     public long getCompilationTimeStamp() {
         if (classData.fields != null) {

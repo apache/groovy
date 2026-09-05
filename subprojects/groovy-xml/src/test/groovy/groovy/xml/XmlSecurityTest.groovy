@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test
 import org.xml.sax.InputSource
 import org.xml.sax.SAXParseException
 
+import javax.xml.XMLConstants
 import javax.xml.transform.stream.StreamSource
 
 import static org.junit.jupiter.api.Assertions.assertEquals
@@ -194,7 +195,7 @@ class XmlSecurityTest {
   <xs:element name="root" type="xs:string"/>
 </xs:schema>'''
         def saxParser = XmlUtil.newSAXParser(
-                javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI,
+                XMLConstants.W3C_XML_SCHEMA_NS_URI,
                 new StreamSource(new StringReader(xsd)))
         assertNotNull(saxParser)
     }

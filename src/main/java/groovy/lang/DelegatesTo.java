@@ -22,14 +22,17 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import groovy.transform.CompileStatic;
+import groovy.transform.TypeChecked;
+
 
 /**
  * This annotation can be used by API or DSL writers to specify what the delegate
  * type of a closure will be. This is important for IDE support.
  * <p>
- * This annotation can also be used to help the type checker ({@link groovy.transform.TypeChecked})
+ * This annotation can also be used to help the type checker ({@link TypeChecked})
  * which would not report errors then if the delegate is of the documented type. Of course, it is
- * also compatible with {@link groovy.transform.CompileStatic}.
+ * also compatible with {@link CompileStatic}.
  * <p>
  * Example:
  * <pre>

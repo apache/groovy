@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.concurrent.ParallelScope;
 import groovy.concurrent.Pool;
 
 import java.util.ArrayList;
@@ -40,7 +41,7 @@ import java.util.stream.IntStream;
  * to {@link Collection}.
  * <p>
  * These methods use {@link Pool#current()} to obtain the current pool
- * (typically set by {@link groovy.concurrent.ParallelScope#withPool}).
+ * (typically set by {@link ParallelScope#withPool}).
  * If no pool is current, they fall back to {@link ForkJoinPool#commonPool()}.
  * <p>
  * All methods delegate to Java parallel streams with pool isolation:
@@ -49,7 +50,7 @@ import java.util.stream.IntStream;
  * <p>
  * <b>Blocking work:</b> closures that block (I/O, locks, barriers, timed waits)
  * hold ForkJoin worker threads. Prefer a dedicated
- * {@link groovy.concurrent.ParallelScope#withPool(int, java.util.function.Function)
+ * {@link ParallelScope#withPool(int, Function)
  * ParallelScope.withPool(n)} with {@code n} large enough for the expected
  * concurrent blockers, or an I/O-oriented pool ({@link Pool#io()},
  * {@link Pool#virtual()}) for blocking workloads. Relying on the shared

@@ -18,10 +18,12 @@
  */
 package bugs.groovy8468;
 
+import java.lang.reflect.Array;
+
 public class FactoryImpl implements Factory {
   @Override @SuppressWarnings("unchecked")
   public <T extends Face> T[] makeArray(Class<T> clazz) {
-    return (T[]) java.lang.reflect.Array.newInstance(clazz, 0);
+    return (T[]) Array.newInstance(clazz, 0);
   }
 
   /*public static void main(String[] args) {

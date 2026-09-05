@@ -18,6 +18,7 @@
  */
 package groovy.bugs
 
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -26,7 +27,7 @@ import static groovy.test.GroovyAssert.shouldFail
 class Groovy5025Bug {
     @Test
     void testDisableAstBuilder() {
-        def config = new org.codehaus.groovy.control.CompilerConfiguration()
+        def config = new CompilerConfiguration()
         config.disabledGlobalASTTransformations = ['org.apache.groovy.ast.builder.AstBuilderTransformation']
         def script = '''
             new org.codehaus.groovy.ast.builder.AstBuilder().buildFromCode { "Hello" }

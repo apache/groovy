@@ -20,11 +20,13 @@ package groovy
 
 import groovy.test.GroovyShellTestCase
 
+import java.sql.Time
+
 class EqualsTest extends GroovyShellTestCase {
 
     void testParentChildrenEquals() {
         def x = new Date()
-        def y = new java.sql.Time(x.time)
+        def y = new Time(x.time)
         // Gotcha: don't try this with Timestamp,
         // see: http://mattfleming.com/node/141
 

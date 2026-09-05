@@ -117,7 +117,7 @@ public class JsonSlurper {
      * <p>
      * <strong>This is a parser-strategy selector, not a size limit.</strong> It does not reject or
      * cap input &mdash; an oversized document is still parsed in full (by the windowing parser).
-     * It is consulted <em>only</em> by the {@link java.io.File}-based parse methods; the
+     * It is consulted <em>only</em> by the {@link File}-based parse methods; the
      * {@link #parse(Reader)}, {@link #parse(InputStream)} and {@code parse(URL)} entry points ignore
      * it and buffer their entire input into memory regardless of this value. To bound untrusted
      * input, limit its size yourself before parsing (and cap nesting via

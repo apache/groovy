@@ -21,6 +21,9 @@ package org.codehaus.groovy.control
 import org.codehaus.groovy.tools.GroovyClass
 import org.junit.jupiter.api.Test
 
+import java.util.ArrayList
+import java.util.LinkedList
+
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertNotNull
 import static org.junit.jupiter.api.Assertions.assertTrue
@@ -108,8 +111,8 @@ class ClassWriterCommonSuperClassTest {
         def res2 = testerClass.getMethod('process', int.class, boolean.class).invoke(null, 2, true)
 
         assertEquals('test.deep.Leaf1', res0.class.name)
-        assertEquals(java.util.LinkedList.class, res1.class)
-        assertEquals(java.util.ArrayList.class, res2.class)
+        assertEquals(LinkedList.class, res1.class)
+        assertEquals(ArrayList.class, res2.class)
     }
 
     @Test

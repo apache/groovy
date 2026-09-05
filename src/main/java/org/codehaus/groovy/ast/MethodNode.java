@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast;
 
+import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 
@@ -96,7 +97,7 @@ public class MethodNode extends AnnotatedNode {
     }
 
     /**
-     * @deprecated use {@link org.apache.groovy.ast.tools.MethodNodeUtils#methodDescriptor(MethodNode, boolean)}
+     * @deprecated use {@link MethodNodeUtils#methodDescriptor(MethodNode, boolean)}
      */
     @Deprecated
     public String getTypeDescriptor(final boolean pretty) {

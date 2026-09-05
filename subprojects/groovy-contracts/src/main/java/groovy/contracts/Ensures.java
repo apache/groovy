@@ -28,6 +28,7 @@ import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Map;
 
 /**
  * <p>
@@ -52,7 +53,7 @@ import java.lang.annotation.Target;
  * immutability.
  * </p>
  * <p>
- * <tt>old</tt> is available in every postcondition. It is a {@link java.util.Map} which holds the values
+ * <tt>old</tt> is available in every postcondition. It is a {@link Map} which holds the values
  * of value types and {@link Cloneable} types before the method has been executed.
  * </p>
  * <p>

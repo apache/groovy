@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.callsite
 
+import groovy.lang.GroovySystem
 import groovy.lang.MetaClassImpl
 import org.codehaus.groovy.reflection.CachedMethod
 import org.codehaus.groovy.reflection.ReflectionCache
@@ -33,7 +34,7 @@ final class CachedMethodCallSitesTest {
         def cachedClass = ReflectionCache.getCachedClass(String)
         CachedMethod method = cachedClass.methods.find { it.name == 'length' && it.paramsCount == 0 }
         assert method != null
-        def mc = (MetaClassImpl) groovy.lang.GroovySystem.metaClassRegistry.getMetaClass(String)
+        def mc = (MetaClassImpl) GroovySystem.metaClassRegistry.getMetaClass(String)
         def site0 = new CallSiteArray(CachedMethodCallSitesTest, ['length'] as String[]).array[0]
         def site = CachedMethodCallSites.createPojoMetaMethodSite(method, site0, mc, [] as Class[])
         assert site != null
@@ -47,7 +48,7 @@ final class CachedMethodCallSitesTest {
             it.name == 'valueOf' && it.paramsCount == 1 && it.nativeParameterTypes[0] == Object
         }
         assert method != null
-        def mc = (MetaClassImpl) groovy.lang.GroovySystem.metaClassRegistry.getMetaClass(String)
+        def mc = (MetaClassImpl) GroovySystem.metaClassRegistry.getMetaClass(String)
         def site0 = new CallSiteArray(CachedMethodCallSitesTest, ['valueOf'] as String[]).array[0]
         def site = CachedMethodCallSites.createStaticMetaMethodSite(method, site0, mc, [Object] as Class[])
         assert site != null

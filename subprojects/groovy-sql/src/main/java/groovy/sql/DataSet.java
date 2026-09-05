@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.stmt.Statement;
 
+import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -252,7 +253,7 @@ public class DataSet extends Sql {
      *         to the order in which commands were added to the batch.
      * @throws SQLException if a database access error occurs,
      *                      or this method is called on a closed <code>Statement</code>, or the
-     *                      driver does not support batch statements. Throws {@link java.sql.BatchUpdateException}
+     *                      driver does not support batch statements. Throws {@link BatchUpdateException}
      *                      (a subclass of <code>SQLException</code>) if one of the commands sent to the
      *                      database fails to execute properly or attempts to return a result set.
      */
@@ -281,7 +282,7 @@ public class DataSet extends Sql {
      *         command in the batch.  The elements of the array are ordered according
      *         to the order in which commands were added to the batch.
      * @throws SQLException if a database access error occurs, or the driver does not support batch statements.
-     *                      Throws {@link java.sql.BatchUpdateException} (a subclass of <code>SQLException</code>)
+     *                      Throws {@link BatchUpdateException} (a subclass of <code>SQLException</code>)
      *                      if one of the commands sent to the database fails to execute properly.
      */
     @Override

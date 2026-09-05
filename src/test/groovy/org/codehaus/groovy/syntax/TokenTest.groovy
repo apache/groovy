@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.syntax
 
+import org.codehaus.groovy.GroovyBugError
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -114,7 +115,7 @@ class TokenTest {
     @Test
     void testGetWithInvalidIndexThrows() {
         def token = new Token(Types.PLUS, "+", LINE, COLUMN)
-        shouldFail(org.codehaus.groovy.GroovyBugError) { token.get(1) }
+        shouldFail(GroovyBugError) { token.get(1) }
     }
 
     @Test

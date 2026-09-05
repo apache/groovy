@@ -21,8 +21,8 @@
  * Command-line interface (CLI) option declaration and processing framework.
  *
  * <p>
- * {@link groovy.cli.Option @Option} marks CLI options with short/long names and descriptions.
- * {@link groovy.cli.Unparsed @Unparsed} captures remaining arguments.
+ * {@link Option @Option} marks CLI options with short/long names and descriptions.
+ * {@link Unparsed @Unparsed} captures remaining arguments.
  * See subpackages for CLI implementations: {@code groovy.cli.commons} (Apache Commons),
  * {@code groovy.cli.picocli} (Picocli).
  * </p>

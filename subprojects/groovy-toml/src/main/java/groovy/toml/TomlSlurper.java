@@ -88,7 +88,7 @@ public class TomlSlurper {
      * @param file the reader of toml
      * @return the root node of the parsed tree of Nodes
      */
-    public Object parse(java.io.File file) throws IOException {
+    public Object parse(File file) throws IOException {
         return parse(file.toPath());
     }
 

@@ -20,9 +20,11 @@ package groovy.ant
 
 import groovy.xml.NamespaceBuilder
 import org.apache.tools.ant.BuildEvent
+import org.apache.tools.ant.DefaultLogger
 import org.apache.tools.ant.Project
 import org.apache.tools.ant.ProjectHelper
 import org.apache.tools.ant.UnknownElement
+import org.apache.tools.ant.types.Path
 import org.junit.jupiter.api.Test
 
 import static org.junit.jupiter.api.Assertions.assertEquals
@@ -86,7 +88,7 @@ class AntTest {
             }
         }
         assert value != null
-        assertEquals org.apache.tools.ant.types.Path, value.getClass()
+        assertEquals Path, value.getClass()
     }
 
     @Test
@@ -307,7 +309,7 @@ finished: echo[message:myTestTarget4]
     }
 }
 
-class SimpleListener extends org.apache.tools.ant.DefaultLogger {
+class SimpleListener extends DefaultLogger {
     def spoof = new StringBuffer()
 
     void taskStarted(BuildEvent event) {

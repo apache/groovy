@@ -20,6 +20,7 @@ package org.apache.groovy.contracts.ast.visitor;
 
 import groovy.contracts.Ensures;
 import groovy.contracts.Requires;
+import groovy.lang.Closure;
 import org.apache.groovy.contracts.ClassInvariantViolation;
 import org.apache.groovy.contracts.PostconditionViolation;
 import org.apache.groovy.contracts.PreconditionViolation;
@@ -85,7 +86,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 
 /**
- * Visits interfaces &amp; classes and looks for <tt>@Requires</tt> or <tt>@Ensures</tt> and creates {@link groovy.lang.Closure}
+ * Visits interfaces &amp; classes and looks for <tt>@Requires</tt> or <tt>@Ensures</tt> and creates {@link Closure}
  * classes for the annotation closures.<p/>
  * <p>
  * The annotation closure classes are used later on to check interface contract pre- and post-conditions in

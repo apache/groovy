@@ -22,6 +22,7 @@ import groovy.contracts.Contracted;
 import groovy.contracts.Ensures;
 import groovy.contracts.Invariant;
 import groovy.contracts.Requires;
+import org.apache.groovy.contracts.AssertionViolation;
 import org.apache.groovy.contracts.ast.visitor.AnnotationProcessorVisitor;
 import org.apache.groovy.contracts.ast.visitor.DomainModelInjectionVisitor;
 import org.apache.groovy.contracts.ast.visitor.DynamicSetterInjectionVisitor;
@@ -35,6 +36,7 @@ import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.io.ReaderSource;
+import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
 /**
@@ -44,7 +46,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformation;
  * assertions executing the closure-code.
  * </p>
  * <p>
- * Whenever an assertion is broken an {@link org.apache.groovy.contracts.AssertionViolation} descendant class will be thrown.
+ * Whenever an assertion is broken an {@link AssertionViolation} descendant class will be thrown.
  * </p>
  *
  * @see org.apache.groovy.contracts.PreconditionViolation
@@ -55,7 +57,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformation;
 public class GContractsASTTransformation extends BaseASTTransformation {
 
     /**
-     * {@link org.codehaus.groovy.transform.ASTTransformation#visit(org.codehaus.groovy.ast.ASTNode[], org.codehaus.groovy.control.SourceUnit)}
+     * {@link ASTTransformation#visit(ASTNode[], SourceUnit)}
      */
     @Override
     public void visit(ASTNode[] nodes, SourceUnit unit) {

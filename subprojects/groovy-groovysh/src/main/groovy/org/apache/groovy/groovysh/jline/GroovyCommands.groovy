@@ -60,6 +60,7 @@ import java.awt.Desktop
 import java.awt.Dimension
 import java.awt.Graphics2D
 import java.awt.event.ActionListener
+import java.awt.geom.AffineTransform
 import java.awt.image.BufferedImage
 import java.awt.image.RenderedImage
 import java.lang.reflect.Method
@@ -409,7 +410,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         BufferedImage out = new BufferedImage(src.width, src.height, BufferedImage.TYPE_INT_ARGB)
         Graphics2D g = out.createGraphics()
         try {
-            g.drawRenderedImage(src, new java.awt.geom.AffineTransform())
+            g.drawRenderedImage(src, new AffineTransform())
         } finally {
             g.dispose()
         }

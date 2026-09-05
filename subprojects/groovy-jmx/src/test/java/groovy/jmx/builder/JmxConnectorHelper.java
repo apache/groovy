@@ -22,6 +22,7 @@ import java.rmi.NoSuchObjectException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,7 +61,7 @@ public class JmxConnectorHelper {
     public static void destroyRmiRegistry(Registry reg) {
         try {
             if (reg != null) {
-                java.rmi.server.UnicastRemoteObject.unexportObject(reg, true);
+                UnicastRemoteObject.unexportObject(reg, true);
             }
         } catch (NoSuchObjectException e) {
             throw new RuntimeException(e);

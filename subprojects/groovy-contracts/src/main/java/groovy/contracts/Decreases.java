@@ -20,6 +20,8 @@ package groovy.contracts;
 
 import groovy.lang.annotation.ExtendedElementType;
 import groovy.lang.annotation.ExtendedTarget;
+import org.apache.groovy.contracts.LoopVariantViolation;
+import org.apache.groovy.contracts.RecursionVariantViolation;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
@@ -28,6 +30,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.List;
 
 /**
  * Specifies a termination measure, either for a <em>loop</em> or for a
@@ -39,9 +42,9 @@ import java.lang.annotation.Target;
  * evaluated at the start of each iteration and must be non-negative there and
  * strictly decrease between consecutive iterations (so progress made by a classic
  * {@code for} loop's update expression is seen); a
- * {@link org.apache.groovy.contracts.LoopVariantViolation
+ * {@link LoopVariantViolation
  * LoopVariantViolation} is thrown otherwise. The measure may also be a
- * {@link java.util.List} compared lexicographically.
+ * {@link List} compared lexicographically.
  * <pre>
  * int n = 10
  * {@code @Decreases}({ n })
@@ -52,7 +55,7 @@ import java.lang.annotation.Target;
  * must strictly decrease (and stay {@code >= 0}) on every <em>recursive</em>
  * re-entry — a recursion termination measure. At runtime the value is captured on
  * entry and compared against the nearest enclosing invocation of the same method
- * (per thread); a {@link org.apache.groovy.contracts.RecursionVariantViolation
+ * (per thread); a {@link RecursionVariantViolation
  * RecursionVariantViolation} is thrown if a recursive call fails to decrease it
  * or it becomes negative, turning a non-terminating recursion into an immediate,
  * localised error rather than a {@code StackOverflowError}.

@@ -25,11 +25,12 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.net.URI;
 
 /**
  * Variable annotation used for getting the URI of the current script.
  * <p>
- * The type of the variable annotated with {@code @SourceURI} must be assignment compatible with {@link java.net.URI}.
+ * The type of the variable annotated with {@code @SourceURI} must be assignment compatible with {@link URI}.
  * It will be used to hold a URI object that references the source for the current script.
  * </p><p>By default the URI
  * will be made absolute (which is to say it will have an authority) in the case where a relative path was used
@@ -41,7 +42,7 @@ import java.lang.annotation.Target;
  * <pre class="language-groovy groovyTestCase">
  * {@code @groovy.transform.SourceURI} def sourceURI
  *
- * assert sourceURI instanceof java.net.URI
+ * assert sourceURI instanceof URI
  * </pre>
  *
  * @since 2.3.0

@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
@@ -175,7 +176,7 @@ public class RootLoader extends URLClassLoader {
      * {@inheritDoc}
      * <p>
      * Collapses entries that resolve to the same canonical jar file so callers
-     * such as {@link java.util.ServiceLoader} don't see the same providers
+     * such as {@link ServiceLoader} don't see the same providers
      * twice when the launcher's startup classpath and the {@code load} entries
      * in {@code groovy-starter.conf} reference the same jar (GROOVY-11978).
      */

@@ -25,6 +25,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Objects;
 
 /**
  * Class annotation used to assist in creating appropriate {@code equals()} and {@code hashCode()} methods.
@@ -290,8 +291,8 @@ public @interface EqualsAndHashCode {
     boolean allNames() default false;
 
     /**
-     * Whether to avoid using Groovy runtime methods and instead use methods like {@link java.util.Objects#hash(Object...)}
-     * and {@link java.util.Objects#equals(Object, Object)} for the generated {@code equals} and {@code hashCode} methods.
+     * Whether to avoid using Groovy runtime methods and instead use methods like {@link Objects#hash(Object...)}
+     * and {@link Objects#equals(Object, Object)} for the generated {@code equals} and {@code hashCode} methods.
      * The generated code is more similar to what is typically used in POJO classes.
      * The presence of the {@code @POJO} annotation on a class is looked for by default but this annotation attribute
      * allows the feature to be explicitly configured if desired.

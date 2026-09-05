@@ -20,13 +20,16 @@ package org.codehaus.groovy.tools.groovydoc;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParserConfiguration;
+import org.apache.groovy.groovydoc.tools.GroovyDocUtil;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 import org.codehaus.groovy.tools.shell.util.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -75,7 +78,7 @@ public class GroovyDocTool {
      * @param properties       additional properties to be used when generating the groovydoc
      */
     public GroovyDocTool(ResourceManager resourceManager, String[] sourcepaths, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List<LinkArgument> links, String javaVersion, Properties properties) {
-        this.sourcepaths = sourcepaths == null ? new String[0] : java.util.Arrays.copyOf(sourcepaths, sourcepaths.length);
+        this.sourcepaths = sourcepaths == null ? new String[0] : Arrays.copyOf(sourcepaths, sourcepaths.length);
         ParserConfiguration.LanguageLevel javaLanguageLevel = calculateLanguageLevel(javaVersion);
         rootDocBuilder = new GroovyRootDocBuilder(
                 sourcepaths,
@@ -113,7 +116,7 @@ public class GroovyDocTool {
 
         if (version == null) {
             version = "JAVA_" + Runtime.version().feature();
-            boolean previewEnabled = java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments().contains("--enable-preview");
+            boolean previewEnabled = ManagementFactory.getRuntimeMXBean().getInputArguments().contains("--enable-preview");
             if (previewEnabled) version += "_PREVIEW";
 
             try {
@@ -189,7 +192,7 @@ public class GroovyDocTool {
     /**
      * Returns the directory component of the given filename, or {@code "DefaultPackage"} if the file is in the default package.
      *
-     * @deprecated use {@link org.apache.groovy.groovydoc.tools.GroovyDocUtil#getPath}
+     * @deprecated use {@link GroovyDocUtil#getPath}
      */
     @Deprecated
     static String getPath(String filename) {
@@ -204,7 +207,7 @@ public class GroovyDocTool {
     /**
      * Returns the filename component (basename) of the given path.
      *
-     * @deprecated use {@link org.apache.groovy.groovydoc.tools.GroovyDocUtil#getFile}
+     * @deprecated use {@link GroovyDocUtil#getFile}
      */
     @Deprecated
     static String getFile(String filename) {

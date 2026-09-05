@@ -27,11 +27,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.codehaus.groovy.runtime.StringGroovyMethods;
+
 
 /**
  * A node in the tree of balanced groups extracted by {@link #find},
  * also exposed on {@link CharSequence} via
- * {@link org.codehaus.groovy.runtime.StringGroovyMethods#findBalancedGroups(CharSequence, String, String)}.
+ * {@link StringGroovyMethods#findBalancedGroups(CharSequence, String, String)}.
  * <p>
  * Java's {@link Pattern} has no .NET-style balancing groups
  * ({@code (?<name1-name2>…)}). This type is both the structured result and the

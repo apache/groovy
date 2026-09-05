@@ -426,7 +426,7 @@ public final class FindReplaceUtility {
         FIND_REPLACE_DIALOG.repaint();
         FIND_REPLACE_DIALOG.pack();
 
-        java.awt.Frame[] frames = java.awt.Frame.getFrames();
+        Frame[] frames = Frame.getFrames();
         for (Frame frame : frames) {
             if (frame.isFocused()) {
                 FIND_REPLACE_DIALOG.setLocationRelativeTo(frame);

@@ -31,6 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -41,7 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * {@code META-INF/services/groovy.concurrent.AwaitableAdapter}. Two built-in
  * adapters are always present after SPI-loaded ones:
  * <ul>
- *   <li>{@link FlowPublisherAdapter} for {@link java.util.concurrent.Flow.Publisher}
+ *   <li>{@link FlowPublisherAdapter} for {@link Flow.Publisher}
  *       (single-value {@code await} and multi-value {@code for await}).</li>
  *   <li>A {@code Future} fallback handling {@link CompletableFuture},
  *       {@link CompletionStage}, and {@link Future} (via a blocking wrapper).</li>

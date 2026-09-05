@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 import org.codehaus.groovy.ast.expr.ClosureExpression
+import org.codehaus.groovy.ast.expr.EmptyExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.control.SourceUnit
 
@@ -123,8 +124,8 @@ final class AstQueryTest extends GroovyTestCase {
     }
 
     void testEmptyExpressionIsVisited() {
-        def empty = new org.codehaus.groovy.ast.expr.EmptyExpression()
-        assert AstQuery.from(empty).andSelf().descendants(org.codehaus.groovy.ast.expr.EmptyExpression).count() == 1
+        def empty = new EmptyExpression()
+        assert AstQuery.from(empty).andSelf().descendants(EmptyExpression).count() == 1
     }
 
     void testQueryIsImmutableAndReRunnable() {

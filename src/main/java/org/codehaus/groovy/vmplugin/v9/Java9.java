@@ -26,6 +26,7 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.vmplugin.v17.Java17;
 import org.codehaus.groovy.vmplugin.v8.Java8;
 
 import java.lang.invoke.MethodHandle;
@@ -54,7 +55,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * @deprecated Use {@link org.codehaus.groovy.vmplugin.v17.Java17} instead. Groovy 6.0 requires JDK 17+.
+ * @deprecated Use {@link Java17} instead. Groovy 6.0 requires JDK 17+.
  */
 @Deprecated(since = "6.0.0", forRemoval = true)
 @SuppressWarnings("removal")

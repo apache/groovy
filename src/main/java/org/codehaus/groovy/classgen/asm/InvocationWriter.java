@@ -18,9 +18,11 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.GroovyCodeVisitorAdapter;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
@@ -329,12 +331,12 @@ public class InvocationWriter {
     }
 
     /**
-     * Supplements {@link org.apache.groovy.ast.tools.ExpressionUtils#isThisExpression isThisExpression}
+     * Supplements {@link ExpressionUtils#isThisExpression isThisExpression}
      * with the ability to see into {@code CheckcastReceiverExpression}.
      */
     private static boolean isThis(final Expression expression) {
         boolean[] isThis = new boolean[1];
-        expression.visit(new org.codehaus.groovy.ast.GroovyCodeVisitorAdapter() {
+        expression.visit(new GroovyCodeVisitorAdapter() {
             /**
              * Tracks whether the visited variable expression is {@code this}.
              */
@@ -466,7 +468,7 @@ public class InvocationWriter {
     }
 
     /**
-     * Emits an uncached invocation via {@link org.codehaus.groovy.runtime.ScriptBytecodeAdapter}.
+     * Emits an uncached invocation via {@link ScriptBytecodeAdapter}.
      * Used as the fallback when neither direct nor cached dispatch is applicable.
      *
      * @param origin                    the original call expression

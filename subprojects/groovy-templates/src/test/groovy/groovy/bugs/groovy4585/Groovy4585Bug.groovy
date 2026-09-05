@@ -18,12 +18,13 @@
  */
 package groovy.bugs.groovy4585
 
+import groovy.text.SimpleTemplateEngine
 import org.junit.jupiter.api.Test
 
 class Groovy4585Bug {
     @Test
     void test() {
-        def engineForBuildXml = new groovy.text.SimpleTemplateEngine(false)
+        def engineForBuildXml = new SimpleTemplateEngine(false)
         engineForBuildXml.setEscapeBackslash(true)
         def templateForBuildXml = engineForBuildXml.createTemplate(this.getClass().getResource("/bugs/groovy4585/groovy4585.xml").text)
         String buildXmlContent = templateForBuildXml.make([names:['a', 'b', 'c']]).toString()

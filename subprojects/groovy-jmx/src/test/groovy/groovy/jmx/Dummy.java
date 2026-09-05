@@ -18,7 +18,7 @@
  */
 package groovy.jmx;
 
-public class Dummy implements groovy.jmx.DummyMBean {
+public class Dummy implements DummyMBean {
 
     private String name = "James";
     private String location = "London";

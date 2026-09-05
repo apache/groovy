@@ -18,6 +18,7 @@
  */
 
 import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.transform.trait.Traits
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -202,7 +203,7 @@ p.Named__name = 'Bob'                       // <4>
     @Test
     void testRemappedName() {
         def foo = ClassHelper.make("my.package.Foo")
-        assert org.codehaus.groovy.transform.trait.Traits.remappedFieldName(foo, "bar") == 'my_package_Foo__bar'
+        assert Traits.remappedFieldName(foo, "bar") == 'my_package_Foo__bar'
     }
 
     @Test

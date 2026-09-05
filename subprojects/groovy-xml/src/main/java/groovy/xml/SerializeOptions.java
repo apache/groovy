@@ -18,6 +18,7 @@
  */
 package groovy.xml;
 
+import javax.xml.transform.TransformerFactory;
 import java.nio.charset.Charset;
 
 /**
@@ -113,7 +114,7 @@ public class SerializeOptions {
     }
 
     /**
-     * Whether the underlying {@link javax.xml.transform.TransformerFactory}
+     * Whether the underlying {@link TransformerFactory}
      * may resolve external DTDs and stylesheets (e.g. via {@code <xsl:import>}
      * or {@code <xsl:include>}).
      * Default is {@code false}; set to {@code true} when serializing XSLT

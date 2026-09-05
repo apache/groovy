@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.stc;
 
+import groovy.transform.Virtual;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -44,7 +45,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClas
  */
 public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
 
-    private static final ClassNode VIRTUAL_TYPE = ClassHelper.make(groovy.transform.Virtual.class);
+    private static final ClassNode VIRTUAL_TYPE = ClassHelper.make(Virtual.class);
 
     /**
      * Creates the trait-specific type-checking extension.

@@ -18,6 +18,7 @@
  */
 package groovy
 
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -206,7 +207,7 @@ final class ImportTest {
     void testImportModuleFromClasspath() {
         // Find JUnit JAR from the test classloader and add it to the compiler classpath
         def junitUrl = Test.class.protectionDomain.codeSource.location
-        def config = new org.codehaus.groovy.control.CompilerConfiguration()
+        def config = new CompilerConfiguration()
         config.classpathList = [new File(junitUrl.toURI()).path]
         def loader = new GroovyClassLoader(getClass().classLoader, config)
         def shell = new GroovyShell(loader)

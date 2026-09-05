@@ -63,6 +63,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
+import java.util.logging.Logger;
 
 /**
  * Support methods for DefaultGroovyMethods and PluginDefaultMethods.
@@ -174,7 +175,7 @@ public class DefaultGroovyMethodsSupport {
                 thrown = e;
                 if (logWarning) {
                     String name = DefaultGroovyMethodsSupport.class.getName();
-                    java.util.logging.Logger.getLogger(name).warning("Caught exception during close(): " + e);
+                    Logger.getLogger(name).warning("Caught exception during close(): " + e);
                 }
             }
         }

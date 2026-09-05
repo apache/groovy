@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ast.tools;
 
+import groovy.transform.NonSealed;
 import org.apache.groovy.util.BeanUtils;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassNode;
@@ -368,7 +369,7 @@ public class ClassNodeUtils {
             return false;
         }
         if (cn.isPrimaryClassNode()) {
-            if (Boolean.TRUE.equals(cn.getNodeMetaData(groovy.transform.NonSealed.class))) return true;
+            if (Boolean.TRUE.equals(cn.getNodeMetaData(NonSealed.class))) return true;
         } else {
             // GROOVY-11292, GROOVY-11750: check super class
             try {

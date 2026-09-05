@@ -19,6 +19,7 @@
 package org.apache.groovy.parser.antlr4.internal;
 
 import groovy.lang.Tuple2;
+import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.BufferedTokenStream;
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.RecognitionException;
@@ -240,7 +241,7 @@ final class MissingDelimiterDiagnostic {
      *       (e.g. {@code (Foo)1}, {@code (Foo)(x)})</li>
      * </ul>
      * Reporting the earliest site is intentional: with
-     * {@link org.antlr.v4.runtime.BailErrorStrategy} the parser stops at the
+     * {@link BailErrorStrategy} the parser stops at the
      * first recognition failure, so the first incomplete cast is the relevant
      * one.  In a hypothetical multi-error buffer the caret could theoretically
      * point at an earlier cast-like fragment than the failure ANTLR reported;

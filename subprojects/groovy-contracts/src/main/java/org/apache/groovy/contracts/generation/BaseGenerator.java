@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -39,6 +40,7 @@ import org.codehaus.groovy.control.io.ReaderSource;
 
 import java.lang.annotation.Annotation;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.andX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -118,7 +120,7 @@ public abstract class BaseGenerator {
     }
 
     /**
-     * @param classNode the {@link org.codehaus.groovy.ast.ClassNode} used to look up the invariant closure field
+     * @param classNode the {@link ClassNode} used to look up the invariant closure field
      * @return the field name of the invariant closure field of the given <tt>classNode</tt>
      */
     public static String getInvariantMethodName(final ClassNode classNode) {
@@ -126,8 +128,8 @@ public abstract class BaseGenerator {
     }
 
     /**
-     * @param classNode the {@link org.codehaus.groovy.ast.ClassNode} used to look up the invariant closure field
-     * @return the {@link org.codehaus.groovy.ast.MethodNode} which contains the invariant of the given <tt>classNode</tt>
+     * @param classNode the {@link ClassNode} used to look up the invariant closure field
+     * @return the {@link MethodNode} which contains the invariant of the given <tt>classNode</tt>
      */
     public static MethodNode getInvariantMethodNode(final ClassNode classNode) {
         return classNode.getDeclaredMethod(getInvariantMethodName(classNode), Parameter.EMPTY_ARRAY);
@@ -207,7 +209,7 @@ public abstract class BaseGenerator {
             // declaring class deliberately left to existing enforcement.
             contractElementAnnotations = contractElementAnnotations.stream()
                     .filter(a -> !isUnwoven(a))
-                    .collect(java.util.stream.Collectors.toList());
+                    .collect(Collectors.toList());
         }
         if (contractElementAnnotations.isEmpty()) {
             methodNode.putNodeMetaData(inlineModeKey(annotationType), Boolean.TRUE);
@@ -247,8 +249,8 @@ public abstract class BaseGenerator {
 
     /** True for a contract arm carrying {@code woven = false} (enforced elsewhere, never asserted). */
     private static boolean isUnwoven(final AnnotationNode annotationNode) {
-        org.codehaus.groovy.ast.expr.Expression member = annotationNode.getMember("woven");
-        return member instanceof org.codehaus.groovy.ast.expr.ConstantExpression constant
+        Expression member = annotationNode.getMember("woven");
+        return member instanceof ConstantExpression constant
                 && Boolean.FALSE.equals(constant.getValue());
     }
 }

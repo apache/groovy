@@ -20,6 +20,8 @@ package groovy
 
 import org.junit.jupiter.api.Test
 
+import java.util.List
+
 
 class ArrayParamMethodTest implements DummyInterface {
 
@@ -35,7 +37,7 @@ class ArrayParamMethodTest implements DummyInterface {
     void methodWithArrayParam(String[] args) {
         // lets turn it into a list
         def list = args.toList()
-        assert list instanceof java.util.List
+        assert list instanceof List
         list[4] = "e"
 
         assert list == ["a", "b", "c", null, "e"]

@@ -18,9 +18,12 @@
  */
 package org.codehaus.groovy.classgen.asm.indy;
 
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.classgen.asm.CallSiteWriter;
+import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
 import org.codehaus.groovy.classgen.asm.WriterController;
 
 /**
@@ -89,11 +92,11 @@ public class IndyCallSiteWriter extends CallSiteWriter {
      * flag, on by default; set {@code -Dgroovy.indy.setproperty=false} to
      * disable (opt-out).
      */
-    private static final boolean INDY_SET_PROPERTY = org.apache.groovy.util.SystemUtil.getBooleanSafe("groovy.indy.setproperty", true);
+    private static final boolean INDY_SET_PROPERTY = SystemUtil.getBooleanSafe("groovy.indy.setproperty", true);
 
     /** {@inheritDoc} */
     @Override
-    public void makeSetPropertySite(org.codehaus.groovy.ast.expr.PropertyExpression expression, Expression objectExpression, String name, org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter adapter, boolean groovyObject) {
+    public void makeSetPropertySite(PropertyExpression expression, Expression objectExpression, String name, MethodCallerMultiAdapter adapter, boolean groovyObject) {
         if (INDY_SET_PROPERTY && !expression.isSafe() && !expression.isSpreadSafe()) {
             InvokeDynamicWriter idw = (InvokeDynamicWriter) controller.getInvocationWriter();
             idw.writeSetProperty(objectExpression, name, expression.isImplicitThis(), groovyObject);

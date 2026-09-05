@@ -18,6 +18,7 @@
  */
 package groovy.concurrent
 
+import org.apache.groovy.runtime.async.AsyncSupport
 import org.junit.jupiter.api.Test
 
 import java.util.concurrent.CountDownLatch
@@ -62,7 +63,7 @@ final class AgentChangesTest {
         try {
             agent.send { it + 100 }
             // Wait for the update to land before subscribing
-            assert org.apache.groovy.runtime.async.AsyncSupport.await(agent.getAsync()) == 100
+            assert AsyncSupport.await(agent.getAsync()) == 100
 
             List<Integer> received = Collections.synchronizedList([])
             CountDownLatch sawOne = new CountDownLatch(1)

@@ -39,7 +39,7 @@ import static org.apache.groovy.json.internal.Exceptions.sputs;
 /**
  * Overlay-backed numeric {@link Value} that parses JSON numbers on demand.
  */
-public class NumberValue extends java.lang.Number implements Value {
+public class NumberValue extends Number implements Value {
 
     private char[] buffer;
     private boolean chopped;

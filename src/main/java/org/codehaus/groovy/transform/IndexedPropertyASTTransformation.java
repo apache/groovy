@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.control.CompilePhase;
@@ -111,7 +112,7 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         params[0] = new Parameter(ClassHelper.int_TYPE, "index");
         body.addStatement(stmt(indexX(varX(fNode), varX(params[0]))));
         // GEP-21 Shape C: replace the stubber's placeholder body if present.
-        org.codehaus.groovy.ast.MethodNode existing = cNode.getDeclaredMethod(makeName(fNode, "get"), params);
+        MethodNode existing = cNode.getDeclaredMethod(makeName(fNode, "get"), params);
         if (StubberSupport.isStub(existing)) {
             existing.setCode(body);
             StubberSupport.clearStub(existing);
@@ -128,7 +129,7 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
                 new Parameter(componentType, "value"));
         body.addStatement(assignS(indexX(varX(fNode), varX(theParams[0])), varX(theParams[1])));
         // GEP-21 Shape C: replace the stubber's placeholder body if present.
-        org.codehaus.groovy.ast.MethodNode existing = cNode.getDeclaredMethod(getSetterName(fNode.getName()), theParams);
+        MethodNode existing = cNode.getDeclaredMethod(getSetterName(fNode.getName()), theParams);
         if (StubberSupport.isStub(existing)) {
             existing.setCode(body);
             StubberSupport.clearStub(existing);

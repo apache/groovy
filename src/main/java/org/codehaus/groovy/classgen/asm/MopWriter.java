@@ -263,7 +263,7 @@ public class MopWriter {
      * @param p1 first parameter array
      * @param p2 second parameter array
      * @return true if parameters are equal
-     * @deprecated Use {@link org.codehaus.groovy.ast.tools.ParameterUtils#parametersEqual(Parameter[], Parameter[])} instead
+     * @deprecated Use {@link ParameterUtils#parametersEqual(Parameter[], Parameter[])} instead
      */
     @Deprecated
     public static boolean equalParameterTypes(final Parameter[] p1, final Parameter[] p2) {

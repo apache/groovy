@@ -199,7 +199,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @see IOGroovyMethods#withStream(java.io.OutputStream, groovy.lang.Closure)
+     * @see IOGroovyMethods#withStream(java.io.OutputStream, Closure)
      * @since 2.3.0
      */
     public static <T> T withObjectOutputStream(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.ObjectOutputStream") Closure<T> closure) throws IOException {
@@ -238,7 +238,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @throws java.io.IOException    if an IOException occurs.
      * @throws ClassNotFoundException if the class  is not found.
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachObject(java.io.ObjectInputStream, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachObject(java.io.ObjectInputStream, Closure)
      * @since 2.3.0
      */
     public static void eachObject(Path self, Closure closure) throws IOException, ClassNotFoundException {
@@ -253,7 +253,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.InputStream, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.InputStream, Closure)
      * @since 2.3.0
      */
     public static <T> T withObjectInputStream(Path path, @ClosureParams(value = SimpleType.class, options = "java.io.ObjectInputStream") Closure<T> closure) throws IOException {
@@ -269,7 +269,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure     a closure
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.InputStream, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.InputStream, Closure)
      * @since 2.3.0
      */
     public static <T> T withObjectInputStream(Path self, ClassLoader classLoader, @ClosureParams(value = SimpleType.class, options = "java.io.ObjectInputStream") Closure<T> closure) throws IOException {
@@ -285,7 +285,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
      * @return the last value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @see #eachLine(Path, int, groovy.lang.Closure)
+     * @see #eachLine(Path, int, Closure)
      * @since 2.3.0
      */
     public static <T> T eachLine(Path self, @ClosureParams(value = FromString.class, options = {"String", "String,Integer"}) Closure<T> closure) throws IOException {
@@ -302,7 +302,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
      * @return the last value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @see #eachLine(Path, String, int, groovy.lang.Closure)
+     * @see #eachLine(Path, String, int, Closure)
      * @since 2.3.0
      */
     public static <T> T eachLine(Path self, String charset, @ClosureParams(value = FromString.class, options = {"String", "String,Integer"}) Closure<T> closure) throws IOException {
@@ -319,7 +319,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure   a closure (arg 1 is line, optional arg 2 is line number)
      * @return the last value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachLine(java.io.Reader, int, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachLine(java.io.Reader, int, Closure)
      * @since 2.3.0
      */
     public static <T> T eachLine(Path self, int firstLine, @ClosureParams(value = FromString.class, options = {"String", "String,Integer"}) Closure<T> closure) throws IOException {
@@ -337,7 +337,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure   a closure (arg 1 is line, optional arg 2 is line number)
      * @return the last value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachLine(java.io.Reader, int, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachLine(java.io.Reader, int, Closure)
      * @since 2.3.0
      */
     public static <T> T eachLine(Path self, String charset, int firstLine, @ClosureParams(value = FromString.class, options = {"String", "String,Integer"}) Closure<T> closure) throws IOException {
@@ -357,7 +357,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @return the last value returned by the closure
      * @throws java.io.IOException                    if an IOException occurs.
      * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#splitEachLine(java.io.Reader, String, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#splitEachLine(java.io.Reader, String, Closure)
      * @since 2.3.0
      */
     public static <T> T splitEachLine(Path self, String regex, @ClosureParams(value = FromString.class, options = {"List<String>", "String[]"}, conflictResolutionStrategy = PickFirstResolver.class) Closure<T> closure) throws IOException {
@@ -376,7 +376,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the last value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#splitEachLine(java.io.Reader, java.util.regex.Pattern, Closure)
      * @since 2.3.0
      */
     public static <T> T splitEachLine(Path self, Pattern pattern, @ClosureParams(value = FromString.class, options = {"List<String>", "String[]"}, conflictResolutionStrategy = PickFirstResolver.class) Closure<T> closure) throws IOException {
@@ -397,7 +397,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @return the last value returned by the closure
      * @throws java.io.IOException                    if an IOException occurs.
      * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#splitEachLine(java.io.Reader, String, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#splitEachLine(java.io.Reader, String, Closure)
      * @since 2.3.0
      */
     public static <T> T splitEachLine(Path self, String regex, String charset, @ClosureParams(value = FromString.class, options = {"List<String>", "String[]"}, conflictResolutionStrategy = PickFirstResolver.class) Closure<T> closure) throws IOException {
@@ -417,7 +417,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the last value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#splitEachLine(java.io.Reader, java.util.regex.Pattern, Closure)
      * @since 2.3.0
      */
     public static <T> T splitEachLine(Path self, Pattern pattern, String charset, @ClosureParams(value = FromString.class, options = {"List<String>", "String[]"}, conflictResolutionStrategy = PickFirstResolver.class) Closure<T> closure) throws IOException {
@@ -964,7 +964,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure a closure (the parameter is the Path for the 'child' file)
      * @throws java.io.FileNotFoundException if the given directory does not exist
      * @throws IllegalArgumentException      if the provided Path object does not represent a directory
-     * @see #eachFile(Path, groovy.io.FileType, groovy.lang.Closure)
+     * @see #eachFile(Path, FileType, Closure)
      * @since 2.3.0
      */
     public static void eachFile(final Path self, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") final Closure closure) throws IOException {
@@ -979,7 +979,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure a closure (the parameter is the Path for the subdirectory file)
      * @throws java.io.FileNotFoundException if the given directory does not exist
      * @throws IllegalArgumentException      if the provided Path object does not represent a directory
-     * @see #eachFile(Path, groovy.io.FileType, groovy.lang.Closure)
+     * @see #eachFile(Path, FileType, Closure)
      * @since 2.3.0
      */
     public static void eachDir(Path self, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") Closure closure) throws IOException {
@@ -1023,15 +1023,15 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * <p>
      * The traversal can be adapted by providing various options in the <code>options</code> Map according
      * to the following keys:<dl>
-     * <dt>type</dt><dd>A {@link groovy.io.FileType} enum to determine if normal files or directories or both are processed</dd>
-     * <dt>preDir</dt><dd>A {@link groovy.lang.Closure} run before each directory is processed and optionally returning a {@link groovy.io.FileVisitResult} value
+     * <dt>type</dt><dd>A {@link FileType} enum to determine if normal files or directories or both are processed</dd>
+     * <dt>preDir</dt><dd>A {@link Closure} run before each directory is processed and optionally returning a {@link FileVisitResult} value
      * which can be used to control subsequent processing.</dd>
      * <dt>preRoot</dt><dd>A boolean indicating that the 'preDir' closure should be applied at the root level</dd>
-     * <dt>postDir</dt><dd>A {@link groovy.lang.Closure} run after each directory is processed and optionally returning a {@link groovy.io.FileVisitResult} value
+     * <dt>postDir</dt><dd>A {@link Closure} run after each directory is processed and optionally returning a {@link FileVisitResult} value
      * which can be used to control subsequent processing.</dd>
      * <dt>postRoot</dt><dd>A boolean indicating that the 'postDir' closure should be applied at the root level</dd>
      * <dt>visitRoot</dt><dd>A boolean indicating that the given closure should be applied for the root dir
-     * (not applicable if the 'type' is set to {@link groovy.io.FileType#FILES})</dd>
+     * (not applicable if the 'type' is set to {@link FileType#FILES})</dd>
      * <dt>maxDepth</dt><dd>The maximum number of directory levels when recursing
      * (default is -1 which means infinite, set to 0 for no recursion)</dd>
      * <dt>filter</dt><dd>A filter to perform on traversed files/directories (using the {@link DefaultGroovyMethods#isCase(Object, Object)} method). If set,
@@ -1042,7 +1042,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * If set, any candidates which match won't be visited.</dd>
      * <dt>excludeNameFilter</dt><dd>A filter to perform on the names of traversed files/directories (using the {@link DefaultGroovyMethods#isCase(Object, Object)} method).
      * If set, any candidates which match won't be visited. (Must not be set if 'excludeFilter' is set)</dd>
-     * <dt>sort</dt><dd>A {@link groovy.lang.Closure} which if set causes the files and subdirectories for each directory to be processed in sorted order.
+     * <dt>sort</dt><dd>A {@link Closure} which if set causes the files and subdirectories for each directory to be processed in sorted order.
      * Note that even when processing only files, the order of visited subdirectories will be affected by this parameter.</dd>
      * </dl>
      * This example prints out file counts and size aggregates for groovy source files within a directory tree:
@@ -1065,13 +1065,13 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      *
      * @param self    a Path (that happens to be a folder/directory)
      * @param options a Map of options to alter the traversal behavior
-     * @param closure the Closure to invoke on each file/directory and optionally returning a {@link groovy.io.FileVisitResult} value
+     * @param closure the Closure to invoke on each file/directory and optionally returning a {@link FileVisitResult} value
      *                which can be used to control subsequent processing
      * @throws java.io.FileNotFoundException if the given directory does not exist
      * @throws IllegalArgumentException      if the provided Path object does not represent a directory or illegal filter combinations are supplied
-     * @see DefaultGroovyMethods#sort(java.lang.Iterable, groovy.lang.Closure)
-     * @see groovy.io.FileVisitResult
-     * @see groovy.io.FileType
+     * @see DefaultGroovyMethods#sort(java.lang.Iterable, Closure)
+     * @see FileVisitResult
+     * @see FileType
      * @since 2.3.0
      */
     public static void traverse(
@@ -1156,15 +1156,15 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
 
     /**
      * Processes each descendant file in this directory and any subdirectories.
-     * Convenience method for {@link #traverse(Path, java.util.Map, groovy.lang.Closure)} when
+     * Convenience method for {@link #traverse(Path, java.util.Map, Closure)} when
      * no options to alter the traversal behavior are required.
      *
      * @param self    a Path (that happens to be a folder/directory)
-     * @param closure the Closure to invoke on each file/directory and optionally returning a {@link groovy.io.FileVisitResult} value
+     * @param closure the Closure to invoke on each file/directory and optionally returning a {@link FileVisitResult} value
      *                which can be used to control subsequent processing
      * @throws java.io.FileNotFoundException if the given directory does not exist
      * @throws IllegalArgumentException      if the provided Path object does not represent a directory
-     * @see #traverse(Path, java.util.Map, groovy.lang.Closure)
+     * @see #traverse(Path, java.util.Map, Closure)
      * @since 2.3.0
      */
     public static void traverse(final Path self, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") final Closure closure)
@@ -1175,14 +1175,14 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
     /**
      * Invokes the closure specified with key 'visit' in the options Map
      * for each descendant file in this directory tree. Convenience method
-     * for {@link #traverse(Path, java.util.Map, groovy.lang.Closure)} allowing the 'visit' closure
+     * for {@link #traverse(Path, java.util.Map, Closure)} allowing the 'visit' closure
      * to be included in the options Map rather than as a parameter.
      *
      * @param self    a Path (that happens to be a folder/directory)
      * @param options a Map of options to alter the traversal behavior
      * @throws java.io.FileNotFoundException if the given directory does not exist
      * @throws IllegalArgumentException      if the provided Path object does not represent a directory or illegal filter combinations are supplied
-     * @see #traverse(Path, java.util.Map, groovy.lang.Closure)
+     * @see #traverse(Path, java.util.Map, Closure)
      * @since 2.3.0
      */
     public static void traverse(
@@ -1276,7 +1276,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure a Closure
      * @throws java.io.FileNotFoundException if the given directory does not exist
      * @throws IllegalArgumentException      if the provided Path object does not represent a directory
-     * @see #eachFileRecurse(Path, groovy.io.FileType, groovy.lang.Closure)
+     * @see #eachFileRecurse(Path, FileType, Closure)
      * @since 2.3.0
      */
     public static void eachFileRecurse(Path self, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") Closure closure) throws IOException {
@@ -1293,7 +1293,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @throws java.io.FileNotFoundException if the given directory does not exist
      * @throws IllegalArgumentException      if the provided Path object does not represent a directory
-     * @see #eachFileRecurse(Path, groovy.io.FileType, groovy.lang.Closure)
+     * @see #eachFileRecurse(Path, FileType, Closure)
      * @since 2.3.0
      */
     public static void eachDirRecurse(final Path self, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") final Closure closure) throws IOException {
@@ -1302,7 +1302,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
 
     /**
      * Invokes the closure for each file whose name (file.name) matches the given nameFilter in the given directory
-     * - calling the {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#isCase(Object, Object)} method to determine if a match occurs.  This method can be used
+     * - calling the {@link DefaultGroovyMethods#isCase(Object, Object)} method to determine if a match occurs.  This method can be used
      * with different kinds of filters like regular expressions, classes, ranges etc.
      * Both regular files and subdirectories may be candidates for matching depending
      * on the value of fileType.
@@ -1322,7 +1322,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      *
      * @param self       a Path (that happens to be a folder/directory)
      * @param fileType   whether normal files or directories or both should be processed
-     * @param nameFilter the filter to perform on the name of the file/directory (using the {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#isCase(Object, Object)} method)
+     * @param nameFilter the filter to perform on the name of the file/directory (using the {@link DefaultGroovyMethods#isCase(Object, Object)} method)
      * @param closure    the closure to invoke
      * @throws java.io.FileNotFoundException if the given directory does not exist
      * @throws IllegalArgumentException      if the provided Path object does not represent a directory
@@ -1344,16 +1344,16 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
 
     /**
      * Invokes the closure for each file whose name (file.name) matches the given nameFilter in the given directory
-     * - calling the {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#isCase(Object, Object)} method to determine if a match occurs.  This method can be used
+     * - calling the {@link DefaultGroovyMethods#isCase(Object, Object)} method to determine if a match occurs.  This method can be used
      * with different kinds of filters like regular expressions, classes, ranges etc.
      * Both regular files and subdirectories are matched.
      *
      * @param self       a Path (that happens to be a folder/directory)
-     * @param nameFilter the nameFilter to perform on the name of the file (using the {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#isCase(Object, Object)} method)
+     * @param nameFilter the nameFilter to perform on the name of the file (using the {@link DefaultGroovyMethods#isCase(Object, Object)} method)
      * @param closure    the closure to invoke
      * @throws java.io.FileNotFoundException if the given directory does not exist
      * @throws IllegalArgumentException      if the provided Path object does not represent a directory
-     * @see #eachFileMatch(Path, groovy.io.FileType, Object, groovy.lang.Closure)
+     * @see #eachFileMatch(Path, FileType, Object, Closure)
      * @since 2.3.0
      */
     public static void eachFileMatch(final Path self, final Object nameFilter, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") final Closure closure) throws IOException {
@@ -1368,11 +1368,11 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * Only subdirectories are matched; regular files are ignored.
      *
      * @param self       a Path (that happens to be a folder/directory)
-     * @param nameFilter the nameFilter to perform on the name of the directory (using the {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#isCase(Object, Object)} method)
+     * @param nameFilter the nameFilter to perform on the name of the directory (using the {@link DefaultGroovyMethods#isCase(Object, Object)} method)
      * @param closure    the closure to invoke
      * @throws java.io.FileNotFoundException if the given directory does not exist
      * @throws IllegalArgumentException      if the provided Path object does not represent a directory
-     * @see #eachFileMatch(Path, groovy.io.FileType, Object, groovy.lang.Closure)
+     * @see #eachFileMatch(Path, FileType, Object, Closure)
      * @since 2.3.0
      */
     public static void eachDirMatch(final Path self, final Object nameFilter, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") final Closure closure) throws IOException {
@@ -1482,7 +1482,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts this Path to a {@link groovy.lang.Writable}.
+     * Converts this Path to a {@link Writable}.
      *
      * @param self a Path
      * @return a Path which wraps the input file and which implements Writable
@@ -1493,8 +1493,8 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts this Path to a {@link groovy.lang.Writable} or delegates to default
-     * {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#asType(Object, Class)}.
+     * Converts this Path to a {@link Writable} or delegates to default
+     * {@link DefaultGroovyMethods#asType(Object, Class)}.
      *
      * @param path a Path
      * @param c    the desired class
@@ -1613,7 +1613,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.OutputStream, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.OutputStream, Closure)
      * @since 2.3.0
      */
     @SuppressWarnings("unchecked")
@@ -1629,7 +1629,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.InputStream, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.InputStream, Closure)
      * @since 2.3.0
      */
     @SuppressWarnings("unchecked")
@@ -1645,7 +1645,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.OutputStream, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.OutputStream, Closure)
      * @since 2.3.0
      */
     public static <T> T withDataOutputStream(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.DataOutputStream") Closure<T> closure) throws IOException {
@@ -1660,7 +1660,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws java.io.IOException if an IOException occurs.
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.InputStream, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.InputStream, Closure)
      * @since 2.3.0
      */
     public static <T> T withDataInputStream(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.DataInputStream") Closure<T> closure) throws IOException {
@@ -1945,7 +1945,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param self    a Path
      * @param closure a closure
      * @throws java.io.IOException if an IOException occurs.
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachByte(java.io.InputStream, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachByte(java.io.InputStream, Closure)
      * @since 2.3.0
      */
     public static void eachByte(Path self, @ClosureParams(value = SimpleType.class, options = "byte") Closure closure) throws IOException {
@@ -1960,7 +1960,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param bufferLen the length of the buffer to use.
      * @param closure   a 2 parameter closure which is passed the byte[] and a number of bytes successfully read.
      * @throws java.io.IOException if an IOException occurs.
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachByte(java.io.InputStream, int, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#eachByte(java.io.InputStream, int, Closure)
      * @since 2.3.0
      */
     public static void eachByte(Path self, int bufferLen, @ClosureParams(value = FromString.class, options = "byte[],Integer") Closure closure) throws IOException {
@@ -1977,7 +1977,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      *                the line or not
      * @return a Writable closure
      * @throws java.io.IOException if <code>self</code> is not readable
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#filterLine(java.io.Reader, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#filterLine(java.io.Reader, Closure)
      * @since 2.3.0
      */
     public static Writable filterLine(Path self, @ClosureParams(value = SimpleType.class, options = "java.lang.String") Closure closure) throws IOException {
@@ -2006,7 +2006,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      *                the line or not
      * @return a Writable closure
      * @throws java.io.IOException if an IOException occurs
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#filterLine(java.io.Reader, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#filterLine(java.io.Reader, Closure)
      * @since 2.3.0
      */
     public static Writable filterLine(Path self, String charset, @ClosureParams(value = SimpleType.class, options = "java.lang.String") Closure closure) throws IOException {
@@ -2022,7 +2022,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure a closure which takes each line as a parameter and returns
      *                <code>true</code> if the line should be written to this writer.
      * @throws java.io.IOException if <code>self</code> is not readable
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#filterLine(java.io.Reader, java.io.Writer, Closure)
      * @since 2.3.0
      */
     public static void filterLine(Path self, Writer writer, @ClosureParams(value = SimpleType.class, options = "java.lang.String") Closure closure) throws IOException {
@@ -2039,7 +2039,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @param closure a closure which takes each line as a parameter and returns
      *                <code>true</code> if the line should be written to this writer.
      * @throws java.io.IOException if an IO error occurs
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#filterLine(java.io.Reader, java.io.Writer, Closure)
      * @since 2.3.0
      */
     public static void filterLine(Path self, Writer writer, String charset, @ClosureParams(value = SimpleType.class, options = "java.lang.String") Closure closure) throws IOException {
@@ -2061,7 +2061,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
     /**
      * #deprecated use the variant in IOGroovyMethods
      *
-     * @see org.codehaus.groovy.runtime.IOGroovyMethods#withCloseable(java.io.Closeable, groovy.lang.Closure)
+     * @see org.codehaus.groovy.runtime.IOGroovyMethods#withCloseable(java.io.Closeable, Closure)
      * @since 2.3.0
      */
     @Deprecated

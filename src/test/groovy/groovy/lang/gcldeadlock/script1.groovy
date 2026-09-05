@@ -1,3 +1,5 @@
+
+import groovy.lang.gcldeadlock.DeadlockBugUtil
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -16,6 +18,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-def util = new groovy.lang.gcldeadlock.DeadlockBugUtil()
+def util = new DeadlockBugUtil()
 
 number + "+" + number + "=" + util.plus(number, number)

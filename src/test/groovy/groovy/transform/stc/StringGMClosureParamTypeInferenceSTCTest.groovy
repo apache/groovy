@@ -18,10 +18,11 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.runtime.StringGroovyMethods
 import org.junit.jupiter.api.Test
 
 /**
- * Unit tests for static type checking : closure parameter type inference for {@link org.codehaus.groovy.runtime.StringGroovyMethods}.
+ * Unit tests for static type checking : closure parameter type inference for {@link StringGroovyMethods}.
  */
 class StringGMClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 

@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * Represents a simple key-value cache, which is thread safe and backed by a {@link java.util.Map} instance
+ * Represents a simple key-value cache, which is thread safe and backed by a {@link Map} instance
  *
  * @param <K> type of the keys
  * @param <V> type of the values
@@ -55,7 +55,7 @@ public class ConcurrentCommonCache<K, V> implements FlexibleCache<K, V>, ValueCo
      *
      * @param initialCapacity  initial capacity of the cache
      * @param maxSize          max size of the cache
-     * @param evictionStrategy LRU or FIFO, see {@link org.codehaus.groovy.runtime.memoize.EvictableCache.EvictionStrategy}
+     * @param evictionStrategy LRU or FIFO, see {@link EvictableCache.EvictionStrategy}
      */
     public ConcurrentCommonCache(int initialCapacity, int maxSize, EvictionStrategy evictionStrategy) {
         commonCache = new CommonCache<K, V>(initialCapacity, maxSize, evictionStrategy);
@@ -83,9 +83,9 @@ public class ConcurrentCommonCache<K, V> implements FlexibleCache<K, V>, ValueCo
     }
 
     /**
-     * Constructs a cache backed by the specified {@link java.util.Map} instance
+     * Constructs a cache backed by the specified {@link Map} instance
      *
-     * @param map the {@link java.util.Map} instance
+     * @param map the {@link Map} instance
      */
     public ConcurrentCommonCache(Map<K, V> map) {
         commonCache = new CommonCache<K, V>(map);

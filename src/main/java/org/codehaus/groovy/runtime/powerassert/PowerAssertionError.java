@@ -23,7 +23,7 @@ import java.io.Serial;
 /**
  * Indicates that a power assertion has failed.
  */
-public class PowerAssertionError extends java.lang.AssertionError {
+public class PowerAssertionError extends AssertionError {
     @Serial private static final long serialVersionUID = -2204531294530022591L;
 
     /**

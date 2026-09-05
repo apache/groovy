@@ -23,7 +23,7 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
 
 /**
- * Provides optimized reflection caching for {@link java.lang.String}.
+ * Provides optimized reflection caching for {@link String}.
  * Coerces {@link GString} arguments to {@link String} for type-safe method invocation.
  */
 public class StringCachedClass extends CachedClass {

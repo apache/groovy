@@ -18,7 +18,9 @@
  */
 package org.apache.groovy.parser.antlr4.internal;
 
+import org.antlr.v4.runtime.ANTLRErrorStrategy;
 import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -364,8 +366,8 @@ final class ErrorStrategyTest {
 
     // --- helpers ----------------------------------------------------------------
 
-    private static GroovyLangParser parser(org.antlr.v4.runtime.CharStream charStream,
-                                           org.antlr.v4.runtime.ANTLRErrorStrategy strategy,
+    private static GroovyLangParser parser(CharStream charStream,
+                                           ANTLRErrorStrategy strategy,
                                            PredictionMode mode) {
         var parser = new GroovyLangParser(new CommonTokenStream(new GroovyLangLexer(charStream)));
         parser.setErrorHandler(strategy);
@@ -411,7 +413,7 @@ final class ErrorStrategyTest {
 
     /** Package subclass exposing protected reporting helpers. */
     private static final class StrategyProbe extends AbstractFriendlyErrorStrategy {
-        StrategyProbe(org.antlr.v4.runtime.CharStream charStream) {
+        StrategyProbe(CharStream charStream) {
             super(charStream);
         }
 

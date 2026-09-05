@@ -18,6 +18,7 @@
  */
 package bugs
 
+import groovy.test.NotYetImplemented
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -28,7 +29,7 @@ final class Groovy5239 {
         static who() { 'PublicStatic' }
     }
 
-    @Test @groovy.test.NotYetImplemented
+    @Test @NotYetImplemented
     void testStaticImportVersusDelegateMethod() {
         assertScript '''
             import static bugs.Groovy5239.PublicStatic.who

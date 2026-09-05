@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.classgen.asm.indy.IndyCallSiteWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -67,14 +68,14 @@ import static org.objectweb.asm.Opcodes.RETURN;
  * <p>
  * Non-public API used by {@code AsmClassGenerator}. Do not use this class
  * in application code. Groovy 6 defaults to invokedynamic
- * ({@link org.codehaus.groovy.classgen.asm.indy.IndyCallSiteWriter});
+ * ({@link IndyCallSiteWriter});
  * this writer is selected only when {@code indy} is disabled. The generated
  * bytecode references {@code org.codehaus.groovy.runtime.callsite.*}, which
  * lives in the optional {@code groovy-callsite} module — that module must be
  * on the classpath both to emit and to execute such classes
  * ({@code WriterController} fails fast if it is missing when {@code indy} is off).
  *
- * @see org.codehaus.groovy.classgen.asm.indy.IndyCallSiteWriter
+ * @see IndyCallSiteWriter
  */
 public class CallSiteWriter {
     private static final int SIG_ARRAY_LENGTH = 255;

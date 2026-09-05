@@ -19,9 +19,10 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.ResourceGMClosureParamTypeInferenceSTCTest
+import org.codehaus.groovy.runtime.ResourceGroovyMethods
 
 /**
- * Unit tests for static compilation: closure parameter type inference: {@link org.codehaus.groovy.runtime.ResourceGroovyMethods}.
+ * Unit tests for static compilation: closure parameter type inference: {@link ResourceGroovyMethods}.
  */
 final class ResourceGMClosureParamTypeInferenceStaticCompileTest extends ResourceGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
 }

@@ -263,8 +263,8 @@ public class GenericsUtils {
     }
 
     /**
-     * Interface class nodes retrieved from {@link org.codehaus.groovy.ast.ClassNode#getInterfaces()}
-     * or {@link org.codehaus.groovy.ast.ClassNode#getAllInterfaces()} are returned with generic type
+     * Interface class nodes retrieved from {@link ClassNode#getInterfaces()}
+     * or {@link ClassNode#getAllInterfaces()} are returned with generic type
      * arguments. This method allows returning a parameterized interface given the parameterized class
      * node which implements this interface.
      *
@@ -281,8 +281,8 @@ public class GenericsUtils {
     }
 
     /**
-     * Interface class nodes retrieved from {@link org.codehaus.groovy.ast.ClassNode#getInterfaces()}
-     * or {@link org.codehaus.groovy.ast.ClassNode#getAllInterfaces()} are returned with generic type
+     * Interface class nodes retrieved from {@link ClassNode#getInterfaces()}
+     * or {@link ClassNode#getAllInterfaces()} are returned with generic type
      * arguments. This method allows returning a parameterized interface given the parameterized class
      * node which implements this interface.
      *
@@ -1213,7 +1213,7 @@ public class GenericsUtils {
      * Gets the parameter and return types of the abstract method of SAM.
      *
      * If the abstract method is not parameterized, we will get generics placeholders, e.g. T, U
-     * For example, the abstract method of {@link java.util.function.Function} is
+     * For example, the abstract method of {@link Function} is
      * <pre>
      *      R apply(T t);
      * </pre>

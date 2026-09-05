@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.groovysh.commands
 
+import org.jline.console.CommandRegistry
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 
@@ -29,7 +30,7 @@ import java.util.stream.Stream
  * wiring its {@code CmdDesc} or {@code maybePrintHelp} call surfaces here
  * immediately rather than waiting for a user to type {@code /yourcmd --help}.
  *
- * <p>The set of names comes from {@link org.jline.console.CommandRegistry#commandNames}
+ * <p>The set of names comes from {@link CommandRegistry#commandNames}
  * at runtime, so the test self-adjusts to environment-conditional commands
  * (e.g. {@code /grab} only registers when Ivy is on the classpath).
  */

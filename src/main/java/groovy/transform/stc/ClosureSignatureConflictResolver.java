@@ -18,6 +18,7 @@
  */
 package groovy.transform.stc;
 
+import groovy.lang.Closure;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
@@ -40,7 +41,7 @@ public class ClosureSignatureConflictResolver {
      * @param receiver the receiver the method is being called on
      * @param arguments the arguments for the closure
      * @param closure the closure expression under analysis
-     * @param methodNode the method for which a {@link groovy.lang.Closure} parameter was annotated with {@link ClosureParams}
+     * @param methodNode the method for which a {@link Closure} parameter was annotated with {@link ClosureParams}
      * @param sourceUnit the source unit of the file being compiled
      * @param compilationUnit the compilation unit of the file being compiled
      * @param options the options, corresponding to the {@link ClosureParams#options()} found on the annotation

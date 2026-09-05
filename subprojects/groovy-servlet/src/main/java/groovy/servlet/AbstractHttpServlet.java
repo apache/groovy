@@ -41,10 +41,10 @@ import java.util.regex.Pattern;
  * <p>
  * <h4>Resource name mangling (pattern replacement)</h4>
  * <p>
- * Also implements Groovy's {@link groovy.util.ResourceConnector} in a dynamic
+ * Also implements Groovy's {@link ResourceConnector} in a dynamic
  * manner. It allows you to modify the resource name that is searched for with a
- * <i>replace all</i> operation. See {@link java.util.regex.Pattern} and
- * {@link java.util.regex.Matcher} for details.
+ * <i>replace all</i> operation. See {@link Pattern} and
+ * {@link Matcher} for details.
  * The servlet init parameter names are:
  * <pre>
  * {@value #INIT_PARAM_RESOURCE_NAME_REGEX} = empty - defaults to null
@@ -459,7 +459,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
      * <p>
      * The binding provided by TemplateServlet does already include some default
      * variables. As of this writing, they are (copied from
-     * {@link groovy.servlet.ServletBinding}):
+     * {@link ServletBinding}):
      * <ul>
      * <li><tt>"request"</tt> : HttpServletRequest </li>
      * <li><tt>"response"</tt> : HttpServletResponse </li>

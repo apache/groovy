@@ -170,7 +170,7 @@ public interface JsonGenerator {
 
         /**
          * Sets the date format that will be used to serialize {@code Date} objects.
-         * This must be a valid pattern for {@link java.text.SimpleDateFormat} and the
+         * This must be a valid pattern for {@link SimpleDateFormat} and the
          * date formatter will be constructed with the default locale of {@link Locale#US}.
          *
          * @param format date format pattern used to serialize dates
@@ -184,7 +184,7 @@ public interface JsonGenerator {
 
         /**
          * Sets the date format that will be used to serialize {@code Date} objects.
-         * This must be a valid pattern for {@link java.text.SimpleDateFormat}.
+         * This must be a valid pattern for {@link SimpleDateFormat}.
          *
          * @param format date format pattern used to serialize dates
          * @param locale the locale whose date format symbols will be used

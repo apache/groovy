@@ -55,7 +55,7 @@ public class PreconditionGenerator extends BaseGenerator {
      * Injects a precondition assertion statement in the given <tt>method</tt>, based on the given <tt>annotation</tt> of
      * type {@link Requires}.
      *
-     * @param method       the {@link org.codehaus.groovy.ast.MethodNode} for assertion injection
+     * @param method       the {@link MethodNode} for assertion injection
      * @param precondition the {@link org.apache.groovy.contracts.domain.Precondition} the assertion statement should be generated from
      */
     public void generatePreconditionAssertionStatement(final MethodNode method, final org.apache.groovy.contracts.domain.Precondition precondition) {
@@ -78,11 +78,11 @@ public class PreconditionGenerator extends BaseGenerator {
     }
 
     /**
-     * Generates the default precondition statement for {@link org.codehaus.groovy.ast.MethodNode} instances with
-     * the {@link org.apache.groovy.contracts.annotations.meta.Precondition} annotation.
+     * Generates the default precondition statement for {@link MethodNode} instances with
+     * the {@link Precondition} annotation.
      *
-     * @param type       the current {@link org.codehaus.groovy.ast.ClassNode}
-     * @param methodNode the {@link org.codehaus.groovy.ast.MethodNode} with a {@link org.apache.groovy.contracts.annotations.meta.Precondition} annotation
+     * @param type       the current {@link ClassNode}
+     * @param methodNode the {@link MethodNode} with a {@link Precondition} annotation
      */
     public void generateDefaultPreconditionStatement(final ClassNode type, final MethodNode methodNode) {
         boolean noPreconditionInHierarchy = AnnotationUtils.getAnnotationNodeInHierarchyWithMetaAnnotation(type.getSuperClass(), methodNode, ClassHelper.makeWithoutCaching(Precondition.class)).isEmpty();

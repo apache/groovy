@@ -18,6 +18,7 @@
  */
 package groovy.ui
 
+import groovy.lang.Script
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
@@ -199,7 +200,7 @@ assert new MyConcreteClass() != null"""
         main.@editFiles = true
         main.@backupExtension = ''
         def script = new GroovyShell().parse('throw new RuntimeException("boom")')
-        def method = GroovyMain.getDeclaredMethod('processFile', groovy.lang.Script, File)
+        def method = GroovyMain.getDeclaredMethod('processFile', Script, File)
         method.accessible = true
         try {
             def thrown = shouldFail(InvocationTargetException) {

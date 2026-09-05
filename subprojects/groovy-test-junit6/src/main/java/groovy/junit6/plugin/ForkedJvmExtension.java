@@ -32,10 +32,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -175,7 +177,7 @@ public class ForkedJvmExtension implements InvocationInterceptor {
     /**
      * Filters {@code classpath} (a {@link File#pathSeparator}-separated list)
      * by dropping entries that match any of the supplied regular expressions
-     * via {@link java.util.regex.Matcher#find()}. Visible for testing.
+     * via {@link Matcher#find()}. Visible for testing.
      *
      * @param classpath the original classpath string
      * @param excludes  regex patterns; an empty list returns {@code classpath} unchanged
@@ -203,7 +205,7 @@ public class ForkedJvmExtension implements InvocationInterceptor {
     }
 
     private static Set<String> resolveInherited(String[] patterns) {
-        if (patterns.length == 0) return java.util.Collections.emptySet();
+        if (patterns.length == 0) return Collections.emptySet();
         Properties parent = System.getProperties();
         Set<String> matched = new LinkedHashSet<>();
         for (String pattern : patterns) {

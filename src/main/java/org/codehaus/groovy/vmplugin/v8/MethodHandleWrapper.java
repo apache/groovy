@@ -19,6 +19,7 @@
 package org.codehaus.groovy.vmplugin.v8;
 
 import groovy.lang.MetaMethod;
+import org.apache.groovy.runtime.indy.AotDispatch;
 
 import java.lang.invoke.MethodHandle;
 import java.util.concurrent.atomic.AtomicLong;
@@ -43,7 +44,7 @@ class MethodHandleWrapper {
      * while selection itself runs is caught at the PIC write instead
      * (see {@code IndyInterface#putSelected}).
      */
-    private final long aotStamp = org.apache.groovy.runtime.indy.AotDispatch.stamp();
+    private final long aotStamp = AotDispatch.stamp();
 
     /**
      * Creates a wrapper for the cached and relink targets of a meta method.

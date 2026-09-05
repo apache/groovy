@@ -18,6 +18,9 @@
  */
 package org.codehaus.groovy.groovydoc;
 
+import java.io.Externalizable;
+import java.io.Serializable;
+
 /**
  * Describes a Groovy type together with the members and relationships needed to render its documentation.
  */
@@ -132,14 +135,14 @@ public interface GroovyClassDoc extends GroovyType, GroovyProgramElementDoc {
     boolean isAbstract();
 
     /**
-     * Indicates whether this type implements {@link java.io.Externalizable}.
+     * Indicates whether this type implements {@link Externalizable}.
      *
      * @return {@code true} if this type is externalizable
      */
     boolean isExternalizable();
 
     /**
-     * Indicates whether this type implements {@link java.io.Serializable}.
+     * Indicates whether this type implements {@link Serializable}.
      *
      * @return {@code true} if this type is serializable
      */

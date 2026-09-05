@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.transform.TupleConstructor
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
@@ -1274,7 +1275,7 @@ class Foo4244 {
     @Delegate Bar4244 bar = new Bar4244()
 }
 
-@groovy.transform.TupleConstructor(includeFields=true)
+@TupleConstructor(includeFields=true)
 class FooToMethod {
     private final Callable<DelegateFoo> supplier
 

@@ -25,6 +25,8 @@ package org.apache.groovy.util.concurrent;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.lang.ref.Reference;
@@ -46,6 +48,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -57,11 +61,11 @@ import java.util.function.Function;
  * <p>
  * This table is designed around specific advanced use-cases. If there is any
  * doubt whether this table is for you, you most likely should be using
- * {@link java.util.concurrent.ConcurrentHashMap} instead.
+ * {@link ConcurrentHashMap} instead.
  * <p>
  * This table supports strong, weak, and soft keys and values. By default keys
  * are weak, and values are strong. Such a configuration offers similar behavior
- * to {@link java.util.WeakHashMap}, entries of this table are periodically
+ * to {@link WeakHashMap}, entries of this table are periodically
  * removed once their corresponding keys are no longer referenced outside of
  * this table. In other words, this table will not prevent a key from being
  * discarded by the garbage collector. Once a key has been discarded by the
@@ -87,10 +91,10 @@ import java.util.function.Function;
  * non-strong values may disappear before their corresponding key.
  * <p>
  * While this table does allow the use of both strong keys and values, it is
- * recommended you use {@link java.util.concurrent.ConcurrentHashMap} for such a
+ * recommended you use {@link ConcurrentHashMap} for such a
  * configuration, since it is optimized for that case.
  * <p>
- * Just like {@link java.util.concurrent.ConcurrentHashMap}, this class obeys
+ * Just like {@link ConcurrentHashMap}, this class obeys
  * the same functional specification as {@link Hashtable}, and
  * includes versions of methods corresponding to each method of
  * <tt>Hashtable</tt>. However, even though all operations are thread-safe,
@@ -2339,7 +2343,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
      * for each key-value mapping, followed by a null pair.
      * The key-value mappings are emitted in no particular order.
      */
-    private void writeObject(java.io.ObjectOutputStream s) throws IOException {
+    private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
 
         for (int k = 0; k < segments.length; ++k) {
@@ -2373,7 +2377,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
      * @param s the stream
      */
     @SuppressWarnings("unchecked")
-    private void readObject(java.io.ObjectInputStream s) throws IOException, ClassNotFoundException {
+    private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
         s.defaultReadObject();
 
         // Initialize each segment to be minimally sized, and let grow.

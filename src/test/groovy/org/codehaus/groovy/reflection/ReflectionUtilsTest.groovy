@@ -21,6 +21,7 @@ package org.codehaus.groovy.reflection
 import org.junit.jupiter.api.Test
 
 import java.lang.reflect.Method
+import java.lang.reflect.Modifier
 
 import static org.junit.jupiter.api.Assertions.*
 
@@ -197,7 +198,7 @@ class ReflectionUtilsTest {
         def result = ReflectionUtils.checkAccessible(
             ReflectionUtilsTest,
             String,
-            java.lang.reflect.Modifier.PUBLIC,
+            Modifier.PUBLIC,
             false
         )
         assertTrue(result)
@@ -209,7 +210,7 @@ class ReflectionUtilsTest {
         def result = ReflectionUtils.checkAccessible(
             ReflectionUtilsTest,
             String,
-            java.lang.reflect.Modifier.PRIVATE,
+            Modifier.PRIVATE,
             false
         )
         // Typically false for private methods

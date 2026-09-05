@@ -23,6 +23,16 @@ import org.junit.jupiter.api.Test
 
 import java.awt.Dimension
 import java.nio.CharBuffer
+import java.util.ArrayList
+import java.util.Collection
+import java.util.HashSet
+import java.util.Hashtable
+import java.util.Iterator
+import java.util.LinkedHashMap
+import java.util.LinkedList
+import java.util.Stack
+import java.util.TreeMap
+import java.util.Vector
 import java.util.concurrent.LinkedBlockingQueue
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -1427,7 +1437,7 @@ final class GroovyMethodsTest {
     void testCharSequenceTake() {
         def data = [ 'groovy',      // String
                      "${'groovy'}", // GString
-                     java.nio.CharBuffer.wrap( 'groovy' ),
+                     CharBuffer.wrap( 'groovy' ),
                      new StringBuffer( 'groovy' ),
                      new StringBuilder( 'groovy' ) ]
         data.each {
@@ -1544,7 +1554,7 @@ final class GroovyMethodsTest {
     void testCharSequenceDrop() {
         def data = [ 'groovy',      // String
                      "${'groovy'}", // GString
-                     java.nio.CharBuffer.wrap( 'groovy' ),
+                     CharBuffer.wrap( 'groovy' ),
                      new StringBuffer( 'groovy' ),
                      new StringBuilder( 'groovy' ) ]
         data.each {
@@ -1566,21 +1576,21 @@ final class GroovyMethodsTest {
         // - Cannot test StringBuffer or StringBuilder, as X.subSequence in Java returns String
         def data = [
           // Lists
-          (java.util.ArrayList)     : new ArrayList( [ 1, 2, 3 ] ),
-          (java.util.LinkedList)    : new LinkedList( [ 1, 2, 3 ] ),
-          (java.util.Stack)         : new Stack() {{ addAll( [ 1, 2, 3 ] ) }},
-          (java.util.Vector)        : new Vector( [ 1, 2, 3 ] ),
+          (ArrayList)     : new ArrayList( [ 1, 2, 3 ] ),
+          (LinkedList)    : new LinkedList( [ 1, 2, 3 ] ),
+          (Stack)         : new Stack() {{ addAll( [ 1, 2, 3 ] ) }},
+          (Vector)        : new Vector( [ 1, 2, 3 ] ),
           // Maps
-          (java.util.LinkedHashMap) : new LinkedHashMap( [ a:1, b:2, c:3 ] ),
-          (java.util.TreeMap)       : new TreeMap( [ a:1, b:2, c:3 ] ),
-          (java.util.Hashtable)     : new Hashtable( [ a:1, b:2, c:3 ] ),
+          (LinkedHashMap) : new LinkedHashMap( [ a:1, b:2, c:3 ] ),
+          (TreeMap)       : new TreeMap( [ a:1, b:2, c:3 ] ),
+          (Hashtable)     : new Hashtable( [ a:1, b:2, c:3 ] ),
           // Iterators
-          (java.util.Iterator)      : [ hasNext:{ true }, next:{ 'groovy' } ] as Iterator,
+          (Iterator)      : [ hasNext:{ true }, next:{ 'groovy' } ] as Iterator,
           // Iterables
           (java.lang.Iterable)      : { [ hasNext:{ a < 6 }, next:{ a++ } ] as Iterator } as Iterable,
           // CharSequences
           (java.lang.String)        : new String( 'groovy' ),
-          (java.nio.CharBuffer)     : java.nio.CharBuffer.wrap( 'groovy' ),
+          (CharBuffer)     : CharBuffer.wrap( 'groovy' ),
         ]
         data.each { Class clazz, object ->
             a = 1
@@ -1591,10 +1601,10 @@ final class GroovyMethodsTest {
 
         data = [
           // Lists
-          (java.util.ArrayList)     : new ArrayList( [ 1, 2, 3 ] ),
-          (java.util.LinkedList)    : new LinkedList( [ 1, 2, 3 ] ),
-          (java.util.Stack)         : new Stack() {{ addAll( [ 1, 2, 3 ] ) }},
-          (java.util.Vector)        : new Vector( [ 1, 2, 3 ] ),
+          (ArrayList)     : new ArrayList( [ 1, 2, 3 ] ),
+          (LinkedList)    : new LinkedList( [ 1, 2, 3 ] ),
+          (Stack)         : new Stack() {{ addAll( [ 1, 2, 3 ] ) }},
+          (Vector)        : new Vector( [ 1, 2, 3 ] ),
           // Iterables
           (java.lang.Iterable)      : { [ hasNext:{ a < 6 }, next:{ a++ } ] as Iterator } as Iterable,
         ]
@@ -1774,7 +1784,7 @@ final class GroovyMethodsTest {
     void testCharSequenceTakeWhile() {
         def data = [ 'groovy',      // String
                      "${'groovy'}", // GString
-                     java.nio.CharBuffer.wrap( 'groovy' ),
+                     CharBuffer.wrap( 'groovy' ),
                      new StringBuffer( 'groovy' ),
                      new StringBuilder( 'groovy' ) ]
         data.each {
@@ -1986,14 +1996,14 @@ final class GroovyMethodsTest {
         int a
         def data = [
                 // Lists
-                (java.util.ArrayList)     : new ArrayList( [ 1, 2, 3 ] ),
-                (java.util.LinkedList)    : new LinkedList( [ 1, 2, 3 ] ),
-                (java.util.Stack)         : new Stack() {{ addAll( [ 1, 2, 3 ] ) }},
-                (java.util.Vector)        : new Vector( [ 1, 2, 3 ] ),
+                (ArrayList)     : new ArrayList( [ 1, 2, 3 ] ),
+                (LinkedList)    : new LinkedList( [ 1, 2, 3 ] ),
+                (Stack)         : new Stack() {{ addAll( [ 1, 2, 3 ] ) }},
+                (Vector)        : new Vector( [ 1, 2, 3 ] ),
                 // Sets
-                (java.util.HashSet)       : new HashSet( [ 1, 2, 3 ] ),
+                (HashSet)       : new HashSet( [ 1, 2, 3 ] ),
                 // Iterables
-                (java.util.Collection)    : { [ hasNext:{ a <= 3 }, next:{ a++ } ] as Iterator } as Iterable,
+                (Collection)    : { [ hasNext:{ a <= 3 }, next:{ a++ } ] as Iterator } as Iterable,
         ]
         data.each { Class clazz, object ->
             a = 1
@@ -2260,7 +2270,7 @@ final class GroovyMethodsTest {
     void testCharSequenceTakeRight() {
         def data = ['groovy',      // String
                     "${'groovy'}", // GString
-                    java.nio.CharBuffer.wrap('groovy'),
+                    CharBuffer.wrap('groovy'),
                     new StringBuffer('groovy'),
                     new StringBuilder('groovy')]
         data.each {
@@ -2279,7 +2289,7 @@ final class GroovyMethodsTest {
 
         def data = [text,      // String
                     "${text}", // GString
-                    java.nio.CharBuffer.wrap(text),
+                    CharBuffer.wrap(text),
                     new StringBuffer(text),
                     new StringBuilder(text)]
 
@@ -2304,7 +2314,7 @@ final class GroovyMethodsTest {
                 assert s.takeAfter("${r[0]}").toString() == r[1]  //GString as searchString
 
                 if (r[0]) {
-                    assert s.takeAfter(java.nio.CharBuffer.wrap(r[0])).toString() == r[1] //CharBuffer as searchString
+                    assert s.takeAfter(CharBuffer.wrap(r[0])).toString() == r[1] //CharBuffer as searchString
                     assert s.takeAfter(new StringBuffer(r[0])).toString() == r[1]  //StringBuffer as searchString
                     assert s.takeAfter(new StringBuilder(r[0])).toString() == r[1] //StringBuilder as searchString
                 }
@@ -2319,7 +2329,7 @@ final class GroovyMethodsTest {
 
         def data = [text,      // String
                     "${text}", // GString
-                    java.nio.CharBuffer.wrap(text),
+                    CharBuffer.wrap(text),
                     new StringBuffer(text),
                     new StringBuilder(text)]
 
@@ -2345,7 +2355,7 @@ final class GroovyMethodsTest {
                 assert s.takeBefore("${r[0]}").toString() == r[1]  //GString as searchString
 
                 if (r[0]) {
-                    assert s.takeBefore(java.nio.CharBuffer.wrap(r[0])).toString() == r[1] //CharBuffer as searchString
+                    assert s.takeBefore(CharBuffer.wrap(r[0])).toString() == r[1] //CharBuffer as searchString
                     assert s.takeBefore(new StringBuffer(r[0])).toString() == r[1]  //StringBuffer as searchString
                     assert s.takeBefore(new StringBuilder(r[0])).toString() == r[1] //StringBuilder as searchString
                 }
@@ -2357,7 +2367,7 @@ final class GroovyMethodsTest {
     void testCharSequenceDropRight() {
         def data = ['groovy',      // String
                     "${'groovy'}", // GString
-                    java.nio.CharBuffer.wrap('groovy'),
+                    CharBuffer.wrap('groovy'),
                     new StringBuffer('groovy'),
                     new StringBuilder('groovy')]
         data.each {
@@ -2376,7 +2386,7 @@ final class GroovyMethodsTest {
 
         def data = [text,      // String
                     "${text}", // GString
-                    java.nio.CharBuffer.wrap(text),
+                    CharBuffer.wrap(text),
                     new StringBuffer(text),
                     new StringBuilder(text)]
 
@@ -2490,7 +2500,7 @@ final class GroovyMethodsTest {
 
         def data = [text,      // String
                     "${text}", // GString
-                    java.nio.CharBuffer.wrap(text),
+                    CharBuffer.wrap(text),
                     new StringBuffer(text),
                     new StringBuilder(text)]
 
@@ -2527,7 +2537,7 @@ final class GroovyMethodsTest {
 
         def data = [text,      // String
                     "${text}", // GString
-                    java.nio.CharBuffer.wrap(text),
+                    CharBuffer.wrap(text),
                     new StringBuffer(text),
                     new StringBuilder(text)]
 
@@ -2564,7 +2574,7 @@ final class GroovyMethodsTest {
 
         def data = [text,      // String
                     "${text}", // GString
-                    java.nio.CharBuffer.wrap(text),
+                    CharBuffer.wrap(text),
                     new StringBuffer(text),
                     new StringBuilder(text)]
 

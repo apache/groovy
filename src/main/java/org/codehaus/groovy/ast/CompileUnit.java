@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast;
 
 import groovy.lang.GroovyClassLoader;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -296,7 +297,7 @@ public class CompileUnit implements NodeMetaDataHandler {
     /**
      * Marks a class for compilation and associates it with its source location.
      * This method does not perform actual compilation—it is only a marker that the class
-     * should be compiled by the {@link org.codehaus.groovy.control.CompilationUnit} at the end of a parse step.
+     * should be compiled by the {@link CompilationUnit} at the end of a parse step.
      * No marked class should remain by the end of compilation.
      *
      * @param node the {@link ClassNode} to compile

@@ -135,7 +135,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Converts the GString to a File, or delegates to the default
-     * {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#asType(Object,Class)}.
+     * {@link DefaultGroovyMethods#asType(Object,Class)}.
      *
      * @param self a GString
      * @param c    the desired class
@@ -175,7 +175,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * <li>Subclasses of Enum</li>
      * </ul>
      * If any other type is given, the call is delegated to
-     * {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#asType(Object,Class)}.
+     * {@link DefaultGroovyMethods#asType(Object,Class)}.
      *
      * @param self a String
      * @param c    the desired class
@@ -345,7 +345,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Provides an implementation of contains() like {@link java.util.Collection#contains(Object)} to make CharSequences more polymorphic.
+     * Provides an implementation of contains() like {@link Collection#contains(Object)} to make CharSequences more polymorphic.
      *
      * @param self a CharSequence
      * @param text the CharSequence to look for
@@ -1621,7 +1621,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Gets a replacement corresponding to the matched pattern for {@link org.codehaus.groovy.runtime.StringGroovyMethods#replaceAll(CharSequence,Pattern,Closure)}.
+     * Gets a replacement corresponding to the matched pattern for {@link StringGroovyMethods#replaceAll(CharSequence,Pattern,Closure)}.
      * <p>
      * The closure is called with a parameter determined as follows:
      * <ul>
@@ -1889,7 +1889,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * 'Case' implementation for the {@link java.util.regex.Pattern} class, which allows
+     * 'Case' implementation for the {@link Pattern} class, which allows
      * testing a String against a number of regular expressions.
      * <p>
      * For example:
@@ -2017,14 +2017,14 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Returns an {@link java.util.Iterator} which traverses each match.
+     * Returns an {@link Iterator} which traverses each match.
      *
      * @param self a Matcher object
      * @return an Iterator for a Matcher
      *
      * @since 1.0
      *
-     * @see java.util.regex.Matcher#group()
+     * @see Matcher#group()
      */
     public static Iterator iterator(final Matcher self) {
         self.reset();
@@ -2676,8 +2676,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * Note that backslashes ({@code \}) and dollar signs ({@code $}) in the
      * replacement string may cause the results to be different from if it were
      * being treated as a literal replacement string; see
-     * {@link java.util.regex.Matcher#replaceAll}.
-     * Use {@link java.util.regex.Matcher#quoteReplacement} to suppress the special
+     * {@link Matcher#replaceAll}.
+     * Use {@link Matcher#quoteReplacement} to suppress the special
      * meaning of these characters, if desired.
      * <p>
      * <pre class="language-groovy groovyTestCase">
@@ -2734,7 +2734,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @since 1.8.2
      *
-     * @see java.util.regex.Matcher#quoteReplacement(String)
+     * @see Matcher#quoteReplacement(String)
      */
     public static String replaceAll(final CharSequence self, final Pattern pattern, @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) final Closure closure) {
         final CharSequence cs = Objects.requireNonNull(RegexGuard.prepare(self), "self");
@@ -2799,8 +2799,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * Note that backslashes ({@code \}) and dollar signs ({@code $}) in the
      * replacement string may cause the results to be different from if it were
      * being treated as a literal replacement string; see
-     * {@link java.util.regex.Matcher#replaceFirst}.
-     * Use {@link java.util.regex.Matcher#quoteReplacement} to suppress the special
+     * {@link Matcher#replaceFirst}.
+     * Use {@link Matcher#quoteReplacement} to suppress the special
      * meaning of these characters, if desired.
      * <p>
      * <pre class="language-groovy groovyTestCase">
@@ -4454,7 +4454,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * This is Groovy's structured alternative to .NET regex balancing groups
      * ({@code (?&lt;Open&gt;…)} / {@code (?&lt;Close-Open&gt;…)} / {@code (?(Open)(?!))}).
      * Delegates to {@link BalancedGroup#find(CharSequence, String, String)}.
-     * Java {@link java.util.regex.Pattern} cannot express capture-stack push/pop, so
+     * Java {@link Pattern} cannot express capture-stack push/pop, so
      * nesting is resolved with an explicit stack and the result is a tree of
      * {@link BalancedGroup} nodes (with {@link BalancedGroup#getStart()}/{@link BalancedGroup#getEnd()}
      * offsets comparable to .NET {@code Capture.Index}/{@code Length}).

@@ -18,9 +18,11 @@
  */
 package org.codehaus.groovy.control.messages;
 
+import org.codehaus.groovy.control.ErrorFormat;
+
 /**
  * A format-neutral view of a {@link Message}: what it says and, when known, the
- * source and position it applies to. {@link org.codehaus.groovy.control.ErrorFormat}
+ * source and position it applies to. {@link ErrorFormat}
  * renders its non-default layouts from this, so a new layout needs no change to the
  * message classes (GROOVY-12312).
  *

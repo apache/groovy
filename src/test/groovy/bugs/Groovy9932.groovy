@@ -18,6 +18,7 @@
  */
 package bugs
 
+import groovy.mock.interceptor.MockFor
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.jupiter.api.Test
 
@@ -29,7 +30,7 @@ final class Groovy9932 {
     void testMockCallChain() {
         assumeFalse(CompilerConfiguration.DEFAULT.isIndyEnabled())
 
-        new groovy.mock.interceptor.MockFor(Helper).tap {
+        new MockFor(Helper).tap {
             demand.publicMethod { -> 'intercepted' }
             ignore 'getMyString'
         }.use {

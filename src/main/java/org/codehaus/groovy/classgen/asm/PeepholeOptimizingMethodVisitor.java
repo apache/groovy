@@ -18,10 +18,12 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ConstantDynamic;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
@@ -274,7 +276,7 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
      * {@code delegate}.
      *
      * @param delegate the next method visitor in the chain (for example a
-     *        {@link org.objectweb.asm.MethodWriter} or {@link TraceMethodVisitor})
+     *        {@code org.objectweb.asm.MethodWriter} or {@link TraceMethodVisitor})
      */
     public PeepholeOptimizingMethodVisitor(final MethodVisitor delegate) {
         super(CompilerConfiguration.ASM_API_VERSION, delegate);
@@ -286,7 +288,7 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
      * otherwise wraps it.
      * <p>
      * Returning {@code null} unchanged matches the ASM contract that
-     * {@link org.objectweb.asm.ClassVisitor#visitMethod} may return {@code null}
+     * {@link ClassVisitor#visitMethod} may return {@code null}
      * to skip a method body. Used by {@link PeepholeOptimizingClassVisitor#visitMethod}
      * so nested or repeated wrapping does not stack multiple peephole layers.
      *
@@ -306,7 +308,7 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
      * layers to find a {@link TraceMethodVisitor}, then prints that visitor's
      * recorded instruction text to {@code out}.
      * <p>
-     * {@link org.codehaus.groovy.classgen.AsmClassGenerator} uses this when
+     * {@link AsmClassGenerator} uses this when
      * {@code visitMaxs} fails under classgen logging: the outer visitor is a
      * peephole wrapper, so a direct {@code instanceof TraceMethodVisitor} check
      * would miss the tracer sitting further down the chain.

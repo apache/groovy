@@ -53,6 +53,7 @@ import org.codehaus.groovy.util.LockableObject;
 import org.codehaus.groovy.util.ManagedConcurrentLinkedQueue;
 import org.codehaus.groovy.util.ManagedReference;
 import org.codehaus.groovy.util.ReferenceBundle;
+import org.codehaus.groovy.vmplugin.VMPlugin;
 
 import java.io.Serial;
 import java.lang.invoke.SwitchPoint;
@@ -166,12 +167,12 @@ public class ClassInfo implements Finalizable {
      * hierarchy walks re-resolve live on the dynamic route (see
      * {@link IndyInvalidation}). Callers that previously relied on
      * {@code incVersion()} as a global “flush everything” hammer should invoke
-     * {@link org.codehaus.groovy.vmplugin.VMPlugin#invalidateCallSites()} (or
+     * {@link VMPlugin#invalidateCallSites()} (or
      * {@link IndyInvalidation#invalidateCategory()}) explicitly when a bulk flush
      * is required. Unrelated classes keep their optimized targets.
      * <p>
      * Category enter/leave still bulk-invalidates MetaClass SwitchPoints via
-     * {@link org.codehaus.groovy.vmplugin.VMPlugin#invalidateCallSites()}.
+     * {@link VMPlugin#invalidateCallSites()}.
      * SwitchPoint policy is owned by {@link IndyInvalidation}; this method only
      * bumps generation then delegates exact-class invalidation.
      */

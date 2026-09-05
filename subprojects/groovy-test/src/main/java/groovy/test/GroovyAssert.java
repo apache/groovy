@@ -22,6 +22,7 @@ import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.junit.Assert;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -34,9 +35,9 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.isAtLeast;
 
 /**
  * <p>{@code GroovyAssert} contains a set of static assertion and test helper methods for JUnit 4+.
- * They augment the kind of helper methods found in JUnit 4's {@link org.junit.Assert} class.
+ * They augment the kind of helper methods found in JUnit 4's {@link Assert} class.
  * JUnit 3 users typically don't use these methods but instead,
- * the equivalent methods in {@link groovy.test.GroovyTestCase}.
+ * the equivalent methods in {@link GroovyTestCase}.
  * </p>
  *
  * <p>
@@ -53,7 +54,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.isAtLeast;
  * </pre>
  * </p>
  * <em>Backwards compatibility note:</em>
- * Prior to Groovy 4, {@code GroovyAssert} extended JUnit 4's {@link org.junit.Assert} class.
+ * Prior to Groovy 4, {@code GroovyAssert} extended JUnit 4's {@link Assert} class.
  * This meant that you could statically import static methods from that class via {@code GroovyAssert}, e.g.:
  * <pre>
  *     import static groovy.test.GroovyAssert.assertNotNull
@@ -64,7 +65,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.isAtLeast;
  *     import static org.junit.Assert.assertNotNull
  * </pre>
  *
- * @see groovy.test.GroovyTestCase
+ * @see GroovyTestCase
  * @since 2.3
  */
 public class GroovyAssert {

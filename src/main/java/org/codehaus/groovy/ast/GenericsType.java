@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.StringJoiner;
 
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
@@ -133,7 +134,7 @@ public class GenericsType extends ASTNode {
 
     private static String genericsBounds(final ClassNode theType, final Set<String> visited) {
         if (theType instanceof WideningCategories.LowestUpperBoundClassNode) {
-            var ret = new java.util.StringJoiner(" & ");
+            var ret = new StringJoiner(" & ");
             for (ClassNode type : theType.asGenericsType().getUpperBounds()) {
                 ret.add(genericsBounds(type, visited));
             }

@@ -47,7 +47,7 @@ public class SourceURIASTTransformation extends AbstractASTTransformation {
     private static final Class<SourceURI> MY_CLASS = SourceURI.class;
     private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode URI_TYPE = ClassHelper.make(java.net.URI.class);
+    private static final ClassNode URI_TYPE = ClassHelper.make(URI.class);
 
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {

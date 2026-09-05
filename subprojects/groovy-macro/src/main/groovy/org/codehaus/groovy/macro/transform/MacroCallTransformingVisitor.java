@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.macro.runtime.Macro;
 import org.codehaus.groovy.macro.runtime.MacroContext;
 import org.codehaus.groovy.macro.runtime.MacroStub;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -129,7 +130,7 @@ class MacroCallTransformingVisitor extends ClassCodeVisitorSupport {
 
     /**
      * Finds all extension methods of {@link MacroContext} for given methodName
-     * with @{@link org.codehaus.groovy.macro.runtime.Macro} annotation.
+     * with @{@link Macro} annotation.
      */
     private List<MethodNode> findMacroMethods(String methodName, List<Expression> callArguments) {
         List<MethodNode> methods = MACRO_METHOD_CACHE.get(classLoader).get(methodName);

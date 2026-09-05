@@ -54,6 +54,7 @@ import org.codehaus.groovy.ast.query.AstQuery;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.classgen.FinalVariableAnalyzer;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.VerifierCodeVisitor;
@@ -685,7 +686,7 @@ public class JavaStubGenerator {
     }
 
     private static boolean sameParameterTypes(final Parameter[] firstParams, final Parameter[] secondParams) {
-        return org.codehaus.groovy.ast.tools.ParameterUtils.parametersEqual(firstParams, secondParams);
+        return ParameterUtils.parametersEqual(firstParams, secondParams);
     }
 
     private void printConstructors(final PrintWriter out, final ClassNode classNode) {

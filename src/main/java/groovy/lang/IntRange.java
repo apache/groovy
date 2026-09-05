@@ -306,7 +306,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
      * It is not necessary to override <code>hashCode</code>, as
      * {@link AbstractList#hashCode()} provides a suitable hash code.<p>
      * <p>
-     * Note that equals is generally handled by {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#equals(List, List)}
+     * Note that equals is generally handled by {@link DefaultGroovyMethods#equals(List, List)}
      * instead of this method.
      *
      * @param that the object to compare

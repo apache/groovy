@@ -18,9 +18,13 @@
  */
 package groovy
 
+import groovy.transform.TypeChecked
 import org.junit.jupiter.api.Test
 
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+
+import java.util.List
+import java.util.Map
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -54,9 +58,9 @@ final class InstanceofTest {
     void testFullyQualifiedClass() {
         def l = [1, 2, 3]
 
-        assert (l instanceof java.util.List)
-        assert !(l instanceof java.util.Map)
-        assert (l !instanceof java.util.Map)
+        assert (l instanceof List)
+        assert !(l instanceof Map)
+        assert (l !instanceof Map)
     }
 
     @Test
@@ -212,7 +216,7 @@ final class InstanceofTest {
         assert err.message =~ /No such property: s/
 
         def shell = GroovyShell.withConfig {
-            ast groovy.transform.TypeChecked
+            ast TypeChecked
         }
 
         err = shouldFail shell, '''
@@ -409,7 +413,7 @@ final class InstanceofTest {
     @Test
     void testVariableOrRightHandSideNotInScope() {
         def shell = GroovyShell.withConfig {
-            ast groovy.transform.TypeChecked
+            ast TypeChecked
         }
         def err = shouldFail shell, '''
             @groovy.transform.TypeChecked
@@ -439,7 +443,7 @@ final class InstanceofTest {
     @Test
     void testVariableTernaryFalseBranchNotInScope() {
         def shell = GroovyShell.withConfig {
-            ast groovy.transform.TypeChecked
+            ast TypeChecked
         }
         def err = shouldFail shell, '''
             @groovy.transform.TypeChecked
@@ -563,7 +567,7 @@ final class InstanceofTest {
     @Test
     void testVariableScopeEarlyReturnTypeChecked() {
         def shell = GroovyShell.withConfig {
-            ast groovy.transform.TypeChecked
+            ast TypeChecked
         }
         assert shell.evaluate('''
             @groovy.transform.TypeChecked
@@ -583,7 +587,7 @@ final class InstanceofTest {
     @Test
     void testVariableScopePositiveNotInElseTypeChecked() {
         def shell = GroovyShell.withConfig {
-            ast groovy.transform.TypeChecked
+            ast TypeChecked
         }
         def err = shouldFail shell, '''
             Number n = 12345
@@ -599,7 +603,7 @@ final class InstanceofTest {
     @Test
     void testVariableScopeNegatedInElseTypeChecked() {
         def shell = GroovyShell.withConfig {
-            ast groovy.transform.TypeChecked
+            ast TypeChecked
         }
         assert shell.evaluate('''
             @groovy.transform.TypeChecked

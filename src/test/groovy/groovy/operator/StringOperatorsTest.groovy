@@ -20,6 +20,8 @@ package groovy.operator
 
 import org.junit.jupiter.api.Test
 
+import java.util.regex.Pattern
+
 
 class StringOperatorsTest {
 
@@ -71,6 +73,6 @@ class StringOperatorsTest {
         String value="test"
         String s = "^\\S+$value\$"
         def p = ~s
-        assert p instanceof java.util.regex.Pattern
+        assert p instanceof Pattern
     }
 }

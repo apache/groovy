@@ -24,6 +24,7 @@ import javax.management.MBeanServer
 import javax.management.NotificationFilter
 import javax.management.NotificationFilterSupport
 import javax.management.ObjectName
+import javax.management.timer.Timer
 
 /**
  * The JmxTimerFactory class generates a timer() node for JmxBuilder.  This node crates a standard JMX Timer object
@@ -57,7 +58,7 @@ class JmxTimerFactory extends AbstractFactory {
             throw new JmxBuilderException("Node '${nodeName}' only supports named attributes.")
         }
         JmxBuilder fsb = (JmxBuilder) builder
-        javax.management.timer.Timer timer = new javax.management.timer.Timer()
+        Timer timer = new Timer()
         def metaMap = [:]
         metaMap.server = fsb.getMBeanServer()
         metaMap.timer = timer

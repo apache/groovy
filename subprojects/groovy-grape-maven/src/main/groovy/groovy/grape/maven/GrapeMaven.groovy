@@ -52,6 +52,8 @@ import org.eclipse.aether.transfer.TransferEvent
 import org.eclipse.aether.util.graph.selector.AndDependencySelector
 import org.eclipse.aether.util.repository.SimpleArtifactDescriptorPolicy
 
+import java.lang.reflect.Field
+import java.util.Map
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
@@ -85,9 +87,9 @@ class GrapeMaven implements GrapeEngine {
             Class<?> lfc = Class.forName('org.slf4j.LoggerFactory')
             Object ilf = lfc.getMethod('getILoggerFactory').invoke(null)
             if (ilf != null && ilf.getClass().getName() == 'org.slf4j.simple.SimpleLoggerFactory') {
-                java.lang.reflect.Field f = ilf.getClass().getDeclaredField('loggerMap')
+                Field f = ilf.getClass().getDeclaredField('loggerMap')
                 f.setAccessible(true)
-                ((java.util.Map) f.get(ilf)).clear()
+                ((Map) f.get(ilf)).clear()
             }
         } catch (Exception ignored) {
             // Not using slf4j-simple, or reflection failed — best effort only

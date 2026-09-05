@@ -42,6 +42,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.objectweb.asm.Opcodes;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -394,7 +395,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
 
         if (classType != null) {
             Expression argsToUse = argsExp;
-            if (classType.getOuterClass() != null && ((classType.getModifiers() & org.objectweb.asm.Opcodes.ACC_STATIC) == 0)) {
+            if (classType.getOuterClass() != null && ((classType.getModifiers() & Opcodes.ACC_STATIC) == 0)) {
                 if (!(argsExp instanceof ArgumentListExpression argsListExp)) {
                     addError("Non-static inner constructor arguments must be an argument list expression; pass 'this' pointer explicitly as first constructor argument otherwise.", mce);
                     return mce;

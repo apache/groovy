@@ -18,6 +18,7 @@
  */
 package groovy.json
 
+import org.apache.groovy.json.internal.CharBuf
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -25,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals
 
 /**
  * A JSON string whose escape sequence is truncated by the end of the document used to run
- * {@link org.apache.groovy.json.internal.CharBuf#decodeJsonString} one character off the end of the
+ * {@link CharBuf#decodeJsonString} one character off the end of the
  * slice: the escape branch was guarded by {@code index < to}, always true inside the loop, so a
  * backslash in the final position did {@code index++} and read {@code chars[to]}. On the default
  * {@link JsonSlurper} that surfaced as a raw {@link ArrayIndexOutOfBoundsException} instead of the

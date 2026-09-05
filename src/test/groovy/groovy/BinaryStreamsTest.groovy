@@ -20,6 +20,8 @@ package groovy
 
 import org.junit.jupiter.api.Test
 
+import java.util.ArrayList
+
 
 /**
  * Test case for DefaultGroovyMethods involving Object streams and data streams.
@@ -41,7 +43,7 @@ final class BinaryStreamsTest {
 
         def ois = temp1.newObjectInputStream()
         def readFirst = ois.readObject()
-        assert readFirst.getClass() == java.util.ArrayList
+        assert readFirst.getClass() == ArrayList
         assert readFirst[0] == 55
         assert readFirst[1][0] == 78
         assert readFirst[1][1] == readFirst

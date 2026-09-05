@@ -21,6 +21,8 @@ package org.codehaus.groovy.control.customizers
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.SwitchExpression
+import org.codehaus.groovy.ast.stmt.YieldStatement
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.runtime.InvokerHelper
@@ -160,7 +162,7 @@ final class SecureASTCustomizerTest {
         '''
         def shell = new GroovyShell(configuration)
         shell.evaluate(script) // authorized: selector, arms and yields are all visited
-        customizer.disallowedExpressions = [org.codehaus.groovy.ast.expr.SwitchExpression]
+        customizer.disallowedExpressions = [SwitchExpression]
         assert hasSecurityException {
             shell.evaluate(script)
         }
@@ -168,7 +170,7 @@ final class SecureASTCustomizerTest {
 
     @Test // GROOVY-12255
     void testDisallowedYieldStatement() {
-        customizer.disallowedStatements = [org.codehaus.groovy.ast.stmt.YieldStatement]
+        customizer.disallowedStatements = [YieldStatement]
         def shell = new GroovyShell(configuration)
         shell.evaluate('1+1')
         assert hasSecurityException {

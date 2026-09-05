@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.AutoFinal
+import groovy.transform.CompileStatic
 import groovy.transform.SelfType
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.ast.ClassNode
@@ -68,7 +69,7 @@ trait StaticCompilationTestSupport {
                             'org.codehaus.groovy.control.CompilePhase',
                             'org.codehaus.groovy.transform.stc.StaticTypesMarker')
                 },
-                new ASTTransformationCustomizer(groovy.transform.CompileStatic),
+                new ASTTransformationCustomizer(CompileStatic),
                 new ASTTreeCollector(this)
         )
         configure()

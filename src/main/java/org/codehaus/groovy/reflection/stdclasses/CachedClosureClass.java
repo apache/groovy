@@ -18,12 +18,13 @@
  */
 package org.codehaus.groovy.reflection.stdclasses;
 
+import groovy.lang.Closure;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ClassInfo;
 
 /**
- * Provides optimized reflection caching for Groovy {@link groovy.lang.Closure} classes.
+ * Provides optimized reflection caching for Groovy {@link Closure} classes.
  * Analyzes closure {@code doCall} methods to determine parameter types and maximum parameters.
  */
 public class CachedClosureClass extends CachedClass {

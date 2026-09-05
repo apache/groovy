@@ -21,6 +21,8 @@ package groovy.lang;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This {@link Interceptor} traces method calls on the proxied object to a log.
@@ -133,9 +135,9 @@ public class TracingInterceptor implements Interceptor {
      * @throws IOException if the trace output cannot be written
      */
     protected void writeInfo(final Class aClass, final String methodName, final Object[] arguments) throws IOException {
-        String argumentTypes = java.util.stream.Stream.of(arguments)
+        String argumentTypes = Stream.of(arguments)
                 .map(arg -> arg != null ? arg.getClass().getName() : "java.lang.Object") // GROOVY-10009
-                .collect(java.util.stream.Collectors.joining(", "));
+                .collect(Collectors.joining(", "));
         String result = aClass.getName() + '.' + methodName + '(' + argumentTypes + ')';
         writer.write(result);
     }

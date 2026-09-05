@@ -37,11 +37,13 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.Stack;
 
 /**
@@ -910,7 +912,7 @@ public class Node implements Serializable, Cloneable {
         Map<String, Object> map = new LinkedHashMap<>();
 
         // copy attributes, tracking which keys came from attributes
-        java.util.Set<String> attributeKeys = new java.util.HashSet<>();
+        Set<String> attributeKeys = new HashSet<>();
         for (Map.Entry<?, ?> entry : ((Map<?, ?>) attributes()).entrySet()) {
             String key = nameAsString(entry.getKey());
             map.put(key, entry.getValue());

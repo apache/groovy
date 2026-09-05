@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import groovy.lang.Reference;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -80,7 +81,7 @@ import static org.objectweb.asm.Opcodes.SWAP;
 
 /**
  * Tracks the JVM operand stack during bytecode generation, maintaining a
- * parallel list of {@link org.codehaus.groovy.ast.ClassNode} type descriptors for each slot.
+ * parallel list of {@link ClassNode} type descriptors for each slot.
  * Used to emit correct pop/cast/box instructions and to verify stack discipline.
  */
 public class OperandStack {
@@ -605,7 +606,7 @@ public class OperandStack {
      * otherwise loads the variable's value onto the stack.
      *
      * @param variable              the bytecode variable to load or store
-     * @param useReferenceDirectly  if {@code true}, loads the {@link groovy.lang.Reference}
+     * @param useReferenceDirectly  if {@code true}, loads the {@link Reference}
      *                              wrapper directly rather than unboxing it
      */
     public void loadOrStoreVariable(final BytecodeVariable variable, final boolean useReferenceDirectly) {
@@ -634,7 +635,7 @@ public class OperandStack {
 
     /**
      * Stores the top operand stack value into {@code variable}, casting to the variable's
-     * declared type. Handles both plain variables and {@link groovy.lang.Reference}-wrapped
+     * declared type. Handles both plain variables and {@link Reference}-wrapped
      * closure-shared variables.
      *
      * @param variable the bytecode variable slot to store into

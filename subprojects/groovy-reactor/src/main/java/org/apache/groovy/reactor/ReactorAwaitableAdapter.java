@@ -24,6 +24,8 @@ import org.apache.groovy.runtime.async.GroovyPromise;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.ServiceLoader;
+
 /**
  * Adapter for Project Reactor types, enabling:
  * <ul>
@@ -31,7 +33,7 @@ import reactor.core.publisher.Mono;
  *   <li>{@code for await (item in flux)} — iterates over a {@link Flux}</li>
  * </ul>
  * <p>
- * Auto-discovered via {@link java.util.ServiceLoader} when {@code groovy-reactor}
+ * Auto-discovered via {@link ServiceLoader} when {@code groovy-reactor}
  * is on the classpath.
  *
  * @since 6.0.0

@@ -21,7 +21,7 @@ package org.codehaus.groovy.reflection.stdclasses;
 import org.codehaus.groovy.reflection.ClassInfo;
 
 /**
- * Provides optimized reflection caching for {@code byte} and {@link java.lang.Byte}.
+ * Provides optimized reflection caching for {@code byte} and {@link Byte}.
  * Coerces numeric arguments to byte values for type-safe method invocation.
  * Optionally allows {@code null} values for the boxed {@link Byte} class variant.
  */

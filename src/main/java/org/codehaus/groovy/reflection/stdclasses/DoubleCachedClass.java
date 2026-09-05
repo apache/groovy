@@ -24,7 +24,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 /**
- * Provides optimized reflection caching for {@code double} and {@link java.lang.Double}.
+ * Provides optimized reflection caching for {@code double} and {@link Double}.
  * Coerces numeric arguments to double values, with validation to prevent overflow to infinity.
  * Optionally allows {@code null} values for the boxed {@link Double} class variant.
  */

@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.contracts.ast;
 
+import groovy.contracts.Modifies;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -43,7 +44,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Handles {@link groovy.contracts.Modifies} annotations placed on methods.
+ * Handles {@link Modifies} annotations placed on methods.
  * Extracts the declared modification targets (fields and parameters) from
  * the annotation closure and stores them as node metadata on the {@link MethodNode}.
  * <p>
@@ -52,7 +53,7 @@ import java.util.Set;
  * (such as {@code @Ensures} validation) can read this metadata.
  *
  * @since 6.0.0
- * @see groovy.contracts.Modifies
+ * @see Modifies
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class ModifiesASTTransformation implements ASTTransformation {

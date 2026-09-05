@@ -27,7 +27,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.io.ReaderSource;
 
 /**
- * Checks whether the given {@link org.codehaus.groovy.ast.ClassNode} is relevant for
+ * Checks whether the given {@link ClassNode} is relevant for
  * further processing.
  */
 public class ContractElementVisitor extends BaseVisitor implements ASTNodeMetaData {

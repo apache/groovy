@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.control.messages;
 
+import org.codehaus.groovy.control.ErrorFormat;
 import org.codehaus.groovy.control.Janitor;
 import org.codehaus.groovy.control.ProcessingUnit;
 import org.codehaus.groovy.control.SourceUnit;
@@ -57,7 +58,7 @@ public abstract class Message {
     /**
      * Writes this message to the specified {@link PrintWriter}. This is the full,
      * human-oriented rendering; other layouts are produced by
-     * {@link org.codehaus.groovy.control.ErrorFormat} from {@link #toDiagnostic()}.
+     * {@link ErrorFormat} from {@link #toDiagnostic()}.
      */
     public abstract void write(PrintWriter writer, Janitor janitor);
 

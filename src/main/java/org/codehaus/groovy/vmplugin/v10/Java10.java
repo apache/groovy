@@ -18,12 +18,13 @@
  */
 package org.codehaus.groovy.vmplugin.v10;
 
+import org.codehaus.groovy.vmplugin.v17.Java17;
 import org.codehaus.groovy.vmplugin.v9.Java9;
 
 import java.util.Arrays;
 
 /**
- * @deprecated Use {@link org.codehaus.groovy.vmplugin.v17.Java17} instead. Groovy 6.0 requires JDK 17+.
+ * @deprecated Use {@link Java17} instead. Groovy 6.0 requires JDK 17+.
  */
 @Deprecated(since = "6.0.0", forRemoval = true)
 @SuppressWarnings("removal")

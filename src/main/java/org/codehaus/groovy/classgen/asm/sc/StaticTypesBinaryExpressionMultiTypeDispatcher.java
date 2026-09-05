@@ -43,6 +43,7 @@ import org.codehaus.groovy.syntax.TokenUtil;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
@@ -304,7 +305,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                 // that.x = ... should not use non-public setter for map
                 setterMethod = null;
             } else { // GROOVY-11119
-                java.util.List<MethodNode> setters = receiverType.getMethods(setterName);
+                List<MethodNode> setters = receiverType.getMethods(setterName);
                 setters.removeIf(s -> s.isAbstract() || s.getParameters().length != 1);
                 if (setters.size() > 1) setterMethod = null;
             }

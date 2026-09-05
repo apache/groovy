@@ -20,6 +20,7 @@ package org.codehaus.groovy.ast.stmt;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.transform.ASTTransformation;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -106,7 +107,7 @@ public class Statement extends ASTNode {
     /**
      * Returns the list of statement-level annotations attached to this statement.
      * These are Groovy-only source-retention annotations that do not appear at the
-     * JVM level; they are processed by registered {@link org.codehaus.groovy.transform.ASTTransformation}s.
+     * JVM level; they are processed by registered {@link ASTTransformation}s.
      *
      * @return an unmodifiable view of the annotations list, never {@code null}
      * @since 6.0.0
@@ -139,7 +140,7 @@ public class Statement extends ASTNode {
 
     /**
      * Returns true if this statement is empty or produces no side effects.
-     * Typically only {@link org.codehaus.groovy.ast.stmt.EmptyStatement} returns true.
+     * Typically only {@link EmptyStatement} returns true.
      *
      * @return true if this statement is empty
      */

@@ -115,7 +115,7 @@ class AstBuilderFromCodeTest {
         def expected = new AstBuilder().buildFromString(""" println "Hello World" """)
 
         // it is important for this to remain a method invocation on a fully qualified class name
-        def result = new org.codehaus.groovy.ast.builder.AstBuilder().buildFromCode {
+        def result = new AstBuilder().buildFromCode {
             println "Hello World"
         }
         AstAssert.assertSyntaxTree(expected, result)

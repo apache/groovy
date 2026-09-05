@@ -26,6 +26,8 @@ import org.codehaus.groovy.classgen.VariableScopeVisitor.InstanceofFlowBindings
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.ast.CodeVisitorSupport
+import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.junit.jupiter.api.Test
 
 final class InstanceofFlowBindingsTest {
@@ -470,14 +472,14 @@ final class InstanceofFlowBindingsTest {
         Expression found = null
         cu.ast.classes[0].getMethods('m')[0].code.visit(new CodeVisitorSupport() {
             @Override
-            void visitMethodCallExpression(org.codehaus.groovy.ast.expr.MethodCallExpression call) {
+            void visitMethodCallExpression(MethodCallExpression call) {
                 if (call.methodAsString == 'm' || call.objectExpression.text == 'this') {
                     found = call
                 }
                 super.visitMethodCallExpression(call)
             }
             @Override
-            void visitExpressionStatement(org.codehaus.groovy.ast.stmt.ExpressionStatement stmt) {
+            void visitExpressionStatement(ExpressionStatement stmt) {
                 found = stmt.expression
                 super.visitExpressionStatement(stmt)
             }

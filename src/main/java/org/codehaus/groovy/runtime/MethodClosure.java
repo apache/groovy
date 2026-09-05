@@ -23,6 +23,9 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamException;
 import java.io.Serial;
 import java.util.Arrays;
 
@@ -168,7 +171,7 @@ public class MethodClosure extends Closure {
     }
 
     @Serial
-    private void readObject(final java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
+    private void readObject(final ObjectInputStream stream) throws IOException, ClassNotFoundException {
         if (ALLOW_RESOLVE) {
             stream.defaultReadObject();
         }
@@ -176,7 +179,7 @@ public class MethodClosure extends Closure {
     }
 
     @Serial
-    private Object readResolve() throws java.io.ObjectStreamException {
+    private Object readResolve() throws ObjectStreamException {
         if (ALLOW_RESOLVE) {
             Closure.checkForReferenceCycle(this);
             return this;

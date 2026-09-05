@@ -113,7 +113,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
             if (mNode instanceof ConstructorNode) {
                 declaringClass.getDeclaredConstructors().removeIf(StubberSupport::isStub);
             } else {
-                java.util.List<MethodNode> stubs = new java.util.ArrayList<>();
+                List<MethodNode> stubs = new ArrayList<>();
                 for (MethodNode m : declaringClass.getMethods()) {
                     if (StubberSupport.isStub(m)) stubs.add(m);
                 }

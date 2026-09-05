@@ -20,6 +20,7 @@ package org.apache.groovy.contracts.ast;
 
 import groovy.contracts.ThrowsIf;
 import org.apache.groovy.contracts.ThrowsIfSupport;
+import org.apache.groovy.contracts.ThrowsIfViolation;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -105,7 +106,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  * }
  * </pre>
  * A justified throw propagates untouched (defined behaviour); a broken
- * implementation raises {@link org.apache.groovy.contracts.ThrowsIfViolation},
+ * implementation raises {@link ThrowsIfViolation},
  * never the declared exception. Non-woven arms with no {@code checked} flag
  * anywhere generate nothing — runtime-retained metadata for tools.
  *

@@ -29,6 +29,7 @@ import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import javax.sql.DataSource;
+import java.sql.BatchUpdateException;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -184,7 +185,7 @@ import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
  * or the named parameter variants discussed next.
  * <p>
  * That conversion belongs to the query methods on this class. It does <b>not</b> apply to
- * {@link groovy.sql.BatchingStatementWrapper#addBatch(String) addBatch} inside
+ * {@link BatchingStatementWrapper#addBatch(String) addBatch} inside
  * <code>withBatch { ... }</code>: a JDBC <code>Statement</code> batch may hold different statements,
  * so there is nothing to bind against and the command is used as SQL text. An interpolated value
  * there is composed into the statement, and Groovy logs a warning saying so. To bind values in a
@@ -273,7 +274,7 @@ public class Sql implements AutoCloseable {
      * GString expression surrounded by SQL quotes, e.g. {@code "... where name = '${value}'"})
      * is handled by {@link #asSql(GString, List)}.
      * <p>
-     * Such a construct can't be expressed as a JDBC {@link java.sql.PreparedStatement} placeholder,
+     * Such a construct can't be expressed as a JDBC {@link PreparedStatement} placeholder,
      * so the value would have to be inlined into the SQL string via string concatenation, exposing
      * a SQL injection vulnerability (CWE-89).
      * <p>
@@ -4172,7 +4173,7 @@ public class Sql implements AutoCloseable {
      *         to the order in which commands were added to the batch.
      * @throws SQLException if a database access error occurs,
      *                      or this method is called on a closed <code>Statement</code>, or the
-     *                      driver does not support batch statements. Throws {@link java.sql.BatchUpdateException}
+     *                      driver does not support batch statements. Throws {@link BatchUpdateException}
      *                      (a subclass of <code>SQLException</code>) if one of the commands sent to the
      *                      database fails to execute properly or attempts to return a result set.
      * @see #withBatch(int, Closure)
@@ -4225,7 +4226,7 @@ public class Sql implements AutoCloseable {
      *         to the order in which commands were added to the batch.
      * @throws SQLException if a database access error occurs,
      *                      or this method is called on a closed <code>Statement</code>, or the
-     *                      driver does not support batch statements. Throws {@link java.sql.BatchUpdateException}
+     *                      driver does not support batch statements. Throws {@link BatchUpdateException}
      *                      (a subclass of <code>SQLException</code>) if one of the commands sent to the
      *                      database fails to execute properly or attempts to return a result set.
      * @see #withBatch(Closure)
@@ -4289,7 +4290,7 @@ public class Sql implements AutoCloseable {
      *         to the order in which commands were executed.
      * @throws SQLException if a database access error occurs,
      *                      or this method is called on a closed <code>Statement</code>, or the
-     *                      driver does not support batch statements. Throws {@link java.sql.BatchUpdateException}
+     *                      driver does not support batch statements. Throws {@link BatchUpdateException}
      *                      (a subclass of <code>SQLException</code>) if one of the commands sent to the
      *                      database fails to execute properly or attempts to return a result set.
      * @see #withBatch(int, String, Closure)
@@ -4364,7 +4365,7 @@ public class Sql implements AutoCloseable {
      *         to the order in which commands were executed.
      * @throws SQLException if a database access error occurs,
      *                      or this method is called on a closed <code>Statement</code>, or the
-     *                      driver does not support batch statements. Throws {@link java.sql.BatchUpdateException}
+     *                      driver does not support batch statements. Throws {@link BatchUpdateException}
      *                      (a subclass of <code>SQLException</code>) if one of the commands sent to the
      *                      database fails to execute properly or attempts to return a result set.
      * @see BatchingPreparedStatementWrapper

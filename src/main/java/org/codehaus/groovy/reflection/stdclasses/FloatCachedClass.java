@@ -24,7 +24,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 /**
- * Provides optimized reflection caching for {@code float} and {@link java.lang.Float}.
+ * Provides optimized reflection caching for {@code float} and {@link Float}.
  * Coerces numeric arguments to float values, with validation to prevent overflow to infinity.
  * Optionally allows {@code null} values for the boxed {@link Float} class variant.
  */

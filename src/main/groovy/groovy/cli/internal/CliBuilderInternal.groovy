@@ -127,7 +127,7 @@ class CliBuilderInternal {
     final CommandLine.Model.UsageMessageSpec usageMessage = new CommandLine.Model.UsageMessageSpec()
 
     /**
-     * Internal data structure mapping option names to their associated {@link groovy.cli.TypedOption} object.
+     * Internal data structure mapping option names to their associated {@link TypedOption} object.
      */
     Map<String, TypedOption> savedTypeOptions = new HashMap<String, TypedOption>()
 

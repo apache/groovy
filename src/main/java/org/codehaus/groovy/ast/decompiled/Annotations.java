@@ -349,7 +349,7 @@ class Annotations {
      * using double-checked locking pattern. This avoids performing VM plugin configuration during initial
      * annotation parsing, deferring it until retention/target checks are needed.
      *
-     * <p>The lazy initialization calls {@link org.codehaus.groovy.vmplugin.VMPluginFactory#getPlugin()}
+     * <p>The lazy initialization calls {@link VMPluginFactory#getPlugin()}
      * to configure annotation metadata from the annotation's class definition annotations.
      */
     private static class DecompiledAnnotationNode extends AnnotationNode {

@@ -55,9 +55,9 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Visits annotations of meta-type {@link ContractElement} and applies the AST transformations of the underlying
- * {@link org.apache.groovy.contracts.common.spi.AnnotationProcessor} implementation.
+ * {@link AnnotationProcessor} implementation.
  *
- * @see org.apache.groovy.contracts.common.spi.AnnotationProcessor
+ * @see AnnotationProcessor
  */
 public class AnnotationProcessorVisitor extends BaseVisitor {
 

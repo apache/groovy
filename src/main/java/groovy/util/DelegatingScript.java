@@ -19,6 +19,7 @@
 package groovy.util;
 
 import groovy.lang.Binding;
+import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import groovy.lang.MissingMethodException;
@@ -27,7 +28,7 @@ import groovy.lang.Script;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
- * {@link Script} that performs method invocations and property access like {@link groovy.lang.Closure} does.
+ * {@link Script} that performs method invocations and property access like {@link Closure} does.
  *
  * <p>
  * {@link DelegatingScript} is a convenient basis for loading a custom-defined DSL as a {@link Script}, then execute it.

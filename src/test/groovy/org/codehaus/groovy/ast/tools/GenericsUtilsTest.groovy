@@ -24,7 +24,9 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.GenericsType
 import org.codehaus.groovy.ast.InnerClassNode
 import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.MixinNode
 import org.codehaus.groovy.ast.Parameter
+import org.codehaus.groovy.ast.builder.AstStringCompiler
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
@@ -33,12 +35,14 @@ import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor
 import org.junit.jupiter.api.Test
 import org.objectweb.asm.Opcodes
 
+import java.util.function.BiFunction
+
 import static org.junit.jupiter.api.Assertions.assertThrows
 
 final class GenericsUtilsTest {
 
     private static List<ClassNode> compile(String code) {
-        def compiler = new org.codehaus.groovy.ast.builder.AstStringCompiler()
+        def compiler = new AstStringCompiler()
         compiler.compile(code, CompilePhase.INSTRUCTION_SELECTION, false).tail()
     }
 
@@ -209,7 +213,7 @@ final class GenericsUtilsTest {
             import java.util.function.*
             interface Derived extends BinaryOperator<Integer> {}
         '''
-        ClassNode target = ClassHelper.makeWithoutCaching(java.util.function.BiFunction)
+        ClassNode target = ClassHelper.makeWithoutCaching(BiFunction)
         ClassNode source = findClassNode('Derived', classNodeList)
 
         Map<GenericsType, GenericsType> m = GenericsUtils.makeDeclaringAndActualGenericsTypeMapOfExactType(target, source)
@@ -425,7 +429,7 @@ final class GenericsUtilsTest {
 
         ClassNode diamondIface = ClassHelper.LIST_TYPE.getPlainNodeReference()
         diamondIface.genericsTypes = GenericsType.EMPTY_ARRAY
-        ClassNode anon = new InnerClassNode(ClassHelper.OBJECT_TYPE, 'C$2', Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE, [diamondIface] as ClassNode[], org.codehaus.groovy.ast.MixinNode.EMPTY_ARRAY)
+        ClassNode anon = new InnerClassNode(ClassHelper.OBJECT_TYPE, 'C$2', Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE, [diamondIface] as ClassNode[], MixinNode.EMPTY_ARRAY)
         anon.anonymous = true
         assert GenericsUtils.diamondTargetOfAnonymousClass(anon) === diamondIface
 

@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.runtime.async;
 
+import groovy.concurrent.ChannelSelect;
 import groovy.transform.Internal;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -25,7 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * The single-winner state of one selection: the arbiter through which a group
- * of competing offers (the branches of a {@link groovy.concurrent.ChannelSelect},
+ * of competing offers (the branches of a {@link ChannelSelect},
  * or a lone channel operation) commits exactly one outcome between them.
  * <p>
  * A claim is a three-state machine: OPEN, PENDING, or COMMITTED. PENDING is a

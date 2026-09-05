@@ -22,8 +22,8 @@
  *
  * <p>
  * Strategy pattern implementations for property handling during transformations:
- * {@link groovy.transform.options.DefaultPropertyHandler} (standard),
- * {@link groovy.transform.options.ImmutablePropertyHandler} (immutable constraints).
+ * {@link DefaultPropertyHandler} (standard),
+ * {@link ImmutablePropertyHandler} (immutable constraints).
  * </p>
  */
 package groovy.transform.options;

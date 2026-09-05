@@ -78,7 +78,7 @@ public class PostconditionGenerator extends BaseGenerator {
      * to create a map of most instance variables found in this class. Used for the <tt>old</tt> variable
      * mechanism.
      *
-     * @param classNode the {@link org.codehaus.groovy.ast.ClassNode} to add the synthetic method to
+     * @param classNode the {@link ClassNode} to add the synthetic method to
      */
     public void addOldVariablesMethod(final ClassNode classNode) {
         OldVariableGenerationUtility.addOldVariableMethodNode(classNode);
@@ -87,7 +87,7 @@ public class PostconditionGenerator extends BaseGenerator {
     /**
      * Injects a postcondition assertion statement in the given <tt>method</tt>, based on the <tt>booleanExpression</tt>.
      *
-     * @param method        the {@link org.codehaus.groovy.ast.MethodNode} for assertion injection
+     * @param method        the {@link MethodNode} for assertion injection
      * @param postcondition the {@link org.apache.groovy.contracts.domain.Postcondition} the assertion statement should be generated from
      */
     public void generatePostconditionAssertionStatement(MethodNode method, org.apache.groovy.contracts.domain.Postcondition postcondition) {
@@ -111,11 +111,11 @@ public class PostconditionGenerator extends BaseGenerator {
     }
 
     /**
-     * Adds a default postcondition if a postcondition has already been defined for this {@link org.codehaus.groovy.ast.MethodNode}
+     * Adds a default postcondition if a postcondition has already been defined for this {@link MethodNode}
      * in a super-class.
      *
-     * @param type   the current {@link org.codehaus.groovy.ast.ClassNode} of the given <tt>methodNode</tt>
-     * @param method the {@link org.codehaus.groovy.ast.MethodNode} to create the default postcondition for
+     * @param type   the current {@link ClassNode} of the given <tt>methodNode</tt>
+     * @param method the {@link MethodNode} to create the default postcondition for
      */
     public void generateDefaultPostconditionStatement(final ClassNode type, final MethodNode method) {
         boolean noPostconditionInHierarchy = AnnotationUtils.getAnnotationNodeInHierarchyWithMetaAnnotation(type.getSuperClass(), method, ClassHelper.makeWithoutCaching(Postcondition.class)).isEmpty();

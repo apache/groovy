@@ -46,6 +46,7 @@
  */
 package org.codehaus.groovy.jsr223;
 
+import groovy.lang.GString;
 import groovy.lang.GroovySystem;
 
 import javax.script.ScriptEngine;
@@ -213,7 +214,7 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
      * The text is data, so it is rendered as a string literal with every character escaped
      * that would otherwise change what the statement means: the quote and backslash that
      * would end or re-escape the literal, the dollar that would make it an interpolating
-     * {@link groovy.lang.GString}, and the line terminators that would end the line. Other
+     * {@link GString}, and the line terminators that would end the line. Other
      * control characters are legal inside a Groovy string literal and are emitted as they
      * are.
      *

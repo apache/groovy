@@ -25,6 +25,9 @@ import javax.management.MBeanServerConnection
 import javax.management.MBeanServerFactory
 import javax.management.ObjectName
 import java.lang.management.ManagementFactory
+import java.math.BigDecimal
+import java.math.BigInteger
+import java.util.Date
 
 /**
  * This is a utility class used as a helper for JmxBuilder.
@@ -76,7 +79,7 @@ class JmxBuilderTools {
 
     /** Descriptor key for a logical name. */
     static String DESC_KEY_NAME = "name"
-    /** Descriptor key for an {@link javax.management.ObjectName}. */
+    /** Descriptor key for an {@link ObjectName}. */
     static String DESC_KEY_JMX_NAME = "jmxName"
     /** Descriptor key for a display name. */
     static String DESC_KEY_DISPLAY_NAME = "displayName"
@@ -202,18 +205,18 @@ class JmxBuilderTools {
             "Boolean"             : java.lang.Boolean.class,
             "java.lang.Boolean"   : java.lang.Boolean.class,
 
-            "bigDec"              : java.math.BigDecimal.class,
-            "bigDecimal"          : java.math.BigDecimal.class,
-            "BigDecimal"          : java.math.BigDecimal.class,
-            "java.math.BigDecimal": java.math.BigDecimal.class,
+            "bigDec"              : BigDecimal.class,
+            "bigDecimal"          : BigDecimal.class,
+            "BigDecimal"          : BigDecimal.class,
+            "java.math.BigDecimal": BigDecimal.class,
 
-            "bigInt"              : java.math.BigInteger.class,
-            "bigInteger"          : java.math.BigInteger.class,
-            "BigInteger"          : java.math.BigInteger.class,
-            "java.math.BigInteger": java.math.BigInteger.class,
+            "bigInt"              : BigInteger.class,
+            "bigInteger"          : BigInteger.class,
+            "BigInteger"          : BigInteger.class,
+            "java.math.BigInteger": BigInteger.class,
 
-            "date"                : java.util.Date.class,
-            "java.util.Date"      : java.util.Date.class
+            "date"                : Date.class,
+            "java.util.Date"      : Date.class
     ]
 
     /**

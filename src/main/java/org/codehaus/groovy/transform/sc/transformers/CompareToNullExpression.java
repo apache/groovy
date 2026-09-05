@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform.sc.transformers;
 
 import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -92,7 +93,7 @@ public class CompareToNullExpression extends BinaryExpression {
      * @throws UnsupportedOperationException always
      */
     @Override
-    public void setType(final org.codehaus.groovy.ast.ClassNode type) {
+    public void setType(final ClassNode type) {
         throw new UnsupportedOperationException();
     }
 

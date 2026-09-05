@@ -23,6 +23,7 @@ import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -82,7 +83,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
      * @since 6.0.0
      */
     public void setSourcepaths(String[] sourcepaths) {
-        this.sourcepaths = sourcepaths == null ? new String[0] : java.util.Arrays.copyOf(sourcepaths, sourcepaths.length);
+        this.sourcepaths = sourcepaths == null ? new String[0] : Arrays.copyOf(sourcepaths, sourcepaths.length);
     }
 
     /** {@inheritDoc} */

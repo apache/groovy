@@ -22,7 +22,7 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
 
 /**
- * Provides optimized reflection caching for {@link java.lang.Object}.
+ * Provides optimized reflection caching for {@link Object}.
  * The root cached class that accepts all argument types for assignment,
  * making it a universal fallback for method invocation.
  */

@@ -21,6 +21,7 @@ package groovy.swing.factory
 import groovy.util.logging.Log
 
 import javax.swing.*
+import javax.swing.table.DefaultTableColumnModel
 import javax.swing.table.TableColumnModel
 
 /**
@@ -52,7 +53,7 @@ class ColumnModelFactory extends AbstractFactory {
         if (jxTableClass != null && jxTableClass.isAssignableFrom(builder.current.getClass())) {
             return Class.forName("org.jdesktop.swingx.table.DefaultTableColumnModelExt").ngetConstructor().newInstance()
         } else {
-            return new javax.swing.table.DefaultTableColumnModel()
+            return new DefaultTableColumnModel()
         }
     }
 

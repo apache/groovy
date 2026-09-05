@@ -18,6 +18,7 @@
  */
 package groovy.lang
 
+import groovy.transform.ToString
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.fail
@@ -109,7 +110,7 @@ class WithMethodTest {
          fail 'this should never have been called'
      }
 
-     @groovy.transform.ToString(includePackage = false)
+     @ToString(includePackage = false)
      class PersonWith {
          String firstName
          String lastName

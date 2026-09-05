@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.powerassert
 
+import groovy.transform.PackageScope
 import org.junit.jupiter.api.Test
 
 import static org.codehaus.groovy.runtime.powerassert.AssertionTestUtil.fails
@@ -75,14 +76,14 @@ final class AssertionsInDifferentLocationsTest {
     }
 }
 
-@groovy.transform.PackageScope class AssertionInConstructor {
+@PackageScope class AssertionInConstructor {
     def AssertionInConstructor() {
         assert true
         assert false
     }
 }
 
-@groovy.transform.PackageScope class AssertionInConstructorAfterThisCall {
+@PackageScope class AssertionInConstructorAfterThisCall {
     def AssertionInConstructorAfterThisCall() {
         this(true)
         assert true
@@ -92,7 +93,7 @@ final class AssertionsInDifferentLocationsTest {
     def AssertionInConstructorAfterThisCall(flag) {}
 }
 
-@groovy.transform.PackageScope class AssertionInConstructorAfterSuperCall {
+@PackageScope class AssertionInConstructorAfterSuperCall {
     def AssertionInConstructorAfterSuperCall() {
         super()
         assert true
@@ -100,14 +101,14 @@ final class AssertionsInDifferentLocationsTest {
     }
 }
 
-@groovy.transform.PackageScope class AssertionInInstanceInitializer {
+@PackageScope class AssertionInInstanceInitializer {
     {
         assert true
         assert false
     }
 }
 
-@groovy.transform.PackageScope class AssertionInClassInitializer {
+@PackageScope class AssertionInClassInitializer {
     static {
         assert true
         assert false

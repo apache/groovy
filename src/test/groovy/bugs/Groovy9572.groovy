@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test
 /**
  * GROOVY-9572B: the Verifier-generated {@code __$stMC} field (constant
  * {@link Verifier#STATIC_METACLASS_BOOL}) should carry
- * {@link groovy.transform.Internal} so that tooling (groovydoc per GEP-17)
+ * {@link Internal} so that tooling (groovydoc per GEP-17)
  * can hide it from generated documentation of subclasses that inherit it.
  */
 final class Groovy9572 {

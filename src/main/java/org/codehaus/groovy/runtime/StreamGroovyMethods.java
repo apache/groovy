@@ -893,7 +893,7 @@ public class StreamGroovyMethods {
      * <p>
      * No native {@code Stream.toSet()} exists, so this provides the immutable
      * counterpart to {@link #toSet(Stream)}. Null elements are preserved
-     * (unlike {@link java.util.stream.Collectors#toUnmodifiableSet()} which
+     * (unlike {@link Collectors#toUnmodifiableSet()} which
      * rejects nulls); the returned set is unmodifiable and mutation attempts
      * throw {@link UnsupportedOperationException}. Returns the canonical
      * empty set ({@link Collections#emptySet()}) when the stream is empty.

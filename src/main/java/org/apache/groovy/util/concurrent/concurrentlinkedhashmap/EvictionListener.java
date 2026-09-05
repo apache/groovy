@@ -16,6 +16,7 @@
 package org.apache.groovy.util.concurrent.concurrentlinkedhashmap;
 
 import javax.annotation.concurrent.ThreadSafe;
+import java.util.concurrent.ExecutorService;
 
 /**
  * A listener registered for notification when an entry is evicted. An instance
@@ -29,7 +30,7 @@ import javax.annotation.concurrent.ThreadSafe;
  * long execution times or failures as a side effect of the listener being
  * notified. Execution safety and a fast turn around time can be achieved by
  * performing the operation asynchronously, such as by submitting a task to an
- * {@link java.util.concurrent.ExecutorService}.
+ * {@link ExecutorService}.
  *
  * @see <a href="http://code.google.com/p/concurrentlinkedhashmap/">
  *      http://code.google.com/p/concurrentlinkedhashmap/</a>

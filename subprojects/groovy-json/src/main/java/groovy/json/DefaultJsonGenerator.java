@@ -24,6 +24,7 @@ import groovy.lang.MetaProperty;
 import groovy.util.Expando;
 import org.apache.groovy.json.internal.CharBuf;
 import org.apache.groovy.json.internal.Chr;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -263,7 +264,7 @@ public class DefaultJsonGenerator implements JsonGenerator {
      * @return a map of property names to values
      */
     protected Map<?, ?> getObjectProperties(final Object object) {
-        List<MetaProperty> metaProperties = org.codehaus.groovy.runtime.InvokerHelper.getMetaClass(object).getProperties();
+        List<MetaProperty> metaProperties = InvokerHelper.getMetaClass(object).getProperties();
 
         Map<String, Object> namesAndValues = new LinkedHashMap<>(metaProperties.size());
 

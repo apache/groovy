@@ -24,7 +24,7 @@ import java.awt.*
 /**
  * Factory for creating scroll panes.
  */
-class ScrollPaneFactory extends groovy.swing.factory.BeanFactory {
+class ScrollPaneFactory extends BeanFactory {
 
     /**
      * Creates a new factory for creating scroll panes

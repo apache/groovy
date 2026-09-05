@@ -25,8 +25,8 @@ import java.lang.annotation.Target;
 
 /**
  * Indicates Groovy-specific element types on which an annotation is allowed,
- * complementing {@link java.lang.annotation.Target} for constructs that have
- * no corresponding {@link java.lang.annotation.ElementType}.
+ * complementing {@link Target} for constructs that have
+ * no corresponding {@link ElementType}.
  *
  * @see ExtendedElementType
  * @since 6.0.0

@@ -24,6 +24,10 @@ import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.Closeable;
+import java.io.Flushable;
+import java.io.Serializable;
+
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -141,10 +145,10 @@ public final class ClassNodeTest {
     @Test
     public void testIntersectionTypesWithDifferentComponentsAreNotEqual() {
         ClassNode runnableAndSerializable = new IntersectionTypeClassNode(new ClassNode[]{
-                ClassHelper.make(Runnable.class), ClassHelper.make(java.io.Serializable.class)
+                ClassHelper.make(Runnable.class), ClassHelper.make(Serializable.class)
         });
         ClassNode closeableAndFlushable = new IntersectionTypeClassNode(new ClassNode[]{
-                ClassHelper.make(java.io.Closeable.class), ClassHelper.make(java.io.Flushable.class)
+                ClassHelper.make(Closeable.class), ClassHelper.make(Flushable.class)
         });
         assertTrue(!runnableAndSerializable.equals(closeableAndFlushable));
         assertTrue(runnableAndSerializable.hashCode() != closeableAndFlushable.hashCode());

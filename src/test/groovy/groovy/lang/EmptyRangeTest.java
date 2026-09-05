@@ -21,6 +21,7 @@ package groovy.lang;
 import groovy.test.GroovyTestCase;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -51,35 +52,35 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#getFrom()}.
+     * Test method for {@link EmptyRange#getFrom()}.
      */
     public void testGetFrom() {
         assertEquals("wrong 'from' value", AT, range.getFrom());
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#getTo()}.
+     * Test method for {@link EmptyRange#getTo()}.
      */
     public void testGetTo() {
         assertEquals("wrong 'from' value", AT, range.getTo());
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#isReverse()}.
+     * Test method for {@link EmptyRange#isReverse()}.
      */
     public void testIsReverse() {
         assertFalse("empty range reversed", range.isReverse());
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#inspect()}.
+     * Test method for {@link EmptyRange#inspect()}.
      */
     public void testInspect() {
         assertEquals("wrong 'inspect' value", AT + "..<" + AT, range.inspect());
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#inspect()()} with a range with a <code>null</code> 'at' value.
+     * Test method for {@link EmptyRange#inspect()()} with a range with a <code>null</code> 'at' value.
      */
     public void testInspectNullAt() {
         final Range nullAtRange = new EmptyRange(null);
@@ -87,14 +88,14 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#toString()}.
+     * Test method for {@link EmptyRange#toString()}.
      */
     public void testToString() {
         assertEquals("wrong string value", AT + "..<" + AT, range.toString());
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#toString()} with a range with a <code>null</code> 'at' value.
+     * Test method for {@link EmptyRange#toString()} with a range with a <code>null</code> 'at' value.
      */
     public void testToStringNullAt() {
         final Range nullAtRange = new EmptyRange(null);
@@ -102,35 +103,35 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#size()}.
+     * Test method for {@link EmptyRange#size()}.
      */
     public void testSize() {
         assertEquals("wrong size", 0, range.size());
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#clear()}.
+     * Test method for {@link EmptyRange#clear()}.
      */
     public void testClear() {
         range.clear();
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#isEmpty()}.
+     * Test method for {@link EmptyRange#isEmpty()}.
      */
     public void testIsEmpty() {
         assertTrue("range not empty", range.isEmpty());
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#toArray()}.
+     * Test method for {@link EmptyRange#toArray()}.
      */
     public void testToArray() {
         assertArrayEquals(new Object[0], range.toArray());
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#get(int)}.
+     * Test method for {@link EmptyRange#get(int)}.
      */
     public void testGet() {
         try {
@@ -142,7 +143,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#remove(int)}.
+     * Test method for {@link EmptyRange#remove(int)}.
      */
     public void testRemoveInt() {
         try {
@@ -154,7 +155,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#add(int, java.lang.Object)}.
+     * Test method for {@link EmptyRange#add(int, Object)}.
      */
     public void testAddIntObject() {
         try {
@@ -166,7 +167,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#indexOf(java.lang.Object)}.
+     * Test method for {@link EmptyRange#indexOf(Object)}.
      */
     public void testIndexOf() {
         assertEquals("found value in empty range", -1, range.indexOf(AT));
@@ -175,7 +176,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#lastIndexOf(java.lang.Object)}.
+     * Test method for {@link EmptyRange#lastIndexOf(Object)}.
      */
     public void testLastIndexOf() {
         assertEquals("found value in empty range", -1, range.lastIndexOf(AT));
@@ -184,7 +185,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#add(java.lang.Object)}.
+     * Test method for {@link EmptyRange#add(Object)}.
      */
     public void testAddObject() {
         try {
@@ -196,14 +197,14 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#contains(java.lang.Object)}.
+     * Test method for {@link EmptyRange#contains(Object)}.
      */
     public void testContains() {
         assertFalse("empty range contains a value", range.contains(AT));
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#remove(java.lang.Object)}.
+     * Test method for {@link EmptyRange#remove(Object)}.
      */
     public void testRemoveObject() {
         try {
@@ -215,7 +216,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#addAll(int, java.util.Collection)}.
+     * Test method for {@link EmptyRange#addAll(int, Collection)}.
      */
     public void testAddAllIntCollection() {
         try {
@@ -227,7 +228,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#addAll(java.util.Collection)}.
+     * Test method for {@link EmptyRange#addAll(Collection)}.
      */
     public void testAddAllCollection() {
         try {
@@ -239,7 +240,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#containsAll(java.util.Collection)}.
+     * Test method for {@link EmptyRange#containsAll(Collection)}.
      */
     public void testContainsAll() {
         final List list = new ArrayList();
@@ -250,7 +251,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#removeAll(java.util.Collection)}.
+     * Test method for {@link EmptyRange#removeAll(Collection)}.
      */
     public void testRemoveAll() {
         try {
@@ -262,7 +263,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#retainAll(java.util.Collection)}.
+     * Test method for {@link EmptyRange#retainAll(Collection)}.
      */
     public void testRetainAll() {
         try {
@@ -274,7 +275,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#iterator()}.
+     * Test method for {@link EmptyRange#iterator()}.
      */
     public void testIterator() {
         final Iterator iterator = range.iterator();
@@ -302,7 +303,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#subList(int, int)}.
+     * Test method for {@link EmptyRange#subList(int, int)}.
      */
     public void testSubList() {
         final List list = range.subList(0, 0);
@@ -316,7 +317,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#listIterator()}.
+     * Test method for {@link EmptyRange#listIterator()}.
      */
     public void testListIterator() {
         final ListIterator iterator = range.listIterator();
@@ -332,7 +333,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#listIterator(int)}.
+     * Test method for {@link EmptyRange#listIterator(int)}.
      */
     public void testListIteratorInt() {
         final ListIterator iterator = range.listIterator(0);
@@ -348,7 +349,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#set(int, java.lang.Object)}.
+     * Test method for {@link EmptyRange#set(int, Object)}.
      */
     public void testSet() {
         try {
@@ -360,7 +361,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#toArray(java.lang.Object[])}.
+     * Test method for {@link EmptyRange#toArray(Object[])}.
      */
     public void testToArrayObjectArray() {
         final Integer[] actual = (Integer[]) range.toArray(new Integer[0]);
@@ -368,7 +369,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#step(int, groovy.lang.Closure)}.
+     * Test method for {@link EmptyRange#step(int, Closure)}.
      */
     public void testStepIntClosure() {
         final List callLog = new ArrayList();
@@ -378,7 +379,7 @@ public class EmptyRangeTest extends GroovyTestCase {
     }
 
     /**
-     * Test method for {@link groovy.lang.EmptyRange#step(int)}.
+     * Test method for {@link EmptyRange#step(int)}.
      */
     public void testStepInt() {
         List result = range.step(1);

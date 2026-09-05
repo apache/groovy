@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.traitx
 
+import groovy.transform.CompileStatic
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -26,7 +27,7 @@ import static groovy.test.GroovyAssert.shouldFail
 final class TraitWithClosureOrLambda {
 
     private final GroovyShell shell = GroovyShell.withConfig {
-        ast groovy.transform.CompileStatic
+        ast CompileStatic
     }
 
     @Test

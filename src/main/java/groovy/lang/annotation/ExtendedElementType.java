@@ -18,8 +18,10 @@
  */
 package groovy.lang.annotation;
 
+import java.lang.annotation.ElementType;
+
 /**
- * Groovy-specific element types that extend {@link java.lang.annotation.ElementType}
+ * Groovy-specific element types that extend {@link ElementType}
  * to cover Groovy language constructs not present in the JDK.
  *
  * @see ExtendedTarget

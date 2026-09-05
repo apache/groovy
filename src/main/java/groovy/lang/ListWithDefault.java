@@ -225,7 +225,7 @@ public final class ListWithDefault<T> implements List<T> {
      * store null values in the list when in this mode.
      * <p>
      * This implementation breaks
-     * the contract of {@link java.util.List#get(int)} as it a) possibly modifies the underlying list and b) does
+     * the contract of {@link List#get(int)} as it a) possibly modifies the underlying list and b) does
      * NOT throw an {@link IndexOutOfBoundsException} when {@code index < 0 || index >= size()}.
      *
      * @param index an index (might be greater or equal to {@code size()}, or smaller than 0)

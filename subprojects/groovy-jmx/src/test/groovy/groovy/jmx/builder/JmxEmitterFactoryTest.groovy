@@ -22,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 import javax.management.MBeanServer
+import javax.management.MBeanServerFactory
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -31,7 +32,7 @@ public class JmxEmitterFactoryTest {
 
     @BeforeEach
     void setUp() {
-        server = javax.management.MBeanServerFactory.createMBeanServer()
+        server = MBeanServerFactory.createMBeanServer()
         builder = new JmxBuilder(server)
     }
 

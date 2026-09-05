@@ -18,11 +18,13 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
+import org.codehaus.groovy.transform.DelegateASTTransformation
+
 /**
  * Captures the joint-compilation surface for {@code @Delegate}.
  *
  * <p>The stubber and full transform share enumeration and filter helpers
- * (see {@link org.codehaus.groovy.transform.DelegateASTTransformation}),
+ * (see {@link DelegateASTTransformation}),
  * so the stub honours {@code interfaces}, {@code deprecated},
  * {@code includes}/{@code excludes}, {@code includeTypes}/{@code excludeTypes}
  * the same way the runtime does. The stub surface is therefore a strict

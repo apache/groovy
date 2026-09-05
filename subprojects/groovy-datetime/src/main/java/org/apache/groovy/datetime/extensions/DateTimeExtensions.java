@@ -79,7 +79,7 @@ public final class DateTimeExtensions {
     private static final DateTimeFormatter ZONE_SHORT_FORMATTER = DateTimeFormatter.ofPattern("z");
 
     /**
-     * For any Temporal subtype that does not use {@link java.time.temporal.ChronoUnit#SECONDS} as the unit for
+     * For any Temporal subtype that does not use {@link ChronoUnit#SECONDS} as the unit for
      * the upto/downto methods, should have an entry.
      */
     private static final Map<Class<? extends Temporal>, TemporalUnit> DEFAULT_UNITS = new HashMap<>();
@@ -110,19 +110,19 @@ public final class DateTimeExtensions {
         return nanos / 1_000_000;
     }
 
-    /* ******** java.time.temporal.Temporal extension methods ******** */
+    /* ******** Temporal extension methods ******** */
 
     /**
-     * Iterates from this to the {@code to} {@link java.time.temporal.Temporal}, inclusive, incrementing by one
+     * Iterates from this to the {@code to} {@link Temporal}, inclusive, incrementing by one
      * unit each iteration, calling the closure once per iteration. The closure may accept a single
-     * {@link java.time.temporal.Temporal} argument.
+     * {@link Temporal} argument.
      * <p>
-     * The particular unit incremented by depends on the specific subtype of {@link java.time.temporal.Temporal}.
-     * Most subtypes use a unit of {@link java.time.temporal.ChronoUnit#SECONDS} except for
+     * The particular unit incremented by depends on the specific subtype of {@link Temporal}.
+     * Most subtypes use a unit of {@link ChronoUnit#SECONDS} except for
      * <ul>
-     * <li>{@link java.time.chrono.ChronoLocalDate} and its sub-types use {@link java.time.temporal.ChronoUnit#DAYS}.
-     * <li>{@link java.time.YearMonth} uses {@link java.time.temporal.ChronoUnit#MONTHS}.
-     * <li>{@link java.time.Year} uses {@link java.time.temporal.ChronoUnit#YEARS}.
+     * <li>{@link ChronoLocalDate} and its sub-types use {@link ChronoUnit#DAYS}.
+     * <li>{@link YearMonth} uses {@link ChronoUnit#MONTHS}.
+     * <li>{@link Year} uses {@link ChronoUnit#YEARS}.
      * </ul>
      *
      * @param from    the starting Temporal
@@ -137,12 +137,12 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Iterates from this to the {@code to} {@link java.time.temporal.Temporal}, inclusive, incrementing by one
+     * Iterates from this to the {@code to} {@link Temporal}, inclusive, incrementing by one
      * {@code unit} each iteration, calling the closure once per iteration. The closure may accept a single
-     * {@link java.time.temporal.Temporal} argument.
+     * {@link Temporal} argument.
      * <p>
      * If the unit is too large to iterate to the second Temporal exactly, such as iterating from two LocalDateTimes
-     * that are seconds apart using {@link java.time.temporal.ChronoUnit#DAYS} as the unit, the iteration will cease
+     * that are seconds apart using {@link ChronoUnit#DAYS} as the unit, the iteration will cease
      * as soon as the current value of the iteration is later than the second Temporal argument. The closure will
      * not be called with any value later than the {@code to} value.
      *
@@ -181,16 +181,16 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Iterates from this to the {@code to} {@link java.time.temporal.Temporal}, inclusive, decrementing by one
+     * Iterates from this to the {@code to} {@link Temporal}, inclusive, decrementing by one
      * unit each iteration, calling the closure once per iteration. The closure may accept a single
-     * {@link java.time.temporal.Temporal} argument.
+     * {@link Temporal} argument.
      * <p>
-     * The particular unit decremented by depends on the specific subtype of {@link java.time.temporal.Temporal}.
-     * Most subtypes use a unit of {@link java.time.temporal.ChronoUnit#SECONDS} except for
+     * The particular unit decremented by depends on the specific subtype of {@link Temporal}.
+     * Most subtypes use a unit of {@link ChronoUnit#SECONDS} except for
      * <ul>
-     * <li>{@link java.time.chrono.ChronoLocalDate} and its sub-types use {@link java.time.temporal.ChronoUnit#DAYS}.
-     * <li>{@link java.time.YearMonth} uses {@link java.time.temporal.ChronoUnit#MONTHS}.
-     * <li>{@link java.time.Year} uses {@link java.time.temporal.ChronoUnit#YEARS}.
+     * <li>{@link ChronoLocalDate} and its sub-types use {@link ChronoUnit#DAYS}.
+     * <li>{@link YearMonth} uses {@link ChronoUnit#MONTHS}.
+     * <li>{@link Year} uses {@link ChronoUnit#YEARS}.
      * </ul>
      *
      * @param from    the starting Temporal
@@ -205,12 +205,12 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Iterates from this to the {@code to} {@link java.time.temporal.Temporal}, inclusive, decrementing by one
+     * Iterates from this to the {@code to} {@link Temporal}, inclusive, decrementing by one
      * {@code unit} each iteration, calling the closure once per iteration. The closure may accept a single
-     * {@link java.time.temporal.Temporal} argument.
+     * {@link Temporal} argument.
      * <p>
      * If the unit is too large to iterate to the second Temporal exactly, such as iterating from two LocalDateTimes
-     * that are seconds apart using {@link java.time.temporal.ChronoUnit#DAYS} as the unit, the iteration will cease
+     * that are seconds apart using {@link ChronoUnit#DAYS} as the unit, the iteration will cease
      * as soon as the current value of the iteration is earlier than the second Temporal argument. The closure will
      * not be called with any value earlier than the {@code to} value.
      *
@@ -249,15 +249,15 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.Duration} or {@link java.time.Period} between this (inclusive) and the {@code other}
-     * {@link java.time.temporal.Temporal} (exclusive).
+     * Returns a {@link Duration} or {@link Period} between this (inclusive) and the {@code other}
+     * {@link Temporal} (exclusive).
      * <p>
-     * A Period will be returned for types {@link java.time.Year}, {@link java.time.YearMonth}, and
-     * {@link java.time.chrono.ChronoLocalDate}; otherwise, a Duration will be returned.
+     * A Period will be returned for types {@link Year}, {@link YearMonth}, and
+     * {@link ChronoLocalDate}; otherwise, a Duration will be returned.
      * <p>
-     * Note: if the Temporal is a ChronoLocalDate but not a {@link java.time.LocalDate}, a general
-     * {@link java.time.chrono.ChronoPeriod} will be returned as per the return type of the method
-     * {@link java.time.chrono.ChronoLocalDate#until(ChronoLocalDate)} .
+     * Note: if the Temporal is a ChronoLocalDate but not a {@link LocalDate}, a general
+     * {@link ChronoPeriod} will be returned as per the return type of the method
+     * {@link ChronoLocalDate#until(ChronoLocalDate)} .
      *
      * @param self  a Temporal
      * @param other another Temporal of the same type
@@ -276,11 +276,11 @@ public final class DateTimeExtensions {
         };
     }
 
-    /* ******** java.time.temporal.TemporalAccessor extension methods ******** */
+    /* ******** TemporalAccessor extension methods ******** */
 
     /**
      * Supports the getAt operator; equivalent to calling the
-     * {@link java.time.temporal.TemporalAccessor#getLong(java.time.temporal.TemporalField)} method.
+     * {@link TemporalAccessor#getLong(TemporalField)} method.
      *
      * @param self  a TemporalAccessor
      * @param field a non-null TemporalField
@@ -296,7 +296,7 @@ public final class DateTimeExtensions {
 
     /**
      * Supports the getAt operator for an iterable; equivalent to collecting the
-     * {@link java.time.temporal.TemporalAccessor#getLong(java.time.temporal.TemporalField)} method
+     * {@link TemporalAccessor#getLong(TemporalField)} method
      * for each field in the supplied iterable.
      * <pre class="language-groovy groovyTestCase">
      * import static java.time.temporal.ChronoField.*
@@ -324,11 +324,11 @@ public final class DateTimeExtensions {
         return result;
     }
 
-    /* ******** java.time.temporal.TemporalAmount extension methods ******** */
+    /* ******** TemporalAmount extension methods ******** */
 
     /**
      * Supports the getAt operator; equivalent to calling the
-     * {@link java.time.temporal.TemporalAmount#get(TemporalUnit)} method.
+     * {@link TemporalAmount#get(TemporalUnit)} method.
      *
      * @param self a TemporalAmount
      * @param unit a non-null TemporalUnit
@@ -342,10 +342,10 @@ public final class DateTimeExtensions {
         return self.get(unit);
     }
 
-    /* ******** java.time.Duration extension methods ******** */
+    /* ******** Duration extension methods ******** */
 
     /**
-     * Returns a {@link java.time.Duration} that is {@code seconds} seconds longer than this duration.
+     * Returns a {@link Duration} that is {@code seconds} seconds longer than this duration.
      *
      * @param self    a Duration
      * @param seconds the number of seconds to add
@@ -357,7 +357,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.Duration} that is {@code seconds} seconds shorter that this duration.
+     * Returns a {@link Duration} that is {@code seconds} seconds shorter that this duration.
      *
      * @param self    a Duration
      * @param seconds the number of seconds to subtract
@@ -369,7 +369,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.Duration} that is one second longer than this duration.
+     * Returns a {@link Duration} that is one second longer than this duration.
      *
      * @param self a Duration
      * @return a Duration
@@ -380,7 +380,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.Duration} that is one second shorter than this duration.
+     * Returns a {@link Duration} that is one second shorter than this duration.
      *
      * @param self a Duration
      * @return a Duration
@@ -469,10 +469,10 @@ public final class DateTimeExtensions {
         return self.isZero() || self.isNegative();
     }
 
-    /* ******** java.time.Instant extension methods ******** */
+    /* ******** Instant extension methods ******** */
 
     /**
-     * Returns an {@link java.time.Instant} that is {@code seconds} seconds after this instant.
+     * Returns an {@link Instant} that is {@code seconds} seconds after this instant.
      *
      * @param self    an Instant
      * @param seconds the number of seconds to add
@@ -484,7 +484,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an {@link java.time.Instant} that is {@code seconds} seconds before this instant.
+     * Returns an {@link Instant} that is {@code seconds} seconds before this instant.
      *
      * @param self    an Instant
      * @param seconds the number of seconds to subtract
@@ -496,7 +496,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an {@link java.time.Instant} that is one second after this instant.
+     * Returns an {@link Instant} that is one second after this instant.
      *
      * @param self an Instant
      * @return an Instant one-second ahead
@@ -507,7 +507,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an {@link java.time.Instant} that one second before this instant.
+     * Returns an {@link Instant} that one second before this instant.
      *
      * @param self an Instant
      * @return an Instant one-second behind
@@ -518,7 +518,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a generally equivalent {@link java.util.Date} according the number of milliseconds since the epoch,
+     * Returns a generally equivalent {@link Date} according the number of milliseconds since the epoch,
      * adjusted into the system default time zone.
      *
      * @param self an Instant
@@ -530,7 +530,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a generally equivalent {@link java.util.Calendar} in the GMT time zone, truncated to milliseconds.
+     * Returns a generally equivalent {@link Calendar} in the GMT time zone, truncated to milliseconds.
      *
      * @param self an Instant
      * @return a Calendar
@@ -542,15 +542,15 @@ public final class DateTimeExtensions {
         return cal;
     }
 
-    /* ******** java.time.LocalDate extension methods ******** */
+    /* ******** LocalDate extension methods ******** */
 
     /**
-     * Formats this date with the provided {@link java.time.format.DateTimeFormatter} pattern.
+     * Formats this date with the provided {@link DateTimeFormatter} pattern.
      *
      * @param self    a LocalDate
      * @param pattern the formatting pattern
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String format(final LocalDate self, String pattern) {
@@ -558,12 +558,12 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Formats this date in the provided, localized {@link java.time.format.FormatStyle}.
+     * Formats this date in the provided, localized {@link FormatStyle}.
      *
      * @param self      a LocalDate
      * @param dateStyle the FormatStyle
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String format(final LocalDate self, FormatStyle dateStyle) {
@@ -571,11 +571,11 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Formats this date with the {@link java.time.format.DateTimeFormatter#ISO_LOCAL_DATE} formatter.
+     * Formats this date with the {@link DateTimeFormatter#ISO_LOCAL_DATE} formatter.
      *
      * @param self a LocalDate
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String getDateString(final LocalDate self) {
@@ -583,7 +583,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.LocalDate} that is {@code days} days after this date.
+     * Returns a {@link LocalDate} that is {@code days} days after this date.
      *
      * @param self a LocalDate
      * @param days the number of days to add
@@ -595,7 +595,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.LocalDate} that is {@code days} days before this date.
+     * Returns a {@link LocalDate} that is {@code days} days before this date.
      *
      * @param self a LocalDate
      * @param days the number of days to subtract
@@ -619,7 +619,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.LocalDate} one day after this date.
+     * Returns a {@link LocalDate} one day after this date.
      *
      * @param self a LocalDate
      * @return the next day
@@ -630,7 +630,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.LocalDate} one day before this date.
+     * Returns a {@link LocalDate} one day before this date.
      *
      * @param self a LocalDate
      * @return the previous day
@@ -641,8 +641,8 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.Period} equivalent to the time between this date (inclusive)
-     * and the provided {@link java.time.LocalDate} (exclusive).
+     * Returns a {@link Period} equivalent to the time between this date (inclusive)
+     * and the provided {@link LocalDate} (exclusive).
      *
      * @param self  a LocalDate
      * @param other another LocalDate
@@ -654,7 +654,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.LocalDateTime} from this date and the provided {@link java.time.LocalTime}.
+     * Returns a {@link LocalDateTime} from this date and the provided {@link LocalTime}.
      *
      * @param self a LocalDate
      * @param time a LocalTime
@@ -666,7 +666,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.OffsetDateTime} from this date and the provided {@link java.time.OffsetTime}.
+     * Returns a {@link OffsetDateTime} from this date and the provided {@link OffsetTime}.
      *
      * @param self a LocalDate
      * @param time an OffsetTime
@@ -678,11 +678,11 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an equivalent instance of {@link java.util.Date}.
+     * Returns an equivalent instance of {@link Date}.
      * The time portion of the returned date is cleared.
      *
      * @param self a LocalDate
-     * @return a java.util.Date
+     * @return a Date
      * @since 2.5.0
      */
     public static Date toDate(final LocalDate self) {
@@ -690,11 +690,11 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an equivalent instance of {@link java.util.Calendar}.
+     * Returns an equivalent instance of {@link Calendar}.
      * The time portion of the returned calendar is cleared and the time zone is the current system default.
      *
      * @param self a LocalDate
-     * @return a java.util.Calendar
+     * @return a Calendar
      * @since 2.5.0
      */
     public static Calendar toCalendar(final LocalDate self) {
@@ -714,15 +714,15 @@ public final class DateTimeExtensions {
         self.clear(Calendar.MILLISECOND);
     }
 
-    /* ******** java.time.LocalDateTime extension methods ******** */
+    /* ******** LocalDateTime extension methods ******** */
 
     /**
-     * Formats this date/time with the provided {@link java.time.format.DateTimeFormatter} pattern.
+     * Formats this date/time with the provided {@link DateTimeFormatter} pattern.
      *
      * @param self    a LocalDateTime
      * @param pattern the formatting pattern
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String format(final LocalDateTime self, String pattern) {
@@ -730,12 +730,12 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Formats this date/time in the provided, localized {@link java.time.format.FormatStyle}.
+     * Formats this date/time in the provided, localized {@link FormatStyle}.
      *
      * @param self          a LocalDateTime
      * @param dateTimeStyle the FormatStyle
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String format(final LocalDateTime self, FormatStyle dateTimeStyle) {
@@ -743,11 +743,11 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Formats this date/time with the {@link java.time.format.DateTimeFormatter#ISO_LOCAL_DATE_TIME} formatter.
+     * Formats this date/time with the {@link DateTimeFormatter#ISO_LOCAL_DATE_TIME} formatter.
      *
      * @param self a LocalDateTime
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String getDateTimeString(final LocalDateTime self) {
@@ -755,11 +755,11 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Formats this date/time with the {@link java.time.format.DateTimeFormatter#ISO_LOCAL_DATE} formatter.
+     * Formats this date/time with the {@link DateTimeFormatter#ISO_LOCAL_DATE} formatter.
      *
      * @param self a LocalDateTime
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String getDateString(final LocalDateTime self) {
@@ -767,11 +767,11 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Formats this date/time with the {@link java.time.format.DateTimeFormatter#ISO_LOCAL_TIME} formatter.
+     * Formats this date/time with the {@link DateTimeFormatter#ISO_LOCAL_TIME} formatter.
      *
      * @param self a LocalDateTime
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String getTimeString(final LocalDateTime self) {
@@ -779,7 +779,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.LocalDateTime} with the time portion cleared.
+     * Returns a {@link LocalDateTime} with the time portion cleared.
      *
      * @param self a LocalDateTime
      * @return a LocalDateTime
@@ -790,7 +790,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.LocalDateTime} that is {@code seconds} seconds after this date/time.
+     * Returns a {@link LocalDateTime} that is {@code seconds} seconds after this date/time.
      *
      * @param self    a LocalDateTime
      * @param seconds the number of seconds to add
@@ -802,7 +802,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.LocalDateTime} that is {@code seconds} seconds before this date/time.
+     * Returns a {@link LocalDateTime} that is {@code seconds} seconds before this date/time.
      *
      * @param self    a LocalDateTime
      * @param seconds the number of seconds to subtract
@@ -814,7 +814,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.LocalDateTime} that is one second after this date/time.
+     * Returns a {@link LocalDateTime} that is one second after this date/time.
      *
      * @param self a LocalDateTime
      * @return a LocalDateTime
@@ -825,7 +825,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.LocalDateTime} that is one second before this date/time.
+     * Returns a {@link LocalDateTime} that is one second before this date/time.
      *
      * @param self a LocalDateTime
      * @return a LocalDateTime
@@ -836,7 +836,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an {@link java.time.OffsetDateTime} of this date/time and the provided {@link java.time.ZoneOffset}.
+     * Returns an {@link OffsetDateTime} of this date/time and the provided {@link ZoneOffset}.
      *
      * @param self   a LocalDateTime
      * @param offset a ZoneOffset
@@ -848,7 +848,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.OffsetDateTime} of this date/time and the provided {@link java.time.ZoneId}.
+     * Returns a {@link OffsetDateTime} of this date/time and the provided {@link ZoneId}.
      *
      * @param self a LocalDateTime
      * @param zone a ZoneId
@@ -860,11 +860,11 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a generally equivalent instance of {@link java.util.Date}.
+     * Returns a generally equivalent instance of {@link Date}.
      * The time value of the returned date is truncated to milliseconds.
      *
      * @param self a LocalDateTime
-     * @return a java.util.Date
+     * @return a Date
      * @since 2.5.0
      */
     public static Date toDate(final LocalDateTime self) {
@@ -872,12 +872,12 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a generally equivalent instance of {@link java.util.Calendar}.
+     * Returns a generally equivalent instance of {@link Calendar}.
      * The time value of the returned calendar is truncated to milliseconds and the
      * time zone is the current system default.
      *
      * @param self a LocalDateTime
-     * @return a java.util.Calendar
+     * @return a Calendar
      * @since 2.5.0
      */
     public static Calendar toCalendar(final LocalDateTime self) {
@@ -892,15 +892,15 @@ public final class DateTimeExtensions {
         return cal;
     }
 
-    /* ******** java.time.LocalTime extension methods ******** */
+    /* ******** LocalTime extension methods ******** */
 
     /**
-     * Formats this time with the provided {@link java.time.format.DateTimeFormatter} pattern.
+     * Formats this time with the provided {@link DateTimeFormatter} pattern.
      *
      * @param self    a LocalDateTime
      * @param pattern the formatting pattern
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String format(final LocalTime self, String pattern) {
@@ -908,12 +908,12 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Formats this time in the provided, localized {@link java.time.format.FormatStyle}.
+     * Formats this time in the provided, localized {@link FormatStyle}.
      *
      * @param self      a LocalTime
      * @param timeStyle the FormatStyle
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String format(final LocalTime self, FormatStyle timeStyle) {
@@ -921,11 +921,11 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Formats this time with the {@link java.time.format.DateTimeFormatter#ISO_LOCAL_TIME} formatter.
+     * Formats this time with the {@link DateTimeFormatter#ISO_LOCAL_TIME} formatter.
      *
      * @param self a LocalTime
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String getTimeString(final LocalTime self) {
@@ -933,7 +933,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.LocalTime} that is {@code seconds} seconds after this time.
+     * Returns a {@link LocalTime} that is {@code seconds} seconds after this time.
      *
      * @param self    a LocalTime
      * @param seconds the number of seconds to add
@@ -945,7 +945,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.LocalTime} that is {@code seconds} seconds before this time.
+     * Returns a {@link LocalTime} that is {@code seconds} seconds before this time.
      *
      * @param self    a LocalTime
      * @param seconds the number of seconds to subtract
@@ -957,7 +957,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.LocalTime} that is one second after this time.
+     * Returns a {@link LocalTime} that is one second after this time.
      *
      * @param self a LocalTime
      * @return a LocalTime
@@ -968,7 +968,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.LocalTime} that is one second before this time.
+     * Returns a {@link LocalTime} that is one second before this time.
      *
      * @param self a LocalTime
      * @return a LocalTime
@@ -979,7 +979,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.LocalDateTime} of this time and the provided {@link java.time.LocalDate}.
+     * Returns a {@link LocalDateTime} of this time and the provided {@link LocalDate}.
      *
      * @param self a LocalTime
      * @param date a LocalDate
@@ -991,7 +991,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an {@link java.time.OffsetTime} of this time and the provided {@link java.time.ZoneOffset}.
+     * Returns an {@link OffsetTime} of this time and the provided {@link ZoneOffset}.
      *
      * @param self   a LocalTime
      * @param offset a ZoneOffset
@@ -1003,11 +1003,11 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a generally equivalent instance of {@link java.util.Date}. The day-month-year value of the
+     * Returns a generally equivalent instance of {@link Date}. The day-month-year value of the
      * returned date is today and the time is truncated to milliseconds.
      *
      * @param self a LocalTime
-     * @return a java.util.Date
+     * @return a Date
      * @since 2.5.0
      */
     public static Date toDate(final LocalTime self) {
@@ -1015,12 +1015,12 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a generally equivalent instance of {@link java.util.Calendar}. The day-month-year value of the
+     * Returns a generally equivalent instance of {@link Calendar}. The day-month-year value of the
      * returned calendar is today, the time is truncated to milliseconds, and the time zone is the current
      * system default.
      *
      * @param self a LocalTime
-     * @return a java.util.Calendar
+     * @return a Calendar
      * @since 2.5.0
      */
     public static Calendar toCalendar(final LocalTime self) {
@@ -1032,10 +1032,10 @@ public final class DateTimeExtensions {
         return cal;
     }
 
-    /* ******** java.time.MonthDay extension methods ******** */
+    /* ******** MonthDay extension methods ******** */
 
     /**
-     * Returns a {@link java.time.LocalDate} of this month/day and the provided year.
+     * Returns a {@link LocalDate} of this month/day and the provided year.
      *
      * @param self a MonthDay
      * @param year a year
@@ -1047,7 +1047,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.LocalDate} of this month/day and the provided {@link java.time.Year}.
+     * Returns a {@link LocalDate} of this month/day and the provided {@link Year}.
      *
      * @param self a MonthDay
      * @param year a Year
@@ -1058,15 +1058,15 @@ public final class DateTimeExtensions {
         return year.atMonthDay(self);
     }
 
-    /* ******** java.time.OffsetDateTime extension methods ******** */
+    /* ******** OffsetDateTime extension methods ******** */
 
     /**
-     * Formats this date/time with the provided {@link java.time.format.DateTimeFormatter} pattern.
+     * Formats this date/time with the provided {@link DateTimeFormatter} pattern.
      *
      * @param self    an OffsetDateTime
      * @param pattern the formatting pattern
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String format(final OffsetDateTime self, String pattern) {
@@ -1074,12 +1074,12 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Formats this date/time in the provided, localized {@link java.time.format.FormatStyle}.
+     * Formats this date/time in the provided, localized {@link FormatStyle}.
      *
      * @param self          an OffsetDateTime
      * @param dateTimeStyle the FormatStyle
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String format(final OffsetDateTime self, FormatStyle dateTimeStyle) {
@@ -1087,11 +1087,11 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Formats this date/time with the {@link java.time.format.DateTimeFormatter#ISO_OFFSET_DATE_TIME} formatter.
+     * Formats this date/time with the {@link DateTimeFormatter#ISO_OFFSET_DATE_TIME} formatter.
      *
      * @param self an OffsetDateTime
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String getDateTimeString(final OffsetDateTime self) {
@@ -1099,11 +1099,11 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Formats this date/time with the {@link java.time.format.DateTimeFormatter#ISO_OFFSET_DATE} formatter.
+     * Formats this date/time with the {@link DateTimeFormatter#ISO_OFFSET_DATE} formatter.
      *
      * @param self an OffsetDateTime
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String getDateString(final OffsetDateTime self) {
@@ -1111,11 +1111,11 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Formats this date/time with the {@link java.time.format.DateTimeFormatter#ISO_OFFSET_TIME} formatter.
+     * Formats this date/time with the {@link DateTimeFormatter#ISO_OFFSET_TIME} formatter.
      *
      * @param self an OffsetDateTime
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String getTimeString(final OffsetDateTime self) {
@@ -1123,7 +1123,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an {@link java.time.OffsetDateTime} with the time portion cleared.
+     * Returns an {@link OffsetDateTime} with the time portion cleared.
      *
      * @param self an OffsetDateTime
      * @return an OffsetDateTime
@@ -1134,7 +1134,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an {@link java.time.OffsetDateTime} that is {@code seconds} seconds after this date/time.
+     * Returns an {@link OffsetDateTime} that is {@code seconds} seconds after this date/time.
      *
      * @param self    an OffsetDateTime
      * @param seconds the number of seconds to add
@@ -1146,7 +1146,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an {@link java.time.OffsetDateTime} that is {@code seconds} seconds before this date/time.
+     * Returns an {@link OffsetDateTime} that is {@code seconds} seconds before this date/time.
      *
      * @param self    an OffsetDateTime
      * @param seconds the number of seconds to subtract
@@ -1158,7 +1158,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an {@link java.time.OffsetDateTime} one second after this date/time.
+     * Returns an {@link OffsetDateTime} one second after this date/time.
      *
      * @param self an OffsetDateTime
      * @return an OffsetDateTime
@@ -1169,7 +1169,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an {@link java.time.OffsetDateTime} one second before this date/time.
+     * Returns an {@link OffsetDateTime} one second before this date/time.
      *
      * @param self an OffsetDateTime
      * @return an OffsetDateTime
@@ -1180,12 +1180,12 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a generally equivalent instance of {@link java.util.Date}.
+     * Returns a generally equivalent instance of {@link Date}.
      * The time value of the returned date is truncated to milliseconds and will be
      * adjusted to the current system default time zone.
      *
      * @param self an OffsetDateTime
-     * @return a java.util.Date
+     * @return a Date
      * @since 2.5.0
      */
     public static Date toDate(final OffsetDateTime self) {
@@ -1193,27 +1193,27 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a generally equivalent instance of {@link java.util.Calendar}.
+     * Returns a generally equivalent instance of {@link Calendar}.
      * The time value of the returned calendar is truncated to milliseconds and the time zone
      * is based on the offset of this date/time.
      *
      * @param self an OffsetDateTime
-     * @return a java.util.Calendar
+     * @return a Calendar
      * @since 2.5.0
      */
     public static Calendar toCalendar(final OffsetDateTime self) {
         return toCalendar(self.toZonedDateTime());
     }
 
-    /* ******** java.time.OffsetTime extension methods ******** */
+    /* ******** OffsetTime extension methods ******** */
 
     /**
-     * Formats this time with the provided {@link java.time.format.DateTimeFormatter} pattern.
+     * Formats this time with the provided {@link DateTimeFormatter} pattern.
      *
      * @param self    an OffsetTime
      * @param pattern the formatting pattern
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String format(final OffsetTime self, String pattern) {
@@ -1221,12 +1221,12 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Formats this time in the provided, localized {@link java.time.format.FormatStyle}.
+     * Formats this time in the provided, localized {@link FormatStyle}.
      *
      * @param self      an OffsetTime
      * @param timeStyle the FormatStyle
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String format(final OffsetTime self, FormatStyle timeStyle) {
@@ -1234,11 +1234,11 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Formats this time with the {@link java.time.format.DateTimeFormatter#ISO_OFFSET_TIME} formatter.
+     * Formats this time with the {@link DateTimeFormatter#ISO_OFFSET_TIME} formatter.
      *
      * @param self an OffsetTime
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String getTimeString(final OffsetTime self) {
@@ -1246,7 +1246,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an {@link java.time.OffsetTime} that is {@code seconds} seconds after this time.
+     * Returns an {@link OffsetTime} that is {@code seconds} seconds after this time.
      *
      * @param self    an OffsetTime
      * @param seconds the number of seconds to add
@@ -1258,7 +1258,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an {@link java.time.OffsetTime} that is {@code seconds} seconds before this time.
+     * Returns an {@link OffsetTime} that is {@code seconds} seconds before this time.
      *
      * @param self    an OffsetTime
      * @param seconds the number of seconds to subtract
@@ -1270,7 +1270,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an {@link java.time.OffsetTime} that is one second after this time.
+     * Returns an {@link OffsetTime} that is one second after this time.
      *
      * @param self an OffsetTime
      * @return an OffsetTime
@@ -1281,7 +1281,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an {@link java.time.OffsetTime} that is one second before this time.
+     * Returns an {@link OffsetTime} that is one second before this time.
      *
      * @param self an OffsetTime
      * @return an OffsetTime
@@ -1292,7 +1292,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an {@link java.time.OffsetDateTime} of this time and the provided {@link java.time.LocalDate}.
+     * Returns an {@link OffsetDateTime} of this time and the provided {@link LocalDate}.
      *
      * @param self an OffsetTime
      * @param date a LocalDate
@@ -1304,12 +1304,12 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a generally equivalent instance of {@link java.util.Date}.
+     * Returns a generally equivalent instance of {@link Date}.
      * The time value of the returned date is truncated to milliseconds and will be
      * adjusted to the current system default time zone.
      *
      * @param self an OffsetTime
-     * @return a java.util.Date
+     * @return a Date
      * @since 2.5.0
      */
     public static Date toDate(final OffsetTime self) {
@@ -1317,12 +1317,12 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a generally equivalent instance of {@link java.util.Calendar}.
+     * Returns a generally equivalent instance of {@link Calendar}.
      * The date value of the returned calendar is now, the time value is truncated to milliseconds,
      * and the time zone is based on the offset of this time.
      *
      * @param self an OffsetTime
-     * @return a java.util.Calendar
+     * @return a Calendar
      * @since 2.5.0
      */
     public static Calendar toCalendar(final OffsetTime self) {
@@ -1335,10 +1335,10 @@ public final class DateTimeExtensions {
         return cal;
     }
 
-    /* ******** java.time.Period extension methods ******** */
+    /* ******** Period extension methods ******** */
 
     /**
-     * Returns a {@link java.time.Period} that is {@code days} days longer than this period.
+     * Returns a {@link Period} that is {@code days} days longer than this period.
      * No normalization is performed.
      *
      * @param self a Period
@@ -1351,7 +1351,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.Period} that is {@code days} days shorter than this period.
+     * Returns a {@link Period} that is {@code days} days shorter than this period.
      * No normalization is performed.
      *
      * @param self a Period
@@ -1364,7 +1364,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.Period} that is one day longer than this period.
+     * Returns a {@link Period} that is one day longer than this period.
      * No normalization is performed.
      *
      * @param self a Period
@@ -1376,7 +1376,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.Period} that is one day shorter than this period.
+     * Returns a {@link Period} that is one day shorter than this period.
      * No normalization is performed.
      *
      * @param self a Period
@@ -1388,7 +1388,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Supports the unary minus operator; equivalent to calling the {@link java.time.Period#negated()} method.
+     * Supports the unary minus operator; equivalent to calling the {@link Period#negated()} method.
      *
      * @param self a Period
      * @return a negated Period
@@ -1399,7 +1399,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Supports the unary plus operator; returns a {@link java.time.Period} with all unit values positive.
+     * Supports the unary plus operator; returns a {@link Period} with all unit values positive.
      * For example, a period of "2 years, -3 months, and -4 days" would result in a period of
      * "2 years, 3 months, and 4 days." No normalization is performed.
      *
@@ -1414,7 +1414,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Supports the multiply operator; equivalent to calling the {@link java.time.Period#multipliedBy(int)} method.
+     * Supports the multiply operator; equivalent to calling the {@link Period#multipliedBy(int)} method.
      *
      * @param self   a Period
      * @param scalar a scalar to multiply each unit by
@@ -1458,10 +1458,10 @@ public final class DateTimeExtensions {
         return self.isZero() || self.isNegative();
     }
 
-    /* ******** java.time.Year extension methods ******** */
+    /* ******** Year extension methods ******** */
 
     /**
-     * Returns a {@link java.time.Year} that is {@code years} years after this year.
+     * Returns a {@link Year} that is {@code years} years after this year.
      *
      * @param self  a Year
      * @param years the number of years to add
@@ -1473,7 +1473,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.Year} that is {@code years} years before this year.
+     * Returns a {@link Year} that is {@code years} years before this year.
      *
      * @param self  a Year
      * @param years the number of years to subtract
@@ -1485,7 +1485,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.Year} after this year.
+     * Returns a {@link Year} after this year.
      *
      * @param self a Year
      * @return the next Year
@@ -1496,7 +1496,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.Year} before this year.
+     * Returns a {@link Year} before this year.
      *
      * @param self a Year
      * @return the previous Year
@@ -1507,8 +1507,8 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.Period} between the first day of this year (inclusive) and the first day of the
-     * provided {@link java.time.Year} (exclusive).
+     * Returns a {@link Period} between the first day of this year (inclusive) and the first day of the
+     * provided {@link Year} (exclusive).
      *
      * @param self a Year
      * @param year another Year
@@ -1520,7 +1520,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.YearMonth} of this year and the provided {@link java.time.Month}.
+     * Returns a {@link YearMonth} of this year and the provided {@link Month}.
      *
      * @param self  a Year
      * @param month a Month
@@ -1532,7 +1532,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.LocalDate} of this year on the given {@link java.time.MonthDay}.
+     * Returns a {@link LocalDate} of this year on the given {@link MonthDay}.
      *
      * @param self     a Year
      * @param monthDay a MonthDay
@@ -1544,8 +1544,8 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Equivalent to calling the {@link java.time.Year#get(java.time.temporal.TemporalField)} method with a
-     * {@link java.time.temporal.ChronoField#ERA} argument.
+     * Equivalent to calling the {@link Year#get(TemporalField)} method with a
+     * {@link ChronoField#ERA} argument.
      * <p>
      * Returns the era of the year, which is currently either 0 (BC) or 1 (AD).
      *
@@ -1558,8 +1558,8 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Equivalent to calling the {@link java.time.Year#get(java.time.temporal.TemporalField)} method with a
-     * {@link java.time.temporal.ChronoField#YEAR_OF_ERA} argument.
+     * Equivalent to calling the {@link Year#get(TemporalField)} method with a
+     * {@link ChronoField#YEAR_OF_ERA} argument.
      * <p>
      * Since Year=0 represents 1 BC, the yearOfEra value of Year=0 is 1, Year=-1 is 2, and so on.
      *
@@ -1571,10 +1571,10 @@ public final class DateTimeExtensions {
         return self.get(ChronoField.YEAR_OF_ERA);
     }
 
-    /* ******** java.time.YearMonth extension methods ******** */
+    /* ******** YearMonth extension methods ******** */
 
     /**
-     * Returns a {@link java.time.YearMonth} that is {@code months} months after this year/month.
+     * Returns a {@link YearMonth} that is {@code months} months after this year/month.
      *
      * @param self   a YearMonth
      * @param months the number of months to add
@@ -1586,7 +1586,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.YearMonth} that is {@code months} months before this year/month.
+     * Returns a {@link YearMonth} that is {@code months} months before this year/month.
      *
      * @param self   a YearMonth
      * @param months the number of months to subtract
@@ -1598,7 +1598,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.YearMonth} that is the month after this year/month.
+     * Returns a {@link YearMonth} that is the month after this year/month.
      *
      * @param self a YearMonth
      * @return the next YearMonth
@@ -1609,7 +1609,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.YearMonth} that is the month before this year/month.
+     * Returns a {@link YearMonth} that is the month before this year/month.
      *
      * @param self a YearMonth
      * @return the previous YearMonth
@@ -1620,7 +1620,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.LocalDate} of this year/month and the given day of the month.
+     * Returns a {@link LocalDate} of this year/month and the given day of the month.
      *
      * @param self       a YearMonth
      * @param dayOfMonth a day of the month
@@ -1632,8 +1632,8 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.Period} of time between the first day of this year/month (inclusive) and the
-     * given {@link java.time.YearMonth} (exclusive).
+     * Returns a {@link Period} of time between the first day of this year/month (inclusive) and the
+     * given {@link YearMonth} (exclusive).
      *
      * @param self  a YearMonth
      * @param other another YearMonth
@@ -1644,15 +1644,15 @@ public final class DateTimeExtensions {
         return Period.between(self.atDay(1), other.atDay(1));
     }
 
-    /* ******** java.time.ZonedDateTime extension methods ******** */
+    /* ******** ZonedDateTime extension methods ******** */
 
     /**
-     * Formats this date/time with the provided {@link java.time.format.DateTimeFormatter} pattern.
+     * Formats this date/time with the provided {@link DateTimeFormatter} pattern.
      *
      * @param self    a ZonedDateTime
      * @param pattern the formatting pattern
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String format(final ZonedDateTime self, String pattern) {
@@ -1660,12 +1660,12 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Formats this date/time in the provided, localized {@link java.time.format.FormatStyle}.
+     * Formats this date/time in the provided, localized {@link FormatStyle}.
      *
      * @param self          a ZonedDateTime
      * @param dateTimeStyle the FormatStyle
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String format(final ZonedDateTime self, FormatStyle dateTimeStyle) {
@@ -1673,12 +1673,12 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Formats this date/time with the {@link java.time.format.DateTimeFormatter#ISO_LOCAL_DATE_TIME} formatter
+     * Formats this date/time with the {@link DateTimeFormatter#ISO_LOCAL_DATE_TIME} formatter
      * and appends the zone's short name, e.g. {@code 2018-03-10T14:34:55.144EST}.
      *
      * @param self a ZonedDateTime
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String getDateTimeString(final ZonedDateTime self) {
@@ -1686,12 +1686,12 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Formats this date/time with the {@link java.time.format.DateTimeFormatter#ISO_LOCAL_DATE} formatter
+     * Formats this date/time with the {@link DateTimeFormatter#ISO_LOCAL_DATE} formatter
      * and appends the zone's short name, e.g. {@code 2018-03-10EST}.
      *
      * @param self a ZonedDateTime
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String getDateString(final ZonedDateTime self) {
@@ -1699,12 +1699,12 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Formats this date/time with the {@link java.time.format.DateTimeFormatter#ISO_LOCAL_TIME} formatter
+     * Formats this date/time with the {@link DateTimeFormatter#ISO_LOCAL_TIME} formatter
      * and appends the zone's short name, e.g. {@code 14:34:55.144EST}.
      *
      * @param self a ZonedDateTime
      * @return a formatted String
-     * @see java.time.format.DateTimeFormatter
+     * @see DateTimeFormatter
      * @since 2.5.0
      */
     public static String getTimeString(final ZonedDateTime self) {
@@ -1712,7 +1712,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an {@link java.time.ZonedDateTime} with the time portion cleared.
+     * Returns an {@link ZonedDateTime} with the time portion cleared.
      *
      * @param self a ZonedDateTime
      * @return a ZonedDateTime
@@ -1723,7 +1723,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.ZonedDateTime} that is {@code seconds} seconds after this date/time.
+     * Returns a {@link ZonedDateTime} that is {@code seconds} seconds after this date/time.
      *
      * @param self    an ZonedDateTime
      * @param seconds the number of seconds to add
@@ -1735,7 +1735,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.ZonedDateTime} that is {@code seconds} seconds before this date/time.
+     * Returns a {@link ZonedDateTime} that is {@code seconds} seconds before this date/time.
      *
      * @param self    a ZonedDateTime
      * @param seconds the number of seconds to subtract
@@ -1747,7 +1747,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.ZonedDateTime} that is one second after this date/time.
+     * Returns a {@link ZonedDateTime} that is one second after this date/time.
      *
      * @param self a ZonedDateTime
      * @return a ZonedDateTime
@@ -1758,7 +1758,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.ZonedDateTime} that is one second before this date/time.
+     * Returns a {@link ZonedDateTime} that is one second before this date/time.
      *
      * @param self a ZonedDateTime
      * @return a ZonedDateTime
@@ -1769,12 +1769,12 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a generally equivalent instance of {@link java.util.Date}.
+     * Returns a generally equivalent instance of {@link Date}.
      * The time value of the returned date is truncated to milliseconds and will be
      * adjusted to the current system default time zone.
      *
      * @param self a ZonedDateTime
-     * @return a java.util.Date
+     * @return a Date
      * @since 2.5.0
      */
     public static Date toDate(final ZonedDateTime self) {
@@ -1782,12 +1782,12 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a generally equivalent instance of {@link java.util.Calendar}.
+     * Returns a generally equivalent instance of {@link Calendar}.
      * The time value of the returned calendar is truncated to milliseconds and the time zone
      * is determined by the zone of this date/time.
      *
      * @param self an ZonedDateTime
-     * @return a java.util.Calendar
+     * @return a Calendar
      * @since 2.5.0
      */
     public static Calendar toCalendar(final ZonedDateTime self) {
@@ -1802,10 +1802,10 @@ public final class DateTimeExtensions {
         return cal;
     }
 
-    /* ******** java.time.ZoneId extension methods ******** */
+    /* ******** ZoneId extension methods ******** */
 
     /**
-     * Returns a {@link java.util.TimeZone} equivalent to this zone.
+     * Returns a {@link TimeZone} equivalent to this zone.
      *
      * @param self a ZoneId
      * @return a TimeZone
@@ -1816,7 +1816,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns the name of this zone formatted according to the {@link java.time.format.TextStyle#FULL} text style.
+     * Returns the name of this zone formatted according to the {@link TextStyle#FULL} text style.
      *
      * @param self a ZoneId
      * @return the full display name of the ZoneId
@@ -1827,8 +1827,8 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns the name of this zone formatted according to the {@link java.time.format.TextStyle#FULL} text style
-     * for the provided {@link java.util.Locale}.
+     * Returns the name of this zone formatted according to the {@link TextStyle#FULL} text style
+     * for the provided {@link Locale}.
      *
      * @param self   a ZoneId
      * @param locale a Locale
@@ -1840,7 +1840,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns the name of this zone formatted according to the {@link java.time.format.TextStyle#SHORT} text style.
+     * Returns the name of this zone formatted according to the {@link TextStyle#SHORT} text style.
      *
      * @param self a ZoneId
      * @return the short display name of the ZoneId
@@ -1851,8 +1851,8 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns the name of this zone formatted according to the {@link java.time.format.TextStyle#SHORT} text style
-     * for the provided {@link java.util.Locale}.
+     * Returns the name of this zone formatted according to the {@link TextStyle#SHORT} text style
+     * for the provided {@link Locale}.
      *
      * @param self   a ZoneId
      * @param locale a Locale
@@ -1864,7 +1864,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.ZoneOffset} for this zone as of now.
+     * Returns a {@link ZoneOffset} for this zone as of now.
      *
      * @param self a ZoneId
      * @return a ZoneOffset
@@ -1875,7 +1875,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.ZoneOffset} for this zone as of the provided {@link java.time.Instant}.
+     * Returns a {@link ZoneOffset} for this zone as of the provided {@link Instant}.
      *
      * @param self    a ZoneId
      * @param instant an Instant
@@ -1887,7 +1887,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns a {@link java.time.ZonedDateTime} of this zone and the given {@link java.time.LocalDateTime}.
+     * Returns a {@link ZonedDateTime} of this zone and the given {@link LocalDateTime}.
      *
      * @param self a ZoneId
      * @return a ZonedDateTime
@@ -1897,10 +1897,10 @@ public final class DateTimeExtensions {
         return ZonedDateTime.of(dateTime, self);
     }
 
-    /* ******** java.time.ZoneOffset extension methods ******** */
+    /* ******** ZoneOffset extension methods ******** */
 
     /**
-     * Returns a generally  equivalent {@link java.util.TimeZone}. The offset will be truncated to minutes.
+     * Returns a generally  equivalent {@link TimeZone}. The offset will be truncated to minutes.
      *
      * @param self a ZoneOffset
      * @return a TimeZone
@@ -1972,7 +1972,7 @@ public final class DateTimeExtensions {
 
     /**
      * Supports the getAt operator; equivalent to calling the
-     * {@link java.time.ZoneOffset#getLong(java.time.temporal.TemporalField)} method.
+     * {@link ZoneOffset#getLong(TemporalField)} method.
      *
      * @param self  a ZoneOffset
      * @param field a TemporalField
@@ -1984,7 +1984,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an {@link java.time.OffsetDateTime} of this offset and the provided {@link java.time.LocalDateTime}.
+     * Returns an {@link OffsetDateTime} of this offset and the provided {@link LocalDateTime}.
      *
      * @param self     a ZoneOffset
      * @param dateTime a LocalDateTime
@@ -1996,7 +1996,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns an {@link java.time.OffsetDateTime} of this offset and the provided {@link java.time.LocalTime}.
+     * Returns an {@link OffsetDateTime} of this offset and the provided {@link LocalTime}.
      *
      * @param self a ZoneOffset
      * @param time a LocalTime
@@ -2007,10 +2007,10 @@ public final class DateTimeExtensions {
         return OffsetTime.of(time, self);
     }
 
-    /* ******** java.time.DayOfWeek extension methods ******** */
+    /* ******** DayOfWeek extension methods ******** */
 
     /**
-     * Returns the {@link java.time.DayOfWeek} that is {@code days} many days after this day of the week.
+     * Returns the {@link DayOfWeek} that is {@code days} many days after this day of the week.
      *
      * @param self a DayOfWeek
      * @param days the number of days to move forward
@@ -2024,7 +2024,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns the {@link java.time.DayOfWeek} that is {@code days} many days before this day of the week.
+     * Returns the {@link DayOfWeek} that is {@code days} many days before this day of the week.
      *
      * @param self a DayOfWeek
      * @param days the number of days to move back
@@ -2056,10 +2056,10 @@ public final class DateTimeExtensions {
         return !isWeekend(self);
     }
 
-    /* ******** java.time.Month extension methods ******** */
+    /* ******** Month extension methods ******** */
 
     /**
-     * Returns the {@link java.time.Month} that is {@code months} months after this month.
+     * Returns the {@link Month} that is {@code months} months after this month.
      *
      * @param self   a Month
      * @param months the number of months move forward
@@ -2073,7 +2073,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns the {@link java.time.Month} that is {@code months} months before this month.
+     * Returns the {@link Month} that is {@code months} months before this month.
      *
      * @param self   a Month
      * @param months the number of months to move back
@@ -2085,7 +2085,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Creates a {@link java.time.MonthDay} at the provided day of the month.
+     * Creates a {@link MonthDay} at the provided day of the month.
      *
      * @param self       a Month
      * @param dayOfMonth a day of the month
@@ -2097,7 +2097,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Creates a {@link java.time.YearMonth} at the provided {@link java.time.Year}.
+     * Creates a {@link YearMonth} at the provided {@link Year}.
      *
      * @param self a Month
      * @param year a Year
@@ -2109,7 +2109,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns the Time Zone offset of the Calendar as a {@link java.time.ZoneOffset}.
+     * Returns the Time Zone offset of the Calendar as a {@link ZoneOffset}.
      *
      * @param self a Calendar
      * @return a ZoneOffset
@@ -2128,7 +2128,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns the Time Zone offset of the Date as a {@link java.time.ZoneOffset},
+     * Returns the Time Zone offset of the Date as a {@link ZoneOffset},
      * which will typically be system's default offset.
      *
      * @param self a Date
@@ -2140,7 +2140,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns the Time Zone of the Calendar as a java.time.ZoneId.
+     * Returns the Time Zone of the Calendar as a ZoneId.
      *
      * @param self a Calendar
      * @return a ZoneId
@@ -2151,7 +2151,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Returns the Time Zone of the Date as a {@link java.time.ZoneId}. This will
+     * Returns the Time Zone of the Date as a {@link ZoneId}. This will
      * typically be the system's default ZoneId.
      *
      * @param self a Date
@@ -2163,7 +2163,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Calendar to a corresponding {@link java.time.Year}.  If the Calendar has a different
+     * Converts the Calendar to a corresponding {@link Year}.  If the Calendar has a different
      * time zone than the system default, the Year will be adjusted into the default time zone.
      *
      * @param self a Calendar
@@ -2175,7 +2175,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Date to a corresponding {@link java.time.Year}.
+     * Converts the Date to a corresponding {@link Year}.
      *
      * @param self a Date
      * @return a Year
@@ -2186,7 +2186,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Calendar to a corresponding {@link java.time.Month}. If the Calendar has a different
+     * Converts the Calendar to a corresponding {@link Month}. If the Calendar has a different
      * time zone than the system default, the Month will be adjusted into the default time zone.
      *
      * @param self a Calendar
@@ -2198,7 +2198,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Date to a corresponding {@link java.time.Month}.
+     * Converts the Date to a corresponding {@link Month}.
      *
      * @param self a Date
      * @return a Month
@@ -2209,7 +2209,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Calendar to a corresponding {@link java.time.MonthDay}. If the Calendar has a different
+     * Converts the Calendar to a corresponding {@link MonthDay}. If the Calendar has a different
      * time zone than the system default, the MonthDay will be adjusted into the default time zone.
      *
      * @param self a Calendar
@@ -2221,7 +2221,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Date to a corresponding {@link java.time.MonthDay}.
+     * Converts the Date to a corresponding {@link MonthDay}.
      *
      * @param self a Date
      * @return a MonthDay
@@ -2232,7 +2232,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Calendar to a corresponding {@link java.time.YearMonth}. If the Calendar has a different
+     * Converts the Calendar to a corresponding {@link YearMonth}. If the Calendar has a different
      * time zone than the system default, the YearMonth will be adjusted into the default time zone.
      *
      * @param self a Calendar
@@ -2244,7 +2244,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Date to a corresponding {@link java.time.YearMonth}.
+     * Converts the Date to a corresponding {@link YearMonth}.
      *
      * @param self a Date
      * @return a YearMonth
@@ -2255,7 +2255,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Calendar to a corresponding {@link java.time.DayOfWeek}. If the Calendar has a different
+     * Converts the Calendar to a corresponding {@link DayOfWeek}. If the Calendar has a different
      * time zone than the system default, the DayOfWeek will be adjusted into the default time zone.
      *
      * @param self a Calendar
@@ -2267,7 +2267,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Date to a corresponding {@link java.time.DayOfWeek}.
+     * Converts the Date to a corresponding {@link DayOfWeek}.
      *
      * @param self a Date
      * @return a DayOfWeek
@@ -2278,7 +2278,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Calendar to a corresponding {@link java.time.LocalDate}. If the Calendar has a different
+     * Converts the Calendar to a corresponding {@link LocalDate}. If the Calendar has a different
      * time zone than the system default, the LocalDate will be adjusted into the default time zone.
      *
      * @param self a Calendar
@@ -2290,7 +2290,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Date to a corresponding {@link java.time.LocalDate}.
+     * Converts the Date to a corresponding {@link LocalDate}.
      *
      * @param self a Date
      * @return a LocalDate
@@ -2301,7 +2301,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Calendar to a corresponding {@link java.time.LocalTime}. If the Calendar has a different
+     * Converts the Calendar to a corresponding {@link LocalTime}. If the Calendar has a different
      * time zone than the system default, the LocalTime will be adjusted into the default time zone.
      *
      * @param self a Calendar
@@ -2317,7 +2317,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Date to a corresponding {@link java.time.LocalTime}.
+     * Converts the Date to a corresponding {@link LocalTime}.
      *
      * @param self a Date
      * @return a LocalTime
@@ -2328,7 +2328,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Calendar to a corresponding {@link java.time.LocalDateTime}. If the Calendar has a different
+     * Converts the Calendar to a corresponding {@link LocalDateTime}. If the Calendar has a different
      * time zone than the system default, the LocalDateTime will be adjusted into the default time zone.
      *
      * @param self a Calendar
@@ -2340,7 +2340,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Date to a corresponding {@link java.time.LocalDateTime}.
+     * Converts the Date to a corresponding {@link LocalDateTime}.
      *
      * @param self a Date
      * @return a LocalDateTime
@@ -2351,8 +2351,8 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * <p>Converts the Calendar to a corresponding {@link java.time.ZonedDateTime}.</p><p>Note that
-     * {@link java.util.GregorianCalendar} has a {@link java.util.GregorianCalendar#toZonedDateTime} method,
+     * <p>Converts the Calendar to a corresponding {@link ZonedDateTime}.</p><p>Note that
+     * {@link GregorianCalendar} has a {@link GregorianCalendar#toZonedDateTime} method,
      * which is commonly the specific type of Calendar in use.</p>
      *
      * @param self a Calendar
@@ -2368,7 +2368,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Date to a corresponding {@link java.time.ZonedDateTime}.
+     * Converts the Date to a corresponding {@link ZonedDateTime}.
      *
      * @param self a Date
      * @return a ZonedDateTime
@@ -2379,7 +2379,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Calendar to a corresponding {@link java.time.OffsetDateTime}.
+     * Converts the Calendar to a corresponding {@link OffsetDateTime}.
      *
      * @param self a Calendar
      * @return an OffsetDateTime
@@ -2390,7 +2390,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Date to a corresponding {@link java.time.OffsetDateTime}.
+     * Converts the Date to a corresponding {@link OffsetDateTime}.
      *
      * @param self a Date
      * @return an OffsetDateTime
@@ -2401,7 +2401,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Calendar to a corresponding {@link java.time.OffsetTime}.
+     * Converts the Calendar to a corresponding {@link OffsetTime}.
      *
      * @param self a Calendar
      * @return an OffsetTime
@@ -2412,7 +2412,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the Date to a corresponding {@link java.time.OffsetTime}.
+     * Converts the Date to a corresponding {@link OffsetTime}.
      *
      * @param self a Date
      * @return an OffsetTime
@@ -2423,7 +2423,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Convenience method for converting a Calendar to a corresponding {@link java.time.Instant}.
+     * Convenience method for converting a Calendar to a corresponding {@link Instant}.
      *
      * @param self a Calendar
      * @return an Instant
@@ -2434,7 +2434,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts the TimeZone to a corresponding {@link java.time.ZoneOffset}. The offset is determined
+     * Converts the TimeZone to a corresponding {@link ZoneOffset}. The offset is determined
      * using the current date/time.
      *
      * @param self a TimeZone
@@ -2446,7 +2446,7 @@ public final class DateTimeExtensions {
     }
 
     /**
-     * Converts this TimeZone to a corresponding {@link java.time.ZoneOffset}. The offset is determined
+     * Converts this TimeZone to a corresponding {@link ZoneOffset}. The offset is determined
      * using the date/time of specified Instant.
      *
      * @param self a TimeZone

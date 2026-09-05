@@ -120,7 +120,7 @@ public class BytecodeHelper {
     }
 
     /**
-     * Returns a method descriptor for the given {@link org.codehaus.groovy.ast.MethodNode}.
+     * Returns a method descriptor for the given {@link MethodNode}.
      *
      * @param methodNode the method node for which to create the descriptor
      * @return a method descriptor as defined in section JVMS section 4.3.3

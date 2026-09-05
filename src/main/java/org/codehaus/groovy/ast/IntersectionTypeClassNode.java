@@ -21,6 +21,8 @@ package org.codehaus.groovy.ast;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
+
 
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -34,7 +36,7 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  * </pre>
  *
  * <p>Distinct from the implicit lowest-upper-bound nodes that
- * {@link org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor}
+ * {@link StaticTypeCheckingVisitor}
  * synthesizes during inference: an instance of this class records the ordered
  * list of components exactly as written by the user. That ordering is needed
  * for cast-conversion checks, error messages and (in later phases) bytecode

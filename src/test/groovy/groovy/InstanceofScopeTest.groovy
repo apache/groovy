@@ -22,13 +22,14 @@ import org.codehaus.groovy.ast.CodeVisitorSupport
 import org.codehaus.groovy.ast.DynamicVariable
 import org.codehaus.groovy.ast.Variable
 import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.classgen.VariableScopeVisitor
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
 
 /**
  * AST-level scope tests for JEP 394 {@code instanceof} pattern variables
- * (GROOVY-12242), verifying that {@link org.codehaus.groovy.classgen.VariableScopeVisitor}
+ * (GROOVY-12242), verifying that {@link VariableScopeVisitor}
  * correctly scopes each pattern variable for every condition shape in the
  * visibility matrix.
  * <p>

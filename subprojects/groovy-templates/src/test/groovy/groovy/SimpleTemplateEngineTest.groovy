@@ -18,6 +18,7 @@
  */
 package groovy
 
+import groovy.text.SimpleTemplateEngine
 import org.junit.jupiter.api.Test
 
 
@@ -26,7 +27,7 @@ class SimpleTemplateEngineTest {
     @Test
     void testBindingWithDefault() {
       def binding = [ firstname : "Grace", lastname  : "Hopper" ]
-      def engine = new groovy.text.SimpleTemplateEngine()
+      def engine = new SimpleTemplateEngine()
       def text = '''$salutation <%= firstname %> $lastname'''
       def template = engine.createTemplate(text).make(binding.withDefault{ '' })
       assert template.toString() == ''' Grace Hopper'''

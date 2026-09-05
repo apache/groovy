@@ -81,7 +81,7 @@ public class SwingExtensions {
     }
 
     /**
-     * Returns an {@link java.util.Iterator} which traverses the Container one Component at a time.
+     * Returns an {@link Iterator} which traverses the Container one Component at a time.
      *
      * @param self a Container
      * @return an Iterator for a Container
@@ -146,7 +146,7 @@ public class SwingExtensions {
     }
 
     /**
-     * Returns an {@link java.util.Iterator} which traverses the ButtonGroup one AbstractButton at a time.
+     * Returns an {@link Iterator} which traverses the ButtonGroup one AbstractButton at a time.
      *
      * @param self a ButtonGroup
      * @return an Iterator for a ButtonGroup
@@ -180,7 +180,7 @@ public class SwingExtensions {
     }
 
     /**
-     * Returns an {@link java.util.Iterator} which traverses the ListModel one element at a time.
+     * Returns an {@link Iterator} which traverses the ListModel one element at a time.
      *
      * @param self a ListModel
      * @return an Iterator for a ListModel
@@ -247,7 +247,7 @@ public class SwingExtensions {
     }
 
     /**
-     * Returns an {@link java.util.Iterator} which traverses the DefaultListModel one element at a time.
+     * Returns an {@link Iterator} which traverses the DefaultListModel one element at a time.
      *
      * @param self a DefaultListModel
      * @return an Iterator for a DefaultListModel
@@ -324,7 +324,7 @@ public class SwingExtensions {
     }
 
     /**
-     * Returns an {@link java.util.Iterator} which traverses the ComboBox one item at a time.
+     * Returns an {@link Iterator} which traverses the ComboBox one item at a time.
      *
      * @param self a ComboBox
      * @return an Iterator for a ComboBox
@@ -364,7 +364,7 @@ public class SwingExtensions {
     }
 
     /**
-     * Returns an {@link java.util.Iterator} which traverses the MutableComboBoxModel one item at a time.
+     * Returns an {@link Iterator} which traverses the MutableComboBoxModel one item at a time.
      *
      * @param self a MutableComboBoxModel
      * @return an Iterator for a MutableComboBoxModel
@@ -430,7 +430,7 @@ public class SwingExtensions {
     }
 
     /**
-     * Returns an {@link java.util.Iterator} which traverses the TableModel one row at a time.
+     * Returns an {@link Iterator} which traverses the TableModel one row at a time.
      *
      * @param self a TableModel
      * @return an Iterator for a TableModel
@@ -519,7 +519,7 @@ public class SwingExtensions {
     }
 
     /**
-     * Returns an {@link java.util.Iterator} which traverses the DefaultTableModel one item at a time.
+     * Returns an {@link Iterator} which traverses the DefaultTableModel one item at a time.
      *
      * @param self a DefaultTableModel
      * @return an Iterator for a DefaultTableModel
@@ -576,7 +576,7 @@ public class SwingExtensions {
     }
 
     /**
-     * Returns an {@link java.util.Iterator} which traverses the TableColumnModel one TableColumn at a time.
+     * Returns an {@link Iterator} which traverses the TableColumnModel one TableColumn at a time.
      *
      * @param self a TableColumnModel
      * @return an Iterator for a TableColumnModel
@@ -654,7 +654,7 @@ public class SwingExtensions {
     }
 
     /**
-     * Returns an {@link java.util.Iterator} which traverses the TreePath one path at a time.
+     * Returns an {@link Iterator} which traverses the TreePath one path at a time.
      *
      * @param self a TreePath
      * @return an Iterator for a TreePath
@@ -688,7 +688,7 @@ public class SwingExtensions {
     }
 
     /**
-     * Returns an {@link java.util.Iterator} which traverses the TreeNode one node at a time.
+     * Returns an {@link Iterator} which traverses the TreeNode one node at a time.
      *
      * @param self a TreeNode
      * @return an Iterator for a TreeNode
@@ -847,7 +847,7 @@ public class SwingExtensions {
     }
 
     /**
-     * Returns an {@link java.util.Iterator} which traverses the JMenu one component at a time.
+     * Returns an {@link Iterator} which traverses the JMenu one component at a time.
      *
      * @param self a JMenu
      * @return an Iterator for a JMenu
@@ -895,7 +895,7 @@ public class SwingExtensions {
     }
 
     /**
-     * Returns an {@link java.util.Iterator} which traverses the JMenuBar one menu at a time.
+     * Returns an {@link Iterator} which traverses the JMenuBar one menu at a time.
      *
      * @param self a JMenuBar
      * @return an Iterator for a JMenuBar
@@ -976,7 +976,7 @@ public class SwingExtensions {
     }
 
     /**
-     * Returns an {@link java.util.Iterator} which traverses the JPopupMenu one MenuElement at a time.
+     * Returns an {@link Iterator} which traverses the JPopupMenu one MenuElement at a time.
      *
      * @param self a JPopupMenu
      * @return an Iterator for a JPopupMenu
@@ -1020,7 +1020,7 @@ public class SwingExtensions {
     }
 
     /**
-     * Returns an {@link java.util.Iterator} which traverses the JTabbedPane one Component tab at a time.
+     * Returns an {@link Iterator} which traverses the JTabbedPane one Component tab at a time.
      *
      * @param self a JTabbedPane
      * @return an Iterator for a JTabbedPane

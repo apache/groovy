@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
@@ -48,7 +49,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
- * Creates a try-catch block around a given {@link org.codehaus.groovy.ast.stmt.AssertStatement} and catches
+ * Creates a try-catch block around a given {@link AssertStatement} and catches
  * a PowerAssertionError to reuse the generated visual output.
  */
 public class TryCatchBlockGenerator {

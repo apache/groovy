@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen;
 
+import groovy.lang.MissingPropertyException;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import groovy.transform.Internal;
@@ -98,8 +99,8 @@ import static org.codehaus.groovy.transform.trait.Traits.isTrait;
  * bound on each control-flow path; this visitor:
  * <ul>
  *   <li>declares each pattern variable only where it is live, so out-of-scope
- *       references become {@link org.codehaus.groovy.ast.DynamicVariable}
- *       (runtime {@link groovy.lang.MissingPropertyException} in dynamic
+ *       references become {@link DynamicVariable}
+ *       (runtime {@link MissingPropertyException} in dynamic
  *       Groovy — the same rule {@code @TypeChecked} enforces at compile
  *       time); and</li>
  *   <li>attaches the same {@link InstanceofFlowBindings} instance as AST
@@ -673,8 +674,8 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
      *       after the if-else.</li>
      * </ul>
      * In dynamic Groovy, undeclared references resolve to
-     * {@link org.codehaus.groovy.ast.DynamicVariable} (runtime
-     * {@link groovy.lang.MissingPropertyException}). {@code @TypeChecked}
+     * {@link DynamicVariable} (runtime
+     * {@link MissingPropertyException}). {@code @TypeChecked}
      * enforces the same rules at compile time; both modes share this visitor.
      */
     @Override

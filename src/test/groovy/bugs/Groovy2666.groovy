@@ -33,7 +33,7 @@ final class Groovy2666 {
     void testMe() {
         try {
             ex()
-        } catch (org.codehaus.groovy.GroovyBugError expected) {
+        } catch (GroovyBugError expected) {
             return
         } catch (NullPointerException e) {
         }

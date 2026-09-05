@@ -18,7 +18,11 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
+import org.opentest4j.AssertionFailedError
+
+import java.util.regex.Pattern
 
 import static groovy.API.arrayMethod
 import static groovy.API.noArrayMethod
@@ -43,7 +47,7 @@ import static java.util.jar.Attributes.Name as AttrName
 import static java.util.regex.Pattern.MULTILINE
 import static org.junit.jupiter.api.Assertions.assertEquals
 
-final class StaticImportTest extends groovy.test.GroovyTestCase {
+final class StaticImportTest extends GroovyTestCase {
 
     void testFieldWithAliasInExpression() {
         assert !F
@@ -86,7 +90,7 @@ final class StaticImportTest extends groovy.test.GroovyTestCase {
     }
 
     void testWildCardAliasing() {
-        assert MULTILINE == java.util.regex.Pattern.MULTILINE
+        assert MULTILINE == Pattern.MULTILINE
     }
 
     private format(a, b, c, ignored) { format(a, b, c) }
@@ -98,7 +102,7 @@ final class StaticImportTest extends groovy.test.GroovyTestCase {
     void testAssertEqualsFromJUnit() {
         double[] values = [3.9999, 4.0001, 0.00021, 0.00019]
         assertEquals(values[0], values[1], values[2])
-        shouldFail(org.opentest4j.AssertionFailedError) {
+        shouldFail(AssertionFailedError) {
             assertEquals(values[0], values[1], values[3])
         }
     }

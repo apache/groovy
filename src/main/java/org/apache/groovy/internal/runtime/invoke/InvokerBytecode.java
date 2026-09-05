@@ -28,6 +28,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -56,7 +57,7 @@ final class InvokerBytecode {
     private static final String THROWABLE = "java/lang/Throwable";
 
     /**
-     * BSM for {@link java.lang.invoke.MethodHandles#classData} — already has
+     * BSM for {@link MethodHandles#classData} — already has
      * the {@code ConstantDynamic} bootstrap signature, so {@code <clinit>} is
      * not required and there is no checked {@code IllegalAccessException}.
      */

@@ -51,6 +51,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
@@ -326,7 +327,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
      * override. Java overrides may narrow checked exceptions but cannot add new
      * ones, so the nearest superclass-declared {@code clone()} dictates the
      * shape: if it does not declare {@link CloneNotSupportedException}, neither
-     * may we (e.g. a subclass of {@link java.util.HashMap}, whose {@code clone()}
+     * may we (e.g. a subclass of {@link HashMap}, whose {@code clone()}
      * is silenced). Defaults to {@code throws CloneNotSupportedException} when
      * no narrowing parent intervenes, matching {@link Object#clone()}.
      */

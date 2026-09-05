@@ -20,6 +20,7 @@ package org.apache.groovy.lang.annotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.CONSTRUCTOR;
@@ -58,7 +59,7 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
  * became part of the binary ABI. It is mandatory and must use the full
  * three-part version form, e.g. {@code "1.0.0"}.
  *
- * <p><b>Retention.</b> This marker has {@link java.lang.annotation.RetentionPolicy#CLASS}
+ * <p><b>Retention.</b> This marker has {@link RetentionPolicy#CLASS}
  * retention: it survives into published class files so the build's binary
  * compatibility tooling can rely on it.
  *

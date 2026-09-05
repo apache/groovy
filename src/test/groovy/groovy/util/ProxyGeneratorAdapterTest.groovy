@@ -21,6 +21,9 @@ package groovy.util
 import org.apache.groovy.util.HiddenClassDefiner
 import org.codehaus.groovy.runtime.ProxyGeneratorAdapter
 import org.junit.jupiter.api.Test
+import org.objectweb.asm.Type
+
+import java.io.Serializable
 
 import static groovy.test.GroovyAssert.assertScript
 import static org.junit.jupiter.api.Assertions.*
@@ -212,23 +215,23 @@ class ProxyGeneratorAdapterTest {
 
     @Test
     void testGetTypeArgsRegisterLength() {
-        def types = { list -> list as org.objectweb.asm.Type[] }
+        def types = { list -> list as Type[] }
         def proxyGeneratorAdapter = new ProxyGeneratorAdapter([:], Object, [] as Class[], null, false, Object)
 
-        assert 2 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([org.objectweb.asm.Type.LONG_TYPE]))
-        assert 2 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([org.objectweb.asm.Type.DOUBLE_TYPE]))
+        assert 2 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([Type.LONG_TYPE]))
+        assert 2 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([Type.DOUBLE_TYPE]))
 
-        assert 1 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([org.objectweb.asm.Type.BYTE_TYPE]))
-        assert 1 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([org.objectweb.asm.Type.CHAR_TYPE]))
-        assert 1 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([org.objectweb.asm.Type.INT_TYPE]))
-        assert 1 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([org.objectweb.asm.Type.FLOAT_TYPE]))
+        assert 1 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([Type.BYTE_TYPE]))
+        assert 1 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([Type.CHAR_TYPE]))
+        assert 1 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([Type.INT_TYPE]))
+        assert 1 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([Type.FLOAT_TYPE]))
 
-        assert 1 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([org.objectweb.asm.Type.BOOLEAN_TYPE]))
+        assert 1 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([Type.BOOLEAN_TYPE]))
 
         assert 5 == proxyGeneratorAdapter.getTypeArgsRegisterLength(types([
-                org.objectweb.asm.Type.LONG_TYPE,
-                org.objectweb.asm.Type.LONG_TYPE,
-                org.objectweb.asm.Type.INT_TYPE ] as org.objectweb.asm.Type[]))
+                Type.LONG_TYPE,
+                Type.LONG_TYPE,
+                Type.INT_TYPE ] as Type[]))
     }
 
     abstract static class Foo {
@@ -277,9 +280,9 @@ class ProxyGeneratorAdapterTest {
         def calls = 0
         def proxy = ProxyGenerator.INSTANCE.instantiateAggregate(
                 ['run': { -> calls++ }],
-                [Runnable, java.io.Serializable, UserMarker] as List<Class>)
+                [Runnable, Serializable, UserMarker] as List<Class>)
         assert proxy instanceof Runnable
-        assert proxy instanceof java.io.Serializable
+        assert proxy instanceof Serializable
         assert proxy instanceof UserMarker
         proxy.run()
         proxy.run()

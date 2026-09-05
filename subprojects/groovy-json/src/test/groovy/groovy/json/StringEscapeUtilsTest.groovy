@@ -19,6 +19,7 @@
 package groovy.json
 
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.function.Executable
 
 import static org.junit.jupiter.api.Assertions.*
 
@@ -554,7 +555,7 @@ class StringEscapeUtilsTest {
     @Test
     void testConstructor() {
         // Public constructor is allowed
-        assertDoesNotThrow({ -> new StringEscapeUtils() } as org.junit.jupiter.api.function.Executable)
+        assertDoesNotThrow({ -> new StringEscapeUtils() } as Executable)
     }
 
     @Test

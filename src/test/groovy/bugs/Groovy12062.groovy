@@ -18,13 +18,14 @@
  */
 package bugs
 
+import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
 /**
- * Under classic (non-indy) codegen, {@link org.codehaus.groovy.classgen.asm.OptimizingStatementWriter}
+ * Under classic (non-indy) codegen, {@link OptimizingStatementWriter}
  * emits an optimizable statement twice behind a {@code __$stMC} fast/slow guard.
  * When the method has a non-empty (and non-optimizable) {@code finally} block,
  * inlining that block used to unwind the {@code CompileStack} scope permanently,

@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.powerassert
 
+import groovy.transform.PackageScope
 import org.junit.jupiter.api.Test
 
 import static java.lang.Math.min
@@ -760,7 +761,7 @@ assert func.call(42) == null
     */
 }
 
-@groovy.transform.PackageScope class Holder {
+@PackageScope class Holder {
     public x = 0
     def getX() { 9 }
     String toString() { 'h' }

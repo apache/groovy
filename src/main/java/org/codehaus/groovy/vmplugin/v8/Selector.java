@@ -69,6 +69,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
 
@@ -536,7 +537,7 @@ public abstract class Selector {
             // keeps EMC off its fast metaclass path
             if (mci.getClass() != MetaClassImpl.class) return;
             Object receiver = getCorrectedReceiver();
-            if (receiver instanceof Class || receiver instanceof java.util.Map) return;
+            if (receiver instanceof Class || receiver instanceof Map) return;
             if (GroovyCategorySupport.hasCategoryInCurrentThread()) return; // categories can contribute setters
 
             // a setProperty(String,Object) contributed by the class itself, a

@@ -32,11 +32,13 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import org.codehaus.groovy.control.customizers.ImportCustomizer;
+
 
 /**
  * Shared utilities for expanding JPMS module imports into package-level
  * star imports. Used by both the parser ({@code AstBuilder}) and the
- * {@link org.codehaus.groovy.control.customizers.ImportCustomizer}.
+ * {@link ImportCustomizer}.
  *
  * @since 6.0.0
  */

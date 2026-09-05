@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Function;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import static java.util.logging.Level.WARNING;
@@ -107,7 +108,7 @@ public class MetaInfExtensionModule extends SimpleExtensionModule {
                     return loader.loadClass(extensionClass);
                 }
             } catch (ClassNotFoundException | InaccessibleObjectException | LinkageError error) {
-                var logger = java.util.logging.Logger.getLogger(MetaInfExtensionModule.class.getName());
+                var logger = Logger.getLogger(MetaInfExtensionModule.class.getName());
                 logger.log(WARNING, "Module [" + name + "] - Unable to load extension class: " + extensionClass, error);
             }
             return null;

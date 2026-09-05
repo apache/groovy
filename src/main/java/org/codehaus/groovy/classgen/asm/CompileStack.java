@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import groovy.lang.Reference;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -376,7 +377,7 @@ public class CompileStack {
     }
 
     /**
-     * Returns a variable by name, throwing a {@link org.codehaus.groovy.GroovyBugError}
+     * Returns a variable by name, throwing a {@link GroovyBugError}
      * if it does not exist. Convenience overload of
      * {@link #getVariable(String, boolean)} with {@code mustExist = true}.
      *
@@ -935,7 +936,7 @@ public class CompileStack {
     }
 
     /**
-     * Wraps the current stack value in a {@code groovy.lang.Reference} for the given variable slot.
+     * Wraps the current stack value in a {@code Reference} for the given variable slot.
      * <p>
      * Expects a boxed/object value already on the JVM operand stack. Prefer
      * {@link #storeVar(BytecodeVariable, boolean)} when the value still needs
@@ -957,7 +958,7 @@ public class CompileStack {
      * <p>
      * When {@code variable} is a {@linkplain BytecodeVariable#isHolder() holder}
      * and {@code freshReferenceIfHolder} is {@code true}, the value is cast and
-     * boxed and a <em>new</em> {@link groovy.lang.Reference} is written to the
+     * boxed and a <em>new</em> {@link Reference} is written to the
      * slot (for-in per-iteration recapture, GROOVY-11792). Callers that already
      * hold a boxed object on the JVM stack and do not need casting may call
      * {@link #createReference(BytecodeVariable)} directly.

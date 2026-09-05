@@ -29,6 +29,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -302,7 +303,7 @@ public class DgmConverter {
             "()Ljava/lang/invoke/MethodHandles$Lookup;", false);
         // Class ownerClass = <declaring class>.class
         String ownerInternal = BytecodeHelper.getClassInternalName(method.getDeclaringClass().getTheClass());
-        mv.visitLdcInsn(org.objectweb.asm.Type.getObjectType(ownerInternal));
+        mv.visitLdcInsn(Type.getObjectType(ownerInternal));
         // String methodName = "<method name>"
         mv.visitLdcInsn(method.getName());
         // MethodType methodType = MethodType.methodType(<return>, <param1>, <param2>, ...)

@@ -300,13 +300,13 @@ final class InvokerFactoryTest {
     @Test
     @ResourceLock(Resources.SYSTEM_PROPERTIES)
     void testHiddenClassKillSwitchDisablesGeneration() {
-        String previous = System.getProperty(org.apache.groovy.util.HiddenClassDefiner.PROPERTY_DISABLE)
+        String previous = System.getProperty(HiddenClassDefiner.PROPERTY_DISABLE)
         try {
-            System.setProperty(org.apache.groovy.util.HiddenClassDefiner.PROPERTY_DISABLE, 'true')
+            System.setProperty(HiddenClassDefiner.PROPERTY_DISABLE, 'true')
             assertFalse(InvokerFactory.generationAllowed())
             assertNull(InvokerFactory.tryCreate(cm(DirectInvokerSubjects.getMethod('ping'))))
         } finally {
-            restoreProperty(org.apache.groovy.util.HiddenClassDefiner.PROPERTY_DISABLE, previous)
+            restoreProperty(HiddenClassDefiner.PROPERTY_DISABLE, previous)
         }
         assertTrue(InvokerFactory.generationAllowed())
     }
@@ -316,9 +316,9 @@ final class InvokerFactoryTest {
         // Private java.lang member: Step 1 no, Step 2 usually no, Step 3 unreflect
         // fails under strong encapsulation, Step 4 refused for bootstrap.
         Method m = String.declaredMethods.find { method ->
-            java.lang.reflect.Modifier.isPrivate(method.modifiers) &&
+            Modifier.isPrivate(method.modifiers) &&
                     !method.synthetic &&
-                    !java.lang.reflect.Modifier.isAbstract(method.modifiers)
+                    !Modifier.isAbstract(method.modifiers)
         }
         if (m == null) {
             return

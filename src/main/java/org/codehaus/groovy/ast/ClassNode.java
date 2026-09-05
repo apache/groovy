@@ -34,11 +34,14 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
+import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -47,6 +50,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -208,7 +212,7 @@ public class ClassNode extends AnnotatedNode {
      * an actual source class definition with specified interfaces and mixins.
      *
      * @param name       the fully-qualified name of the class (e.g., "com.example.MyClass")
-     * @param modifiers  the bytecode modifiers (flags from {@link java.lang.reflect.Modifier} or {@link org.objectweb.asm.Opcodes})
+     * @param modifiers  the bytecode modifiers (flags from {@link Modifier} or {@link Opcodes})
      * @param superClass the base class ({@link ClassNode} representing the parent type); use {@link ClassHelper#OBJECT_TYPE} if no direct base class
      * @param interfaces array of {@link ClassNode} instances for interfaces implemented by this class; may be empty
      * @param mixins     array of {@link MixinNode} instances to be mixed into this class; may be empty
@@ -229,7 +233,7 @@ public class ClassNode extends AnnotatedNode {
      * It delegates to the full constructor with empty interface and mixin arrays.
      *
      * @param name       the fully-qualified name of the class (e.g., "com.example.MyClass")
-     * @param modifiers  the bytecode modifiers (flags from {@link java.lang.reflect.Modifier} or {@link org.objectweb.asm.Opcodes})
+     * @param modifiers  the bytecode modifiers (flags from {@link Modifier} or {@link Opcodes})
      * @param superClass the base class ({@link ClassNode} representing the parent type); use {@link ClassHelper#OBJECT_TYPE} if no direct base class
      */
     public ClassNode(final String name, final int modifiers, final ClassNode superClass) {
@@ -1473,7 +1477,7 @@ public class ClassNode extends AnnotatedNode {
     public MethodNode getGetterMethod(String getterName, boolean searchSupers) {
         MethodNode getterMethod = null;
 
-        java.util.function.Predicate<MethodNode> isNullOrSynthetic = (method) ->
+        Predicate<MethodNode> isNullOrSynthetic = (method) ->
                 (method == null || (method.getModifiers() & ACC_SYNTHETIC) != 0);
 
         boolean booleanReturnOnly = getterName.startsWith("is");
@@ -1838,7 +1842,7 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
         // turn hoists a nested one. Track already-visited methods by identity (MethodNode uses the
         // default equals) in a hash set for O(1) membership, and re-scan getMethods() after each round
         // for the newly added ones, until none remain.
-        Set<MethodNode> visited = Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        Set<MethodNode> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         List<MethodNode> pending = new ArrayList<>(getMethods()); // snapshot avoids ConcurrentModificationException
         while (!pending.isEmpty()) {
             for (MethodNode mn : pending) {

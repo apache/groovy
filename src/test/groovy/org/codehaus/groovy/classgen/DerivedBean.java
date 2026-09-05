@@ -18,11 +18,13 @@
  */
 package org.codehaus.groovy.classgen;
 
+import org.codehaus.groovy.runtime.DummyBean;
+
 
 /**
  * A simple bean
  */
-public class DerivedBean extends org.codehaus.groovy.runtime.DummyBean {
+public class DerivedBean extends DummyBean {
 
     private String bar;
 

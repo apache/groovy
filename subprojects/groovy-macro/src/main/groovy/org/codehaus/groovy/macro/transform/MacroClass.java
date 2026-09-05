@@ -18,8 +18,10 @@
  */
 package org.codehaus.groovy.macro.transform;
 
+import org.codehaus.groovy.ast.ClassNode;
+
 /**
- * Marker base class for anonymous classes expanded into {@link org.codehaus.groovy.ast.ClassNode} instances.
+ * Marker base class for anonymous classes expanded into {@link ClassNode} instances.
  *
  * @since 2.5.0
  */

@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -106,7 +107,7 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
         ClassNode[] exceptions = {make(IOException.class)};
         // GEP-21 Shape C: replace the stubber's placeholder body if present.
         Parameter[] writeParams = params(out);
-        org.codehaus.groovy.ast.MethodNode existing = cNode.getDeclaredMethod("writeExternal", writeParams);
+        MethodNode existing = cNode.getDeclaredMethod("writeExternal", writeParams);
         if (StubberSupport.isStub(existing)) {
             existing.setCode(body);
             StubberSupport.clearStub(existing);
@@ -128,7 +129,7 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
         }
         // GEP-21 Shape C: replace the stubber's placeholder body if present.
         Parameter[] readParams = params(oin);
-        org.codehaus.groovy.ast.MethodNode existing = cNode.getDeclaredMethod("readExternal", readParams);
+        MethodNode existing = cNode.getDeclaredMethod("readExternal", readParams);
         if (StubberSupport.isStub(existing)) {
             existing.setCode(body);
             StubberSupport.clearStub(existing);

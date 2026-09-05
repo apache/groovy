@@ -22,6 +22,8 @@ import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
 import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
 import org.apache.groovy.groovysh.Main;
+import org.codehaus.groovy.control.ModuleImportHelper;
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
@@ -50,6 +52,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.module.ModuleFinder;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -77,6 +80,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -548,8 +552,8 @@ public class GroovyEngine implements ScriptEngine {
             imports.put("module " + moduleName, addSnippet(SnippetType.IMPORT, statement));
             // Populate the completion cache with exported packages from the module
             try {
-                var finder = java.lang.module.ModuleFinder.ofSystem();
-                for (String pkg : org.codehaus.groovy.control.ModuleImportHelper.resolveModulePackages(moduleName, finder)) {
+                var finder = ModuleFinder.ofSystem();
+                for (String pkg : ModuleImportHelper.resolveModulePackages(moduleName, finder)) {
                     addToNameClass(pkg + ".*");
                 }
             } catch (Exception ignore) {
@@ -2693,13 +2697,13 @@ public class GroovyEngine implements ScriptEngine {
                 } catch (MissingPropertyException e) {
                     mainDesc.addAll(doExceptionMessage(e));
                     out.setErrorPattern(Pattern.compile("\\b" + e.getProperty() + "\\b"));
-                } catch (java.util.regex.PatternSyntaxException e) {
+                } catch (PatternSyntaxException e) {
                     mainDesc.addAll(doExceptionMessage(e));
                     int idx = line.getHead().lastIndexOf(e.getPattern());
                     if (idx >= 0) {
                         out.setErrorIndex(idx + e.getIndex());
                     }
-                } catch (org.codehaus.groovy.control.MultipleCompilationErrorsException e) {
+                } catch (MultipleCompilationErrorsException e) {
                     if (e.getErrorCollector().getErrors() != null) {
                         for (Object o : e.getErrorCollector().getErrors()) {
                             if (o instanceof SyntaxErrorMessage sem) {

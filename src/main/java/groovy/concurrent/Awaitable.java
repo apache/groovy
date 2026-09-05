@@ -24,8 +24,11 @@ import org.apache.groovy.runtime.async.GroovyPromise;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
@@ -60,7 +63,7 @@ import java.util.function.Supplier;
  *   <li>{@link #delay(long) Awaitable.delay(ms)} — completes after a
  *       non-blocking delay</li>
  *   <li>{@link #orTimeoutMillis(Object, long) Awaitable.orTimeoutMillis(task, ms)} —
- *       fails with {@link java.util.concurrent.TimeoutException} if the task
+ *       fails with {@link TimeoutException} if the task
  *       does not complete in time</li>
  *   <li>{@link #completeOnTimeoutMillis(Object, Object, long)
  *       Awaitable.completeOnTimeoutMillis(task, fallback, ms)} —
@@ -208,7 +211,7 @@ public interface Awaitable<T> {
      * <p>
      * The supplied throwable is transparently unwrapped so handlers see the
      * original failure rather than {@link ExecutionException} /
-     * {@link java.util.concurrent.CompletionException} wrappers.
+     * {@link CompletionException} wrappers.
      *
      * @param action the completion callback receiving the result or failure
      * @return a new awaitable that completes with the original result
@@ -309,8 +312,8 @@ public interface Awaitable<T> {
      * If the source is already an {@code Awaitable}, it is returned as-is.
      * Otherwise, the {@link AwaitableAdapterRegistry} is consulted to find a
      * suitable adapter. Built-in adapters handle {@link CompletableFuture},
-     * {@link java.util.concurrent.CompletionStage}, and
-     * {@link java.util.concurrent.Future}; third-party frameworks can register
+     * {@link CompletionStage}, and
+     * {@link Future}; third-party frameworks can register
      * additional adapters via the registry.
      * <p>
      * This is the recommended entry point for converting external async types
@@ -439,7 +442,7 @@ public interface Awaitable<T> {
      * Returns an {@code Awaitable} that completes with the result of the first
      * source that succeeds.  Individual failures are silently absorbed; only
      * when <em>all</em> sources have failed does the returned awaitable reject
-     * with an aggregate {@link java.util.concurrent.CompletionException}
+     * with an aggregate {@link CompletionException}
      * (message {@code "All N tasks failed"}, cause = first failure, remaining
      * failures as suppressed). Under {@code await} exception transparency the
      * cause is rethrown.
@@ -534,7 +537,7 @@ public interface Awaitable<T> {
      * deadline elapses.
      * <p>
      * The source may be a Groovy {@link Awaitable}, a JDK
-     * {@link CompletableFuture}/{@link java.util.concurrent.CompletionStage},
+     * {@link CompletableFuture}/{@link CompletionStage},
      * or any type supported by {@link AwaitableAdapterRegistry}.  This provides
      * a concise timeout combinator that returns another awaitable rather than
      * requiring structural timeout blocks.

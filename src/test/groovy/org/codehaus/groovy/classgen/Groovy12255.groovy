@@ -957,9 +957,9 @@ final class Groovy12255 {
                                         GeneralUtils.yieldS(GeneralUtils.constX('a')))))],
                 GeneralUtils.yieldS(GeneralUtils.constX('z')))
 
-        new org.codehaus.groovy.ast.ClassCodeExpressionTransformer() {
+        new ClassCodeExpressionTransformer() {
             @Override
-            protected org.codehaus.groovy.control.SourceUnit getSourceUnit() { null }
+            protected SourceUnit getSourceUnit() { null }
 
             @Override
             Expression transform(Expression expression) {

@@ -20,11 +20,12 @@ package org.codehaus.groovy.ast.stmt;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
 
 
 /**
  * Represents a case arm of a {@link SwitchStatement} or a
- * {@link org.codehaus.groovy.ast.expr.SwitchExpression}.
+ * {@link SwitchExpression}.
  * A case consists of a pattern (expression) to match against the switch
  * selector and the statement to execute if the pattern matches.
  *

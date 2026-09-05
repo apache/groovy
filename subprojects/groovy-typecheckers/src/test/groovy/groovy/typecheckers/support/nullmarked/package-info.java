@@ -22,5 +22,7 @@
  * {@code NullCheckerTest} to verify that package-level annotations of precompiled dependencies are
  * read from {@code package-info.class} during resolution (GROOVY-12207).
  */
-@org.jspecify.annotations.NullMarked
+@NullMarked
 package groovy.typecheckers.support.nullmarked;
+
+import org.jspecify.annotations.NullMarked;

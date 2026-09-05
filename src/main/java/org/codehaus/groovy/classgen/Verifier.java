@@ -24,6 +24,8 @@ import groovy.lang.MetaClass;
 import groovy.transform.CompileStatic;
 import groovy.transform.Generated;
 import groovy.transform.Internal;
+import groovy.transform.NonSealed;
+import groovy.transform.Sealed;
 import groovy.transform.stc.POJO;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.apache.groovy.ast.tools.MethodNodeUtils;
@@ -408,11 +410,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     private static void detectNonSealedType(final ClassNode node) {
         if (isFinal(node.getModifiers())) return;
-        if (Boolean.TRUE.equals(node.getNodeMetaData(groovy.transform.Sealed.class))) return;
-        if (Boolean.TRUE.equals(node.getNodeMetaData(groovy.transform.NonSealed.class))) return;
+        if (Boolean.TRUE.equals(node.getNodeMetaData(Sealed.class))) return;
+        if (Boolean.TRUE.equals(node.getNodeMetaData(NonSealed.class))) return;
         for (ClassNode sc = node.getSuperClass(); sc != null && !isObjectType(sc); sc = sc.getSuperClass()) {
             if (sc.isSealed()) {
-                node.putNodeMetaData(groovy.transform.NonSealed.class, Boolean.TRUE);
+                node.putNodeMetaData(NonSealed.class, Boolean.TRUE);
                 return;
             }
         }

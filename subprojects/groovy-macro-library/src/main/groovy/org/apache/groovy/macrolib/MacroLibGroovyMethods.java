@@ -253,7 +253,7 @@ public final class MacroLibGroovyMethods {
         // Copy source positions from the originating user nodes onto every
         // synthetic AST node we create — fresh AST nodes default to line/col -1,
         // and several downstream code paths (notably
-        // {@link org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor#addStaticTypeError})
+        // org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor#addStaticTypeError)
         // silently drop diagnostics on positionless nodes. Anchoring everything
         // back to the user's {@code name in expr} clause keeps both error
         // attribution and IDE navigation pointing at real source.

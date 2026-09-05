@@ -21,7 +21,7 @@
  * CLI parsing using Apache Commons CLI library.
  *
  * <p>
- * {@link groovy.cli.commons.CliBuilder} wraps Apache Commons CLI with DSL and annotation support.
+ * {@link CliBuilder} wraps Apache Commons CLI with DSL and annotation support.
  * See {@code groovy.cli.picocli} for advanced POSIX-compliant parsing.
  * </p>
  */

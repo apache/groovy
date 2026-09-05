@@ -39,6 +39,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
@@ -105,8 +107,8 @@ public @interface Log {
      */
     class JavaUtilLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategyV2 {
 
-        private static final ClassNode LOGGER_CLASSNODE = ClassHelper.make(java.util.logging.Logger.class);
-        private static final ClassNode LEVEL_CLASSNODE = ClassHelper.make(java.util.logging.Level.class);
+        private static final ClassNode LOGGER_CLASSNODE = ClassHelper.make(Logger.class);
+        private static final ClassNode LEVEL_CLASSNODE = ClassHelper.make(Level.class);
 
         /**
          * Creates a Java Util Logging strategy.

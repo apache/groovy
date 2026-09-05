@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ant;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import groovy.ant.AntBuilder;
 import groovy.lang.GroovyClassLoader;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 import org.apache.groovy.io.StringBuilderWriter;
@@ -180,7 +181,7 @@ import static java.lang.System.Logger.Level.WARNING;
  * <p>
  * Based on the implementation of the Javac task in Apache Ant.
  * <p>
- * Can also be used from {@link groovy.ant.AntBuilder} to allow the build file to be scripted in Groovy.
+ * Can also be used from {@link AntBuilder} to allow the build file to be scripted in Groovy.
  */
 public class Groovyc extends MatchingTask {
 

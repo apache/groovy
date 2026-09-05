@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm.indy
 
+import groovy.test.GroovyAssert
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -219,7 +220,7 @@ final class IndyCompoundAssignTest {
     void neitherMethodResponds_raisesMissingMethod() {
         // No *Assign and no base operator -> the resolver declines and the legacy
         // helper raises the usual MissingMethodException (semantics preserved).
-        def err = groovy.test.GroovyAssert.shouldFail(MissingMethodException) {
+        def err = GroovyAssert.shouldFail(MissingMethodException) {
             ev('''
                 class NoOps { }
                 def f = { a, b -> a += b; a }

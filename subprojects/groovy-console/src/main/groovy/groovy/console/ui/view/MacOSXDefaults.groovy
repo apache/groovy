@@ -21,6 +21,8 @@ package groovy.console.ui.view
 import javax.swing.text.StyleConstants
 import javax.swing.text.StyleContext
 import java.util.prefs.Preferences
+import groovy.console.ui.Console
+
 
 build(Defaults)
 
@@ -29,7 +31,7 @@ System.setProperty('apple.laf.useScreenMenuBar', 'true')
 System.setProperty('com.apple.mrj.application.apple.menu.about.name', 'GroovyConsole')
 
 // font override for macOS
-def prefs = Preferences.userNodeForPackage(groovy.console.ui.Console)
+def prefs = Preferences.userNodeForPackage(Console)
 def fontFamily = prefs.get("fontName", "Monaco")
 styles.regular[StyleConstants.FontFamily] = fontFamily
 styles[StyleContext.DEFAULT_STYLE] = styles[StyleContext.DEFAULT_STYLE] ?: [:]

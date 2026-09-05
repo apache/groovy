@@ -18,10 +18,13 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
+import groovy.transform.builder.DefaultStrategy
+import groovy.transform.builder.SimpleStrategy
+
 /**
  * Captures the joint-compilation surface for {@code @Builder} with
- * {@link groovy.transform.builder.DefaultStrategy} (the default) and
- * {@link groovy.transform.builder.SimpleStrategy} with a non-default
+ * {@link DefaultStrategy} (the default) and
+ * {@link SimpleStrategy} with a non-default
  * prefix.
  *
  * <p>For DefaultStrategy: the stubber emits the inner {@code FooBuilder}

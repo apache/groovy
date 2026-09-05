@@ -125,11 +125,11 @@ public class TableSorter extends TableMap {
         this way but other subclasses of Number might want to do this to save
         space and avoid unnecessary heap allocation.
         */
-        if (type.getSuperclass() == java.lang.Number.class) {
+        if (type.getSuperclass() == Number.class) {
             return compareNumbers(data, row1, column, row2);
         }
 
-        if (type == java.util.Date.class) {
+        if (type == Date.class) {
             return compareDates(data, row1, column, row2);
         }
 

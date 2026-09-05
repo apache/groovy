@@ -43,6 +43,7 @@ import groovy.lang.PropertyValue;
 import groovy.lang.Range;
 import groovy.lang.SpreadMap;
 import groovy.lang.Tuple2;
+import groovy.lang.groovydoc.Groovydoc;
 import groovy.transform.stc.ClassTag;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FirstParam;
@@ -59,6 +60,7 @@ import groovy.util.ProxyGenerator;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.groovy.lang.annotation.GroovyABI;
 import org.apache.groovy.lang.annotation.Incubating;
+import org.apache.groovy.util.Lambdas;
 import org.apache.groovy.util.ReversedList;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.classgen.Verifier;
@@ -99,6 +101,7 @@ import org.codehaus.groovy.util.ArrayIterable;
 import org.codehaus.groovy.util.IntArrayIterator;
 import org.codehaus.groovy.util.IteratorBufferedIterator;
 import org.codehaus.groovy.util.ListBufferedIterator;
+import org.w3c.dom.Element;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -108,10 +111,12 @@ import java.io.Writer;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.MathContext;
 import java.math.RoundingMode;
 import java.net.URL;
 import java.security.CodeSource;
@@ -165,6 +170,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.ObjIntConsumer;
 import java.util.function.Predicate;
+import java.util.logging.Logger;
 
 import static groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC;
 
@@ -1300,7 +1306,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param col   a collection
      * @param clazz the desired class
      * @return the object resulting from this type conversion
-     * @see #asType(java.lang.Object, java.lang.Class)
+     * @see #asType(Object, java.lang.Class)
      * @since 1.0
      */
     @SuppressWarnings("unchecked")
@@ -1418,7 +1424,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Transform this number to the given type, using the 'as' operator.  The
      * following types are supported in addition to the default
-     * {@link #asType(java.lang.Object, java.lang.Class)}:
+     * {@link #asType(Object, java.lang.Class)}:
      * <ul>
      *  <li>BigDecimal</li>
      *  <li>BigInteger</li>
@@ -2545,7 +2551,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns an iterator of transformed values from the source iterator using the given
      * two-argument <code>transform</code>, with the supplied <code>param</code> fixed as the
      * second argument. Combines {@link #collecting(Iterator, Function)} with the right-currying
-     * performed by {@link org.apache.groovy.util.Lambdas#curryWith(BiFunction, Object)}, so that
+     * performed by {@link Lambdas#curryWith(BiFunction, Object)}, so that
      * {@code iter.collecting(transform, param)} is equivalent to
      * {@code iter.collecting(curryWith(transform, param))}.
      * Since the result is lazy, it is suitable for use with potentially infinite iterators.
@@ -2745,7 +2751,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * fixed as the second argument, returning a list of transformed values. This is a
      * "fat-free" variant combining {@link #collect(Iterable, Closure)} with the
      * right-currying performed by
-     * {@link org.apache.groovy.util.Lambdas#curryWith(BiFunction, Object)}, so that
+     * {@link Lambdas#curryWith(BiFunction, Object)}, so that
      * {@code list.collect(transform, param)} is equivalent to
      * {@code list.collect(curryWith(transform, param))}.
      * <pre class="language-groovy groovyTestCase">
@@ -4193,7 +4199,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Counts the number of occurrences which satisfy the given two-argument condition, with the
      * supplied <code>param</code> fixed as the second argument. Combines
      * {@link #count(Iterable, Predicate)} with the right-currying performed by
-     * {@link org.apache.groovy.util.Lambdas#curryWith(BiPredicate, Object)}, so that
+     * {@link Lambdas#curryWith(BiPredicate, Object)}, so that
      * {@code list.count(condition, param)} is equivalent to
      * {@code list.count(curryWith(condition, param))}.
      * <p>
@@ -6280,7 +6286,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <code>param</code> fixed as the second argument. This is the single-result
      * counterpart of {@link #findAll(Iterable, BiPredicate, Object)}, combining
      * {@link #find(Iterable, Predicate)} with the right-currying performed by
-     * {@link org.apache.groovy.util.Lambdas#curryWith(BiPredicate, Object)}, so that
+     * {@link Lambdas#curryWith(BiPredicate, Object)}, so that
      * {@code list.find(condition, param)} is equivalent to
      * {@code list.find(curryWith(condition, param))}.
      * <pre class="language-groovy groovyTestCase">
@@ -6493,7 +6499,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <code>param</code> fixed as the second argument, preserving the Set type. This is
      * the Set-preserving counterpart of {@link #findAll(Iterable, BiPredicate, Object)},
      * combining {@link #findAll(Set, Predicate)} with the right-currying performed by
-     * {@link org.apache.groovy.util.Lambdas#curryWith(BiPredicate, Object)}, so that
+     * {@link Lambdas#curryWith(BiPredicate, Object)}, so that
      * {@code set.findAll(condition, param)} is equivalent to
      * {@code set.findAll(curryWith(condition, param))}.
      * <pre class="language-groovy groovyTestCase">
@@ -6563,7 +6569,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Finds all values matching the given two-argument condition, with the supplied
      * <code>param</code> fixed as the second argument. This is a "fat-free" variant
      * combining {@link #findAll(Iterable, Predicate)} with the right-currying performed
-     * by {@link org.apache.groovy.util.Lambdas#curryWith(BiPredicate, Object)}, so that
+     * by {@link Lambdas#curryWith(BiPredicate, Object)}, so that
      * {@code list.findAll(condition, param)} is equivalent to
      * {@code list.findAll(curryWith(condition, param))}.
      * <pre class="language-groovy groovyTestCase">
@@ -6755,7 +6761,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Lazily finds all items matching the given two-argument condition, with the supplied
      * <code>param</code> fixed as the second argument. Combines
      * {@link #findingAll(Iterator, Predicate)} with the right-currying performed by
-     * {@link org.apache.groovy.util.Lambdas#curryWith(BiPredicate, Object)}, so that
+     * {@link Lambdas#curryWith(BiPredicate, Object)}, so that
      * {@code iter.findingAll(condition, param)} is equivalent to
      * {@code iter.findingAll(curryWith(condition, param))}.
      * Since the result is lazy, it is suitable for use with potentially infinite iterators.
@@ -8631,10 +8637,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @since 3.0.0
      */
-    public static groovy.lang.groovydoc.Groovydoc getGroovydoc(AnnotatedElement holder) {
+    public static Groovydoc getGroovydoc(AnnotatedElement holder) {
         var groovydocAnnotation = holder.getAnnotation(groovy.lang.Groovydoc.class);
         return groovydocAnnotation == null ? EMPTY_GROOVYDOC :
-            new groovy.lang.groovydoc.Groovydoc(groovydocAnnotation.value(), holder);
+            new Groovydoc(groovydocAnnotation.value(), holder);
     }
 
     //--------------------------------------------------------------------------
@@ -8723,12 +8729,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     // getMetaProperties
 
     /**
-     * Retrieves the list of {@link groovy.lang.MetaProperty} objects for 'self' and wraps it
-     * in a list of {@link groovy.lang.PropertyValue} objects that additionally provide
+     * Retrieves the list of {@link MetaProperty} objects for 'self' and wraps it
+     * in a list of {@link PropertyValue} objects that additionally provide
      * the value for each property of 'self'.
      *
      * @param self the receiver object
-     * @return list of {@link groovy.lang.PropertyValue} objects
+     * @return list of {@link PropertyValue} objects
      * @see groovy.util.Expando#getMetaPropertyValues()
      * @since 1.0
      */
@@ -8746,7 +8752,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     // getProperties
 
     /**
-     * Convenience method that calls {@link #getMetaPropertyValues(java.lang.Object)}(self)
+     * Convenience method that calls {@link #getMetaPropertyValues(Object)}(self)
      * and provides the data in form of simple key/value pairs, i.e. without
      * type() information.
      *
@@ -8762,7 +8768,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             try {
                 props.put(mp.getName(), mp.getValue());
             } catch (Exception e) {
-                java.util.logging.Logger.getLogger(DefaultGroovyMethods.class.getName())
+                Logger.getLogger(DefaultGroovyMethods.class.getName())
                     .throwing(self.getClass().getName(), "getProperty(" + mp.getName() + ")", e);
             }
         }
@@ -8807,7 +8813,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates over the collection of items which this Object represents and returns each item that matches
-     * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
+     * the given filter - calling the <code>{@link #isCase(Object, Object)}</code>
      * method used by switch statements. This method can be used with different
      * kinds of filters like regular expressions, classes, ranges etc.
      * Example:
@@ -8820,7 +8826,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self   the object over which we iterate
-     * @param filter the filter to perform on the object (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
+     * @param filter the filter to perform on the object (using the {@link #isCase(Object, Object)} method)
      * @return a collection of objects which match the filter
      * @since 1.5.6
      */
@@ -8838,7 +8844,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates over the collection of items and returns each item that matches
-     * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
+     * the given filter - calling the <code>{@link #isCase(Object, Object)}</code>
      * method used by switch statements. method can be used with different
      * kinds of filters like regular expressions, classes, ranges etc.
      * Example:
@@ -8851,7 +8857,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self   a collection
-     * @param filter the filter to perform on each element of the collection (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
+     * @param filter the filter to perform on each element of the collection (using the {@link #isCase(Object, Object)} method)
      * @return a collection of objects which match the filter
      * @since 2.0
      */
@@ -8867,7 +8873,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates over the collection of items and returns each item that matches
-     * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
+     * the given filter - calling the <code>{@link #isCase(Object, Object)}</code>
      * method used by switch statements. This method can be used with different
      * kinds of filters like regular expressions, classes, ranges etc.
      * Example:
@@ -8880,7 +8886,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self   a List
-     * @param filter the filter to perform on each element of the collection (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
+     * @param filter the filter to perform on each element of the collection (using the {@link #isCase(Object, Object)} method)
      * @return a List of objects which match the filter
      * @since 2.4.0
      */
@@ -8890,7 +8896,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates over the collection of items and returns each item that matches
-     * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
+     * the given filter - calling the <code>{@link #isCase(Object, Object)}</code>
      * method used by switch statements. This method can be used with different
      * kinds of filters like regular expressions, classes, ranges etc.
      * Example:
@@ -8903,7 +8909,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self   a Set
-     * @param filter the filter to perform on each element of the collection (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
+     * @param filter the filter to perform on each element of the collection (using the {@link #isCase(Object, Object)} method)
      * @return a Set of objects which match the filter
      * @since 2.4.0
      */
@@ -8992,7 +8998,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Lazily returns an Iterator of items matching the given filter - calling the
-     * <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code> method used by
+     * <code>{@link #isCase(Object, Object)}</code> method used by
      * switch statements. This method can be used with different kinds of filters like
      * regular expressions, classes, ranges etc.
      * <pre class="groovyTestCase">
@@ -9001,7 +9007,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self   a source Iterator
-     * @param filter the filter to perform on each element (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
+     * @param filter the filter to perform on each element (using the {@link #isCase(Object, Object)} method)
      * @return an Iterator returning the filtered elements
      * @since 6.0.0
      */
@@ -9605,10 +9611,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the serialized XML string
      * @since 6.0.0
      */
-    public static String groovyToString(org.w3c.dom.Element self) {
+    public static String groovyToString(Element self) {
         try {
-            java.lang.reflect.Method serialize = Class.forName("groovy.xml.XmlUtil")
-                    .getMethod("serialize", org.w3c.dom.Element.class);
+            Method serialize = Class.forName("groovy.xml.XmlUtil")
+                    .getMethod("serialize", Element.class);
             return (String) serialize.invoke(null, self);
         } catch (Exception e) {
             return self.toString();
@@ -9627,7 +9633,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self The object to inspect
      * @param name The name of the property of interest
      * @return The found MetaProperty or null if it doesn't exist
-     * @see groovy.lang.MetaObjectProtocol#hasProperty(java.lang.Object, java.lang.String)
+     * @see groovy.lang.MetaObjectProtocol#hasProperty(Object, java.lang.String)
      * @since 1.6.1
      */
     public static MetaProperty hasProperty(Object self, String name) {
@@ -10824,7 +10830,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Collection composed of the intersection of both collections.  Any
      * elements that exist in both collections are added to the resultant collection.
-     * For collections of custom objects; the objects should implement java.lang.Comparable
+     * For collections of custom objects; the objects should implement Comparable
      * <pre class="language-groovy groovyTestCase">assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])</pre>
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
      * element exists in both collections.
@@ -10842,7 +10848,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Collection composed of the intersection of both collections.  Any
      * elements that exist in both collections are added to the resultant collection.
-     * For collections of custom objects; the objects should implement java.lang.Comparable
+     * For collections of custom objects; the objects should implement Comparable
      * <pre class="language-groovy groovyTestCase">
      * assert [3,4] == [1,2,3,4].intersect([3,4,5,6], Comparator.naturalOrder())
      * assert [2,4] == [1,2,3,4].intersect([4,8,12,16,20], (x, y) {@code -> x * x <=> y})
@@ -10882,7 +10888,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Collection composed of the intersection of both iterables.  Any
      * elements that exist in both iterables are added to the resultant collection.
-     * For iterables of custom objects; the objects should implement java.lang.Comparable
+     * For iterables of custom objects; the objects should implement Comparable
      * <pre class="language-groovy groovyTestCase">
      * assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])
      * </pre>
@@ -10902,7 +10908,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Collection composed of the intersection of both iterables.  Any
      * elements that exist in both iterables are added to the resultant collection.
-     * For iterables of custom objects; the objects should implement java.lang.Comparable
+     * For iterables of custom objects; the objects should implement Comparable
      * <pre class="language-groovy groovyTestCase">
      * assert [3,4] == [1,2,3,4].intersect([3,4,5,6], Comparator.naturalOrder())
      * </pre>
@@ -10922,7 +10928,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Elements from teh first iterable which also occur (according to the comparator closure) in the second iterable are added to the result.
      * If the closure takes a single parameter, the argument passed will be each element,
      * and the closure should return a value used for comparison (either using
-     * {@link java.lang.Comparable#compareTo(java.lang.Object)} or {@link java.lang.Object#equals(java.lang.Object)}).
+     * {@link Comparable#compareTo(Object)} or {@link Object#equals(Object)}).
      * If the closure takes two parameters, two items from the Iterator
      * will be passed as arguments, and the closure should return an
      * int value (with 0 indicating the items are deemed equal).
@@ -11235,7 +11241,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param caseValue   the case value
      * @param switchValue the switch value
      * @return true if the caseValue is deemed to contain the switchValue
-     * @see java.util.Collection#contains(java.lang.Object)
+     * @see java.util.Collection#contains(Object)
      * @since 1.0
      */
     public static boolean isCase(Collection caseValue, Object switchValue) {
@@ -11649,7 +11655,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an object
      * @return an Iterator for the given Object
-     * @see org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#asCollection(java.lang.Object)
+     * @see org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#asCollection(Object)
      * @since 1.0
      */
     @GroovyABI(since = "2.0.0")
@@ -11672,7 +11678,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Allows an Enumeration to behave like an Iterable.  Note that the
-     * {@link java.util.Iterator#remove() remove()} method is unsupported since
+     * {@link Iterator#remove() remove()} method is unsupported since
      * the underlying Enumeration doesn't provide a mechanism for removing items.
      *
      * @param self an Enumeration object
@@ -14400,7 +14406,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param range the (in this case empty) subset of the list to set
      * @param value the Collection of values
      * @since 1.0
-     * @see #putAt(java.util.List, groovy.lang.EmptyRange, java.lang.Object)
+     * @see #putAt(java.util.List, groovy.lang.EmptyRange, Object)
      */
     public static void putAt(List self, EmptyRange range, Collection value) {
         putAt(self, range, (Object)value);
@@ -14866,7 +14872,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param name The name of the method of interest
      * @param argTypes The argument types to match against
      * @return A List of MetaMethods matching the argument types which will be empty if no matching methods exist
-     * @see groovy.lang.MetaObjectProtocol#respondsTo(java.lang.Object, java.lang.String, java.lang.Object[])
+     * @see groovy.lang.MetaObjectProtocol#respondsTo(Object, java.lang.String, Object[])
      * @since 1.6.0
      */
     public static List<MetaMethod> respondsTo(Object self, String name, Object[] argTypes) {
@@ -14885,7 +14891,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self The object to inspect
      * @param name The name of the method of interest
      * @return A List of MetaMethods matching the given name or an empty list if no matching methods exist
-     * @see groovy.lang.MetaObjectProtocol#respondsTo(java.lang.Object, java.lang.String)
+     * @see groovy.lang.MetaObjectProtocol#respondsTo(Object, java.lang.String)
      * @since 1.6.1
      */
     public static List<MetaMethod> respondsTo(Object self, String name) {
@@ -15222,14 +15228,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Round the value
      * <p>
-     * Note that this method differs from {@link java.math.BigDecimal#round(java.math.MathContext)}
+     * Note that this method differs from {@link BigDecimal#round(MathContext)}
      * which specifies the digits to retain starting from the leftmost nonzero
      * digit. This method rounds the integral part to the nearest whole number.
      *
      * @param number a BigDecimal
      * @return the rounded value of that BigDecimal
-     * @see #round(java.math.BigDecimal, int)
-     * @see java.math.BigDecimal#round(java.math.MathContext)
+     * @see #round(BigDecimal, int)
+     * @see BigDecimal#round(MathContext)
      * @since 2.5.0
      */
     public static BigDecimal round(BigDecimal number) {
@@ -15239,7 +15245,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Round the value
      * <p>
-     * Note that this method differs from {@link java.math.BigDecimal#round(java.math.MathContext)}
+     * Note that this method differs from {@link BigDecimal#round(MathContext)}
      * which specifies the digits to retain starting from the leftmost nonzero
      * digit. This method operates on the fractional part of the number and
      * the precision argument specifies the number of digits to the right of
@@ -15248,8 +15254,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param number a BigDecimal
      * @param precision the number of decimal places to keep
      * @return a BigDecimal rounded to the number of decimal places specified by precision
-     * @see #round(java.math.BigDecimal)
-     * @see java.math.BigDecimal#round(java.math.MathContext)
+     * @see #round(BigDecimal)
+     * @see BigDecimal#round(MathContext)
      * @since 2.5.0
      */
     public static BigDecimal round(BigDecimal number, int precision) {
@@ -16105,7 +16111,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return sprintf(self, format, ((List) arg).toArray());
         }
         if (!arg.getClass().isArray()) {
-            Object[] o = (Object[]) java.lang.reflect.Array.newInstance(arg.getClass(), 1);
+            Object[] o = (Object[]) Array.newInstance(arg.getClass(), 1);
             o[0] = arg;
             return sprintf(self, format, o);
         }
@@ -17398,7 +17404,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the currency-formatted String
      *
      * @see #toCurrencyString(Number, Locale)
-     * @see java.text.NumberFormat#getCurrencyInstance()
+     * @see NumberFormat#getCurrencyInstance()
      * @since 6.0.0
      */
     public static String toCurrencyString(Number self) {
@@ -17416,7 +17422,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the currency-formatted String
      *
      * @see StringGroovyMethods#toCurrencyNumber(CharSequence, Locale)
-     * @see java.text.NumberFormat#getCurrencyInstance(Locale)
+     * @see NumberFormat#getCurrencyInstance(Locale)
      * @since 6.0.0
      */
     public static String toCurrencyString(Number self, Locale locale) {
@@ -17439,7 +17445,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the percent-formatted String
      *
      * @see #toPercentString(Number, Locale)
-     * @see java.text.NumberFormat#getPercentInstance()
+     * @see NumberFormat#getPercentInstance()
      * @since 6.0.0
      */
     public static String toPercentString(Number self) {
@@ -17453,15 +17459,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert 0.5.toPercentString(Locale.US) == '50%'
      * assert 0.945.toPercentString(Locale.US) == '94%' // rounded, not '94.5%'
      * </pre>
-     * For fraction digits, format via {@link java.text.NumberFormat#getPercentInstance(Locale)}
-     * with {@link java.text.NumberFormat#setMaximumFractionDigits(int)}.
+     * For fraction digits, format via {@link NumberFormat#getPercentInstance(Locale)}
+     * with {@link NumberFormat#setMaximumFractionDigits(int)}.
      *
      * @param self   a Number
      * @param locale the locale defining the percent format
      * @return the percent-formatted String
      *
      * @see StringGroovyMethods#toPercentNumber(CharSequence, Locale)
-     * @see java.text.NumberFormat#getPercentInstance(Locale)
+     * @see NumberFormat#getPercentInstance(Locale)
      * @since 6.0.0
      */
     public static String toPercentString(Number self, Locale locale) {
@@ -18245,7 +18251,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * If the supplied Closure takes a single parameter, the argument passed will be each element,
      * and the closure should return a value used for comparison (either using
-     * {@link java.lang.Comparable#compareTo(java.lang.Object)} or {@link java.lang.Object#equals(java.lang.Object)}).
+     * {@link Comparable#compareTo(Object)} or {@link Object#equals(Object)}).
      * If the closure takes two parameters, two items from the Iterator
      * will be passed as arguments, and the closure should return an
      * int value (with 0 indicating the items are not unique).
@@ -18438,8 +18444,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterable is retained, but all other ones are removed.
      * <p>
      * If the closure takes a single parameter, each element from the Iterable will be passed to the closure. The closure
-     * should return a value used for comparison (either using {@link java.lang.Comparable#compareTo(java.lang.Object)} or
-     * {@link java.lang.Object#equals(java.lang.Object)}). If the closure takes two parameters, two items from the Iterable
+     * should return a value used for comparison (either using {@link Comparable#compareTo(Object)} or
+     * {@link Object#equals(Object)}). If the closure takes two parameters, two items from the Iterable
      * will be passed as arguments, and the closure should return an int value (with 0 indicating the items are not unique).
      * <p>
      * <pre class="language-groovy groovyTestCase">
@@ -18482,8 +18488,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterable is retained, but all other ones are removed.
      * <p>
      * If the closure takes a single parameter, each element from the Iterable will be passed to the closure. The closure
-     * should return a value used for comparison (either using {@link java.lang.Comparable#compareTo(java.lang.Object)} or
-     * {@link java.lang.Object#equals(java.lang.Object)}). If the closure takes two parameters, two items from the Iterable
+     * should return a value used for comparison (either using {@link Comparable#compareTo(Object)} or
+     * {@link Object#equals(Object)}). If the closure takes two parameters, two items from the Iterable
      * will be passed as arguments, and the closure should return an int value (with 0 indicating the items are not unique).
      * <p>
      * <pre class="language-groovy groovyTestCase">
@@ -18673,7 +18679,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param number a BigDecimal
      * @return a BigDecimal truncated to 0 decimal places
-     * @see #trunc(java.math.BigDecimal, int)
+     * @see #trunc(BigDecimal, int)
      * @since 2.5.0
      */
     public static BigDecimal trunc(BigDecimal number) {
@@ -18686,7 +18692,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param number a BigDecimal
      * @param precision the number of decimal places to keep
      * @return a BigDecimal truncated to the number of decimal places specified by precision
-     * @see #trunc(java.math.BigDecimal)
+     * @see #trunc(BigDecimal)
      * @since 2.5.0
      */
     public static BigDecimal trunc(BigDecimal number, int precision) {
@@ -18731,7 +18737,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a Collection composed of the union of both collections.  Any
      * elements that exist in either collections are added to the resultant collection, such
      * that no elements are duplicated in the resultant collection.
-     * For collections of custom objects; the objects should implement java.lang.Comparable
+     * For collections of custom objects; the objects should implement Comparable
      * <pre class="language-groovy groovyTestCase">assert [1,2,3,4,5,6,7,8] == [1,2,3,4,5].union([4,5,6,7,8])</pre>
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
      * element exists in the resultant collection.
@@ -18750,7 +18756,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a Collection composed of the union of both collections.  Any
      * elements that exist in either collections are added to the resultant collection, such
      * that no elements are duplicated in the resultant collection.
-     * For collections of custom objects; the objects should implement java.lang.Comparable
+     * For collections of custom objects; the objects should implement Comparable
      * <pre class="language-groovy groovyTestCase">
      * assert [1,2,3,4,5,6] == [1,2,3,4].union([3,4,5,6], Comparator.naturalOrder())
      * assert [4,8,12,16,20,1,3] == [4,8,12,16,20].union([1,2,3,4], (x, y) {@code -> x * x <=> y})
@@ -18798,7 +18804,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a Collection composed of the union of both iterables.  Any
      * elements that exist in either iterables are added to the resultant collection, such
      * that no elements are duplicated in the resultant collection.
-     * For iterables of custom objects; the objects should implement java.lang.Comparable
+     * For iterables of custom objects; the objects should implement Comparable
      * <pre class="language-groovy groovyTestCase">
      * assert [1,2,3,4,5,6,7,8] == [1,2,3,4,5].union([4,5,6,7,8])
      * </pre>
@@ -18819,7 +18825,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a Collection composed of the union of both iterables.  Any
      * elements that exist in either iterables are added to the resultant collection, such
      * that no elements are duplicated in the resultant collection.
-     * For iterables of custom objects; the objects should implement java.lang.Comparable
+     * For iterables of custom objects; the objects should implement Comparable
      * <pre class="language-groovy groovyTestCase">
      * assert [1,2,3,4,5,6] == [1,2,3,4].union([3,4,5,6], Comparator.naturalOrder())
      * </pre>
@@ -18840,7 +18846,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * already in the result (according to the comparator closure).
      * If the closure takes a single parameter, the argument passed will be each element,
      * and the closure should return a value used for comparison (either using
-     * {@link java.lang.Comparable#compareTo(java.lang.Object)} or {@link java.lang.Object#equals(java.lang.Object)}).
+     * {@link Comparable#compareTo(Object)} or {@link Object#equals(Object)}).
      * If the closure takes two parameters, two items from the Iterator
      * will be passed as arguments, and the closure should return an
      * int value (with 0 indicating the items are deemed equal).
@@ -19088,7 +19094,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * If the closure takes a single parameter, the argument passed will be each element,
      * and the closure should return a value used for comparison (either using
-     * {@link java.lang.Comparable#compareTo(java.lang.Object)} or {@link java.lang.Object#equals(java.lang.Object)}).
+     * {@link Comparable#compareTo(Object)} or {@link Object#equals(Object)}).
      * If the closure takes two parameters, two items from the Iterator
      * will be passed as arguments, and the closure should return an
      * int value (with 0 indicating the items are not unique).
@@ -19112,7 +19118,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the closure takes a single parameter, the
      * argument passed will be each element, and the closure
      * should return a value used for comparison (either using
-     * {@link java.lang.Comparable#compareTo(java.lang.Object)} or {@link java.lang.Object#equals(java.lang.Object)}).
+     * {@link Comparable#compareTo(Object)} or {@link Object#equals(Object)}).
      * If the closure takes two parameters, two items from the collection
      * will be passed as arguments, and the closure should return an
      * int value (with 0 indicating the items are not unique).
@@ -19136,7 +19142,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the closure takes a single parameter, the
      * argument passed will be each element, and the closure
      * should return a value used for comparison (either using
-     * {@link java.lang.Comparable#compareTo(java.lang.Object)} or {@link java.lang.Object#equals(java.lang.Object)}).
+     * {@link Comparable#compareTo(Object)} or {@link Object#equals(Object)}).
      * If the closure takes two parameters, two items from the List
      * will be passed as arguments, and the closure should return an
      * int value (with 0 indicating the items are not unique).
@@ -19158,8 +19164,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If mutate is true, it works on the receiver object and returns it. If mutate is false, a new collection is returned.
      * <p>
      * If the closure takes a single parameter, each element from the Collection will be passed to the closure. The closure
-     * should return a value used for comparison (either using {@link java.lang.Comparable#compareTo(java.lang.Object)} or
-     * {@link java.lang.Object#equals(java.lang.Object)}). If the closure takes two parameters, two items from the collection
+     * should return a value used for comparison (either using {@link Comparable#compareTo(Object)} or
+     * {@link Object#equals(Object)}). If the closure takes two parameters, two items from the collection
      * will be passed as arguments, and the closure should return an int value (with 0 indicating the items are not unique).
      * <pre class="language-groovy groovyTestCase">
      * def orig = [1, 3, 4, 5]
@@ -19196,8 +19202,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If mutate is true, it works on the receiver object and returns it. If mutate is false, a new collection is returned.
      * <p>
      * If the closure takes a single parameter, each element from the List will be passed to the closure. The closure
-     * should return a value used for comparison (either using {@link java.lang.Comparable#compareTo(java.lang.Object)} or
-     * {@link java.lang.Object#equals(java.lang.Object)}). If the closure takes two parameters, two items from the collection
+     * should return a value used for comparison (either using {@link Comparable#compareTo(Object)} or
+     * {@link Object#equals(Object)}). If the closure takes two parameters, two items from the collection
      * will be passed as arguments, and the closure should return an int value (with 0 indicating the items are not unique).
      * <pre class="language-groovy groovyTestCase">
      * def orig = [1, 3, 4, 5]

@@ -18,6 +18,7 @@
  */
 package bugs
 
+import groovy.lang.DelegatingMetaClass
 import groovy.lang.MetaClassImpl
 import org.apache.groovy.runtime.indy.IndyInvalidation
 import org.codehaus.groovy.reflection.ClassInfo
@@ -673,7 +674,7 @@ final class Groovy12191 {
             SwitchPoint domainSp = IndyInvalidation.switchPointForMetaClass(mc)
             assertSame(domainSp, info.indySwitchPoint)
             assertSame(domainSp, IndyInvalidation.classSwitchPointFor(McOwnerHost))
-            def custom = new groovy.lang.DelegatingMetaClass(mc) {}
+            def custom = new DelegatingMetaClass(mc) {}
             assertSame(domainSp, IndyInvalidation.switchPointForMetaClass(custom))
         } finally {
             GroovySystem.metaClassRegistry.removeMetaClass(McOwnerHost)

@@ -18,6 +18,8 @@
  */
 package groovy.transform;
 
+import groovy.util.regex.RegexGuard;
+import groovy.util.regex.RegexTimeoutException;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
@@ -31,8 +33,8 @@ import java.lang.annotation.Target;
  * Guards the regex operators within the annotated scope against Regular
  * Expression Denial of Service (ReDoS). Match ({@code ==~}) and find
  * ({@code =~}) expressions are rewritten at compile time to deadline-guarded
- * {@link groovy.util.regex.RegexGuard} calls which throw
- * {@link groovy.util.regex.RegexTimeoutException} if evaluation, e.g. due to
+ * {@link RegexGuard} calls which throw
+ * {@link RegexTimeoutException} if evaluation, e.g. due to
  * catastrophic backtracking on adversarial input, exceeds the configured
  * timeout. Matching semantics are otherwise unchanged, including left-to-right
  * evaluation of the operands, which the generated call preserves by taking them
@@ -54,16 +56,16 @@ import java.lang.annotation.Target;
  * variable are unaffected. A guarded field initializer runs, as usual, in the
  * constructor (or in the static initializer for a static field, where a
  * timeout surfaces as an {@code ExceptionInInitializerError} whose cause is
- * the {@link groovy.util.regex.RegexTimeoutException}).
+ * the {@link RegexTimeoutException}).
  * <p>
  * Limitations: only regex operators lexically visible within the annotated
  * scope are rewritten. Regex evaluation via method calls such as
  * {@code String#matches}, {@code replaceAll} or {@code split}, or occurring
  * in code called from the annotated scope, is not guarded; use
- * {@link groovy.util.regex.RegexGuard} explicitly for those. This is an
+ * {@link RegexGuard} explicitly for those. This is an
  * opt-in facility, never a blanket default.
  *
- * @see groovy.util.regex.RegexGuard
+ * @see RegexGuard
  * @since 6.0.0
  */
 @Documented

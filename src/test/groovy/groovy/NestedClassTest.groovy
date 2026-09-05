@@ -18,6 +18,7 @@
  */
 package groovy
 
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -70,7 +71,7 @@ class NestedClassTest {
         method ()
         """).newInstance()
 
-        shouldFail (org.codehaus.groovy.runtime.typehandling.GroovyCastException) {
+        shouldFail (GroovyCastException) {
           assertEquals 239, script.run()
         }
     }
@@ -85,7 +86,7 @@ class NestedClassTest {
         field
         """).newInstance()
 
-        shouldFail (org.codehaus.groovy.runtime.typehandling.GroovyCastException) {
+        shouldFail (GroovyCastException) {
           assertEquals 239, script.run()
         }
     }

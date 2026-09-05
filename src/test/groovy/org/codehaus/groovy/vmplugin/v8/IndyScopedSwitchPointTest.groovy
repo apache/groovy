@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.vmplugin.v8
 
+import groovy.lang.MetaClass
+import groovy.lang.MetaMethod
 import org.apache.groovy.runtime.indy.IndyInvalidation
 import org.codehaus.groovy.reflection.CachedMethod
 import org.codehaus.groovy.reflection.ClassInfo
@@ -27,6 +29,10 @@ import org.junit.jupiter.api.Test
 import java.lang.invoke.MethodHandles
 import java.lang.invoke.MethodType
 import java.lang.invoke.SwitchPoint
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.CyclicBarrier
+import java.util.concurrent.TimeUnit
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertFalse
@@ -129,9 +135,9 @@ final class IndyScopedSwitchPointTest {
     @Test
     void invalidateSwitchPoints_concurrentBulk_isSafe() {
         int threads = 8
-        def start = new java.util.concurrent.CyclicBarrier(threads)
-        def done = new java.util.concurrent.CountDownLatch(threads)
-        def errors = new java.util.concurrent.ConcurrentLinkedQueue<Throwable>()
+        def start = new CyclicBarrier(threads)
+        def done = new CountDownLatch(threads)
+        def errors = new ConcurrentLinkedQueue<Throwable>()
         SwitchPoint before = ClassInfo.getClassInfo(LegacyHost).indySwitchPoint
 
         threads.times {
@@ -146,7 +152,7 @@ final class IndyScopedSwitchPointTest {
                 }
             }
         }
-        assertTrue(done.await(30, java.util.concurrent.TimeUnit.SECONDS))
+        assertTrue(done.await(30, TimeUnit.SECONDS))
         assertTrue(errors.isEmpty(), "concurrent invalidate failed: $errors")
         assertTrue(before.hasBeenInvalidated())
     }
@@ -218,8 +224,8 @@ final class IndyScopedSwitchPointTest {
         def metaMethod = CachedMethod.find(javaMethod)
         assert metaMethod != null
         def ctor = ColdReflectiveMethodHandleWrapper.getDeclaredConstructor(
-                groovy.lang.MetaMethod, CacheableCallSite, Class, String, int,
-                Boolean, Boolean, Boolean, groovy.lang.MetaClass, SwitchPoint, Class[])
+                MetaMethod, CacheableCallSite, Class, String, int,
+                Boolean, Boolean, Boolean, MetaClass, SwitchPoint, Class[])
         ctor.accessible = true
         def type = MethodType.methodType(Object, Object)
         def site = new CacheableCallSite(type, MethodHandles.lookup())

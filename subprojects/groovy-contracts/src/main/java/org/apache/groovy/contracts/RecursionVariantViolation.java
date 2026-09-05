@@ -18,8 +18,10 @@
  */
 package org.apache.groovy.contracts;
 
+import groovy.contracts.Decreases;
+
 /**
- * Thrown when a method-level {@link groovy.contracts.Decreases} recursion
+ * Thrown when a method-level {@link Decreases} recursion
  * termination measure fails — either a recursive re-entry did not strictly
  * decrease the measure, or the measure became negative (not well-founded).
  *

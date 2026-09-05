@@ -20,12 +20,28 @@ package org.codehaus.groovy.reflection
 
 import groovy.lang.GroovySystem
 
+import java.awt.Dimension
+import java.awt.Point
+import java.awt.Rectangle
+import java.io.ByteArrayOutputStream
+import java.io.StringWriter
 import java.lang.ref.WeakReference
+import java.net.InetSocketAddress
+import java.text.StringCharacterIterator
+import java.util.EventObject
+import java.util.Formatter
+import java.util.SimpleTimeZone
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+import java.util.zip.Adler32
+import java.util.zip.CRC32
 
 /**
  * GROOVY-12281 stress probe for {@code -Dgroovy.use.classvalue=soft} under
@@ -90,15 +106,15 @@ final class ClassInfoSoftModeStressProbe {
                 new Stack(), new Vector(), new Hashtable(), new StringBuilder('x'),
                 new StringBuffer('y'), new Random(42), new StringJoiner(','),
                 new IdentityHashMap(), new WeakHashMap(), new LinkedHashMap(),
-                new LinkedHashSet(), new java.util.concurrent.ConcurrentHashMap(),
-                new java.util.concurrent.ConcurrentLinkedDeque(), new java.util.concurrent.CopyOnWriteArrayList(),
-                new java.util.concurrent.atomic.AtomicInteger(7), new java.util.concurrent.atomic.AtomicLong(9),
-                new java.util.zip.CRC32(), new java.util.zip.Adler32(),
-                new java.text.StringCharacterIterator('z'), new java.awt.Point(1, 2),
-                new java.awt.Dimension(3, 4), new java.awt.Rectangle(5, 6),
-                new java.io.ByteArrayOutputStream(), new java.io.StringWriter(),
-                new java.net.InetSocketAddress(80), new java.util.Formatter(),
-                new java.util.EventObject('e'), new java.util.SimpleTimeZone(0, 'UTC'),
+                new LinkedHashSet(), new ConcurrentHashMap(),
+                new ConcurrentLinkedDeque(), new CopyOnWriteArrayList(),
+                new AtomicInteger(7), new AtomicLong(9),
+                new CRC32(), new Adler32(),
+                new StringCharacterIterator('z'), new Point(1, 2),
+                new Dimension(3, 4), new Rectangle(5, 6),
+                new ByteArrayOutputStream(), new StringWriter(),
+                new InetSocketAddress(80), new Formatter(),
+                new EventObject('e'), new SimpleTimeZone(0, 'UTC'),
         ] as Object[]
         long[] javaExpected = new long[javaReceivers.length]
         def javaInfos = new WeakReference[javaReceivers.length]
@@ -207,7 +223,7 @@ final class ClassInfoSoftModeStressProbe {
             startGate.await()
             def hog = new byte[24][]
             int i = 0, gcTick = 0
-            while (!done.await(0, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+            while (!done.await(0, TimeUnit.MILLISECONDS)) {
                 try {
                     hog[i++ % hog.length] = new byte[256 << 10]
                 } catch (OutOfMemoryError e) {

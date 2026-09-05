@@ -18,6 +18,7 @@
  */
 package groovy.jmx
 
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.jupiter.api.Test
 
 final class ImportModuleJmxTest {
@@ -28,7 +29,7 @@ final class ImportModuleJmxTest {
         // JAR path is passed as a system property from build.gradle
         def jmxJar = System.getProperty('groovy.jmx.jar')
         assert jmxJar, 'groovy.jmx.jar system property not set'
-        def config = new org.codehaus.groovy.control.CompilerConfiguration()
+        def config = new CompilerConfiguration()
         config.classpathList = [jmxJar]
         def loader = new GroovyClassLoader(getClass().classLoader, config)
         def shell = new GroovyShell(loader)

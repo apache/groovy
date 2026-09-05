@@ -19,6 +19,7 @@
 package groovy.util.regex;
 
 import groovy.lang.Closure;
+import groovy.transform.SafeRegex;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.apache.groovy.runtime.async.ScopedLocal;
 import org.codehaus.groovy.runtime.FormatHelper;
@@ -67,7 +68,7 @@ import java.util.regex.Pattern;
  * not subject to backtracking.</li>
  * </ul>
  *
- * @see groovy.transform.SafeRegex
+ * @see SafeRegex
  * @since 6.0.0
  */
 @Incubating
@@ -124,7 +125,7 @@ public final class RegexGuard {
     }
 
     /**
-     * Runtime hook used by the {@link groovy.transform.SafeRegex} transform:
+     * Runtime hook used by the {@link SafeRegex} transform:
      * equivalent to {@link #matches(Object, Object, long)} but with the operands
      * in the {@code ==~} operator's order, so that a rewritten expression still
      * evaluates its operands left to right, exactly as the original did.
@@ -140,7 +141,7 @@ public final class RegexGuard {
     }
 
     /**
-     * Runtime hook used by the {@link groovy.transform.SafeRegex} transform:
+     * Runtime hook used by the {@link SafeRegex} transform:
      * equivalent to {@link #matcher(Object, Object, long)} but with the operands
      * in the {@code =~} operator's order, so that a rewritten expression still
      * evaluates its operands left to right, exactly as the original did.
@@ -227,7 +228,7 @@ public final class RegexGuard {
      * within the enclosing scope.</li>
      * <li>Nested guards only tighten: the smaller per-evaluation timeout wins.</li>
      * <li>An explicit timeout, e.g. from {@link #matches(Object, Object, long)} or a
-     * {@link groovy.transform.SafeRegex} scope, is likewise capped by the ambient timeout.</li>
+     * {@link SafeRegex} scope, is likewise capped by the ambient timeout.</li>
      * <li>A matcher created within the scope (e.g. via {@code =~}) keeps its deadline,
      * measured from creation, when used after the block exits.</li>
      * <li>Direct {@code java.util.regex} calls, e.g. a hand-written

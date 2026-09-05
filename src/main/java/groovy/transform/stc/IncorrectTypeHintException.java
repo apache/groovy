@@ -24,7 +24,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import java.io.Serial;
 
 /**
- * Indicates that a {@link groovy.transform.stc.ClosureParams} hint declaration is invalid.
+ * Indicates that a {@link ClosureParams} hint declaration is invalid.
  *
  * @since 2.3.0
  */

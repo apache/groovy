@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.powerassert
 
+import groovy.transform.PackageScope
 import org.junit.jupiter.api.Test
 
 import static org.codehaus.groovy.runtime.powerassert.AssertionTestUtil.isRendered
@@ -82,7 +83,7 @@ assert func(42) == null
         }
     }
 
-    @groovy.transform.PackageScope class FuncHolder {
+    @PackageScope class FuncHolder {
         def func = { it }
     }
 

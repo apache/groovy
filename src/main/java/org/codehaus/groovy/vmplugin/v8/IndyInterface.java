@@ -25,6 +25,7 @@ import org.apache.groovy.runtime.indy.AotDispatch;
 import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GeneratedDispatcher;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -292,7 +293,7 @@ public class IndyInterface {
      * Bulk-invalidates every loaded class SwitchPoint so sites re-link under the
      * new category state. Per-class MetaClass changes use the MetaClass-aware
      * registry path ({@link IndyInvalidation#invalidateForMetaClassChange}) or
-     * {@link org.codehaus.groovy.reflection.ClassInfo#incVersion()} (exact-class
+     * {@link ClassInfo#incVersion()} (exact-class
      * for in-place EMC updates).
      * <p>
      * Pre-6.0 this method also rotated a process-wide {@code switchPoint} field.

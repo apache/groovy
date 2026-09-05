@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 import static java.lang.System.Logger.Level.WARNING;
 
@@ -518,7 +519,7 @@ public class Groovydoc extends Task {
      */
     private static boolean isValidPackagePath(String relativeDir) {
         if (relativeDir == null || relativeDir.isEmpty()) return true;
-        for (String segment : relativeDir.split(java.util.regex.Pattern.quote(File.separator))) {
+        for (String segment : relativeDir.split(Pattern.quote(File.separator))) {
             if (segment.isEmpty()) return false;
             if (!Character.isJavaIdentifierStart(segment.charAt(0))) return false;
             for (int k = 1; k < segment.length(); k++) {

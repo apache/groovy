@@ -43,7 +43,7 @@ import org.objectweb.asm.Type;
  * <h2>Type Descriptor Handling</h2>
  * <p>The resolver handles multiple bytecode formats:
  * <ul>
- *   <li><strong>Primitive types:</strong> Resolved via {@link org.codehaus.groovy.ast.ClassHelper#make(String)}
+ *   <li><strong>Primitive types:</strong> Resolved via {@link ClassHelper#make(String)}
  *       (e.g., {@code "I"} → {@code int.class}).</li>
  *   <li><strong>Object types:</strong> Converted from JVMS internal names (e.g., {@code "java/lang/String"})
  *       to dot notation and resolved via {@link #resolveClass(String)}.</li>

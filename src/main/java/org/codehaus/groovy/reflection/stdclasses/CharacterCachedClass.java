@@ -22,7 +22,7 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
 
 /**
- * Provides optimized reflection caching for {@code char} and {@link java.lang.Character}.
+ * Provides optimized reflection caching for {@code char} and {@link Character}.
  * Optionally allows {@code null} values for the boxed {@link Character} class variant.
  */
 public class CharacterCachedClass extends CachedClass {

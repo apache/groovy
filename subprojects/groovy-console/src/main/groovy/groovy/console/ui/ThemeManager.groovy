@@ -27,6 +27,7 @@ import javax.swing.text.StyleConstants
 import javax.swing.text.StyleContext
 import java.awt.Color
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.TimeUnit
 import java.util.prefs.Preferences
 
 /**
@@ -357,7 +358,7 @@ class ThemeManager {
         if (os.contains('mac')) {
             try {
                 Process p = ['defaults', 'read', '-g', 'AppleInterfaceStyle'].execute()
-                if (!p.waitFor(2, java.util.concurrent.TimeUnit.SECONDS)) {
+                if (!p.waitFor(2, TimeUnit.SECONDS)) {
                     p.destroyForcibly()
                     return false
                 }
@@ -370,7 +371,7 @@ class ThemeManager {
                 Process p = ['reg', 'query',
                     'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize',
                     '/v', 'AppsUseLightTheme'].execute()
-                if (!p.waitFor(2, java.util.concurrent.TimeUnit.SECONDS)) {
+                if (!p.waitFor(2, TimeUnit.SECONDS)) {
                     p.destroyForcibly()
                     return false
                 }

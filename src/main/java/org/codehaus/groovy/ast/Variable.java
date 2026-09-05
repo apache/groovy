@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -29,11 +30,11 @@ import static org.objectweb.asm.Opcodes.ACC_VOLATILE;
 
 /**
  * Interface marking an AST node as representing a variable in Groovy/Java scope.
- * Typical implementations include {@link org.codehaus.groovy.ast.expr.VariableExpression},
+ * Typical implementations include {@link VariableExpression},
  * {@link FieldNode}, {@link PropertyNode}, and {@link Parameter}.
  * Provides unified access to variable metadata such as type, scope context, and modifiers.
  *
- * @see org.codehaus.groovy.ast.expr.VariableExpression
+ * @see VariableExpression
  * @see FieldNode
  * @see PropertyNode
  * @see Parameter

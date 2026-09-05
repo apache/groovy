@@ -21,13 +21,16 @@ package org.codehaus.groovy.runtime.m12n;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
+
 
 /**
  * The extension method registry is responsible for collecting methods (or static methods) which are added to existing
  * classes and may be called like regular methods.
  * <p>
- * In previous Groovy versions, such methods could only be defined in a single class called {@link org.codehaus.groovy.runtime.DefaultGroovyMethods}
- * for instance methods, and {@link org.codehaus.groovy.runtime.DefaultGroovyStaticMethods} for static methods.
+ * In previous Groovy versions, such methods could only be defined in a single class called {@link DefaultGroovyMethods}
+ * for instance methods, and {@link DefaultGroovyStaticMethods} for static methods.
  *
  * @since 2.0.0
  */

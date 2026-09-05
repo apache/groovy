@@ -23,6 +23,7 @@ import groovy.beans.Vetoable
 
 import javax.swing.DefaultBoundedRangeModel
 import javax.swing.DefaultButtonModel
+import javax.swing.DefaultComboBoxModel
 import javax.swing.DefaultListModel
 import javax.swing.ListSelectionModel
 import javax.swing.SpinnerNumberModel
@@ -229,7 +230,7 @@ class SwingBuilderBindingsTest extends GroovySwingTestCase {
             def vectorData = ['Adams', 'Boston', 'Chicago', 'Denver']
             swing.frame {
                 comboBox(id: 'combo01', items: comboData)
-                comboBox(id: 'combo02', model: new javax.swing.DefaultComboBoxModel(new Vector(vectorData)))
+                comboBox(id: 'combo02', model: new DefaultComboBoxModel(new Vector(vectorData)))
 
                 t1e = label(text: bind {combo01.elements})
                 t1sx = label(text: bind {combo01.selectedIndex})

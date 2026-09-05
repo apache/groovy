@@ -37,11 +37,11 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 
 /**
  * <p>
- * Base class for {@link org.codehaus.groovy.ast.ClassCodeVisitorSupport} descendants. This class is used in groovy-contracts
+ * Base class for {@link ClassCodeVisitorSupport} descendants. This class is used in groovy-contracts
  * as root class for all code visitors directly used by global AST transformations.
  * </p>
  *
- * @see org.codehaus.groovy.ast.ClassCodeVisitorSupport
+ * @see ClassCodeVisitorSupport
  */
 public abstract class BaseVisitor extends ClassCodeVisitorSupport {
 

@@ -18,6 +18,7 @@
  */
 package groovy.typecheckers
 
+import groovy.transform.Monadic
 import org.apache.groovy.lang.annotation.Incubating
 import org.apache.groovy.runtime.MonadicCarrierRegistry
 import org.apache.groovy.typecheckers.CheckingVisitor
@@ -58,7 +59,7 @@ import static org.codehaus.groovy.ast.ClassHelper.make
  * </ul>
  * Carriers, and the canonical names of their bind/map methods, are read
  * entirely from {@link MonadicCarrierRegistry}; types annotated
- * {@link groovy.transform.Monadic} also participate (matched by simple name,
+ * {@link Monadic} also participate (matched by simple name,
  * like {@code @Reducer}). Calls whose target is {@code Comprehensions} are
  * skipped &mdash; they are {@link MonadicChecker}'s domain.
  * <p>
@@ -74,7 +75,7 @@ import static org.codehaus.groovy.ast.ClassHelper.make
  * @since 6.0.0
  * @see MonadicCarrierRegistry
  * @see MonadicChecker
- * @see groovy.transform.Monadic
+ * @see Monadic
  */
 @Incubating
 class MonadicShapeChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {

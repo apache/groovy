@@ -36,6 +36,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -187,8 +189,8 @@ final class GroovycTest {
      * private ArrayList<String> x = new ArrayList<String>();
      * x = (ArrayList)z ;
      * Upto JDK6, 'javac -Xlint' produces the following output:
-     * found   : java.util.ArrayList
-     * required: java.util.ArrayList<java.lang.String>
+     * found   : ArrayList
+     * required: ArrayList<java.lang.String>
      * But, OpenJDK seems to be producing the following output:
      * required: ArrayList<String>
      * found:    ArrayList
@@ -406,8 +408,8 @@ final class GroovycTest {
         return gc;
     }
 
-    private static java.util.List<String> buildForkCommandLine(Groovyc gc) {
-        java.util.List<String> cmd = new java.util.ArrayList<>();
+    private static List<String> buildForkCommandLine(Groovyc gc) {
+        List<String> cmd = new ArrayList<>();
         gc.doForkCommandLineList(cmd, new Path(gc.getProject()), File.separator);
         return cmd;
     }
@@ -441,7 +443,7 @@ final class GroovycTest {
         ref.setPrefix("myapp.");
         ps.addPropertyref(ref);
         gc.addSyspropertyset(ps);
-        java.util.List<String> cmd = buildForkCommandLine(gc);
+        List<String> cmd = buildForkCommandLine(gc);
         assertTrue(cmd.contains("-Dmyapp.url=https://example.com"));
         assertTrue(cmd.contains("-Dmyapp.timeout=30"));
         assertTrue(cmd.stream().noneMatch(s -> s.startsWith("-Dother.value=")));
@@ -453,7 +455,7 @@ final class GroovycTest {
         project.setProperty("beta", "two");
         Groovyc gc = newForkedGroovyc(project);
         gc.setInheritAll(true);
-        java.util.List<String> cmd = buildForkCommandLine(gc);
+        List<String> cmd = buildForkCommandLine(gc);
         assertTrue(cmd.contains("-Dalpha=1"));
         assertTrue(cmd.contains("-Dbeta=two"));
     }
@@ -467,7 +469,7 @@ final class GroovycTest {
         explicit.setValue("fromSysproperty");
         gc.addSysproperty(explicit);
         gc.setInheritAll(true);
-        java.util.List<String> cmd = buildForkCommandLine(gc);
+        List<String> cmd = buildForkCommandLine(gc);
         long count = cmd.stream().filter(s -> s.startsWith("-Dshared=")).count();
         assertEquals(1, count);
         assertTrue(cmd.contains("-Dshared=fromSysproperty"));

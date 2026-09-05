@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.contracts.ast.visitor;
 
+import org.apache.groovy.contracts.annotations.meta.ContractElement;
 import org.apache.groovy.contracts.util.AnnotationUtils;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassNode;
@@ -27,8 +28,8 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.io.ReaderSource;
 
 /**
- * This {@link BaseVisitor} walks up the class hierarchy for the given {@link org.codehaus.groovy.ast.ClassNode}
- * and adds {@link org.apache.groovy.contracts.annotations.meta.ContractElement} annotations to method parameters.
+ * This {@link BaseVisitor} walks up the class hierarchy for the given {@link ClassNode}
+ * and adds {@link ContractElement} annotations to method parameters.
  */
 public class AnnotationContractParameterVisitor extends BaseVisitor {
 

@@ -23,6 +23,7 @@ import org.codehaus.groovy.tools.groovydoc.ClasspathResourceManager
 import org.codehaus.groovy.tools.groovydoc.FileOutputTool
 import org.codehaus.groovy.tools.groovydoc.GroovyDocTool
 import org.codehaus.groovy.tools.groovydoc.LinkArgument
+import org.codehaus.groovy.tools.groovydoc.Main
 import org.codehaus.groovy.tools.groovydoc.PreLanguageRewriter
 import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo
 
@@ -30,7 +31,7 @@ import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInf
  * Runs groovydoc programmatically against a tree of mock source files produced by
  * {@link MockSourceGenerator}, writing the GDK documentation to the output dir.
  * Uses {@link GroovyDocTool} directly rather than shelling out to
- * {@link org.codehaus.groovy.tools.groovydoc.Main} so template overrides and
+ * {@link Main} so template overrides and
  * link-arg wiring can be driven from Groovy code.
  *
  * @since 6.0.0

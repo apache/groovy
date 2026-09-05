@@ -69,27 +69,50 @@ import java.util.regex.Pattern
 class QualifiedNames {
     /** two or more lowercase package segments, then a type name */
     static final Pattern QUALIFIED_TYPE = ~/^([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+)\.([A-Z]\w*)$/
-    static final Pattern PACKAGE_PATH = ~/^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$/
+    /**
+     * a static reference is only taken for package-qualified when the chain starts
+     * with a package root: a lowercase chain such as {@code map.attributes.Id} is
+     * otherwise a property path on a variable
+     */
+    static final Pattern PACKAGE_PATH = ~/^(?:java|javax|jakarta|jdk|org|com|net|io|groovy)(?:\.[a-z][a-z0-9_]*)+$/
     static final Pattern LINK_TAG = ~/\{@link(?:plain)?\s+([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+)\.([A-Z]\w*)/
+
+    /** the packages Groovy imports by default, which bind simple names just as a star import does */
+    private static final List<String> DEFAULT_STAR_PACKAGES = ['java.util.', 'java.io.', 'java.net.', 'groovy.lang.', 'groovy.util.']
 
     private final Map<String, String> importedByName = [:]
     private final Set<String> declaredInFile
+    /** star-imported packages, explicit and default, each ending with a dot */
+    private final List<String> starPackages
 
     QualifiedNames(ModuleNode module) {
         module?.imports?.each { importedByName[it.alias] = it.className }
         declaredInFile = (module?.classes*.nameWithoutPackage ?: []) as Set
+        starPackages = (module?.starImports*.packageName ?: []) + DEFAULT_STAR_PACKAGES
     }
 
     /**
      * Whether the qualification is required: the simple name is bound to another
-     * type by an import or by a class declared in the same file. java.lang is
-     * never checked, since def, implicit supertypes and the like surface as
-     * java.lang types in the unresolved AST.
+     * type by an import, by a class declared in the same file, or by a star import
+     * of a package that has a class of that name (java.awt.* supplying List, say).
+     * java.lang is never checked, since def, implicit supertypes and the like
+     * surface as java.lang types in the unresolved AST.
      */
     boolean isNeeded(String packagePath, String simpleName) {
         if (packagePath == 'java.lang') return true
         String bound = importedByName[simpleName]
-        (bound != null && bound != "${packagePath}.${simpleName}".toString()) || declaredInFile.contains(simpleName)
+        if (bound != null) return bound != "${packagePath}.${simpleName}".toString()
+        if (declaredInFile.contains(simpleName)) return true
+        starPackages.any { String pkg -> pkg != packagePath + '.' && classExists(pkg + simpleName) }
+    }
+
+    private static boolean classExists(String name) {
+        try {
+            Class.forName(name, false, QualifiedNames.classLoader)
+            true
+        } catch (Throwable ignored) {
+            false
+        }
     }
 }
 
@@ -170,8 +193,10 @@ class UnnecessaryFullyQualifiedNameAstVisitor extends AbstractAstVisitor {
     @Override
     protected void visitClassEx(ClassNode node) {
         checkAnnotations(node)
-        checkType(node.unresolvedSuperClass, node, 'superclass')
-        node.unresolvedInterfaces?.each { checkType(it, node, 'interface') }
+        // a script's superclass is the implicit groovy.lang.Script, and an annotation's
+        // interface the implicit java.lang.annotation.Annotation: neither is written
+        if (!node.script) checkType(node.unresolvedSuperClass, node, 'superclass')
+        if (!node.annotationDefinition) node.unresolvedInterfaces?.each { checkType(it, node, 'interface') }
         super.visitClassEx(node)
     }
 
@@ -289,340 +314,45 @@ class GateUnusedImportRule extends UnusedImportRule {
     }
 }
 
-def fullyQualifiedNameBaseline = [
+def fullyQualifiedNameBaseline = [] as Set   // the tree is clean; keep it so
+
+def unusedImportBaseline = [] as Set   // the tree is clean; keep it so
+
+// Deliberate exceptions, not a baseline: user-guide snippets (src/spec/test,
+// included by tag) that show a fully qualified name to the reader on purpose,
+// because the import that would replace it lies outside the tagged region.
+def documentationSnippets = [
     'DOMBuilderTest',
     'SaxBuilderTest',
     'StaxBuilderTest',
+    'SyntaxTest',
     'TemplateEnginesTest',
     'UserGuideXmlSlurperTest',
     'builder.AntBuilderSpecTest',
-    'groovy.DateTest',
-    'groovy.SimpleTemplateEngineTest',
-    'groovy.ant.AntTest',
-    'groovy.bugs.Groovy5025Bug',
-    'groovy.bugs.groovy4585.Groovy4585Bug',
-    'groovy.cli.commons.CliBuilder',
-    'groovy.cli.commons.package-info',
-    'groovy.cli.picocli.CliBuilder',
-    'groovy.cli.picocli.package-info',
-    'groovy.console.ui.AstBrowser',
-    'groovy.console.ui.Console',
-    'groovy.console.ui.ConsoleActions',
-    'groovy.console.ui.ConsolePreferences',
-    'groovy.console.ui.ConsoleView',
-    'groovy.console.ui.HistoryRecordGetTextToRunTests',
-    'groovy.console.ui.ThemeManager',
-    'groovy.console.ui.view.BasicContentPane',
-    'groovy.console.ui.view.BasicMenuBar',
-    'groovy.console.ui.view.BasicStatusBar',
-    'groovy.console.ui.view.BasicToolBar',
-    'groovy.console.ui.view.Defaults',
-    'groovy.console.ui.view.GTKDefaults',
-    'groovy.console.ui.view.MacOSXDefaults',
-    'groovy.console.ui.view.MacOSXMenuBar',
-    'groovy.console.ui.view.WindowsDefaults',
+    'gdk.WorkingWithCollectionsTest',
+    'metaprogramming.MacroVariableSubstitutionTest',
     'groovy.csv.CsvBuilderTest',
-    'groovy.grape.ivy.GrapeIvy',
-    'groovy.grape.ivy.StrictCachedGrapesResolverTest',
-    'groovy.grape.maven.GrapeMaven',
-    'groovy.http.HttpBuilderClientTest',
-    'groovy.jmx.ImportModuleJmxTest',
-    'groovy.jmx.builder.JmxBeanFactoryTest',
-    'groovy.jmx.builder.JmxBeansFactoryTest',
-    'groovy.jmx.builder.JmxBuilderTools',
-    'groovy.jmx.builder.JmxEmbeddedMetaMapBuilderTest',
-    'groovy.jmx.builder.JmxEmitterFactoryTest',
-    'groovy.jmx.builder.JmxMetaMapBuilderTest',
-    'groovy.jmx.builder.JmxTimerFactory',
-    'groovy.json.DefaultJsonGeneratorTest',
-    'groovy.json.JsonBuilderTest',
-    'groovy.json.JsonSlurperClassicTest',
-    'groovy.json.JsonSlurperMalformedStringTest',
-    'groovy.json.StreamingJsonBuilderTest',
-    'groovy.json.StringEscapeUtilsTest',
-    'groovy.junit6.plugin.GroovyDisabledIf',
-    'groovy.junit6.plugin.GroovyEnabledIf',
-    'groovy.servlet.AbstractHttpServletTest',
-    'groovy.servlet.ServletBindingTest',
-    'groovy.sql.SqlHelperTestCase',
-    'groovy.sql.SqlTest',
-    'groovy.sql.SqlTestConstants',
-    'groovy.swing.SwingBuilder',
-    'groovy.swing.SwingBuilderBindingsTest',
-    'groovy.swing.SwingBuilderTableTest',
-    'groovy.swing.SwingBuilderTest',
-    'groovy.swing.binding.JTableMetaMethods',
-    'groovy.swing.factory.BoxLayoutFactory',
-    'groovy.swing.factory.ColumnFactory',
-    'groovy.swing.factory.ColumnModelFactory',
-    'groovy.swing.factory.DialogFactory',
-    'groovy.swing.factory.InternalFrameFactory',
-    'groovy.swing.factory.LayoutFactory',
-    'groovy.swing.factory.ScrollPaneFactory',
-    'groovy.test.suite.ATestScriptThatsNoTestCase',
     'groovy.toml.TomlParserTest',
-    'groovy.typecheckers.CombinerChecker',
-    'groovy.typecheckers.CombinerCheckerTest',
-    'groovy.typecheckers.FormatMethod',
-    'groovy.typecheckers.FormatStringCheckerTest',
-    'groovy.typecheckers.ModifiesChecker',
-    'groovy.typecheckers.ModifiesCheckerTest',
-    'groovy.typecheckers.MonadicShapeChecker',
-    'groovy.typecheckers.MonadicShapeCheckerTest',
-    'groovy.typecheckers.NullCheckerTest',
-    'groovy.typecheckers.PurityCheckerTest',
-    'groovy.typecheckers.RegexChecker',
-    'groovy.typecheckers.RegexCheckerTest',
-    'groovy.typecheckers.SqlInjectionCheckerTest',
-    'groovy.typecheckers.package-info',
-    'groovy.xml.GpathSyntaxTestSupport',
-    'groovy.xml.MarkupWithWriterTest',
-    'groovy.xml.MixedMarkupTestSupport',
-    'groovy.xml.StaxBuilderTest',
-    'groovy.xml.UseMarkupWithWriterScript',
+    'groovy.yaml.YamlParserTest',
     'groovy.xml.UserGuideMarkupBuilderTest',
     'groovy.xml.UserGuideXmlParserTest',
-    'groovy.xml.XmlSecurityTest',
-    'groovy.xml.script.AtomTestScript',
-    'groovy.yaml.YamlParserTest',
-    'org.apache.groovy.contracts.spock.SpockIntegrationTests',
-    'org.apache.groovy.contracts.tests.post.OldVariablePostconditionTests',
-    'org.apache.groovy.datetime.TimeCategoryTest',
-    'org.apache.groovy.dateutil.TimeCategoryTest',
-    'org.apache.groovy.dateutil.extensions.DateUtilExtensionsTest',
-    'org.apache.groovy.docgenerator.GDKDocTool',
-    'org.apache.groovy.docgenerator.JavaExtensionSourceSetTest',
-    'org.apache.groovy.groovysh.commands.CompletionTest',
-    'org.apache.groovy.groovysh.commands.DocTest',
-    'org.apache.groovy.groovysh.commands.HelpFlagTest',
-    'org.apache.groovy.groovysh.jline.GroovyCommands',
-    'org.apache.groovy.nio.extensions.NioExtensionsTest',
-    'org.apache.groovy.typecheckers.package-info',
-    'org.codehaus.groovy.ant.GroovyTest2Class',
-    'org.codehaus.groovy.ast.builder.AstBuilderFromCodeTest',
-    'org.codehaus.groovy.ast.builder.WithAstBuilder',
-    'org.codehaus.groovy.control.customizers.ASTTransformationCustomizerTest',
-    'org.codehaus.groovy.macro.matcher.ASTMatcher',
-    'org.codehaus.groovy.runtime.callsite.CachedMethodCallSitesTest',
-    'org.codehaus.groovy.tools.groovydoc.GroovyDocToolTestSampleGroovy',
-    'org.codehaus.groovy.tools.groovydoc.testfiles.ClassWithClosureInAnnotation',
-    'org.codehaus.groovy.tools.groovydoc.testfiles.ClassWithSpockStyleAnnotations',
+] as Set
+
+// Deliberate exceptions: groovydoc test fixtures whose qualified names are the
+// input under test (a qualified superclass, an annotation written in full, an
+// adapter linking two namesake classes).
+def groovydocFixtures = [
     'org.codehaus.groovy.tools.groovydoc.testfiles.ExampleVisibilityG',
-    'org.codehaus.groovy.tools.groovydoc.testfiles.Script',
-    'org.codehaus.groovy.tools.groovydoc.testfiles.ScriptWithMarkdownTopLevelDoc',
-    'org.codehaus.groovy.tools.groovydoc.testfiles.ScriptWithOnlyMemberDoc',
-    'org.codehaus.groovy.tools.groovydoc.testfiles.ScriptWithTopLevelDoc',
     'org.codehaus.groovy.tools.groovydoc.testfiles.a.DescendantD',
     'org.codehaus.groovy.tools.groovydoc.testfiles.alias.FooAdapter',
     'org.codehaus.groovy.tools.groovydoc.testfiles.anno.Groovy',
-    'org.codehaus.groovy.tools.groovydoc.testfiles.generics.Groovy',
-    'testable.MyTest',
-    'testable.MyTestable',
-    // core
-    'ScriptAsUnitTest',
-    'SyntaxTest',
-    'TraitsSpecificationTest',
-    'binarytrees',
-    'bugs.CustomMetaClassTest',
-    'bugs.Groovy10281',
-    'bugs.Groovy10587',
-    'bugs.Groovy11062',
-    'bugs.Groovy12046',
-    'bugs.Groovy12062',
-    'bugs.Groovy12142',
-    'bugs.Groovy12191',
-    'bugs.Groovy2666',
-    'bugs.Groovy4139Bug',
-    'bugs.Groovy4720Bug',
-    'bugs.Groovy4861Bug',
-    'bugs.Groovy5239',
-    'bugs.Groovy5359',
-    'bugs.Groovy558_616_Bug',
-    'bugs.Groovy596',
-    'bugs.Groovy779_Bug',
-    'bugs.Groovy8283',
-    'bugs.Groovy8444',
-    'bugs.Groovy9238',
-    'bugs.Groovy9292',
-    'bugs.Groovy9293',
-    'bugs.Groovy9572',
-    'bugs.Groovy9932',
-    'bugs.POJOCallSiteBug',
-    'bugs.groovy10121.SomeCollectedAnnotations',
-    'bugs.scriptForGroovy1567',
-    'bugs.scriptForGroovy3934',
-    'fannkuch',
-    'gdk.ConfigSlurperTest',
-    'gdk.WorkingWithCollectionsTest',
-    'gdk.WorkingWithIOSpecTest',
-    'gls.annotations.ConstAnnotation',
-    'gls.annotations.XmlEnum',
-    'gls.annotations.XmlEnumValue',
-    'gls.annotations.closures.AnnotationClosureTest',
-    'gls.generics.GenericsJavaCompatibilityTest',
-    'gls.invocation.CovariantReturnTest',
-    'gls.statements.MultipleAssignmentDeclarationTest',
-    'groovy.ArrayParamMethodTest',
-    'groovy.BinaryStreamsTest',
-    'groovy.EqualsTest',
-    'groovy.GStringTest',
-    'groovy.GroovyMethodsTest',
-    'groovy.IllegalAccessTests',
-    'groovy.ImportTest',
-    'groovy.InstanceofFlowBindingsTest',
-    'groovy.InstanceofScopeTest',
-    'groovy.InstanceofTest',
-    'groovy.NestedClassTest',
-    'groovy.NewExpressionTest',
-    'groovy.PropertyTest',
-    'groovy.SqlDateTest',
-    'groovy.StaticImportTest',
-    'groovy.annotations.MyIntegerAnno',
-    'groovy.beans.ListenerList',
-    'groovy.beans.ListenerListASTTransformation',
-    'groovy.benchmarks.createLoop',
-    'groovy.cli.OptionField',
-    'groovy.cli.UnparsedField',
-    'groovy.cli.internal.CliBuilderInternal',
-    'groovy.concurrent.AgentChangesTest',
-    'groovy.concurrent.BroadcastChannelAsPublisherTest',
-    'groovy.concurrent.ChannelCompositionTest',
-    'groovy.concurrent.FlowPublisherAdapterTest',
-    'groovy.lang.ClosureSerializationCycleTest',
-    'groovy.lang.InterceptorTest',
-    'groovy.lang.IntersectionCastE2ETest',
-    'groovy.lang.IntersectionCoercionTest',
-    'groovy.lang.MixinTest',
-    'groovy.lang.ReferenceSerializationTest',
-    'groovy.lang.ReferenceTest',
-    'groovy.lang.WithMethodTest',
-    'groovy.operator.BitwiseOperatorsTest',
-    'groovy.operator.StringOperatorsTest',
-    'groovy.script.scriptWithPackageStatement',
-    'groovy.transform.AnnotationCollectorLegacyTest',
-    'groovy.transform.AnnotationCollectorTest',
-    'groovy.transform.AutoExternalize',
-    'groovy.transform.Canonical',
-    'groovy.transform.CompileDynamic',
-    'groovy.transform.ConditionalInterrupt',
-    'groovy.transform.Immutable',
-    'groovy.transform.ImmutableProperties',
-    'groovy.transform.ReadWriteLockTest',
-    'groovy.transform.RecordType',
-    'groovy.transform.ThreadInterrupt',
-    'groovy.transform.ThreadInterruptTest',
-    'groovy.transform.TimedInterrupt',
-    'groovy.transform.stc.ClosuresSTCTest',
-    'groovy.transform.stc.IOGMClosureParamTypeInferenceSTCTest',
-    'groovy.transform.stc.IntersectionCastSTCTest',
-    'groovy.transform.stc.LambdaTest',
-    'groovy.transform.stc.ResourceGMClosureParamTypeInferenceSTCTest',
-    'groovy.transform.stc.SocketGMClosureParamTypeInferenceSTCTest',
-    'groovy.transform.stc.StringGMClosureParamTypeInferenceSTCTest',
-    'groovy.ui.GroovyMainTest',
-    'groovy.util.ConfigSlurper',
-    'groovy.util.ConfigSlurperTest',
-    'groovy.util.GroovyScriptEngineReloadingTest',
-    'groovy.util.MiscScriptTest',
-    'groovy.util.ObservableListTest',
-    'groovy.util.ObservableSetTests',
-    'groovy.util.ProxyGeneratorAdapterTest',
-    'metaprogramming.ASTMatcherFilteringTest',
-    'metaprogramming.ASTMatcherTestingTest',
-    'metaprogramming.MacroClassTest',
-    'metaprogramming.MacroExpressionTest',
-    'metaprogramming.MacroStatementTest',
-    'metaprogramming.MacroVariableSubstitutionTest',
-    'metaprogramming.MyTransformToDebug',
-    'org.apache.groovy.internal.runtime.invoke.InvokerFactoryTest',
-    'org.apache.groovy.parser.antlr4.Groovy12173',
-    'org.apache.groovy.parser.antlr4.internal.MissingDelimiterDiagnosticTest',
-    'org.apache.groovy.runtime.indy.IndyInvalidationTest',
-    'org.codehaus.groovy.ast.AnnotationNodeTest',
-    'org.codehaus.groovy.ast.Groovy9871',
-    'org.codehaus.groovy.ast.query.AstQueryTest',
-    'org.codehaus.groovy.ast.tools.GenericsUtilsTest',
-    'org.codehaus.groovy.classgen.ExtendedVerifierTest',
-    'org.codehaus.groovy.classgen.Groovy12255',
-    'org.codehaus.groovy.classgen.RecordTest',
-    'org.codehaus.groovy.classgen.asm.PeepholeOptimizingMethodVisitorTest',
-    'org.codehaus.groovy.classgen.asm.indy.IndyCompoundAssignTest',
-    'org.codehaus.groovy.classgen.asm.sc.CompatWithASTXFormStaticCompileTest',
-    'org.codehaus.groovy.classgen.asm.sc.CompileDynamicTest',
-    'org.codehaus.groovy.classgen.asm.sc.ResourceGMClosureParamTypeInferenceStaticCompileTest',
-    'org.codehaus.groovy.classgen.asm.sc.SocketGMClosureParamTypeInferenceStaticCompileTest',
-    'org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport',
-    'org.codehaus.groovy.classgen.genArrayAccess',
-    'org.codehaus.groovy.classgen.genArrayUtil',
-    'org.codehaus.groovy.classgen.genDgmMath',
-    'org.codehaus.groovy.classgen.genMathModification',
-    'org.codehaus.groovy.control.ClassNodeResolverTest',
-    'org.codehaus.groovy.control.ClassWriterCommonSuperClassTest',
-    'org.codehaus.groovy.control.customizers.ASTTransformationCustomizer',
-    'org.codehaus.groovy.control.customizers.SecureASTCustomizerTest',
-    'org.codehaus.groovy.control.customizers.SourceAwareCustomizerTest',
-    'org.codehaus.groovy.reflection.ClassInfoSoftModeStressProbe',
-    'org.codehaus.groovy.reflection.ReflectionUtilsTest',
-    'org.codehaus.groovy.reflection.utils.ReflectionUtilsTest',
-    'org.codehaus.groovy.runtime.DefaultGroovyMethodsTest',
-    'org.codehaus.groovy.runtime.DefaultGroovyStaticMethodsTest',
-    'org.codehaus.groovy.runtime.NumberAwareComparatorTest',
-    'org.codehaus.groovy.runtime.PackedClosureMetaClassTest',
-    'org.codehaus.groovy.runtime.m12n.ExtensionModuleTest',
-    'org.codehaus.groovy.runtime.powerassert.AssertionRenderingTest',
-    'org.codehaus.groovy.runtime.powerassert.AssertionsInDifferentLocationsTest',
-    'org.codehaus.groovy.runtime.powerassert.EvaluationTest',
-    'org.codehaus.groovy.runtime.powerassert.ImplicitClosureCallRenderingTest',
-    'org.codehaus.groovy.runtime.powerassert.ScriptEvaluationTest',
-    'org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformationTest',
-    'org.codehaus.groovy.syntax.TokenTest',
-    'org.codehaus.groovy.tools.stubgenerator.AnnotationCollectorStubTest',
-    'org.codehaus.groovy.tools.stubgenerator.AutoCloneHashMapJointCompilationStubTest',
-    'org.codehaus.groovy.tools.stubgenerator.BuilderJointCompilationStubTest',
-    'org.codehaus.groovy.tools.stubgenerator.DelegateJointCompilationStubTest',
-    'org.codehaus.groovy.tools.stubgenerator.ListenerListJointCompilationStubTest',
-    'org.codehaus.groovy.transform.ASTTestTransformation',
-    'org.codehaus.groovy.transform.AsyncTransformHelperTest',
-    'org.codehaus.groovy.transform.AutoFinalTransformTest',
-    'org.codehaus.groovy.transform.DelegateTransformTest',
-    'org.codehaus.groovy.transform.PackedClosuresTransformTest',
-    'org.codehaus.groovy.transform.classloading.TransformsAndCustomClassLoadersTest',
-    'org.codehaus.groovy.transform.stc.ClassTagExtensionModuleTest',
-    'org.codehaus.groovy.transform.traitx.TraitASTTransformationTest',
-    'org.codehaus.groovy.transform.traitx.TraitWithClosureOrLambda',
-    'org.codehaus.groovy.util.ReferenceManagerTest',
-    'org.codehaus.groovy.vmplugin.v8.IndyScopedSwitchPointTest',
-    'org.codehaus.groovy.vmplugin.v8.PluginDefaultGroovyMethodsTest',
-    'org.codehaus.groovy.vmplugin.v9.ClassFinderTest',
-    'partialsums',
-    'rayTracer',
-    'recursive',
-    'script0',
-    'script1',
-    'script120',
-    'script240',
-    'script30',
-    'script300',
-    'script300WithCategory',
-    'script60',
-    'scriptArgs',
-    'scriptHelloWorld',
-    'scriptHelloWorld2',
-    'scriptMethodReflection',
-    'scriptThatCallsAnother',
-    'scriptWithClass',
-    'scriptWithClosure',
-    'scriptWithEval',
-    'spectralnorm',
 ] as Set
-
-def unusedImportBaseline = [] as Set   // the tree is clean; keep it so
 
 ruleset {
     description 'The lint gate: rules that fail the build. Advisory rules live in codenarc.groovy.'
 
     rule(GateUnnecessaryFullyQualifiedNameRule) {
-        baseline = fullyQualifiedNameBaseline
+        baseline = fullyQualifiedNameBaseline + documentationSnippets + groovydocFixtures
     }
 
     rule(GateUnusedImportRule) {

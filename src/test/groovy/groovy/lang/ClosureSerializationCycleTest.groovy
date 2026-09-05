@@ -18,6 +18,7 @@
  */
 package groovy.lang
 
+import groovy.transform.PackedClosures
 import org.apache.groovy.util.Closures
 import org.codehaus.groovy.runtime.CurriedClosure
 import org.junit.jupiter.api.Test
@@ -38,7 +39,7 @@ import static groovy.test.GroovyAssert.shouldFail
  * tests cover that rejection and confirm that legitimate closure serialization is
  * unaffected.
  */
-@groovy.transform.PackedClosures(mode = groovy.transform.PackedClosures.PackMode.DISABLED)
+@PackedClosures(mode = PackedClosures.PackMode.DISABLED)
 // the closure literals here are serialization-gadget FIXTURES: they must compile as classes
 // (serializable) regardless of the GEP-27 packing flag, so deserialization hardening is tested
 final class ClosureSerializationCycleTest {

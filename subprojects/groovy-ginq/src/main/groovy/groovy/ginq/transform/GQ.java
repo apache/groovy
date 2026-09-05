@@ -18,6 +18,7 @@
  */
 package groovy.ginq.transform;
 
+import org.apache.groovy.ginq.dsl.GinqAstVisitor;
 import org.apache.groovy.ginq.provider.collection.runtime.Queryable;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
@@ -57,7 +58,7 @@ public @interface GQ {
      * Specify the GINQ AST walker to customize GINQ behaviour.
      * <p>
      * This is an advanced extension point: the named class must implement the
-     * {@link org.apache.groovy.ginq.dsl.GinqAstVisitor} provider SPI, which is still
+     * {@link GinqAstVisitor} provider SPI, which is still
      * {@link Incubating} and may change in a future release.
      */
     @Incubating

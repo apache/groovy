@@ -31,6 +31,7 @@ import org.codehaus.groovy.tools.groovydoc.antlr4.GroovyDocParser;
 import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo;
 
 import java.io.IOException;
+import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -1057,9 +1058,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertNotNull("Expected JavaExtendsWriterInheritDoc.html in output", doc);
         assertNotNull("Expected close() section in:\n" + doc, closeSection);
         assertNotNull("Expected flush() section in:\n" + doc, flushSection);
-        assertMatches("Expected inherited close() text from java.io.Writer in:\n" + doc,
+        assertMatches("Expected inherited close() text from Writer in:\n" + doc,
                 "(?i)close[sd]?\\b[^\\n]{0,40}\\bstream", normalizeWhitespace(closeSection));
-        assertMatches("Expected inherited flush() text from java.io.Writer in:\n" + doc,
+        assertMatches("Expected inherited flush() text from Writer in:\n" + doc,
                 "(?i)flush(es|ed|ing)?\\b[^\\n]{0,40}\\bstream", normalizeWhitespace(flushSection));
         assertFalse("External JDK inheritDoc should not remain literal in:\n" + doc,
                 doc.contains("{@inheritDoc}"));
@@ -1090,7 +1091,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 new ExternalGroovyClassDoc(Map.class).superclass());
         assertEquals("Concrete external classes should expose their reflected superclass",
                 "java.lang.Object",
-                new ExternalGroovyClassDoc(java.io.Writer.class).superclass().qualifiedTypeName());
+                new ExternalGroovyClassDoc(Writer.class).superclass().qualifiedTypeName());
     }
 
     public void testExternalJavadocSupportStandaloneLookupDoesNotRetainCaches() {

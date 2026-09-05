@@ -22,6 +22,7 @@ import groovy.lang.Closure;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.io.FileReaderSource;
 import org.codehaus.groovy.control.io.ReaderSource;
@@ -60,7 +61,7 @@ public class SourceAwareCustomizer extends DelegatingCustomizer {
      * <p>
      * A {@code null} source unit selects nothing: this customizer exists to match against source
      * units, so a class node which has none (see
-     * {@link org.codehaus.groovy.control.CompilationUnit.IPrimaryClassNodeOperation#call(SourceUnit,
+     * {@link CompilationUnit.IPrimaryClassNodeOperation#call(SourceUnit,
      * GeneratorContext, ClassNode) call}) cannot satisfy any source-based criterion, and the
      * delegate is not invoked.
      *

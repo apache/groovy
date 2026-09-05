@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.contracts.generation;
 
+import groovy.lang.GString;
 import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -159,7 +160,7 @@ public class OldVariableGenerationUtility {
     /**
      * Reports whether the (wrapper) type participates in {@code old} snapshotting: the value-like JDK
      * types ({@code java.lang} / {@code java.math} / {@code java.util} / {@code java.sql}), {@link String},
-     * {@link groovy.lang.GString} and the primitives.
+     * {@link GString} and the primitives.
      */
     private static boolean isOldSnapshotType(final ClassNode wrapperType) {
         final String name = wrapperType.getName();

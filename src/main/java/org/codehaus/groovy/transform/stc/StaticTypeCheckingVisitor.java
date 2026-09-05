@@ -129,6 +129,7 @@ import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -410,7 +411,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode ENUMERATION_TYPE = ClassHelper.make(Enumeration.class);
     /** Cached {@link CharSequence} type (GROOVY-9848: membership operator dispatch). */
     protected static final ClassNode CHAR_SEQUENCE_TYPE = ClassHelper.make(CharSequence.class);
-    /** Cached {@link java.util.Map.Entry} type. */
+    /** Cached {@link Map.Entry} type. */
     protected static final ClassNode MAP_ENTRY_TYPE = ClassHelper.make(Map.Entry.class);
     /** Cached {@link Iterable} type. */
     protected static final ClassNode ITERABLE_TYPE = ClassHelper.ITERABLE_TYPE;
@@ -910,7 +911,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             pattern = "No such {0,choice,1#attribute|2#property}: {1} for Class or static {0,choice,1#field|2#property} for class: {2}";
         }
 
-        String error = java.text.MessageFormat.format(pattern, expression instanceof AttributeExpression ? 1 : 2, expression.getPropertyAsString(), prettyPrintTypeName(wrapTypeIfNecessary(objectExpressionType)));
+        String error = MessageFormat.format(pattern, expression instanceof AttributeExpression ? 1 : 2, expression.getPropertyAsString(), prettyPrintTypeName(wrapTypeIfNecessary(objectExpressionType)));
         ASTNode node = expression.getLineNumber() > 0 ? expression : expression.getProperty(); // GROOVY-11663
         addStaticTypeError(error, node);
     }
@@ -4780,7 +4781,7 @@ out:                if (mn.size() != 1) {
      * @param receiver                  the receiver of the method call
      * @param argumentTypes             the argument types of the method call
      * @param returnType                the return type as inferred by the type checker
-     * @return proxy return type if the selected method is {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#withTraits(Object, Class[]) withTraits}
+     * @return proxy return type if the selected method is {@link DefaultGroovyMethods#withTraits(Object, Class[]) withTraits}
      */
     private static ClassNode adjustWithTraits(final MethodNode directMethodCallCandidate, final ClassNode receiver, final ClassNode[] argumentTypes, final ClassNode returnType) {
         if ("withTraits".equals(directMethodCallCandidate.getName()) && isDefaultExtension(directMethodCallCandidate)) {

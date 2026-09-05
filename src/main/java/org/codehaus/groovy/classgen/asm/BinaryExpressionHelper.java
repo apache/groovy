@@ -55,6 +55,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -192,7 +193,7 @@ public class BinaryExpressionHelper {
 
     /**
      * Loads the stored switch selector, evaluates {@code caseValue}, and invokes
-     * {@link org.codehaus.groovy.runtime.ScriptBytecodeAdapter#isCase(Object, Object)}.
+     * {@link ScriptBytecodeAdapter#isCase(Object, Object)}.
      * Shared by switch statements and switch expressions so both keep the
      * operand stack consistent.
      *
@@ -691,7 +692,7 @@ public class BinaryExpressionHelper {
             operandStack.remove(operandStack.getStackLength() - mark);
         } else { // multiple declaration or assignment
             TupleExpression tuple = (TupleExpression) leftExpression;
-            java.util.List<Expression> elements = tuple.getExpressions();
+            List<Expression> elements = tuple.getExpressions();
             int tupleSize = elements.size();
             int restIndex = -1;
             for (int idx = 0; idx < tupleSize; idx++) {

@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform.stc;
 
+import groovy.lang.DelegatesTo;
+
 /**
  * This enumeration is used by the AST transformations which rely on static type
  * checking, either to store or to retrieve information from AST node metadata.
@@ -38,7 +40,7 @@ public enum StaticTypesMarker {
     INITIAL_EXPRESSION,
     /** used to store the MethodNode a MethodCallExpression should target */
     DIRECT_METHOD_CALL_TARGET,
-    /** used to store the delegation strategy and delegate type of a closure derived from {@link groovy.lang.DelegatesTo DelegatesTo} metadata */
+    /** used to store the delegation strategy and delegate type of a closure derived from {@link DelegatesTo DelegatesTo} metadata */
     DELEGATION_METADATA,
     /** if the receiver is implicit but not "this", store the name of the receiver (delegate or owner) */
     IMPLICIT_RECEIVER,

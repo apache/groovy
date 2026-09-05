@@ -73,7 +73,7 @@ public class TemporaryMethodKey extends MethodKey {
         Object value = parameterValues[index];
 
         if (value != null) {
-            Class type = (Class)((value.getClass() == java.lang.Class.class) ?
+            Class type = (Class)((value.getClass() == Class.class) ?
                     value :
                     value.getClass());
             return type;

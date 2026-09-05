@@ -19,6 +19,7 @@
 package org.apache.groovy.contracts.common.impl.lc;
 
 import org.apache.groovy.contracts.common.base.BaseLifecycle;
+import org.apache.groovy.contracts.common.spi.Lifecycle;
 import org.apache.groovy.contracts.common.spi.ProcessingContextInformation;
 import org.apache.groovy.contracts.generation.CandidateChecks;
 import org.apache.groovy.contracts.generation.PreconditionGenerator;
@@ -26,7 +27,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 
 /**
- * Internal {@link org.apache.groovy.contracts.common.spi.Lifecycle} implementation for pre-conditions.
+ * Internal {@link Lifecycle} implementation for pre-conditions.
  */
 public class PreconditionLifecycle extends BaseLifecycle {
 

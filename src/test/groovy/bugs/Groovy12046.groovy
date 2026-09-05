@@ -18,6 +18,9 @@
  */
 package bugs
 
+import groovy.lang.GroovyObject
+import groovy.lang.MetaClassImpl
+import groovy.lang.MissingMethodException
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -26,14 +29,14 @@ import static groovy.test.GroovyAssert.assertScript
  * Regression tests for GROOVY-12046.
  *
  * <p>A mocking framework (e.g. Spock, Mockito) typically creates a runtime subclass ("proxy") and
- * installs a per-instance {@link groovy.lang.MetaClassImpl} whose {@code theClass} points to the
+ * installs a per-instance {@link MetaClassImpl} whose {@code theClass} points to the
  * <em>parent</em> class.  When an unresolved method reaches
- * {@code MetaClassImpl.invokeMissingMethod}, the thrown {@link groovy.lang.MissingMethodException}
+ * {@code MetaClassImpl.invokeMissingMethod}, the thrown {@link MissingMethodException}
  * must carry the <em>receiver's runtime class</em> as its {@code type}, not {@code theClass}.
  * The indy call-site handler in
  * {@code IndyGuardsFiltersAndSignatures.invokeGroovyObjectInvoker} guards
  * {@code receiver.getClass() == e.getType()} before delegating to
- * {@link groovy.lang.GroovyObject#invokeMethod(String, Object)};  if the type is wrong the
+ * {@link GroovyObject#invokeMethod(String, Object)};  if the type is wrong the
  * {@code invokeMethod} MOP fallback is silently skipped.</p>
  */
 final class Groovy12046 {
@@ -67,7 +70,7 @@ final class Groovy12046 {
     '''
 
     /**
-     * The {@link groovy.lang.MissingMethodException#getType()} must equal the receiver's
+     * The {@link MissingMethodException#getType()} must equal the receiver's
      * <em>runtime</em> class ({@code Proxy}), not the metaclass {@code theClass} ({@code ObjClass}).
      * This is the contract consumed by {@code invokeGroovyObjectInvoker}'s type guard.
      */
@@ -93,7 +96,7 @@ final class Groovy12046 {
 
     /**
      * An end-to-end call on a typed variable compiled with an indy call site must activate the
-     * {@link groovy.lang.GroovyObject#invokeMethod(String, Object)} MOP fallback when the
+     * {@link GroovyObject#invokeMethod(String, Object)} MOP fallback when the
      * target method is absent from the per-instance metaclass.
      */
     @Test
@@ -108,7 +111,7 @@ final class Groovy12046 {
     }
 
     /**
-     * If the missing-method path is already rethrowing an existing {@link groovy.lang.MissingMethodException},
+     * If the missing-method path is already rethrowing an existing {@link MissingMethodException},
      * it must preserve that original exception instead of synthesizing a replacement.
      */
     @Test

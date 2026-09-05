@@ -40,7 +40,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
  * The configuration is a Groovy script and reading it runs it. That is what makes the dot
  * notation and the closures above work, and it also means a configuration file can do
  * anything the application itself can. Despite the name, this is not one of the data
- * slurpers: {@link groovy.json.JsonSlurper} and its siblings map a document to values,
+ * slurpers: {@code groovy.json.JsonSlurper} and its siblings map a document to values,
  * whereas {@code parse} here compiles and executes what it is given. Read configuration
  * only from somewhere you would accept code from.
  *

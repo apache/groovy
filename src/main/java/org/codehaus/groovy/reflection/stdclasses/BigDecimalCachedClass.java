@@ -24,7 +24,7 @@ import org.codehaus.groovy.runtime.typehandling.NumberMath;
 import java.math.BigDecimal;
 
 /**
- * Provides optimized reflection caching for {@link java.math.BigDecimal}.
+ * Provides optimized reflection caching for {@link BigDecimal}.
  * Coerces numeric arguments to {@link BigDecimal} for type-safe method invocation.
  */
 public class BigDecimalCachedClass extends DoubleCachedClass {

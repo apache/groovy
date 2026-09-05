@@ -95,7 +95,7 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
                 tableModel {
                     closureColumn(read: closure, write: closure, header: 'header')
                 }
-                tableModel(model: new groovy.swing.model.ValueHolder('foo')) {
+                tableModel(model: new ValueHolder('foo')) {
                     closureColumn(read: closure, type: String)
                 }
                 tableModel(list: ['a', 'b']) {

@@ -19,6 +19,7 @@
 package org.codehaus.groovy.runtime
 
 import groovy.test.GroovyTestCase
+import org.objectweb.asm.Opcodes
 
 /**
  * Tests for DGM methods
@@ -332,7 +333,7 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
     }
 
     void testWhichJar() {
-        assert DefaultGroovyMethods.getLocation(org.objectweb.asm.Opcodes).getFile().matches(/(.+\/)?asm[-].+\.jar/)
+        assert DefaultGroovyMethods.getLocation(Opcodes).getFile().matches(/(.+\/)?asm[-].+\.jar/)
         assert null == DefaultGroovyMethods.getLocation(String)
     }
 

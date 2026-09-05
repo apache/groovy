@@ -18,6 +18,6 @@
  */
 
 /**
- * XML namespace support via {@link groovy.namespace.QName} qualified names.
+ * XML namespace support via {@link QName} qualified names.
  */
 package groovy.namespace;

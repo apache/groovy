@@ -68,7 +68,7 @@ public abstract class XStreamUtils {
      * Takes the incoming file-name and checks whether this is a URI using the <tt>file:</tt> protocol or a non-URI and treats
      * it accordingly.
      *
-     * @return a file-name {@link java.io.File} representation or <tt>null</tt> if the file-name was in an invalid URI format
+     * @return a file-name {@link File} representation or <tt>null</tt> if the file-name was in an invalid URI format
      */
     private static File astFile(final String uriOrFileName) {
         try {

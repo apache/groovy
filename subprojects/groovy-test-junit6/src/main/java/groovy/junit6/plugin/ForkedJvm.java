@@ -26,6 +26,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.regex.Matcher;
 
 /**
  * Runs the annotated test method (or every test method on the annotated class)
@@ -134,7 +135,7 @@ public @interface ForkedJvm {
      * Regular expressions that exclude matching entries from the parent's
      * {@code java.class.path} when constructing the forked JVM's classpath.
      * Each pattern is applied to each path entry with
-     * {@link java.util.regex.Matcher#find()}, so plain substrings (e.g.
+     * {@link Matcher#find()}, so plain substrings (e.g.
      * {@code "junit-platform-instrumentation"}) work without anchoring.
      * <p>
      * Patterns can also be supplied via the system property

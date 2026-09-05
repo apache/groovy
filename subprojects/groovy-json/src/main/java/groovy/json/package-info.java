@@ -21,9 +21,9 @@
  * JSON parsing, generation, and streaming support.
  *
  * <p>
- * {@link groovy.json.JsonParser} parses JSON strings, {@link groovy.json.JsonSlurper} provides
- * lazy/streaming parsing, {@link groovy.json.JsonBuilder} is a DSL for construction,
- * and {@link groovy.json.JsonOutput} serializes to JSON.
+ * {@link JsonParser} parses JSON strings, {@link JsonSlurper} provides
+ * lazy/streaming parsing, {@link JsonBuilder} is a DSL for construction,
+ * and {@link JsonOutput} serializes to JSON.
  * </p>
  */
 package groovy.json;

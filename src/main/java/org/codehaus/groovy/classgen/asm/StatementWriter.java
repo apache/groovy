@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import groovy.lang.Reference;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
@@ -46,6 +47,7 @@ import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.classgen.VariableScopeVisitor.InstanceofFlowBindings;
 import org.codehaus.groovy.classgen.asm.CompileStack.BlockRecorder;
 import org.codehaus.groovy.syntax.Types;
@@ -248,7 +250,7 @@ public class StatementWriter {
      * Applies the for-in per-iteration capture policy
      * ({@link WriterController#isForInPerIterationCaptureEnabled()}, GROOVY-11792): when
      * enabled, a shared (holder) loop variable receives a fresh
-     * {@link groovy.lang.Reference} so deferred closures, lambdas, and
+     * {@link Reference} so deferred closures, lambdas, and
      * anonymous inner classes observe this iteration's value. When disabled,
      * the historical in-place {@code Reference#set} path is used. Non-holder
      * variables always take the plain store path.
@@ -266,7 +268,7 @@ public class StatementWriter {
      * Increments the for-in index variable by one.
      * <p>
      * Plain (non-shared) indexes use {@code IINC}. Shared indexes are loaded
-     * from their {@link groovy.lang.Reference}, unboxed, incremented, then
+     * from their {@link Reference}, unboxed, incremented, then
      * stored via {@link #storeForLoopVariable(BytecodeVariable)} so the same
      * per-iteration capture policy applies as for value variables
      * (GROOVY-11751, GROOVY-11792).
@@ -306,7 +308,7 @@ public class StatementWriter {
     }
 
     /**
-     * Emits the {@link java.util.Iterator#hasNext()} call via the given visitor.
+     * Emits the {@link Iterator#hasNext()} call via the given visitor.
      * Overrideable so subclasses can substitute a specialized or inlined variant.
      *
      * @param mv the method visitor to write to
@@ -316,7 +318,7 @@ public class StatementWriter {
     }
 
     /**
-     * Emits the {@link java.util.Iterator#next()} call via the given visitor.
+     * Emits the {@link Iterator#next()} call via the given visitor.
      * Overrideable so subclasses can substitute a specialized or inlined variant.
      *
      * @param mv the method visitor to write to
@@ -488,7 +490,7 @@ public class StatementWriter {
      * then uses {@link CompileStack#pushState}/{@link CompileStack#hidePatternVariablesExcept}/
      * {@link CompileStack#pop} so only path-live names are visible. Path-live
      * names come from {@link InstanceofFlowBindings} metadata attached by
-     * {@link org.codehaus.groovy.classgen.VariableScopeVisitor} — classgen
+     * {@link VariableScopeVisitor} — classgen
      * does not re-run the flow analysis. After both arms, non-survivors are
      * permanently hidden on the outer frame (JLS §6.3.2.2-200-C).
      *

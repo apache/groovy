@@ -20,6 +20,7 @@ package groovy.cli;
 
 import groovy.transform.Undefined;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -28,7 +29,7 @@ import java.lang.annotation.Target;
 /**
  * Indicates that a method or property can be used to set a CLI option.
  */
-@java.lang.annotation.Documented
+@Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface Option {

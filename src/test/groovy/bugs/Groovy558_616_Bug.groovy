@@ -18,7 +18,10 @@
  */
 package bugs
 
+import groovy.util.Expando
 import org.junit.jupiter.api.Test
+
+import java.util.ArrayList
 
 
 /**
@@ -29,8 +32,8 @@ class Groovy558_616_Bug {
 
     @Test
     void testListClass() {
-        assert java.util.ArrayList.class == ArrayList.class
-        assert java.util.ArrayList.class == ArrayList
+        assert ArrayList.class == ArrayList.class
+        assert ArrayList.class == ArrayList
         assert ArrayList != Class
         def list = new ArrayList()
         assert list.class == ArrayList
@@ -47,8 +50,8 @@ class Groovy558_616_Bug {
 
     @Test
     void testExpandoClass() {
-        assert groovy.util.Expando.class == Expando.class
-        assert groovy.util.Expando.class == Expando
+        assert Expando.class == Expando.class
+        assert Expando.class == Expando
         assert Expando != Class
         def dum = new Expando()
         assert dum.class == Expando

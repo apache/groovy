@@ -20,6 +20,7 @@ package org.apache.groovy.parser.antlr4
 
 import org.antlr.v4.runtime.CommonToken
 import org.codehaus.groovy.ast.ModuleNode
+import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression
 import org.codehaus.groovy.ast.expr.DeclarationExpression
@@ -29,6 +30,7 @@ import org.codehaus.groovy.ast.expr.MethodPointerExpression
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.AttributeExpression
+import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
@@ -114,8 +116,8 @@ final class Groovy12173 {
             assert a == 1 && b == 2
         ''')
         DeclarationExpression decl = firstDeclaration(ast)
-        assertTrue(decl.leftExpression instanceof org.codehaus.groovy.ast.expr.TupleExpression
-                || decl.leftExpression instanceof org.codehaus.groovy.ast.expr.ArgumentListExpression
+        assertTrue(decl.leftExpression instanceof TupleExpression
+                || decl.leftExpression instanceof ArgumentListExpression
                 || decl.leftExpression != null)
         assertNotNull(decl)
     }

@@ -18,6 +18,7 @@
  */
 package gls.statements
 
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -480,7 +481,7 @@ final class MultipleAssignmentDeclarationTest {
     void testTypedRest_elementMismatchRuntimeFailure() {
         // Dynamic mode: declared Integer (not a container) for *t — runtime coercion fails
         // when assigning the slice/iterator to an Integer variable.
-        shouldFail org.codehaus.groovy.runtime.typehandling.GroovyCastException, '''
+        shouldFail GroovyCastException, '''
             def (h, Integer *t) = [1, 2, 3]
         '''
     }
@@ -1775,7 +1776,7 @@ final class MultipleAssignmentDeclarationTest {
         // STC stores the Map's V as the binder type; primitive int binder accepts.
         // At runtime, missing key → null, and null→int throws GroovyCastException —
         // standard Groovy semantics, not a GEP-20 specific behaviour.
-        shouldFail org.codehaus.groovy.runtime.typehandling.GroovyCastException, '''import groovy.transform.CompileStatic
+        shouldFail GroovyCastException, '''import groovy.transform.CompileStatic
             @CompileStatic
             def go(Map<String, Integer> m) {
                 def (missing: int x) = m

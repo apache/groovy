@@ -22,10 +22,11 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 /**
  * Represents method nodes which are used by the static type checker to virtually add methods
- * coming from {@link org.codehaus.groovy.runtime.DefaultGroovyMethods DGM-like} methods.
+ * coming from {@link DefaultGroovyMethods DGM-like} methods.
  */
 public class ExtensionMethodNode extends MethodNode {
     private final MethodNode extensionMethodNode;

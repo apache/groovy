@@ -82,6 +82,7 @@ import javax.swing.border.EtchedBorder
 import javax.swing.table.TableColumn
 import java.awt.*
 import java.lang.reflect.InvocationTargetException
+import java.util.List
 import java.util.logging.Logger
 
 /**
@@ -547,7 +548,7 @@ class SwingBuilder extends FactoryBuilderSupport {
         //if (context) {
         //    LOG.warning "For best result do not call lookAndFeel when it is a child of a SwingBuilder node, initialization of the Look and Feel may be inconsistent."
         //}
-        groovy.swing.LookAndFeelHelper.instance.lookAndFeel(laf, attributes, initCode)
+        LookAndFeelHelper.instance.lookAndFeel(laf, attributes, initCode)
     }
 
     /**
@@ -577,7 +578,7 @@ class SwingBuilder extends FactoryBuilderSupport {
         return null
     }
 
-    private static LookAndFeel _laf(java.util.List s) {
+    private static LookAndFeel _laf(List s) {
         _laf(*s)
     }
 

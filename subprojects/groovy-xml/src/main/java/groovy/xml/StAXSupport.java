@@ -21,6 +21,7 @@ package groovy.xml;
 import groovy.lang.GroovyRuntimeException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
@@ -30,9 +31,12 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.Characters;
+import javax.xml.stream.events.Comment;
 import javax.xml.stream.events.Namespace;
+import javax.xml.stream.events.ProcessingInstruction;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
+import java.io.IOException;
 import java.io.Reader;
 import java.util.Iterator;
 import java.util.Spliterator;
@@ -61,7 +65,7 @@ final class StAXSupport {
         return StreamSupport.stream(spliterator, false).onClose(() -> closeQuietly(eventReader, reader));
     }
 
-    static Stream<org.w3c.dom.Node> streamElements(Reader reader,
+    static Stream<Node> streamElements(Reader reader,
                                                    String namespaceURI,
                                                    String localName,
                                                    boolean allowDocTypeDeclaration) {
@@ -99,7 +103,7 @@ final class StAXSupport {
         }
         try {
             sourceReader.close();
-        } catch (java.io.IOException ignored) {
+        } catch (IOException ignored) {
             // best-effort close
         }
     }
@@ -126,7 +130,7 @@ final class StAXSupport {
         }
     }
 
-    private static final class SubtreeSpliterator implements Spliterator<org.w3c.dom.Node> {
+    private static final class SubtreeSpliterator implements Spliterator<Node> {
         private final XMLEventReader reader;
         private final DocumentBuilder docBuilder;
         private final String targetNamespaceURI; // null = match any namespace
@@ -141,7 +145,7 @@ final class StAXSupport {
         }
 
         @Override
-        public boolean tryAdvance(Consumer<? super org.w3c.dom.Node> action) {
+        public boolean tryAdvance(Consumer<? super Node> action) {
             try {
                 while (reader.hasNext()) {
                     XMLEvent event = reader.nextEvent();
@@ -162,7 +166,7 @@ final class StAXSupport {
             return targetNamespaceURI.equals(name.getNamespaceURI());
         }
 
-        private org.w3c.dom.Node buildSubtree(StartElement first) throws XMLStreamException {
+        private Node buildSubtree(StartElement first) throws XMLStreamException {
             Document doc = docBuilder.newDocument();
             Element root = createElement(doc, first);
             copyAttributes(root, first);
@@ -192,9 +196,9 @@ final class StAXSupport {
                         current.appendChild(doc.createTextNode(chars.getData()));
                     }
                 } else if (event.getEventType() == XMLEvent.COMMENT) {
-                    current.appendChild(doc.createComment(((javax.xml.stream.events.Comment) event).getText()));
+                    current.appendChild(doc.createComment(((Comment) event).getText()));
                 } else if (event.getEventType() == XMLEvent.PROCESSING_INSTRUCTION) {
-                    javax.xml.stream.events.ProcessingInstruction pi = (javax.xml.stream.events.ProcessingInstruction) event;
+                    ProcessingInstruction pi = (ProcessingInstruction) event;
                     current.appendChild(doc.createProcessingInstruction(pi.getTarget(), pi.getData()));
                 }
             }
@@ -243,7 +247,7 @@ final class StAXSupport {
         }
 
         @Override
-        public Spliterator<org.w3c.dom.Node> trySplit() {
+        public Spliterator<Node> trySplit() {
             return null;
         }
 

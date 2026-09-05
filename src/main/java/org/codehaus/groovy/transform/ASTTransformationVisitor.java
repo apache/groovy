@@ -65,7 +65,7 @@ import java.util.Set;
  * when it is encountered by a tree walk.  One instance of each exists
  * for each phase of the compilation it applies to.  Before invocation the
  * <p>
- * {@link org.codehaus.groovy.transform.ASTTransformationCollectorCodeVisitor} will add a list
+ * {@link ASTTransformationCollectorCodeVisitor} will add a list
  * of annotations that this visitor should be concerned about.  All other
  * annotations are ignored, whether they are GroovyASTTransformation
  * annotated or not.

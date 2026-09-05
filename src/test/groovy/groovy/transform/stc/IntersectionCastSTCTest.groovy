@@ -19,6 +19,7 @@
 package groovy.transform.stc
 
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.CodeVisitorSupport
 import org.codehaus.groovy.ast.IntersectionTypeClassNode
 import org.codehaus.groovy.ast.expr.CastExpression
 import org.codehaus.groovy.ast.expr.LambdaExpression
@@ -223,7 +224,7 @@ final class IntersectionCastSTCTest {
         cu.AST.classes.each { cn ->
             cn.methods.each { mn ->
                 if (mn.code == null) return
-                mn.code.visit(new org.codehaus.groovy.ast.CodeVisitorSupport() {
+                mn.code.visit(new CodeVisitorSupport() {
                     @Override
                     void visitCastExpression(CastExpression expression) {
                         if (holder[0] == null && expression.type instanceof IntersectionTypeClassNode) {

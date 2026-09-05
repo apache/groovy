@@ -20,6 +20,7 @@ package groovy.contracts;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -27,7 +28,7 @@ import java.lang.annotation.Target;
 /**
  * Container annotation for multiple {@link Requires} preconditions on the same target.
  * Synthesized by the compiler from stacked {@code @Requires} annotations via
- * {@link java.lang.annotation.Repeatable}; not normally written by hand.
+ * {@link Repeatable}; not normally written by hand.
  *
  * @since 5.0.0
  * @see Requires

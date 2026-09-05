@@ -23,7 +23,7 @@ import javax.swing.*
 /**
  * Factory for creating internal frames.
  */
-class InternalFrameFactory extends groovy.swing.factory.RootPaneContainerFactory {
+class InternalFrameFactory extends RootPaneContainerFactory {
 
     /**
      * Creates the node handled by this factory.

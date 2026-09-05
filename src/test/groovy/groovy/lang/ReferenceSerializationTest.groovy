@@ -18,6 +18,7 @@
  */
 package groovy.lang
 
+import groovy.transform.PackedClosures
 import org.junit.jupiter.api.Test
 
 /**
@@ -59,7 +60,7 @@ class ReferenceSerializationTest implements Serializable {
     }
 
     @Test
-    @groovy.transform.PackedClosures(mode = groovy.transform.PackedClosures.PackMode.DISABLED)
+    @PackedClosures(mode = PackedClosures.PackMode.DISABLED)
     // closure round-trip fixture: must stay a (serializable) class regardless of the packing flag
     void testClosureSerializationWithAReferenceToALocalVariable() {
         int number = 2

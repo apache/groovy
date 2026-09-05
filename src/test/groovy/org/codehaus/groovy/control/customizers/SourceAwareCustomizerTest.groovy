@@ -20,6 +20,7 @@ package org.codehaus.groovy.control.customizers
 
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilePhase
@@ -74,7 +75,7 @@ final class SourceAwareCustomizerTest {
         def unit = new CompilationUnit(config)
         def classNode = new ClassNode('Synthetic', Modifier.PUBLIC, ClassHelper.OBJECT_TYPE)
         classNode.addMethod('answer', Modifier.PUBLIC | Modifier.STATIC,
-            ClassHelper.int_TYPE, org.codehaus.groovy.ast.Parameter.EMPTY_ARRAY,
+            ClassHelper.int_TYPE, Parameter.EMPTY_ARRAY,
             ClassNode.EMPTY_ARRAY, returnS(constX(42)))
         unit.addClassNode(classNode)
 

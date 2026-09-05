@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.contracts.ast.visitor;
 
+import org.apache.groovy.contracts.common.spi.AnnotationProcessor;
 import org.apache.groovy.contracts.common.spi.Lifecycle;
 import org.apache.groovy.contracts.common.spi.ProcessingContextInformation;
 import org.apache.groovy.contracts.util.LifecycleImplementationLoader;
@@ -31,7 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <p>AST transformation visitor which is triggered after applying {@link org.apache.groovy.contracts.common.spi.AnnotationProcessor}
+ * <p>AST transformation visitor which is triggered after applying {@link AnnotationProcessor}
  * related transformations.</p>
  *
  * @see AnnotationProcessorVisitor

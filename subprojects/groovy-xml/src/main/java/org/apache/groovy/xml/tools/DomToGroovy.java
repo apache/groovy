@@ -20,6 +20,7 @@ package org.apache.groovy.xml.tools;
 
 import groovy.util.IndentPrinter;
 import groovy.xml.FactorySupport;
+import groovy.xml.MarkupBuilder;
 import org.codehaus.groovy.syntax.Types;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Comment;
@@ -47,7 +48,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Turns a DOM document into the {@link groovy.xml.MarkupBuilder} calls that would produce
+ * Turns a DOM document into the {@link MarkupBuilder} calls that would produce
  * it, as an aid to writing builder code by hand. The result is a starting point to edit
  * rather than a finished script: names that are not valid Groovy identifiers are quoted,
  * and the layout is meant to be read.

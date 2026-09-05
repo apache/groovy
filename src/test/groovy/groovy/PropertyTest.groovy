@@ -23,6 +23,8 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.messages.WarningMessage
 import org.junit.jupiter.api.Test
 
+import java.awt.Font
+
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -56,8 +58,8 @@ final class PropertyTest {
     @Test
     void testClassWithPrivateFieldAndGetter() {
         if (HeadlessTestSupport.headless) return
-        assert java.awt.Font.getName() == 'java.awt.Font'
-        assert java.awt.Font.name == 'java.awt.Font'
+        assert Font.getName() == 'java.awt.Font'
+        assert Font.name == 'java.awt.Font'
     }
 
     @Test

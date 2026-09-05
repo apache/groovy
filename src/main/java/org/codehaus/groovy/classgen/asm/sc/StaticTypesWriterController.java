@@ -49,7 +49,7 @@ import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.isStatic
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLUTION;
 
 /**
- * An alternative {@link org.codehaus.groovy.classgen.asm.WriterController} which handles static types and method
+ * An alternative {@link WriterController} which handles static types and method
  * dispatch. In case of a "mixed mode" where only some methods are annotated with {@link groovy.transform.TypeChecked}
  * then this writer will delegate to the classic writer controller.
  */

@@ -18,11 +18,17 @@
  */
 package org.apache.groovy.runtime.indy
 
+import groovy.lang.DelegatingMetaClass
 import groovy.lang.ExpandoMetaClass
 import groovy.lang.GroovySystem
 import groovy.lang.MetaClass
+import groovy.lang.MetaClassImpl
+import groovy.lang.MetaClassRegistryChangeEvent
 import org.codehaus.groovy.reflection.ClassInfo
+import org.codehaus.groovy.runtime.HandleMetaClass
 import org.codehaus.groovy.runtime.NullObject
+import org.codehaus.groovy.util.ManagedReference
+import org.codehaus.groovy.util.ReferenceBundle
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -299,7 +305,7 @@ final class IndyInvalidationTest {
 
     @Test
     void isStockMetaClass_andNeedsBulkInvalidation() {
-        def mcImpl = new groovy.lang.MetaClassImpl(ClassA)
+        def mcImpl = new MetaClassImpl(ClassA)
         mcImpl.initialize()
         def emc = new ExpandoMetaClass(ClassA, true, true)
         emc.initialize()
@@ -327,7 +333,7 @@ final class IndyInvalidationTest {
     void isStockMetaClass_unwrapsHandleMetaClass() {
         def emc = new ExpandoMetaClass(ClassA, true, true)
         emc.initialize()
-        def handle = new org.codehaus.groovy.runtime.HandleMetaClass(emc)
+        def handle = new HandleMetaClass(emc)
         assertTrue(IndyInvalidation.isStockMetaClass(handle),
                 'HandleMetaClass wrapping EMC must unwrap to stock MetaClassImpl')
         assertFalse(IndyInvalidation.needsBulkInvalidation(null, handle))
@@ -337,11 +343,11 @@ final class IndyInvalidationTest {
     void invalidateForMetaClassChange_exactForPureMetaClassImpl() {
         SwitchPoint parentSp = ClassInfo.getClassInfo(PolicyParent).indySwitchPoint
         SwitchPoint childSp = ClassInfo.getClassInfo(PolicyChild).indySwitchPoint
-        def oldMc = new groovy.lang.MetaClassImpl(PolicyParent)
+        def oldMc = new MetaClassImpl(PolicyParent)
         oldMc.initialize()
-        def newMc = new groovy.lang.MetaClassImpl(PolicyParent)
+        def newMc = new MetaClassImpl(PolicyParent)
         newMc.initialize()
-        def event = new groovy.lang.MetaClassRegistryChangeEvent(
+        def event = new MetaClassRegistryChangeEvent(
                 GroovySystem.metaClassRegistry, null, PolicyParent, oldMc, newMc)
 
         IndyInvalidation.invalidateForMetaClassChange(event)
@@ -357,7 +363,7 @@ final class IndyInvalidationTest {
         SwitchPoint childSp = ClassInfo.getClassInfo(PolicyChildEmc).indySwitchPoint
         def emc = new ExpandoMetaClass(PolicyParentEmc, true, true)
         emc.initialize()
-        def event = new groovy.lang.MetaClassRegistryChangeEvent(
+        def event = new MetaClassRegistryChangeEvent(
                 GroovySystem.metaClassRegistry, null, PolicyParentEmc, null, emc)
 
         IndyInvalidation.invalidateForMetaClassChange(event)
@@ -372,7 +378,7 @@ final class IndyInvalidationTest {
         SwitchPoint spA = ClassInfo.getClassInfo(ClassA).indySwitchPoint
         SwitchPoint spB = ClassInfo.getClassInfo(ClassB).indySwitchPoint
         def custom = new PureCustomMetaClass(ClassA)
-        def event = new groovy.lang.MetaClassRegistryChangeEvent(
+        def event = new MetaClassRegistryChangeEvent(
                 GroovySystem.metaClassRegistry, null, ClassA, null, custom)
 
         long bulkBefore = IndyInvalidation.bulkInvalidationCount()
@@ -391,7 +397,7 @@ final class IndyInvalidationTest {
         def instance = new PolicyParentPerInst()
         def emc = new ExpandoMetaClass(PolicyParentPerInst, false, true)
         emc.initialize()
-        def event = new groovy.lang.MetaClassRegistryChangeEvent(
+        def event = new MetaClassRegistryChangeEvent(
                 GroovySystem.metaClassRegistry, instance, PolicyParentPerInst, null, emc)
 
         assertTrue(event.isPerInstanceMetaClassChange())
@@ -405,7 +411,7 @@ final class IndyInvalidationTest {
     @Test
     void invalidateForMetaClassChange_nullType_unscoped() {
         SwitchPoint sp = ClassInfo.getClassInfo(ClassA).indySwitchPoint
-        def event = new groovy.lang.MetaClassRegistryChangeEvent(
+        def event = new MetaClassRegistryChangeEvent(
                 GroovySystem.metaClassRegistry, null, null, null, null)
         IndyInvalidation.invalidateForMetaClassChange(event)
         assertTrue(sp.hasBeenInvalidated())
@@ -423,7 +429,7 @@ final class IndyInvalidationTest {
         SwitchPoint preInstall = info.indySwitchPoint
         assertFalse(preInstall.hasBeenInvalidated())
 
-        def mc = new groovy.lang.MetaClassImpl(LocalGen)
+        def mc = new MetaClassImpl(LocalGen)
         mc.initialize()
         info.setStrongMetaClass(mc)
 
@@ -440,13 +446,13 @@ final class IndyInvalidationTest {
     @Test
     void setStrongMetaClass_replace_invalidatesLocalSwitchPoint() {
         def info = ClassInfo.getClassInfo(LocalGenReplace)
-        def mc1 = new groovy.lang.MetaClassImpl(LocalGenReplace)
+        def mc1 = new MetaClassImpl(LocalGenReplace)
         mc1.initialize()
         info.setStrongMetaClass(mc1)
         SwitchPoint sp = info.indySwitchPoint
         assertFalse(sp.hasBeenInvalidated())
 
-        def mc2 = new groovy.lang.MetaClassImpl(LocalGenReplace)
+        def mc2 = new MetaClassImpl(LocalGenReplace)
         mc2.initialize()
         info.setStrongMetaClass(mc2)
 
@@ -457,13 +463,13 @@ final class IndyInvalidationTest {
     @Test
     void setWeakMetaClass_replace_invalidatesLocalSwitchPoint() {
         def info = ClassInfo.getClassInfo(LocalGenWeak)
-        def mc1 = new groovy.lang.MetaClassImpl(LocalGenWeak)
+        def mc1 = new MetaClassImpl(LocalGenWeak)
         mc1.initialize()
         info.setWeakMetaClass(mc1)
         SwitchPoint sp = info.indySwitchPoint
         assertFalse(sp.hasBeenInvalidated())
 
-        def mc2 = new groovy.lang.MetaClassImpl(LocalGenWeak)
+        def mc2 = new MetaClassImpl(LocalGenWeak)
         mc2.initialize()
         info.setWeakMetaClass(mc2)
 
@@ -541,7 +547,7 @@ final class IndyInvalidationTest {
         info.setStrongMetaClass(null)
         info.setWeakMetaClass(null)
         SwitchPoint preInstall = info.indySwitchPoint
-        def mc = new groovy.lang.MetaClassImpl(WeakOnlyHost)
+        def mc = new MetaClassImpl(WeakOnlyHost)
         mc.initialize()
         info.setWeakMetaClass(mc)
         assertTrue(preInstall.hasBeenInvalidated())
@@ -557,7 +563,7 @@ final class IndyInvalidationTest {
         // after the MetaClass *object* has been collected (optimised POJO
         // handles do not pin the MetaClass).
         def info = ClassInfo.getClassInfo(CollectedMcHost)
-        def mc = new groovy.lang.MetaClassImpl(CollectedMcHost)
+        def mc = new MetaClassImpl(CollectedMcHost)
         mc.initialize()
         info.setWeakMetaClass(mc)
         SwitchPoint linked = IndyInvalidation.classSwitchPointFor(CollectedMcHost)
@@ -566,7 +572,7 @@ final class IndyInvalidationTest {
         // Simulate the weak MetaClass being collected (deterministic: clear the ref).
         def field = ClassInfo.getDeclaredField('weakMetaClass')
         field.accessible = true
-        ((org.codehaus.groovy.util.ManagedReference) field.get(info)).clear()
+        ((ManagedReference) field.get(info)).clear()
         assertEquals(null, info.metaClassForClass)
 
         IndyInvalidation.invalidateClass(CollectedMcHost)
@@ -590,8 +596,8 @@ final class IndyInvalidationTest {
             }
             // Managed-reference creation pumps the shared weak-bundle manager,
             // which delivers the domain reclaim for the collected ClassInfo.
-            new org.codehaus.groovy.util.ManagedReference<Object>(
-                    org.codehaus.groovy.util.ReferenceBundle.getWeakBundle(), new Object())
+            new ManagedReference<Object>(
+                    ReferenceBundle.getWeakBundle(), new Object())
             classCollected = classCollected || clsRef.get() == null
             reclaimed = orphan.hasBeenInvalidated()
             if (!reclaimed) Thread.sleep(10)
@@ -639,7 +645,7 @@ final class IndyInvalidationTest {
 
     @Test
     void switchPointForMetaClass_identityMapDomain() {
-        def mc = new groovy.lang.MetaClassImpl(ClassA)
+        def mc = new MetaClassImpl(ClassA)
         mc.initialize()
         SwitchPoint sp = IndyInvalidation.switchPointForMetaClass(mc)
         assertSame(sp, IndyInvalidation.switchPointForMetaClass(mc))
@@ -657,7 +663,7 @@ final class IndyInvalidationTest {
         SwitchPoint preInstall = IndyInvalidation.classSwitchPointFor(type)
         assertSame(info.indySwitchPoint, preInstall)
         assertFalse(preInstall.hasBeenInvalidated())
-        def mc = new groovy.lang.MetaClassImpl(type)
+        def mc = new MetaClassImpl(type)
         mc.initialize()
         info.strongMetaClass = mc
         assertTrue(preInstall.hasBeenInvalidated())
@@ -679,9 +685,9 @@ final class IndyInvalidationTest {
 
     @Test
     void customNonMetaClassImpl_usesSameIdentityDomain() {
-        def impl = new groovy.lang.MetaClassImpl(ClassB)
+        def impl = new MetaClassImpl(ClassB)
         impl.initialize()
-        def custom = new groovy.lang.DelegatingMetaClass(impl) {}
+        def custom = new DelegatingMetaClass(impl) {}
         SwitchPoint sp = IndyInvalidation.switchPointForMetaClass(custom)
         assertSame(sp, IndyInvalidation.switchPointForMetaClass(impl))
         IndyInvalidation.invalidateMetaClass(impl)
@@ -729,7 +735,7 @@ class PureCustomMetaClass implements MetaClass {
     final MetaClass delegate
 
     PureCustomMetaClass(Class theClass) {
-        this.delegate = new groovy.lang.MetaClassImpl(theClass)
+        this.delegate = new MetaClassImpl(theClass)
         this.delegate.initialize()
     }
 }

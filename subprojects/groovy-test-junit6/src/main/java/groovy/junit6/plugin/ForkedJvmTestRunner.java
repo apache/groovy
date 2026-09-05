@@ -32,6 +32,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -124,7 +125,7 @@ public final class ForkedJvmTestRunner {
     private static void writeAborted(Path path, String reason) throws IOException {
         try (OutputStream out = Files.newOutputStream(path)) {
             out.write(ABORTED_MARKER);
-            out.write(reason.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            out.write(reason.getBytes(StandardCharsets.UTF_8));
         }
     }
 
@@ -143,7 +144,7 @@ public final class ForkedJvmTestRunner {
     private static void writeTextFallback(Path path, String text) throws IOException {
         try (OutputStream out = Files.newOutputStream(path)) {
             out.write(TEXT_FALLBACK_MARKER);
-            out.write(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            out.write(text.getBytes(StandardCharsets.UTF_8));
         }
     }
 

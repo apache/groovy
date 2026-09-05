@@ -29,7 +29,7 @@
  *   <li>Support for inner classes, enums, annotations, and other Groovy language features</li>
  * </ul>
  * <p>
- * The primary entry point for bytecode generation is {@link org.codehaus.groovy.classgen.AsmClassGenerator},
+ * The primary entry point for bytecode generation is {@link AsmClassGenerator},
  * which coordinates the entire class generation process. Various visitor classes handle specific aspects
  * such as annotation processing, inner class resolution, variable scoping, and verification.
  *

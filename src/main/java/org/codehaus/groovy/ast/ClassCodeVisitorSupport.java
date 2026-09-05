@@ -39,6 +39,8 @@ import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.ast.stmt.YieldStatement;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.Message;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -498,9 +500,9 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
      * Errors are accumulated and reported after visitation completes.
      * <p>
      * The error counts towards the configured
-     * {@link org.codehaus.groovy.control.CompilerConfiguration#getTolerance() error tolerance},
+     * {@link CompilerConfiguration#getTolerance() error tolerance},
      * so visitation may be cut short once that many errors have been collected (GROOVY-12306).
-     * Use {@link org.codehaus.groovy.control.ErrorCollector#addErrorAndContinue(Message)}
+     * Use {@link ErrorCollector#addErrorAndContinue(Message)}
      * directly to report an error which must never bail out.
      *
      * @param error the error message to report

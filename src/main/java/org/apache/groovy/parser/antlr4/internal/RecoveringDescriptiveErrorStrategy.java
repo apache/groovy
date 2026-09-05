@@ -19,6 +19,7 @@
 package org.apache.groovy.parser.antlr4.internal;
 
 import org.antlr.v4.runtime.CharStream;
+import org.codehaus.groovy.control.ErrorCollector;
 
 /**
  * Recovering parser error strategy with the same friendly diagnostics as
@@ -31,7 +32,7 @@ import org.antlr.v4.runtime.CharStream;
  * <p>
  * Callers must parse with LL prediction and error listeners installed. Hosts
  * should read diagnostics from
- * {@link org.codehaus.groovy.control.ErrorCollector}: a partial tree may still
+ * {@link ErrorCollector}: a partial tree may still
  * fail during AST building after recovery.
  * </p>
  *

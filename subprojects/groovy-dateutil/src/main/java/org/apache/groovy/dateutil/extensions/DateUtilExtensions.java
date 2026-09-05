@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
@@ -553,16 +554,16 @@ public final class DateUtilExtensions {
      * <p>
      * <p>For example, if the system timezone is GMT,
      * <code>new Date(0).format('MM/dd/yy')</code> would return the string
-     * <code>"01/01/70"</code>. See documentation for {@link java.text.SimpleDateFormat}
+     * <code>"01/01/70"</code>. See documentation for {@link SimpleDateFormat}
      * for format pattern use.
      * <p>
      * <p>Note that a new DateFormat instance is created for every
      * invocation of this method (for thread safety).
      *
      * @param self   a Date
-     * @param format the format pattern to use according to {@link java.text.SimpleDateFormat}
+     * @param format the format pattern to use according to {@link SimpleDateFormat}
      * @return a string representation of this date.
-     * @see java.text.SimpleDateFormat
+     * @see SimpleDateFormat
      * @since 1.5.7
      */
     public static String format(Date self, String format) {
@@ -579,17 +580,17 @@ public final class DateUtilExtensions {
      * def tz = TimeZone.getTimeZone('GMT')
      * println d.format('dd/MMM/yyyy', tz)
      * </code> would return the string
-     * <code>"01/Jan/1970"</code>. See documentation for {@link java.text.SimpleDateFormat}
+     * <code>"01/Jan/1970"</code>. See documentation for {@link SimpleDateFormat}
      * for format pattern use.
      * <p>
      * <p>Note that a new DateFormat instance is created for every
      * invocation of this method (for thread safety).
      *
      * @param self   a Date
-     * @param format the format pattern to use according to {@link java.text.SimpleDateFormat}
+     * @param format the format pattern to use according to {@link SimpleDateFormat}
      * @param tz     the TimeZone to use
      * @return a string representation of this date.
-     * @see java.text.SimpleDateFormat
+     * @see SimpleDateFormat
      * @since 1.8.3
      */
     public static String format(Date self, String format, TimeZone tz) {
@@ -600,7 +601,7 @@ public final class DateUtilExtensions {
 
     /**
      * <p>Return a string representation of the 'day' portion of this date
-     * according to the locale-specific {@link java.text.DateFormat#SHORT} default format.
+     * according to the locale-specific {@link DateFormat#SHORT} default format.
      * For an "en_UK" system locale, this would be <code>dd/MM/yy</code>.
      * <p>
      * <p>Note that a new DateFormat instance is created for every
@@ -608,8 +609,8 @@ public final class DateUtilExtensions {
      *
      * @param self a Date
      * @return a string representation of this date
-     * @see java.text.DateFormat#getDateInstance(int)
-     * @see java.text.DateFormat#SHORT
+     * @see DateFormat#getDateInstance(int)
+     * @see DateFormat#SHORT
      * @since 1.5.7
      */
     public static String getDateString(Date self) {
@@ -618,7 +619,7 @@ public final class DateUtilExtensions {
 
     /**
      * <p>Return a string representation of the time portion of this date
-     * according to the locale-specific {@link java.text.DateFormat#MEDIUM} default format.
+     * according to the locale-specific {@link DateFormat#MEDIUM} default format.
      * For an "en_UK" system locale, this would be <code>HH:MM:ss</code>.
      * <p>
      * <p>Note that a new DateFormat instance is created for every
@@ -626,8 +627,8 @@ public final class DateUtilExtensions {
      *
      * @param self a Date
      * @return a string representing the time portion of this date
-     * @see java.text.DateFormat#getTimeInstance(int)
-     * @see java.text.DateFormat#MEDIUM
+     * @see DateFormat#getTimeInstance(int)
+     * @see DateFormat#MEDIUM
      * @since 1.5.7
      */
     public static String getTimeString(Date self) {
@@ -637,8 +638,8 @@ public final class DateUtilExtensions {
     /**
      * <p>Return a string representation of the date and time portion of
      * this Date instance, according to the locale-specific format used by
-     * {@link java.text.DateFormat}.  This method uses the {@link java.text.DateFormat#SHORT}
-     * preset for the day portion and {@link java.text.DateFormat#MEDIUM} for the time
+     * {@link DateFormat}.  This method uses the {@link DateFormat#SHORT}
+     * preset for the day portion and {@link DateFormat#MEDIUM} for the time
      * portion of the output string.
      * <p>
      * <p>Note that a new DateFormat instance is created for every
@@ -646,7 +647,7 @@ public final class DateUtilExtensions {
      *
      * @param self a Date
      * @return a string representation of this date and time
-     * @see java.text.DateFormat#getDateTimeInstance(int, int)
+     * @see DateFormat#getDateTimeInstance(int, int)
      * @since 1.5.7
      */
     public static String getDateTimeString(Date self) {
@@ -712,24 +713,24 @@ public final class DateUtilExtensions {
     }
 
     /**
-     * <p>Shortcut for {@link java.text.SimpleDateFormat} to output a String representation
+     * <p>Shortcut for {@link SimpleDateFormat} to output a String representation
      * of this calendar instance.  This method respects the Calendar's assigned
-     * {@link java.util.TimeZone}, whereas calling <code>cal.time.format('HH:mm:ss')</code>
+     * {@link TimeZone}, whereas calling <code>cal.time.format('HH:mm:ss')</code>
      * would use the system timezone.
      * <p>Note that Calendar equivalents of <code>date.getDateString()</code>
      * and variants do not exist because those methods are Locale-dependent.
-     * Although a Calendar may be assigned a {@link java.util.Locale}, that information is
+     * Although a Calendar may be assigned a {@link Locale}, that information is
      * lost and therefore cannot be used to control the default date/time formats
      * provided by these methods.  Instead, the system Locale would always be
      * used.  The alternative is to simply call
-     * {@link java.text.DateFormat#getDateInstance(int, java.util.Locale)} and pass the same Locale
+     * {@link DateFormat#getDateInstance(int, Locale)} and pass the same Locale
      * that was used for the Calendar.
      *
      * @param self    this calendar
      * @param pattern format pattern
      * @return String representation of this calendar with the given format.
-     * @see java.text.DateFormat#setTimeZone(java.util.TimeZone)
-     * @see java.text.SimpleDateFormat#format(java.util.Date)
+     * @see DateFormat#setTimeZone(TimeZone)
+     * @see SimpleDateFormat#format(java.util.Date)
      * @see #format(java.util.Date, String)
      * @since 1.6.0
      */

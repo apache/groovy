@@ -65,7 +65,7 @@
 
         <module name="RegexpSinglelineJava">
             <property name="id" value="FullyQualifiedNameInJavadoc"/>
-            <property name="format" value="\{@link(?:plain)?\s+(?:org|java|javax|jakarta|groovy)(?:\.[a-z][a-z0-9_]*)+\.[A-Z]"/>
+            <property name="format" value="^[^&quot;]*\{@link(?:plain)?\s+(?:org|java|javax|jakarta|groovy)(?:\.[a-z][a-z0-9_]*)+\.[A-Z]"/>
             <property name="message" value="Import the type and link it by its simple name"/>
         </module>
 

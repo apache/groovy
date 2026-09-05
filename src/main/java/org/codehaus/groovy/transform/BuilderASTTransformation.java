@@ -121,7 +121,7 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
             // method lists, since ClassNode keeps a parallel name->methods map.
             if (parent instanceof ClassNode buildee) {
                 buildee.getModule().getClasses().removeIf(StubberSupport::isStub);
-                java.util.List<MethodNode> stubs = new java.util.ArrayList<>();
+                List<MethodNode> stubs = new ArrayList<>();
                 for (MethodNode m : buildee.getMethods()) {
                     if (StubberSupport.isStub(m)) stubs.add(m);
                 }

@@ -29,9 +29,9 @@ import org.codehaus.groovy.classgen.asm.WriterController;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
 
 /**
- * A front-end class for {@link org.codehaus.groovy.classgen.asm.ExpressionAsVariableSlot} which
+ * A front-end class for {@link ExpressionAsVariableSlot} which
  * allows defining temporary variables loaded from variable slots directly at the AST level,
- * without any knowledge of {@link org.codehaus.groovy.classgen.AsmClassGenerator}.
+ * without any knowledge of {@link AsmClassGenerator}.
  *
  * @since 2.4.0
  */

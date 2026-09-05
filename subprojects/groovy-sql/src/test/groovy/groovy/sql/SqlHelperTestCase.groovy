@@ -20,6 +20,8 @@ package groovy.sql
 
 import groovy.test.GroovyTestCase
 
+import java.sql.SQLException
+
 import static groovy.sql.SqlTestConstants.DB_DATASOURCE
 import static groovy.sql.SqlTestConstants.DB_DS_KEY
 import static groovy.sql.SqlTestConstants.DB_PASSWORD
@@ -80,7 +82,7 @@ class SqlHelperTestCase extends GroovyTestCase {
     protected tryDrop(Sql sql, String tableName) {
         try {
             sql.execute("drop table $tableName".toString())
-        } catch (java.sql.SQLException se) {}
+        } catch (SQLException se) {}
     }
 
     protected getURI() {

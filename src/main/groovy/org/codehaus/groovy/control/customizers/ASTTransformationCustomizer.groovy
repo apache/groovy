@@ -22,14 +22,19 @@ import groovy.transform.AnnotationCollector
 import groovy.transform.AutoFinal
 import groovy.transform.CompilationUnitAware
 import groovy.transform.CompileStatic
+import groovy.transform.RecordBase
+import groovy.transform.Sealed
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.builder.AstBuilder
+import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.transform.ASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
@@ -263,9 +268,9 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
      * Creates one {@link ASTTransformationCustomizer} per AST transformation class declared by the
      * given annotation's {@link GroovyASTTransformationClass} list. This is the way to use the
      * customizer with annotations whose implementation is split across multiple transforms running
-     * at different compile phases (e.g. {@link groovy.transform.Sealed}, {@link groovy.transform.RecordBase}).
+     * at different compile phases (e.g. {@link Sealed}, {@link RecordBase}).
      * <p>
-     * Spread the result into {@link org.codehaus.groovy.control.CompilerConfiguration#addCompilationCustomizers}:
+     * Spread the result into {@link CompilerConfiguration#addCompilationCustomizers}:
      * <pre>
      *     configuration.addCompilationCustomizers(*ASTTransformationCustomizer.forAnnotation(Sealed))
      * </pre>
@@ -341,8 +346,8 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
      * <pre>annotationParameters = [value: 'logger']</pre>
      *
      * Note that you cannot specify annotation closure values directly. If the annotation you want to add takes
-     * a closure as an argument, you will have to set a {@link org.codehaus.groovy.ast.expr.ClosureExpression} instead. This can be done by either
-     * creating a custom {@link org.codehaus.groovy.ast.expr.ClosureExpression} from code, or using the {@link org.codehaus.groovy.ast.builder.AstBuilder}.
+     * a closure as an argument, you will have to set a {@link ClosureExpression} instead. This can be done by either
+     * creating a custom {@link ClosureExpression} from code, or using the {@link AstBuilder}.
      * <p>
      * Here is an example:
      * <pre>

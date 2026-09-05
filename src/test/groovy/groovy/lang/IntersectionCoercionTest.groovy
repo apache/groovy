@@ -21,6 +21,8 @@ package groovy.lang
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 import org.junit.jupiter.api.Test
 
+import java.io.Serializable
+
 import static org.junit.jupiter.api.Assertions.assertThrows
 
 /**
@@ -69,7 +71,7 @@ final class IntersectionCoercionTest {
             return [proxy, proxy.greet("world")]
         ''')
         def (proxy, greeting) = result
-        assert proxy instanceof java.io.Serializable
+        assert proxy instanceof Serializable
         // The proxy's class implements Greeter via ProxyGenerator
         assert proxy.class.interfaces.any { it.name == 'Greeter' }
         assert greeting == 'Hello, world'
@@ -100,7 +102,7 @@ final class IntersectionCoercionTest {
             return [proxy, calls]
         ''')
         def (proxy, calls) = result
-        assert proxy instanceof java.io.Serializable
+        assert proxy instanceof Serializable
         assert proxy.class.interfaces.any { it.name == 'Action' }
         assert calls == 2
     }
@@ -145,7 +147,7 @@ final class IntersectionCoercionTest {
             return [p, p.greet("world")]
         ''')
         def (proxy, greeting) = result
-        assert proxy instanceof java.io.Serializable
+        assert proxy instanceof Serializable
         assert proxy.class.interfaces.any { it.name == 'Greeter' }
         assert greeting == 'Hello, world'
     }

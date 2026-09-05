@@ -32,9 +32,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.ServiceConfigurationError;
+import org.apache.groovy.contracts.common.spi.Lifecycle;
+
 
 /**
- * <p>Finds and loads implementation classes of interface {@link org.apache.groovy.contracts.common.spi.Lifecycle}.</p>
+ * <p>Finds and loads implementation classes of interface {@link Lifecycle}.</p>
  **/
 public final class LifecycleImplementationLoader<S> implements Iterable<S> {
 
@@ -250,7 +252,7 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
     }
 
     /**
-     * Creates a new {@link org.apache.groovy.contracts.common.spi.Lifecycle} for the given type and class
+     * Creates a new {@link Lifecycle} for the given type and class
      * loader.
      *
      * @param service the service type to load

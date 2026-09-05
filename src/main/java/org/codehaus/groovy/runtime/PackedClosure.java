@@ -19,12 +19,19 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
+import groovy.lang.MissingMethodException;
+import org.apache.groovy.internal.util.UncheckedThrow;
 import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
+import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectOutputStream;
 import java.io.Serial;
+import java.lang.reflect.Array;
+import java.util.List;
 
 /**
  * The shared {@link Closure} adapter family for {@code @PackedClosures} compact closure
@@ -38,7 +45,7 @@ import java.io.Serial;
  * {@link FixedIt} for implicit-parameter literals, {@link FixedN} for higher and vararg
  * arities), which dispatches back to that method. This removes the per-closure generated
  * class (and the deeply-nested {@code $_closure1$_closure2$_closure3} name explosion)
- * while still yielding a real {@code groovy.lang.Closure} instance, so features that
+ * while still yielding a real {@code Closure} instance, so features that
  * operate through {@code call()} (iteration, {@code curry}, {@code memoize},
  * {@code trampoline}) continue to work — and the family member's declared {@code doCall}
  * signature(s) give class-level introspection (SAM-overload selection, MOP method
@@ -297,11 +304,11 @@ public abstract class PackedClosure extends Closure<Object> {
      * remain, so opting the declaring scope out of packing is the remedy.
      */
     @Serial
-    private void writeObject(final java.io.ObjectOutputStream out) throws java.io.IOException {
+    private void writeObject(final ObjectOutputStream out) throws IOException {
         Object owner = getOwner();
         String where = (owner == null) ? ""
                 : " on " + ((owner instanceof Class) ? ((Class<?>) owner).getName() : owner.getClass().getName());
-        throw new java.io.NotSerializableException(
+        throw new NotSerializableException(
                 "packed closure (hoisted body '" + method + "'" + where + "). Packed closures are not"
                 + " serializable and dehydrate() does not help (the dispatch state remains); exclude"
                 + " the declaring scope from packing -- e.g. @PackedClosures(mode = DISABLED) on the"
@@ -320,7 +327,7 @@ public abstract class PackedClosure extends Closure<Object> {
         try {
             return dispatchAll((args != null) ? args : EMPTY);
         } catch (InvokerInvocationException e) {
-            org.apache.groovy.internal.util.UncheckedThrow.rethrow(e.getCause());
+            UncheckedThrow.rethrow(e.getCause());
             return null; // unreachable
         }
     }
@@ -339,7 +346,7 @@ public abstract class PackedClosure extends Closure<Object> {
         try {
             return dispatchOne(coerceArg(arguments, parameterTypes[0]));
         } catch (InvokerInvocationException e) {
-            org.apache.groovy.internal.util.UncheckedThrow.rethrow(e.getCause());
+            UncheckedThrow.rethrow(e.getCause());
             return null; // unreachable
         }
     }
@@ -357,7 +364,7 @@ public abstract class PackedClosure extends Closure<Object> {
         try {
             return getMetaClass().invokeMethod(this, "doCall", args);
         } catch (InvokerInvocationException e) {
-            org.apache.groovy.internal.util.UncheckedThrow.rethrow(e.getCause());
+            UncheckedThrow.rethrow(e.getCause());
             return null; // unreachable
         }
     }
@@ -459,26 +466,26 @@ public abstract class PackedClosure extends Closure<Object> {
                 try {
                     return DefaultTypeTransformation.castToType(arg, t);
                 } catch (RuntimeException e) {
-                    throw new groovy.lang.MissingMethodException("doCall", getClass(), new Object[]{arg});
+                    throw new MissingMethodException("doCall", getClass(), new Object[]{arg});
                 }
             }
-            Object boxed = java.lang.reflect.Array.newInstance(t.getComponentType(), 1);
-            java.lang.reflect.Array.set(boxed, 0, arg);
+            Object boxed = Array.newInstance(t.getComponentType(), 1);
+            Array.set(boxed, 0, arg);
             return boxed;
         }
         // a Closure argument coerces to a SAM-interface parameter (metaclass selection accepts
         // Closure for SAM params -- e.g. action.run({->}) into { Proc it -> it.doSomething() });
         // castToType performs the standard proxy conversion
-        boolean closureToSam = groovy.lang.Closure.class.isAssignableFrom(arg.getClass())
+        boolean closureToSam = Closure.class.isAssignableFrom(arg.getClass())
                 && t.isInterface()
                 && CachedSAMClass.getSAMMethod(t) != null;
         if (!closureToSam && !MetaClassHelper.isAssignableFrom(t, arg.getClass())) {
-            throw new groovy.lang.MissingMethodException("doCall", getClass(), new Object[]{arg});
+            throw new MissingMethodException("doCall", getClass(), new Object[]{arg});
         }
         try {
             return DefaultTypeTransformation.castToType(arg, t);
         } catch (RuntimeException e) {
-            throw new groovy.lang.MissingMethodException("doCall", getClass(), new Object[]{arg});
+            throw new MissingMethodException("doCall", getClass(), new Object[]{arg});
         }
     }
 
@@ -488,8 +495,8 @@ public abstract class PackedClosure extends Closure<Object> {
         // A real closure destructures a single List/Tuple argument across a non-one-parameter
         // signature ({ a, b -> } called with one Tuple2; { -> } driven with a Tuple0); mirror
         // that before arity normalisation. A one-parameter closure keeps the list as its argument.
-        if (provided.length == 1 && arity != 1 && provided[0] instanceof java.util.List) {
-            provided = ((java.util.List<?>) provided[0]).toArray();
+        if (provided.length == 1 && arity != 1 && provided[0] instanceof List) {
+            provided = ((List<?>) provided[0]).toArray();
         }
         // With the real parameter types available, adapt arguments exactly as metaclass dispatch on
         // a generated closure class would -- collecting excess args into a trailing array parameter
@@ -505,7 +512,7 @@ public abstract class PackedClosure extends Closure<Object> {
         // arguments to a zero-parameter closure are always a mismatch ({ -> } invoked by each());
         // checked before correctArguments, which would silently drop them for a no-arg signature
         if (arity == 0 && provided.length > 0) {
-            throw new groovy.lang.MissingMethodException("doCall", getClass(), original);
+            throw new MissingMethodException("doCall", getClass(), original);
         }
         try {
             provided = info.correctArguments(provided);
@@ -521,7 +528,7 @@ public abstract class PackedClosure extends Closure<Object> {
             if (provided.length == 0 && arity == 1) {
                 provided = new Object[]{null};
             } else {
-                throw new groovy.lang.MissingMethodException("doCall", getClass(), original);
+                throw new MissingMethodException("doCall", getClass(), original);
             }
         }
         Class<?>[] types = parameterTypes;

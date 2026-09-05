@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.vmplugin.v9
 
+import org.antlr.v4.runtime.tree.ParseTree
 import org.codehaus.groovy.control.ResolveVisitor
 import org.codehaus.groovy.vmplugin.VMPluginFactory
 import org.junit.jupiter.api.Test
@@ -43,7 +44,7 @@ final class ClassFinderTest {
 
     @Test
     void findGroovyClass3() {
-        Map<String, Set<String>> result = ClassFinder.find(org.codehaus.groovy.control.ResolveVisitor.location.toURI(), 'org/codehaus/groovy/control')
+        Map<String, Set<String>> result = ClassFinder.find(ResolveVisitor.location.toURI(), 'org/codehaus/groovy/control')
         assert ['org/codehaus/groovy/control'] == result.get('ResolveVisitor')?.toList()
     }
 
@@ -87,14 +88,14 @@ final class ClassFinderTest {
 
     @Test
     void findJarClass() {
-        Map<String, Set<String>> result = ClassFinder.find(org.antlr.v4.runtime.tree.ParseTree.location.toURI(), 'org/antlr/v4/runtime/tree')
+        Map<String, Set<String>> result = ClassFinder.find(ParseTree.location.toURI(), 'org/antlr/v4/runtime/tree')
         assert ['org/antlr/v4/runtime/tree'] == result.get('ParseTree')?.toList()
         assert null == result.get('ParseTreePattern')
     }
 
     @Test
     void findJarClassRecursive() {
-        Map<String, Set<String>> result = ClassFinder.find(org.antlr.v4.runtime.tree.ParseTree.location.toURI(), 'org/antlr/v4/runtime/tree', true)
+        Map<String, Set<String>> result = ClassFinder.find(ParseTree.location.toURI(), 'org/antlr/v4/runtime/tree', true)
         assert ['org/antlr/v4/runtime/tree'] == result.get('ParseTree')?.toList()
         assert ['org/antlr/v4/runtime/tree/pattern'] == result.get('ParseTreePattern')?.toList()
     }

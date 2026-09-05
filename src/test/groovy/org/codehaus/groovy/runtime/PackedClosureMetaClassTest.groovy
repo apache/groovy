@@ -18,12 +18,13 @@
  */
 package org.codehaus.groovy.runtime
 
+import org.codehaus.groovy.runtime.metaclass.PackedClosureMetaClass
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
 /**
- * {@link org.codehaus.groovy.runtime.metaclass.PackedClosureMetaClass} gives packed
+ * {@link PackedClosureMetaClass} gives packed
  * closures their own MOP standing: it is the registered stock metaclass for the shared
  * {@code PackedClosure} adapter class, dispatches {@code call}/{@code doCall} without
  * reflection, matches {@code ClosureMetaClass}'s category stance for those names, and

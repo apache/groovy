@@ -21,7 +21,7 @@
  * Builder pattern generation via AST transformation.
  *
  * <p>
- * {@link groovy.transform.builder.Builder @Builder} annotation with pluggable strategies:
+ * {@link Builder @Builder} annotation with pluggable strategies:
  * SimpleStrategy (chained setters), DefaultStrategy (nested helper),
  * InitializerStrategy (type-safe), ExternalStrategy (separate class).
  * </p>

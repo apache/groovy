@@ -41,6 +41,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.classgen.BytecodeInstruction;
 import org.codehaus.groovy.classgen.BytecodeSequence;
+import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.LambdaWriter;
@@ -50,6 +51,7 @@ import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.objectweb.asm.MethodVisitor;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -137,9 +139,9 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
     @SuppressWarnings("unchecked")
     private static ClassNode[] collectLambdaMarkers(final LambdaExpression expression, final ClassNode functionalType) {
         Object md = expression.getNodeMetaData(LAMBDA_MARKERS);
-        if (!(md instanceof java.util.List)) return ClassNode.EMPTY_ARRAY;
-        java.util.List<ClassNode> raw = (java.util.List<ClassNode>) md;
-        java.util.List<ClassNode> out = new java.util.ArrayList<>(raw.size());
+        if (!(md instanceof List)) return ClassNode.EMPTY_ARRAY;
+        List<ClassNode> raw = (List<ClassNode>) md;
+        List<ClassNode> out = new ArrayList<>(raw.size());
         for (ClassNode m : raw) {
             if (m == null || !m.isInterface()) continue;
             if (m.equals(SERIALIZABLE_TYPE) || SERIALIZABLE_TYPE.equals(m.redirect())) continue;
@@ -333,7 +335,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         addGeneratedMethod(controller.getClassNode(), implMethod);
         // Added after the ReturnAdder phase (an inner class would get it via full compilation), so wire the
         // implicit return for an expression-bodied lambda here (idempotent when returns already present).
-        new org.codehaus.groovy.classgen.ReturnAdder().visitMethod(implMethod);
+        new ReturnAdder().visitMethod(implMethod);
         return implMethod;
     }
 
@@ -365,7 +367,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         implMethod.setSourcePosition(lambdaMethod);
         implMethod.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
         addGeneratedMethod(controller.getClassNode(), implMethod);
-        new org.codehaus.groovy.classgen.ReturnAdder().visitMethod(implMethod);
+        new ReturnAdder().visitMethod(implMethod);
 
         // nonCapturing=true so no lambda instance is loaded; capturedValueParams drives the dedicated factory.
         return new GeneratedLambda(controller.getClassNode(), implMethod, null, Parameter.EMPTY_ARRAY, true, false, valueParams);

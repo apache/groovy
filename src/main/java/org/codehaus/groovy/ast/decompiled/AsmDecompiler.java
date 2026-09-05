@@ -29,6 +29,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.RecordComponentVisitor;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.TypePath;
+import org.objectweb.asm.TypeReference;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -277,7 +278,7 @@ public abstract class AsmDecompiler {
          * Visits class-level type annotations (JSR 308), such as annotations on the
          * superclass, superinterfaces or type parameters of the class declaration.
          *
-         * @param typeRef the annotated type position (ASM {@link org.objectweb.asm.TypeReference} value)
+         * @param typeRef the annotated type position (ASM {@link TypeReference} value)
          * @param typePath the path to the annotated type within the type given by {@code typeRef}, or {@code null}
          * @param desc the annotation type descriptor
          * @param visible {@code true} for runtime-visible annotations

@@ -21,8 +21,8 @@
  * JavaBean property binding and change notification via AST transformations.
  *
  * <p>
- * Provides {@link groovy.beans.Bindable @Bindable} for property change observation and
- * {@link groovy.beans.Vetoable @Vetoable} for constrained properties with veto support.
+ * Provides {@link Bindable @Bindable} for property change observation and
+ * {@link Vetoable @Vetoable} for constrained properties with veto support.
  * </p>
  */
 package groovy.beans;

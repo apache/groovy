@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.logging.Logger
 
 import static groovy.test.GroovyAssert.shouldFail
 import static groovy.transform.PackageScopeTarget.METHODS
@@ -50,7 +51,7 @@ final class ASTTransformationCustomizerTest {
             class MyClass {}
             new MyClass()
         '''
-        assert result.log.class == java.util.logging.Logger
+        assert result.log.class == Logger
     }
 
     @Test
@@ -74,7 +75,7 @@ final class ASTTransformationCustomizerTest {
             class MyClass {}
             new MyClass()
         '''
-        assert result.logger.class == java.util.logging.Logger
+        assert result.logger.class == Logger
     }
 
     @Test
@@ -201,7 +202,7 @@ final class ASTTransformationCustomizerTest {
             class MyClass { }
             new MyClass()
         '''
-        assert result.log.class == java.util.logging.Logger
+        assert result.log.class == Logger
     }
 
     @Test
@@ -228,7 +229,7 @@ final class ASTTransformationCustomizerTest {
             class MyClass { }
             new MyClass()
         '''
-        assert result.logger.class == java.util.logging.Logger
+        assert result.logger.class == Logger
     }
 
     //--------------------------------------------------------------------------

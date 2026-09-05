@@ -25,17 +25,17 @@ import org.codehaus.groovy.transform.ASTTransformation;
 import java.lang.reflect.Field;
 
 /**
- * Base AST transformation encapsulating all common helper methods and implementing {@link org.codehaus.groovy.transform.ASTTransformation}.
+ * Base AST transformation encapsulating all common helper methods and implementing {@link ASTTransformation}.
  *
- * @see org.codehaus.groovy.transform.ASTTransformation
+ * @see ASTTransformation
  */
 public abstract class BaseASTTransformation implements ASTTransformation {
 
     /**
-     * Reads the protected <tt>source1</tt> instance variable of {@link org.codehaus.groovy.control.SourceUnit}.
+     * Reads the protected <tt>source1</tt> instance variable of {@link SourceUnit}.
      *
-     * @param unit the {@link org.codehaus.groovy.control.SourceUnit} to retrieve the {@link org.codehaus.groovy.control.io.ReaderSource} from
-     * @return the {@link org.codehaus.groovy.control.io.ReaderSource} of the given <tt>unit</tt>.
+     * @param unit the {@link SourceUnit} to retrieve the {@link ReaderSource} from
+     * @return the {@link ReaderSource} of the given <tt>unit</tt>.
      */
     protected ReaderSource getReaderSource(SourceUnit unit) {
 

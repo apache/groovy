@@ -24,7 +24,7 @@ import java.awt.*
 /**
  * Factory for creating {@link JDialog} nodes.
  */
-public class DialogFactory extends groovy.swing.factory.RootPaneContainerFactory {
+public class DialogFactory extends RootPaneContainerFactory {
 
     /**
      * Creates the node handled by this factory.

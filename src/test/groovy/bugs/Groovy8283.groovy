@@ -18,6 +18,8 @@
  */
 package bugs
 
+import groovy.transform.CompileStatic
+import groovy.transform.TypeChecked
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -61,7 +63,7 @@ final class Groovy8283 {
     @Test
     void testReadFieldPropertyShadowing2() {
         def shell = GroovyShell.withConfig {
-            ast(groovy.transform.TypeChecked)
+            ast(TypeChecked)
             imports {
                 normal 'groovy.transform.ASTTest'
                 staticStar 'org.codehaus.groovy.control.CompilePhase'
@@ -124,7 +126,7 @@ final class Groovy8283 {
     @Test
     void testReadFieldPropertyShadowing3() {
         def shell = GroovyShell.withConfig {
-            ast(groovy.transform.CompileStatic)
+            ast(CompileStatic)
         }
         shell.parse '''package p
             class A {}
@@ -238,7 +240,7 @@ final class Groovy8283 {
     @Test
     void testWriteFieldPropertyShadowing2() {
         def shell = GroovyShell.withConfig {
-            ast(groovy.transform.TypeChecked)
+            ast(TypeChecked)
             imports {
                 normal 'groovy.transform.ASTTest'
                 staticStar 'org.codehaus.groovy.control.CompilePhase'

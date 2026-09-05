@@ -22,6 +22,8 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import groovy.concurrent.Awaitable;
+
 
 /**
  * Marks a method within an {@link ActiveObject} class for
@@ -30,7 +32,7 @@ import java.lang.annotation.Target;
  * When {@code blocking = true} (the default), the caller blocks
  * until the actor processes the method and returns the result.
  * When {@code blocking = false}, the method returns an
- * {@link groovy.concurrent.Awaitable} immediately.
+ * {@link Awaitable} immediately.
  *
  * @see ActiveObject
  * @since 6.0.0

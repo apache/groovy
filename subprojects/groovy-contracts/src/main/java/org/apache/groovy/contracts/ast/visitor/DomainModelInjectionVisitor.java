@@ -36,10 +36,10 @@ import org.codehaus.groovy.control.io.ReaderSource;
 import java.util.Map;
 
 /**
- * Visits the given {@link ClassNode} and injects the current {@link org.apache.groovy.contracts.domain.Contract} into the given AST
+ * Visits the given {@link ClassNode} and injects the current {@link Contract} into the given AST
  * nodes.
  *
- * @see org.apache.groovy.contracts.domain.Contract
+ * @see Contract
  */
 public class DomainModelInjectionVisitor extends BaseVisitor {
 

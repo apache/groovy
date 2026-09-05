@@ -20,6 +20,8 @@ package groovy.lang
 
 import org.junit.jupiter.api.Test
 
+import java.io.Serializable
+
 import static org.junit.jupiter.api.Assertions.*
 
 /**
@@ -103,7 +105,7 @@ class ReferenceTest {
     @Test
     void testReferenceIsSerializable() {
         def ref = new Reference<String>("test")
-        assertTrue(ref instanceof java.io.Serializable)
+        assertTrue(ref instanceof Serializable)
     }
 
     @Test

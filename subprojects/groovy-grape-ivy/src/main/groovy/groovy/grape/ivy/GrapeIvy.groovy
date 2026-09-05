@@ -978,27 +978,27 @@ class GrapeIvy implements GrapeEngine {
         // Map numeric level (from grape -q/-w/-i/-V/-d flags) to JUL level
         // for the platform logging backed Ivy logger.
         // 0=quiet/errors only, 1=warn, 2=info, 3=verbose, 4=debug
-        java.util.logging.Level julLevel
+        Level julLevel
         switch (level) {
             case 0:
-                julLevel = java.util.logging.Level.SEVERE
+                julLevel = Level.SEVERE
                 break
             case 1:
-                julLevel = java.util.logging.Level.WARNING
+                julLevel = Level.WARNING
                 break
             case 2:
-                julLevel = java.util.logging.Level.INFO
+                julLevel = Level.INFO
                 break
             case 3:
-                julLevel = java.util.logging.Level.FINE
+                julLevel = Level.FINE
                 break
             case 4:
-                julLevel = java.util.logging.Level.FINEST
+                julLevel = Level.FINEST
                 break
             default:
-                julLevel = java.util.logging.Level.INFO
+                julLevel = Level.INFO
         }
-        java.util.logging.Logger.getLogger('groovy.grape.ivy').setLevel(julLevel)
+        Logger.getLogger('groovy.grape.ivy').setLevel(julLevel)
     }
 }
 

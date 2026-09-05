@@ -20,6 +20,8 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+import java.math.BigDecimal
+
 class Groovy779_Bug {
 
     def boolean exceptionCalled = false
@@ -82,7 +84,7 @@ class Groovy779_Bug {
         assert p.signal == "bar"
         assert p.rate == 15.0
 
-        p = new Groovy779OneProfit(signal: 111 + 22, rate: new java.math.BigDecimal("15"))
+        p = new Groovy779OneProfit(signal: 111 + 22, rate: new BigDecimal("15"))
         assert p.signal == "133"
         assert p.rate == 15.0
 
@@ -90,7 +92,7 @@ class Groovy779_Bug {
         assert p2.signal == "bar~"
         assert p2.rate == 15.0
 
-        p2 = new Groovy779AnotherProfit(signal: 111 - 22, rate: new java.math.BigDecimal("15"))
+        p2 = new Groovy779AnotherProfit(signal: 111 - 22, rate: new BigDecimal("15"))
         assert p2.signal == "89"
         assert p2.rate == 15.0
     }

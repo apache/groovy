@@ -29,6 +29,7 @@ import groovy.util.IndentPrinter;
 import groovy.util.Node;
 import groovy.xml.XmlNodePrinter;
 import groovy.xml.XmlParser;
+import groovy.xml.XmlUtil;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.FormatHelper;
@@ -67,7 +68,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * written as it stands: a value carrying <code>&lt;</code> or <code>&amp;</code> reaches
  * the output as markup rather than as text, and can leave it neither well-formed nor what
  * the template intended. Escape a value that may contain either, with
- * {@link groovy.xml.XmlUtil#escapeXml(String)} or otherwise, before binding it &mdash;
+ * {@link XmlUtil#escapeXml(String)} or otherwise, before binding it &mdash;
  * always for a value that came from somewhere you do not control.
  * <p>
  * The xmlns namespace definition for <code>gsp:</code> tags will be removed

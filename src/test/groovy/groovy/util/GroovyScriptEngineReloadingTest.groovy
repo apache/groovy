@@ -21,9 +21,12 @@ package groovy.util
 import groovy.transform.AutoFinal
 import groovy.transform.Canonical
 import groovy.transform.TupleConstructor
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+
+import java.util.concurrent.ConcurrentHashMap
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -397,7 +400,7 @@ final class GroovyScriptEngineReloadingTest {
      */
     @Test
     void testCompilerConfigurationInheritance() {
-        def cc = new org.codehaus.groovy.control.CompilerConfiguration(scriptBaseClass: CustomBaseClass.name)
+        def cc = new CompilerConfiguration(scriptBaseClass: CustomBaseClass.name)
         def cl = new GroovyClassLoader(this.class.classLoader, cc)
         makeGSE(cl)
 
@@ -422,7 +425,7 @@ final class GroovyScriptEngineReloadingTest {
     // GROOVY-6203
     @Test
     void testGSEBaseClass() {
-        gse.config = new org.codehaus.groovy.control.CompilerConfiguration(scriptBaseClass: CustomBaseClass.name)
+        gse.config = new CompilerConfiguration(scriptBaseClass: CustomBaseClass.name)
 
         MapFileSystem.instance.modFile(
                 'Groovy6203Helper.groovy',
@@ -513,7 +516,7 @@ final class GroovyScriptEngineReloadingTest {
 
     @Singleton
     static class MapFileSystem {
-        public final Map<String, MapFileEntry> fileCache = new java.util.concurrent.ConcurrentHashMap<>()
+        public final Map<String, MapFileEntry> fileCache = new ConcurrentHashMap<>()
 
         void modFile(String name, String content, long lutime) {
             if (fileCache.containsKey(name)) {

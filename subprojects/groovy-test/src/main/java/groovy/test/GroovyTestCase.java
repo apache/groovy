@@ -30,9 +30,9 @@ import java.util.logging.Logger;
 /**
  * A JUnit 3 {@link junit.framework.TestCase} base class in Groovy.
  *
- * In case JUnit 4 is used, see {@link groovy.test.GroovyAssert}.
+ * In case JUnit 4 is used, see {@link GroovyAssert}.
  *
- * @see groovy.test.GroovyAssert
+ * @see GroovyAssert
  */
 public class GroovyTestCase extends TestCase {
 
@@ -204,7 +204,7 @@ public class GroovyTestCase extends TestCase {
     }
 
     /**
-     * see {@link groovy.test.GroovyAssert#assertScript(String)}
+     * see {@link GroovyAssert#assertScript(String)}
      */
     protected void assertScript(final String script) throws Exception {
         GroovyAssert.assertScript(script);
@@ -220,14 +220,14 @@ public class GroovyTestCase extends TestCase {
     }
 
     /**
-     * see {@link groovy.test.GroovyAssert#shouldFail(groovy.lang.Closure)}
+     * see {@link GroovyAssert#shouldFail(Closure)}
      */
     protected String shouldFail(Closure code) {
         return GroovyAssert.shouldFail(code).getMessage();
     }
 
     /**
-     * see {@link groovy.test.GroovyAssert#shouldFail(Class, groovy.lang.Closure)}
+     * see {@link GroovyAssert#shouldFail(Class, Closure)}
      */
     @SuppressWarnings("unchecked")
     protected String shouldFail(Class clazz, Closure code) {
@@ -235,7 +235,7 @@ public class GroovyTestCase extends TestCase {
     }
 
     /**
-     * see {@link groovy.test.GroovyAssert#shouldFailWithCause(Class, groovy.lang.Closure)}
+     * see {@link GroovyAssert#shouldFailWithCause(Class, Closure)}
      */
     @SuppressWarnings("unchecked")
     protected String shouldFailWithCause(Class clazz, Closure code) {
@@ -243,7 +243,7 @@ public class GroovyTestCase extends TestCase {
     }
 
     /**
-     * see {@link groovy.test.GroovyAssert#shouldFail(Class, String)}
+     * see {@link GroovyAssert#shouldFail(Class, String)}
      */
     @SuppressWarnings("unchecked")
     protected String shouldFail(Class clazz, String script) {
@@ -251,7 +251,7 @@ public class GroovyTestCase extends TestCase {
     }
 
     /**
-     * see {@link groovy.test.GroovyAssert#shouldFail(String)}
+     * see {@link GroovyAssert#shouldFail(String)}
      */
     protected String shouldFail(String script) {
         return GroovyAssert.shouldFail(script).getMessage();
@@ -265,7 +265,7 @@ public class GroovyTestCase extends TestCase {
     }
 
     /**
-     * see {@link groovy.test.GroovyAssert#notYetImplemented(java.lang.Object)}
+     * see {@link GroovyAssert#notYetImplemented(Object)}
      */
     public static boolean notYetImplemented(Object caller) {
         return GroovyAssert.notYetImplemented(caller);
@@ -276,7 +276,7 @@ public class GroovyTestCase extends TestCase {
      * <pre> GroovyTestCase.notYetImplemented(this); </pre>.
      *
      * @return <code>false</code> when not itself already in the call stack
-     * @see #notYetImplemented(java.lang.Object)
+     * @see #notYetImplemented(Object)
      */
     public boolean notYetImplemented() {
         return notYetImplemented(this);

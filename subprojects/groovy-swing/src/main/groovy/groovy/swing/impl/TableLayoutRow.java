@@ -28,7 +28,7 @@ import java.util.List;
 public class TableLayoutRow {
 
     private final TableLayout parent;
-    private final List<groovy.swing.impl.TableLayoutCell> cells = new ArrayList<groovy.swing.impl.TableLayoutCell>();
+    private final List<TableLayoutCell> cells = new ArrayList<TableLayoutCell>();
     private int rowIndex;
 
     /**
@@ -44,7 +44,7 @@ public class TableLayoutRow {
      * Adds a new cell to this row
      * @param tag the td element
      */
-    public void addCell(groovy.swing.impl.TableLayoutCell tag) {
+    public void addCell(TableLayoutCell tag) {
         int gridx = 0;
         for (TableLayoutCell cell : cells) {
             gridx += cell.getColspan();

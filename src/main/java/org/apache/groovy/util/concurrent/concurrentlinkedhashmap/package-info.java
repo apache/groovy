@@ -16,21 +16,21 @@
 
 /**
  * This package contains an implementation of a bounded
- * {@link java.util.concurrent.ConcurrentMap} data structure.
+ * {@link ConcurrentMap} data structure.
  * <p>
- * {@link org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher} is a simple interface
+ * {@link Weigher} is a simple interface
  * for determining how many units of capacity an entry consumes. Depending on
  * which concrete Weigher class is used, an entry may consume a different amount
  * of space within the cache. The
- * {@link org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weighers} class provides
+ * {@link Weighers} class provides
  * utility methods for obtaining the most common kinds of implementations.
  * <p>
- * {@link org.apache.groovy.util.concurrent.concurrentlinkedhashmap.EvictionListener} provides the
+ * {@link EvictionListener} provides the
  * ability to be notified when an entry is evicted from the map. An eviction
  * occurs when the entry was automatically removed due to the map exceeding a
  * capacity threshold. It is not called when an entry was explicitly removed.
  * <p>
- * The {@link org.apache.groovy.util.concurrent.concurrentlinkedhashmap.ConcurrentLinkedHashMap}
+ * The {@link ConcurrentLinkedHashMap}
  * class supplies an efficient, scalable, thread-safe, bounded map. As with the
  * <tt>Java Collections Framework</tt> the "Concurrent" prefix is used to
  * indicate that the map is not governed by a single exclusion lock.
@@ -39,3 +39,5 @@
  *      http://code.google.com/p/concurrentlinkedhashmap/</a>
  */
 package org.apache.groovy.util.concurrent.concurrentlinkedhashmap;
+
+import java.util.concurrent.ConcurrentMap;

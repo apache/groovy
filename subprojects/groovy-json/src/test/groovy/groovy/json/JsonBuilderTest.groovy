@@ -20,6 +20,8 @@ package groovy.json
 
 import org.junit.jupiter.api.Test
 
+import java.util.concurrent.atomic.AtomicBoolean
+
 import static groovy.test.GroovyAssert.shouldFail
 
 
@@ -354,7 +356,7 @@ class JsonBuilderTest {
 
     @Test
     void testExampleFromTheGep7Page() {
-        def builder = new groovy.json.JsonBuilder()
+        def builder = new JsonBuilder()
         def root = builder.people {
             person {
                 firstName 'Guillaume'
@@ -393,7 +395,7 @@ class JsonBuilderTest {
     @Test
     void testSupportForUUID() {
         def id = UUID.randomUUID()
-        def json = new groovy.json.JsonBuilder()
+        def json = new JsonBuilder()
         json { uuid id }
         assert json.toString() == "{\"uuid\":\"${id.toString()}\"}"
     }
@@ -444,7 +446,7 @@ class JsonBuilderTest {
                 .dateFormat('yyyyMM')
                 .excludeFieldsByName('secretKey', 'creditCardNumber')
                 .excludeFieldsByType(URL)
-                .addConverter(java.util.concurrent.atomic.AtomicBoolean) { ab -> ab.get() }
+                .addConverter(AtomicBoolean) { ab -> ab.get() }
                 .build()
 
         def json = new JsonBuilder(generator)
@@ -455,7 +457,7 @@ class JsonBuilderTest {
             secretKey 'J79-A25'
             creditCardNumber '123-444-789-2233'
             site new URL('http://groovy-lang.org')
-            isActive new java.util.concurrent.atomic.AtomicBoolean(true)
+            isActive new AtomicBoolean(true)
         }
 
         assert json.toString() == '{"payload":{"id":"YT-1234","isActive":true}}'

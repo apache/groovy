@@ -18,6 +18,8 @@
  */
 package groovy.typecheckers
 
+import groovy.transform.Associative
+import groovy.transform.Reducer
 import org.apache.groovy.lang.annotation.Incubating
 import org.apache.groovy.typecheckers.CheckingVisitor
 import org.codehaus.groovy.ast.ClassNode
@@ -58,8 +60,8 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker
  * <p>
  * What it does, by combiner shape:
  * <ul>
- *   <li><b>Method reference</b> to a method annotated {@link groovy.transform.Associative}
- *       or {@link groovy.transform.Reducer} &mdash; accepted.</li>
+ *   <li><b>Method reference</b> to a method annotated {@link Associative}
+ *       or {@link Reducer} &mdash; accepted.</li>
  *   <li><b>Inline closure</b> whose combine expression applies a non-associative
  *       operator ({@code -}, {@code /}, {@code %}, {@code **}) directly to the
  *       two combiner parameters (e.g. <code>{ a, b {@literal ->} a - b }</code>)
@@ -74,8 +76,8 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker
  * type-checking extension makes false-positive aversion essential.
  *
  * @since 6.0.0
- * @see groovy.transform.Associative
- * @see groovy.transform.Reducer
+ * @see Associative
+ * @see Reducer
  */
 @Incubating
 class CombinerChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {

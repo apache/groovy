@@ -141,10 +141,10 @@ public class MethodCaller {
     }
 
     /**
-     * Returns the reflected {@link java.lang.reflect.Method} for this caller,
+     * Returns the reflected {@link Method} for this caller,
      * matching by name and, if specified, by parameter count.
      *
-     * @return the matching {@link java.lang.reflect.Method}
+     * @return the matching {@link Method}
      * @throws RuntimeException if no matching method can be found
      */
     protected Method getMethod() {

@@ -21,8 +21,8 @@
  * Swing table support with sorting and model management.
  *
  * <p>
- * {@link groovy.swing.table.TableSorter} wraps table models for column sorting.
- * {@link groovy.swing.table.TableMap} provides base table model wrapping functionality.
+ * {@link TableSorter} wraps table models for column sorting.
+ * {@link TableMap} provides base table model wrapping functionality.
  * </p>
  */
 package groovy.swing.table;

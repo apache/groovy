@@ -369,7 +369,7 @@ public class GroovydocJavaVisitor
     // GROOVY-9572: hide members annotated with groovy.transform.@Internal (per GEP-17)
     // or deemed internal by name convention (contains '$'), unless the user opts
     // in with -showInternal / showInternal=true. Mirrors the policy of
-    // {@link org.apache.groovy.ast.tools.AnnotatedNodeUtils#deemedInternal} on
+    // org.apache.groovy.ast.tools.AnnotatedNodeUtils#deemedInternal on
     // the Groovy-AST side, expressed against JavaParser AST nodes here.
     private boolean isInternal(NodeWithAnnotations<?> n) {
         if ("true".equals(properties.getProperty("showInternal", "false"))) return false;

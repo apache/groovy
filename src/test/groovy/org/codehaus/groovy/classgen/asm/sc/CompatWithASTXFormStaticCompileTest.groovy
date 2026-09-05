@@ -18,12 +18,13 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
+import groovy.transform.CompileStatic
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.junit.jupiter.api.Test
 
 /**
  * Unit tests which checks compatibility of various AST xforms with the
- * {@link groovy.transform.CompileStatic} annotation.
+ * {@link CompileStatic} annotation.
  */
 final class CompatWithASTXFormStaticCompileTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 

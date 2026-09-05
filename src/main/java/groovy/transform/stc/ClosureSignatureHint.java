@@ -18,6 +18,7 @@
  */
 package groovy.transform.stc;
 
+import groovy.lang.Closure;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -27,24 +28,25 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.WarningMessage;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.util.List;
 
 /**
  * <p>A closure signature hint class is always used in conjunction with the {@link ClosureParams} annotation. It is
- * called at compile time (or may be used by IDEs) to infer the types of the parameters of a {@link groovy.lang.Closure}.</p>
+ * called at compile time (or may be used by IDEs) to infer the types of the parameters of a {@link Closure}.</p>
 
  * <p>A closure hint class is responsible for generating the list of arguments that a closure accepts. Since closures
  * may accept several signatures, {@link #getClosureSignatures(org.codehaus.groovy.ast.MethodNode, org.codehaus.groovy.control.SourceUnit, org.codehaus.groovy.control.CompilationUnit, String[], org.codehaus.groovy.ast.ASTNode)} should
  * return a list.</p>
  *
  * <p>Whenever the type checker encounters a method call that targets a method accepting a closure, it will search
- * for the {@link ClosureParams} annotation on the {@link groovy.lang.Closure} argument. If it is found, then it
+ * for the {@link ClosureParams} annotation on the {@link Closure} argument. If it is found, then it
  * creates an instance of the hint class and calls the {@link #getClosureSignatures(org.codehaus.groovy.ast.MethodNode, org.codehaus.groovy.control.SourceUnit, org.codehaus.groovy.control.CompilationUnit, String[], org.codehaus.groovy.ast.ASTNode)}
  * method, which will in turn return the list of signatures.</p>
  *
  * <p><i>Note that the signature concept here is used only to describe the parameter types, not the result type, which
- * is found in the generic type argument of the {@link groovy.lang.Closure} class.</i></p>
+ * is found in the generic type argument of the {@link Closure} class.</i></p>
  *
  * <p>Several predefined hints can be found, which should cover most of the use cases.</p>
  *
@@ -57,7 +59,7 @@ public abstract class ClosureSignatureHint {
      * A helper method which will extract the n-th generic type from a class node.
      * @param type the class node from which to pick a generic type
      * @param gtIndex the index of the generic type to extract
-     * @return the n-th generic type, or {@link org.codehaus.groovy.ast.ClassHelper#OBJECT_TYPE} if it doesn't exist.
+     * @return the n-th generic type, or {@link ClassHelper#OBJECT_TYPE} if it doesn't exist.
      */
     public static ClassNode pickGenericType(final ClassNode type, final int gtIndex) {
         final GenericsType[] genericsTypes = type.getGenericsTypes();
@@ -72,7 +74,7 @@ public abstract class ClosureSignatureHint {
      * @param node the method node from which the generic type should be picked
      * @param parameterIndex the index of the parameter in the method parameter list
      * @param gtIndex the index of the generic type to extract
-     * @return the generic type, or {@link org.codehaus.groovy.ast.ClassHelper#OBJECT_TYPE} if it doesn't exist.
+     * @return the generic type, or {@link ClassHelper#OBJECT_TYPE} if it doesn't exist.
      */
     public static ClassNode pickGenericType(final MethodNode node, final int parameterIndex, final int gtIndex) {
         final Parameter[] parameters = node.getParameters();
@@ -84,8 +86,8 @@ public abstract class ClosureSignatureHint {
      * <p>Subclasses should implement this method, which returns the list of accepted closure signatures.</p>
      *
      * <p>The compiler will call this method each time, in a source file, a method call using a closure
-     * literal is encountered and that the target method has the corresponding {@link groovy.lang.Closure} parameter
-     * annotated with {@link groovy.transform.stc.ClosureParams}. So imagine the following code needs to be compiled:</p>
+     * literal is encountered and that the target method has the corresponding {@link Closure} parameter
+     * annotated with {@link ClosureParams}. So imagine the following code needs to be compiled:</p>
      *
      * <code>@groovy.transform.TypeChecked
      * void doSomething() {
@@ -93,11 +95,11 @@ public abstract class ClosureSignatureHint {
      * }</code>
      *
      * <p>The <i>collect</i> method accepts a closure, but normally, the type checker doesn't have enough type information
-     * in the sole {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#collect(java.lang.Iterable, groovy.lang.Closure)} method
+     * in the sole {@link DefaultGroovyMethods#collect(Iterable, Closure)} method
      * signature to infer the type of <i>it</i>. With the annotation, it will now try to find an annotation on the closure parameter.
      * If it finds it, then an instance of the hint class is created and the type checker calls it with the following arguments:</p>
      * <ul>
-     *     <li>the method node corresponding to the target method (here, the {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#collect(java.lang.Iterable, groovy.lang.Closure)} method</li>
+     *     <li>the method node corresponding to the target method (here, the {@link DefaultGroovyMethods#collect(Iterable, Closure)} method</li>
      *     <li>the (optional) list of options found in the annotation</li>
      * </ul>
      *
@@ -111,7 +113,7 @@ public abstract class ClosureSignatureHint {
      * <p>Subclasses are therefore expected to return the signatures according to the available context, which is only the target method and the potential options.</p>
      *
      *
-     * @param node the method node for which a {@link groovy.lang.Closure} parameter was annotated with
+     * @param node the method node for which a {@link Closure} parameter was annotated with
      *             {@link ClosureParams}
      * @param sourceUnit the source unit of the file being compiled
      * @param compilationUnit the compilation unit of the file being compiled

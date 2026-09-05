@@ -19,6 +19,7 @@
 package groovy.transform.stc;
 
 import org.apache.groovy.lang.annotation.Incubating;
+import org.codehaus.groovy.control.CompilerConfiguration;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -65,7 +66,7 @@ import java.lang.annotation.Target;
  *   another library, so adding a jar to the compile classpath cannot re-route existing calls it
  *   does not already own.</li>
  *   <li><em>Consent</em> &mdash; the consumer may veto all preemption globally via
- *   {@link org.codehaus.groovy.control.CompilerConfiguration#setClassTagPreemptionDisabled} (also
+ *   {@link CompilerConfiguration#setClassTagPreemptionDisabled} (also
  *   seeded from the {@code groovy.classtag.preemption.disable} system property). Code compiled
  *   with the veto behaves exactly as it did before any library declared preemption; a
  *   finer-grained (per-method or per-call-site) opt-out may be added later if experience shows
@@ -124,7 +125,7 @@ public @interface ClassTag {
      * compilation. Because that changes the meaning of existing source, it is off by default;
      * without it the overload is only selected additively (when the call as written matches no
      * method). Consumers retain a veto via
-     * {@link org.codehaus.groovy.control.CompilerConfiguration#setClassTagPreemptionDisabled}.
+     * {@link CompilerConfiguration#setClassTagPreemptionDisabled}.
      * By convention, set it on every {@code @ClassTag} parameter of the overload (any one
      * suffices to declare the intent).
      *

@@ -18,9 +18,12 @@
  */
 package groovy.util.function;
 
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
 /**
- * A {@link java.util.function.Consumer Consumer} of three input arguments —
- * the three-argument cousin of {@link java.util.function.BiConsumer BiConsumer}
+ * A {@link Consumer Consumer} of three input arguments —
+ * the three-argument cousin of {@link BiConsumer BiConsumer}
  * that {@code java.util.function} itself does not provide.
  *
  * @param <A> the first argument type

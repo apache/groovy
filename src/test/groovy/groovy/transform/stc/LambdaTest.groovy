@@ -18,6 +18,7 @@
  */
 package groovy.transform.stc
 
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -30,7 +31,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 final class LambdaTest {
 
     private final GroovyShell shell = GroovyShell.withConfig {
-        ast(groovy.transform.CompileStatic)
+        ast(CompileStatic)
         imports {
             normal 'java.util.stream.Collectors'
             star 'java.util.function'

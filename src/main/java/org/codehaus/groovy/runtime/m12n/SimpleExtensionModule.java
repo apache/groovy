@@ -22,6 +22,7 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.NewStaticMetaMethod;
 
@@ -30,7 +31,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * An extension module which provides extension methods using a {@link org.codehaus.groovy.runtime.DefaultGroovyMethods}-like implementation, that
+ * An extension module which provides extension methods using a {@link DefaultGroovyMethods}-like implementation, that
  * is to say using static methods defined in an "extension class".
  * <p>
  * For commodity, multiple extension classes may be defined in a single module, including classes used to define new

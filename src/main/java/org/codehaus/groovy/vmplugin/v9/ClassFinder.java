@@ -19,6 +19,7 @@
 package org.codehaus.groovy.vmplugin.v9;
 
 import groovy.lang.Tuple2;
+import groovy.lang.groovydoc.GroovydocHolder;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,7 +55,7 @@ import java.util.regex.Pattern;
  *   // find classes under `java.lang` package via classpath entry(jrt)
  *   ClassFinder.find(URI.create("jrt:/modules/java.base/"), "java/lang")
  *
- *   // find classes under the sub-packages too, e.g. we can get {@link groovy.lang.groovydoc.GroovydocHolder} via the following code
+ *   // find classes under the sub-packages too, e.g. we can get {@link GroovydocHolder} via the following code
  *   ClassFinder.find(URI.create("file:/D:/_DEV/Groovy/groovy-3.0.1/lib/groovy-3.0.1.jar"), "groovy/lang", true)
  * </code></pre>
  *

@@ -31,7 +31,7 @@ import java.lang.reflect.Modifier;
  * Caches reflection information about a single constructor for fast lookup and invocation.
  * <p>
  * Extends {@link ParameterTypes} to manage parameter type information and implements
- * {@link groovy.lang.MetaMember} for meta-programming support. Provides methods to invoke
+ * {@link MetaMember} for meta-programming support. Provides methods to invoke
  * constructors with argument coercion and error handling.
  */
 public class CachedConstructor extends ParameterTypes implements MetaMember {
@@ -77,7 +77,7 @@ public class CachedConstructor extends ParameterTypes implements MetaMember {
 
     /**
      * Returns the modifiers of this constructor (e.g., public, private, protected).
-     * See {@link java.lang.reflect.Modifier} for modifier constants.
+     * See {@link Modifier} for modifier constants.
      *
      * @return the constructor modifiers
      */

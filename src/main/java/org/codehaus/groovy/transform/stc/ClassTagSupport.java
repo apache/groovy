@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
@@ -46,7 +47,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extrac
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
 
 /**
- * Support for {@link groovy.transform.stc.ClassTag} (GROOVY-12115): matching a call that omits
+ * Support for {@link ClassTag} (GROOVY-12115): matching a call that omits
  * compiler-supplied {@code Class<X>} token argument(s) to the overload that can absorb them, so
  * the static type checker can synthesise the token(s) from the receiver's type argument(s).
  * Matching is a pure computation - the call's AST is only rewritten by an explicit
@@ -107,7 +108,7 @@ final class ClassTagSupport {
      * callers of <em>its own</em> lenient API, but a jar on the compile classpath can never
      * capture existing calls owned by another library.</li>
      * <li><em>Consent</em>: the consuming build may veto all preemption globally via
-     * {@link org.codehaus.groovy.control.CompilerConfiguration#isClassTagPreemptionDisabled()}
+     * {@link CompilerConfiguration#isClassTagPreemptionDisabled()}
      * (checked up front via {@link #isPreemptionPossible}).</li>
      * </ul>
      * Tokens are reified from {@code receiver} - the receiver the incumbents bound on - so the
@@ -152,7 +153,7 @@ final class ClassTagSupport {
 
     /**
      * Whether preemption is possible at all under the current configuration:
-     * {@link org.codehaus.groovy.control.CompilerConfiguration#isClassTagPreemptionDisabled()}
+     * {@link CompilerConfiguration#isClassTagPreemptionDisabled()}
      * disables every preemptive upgrade (additive injection is unaffected). Cheap, so it guards
      * the per-call preemption attempt.
      */

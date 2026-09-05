@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform;
 
+import groovy.transform.Internal;
+import groovy.transform.Undefined;
 import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.codehaus.groovy.GroovyBugError;
@@ -38,9 +40,11 @@ import org.codehaus.groovy.ast.tools.BeanUtils;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 
 import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -61,7 +65,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperNonPropertyFiel
  */
 public abstract class AbstractASTTransformation implements ASTTransformation, ErrorCollecting {
     /**
-     * A shared ClassNode representing the {@link java.lang.annotation.Retention} annotation.
+     * A shared ClassNode representing the {@link Retention} annotation.
      * Used for checking retention policy of annotations during AST transformation.
      */
     public static final ClassNode RETENTION_CLASSNODE = ClassHelper.makeWithoutCaching(Retention.class);
@@ -73,20 +77,20 @@ public abstract class AbstractASTTransformation implements ASTTransformation, Er
     protected SourceUnit sourceUnit;
 
     /**
-     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link java.lang.annotation.RetentionPolicy#RUNTIME}
-     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.
+     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link RetentionPolicy#RUNTIME}
+     * and {@link RetentionPolicy#CLASS}.
      * <p>
-     * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported for now.
+     * Annotations with {@link GeneratedClosure} members are not supported for now.
      */
     protected List<AnnotationNode> copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, String myTypeName) {
         return copyAnnotatedNodeAnnotations(annotatedNode, myTypeName, true);
     }
 
     /**
-     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link java.lang.annotation.RetentionPolicy#RUNTIME}
-     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.
+     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link RetentionPolicy#RUNTIME}
+     * and {@link RetentionPolicy#CLASS}.
      * <p>
-     * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported for now.
+     * Annotations with {@link GeneratedClosure} members are not supported for now.
      */
     protected List<AnnotationNode> copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, String myTypeName, boolean includeGenerated) {
         final List<AnnotationNode> copiedAnnotations = new ArrayList<>();
@@ -152,7 +156,7 @@ public abstract class AbstractASTTransformation implements ASTTransformation, Er
 
     /**
      * Retrieves the string value of an annotation member with a default fallback.
-     * Returns the default value if the member is undefined (see {@link groovy.transform.Undefined}).
+     * Returns the default value if the member is undefined (see {@link Undefined}).
      *
      * @param node the annotation node to query
      * @param name the name of the annotation member
@@ -443,7 +447,7 @@ public abstract class AbstractASTTransformation implements ASTTransformation, Er
     }
 
     /**
-     * Variant that checks both the name and {@link groovy.transform.Internal @Internal} annotation.
+     * Variant that checks both the name and {@link Internal @Internal} annotation.
      *
      * @since 6.0.0
      */
@@ -485,7 +489,7 @@ public abstract class AbstractASTTransformation implements ASTTransformation, Er
     }
 
     /**
-     * Variant that checks both the name and {@link groovy.transform.Internal @Internal} annotation.
+     * Variant that checks both the name and {@link Internal @Internal} annotation.
      *
      * @since 6.0.0
      */

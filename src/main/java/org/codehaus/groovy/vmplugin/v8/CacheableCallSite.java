@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.vmplugin.v8;
 
+import org.apache.groovy.runtime.indy.AotDispatch;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.runtime.memoize.MemoizeCache;
 
@@ -74,7 +75,7 @@ public class CacheableCallSite extends MutableCallSite {
         this.lookup = lookup;
         // captured once, at link time (this constructor only runs while linking a site), so
         // per-invocation code reads a plain field instead of probing system properties
-        this.aotLinked = org.apache.groovy.runtime.indy.AotDispatch.isAotLinkRequested();
+        this.aotLinked = AotDispatch.isAotLinkRequested();
     }
 
     /**

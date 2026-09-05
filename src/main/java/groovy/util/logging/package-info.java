@@ -21,8 +21,8 @@
  * Logging framework integration via AST transformations.
  *
  * <p>
- * Automatic logger injection for: {@link groovy.util.logging.Log @Log} (java.util.logging),
- * {@link groovy.util.logging.Commons @Commons} (Apache Commons Logging),
+ * Automatic logger injection for: {@link Log @Log} (java.util.logging),
+ * {@link Commons @Commons} (Apache Commons Logging),
  * and @Log4j/@Slf4j/@Log4j2/@PlatformLog for other frameworks.
  * Includes automatic log-level guard optimization.
  * </p>

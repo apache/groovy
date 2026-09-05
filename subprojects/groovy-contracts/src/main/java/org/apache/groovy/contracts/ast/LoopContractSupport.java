@@ -19,8 +19,11 @@
 package org.apache.groovy.contracts.ast;
 
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.DynamicVariable;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
@@ -38,8 +41,8 @@ import org.codehaus.groovy.control.StaticImportVisitor;
  * Both transforms lift expressions out of an {@code @Invariant}/{@code @Decreases} annotation
  * closure and inline them into the loop body. Because those expressions originally lived inside
  * an annotation member, the compiler's {@link VariableScopeVisitor} never descended into them, so
- * their {@link org.codehaus.groovy.ast.expr.VariableExpression}s reference unresolved
- * {@link org.codehaus.groovy.ast.DynamicVariable}s. Under dynamic Groovy this resolves at runtime,
+ * their {@link VariableExpression}s reference unresolved
+ * {@link DynamicVariable}s. Under dynamic Groovy this resolves at runtime,
  * but {@code @TypeChecked}/{@code @CompileStatic} (which run later) then see such references as
  * {@code java.lang.Object} and fail type checking.
  * <p>
@@ -56,13 +59,13 @@ final class LoopContractSupport {
      * Re-runs the compiler's semantic-analysis resolution passes over the code inlined out of a
      * loop-contract annotation closure (GROOVY-12072).
      * <p>
-     * Class invariants and preconditions sit on {@link org.codehaus.groovy.ast.AnnotatedNode}s
+     * Class invariants and preconditions sit on {@link AnnotatedNode}s
      * (classes, methods, fields), so the compiler's {@link ResolveVisitor}, {@link StaticImportVisitor}
      * and {@link VariableScopeVisitor} descend into their annotation members and fully resolve the
      * closure before the contracts framework extracts it. A loop-contract annotation, however, sits on
      * a plain statement none of those visitors reach, and this transform runs <em>after</em> they have
      * completed. The expressions it lifts into the loop body therefore arrive completely unresolved:
-     * type references such as {@code Math} are bare {@link org.codehaus.groovy.ast.expr.VariableExpression}s,
+     * type references such as {@code Math} are bare {@link VariableExpression}s,
      * unqualified statically imported members such as {@code max(3, 4)} are unresolved method calls, and
      * local-variable references are unbound.
      * <p>

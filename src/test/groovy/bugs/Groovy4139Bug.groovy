@@ -18,13 +18,14 @@
  */
 package bugs
 
+import groovy.time.TimeCategory
 import org.junit.jupiter.api.Test
 
 
 class Groovy4139Bug {
     @Test
     void testEmptyStringAsMapEntryKey() {
-        use (groovy.time.TimeCategory) {
+        use (TimeCategory) {
             def topics = [:]
             topics[''] = 100
 

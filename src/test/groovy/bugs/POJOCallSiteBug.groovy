@@ -18,6 +18,7 @@
  */
 package bugs
 
+import org.codehaus.groovy.runtime.NullObject
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -36,7 +37,7 @@ class POJOCallSiteBug {
     @AfterEach
     void tearDown() {
         registry.setMetaClass(POJOCallSiteBugFoo, originalMetaClass)
-        org.codehaus.groovy.runtime.NullObject.getNullObject().setMetaClass(null)
+        NullObject.getNullObject().setMetaClass(null)
     }
 
     @Test
@@ -83,10 +84,10 @@ class POJOCallSiteBug {
 
     @Test
     void testChangeFromNullToOther() {
-        def emc = new ExpandoMetaClass( org.codehaus.groovy.runtime.NullObject.getNullObject().getClass())
+        def emc = new ExpandoMetaClass( NullObject.getNullObject().getClass())
         emc.plus = {b -> b}
         emc.initialize()
-        org.codehaus.groovy.runtime.NullObject.getNullObject().setMetaClass(emc)
+        NullObject.getNullObject().setMetaClass(emc)
 
 
         Double[][] a = new Double[10][10]

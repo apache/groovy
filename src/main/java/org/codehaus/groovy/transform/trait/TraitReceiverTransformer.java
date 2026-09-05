@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.trait;
 
+import groovy.transform.Virtual;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -59,7 +60,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
- * This expression transformer is used internally by the {@link org.codehaus.groovy.transform.trait.TraitASTTransformation
+ * This expression transformer is used internally by the {@link TraitASTTransformation
  * trait} AST transformation to change the receiver of a message on "this" into a static method call on the trait helper
  * class.
  * <p>
@@ -70,7 +71,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  */
 class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
-    private static final ClassNode VIRTUAL_TYPE = ClassHelper.make(groovy.transform.Virtual.class);
+    private static final ClassNode VIRTUAL_TYPE = ClassHelper.make(Virtual.class);
 
     private final VariableExpression weaved;
     private final SourceUnit unit;

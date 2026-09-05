@@ -18,11 +18,12 @@
  */
 package org.apache.groovy.groovysh.commands
 
+import org.apache.groovy.groovysh.jline.GroovyCommands
 import org.junit.jupiter.api.Test
 
 /**
  * Smoke test for tab completion. Each registered command in
- * {@link org.apache.groovy.groovysh.jline.GroovyCommands} wires up a
+ * {@link GroovyCommands} wires up a
  * completer factory; previously, none of those factories were exercised
  * by any test.
  *

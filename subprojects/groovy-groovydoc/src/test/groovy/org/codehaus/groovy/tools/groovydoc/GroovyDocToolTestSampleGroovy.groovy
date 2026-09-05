@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
+import java.util.Date
+
 public class GroovyDocToolTestSampleGroovy {
   /**
     * First method. Simple case
@@ -32,7 +34,7 @@ public class GroovyDocToolTestSampleGroovy {
   char thirdMethod() {}
 
   /** Fourth method. Has fully qualified return type */
-  java.util.Date fourthMethod() {}
+  Date fourthMethod() {}
 
   /*
     * Fifth method. Doesn't have any groovydoc (note: single * at beginning)

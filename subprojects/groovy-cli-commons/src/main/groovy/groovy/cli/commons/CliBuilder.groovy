@@ -200,10 +200,10 @@ import static groovy.lang.MetaProperty.getSetterName
  * import groovy.cli.Unparsed
  *
  * interface OptionInterface {
- *     @{@link groovy.cli.Option}(shortName='a', description='display all files') boolean all()
- *     @{@link groovy.cli.Option}(shortName='l', description='use a long listing format') boolean longFormat()
- *     @{@link groovy.cli.Option}(shortName='t', description='sort by modification time') boolean time()
- *     @{@link groovy.cli.Unparsed} List remaining()
+ *     @{@link Option}(shortName='a', description='display all files') boolean all()
+ *     @{@link Option}(shortName='l', description='use a long listing format') boolean longFormat()
+ *     @{@link Option}(shortName='t', description='sort by modification time') boolean time()
+ *     @{@link Unparsed} List remaining()
  * }
  * </pre>
  * Then this description is supplied to CliBuilder during parsing, e.g.:
@@ -226,10 +226,10 @@ import static groovy.lang.MetaProperty.getSetterName
  * import groovy.cli.Unparsed
  *
  * class OptionClass {
- *     @{@link groovy.cli.Option}(shortName='a', description='display all files') boolean all
- *     @{@link groovy.cli.Option}(shortName='l', description='use a long listing format') boolean longFormat
- *     @{@link groovy.cli.Option}(shortName='t', description='sort by modification time') boolean time
- *     @{@link groovy.cli.Unparsed} List remaining
+ *     @{@link Option}(shortName='a', description='display all files') boolean all
+ *     @{@link Option}(shortName='l', description='use a long listing format') boolean longFormat
+ *     @{@link Option}(shortName='t', description='sort by modification time') boolean time
+ *     @{@link Unparsed} List remaining
  * }
  * </pre>
  * Then this description is supplied to CliBuilder during parsing, e.g.:

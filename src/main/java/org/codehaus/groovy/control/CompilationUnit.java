@@ -53,11 +53,13 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
+import javax.tools.JavaFileObject;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -124,7 +126,7 @@ public class CompilationUnit extends ProcessingUnit {
     /** The AST transformations state data. */
     protected ASTTransformationsContext astTransformationsContext;
 
-    private Set<javax.tools.JavaFileObject> javaCompilationUnitSet = new HashSet<>();
+    private Set<JavaFileObject> javaCompilationUnitSet = new HashSet<>();
 
     /**
      * Initializes the CompilationUnit with defaults.
@@ -432,7 +434,7 @@ public class CompilationUnit extends ProcessingUnit {
 
     /**
      * Configures its debugging mode and classloader classpath from a given compiler configuration.
-     * This cannot be done more than once due to limitations in {@link java.net.URLClassLoader URLClassLoader}.
+     * This cannot be done more than once due to limitations in {@link URLClassLoader URLClassLoader}.
      */
     @Override
     public void configure(final CompilerConfiguration configuration) {
@@ -511,7 +513,7 @@ public class CompilationUnit extends ProcessingUnit {
      *
      * @return the tracked Java compilation units
      */
-    public Set<javax.tools.JavaFileObject> getJavaCompilationUnitSet() {
+    public Set<JavaFileObject> getJavaCompilationUnitSet() {
         return javaCompilationUnitSet;
     }
 
@@ -520,7 +522,7 @@ public class CompilationUnit extends ProcessingUnit {
      *
      * @param javaCompilationUnitSet the Java units to add
      */
-    public void addJavaCompilationUnits(final Set<javax.tools.JavaFileObject> javaCompilationUnitSet) {
+    public void addJavaCompilationUnits(final Set<JavaFileObject> javaCompilationUnitSet) {
         this.javaCompilationUnitSet.addAll(javaCompilationUnitSet);
     }
 
@@ -1066,7 +1068,7 @@ public class CompilationUnit extends ProcessingUnit {
          * @param source the source unit owning the class, or {@code null} when the class node was
          *        supplied directly via {@link CompilationUnit#addClassNode(ClassNode)} and so has no
          *        originating source. Implementations must tolerate {@code null} here: an unguarded
-         *        dereference is reported as a {@link org.codehaus.groovy.GroovyBugError} wrapping the
+         *        dereference is reported as a {@link GroovyBugError} wrapping the
          *        {@code NullPointerException}, which reads as a compiler bug rather than as a fault
          *        in the implementation.
          * @param context the current generator context

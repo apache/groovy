@@ -33,7 +33,7 @@ import java.time.Duration;
  * def t = System.timed { (1..1_000).sum() }
  * assert t.result == 500_500
  * assert t.nanos &gt;= 0
- * assert t.duration instanceof java.time.Duration
+ * assert t.duration instanceof Duration
  * </pre>
  *
  * @param <T>    the type of the timed result
@@ -44,7 +44,7 @@ import java.time.Duration;
 public record Timed<T>(T result, long nanos) {
 
     /**
-     * Returns the elapsed time as a {@link java.time.Duration}. Exposed to Groovy
+     * Returns the elapsed time as a {@link Duration}. Exposed to Groovy
      * as the read-only {@code duration} property.
      *
      * @return the elapsed time as a {@code Duration}

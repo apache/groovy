@@ -31,15 +31,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * <p>Helper methods for reading/getting {@link org.codehaus.groovy.ast.AnnotationNode} instances.</p>
+ * <p>Helper methods for reading/getting {@link AnnotationNode} instances.</p>
  */
 public class AnnotationUtils {
 
     /**
-     * Checks whether the given {@link org.codehaus.groovy.ast.ClassNode} is annotated
+     * Checks whether the given {@link ClassNode} is annotated
      * with an annotations of the given package or full annotatedNode name.
      *
-     * @param annotatedNode     the {@link org.codehaus.groovy.ast.AnnotatedNode} to search for the given annotation
+     * @param annotatedNode     the {@link AnnotatedNode} to search for the given annotation
      * @param typeOrPackageName can either be a part of the package or the complete annotation class name
      * @return <tt>true</tt> if an annotation was found, <tt>false</tt> otherwise
      */
@@ -54,12 +54,12 @@ public class AnnotationUtils {
     }
 
     /**
-     * Gets the next {@link org.codehaus.groovy.ast.AnnotationNode} instance in the inheritance line which is annotated
+     * Gets the next {@link AnnotationNode} instance in the inheritance line which is annotated
      * with the given Annotation class <tt>anno</tt>.
      *
-     * @param type the {@link org.codehaus.groovy.ast.ClassNode} to check for the annotation
+     * @param type the {@link ClassNode} to check for the annotation
      * @param anno the annotation to watch out for
-     * @return the next {@link org.codehaus.groovy.ast.AnnotationNode} in the inheritance line, or <tt>null</tt>
+     * @return the next {@link AnnotationNode} in the inheritance line, or <tt>null</tt>
      */
     public static List<AnnotationNode> getAnnotationNodeInHierarchyWithMetaAnnotation(ClassNode type, ClassNode anno) {
         List<AnnotationNode> result = new ArrayList<>();
@@ -107,10 +107,10 @@ public class AnnotationUtils {
     }
 
     /**
-     * Loads all annotation nodes of the given {@link org.codehaus.groovy.ast.AnnotatedNode} instance which are marked
+     * Loads all annotation nodes of the given {@link AnnotatedNode} instance which are marked
      * with the annotation <tt>metaAnnotationClassName</tt>.
      *
-     * @param annotatedNode           an {@link org.codehaus.groovy.ast.AnnotatedNode} from which the annotations are checked
+     * @param annotatedNode           an {@link AnnotatedNode} from which the annotations are checked
      * @param metaAnnotationClassName the name of the meta annotation
      * @return a list of {@link AnnotationNode} instances which implement the given <tt>metaAnnotationClass</tt>
      */

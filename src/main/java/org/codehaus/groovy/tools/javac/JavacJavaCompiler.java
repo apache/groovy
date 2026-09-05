@@ -26,6 +26,9 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
@@ -33,6 +36,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
+import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -103,9 +107,9 @@ public class JavacJavaCompiler implements JavaCompiler {
     private boolean doCompileWithSystemJavaCompiler(final CompilationUnit cu, final List<String> files, final List<String> javacParameters, final Writer javacOutput) throws IOException {
         Locale locale = Locale.ENGLISH;
         Charset charset = Charset.forName(config.getSourceEncoding());
-        javax.tools.JavaCompiler compiler = javax.tools.ToolProvider.getSystemJavaCompiler();
-        try (javax.tools.StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, locale, charset)) {
-            Set<javax.tools.JavaFileObject> compilationUnitSet = cu.getJavaCompilationUnitSet(); // java stubs already added
+        javax.tools.JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, locale, charset)) {
+            Set<JavaFileObject> compilationUnitSet = cu.getJavaCompilationUnitSet(); // java stubs already added
 
             Map<String, Object> options = config.getJointCompilationOptions();
             if (!Boolean.TRUE.equals(options.get(CompilerConfiguration.MEM_STUB))) {
@@ -233,7 +237,7 @@ public class JavacJavaCompiler implements JavaCompiler {
             || param.equals("release") || param.equals("-release");
     }
 
-    private static java.security.CodeSource getCodeSource() {
+    private static CodeSource getCodeSource() {
         return GroovyObject.class.getProtectionDomain().getCodeSource();
     }
 }

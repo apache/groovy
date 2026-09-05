@@ -20,6 +20,7 @@ package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 
 /**
@@ -54,7 +55,7 @@ public final class PeepholeOptimizingClassVisitor extends ClassVisitor {
      * {@code classVisitor}.
      *
      * @param classVisitor the next visitor in the class-generation chain
-     *        (typically a {@link org.objectweb.asm.ClassWriter}, optionally
+     *        (typically a {@link ClassWriter}, optionally
      *        preceded by logging / tracing adapters)
      */
     public PeepholeOptimizingClassVisitor(final ClassVisitor classVisitor) {

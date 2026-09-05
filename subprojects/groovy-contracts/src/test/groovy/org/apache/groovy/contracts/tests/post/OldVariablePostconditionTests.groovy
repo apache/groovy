@@ -21,6 +21,8 @@ package org.apache.groovy.contracts.tests.post
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
 import org.junit.jupiter.api.Test
 
+import java.sql.Timestamp
+
 /**
  * <tt>old</tt> variables tests for postconditions.
  *
@@ -99,10 +101,10 @@ final class OldVariablePostconditionTests extends BaseTestClass {
         instance = create_instance_of(createSourceCodeForTemplate(templateSourceCode, [type: java.sql.Date.class.getName()]), sql_date_now)
         instance.setVariable sql_date_not_now
 
-        def ts_now = new java.sql.Timestamp(date_now.getTime())
-        def ts_not_now = new java.sql.Timestamp(date_not_now.getTime())
+        def ts_now = new Timestamp(date_now.getTime())
+        def ts_not_now = new Timestamp(date_not_now.getTime())
 
-        instance = create_instance_of(createSourceCodeForTemplate(templateSourceCode, [type: java.sql.Timestamp.class.getName()]), ts_now)
+        instance = create_instance_of(createSourceCodeForTemplate(templateSourceCode, [type: Timestamp.class.getName()]), ts_now)
         instance.setVariable ts_not_now
 
         //instance = create_instance_of(createSourceCodeForTemplate(dynamic_constructor_class_code, [type: GString.class.getName()]), "${''}")

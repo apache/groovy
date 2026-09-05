@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.classgen
 
+import groovy.transform.CompileStatic
+import groovy.transform.TypeChecked
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.RecordComponentNode
@@ -41,8 +43,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue
 
 @ParameterizedClass
 @ValueSource(classes=[
-    groovy.transform.TypeChecked,
-    groovy.transform.CompileStatic
+    TypeChecked,
+    CompileStatic
 ])
 final class RecordTest {
 

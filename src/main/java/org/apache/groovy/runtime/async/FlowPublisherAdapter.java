@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Adapter for {@link java.util.concurrent.Flow.Publisher}, the JDK's built-in
+ * Adapter for {@link Flow.Publisher}, the JDK's built-in
  * Reactive Streams type. Enables:
  * <ul>
  *   <li>{@code await publisher} — completes with the first {@code onNext}

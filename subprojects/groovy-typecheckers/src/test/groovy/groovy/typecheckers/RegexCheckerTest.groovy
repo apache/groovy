@@ -18,6 +18,7 @@
  */
 package groovy.typecheckers
 
+import groovy.transform.TypeChecked
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.control.customizers.ImportCustomizer
@@ -34,7 +35,7 @@ final class RegexCheckerTest {
     @BeforeAll
     static void setUp() {
         shell = new GroovyShell(new CompilerConfiguration().tap {
-            def customizer = new ASTTransformationCustomizer(groovy.transform.TypeChecked)
+            def customizer = new ASTTransformationCustomizer(TypeChecked)
             customizer.annotationParameters = [extensions: 'groovy.typecheckers.RegexChecker']
             addCompilationCustomizers(customizer, new ImportCustomizer().addStarImports('java.util.regex'))
         })

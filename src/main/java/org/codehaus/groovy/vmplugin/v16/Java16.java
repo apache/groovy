@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.vmplugin.v10.Java10;
+import org.codehaus.groovy.vmplugin.v17.Java17;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
@@ -34,7 +35,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * @deprecated Use {@link org.codehaus.groovy.vmplugin.v17.Java17} instead. Groovy 6.0 requires JDK 17+.
+ * @deprecated Use {@link Java17} instead. Groovy 6.0 requires JDK 17+.
  */
 @Deprecated(since = "6.0.0", forRemoval = true)
 @SuppressWarnings("removal")

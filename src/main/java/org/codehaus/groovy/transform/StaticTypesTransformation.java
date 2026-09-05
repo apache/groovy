@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.CompilationUnitAware;
+import groovy.transform.TypeChecked;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -48,7 +49,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 
 /**
- * Handles the implementation of the {@link groovy.transform.TypeChecked} transformation.
+ * Handles the implementation of the {@link TypeChecked} transformation.
  */
 @GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)
 public class StaticTypesTransformation implements ASTTransformation, CompilationUnitAware {

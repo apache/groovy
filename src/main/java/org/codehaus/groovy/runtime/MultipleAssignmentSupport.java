@@ -23,6 +23,7 @@ import org.apache.groovy.lang.annotation.GroovyABI;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Spliterator;
@@ -62,7 +63,7 @@ public final class MultipleAssignmentSupport {
      *       {@code List}, {@code CharSequence}, and Java arrays (size-aware so
      *       out-of-bounds {@code fromIndex} returns the canonical empty value
      *       without calling user code), with an MOP-dispatched fallback for
-     *       any other Path B receiver — {@link java.util.BitSet} (returns
+     *       any other Path B receiver — {@link BitSet} (returns
      *       {@code BitSet}), user custom classes, etc.</li>
      *   <li><b>Path C</b> — anything else iterable: return the already-advanced
      *       iterator.</li>

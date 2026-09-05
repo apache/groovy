@@ -30,7 +30,7 @@ import org.codehaus.groovy.control.SourceUnit;
  * method:</p>
  * <code>void foo(A firstArg, B secondArg, Closure c) {...}</code>
  * <p>If the <i>c</i> closure should be <code>{ B it {@code ->} ...}</code>, then we can see that the parameter type
- * should be picked from the second parameter of the foo method, which is what {@link groovy.transform.stc.PickAnyArgumentHint}
+ * should be picked from the second parameter of the foo method, which is what {@link PickAnyArgumentHint}
  * lets you do.</p>
  * <p>Alternatively, the method may look like this:</p>
  * <code>void &lt;T&gt; foo(A&lt;T&gt; firstArg, B secondArg, Closure c) {...}</code>

@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.control.CompilePhase;
@@ -79,7 +80,7 @@ public class FinalASTStubber extends AbstractASTTransformation {
         } else if (target instanceof MethodNode mNode) {
             // Skip ConstructorNode (subclass of MethodNode) — the full
             // transform reports an error for constructor targets.
-            if (!(mNode instanceof org.codehaus.groovy.ast.ConstructorNode)) {
+            if (!(mNode instanceof ConstructorNode)) {
                 mNode.setModifiers(mNode.getModifiers() | ACC_FINAL);
             }
         }

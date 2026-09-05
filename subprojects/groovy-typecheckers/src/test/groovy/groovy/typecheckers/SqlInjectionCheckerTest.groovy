@@ -18,6 +18,7 @@
  */
 package groovy.typecheckers
 
+import groovy.transform.TypeChecked
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.Phases
@@ -40,7 +41,7 @@ final class SqlInjectionCheckerTest {
 
     private static CompilerConfiguration configured() {
         new CompilerConfiguration().tap {
-            def customizer = new ASTTransformationCustomizer(groovy.transform.TypeChecked)
+            def customizer = new ASTTransformationCustomizer(TypeChecked)
             customizer.annotationParameters = [extensions: 'groovy.typecheckers.SqlInjectionChecker']
             addCompilationCustomizers(customizer)
         }

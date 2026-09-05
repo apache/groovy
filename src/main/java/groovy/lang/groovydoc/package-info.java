@@ -21,8 +21,8 @@
  * Runtime representation of Groovy documentation and javadoc tags.
  *
  * <p>
- * {@link groovy.lang.groovydoc.Groovydoc}, {@link groovy.lang.groovydoc.GroovydocHolder},
- * and {@link groovy.lang.groovydoc.GroovydocTag} enable runtime introspection of documentation metadata.
+ * {@link Groovydoc}, {@link GroovydocHolder},
+ * and {@link GroovydocTag} enable runtime introspection of documentation metadata.
  * </p>
  */
 package groovy.lang.groovydoc;

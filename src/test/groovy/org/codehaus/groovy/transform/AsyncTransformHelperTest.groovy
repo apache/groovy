@@ -96,11 +96,11 @@ final class AsyncTransformHelperTest {
     void testWrapForAwaitLoopUsesUniqueSyntheticNames() {
         def collection = new ConstantExpression([1, 2, 3])
         def loop1 = new ForStatement(
-                new Parameter(org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE, 'item'),
+                new Parameter(ClassHelper.OBJECT_TYPE, 'item'),
                 collection,
                 EmptyStatement.INSTANCE)
         def loop2 = new ForStatement(
-                new Parameter(org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE, 'item'),
+                new Parameter(ClassHelper.OBJECT_TYPE, 'item'),
                 collection,
                 EmptyStatement.INSTANCE)
 
