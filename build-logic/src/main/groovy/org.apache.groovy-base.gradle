@@ -414,3 +414,44 @@ static Configuration createConsumableConfiguration(ObjectFactory objects,
         }
     }
 }
+
+// ---- Lint gate ---------------------------------------------------------
+//
+// The Checkstyle and CodeNarc runs above are advisory (ignoreFailures) and
+// feed the HTML reports. The gate tasks run a separate, small configuration
+// of rules that must hold, and fail on any violation. They are registered
+// after the configureEach blocks above so that their settings win.
+// Run with: ./gradlew lintGate --continue
+// CI: .github/workflows/groovy-lint-gate.yml
+
+tasks.register('checkstyleGate', Checkstyle) {
+    group = 'verification'
+    description = 'Runs the Checkstyle rules that fail the build (config/checkstyle/gate.xml)'
+    source sourceSets.main.allJava, sourceSets.test.allJava
+    // generated sources (the ANTLR parser) are not ours to keep clean
+    exclude { it.file.absolutePath.startsWith(layout.buildDirectory.get().asFile.absolutePath) }
+    classpath = files()
+    configFile = rootProject.file('config/checkstyle/gate.xml')
+    ignoreFailures = false
+    showViolations = true
+}
+
+tasks.register('codenarcGate', CodeNarc) {
+    group = 'verification'
+    description = 'Runs the CodeNarc rules that fail the build (config/codenarc/gate.groovy)'
+    source sourceSets.main.groovy.matching { include '**/*.groovy' },
+           sourceSets.test.groovy.matching { include '**/*.groovy' }
+    configFile = rootProject.file('config/codenarc/gate.groovy')
+    ignoreFailures = false
+    maxHeapSize = '2g' // the core test tree exhausts the default worker heap
+    reports {
+        html.required = false
+        text.required = true
+    }
+}
+
+tasks.register('lintGate') {
+    group = 'verification'
+    description = 'Runs the lint rules that fail the build'
+    dependsOn 'checkstyleGate', 'codenarcGate'
+}

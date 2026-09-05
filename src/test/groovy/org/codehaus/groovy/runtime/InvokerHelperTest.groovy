@@ -19,17 +19,13 @@
 package org.codehaus.groovy.runtime
 
 import groovy.lang.Binding
-import groovy.lang.Closure
 import groovy.lang.GroovyClassLoader
 import groovy.lang.GroovyCodeSource
 import groovy.lang.GroovyShell
-import groovy.lang.Script
 import groovy.lang.SpreadMap
 import groovy.lang.SpreadMapEvaluatingException
-import groovy.lang.Tuple
 import org.junit.jupiter.api.Test
 
-import java.util.regex.Matcher
 import java.util.regex.Pattern
 
 import org.junit.jupiter.api.function.Executable

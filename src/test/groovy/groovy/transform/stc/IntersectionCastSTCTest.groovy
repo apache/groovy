@@ -18,18 +18,14 @@
  */
 package groovy.transform.stc
 
-import groovy.transform.TypeChecked
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.IntersectionTypeClassNode
 import org.codehaus.groovy.ast.expr.CastExpression
 import org.codehaus.groovy.ast.expr.LambdaExpression
-import org.codehaus.groovy.ast.tools.GenericsUtils
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.Phases
-import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
 import org.codehaus.groovy.transform.stc.StaticTypesMarker

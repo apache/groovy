@@ -18,7 +18,6 @@
  */
 package bugs
 
-import groovy.test.GroovyAssert
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
