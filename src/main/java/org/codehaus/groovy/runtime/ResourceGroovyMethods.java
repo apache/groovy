@@ -64,6 +64,9 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.LinkOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1724,16 +1727,24 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * <li>false, when it is called for a file which isn't a directory</li>
      * <li>false, when directory couldn't be deleted</li>
      * </ul>
+     * <p>
+     * A symbolic link is removed as the link itself; its target is never entered. The same
+     * holds for any node that is neither a regular file nor a directory, such as a Windows
+     * directory junction: it is never entered, so what it points at is never touched.
      *
      * @param self a File
      * @return true if the file doesn't exist or deletion was successful
      * @since 1.6.0
      */
     public static boolean deleteDir(final File self) {
-        if (Files.isSymbolicLink(self.toPath())) {
-            // never follow a symbolic link into its target; remove the link itself.
-            // Note: Files.isSymbolicLink does not detect Windows directory junctions
-            // (reparse points), which are therefore still traversed.
+        final BasicFileAttributes attrs;
+        try {
+            attrs = Files.readAttributes(self.toPath(), BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+        } catch (IOException e) {
+            return !self.exists();
+        }
+        if (attrs.isSymbolicLink()) {
+            // never follow a symbolic link into its target; remove the link itself
             try {
                 Files.delete(self.toPath());
                 return true;
@@ -1741,9 +1752,10 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
                 return false;
             }
         }
-        if (!self.exists())
-            return true;
-        if (!self.isDirectory())
+        if (attrs.isOther() || !attrs.isDirectory())
+            // a plain file is not a directory, and neither is anything reporting isOther:
+            // a Windows junction or other reparse point, a pipe, a socket, a device.
+            // A junction in particular is never entered, so its target is never touched.
             return false;
 
         File[] files = self.listFiles();
@@ -1754,8 +1766,9 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
         // delete contained files
         boolean result = true;
         for (File file : files) {
-            if (Files.isSymbolicLink(file.toPath())) {
-                // remove the link itself; do not recurse through it into the target
+            if (isLinkLike(file.toPath())) {
+                // a symbolic link, junction, or other special node: remove the node itself,
+                // never what it points at or represents
                 try {
                     Files.delete(file.toPath());
                 } catch (IOException e) {
@@ -1775,6 +1788,23 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
             result = false;
 
         return result;
+    }
+
+    /**
+     * Whether the node should be removed as itself rather than entered or opened: a symbolic
+     * link, or anything reporting {@code isOther} — a Windows junction or other reparse point,
+     * a pipe, a socket, a device.
+     *
+     * @param path the node, examined without following links
+     * @return whether to treat it as a leaf
+     */
+    private static boolean isLinkLike(final Path path) {
+        try {
+            BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+            return attrs.isSymbolicLink() || attrs.isOther();
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     /**

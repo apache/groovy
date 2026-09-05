@@ -31,6 +31,76 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue
  */
 class DirectoryDeleteTest {
 
+    // A junction is created without privilege on Windows, unlike a symbolic link, so it is
+    // the link form an unprivileged local user can plant. It must be removed as a node and
+    // never entered. Junctions only exist on Windows, so these run nowhere else; the
+    // symbolic-link tests below cover the same property for POSIX.
+    @Test
+    void junctionInsideTreeIsRemovedNotEntered() {
+        assumeTrue(System.getProperty('os.name').containsIgnoreCase('windows'),
+                'junctions are a Windows construct')
+        def base = Files.createTempDirectory('junction_')
+        def outside = Files.createDirectory(base.resolve('outside'))
+        def survivor = outside.resolve('survivor.txt')
+        survivor.toFile().write('keep')
+        def tree = Files.createDirectory(base.resolve('tree'))
+        def junction = tree.resolve('junction')
+        def proc = ['cmd', '/c', 'mklink', '/J', junction.toString(), outside.toString()].execute()
+        assumeTrue(proc.waitFor() == 0, 'could not create a junction')
+
+        assert tree.toFile().deleteDir()
+        assert !Files.exists(tree, LinkOption.NOFOLLOW_LINKS)
+        assert survivor.toFile().text == 'keep'
+        base.toFile().deleteDir()
+    }
+
+    @Test
+    void deleteDirOnAJunctionRefusesAndLeavesTheTargetAlone() {
+        assumeTrue(System.getProperty('os.name').containsIgnoreCase('windows'),
+                'junctions are a Windows construct')
+        def base = Files.createTempDirectory('junctionSelf_')
+        def outside = Files.createDirectory(base.resolve('outside'))
+        def survivor = outside.resolve('survivor.txt')
+        survivor.toFile().write('keep')
+        def junction = base.resolve('junction')
+        def proc = ['cmd', '/c', 'mklink', '/J', junction.toString(), outside.toString()].execute()
+        assumeTrue(proc.waitFor() == 0, 'could not create a junction')
+
+        // a junction is not a directory to this method, and is never entered
+        assert !junction.toFile().deleteDir()
+        assert survivor.toFile().text == 'keep'
+        base.toFile().deleteDir()
+    }
+
+    // The same guard covers every node reporting isOther, which on POSIX includes a named
+    // pipe — giving the new branch coverage on the platforms the build actually runs on.
+    @Test
+    void namedPipeInsideTreeIsDeletedWithIt() {
+        assumeTrue(!System.getProperty('os.name').containsIgnoreCase('windows'),
+                'mkfifo is a POSIX tool')
+        def base = Files.createTempDirectory('fifo_')
+        def tree = Files.createDirectory(base.resolve('tree'))
+        def fifo = tree.resolve('pipe')
+        assumeTrue(['mkfifo', fifo.toString()].execute().waitFor() == 0, 'could not create a fifo')
+
+        assert tree.toFile().deleteDir()
+        assert !Files.exists(tree, LinkOption.NOFOLLOW_LINKS)
+        base.toFile().deleteDir()
+    }
+
+    @Test
+    void deleteDirOnANamedPipeRefusesAndLeavesIt() {
+        assumeTrue(!System.getProperty('os.name').containsIgnoreCase('windows'),
+                'mkfifo is a POSIX tool')
+        def base = Files.createTempDirectory('fifoSelf_')
+        def fifo = base.resolve('pipe')
+        assumeTrue(['mkfifo', fifo.toString()].execute().waitFor() == 0, 'could not create a fifo')
+
+        assert !fifo.toFile().deleteDir()   // not a directory
+        assert Files.exists(fifo, LinkOption.NOFOLLOW_LINKS)
+        base.toFile().deleteDir()
+    }
+
     @Test
     void testDeleteDir(){
         def file = File.createTempFile("deleteDirTest", "")

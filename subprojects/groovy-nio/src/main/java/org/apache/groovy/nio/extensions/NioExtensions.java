@@ -63,6 +63,7 @@ import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileAttribute;
@@ -1387,6 +1388,10 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * <li>false, when it is called for a file which isn't a directory</li>
      * <li>false, when directory couldn't be deleted</li>
      * </ul>
+     * <p>
+     * A symbolic link is removed as the link itself; its target is never entered. The same
+     * holds for any node that is neither a regular file nor a directory, such as a Windows
+     * directory junction: it is never entered, so what it points at is never touched.
      * </p>
      *
      * @param self a Path
@@ -1394,10 +1399,14 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static boolean deleteDir(final Path self) {
-        if (Files.isSymbolicLink(self)) {
-            // never follow a symbolic link into its target; remove the link itself.
-            // Note: Files.isSymbolicLink does not detect Windows directory junctions
-            // (reparse points), which are therefore still traversed.
+        final BasicFileAttributes selfAttrs;
+        try {
+            selfAttrs = Files.readAttributes(self, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+        } catch (IOException e) {
+            return !Files.exists(self);
+        }
+        if (selfAttrs.isSymbolicLink()) {
+            // never follow a symbolic link into its target; remove the link itself
             try {
                 Files.delete(self);
                 return true;
@@ -1405,18 +1414,21 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
                 return false;
             }
         }
-
-        if (!Files.exists(self))
-            return true;
-
-        if (!Files.isDirectory(self))
+        if (selfAttrs.isOther() || !selfAttrs.isDirectory())
+            // a plain file is not a directory, and neither is anything reporting isOther:
+            // a Windows junction or other reparse point, a pipe, a socket, a device.
+            // A junction in particular is never entered, so its target is never touched.
             return false;
 
         // delete contained files
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(self)) {
             for (Path path : stream) {
-                // do not follow a symbolic link into its target; delete the link itself
-                if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
+                BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+                if (attrs.isSymbolicLink() || attrs.isOther()) {
+                    // a symbolic link, junction, or other special node: remove the node itself,
+                    // never what it points at or represents
+                    Files.delete(path);
+                } else if (attrs.isDirectory()) {
                     if (!deleteDir(path)) {
                         return false;
                     }

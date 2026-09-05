@@ -726,6 +726,50 @@ class NioExtensionsTest extends Specification {
         !Files.exists(folder)
     }
 
+    def testDeleteDirRemovesAJunctionWithoutEnteringIt() {
+        setup:
+        if (!System.getProperty('os.name').containsIgnoreCase('windows')) {
+            throw new TestAbortedException('junctions are a Windows construct')
+        }
+        def base = Files.createTempDirectory(tempDir.toPath(), 'junction_')
+        def outside = Files.createDirectory(base.resolve('outside'))
+        def survivor = outside.resolve('survivor.txt')
+        Files.write(survivor, 'keep'.bytes)
+        def tree = Files.createDirectory(base.resolve('tree'))
+        def junction = tree.resolve('junction')
+        if (['cmd', '/c', 'mklink', '/J', junction.toString(), outside.toString()].execute().waitFor() != 0) {
+            throw new TestAbortedException('could not create a junction')
+        }
+
+        when:
+        def result = tree.deleteDir()
+
+        then:
+        result
+        !Files.exists(tree, LinkOption.NOFOLLOW_LINKS)
+        new String(Files.readAllBytes(survivor)) == 'keep'
+    }
+
+    def testDeleteDirDeletesANamedPipeInsideTheTree() {
+        setup:
+        if (System.getProperty('os.name').containsIgnoreCase('windows')) {
+            throw new TestAbortedException('mkfifo is a POSIX tool')
+        }
+        def base = Files.createTempDirectory(tempDir.toPath(), 'fifo_')
+        def tree = Files.createDirectory(base.resolve('tree'))
+        def fifo = tree.resolve('pipe')
+        if (['mkfifo', fifo.toString()].execute().waitFor() != 0) {
+            throw new TestAbortedException('could not create a fifo')
+        }
+
+        when:
+        def result = tree.deleteDir()
+
+        then:
+        result
+        !Files.exists(tree, LinkOption.NOFOLLOW_LINKS)
+    }
+
     def testDeleteDirDoesNotFollowSymlink() {
         setup:
         def base = Files.createTempDirectory(tempDir.toPath(), 'symlink_')
