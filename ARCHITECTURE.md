@@ -105,6 +105,23 @@ verbatim keeps the reference precise; paraphrasing tends to drift.
   `GroovyLangParser`, `AstBuilder`, plus support classes:
   `ModifierManager`, `GroovydocManager`, `SemanticPredicates`,
   `PositionInfo`).
+- Recognition failures share one message path
+  (`DescriptiveErrorStrategy` / `RecoveringDescriptiveErrorStrategy` via
+  `AbstractFriendlyErrorStrategy`). `MissingDelimiterDiagnostic` may
+  relocate the caret for an unclosed `)` / `]` / `}` (Groovy 4 `?[` is
+  the same opener family as `[`); reserved keywords, a leading `?[`
+  that has no path to attach to, and sole-expected punctuation only
+  refine the fallback sentence.
+  Locate/refine stay in a defensive try; listener dispatch is a single
+  call afterwards. Lexer unexpected-character / GString-dollar display
+  goes through `Lexer.getCharErrorDisplay` (Unicode spaces other than
+  `U+0020`, curly quotes, and non-ASCII dashes are named as escapes so
+  they do not vanish into the caret line). Unclosed `/*` comments are
+  a lexer diagnostic at the opener (`requireUnclosedComment`), not a
+  parser fallback. Slashy strings cannot use an EOF closer: `/` after
+  an expression with newlines is division (`9 \n / \n 3`). All of that
+  runs only after recognition has already failed. Do not re-introduce
+  grammar-level parser error alternatives for this (GROOVY-9588).
 - `AstBuilder` is the hand-off from CST to AST. It is large; almost
   every parser-visible language change touches it.
 

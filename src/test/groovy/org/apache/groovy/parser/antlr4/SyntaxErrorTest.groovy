@@ -20,11 +20,9 @@ package org.apache.groovy.parser.antlr4
 
 import groovy.test.NotYetImplemented
 import groovy.transform.AutoFinal
-import org.codehaus.groovy.control.CompilationUnit
-import org.codehaus.groovy.control.Phases
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
+import static org.apache.groovy.parser.antlr4.TestUtils.expectParseError
 import static org.apache.groovy.parser.antlr4.util.ASTComparatorCategory.LOCATION_IGNORE_LIST
 
 /**
@@ -83,12 +81,12 @@ final class SyntaxErrorTest {
         TestUtils.doRunAndShouldFail('fail/UnexpectedCharacter_01x.groovy')
     }
 
-    @Test // TODO: Could the character be escaped in the error message?
+    @Test
     void 'groovy core - UnexpectedCharacter 2'() {
         expectParseError '''\
             |def \u200Bname = null
             |'''.stripMargin(), '''\
-            |Unexpected character: '\u200B' @ line 1, column 5.
+            |Unexpected character: '\\u200b' @ line 1, column 5.
             |   def \u200Bname = null
             |       ^
             |
@@ -98,7 +96,7 @@ final class SyntaxErrorTest {
         expectParseError '''\
             |def na\u200Bme = null
             |'''.stripMargin(), '''\
-            |Unexpected character: '\u200B' @ line 1, column 7.
+            |Unexpected character: '\\u200b' @ line 1, column 7.
             |   def na\u200Bme = null
             |         ^
             |
@@ -108,7 +106,7 @@ final class SyntaxErrorTest {
         expectParseError '''\
             |def na\u000Cme = null
             |'''.stripMargin(), '''\
-            |Unexpected character: '\u000C' @ line 1, column 7.
+            |Unexpected character: '\\f' @ line 1, column 7.
             |   def na\u000Cme = null
             |         ^
             |
@@ -123,7 +121,7 @@ final class SyntaxErrorTest {
             |  println 'Hello
             |}
             |'''.stripMargin(), '''\
-            |Unexpected character: '\\'' @ line 2, column 11.
+            |Unclosed string literal @ line 2, column 11.
             |     println 'Hello
             |             ^
             |
@@ -965,20 +963,6 @@ final class SyntaxErrorTest {
     }
 
     //--------------------------------------------------------------------------
-
-    private static void expectParseError(String source, String expect) {
-        try {
-            new CompilationUnit().with {
-                addSource('test.groovy', source)
-                compile(Phases.CONVERSION)
-                getAST()
-            }
-            Assertions.fail('expected parse to fail')
-        } catch (e) {
-            def line = (expect =~ /@ line (\d+),/)[0][1]
-            Assertions.assertEquals("startup failed:\ntest.groovy: $line: $expect".toString(), e.message.replace('\r\n', '\n'))
-        }
-    }
 
     private static unzipScriptAndShouldFail(String entryName, List ignoreClazzList, Map<String, String> replacementsMap = [:], boolean toCheckNewParserOnly = false) {
         ignoreClazzList.addAll(TestUtils.COMMON_IGNORE_CLASS_LIST)

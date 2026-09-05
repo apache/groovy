@@ -428,6 +428,44 @@ final class MissingDelimiterDiagnosticTest {
     }
 
     @Test
+    void 'safe-index inside parens names the inner bracket not the paren'() {
+        // strategy 1 may see a sole expected ')'; innermost opener is '?['
+        def tokens = tokenStream('(a?[0')
+        def hit = MissingDelimiterDiagnostic.locate(tokens, stubException(setOf(RPAREN), lastToken(tokens)))
+        assertNotNull hit
+        assertEquals "Missing ']'", hit.message
+    }
+
+    @Test
+    void 'regular index inside parens names the inner bracket not the paren'() {
+        def tokens = tokenStream('(a[0')
+        def hit = MissingDelimiterDiagnostic.locate(tokens, stubException(setOf(RPAREN), lastToken(tokens)))
+        assertNotNull hit
+        assertEquals "Missing ']'", hit.message
+    }
+
+    @Test
+    void 'empty unclosed safe index reports Missing bracket'() {
+        def hit = MissingDelimiterDiagnostic.locate(tokenStream('a?['), null)
+        assertNotNull hit
+        assertEquals "Missing ']'", hit.message
+    }
+
+    @Test
+    void 'safe-index mismatched paren closer reports Missing bracket'() {
+        def hit = MissingDelimiterDiagnostic.locate(tokenStream('a?[0)'), null)
+        assertNotNull hit
+        assertEquals "Missing ']'", hit.message
+    }
+
+    @Test
+    void 'cast pattern does not treat safe index as a cast operand'() {
+        def hit = MissingDelimiterDiagnostic.locate(tokenStream('(int?[0'), null)
+        assertNotNull hit
+        assertEquals "Missing ']'", hit.message
+    }
+
+    @Test
     void 'newlines inside braces do not move caret past last statement token'() {
         def hit = MissingDelimiterDiagnostic.locate(tokenStream('def m() {\n  println 1\n'), null)
         assertNotNull hit

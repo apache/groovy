@@ -838,6 +838,8 @@ personInfo?['name'] = 'sunlan'                  // quietly ignore attempt to set
 assert null == personInfo?['name']
 --------------------------------------
 
+`?[` is a single token: do not put a space between `?` and `[` (`a? [0]` is an incomplete ternary, not a safe index). An unclosed `?[` is reported as `Missing ']'`, including when the safe index sits inside parentheses (`(a?[0`). `?[` cannot start an expression: `?[0]`, `foo(?[0])`, and `x = ?[0]` are reported as `'?[' requires an expression before it`.
+
 
 === Membership operator
 

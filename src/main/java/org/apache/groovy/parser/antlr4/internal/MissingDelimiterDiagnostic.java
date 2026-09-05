@@ -141,35 +141,55 @@ final class MissingDelimiterDiagnostic {
         if (expected == null || expected.size() != 1) {
             return null;
         }
-
-        final String message;
-        final int openDepth;
-        if (expected.contains(RPAREN)) {
-            message = MSG_RPAREN;
-            openDepth = delimiterDepth(defaultChannel, true, false, false);
-        } else if (expected.contains(RBRACK)) {
-            message = MSG_RBRACK;
-            openDepth = delimiterDepth(defaultChannel, false, true, false);
-        } else if (expected.contains(RBRACE)) {
-            message = MSG_RBRACE;
-            openDepth = delimiterDepth(defaultChannel, false, false, true);
-        } else {
+        CloserSpec closer = soleCloser(expected);
+        if (closer == null) {
             return null;
         }
 
         // If the corresponding openers/closers are already balanced, the
         // failure is an unexpected intermediate token (e.g. `foo(1;2;3)`),
         // not a missing closer — leave the generic error alone.
-        if (openDepth == 0) {
+        if (closer.depth(defaultChannel) == 0) {
             return null;
         }
+        // The parser's sole expected closer may belong to an *outer* family
+        // (`(a?[0` expected `)` while the innermost opener is `?[`). Defer to
+        // the delimiter stack so the inner `]` is named first.
+        if (!closer.matchesInner(innermostOpenType(defaultChannel))) {
+            return null;
+        }
+        return hitAtOffending(e, defaultChannel, closer.message);
+    }
 
+    /**
+     * The single expected closer, or {@code null} if the expected set is not
+     * exactly one of {@code ) } / {@code ] } / {@code } }.
+     */
+    private static CloserSpec soleCloser(final IntervalSet expected) {
+        if (expected.contains(RPAREN)) {
+            return new CloserSpec(MSG_RPAREN, true, false, false);
+        }
+        if (expected.contains(RBRACK)) {
+            return new CloserSpec(MSG_RBRACK, false, true, false);
+        }
+        if (expected.contains(RBRACE)) {
+            return new CloserSpec(MSG_RBRACE, false, false, true);
+        }
+        return null;
+    }
+
+    /**
+     * Caret on the offender, or just past the last real token when the
+     * offender is EOF (whose line/column often sit on the following empty
+     * line after a trailing newline).
+     */
+    private static Hit hitAtOffending(final RecognitionException e,
+                                      final List<Token> defaultChannel,
+                                      final String message) {
         Token offending = e.getOffendingToken();
         if (offending == null) {
             return null;
         }
-        // EOF's line/column often sit on the following empty line after a
-        // trailing newline; point just past the previous real token instead.
         if (offending.getType() == Token.EOF) {
             Token lastReal = lastNonEof(defaultChannel);
             if (lastReal != null) {
@@ -180,32 +200,67 @@ final class MissingDelimiterDiagnostic {
     }
 
     /**
-     * Net open depth for the requested delimiter family at end of stream.
+     * One closer family: the diagnostic sentence and which delimiter depths
+     * to count. {@code ?[} is the same opener family as {@code [}.
      * Families are counted independently so a missing {@code ')'} is not
      * masked by balanced braces, and vice versa.
      */
-    private static int delimiterDepth(final List<Token> tokens,
-                                      final boolean parens,
-                                      final boolean brackets,
-                                      final boolean braces) {
-        int depth = 0;
+    private record CloserSpec(String message, boolean parens, boolean brackets, boolean braces) {
+        int depth(final List<Token> tokens) {
+            int depth = 0;
+            for (Token t : tokens) {
+                int type = t.getType();
+                if (opens(type)) {
+                    depth++;
+                } else if (closes(type) && depth > 0) {
+                    depth--;
+                }
+            }
+            return depth;
+        }
+
+        private boolean opens(final int type) {
+            return parens && type == LPAREN
+                    || brackets && isOpenBracket(type)
+                    || braces && type == LBRACE;
+        }
+
+        private boolean closes(final int type) {
+            return parens && type == RPAREN
+                    || brackets && type == RBRACK
+                    || braces && type == RBRACE;
+        }
+
+        boolean matchesInner(final int inner) {
+            if (parens) {
+                return inner == LPAREN;
+            }
+            if (brackets) {
+                return isOpenBracket(inner);
+            }
+            return inner == LBRACE;
+        }
+    }
+
+    /**
+     * Type of the innermost still-open delimiter, or {@code 0} if none.
+     * Used so a sole expected {@code ')'} does not hide an inner unclosed
+     * {@code ?[} / {@code [} (Groovy 4 safe index).
+     */
+    private static int innermostOpenType(final List<Token> tokens) {
+        Deque<Integer> stack = new ArrayDeque<>();
         for (Token t : tokens) {
             int type = t.getType();
-            if (parens && type == LPAREN) {
-                depth++;
-            } else if (parens && type == RPAREN && depth > 0) {
-                depth--;
-            } else if (brackets && isOpenBracket(type)) {
-                depth++;
-            } else if (brackets && type == RBRACK && depth > 0) {
-                depth--;
-            } else if (braces && type == LBRACE) {
-                depth++;
-            } else if (braces && type == RBRACE && depth > 0) {
-                depth--;
+            if (type == Token.EOF) {
+                break;
+            }
+            if (isOpenDelimiter(type)) {
+                stack.push(type);
+            } else if (isCloseDelimiter(type) && !stack.isEmpty() && closes(stack.peek(), type)) {
+                stack.pop();
             }
         }
-        return depth;
+        return stack.isEmpty() ? 0 : stack.peek();
     }
 
     /**
@@ -271,8 +326,9 @@ final class MissingDelimiterDiagnostic {
                 continue; // well-formed cast or intersection type
             }
             // Type continuators that matchType should already have consumed;
-            // if they remain, skip rather than false-positive.
-            if (nt == DOT || nt == LT || nt == LBRACK) {
+            // if they remain, skip rather than false-positive. SAFE_INDEX is
+            // the Groovy 4 {@code ?[} opener, the same family as {@code [}.
+            if (nt == DOT || nt == LT || nt == LBRACK || nt == SAFE_INDEX) {
                 continue;
             }
             if (primitiveType || isHighConfidenceCastOperand(nt)) {
