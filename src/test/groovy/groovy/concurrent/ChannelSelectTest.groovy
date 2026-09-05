@@ -1206,13 +1206,21 @@ final class ChannelSelectTest {
             import static groovy.concurrent.ChannelSelect.*
 
             def work = AsyncChannel.create(4)
-            def timer = AsyncChannel.after(10)
+            // already elapsed: holds its instant with no scheduler hop, so the
+            // assertion that the guarded-off branch left it alone does not race
+            // the single scheduler thread
+            def timer = AsyncChannel.after(0)
             boolean armed = false
             def sel = offers(receive(work), receive(timer).when { armed })
+            assert timer.bufferedSize == 1 && timer.closed
 
-            Thread.sleep(30)     // the timer has fired and holds its instant
-            async { Thread.sleep(20); work.send('x') }
-            def first = await sel.select()
+            // work is not ready yet: a registered timer would commit at once
+            def firstPending = sel.select()
+            assert !firstPending.toCompletableFuture().isDone()
+            assert timer.bufferedSize == 1
+
+            work.send('x')
+            def first = await firstPending
             assert first.index == 0 && first.value == 'x'
             assert timer.bufferedSize == 1
 
