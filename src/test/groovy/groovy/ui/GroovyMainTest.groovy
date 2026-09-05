@@ -21,7 +21,12 @@ package groovy.ui
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
+import java.nio.file.FileSystems
+import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermissions
+
 import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assumptions.assumeTrue
 
 final class GroovyMainTest {
 
@@ -211,23 +216,23 @@ assert new MyConcreteClass() != null"""
     }
 
     private static boolean posix() {
-        java.nio.file.FileSystems.default.supportedFileAttributeViews().contains('posix')
+        FileSystems.default.supportedFileAttributeViews().contains('posix')
     }
 
     private static String modeOf(File f) {
-        java.nio.file.attribute.PosixFilePermissions.toString(
-            java.nio.file.Files.getPosixFilePermissions(f.toPath()))
+        PosixFilePermissions.toString(
+            Files.getPosixFilePermissions(f.toPath()))
     }
 
     private static void setMode(File f, String mode) {
-        java.nio.file.Files.setPosixFilePermissions(f.toPath(),
-            java.nio.file.attribute.PosixFilePermissions.fromString(mode))
+        Files.setPosixFilePermissions(f.toPath(),
+            PosixFilePermissions.fromString(mode))
     }
 
     // GROOVY-12337
     @Test
     void testInPlaceEditPreservesRestrictivePermissions() {
-        org.junit.jupiter.api.Assumptions.assumeTrue(posix())
+        assumeTrue(posix())
         def dir = File.createTempDir('groovy-main-inplace-perm-')
         def file = new File(dir, 'secret.txt')
         file.text = 'hello\n'
@@ -247,7 +252,7 @@ assert new MyConcreteClass() != null"""
     // GROOVY-12337
     @Test
     void testInPlaceEditWithBackupExtensionPreservesPermissions() {
-        org.junit.jupiter.api.Assumptions.assumeTrue(posix())
+        assumeTrue(posix())
         def dir = File.createTempDir('groovy-main-inplace-bakperm-')
         def file = new File(dir, 'secret.txt')
         file.text = 'hello\n'
@@ -267,7 +272,7 @@ assert new MyConcreteClass() != null"""
     // GROOVY-12337
     @Test
     void testInPlaceEditPreservesAnExecutableMode() {
-        org.junit.jupiter.api.Assumptions.assumeTrue(posix())
+        assumeTrue(posix())
         def dir = File.createTempDir('groovy-main-inplace-exec-')
         def file = new File(dir, 'script.sh')
         file.text = 'echo hi\n'
