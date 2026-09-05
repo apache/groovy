@@ -154,6 +154,35 @@ public class GroovyDocToolTest extends GroovyTestCase {
     // GROOVY-3782 (stray-brace rendering bug): the old regex chain broke
     // `{@inheritDoc}` into bogus `{<DL><DT><B>inheritDoc:</B>...` HTML. The
     // GROOVY-11939 tokenizer refactor fixed that as a side-effect. Verify.
+    // A documentation path derived from a source argument or a source-path-relative file name
+    // may carry a ".." segment; the writer must not follow it out of the destination directory.
+    public void testClassPageDoesNotEscapeDestinationDirectory() throws Exception {
+        Path srcRoot = Files.createTempDirectory("groovydoc-traversal");
+        try {
+            Path pkg = Files.createDirectories(srcRoot.resolve("sub"));
+            Files.writeString(pkg.resolve("Pwned.groovy"), "class Pwned { }");
+
+            GroovyDocTool tool = makeHtmltool(new ArrayList<>(), null, new Properties(),
+                    new String[]{srcRoot.toString()});
+            // not found as a direct file, so resolved under the source path with its ".." kept
+            tool.add(List.of("../" + srcRoot.getFileName() + "/sub/Pwned.groovy"));
+
+            MockOutputTool output = new MockOutputTool();
+            tool.renderToOutput(output, MOCK_DIR);
+
+            for (String written : output.getOutputs().keySet()) {
+                Path resolved = Paths.get(written).toAbsolutePath().normalize();
+                Path root = Paths.get(MOCK_DIR).toAbsolutePath().normalize();
+                assertTrue("output escaped the destination directory: " + written,
+                        resolved.startsWith(root));
+            }
+        } finally {
+            try (Stream<Path> walk = Files.walk(srcRoot)) {
+                walk.sorted(Comparator.reverseOrder()).forEach(pth -> pth.toFile().delete());
+            }
+        }
+    }
+
     public void testInheritDocDoesNotLeaveStrayBrace() throws Exception {
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
         htmlTool.add(List.of(base + "/ClassWithInheritDocStub.groovy"));
