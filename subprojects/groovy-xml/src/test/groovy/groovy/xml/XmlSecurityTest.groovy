@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test
 import org.xml.sax.InputSource
 import org.xml.sax.SAXParseException
 
-import javax.xml.transform.TransformerException
 import javax.xml.transform.stream.StreamSource
 
 import static org.junit.jupiter.api.Assertions.assertEquals

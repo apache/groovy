@@ -20,8 +20,6 @@ package groovy.jmx
 
 import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.assertScript
-
 final class ImportModuleJmxTest {
 
     @Test
