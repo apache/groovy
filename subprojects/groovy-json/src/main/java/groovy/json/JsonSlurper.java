@@ -31,9 +31,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Date;
 import java.util.Map;
 
 /**
@@ -205,7 +208,7 @@ public class JsonSlurper {
 
     /**
      * Whether a string in a full ISO-8601 or JSON-date form is returned as a
-     * {@link java.util.Date} rather than as a {@code String}. On by default.
+     * {@link Date} rather than as a {@code String}. On by default.
      * <p>
      * This applies to {@link JsonParserType#INDEX_OVERLAY} and
      * {@link JsonParserType#LAX}; the other two parser types return the string either
@@ -223,7 +226,7 @@ public class JsonSlurper {
 
     /**
      * Sets whether a string in a full ISO-8601 or JSON-date form is returned as a
-     * {@link java.util.Date} rather than as a {@code String}. On by default.
+     * {@link Date} rather than as a {@code String}. On by default.
      * <p>
      * This applies to {@link JsonParserType#INDEX_OVERLAY} and
      * {@link JsonParserType#LAX}; the other two parser types return the string either
@@ -283,7 +286,7 @@ public class JsonSlurper {
      * {@link JsonException}. This guards the recursive-descent parsers against a small but
      * deeply-nested document driving a {@link StackOverflowError}. A value of {@code 0} or less
      * disables the check (restoring the previous, unbounded behaviour). Defaults to
-     * {@link org.apache.groovy.json.internal.BaseJsonParser#DEFAULT_MAX_NESTING_DEPTH}, and can
+     * {@link BaseJsonParser#DEFAULT_MAX_NESTING_DEPTH}, and can
      * be overridden globally with the {@code groovy.json.maxNestingDepth} system property.
      *
      * @return the maximum nesting depth
@@ -309,11 +312,11 @@ public class JsonSlurper {
     /**
      * The maximum length, in characters, of a single number token the parser will accept before
      * throwing a {@link JsonException}. Converting a digit run past the {@code long} range builds
-     * a {@link java.math.BigInteger} or {@link java.math.BigDecimal}, and decimal conversion is
+     * a {@link BigInteger} or {@link BigDecimal}, and decimal conversion is
      * superlinear in the digit count, so an uncapped token lets a small document cost quadratic
      * CPU. A value of {@code 0} or less disables the check (restoring the previous, unbounded
      * behaviour). Defaults to
-     * {@link org.apache.groovy.json.internal.BaseJsonParser#DEFAULT_MAX_NUMBER_LENGTH}, and can
+     * {@link BaseJsonParser#DEFAULT_MAX_NUMBER_LENGTH}, and can
      * be overridden globally with the {@code groovy.json.maxNumberLength} system property.
      *
      * @return the maximum number token length

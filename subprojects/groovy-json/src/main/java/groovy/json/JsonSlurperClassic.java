@@ -19,6 +19,7 @@
 package groovy.json;
 
 import groovy.io.LineColumnReader;
+import org.apache.groovy.json.internal.BaseJsonParser;
 import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
@@ -26,6 +27,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -67,11 +70,11 @@ public class JsonSlurperClassic {
      * Maximum nesting depth of arrays/objects accepted before a {@link JsonException} is thrown,
      * guarding the recursive parser against a small but deeply-nested document driving a
      * {@link StackOverflowError}. A value of {@code 0} or less disables the check. Defaults to
-     * {@link org.apache.groovy.json.internal.BaseJsonParser#DEFAULT_MAX_NESTING_DEPTH}, and can be
+     * {@link BaseJsonParser#DEFAULT_MAX_NESTING_DEPTH}, and can be
      * overridden globally with the {@code groovy.json.maxNestingDepth} system property.
      */
     private int maxNestingDepth = Integer.getInteger("groovy.json.maxNestingDepth",
-            org.apache.groovy.json.internal.BaseJsonParser.DEFAULT_MAX_NESTING_DEPTH);
+            BaseJsonParser.DEFAULT_MAX_NESTING_DEPTH);
 
     /**
      * Returns the maximum nesting depth of arrays/objects the parser will accept.
@@ -97,13 +100,13 @@ public class JsonSlurperClassic {
     /**
      * Maximum length, in characters, of a single number token accepted before a
      * {@link JsonException} is thrown. Converting a digit run past the {@code long} range builds a
-     * {@link java.math.BigInteger} or {@link java.math.BigDecimal}, and decimal conversion is
+     * {@link BigInteger} or {@link BigDecimal}, and decimal conversion is
      * superlinear in the digit count. A value of {@code 0} or less disables the check. Defaults to
-     * {@link org.apache.groovy.json.internal.BaseJsonParser#DEFAULT_MAX_NUMBER_LENGTH}, and can be
+     * {@link BaseJsonParser#DEFAULT_MAX_NUMBER_LENGTH}, and can be
      * overridden globally with the {@code groovy.json.maxNumberLength} system property.
      */
     private int maxNumberLength = Integer.getInteger("groovy.json.maxNumberLength",
-            org.apache.groovy.json.internal.BaseJsonParser.DEFAULT_MAX_NUMBER_LENGTH);
+            BaseJsonParser.DEFAULT_MAX_NUMBER_LENGTH);
 
     /**
      * Returns the maximum length permitted for a single number token.

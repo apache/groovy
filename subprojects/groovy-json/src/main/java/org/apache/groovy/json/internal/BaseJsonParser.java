@@ -29,6 +29,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentHashMap;
@@ -151,8 +153,8 @@ public abstract class BaseJsonParser implements JsonParser {
 
     /**
      * Default maximum length, in characters, of a single JSON number token. Converting a digit
-     * run past the {@code long} range builds a {@link java.math.BigInteger} (or
-     * {@link java.math.BigDecimal}), and decimal conversion is superlinear in the digit count,
+     * run past the {@code long} range builds a {@link BigInteger} (or
+     * {@link BigDecimal}), and decimal conversion is superlinear in the digit count,
      * so an uncapped token lets a small document cost quadratic CPU. Chosen to match Jackson's
      * {@code StreamReadConstraints} default, while sitting far above any realistic number.
      */

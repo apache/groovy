@@ -29,6 +29,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
+import java.lang.ref.WeakReference
+
 class TemplateServletTest {
 
     TemplateServlet servlet
@@ -116,7 +118,7 @@ class TemplateServletTest {
      * that retains what it stored.
      */
     private static void forceGarbageCollection() {
-        def canary = new java.lang.ref.WeakReference<Object>(new Object())
+        def canary = new WeakReference<Object>(new Object())
         for (int i = 0; canary.get() != null && i < 100; i++) {
             System.gc()
             Thread.sleep(10)

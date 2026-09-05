@@ -25,6 +25,7 @@ import java.time.ZoneOffset;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -174,7 +175,7 @@ public class Dates {
             int second = CharScanner.parseIntFromTo(charArray, from + 17, from + 19);
             int milliseconds = CharScanner.parseIntFromTo(charArray, from + 20, from + 23);
             return OffsetDateTime.of(year, month, day, hour, minute, second,
-                    (int) java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(milliseconds), ZoneOffset.UTC);
+                    (int) TimeUnit.MILLISECONDS.toNanos(milliseconds), ZoneOffset.UTC);
         } catch (Exception ex) {
             return null;
         }

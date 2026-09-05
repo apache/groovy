@@ -18,6 +18,10 @@
  */
 package groovy.json;
 
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.util.Date;
+
 /**
  * What a slurper makes of a string in a full ISO-8601 or JSON-date form.
  * <p>
@@ -36,20 +40,20 @@ public enum JsonDateHandling {
     STRING,
 
     /**
-     * Convert to a {@link java.util.Date}. This is the default, and what a slurper has
+     * Convert to a {@link Date}. This is the default, and what a slurper has
      * always done. A {@code Date} is an instant, so an offset in the source is not
      * preserved.
      */
     UTIL_DATE,
 
     /**
-     * Convert to a {@link java.time.Instant}, which like {@link java.util.Date} is a point
+     * Convert to a {@link Instant}, which like {@link Date} is a point
      * on the timeline and so does not preserve an offset in the source.
      */
     INSTANT,
 
     /**
-     * Convert to a {@link java.time.OffsetDateTime}, the only choice here that keeps the
+     * Convert to a {@link OffsetDateTime}, the only choice here that keeps the
      * offset the document carried.
      */
     OFFSET_DATE_TIME

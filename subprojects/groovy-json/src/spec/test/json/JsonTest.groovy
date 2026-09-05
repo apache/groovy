@@ -24,6 +24,10 @@ import groovy.json.JsonParserType
 import groovy.json.JsonSlurper
 import org.junit.jupiter.api.Test
 
+import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
+
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -107,12 +111,12 @@ class JsonTest {
 
         assert slurp(JsonDateHandling.STRING) instanceof String
         assert slurp(JsonDateHandling.UTIL_DATE) instanceof Date              // the default
-        assert slurp(JsonDateHandling.INSTANT) instanceof java.time.Instant
+        assert slurp(JsonDateHandling.INSTANT) instanceof Instant
 
         // only OFFSET_DATE_TIME keeps the offset the document carried
         def odt = slurp(JsonDateHandling.OFFSET_DATE_TIME)
-        assert odt instanceof java.time.OffsetDateTime
-        assert odt.offset == java.time.ZoneOffset.ofHours(10)
+        assert odt instanceof OffsetDateTime
+        assert odt.offset == ZoneOffset.ofHours(10)
         // end::date_handling[]
 
         // the deprecated boolean maps onto two of the four, on its own

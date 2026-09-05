@@ -19,6 +19,10 @@
 package groovy.xml
 
 import org.junit.jupiter.api.Test
+import org.xml.sax.helpers.DefaultHandler
+
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.stream.StreamResult
 
 import static org.junit.jupiter.api.Assertions.assertThrows
 import static org.junit.jupiter.api.Assertions.assertTrue
@@ -129,8 +133,8 @@ final class MarkupBuilderInjectionTest {
 
     /** Serialising SAX handler, so the emitted document can be inspected as text. */
     private static saxHandlerTo(ByteArrayOutputStream out) {
-        def handler = javax.xml.transform.TransformerFactory.newInstance().newTransformerHandler()
-        handler.setResult(new javax.xml.transform.stream.StreamResult(out))
+        def handler = TransformerFactory.newInstance().newTransformerHandler()
+        handler.setResult(new StreamResult(out))
         handler
     }
 
@@ -153,7 +157,7 @@ final class MarkupBuilderInjectionTest {
     void streamingSaxCommentIsCheckedEvenWhenTheHandlerWouldDropIt() {
         // a handler that is not a LexicalHandler discards comments; malformed content should still
         // be reported rather than silently thrown away
-        def plainHandler = new org.xml.sax.helpers.DefaultHandler()
+        def plainHandler = new DefaultHandler()
         assertThrows(GroovyRuntimeException) {
             new StreamingSAXBuilder().bind { mkp.comment('a -- b'); root('x') }(plainHandler)
         }
