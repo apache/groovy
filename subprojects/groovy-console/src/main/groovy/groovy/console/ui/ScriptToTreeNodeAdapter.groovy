@@ -24,7 +24,6 @@ import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
 import org.apache.groovy.io.StringBuilderWriter
 import org.codehaus.groovy.GroovyBugError
-import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.CodeVisitorSupport

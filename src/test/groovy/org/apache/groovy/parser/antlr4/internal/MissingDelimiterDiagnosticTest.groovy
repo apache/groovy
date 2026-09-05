@@ -25,7 +25,6 @@ import org.antlr.v4.runtime.RecognitionException
 import org.antlr.v4.runtime.Token
 import org.antlr.v4.runtime.misc.IntervalSet
 import org.apache.groovy.parser.antlr4.GroovyLangLexer
-import org.apache.groovy.parser.antlr4.GroovyParser
 import org.junit.jupiter.api.Test
 
 import java.lang.reflect.Method

@@ -25,7 +25,6 @@ import groovy.console.ui.view.BasicMenuBar
 import groovy.console.ui.view.MacOSXMenuBar
 import groovy.swing.GroovySwingTestCase
 import groovy.swing.SwingBuilder
-import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
 
 import javax.swing.JTextPane
@@ -229,7 +228,6 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             assert swing.ii != null
             assert swing.ii.description == '<none>'
 
-
             swing.imageIcon(gpath, id: 'ii')
             assert swing.ii != null
 
@@ -243,7 +241,6 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             swing.imageIcon(file: gpath, description: '<none>', id: 'ii')
             assert swing.ii != null
             assert swing.ii.description == '<none>'
-
 
             swing.imageIcon(url, id: 'ii')
             assert swing.ii != null
@@ -259,7 +256,6 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             assert swing.ii != null
             assert swing.ii.description == '<none>'
 
-
             swing.imageIcon(resource, id: 'ii')
             assert swing.ii != null
 
@@ -273,7 +269,6 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             swing.imageIcon(file: resource, description: '<none>', id: 'ii')
             assert swing.ii != null
             assert swing.ii.description == '<none>'
-
 
             swing.imageIcon(resource, class: Console, id: 'ii')
             assert swing.ii != null
@@ -303,7 +298,6 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             assert swing.ii != null
             assert swing.ii.description == '<none>'
 
-
             swing.imageIcon(gresource, class: Console, id: 'ii')
             assert swing.ii != null
 
@@ -318,7 +312,6 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             assert swing.ii != null
             assert swing.ii.description == '<none>'
 
-
             swing.imageIcon(relativeResource, class: Console, id: 'ii')
             assert swing.ii != null
 
@@ -332,7 +325,6 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             swing.imageIcon(file: relativeResource, description: '<none>', class: Console, id: 'ii')
             assert swing.ii != null
             assert swing.ii.description == '<none>'
-
 
             swing.imageIcon(grelativeResource, class: Console, id: 'ii')
             assert swing.ii != null

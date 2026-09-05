@@ -36,10 +36,13 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
+import org.codehaus.groovy.transform.StubberSupport;
 import org.objectweb.asm.Opcodes;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -153,9 +156,9 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         // user-written support" and the field + real bodies get installed.
         // Use removeMethod() rather than removeIf() on the list, since
         // ClassNode keeps a parallel name->methods map.
-        java.util.List<org.codehaus.groovy.ast.MethodNode> stubs = new java.util.ArrayList<>();
-        for (org.codehaus.groovy.ast.MethodNode m : classNode.getMethods()) {
-            if (org.codehaus.groovy.transform.StubberSupport.isStub(m)) stubs.add(m);
+        List<MethodNode> stubs = new ArrayList<>();
+        for (MethodNode m : classNode.getMethods()) {
+            if (StubberSupport.isStub(m)) stubs.add(m);
         }
         stubs.forEach(classNode::removeMethod);
         if (needsPropertyChangeSupport(classNode, source)) {

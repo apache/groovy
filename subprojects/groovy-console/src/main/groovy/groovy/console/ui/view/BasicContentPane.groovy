@@ -30,7 +30,6 @@ import javax.swing.text.StyleConstants
 import javax.swing.text.StyleContext
 import javax.swing.text.StyledDocument
 import java.awt.BorderLayout
-import java.awt.Color
 import java.awt.Dimension
 import java.awt.Font
 import java.awt.FontMetrics
@@ -77,7 +76,6 @@ private def buildOutputArea(prefs) {
         )
     }
 }
-
 
 /** Text component backing the script input area. */
 inputArea = inputEditor.textEditor

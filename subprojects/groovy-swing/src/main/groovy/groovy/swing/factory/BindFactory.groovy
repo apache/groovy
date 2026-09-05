@@ -29,7 +29,6 @@ import groovy.swing.binding.JSpinnerProperties
 import groovy.swing.binding.JTableProperties
 import groovy.swing.binding.JTextComponentProperties
 import org.apache.groovy.swing.binding.AggregateBinding
-import org.apache.groovy.swing.binding.BindingUpdatable
 import org.apache.groovy.swing.binding.ClosureSourceBinding
 import org.apache.groovy.swing.binding.ClosureTriggerBinding
 import org.apache.groovy.swing.binding.EventTriggerBinding

@@ -21,7 +21,6 @@ package groovy.console.ui
 import com.github.javaparser.ParseProblemException
 import com.github.javaparser.StaticJavaParser
 import com.github.javaparser.ast.CompilationUnit
-import com.github.javaparser.ast.Modifier
 import com.github.javaparser.ast.body.TypeDeclaration
 import groovy.cli.internal.CliBuilderInternal
 import groovy.cli.internal.OptionAccessor
@@ -70,7 +69,6 @@ import javax.swing.JTextPane
 import javax.swing.RootPaneContainer
 import javax.swing.SwingUtilities
 import javax.swing.Timer
-import javax.swing.UIManager
 import javax.swing.event.CaretEvent
 import javax.swing.event.CaretListener
 import javax.swing.event.DocumentListener
