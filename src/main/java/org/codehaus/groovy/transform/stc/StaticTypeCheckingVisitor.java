@@ -5218,8 +5218,9 @@ trying: for (ClassNode[] signature : signatures) {
     @Override
     public void visitYieldStatement(final YieldStatement statement) {
         super.visitYieldStatement(statement);
-        if (typeCheckingContext.getEnclosingSwitchExpression() != null) {
-            typeCheckingContext.getEnclosingSwitchExpressionYieldTypes().add(getType(statement.getExpression()));
+        List<ClassNode> yieldTypes = typeCheckingContext.peekEnclosingSwitchExpressionYieldTypes();
+        if (yieldTypes != null) {
+            yieldTypes.add(getType(statement.getExpression()));
         }
     }
 
@@ -7275,12 +7276,19 @@ out:    for (ClassNode type : todo) {
         Long err = ((long) node.getLineNumber()) << 16 + node.getColumnNumber();
         if ((DEBUG_GENERATED_CODE && node.getLineNumber() < 0) || !typeCheckingContext.reportedErrors.contains(err)) {
             SourceUnit source = getSourceUnit();
+            ErrorCollector sourceCollector = source.getErrorCollector();
             ErrorCollector collector = typeCheckingContext.getErrorCollector();
+            if (collector == null) {
+                collector = sourceCollector;
+            }
+            if (collector == null) {
+                return;
+            }
             Message message = Message.create(new SyntaxException(msg + '\n', node), source);
             // GROOVY-12306: only the source unit's own collector enforces the error tolerance.
             // The temporary collectors pushed for speculative checks must never bail out, as
             // their errors are routinely discarded once a candidate is ruled in or out.
-            if (collector == source.getErrorCollector()) {
+            if (collector == sourceCollector) {
                 collector.addError(message);
             } else {
                 collector.addErrorAndContinue(message);

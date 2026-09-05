@@ -95,7 +95,7 @@ public abstract class AtnManager {
      */
     private static final long DFA_CACHE_SIZE_LIMIT_DEFAULT;
     private static final long DFA_CACHE_SIZE_LIMIT;
-    private volatile SoftReference<AtnWrapper> atnWrapperSoftReference;
+    private volatile SoftReference<AtnWrapper> atnWrapperSoftReference; // NOSONAR java:S3077 — SoftReference is an immutable holder; volatile publishes the replacement
 
     static {
         long t = SystemUtil.getLongSafe(DFA_CACHE_THRESHOLD_OPT, DFA_CACHE_THRESHOLD_DEFAULT);

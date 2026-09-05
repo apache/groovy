@@ -48,9 +48,10 @@ public class CachedField extends MetaProperty {
     private final Field field;
     private volatile boolean madeAccessible;  // outcome of the deep-reflection attempt
     private volatile boolean accessAttempted; // Groovy's deep-reflection path has been tried
-    private volatile MethodHandle getter, setter; // deep-reflection handles, which are
-        // caller-independent and so may be cached; a handle obtained from a caller's
-        // lookup carries that caller's access rights and is never cached
+    private volatile MethodHandle getter, setter; // NOSONAR java:S3077 — MethodHandle is immutable; volatile for publication only
+        // deep-reflection handles, which are caller-independent and so may be
+        // cached; a handle obtained from a caller's lookup carries that caller's
+        // access rights and is never cached
 
     /**
      * Tries once to establish deep-reflection access to the field, remembering

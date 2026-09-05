@@ -33,6 +33,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -69,8 +70,12 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
     private final Deque<PendingOp<T>> waitingReceivers = new ConcurrentLinkedDeque<>();
     private final int capacity;
     private volatile boolean closed;
-    /** run once, outside the lock, by the call that closes the channel; {@code null} for none */
-    private volatile Runnable onClose;
+    /**
+     * Run once, outside the lock, by the call that closes the channel; {@code null} for none.
+     * {@link AtomicReference} rather than {@code volatile}: java:S3077 flags a volatile
+     * {@link Runnable} as an insufficient publication of a non-atomic type.
+     */
+    private final AtomicReference<Runnable> onClose = new AtomicReference<>();
 
     public DefaultAsyncChannel() {
         this(0);
@@ -116,7 +121,7 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
             // isClosed() as true. no-op if already cancelled.
             timer.sendAndClose(Instant.now());
         }, delay, unit);
-        timer.onClose = () -> firing.cancel(false);
+        timer.onClose.set(() -> firing.cancel(false));
         return timer;
     }
 
@@ -329,7 +334,7 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
     }
 
     private void runCloseHook() {
-        Runnable hook = onClose;
+        Runnable hook = onClose.get();
         if (hook != null) hook.run();
     }
 

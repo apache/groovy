@@ -579,7 +579,7 @@ public class ClassInfo implements Finalizable {
             if (answer != null) {
                 return answer;
             }
-            throw new IllegalStateException(
+            throw new IllegalStateException( // NOSONAR javabugs:S6416 — bootstrap: unpublished registry, creation is impossible
                     "MetaClassRegistry is not yet initialized; cannot create MetaClass for "
                             + getTheClass());
         }

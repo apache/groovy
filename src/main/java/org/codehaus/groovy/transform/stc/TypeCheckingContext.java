@@ -487,13 +487,24 @@ public class TypeCheckingContext {
 
     /**
      * Returns the list collecting yield types for the current switch expression
-     * (GROOVY-12255).
+     * (GROOVY-12255). Empty when there is no enclosing switch expression; the
+     * returned empty list is not the live collector and must not be mutated.
      *
      * @since 6.0.0
      */
     public List<ClassNode> getEnclosingSwitchExpressionYieldTypes() {
-        if (switchExpressionYieldTypes.isEmpty()) return List.of();
-        return switchExpressionYieldTypes.getFirst();
+        List<ClassNode> types = switchExpressionYieldTypes.peekFirst();
+        return types != null ? types : List.of();
+    }
+
+    /**
+     * Live yield-type collector for the innermost switch expression, or
+     * {@code null} if none is in progress. Unlike
+     * {@link #getEnclosingSwitchExpressionYieldTypes()}, this is always
+     * mutable when non-null, so a yield can be recorded onto it.
+     */
+    List<ClassNode> peekEnclosingSwitchExpressionYieldTypes() {
+        return switchExpressionYieldTypes.peekFirst();
     }
 
     /**

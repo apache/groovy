@@ -57,6 +57,15 @@ final class MetaClassCallSitesTest {
     }
 
     @Test
+    void testCreateConstructorSiteWithNullArgsDoesNotNpe() {
+        // an interface has no constructors, so chooseConstructor returns null and
+        // the named-arg fallback used to dereference args without a null check
+        def mc = (MetaClassImpl) GroovySystem.metaClassRegistry.getMetaClass(Runnable)
+        def site = MetaClassCallSites.createConstructorSite(mc, dummySite('<init>'), null)
+        assert site instanceof MetaClassConstructorSite
+    }
+
+    @Test
     void testCreatePogoCallSite() {
         def obj = new GroovyShell().evaluate('''
             class P { def hi() { 'hi' } }

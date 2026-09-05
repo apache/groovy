@@ -239,54 +239,63 @@ public class ReaderCharacterSource implements CharacterSource {
             CharBuf spanning = null;
             boolean foundEnd = false;
             boolean wasEscaped = false;
-            while (!foundEnd) {
-                for (; index < length; index++) {
-                    ch = readBuf[index];
-                    if (wasEscaped) {
-                        wasEscaped = false;
-                    } else if (ch == match) {
-                        foundEnd = true;
+            try {
+                while (!foundEnd) {
+                    for (; index < length; index++) {
+                        ch = readBuf[index];
+                        if (wasEscaped) {
+                            wasEscaped = false;
+                        } else if (ch == match) {
+                            foundEnd = true;
+                            break;
+                        } else if (ch == esc) {
+                            foundEscape = true;
+                            wasEscaped = true;
+                        }
+                    }
+
+                    if (results == null && spanning == null) {
+                        results = ArrayUtils.copyRange(readBuf, start, index);
+                    } else {
+                        if (spanning == null) {
+                            spanning = CharBuf.create(results.length + readAheadSize);
+                            spanning.add(results);
+                            results = null;
+                        }
+                        spanning.add(ArrayUtils.copyRange(readBuf, start, index));
+                    }
+
+                    ensureBuffer();
+
+                    // Reset start if new buffer
+                    if (index == 0) {
+                        start = 0;
+                    }
+
+                    // Exit early if we run out of data
+                    if (done) {
                         break;
-                    } else if (ch == esc) {
-                        foundEscape = true;
-                        wasEscaped = true;
                     }
                 }
 
-                if (results == null && spanning == null) {
-                    results = ArrayUtils.copyRange(readBuf, start, index);
-                } else {
-                    if (spanning == null) {
-                        spanning = CharBuf.create(results.length + readAheadSize);
-                        spanning.add(results);
-                        results = null;
-                    }
-                    spanning.add(ArrayUtils.copyRange(readBuf, start, index));
+                if (spanning != null) {
+                    results = Arrays.copyOf(spanning.toCharArray(), spanning.len());
                 }
 
-                ensureBuffer();
-
-                // Reset start if new buffer
-                if (index == 0) {
-                    start = 0;
-                }
-
-                // Exit early if we run out of data
+                // done will only be true if we ran out of data without seeing the match character
                 if (done) {
-                    break;
+                    return Exceptions.die(char[].class, "Unable to find close char " + (char)match + ": " + new String(results));
+                } else {
+                    index++;
+                    return results;
                 }
-            }
-
-            if (spanning != null) {
-                results = Arrays.copyOf(spanning.toCharArray(), spanning.len());
-            }
-
-            // done will only be true if we ran out of data without seeing the match character
-            if (done) {
-                return Exceptions.die(char[].class, "Unable to find close char " + (char)match + ": " + new String(results));
-            } else {
-                index++;
-                return results;
+            } finally {
+                if (spanning != null) {
+                    try {
+                        spanning.close();
+                    } catch (IOException ignored) {
+                    }
+                }
             }
         } catch (Exception ex) {
             String str = CharScanner.errorDetails("findNextChar issue", readBuf, index, ch);

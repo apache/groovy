@@ -66,4 +66,21 @@ final class CustomErrorCollectorSTCTest {
             shell.evaluate('int x = new Object()')
         }
     }
+
+    @Test
+    void testAddErrorAfterPoppingLastCollectorUsesSourceCollector() {
+        CompilerConfiguration c = new CompilerConfiguration()
+        c.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.INSTRUCTION_SELECTION) {
+            @Override
+            void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
+                def visitor = new StaticTypeCheckingVisitor(source, classNode)
+                visitor.typeCheckingContext.popErrorCollector()
+                visitor.visitClass(classNode)
+            }
+        })
+        GroovyShell shell = new GroovyShell(c)
+        shouldFail(MultipleCompilationErrorsException) {
+            shell.evaluate('int x = new Object()')
+        }
+    }
 }

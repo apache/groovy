@@ -138,10 +138,11 @@ public final class MetaClassCallSites {
      * Creates a constructor call site for the given metaclass.
      */
     public static CallSite createConstructorSite(final MetaClassImpl metaClass, final CallSite site, final Object[] args) {
+        final Object[] arguments = args == null ? CallSiteArray.NOPARAM : args;
         if (metaClass instanceof ExpandoMetaClass emc) {
-            Class<?>[] params = MetaClassHelper.convertToTypeArray(args);
+            Class<?>[] params = MetaClassHelper.convertToTypeArray(arguments);
             MetaMethod method = emc.pickMethod(CONSTRUCTOR_NAME, params);
-            if (method != null && method.getParameterTypes().length == args.length
+            if (method != null && method.getParameterTypes().length == arguments.length
                     && method.getDeclaringClass().getTheClass().equals(emc.getTheClass())) {
                 return new ConstructorMetaMethodSite(site, emc, method, params);
             }
@@ -149,18 +150,18 @@ public final class MetaClassCallSites {
         if (isAdapting(metaClass)) {
             return new MetaClassConstructorSite(site, metaClass);
         }
-        Class[] argTypes = MetaClassHelper.convertToTypeArray(args);
+        Class[] argTypes = MetaClassHelper.convertToTypeArray(arguments);
         CachedConstructor constructor = metaClass.chooseConstructor(argTypes);
         if (constructor != null) {
-            return ConstructorSite.createConstructorSite(site, metaClass, constructor, argTypes, args);
+            return ConstructorSite.createConstructorSite(site, metaClass, constructor, argTypes, arguments);
         }
-        if ((args.length == 1 && args[0] instanceof Map)
-                || (args.length == 2 && args[1] instanceof Map
+        if ((arguments.length == 1 && arguments[0] instanceof Map)
+                || (arguments.length == 2 && arguments[1] instanceof Map
                 && metaClass.getTheClass().getEnclosingClass() != null
                 && metaClass.getTheClass().getEnclosingClass().isAssignableFrom(argTypes[0]))) {
-            Object selected = metaClass.chooseNamedArgCompatibleConstructor(argTypes, args);
+            Object selected = metaClass.chooseNamedArgCompatibleConstructor(argTypes, arguments);
             if (selected instanceof CachedConstructor namedArgCtor) {
-                return args.length == 1
+                return arguments.length == 1
                         ? new ConstructorSite.NoParamSite(site, metaClass, namedArgCtor, argTypes)
                         : new ConstructorSite.NoParamSiteInnerClass(site, metaClass, namedArgCtor, argTypes);
             }
