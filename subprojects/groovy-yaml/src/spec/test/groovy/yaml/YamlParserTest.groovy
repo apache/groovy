@@ -19,7 +19,16 @@
 package groovy.yaml
 
 
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonIdentityInfo
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.ObjectIdGenerators
 import org.junit.jupiter.api.Test
+import org.yaml.snakeyaml.LoaderOptions
+import org.yaml.snakeyaml.Yaml
+import org.yaml.snakeyaml.constructor.SafeConstructor
+
+import static groovy.test.GroovyAssert.shouldFail
 
 class YamlParserTest {
 
@@ -107,6 +116,115 @@ matrix:
         assert 'trusty' == yaml.dist
         assert ['openjdk10', 'oraclejdk9', 'oraclejdk8'] ==  yaml.matrix.include.jdk
 
+    }
+
+    @Test
+    void testAliasesAreNotResolved() {
+        // tag::alias_behaviour[]
+        def yaml = '''\
+            defaults: &d
+              host: example.com
+              port: 443
+            prod: *d
+            '''.stripIndent()
+
+        def loaded = new YamlSlurper().parseText(yaml)
+
+        assert loaded.defaults == [host: 'example.com', port: 443]
+        assert loaded.prod == 'd'     // the anchor's name, not the mapping it names
+        // end::alias_behaviour[]
+
+        // tag::merge_key_behaviour[]
+        def merged = new YamlSlurper().parseText('''\
+            defaults: &d
+              a: 1
+              b: 9
+            prod:
+              <<: *d
+              b: 2
+            '''.stripIndent())
+
+        assert merged.prod == ['<<': 'd', b: 2]   // no merge occurs
+        // end::merge_key_behaviour[]
+    }
+
+    // tag::alias_identity_class[]
+    @JsonIdentityInfo(generator = ObjectIdGenerators.StringIdGenerator, property = '@id')
+    static class Address {
+        String street
+        String city
+    }
+
+    static class Shipment {
+        Address billTo
+        Address shipTo
+    }
+    // end::alias_identity_class[]
+
+    @Test
+    void testAliasesResolveThroughIdentityInfo() {
+        // tag::alias_identity_parsing[]
+        def shipment = new YamlSlurper().parseTextAs(Shipment, '''\
+            billTo: &id001
+              street: 123 Tornado Alley
+              city: East Centerville
+            shipTo: *id001
+            '''.stripIndent())
+
+        assert shipment.shipTo.street == '123 Tornado Alley'
+        assert shipment.billTo.is(shipment.shipTo)   // one shared instance
+        // end::alias_identity_parsing[]
+    }
+
+    static class CreatorAddress {
+        final String street
+        @JsonCreator CreatorAddress(@JsonProperty('street') String street) { this.street = street }
+    }
+
+    @JsonIdentityInfo(generator = ObjectIdGenerators.StringIdGenerator, property = '@id')
+    static class CreatorShipment {
+        CreatorAddress billTo
+        CreatorAddress shipTo
+    }
+
+    @Test
+    void testIdentityInfoNeedsSetterBasedTypes() {
+        // the guide fences @JsonIdentityInfo to mutable, setter-based types; this pins why:
+        // a creator-based type fails even for a plain backward reference
+        shouldFail {
+            new YamlSlurper().parseTextAs(CreatorShipment,
+                'billTo: &a1\n  street: Main St\nshipTo: *a1\n')
+        }
+    }
+
+    @Test
+    void testSnakeYamlRecipeForAliases() {
+        // tag::alias_snakeyaml[]
+        def yaml = new Yaml(new SafeConstructor(new LoaderOptions()))
+
+        def loaded = yaml.load('''\
+            defaults: &d
+              a: 1
+              b: 9
+            prod:
+              <<: *d
+              b: 2
+            again: *d
+            '''.stripIndent())
+
+        assert loaded.prod == [a: 1, b: 2]       // merge keys apply
+        assert loaded.again == [a: 1, b: 9]      // aliases resolve
+        assert loaded.again.is(loaded.defaults)  // to the same object
+        // end::alias_snakeyaml[]
+
+        // the caveats beside the recipe, pinned:
+        // an alias bomb is rejected rather than expanded
+        def bomb = 'x: &x [1,2]\ny: [' + (['*x'] * 60).join(',') + ']'
+        shouldFail { new Yaml(new SafeConstructor(new LoaderOptions())).load(bomb) }
+
+        // a self-referential anchor builds a genuinely cyclic graph
+        def cyclic = new Yaml(new SafeConstructor(new LoaderOptions())).load('a: &a\n  self: *a')
+        assert cyclic.a.self.is(cyclic.a)
     }
 
     // tag::typed_class[]

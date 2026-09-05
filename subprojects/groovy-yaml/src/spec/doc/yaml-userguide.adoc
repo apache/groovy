@@ -137,6 +137,77 @@ include::../test/groovy/yaml/YamlParserTest.groovy[tags=temporal_class,indent=0]
 include::../test/groovy/yaml/YamlParserTest.groovy[tags=temporal_typed,indent=0]
 ----
 
+[[yaml_aliases]]
+=== Anchors and aliases
+
+`YamlSlurper` does not resolve YAML anchors and aliases. An alias arrives as a plain
+string holding the anchor's name, and a merge key (`<<`) is left as a literal entry
+rather than merging anything:
+
+[source,groovy]
+----
+include::../test/groovy/yaml/YamlParserTest.groovy[tags=alias_behaviour,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/groovy/yaml/YamlParserTest.groovy[tags=merge_key_behaviour,indent=0]
+----
+
+This comes from the Jackson YAML backend the slurper is built on, which reads the
+document as a stream of events and does not replay an anchored subtree when an alias
+refers to it. It is a long-standing, deliberate limitation
+(https://github.com/FasterXML/jackson-dataformats-text/issues/98[jackson-dataformats-text#98],
+closed as not planned), so a document that relies on anchors should either be flattened
+before parsing, or read as shown below.
+
+For the typed `parseAs` API only, Jackson's own object-identity mechanism can stand in
+for aliases. Annotate the referenced class with `@JsonIdentityInfo` and an anchored
+mapping round-trips as one shared instance:
+
+[source,groovy]
+----
+include::../test/groovy/yaml/YamlParserTest.groovy[tags=alias_identity_class,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/groovy/yaml/YamlParserTest.groovy[tags=alias_identity_parsing,indent=0]
+----
+
+====
+This works for mutable, setter-based classes only. A type deserialized through a
+constructor — `@JsonCreator`, and immutable classes generally — fails with
+`No Object Id found` even for a plain backward reference, so do not reach for this
+with `@Immutable` targets. It is Jackson's object-identity feature standing in for
+aliases, not alias support.
+====
+
+=== Resolving aliases with SnakeYAML directly
+
+The SnakeYAML library resolves anchors, aliases, and merge keys in full. This is not
+part of `groovy-yaml` — it is a second YAML parser used directly, shown here because
+the need is common. Today SnakeYAML happens to reach the classpath transitively via
+the Jackson YAML backend; that arrangement is not yours to rely on (and ends with
+Jackson 3), so declare `org.yaml:snakeyaml` as a dependency if you use this.
+
+[source,groovy]
+----
+include::../test/groovy/yaml/YamlParserTest.groovy[tags=alias_snakeyaml,indent=0]
+----
+
+`SafeConstructor` matters: it produces only maps, lists, and scalars, and refuses the
+tagged-type instantiation that makes careless YAML loading dangerous. Differences from
+`YamlSlurper` to be aware of:
+
+* it follows YAML 1.1 typing, so an untagged timestamp becomes a `java.util.Date`
+  where `YamlSlurper` returns a `String`;
+* input is capped at 3MB of code points by default, and a document may use at most 50
+  aliases of non-scalar nodes — both raised via `LoaderOptions` if needed, and the
+  alias cap is what keeps an alias-expansion document from being a denial of service;
+* a self-referential anchor constructs a genuinely cyclic object graph, which naive
+  traversal — `toString()`, `JsonOutput.toJson` — will not survive.
+
 === Builders
 
 Another way to create YAML from Groovy is to use `YamlBuilder`. The builder provide a
