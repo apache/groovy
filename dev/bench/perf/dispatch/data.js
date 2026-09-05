@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788505666272,
+  "lastUpdate": 1788591685784,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -3193,6 +3193,58 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/apache/groovy/commit/8d6d4d7086e190e94ad654685e318d9f14780be4"
         },
         "date": 1788505665468,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4029,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 457,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 879,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1517,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "65ac2abf7554b4d6622527739c9338bc94ba4047",
+          "message": "GROOVY-12355: STC: infer division and group arithmetic from the runtime's number categories\n\nThe runtime divides with floating-point math when either operand is a\nFloat or Double, wrapper or primitive, and with BigDecimal math for\nintegral, BigInteger and BigDecimal operands. The type checker only\nrecognised primitive float and double, so Double / Integer was inferred\nas BigDecimal, and an operand typed as Number, whose runtime category\nis unknown, was inferred as BigDecimal too. Statically compiled code\nthen cast the Double the runtime produced and failed.\n\nUnwrap before testing the floating category, and infer BigDecimal only\nwhen both operands belong to a category that divides that way; a\nNumber operand yields Number. The group operations had the same blind\nspot from the other side: they took the category of whichever operand\nthey recognised, so Number * int was int. An operand of unknown\ncategory now yields Number unless a floating-point partner decides the\nresult, as it does at runtime.\n\nAn arithmetic result that could not be typed before may now be a\nNumber where it was an int or BigDecimal, so code that assigned it to a\nnarrower type needs an explicit conversion, as the GROOVY-5539 test now\nshows. StringUtil.bar with Double arguments works without change.",
+          "timestamp": "2026-09-05T01:02:53Z",
+          "url": "https://github.com/apache/groovy/commit/65ac2abf7554b4d6622527739c9338bc94ba4047"
+        },
+        "date": 1788591684270,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
