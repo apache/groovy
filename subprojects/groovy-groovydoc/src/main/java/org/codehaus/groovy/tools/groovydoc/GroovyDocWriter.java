@@ -92,10 +92,31 @@ public class GroovyDocWriter {
     /**
      * Writes the HTML page for a single class doc if its visibility matches the configured scope.
      */
+    /**
+     * Whether a destination built from a documentation-derived name would land outside the
+     * destination directory. The name reaches here as a package path, and a {@code ..} segment
+     * in it — from a source argument or a source-path-relative file name — would otherwise let
+     * a page be written anywhere the process can write. The check is on the normalised paths, so
+     * it does not depend on the names having been sanitised earlier.
+     *
+     * @param destdir the destination directory
+     * @param destFileName the candidate output path below it
+     * @return whether the candidate resolves outside {@code destdir}
+     */
+    private static boolean escapesDestDir(String destdir, String destFileName) {
+        Path root = Paths.get(destdir).toAbsolutePath().normalize();
+        Path target = Paths.get(destFileName).toAbsolutePath().normalize();
+        return !target.startsWith(root);
+    }
+
     public void writeClassToOutput(GroovyClassDoc classDoc, String destdir) throws Exception {
         if (classDoc.isPublic() || classDoc.isProtected() && "true".equals(properties.getProperty("protectedScope")) ||
                 classDoc.isPackagePrivate() && "true".equals(properties.getProperty("packageScope")) || "true".equals(properties.getProperty("privateScope"))) {
             String destFileName = destdir + FS + classDoc.getFullPathName() + ".html";
+            if (escapesDestDir(destdir, destFileName)) {
+                log.warn("Skipping " + classDoc.getFullPathName() + ": documentation path escapes the destination directory");
+                return;
+            }
             log.debug("Generating " + destFileName);
             String renderedSrc = templateEngine.applyClassTemplates(classDoc);
             output.writeToOutput(destFileName, renderedSrc, properties.getProperty("fileEncoding"));
@@ -108,6 +129,10 @@ public class GroovyDocWriter {
     public void writePackages(GroovyRootDoc rootDoc, String destdir) throws Exception {
         for (GroovyPackageDoc packageDoc : rootDoc.specifiedPackages()) {
             if (new File(packageDoc.name()).isAbsolute()) continue;
+            if (escapesDestDir(destdir, destdir + FS + packageDoc.name())) {
+                log.warn("Skipping package " + packageDoc.name() + ": path escapes the destination directory");
+                continue;
+            }
             output.makeOutputArea(destdir + FS + packageDoc.name());
             writePackageToOutput(packageDoc, destdir);
             copyResourceFiles(packageDoc, destdir);

@@ -115,6 +115,16 @@ public class MockOutputTool implements OutputTool {
     }
 
     /**
+     * Returns every path written to by {@link #writeToOutput}, mapped to its content. The keys
+     * are the raw destination paths, so a test can assert none of them escape a directory.
+     *
+     * @return the written paths and their content
+     */
+    public Map<String, String> getOutputs() {
+        return output;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
