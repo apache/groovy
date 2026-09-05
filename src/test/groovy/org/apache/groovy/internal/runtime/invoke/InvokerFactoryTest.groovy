@@ -474,8 +474,53 @@ final class InvokerFactoryTest {
     }
 
     // -------------------------------------------------------------------------
-    // Forced Step 3 through defineSteps (hidden non-public nestmate)
+    // Hidden hosts (GROOVY-12361): no step may bind a hidden declaring class
     // -------------------------------------------------------------------------
+
+    @Test
+    void testTryCreateDeclinesPublicHiddenHost() {
+        // The ProxyGeneratorAdapter shape: a public hidden nestmate whose public
+        // method is a Step 1 candidate. Its trampoline would CHECKCAST the
+        // receiver to the hidden class name, which no loader can resolve, so it
+        // defines fine but throws NoClassDefFoundError on first invoke.
+        byte[] bytes = emitStringPingClass(
+                'org/apache/groovy/internal/runtime/invoke/PublicHiddenHost',
+                'ping', 'hidden-pong', true)
+        Class<?> hiddenHost = HiddenClassDefiner.tryDefineNestmate(InvokerFactory.LOOKUP, bytes, true)
+        assertNotNull(hiddenHost)
+        assertTrue((Boolean) Class.getMethod('isHidden').invoke(hiddenHost))
+        Method ping = javaGetMethod(hiddenHost, 'ping')
+        assertTrue(InvokerFactory.isPubliclyInvocableFromInvokerFactory(cm(ping)))
+        assertFalse(InvokerFactory.allTypesNameable(ping))
+
+        assertNull(InvokerFactory.tryCreate(cm(ping)), 'hidden declaring class must not get a trampoline')
+        // the reflective path keeps working
+        Object host = ((Class) hiddenHost).getConstructor().newInstance()
+        assertEquals('hidden-pong', cm(ping).invoke(host, new Object[0]))
+    }
+
+    @Test
+    void testHiddenProxyStaysInvocablePastThreshold() {
+        // End-to-end: a map-coerced proxy of a superclass on Groovy's own loader
+        // is a hidden class; before GROOVY-12361 the call after the threshold
+        // failed with NoClassDefFoundError from the generated trampoline.
+        String old = System.getProperty(InvokerFactory.PROPERTY_THRESHOLD)
+        System.setProperty(InvokerFactory.PROPERTY_THRESHOLD, '0')
+        try {
+            Object proxy = [name: { 'circle' }] as HiddenProxyBase
+            assertTrue((Boolean) Class.getMethod('isHidden').invoke(proxy.getClass()))
+            CachedMethod name = CachedMethod.find(javaGetMethod(proxy.getClass(), 'name'))
+            assertNotNull(name)
+            3.times { assertEquals('circle', name.invoke(proxy, new Object[0])) }
+        } finally {
+            if (old == null) System.clearProperty(InvokerFactory.PROPERTY_THRESHOLD)
+            else System.setProperty(InvokerFactory.PROPERTY_THRESHOLD, old)
+        }
+    }
+
+    static abstract class HiddenProxyBase {
+        abstract String name()
+    }
 
     @Test
     void testDefineStepsFallsThroughToClassDataForHiddenNonPublicHost() {
@@ -493,13 +538,17 @@ final class InvokerFactoryTest {
 
         Method ping = javaGetMethod(hiddenHost, 'ping')
         assertFalse(InvokerFactory.isPubliclyInvocableFromInvokerFactory(cm(ping)))
-        DirectInvoker di = InvokerFactory.tryCreate(cm(ping))
-        assertNotNull(di, 'Step 3 classData must succeed when Steps 1–2 cannot')
+        // GROOVY-12361: tryCreate declines any hidden host, since even the classData
+        // trampoline names the hidden type in its invokeExact descriptor and would
+        // throw NoClassDefFoundError on first invoke.
+        assertNull(InvokerFactory.tryCreate(cm(ping)), 'hidden host must not get a trampoline')
+        // Step 3 can still be driven directly (definition succeeds; only resolution
+        // on invoke would fail), which is what the remaining classData tests rely on.
+        DirectInvoker di = InvokerFactory.tryCreateClassData(cm(ping))
+        assertNotNull(di, 'Step 3 classData definition itself must succeed')
         assertTrue(di.class.hidden)
         assertSame(InvokerFactory, di.class.nestHost)
-        // The trampoline CHECKCASTs the receiver to the hidden host name, which is
-        // not Class.forName-loadable — do not invoke. Production CachedMethods
-        // wrap ordinary types; this fixture exists to force the Step 3 fall-through.
+        // Do not invoke: the CHECKCAST to the hidden host name cannot resolve.
     }
 
     // -------------------------------------------------------------------------

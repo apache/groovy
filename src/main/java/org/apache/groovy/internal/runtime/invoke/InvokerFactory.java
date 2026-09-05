@@ -104,6 +104,13 @@ public final class InvokerFactory {
             return null;
         }
         try {
+            if (!allTypesNameable(method.getCachedMethod())) {
+                // A hidden class (e.g. a ProxyGeneratorAdapter proxy) cannot be named
+                // in bytecode. Every step's trampoline would define and initialise
+                // fine but fail with NoClassDefFoundError once its CHECKCAST /
+                // INVOKE* / invokeExact descriptor resolves on first use (GROOVY-12361).
+                return null;
+            }
             return defineSteps(method);
         } catch (Exception | LinkageError ignored) {
             // Sticky-fail expected define/link/access problems, including
@@ -132,6 +139,33 @@ public final class InvokerFactory {
             return false;
         }
         return !AndroidSupport.isRunningAndroid();
+    }
+
+    /**
+     * Whether every type the trampoline bytecode must name — declaring class,
+     * return type and parameter types (array components included) — can be
+     * resolved by name, i.e. none of them is a hidden class (GROOVY-12361).
+     *
+     * @param m the candidate
+     * @return {@code true} when a trampoline can legally reference all types
+     */
+    static boolean allTypesNameable(final Method m) {
+        if (!nameable(m.getDeclaringClass()) || !nameable(m.getReturnType())) {
+            return false;
+        }
+        for (Class<?> p : m.getParameterTypes()) {
+            if (!nameable(p)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean nameable(Class<?> type) {
+        while (type.isArray()) {
+            type = type.getComponentType();
+        }
+        return !type.isHidden();
     }
 
     /**
