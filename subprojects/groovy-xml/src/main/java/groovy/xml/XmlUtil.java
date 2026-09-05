@@ -35,6 +35,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.events.XMLEvent;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
@@ -51,9 +53,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
 import java.net.URL;
+import java.util.stream.Stream;
 
 /**
  * Used for pretty printing XML content and other XML related utilities.
@@ -766,31 +770,31 @@ public class XmlUtil {
     }
 
     /**
-     * Streams XML events from the supplied {@link java.io.Reader} using a hardened
-     * StAX {@link javax.xml.stream.XMLInputFactory}. The returned stream
+     * Streams XML events from the supplied {@link Reader} using a hardened
+     * StAX {@link XMLInputFactory}. The returned stream
      * lazily pulls events; closing the stream closes the underlying reader.
      * <p>
      * Equivalent to {@link #events(Reader, boolean) events(reader, false)}.
      *
      * @param reader the XML source
-     * @return a stream of {@link javax.xml.stream.events.XMLEvent}s
+     * @return a stream of {@link XMLEvent}s
      * @since 6.0.0
      */
-    public static java.util.stream.Stream<javax.xml.stream.events.XMLEvent> events(java.io.Reader reader) {
+    public static Stream<XMLEvent> events(Reader reader) {
         return events(reader, false);
     }
 
     /**
-     * Streams XML events from the supplied {@link java.io.Reader} using a hardened
-     * StAX {@link javax.xml.stream.XMLInputFactory}. The returned stream
+     * Streams XML events from the supplied {@link Reader} using a hardened
+     * StAX {@link XMLInputFactory}. The returned stream
      * lazily pulls events; closing the stream closes the underlying reader.
      *
      * @param reader the XML source
      * @param allowDocTypeDeclaration whether DOCTYPE declarations are permitted
-     * @return a stream of {@link javax.xml.stream.events.XMLEvent}s
+     * @return a stream of {@link XMLEvent}s
      * @since 6.0.0
      */
-    public static java.util.stream.Stream<javax.xml.stream.events.XMLEvent> events(java.io.Reader reader, boolean allowDocTypeDeclaration) {
+    public static Stream<XMLEvent> events(Reader reader, boolean allowDocTypeDeclaration) {
         return StAXSupport.events(reader, allowDocTypeDeclaration);
     }
 
@@ -812,7 +816,7 @@ public class XmlUtil {
      * @return a stream of DOM nodes, one per matching subtree
      * @since 6.0.0
      */
-    public static java.util.stream.Stream<org.w3c.dom.Node> streamElements(java.io.Reader reader, String localName) {
+    public static Stream<org.w3c.dom.Node> streamElements(Reader reader, String localName) {
         return StAXSupport.streamElements(reader, null, localName, false);
     }
 
@@ -826,7 +830,7 @@ public class XmlUtil {
      * @return a stream of DOM nodes, one per matching subtree
      * @since 6.0.0
      */
-    public static java.util.stream.Stream<org.w3c.dom.Node> streamElements(java.io.Reader reader, String namespaceURI, String localName) {
+    public static Stream<org.w3c.dom.Node> streamElements(Reader reader, String namespaceURI, String localName) {
         return StAXSupport.streamElements(reader, namespaceURI, localName, false);
     }
 
@@ -841,7 +845,7 @@ public class XmlUtil {
      * @return a stream of DOM nodes, one per matching subtree
      * @since 6.0.0
      */
-    public static java.util.stream.Stream<org.w3c.dom.Node> streamElements(java.io.Reader reader, String namespaceURI, String localName, boolean allowDocTypeDeclaration) {
+    public static Stream<org.w3c.dom.Node> streamElements(Reader reader, String namespaceURI, String localName, boolean allowDocTypeDeclaration) {
         return StAXSupport.streamElements(reader, namespaceURI, localName, allowDocTypeDeclaration);
     }
 }
