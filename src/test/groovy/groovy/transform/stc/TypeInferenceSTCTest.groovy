@@ -1835,6 +1835,92 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12355
+    @Test
+    void testDivisionInference() {
+        // the runtime divides with floating-point math when either operand is a
+        // Float or Double, and with BigDecimal math for the other known categories;
+        // an operand typed as Number may be either, so the result is only a Number
+        [['Number',     'Number',     'Number'],
+         ['Number',     'int',        'Number'],
+         ['Integer',    'Number',     'Number'],
+         ['Double',     'Integer',    'Double'],
+         ['Integer',    'Double',     'Double'],
+         ['Float',      'Float',      'Double'],
+         ['double',     'Integer',    'Double'],
+         ['double',     'Number',     'Double'],
+         ['double',     'int',        'double'],
+         ['float',      'float',      'double'],
+         ['Integer',    'Integer',    'BigDecimal'],
+         ['int',        'int',        'BigDecimal'],
+         ['Long',       'BigInteger', 'BigDecimal'],
+         ['BigDecimal', 'Integer',    'BigDecimal'],
+         ['BigInteger', 'BigDecimal', 'BigDecimal']
+        ].each { left, right, result ->
+            assertScript """
+                def m($left a, $right b) {
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        def type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                        assert type == make($result) : '$left / $right'
+                    })
+                    def r = a / b
+                    r
+                }
+            """
+        }
+    }
+
+    // GROOVY-12355
+    @Test
+    void testGroupOperationInferenceWithNumberOperand() {
+        // an operand typed as Number may hold any category at runtime, so only a
+        // floating-point partner decides the result; otherwise it is a Number
+        [['Number', 'int',        '+', 'Number'],
+         ['int',    'Number',     '*', 'Number'],
+         ['Number', 'Number',     '-', 'Number'],
+         ['Number', 'BigDecimal', '+', 'Number'],
+         ['Number', 'BigInteger', '*', 'Number'],
+         ['Number', 'double',     '*', 'Double'],
+         ['Double', 'Number',     '+', 'Double'],
+         ['Number', 'float',      '-', 'Double']
+        ].each { left, right, operator, result ->
+            assertScript """
+                def m($left a, $right b) {
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        def type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                        assert type == make($result) : '$left $operator $right'
+                    })
+                    def r = a $operator b
+                    r
+                }
+            """
+        }
+        assertScript '''
+            def m(Number a, int b) { (a * b).intValue() }
+            assert m(1.5d, 8) == 12 // was ClassCastException: Double cannot be cast to Integer
+            assert m(1.5, 8) == 12
+            assert m(3, 8) == 24
+        '''
+    }
+
+    // GROOVY-12355
+    @Test
+    void testDivisionOfNumberOrWrapperFloatingOperandsAtRuntime() {
+        assertScript '''
+            def nn(Number a, Number b) { a / b }
+            def di(Double a, Integer b) { a / b }
+            def nnChain(Number a, Number b) { ((a / b) * 8).intValue() }
+            def diChain(Double a, Integer b) { ((a / b) * 8).intValue() }
+
+            assert nn(1.5d, 2) == 0.75d && nn(1.5d, 2) instanceof Double
+            assert nn(3, 2) == 1.5 && nn(3, 2) instanceof BigDecimal
+            assert di(1.5d, 2) == 0.75d && di(1.5d, 2) instanceof Double
+            assert nnChain(1.5d, 2) == 6 // was ClassCastException: Double cannot be cast to BigDecimal
+            assert nnChain(3, 2) == 12
+            assert diChain(1.5d, 2) == 6
+        '''
+    }
+
     @Test
     void testNumberPrefixPlusPlusInference() {
         [Byte:'Integer',
