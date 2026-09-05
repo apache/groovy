@@ -20,6 +20,7 @@ package groovy.lang;
 
 import groovy.transform.Internal;
 import org.apache.groovy.internal.util.UncheckedThrow;
+import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.apache.groovy.util.BeanUtils;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
@@ -3888,7 +3889,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     /**
      * Searches the class hierarchy for a mutable meta-class bean property on the
      * missing-property path. Linked miss sites re-enter this walk live (no
-     * SwitchPoint fan-out); see {@link org.apache.groovy.runtime.indy.IndyInvalidation}.
+     * SwitchPoint fan-out); see {@link IndyInvalidation}.
      *
      * @param propertyName the property name
      * @param theClass the class to start searching from
@@ -3970,7 +3971,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * <p>
      * <b>6.0 (GROOVY-12191):</b> this walk is retained. Linked miss sites re-enter
      * it live without SwitchPoint fan-out — see
-     * {@link org.apache.groovy.runtime.indy.IndyInvalidation}.
+     * {@link IndyInvalidation}.
      *
      * @param instanceKlazz the runtime receiver class
      * @param methodName the method name

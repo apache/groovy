@@ -54,7 +54,7 @@ import java.rmi.server.RMIServerSocketFactory
  * <p>
  * When {@code authenticate} is true a source of credentials must be supplied, being one of
  * {@code passwordFile}, {@code loginConfig}, or a {@code jmx.remote.authenticator} entry
- * holding a {@link javax.management.remote.JMXAuthenticator}. A connector which was asked to
+ * holding a {@link JMXAuthenticator}. A connector which was asked to
  * authenticate but has none of these would start open, so that combination is rejected rather
  * than accepted silently. Any other entry in {@code properties} is passed to the connector
  * environment unaltered.

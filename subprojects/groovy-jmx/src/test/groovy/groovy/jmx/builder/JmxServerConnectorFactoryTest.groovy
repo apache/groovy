@@ -34,6 +34,7 @@ import javax.management.remote.rmi.RMIConnectorServer
 import javax.net.ssl.SSLContext
 import javax.rmi.ssl.SslRMIClientSocketFactory
 import javax.rmi.ssl.SslRMIServerSocketFactory
+import javax.security.auth.Subject
 
 @ExtendWith(CgroupV2NpeMitigationExtension)
 class JmxServerConnectorFactoryTest {
@@ -159,7 +160,7 @@ class JmxServerConnectorFactoryTest {
     @Test
     void testCallerSuppliedAuthenticatorSatisfiesAuthenticationRequest() {
         def factory = new JmxServerConnectorFactory()
-        def authenticator = { env -> new javax.security.auth.Subject() } as JMXAuthenticator
+        def authenticator = { env -> new Subject() } as JMXAuthenticator
         def env = factory.confiConnectorProperties('rmi', rmi.port,
                 [authenticate: true, (JMXConnectorServer.AUTHENTICATOR): authenticator])
 

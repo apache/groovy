@@ -1498,7 +1498,7 @@ public abstract class Selector {
      * {@code callSite.type()}. Guard and switch-point wrapping are intentionally
      * omitted — the caller (compound-assignment) applies its own per-shape guard
      * and the scoped per-class MOP SwitchPoint (see
-     * {@link org.apache.groovy.runtime.indy.IndyInvalidation}). The caller must
+     * {@link IndyInvalidation}). The caller must
      * have already established that {@code methodName} resolves for this receiver
      * (e.g. via {@code respondsTo}); this routes the actual invocation through the
      * same selection, coercion and wrapping path as a normal call.

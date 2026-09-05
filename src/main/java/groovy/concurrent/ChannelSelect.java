@@ -326,7 +326,7 @@ public final class ChannelSelect {
      * are ready, the one listed first commits (see {@link #fair()} for a
      * rotating choice and {@link #random()} for a random one). Cancelling the
      * result (for example through
-     * {@link Awaitable#orTimeout(long, java.util.concurrent.TimeUnit)})
+     * {@link Awaitable#orTimeout(long, TimeUnit)})
      * withdraws the pending offers, so a timed-out select consumes nothing
      * and sends nothing. To take a timeout as a branch instead of an
      * exception, add a timer offer from {@link #after(long)} or receive

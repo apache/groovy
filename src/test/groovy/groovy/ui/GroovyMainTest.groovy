@@ -21,6 +21,7 @@ package groovy.ui
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
+import java.lang.reflect.InvocationTargetException
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.attribute.PosixFilePermissions
@@ -201,7 +202,7 @@ assert new MyConcreteClass() != null"""
         def method = GroovyMain.getDeclaredMethod('processFile', groovy.lang.Script, File)
         method.accessible = true
         try {
-            def thrown = shouldFail(java.lang.reflect.InvocationTargetException) {
+            def thrown = shouldFail(InvocationTargetException) {
                 method.invoke(main, script, file)
             }
             assert thrown.cause instanceof RuntimeException

@@ -28,6 +28,7 @@ import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
+import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.memoize.ConcurrentCommonCache;
 import org.codehaus.groovy.runtime.memoize.ConcurrentSoftCache;
@@ -48,6 +49,7 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1457,8 +1459,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      *       while a closure's fields are read, shifting {@link java.io.ObjectInputStream}'s
      *       latest-user-defined loader away from the loader that defined the closure's captured types.</li>
      * </ul>
-     * Groovy's own serializable gadget closures ({@link org.codehaus.groovy.runtime.CurriedClosure},
-     * {@link org.codehaus.groovy.runtime.ComposedClosure}) call this from their {@code private readResolve()}.
+     * Groovy's own serializable gadget closures ({@link CurriedClosure},
+     * {@link ComposedClosure}) call this from their {@code private readResolve()}.
      * Any other {@code Closure} subclass that participates in serialization can opt in the same way (the
      * method is {@code protected static}, so it is reachable from subclasses but not from arbitrary code).
      *
@@ -1522,7 +1524,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * {@code thisObject}, for the purposes of {@link #checkForReferenceCycle}.
      * <p>
      * A closure which wraps another and invokes it, as
-     * {@link org.codehaus.groovy.runtime.ComposedClosure} and {@code TrampolineClosure} do,
+     * {@link ComposedClosure} and {@code TrampolineClosure} do,
      * recurses through its own fields rather than through the three the cycle check walks by
      * default, so a forged graph would escape the check unless it declares them here.
      * <p>
@@ -1688,8 +1690,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             // invokes its target method; a curried closure uncurries and re-enters), so their
             // doCall declarations, where present, are NOT what the MOP would select — e.g.
             // MethodClosure's vestigial doCall would mis-dispatch a class-owner method pointer.
-            if (org.codehaus.groovy.runtime.MethodClosure.class.isAssignableFrom(type)
-                    || org.codehaus.groovy.runtime.CurriedClosure.class.isAssignableFrom(type)) {
+            if (MethodClosure.class.isAssignableFrom(type)
+                    || CurriedClosure.class.isAssignableFrom(type)) {
                 return NONE;
             }
             Method[] exact = new Method[ARITY_LIMIT];
@@ -1705,7 +1707,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
                         continue;
                     }
                     Class<?>[] params = m.getParameterTypes();
-                    if (!seen.add(java.util.Arrays.toString(params))) continue; // overridden below: most-derived wins
+                    if (!seen.add(Arrays.toString(params))) continue; // overridden below: most-derived wins
                     int arity = m.getParameterCount();
                     boolean allObject = true, hasArray = false;
                     for (Class<?> p : params) {

@@ -684,13 +684,14 @@ final class ChannelSelectTest {
             import groovy.concurrent.ChannelClosedException
             import groovy.concurrent.ChannelSelect
             import java.util.concurrent.ConcurrentHashMap
+            import java.util.concurrent.atomic.AtomicInteger
             import static org.apache.groovy.runtime.async.AsyncSupport.await as awaitFor
 
             def a = AsyncChannel.create(8)
             def b = AsyncChannel.create(8)
             int perChannel = 2000
             def seen = new ConcurrentHashMap<Integer, Boolean>()
-            def duplicates = new java.util.concurrent.atomic.AtomicInteger()
+            def duplicates = new AtomicInteger()
 
             def producers = [
                 Thread.start { for (i in 0..<perChannel) awaitFor(a.send(i)); a.close() },
