@@ -1280,6 +1280,14 @@ final class GroovyMethodsTest {
     }
 
     @Test
+    void testBarWithDoubleArguments() {
+        assert StringUtil.bar(0.5d, 0, 1, 8) == '\u2588' * 4 + '\u258F'
+        assert StringUtil.bar(0.45d, 0, 2) == StringUtil.bar(0.45, 0, 2)
+        assert StringUtil.bar(1.75d, 0.5d, 2.5d, 16) == StringUtil.bar(1.75, 0.5, 2.5, 16)
+        assert StringUtil.bar(3L, 1, 5) == StringUtil.bar(3, 1, 5)
+    }
+
+    @Test
     void testStringTranslate() {
         assert StringUtil.tr("abcdefghijklmn", "abcdefghijklmn", "ABCDEFGHIJKLMN") == "ABCDEFGHIJKLMN"
         assert StringUtil.tr("abcdefghijklmn", "abc", "ABC") == "ABCdefghijklmn"

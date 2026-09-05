@@ -71,6 +71,8 @@ class StringUtil {
      *
      * If using Windows command-line, make sure you are using the Unicode
      * codepage (65001) and a font that supports block elements (like Cascadia).
+     * The proportion is calculated in double precision whatever the
+     * argument types.
      *
      * @param x the value for the bar to be drawn
      * @param min the minimum value
@@ -82,8 +84,8 @@ class StringUtil {
     static String bar(Number x, Number min, Number max, int width = 40) {
         int fracWidth = width * 8
         assert min < max && x >= min && x <= max
-        Number interval = max - min
-        int barWidth = ((x - min) / interval * fracWidth).intValue()
+        double interval = max.doubleValue() - min.doubleValue()
+        int barWidth = (int) ((x.doubleValue() - min.doubleValue()) / interval * fracWidth)
         int fullChunks = barWidth.intdiv(8)
         int remainder = barWidth % 8
         // unicode for fractional blocks (7/8, 6/8, etc.) are adjacent
