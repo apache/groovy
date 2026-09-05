@@ -134,12 +134,12 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
-    // GROOVY-
+    // GROOVY-5539
     @Test
     void testPowerShouldNotThrowVerifyError() {
         assertScript '''
             int squarePlusOne(int num) {
-                num ** num + 1
+                (num ** num + 1).intValue() // the sum of a power (a Number) and an int is a Number (GROOVY-12355)
             }
             assert squarePlusOne(2) == 5
         '''

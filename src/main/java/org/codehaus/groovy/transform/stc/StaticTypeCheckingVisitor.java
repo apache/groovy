@@ -6009,15 +6009,21 @@ trying: for (ClassNode[] signature : signatures) {
             switch (op) {
               case DIVIDE:
               case DIVIDE_EQUAL:
-                // divisions may produce different results depending on operand types
-                if (isFloatingCategory(leftRedirect) || isFloatingCategory(rightRedirect)) {
+                // divisions may produce different results depending on operand types;
+                // the runtime uses floating-point math when either operand is a Float
+                // or Double, wrapper or primitive, and BigDecimal math for integral,
+                // BigInteger and BigDecimal operands (GROOVY-12355)
+                if (isFloatingCategory(getUnwrapper(leftRedirect)) || isFloatingCategory(getUnwrapper(rightRedirect))) {
                     if (!isPrimitiveType(leftRedirect) || !isPrimitiveType(rightRedirect)) {
                         return Double_TYPE;
                     }
                     return double_TYPE;
                 }
                 if (DIVIDE == op) {
-                    return BigDecimal_TYPE;
+                    if (isBigDecCategory(getUnwrapper(leftRedirect)) && isBigDecCategory(getUnwrapper(rightRedirect))) {
+                        return BigDecimal_TYPE;
+                    }
+                    return Number_TYPE; // an operand of unknown category may be a Double or Float at runtime
                 }
                 // falls through
               case MOD:
@@ -6039,6 +6045,13 @@ trying: for (ClassNode[] signature : signatures) {
      * Returns the result type for grouped numeric operations such as addition.
      */
     protected static ClassNode getGroupOperationResultType(final ClassNode a, final ClassNode b) {
+        if (!isDoubleCategory(getUnwrapper(a)) || !isDoubleCategory(getUnwrapper(b))) {
+            // an operand typed as Number (or a Number subtype outside every category) may
+            // hold any category at runtime: a floating-point partner still decides the
+            // result, otherwise only Number is certain (GROOVY-12355)
+            if (isFloatingCategory(getUnwrapper(a)) || isFloatingCategory(getUnwrapper(b))) return Double_TYPE;
+            return Number_TYPE;
+        }
         if (isBigIntCategory(a) && isBigIntCategory(b)) return BigInteger_TYPE;
         if (isBigDecCategory(a) && isBigDecCategory(b)) return BigDecimal_TYPE;
         if (isBigDecimalType(a) || isBigDecimalType(b)) return BigDecimal_TYPE;

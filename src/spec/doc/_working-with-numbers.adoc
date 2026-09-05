@@ -304,6 +304,10 @@ if either operand is a `float` or `double`, and a `BigDecimal` result otherwise
 (when both operands are any combination of an integral type `short`, `char`, `byte`, `int`, `long`,
 `BigInteger` or `BigDecimal`).
 
+Under static type checking, the inferred type of a division follows the same rule from the
+static types of the operands. An operand typed as `Number` may hold a `Float` or `Double` at
+runtime as well as any of the other types, so a division involving one is inferred as `Number`.
+
 `BigDecimal` division is performed with the `divide()` method if the division is exact
 (i.e. yielding a result that can be represented within the bounds of the same precision and scale),
 or using a `MathContext` with a http://docs.oracle.com/javase/7/docs/api/java/math/BigDecimal.html#precision()[precision]
