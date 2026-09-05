@@ -38,6 +38,12 @@ import java.nio.file.Path;
 
 /**
  *  Represents a YAML parser
+ *  <p>
+ *  YAML anchors and aliases are not resolved: an alias is returned as a plain string
+ *  holding the anchor's name, and a merge key ({@code <<}) is left as a literal entry.
+ *  This comes from the Jackson YAML backend and is a deliberate limitation there. The
+ *  Processing YAML user guide covers it, along with what to use when a document relies
+ *  on anchors.
  *
  *  @since 3.0.0
  */
