@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788505653079,
+  "lastUpdate": 1788591671475,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -5698,6 +5698,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 476.7933333333333,
             "range": "±25.85",
+            "unit": "ms",
+            "extra": "5.1.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "65ac2abf7554b4d6622527739c9338bc94ba4047",
+          "message": "GROOVY-12355: STC: infer division and group arithmetic from the runtime's number categories\n\nThe runtime divides with floating-point math when either operand is a\nFloat or Double, wrapper or primitive, and with BigDecimal math for\nintegral, BigInteger and BigDecimal operands. The type checker only\nrecognised primitive float and double, so Double / Integer was inferred\nas BigDecimal, and an operand typed as Number, whose runtime category\nis unknown, was inferred as BigDecimal too. Statically compiled code\nthen cast the Double the runtime produced and failed.\n\nUnwrap before testing the floating category, and infer BigDecimal only\nwhen both operands belong to a category that divides that way; a\nNumber operand yields Number. The group operations had the same blind\nspot from the other side: they took the category of whichever operand\nthey recognised, so Number * int was int. An operand of unknown\ncategory now yields Number unless a floating-point partner decides the\nresult, as it does at runtime.\n\nAn arithmetic result that could not be typed before may now be a\nNumber where it was an int or BigDecimal, so code that assigned it to a\nnarrower type needs an explicit conversion, as the GROOVY-5539 test now\nshows. StringUtil.bar with Double arguments works without change.",
+          "timestamp": "2026-09-05T01:02:53Z",
+          "url": "https://github.com/apache/groovy/commit/65ac2abf7554b4d6622527739c9338bc94ba4047"
+        },
+        "date": 1788591668214,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 552.2733333333333,
+            "range": "±21.55",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 644.8666666666667,
+            "range": "±204.2",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 566.8066666666667,
+            "range": "±143.42",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 481.1466666666667,
+            "range": "±22.23",
             "unit": "ms",
             "extra": "5.1.0"
           }
