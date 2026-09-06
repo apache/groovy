@@ -216,6 +216,7 @@
          <trusted-key id="C4F54D8622C95CC3F098721A0F13D5631D6AF36D" group="org.testng" name="testng" version="7.10.2"/>
          <trusted-key id="C668130C58722C9DC1C0FC633F1EB974E7AB9B37" group="biz.aQute.bnd"/>
          <trusted-key id="C7BE5BCC9FEC15518CFDA882B0F3710FA64900E7" group="com.google.code.gson" name="gson"/>
+         <trusted-key id="C7C5042998FCB6E396E8D262BA19949FA2609216" group="app.testlens"/>
          <trusted-key id="CE8075A251547BEE249BC151A2115AE15F6B8B72">
             <trusting group="org.apache.ant"/>
             <trusting group="org.apache.commons"/>
