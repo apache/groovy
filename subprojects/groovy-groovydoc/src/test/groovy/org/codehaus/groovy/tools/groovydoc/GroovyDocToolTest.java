@@ -370,6 +370,46 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 doc.contains(secretText));
     }
 
+    // A symbolic link inside a package's doc-files/ directory must not be followed when the
+    // directory is mirrored into the output: copying it would place the content of whatever it
+    // points at, possibly outside the source tree, into the published documentation.
+    public void testDocFilesSymlinkIsNotCopiedIntoOutput() throws Exception {
+        String pkg = "org/codehaus/groovy/tools/groovydoc/testfiles/docfiles";
+        Path tmp = Files.createTempDirectory("docfiles-symlink-");
+        Path pkgDir = tmp.resolve(pkg);
+        Path docFiles = Files.createDirectories(pkgDir.resolve("doc-files"));
+        Files.writeString(pkgDir.resolve("Documented.groovy"),
+                "package " + pkg.replace('/', '.') + "\nclass Documented {}\n");
+
+        String secret = "TOP_SECRET_CREDENTIAL_VALUE";
+        Path secretFile = Files.writeString(tmp.resolve("secret.txt"), secret);
+        Files.writeString(docFiles.resolve("note.txt"), "a real asset"); // positive control
+        try {
+            Files.createSymbolicLink(docFiles.resolve("leak.txt"), secretFile);
+        } catch (IOException | UnsupportedOperationException e) {
+            return; // symbolic links unavailable on this platform (e.g. Windows without privilege)
+        }
+
+        GroovyDocTool tool = new GroovyDocTool(
+                new FileSystemResourceManager("src/main/resources"),
+                new String[]{tmp.toString()},
+                GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES,
+                GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES,
+                GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES,
+                new ArrayList<>(), null, new Properties());
+        tool.add(List.of(pkg + "/Documented.groovy"));
+        MockOutputTool output = new MockOutputTool();
+        tool.renderToOutput(output, MOCK_DIR);
+
+        String docFilesOut = MOCK_DIR + "/" + pkg + "/doc-files/";
+        // the symlink is not copied, so its target content never reaches the output
+        assertNull("a doc-files symlink was copied into the output",
+                output.getText(docFilesOut + "leak.txt"));
+        // a real asset in the same directory still is
+        assertEquals("a real doc-files asset should still be copied",
+                "a real asset", output.getText(docFilesOut + "note.txt"));
+    }
+
     /** Renders one class from a temporary source tree and returns its page. */
     private String renderSingle(Path sourcePath, String pkg, String simpleName) throws Exception {
         GroovyDocTool tool = new GroovyDocTool(
