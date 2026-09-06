@@ -61,7 +61,6 @@
          <ignored-key id="012579464D01C06A" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="09A79E1E15A04694" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="0C27E8FAC93B3B19" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="0CA7139CBC7026F9" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="1063FE98BCECB758" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="156E8DA37ABC7C91" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="1861C322C56014B2" reason="Key couldn't be downloaded from any key server"/>
@@ -197,6 +196,7 @@
          <trusted-key id="9857C388D7D1D9D031274CD0A5DEF5A76F94A471" group="^com[.]github[.]spotbugs($|([.].*))" regex="true"/>
          <trusted-key id="9A072E65CCCDCDD07C5B2C3F405262BDCB017886" group="me.sunlan"/>
          <trusted-key id="9FFED7A118D45A44E4A1E47130E6F80434A72A7F" group="^org[.]apache[.]maven($|([.].*))" regex="true"/>
+         <trusted-key id="A413F67D71BEEC23ADD0CE0ACB43338E060CF9FA" group="org.jacoco"/>
          <trusted-key id="A5BD02B93E7A40482EB1D66A5F69AD087600B22C" group="org.ow2.asm"/>
          <trusted-key id="A6D6C97108B8585F91B158748671A8DF71296252" group="com.squareup.moshi"/>
          <trusted-key id="AA417737BD805456DB3CBDDE6601E5C08DCCBB96" group="info.picocli" name="picocli"/>
