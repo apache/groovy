@@ -82,7 +82,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Predicate;
 
 import static groovy.lang.Tuple.tuple;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
@@ -620,20 +619,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private boolean setRedirect(final ClassNode type, final ClassNode classToCheck) {
-        String typeName = type.getName();
-
-        Predicate<ClassNode> resolver = (ClassNode maybeOuter) -> {
-            if (!typeName.equals(maybeOuter.getName())) {
-                ClassNode maybeNested = new ConstructedNestedClass(maybeOuter, typeName);
-                if (resolveFromCompileUnit(maybeNested) || resolveToOuter(maybeNested)) {
-                    type.setRedirect(maybeNested);
-                    return true;
-                }
-            }
-            return false;
-        };
-
-        if (resolver.test(classToCheck)) {
+        if (tryRedirectNested(type, classToCheck)) {
             if (currentClass != classToCheck && !currentClass.getOuterClasses().contains(classToCheck) && !isVisibleNestedClass(type.redirect(), currentClass)) {
                 type.setRedirect(null);
             } else {
@@ -642,9 +628,22 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
         if (classToCheck.getInterfaces().length > 0) {
             for (ClassNode face : classToCheck.getAllInterfaces()) {
-                if (resolver.test(face)) {
+                if (tryRedirectNested(type, face)) {
                     return true;
                 }
+            }
+        }
+        return false;
+    }
+
+    private boolean tryRedirectNested(final ClassNode type, final ClassNode maybeOuter) {
+        final String typeName = type.getName();
+
+        if (!typeName.equals(maybeOuter.getName())) {
+            ClassNode maybeNested = new ConstructedNestedClass(maybeOuter, typeName);
+            if (resolveFromCompileUnit(maybeNested) || resolveToOuter(maybeNested)) {
+                type.setRedirect(maybeNested);
+                return true;
             }
         }
         return false;
