@@ -54,7 +54,12 @@ import java.lang.reflect.Modifier;
  *       loader can resolve {@link DirectInvoker} — never for bootstrap hosts.</li>
  * </ol>
  *
- * Failures sticky-return {@code null}; they must not propagate to
+ * <p>Before any step, a member whose declaring class, return type or a
+ * parameter type is a hidden class is declined outright (GROOVY-12361): every
+ * encoding names those types in the constant pool, so the trampoline would
+ * define but throw {@code NoClassDefFoundError} on first invoke.
+ *
+ * <p>Failures sticky-return {@code null}; they must not propagate to
  * {@code CachedMethod.invoke}.
  *
  * @since 6.0.0
@@ -103,14 +108,15 @@ public final class InvokerFactory {
         if (method.isCallerSensitive() || Modifier.isAbstract(method.getModifiers())) {
             return null;
         }
+        if (!allTypesNameable(method)) {
+            // Policy decline, not a define failure: a hidden class (e.g. a
+            // ProxyGeneratorAdapter proxy) cannot be named in bytecode. Every
+            // step's trampoline would define and initialise fine but fail with
+            // NoClassDefFoundError once its CHECKCAST / INVOKE* / invokeExact
+            // descriptor resolves on first use (GROOVY-12361).
+            return null;
+        }
         try {
-            if (!allTypesNameable(method.getCachedMethod())) {
-                // A hidden class (e.g. a ProxyGeneratorAdapter proxy) cannot be named
-                // in bytecode. Every step's trampoline would define and initialise
-                // fine but fail with NoClassDefFoundError once its CHECKCAST /
-                // INVOKE* / invokeExact descriptor resolves on first use (GROOVY-12361).
-                return null;
-            }
             return defineSteps(method);
         } catch (Exception | LinkageError ignored) {
             // Sticky-fail expected define/link/access problems, including
@@ -146,14 +152,17 @@ public final class InvokerFactory {
      * return type and parameter types (array components included) — can be
      * resolved by name, i.e. none of them is a hidden class (GROOVY-12361).
      *
-     * @param m the candidate
+     * Reads the same types {@link #isPubliclyInvocableFromInvokerFactory} does,
+     * without forcing accessibility on the underlying {@link Method}.
+     *
+     * @param method the candidate
      * @return {@code true} when a trampoline can legally reference all types
      */
-    static boolean allTypesNameable(final Method m) {
-        if (!nameable(m.getDeclaringClass()) || !nameable(m.getReturnType())) {
+    static boolean allTypesNameable(final CachedMethod method) {
+        if (!nameable(method.getDeclaringClass().getTheClass()) || !nameable(method.getReturnType())) {
             return false;
         }
-        for (Class<?> p : m.getParameterTypes()) {
+        for (Class<?> p : method.getNativeParameterTypes()) {
             if (!nameable(p)) {
                 return false;
             }

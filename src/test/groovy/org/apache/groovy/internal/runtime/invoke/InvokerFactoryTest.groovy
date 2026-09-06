@@ -491,7 +491,7 @@ final class InvokerFactoryTest {
         assertTrue((Boolean) Class.getMethod('isHidden').invoke(hiddenHost))
         Method ping = javaGetMethod(hiddenHost, 'ping')
         assertTrue(InvokerFactory.isPubliclyInvocableFromInvokerFactory(cm(ping)))
-        assertFalse(InvokerFactory.allTypesNameable(ping))
+        assertFalse(InvokerFactory.allTypesNameable(cm(ping)))
 
         assertNull(InvokerFactory.tryCreate(cm(ping)), 'hidden declaring class must not get a trampoline')
         // the reflective path keeps working
@@ -500,21 +500,30 @@ final class InvokerFactoryTest {
     }
 
     @Test
+    @ResourceLock(Resources.SYSTEM_PROPERTIES)
     void testHiddenProxyStaysInvocablePastThreshold() {
-        // End-to-end: a map-coerced proxy of a superclass on Groovy's own loader
-        // is a hidden class; before GROOVY-12361 the call after the threshold
-        // failed with NoClassDefFoundError from the generated trampoline.
-        String old = System.getProperty(InvokerFactory.PROPERTY_THRESHOLD)
-        System.setProperty(InvokerFactory.PROPERTY_THRESHOLD, '0')
+        // End-to-end through the CachedMethod.invoke hook: a map-coerced proxy of
+        // a superclass on Groovy's own loader is a hidden class; before
+        // GROOVY-12361 the call after the threshold failed with
+        // NoClassDefFoundError from the generated trampoline.
+        String previous = System.getProperty(InvokerFactory.PROPERTY_THRESHOLD)
         try {
+            System.setProperty(InvokerFactory.PROPERTY_THRESHOLD, '0')
             Object proxy = [name: { 'circle' }] as HiddenProxyBase
             assertTrue((Boolean) Class.getMethod('isHidden').invoke(proxy.getClass()))
-            CachedMethod name = CachedMethod.find(javaGetMethod(proxy.getClass(), 'name'))
-            assertNotNull(name)
-            3.times { assertEquals('circle', name.invoke(proxy, new Object[0])) }
+            CachedMethod name = new CachedMethod(javaGetMethod(proxy.getClass(), 'name'))
+            // first call crosses the threshold and must sticky-decline generation
+            assertEquals('circle', name.invoke(proxy, new Object[0]))
+            def attempted = CachedMethod.getDeclaredField('invokerAttempted')
+            attempted.accessible = true
+            assertTrue((Boolean) attempted.get(name), 'generation must have been attempted and declined')
+            def invokerField = CachedMethod.getDeclaredField('invoker')
+            invokerField.accessible = true
+            assertNull(invokerField.get(name), 'hidden proxy must stay on the reflective path')
+            // and the reflective path keeps serving subsequent calls
+            2.times { assertEquals('circle', name.invoke(proxy, new Object[0])) }
         } finally {
-            if (old == null) System.clearProperty(InvokerFactory.PROPERTY_THRESHOLD)
-            else System.setProperty(InvokerFactory.PROPERTY_THRESHOLD, old)
+            restoreProperty(InvokerFactory.PROPERTY_THRESHOLD, previous)
         }
     }
 
@@ -523,7 +532,7 @@ final class InvokerFactoryTest {
     }
 
     @Test
-    void testDefineStepsFallsThroughToClassDataForHiddenNonPublicHost() {
+    void testTryCreateDeclinesNonPublicHiddenHost() {
         byte[] bytes = emitStringPingClass(
                 'org/apache/groovy/internal/runtime/invoke/Step3HiddenHost',
                 'ping', 'step3-pong', false)
@@ -538,17 +547,12 @@ final class InvokerFactoryTest {
 
         Method ping = javaGetMethod(hiddenHost, 'ping')
         assertFalse(InvokerFactory.isPubliclyInvocableFromInvokerFactory(cm(ping)))
-        // GROOVY-12361: tryCreate declines any hidden host, since even the classData
-        // trampoline names the hidden type in its invokeExact descriptor and would
-        // throw NoClassDefFoundError on first invoke.
+        // GROOVY-12361: a non-public hidden host is not a Step 1/2 candidate, so a
+        // Step 1-only patch would let it reach Step 3, whose classData trampoline
+        // names the hidden type in its invokeExact descriptor and would throw
+        // NoClassDefFoundError on first invoke. tryCreate must decline outright.
+        assertFalse(InvokerFactory.allTypesNameable(cm(ping)))
         assertNull(InvokerFactory.tryCreate(cm(ping)), 'hidden host must not get a trampoline')
-        // Step 3 can still be driven directly (definition succeeds; only resolution
-        // on invoke would fail), which is what the remaining classData tests rely on.
-        DirectInvoker di = InvokerFactory.tryCreateClassData(cm(ping))
-        assertNotNull(di, 'Step 3 classData definition itself must succeed')
-        assertTrue(di.class.hidden)
-        assertSame(InvokerFactory, di.class.nestHost)
-        // Do not invoke: the CHECKCAST to the hidden host name cannot resolve.
     }
 
     // -------------------------------------------------------------------------
