@@ -207,7 +207,7 @@ final class BroadcastChannelAsPublisherTest {
             def publisher = broadcast.asPublisher()
 
             async {
-                Thread.sleep(30)  // let consumer subscribe
+                Thread.sleep(50)  // let consumer subscribe
                 ['x', 'y', 'z'].each { broadcast.send(it) }
                 broadcast.close()
             }
