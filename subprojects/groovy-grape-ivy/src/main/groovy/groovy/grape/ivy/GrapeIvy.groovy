@@ -58,6 +58,7 @@ import org.w3c.dom.Element
 import javax.xml.XMLConstants
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.parsers.ParserConfigurationException
+import java.nio.file.Path
 import java.text.ParseException
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -735,10 +736,35 @@ class GrapeIvy implements GrapeEngine {
             if (classifier) name += "-$classifier"
             name += ".${attrs.getNamedItem('ext').getTextContent()}"
             def jarfile = new File(jardir, name)
+            if (!isWithin(jardir, jarfile)) {
+                // the name comes from a cached descriptor; a value carrying a path separator or
+                // a ".." segment would otherwise delete a file outside the module's jars directory
+                System.err.println("Skipping ${name}: artifact path escapes the module cache directory")
+                continue
+            }
             if (jarfile.exists()) {
                 System.err.println("Deleting ${jarfile.getName()}")
                 jarfile.delete()
             }
+        }
+    }
+
+    /**
+     * Whether {@code file} resolves to a location inside {@code dir}. Uses canonical paths, so a
+     * {@code ..} segment or a path separator in the name — or a symbolic link along the way —
+     * cannot carry the resolved file out of the directory.
+     *
+     * @param dir the directory the file must stay within
+     * @param file the candidate file
+     * @return whether the file is contained in the directory
+     */
+    private static boolean isWithin(File dir, File file) {
+        try {
+            Path root = dir.canonicalFile.toPath()
+            Path target = file.canonicalFile.toPath()
+            target.startsWith(root)
+        } catch (IOException ignored) {
+            false
         }
     }
 
