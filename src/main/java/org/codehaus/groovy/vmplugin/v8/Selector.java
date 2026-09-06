@@ -76,6 +76,7 @@ import java.util.function.Predicate;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.ARRAYLIST_CONSTRUCTOR;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.BEAN_CONSTRUCTOR_PROPERTY_SETTER;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.CLASS_FOR_NAME;
+import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.INVOKE_REFLECTIVELY;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.DTT_CAST_TO_TYPE;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.EQUALS;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.GROOVY_CAST_EXCEPTION;
@@ -1042,6 +1043,16 @@ public abstract class Selector {
                     }
                 } else if (parameterCount == 1 && "forName".equals(name) && declaringClass == Class.class) {
                     handle = MethodHandles.insertArguments(CLASS_FOR_NAME, 1, Boolean.TRUE, sender.getClassLoader());
+                } else if (callSite.isAotLinked()
+                        && ColdReflectiveMethodHandleWrapper.isCallerSensitive(cm, getCorrectedReceiver().getClass())) {
+                    // GROOVY-12364: a caller-bound handle from unreflect() is exactly right on
+                    // HotSpot, but GraalVM's MethodHandle interpreter cannot invoke it ("Cannot
+                    // invoke method that has a @CallerSensitiveAdapter without an explicit
+                    // caller", a VM-fatal error) because Groovy builds the handle at run time.
+                    // Reflection works there, so an AOT-linked site invokes such targets
+                    // through Method.invoke; the observed caller is then Groovy's runtime.
+                    handle = reflectiveHandle(cm);
+                    if (LOG_ENABLED) LOG.info("caller-sensitive target on an AOT-linked site dispatched reflectively: " + name);
                 } else {
                     handle = unreflect(cm.getCachedMethod());
                 }
@@ -1068,6 +1079,31 @@ public abstract class Selector {
                 return true;
             }
             return false;
+        }
+
+        /**
+         * Builds a handle with the target method's own type whose leaf is
+         * {@code Method.invoke} rather than the method itself (GROOVY-12364).
+         * Shaped like {@link #unreflect}'s result, including the varargs
+         * collector flag, so the rest of the chain is unaffected.
+         *
+         * @param cm the selected method
+         * @return a handle of the method's natural type dispatching reflectively
+         */
+        private static MethodHandle reflectiveHandle(CachedMethod cm) {
+            Method method = cm.getCachedMethod();
+            MethodType natural = MethodType.methodType(method.getReturnType(), method.getParameterTypes());
+            MethodHandle mh = MethodHandles.insertArguments(INVOKE_REFLECTIVELY, 0, cm); // (Object receiver, Object[] args)Object
+            if (Modifier.isStatic(method.getModifiers())) {
+                mh = MethodHandles.insertArguments(mh, 0, (Object) null);
+            } else {
+                natural = natural.insertParameterTypes(0, method.getDeclaringClass());
+            }
+            mh = mh.asCollector(Object[].class, method.getParameterCount()).asType(natural);
+            if (method.isVarArgs()) {
+                mh = mh.asVarargsCollector(method.getParameterTypes()[method.getParameterCount() - 1]);
+            }
+            return mh;
         }
 
         /**
