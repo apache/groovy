@@ -21,13 +21,12 @@ plugins {
     id 'org.apache.groovy-library'
 }
 
-// This module has no source code of its own. Its jar is extracted from
+// This module has no main source code of its own. Its jar is extracted from
 // the Groovy core jar, containing only the pure-Java concurrent API.
 // Java users can depend on this module without the Groovy runtime.
 sourceSets {
     main.java.srcDirs = []
     main.groovy.srcDirs = []
-    test.java.srcDirs = []
     test.groovy.srcDirs = []
 }
 
@@ -35,15 +34,32 @@ sourceSets {
 configurations.groovyCompilerClasspath.dependencies.clear()
 
 // The jar is built by filtering core's repackageJar (shadow) output
+def apiIncludes = [
+    'groovy/concurrent/**',
+    'org/apache/groovy/runtime/async/**',
+    'org/apache/groovy/util/concurrent/ThreadHelper*',
+    // Types the API above references that live outside those packages.
+    // ModuleSelfContainmentTest fails the build if a groovy.* reference
+    // is left unresolved by this list.
+    'groovy/transform/Internal*',
+    'groovy/util/function/TriConsumer*',
+    'org/apache/groovy/lang/annotation/GroovyABI*',
+]
+// Groovy-dependent classes
+def apiExcludes = [
+    '**/AsyncClosureUtils*',
+    '**/Dataflows*',
+]
+
 tasks.named('jar') {
     dependsOn rootProject.tasks.named('repackageJar')
+    // Copy-spec patterns are not tracked as task inputs on their own, so an
+    // edited list would otherwise leave a stale, up-to-date jar behind.
+    inputs.property('apiIncludes', apiIncludes)
+    inputs.property('apiExcludes', apiExcludes)
     from(zipTree(rootProject.tasks.named('repackageJar').flatMap { it.archiveFile })) {
-        include 'groovy/concurrent/**'
-        include 'org/apache/groovy/runtime/async/**'
-        include 'org/apache/groovy/util/concurrent/ThreadHelper*'
-        // Exclude Groovy-dependent classes
-        exclude '**/AsyncClosureUtils*'
-        exclude '**/Dataflows*'
+        include apiIncludes
+        exclude apiExcludes
     }
     manifest {
         attributes 'Automatic-Module-Name': 'org.apache.groovy.concurrent.java'
@@ -53,6 +69,41 @@ tasks.named('jar') {
 groovyLibrary {
     optionalModule()
     withoutBinaryCompatibilityChecks()
+}
+
+// The tests are the pure-Java consumer's view of this module: they are compiled
+// and run against the module jar plus JUnit only, exactly as a Java project
+// depending on org.apache.groovy:groovy-concurrent-java would be. Groovy core
+// (which the conventions put on testImplementation) is deliberately kept off
+// the classpath, so a groovy.* type leaking into a signature fails here rather
+// than at a user's site.
+configurations {
+    javaConsumerTest {
+        canBeConsumed = false
+        description = 'Test-only dependencies of the pure-Java consumer tests'
+    }
+}
+
+dependencies {
+    javaConsumerTest "org.junit.jupiter:junit-jupiter:${versions.junit6}"
+    // the JUnit jars carry @API annotations; keep javac quiet about them
+    javaConsumerTest "org.apiguardian:apiguardian-api:${versions.apiguardian}"
+    javaConsumerTest "org.junit.platform:junit-platform-launcher:${versions.junit6}", {
+        exclude group: 'org.apiguardian', module: 'apiguardian-api'
+    }
+}
+
+def moduleJar = tasks.named('repackageJar') // the published artifact, not the raw intermediate
+sourceSets {
+    test {
+        compileClasspath = files(moduleJar) + configurations.javaConsumerTest
+        runtimeClasspath = output + files(moduleJar) + configurations.javaConsumerTest
+    }
+}
+
+tasks.named('test') {
+    classpath = sourceSets.test.runtimeClasspath
+    testClassesDirs = sourceSets.test.output.classesDirs
 }
 
 // Declare capability for mutual exclusion with Groovy core on library variants.
