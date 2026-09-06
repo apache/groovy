@@ -27,6 +27,7 @@ import groovy.lang.MetaObjectProtocol;
 import groovy.lang.MetaProperty;
 import groovy.lang.MissingMethodException;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -73,7 +74,7 @@ public class IndyGuardsFiltersAndSignatures {
             SLOW_META_CLASS_FIND,
             MOP_GET, MOP_SET, SET_PROPERTY, MOP_INVOKE_CONSTRUCTOR, MOP_INVOKE_METHOD,
             INTERCEPTABLE_INVOKER,
-            BOOLEAN_IDENTITY, CLASS_FOR_NAME,
+            BOOLEAN_IDENTITY, CLASS_FOR_NAME, INVOKE_REFLECTIVELY,
             DTT_CAST_TO_TYPE, SAM_CONVERSION,
             HASHSET_CONSTRUCTOR, ARRAYLIST_CONSTRUCTOR,
             GROOVY_CAST_EXCEPTION,
@@ -110,6 +111,7 @@ public class IndyGuardsFiltersAndSignatures {
 
             BOOLEAN_IDENTITY                     = MethodHandles.identity(Boolean.class);
             CLASS_FOR_NAME                       = LOOKUP.findStatic(Class.class, "forName", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class));
+            INVOKE_REFLECTIVELY                  = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "invokeReflectively", MethodType.methodType(Object.class, CachedMethod.class, Object.class, Object[].class));
             DTT_CAST_TO_TYPE                     = LOOKUP.findStatic(DefaultTypeTransformation.class, "castToType", MethodType.methodType(Object.class, Object.class, Class.class));
             SAM_CONVERSION                       = LOOKUP.findStatic(CachedSAMClass.class, "coerceToSAM", MethodType.methodType(Object.class, Closure.class, Method.class, Class.class));
             HASHSET_CONSTRUCTOR                  = LOOKUP.findConstructor(HashSet.class, MethodType.methodType(void.class, Collection.class));
@@ -207,6 +209,25 @@ public class IndyGuardsFiltersAndSignatures {
     public static Object unwrap(Object o) {
         Wrapper w = (Wrapper) o;
         return w.unwrap();
+    }
+
+    /**
+     * Reflective leaf for a caller-sensitive target on an AOT-linked site
+     * (GROOVY-12364): classic {@code doMethodInvoke} semantics with the same
+     * {@code GroovyRuntimeException} unwrapping as the reflective cold tier.
+     *
+     * @param method the selected method
+     * @param receiver the receiver, ignored (may be {@code null}) for static methods
+     * @param arguments the call arguments
+     * @return the method's result
+     * @throws Throwable the target's exception, unwrapped
+     */
+    public static Object invokeReflectively(CachedMethod method, Object receiver, Object[] arguments) throws Throwable {
+        try {
+            return method.doMethodInvoke(receiver, arguments);
+        } catch (GroovyRuntimeException gre) {
+            throw ScriptBytecodeAdapter.unwrap(gre);
+        }
     }
 
     /**

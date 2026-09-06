@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.runtime.indy
 
+import org.codehaus.groovy.reflection.CachedMethod
 import org.codehaus.groovy.vmplugin.v8.CacheableCallSite
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.ResourceLock
@@ -62,6 +63,32 @@ final class AotLinkModeTest {
         withAotLink {
             new GroovyShell().evaluate(script)
         }
+    }
+
+    /**
+     * GROOVY-12364: a caller-bound handle from {@code Lookup.unreflect} is what an
+     * ordinary site uses for a {@code @CallerSensitive} target, but GraalVM's
+     * MethodHandle interpreter aborts the process on it ("Cannot invoke method that
+     * has a @CallerSensitiveAdapter without an explicit caller"), while reflection
+     * works there. An AOT-linked site therefore dispatches such targets through
+     * {@code Method.invoke}. On HotSpot the route is observable through the caller
+     * the JDK reports: reflection attributes the call to Groovy's own
+     * {@code CachedMethod}, the handle path to the calling script.
+     */
+    @Test
+    void 'caller-sensitive targets dispatch reflectively on AOT-linked sites'() {
+        String script = 'java.lang.invoke.MethodHandles.lookup().lookupClass()'
+        def viaHandle = new GroovyShell().evaluate(script)
+        assert viaHandle != CachedMethod
+        assert viaHandle.name.startsWith('Script')
+
+        def viaReflection = evaluateAotLinked(script)
+        assert viaReflection == CachedMethod
+
+        // the everyday case: a static caller-sensitive JDK method with an argument
+        assert evaluateAotLinked("java.util.logging.Logger.getLogger('groovy12364').name") == 'groovy12364'
+        // instance caller-sensitive target with varargs, via the same route
+        assert evaluateAotLinked("String.getMethod('valueOf', int).name") == 'valueOf'
     }
 
     /**

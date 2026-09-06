@@ -177,7 +177,7 @@ class ColdReflectiveMethodHandleWrapper extends MethodHandleWrapper {
      * (defaults) carry their own annotations, so they are probed directly.
      * When a probe cannot decide, the method is treated as sensitive.
      */
-    private static boolean isCallerSensitive(CachedMethod cm, Class<?> receiverClass) {
+    static boolean isCallerSensitive(CachedMethod cm, Class<?> receiverClass) {
         if (cm.isCallerSensitive()) return true;
         Method method = cm.getCachedMethod();
         if (Modifier.isAbstract(method.getModifiers())) {
