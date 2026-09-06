@@ -118,6 +118,43 @@ class SqlCacheTest extends GroovyTestCase {
         }
     }
 
+    // GROOVY-12371: the statement cache is keyed on SQL text and was unbounded, so text that
+    // varies — an inList expanding to a different placeholder count, say — grew it without limit.
+    // It is now capped, evicting (and closing) the least recently used statement.
+    void testStatementCacheIsBoundedAndEvictsLeastRecentlyUsed() {
+        sql.cacheStatements = true
+        sql.statementCacheSize = 2
+        assert sql.statementCacheSize == 2
+
+        prepareStatementCallCounter = 0
+        sql.firstRow("select * from PERSON where id = ?", [1])                 // prepare A, cache [A]
+        sql.firstRow("select * from PERSON where id = ? or id = ?", [1, 2])    // prepare B, cache [A,B]
+        sql.firstRow("select * from PERSON where id > ?", [0])                 // prepare C -> evict A, cache [B,C]
+        int afterThreeDistinct = prepareStatementCallCounter
+        assert afterThreeDistinct == 3
+
+        // B and C are still cached: re-running them prepares nothing new
+        sql.firstRow("select * from PERSON where id = ? or id = ?", [1, 2])
+        sql.firstRow("select * from PERSON where id > ?", [0])
+        assert prepareStatementCallCounter == afterThreeDistinct
+
+        // A was evicted, so it must be prepared again
+        sql.firstRow("select * from PERSON where id = ?", [1])
+        assert prepareStatementCallCounter == afterThreeDistinct + 1
+    }
+
+    void testStatementCacheUnboundedWhenSizeNotPositive() {
+        sql.cacheStatements = true
+        sql.statementCacheSize = 0   // unbounded, the historical behaviour
+
+        prepareStatementCallCounter = 0
+        (1..20).each { n -> sql.firstRow("select * from PERSON where id = ? /* ${n} */".toString(), [1]) }
+        int prepared = prepareStatementCallCounter
+        // every one is retained, so re-running the first prepares nothing new
+        sql.firstRow("select * from PERSON where id = ? /* 1 */", [1])
+        assert prepareStatementCallCounter == prepared
+    }
+
     void testCachePreparedStatements() {
         prepareStatementCallCounter = 0
         prepareStatementExpectedCall = 3
