@@ -1140,9 +1140,14 @@ final class ChannelSelectTest {
 
             def work = AsyncChannel.create(4)
             def timer = AsyncChannel.after(100)
-            async { Thread.sleep(20); work.send('done') }
+            // Arm the select first so the value arrives while it is waiting,
+            // then send on this thread. Racing an async sleep against the
+            // timer loses when a cold assertScript class is slow to start.
+            def pending = ChannelSelect.from(work, timer).select()
+            assert !pending.toCompletableFuture().isDone()
+            work.send('done')
 
-            def result = await ChannelSelect.from(work, timer).select()
+            def result = await pending
             assert result.index == 0 && result.value == 'done'
 
             // the losing timer was withdrawn, not consumed: it fires all the
