@@ -41,7 +41,7 @@ dependencies {
     // Package relocation for published jars (com.gradleup.shadow)
     implementation 'com.gradleup.shadow:shadow-gradle-plugin:9.6.1'
     // ASM-based scanning of @GroovyABI annotations in compiled classes
-    implementation 'org.ow2.asm:asm:9.7.1'
+    implementation 'org.ow2.asm:asm:9.10.1'
 }
 
 tasks.withType(Jar).configureEach {
