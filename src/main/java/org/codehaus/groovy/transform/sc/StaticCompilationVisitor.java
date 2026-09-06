@@ -268,13 +268,26 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
      */
     @Override
     public void visitConstructorCallExpression(final ConstructorCallExpression call) {
-        super.visitConstructorCallExpression(call);
-
-        if (call.isUsingAnonymousInnerClass() && call.getType().getNodeMetaData(StaticTypeCheckingVisitor.class) != null) {
+        if (call.isUsingAnonymousInnerClass()) {
+            // GROOVY-6925: an anonymous inner class follows its enclosing method, the
+            // most specific annotation (a @CompileStatic method inside a @CompileDynamic
+            // class, or the reverse). visitClass may already have recorded the class-level
+            // answer for it, so recompute here rather than keep that: this hook is only
+            // reached from a method that is actually visited. GROOVY-12363: decide before
+            // the type checker visits the body below, otherwise its methods are checked
+            // while still counting as dynamic (no direct call targets, no
+            // SUPER_MOP_METHOD_REQUIRED) and yet the class is generated as statically
+            // compiled, which omits the super$ MOP bridges a dynamic super call needs.
             ClassNode anonType = call.getType();
-            anonType.putNodeMetaData(STATIC_COMPILE_NODE, anonType.getEnclosingMethod().getNodeMetaData(STATIC_COMPILE_NODE));
+            MethodNode enclosingMethod = anonType.getEnclosingMethod();
+            boolean isSC = enclosingMethod != null
+                    ? isStaticallyCompiled(enclosingMethod)
+                    : isStaticallyCompiled(getEnclosingDeclaration());
+            anonType.putNodeMetaData(STATIC_COMPILE_NODE, isSC);
             anonType.putNodeMetaData(WriterControllerFactory.class, anonType.getOuterClass().getNodeMetaData(WriterControllerFactory.class));
         }
+
+        super.visitConstructorCallExpression(call);
 
         if (!isStaticallyCompiled(getEnclosingDeclaration())) return;
 

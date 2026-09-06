@@ -93,8 +93,19 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
         StaticCompilationTransformer transformer = new StaticCompilationTransformer(source, visitor);
         if (target instanceof ClassNode) {
             transformer.visitClass((ClassNode) target);
-        } else if (target instanceof MethodNode) {
-            transformer.visitMethod((MethodNode) target);
+        } else if (target instanceof MethodNode methodNode) {
+            transformer.visitMethod(methodNode);
+            // GROOVY-12363: an anonymous inner class declared in this method is compiled
+            // statically with it (StaticCompilationVisitor marks it from the enclosing
+            // method), so its expressions need the same rewriting the class path applies
+            // to inner classes; e.g. an operator call left as a BinaryExpression fails at
+            // class generation in StaticTypesCallSiteWriter
+            methodNode.getDeclaringClass().getInnerClasses().forEachRemaining(innerClass -> {
+                if (innerClass.isAnonymous() && methodNode.equals(innerClass.getEnclosingMethod())
+                        && StaticCompilationVisitor.isStaticallyCompiled(innerClass)) {
+                    transformer.visitClass(innerClass);
+                }
+            });
         }
     }
 
