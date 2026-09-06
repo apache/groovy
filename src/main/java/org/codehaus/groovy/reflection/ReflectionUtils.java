@@ -322,11 +322,17 @@ public class ReflectionUtils {
     }
 
     private static boolean classShouldBeIgnored(final Class c, final Collection<String> extraIgnoredPackages) {
-        return (c != null
-                && (c.isSynthetic()
-                    || (c.getPackage() != null
-                        && (IGNORED_PACKAGES.contains(c.getPackage().getName())
-                          || extraIgnoredPackages.contains(c.getPackage().getName())))));
+        if (c == null) return false;
+        if (c.isSynthetic()) return true;
+        String packageName = c.getPackageName(); // never null, unlike getPackage()
+        if (packageName.isEmpty()) return false;
+        return IGNORED_PACKAGES.contains(packageName)
+                || extraIgnoredPackages.contains(packageName)
+                // GraalVM native image runs dynamically built MethodHandle chains in an
+                // interpreter whose frames (com.oracle.svm.core.methodhandles) are not
+                // hidden, and its reflection accessors live in com.oracle.svm.core.reflect;
+                // all are dispatch machinery, never the caller (GROOVY-12362)
+                || packageName.startsWith("com.oracle.svm.");
     }
 
     private static final MethodHandle IS_SEALED_METHODHANDLE;

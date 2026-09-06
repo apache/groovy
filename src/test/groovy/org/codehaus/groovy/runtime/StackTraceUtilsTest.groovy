@@ -54,6 +54,25 @@ class StackTraceUtilsTest {
         assertFalse(StackTraceUtils.isApplicationClass("com.sun.proxy.Proxy"))
         assertFalse(StackTraceUtils.isApplicationClass("org.apache.groovy.util.Something"))
         assertFalse(StackTraceUtils.isApplicationClass("jdk.internal.misc.Unsafe"))
+        // GROOVY-12362: GraalVM native image dispatch machinery
+        assertFalse(StackTraceUtils.isApplicationClass("com.oracle.svm.core.methodhandles.Util_java_lang_invoke_MethodHandle"))
+        assertFalse(StackTraceUtils.isApplicationClass("com.oracle.svm.core.reflect.SubstrateMethodAccessor"))
+    }
+
+    @Test
+    void testSanitizeStripsGraalVMDispatchFrames() {
+        // the frames a dynamic call leaves in a GraalVM native image (GROOVY-12362)
+        def t = new Exception('boom')
+        t.stackTrace = [
+                new StackTraceElement('Svc', 'work', 'Svc.groovy', 20),
+                new StackTraceElement('com.oracle.svm.core.methodhandles.Util_java_lang_invoke_MethodHandle', 'invokeInternal', null, 259),
+                new StackTraceElement('java.lang.invoke.LambdaForm$NamedFunction', 'invokeWithArguments', null, 107),
+                new StackTraceElement('com.oracle.svm.core.reflect.SubstrateMethodAccessor', 'invoke', null, 118),
+                new StackTraceElement('org.codehaus.groovy.vmplugin.v8.IndyInterface', 'aotDispatch', null, 604),
+                new StackTraceElement('App', 'main', 'App.groovy', 5),
+        ] as StackTraceElement[]
+        def sanitized = StackTraceUtils.sanitize(t)
+        assertEquals(['Svc.work', 'App.main'], sanitized.stackTrace.collect { "${it.className}.${it.methodName}".toString() })
     }
 
     @Test

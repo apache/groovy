@@ -72,7 +72,8 @@ public class StackTraceUtils {
                             "groovyjarjar," +
                             "com.sun.," +
                             "org.apache.groovy.," +
-                            "jdk.internal."
+                            "jdk.internal.," +
+                            "com.oracle.svm." // GraalVM native image: MethodHandle interpreter and reflection accessor frames (GROOVY-12362)
             ).split("[\\s,]+");
 
     private static final List<Closure> tests = new ArrayList<>();
