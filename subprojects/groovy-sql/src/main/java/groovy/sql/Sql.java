@@ -44,6 +44,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -314,7 +315,28 @@ public class Sql implements AutoCloseable {
 
     private boolean withinBatch;
 
-    private final Map<String, Statement> statementCache = new HashMap<>();
+    /**
+     * Upper bound on the number of prepared statements kept in {@link #statementCache}. A value
+     * of {@code 0} or less means unbounded, the historical behaviour. Defaults to 256, overridable
+     * with the {@code groovy.sql.statement.cache.size} system property.
+     */
+    private int statementCacheSize = Integer.getInteger("groovy.sql.statement.cache.size", 256);
+
+    // Access-ordered so eviction is LRU, and synchronized so a shared Sql does not corrupt the map;
+    // the eldest entry is closed as it is evicted, otherwise a bounded cache would leak the JDBC
+    // cursor it drops. SQL whose *text* varies — an inList expanding to a different placeholder
+    // count per call — would otherwise grow this without limit.
+    private final Map<String, Statement> statementCache = Collections.synchronizedMap(
+            new LinkedHashMap<String, Statement>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, Statement> eldest) {
+                    if (statementCacheSize > 0 && size() > statementCacheSize) {
+                        closeStatementQuietly(eldest.getValue());
+                        return true;
+                    }
+                    return false;
+                }
+            });
     private final Map<String, String> namedParamSqlCache = new HashMap<>();
     private final Map<String, List<Tuple<?>>> namedParamIndexPropCache = new HashMap<>();
     private List<String> keyColumnNames;
@@ -4048,6 +4070,33 @@ public class Sql implements AutoCloseable {
     }
 
     /**
+     * The maximum number of statements kept when {@code cacheStatements} is on. A value of 0 or
+     * less means unbounded. Defaults to 256, or the {@code groovy.sql.statement.cache.size} system
+     * property. A cache keyed on the SQL text grows once per distinct text, so a query whose text
+     * varies — an {@code inList} expanding to a different placeholder count per call — will fill
+     * an unbounded cache; the bound keeps that in check by evicting and closing the least recently
+     * used statement.
+     *
+     * @return the cache size limit
+     * @since 6.0.0
+     */
+    public int getStatementCacheSize() {
+        return statementCacheSize;
+    }
+
+    /**
+     * Sets the maximum number of statements kept when {@code cacheStatements} is on; see
+     * {@link #getStatementCacheSize()}. Lowering it below the current number of cached statements
+     * takes effect as statements are next used and evicted, not immediately.
+     *
+     * @param statementCacheSize the new limit; 0 or less for unbounded
+     * @since 6.0.0
+     */
+    public void setStatementCacheSize(int statementCacheSize) {
+        this.statementCacheSize = statementCacheSize;
+    }
+
+    /**
      * @return boolean true if cache is enabled (default is false)
      */
     public boolean isCacheStatements() {
@@ -5035,20 +5084,25 @@ public class Sql implements AutoCloseable {
 
     private void clearStatementCache() {
         Statement[] statements;
-        if (statementCache.isEmpty())
-            return;
-        statements = new Statement[statementCache.size()];
-        statementCache.values().toArray(statements);
-        statementCache.clear();
+        synchronized (statementCache) {
+            if (statementCache.isEmpty())
+                return;
+            statements = statementCache.values().toArray(new Statement[0]);
+            statementCache.clear();
+        }
         for (Statement s : statements) {
-            try {
-                s.close();
-            } catch (Exception e) {
-                // It's normally safe to ignore exceptions during cleanup but here if there is
-                // a closed statement in the cache, the cache is possibly corrupted, hence log
-                // at slightly elevated level than similar cases.
-                LOG.info("Failed to close statement. Already closed? Exception message: " + e.getMessage());
-            }
+            closeStatementQuietly(s);
+        }
+    }
+
+    private static void closeStatementQuietly(Statement s) {
+        try {
+            if (s != null) s.close();
+        } catch (Exception e) {
+            // It's normally safe to ignore exceptions during cleanup but here if there is
+            // a closed statement in the cache, the cache is possibly corrupted, hence log
+            // at slightly elevated level than similar cases.
+            LOG.info("Failed to close statement. Already closed? Exception message: " + e.getMessage());
         }
     }
 
@@ -5057,8 +5111,18 @@ public class Sql implements AutoCloseable {
         if (cacheStatements) {
             stmt = statementCache.get(sql);
             if (stmt == null) {
-                stmt = cmd.execute(connection, sql);
-                statementCache.put(sql, stmt);
+                Statement created = cmd.execute(connection, sql);
+                synchronized (statementCache) {
+                    Statement raced = statementCache.get(sql);
+                    if (raced != null) {
+                        // another thread prepared the same SQL first; keep theirs, drop ours
+                        closeStatementQuietly(created);
+                        stmt = raced;
+                    } else {
+                        statementCache.put(sql, created);
+                        stmt = created;
+                    }
+                }
             }
         } else {
             stmt = cmd.execute(connection, sql);
