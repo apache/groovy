@@ -48,15 +48,15 @@ public class CallsiteBench {
 
     /**
      * Monomorphic dispatch via Groovy dynamic with the reflective cold tier
-     * explicitly disabled (GROOVY-12137). The tier is on by default, so the
-     * plain {@link #dispatch_1_monomorphic_groovy} measures the shipping
-     * (enabled) behaviour and this variant is the disabled baseline; steady
-     * state must match either way (the hot path is identical after promotion).
+     * explicitly enabled (GROOVY-12137). The tier is off by default on a JVM
+     * (GROOVY-12354), so the plain {@link #dispatch_1_monomorphic_groovy}
+     * measures the shipping behaviour and this variant is the enabled side;
+     * steady state must match either way (the hot path is identical after promotion).
      * @param state the monomorphic receiver state
      * @param bh the blackhole for consuming results
      */
     @Benchmark
-    @Fork(value = 2, jvmArgsAppend = "-Dgroovy.indy.cold.reflection=false")
+    @Fork(value = 2, jvmArgsAppend = "-Dgroovy.indy.cold.reflection=true")
     public void dispatch_1_monomorphic_groovyColdReflect(MonomorphicState state, Blackhole bh) {
         Callsite.dispatch(state.receivers, bh);
     }
@@ -93,15 +93,16 @@ public class CallsiteBench {
 
     /**
      * Polymorphic dispatch (3 types) via Groovy dynamic with the reflective
-     * cold tier explicitly disabled (GROOVY-12137) — the disabled baseline
-     * against the default-on {@link #dispatch_3_polymorphic_groovy}. Polymorphic
-     * sites never reach the consecutive-hit promotion, so the enabled variant
-     * exercises the per-wrapper cumulative promotion; steady state must match.
+     * cold tier explicitly enabled (GROOVY-12137) — the enabled side against
+     * the default {@link #dispatch_3_polymorphic_groovy} (tier off on a JVM,
+     * GROOVY-12354). Polymorphic sites never reach the consecutive-hit
+     * promotion, so this variant exercises the per-wrapper cumulative
+     * promotion; steady state must match.
      * @param state the polymorphic receiver state
      * @param bh the blackhole for consuming results
      */
     @Benchmark
-    @Fork(value = 2, jvmArgsAppend = "-Dgroovy.indy.cold.reflection=false")
+    @Fork(value = 2, jvmArgsAppend = "-Dgroovy.indy.cold.reflection=true")
     public void dispatch_3_polymorphic_groovyColdReflect(PolymorphicState state, Blackhole bh) {
         Callsite.dispatch(state.receivers, bh);
     }

@@ -25,7 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue
 
 /**
  * Standing parity guard for the reflective cold tier (GROOVY-12137,
- * {@code groovy.indy.cold.reflection}, on by default). The tier's fast path
+ * {@code groovy.indy.cold.reflection}; off by default on a JVM, on for
+ * AOT-linked sites — GROOVY-12354). The tier's fast path
  * dispatches via {@code java.lang.reflect.Method.invoke} while the normal
  * path uses MethodHandles, so its unique risk is behavioural divergence
  * between those two invocation mechanisms (e.g. primitive-return box identity,
@@ -73,11 +74,21 @@ class ColdReflectionParityTest {
         assertEquals(0, firedOff, "reflective cold tier fired $firedOff times when disabled; expected none")
     }
 
+    @Test
+    void coldReflectionDefaultIsAotOnly() {
+        // property unset: a plain JVM never fires the tier (GROOVY-12354); the same
+        // JVM with AOT link mode forced links every site through it
+        int firedJvm = countColdDispatches(runCorpus(null, true))
+        int firedAot = countColdDispatches(runCorpus(null, true, ['-Dgroovy.indy.aot.link=true']))
+        assertEquals(0, firedJvm, "reflective cold tier fired $firedJvm times on a JVM with the property unset; expected none")
+        assertTrue(firedAot >= 50, "reflective cold tier fired only $firedAot times on AOT-linked sites with the property unset; expected broad exercise")
+    }
+
     private static int countColdDispatches(String log) {
         log.readLines().count { it.contains('using reflective cold tier') }
     }
 
-    private static String runCorpus(boolean coldReflection, boolean logging = false) {
+    private static String runCorpus(Boolean coldReflection, boolean logging = false, List<String> extraArgs = []) {
         def corpus = File.createTempFile('cold-reflection-parity', '.groovy')
         corpus.deleteOnExit()
         corpus.bytes = ColdReflectionParityTest.getResourceAsStream(CORPUS_RESOURCE).bytes
@@ -85,9 +96,10 @@ class ColdReflectionParityTest {
         def java = new File(System.getProperty('java.home'), 'bin/java').absolutePath
         def cp = System.getProperty('java.class.path')
         def cmd = [java, '-cp', cp]
-        // pin the state explicitly (the flag is opt-out / on by default), so
-        // the off case actively disables and the test does not rely on the default
-        cmd << "-Dgroovy.indy.cold.reflection=${coldReflection}".toString()
+        // pin the state explicitly when asked, so the on/off cases do not depend on
+        // the default; null leaves the property unset to exercise the default itself
+        if (coldReflection != null) cmd << "-Dgroovy.indy.cold.reflection=${coldReflection}".toString()
+        cmd.addAll(extraArgs)
         if (logging) cmd << '-Dgroovy.indy.logging=true'
         cmd += ['groovy.ui.GroovyMain', corpus.absolutePath]
 

@@ -57,13 +57,14 @@ public class IndyInterface {
     private static final long INDY_FALLBACK_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.fallback.threshold", 1_000L);
     private static final long INDY_FALLBACK_CUTOFF = SystemUtil.getLongSafe("groovy.indy.fallback.cutoff", 100L);
     /**
-     * Dispatch plain method calls reflectively while a call site is cold,
-     * deferring all MethodHandle chain construction (and its one-time
-     * LambdaForm cost) to hit-count promotion. See
-     * {@link ColdReflectiveMethodHandleWrapper}. On by default; set
-     * {@code -Dgroovy.indy.cold.reflection=false} to disable (opt-out).
+     * Whether plain method calls dispatch reflectively while a call site is
+     * cold ({@link ColdReflectiveMethodHandleWrapper}), deferring MethodHandle
+     * chain construction (and its one-time LambdaForm cost) to hit-count
+     * promotion. An explicit {@code groovy.indy.cold.reflection} setting wins;
+     * {@code null} means unset, in which case only AOT-linked sites use the
+     * tier (see {@link #coldReflectionEnabled}). Read once at class init.
      */
-    private static final boolean INDY_COLD_REFLECTION = SystemUtil.getBooleanSafe("groovy.indy.cold.reflection", true);
+    private static final Boolean INDY_COLD_REFLECTION = readColdReflectionFlag();
 
     /**
      * Flags for method and property calls.
@@ -762,7 +763,7 @@ public class IndyInterface {
 
         Selector selector = Selector.getSelector(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, arguments);
 
-        if (INDY_COLD_REFLECTION && allowColdReflection && callID == CallType.METHOD.getOrderNumber()) {
+        if (allowColdReflection && callID == CallType.METHOD.getOrderNumber() && coldReflectionEnabled(callSite)) {
             MethodHandleWrapper cold = ColdReflectiveMethodHandleWrapper.tryBuild(
                     selector, callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, arguments);
             if (cold != null) {
@@ -781,6 +782,30 @@ public class IndyInterface {
                 selector.method,
                 selector.cache
         );
+    }
+
+    private static Boolean readColdReflectionFlag() {
+        String value = SystemUtil.getSystemPropertySafe("groovy.indy.cold.reflection");
+        return value == null ? null : Boolean.parseBoolean(value);
+    }
+
+    /**
+     * Resolves the reflective cold-tier policy for a call site.
+     * <p>
+     * On a JVM the tier is off unless {@code groovy.indy.cold.reflection=true}
+     * is set: while a site is cold it leaves reflection and Groovy runtime
+     * frames between caller and target, so logging frameworks, {@code StackWalker}
+     * and stack traces report the wrong caller until the site promotes, or
+     * forever for rarely hit sites (GROOVY-12354). For an AOT-linked site
+     * (GraalVM native image, or {@code groovy.indy.aot.link=true}) the tier is
+     * the steady state — method-handle chains would run in the native
+     * MethodHandle interpreter — so it stays on unless the property disables it.
+     *
+     * @param callSite the site being linked
+     * @return {@code true} if the site may use the reflective cold tier
+     */
+    static boolean coldReflectionEnabled(CacheableCallSite callSite) {
+        return INDY_COLD_REFLECTION != null ? INDY_COLD_REFLECTION : callSite.isAotLinked();
     }
 
     /**
