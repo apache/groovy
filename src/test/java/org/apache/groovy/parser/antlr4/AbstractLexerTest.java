@@ -21,10 +21,14 @@ package org.apache.groovy.parser.antlr4;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.Token;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -121,13 +125,24 @@ final class AbstractLexerTest {
                 AbstractLexer.illegalEscapeMessage(rest, 3));
     }
 
-    @Test
-    void requireUnexpectedCharacterPointsAtIllegalBackslash() {
-        GroovyLangLexer lexer = new GroovyLangLexer(CharStreams.fromString("\"C:\\Users\\me\""));
+    @ParameterizedTest
+    @MethodSource("requirePositionCases")
+    void requirePositionsTheDiagnostic(final String src, final String message, final int line, final int column) {
+        GroovyLangLexer lexer = new GroovyLangLexer(CharStreams.fromString(src));
         GroovySyntaxError err = assertThrows(GroovySyntaxError.class, () -> drain(lexer));
-        assertEquals("Illegal escape character: '\\U'", err.getMessage());
-        assertEquals(1, err.getLine());
-        assertEquals(4, err.getColumn()); // 1-based: " C : \
+        assertEquals(message, err.getMessage());
+        assertEquals(line, err.getLine());
+        assertEquals(column, err.getColumn());
+    }
+
+    private static Stream<Arguments> requirePositionCases() {
+        return Stream.of(
+                // 1-based: " C : \   — caret on the illegal backslash
+                Arguments.of("\"C:\\Users\\me\"", "Illegal escape character: '\\U'", 1, 4),
+                Arguments.of("\"C:\\Users", "Illegal escape character: '\\U'", 1, 4),
+                Arguments.of("/* comment", "Unclosed comment", 1, 1),
+                Arguments.of("    /* comment", "Unclosed comment", 1, 5)
+        );
     }
 
     @Test
@@ -240,14 +255,6 @@ final class AbstractLexerTest {
     }
 
     @Test
-    void unclosedQuoteWithIllegalEscapeReportsTheEscape() {
-        GroovyLangLexer lexer = new GroovyLangLexer(CharStreams.fromString("\"C:\\Users"));
-        GroovySyntaxError err = assertThrows(GroovySyntaxError.class, () -> drain(lexer));
-        assertEquals("Illegal escape character: '\\U'", err.getMessage());
-        assertEquals(4, err.getColumn());
-    }
-
-    @Test
     void errorIgnoredIllegalEscapeTokenizesWithoutThrowing() {
         GroovyLangLexer lexer = new GroovyLangLexer(CharStreams.fromString("\"\\q\""));
         lexer.setErrorIgnored(true);
@@ -350,30 +357,12 @@ final class AbstractLexerTest {
     }
 
     @Test
-    void requireUnclosedCommentPointsAtOpener() {
-        GroovyLangLexer lexer = new GroovyLangLexer(CharStreams.fromString("/* comment"));
-        GroovySyntaxError err = assertThrows(GroovySyntaxError.class, () -> drain(lexer));
-        assertEquals("Unclosed comment", err.getMessage());
-        assertEquals(1, err.getLine());
-        assertEquals(1, err.getColumn());
-    }
-
-    @Test
     void errorIgnoredUnclosedCommentTokenizesWithoutThrowing() {
         GroovyLangLexer lexer = new GroovyLangLexer(CharStreams.fromString("/* comment"));
         lexer.setErrorIgnored(true);
         List<Token> tokens = assertDoesNotThrow(() -> collect(lexer));
         assertEquals(Token.EOF, tokens.get(tokens.size() - 1).getType());
         assertTrue(tokens.size() >= 2, tokens.toString());
-    }
-
-    @Test
-    void requireUnclosedCommentPointsAtIndentedOpener() {
-        GroovyLangLexer lexer = new GroovyLangLexer(CharStreams.fromString("    /* comment"));
-        GroovySyntaxError err = assertThrows(GroovySyntaxError.class, () -> drain(lexer));
-        assertEquals("Unclosed comment", err.getMessage());
-        assertEquals(1, err.getLine());
-        assertEquals(5, err.getColumn());
     }
 
     @Test

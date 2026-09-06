@@ -158,44 +158,42 @@ public abstract class AbstractLexer extends Lexer implements SyntaxErrorReportab
         if (n == IntStream.EOF) {
             return -1;
         }
-        switch (n) {
-            case 'b':
-            case 't':
-            case 'n':
-            case 'f':
-            case 'r':
-            case 's':
-            case '"':
-            case '\'':
-            case '\\':
-            case '$':
-            case '\n':
-                return 2;
-            case '\r':
-                return input.LA(i + 2) == '\n' ? 3 : 2;
-            case 'u':
-                for (int h = 2; h <= 5; h++) {
-                    int d = input.LA(i + h);
-                    if (d == IntStream.EOF || !isAsciiHexDigit(d)) {
-                        return -1;
-                    }
-                }
-                return 6;
-            default:
-                if (n >= '0' && n <= '7') {
-                    int len = 2;
-                    int n2 = input.LA(i + 2);
-                    if (n2 >= '0' && n2 <= '7') {
-                        len = 3;
-                        int n3 = input.LA(i + 3);
-                        if (n <= '3' && n3 >= '0' && n3 <= '7') {
-                            len = 4;
-                        }
-                    }
-                    return len;
-                }
+        return switch (n) {
+            case 'b', 't', 'n', 'f', 'r', 's', '"', '\'', '\\', '$', '\n' -> 2;
+            case '\r' -> input.LA(i + 2) == '\n' ? 3 : 2;
+            case 'u' -> unicodeEscapeLength(input, i);
+            default -> octalEscapeLength(n, input, i);
+        };
+    }
+
+    /** {@code UnicodeEscape}: backslash-u plus four ASCII hex digits, else {@code -1}. */
+    private static int unicodeEscapeLength(final CharStream input, final int backslashAt) {
+        for (int h = 2; h <= 5; h++) {
+            int d = input.LA(backslashAt + h);
+            if (d == IntStream.EOF || !isAsciiHexDigit(d)) {
                 return -1;
+            }
         }
+        return 6;
+    }
+
+    /**
+     * {@code OctalEscape}: one to three octal digits; three only when the first
+     * is {@code 0-3}.
+     */
+    private static int octalEscapeLength(final int firstDigit, final CharStream input, final int backslashAt) {
+        if (firstDigit < '0' || firstDigit > '7') {
+            return -1;
+        }
+        int n2 = input.LA(backslashAt + 2);
+        if (n2 < '0' || n2 > '7') {
+            return 2;
+        }
+        int n3 = input.LA(backslashAt + 3);
+        if (firstDigit > '3' || n3 < '0' || n3 > '7') {
+            return 3;
+        }
+        return 4;
     }
 
     /** Matches {@code HexDigit} in {@code GroovyLexer.g4}: {@code [0-9a-fA-F]}. */
