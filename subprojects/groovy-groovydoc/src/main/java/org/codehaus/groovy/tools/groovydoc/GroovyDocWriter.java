@@ -178,14 +178,16 @@ public class GroovyDocWriter {
                 }
                 Path rel = srcDir.relativize(srcFile);
                 Path dstFile = dstDir.resolve(rel);
+                // OutputTool destinations use '/' (see writeClassToOutput); Path#toString is '\' on Windows
+                String dest = dstFile.toString().replace('\\', '/');
                 try {
                     if (Files.isDirectory(srcFile)) {
-                        output.makeOutputArea(dstFile.toString());
+                        output.makeOutputArea(dest);
                     } else {
-                        output.copyResource(srcFile.toString(), dstFile.toString());
+                        output.copyResource(srcFile.toString(), dest);
                     }
                 } catch (Exception e) {
-                    log.warn("Failed to copy " + srcFile + " to " + dstFile + ": " + e.getMessage());
+                    log.warn("Failed to copy " + srcFile + " to " + dest + ": " + e.getMessage());
                 }
             });
         } catch (IOException e) {

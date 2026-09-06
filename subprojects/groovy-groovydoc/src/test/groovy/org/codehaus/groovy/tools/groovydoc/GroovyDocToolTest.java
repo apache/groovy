@@ -432,10 +432,11 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         String docFilesOut = MOCK_DIR + "/" + pkg + "/doc-files/";
         // the symlink is not copied, so its target content never reaches the output
-        assertNull("a doc-files symlink was copied into the output",
-                output.getText(docFilesOut + "leak.txt"));
-        // a real asset in the same directory still is
-        assertEquals("a real doc-files asset should still be copied",
+        assertFalse("a doc-files symlink was copied into the output: " + output.getOutputs().keySet(),
+                output.getOutputs().keySet().stream()
+                        .anyMatch(k -> k.replace('\\', '/').endsWith("/doc-files/leak.txt")));
+        // a real asset in the same directory still is; dest paths use '/' even on Windows
+        assertEquals("a real doc-files asset should still be copied; outputs=" + output.getOutputs().keySet(),
                 "a real asset", output.getText(docFilesOut + "note.txt"));
     }
 
