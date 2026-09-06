@@ -791,8 +791,8 @@ final class ErrorStrategyTest {
         return tokens;
     }
 
-    private static GroovyLangParser parser(org.antlr.v4.runtime.CharStream charStream,
-                                           org.antlr.v4.runtime.ANTLRErrorStrategy strategy,
+    private static GroovyLangParser parser(CharStream charStream,
+                                           ANTLRErrorStrategy strategy,
                                            PredictionMode mode) {
         var parser = new GroovyLangParser(new CommonTokenStream(new GroovyLangLexer(charStream)));
         parser.setErrorHandler(strategy);

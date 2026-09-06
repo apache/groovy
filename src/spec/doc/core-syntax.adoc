@@ -126,8 +126,8 @@ include::../test/SyntaxTest.groovy[tags=reserved_keywords,indent=0]
 
 Of these, `const`, `goto`, `strictfp`, and `threadsafe` are not currently in use.
 Using `const`, `goto`, or `threadsafe` is a compilation error: the diagnostic
-names the reserved keyword and, for `const`, points at `val` (locals; preferred
-over `final` in Groovy 6) or `static final` (class constants). A `default:` or
+names the reserved keyword and, for `const`, points at `val` (locals) or
+`static final` (class constants). A `default:` or
 `default ->` clause outside a `switch` is reported as `'default' outside of switch`.
 Unexpected Unicode spaces (for example a no-break space copied from a word
 processor) are named with a `\u` escape rather than an empty-looking glyph.
@@ -374,6 +374,10 @@ Some special characters also use the backslash as escape character:
 |\"
 |double quote within a double-quoted string (and optional for triple-double-quoted and single-quoted strings)
 |====
+
+An unknown letter escape such as `\U` in `"C:\Users"` is a compilation error
+(`Illegal escape character`). Write a literal backslash as `\\`, or use a
+slashy / dollar-slashy string for Windows paths and regexes.
 
 We'll see some more escaping details when it comes to other types of strings discussed later.
 

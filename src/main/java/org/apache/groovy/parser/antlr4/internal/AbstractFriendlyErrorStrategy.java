@@ -170,13 +170,13 @@ abstract class AbstractFriendlyErrorStrategy extends DefaultErrorStrategy {
      * construct is nearby but incomplete ({@code if (x) else {}} is
      * {@code 'else' without 'if'} because the then-branch is missing).
      * {@code const} is reserved and unused in Java (JLS 3.9); the replacements
-     * are {@code val} (locals; preferred over {@code final} in Groovy 6) and
-     * {@code static final} (class constants). {@code threadsafe} is reserved
-     * and unused in Groovy. {@code default} itself is <em>not</em> mapped
-     * here: it is a valid interface-method and annotation-element keyword, so
-     * an offending {@code default} (for example {@code def m() default {1}})
-     * is not "outside of switch". {@code default:} / {@code default ->}
-     * outside a switch is recognised via {@link #misplacedDefaultClause}.
+     * are {@code val} (locals) and {@code static final} (class constants).
+     * {@code threadsafe} is reserved and unused in Groovy. {@code default}
+     * itself is <em>not</em> mapped here: it is a valid interface-method and
+     * annotation-element keyword, so an offending {@code default} (for example
+     * {@code def m() default {1}}) is not "outside of switch".
+     * {@code default:} / {@code default ->} outside a switch is recognised
+     * via {@link #misplacedDefaultClause}.
      */
     static String keywordMessage(final int tokenType) {
         return switch (tokenType) {

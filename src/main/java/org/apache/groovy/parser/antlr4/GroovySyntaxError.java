@@ -18,6 +18,8 @@
  */
 package org.apache.groovy.parser.antlr4;
 
+import org.codehaus.groovy.syntax.SyntaxException;
+
 /**
  * Represents a syntax error of a Groovy program, raised by the lexer or parser.
  * <p>
@@ -26,7 +28,7 @@ package org.apache.groovy.parser.antlr4;
  * Line and column are 1-based caret coordinates. On the compiler's normal lexer
  * path ({@link SyntaxErrorReportable#require} with {@code toAttachPositionInfo}
  * false), the location is not part of the message string —
- * {@link org.codehaus.groovy.syntax.SyntaxException} appends
+ * {@link SyntaxException} appends
  * {@code @ line N, column M} when wrapping the error. The public
  * {@link SyntaxErrorReportable#throwSyntaxError} path can still append
  * {@link PositionInfo} when {@code toAttachPositionInfo} is true (IDE /

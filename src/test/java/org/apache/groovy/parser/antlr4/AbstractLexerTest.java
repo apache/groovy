@@ -23,6 +23,7 @@ import org.antlr.v4.runtime.Token;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -49,6 +50,209 @@ final class AbstractLexerTest {
         assertEquals("Unclosed string literal", AbstractLexer.unexpectedCharacterMessage("'"));
         assertEquals("Unclosed string literal", AbstractLexer.unexpectedCharacterMessage("\""));
         assertEquals("Unclosed string literal", AbstractLexer.unexpectedCharacterMessage("'''"));
+    }
+
+    @Test
+    void closedStringWithIllegalEscapeIsNotUnclosed() {
+        var rest = CharStreams.fromString("C:\\Users\\me\"");
+        assertEquals("Illegal escape character: '\\U'",
+                AbstractLexer.unexpectedCharacterMessage("\"", rest));
+        assertEquals(3, AbstractLexer.illegalEscapeLaIndex(rest, '"'));
+        var sq = CharStreams.fromString("C:\\Users\\me'");
+        assertEquals("Illegal escape character: '\\U'",
+                AbstractLexer.unexpectedCharacterMessage("'", sq));
+    }
+
+    @Test
+    void illegalEscapeAtStartOfString() {
+        var rest = CharStreams.fromString("\\q\"");
+        assertEquals("Illegal escape character: '\\q'",
+                AbstractLexer.unexpectedCharacterMessage("\"", rest));
+        assertEquals(1, AbstractLexer.illegalEscapeLaIndex(rest, '"'));
+    }
+
+    @Test
+    void illegalIncompleteUnicodeEscape() {
+        var rest = CharStreams.fromString("\\u12\"");
+        assertEquals("Illegal escape character: '\\u'",
+                AbstractLexer.unexpectedCharacterMessage("\"", rest));
+    }
+
+    @Test
+    void legalEscapesAreNotIllegal() {
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("a\\n\\t\\\\b\""), '"'));
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("\\b\\f\\s\\r\""), '"'));
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("\\u0041\""), '"'));
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("\\u00AB\""), '"'));
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("\\u005cq\""), '"'));
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("\\0\""), '"'));
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("\\7\""), '"'));
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("\\077\""), '"'));
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("\\377\""), '"'));
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("\\477\""), '"'));
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("\\08\""), '"'));
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("\\$\""), '"'));
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("\\'\""), '"'));
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("hello"), '"'));
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(null, '"'));
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("a\\\nb\""), '"'));
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("a\\\r\nb\""), '"'));
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("a\\\rb\""), '"'));
+    }
+
+    @Test
+    void escapedQuoteIsNotTheCloser() {
+        // \" must be skipped so the real closer is found; no illegal escape
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("a\\\"b\""), '"'));
+    }
+
+    @Test
+    void illegalOctalEight() {
+        var rest = CharStreams.fromString("\\8\"");
+        assertEquals("Illegal escape character: '\\8'",
+                AbstractLexer.unexpectedCharacterMessage("\"", rest));
+    }
+
+    @Test
+    void backslashAtEofIsIllegalEscape() {
+        var rest = CharStreams.fromString("ab\\");
+        assertEquals(3, AbstractLexer.illegalEscapeLaIndex(rest, '"'));
+        assertEquals("Illegal escape character: '\\'",
+                AbstractLexer.illegalEscapeMessage(rest, 3));
+    }
+
+    @Test
+    void requireUnexpectedCharacterPointsAtIllegalBackslash() {
+        GroovyLangLexer lexer = new GroovyLangLexer(CharStreams.fromString("\"C:\\Users\\me\""));
+        GroovySyntaxError err = assertThrows(GroovySyntaxError.class, () -> drain(lexer));
+        assertEquals("Illegal escape character: '\\U'", err.getMessage());
+        assertEquals(1, err.getLine());
+        assertEquals(4, err.getColumn()); // 1-based: " C : \
+    }
+
+    @Test
+    void twoDigitOctalIsLegal() {
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("\\77x\""), '"'));
+    }
+
+    @Test
+    void scanAheadGivesUpOnAVeryLongLine() {
+        char[] buf = new char[AbstractLexer.ILLEGAL_ESCAPE_SCAN_LIMIT + 8];
+        Arrays.fill(buf, 'a');
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString(new String(buf)), '"'));
+    }
+
+    @Test
+    void scanAheadFindsIllegalEscapeAtLimit() {
+        char[] buf = new char[AbstractLexer.ILLEGAL_ESCAPE_SCAN_LIMIT];
+        Arrays.fill(buf, 'a');
+        buf[AbstractLexer.ILLEGAL_ESCAPE_SCAN_LIMIT - 1] = '\\';
+        assertEquals(AbstractLexer.ILLEGAL_ESCAPE_SCAN_LIMIT,
+                AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString(new String(buf)), '"'));
+    }
+
+    @Test
+    void scanAheadMissesIllegalEscapePastLimit() {
+        char[] buf = new char[AbstractLexer.ILLEGAL_ESCAPE_SCAN_LIMIT + 2];
+        Arrays.fill(buf, 'a');
+        buf[AbstractLexer.ILLEGAL_ESCAPE_SCAN_LIMIT] = '\\';
+        buf[AbstractLexer.ILLEGAL_ESCAPE_SCAN_LIMIT + 1] = 'q';
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString(new String(buf)), '"'));
+    }
+
+    @Test
+    void newlineStopsScanEvenIfCloserFollows() {
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("hello\nworld\\q\""), '"'));
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("hello\rworld\\q\""), '"'));
+    }
+
+    @Test
+    void mismatchedCloserIsNotACloser() {
+        assertEquals(0, AbstractLexer.illegalEscapeLaIndex(CharStreams.fromString("hello'"), '"'));
+        assertEquals("Illegal escape character: '\\q'",
+                AbstractLexer.unexpectedCharacterMessage("\"", CharStreams.fromString("hello\\q'")));
+    }
+
+    @Test
+    void firstIllegalEscapeWins() {
+        var rest = CharStreams.fromString("a\\q\\z\"");
+        assertEquals(2, AbstractLexer.illegalEscapeLaIndex(rest, '"'));
+        assertEquals("Illegal escape character: '\\q'",
+                AbstractLexer.unexpectedCharacterMessage("\"", rest));
+    }
+
+    @Test
+    void illegalEscapeAfterLegalOnes() {
+        var rest = CharStreams.fromString("a\\n\\t\\q\"");
+        assertEquals(6, AbstractLexer.illegalEscapeLaIndex(rest, '"'));
+        assertEquals("Illegal escape character: '\\q'",
+                AbstractLexer.unexpectedCharacterMessage("\"", rest));
+    }
+
+    @Test
+    void extraUInUnicodeEscapeIsIllegal() {
+        // UnicodeEscape is a single 'u' then four hex digits; a second u is not hex
+        var rest = CharStreams.fromString("\\uu0041\"");
+        assertEquals("Illegal escape character: '\\u'",
+                AbstractLexer.unexpectedCharacterMessage("\"", rest));
+    }
+
+    @Test
+    void unicodeEscapeRequiresAsciiHexDigits() {
+        var rest = CharStreams.fromString("\\u004g\"");
+        assertEquals("Illegal escape character: '\\u'",
+                AbstractLexer.unexpectedCharacterMessage("\"", rest));
+        // FULLWIDTH DIGIT ZERO is not HexDigit [0-9a-fA-F]
+        var fw = CharStreams.fromString("\\u\uff10\uff10\uff10\uff10\"");
+        assertEquals("Illegal escape character: '\\u'",
+                AbstractLexer.unexpectedCharacterMessage("\"", fw));
+    }
+
+    @Test
+    void illegalEscapeOfControlCharacterUsesUnicodeDisplay() {
+        var rest = CharStreams.fromString("\\\u0001\"");
+        assertEquals(1, AbstractLexer.illegalEscapeLaIndex(rest, '"'));
+        // backslash + displayCodePoint(SOH); SOH is shown as \u0001
+        assertEquals("Illegal escape character: '\\\\u0001'",
+                AbstractLexer.illegalEscapeMessage(rest, 1));
+    }
+
+    @Test
+    void instanceMessageUsesScanAheadAfterQuoteToken() {
+        GroovyLangLexer lexer = new GroovyLangLexer(CharStreams.fromString("\"C:\\Users\\me\""));
+        GroovySyntaxError err = assertThrows(GroovySyntaxError.class, () -> drain(lexer));
+        assertEquals("Illegal escape character: '\\U'", err.getMessage());
+        assertEquals("Illegal escape character: '\\U'", lexer.unexpectedCharacterMessage());
+    }
+
+    @Test
+    void escapedWindowsPathTokenizes() {
+        List<Token> tokens = collect("x = \"C:\\\\Users\\\\me\"");
+        assertEquals(Token.EOF, tokens.get(tokens.size() - 1).getType());
+    }
+
+    @Test
+    void errorIgnoredUnclosedQuoteTokenizesWithoutThrowing() {
+        GroovyLangLexer lexer = new GroovyLangLexer(CharStreams.fromString("'hello"));
+        lexer.setErrorIgnored(true);
+        List<Token> tokens = assertDoesNotThrow(() -> collect(lexer));
+        assertEquals(Token.EOF, tokens.get(tokens.size() - 1).getType());
+    }
+
+    @Test
+    void unclosedQuoteWithIllegalEscapeReportsTheEscape() {
+        GroovyLangLexer lexer = new GroovyLangLexer(CharStreams.fromString("\"C:\\Users"));
+        GroovySyntaxError err = assertThrows(GroovySyntaxError.class, () -> drain(lexer));
+        assertEquals("Illegal escape character: '\\U'", err.getMessage());
+        assertEquals(4, err.getColumn());
+    }
+
+    @Test
+    void errorIgnoredIllegalEscapeTokenizesWithoutThrowing() {
+        GroovyLangLexer lexer = new GroovyLangLexer(CharStreams.fromString("\"\\q\""));
+        lexer.setErrorIgnored(true);
+        List<Token> tokens = assertDoesNotThrow(() -> collect(lexer));
+        assertEquals(Token.EOF, tokens.get(tokens.size() - 1).getType());
     }
 
     @Test
