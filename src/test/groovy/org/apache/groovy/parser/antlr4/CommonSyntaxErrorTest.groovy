@@ -66,6 +66,37 @@ final class CommonSyntaxErrorTest {
     }
 
     @Test
+    void 'closed string with windows path illegal escape'() {
+        expectParseError 'x = "C:\\Users\\me"', '''\
+            |Illegal escape character: '\\U' @ line 1, column 8.
+            |   x = "C:\\Users\\me"
+            |          ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'closed single-quoted string with illegal escape'() {
+        expectContains "s = 'C:\\Users\\me'", "Illegal escape character: '\\U'"
+    }
+
+    @Test
+    void 'closed string with unknown letter escape'() {
+        expectContains 's = "hello\\q"', "Illegal escape character: '\\q'"
+    }
+
+    @Test
+    void 'incomplete unicode escape in a closed string'() {
+        expectContains 's = "\\u12"', "Illegal escape character: '\\u'"
+    }
+
+    @Test
+    void 'unclosed windows path still names the illegal escape'() {
+        expectContains "x = \"C:\\Users", "Illegal escape character: '\\U'"
+    }
+
+    @Test
     void 'unclosed triple-quoted string'() {
         expectContains "s = '''hello", 'Unclosed string literal'
     }

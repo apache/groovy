@@ -1018,9 +1018,10 @@ SH_COMMENT
     :   '#!' { require(errorIgnored || 0 == this.tokenIndex, "Shebang comment should appear at the first line", -2, false); } ShCommand (LineTerminator '#!' ShCommand)* -> skip
     ;
 
-// Unexpected characters (and unclosed quotes). Display goes through
-// AbstractLexer#getCharErrorDisplay; an unexpected quote is reported as
-// an unclosed string literal.
+// Unexpected characters (and unclosed quotes / illegal string escapes).
+// Display goes through AbstractLexer#getCharErrorDisplay. An unexpected
+// quote is an unclosed string unless a scan-ahead finds an illegal escape
+// in an otherwise closed literal (e.g. "C:\Users\me").
 UNEXPECTED_CHAR
-    :   . { require(errorIgnored, unexpectedCharacterMessage(), -1, false); }
+    :   . { requireUnexpectedCharacter(errorIgnored); }
     ;

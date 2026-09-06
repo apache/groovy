@@ -116,7 +116,9 @@ verbatim keeps the reference precise; paraphrasing tends to drift.
   call afterwards. Lexer unexpected-character / GString-dollar display
   goes through `Lexer.getCharErrorDisplay` (Unicode spaces other than
   `U+0020`, curly quotes, and non-ASCII dashes are named as escapes so
-  they do not vanish into the caret line). Unclosed `/*` comments are
+  they do not vanish into the caret line). An unexpected quote is an
+  unclosed string unless a scan-ahead finds an illegal escape in a
+  closed literal (`"C:\Users\me"`). Unclosed `/*` comments are
   a lexer diagnostic at the opener (`requireUnclosedComment`), not a
   parser fallback. Slashy strings cannot use an EOF closer: `/` after
   an expression with newlines is division (`9 \n / \n 3`). All of that

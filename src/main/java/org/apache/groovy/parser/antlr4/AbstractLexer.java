@@ -20,6 +20,7 @@ package org.apache.groovy.parser.antlr4;
 
 import groovy.lang.Tuple;
 import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.IntStream;
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.Token;
 
@@ -40,15 +41,44 @@ public abstract class AbstractLexer extends Lexer implements SyntaxErrorReportab
     }
 
     /**
+     * Bound for {@link #illegalEscapeLaIndex(CharStream, int)}. Error-path
+     * only; a longer line falls back to {@code Unclosed string literal}.
+     */
+    static final int ILLEGAL_ESCAPE_SCAN_LIMIT = 8192;
+
+    /**
      * User-facing message for {@code UNEXPECTED_CHAR}.
      * <p>
-     * An unexpected {@code '} or {@code "} is reported as an unclosed string
-     * literal (javac: {@code unclosed string literal}). Other characters use
+     * An unexpected {@code '} or {@code "} is an unclosed string literal
+     * (javac: {@code unclosed string literal}), unless a scan-ahead of the
+     * remainder finds an illegal escape in an otherwise closed literal
+     * ({@code "C:\Users\me"}). Other characters use
      * {@code Unexpected character: '...'} via {@link #getCharErrorDisplay(int)}.
      * </p>
      */
     String unexpectedCharacterMessage() {
-        return unexpectedCharacterMessage(getText());
+        return unexpectedCharacterMessage(getText(), _input);
+    }
+
+    /**
+     * Report {@link #unexpectedCharacterMessage()} and, for an illegal
+     * string escape, put the caret on the backslash rather than the opener.
+     *
+     * @param errorIgnored when {@code true}, keep tokenising (IDE highlighting)
+     */
+    void requireUnexpectedCharacter(final boolean errorIgnored) {
+        String text = getText();
+        int offset = -1;
+        if (text != null && !text.isEmpty()) {
+            int q = text.codePointAt(0);
+            if (q == '\'' || q == '"') {
+                int la = illegalEscapeLaIndex(_input, q);
+                if (la > 0) {
+                    offset = la - 1;
+                }
+            }
+        }
+        require(errorIgnored, unexpectedCharacterMessage(), offset, false);
     }
 
     /**
@@ -56,14 +86,123 @@ public abstract class AbstractLexer extends Lexer implements SyntaxErrorReportab
      *             lexer has no current text (still reported, without a glyph)
      */
     static String unexpectedCharacterMessage(final String text) {
+        return unexpectedCharacterMessage(text, null);
+    }
+
+    /**
+     * @param input remainder after the unexpected character; used only when
+     *              {@code text} is {@code '} or {@code "} to distinguish an
+     *              illegal escape from a truly unclosed literal
+     */
+    static String unexpectedCharacterMessage(final String text, final CharStream input) {
         if (text == null || text.isEmpty()) {
             return "Unexpected character";
         }
         int cp = text.codePointAt(0);
         if (cp == '\'' || cp == '"') {
+            int la = illegalEscapeLaIndex(input, cp);
+            if (la > 0) {
+                return illegalEscapeMessage(input, la);
+            }
             return "Unclosed string literal";
         }
         return "Unexpected character: " + quotedCodePoint(cp);
+    }
+
+    /**
+     * 1-based {@code LA} index of an illegal {@code \} after an opening quote,
+     * or {@code 0} if none (unclosed, or a closed literal with only legal
+     * escapes). Error-path only; stops at newline / EOF / the matching quote.
+     */
+    static int illegalEscapeLaIndex(final CharStream input, final int quote) {
+        if (input == null) {
+            return 0;
+        }
+        for (int i = 1; i <= ILLEGAL_ESCAPE_SCAN_LIMIT; i++) {
+            int c = input.LA(i);
+            if (c == IntStream.EOF || c == '\n' || c == '\r') {
+                return 0;
+            }
+            if (c == quote) {
+                return 0;
+            }
+            if (c == '\\') {
+                int n = validEscapeLength(input, i);
+                if (n < 0) {
+                    return i;
+                }
+                i += n - 1;
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * @param la 1-based look-ahead index of the illegal {@code \}
+     */
+    static String illegalEscapeMessage(final CharStream input, final int la) {
+        int next = input.LA(la + 1);
+        String second = next == IntStream.EOF ? "" : displayCodePoint(next);
+        return "Illegal escape character: '\\" + second + "'";
+    }
+
+    /**
+     * Length of a Groovy string {@code EscapeSequence} (see
+     * {@code GroovyLexer.g4}) starting at look-ahead {@code i} (the
+     * {@code \}), or {@code -1} if that {@code \} is illegal. Keep in sync
+     * with that fragment: {@code \btnfrs"'\\}, octal, backslash-u plus four
+     * ASCII hex digits, {@code \$}, line continuation.
+     */
+    private static int validEscapeLength(final CharStream input, final int i) {
+        int n = input.LA(i + 1);
+        if (n == IntStream.EOF) {
+            return -1;
+        }
+        switch (n) {
+            case 'b':
+            case 't':
+            case 'n':
+            case 'f':
+            case 'r':
+            case 's':
+            case '"':
+            case '\'':
+            case '\\':
+            case '$':
+            case '\n':
+                return 2;
+            case '\r':
+                return input.LA(i + 2) == '\n' ? 3 : 2;
+            case 'u':
+                for (int h = 2; h <= 5; h++) {
+                    int d = input.LA(i + h);
+                    if (d == IntStream.EOF || !isAsciiHexDigit(d)) {
+                        return -1;
+                    }
+                }
+                return 6;
+            default:
+                if (n >= '0' && n <= '7') {
+                    int len = 2;
+                    int n2 = input.LA(i + 2);
+                    if (n2 >= '0' && n2 <= '7') {
+                        len = 3;
+                        int n3 = input.LA(i + 3);
+                        if (n <= '3' && n3 >= '0' && n3 <= '7') {
+                            len = 4;
+                        }
+                    }
+                    return len;
+                }
+                return -1;
+        }
+    }
+
+    /** Matches {@code HexDigit} in {@code GroovyLexer.g4}: {@code [0-9a-fA-F]}. */
+    private static boolean isAsciiHexDigit(final int c) {
+        return (c >= '0' && c <= '9')
+                || (c >= 'a' && c <= 'f')
+                || (c >= 'A' && c <= 'F');
     }
 
     /**

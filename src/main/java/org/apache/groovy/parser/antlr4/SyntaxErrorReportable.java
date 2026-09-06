@@ -20,6 +20,7 @@ package org.apache.groovy.parser.antlr4;
 
 import groovy.lang.Tuple;
 import groovy.lang.Tuple2;
+import org.codehaus.groovy.syntax.SyntaxException;
 
 /**
  * A SyntaxErrorReportable is a recognizer that can report syntax error
@@ -59,7 +60,7 @@ public interface SyntaxErrorReportable {
     /**
      * @param toAttachPositionInfo if {@code true}, append {@code " @ line N, column M"}
      *                             to the exception message. Leave {@code false} when the
-     *                             error will be wrapped in {@link org.codehaus.groovy.syntax.SyntaxException},
+     *                             error will be wrapped in {@link SyntaxException},
      *                             which already appends the same location (otherwise the
      *                             displayed message repeats the position).
      */
