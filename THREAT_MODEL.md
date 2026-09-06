@@ -488,18 +488,52 @@ which it holds, and what its violation would look like.
   are `@Incubating` (best-effort per the stability qualifier below).
   *(documented — verified in `groovy-json`, `groovy-yaml` `YamlConverter`,
   `groovy-toml`, `groovy-csv`)*
-- **P4 — Owner-only temporary artifacts.** Temp directories created by
-  Groovy tooling (e.g. `FileSystemCompiler` joint-compilation staging) use
-  NIO `Files.createTempDirectory`, yielding owner-only permissions — the
-  fix class for CVE-2020-17521. *Violation:* a Groovy-created temp
-  artifact being world-readable/writable. CWE-377 / CWE-378. *Indicative
+- **P4 — Least-exposure for artifacts tooling writes.** A file Groovy
+  tooling creates for its own use, or as a byproduct of a run, is given
+  permissions no more permissive than its content warrants — it does not
+  widen exposure by falling back to the process umask. The baseline is
+  taken from what the artifact is: a temporary artifact or a private state
+  file is owner-only (temp directories via NIO `Files.createTempDirectory`,
+  the fix class for CVE-2020-17521; the `groovysh` state files JLine writes
+  are created owner-only, GROOVY-12335); a file rewritten in place keeps
+  the permissions the original had (`groovy -i`, GROOVY-12337); and a file
+  derived from a source inherits the source's permissions, so it exposes no
+  more than the source already does (the `groovy.ast=xml` dump,
+  GROOVY-12368). This is **not** a promise about output a tool is meant to
+  publish — `groovydoc` HTML, compiled `.class` files, joint-compilation
+  results — which is intended to be readable and carries the umask by
+  design. *Condition:* a POSIX-permission filesystem; elsewhere the
+  platform's own model applies. *Violation:* a private or byproduct
+  artifact created world-readable/writable, or a rewrite widening an
+  existing file's permissions. CWE-377 / CWE-378 / CWE-732. *Indicative
   severity if violated: Medium (local).* *(documented — verified in
-  `DefaultGroovyStaticMethods`/`FileSystemCompiler`)*
+  `DefaultGroovyStaticMethods`/`FileSystemCompiler`, `groovy-groovysh`,
+  `GroovyMain`, `XStreamUtils`)*
+- **P4b — Tooling stays within its own output tree.** A tool that resolves
+  a filesystem path from a name it was given — a package path, a cached
+  descriptor's artifact name, a documentation resource — writes, deletes,
+  or copies only within its intended directory: a `..` segment, an absolute
+  path, or a symbolic link or other reparse point does not carry the
+  operation outside that tree. `groovydoc` confines its generated pages and
+  does not follow a link out of a mirrored resource directory
+  (GROOVY-12360, GROOVY-12370); `deleteDir` treats a link or junction as a
+  leaf rather than descending through it (GROOVY-12125, GROOVY-12359);
+  `grape uninstall` deletes only inside the module's cache (GROOVY-12369).
+  *Violation:* a tooling write, delete, or copy escaping its target
+  directory because of a name or link it was handed. CWE-22 / CWE-59.
+  *Indicative severity if violated: Medium (local); lower where the name is
+  operator-supplied.* **Not covered:** a local adversary who mutates the
+  tree *concurrently, during* the operation — swapping a checked path for a
+  link between the check and the act — which needs fd-relative filesystem
+  calls (`SecureDirectoryStream`, Linux-only in OpenJDK) and a write
+  capability [§7](#7-adversary-model) does not grant the local adversary.
+  *(documented — verified in `GroovyDocWriter`, `ResourceGroovyMethods`,
+  `groovy-nio`, `groovy-grape-ivy`)*
 - **P5 — Coordinated security maintenance.** Supported branches receive
   security fixes and coordinated disclosure per [`SECURITY.md`](.github/SECURITY.md)
   and the [security history](https://groovy-lang.org/security.html). *(documented)*
 
-A report demonstrating a *default-configuration* violation of P1–P4 is a
+A report demonstrating a *default-configuration* violation of P1–P4 (and P4b) is a
 genuine vulnerability and should be reported privately
 ([§13: VALID](#13-triage-dispositions)).
 
@@ -668,7 +702,7 @@ vulnerabilities** unless a concrete, in-model data-boundary crossing
 | AST transforms executing code at **compile** time (local & global) | By design; compile time is trusted — `KNOWN-NON-FINDING` |
 | `Eval` / `GroovyShell` inside Groovy's tools, tests, and `groovysh`/`groovyConsole` | By design — `BY-DESIGN: property-disclaimed` |
 | `@Grab`/Grape fetching and loading artifacts | By design dependency resolution — `OUT-OF-MODEL` |
-| Temp-file/dir creation | Now NIO owner-only (P4) — `KNOWN-NON-FINDING` |
+| Temp-file/dir creation, and other artifacts tooling writes | Owner-only or least-exposure (P4); path-contained (P4b) — `KNOWN-NON-FINDING` unless a *default-config* case widens exposure or escapes its tree, which is `VALID-HARDENING` |
 | Regex, `BigInteger`/`BigDecimal` parsing, hash-collision flooding (JDK treeifies heavily-collided `String`-keyed buckets since Java 8) | DoS bounded by developer-chosen input — `OUT-OF-MODEL: downstream-responsibility` |
 | Deep recursion / unbounded input in Groovy's *own* data parsers (`JsonSlurper`, `XmlSlurper`/`XmlParser`, `groovy-yaml`/`-toml`/`-csv`) | Robustness of code meant to consume untrusted input — **`VALID-HARDENING`** *(maintainer)*; nesting depth is now bounded by default in all of them (JSON via the 6.0.0 `maxNestingDepth` cap, GROOVY-12064; XML via the 6.0.0 `jdk.xml.maxElementDepth` bound, GROOVY-12331), per-parser exposure in [§6](#6-assumptions-about-inputs) |
 | Proportionate memory use from a *large* (not amplified) document handed to `JsonSlurper`/`XmlSlurper`/`XmlParser` | Cost proportional to input size; bound the input or use a streaming/Jackson parser ([§6](#6-assumptions-about-inputs)) — `OUT-OF-MODEL: downstream-responsibility` |
