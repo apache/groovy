@@ -265,6 +265,8 @@ public class EncodingGroovyMethods {
         int byteShift = 4;
         int tmp = 0;
         boolean done = false;
+        int dataInGroup = 0; // base64 data characters seen in the current four-character group
+        int padInGroup = 0;  // '=' padding characters seen in the current group
         final StringBuilder buffer = new StringBuilder();
         final byte[] table = urlSafe ? TRANSLATE_TABLE_URLSAFE : TRANSLATE_TABLE;
         for (int i = 0; i != value.length(); i++) {
@@ -276,6 +278,7 @@ public class EncodingGroovyMethods {
                     throw new RuntimeException("= character not at end of base64 value"); // TODO: change this exception type
 
                 tmp = (tmp << 6) | sixBit;
+                dataInGroup++;
 
                 if (byteShift-- != 4) {
                     buffer.append((char) ((tmp >> (byteShift * 2)) & 0XFF));
@@ -283,6 +286,12 @@ public class EncodingGroovyMethods {
 
             } else if (sixBit == 64) {
 
+                // '=' is padding, valid only completing a group that already holds at least two
+                // data characters (one sextet cannot form a byte); a further check below rejects
+                // padding that does not fill the group exactly
+                if (dataInGroup < 2)
+                    throw new RuntimeException("= padding without enough data in base64 value"); // TODO: change this exception type
+                padInGroup++;
                 byteShift--;
                 done = true;
 
@@ -293,8 +302,20 @@ public class EncodingGroovyMethods {
                 throw new RuntimeException("bad character in base64 value"); // TODO: change this exception type
             }
 
-            if (byteShift == 0) byteShift = 4;
+            if (byteShift == 0) {
+                // a padded group must be filled exactly: two data and two pad, or three and one
+                if (padInGroup > 0 && dataInGroup + padInGroup != 4)
+                    throw new RuntimeException("malformed padding in base64 value"); // TODO: change this exception type
+                byteShift = 4;
+                dataInGroup = 0;
+                padInGroup = 0;
+            }
         }
+
+        // the final group need not be padded (missing padding is tolerated), but padding that is
+        // present must still fill it exactly
+        if (padInGroup > 0 && dataInGroup + padInGroup != 4)
+            throw new RuntimeException("malformed padding in base64 value"); // TODO: change this exception type
 
         return buffer.toString().getBytes(StandardCharsets.ISO_8859_1);
     }

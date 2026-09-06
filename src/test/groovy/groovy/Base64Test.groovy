@@ -219,6 +219,30 @@ class Base64Test {
         }
     }
 
+    // GROOVY-12372: padding that is present must fill the four-character group exactly. Missing
+    // padding stays tolerated, as it is by java.util.Base64, but a group padded to the wrong
+    // length no longer decodes.
+    @Test
+    void testDecodingRejectsMalformedPadding() {
+        shouldFail { decodeB64('YQ=') }     // one pad where two are needed
+        shouldFail { decodeB64('YQ===') }   // one pad too many
+        shouldFail { decodeB64('YWJj=') }   // padding on an already complete group
+        shouldFail { decodeB64('=') }       // padding with no data
+        shouldFail { decodeB64url('YQ=') }
+        shouldFail { decodeB64url('YQ===') }
+    }
+
+    // Behaviour deliberately kept: missing padding decodes, and chunked output round-trips
+    @Test
+    void testDecodingStillToleratesMissingPaddingAndWhitespace() {
+        assert decodeB64('YQ') == 'a'        // two data chars, no padding
+        assert decodeB64('YWJj') == 'abc'    // full group, no padding needed
+        assert decodeB64('Y Q==') == 'a'     // embedded whitespace ignored
+        // a chunked encoding, with its newlines, must still decode
+        def data = (0..120).collect { (byte) (it % 256) } as byte[]
+        assert data.encodeBase64(true).toString().decodeBase64() == data
+    }
+
     // Test helper methods
     private static String b64(String s) {
         s.getBytes(StandardCharsets.UTF_8).encodeBase64().toString()
