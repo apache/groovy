@@ -58,53 +58,8 @@
          <trust group="org.jruby" reason="JRuby runtime pulled in by the asciidoctor toolchain"/>
       </trusted-artifacts>
       <ignored-keys>
-         <ignored-key id="012579464D01C06A" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="09A79E1E15A04694" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="0C27E8FAC93B3B19" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="1063FE98BCECB758" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="156E8DA37ABC7C91" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="1861C322C56014B2" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="1C8D5EF0DF2B70D4" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="1D0690E353BE126D" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="1DE461528F1F1B2A" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="254E9C64C264C176" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="25A73BFC746E1035" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="2C7B12F2A511E325" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="2D0E1FB8FE4B68B4" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="2E2A3AECF13B25AC" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="2F732027B9B0B96C" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="3684155E9365C30E" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="385EF0846E5CF3F3" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="38EE757D69184620" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="39B48E1BADDB933F" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="3B14D24C5988C977" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="3C1381C7D09AF9E1" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="3FAAD2CD5ECBB314" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="4783A0225D80620F" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="4ECE492B63E38ACF" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="55101494C452D7A2" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="59A7C2A1BD98C013" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="631ECF66932B28BA" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="70F09CC6B876884A" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="74DAFDFD6DAE2441" reason="Key not available on any key server"/>
-         <ignored-key id="79E193516BE7998F" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="7C25280EAE63EBE5" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="7D713008CC07E9AD" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="80EF47E549604C05" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="86E02C5A42196CA8" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="91C65920226E26BD" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="99CA0918C37E2AE4" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="AB049DF4AB24C1EF" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="AECDB81D38EA9C89" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="B16698A4ADF4D638" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="B7E2662A7640A051" reason="Key not available on any key server"/>
-         <ignored-key id="B83A12A027FC6962" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="BE84D764623A3644" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="BEDE11EAF1164480" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="C1D3063467F1EBD1" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="C33B56C147B01975" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="D1031D14464180E0" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="FF844A3256C7FB01" reason="Key couldn't be downloaded from any key server"/>
       </ignored-keys>
       <trusted-keys>
          <trusted-key id="0181A4828FA27B6BE6F1F5A68611CD28F472E006">
@@ -133,6 +88,7 @@
          <trusted-key id="120D6F34E627ED3A772EBBFE55C7E5E701832382" group="org.yaml" name="snakeyaml"/>
          <trusted-key id="150FDE3F7787E7D11EF4E12A9B7D32F2D50582E6" group="org.codehaus.mojo" name="animal-sniffer-annotations"/>
          <trusted-key id="19BEAB2D799C020F17C69126B16698A4ADF4D638" group="org.checkerframework" name="checker-qual"/>
+         <trusted-key id="1D04A424F505394DBED15D451D0690E353BE126D" group="net.minidev"/>
          <trusted-key id="1D85469D8559C2E1DF5F925131D2D79DF7E85DD3" group="org.jcommander" name="jcommander" version="1.83"/>
          <trusted-key id="204A1D460C2310A23EE6EF958D3D03C45575D893" group="me.sunlan"/>
          <trusted-key id="28118C070CB22A0175A2E8D43D12CA2AC19F3181">
@@ -160,7 +116,10 @@
          <trusted-key id="41CD49B4EF5876F9E9F691DABAC30622339994C4" group="org.jspecify" name="jspecify"/>
          <trusted-key id="47063E8BA7A6450E4A52E7AE466CAED6E0747D50" group="org.apache.maven.plugin-tools"/>
          <trusted-key id="475F3B8E59E6E63AA78067482C7B12F2A511E325" group="org.slf4j"/>
+         <trusted-key id="47FF105DF431FF5416B821FEAECDB81D38EA9C89" group="org.commonmark"/>
+         <trusted-key id="4857D1CE04E78FAB2A172E8F39B48E1BADDB933F" group="com.gradleup.shadow"/>
          <trusted-key id="49BC0306DEB0ECE16CDD09652EE4988C55528F25" group="^org[.]jfrog($|([.].*))" regex="true"/>
+         <trusted-key id="4AC55A85D30C3499A3219500B7E2662A7640A051" group="com.formdev"/>
          <trusted-key id="4C5F68D09D42BA7FAC888DF9A929EA2321FDBF8F">
             <trusting group="net.sf.saxon" name="Saxon-HE"/>
             <trusting group="org.xmlresolver"/>
@@ -168,6 +127,7 @@
          <trusted-key id="4DB1A49729B053CAF015CEE9A6ADFC93EF34893E" group="org.hamcrest"/>
          <trusted-key id="4F7E32D440EF90A83011A8FC6425559C47CC79C4" group="^javax[.]servlet($|([.].*))" regex="true"/>
          <trusted-key id="5719E50EAC5A4B1DD390B72C2A742740E08E7F8D" group="org.antlr"/>
+         <trusted-key id="5989BAF76217B843D66BE55B2D0E1FB8FE4B68B4" group="^org[.]eclipse[.]jetty($|([.].*))" regex="true"/>
          <trusted-key id="5A022DE16956DECDAD4EBC161FE771E34EF57D42" group="jakarta.servlet.jsp"/>
          <trusted-key id="5E7D42F58249A287BD7384DA25A73BFC746E1035" group="net.sourceforge.htmlunit"/>
          <trusted-key id="60200AC4AE761F1614D6C46766D68DAA073BE985">
@@ -293,6 +253,7 @@
       </component>
       <component group="cglib" name="cglib" version="3.3.0">
          <artifact name="cglib-3.3.0.jar">
+            <pgp value="07DBC3C1AB1F4468471656061C8D5EF0DF2B70D4"/>
             <sha512 value="9eaee4a52bd9261364bff9f7dee145f3d7f7e1a842bbb179c6c9fec065beb162bea312b566c875db20dea317bd76267774c73e102e9ee46ab27c4c2b488bf96b" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
@@ -576,6 +537,7 @@
       </component>
       <component group="com.github.weisj" name="jsvg" version="2.1.0">
          <artifact name="jsvg-2.1.0.jar">
+            <pgp value="066C167DC7BA919F2E168DFA2E2A3AECF13B25AC"/>
             <sha512 value="17d97c4687cb96ee3053960d08ce069d819906a01c5385c855fd74d65175f66d1132b8d572f2dfdd9c14f1b989fd8c91661f8dcaf71d8be2b1676ba9a5cb624a" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
@@ -760,6 +722,7 @@
       </component>
       <component group="com.jayway.jsonpath" name="json-path" version="3.0.0">
          <artifact name="json-path-3.0.0.jar">
+            <pgp value="41D266DB4427983A1A4AFB0C3684155E9365C30E"/>
             <sha512 value="202497ea888835cff25632de38f4c08a530f426487523e88e39e50234d2e1082de48c15f6cd94142a6348153798625a5a32777996d703edf2d4e4e1044f6bfb8" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
@@ -792,6 +755,7 @@
       </component>
       <component group="com.shapesecurity" name="salvation2" version="3.0.1">
          <artifact name="salvation2-3.0.1.jar">
+            <pgp value="8EAE59EB400E1F6A94945CCD3C1381C7D09AF9E1"/>
             <sha512 value="c6a6039dc4e2f35a9e576f8fb7a66427fa46e9bf87d0b14117796cd3dc87aa184c2f0dc394dc85d913abfa122c0253306e3e72c97613af902852e161369543c4" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
@@ -844,6 +808,7 @@
       </component>
       <component group="com.sun.mail" name="jakarta.mail" version="1.6.7">
          <artifact name="jakarta.mail-1.6.7.jar">
+            <pgp value="485E371CB07EABE6D5778D4B0C27E8FAC93B3B19"/>
             <sha512 value="3f392a6ae3eada47c37b67d92f3cf39c609a5309fcc97eb271bcf079d0d01f5973c0d32458a875ac1186092a113bb452439f7b7b0edd58a5b3aba5f775e9a001" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
@@ -1000,6 +965,7 @@
       </component>
       <component group="de.siegmar" name="fastcsv" version="3.7.0">
          <artifact name="fastcsv-3.7.0.jar">
+            <pgp value="206DF7C48E3D6CB145DDA835FF844A3256C7FB01"/>
             <sha512 value="9443d2c8bc8b40bd902512758f6df863e1f98706c9eed7e0b33b4ec6af87aaa43ccd0a97cef5f87af9b5bdbf0f15af1784fb30a327b391bc4c3287201f0371dc" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
@@ -1423,6 +1389,7 @@
       </component>
       <component group="net.sf.ehcache" name="ehcache-core" version="2.6.11">
          <artifact name="ehcache-core-2.6.11.jar">
+            <pgp value="6EBDAE68E2E77C0449F1A32BB83A12A027FC6962"/>
             <sha512 value="9ab604a898a9aae0700af7885bc98ab3f665b7512f330e8b93c1f7c965ffef7526e55f6794619ce412889a15fae6f0d46b0c02f5ee4f3667d0c8ce531f3435a4" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
@@ -1693,6 +1660,7 @@
       </component>
       <component group="org.apache.jackrabbit" name="jackrabbit-jcr-rmi" version="2.21.9">
          <artifact name="jackrabbit-jcr-rmi-2.21.9.jar">
+            <pgp value="44F4797A52C336FA666CD9271DE461528F1F1B2A"/>
             <sha512 value="f30dd0a1aceada30c0ceba7954e9420df24cc8d3958d13654f95aa117e205277d4cb01ceff48a9b673b161b5085c9729835e11bd521bcd5189b8d67986049978" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
@@ -2166,6 +2134,7 @@
       </component>
       <component group="org.apache.tika" name="tika-core" version="1.1">
          <artifact name="tika-core-1.1.jar">
+            <pgp value="03CC5FFA61AAAD3C8FF25E9270F09CC6B876884A"/>
             <sha512 value="f5b40a00293ce54f316a384a54dbe7e9c0e9b0684115862a91102dd9d3d23b6643cc8b60ca3f19adc6b171155ac04d612b99f8fe5376187ba0319fb845980e2f" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
@@ -2301,6 +2270,7 @@
       </component>
       <component group="org.brotli" name="dec" version="0.1.2">
          <artifact name="dec-0.1.2.jar">
+            <pgp value="3A4D86C56CA99373B6D8953DBE84D764623A3644"/>
             <sha512 value="d4cd2b33f7c358012ff01db6a13ebfe1e8051a580698bffcd942c47451012cf53ce49a400b1c8bf7502b01e631d79d7c6417202a145622572d79fd145ccde61a" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
@@ -2665,6 +2635,7 @@
       </component>
       <component group="org.jcrom" name="jcrom" version="2.2.0">
          <artifact name="jcrom-2.2.0.jar">
+            <pgp value="47B0262CB68BDC81289B13E63B14D24C5988C977"/>
             <sha512 value="86846d183689d3512815ed7a4244cda5298313b73b4653c18eb7b8fac9848746cd6b0f05a66ced87f03f55b2a63fbb7d0fbe658a51fd858f62906b6acb8b4012" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
@@ -2675,6 +2646,7 @@
       </component>
       <component group="org.jdom" name="jdom2" version="2.0.6.1">
          <artifact name="jdom2-2.0.6.1.jar">
+            <pgp value="78DF98EF7F95578FD545B9A159A7C2A1BD98C013"/>
             <sha512 value="81642db76358fbf131dfe9c2f1d9c280fc23b6bfde6a16a2d36dacc490a1a2af4e0fb4abb5cd78005718bb1d158a42fd6834cd2bfe616ec59625df01951f2478" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
@@ -2894,6 +2866,7 @@
       </component>
       <component group="org.jparsec" name="jparsec" version="3.1">
          <artifact name="jparsec-3.1.jar">
+            <pgp value="E9C9747A809C424B5BC9DD4A4783A0225D80620F"/>
             <sha512 value="0b5b15349b63d7fe1cb6880e8abc9bed54750f1207d978f85cd8475890c0a40d011917e586047b75620f5df42ed41f0e524d9446a266c1e8b80201907094c17a" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
@@ -3451,6 +3424,7 @@
       </component>
       <component group="org.sonarsource.scanner.gradle" name="sonarqube-gradle-plugin" version="7.4.0.8496">
          <artifact name="sonarqube-gradle-plugin-7.4.0.8496.jar">
+            <pgp value="06D0369BE1D0B06997DA66E8C33B56C147B01975"/>
             <sha512 value="dcb5ba82ea1e198d56ffa9830e2c89e3ceb8f9fadc962e8e85a35c6f2f652c0397b2e8fc123a720216e0994391dd893024ef6ca515fc45ca6f8f8d774df113c1" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
@@ -3521,6 +3495,7 @@
       </component>
       <component group="org.vafer" name="jdependency" version="2.16">
          <artifact name="jdependency-2.16.jar">
+            <pgp value="79156E0351AF8604DE9B186B09A79E1E15A04694"/>
             <sha512 value="dd85441a5a8a0c08d5e3d170803f6c298eb19ab4f200c2c5a51918a8d42df23d024e04bbf759d52d54b8024bcca0b31f892a24b379f59800ca20fb50f3eb95c5" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
@@ -3557,9 +3532,6 @@
       </component>
       <component group="org.ysb33r.gradle" name="grolifant" version="0.16.1">
          <artifact name="grolifant-0.16.1.jar">
-            <ignored-keys>
-               <ignored-key id="EA022560A81E5BD48DB3D18B54AC8E2D98CFEAC6" reason="PGP verification failed"/>
-            </ignored-keys>
             <sha512 value="c4f201d3c1243f701751e0ebec32f15fe957c362d6d5a70eec7569e938e55f30b5f60965807a3e2d4bb61526648903f3c88a74f6bccde21da1e7b45e7a17dfa1" origin="Generated by Gradle" reason="PGP signature verification failed!"/>
          </artifact>
       </component>
