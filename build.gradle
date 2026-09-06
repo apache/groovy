@@ -93,6 +93,11 @@ afterEvaluate {
 dependencies {
     // Classic call-site runtime for tests that compile with indy=false (GROOVY-11158)
     testRuntimeOnly projects.groovyCallsite
+    // the groovy.ast=xml AST dump uses XStream, an optional feature; supply it to the tests so
+    // XStreamUtils can be exercised (its permission handling in particular) rather than skipped
+    testRuntimeOnly "com.thoughtworks.xstream:xstream:${versions.xstream}", {
+        transitive = false
+    }
     // for internal CLI usage
     api "info.picocli:picocli:${versions.picocli}" // marked as api but manually excluded later in assemble.gradle - modules will use shaded version
     // for internal usage of things like Opcode
