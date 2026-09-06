@@ -33,7 +33,9 @@ import java.lang.reflect.Modifier;
 
 /**
  * Experimental reflective cold-tier wrapper, guarded by the
- * {@code groovy.indy.cold.reflection} system property.
+ * {@code groovy.indy.cold.reflection} system property: off by default on a
+ * JVM, on for AOT-linked sites (see {@code IndyInterface#coldReflectionEnabled}
+ * for the caller-location trade-off behind that default).
  * <p>
  * The regular cold tier builds a fully guarded MethodHandle chain on the
  * first invocation of every receiver shape — paying the one-time LambdaForm

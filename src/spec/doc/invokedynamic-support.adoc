@@ -105,3 +105,101 @@ Independently of the jar version that you use (and after having exchanged the ja
 |===
 
 So even if you use the indy jar, if you don't use the invokedynamic flag at compile time, then the compiled classes will use the "old" format.
+
+== Runtime properties
+
+=== The reflective cold tier and caller location
+
+Each dynamic call site is linked lazily. Normally even the first calls at a site run through a
+fully guarded `MethodHandle` chain, so nothing but hidden `LambdaForm` frames sits between the
+calling method and the target. The _reflective cold tier_ (`groovy.indy.cold.reflection`) instead
+dispatches plain instance method calls through `java.lang.reflect.Method.invoke` until the site has
+been hit `groovy.indy.optimize.threshold` times (default 1000), and only then builds the
+`MethodHandle` chain. It saves the one-time LambdaForm cost of shapes that are never hot.
+
+The default depends on where the site links:
+
+* On a JVM the tier is *off*. While a site is on the tier, reflection and Groovy runtime frames sit
+  between the caller and the target, so anything that inspects the call stack sees the wrong caller:
+  the `%C`, `%M`, `%F` and `%L` patterns of Log4j2 and Logback, the source class and method of
+  `java.util.logging`, `StackWalker` and `Throwable` stack traces. A site called fewer than the
+  threshold times, such as a rarely hit `warn` or `error` statement, would report the wrong location
+  for the life of the application.
+* For an AOT-linked site, that is inside a GraalVM native image (or when
+  `-Dgroovy.indy.aot.link=true` forces AOT link mode on a JVM), the tier is *on* and is the steady
+  state: a native image cannot retarget call sites and would otherwise run every `MethodHandle` chain
+  in its MethodHandle interpreter at microseconds per call.
+
+Setting the property explicitly overrides the default in either environment:
+
+----
+-Dgroovy.indy.cold.reflection=true    # use the tier on a JVM (opt in)
+-Dgroovy.indy.cold.reflection=false   # keep the MethodHandle path even in a native image
+----
+
+The property is read once when `IndyInterface` initialises, so pass it on the command line rather
+than setting it from code.
+
+==== Caller location with the tier enabled
+
+If you enable the tier on a JVM, or you run a native image, the following keep caller locations
+correct. Statically compiled code (`@CompileStatic`) needs none of them, since it calls targets
+directly.
+
+`java.util.logging`:: The JDK skips additional packages when inferring the caller if they are listed
+in `jdk.logger.packages`. On a JVM pass it at run time:
++
+----
+-Djdk.logger.packages=org.codehaus.groovy,groovy.lang
+----
++
+Alternatively use the `logp` methods, which take an explicit source class and method.
+
+Logback:: Logback skips its _framework packages_ when computing caller data. The list is only
+configurable programmatically, and its default contains just `org.codehaus.groovy.runtime`, so add
+the reflection and MOP packages before logging starts:
++
+[source,groovy]
+----
+import ch.qos.logback.classic.LoggerContext
+import org.slf4j.LoggerFactory
+
+def context = (LoggerContext) LoggerFactory.getILoggerFactory()
+context.frameworkPackages.addAll([
+    'jdk.internal.reflect', 'java.lang.reflect', 'sun.reflect',
+    'org.codehaus.groovy.', 'groovy.lang.'
+])
+----
+
+Log4j2:: Log4j2 has no equivalent skip list; its location is always the frame following the logger's
+own class. Use `@CompileStatic` for the classes whose log locations matter.
+
+Stack traces:: `org.codehaus.groovy.runtime.StackTraceUtils.sanitize` and `deepSanitize` already
+strip every frame the tier adds. Groovy's own caller lookup,
+`org.codehaus.groovy.reflection.ReflectionUtils.getCallingClass`, ignores the MOP packages and
+is unaffected on a JVM.
+
+==== Native images
+
+Inside a GraalVM native image the picture differs in two ways, and both apply whether the tier is
+on or off, so disabling it there gains nothing:
+
+* GraalVM runs dynamically built `MethodHandle` chains in an interpreter whose frames
+  (`com.oracle.svm.core.methodhandles.*`, `java.lang.invoke.LambdaForm$NamedFunction`) are visible
+  to `StackWalker` and to stack traces, unlike HotSpot's hidden `LambdaForm` frames.
+* Its reflection accessor is `com.oracle.svm.core.reflect.SubstrateMethodAccessor`, not a
+  `jdk.internal.reflect` class, so package lists written for HotSpot do not match it.
+
+The same two workarounds hold once those packages are included:
+
+`java.util.logging`:: The package list is captured in a static initialiser that GraalVM runs at
+image build time, so a run-time `-D` is ignored. Pass it to `native-image` when building:
++
+----
+native-image -Djdk.logger.packages=org.codehaus.groovy,groovy.lang,com.oracle.svm.core.methodhandles,com.oracle.svm.core.reflect,java.lang.invoke ...
+----
+
+Logback:: Add `com.oracle.svm.core.reflect`, `com.oracle.svm.core.methodhandles` and
+`java.lang.invoke` to the framework packages shown above.
+
+Log4j2:: No workaround; use `@CompileStatic` where locations matter.
