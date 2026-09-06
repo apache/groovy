@@ -29,6 +29,8 @@
  * Groovy than what is published externally.
  */
 
+import org.apache.groovy.gradle.ConcurrentExecutionControlBuildService
+
 def internalPublication = Attribute.of("org.apache.groovy.internal", Boolean)
 
 def makeInternal = { Configuration cnf ->
@@ -85,4 +87,11 @@ tasks.withType(GroovyCompile).configureEach {
     // See also https://docs.gradle.org/current/userguide/groovy_plugin.html#sec:incremental_groovy_compilation
     options.incremental = true
     options.incrementalAfterFailure = true
+
+    // Forked groovyc (groovycMain_mx=1g) overlapping Test (groovyJUnit_mx=2g)
+    // overcommits GHA RAM; the worker dies and Gradle reports MessageIOException
+    // / Connection reset on compileGroovy. Same limiter Test already uses.
+    if (sharedConfiguration.isRunningOnCI) {
+        usesService(ConcurrentExecutionControlBuildService.restrict(GroovyCompile, gradle, 2))
+    }
 }
