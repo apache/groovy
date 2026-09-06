@@ -28,7 +28,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.LinkOption;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -142,6 +144,13 @@ public class GroovyDocWriter {
     private void copyTree(Path srcDir, Path dstDir) {
         try (Stream<Path> stream = Files.walk(srcDir)) {
             stream.forEach(srcFile -> {
+                if (isLinkLike(srcFile)) {
+                    // do not follow a link out of the resource tree: copying it would place the
+                    // content of whatever it points at, which may be outside the source, into the
+                    // published documentation
+                    log.warn("Skipping " + srcFile + ": symbolic links are not copied into the documentation");
+                    return;
+                }
                 Path rel = srcDir.relativize(srcFile);
                 Path dstFile = dstDir.resolve(rel);
                 try {
@@ -156,6 +165,23 @@ public class GroovyDocWriter {
             });
         } catch (IOException e) {
             log.warn("Failed to walk " + srcDir + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * Whether the path is a symbolic link or other reparse point &mdash; a Windows junction, say.
+     * Such a node is not copied into the documentation, because copying it would follow it to
+     * content that may lie outside the resource tree the author meant to publish.
+     *
+     * @param path the path, examined without following links
+     * @return whether it should be skipped rather than copied
+     */
+    private static boolean isLinkLike(final Path path) {
+        try {
+            BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+            return attrs.isSymbolicLink() || attrs.isOther();
+        } catch (IOException e) {
+            return false;
         }
     }
 
