@@ -99,7 +99,11 @@ public final class NestedCopyWithSupport {
             // A nested node must itself expose copyWith(Map); fail clearly otherwise.
             // Probe with the actual nested map so a type that only has
             // copyWith()/copyWith(Closure) does not falsely pass this guard.
-            boolean supported = !InvokerHelper.getMetaClass(current)
+            // A Class value (e.g. from a 'class' head) can spuriously respond to
+            // copyWith via static-method dispatch, so exclude it and let the
+            // closed-domain error below report it cleanly.
+            boolean supported = !(current instanceof Class)
+                    && !InvokerHelper.getMetaClass(current)
                     .respondsTo(current, "copyWith", new Object[]{e.getValue()}).isEmpty();
             if (!supported) {
                 throw new GroovyRuntimeException("copyWith: nested update of '" + head

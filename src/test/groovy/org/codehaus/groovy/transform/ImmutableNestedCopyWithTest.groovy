@@ -112,6 +112,20 @@ final class ImmutableNestedCopyWithTest {
     }
 
     @Test
+    void navigating_into_a_class_property_fails_with_the_domain_error() {
+        // a 'class' head resolves to a java.lang.Class, which can spuriously respond to
+        // copyWith via static dispatch; it must report the clean closed-domain error
+        def err = shouldFail shell, '''
+            @Immutable(copyWith = true) class Address { String city }
+            @Immutable(copyWith = true) class Person { String name; Address address }
+            def p = new Person('Alice', new Address('NYC'))
+            p.copyWith('address.class.name': 'x')
+        '''
+        assert err.message.contains('nested-copyWith domain')
+        assert err.message.contains('java.lang.Class')
+    }
+
+    @Test
     void null_intermediate_node_fails_clearly() {
         def err = shouldFail shell, '''
             @Immutable(copyWith = true) class Address { String city }
