@@ -95,6 +95,8 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
      * costs a switch and a constructor call rather than a class lookup and a
      * reflective instantiation. That class registers itself with
      * {@link Proxy#register(ProxyFactory)} when it is initialised.
+     * {@link DgmProxyFactoryConfig} switches the factory off in favour of
+     * the reflective path.
      *
      * @since 6.0.0
      */
@@ -130,6 +132,9 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
         }
 
         private static ProxyFactory factory() {
+            // a build-time constant in a native image (see DgmProxyFactoryConfig):
+            // when false, the factory and every adapter it references are pruned
+            if (!DgmProxyFactoryConfig.ENABLED) return null;
             ProxyFactory f = factory;
             if (f == null && !factoryLookupFailed) {
                 try {
