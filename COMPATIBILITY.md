@@ -515,6 +515,28 @@ runs at the end of each phase, so a single type checking error anywhere
 in the compilation still suppresses every class generation error,
 whatever the tolerance.
 
+### Groovy 6 — String-to-`Class` coercion does not run the class's static initializer (GROOVY-12375)
+
+Coercing a `String` to a `Class` — `'com.example.Foo' as Class`, and the
+`(Class)` cast the compiler routes through
+`ShortTypeHandling.castToClass` — now *resolves* the named class without
+*initializing* it. Previously it called the single-argument
+`Class.forName(name)`, which runs the class's static initializer as a side
+effect; it now uses `Class.forName(name, false, loader)` with the same class
+loader as before. The class is still initialized lazily on first real use, as
+the JVM always does.
+
+**Who is affected (runtime behaviour).** Code that relied on the coercion to
+trigger a static initializer — most commonly the legacy JDBC idiom
+`'com.mysql.jdbc.Driver' as Class` to register a driver — no longer gets that
+side effect. Call `Class.forName(name)` (or `Class.forName(name, true, loader)`)
+explicitly where the initialization is wanted; modern JDBC drivers auto-register
+via `ServiceLoader` and do not need it. The `@GroovyABI` signature is unchanged,
+so `japicmp` sees nothing — this is a behavioural change only.
+
+Groovy 6 is the major version for the change. On 3.0.x/4.0.x/5.0.x/5.1.x the
+coercion still initializes the class.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
