@@ -183,12 +183,13 @@ if [ ! -f "$STARTER_CLASSPATH" ] ; then
     die  "Aborting."
 fi
 
-# Create the final classpath. Setting a classpath using the -cp or -classpath option means not to use the
-# global classpath. Groovy behaves then the same as the java interpreter
+# Create the final classpath. An explicit -cp/-classpath option, or the CLASSPATH environment
+# variable, is honoured as-is, the same as the java interpreter. Only a bare invocation with no
+# classpath given falls back to the current directory.
 if [ -n "$CP" ] ; then
-    CP="$CP":.
+    : # explicit -cp/-classpath is honoured as-is
 elif [ -n "$CLASSPATH" ] ; then
-    CP="$CLASSPATH":.
+    CP="$CLASSPATH"
 else
     CP=.
 fi
