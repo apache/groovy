@@ -38,7 +38,10 @@ public class ShortTypeHandling {
      * Casts an object to a Class object.
      * <p>
      * Accepts Class objects directly, or a string representation of a class name
-     * which is loaded via {@code Class.forName}.
+     * which is resolved via {@code Class.forName} without initializing the class;
+     * the class is initialized lazily on first use, as usual. Call
+     * {@code Class.forName} directly if you need initialization to happen at
+     * resolution time (for example, to trigger a static initializer).
      *
      * @param object a Class object or string class name
      * @return the Class object, or null if input is null
@@ -49,7 +52,7 @@ public class ShortTypeHandling {
         if (object==null) return null;
         if (object instanceof Class) return (Class) object;
         try {
-            return Class.forName(object.toString());
+            return Class.forName(object.toString(), false, ShortTypeHandling.class.getClassLoader());
         } catch (Exception e) {
             throw new GroovyCastException(object, Class.class, e);
         }

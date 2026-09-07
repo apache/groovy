@@ -240,4 +240,28 @@ class ShortTypeHandlingTest {
     void testCastToCharWithDoubleNumber() {
         assert ('A' as char) == castToChar(65.9)
     }
+
+    // GROOVY-12375
+    @Test
+    void testCastToClassDoesNotInitialize() {
+        // resolving a class name via coercion must not run its static initializer
+        def probe = castToClass(StaticInitProbe.name)
+        assert probe == StaticInitProbe
+        assert !StaticInitProbeFlag.initialized: 'coercion must not run the static initializer'
+        // initialization still happens on first real use
+        StaticInitProbe.touch()
+        assert StaticInitProbeFlag.initialized: 'static initializer should run on first use'
+    }
+
+    static class StaticInitProbeFlag {
+        static boolean initialized
+    }
+
+    static class StaticInitProbe {
+        static {
+            StaticInitProbeFlag.initialized = true
+        }
+
+        static void touch() {}
+    }
 }
