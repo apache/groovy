@@ -29,6 +29,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -42,6 +43,7 @@ import java.util.Objects;
 import java.util.Set;
 import junit.framework.TestCase;
 import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.DgmProxyFactoryConfig;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -53,6 +55,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TableSwitchInsnNode;
@@ -786,6 +789,62 @@ public class TestDgmConverter extends TestCase {
             assertTrue(loader.isLoaded(ADAPTER_PREFIX + 7));
             assertFalse(loader.isLoaded(ADAPTER_PREFIX + 6));
             assertFalse(loader.isLoaded(ADAPTER_PREFIX + 8));
+        }
+    }
+
+    /**
+     * The factory guard must be a {@code GETSTATIC} of a {@code static final}
+     * field, the shape native-image folds to a constant when the holder class
+     * is initialised at build time. A {@code static final} initialised from a
+     * constant expression would be inlined by javac and could not be switched.
+     */
+    public void testFactoryGuardIsAFoldableStaticFieldRead() throws Exception {
+        String configClass = DgmProxyFactoryConfig.class.getName().replace('.', '/');
+        ClassNode proxy = new ClassNode();
+        try (var in = Objects.requireNonNull(DGM_CLASS_LOADER.getResourceAsStream(
+                GeneratedMetaMethod.Proxy.class.getName().replace('.', '/') + ".class"))) {
+            new ClassReader(in.readAllBytes()).accept(proxy, 0);
+        }
+        boolean guarded = false;
+        for (MethodNode method : proxy.methods) {
+            for (AbstractInsnNode insn : method.instructions) {
+                if (insn instanceof FieldInsnNode && insn.getOpcode() == Opcodes.GETSTATIC) {
+                    FieldInsnNode field = (FieldInsnNode) insn;
+                    if (field.owner.equals(configClass) && field.name.equals("ENABLED")) guarded = true;
+                }
+            }
+        }
+        assertTrue("Proxy should read DgmProxyFactoryConfig.ENABLED", guarded);
+        assertTrue("the default enables the factory", DgmProxyFactoryConfig.ENABLED);
+        Field enabled = DgmProxyFactoryConfig.class.getField("ENABLED");
+        assertTrue(Modifier.isStatic(enabled.getModifiers()) && Modifier.isFinal(enabled.getModifiers()));
+    }
+
+    /**
+     * With {@code -Dgroovy.dgm.factory=false} the factory is never loaded and
+     * adapters resolve by name, the pre-factory behaviour that a native image
+     * built with the switch relies on.
+     */
+    public void testDisabledFactoryFallsBackToReflection() throws Exception {
+        URL dgmRoot = Path.of(Objects.requireNonNull(TestDgmConverter.class.getResource(REFERENCE_CLASS)).toURI())
+                .getParent().getParent().getParent().getParent().toUri().toURL();
+        URL classes = DefaultGroovyMethods.class.getProtectionDomain().getCodeSource().getLocation();
+        String previous = System.setProperty(DgmProxyFactoryConfig.PROPERTY, "false");
+        try (ProbeClassLoader loader = new ProbeClassLoader(new URL[]{dgmRoot, classes})) {
+            Class<?> config = Class.forName(DgmProxyFactoryConfig.class.getName(), true, loader);
+            assertFalse((Boolean) config.getField("ENABLED").get(null));
+
+            Class<?> proxyClass = Class.forName(GeneratedMetaMethod.Proxy.class.getName(), true, loader);
+            Class<?> cachedClass = Class.forName(CachedClass.class.getName(), false, loader);
+            Object proxy = proxyClass.getConstructor(String.class, String.class, cachedClass, Class.class, Class[].class)
+                    .newInstance("org/codehaus/groovy/runtime/dgm$3", "x", null, Object.class, new Class[0]);
+            Object adapter = proxyClass.getMethod("proxy").invoke(proxy);
+
+            assertEquals(ADAPTER_PREFIX + 3, adapter.getClass().getName());
+            assertFalse("the factory must not be loaded when disabled", loader.isLoaded(PROXY_FACTORY_CLASS));
+        } finally {
+            if (previous == null) System.clearProperty(DgmProxyFactoryConfig.PROPERTY);
+            else System.setProperty(DgmProxyFactoryConfig.PROPERTY, previous);
         }
     }
 }

@@ -213,3 +213,28 @@ Logback:: Add `com.oracle.svm.core.reflect`, `com.oracle.svm.core.methodhandles`
 `java.lang.invoke` to the framework packages shown above.
 
 Log4j2:: No workaround; use `@CompileStatic` where locations matter.
+
+=== DGM adapters in native images
+
+Every method Groovy adds to the JDK classes (the _default Groovy methods_, or DGM) is dispatched
+through a small generated adapter class, `org.codehaus.groovy.runtime.dgm$N`, about two thousand of
+them, created the first time the method is selected. A generated factory constructs them directly,
+so nothing in this path is reflective: on a JVM the first use of a DGM method costs a switch and a
+constructor call, and in a GraalVM native image the adapters need no reflection metadata because
+static analysis reaches all of them through the factory. That is the default, and it means every
+adapter is part of the image whether the application uses it or not, at a cost of a few megabytes.
+
+The `groovy.dgm.factory` property turns the factory off, in which case adapters are resolved by
+class name with reflection, as they were before Groovy 6. In a native image that makes the factory,
+and with it every adapter the image does not otherwise know about, disappear: only the adapters the
+native-image agent recorded are kept. The image is smaller, but a DGM method the agent run did not
+exercise fails at run time with `ClassNotFoundException`. The switch is evaluated at image build
+time, so pass it to `native-image` rather than to the application:
+
+----
+native-image -Dgroovy.dgm.factory=false ...
+----
+
+Groovy ships the `native-image.properties` that makes this work; nothing else is needed. On a JVM the
+property is read once at start-up and only changes how an adapter is created the first time it is
+used, so there is no reason to set it there.
