@@ -313,21 +313,27 @@ jobs:
   # *test target*, then set up a stable LTS JDK afterwards so Gradle itself
   # runs on a GA build. `fail-fast: false` keeps EA breakage from failing the
   # rest of the matrix. NOTE: the EA build number bumps ~weekly, so the URL
-  # below goes stale — refresh it (and java-version) from https://jdk.java.net/27/.
+  # below goes stale — refresh it (and java-version and jdk-sha256) from
+  # https://jdk.java.net/27/. The checksum is pinned here rather than fetched
+  # at download time so a compromised host cannot serve a matching one; take it
+  # from the published .sha256 beside the tarball when you bump the build.
   ea:
     if: github.event_name == 'push'
     strategy:
       fail-fast: false
       matrix:
         include:
-          - jdk-url: "https://download.java.net/java/early_access/jdk27/33/GPL/openjdk-27-ea+33_linux-x64_bin.tar.gz"
-            jdk-version: "27.0.0-ea.33"
+          - jdk-url: "https://download.java.net/java/early_access/jdk27/35/GPL/openjdk-27-ea+35_linux-x64_bin.tar.gz"
+            jdk-version: "27.0.0-ea.35"
+            jdk-sha256: "95fc37eb3a18a27a26d5904c2d89d52bace8dafa9a078ca27f4747fbc4bf070b"
     runs-on: ubuntu-latest
     steps:
       - name: "📥 Checkout repository"
         uses: actions/checkout@v7.0.1
       - name: "⬇️ Download EA JDK"
-        run: wget -nv -O "$RUNNER_TEMP/java_package.tar.gz" "${{ matrix.jdk-url }}"
+        run: |
+          wget -nv -O "$RUNNER_TEMP/java_package.tar.gz" "${{ matrix.jdk-url }}"
+          echo "${{ matrix.jdk-sha256 }}  $RUNNER_TEMP/java_package.tar.gz" | sha256sum -c -
       - name: "☕️ Setup EA JDK (test target)"
         uses: actions/setup-java@v6.0.0
         with:
