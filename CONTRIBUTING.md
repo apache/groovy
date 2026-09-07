@@ -130,6 +130,16 @@ Adding, bumping, or removing a dependency — including a transitive
 one — changes the resolved graph, so verification fails until you
 update the metadata. What you do depends on what actually changed.
 
+#### IDE import
+
+IntelliJ IDEA (and similar IDEs) download `-sources.jar` and
+`-javadoc.jar` during Gradle import. Those files are not on
+compile or runtime classpaths, and the CLI build never resolves
+them, so they are trusted by filename regex in
+`gradle/verification-metadata.xml` rather than enumerated as
+checksums. Do not set `org.gradle.dependency.verification=off`
+(or `lenient`) to work around an IDE import error.
+
 #### Updating checksums and signatures
 
 This covers a new unsigned artifact, or a signed artifact whose

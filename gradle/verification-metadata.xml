@@ -45,6 +45,10 @@
    plus checksums, while enforcing metadata adds noisy failures on unsigned ancillary POMs for
    no integrity gain.
 
+   Sources and javadoc jars are trusted by filename regex so IntelliJ (and other IDEs)
+   can download them during Gradle import. The CLI build does not resolve those
+   ancillary artifacts, and they are not on compile/runtime classpaths.
+
    Do not remove this header.
 
 -->
@@ -62,6 +66,8 @@
          <trust group="org.asciidoctor" reason="asciidoctor documentation toolchain; plugin-internal configs resolve a large transitive tree including unsigned gem-related artifacts"/>
          <trust group="org.codehaus.groovy" reason="pre-4.x Groovy namespace: performance-check baselines against Groovy 3.x and transitive of org.asciidoctor:asciidoctorj-groovy-dsl"/>
          <trust group="org.jruby" reason="JRuby runtime pulled in by the asciidoctor toolchain"/>
+         <trust file=".*-javadoc[.]jar" regex="true" reason="IDEs download javadoc jars during Gradle import; they are not on compile/runtime classpaths"/>
+         <trust file=".*-sources[.]jar" regex="true" reason="IDEs download sources jars during Gradle import; they are not on compile/runtime classpaths"/>
       </trusted-artifacts>
       <ignored-keys>
          <ignored-key id="80EF47E549604C05" reason="Key couldn't be downloaded from any key server"/>
