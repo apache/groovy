@@ -145,7 +145,11 @@ public class GroovyServlet extends AbstractHttpServlet {
                 servletContext.log(error.toString());
                 LOGGER.log(ERROR, error.toString());
                 LOGGER.log(ERROR, "Script processing failed", runtimeException);
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, error.toString());
+                if (isVerboseErrors()) {
+                    response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, error.toString());
+                } else {
+                    response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                }
                 return;
             }
             /*
@@ -168,7 +172,11 @@ public class GroovyServlet extends AbstractHttpServlet {
             servletContext.log(e.toString());
             LOGGER.log(ERROR, e.toString());
             LOGGER.log(ERROR, "Internal error", runtimeException);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.toString());
+            if (isVerboseErrors()) {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.toString());
+            } else {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            }
         }
     }
 
@@ -178,5 +186,17 @@ public class GroovyServlet extends AbstractHttpServlet {
      */
     protected GroovyScriptEngine createGroovyScriptEngine(){
         return new GroovyScriptEngine(this);
+    }
+
+    /**
+     * Whether error responses sent to the client include the script path, the
+     * exception message and the top stack frame. {@code false} by default, so
+     * internal detail is not disclosed to callers; the full error is written to
+     * the servlet and application logs regardless. Override this method, or set
+     * the {@code groovy.servlet.verbose.errors} system property to {@code true},
+     * to re-enable the detailed client responses while debugging.
+     */
+    protected boolean isVerboseErrors() {
+        return Boolean.getBoolean("groovy.servlet.verbose.errors");
     }
 }
