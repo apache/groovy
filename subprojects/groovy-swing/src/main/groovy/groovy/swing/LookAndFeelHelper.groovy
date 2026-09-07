@@ -18,6 +18,7 @@
  */
 package groovy.swing
 
+import java.lang.reflect.Modifier
 import javax.swing.*
 import javax.swing.plaf.metal.DefaultMetalTheme
 import javax.swing.plaf.metal.MetalLookAndFeel
@@ -94,7 +95,23 @@ class LookAndFeelHelper {
                     } else if (theme == 'steel') {
                         theme = new DefaultMetalTheme();
                     } else {
-                        theme = Class.forName(theme as String).getConstructor().newInstance()
+                        // resolve without initializing, confirm it is a MetalTheme before
+                        // constructing it, and prefer the context classloader so application
+                        // and @Grab-supplied theme classes resolve; the context loader may be
+                        // null, so fall back to this class's loader (the pre-existing behaviour)
+                        def loader = Thread.currentThread().contextClassLoader ?: LookAndFeelHelper.classLoader
+                        def themeClass = Class.forName(theme as String, false, loader)
+                        if (!MetalTheme.isAssignableFrom(themeClass)) {
+                            throw new IllegalArgumentException("Metal theme class ${themeClass.name} is not a ${MetalTheme.name}")
+                        }
+                        if (Modifier.isAbstract(themeClass.modifiers)) {
+                            throw new IllegalArgumentException("Metal theme class ${themeClass.name} is abstract and cannot be instantiated")
+                        }
+                        try {
+                            theme = themeClass.getConstructor().newInstance()
+                        } catch (NoSuchMethodException e) {
+                            throw new IllegalArgumentException("Metal theme class ${themeClass.name} must provide a public no-argument constructor", e)
+                        }
                     }
                 };
                 MetalLookAndFeel.currentTheme = theme
