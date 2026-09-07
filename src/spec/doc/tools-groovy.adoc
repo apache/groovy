@@ -62,6 +62,12 @@ int (disable any int based optimizations) |
 | -pr | --enable-preview | Enable preview Java features (jdk12+ only). | groovy --enable-preview Person.groovy
 |=======================================================================
 
+NOTE: When no classpath is specified, `groovy` uses the current directory, the same as
+the `java` interpreter. When you supply a classpath with `-cp`/`-classpath` or the `CLASSPATH`
+environment variable, it is used as-is and the current directory is not added for you; add `.`
+to your classpath explicitly if you also need it. This applies to the command-line tools
+generally (`groovyc`, `groovysh`, and so on).
+
 The `-l` option is a developer convenience for experimenting with a line-driven
 script, in the same spirit as `groovysh` but reading from a socket instead of a
 terminal. It is not an application server.

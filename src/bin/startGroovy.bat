@@ -283,17 +283,14 @@ if not exist "%STARTER_CLASSPATH%" (
 
 if exist "%USERPROFILE%/.groovy/init.bat" call "%USERPROFILE%/.groovy/init.bat"
 
-@rem Setting a classpath using the -cp or -classpath option means not to use
-@rem the global classpath. Groovy behaves then the same as the java
-@rem interpreter
+@rem An explicit -cp/-classpath option, or the CLASSPATH environment variable, is honoured
+@rem as-is, the same as the java interpreter. Only a bare invocation with no classpath given
+@rem falls back to the current directory.
 if "x" == "x%CP%" goto empty_cp
-:non_empty_cp
-set CP=%CP%;.
 goto after_cp
 :empty_cp
-set CP=.
-if "x" == "x%CLASSPATH%" goto after_cp
-set CP=%CLASSPATH%;%CP%
+set CP=%CLASSPATH%
+if "x" == "x%CP%" set CP=.
 :after_cp
 
 set STARTER_MAIN_CLASS=org.codehaus.groovy.tools.GroovyStarter
