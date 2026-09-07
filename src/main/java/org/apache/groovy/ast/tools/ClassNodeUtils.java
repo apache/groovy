@@ -43,7 +43,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -598,8 +597,11 @@ public class ClassNodeUtils {
 
     private static boolean isPackagePrivate(final AnnotatedNode aNode) {
         return aNode.getAnnotations().stream().anyMatch(anno -> "groovy.transform.PackageScope".equals(anno.getClassNode().getName()))
-            || aNode.getDeclaringClass().getAnnotations().stream().anyMatch(anno -> "groovy.transform.PackageScope".equals(anno.getClassNode().getName())
-                                                                            && Optional.ofNullable(anno.getMember("value")).filter(expr -> expr.getText().contains("FIELDS")).isPresent());
+            || aNode.getDeclaringClass().getAnnotations().stream().anyMatch(anno -> {
+                if (!"groovy.transform.PackageScope".equals(anno.getClassNode().getName())) return false;
+                Expression value = anno.getMember("value");
+                return value != null && value.getText().contains("FIELDS");
+            });
     }
 
     private ClassNodeUtils() {}

@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Collections;
 
 /**
@@ -94,9 +93,10 @@ public class Statement extends ASTNode {
      * @param that the source {@link Statement} to copy labels from
      */
     public void copyStatementLabels(final Statement that) {
-        Optional.ofNullable(that.getStatementLabels()).ifPresent(labels -> {
+        List<String> labels = that.getStatementLabels();
+        if (labels != null) {
             labels.forEach(this::addStatementLabel);
-        });
+        }
     }
 
     //--------------------------------------------------------------------------

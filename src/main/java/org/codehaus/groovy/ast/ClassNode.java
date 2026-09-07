@@ -48,7 +48,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
@@ -367,7 +366,8 @@ public class ClassNode extends AnnotatedNode {
 
     public CompileUnit getCompileUnit() {
         if (redirect != null) return redirect.getCompileUnit();
-        return Optional.ofNullable(getModule()).map(ModuleNode::getUnit).orElse(null);
+        ModuleNode module = getModule();
+        return module != null ? module.getUnit() : null;
     }
 
     @Deprecated(forRemoval = true, since = "5.0.0")
@@ -377,7 +377,8 @@ public class ClassNode extends AnnotatedNode {
     }
 
     public PackageNode getPackage() {
-        return Optional.ofNullable(getModule()).map(ModuleNode::getPackage).orElse(null);
+        ModuleNode module = getModule();
+        return module != null ? module.getPackage() : null;
     }
 
     public String  getPackageName() {

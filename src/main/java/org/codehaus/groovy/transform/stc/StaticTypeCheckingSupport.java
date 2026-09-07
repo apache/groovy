@@ -69,7 +69,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.TreeSet;
@@ -1749,9 +1748,10 @@ public abstract class StaticTypeCheckingSupport {
                     // GROOVY-6787: Don't override the original if the replacement doesn't respect the bounds otherwise
                     // the original bounds are lost, which can result in accepting an incompatible type as an argument!
                     ClassNode replacementType = extractType(newValue);
+                    GenericsType[] replacementGenerics = replacementType.getGenericsTypes();
                     ClassNode suitabilityType = !replacementType.isGenericsPlaceHolder()
-                            ? replacementType : Optional.ofNullable(replacementType.getGenericsTypes())
-                                    .map(gts -> extractType(gts[0])).orElse(replacementType.redirect());
+                            ? replacementType
+                            : (replacementGenerics != null ? extractType(replacementGenerics[0]) : replacementType.redirect());
 
                     if (oldValue.isCompatibleWith(suitabilityType)) {
                         if (newValue.isWildcard() && newValue.getLowerBound() == null && newValue.getUpperBounds() == null) {
@@ -2025,10 +2025,10 @@ public abstract class StaticTypeCheckingSupport {
 
             // GROOVY-10646: non-static inner class + outer class type parameter
             if ((type.getModifiers() & Opcodes.ACC_STATIC) == 0) {
-                Optional.ofNullable(type.getOuterClass())
-                    .filter(oc -> oc.getGenericsTypes()!=null)
-                    .map(oc -> applyGenericsContext(ctx, spec, oc))
-                    .ifPresent(newType::setOuterClassType);
+                ClassNode oc = type.getOuterClass();
+                if (oc != null && oc.getGenericsTypes() != null) {
+                    newType.setOuterClassType(applyGenericsContext(ctx, spec, oc));
+                }
             }
         }
         return new GenericsType(newType);

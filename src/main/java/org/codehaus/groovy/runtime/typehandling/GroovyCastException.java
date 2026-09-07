@@ -19,7 +19,6 @@
 package org.codehaus.groovy.runtime.typehandling;
 
 import java.io.Serial;
-import java.util.Optional;
 
 /**
  * Exception thrown when a type cast or coercion fails.
@@ -41,7 +40,7 @@ public class GroovyCastException extends ClassCastException {
      */
     public GroovyCastException(final Object objectToCast, final Class classToCastTo, final Exception cause) {
         super(makeMessage(objectToCast, classToCastTo) +
-            " due to: " + cause.getClass().getName() + Optional.ofNullable(cause.getMessage()).map(msg -> ": " + msg).orElse(""));
+            " due to: " + cause.getClass().getName() + (cause.getMessage() != null ? ": " + cause.getMessage() : ""));
     }
 
     /**

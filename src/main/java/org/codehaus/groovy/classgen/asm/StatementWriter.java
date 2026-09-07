@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm;
 import groovy.lang.Reference;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureListExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
@@ -58,7 +59,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -294,11 +294,10 @@ public class StatementWriter {
     }
 
     protected final BytecodeVariable defineLoopIndexVariable(final ForStatement statement) {
-        CompileStack compileStack = controller.getCompileStack();
-        return Optional.ofNullable(statement.getIndexVariable()).map(iv -> {
-            controller.getMethodVisitor().visitInsn(ICONST_M1); // initialize to -1 so increment can pair with next()
-            return compileStack.defineVariable(iv, true);
-        }).orElse(null);
+        Parameter indexVariable = statement.getIndexVariable();
+        if (indexVariable == null) return null;
+        controller.getMethodVisitor().visitInsn(ICONST_M1); // initialize to -1 so increment can pair with next()
+        return controller.getCompileStack().defineVariable(indexVariable, true);
     }
 
     protected final void writeLoopBackEdge(final Label continueLabel, final boolean bodyMayReachContinue) {

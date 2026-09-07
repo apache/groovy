@@ -96,7 +96,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
@@ -753,7 +752,8 @@ public class GeneralUtils {
      * @since 4.0.0
      */
     public static ConstantExpression defaultValueX(final ClassNode type) {
-        return Optional.ofNullable((ConstantExpression) getDefaultValueForPrimitive(type)).orElse(nullX());
+        ConstantExpression value = (ConstantExpression) getDefaultValueForPrimitive(type);
+        return value != null ? value : nullX();
     }
     /**
      * Creates an Elvis operator expression.

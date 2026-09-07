@@ -30,7 +30,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 
@@ -113,7 +113,7 @@ public class RootLoader extends URLClassLoader {
      * which holds the classpath.
      */
     public RootLoader(final LoaderConfiguration lc) {
-        this(Optional.ofNullable(RootLoader.class.getClassLoader()).orElseGet(ClassLoader::getSystemClassLoader));
+        this(Objects.requireNonNullElseGet(RootLoader.class.getClassLoader(), ClassLoader::getSystemClassLoader));
 
         Thread.currentThread().setContextClassLoader(this);
 

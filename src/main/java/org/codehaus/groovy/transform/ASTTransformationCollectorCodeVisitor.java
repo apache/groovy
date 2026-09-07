@@ -43,7 +43,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.evaluateExpression;
@@ -194,11 +193,12 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         for (AnnotationNode annotation : alias.getClassNode().getAnnotations()) {
             if (annotation.getClassNode().getName().equals(AnnotationCollector.class.getName())) {
                 Expression mode = annotation.getMember("mode");
-                modes.put(index, Optional.ofNullable(mode)
-                    .map(exp -> evaluateExpression(exp, source.getConfiguration(), transformLoader))
-                    .map(val -> (AnnotationCollectorMode) val)
-                    .orElse(AnnotationCollectorMode.DUPLICATE)
-                );
+                AnnotationCollectorMode collectorMode = AnnotationCollectorMode.DUPLICATE;
+                if (mode != null) {
+                    Object val = evaluateExpression(mode, source.getConfiguration(), transformLoader);
+                    if (val != null) collectorMode = (AnnotationCollectorMode) val;
+                }
+                modes.put(index, collectorMode);
 
                 Expression processor = annotation.getMember("processor");
                 AnnotationCollectorTransform act = null;

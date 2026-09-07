@@ -72,7 +72,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 
@@ -189,8 +188,8 @@ public class CompilationUnit extends ProcessingUnit {
             source.convert();
             // add module to compile unit
             getAST().addModule(source.getAST());
-            Optional.ofNullable(getProgressCallback())
-                .ifPresent(callback -> callback.call(source, getPhase()));
+            ProgressCallback callback = getProgressCallback();
+            if (callback != null) callback.call(source, getPhase());
         }, Phases.CONVERSION);
 
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
@@ -530,7 +529,8 @@ public class CompilationUnit extends ProcessingUnit {
      * Returns the class loader for loading AST transformations.
      */
     public GroovyClassLoader getTransformLoader() {
-        return Optional.ofNullable(getASTTransformationsContext().getTransformLoader()).orElseGet(this::getClassLoader);
+        GroovyClassLoader loader = getASTTransformationsContext().getTransformLoader();
+        return loader != null ? loader : getClassLoader();
     }
 
     //---------------------------------------------------------------------------
@@ -744,8 +744,8 @@ public class CompilationUnit extends ProcessingUnit {
             // Grab processing may have brought in new AST transforms into various phases, process them as well
             processNewPhaseOperations(phase);
 
-            Optional.ofNullable(getProgressCallback())
-                .ifPresent(callback -> callback.call(this, phase));
+            ProgressCallback callback = getProgressCallback();
+            if (callback != null) callback.call(this, phase);
             completePhase();
             mark();
 
@@ -1119,7 +1119,9 @@ public class CompilationUnit extends ProcessingUnit {
                         unit.getErrorCollector().addCollectorContents(errorCollector);
                     } else {
                         if (e instanceof GroovyRuntimeException gre) {
-                            context = Optional.ofNullable(gre.getModule()).map(ModuleNode::getContext).orElse(context);
+                            ModuleNode module = gre.getModule();
+                            SourceUnit moduleContext = module != null ? module.getContext() : null;
+                            if (moduleContext != null) context = moduleContext;
                         }
                         if (context != null) {
                             if (e instanceof SyntaxException) {

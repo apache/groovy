@@ -45,6 +45,7 @@ import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.InnerClassNode;
+import org.codehaus.groovy.ast.IntersectionTypeClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.MultipleAssignmentMetadata;
 import org.codehaus.groovy.ast.Parameter;
@@ -70,7 +71,6 @@ import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.FieldExpression;
-import org.codehaus.groovy.ast.IntersectionTypeClassNode;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
@@ -1123,7 +1123,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         resultType = originType; // TODO: Find accessible type in hierarchy of resultType?
                     } else if (GenericsUtils.hasUnresolvedGenerics(resultType)) { // GROOVY-9033, GROOVY-10089, et al.
                         Map<GenericsTypeName, GenericsType> enclosing = extractGenericsParameterMapOfThis(typeCheckingContext);
-                        resultType = fullyResolveType(resultType, Optional.ofNullable(enclosing).orElseGet(Collections::emptyMap));
+                        resultType = fullyResolveType(resultType, enclosing != null ? enclosing : Collections.emptyMap());
                     }
                 }
 
@@ -1405,7 +1405,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private static boolean isClosureWithType(final ClassNode type) {
-        return CLOSURE_TYPE.equals(type) && Optional.ofNullable(type.getGenericsTypes()).filter(gts -> gts != null && gts.length == 1).isPresent();
+        if (!CLOSURE_TYPE.equals(type)) return false;
+        GenericsType[] gts = type.getGenericsTypes();
+        return gts != null && gts.length == 1;
     }
 
     private static boolean isCompoundAssignment(final Expression exp) {
@@ -1536,7 +1538,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
     private boolean typeCheckMultipleAssignmentPositional(final Expression leftExpression, Expression rightExpression) {
         if (rightExpression instanceof VariableExpression || rightExpression instanceof PropertyExpression || rightExpression instanceof MethodCall) {
-            ClassNode inferredType = Optional.ofNullable(getType(rightExpression)).orElseGet(rightExpression::getType);
+            ClassNode inferredType = inferredOrDeclaredType(rightExpression);
             GenericsType[] genericsTypes = inferredType.getGenericsTypes();
             ListExpression listExpression = new ListExpression();
             listExpression.setSourcePosition(rightExpression);
@@ -1570,7 +1572,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         // GString constants, closure-call results that didn't match Tuple1..16) — try the
         // indexable synthesis based on the RHS's static type.
         if (!(rightExpression instanceof ListExpression)) {
-            ClassNode rhsType = Optional.ofNullable(getType(rightExpression)).orElseGet(rightExpression::getType);
+            ClassNode rhsType = inferredOrDeclaredType(rightExpression);
             rightExpression = synthesizeIndexableRhs(leftExpression, rightExpression, rhsType);
         }
 
@@ -1703,7 +1705,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private boolean typeCheckRestAgainstDeclaredType(final TupleExpression tuple, final Expression rightExpression) {
-        ClassNode rhsType = Optional.ofNullable(getType(rightExpression)).orElseGet(rightExpression::getType);
+        ClassNode rhsType = inferredOrDeclaredType(rightExpression);
         ClassNode elementType = inferComponentType(rhsType, int_TYPE);
         if (elementType == null) {
             // Non-indexable RHS — let positional surface the existing rejection.
@@ -1859,7 +1861,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private boolean typeCheckMapStyleAgainstDeclaredType(final TupleExpression tuple, final Expression rightExpression) {
-        ClassNode rhsType = Optional.ofNullable(getType(rightExpression)).orElseGet(rightExpression::getType);
+        ClassNode rhsType = inferredOrDeclaredType(rightExpression);
 
         // Map<K, V> RHS: every binder resolves to V. STC won't complain about static "missing keys"
         // because Map keys aren't statically known.
@@ -4243,7 +4245,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private ClassLoader getTransformLoader() {
-        return Optional.ofNullable(typeCheckingContext.getCompilationUnit()).map(CompilationUnit::getTransformLoader).orElseGet(() -> getSourceUnit().getClassLoader());
+        CompilationUnit compilationUnit = typeCheckingContext.getCompilationUnit();
+        ClassLoader loader = compilationUnit != null ? compilationUnit.getTransformLoader() : null;
+        return loader != null ? loader : getSourceUnit().getClassLoader();
     }
 
     /**
@@ -5545,7 +5549,8 @@ trying: for (ClassNode[] signature : signatures) {
         }
         Expression trueExpression = expression.getTrueExpression();
         ClassNode typeOfTrue = findCurrentInstanceOfClass(trueExpression, null);
-        typeOfTrue = Optional.ofNullable(typeOfTrue).orElse(visitValueExpression(trueExpression));
+        ClassNode visitedType = visitValueExpression(trueExpression);
+        if (typeOfTrue == null) typeOfTrue = visitedType;
         Map<Object, List<ClassNode>> tti = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
 
         typeCheckingContext.pushTemporaryTypeInfo();
@@ -6148,10 +6153,11 @@ trying: for (ClassNode[] signature : signatures) {
                 componentType = getType(mce);
             } else {
                 ClassNode iteratorType = getType(mce);
-                if (isOrImplements(iteratorType, Iterator_TYPE) && (iteratorType.getGenericsTypes() != null
+                GenericsType[] iteratorGenerics = iteratorType.getGenericsTypes();
+                if (isOrImplements(iteratorType, Iterator_TYPE) && (iteratorGenerics != null
                         // ignore the iterator(Object) extension method, since it makes *everything* appear iterable
                         || !mce.<MethodNode>getNodeMetaData(DIRECT_METHOD_CALL_TARGET).getDeclaringClass().equals(OBJECT_TYPE))) {
-                    componentType = Optional.ofNullable(iteratorType.getGenericsTypes()).map(gt -> getCombinedBoundType(gt[0])).orElse(OBJECT_TYPE);
+                    componentType = iteratorGenerics != null ? getCombinedBoundType(iteratorGenerics[0]) : OBJECT_TYPE;
                 }
             }
         }
@@ -6442,6 +6448,14 @@ trying: for (ClassNode[] signature : signatures) {
     }
 
     /**
+     * Inferred type for the expression, or its declared type when inference produced nothing.
+     */
+    private ClassNode inferredOrDeclaredType(final Expression expression) {
+        ClassNode inferred = getType(expression);
+        return inferred != null ? inferred : expression.getType();
+    }
+
+    /**
      * Returns the inferred type for the supplied AST node.
      */
     protected ClassNode getType(final ASTNode node) {
@@ -6496,7 +6510,8 @@ trying: for (ClassNode[] signature : signatures) {
 
         if (node instanceof MethodNode) {
             type = ((MethodNode) node).getReturnType();
-            return Optional.ofNullable(getInferredReturnType(node)).orElse(type);
+            ClassNode inferred = getInferredReturnType(node);
+            return inferred != null ? inferred : type;
         }
 
         if (node instanceof MethodCall) {
@@ -7027,10 +7042,11 @@ trying: for (ClassNode[] signature : signatures) {
             for (GenericsType placeholder : aNode.getGenericsTypes()) {
                 for (Map.Entry<GenericsTypeName, GenericsType> e : source.entrySet()) {
                     if (e.getValue().getNodeMetaData(GenericsType.class) == placeholder) {
-                        Optional.ofNullable(target.get(e.getKey()))
-                            // skip "f(g())" for "f(T<String>)" and "<U extends Number> U g()"
-                            .filter(gt -> isAssignableTo(gt.getType(), placeholder.getType()))
-                            .ifPresent(gt -> linked.put(new GenericsTypeName(e.getValue().getName()), gt));
+                        GenericsType gt = target.get(e.getKey());
+                        // skip "f(g())" for "f(T<String>)" and "<U extends Number> U g()"
+                        if (gt != null && isAssignableTo(gt.getType(), placeholder.getType())) {
+                            linked.put(new GenericsTypeName(e.getValue().getName()), gt);
+                        }
                         break;
                     }
                 }
@@ -7214,8 +7230,12 @@ out:    for (ClassNode type : todo) {
                 Map<GenericsTypeName, GenericsType> outerPlaceHolders = extractPlaceHolders(oc, oc.redirect());
                 outerPlaceHolders.forEach(result::putIfAbsent); // inner type parameters win over outer
             }
-            if (!result.isEmpty()) Optional.ofNullable(method.getGenericsTypes()).ifPresent(methodGenerics ->
-                Arrays.stream(methodGenerics).map(gt -> new GenericsTypeName(gt.getName())).forEach(result::remove)); // GROOVY-10322
+            if (!result.isEmpty()) {
+                GenericsType[] methodGenerics = method.getGenericsTypes();
+                if (methodGenerics != null) {
+                    Arrays.stream(methodGenerics).map(gt -> new GenericsTypeName(gt.getName())).forEach(result::remove); // GROOVY-10322
+                }
+            }
         }
         return result;
     }

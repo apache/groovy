@@ -77,7 +77,6 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -651,8 +650,10 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             parameter.setInStaticContext(currentScope.isInStaticContext());
             declare(parameter, statement);
         };
-        Optional.ofNullable(statement.getIndexVariable()).ifPresent(define);
-        Optional.ofNullable(statement.getValueVariable()).ifPresent(define);
+        Parameter indexVariable = statement.getIndexVariable();
+        if (indexVariable != null) define.accept(indexVariable);
+        Parameter valueVariable = statement.getValueVariable();
+        if (valueVariable != null) define.accept(valueVariable);
         super.visitForLoop(statement);
         popState();
     }

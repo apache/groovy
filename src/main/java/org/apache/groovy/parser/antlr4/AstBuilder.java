@@ -621,8 +621,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public Function<Statement, ForStatement> visitOriginalForControl(final OriginalForControlContext ctx) {
         ClosureListExpression closureListExpression = new ClosureListExpression();
         closureListExpression.addExpression(this.visitForInit(ctx.forInit()));
-        closureListExpression.addExpression(Optional.ofNullable(ctx.expression())
-          .map(e -> (Expression) this.visit(e)).orElse(EmptyExpression.INSTANCE));
+        ExpressionContext expressionCtx = ctx.expression();
+        closureListExpression.addExpression(expressionCtx != null ? (Expression) this.visit(expressionCtx) : EmptyExpression.INSTANCE);
         closureListExpression.addExpression(this.visitForUpdate(ctx.forUpdate()));
 
         return (body) -> new ForStatement(closureListExpression, body);
@@ -1343,7 +1343,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public ClassNode visitClassDeclaration(final ClassDeclarationContext ctx) {
-        String packageName = Optional.ofNullable(this.moduleNode.getPackageName()).orElse("");
+        String packageName = this.moduleNode.getPackageName();
+        if (packageName == null) packageName = "";
         String className = this.visitIdentifier(ctx.identifier());
         if ("var".equals(className) || (VAL_ENABLED && "val".equals(className))) {
             throw createParsingFailedException(className + " cannot be used for type declarations", ctx.identifier());
@@ -4014,7 +4015,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public InnerClassNode visitAnonymousInnerClassDeclaration(final AnonymousInnerClassDeclarationContext ctx) {
         ClassNode superClass = Objects.requireNonNull(ctx.getNodeMetaData(ANONYMOUS_INNER_CLASS_SUPER_CLASS), "superClass should not be null");
-        ClassNode outerClass = Optional.ofNullable(this.classNodeStack.peek()).orElse(this.moduleNode.getScriptClassDummy());
+        ClassNode outerClass = this.classNodeStack.peek();
+        if (outerClass == null) outerClass = this.moduleNode.getScriptClassDummy();
         String innerClassName = nextAnonymousClassName(outerClass);
 
         InnerClassNode anonymousInnerClass;
@@ -5222,7 +5224,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return expressionStatements.size() == 1 ? expressionStatements.get(0) : configureAST(this.createBlockStatement(statement), statement);
         }
 
-        return Optional.ofNullable(statement).orElse(EmptyStatement.INSTANCE);
+        return statement != null ? statement : EmptyStatement.INSTANCE;
     }
 
     BlockStatement createBlockStatement(final Statement... statements) {

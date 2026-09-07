@@ -60,8 +60,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
@@ -151,7 +149,7 @@ public abstract class TraitComposer {
 
                 MethodNode originalMethod = trait.getMethod(name, params);
                 Map<String, ClassNode> methodGenericsSpec = GenericsUtils.addMethodGenerics(
-                        Optional.ofNullable(originalMethod).orElse(methodNode), genericsSpec);
+                        originalMethod != null ? originalMethod : methodNode, genericsSpec);
 
                 for (int i = 1; i < nParams; i += 1) {
                     Parameter parameter = helperMethodParams[i];
@@ -546,8 +544,8 @@ public abstract class TraitComposer {
     private static MethodNode findExistingMethod(final ClassNode cNode, final String name, final Parameter[] params) {
         MethodNode mNode = cNode.getDeclaredMethod(name, params);
         if (mNode == null) { // GROOVY-11548: check for final method
-            mNode = Optional.ofNullable(cNode.getMethod(name, params))
-                    .filter(m -> m.isFinal() && !m.isPrivate() && !m.isStatic()).orElse(null);
+            MethodNode found = cNode.getMethod(name, params);
+            mNode = found != null && found.isFinal() && !found.isPrivate() && !found.isStatic() ? found : null;
         }
         return mNode;
     }

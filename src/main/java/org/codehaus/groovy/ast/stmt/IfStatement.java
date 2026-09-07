@@ -22,7 +22,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Represents an if (condition) { then-block } else { else-block } conditional statement in Groovy.
@@ -87,7 +86,7 @@ public class IfStatement extends Statement {
      *      the else-block {@link Statement}, or null for no else clause
      */
     public void setElseBlock(final Statement statement) {
-        elseBlock = Optional.ofNullable(statement).orElse(EmptyStatement.INSTANCE);
+        elseBlock = statement != null ? statement : EmptyStatement.INSTANCE;
     }
 
     @Override

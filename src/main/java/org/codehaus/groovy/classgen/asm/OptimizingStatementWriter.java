@@ -61,7 +61,6 @@ import org.objectweb.asm.MethodVisitor;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
@@ -866,7 +865,8 @@ public class OptimizingStatementWriter extends StatementWriter {
                 } else {
                     opt.chainShouldOptimize(true);
                 }
-                addMeta(expression).type = Optional.ofNullable(typeChooser.resolveType(expression, node)).orElse(leftType);
+                ClassNode expressionType = typeChooser.resolveType(expression, node);
+                addMeta(expression).type = expressionType != null ? expressionType : leftType;
                 opt.chainInvolvedType(leftType);
                 opt.chainInvolvedType(rightType);
             }

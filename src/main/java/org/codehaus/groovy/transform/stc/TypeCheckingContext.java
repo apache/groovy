@@ -42,7 +42,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
@@ -104,8 +103,9 @@ public class TypeCheckingContext {
      * Pushes a fresh error collector derived from the current compiler configuration.
      */
     public ErrorCollector pushErrorCollector() {
-        CompilerConfiguration config = Optional.ofNullable(getErrorCollector())
-                .map(ErrorCollector::getConfiguration).orElseGet(() -> getSource().getConfiguration());
+        ErrorCollector current = getErrorCollector();
+        CompilerConfiguration config = current != null ? current.getConfiguration() : null;
+        if (config == null) config = getSource().getConfiguration();
 
         ErrorCollector collector = new ErrorCollector(config);
         pushErrorCollector(collector);
@@ -283,9 +283,8 @@ public class TypeCheckingContext {
      * Indicates whether the expression is the left-hand side of the current assignment.
      */
     public boolean isTargetOfEnclosingAssignment(final Expression expression) {
-        return Optional.ofNullable(getEnclosingBinaryExpression()).filter(be ->
-            be.getLeftExpression() == expression && StaticTypeCheckingSupport.isAssignment(be.getOperation().getType())
-        ).isPresent();
+        BinaryExpression be = getEnclosingBinaryExpression();
+        return be != null && be.getLeftExpression() == expression && StaticTypeCheckingSupport.isAssignment(be.getOperation().getType());
     }
 
     /**

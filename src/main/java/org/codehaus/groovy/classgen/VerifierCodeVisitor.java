@@ -31,8 +31,6 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 
-import java.util.Optional;
-
 /**
  * Performs various checks on code inside methods and constructors
  * including checking for valid field, variables names etc. that
@@ -56,10 +54,14 @@ public class VerifierCodeVisitor extends CodeVisitorSupport {
      */
     @Override
     public void visitForLoop(ForStatement statement) {
-        Optional.ofNullable(statement.getIndexVariable()).map(Variable::getName)
-            .ifPresent(name -> assertValidIdentifier(name, "for loop index variable name", statement));
-        Optional.ofNullable(statement.getValueVariable()).map(Variable::getName)
-            .ifPresent(name -> assertValidIdentifier(name, "for loop value variable name", statement));
+        Variable indexVariable = statement.getIndexVariable();
+        if (indexVariable != null) {
+            assertValidIdentifier(indexVariable.getName(), "for loop index variable name", statement);
+        }
+        Variable valueVariable = statement.getValueVariable();
+        if (valueVariable != null) {
+            assertValidIdentifier(valueVariable.getName(), "for loop value variable name", statement);
+        }
         super.visitForLoop(statement);
     }
 

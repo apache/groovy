@@ -97,7 +97,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
@@ -2740,7 +2739,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         MetaBeanProperty mbp = (MetaBeanProperty) mp;
         final MetaMethod setterMethod = mbp.getSetter();
         final MetaMethod getterMethod = findStaticAccessMethod(mbp);
-        final CachedField staticField = Optional.ofNullable(mbp.getField()).filter(f -> f.isStatic()).orElse(null);
+        final CachedField cachedField = mbp.getField();
+        final CachedField staticField = cachedField != null && cachedField.isStatic() ? cachedField : null;
 
         boolean getter = getterMethod == null || getterMethod.isStatic();
         boolean setter = setterMethod == null || setterMethod.isStatic();

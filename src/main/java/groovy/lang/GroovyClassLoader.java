@@ -70,7 +70,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /*
@@ -169,10 +168,10 @@ public class GroovyClassLoader extends URLClassLoader {
                 addClasspath(path);
             }
         }
-        this.sourceEncoding = Optional.ofNullable(this.config.getSourceEncoding())
-            // Keep the same default source encoding as #parseClass(InputStream,String)
-            // TODO Should we use CompilerConfiguration.DEFAULT_SOURCE_ENCODING instead?
-            .orElseGet(() -> CharsetToolkit.getDefaultSystemCharset().name());
+        String encoding = this.config.getSourceEncoding();
+        // Keep the same default source encoding as #parseClass(InputStream,String)
+        // TODO Should we use CompilerConfiguration.DEFAULT_SOURCE_ENCODING instead?
+        this.sourceEncoding = encoding != null ? encoding : CharsetToolkit.getDefaultSystemCharset().name();
         this.recompile = null;
     }
 

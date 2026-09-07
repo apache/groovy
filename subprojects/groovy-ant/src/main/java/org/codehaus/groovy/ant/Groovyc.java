@@ -66,7 +66,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -1117,7 +1116,8 @@ public class Groovyc extends MatchingTask {
 
         // map "debug" and "debuglevel" to "-Fg"
         if (javac.getDebug()) {
-            jointOptions.add("-Fg" + Optional.ofNullable(javac.getDebugLevel()).map(level -> ":" + level).orElse(""));
+            String debugLevel = javac.getDebugLevel();
+            jointOptions.add("-Fg" + (debugLevel != null ? ":" + debugLevel : ""));
         } else {
             jointOptions.add("-Fg:none");
         }
@@ -1554,7 +1554,7 @@ public class Groovyc extends MatchingTask {
 
             listFiles();
 
-            Path classpath = Optional.ofNullable(getClasspath()).orElse(new Path(getProject()));
+            Path classpath = classpathOrDefault();
             List<String> jointOptions = extractJointOptions(classpath);
             List<String> commandLineList = new ArrayList<>();
 
@@ -1675,6 +1675,11 @@ public class Groovyc extends MatchingTask {
         return groovyLoader;
     }
 
+    private Path classpathOrDefault() {
+        Path classpath = getClasspath();
+        return classpath != null ? classpath : new Path(getProject());
+    }
+
     private Set<String> getScriptExtensions() {
         return scriptExtensions;
     }
@@ -1683,7 +1688,7 @@ public class Groovyc extends MatchingTask {
         if (scriptExtensions.isEmpty()) {
             scriptExtensions.add(getScriptExtension().substring(2)); // first extension will be the one set explicitly on <groovyc>
 
-            Path classpath = Optional.ofNullable(getClasspath()).orElse(new Path(getProject()));
+            Path classpath = classpathOrDefault();
             try (GroovyClassLoader loader = new GroovyClassLoader(getClass().getClassLoader())) {
                 for (String element : classpath.list()) {
                     loader.addClasspath(element);
