@@ -21,7 +21,6 @@ package org.apache.groovy.gradle
 import groovy.transform.CompileStatic
 import org.gradle.StartParameter
 import org.gradle.api.execution.TaskExecutionGraph
-import org.gradle.api.file.Directory
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFile
 import org.gradle.api.logging.Logger
@@ -137,14 +136,9 @@ class SharedConfiguration {
 
         private static Provider<RegularFile> artifactoryFile(ProviderFactory providers, ProjectLayout layout) {
             providers.provider {
-                // try to read artifactory.properties
-                Directory base = layout.projectDirectory
-                RegularFile artifactoryFile = base.file('artifactory.properties')
-                while (!artifactoryFile.asFile.exists() && base.asFile.parent) {
-                    base = base.dir('..')
-                    artifactoryFile = base.file('artifactory.properties')
-                }
-                artifactoryFile
+                // read artifactory.properties from the repository root only; do not walk
+                // ancestor directories, where a parent could inject credentials
+                layout.projectDirectory.file('artifactory.properties')
             }
         }
 

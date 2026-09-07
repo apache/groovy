@@ -28,6 +28,9 @@ out/
 verification-metadata.dryrun.xml
 verification-keyring.dryrun.keys
 
+# local Artifactory credentials, read only from the repo root (never commit)
+**/artifactory.properties
+
 .claude/
 .apache-steward/
 .apache-steward.local.lock
