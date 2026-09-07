@@ -140,11 +140,20 @@ Setting the property explicitly overrides the default in either environment:
 The property is read once when `IndyInterface` initialises, so pass it on the command line rather
 than setting it from code.
 
-==== Caller location with the tier enabled
+==== Caller location
 
-If you enable the tier on a JVM, or you run a native image, the following keep caller locations
-correct. Statically compiled code (`@CompileStatic`) needs none of them, since it calls targets
-directly.
+Runtime frames appear between a caller and its target whenever the runtime dispatches a call
+through the metaclass instead of linking it at the call site. With the reflective tier enabled that
+is every plain method call until its site promotes. Independently of the tier, and on every Groovy
+version, it is also the case for a call with a dynamic method name, such as `log."$level"(msg)`,
+and for an explicit `invokeMethod` call: a logging helper written that way reports the runtime as
+the caller. Ordinary calls made inside a `use(Category)` block, on a receiver with a per-instance
+metaclass, or from a closure coerced to an interface still link at the call site and report the
+correct location.
+
+The settings below keep caller locations correct in all of those cases, on a JVM and, with the
+additions in the native-image section, in a native image. Statically compiled code
+(`@CompileStatic`) needs none of them for ordinary calls, since it calls targets directly.
 
 `java.util.logging`:: The JDK skips additional packages when inferring the caller if they are listed
 in `jdk.logger.packages`. On a JVM pass it at run time:
@@ -174,8 +183,9 @@ context.frameworkPackages.addAll([
 Log4j2:: Log4j2 has no equivalent skip list; its location is always the frame following the logger's
 own class. Use `@CompileStatic` for the classes whose log locations matter.
 
-Stack traces:: `org.codehaus.groovy.runtime.StackTraceUtils.sanitize` and `deepSanitize` already
-strip every frame the tier adds. Groovy's own caller lookup,
+Stack traces:: The logger settings above change what a logger reports as the source; they do not
+remove the frames from exception stack traces. `org.codehaus.groovy.runtime.StackTraceUtils.sanitize`
+and `deepSanitize` strip every frame the runtime adds. Groovy's own caller lookup,
 `org.codehaus.groovy.reflection.ReflectionUtils.getCallingClass`, ignores the MOP packages and
 is unaffected on a JVM.
 
