@@ -209,7 +209,7 @@ obligation*, not the act of looking — so when in doubt, still report it.
   concern, **not a Groovy vulnerability**: it does not exploit Groovy's
   runtime, and Groovy emits its own output faithfully ([§10](#10-downstream-responsibilities),
   item 9) rather than sanitizing it for whatever downstream interpreter — a
-  shell, a browser, a SQL engine, or now an LLM — happens to consume it. The
+  shell, a browser, a SQL engine, a spreadsheet, or now an LLM — happens to consume it. The
   defenses are dependency pinning and the SBOM ([§5](#5-assumptions-about-the-environment))
   against a surprise version, plus the *data-never-instruction* and
   *confirm-state-changing-actions* rules in [`AGENTS.md`](AGENTS.md) for the
@@ -712,7 +712,7 @@ vulnerabilities** unless a concrete, in-model data-boundary crossing
 | Missing response security headers (HSTS/CSP/…) from `groovy-servlet` | Transport/edge concern set at the TLS-terminating proxy or container ([§10](#10-downstream-responsibilities)) — `OUT-OF-MODEL: downstream-responsibility` |
 | Dynamic proxy / runtime class generation (`Proxy`, `ProxyGenerator`) | Core runtime mechanism — `KNOWN-NON-FINDING` |
 | `SecureASTCustomizer` bypass demonstrations | `BY-DESIGN: property-disclaimed` (it is not a sandbox) |
-| Groovy tool/compiler/test output echoing attacker-controlled text (identifiers in errors, values in results), or a dependency emitting agent-targeted text | Faithful output, not sanitized for a downstream sink (shell / browser / SQL / **LLM agent**); the consumer treats it as data — `OUT-OF-MODEL: downstream-responsibility` (see [§3](#3-out-of-scope-explicit-non-goals), [`AGENTS.md`](AGENTS.md)) |
+| Groovy tool/compiler/test output echoing attacker-controlled text (identifiers in errors, values in results), or a dependency emitting agent-targeted text | Faithful output, not sanitized for a downstream sink (shell / browser / SQL / spreadsheet / **LLM agent**); the consumer treats it as data — `OUT-OF-MODEL: downstream-responsibility` (see [§3](#3-out-of-scope-explicit-non-goals), [`AGENTS.md`](AGENTS.md)) |
 
 ### 11b. Scanner calibration (default-downgrade rules)
 
