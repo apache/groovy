@@ -25,6 +25,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
@@ -119,7 +120,7 @@ class ModuleSelfContainmentTest {
 
     private static Path moduleJar() {
         URL location = ChannelSelect.class.getProtectionDomain().getCodeSource().getLocation();
-        Path path = Paths.get(java.net.URI.create(location.toString()));
+        Path path = Paths.get(URI.create(location.toString()));
         assertTrue(path.getFileName().toString().endsWith(".jar"),
                 () -> "the API should be loaded from the module jar, not from " + path);
         return path;
