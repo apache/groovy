@@ -39,6 +39,12 @@
    gpg -\-keyserver hkps://keyserver.ubuntu.com -\-recv-keys <KEY_ID> # fetch to local gpg
    gpg -\-export -\-armor > gradle/verification-keyring.keys # regenerate the whole file
 
+   The configuration settings below are deliberate; if a regeneration resets one, restore it.
+   In particular, verify-metadata is false on purpose: metadata (POMs) is not
+   signature/checksum-enforced, because jar integrity is already covered by verify-signatures
+   plus checksums, while enforcing metadata adds noisy failures on unsigned ancillary POMs for
+   no integrity gain.
+
    Do not remove this header.
 
 -->
