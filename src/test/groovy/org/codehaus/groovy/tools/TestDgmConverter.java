@@ -30,12 +30,16 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import junit.framework.TestCase;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
@@ -47,6 +51,12 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.TableSwitchInsnNode;
+import org.objectweb.asm.tree.TypeInsnNode;
 
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -606,5 +616,176 @@ public class TestDgmConverter extends TestCase {
             }
         }
         Files.deleteIfExists(dir);
+    }
+
+    // ==================== DgmProxyFactory (GROOVY-12365) ====================
+
+    private static final String PROXY_FACTORY_CLASS = "org.codehaus.groovy.runtime.DgmProxyFactory";
+    private static final String ADAPTER_PREFIX = "org.codehaus.groovy.runtime.dgm$";
+
+    private static int adapterIndex(GeneratedMetaMethod.DgmMethodRecord record) {
+        return Integer.parseInt(record.className.substring(record.className.lastIndexOf('$') + 1));
+    }
+
+    private static Class[] adapterParameters(GeneratedMetaMethod.DgmMethodRecord record) {
+        return Arrays.copyOfRange(record.parameters, 1, record.parameters.length);
+    }
+
+    private static GeneratedMetaMethod.ProxyFactory loadProxyFactory() throws Exception {
+        Class<?> cls = Class.forName(PROXY_FACTORY_CLASS, true, DGM_CLASS_LOADER);
+        return (GeneratedMetaMethod.ProxyFactory) cls.getDeclaredConstructor().newInstance();
+    }
+
+    private static ClassNode readProxyFactory() throws IOException {
+        try (var in = Objects.requireNonNull(DGM_CLASS_LOADER.getResourceAsStream(PROXY_FACTORY_CLASS.replace('.', '/') + ".class"))) {
+            ClassNode node = new ClassNode();
+            new ClassReader(in.readAllBytes()).accept(node, 0);
+            return node;
+        }
+    }
+
+    /**
+     * Every record's adapter is created by index, with the class the record
+     * names, and indices outside the generated range yield {@code null}.
+     */
+    public void testProxyFactoryCreatesEveryAdapterByIndex() throws Exception {
+        List<GeneratedMetaMethod.DgmMethodRecord> records = GeneratedMetaMethod.DgmMethodRecord.loadDgmInfo();
+        assertFalse(records.isEmpty());
+        GeneratedMetaMethod.ProxyFactory factory = loadProxyFactory();
+        for (GeneratedMetaMethod.DgmMethodRecord record : records) {
+            MetaMethod adapter = factory.create(adapterIndex(record), record.methodName,
+                    ReflectionCache.getCachedClass(record.parameters[0]), record.returnType, adapterParameters(record));
+            assertNotNull(record.className, adapter);
+            assertEquals(record.className.replace('/', '.'), adapter.getClass().getName());
+            assertEquals(record.methodName, adapter.getName());
+            assertEquals(record.returnType, adapter.getReturnType());
+        }
+        int adapters = findAllDgmClassFiles().size();
+        CachedClass declaring = ReflectionCache.getCachedClass(Object.class);
+        assertNull(factory.create(adapters, "x", declaring, Object.class, new Class[0]));
+        assertNull(factory.create(adapters + DgmConverter.PROXY_FACTORY_SHARD_SIZE, "x", declaring, Object.class, new Class[0]));
+        assertNull(factory.create(Integer.MAX_VALUE, "x", declaring, Object.class, new Class[0]));
+        assertNull(factory.create(-1, "x", declaring, Object.class, new Class[0]));
+    }
+
+    /**
+     * A {@code Proxy} for a generated adapter resolves it through the factory,
+     * which registers itself with the {@code Proxy} class when initialised.
+     */
+    public void testProxyResolvesAdaptersThroughTheFactory() throws Exception {
+        GeneratedMetaMethod.DgmMethodRecord record = GeneratedMetaMethod.DgmMethodRecord.loadDgmInfo().get(0);
+        GeneratedMetaMethod.Proxy proxy = new GeneratedMetaMethod.Proxy(record.className, record.methodName,
+                ReflectionCache.getCachedClass(record.parameters[0]), record.returnType, adapterParameters(record));
+        MetaMethod adapter = proxy.proxy();
+        assertEquals(record.className.replace('/', '.'), adapter.getClass().getName());
+        assertSame("proxy() is cached", adapter, proxy.proxy());
+
+        Field factoryField = GeneratedMetaMethod.Proxy.class.getDeclaredField("factory");
+        factoryField.setAccessible(true);
+        Object factory = factoryField.get(null);
+        assertNotNull("the generated factory should have registered itself", factory);
+        assertEquals(PROXY_FACTORY_CLASS, factory.getClass().getName());
+    }
+
+    /** A {@code GeneratedMetaMethod} with the adapter constructor shape, not produced by {@code DgmConverter}. */
+    public static class ForeignAdapter extends GeneratedMetaMethod {
+        public ForeignAdapter(String name, CachedClass declaringClass, Class returnType, Class[] parameters) {
+            super(name, declaringClass, returnType, parameters);
+        }
+
+        @Override
+        public Object invoke(Object object, Object[] arguments) {
+            return "foreign";
+        }
+    }
+
+    /**
+     * {@code Proxy} is public API: a class name the factory does not know is
+     * still resolved by name, as before.
+     */
+    public void testProxyFallsBackToReflectionForOtherAdapters() {
+        String className = ForeignAdapter.class.getName().replace('.', '/');
+        GeneratedMetaMethod.Proxy proxy = new GeneratedMetaMethod.Proxy(className, "foreign",
+                ReflectionCache.getCachedClass(Object.class), String.class, new Class[0]);
+        MetaMethod adapter = proxy.proxy();
+        assertTrue(adapter instanceof ForeignAdapter);
+        assertEquals("foreign", proxy.invoke(new Object(), new Object[0]));
+    }
+
+    /**
+     * The factory references every adapter through a direct constructor call
+     * (so static analysis reaches them), never through reflection, and splits
+     * the switch into shards small enough for the JIT.
+     */
+    public void testProxyFactoryIsShardedAndReflectionFree() throws Exception {
+        ClassNode node = readProxyFactory();
+        assertTrue(node.interfaces.contains("org/codehaus/groovy/reflection/GeneratedMetaMethod$ProxyFactory"));
+
+        int adapters = findAllDgmClassFiles().size();
+        int expectedShards = (adapters + DgmConverter.PROXY_FACTORY_SHARD_SIZE - 1) / DgmConverter.PROXY_FACTORY_SHARD_SIZE;
+        int shards = 0;
+        Set<String> constructed = new HashSet<>();
+        for (MethodNode method : node.methods) {
+            if (method.name.startsWith("create$")) {
+                shards++;
+                assertTrue("shards return Object so linking the factory loads no adapter: " + method.desc,
+                        method.desc.endsWith(")Ljava/lang/Object;"));
+                int cases = 0;
+                for (AbstractInsnNode insn : method.instructions) {
+                    if (insn instanceof TableSwitchInsnNode) cases += ((TableSwitchInsnNode) insn).labels.size();
+                }
+                assertTrue(method.name + " has " + cases + " cases", cases > 0 && cases <= DgmConverter.PROXY_FACTORY_SHARD_SIZE);
+            }
+            for (AbstractInsnNode insn : method.instructions) {
+                if (insn instanceof TypeInsnNode && insn.getOpcode() == Opcodes.NEW) {
+                    String type = ((TypeInsnNode) insn).desc;
+                    if (type.startsWith("org/codehaus/groovy/runtime/dgm$")) constructed.add(type);
+                } else if (insn instanceof MethodInsnNode) {
+                    String owner = ((MethodInsnNode) insn).owner;
+                    assertFalse("reflection in " + method.name + ": " + owner + "." + ((MethodInsnNode) insn).name,
+                            owner.equals("java/lang/Class") || owner.equals("java/lang/ClassLoader") || owner.startsWith("java/lang/reflect/"));
+                }
+            }
+        }
+        assertEquals(expectedShards, shards);
+        assertEquals("every adapter is constructed directly", adapters, constructed.size());
+    }
+
+    private static final class ProbeClassLoader extends URLClassLoader {
+        ProbeClassLoader(URL[] urls) {
+            super(urls, ClassLoader.getPlatformClassLoader());
+        }
+
+        boolean isLoaded(String name) {
+            return findLoadedClass(name) != null;
+        }
+    }
+
+    /**
+     * Linking and initialising the factory must not load the adapters (the
+     * verifier would do so if the shard methods returned an adapter supertype);
+     * creating one adapter loads that adapter alone.
+     */
+    public void testLinkingTheFactoryLoadsNoAdapter() throws Exception {
+        URL dgmRoot = Path.of(Objects.requireNonNull(TestDgmConverter.class.getResource(REFERENCE_CLASS)).toURI())
+                .getParent().getParent().getParent().getParent().toUri().toURL();
+        URL classes = DefaultGroovyMethods.class.getProtectionDomain().getCodeSource().getLocation();
+        int adapters = findAllDgmClassFiles().size();
+        try (ProbeClassLoader loader = new ProbeClassLoader(new URL[]{dgmRoot, classes})) {
+            Class<?> factoryClass = Class.forName(PROXY_FACTORY_CLASS, true, loader);
+            assertSame(loader, factoryClass.getClassLoader());
+            for (int i = 0; i < adapters; i++) {
+                assertFalse("linking the factory loaded " + ADAPTER_PREFIX + i, loader.isLoaded(ADAPTER_PREFIX + i));
+            }
+
+            Object factory = factoryClass.getDeclaredConstructor().newInstance();
+            Class<?> cachedClass = Class.forName(CachedClass.class.getName(), false, loader);
+            Method create = factoryClass.getMethod("create", int.class, String.class, cachedClass, Class.class, Class[].class);
+            Object adapter = create.invoke(factory, 7, "x", null, Object.class, new Class[0]);
+            assertEquals(ADAPTER_PREFIX + 7, adapter.getClass().getName());
+            assertTrue(loader.isLoaded(ADAPTER_PREFIX + 7));
+            assertFalse(loader.isLoaded(ADAPTER_PREFIX + 6));
+            assertFalse(loader.isLoaded(ADAPTER_PREFIX + 8));
+        }
     }
 }

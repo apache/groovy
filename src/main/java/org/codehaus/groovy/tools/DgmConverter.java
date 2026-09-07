@@ -47,18 +47,24 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.ACC_SUPER;
 import static org.objectweb.asm.Opcodes.ARETURN;
 import static org.objectweb.asm.Opcodes.ASTORE;
+import static org.objectweb.asm.Opcodes.CHECKCAST;
+import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.GETSTATIC;
 import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.ICONST_1;
+import static org.objectweb.asm.Opcodes.IDIV;
 import static org.objectweb.asm.Opcodes.IFEQ;
 import static org.objectweb.asm.Opcodes.IFNULL;
+import static org.objectweb.asm.Opcodes.ILOAD;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.IRETURN;
+import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.PUTSTATIC;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Type.getMethodType;
@@ -72,6 +78,23 @@ public class DgmConverter {
     private static final System.Logger LOGGER = System.getLogger(DgmConverter.class.getName());
     private static final String TARGET = "TARGET";
     private static final String METHOD_HANDLE_CLASS_NAME = "Ljava/lang/invoke/MethodHandle;";
+
+    private static final String DGM_CLASS_PREFIX = "org/codehaus/groovy/runtime/dgm$";
+    private static final String GENERATED_META_METHOD = "org/codehaus/groovy/reflection/GeneratedMetaMethod";
+    private static final String ADAPTER_CONSTRUCTOR_DESCRIPTOR = "(Ljava/lang/String;Lorg/codehaus/groovy/reflection/CachedClass;Ljava/lang/Class;[Ljava/lang/Class;)V";
+
+    /** Binary name of the generated adapter factory; {@code GeneratedMetaMethod.Proxy} loads it by this constant. */
+    public static final String PROXY_FACTORY_CLASS_NAME = "org/codehaus/groovy/runtime/DgmProxyFactory";
+    private static final String PROXY_FACTORY_INTERFACE = GENERATED_META_METHOD + "$ProxyFactory";
+    private static final String PROXY_CLASS = GENERATED_META_METHOD + "$Proxy";
+    private static final String CREATE_DESCRIPTOR = "(ILjava/lang/String;Lorg/codehaus/groovy/reflection/CachedClass;Ljava/lang/Class;[Ljava/lang/Class;)Lgroovy/lang/MetaMethod;";
+    private static final String SHARD_DESCRIPTOR = "(ILjava/lang/String;Lorg/codehaus/groovy/reflection/CachedClass;Ljava/lang/Class;[Ljava/lang/Class;)Ljava/lang/Object;";
+    /**
+     * Adapters per factory shard method. Each case costs sixteen bytes of
+     * bytecode including its switch-table entry, so a shard stays under
+     * HotSpot's 8000-byte limit for JIT compilation, with room for DGM to grow.
+     */
+    public static final int PROXY_FACTORY_SHARD_SIZE = 400;
 
     /**
      * Generates DGM adapter classes into the target directory.
@@ -101,7 +124,7 @@ public class DgmConverter {
 
             final Class<?> returnType = method.getReturnType();
 
-            final String className = "org/codehaus/groovy/runtime/dgm$" + cur++;
+            final String className = DGM_CLASS_PREFIX + cur++;
 
             GeneratedMetaMethod.DgmMethodRecord dgmMethodRecord = new GeneratedMetaMethod.DgmMethodRecord();
             records.add(dgmMethodRecord);
@@ -112,7 +135,7 @@ public class DgmConverter {
             dgmMethodRecord.className = className;
 
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-            cw.visit(CompilerConfiguration.DEFAULT.getBytecodeVersion(), ACC_PUBLIC, className, null, "org/codehaus/groovy/reflection/GeneratedMetaMethod", null);
+            cw.visit(CompilerConfiguration.DEFAULT.getBytecodeVersion(), ACC_PUBLIC, className, null, GENERATED_META_METHOD, null);
 
             createConstructor(cw);
 
@@ -141,9 +164,133 @@ public class DgmConverter {
             }
         }
 
+        writeClass(targetDirectory, PROXY_FACTORY_CLASS_NAME, createProxyFactory(cur));
+
         GeneratedMetaMethod.DgmMethodRecord.saveDgmInfo(records, targetDirectory+"/META-INF/dgminfo");
         if (info)
             LOGGER.log(INFO, "Saved {0} dgm records to: {1}/META-INF/dgminfo", cur, targetDirectory);
+    }
+
+    private static void writeClass(String targetDirectory, String className, byte[] bytes) throws IOException {
+        File targetFile = new File(targetDirectory + className + ".class").getCanonicalFile();
+        targetFile.getParentFile().mkdirs();
+        try (FileOutputStream fileOutputStream = new FileOutputStream(targetFile)) {
+            fileOutputStream.write(bytes);
+            fileOutputStream.flush();
+        }
+    }
+
+    /**
+     * Generates {@code DgmProxyFactory}: a {@code GeneratedMetaMethod.ProxyFactory}
+     * whose {@code create} method instantiates adapter {@code index} with a
+     * direct constructor call. The adapters are referenced statically, so
+     * native-image analysis reaches them without reflection metadata, and the
+     * class loads none of them eagerly: the shard methods return
+     * {@code Object}, which spares the verifier the subtype checks that would
+     * otherwise load every adapter when the factory is linked.
+     * <p>
+     * Layout:
+     * <pre>
+     * public final class DgmProxyFactory implements GeneratedMetaMethod.ProxyFactory {
+     *     static { GeneratedMetaMethod.Proxy.register(new DgmProxyFactory()); }
+     *     public MetaMethod create(int index, String n, CachedClass c, Class r, Class[] p) {
+     *         switch (index / SHARD_SIZE) { case 0: return (MetaMethod) create$0(index, n, c, r, p); ... default: return null; }
+     *     }
+     *     private static Object create$0(int index, ...) {
+     *         switch (index) { case 0: return new dgm$0(n, c, r, p); ... default: return null; }
+     *     }
+     * }
+     * </pre>
+     *
+     * @param adapterCount the number of generated adapters, {@code dgm$0} to {@code dgm$(adapterCount - 1)}
+     */
+    static byte[] createProxyFactory(int adapterCount) {
+        int shards = (adapterCount + PROXY_FACTORY_SHARD_SIZE - 1) / PROXY_FACTORY_SHARD_SIZE;
+
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+        cw.visit(CompilerConfiguration.DEFAULT.getBytecodeVersion(), ACC_PUBLIC | ACC_FINAL | ACC_SUPER,
+                PROXY_FACTORY_CLASS_NAME, null, "java/lang/Object", new String[]{PROXY_FACTORY_INTERFACE});
+
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+        mv.visitCode();
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+        mv.visitInsn(RETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+
+        // static { GeneratedMetaMethod.Proxy.register(new DgmProxyFactory()); }
+        mv = cw.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
+        mv.visitCode();
+        mv.visitTypeInsn(NEW, PROXY_FACTORY_CLASS_NAME);
+        mv.visitInsn(DUP);
+        mv.visitMethodInsn(INVOKESPECIAL, PROXY_FACTORY_CLASS_NAME, "<init>", "()V", false);
+        mv.visitMethodInsn(INVOKESTATIC, PROXY_CLASS, "register", "(L" + PROXY_FACTORY_INTERFACE + ";)V", false);
+        mv.visitInsn(RETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+
+        // public MetaMethod create(int index, String name, CachedClass declaringClass, Class returnType, Class[] parameters)
+        mv = cw.visitMethod(ACC_PUBLIC, "create", CREATE_DESCRIPTOR, null, null);
+        mv.visitCode();
+        Label createDefault = new Label();
+        if (shards > 0) {
+            Label[] shardLabels = new Label[shards];
+            for (int i = 0; i < shards; i++) shardLabels[i] = new Label();
+            mv.visitVarInsn(ILOAD, 1);
+            BytecodeHelper.pushConstant(mv, PROXY_FACTORY_SHARD_SIZE);
+            mv.visitInsn(IDIV);
+            mv.visitTableSwitchInsn(0, shards - 1, createDefault, shardLabels);
+            for (int i = 0; i < shards; i++) {
+                mv.visitLabel(shardLabels[i]);
+                mv.visitVarInsn(ILOAD, 1);
+                mv.visitVarInsn(ALOAD, 2);
+                mv.visitVarInsn(ALOAD, 3);
+                mv.visitVarInsn(ALOAD, 4);
+                mv.visitVarInsn(ALOAD, 5);
+                mv.visitMethodInsn(INVOKESTATIC, PROXY_FACTORY_CLASS_NAME, "create$" + i, SHARD_DESCRIPTOR, false);
+                mv.visitTypeInsn(CHECKCAST, "groovy/lang/MetaMethod");
+                mv.visitInsn(ARETURN);
+            }
+        }
+        mv.visitLabel(createDefault);
+        mv.visitInsn(ACONST_NULL);
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+
+        // private static Object create$N(int index, String name, CachedClass declaringClass, Class returnType, Class[] parameters)
+        for (int shard = 0; shard < shards; shard++) {
+            int low = shard * PROXY_FACTORY_SHARD_SIZE;
+            int high = Math.min(low + PROXY_FACTORY_SHARD_SIZE, adapterCount) - 1;
+            mv = cw.visitMethod(ACC_PRIVATE | ACC_STATIC, "create$" + shard, SHARD_DESCRIPTOR, null, null);
+            mv.visitCode();
+            Label shardDefault = new Label();
+            Label[] caseLabels = new Label[high - low + 1];
+            for (int i = 0; i < caseLabels.length; i++) caseLabels[i] = new Label();
+            mv.visitVarInsn(ILOAD, 0);
+            mv.visitTableSwitchInsn(low, high, shardDefault, caseLabels);
+            for (int index = low; index <= high; index++) {
+                String adapter = DGM_CLASS_PREFIX + index;
+                mv.visitLabel(caseLabels[index - low]);
+                mv.visitTypeInsn(NEW, adapter);
+                mv.visitInsn(DUP);
+                mv.visitVarInsn(ALOAD, 1);
+                mv.visitVarInsn(ALOAD, 2);
+                mv.visitVarInsn(ALOAD, 3);
+                mv.visitVarInsn(ALOAD, 4);
+                mv.visitMethodInsn(INVOKESPECIAL, adapter, "<init>", ADAPTER_CONSTRUCTOR_DESCRIPTOR, false);
+                mv.visitInsn(ARETURN);
+            }
+            mv.visitLabel(shardDefault);
+            mv.visitInsn(ACONST_NULL);
+            mv.visitInsn(ARETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        cw.visitEnd();
+        return cw.toByteArray();
     }
 
     private static boolean skipMethod(CachedMethod method) {
@@ -158,14 +305,14 @@ public class DgmConverter {
 
     private static void createConstructor(ClassWriter cw) {
         MethodVisitor mv;
-        mv = cw.visitMethod(ACC_PUBLIC, "<init>", "(Ljava/lang/String;Lorg/codehaus/groovy/reflection/CachedClass;Ljava/lang/Class;[Ljava/lang/Class;)V", null, null);
+        mv = cw.visitMethod(ACC_PUBLIC, "<init>", ADAPTER_CONSTRUCTOR_DESCRIPTOR, null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
         mv.visitVarInsn(ALOAD, 1);
         mv.visitVarInsn(ALOAD, 2);
         mv.visitVarInsn(ALOAD, 3);
         mv.visitVarInsn(ALOAD, 4);
-        mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/reflection/GeneratedMetaMethod", "<init>", "(Ljava/lang/String;Lorg/codehaus/groovy/reflection/CachedClass;Ljava/lang/Class;[Ljava/lang/Class;)V", false);
+        mv.visitMethodInsn(INVOKESPECIAL, GENERATED_META_METHOD, "<init>", ADAPTER_CONSTRUCTOR_DESCRIPTOR, false);
         mv.visitInsn(RETURN);
         mv.visitMaxs(0, 0);
         mv.visitEnd();
