@@ -118,3 +118,9 @@ handler.addServlet(GroovyServlet, '*.groovy')
 server.start()
 server.join()
 ----
+
+== Error responses
+
+When a Groovlet fails, `GroovyServlet` returns a generic `500` response to the client by default and writes the full detail — the script path, the exception message and a stack frame — to the servlet and application logs. This keeps internal detail out of responses sent to callers.
+
+While developing, you can restore the detailed client responses by setting the `groovy.servlet.verbose.errors` system property to `true` (for example, `-Dgroovy.servlet.verbose.errors=true`), or by overriding the `isVerboseErrors()` method in a `GroovyServlet` subclass.
