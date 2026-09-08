@@ -26,6 +26,11 @@
 # to catch what slips past the path filter, and on demand. The generator's
 # own unit test needs no GraalVM and runs in the ordinary test workflow.
 # The image build is memory-hungry, so this job runs nothing else.
+#
+# GraalVM for JDK 25.0.4 or later is required. Earlier releases carry a
+# built-in Groovy substitution that targets a method Groovy 6 no longer has,
+# so native-image fails before it reads any metadata, and their agent writes
+# the legacy split configuration files rather than reachability-metadata.json.
 
 name: "Native Image Metadata Check"
 
@@ -68,27 +73,27 @@ concurrency:
 
 jobs:
   native-check:
-    strategy:
-      fail-fast: false
-      matrix:
-        # the oldest GraalVM the runtime is meant to work on and the newest:
-        # the JDK side of the shipped type hierarchies is the build JDK's, so
-        # strict mode is only proven on the JDKs it is run against
-        java: [21, 25]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
-      # GraalVM Community bundles native-image and the native-image agent,
-      # and setup-java exports GRAALVM_HOME for it
-      - uses: actions/setup-java@v6.0.0
+      # The GraalVM action, on the ASF approved list, bundles native-image and
+      # the agent and exports GRAALVM_HOME. `version` selects the release train:
+      # GraalVM renamed its builds from jdk-25.0.x to graal-25.x in 2026, and
+      # with `java-version` alone (or with setup-java) the resolution stops at
+      # the January jdk-25.0.2 build, which predates the fix Groovy 6 needs.
+      - uses: graalvm/setup-graalvm@0426e2e191540e8514dff98dc52a5f5146a2a276 # v1.6.6
         with:
+          version: '25.3'
+          java-version: '25'
           distribution: 'graalvm-community'
-          java-version: ${{ matrix.java }}
-          check-latest: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: GraalVM versions
         run: |
           java --version
           native-image --version
+          # the substitution fix and the combined metadata format need 25.0.4 or later
+          native-image --version | grep -qE 'native-image (25\.([1-9]|0\.([4-9]|[1-9][0-9]))|2[6-9]\.|[3-9][0-9]\.)' \
+            || { echo "GraalVM for JDK 25.0.4 or later is required" >&2; exit 1; }
       # Restore-only (never saves): this job resolves a subset of the `build`
       # lineage; see groovy-build-test.yml (lts job) for the caching rationale.
       - name: "🗄 Restore Gradle dependencies (~/.gradle/caches/modules-2 + wrapper)"
