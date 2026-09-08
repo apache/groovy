@@ -169,6 +169,10 @@ public class DgmConverter {
         GeneratedMetaMethod.DgmMethodRecord.saveDgmInfo(records, targetDirectory+"/META-INF/dgminfo");
         if (info)
             LOGGER.log(INFO, "Saved {0} dgm records to: {1}/META-INF/dgminfo", cur, targetDirectory);
+
+        String metadata = NativeImageMetadataGenerator.write(records, targetDirectory);
+        if (info)
+            LOGGER.log(INFO, "Saved native-image reachability metadata to: {0}", metadata);
     }
 
     private static void writeClass(String targetDirectory, String className, byte[] bytes) throws IOException {
