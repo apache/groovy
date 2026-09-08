@@ -42,10 +42,13 @@
 // prints the Groovy-owned entries it keeps so a reviewer can tell API use from
 // a runtime gap, which belongs in the generator instead.
 //
-// Everything needs a GraalVM: pass -Pgroovy.native.home=<GraalVM home> or set
-// GRAALVM_HOME. Without one the tasks are skipped, so the ordinary build is
-// unaffected. Run this on its own: an image build and the core test suite
-// together exhaust the memory of a developer machine.
+// Everything needs a GraalVM for JDK 25.0.4 or later: pass
+// -Pgroovy.native.home=<GraalVM home> or set GRAALVM_HOME. Without one the tasks
+// are skipped, so the ordinary build is unaffected. Older releases do not work:
+// their agent writes the legacy split configuration files, and their built-in
+// Groovy substitution targets a method Groovy 6 no longer has, so native-image
+// fails before the metadata is even consulted. Run this on its own: an image
+// build and the core test suite together exhaust the memory of a developer machine.
 
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
@@ -150,7 +153,13 @@ def checkNativeMetadata = tasks.register('checkNativeMetadata') {
     inputs.files(coreJar)
     inputs.dir(agentDir)
     doLast {
-        def recorded = new JsonSlurper().parse(agentDir.get().file('reachability-metadata.json').asFile).reflection
+        def recording = agentDir.get().file('reachability-metadata.json').asFile
+        if (!recording.isFile()) {
+            throw new GradleException("the agent wrote no ${recording.name}: GraalVM for JDK 25.0.4 or later is required " +
+                    "(older releases' agents write the legacy split configuration files, and their built-in Groovy substitution " +
+                    "does not apply to Groovy 6); found: " + (agentDir.get().asFile.list() ?: []).join(', '))
+        }
+        def recorded = new JsonSlurper().parse(recording).reflection
         def shipped = shippedMetadata(coreJar.get().asFile)
         def probeOwn = metadataByType(probeMetadata.asFile)
         def missing = []

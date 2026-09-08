@@ -241,6 +241,12 @@ used, so there is no reason to set it there.
 
 === Reachability metadata for the runtime
 
+Groovy 6 needs GraalVM for JDK 25.0.4 or later. Earlier releases carry a built-in substitution for
+Groovy's invokedynamic support that targets a method Groovy 6 no longer has, and `native-image`
+fails with `Could not find target method ... IndyInterface_invalidateSwitchPoints` before it reads
+any metadata; their agent also writes the older split configuration files rather than the single
+`reachability-metadata.json`.
+
 Besides the adapters, the groovy jar carries reachability metadata for what the runtime does on its
 own behalf, under `META-INF/native-image/org.apache.groovy/groovy/`, where `native-image` and the
 GraalVM build plugins pick it up automatically. The build generates it from what the runtime is known
