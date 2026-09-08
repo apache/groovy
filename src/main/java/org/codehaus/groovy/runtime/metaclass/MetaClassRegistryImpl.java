@@ -272,34 +272,53 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
         if (useMethodWrapper) {
             // Here we instantiate objects representing MetaMethods for DGM methods.
             // Calls for such meta methods done without reflection, so more effectively.
-
+            //
+            // Registration is lenient towards Exceptions, which an unusual environment
+            // may raise for a few receiver types (a restrictive class loader, say),
+            // and then costs only the methods concerned. An Error is not absorbed:
+            // it means the runtime itself is broken (a missing class, a static
+            // initialiser failure, or in a GraalVM native image a reflection lookup
+            // the reachability metadata does not cover), and swallowing it would
+            // leave an unpredictable subset of the default Groovy methods registered,
+            // to fail much later as MissingMethodExceptions far from the cause.
+            List<GeneratedMetaMethod.DgmMethodRecord> records;
             try {
-                List<GeneratedMetaMethod.DgmMethodRecord> records = GeneratedMetaMethod.DgmMethodRecord.loadDgmInfo();
+                records = GeneratedMetaMethod.DgmMethodRecord.loadDgmInfo();
+            } catch (Exception e) {
+                Logger.getLogger(MetaClassRegistryImpl.class.getName()).log(Level.SEVERE,
+                        "No default Groovy methods registered: the DGM records (META-INF/dgminfo) could not be read", e);
+                return;
+            }
+            int failed = 0;
+            Exception firstFailure = null;
+            for (GeneratedMetaMethod.DgmMethodRecord record : records) {
+                if (disabling && isDisabled(record.methodName, record.parameters)) continue;
+                Class[] newParams = new Class[record.parameters.length - 1];
+                System.arraycopy(record.parameters, 1, newParams, 0, newParams.length);
 
-                for (GeneratedMetaMethod.DgmMethodRecord record : records) {
-                    if (disabling && isDisabled(record.methodName, record.parameters)) continue;
-                    Class[] newParams = new Class[record.parameters.length - 1];
-                    System.arraycopy(record.parameters, 1, newParams, 0, newParams.length);
-
-                    MetaMethod method = new GeneratedMetaMethod.Proxy(
+                MetaMethod method;
+                try {
+                    method = new GeneratedMetaMethod.Proxy(
                             record.className,
                             record.methodName,
                             ReflectionCache.getCachedClass(record.parameters[0]),
                             record.returnType,
                             newParams
                     );
-                    final CachedClass declClass = method.getDeclaringClass();
-                    List<MetaMethod> arr = map.computeIfAbsent(declClass, k -> new ArrayList<MetaMethod>(4));
-                    arr.add(method);
-                    instanceMethods.add(method);
+                } catch (Exception e) {
+                    if (firstFailure == null) firstFailure = e;
+                    failed++;
+                    continue;
                 }
-            } catch (Throwable e) {
-                Logger logger = Logger.getLogger(MetaClassRegistryImpl.class.getName());
-                if (logger.isLoggable(Level.WARNING)) {
-                    logger.warning(DefaultGroovyMethods.asString(e));
-                }
-                // we print the error, but we don't stop with an exception here
-                // since it is more comfortable this way for development
+                final CachedClass declClass = method.getDeclaringClass();
+                List<MetaMethod> arr = map.computeIfAbsent(declClass, k -> new ArrayList<MetaMethod>(4));
+                arr.add(method);
+                instanceMethods.add(method);
+            }
+            if (failed > 0) {
+                Logger.getLogger(MetaClassRegistryImpl.class.getName()).log(Level.SEVERE,
+                        "Default Groovy method registration incomplete: " + failed + " of " + records.size()
+                        + " methods could not be registered and calls to them will fail; the first failure follows", firstFailure);
             }
         } else {
             CachedMethod[] methods = ReflectionCache.getCachedClass(theClass).getMethods();
