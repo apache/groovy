@@ -41,6 +41,7 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.api.tasks.bundling.Jar
 
@@ -236,6 +237,22 @@ class GroovyLibraryExtension {
             }
             tasks.named('processResources') { Task t ->
                 t.dependsOn(moduleDescriptor)
+            }
+            // The GraalVM reachability metadata for registering this module's
+            // extension classes (GROOVY-12365), generated from the classes the
+            // descriptor names and shipped in the jar next to the descriptor.
+            def metadataDir = layout.buildDirectory.dir('native-image-metadata')
+            def nativeImageMetadata = tasks.register('nativeImageMetadata', JavaExec) { JavaExec t ->
+                t.description = 'Generates the GraalVM reachability metadata for the module\'s extension classes'
+                t.mainClass.set('org.codehaus.groovy.tools.NativeImageMetadataGenerator')
+                t.classpath = javaPluginExtension.sourceSets.getByName('main').runtimeClasspath
+                t.inputs.property('extensionClasses', extensionClasses)
+                t.inputs.property('staticExtensionClasses', staticExtensionClasses)
+                t.outputs.dir(metadataDir)
+                t.args(projectName, metadataDir.get().asFile.absolutePath, extensionClasses, staticExtensionClasses)
+            }
+            tasks.named('jar', Jar) { Jar jar ->
+                jar.from(nativeImageMetadata)
             }
         }
     }

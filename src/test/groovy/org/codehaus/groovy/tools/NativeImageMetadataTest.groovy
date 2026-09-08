@@ -23,6 +23,7 @@ import groovy.lang.Closure
 import groovy.lang.GString
 import org.codehaus.groovy.reflection.GeneratedMetaMethod
 import org.codehaus.groovy.runtime.DefaultGroovyMethods
+import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl
 import org.codehaus.groovy.vmplugin.v8.IndyInterface
 import org.junit.jupiter.api.Test
@@ -225,6 +226,21 @@ final class NativeImageMetadataTest {
                 GString.EMPTY.class.name,
         ])
         assert NativeImageMetadataGenerator.INTROSPECTED_ANONYMOUS_TYPES as Set == [Closure.IDENTITY.class.name, GString.EMPTY.class.name] as Set
+    }
+
+    @Test
+    void extensionModuleMetadataCoversTheClassesTheRegistryLoadsAndScans() {
+        // stand-ins for a module's extension classes: static-method holders with JDK types in their signatures
+        def json = NativeImageMetadataGenerator.generateForModule([DefaultGroovyStaticMethods], [DefaultGroovyStaticMethods])
+        def entries = (new JsonSlurper().parseText(json) as Map).reflection as List<Map>
+        assert entries.every { it.condition.typeReached == REGISTRY }
+        def holder = entries.find { it.type == DefaultGroovyStaticMethods.name }
+        assert holder.allDeclaredMethods && holder.allDeclaredConstructors
+        // a type from a static method's signature is cached by the registry, an abstract one SAM-checked
+        assert entries.find { it.type == 'java.lang.Runnable' }?.allPublicMethods
+        // nothing else: no negatives, no indy family, no DGM records
+        assert !entries.any { it.type.endsWith('BeanInfo') }
+        assert !entries.any { it.condition.typeReached == INDY }
     }
 
     @Test
