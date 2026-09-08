@@ -97,7 +97,10 @@ def registerAgentRun = { String name, Provider<Directory> outputDir, boolean fil
             delete(outputDir)
             def agent = "-agentlib:native-image-agent=config-output-dir=${outputDir.get().asFile}" +
                     (filtered ? ",caller-filter-file=${callerFilter.asFile}" : '')
-            commandLine graalvmBin('java').get(), agent, '-cp', probeClasspath.asPath, 'probe'
+            // AOT link mode on the JVM: dispatch as the image will (the reflective cold tier
+            // creates metaclasses a JIT-linked call site never touches), so the recording
+            // holds what the image needs
+            commandLine graalvmBin('java').get(), agent, '-Dgroovy.indy.aot.link=true', '-cp', probeClasspath.asPath, 'probe'
         }
         standardOutput = new ByteArrayOutputStream()
     }

@@ -34,6 +34,7 @@ import groovy.lang.MetaMethod;
 import groovy.lang.MetaObjectProtocol;
 import groovy.lang.MetaProperty;
 import groovy.lang.ObjectRange;
+import groovy.lang.Reference;
 import groovy.lang.Script;
 import groovy.util.ProxyGenerator;
 import org.apache.groovy.runtime.async.DefaultPool;
@@ -189,6 +190,7 @@ public class NativeImageMetadataGenerator {
             Script.class,
             Binding.class,
             NullObject.class,
+            Reference.class, // holds a captured local variable that a closure reassigns
     };
 
     /**
@@ -424,6 +426,10 @@ public class NativeImageMetadataGenerator {
             if (!receiver.isArray() && !receiver.isPrimitive() && isGroovyOwned(receiver.getName())) types.add(receiver);
         }
         Collections.addAll(types, INTROSPECTED_RUNTIME_TYPES);
+        // the DGM holders get a metaclass of their own: the runtime invokes some of
+        // their methods through the MOP (InvokerHelper.invokeStaticMethod for `as T[]`)
+        for (Class<?> holder : DefaultGroovyMethods.DGM_LIKE_CLASSES) types.add(holder);
+        types.add(DefaultGroovyStaticMethods.class);
         for (String anonymous : INTROSPECTED_ANONYMOUS_TYPES) {
             try {
                 types.add(Class.forName(anonymous, false, NativeImageMetadataGenerator.class.getClassLoader()));

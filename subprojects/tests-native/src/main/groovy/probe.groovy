@@ -66,6 +66,9 @@ Runnable coerced = { println 'coerced closure ran' }
 Comparator<Integer> byValue = { a, b -> a <=> b }
 def sorted = [3, 1, 2].toSorted(byValue)
 def statically = StaticHelper.twice(21) + StaticHelper.join(['a', 'b']).size()
+float[] floats = ['1.5', '2.5']*.toFloat() as float[] // `as T[]` goes through the MOP on DefaultGroovyMethods itself
+def captured = 0
+[1, 2, 3].each { captured += it } // a reassigned captured local lives in a groovy.lang.Reference
 def async = AsyncScope.withScope { scope ->
     def a = scope.async { 20 }
     def b = scope.async { 22 }
@@ -85,7 +88,8 @@ coerced.run()
 println "sorted=$sorted"
 println "static=$statically"
 println "async=$async"
+println "captured=$captured floats=${floats.sum()}"
 println "metaClass=${p.metaClass.class.simpleName} methods=${p.metaClass.methods.size() > 0}"
 assert total == 220 && curried(2) == 42 && p.x == 4
-assert person.greet() == 'hello, groovy' && sorted == [1, 2, 3] && statically == 45 && async == 42
+assert person.greet() == 'hello, groovy' && sorted == [1, 2, 3] && statically == 45 && async == 42 && captured == 6 && floats.sum() == 4.0f
 println 'PROBE OK'
