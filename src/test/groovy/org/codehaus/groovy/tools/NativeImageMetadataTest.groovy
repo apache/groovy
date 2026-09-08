@@ -20,6 +20,7 @@ package org.codehaus.groovy.tools
 
 import groovy.json.JsonSlurper
 import groovy.lang.Closure
+import groovy.lang.GString
 import org.codehaus.groovy.reflection.GeneratedMetaMethod
 import org.codehaus.groovy.runtime.DefaultGroovyMethods
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl
@@ -166,12 +167,24 @@ final class NativeImageMetadataTest {
     }
 
     @Test
+    void asyncRuntimeLookupsAreRegisteredByName() {
+        def executors = reflection().findAll { it.type == 'java.util.concurrent.Executors' }
+        assert executors*.condition*.typeReached as Set == ['org.apache.groovy.runtime.async.AsyncExecutors', 'org.apache.groovy.runtime.async.DefaultPool'] as Set
+        executors.each { assert it.methods == [[name: 'newVirtualThreadPerTaskExecutor', parameterTypes: []]] }
+        def scoped = reflection().find { it.type == 'java.lang.ScopedValue' }
+        assert scoped.condition.typeReached == 'org.apache.groovy.runtime.async.ScopedLocal'
+        assert scoped.methods*.name as Set == ['newInstance', 'get', 'isBound', 'where'] as Set
+    }
+
+    @Test
     void jdkTypesAppearOnlyOnTheRuntimesOwnBehalf() {
+        def runtimeFamilies = [REGISTRY, INDY, 'org.codehaus.groovy.reflection.ReflectionUtils',
+                               'org.apache.groovy.runtime.async.AsyncExecutors', 'org.apache.groovy.runtime.async.DefaultPool',
+                               'org.apache.groovy.runtime.async.ScopedLocal']
         reflection().each { Map entry ->
             String type = entry.type
             if (!NativeImageMetadataGenerator.isGroovyOwned(type)) {
-                assert entry.condition.typeReached in [REGISTRY, INDY, 'org.codehaus.groovy.reflection.ReflectionUtils'] :
-                        "foreign type outside the runtime's own families: $entry"
+                assert entry.condition.typeReached in runtimeFamilies : "foreign type outside the runtime's own families: $entry"
             }
         }
         Set<String> types = reflection()*.type as Set
@@ -207,7 +220,9 @@ final class NativeImageMetadataTest {
                 'org.codehaus.groovy.runtime.GStringImpl',
                 'org.codehaus.groovy.runtime.CurriedClosure',
                 Closure.IDENTITY.class.name,
+                GString.EMPTY.class.name,
         ])
+        assert NativeImageMetadataGenerator.INTROSPECTED_ANONYMOUS_TYPES as Set == [Closure.IDENTITY.class.name, GString.EMPTY.class.name] as Set
     }
 
     @Test

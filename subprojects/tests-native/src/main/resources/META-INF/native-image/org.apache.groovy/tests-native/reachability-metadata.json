@@ -1,0 +1,698 @@
+{
+    "reflection": [
+        {
+            "type": "Named",
+            "methods": [
+                {
+                    "name": "greet",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "setName",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "Named$Trait$FieldHelper",
+            "methods": [
+                {
+                    "name": "Named__name$get",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "Named__name$set",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "Named$Trait$Helper",
+            "methods": [
+                {
+                    "name": "$init$",
+                    "parameterTypes": [
+                        "Named"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "Named$Trait$HelperBeanInfo"
+        },
+        {
+            "type": "Named$Trait$HelperCustomizer"
+        },
+        {
+            "type": "Person",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "PersonBeanInfo"
+        },
+        {
+            "type": "PersonCustomizer"
+        },
+        {
+            "type": "Point",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "getX",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "getY",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "plus",
+                    "parameterTypes": [
+                        "Point"
+                    ]
+                },
+                {
+                    "name": "setX",
+                    "parameterTypes": [
+                        "int"
+                    ]
+                },
+                {
+                    "name": "setY",
+                    "parameterTypes": [
+                        "int"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "PointBeanInfo"
+        },
+        {
+            "type": "PointCustomizer"
+        },
+        {
+            "type": "StaticHelper",
+            "methods": [
+                {
+                    "name": "join",
+                    "parameterTypes": [
+                        "java.util.List"
+                    ]
+                },
+                {
+                    "name": "twice",
+                    "parameterTypes": [
+                        "int"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "StaticHelperBeanInfo"
+        },
+        {
+            "type": "StaticHelperCustomizer"
+        },
+        {
+            "type": "android.app.Activity"
+        },
+        {
+            "type": "groovy.concurrent.AsyncScope",
+            "methods": [
+                {
+                    "name": "async",
+                    "parameterTypes": [
+                        "java.util.function.Supplier"
+                    ]
+                },
+                {
+                    "name": "withScope",
+                    "parameterTypes": [
+                        "java.util.function.Function"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "groovy.concurrent.AsyncScopeBeanInfo"
+        },
+        {
+            "type": "groovy.concurrent.AsyncScopeCustomizer"
+        },
+        {
+            "type": "groovy.concurrent.Awaitable"
+        },
+        {
+            "type": "groovy.runtime.metaclass.Named$Trait$HelperMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.PersonMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.PointMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.StaticHelperMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.groovy.concurrent.AsyncScopeMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.java.lang.BooleanMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.java.lang.ClassMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.java.lang.IntegerMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.java.lang.ObjectMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.java.lang.StringMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.java.util.ArrayListMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.java.util.DateMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.java.util.LinkedHashMapMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.org.apache.groovy.runtime.async.AsyncSupportMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.org.apache.groovy.runtime.async.DefaultAsyncScopeMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.probe$_run_closure1MetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.probe$_run_closure2MetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.probe$_run_closure3MetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.probe$_run_closure4MetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.probe$_run_closure5MetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.probe$_run_closure6MetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.probe$_run_closure7MetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.probe$_run_closure8MetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.probe$_run_closure9$_closure10MetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.probe$_run_closure9$_closure11MetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.probe$_run_closure9MetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.probeMetaClass"
+        },
+        {
+            "type": "java.beans.PropertyVetoException"
+        },
+        {
+            "type": "java.lang.Boolean",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "getBoolean",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.lang.BooleanBeanInfo"
+        },
+        {
+            "type": "java.lang.BooleanCustomizer"
+        },
+        {
+            "type": "java.lang.Class",
+            "methods": [
+                {
+                    "name": "forName",
+                    "parameterTypes": [
+                        "java.lang.String",
+                        "boolean",
+                        "java.lang.ClassLoader"
+                    ]
+                },
+                {
+                    "name": "getPermittedSubclasses",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "getSimpleName",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "isSealed",
+                    "parameterTypes": [
+                        
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.lang.ClassBeanInfo"
+        },
+        {
+            "type": "java.lang.ClassCustomizer"
+        },
+        {
+            "type": "java.lang.IntegerBeanInfo"
+        },
+        {
+            "type": "java.lang.IntegerCustomizer"
+        },
+        {
+            "type": "java.lang.NumberBeanInfo"
+        },
+        {
+            "type": "java.lang.NumberCustomizer"
+        },
+        {
+            "type": "java.lang.String",
+            "methods": [
+                {
+                    "name": "split",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                },
+                {
+                    "name": "toUpperCase",
+                    "parameterTypes": [
+                        
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.lang.StringBeanInfo"
+        },
+        {
+            "type": "java.lang.StringCustomizer"
+        },
+        {
+            "type": "java.lang.reflect.Constructor[]"
+        },
+        {
+            "type": "java.lang.reflect.TypeVariable[]"
+        },
+        {
+            "type": "java.util.AbstractMapBeanInfo"
+        },
+        {
+            "type": "java.util.AbstractMapCustomizer"
+        },
+        {
+            "type": "java.util.ArrayListBeanInfo"
+        },
+        {
+            "type": "java.util.ArrayListCustomizer"
+        },
+        {
+            "type": "java.util.Date",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.util.DateBeanInfo"
+        },
+        {
+            "type": "java.util.DateCustomizer"
+        },
+        {
+            "type": "java.util.HashMapBeanInfo"
+        },
+        {
+            "type": "java.util.HashMapCustomizer"
+        },
+        {
+            "type": "java.util.LinkedHashMap"
+        },
+        {
+            "type": "java.util.LinkedHashMapBeanInfo"
+        },
+        {
+            "type": "java.util.LinkedHashMapCustomizer"
+        },
+        {
+            "type": "java.util.Map$Entry[]"
+        },
+        {
+            "type": "java.util.concurrent.CompletionStage"
+        },
+        {
+            "type": "java.util.function.UnaryOperator"
+        },
+        {
+            "type": "jdk.internal.jrtfs.JrtFileSystemProvider"
+        },
+        {
+            "type": "jdk.internal.reflect.CallerSensitive"
+        },
+        {
+            "type": "org.apache.groovy.runtime.async.AsyncSupport",
+            "methods": [
+                {
+                    "name": "await",
+                    "parameterTypes": [
+                        "java.lang.Object"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "org.apache.groovy.runtime.async.AsyncSupportBeanInfo"
+        },
+        {
+            "type": "org.apache.groovy.runtime.async.AsyncSupportCustomizer"
+        },
+        {
+            "type": "org.apache.groovy.runtime.async.DefaultAsyncScope"
+        },
+        {
+            "type": "org.apache.groovy.runtime.async.DefaultAsyncScopeBeanInfo"
+        },
+        {
+            "type": "org.apache.groovy.runtime.async.DefaultAsyncScopeCustomizer"
+        },
+        {
+            "type": "org.codehaus.groovy.reflection.ParameterTypes"
+        },
+        {
+            "type": "probe",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "groovy.lang.Binding"
+                    ]
+                },
+                {
+                    "name": "run",
+                    "parameterTypes": [
+                        
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure1",
+            "methods": [
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        "java.lang.Object"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure1BeanInfo"
+        },
+        {
+            "type": "probe$_run_closure1Customizer"
+        },
+        {
+            "type": "probe$_run_closure2",
+            "methods": [
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        "java.lang.Object"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure2BeanInfo"
+        },
+        {
+            "type": "probe$_run_closure2Customizer"
+        },
+        {
+            "type": "probe$_run_closure3",
+            "methods": [
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        "java.lang.Object"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure3BeanInfo"
+        },
+        {
+            "type": "probe$_run_closure3Customizer"
+        },
+        {
+            "type": "probe$_run_closure4",
+            "methods": [
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        "java.lang.Object",
+                        "java.lang.Object"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure4BeanInfo"
+        },
+        {
+            "type": "probe$_run_closure4Customizer"
+        },
+        {
+            "type": "probe$_run_closure5",
+            "methods": [
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        "java.lang.Object",
+                        "java.lang.Object"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure5BeanInfo"
+        },
+        {
+            "type": "probe$_run_closure5Customizer"
+        },
+        {
+            "type": "probe$_run_closure6",
+            "methods": [
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        "java.lang.Object",
+                        "java.lang.Object"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure6BeanInfo"
+        },
+        {
+            "type": "probe$_run_closure6Customizer"
+        },
+        {
+            "type": "probe$_run_closure7",
+            "methods": [
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        "java.lang.Object"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure7BeanInfo"
+        },
+        {
+            "type": "probe$_run_closure7Customizer"
+        },
+        {
+            "type": "probe$_run_closure8",
+            "methods": [
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        "java.lang.Object",
+                        "java.lang.Object"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure8BeanInfo"
+        },
+        {
+            "type": "probe$_run_closure8Customizer"
+        },
+        {
+            "type": "probe$_run_closure9",
+            "methods": [
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        "java.lang.Object"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure9$_closure10",
+            "methods": [
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure9$_closure10BeanInfo"
+        },
+        {
+            "type": "probe$_run_closure9$_closure10Customizer"
+        },
+        {
+            "type": "probe$_run_closure9$_closure11",
+            "methods": [
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure9$_closure11BeanInfo"
+        },
+        {
+            "type": "probe$_run_closure9$_closure11Customizer"
+        },
+        {
+            "type": "probe$_run_closure9BeanInfo"
+        },
+        {
+            "type": "probe$_run_closure9Customizer"
+        },
+        {
+            "type": "probeBeanInfo"
+        },
+        {
+            "type": "probeCustomizer"
+        },
+        {
+            "type": {
+                "proxy": [
+                    "java.util.Comparator"
+                ]
+            }
+        },
+        {
+            "type": {
+                "proxy": [
+                    "java.util.function.Function"
+                ]
+            }
+        },
+        {
+            "type": {
+                "proxy": [
+                    "java.util.function.Supplier"
+                ]
+            }
+        }
+    ]
+}

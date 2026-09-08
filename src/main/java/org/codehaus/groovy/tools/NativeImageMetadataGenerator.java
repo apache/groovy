@@ -36,6 +36,8 @@ import groovy.lang.MetaProperty;
 import groovy.lang.ObjectRange;
 import groovy.lang.Script;
 import groovy.util.ProxyGenerator;
+import org.apache.groovy.runtime.async.DefaultPool;
+import org.apache.groovy.runtime.async.ScopedLocal;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
@@ -85,6 +87,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.Executors;
 
 /**
  * Writes the GraalVM reachability metadata for Groovy's own runtime into the
@@ -133,6 +136,12 @@ import java.util.TreeMap;
  * adds are absent until listed, which only matters under
  * {@code --exact-reachability-metadata}.
  * <p>
+ * The {@code tests-native} subproject checks all of this against a probe
+ * program: its {@code checkNativeMetadata} task fails on any Groovy-owned need
+ * the native-image agent records that is not shipped, and its {@code nativeRun}
+ * tasks build and run the probe as an image with nothing but this metadata for
+ * Groovy's part.
+ * <p>
  * Not emitted, deliberately: {@code Class.forName} calls with a constant name
  * (the image builder folds them, absent classes included); reflection over
  * the application's classes and the JDK types it uses dynamically; dynamic
@@ -155,8 +164,8 @@ public class NativeImageMetadataGenerator {
      * Runtime classes an ordinary dynamic program gives a metaclass to, beyond
      * the DGM receivers: what the runtime instantiates for closures, strings,
      * ranges and scripts, and the bootstrap classes themselves. Kept short on
-     * purpose: anything derivable is derived, and the native-image parity tests
-     * (not this list) decide whether a class belongs here.
+     * purpose: anything derivable is derived, and the {@code tests-native}
+     * subproject ({@code nativeCheck}) decides whether a class belongs here.
      */
     static final Class<?>[] INTROSPECTED_RUNTIME_TYPES = {
             GroovySystem.class,
@@ -168,13 +177,11 @@ public class NativeImageMetadataGenerator {
             InvokerHelper.class,
             GroovyObjectSupport.class,
             Closure.class,
-            Closure.IDENTITY.getClass(),
             CurriedClosure.class,
             ComposedClosure.class,
             MethodClosure.class,
             IteratorClosureAdapter.class,
             GString.class,
-            GString.EMPTY.getClass(),
             GStringImpl.class,
             IntRange.class,
             ObjectRange.class,
@@ -182,6 +189,17 @@ public class NativeImageMetadataGenerator {
             Script.class,
             Binding.class,
             NullObject.class,
+    };
+
+    /**
+     * The anonymous classes of {@code Closure.IDENTITY} and {@code GString.EMPTY},
+     * by name: reading the constants would initialise {@code Closure}, and with
+     * it GroovySystem, inside the build's converter JVM, where the DGM records
+     * do not exist yet. {@code NativeImageMetadataTest} checks the names.
+     */
+    static final String[] INTROSPECTED_ANONYMOUS_TYPES = {
+            "groovy.lang.Closure$1",
+            "groovy.lang.GString$1",
     };
 
     /**
@@ -281,8 +299,29 @@ public class NativeImageMetadataGenerator {
         NativeImageMetadataGenerator generator = new NativeImageMetadataGenerator();
         generator.registryBootstrap(records);
         generator.indyMachinery();
+        generator.asyncRuntime();
         generator.introspectedTypes(records);
         return generator.toJson();
+    }
+
+    /**
+     * The async runtime reaches JDK 21 APIs through constant method-handle
+     * lookups and {@code Class.forName}, each inside a fallback that would
+     * silently settle for platform threads or thread locals in an image where
+     * the lookup was not folded; registering the targets removes the doubt.
+     */
+    private void asyncRuntime() {
+        // AsyncExecutors is package-private, hence by name
+        for (String user : new String[]{"org.apache.groovy.runtime.async.AsyncExecutors", DefaultPool.class.getName()}) {
+            method(user, Executors.class.getName(), "newVirtualThreadPerTaskExecutor");
+        }
+        String scopedLocal = ScopedLocal.class.getName();
+        String scopedValue = "java.lang.ScopedValue"; // JDK 21+, by name: the build may run on JDK 17
+        method(scopedLocal, scopedValue, "newInstance");
+        method(scopedLocal, scopedValue, "get");
+        method(scopedLocal, scopedValue, "isBound");
+        method(scopedLocal, scopedValue, "where", scopedValue, Object.class.getName());
+        method(scopedLocal, scopedValue + "$Carrier", "run", Runnable.class.getName());
     }
 
     private void registryBootstrap(List<GeneratedMetaMethod.DgmMethodRecord> records) {
@@ -385,6 +424,13 @@ public class NativeImageMetadataGenerator {
             if (!receiver.isArray() && !receiver.isPrimitive() && isGroovyOwned(receiver.getName())) types.add(receiver);
         }
         Collections.addAll(types, INTROSPECTED_RUNTIME_TYPES);
+        for (String anonymous : INTROSPECTED_ANONYMOUS_TYPES) {
+            try {
+                types.add(Class.forName(anonymous, false, NativeImageMetadataGenerator.class.getClassLoader()));
+            } catch (ClassNotFoundException e) {
+                throw new IllegalStateException("anonymous runtime class renamed; update INTROSPECTED_ANONYMOUS_TYPES", e);
+            }
+        }
         // a metaclass can be created for a class before the class initialises,
         // so the type itself is not a usable condition; the registry, which
         // every metaclass creation goes through, is
@@ -420,14 +466,20 @@ public class NativeImageMetadataGenerator {
     }
 
     private void method(String condition, Class<?> type, String name, Class<?>... parameterTypes) {
-        add(condition, type, NONE);
+        String[] names = new String[parameterTypes.length];
+        for (int i = 0; i < parameterTypes.length; i++) names[i] = parameterTypes[i].getTypeName();
+        method(condition, type.getTypeName(), name, names);
+    }
+
+    private void method(String condition, String typeName, String name, String... parameterTypeNames) {
+        addName(condition, typeName, NONE);
         StringBuilder json = new StringBuilder("{\"name\": \"").append(name).append("\", \"parameterTypes\": [");
-        for (int i = 0; i < parameterTypes.length; i++) {
-            json.append(i == 0 ? "\"" : ", \"").append(parameterTypes[i].getTypeName()).append('"');
+        for (int i = 0; i < parameterTypeNames.length; i++) {
+            json.append(i == 0 ? "\"" : ", \"").append(parameterTypeNames[i]).append('"');
         }
         json.append("]}");
         methods.computeIfAbsent(condition, k -> new TreeMap<>())
-               .computeIfAbsent(type.getTypeName(), k -> new LinkedHashSet<>())
+               .computeIfAbsent(typeName, k -> new LinkedHashSet<>())
                .add(json.toString());
     }
 

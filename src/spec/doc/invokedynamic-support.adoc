@@ -266,8 +266,12 @@ to do rather than from an agent recording:
 Every entry is conditional on the class that performs the access being reached, so an image pays
 only for what it uses; a statically compiled program that never links a dynamic call site carries
 none of the invokedynamic entries. Reflection over the application's classes and the JDK types it
-uses dynamically, `java.lang.reflect.Proxy` instances for closures coerced to interfaces, and
-serialization depend on the application, and the native-image agent remains the way to record them.
+uses dynamically, Groovy API classes it calls dynamically, `java.lang.reflect.Proxy` instances for
+closures coerced to interfaces, and serialization depend on the application, and the native-image
+agent remains the way to record them. One thing the agent does not see: a closure passed where a
+dynamic call expects a single-abstract-method interface is coerced through a method handle, so the
+proxy entry for that interface (`{"type": {"proxy": ["java.util.function.Function"]}}`) has to be
+added by hand, or the call fails with `MissingMethodException` in the image.
 
 The JDK side of the type hierarchies is the one of the JDK Groovy was built with, plus the sequenced
 collection interfaces JDK 21 added. That only matters under `--exact-reachability-metadata`, where a
