@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788765562670,
+  "lastUpdate": 1788851242331,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -3369,6 +3369,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.groovyRuntime",
             "value": 1516,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "realbluesun@hotmail.com"
+          },
+          "id": "fe0f8c2232e9e0b0d1453559840bb51070a430ab",
+          "message": "GROOVY-12364: Indy: dispatch caller-sensitive targets reflectively on AOT-linked sites\n\nLookup.unreflect returns a caller-bound handle for a @CallerSensitive\nmethod, which is exactly right on HotSpot but cannot be executed by\nGraalVM's MethodHandle interpreter: a native image aborts with the\nVM-fatal \"Cannot invoke method that has a @CallerSensitiveAdapter\nwithout an explicit caller\" as soon as dynamic code calls e.g.\nLogger.getLogger or MethodHandles.lookup. Reflection handles such\nmethods fine there, so an AOT-linked site now builds the target handle\naround Method.invoke instead, shaped like the unreflected handle so the\nguarded chain is unchanged. The observed caller then becomes Groovy's\nruntime rather than the calling class, which is harmless for logger and\nbundle lookups in a single-module image; MethodHandles.lookup() should\nbe static-compiled in native code.",
+          "timestamp": "2026-09-06T03:18:53Z",
+          "url": "https://github.com/apache/groovy/commit/fe0f8c2232e9e0b0d1453559840bb51070a430ab"
+        },
+        "date": 1788851241452,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3998,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 442,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 848,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1501,
             "unit": "classes"
           },
           {
