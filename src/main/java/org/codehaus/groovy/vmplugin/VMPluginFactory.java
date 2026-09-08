@@ -20,8 +20,10 @@ package org.codehaus.groovy.vmplugin;
 
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.vmplugin.v17.Java17;
 
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,24 +34,25 @@ import java.util.logging.Logger;
  */
 public class VMPluginFactory {
 
-    private static final Map<Integer,String> PLUGIN_MAP = Maps.of(
-        17, "org.codehaus.groovy.vmplugin.v17.Java17"
+    // Constructor references rather than class names: the plugin is then
+    // reachable by static analysis (GraalVM native image needs no reflection
+    // metadata for it) and its class loads only when the JDK version selects it.
+    private static final Map<Integer, Supplier<VMPlugin>> PLUGIN_MAP = Maps.of(
+        17, Java17::new
     );
 
     private static final VMPlugin PLUGIN = createPlugin();
 
     private static VMPlugin createPlugin() {
-        ClassLoader loader = VMPluginFactory.class.getClassLoader();
         int specVer = Runtime.version().feature();
-        for (Map.Entry<Integer,String> entry : PLUGIN_MAP.entrySet()) {
+        for (Map.Entry<Integer, Supplier<VMPlugin>> entry : PLUGIN_MAP.entrySet()) {
             if (specVer >= entry.getKey()) {
-                String fullName = entry.getValue();
                 try {
-                    return (VMPlugin) loader.loadClass(fullName).getDeclaredConstructor().newInstance();
+                    return entry.getValue().get();
                 } catch (Throwable t) {
                     var log = Logger.getLogger(VMPluginFactory.class.getName());
                     if (log.isLoggable(Level.FINE)) {
-                        log.fine("Trying to create VM plugin `" + fullName + "`, but failed:\n" + DefaultGroovyMethods.asString(t));
+                        log.fine("Trying to create VM plugin for Java " + entry.getKey() + ", but failed:\n" + DefaultGroovyMethods.asString(t));
                     }
                     return null;
                 }

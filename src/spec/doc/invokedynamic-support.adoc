@@ -238,3 +238,37 @@ native-image -Dgroovy.dgm.factory=false ...
 Groovy ships the `native-image.properties` that makes this work; nothing else is needed. On a JVM the
 property is read once at start-up and only changes how an adapter is created the first time it is
 used, so there is no reason to set it there.
+
+=== Reachability metadata for the runtime
+
+Besides the adapters, the groovy jar carries reachability metadata for what the runtime does on its
+own behalf, under `META-INF/native-image/org.apache.groovy/groovy/`, where `native-image` and the
+GraalVM build plugins pick it up automatically. The build generates it from what the runtime is known
+to do rather than from an agent recording:
+
+* what the metaclass registry reflects over while it starts: the classes whose static methods it
+  scans, the types named in the default Groovy method records, which it loads by name, and the
+  abstract ones among them, whose methods it reads to recognise single-abstract-method types. This is
+  the one place JDK types such as `java.util.List` appear, since the runtime does this on every
+  application's behalf;
+* the methods the invokedynamic machinery obtains method handles to, in its own classes and in a few
+  JDK and MOP classes;
+* the declared constructors, methods and fields, and the public methods, of the Groovy-owned types
+  that get a metaclass in an ordinary dynamic program: the Groovy receivers of the default Groovy
+  methods and the runtime's own closure, string, range and script classes;
+* the classes the runtime probes for by naming convention and expects not to find, `<Type>BeanInfo`
+  and `<Type>Customizer` for the JavaBeans Introspector and `groovy.runtime.metaclass.<Type>MetaClass`
+  for the custom metaclass lookup, registered so that the lookups fail with the
+  `ClassNotFoundException` the callers handle rather than a missing-registration error;
+* the resources the runtime reads: the DGM method records, the extension module descriptors and
+  service files.
+
+Every entry is conditional on the class that performs the access being reached, so an image pays
+only for what it uses; a statically compiled program that never links a dynamic call site carries
+none of the invokedynamic entries. Reflection over the application's classes and the JDK types it
+uses dynamically, `java.lang.reflect.Proxy` instances for closures coerced to interfaces, and
+serialization depend on the application, and the native-image agent remains the way to record them.
+
+The JDK side of the type hierarchies is the one of the JDK Groovy was built with, plus the sequenced
+collection interfaces JDK 21 added. That only matters under `--exact-reachability-metadata`, where a
+supertype a later JDK introduces above a JDK type would have to be registered by the application.

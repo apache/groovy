@@ -3,7 +3,8 @@
     "includes": [
       {"pattern": "\\QMETA-INF/dgminfo\\E"},
       {"pattern": "\\QMETA-INF/groovy/org.codehaus.groovy.runtime.ExtensionModule\\E"},
-      {"pattern": "\\QMETA-INF/services/org.codehaus.groovy.runtime.ExtensionModule\\E"}
+      {"pattern": "\\QMETA-INF/services/org.codehaus.groovy.runtime.ExtensionModule\\E"},
+      {"pattern": "\\Qgroovy/concurrent/AsyncScope.class\\E"}
     ]
   }
 }
