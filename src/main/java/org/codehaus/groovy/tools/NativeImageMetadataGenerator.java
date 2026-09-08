@@ -294,6 +294,59 @@ public class NativeImageMetadataGenerator {
     }
 
     /**
+     * Writes the metadata of an extension module (a jar with a
+     * {@code META-INF/groovy/org.codehaus.groovy.runtime.ExtensionModule}
+     * descriptor) under {@code targetDirectory}, as
+     * {@code META-INF/native-image/org.apache.groovy/<artifactId>/reachability-metadata.json}.
+     * The registry loads the descriptor's extension classes by name, scans
+     * their static methods and caches every type in those signatures, all
+     * while it bootstraps; the entries are conditional on the registry.
+     *
+     * @param artifactId the module's artifact id, e.g. {@code groovy-nio}
+     * @param instanceExtensions the descriptor's {@code extensionClasses}
+     * @param staticExtensions the descriptor's {@code staticExtensionClasses}
+     * @param targetDirectory the directory the jar is assembled from
+     * @return the path of the file written
+     */
+    public static String writeForModule(String artifactId, List<Class<?>> instanceExtensions, List<Class<?>> staticExtensions,
+                                        String targetDirectory) throws IOException {
+        File file = new File(targetDirectory, "META-INF/native-image/org.apache.groovy/" + artifactId + "/" + METADATA_FILE).getCanonicalFile();
+        file.getParentFile().mkdirs();
+        Files.write(file.toPath(), generateForModule(instanceExtensions, staticExtensions).getBytes(StandardCharsets.UTF_8));
+        return file.getPath();
+    }
+
+    static String generateForModule(List<Class<?>> instanceExtensions, List<Class<?>> staticExtensions) {
+        NativeImageMetadataGenerator generator = new NativeImageMetadataGenerator();
+        String registry = MetaClassRegistryImpl.class.getName();
+        for (Class<?> extension : instanceExtensions) generator.scannedHolder(registry, extension);
+        for (Class<?> extension : staticExtensions) generator.scannedHolder(registry, extension);
+        return generator.toJson();
+    }
+
+    /**
+     * The build's entry point for a module:
+     * {@code <artifactId> <targetDirectory> <extensionClasses> <staticExtensionClasses>},
+     * the class lists comma-separated and possibly empty. The classes are
+     * loaded without initialisation, so no Groovy runtime starts here.
+     */
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
+        if (args.length != 4) {
+            throw new IllegalArgumentException("usage: <artifactId> <targetDirectory> <extensionClasses> <staticExtensionClasses>");
+        }
+        String path = writeForModule(args[0], loadAll(args[2]), loadAll(args[3]), args[1]);
+        System.out.println("Saved native-image reachability metadata to: " + path);
+    }
+
+    private static List<Class<?>> loadAll(String commaSeparated) throws ClassNotFoundException {
+        List<Class<?>> classes = new ArrayList<>();
+        for (String name : commaSeparated.split("[,; ]")) {
+            if (!name.isBlank()) classes.add(Class.forName(name.trim(), false, NativeImageMetadataGenerator.class.getClassLoader()));
+        }
+        return classes;
+    }
+
+    /**
      * @return the metadata as JSON, deterministic for a given runtime so that
      *         the build output is cacheable and diffs are meaningful
      */
@@ -348,14 +401,7 @@ public class NativeImageMetadataGenerator {
         scanned.add(DefaultGroovyStaticMethods.class);
         for (Class<?> holder : VMPluginFactory.getPlugin().getPluginDefaultGroovyMethods()) scanned.add(holder);
         for (Class<?> holder : VMPluginFactory.getPlugin().getPluginStaticGroovyMethods()) scanned.add(holder);
-        for (Class<?> holder : scanned) {
-            for (Class<?> c = holder; c != null && c != Object.class; c = c.getSuperclass()) add(registry, c, SCANNED);
-            for (Method method : holder.getMethods()) {
-                if (!Modifier.isStatic(method.getModifiers())) continue;
-                recordType(registry, method.getReturnType());
-                for (Class<?> parameter : method.getParameterTypes()) recordType(registry, parameter);
-            }
-        }
+        for (Class<?> holder : scanned) scannedHolder(registry, holder);
         // the meta-method classes instantiated by the registry, and the signatures they declare
         for (Class<?> holder : DefaultGroovyMethods.ADDITIONAL_CLASSES) {
             add(registry, holder, SCANNED);
@@ -363,6 +409,20 @@ public class NativeImageMetadataGenerator {
             recordType(registry, metaMethod.getDeclaringClass().getTheClass());
             recordType(registry, metaMethod.getReturnType());
             for (Class<?> parameter : metaMethod.getNativeParameterTypes()) recordType(registry, parameter);
+        }
+    }
+
+    /**
+     * A class the registry loads by name and scans for static methods: its
+     * declared methods up the chain, and every type in those signatures.
+     */
+    private void scannedHolder(String registry, Class<?> holder) {
+        add(registry, holder, NONE); // loaded by name
+        for (Class<?> c = holder; c != null && c != Object.class; c = c.getSuperclass()) add(registry, c, SCANNED);
+        for (Method method : holder.getMethods()) {
+            if (!Modifier.isStatic(method.getModifiers())) continue;
+            recordType(registry, method.getReturnType());
+            for (Class<?> parameter : method.getParameterTypes()) recordType(registry, parameter);
         }
     }
 

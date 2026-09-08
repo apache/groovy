@@ -263,6 +263,13 @@ to do rather than from an agent recording:
 * the resources the runtime reads: the DGM method records, the extension module descriptors and
   service files.
 
+Each Groovy module that registers extension methods through a descriptor (`groovy-nio`,
+`groovy-xml`, `groovy-dateutil`, `groovy-datetime`, `groovy-sql`, `groovy-swing`, `groovy-jsr223`,
+`groovy-ginq`, `groovy-macro` and `groovy-macro-library`) ships the equivalent for itself under
+`META-INF/native-image/org.apache.groovy/<module>/`: the extension classes the registry loads by
+name and scans, and the types in their signatures. Modules without a descriptor, `groovy-json` and
+`groovy-http-builder` among them, need none: what they reflect over is the application's data.
+
 Every entry is conditional on the class that performs the access being reached, so an image pays
 only for what it uses; a statically compiled program that never links a dynamic call site carries
 none of the invokedynamic entries. Reflection over the application's classes and the JDK types it
