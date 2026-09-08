@@ -307,39 +307,142 @@ jobs:
           echo "Scrubbed $corrupt corrupt jar(s) before cache save."
 
   # Canary job: run the test suite against an upcoming, not-yet-released JDK.
-  # setup-java has no first-class EA distribution, so we download the OpenJDK
-  # EA archive ourselves and install it via `distribution: 'jdkfile'` (which
-  # extracts/caches it and sets JAVA_HOME). We capture that JAVA_HOME as the
-  # *test target*, then set up a stable LTS JDK afterwards so Gradle itself
-  # runs on a GA build. `fail-fast: false` keeps EA breakage from failing the
-  # rest of the matrix. NOTE: the EA build number bumps ~weekly, so the URL
-  # below goes stale — refresh it (and java-version and jdk-sha256) from
-  # https://jdk.java.net/27/. The checksum is pinned here rather than fetched
-  # at download time so a compromised host cannot serve a matching one; take it
-  # from the published .sha256 beside the tarball when you bump the build.
+  # setup-java has no first-class "whatever Oracle currently publishes on this
+  # jdk.java.net page" distribution, so we scrape the page for the linux-x64
+  # tarball (.github/scripts/resolve-jdk-java-net.py) and install it via
+  # `distribution: 'jdkfile'` (which extracts/caches it and sets JAVA_HOME).
+  # Oracle serves either an early-access URL:
+  #   https://download.java.net/java/early_access/jdkN/<build>/GPL/openjdk-N-ea+<build>_linux-x64_bin.tar.gz
+  # or, once the release is at RC/GA, a GA URL whose hash and build number also
+  # move:
+  #   https://download.java.net/java/GA/jdkN/<32-hex>/<build>/GPL/openjdk-N_linux-x64_bin.tar.gz
+  # Point `jdk-page` at https://jdk.java.net/<N>/ ; bumping the canary to a new
+  # JDK is then a one-line matrix edit. We capture JAVA_HOME as the *test
+  # target*, then set up a stable LTS JDK so Gradle itself runs on a GA build.
+  # `fail-fast: false` keeps EA breakage from failing the rest of the matrix.
+  #
+  # Integrity: the tarball is fetched only from download.java.net over HTTPS
+  # and checked against that host's published `.sha256` companion (the same
+  # file the page links). Build numbers change ~weekly, so the digest cannot
+  # be pinned in this file without going stale — a compromised java.net could
+  # still serve a matching pair. Residual risk is accepted because this job is
+  # push-only, read-only, never builds or signs a release artifact, and uses
+  # cache keys isolated from the LTS/additional jobs.
   ea:
     if: github.event_name == 'push'
     strategy:
       fail-fast: false
       matrix:
         include:
-          - jdk-url: "https://download.java.net/java/early_access/jdk27/35/GPL/openjdk-27-ea+35_linux-x64_bin.tar.gz"
-            jdk-version: "27.0.0-ea.35"
-            jdk-sha256: "95fc37eb3a18a27a26d5904c2d89d52bace8dafa9a078ca27f4747fbc4bf070b"
+          - jdk-page: "https://jdk.java.net/27/"
     runs-on: ubuntu-latest
     steps:
       - name: "📥 Checkout repository"
         uses: actions/checkout@v7.0.1
-      - name: "⬇️ Download EA JDK"
+      - name: "⬇️ Resolve and download linux-x64 JDK from jdk.java.net"
+        id: openjdk
+        shell: bash
+        env:
+          JDK_PAGE: ${{ matrix.jdk-page }}
+        timeout-minutes: 15
         run: |
-          wget -nv -O "$RUNNER_TEMP/java_package.tar.gz" "${{ matrix.jdk-url }}"
-          echo "${{ matrix.jdk-sha256 }}  $RUNNER_TEMP/java_package.tar.gz" | sha256sum -c -
+          set -euo pipefail
+
+          die() { echo "::error::$*" >&2; exit 1; }
+
+          PAGE="${JDK_PAGE:?JDK_PAGE is required}"
+          TMP="${RUNNER_TEMP:-${TMPDIR:-/tmp}}"
+          DEST="$TMP/java_package.tar.gz"
+          PAGE_FILE="$TMP/jdk-page.html"
+          RESOLVED="$TMP/jdk-resolved.env"
+
+          case "$PAGE" in
+            https://jdk.java.net|https://jdk.java.net/*) ;;
+            *) die "jdk-page must be an https://jdk.java.net/… URL, got: $PAGE" ;;
+          esac
+          if [[ "$PAGE" == *@* || "$PAGE" == *'?'* || "$PAGE" == *'#'* || "$PAGE" == *..* ]]; then
+            die "jdk-page URL contains disallowed characters: $PAGE"
+          fi
+
+          command -v python3 >/dev/null || die "python3 is required to parse jdk.java.net HTML"
+          command -v curl >/dev/null || die "curl is required"
+
+          # Page and artifact fetches share TLS policy. Neither follows
+          # redirects: the matrix URL is already the canonical jdk.java.net
+          # page, and the scraped download.java.net object URL is already
+          # the canonical tarball. Following a 3xx would skip the host
+          # allowlist. --retry covers connect/timeout; HTTP 4xx is a hard fail.
+          curl_base=(
+            --fail --silent --show-error
+            --retry 5 --retry-delay 2 --retry-max-time 120
+            --connect-timeout 20
+            --proto '=https' --tlsv1.2
+            -H 'User-Agent: Apache-Groovy-CI (groovy-build-test ea)'
+          )
+
+          echo "Fetching $PAGE"
+          curl "${curl_base[@]}" --compressed --max-time 60 --max-filesize 1048576 \
+            -o "$PAGE_FILE" "$PAGE"
+          [[ -s "$PAGE_FILE" ]] || die "Empty response from $PAGE"
+
+          python3 .github/scripts/resolve-jdk-java-net.py "$PAGE" "$PAGE_FILE" "$RESOLVED"
+
+          url=; version=; sha256_url=
+          while IFS='=' read -r k v; do
+            case "$k" in
+              url) url=$v ;;
+              version) version=$v ;;
+              sha256_url) sha256_url=$v ;;
+            esac
+          done < "$RESOLVED"
+
+          ok_download_url() {
+            [[ "$1" == https://download.java.net/java/* ]] || return 1
+            [[ "$1" != *..* && "$1" != *@* && "$1" != *'?'* && "$1" != *'#'* ]] || return 1
+            return 0
+          }
+          ver_re='^[0-9]+\.[0-9]+\.[0-9]+(-ea\.[0-9]+|\+[0-9]+)$'
+          ok_download_url "$url" || die "Refusing artifact URL: $url"
+          [[ "$url" == */openjdk-*_linux-x64_bin.tar.gz ]] || die "Refusing artifact URL: $url"
+          ok_download_url "$sha256_url" || die "Refusing sha256 URL: $sha256_url"
+          [[ "$sha256_url" == "$url.sha256" ]] || die "sha256 URL is not the tarball companion: $sha256_url"
+          [[ "$version" =~ $ver_re ]] || die "Refusing java-version: $version"
+
+          echo "Downloading $url"
+          rm -f "$DEST"
+          curl "${curl_base[@]}" --max-time 600 --max-filesize 524288000 \
+            --progress-bar -o "$DEST" "$url"
+          [[ -s "$DEST" ]] || die "Empty download: $url"
+
+          size="$(stat -c%s "$DEST")"
+          (( size >= 40000000 )) || die "Downloaded archive is suspiciously small: $size bytes"
+
+          echo "Fetching checksum $sha256_url"
+          digest="$(curl "${curl_base[@]}" --max-time 60 --max-filesize 4096 "$sha256_url" \
+            | tr -d '\r' | awk 'NF { print $1; exit }')"
+          [[ "$digest" =~ ^[0-9a-fA-F]{64}$ ]] || die "Invalid sha256 from $sha256_url: $digest"
+          echo "$digest  $DEST" | sha256sum -c -
+
+          {
+            echo "jdk-file=$DEST"
+            echo "java-version=$version"
+            echo "jdk-url=$url"
+          } >> "$GITHUB_OUTPUT"
+          echo "Ready: java-version=$version (${size} bytes)"
+      - name: "📦 Upload jdk.java.net page on resolve failure"
+        if: failure() && steps.openjdk.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: jdk-java-net-page
+          path: ${{ runner.temp }}/jdk-page.html
+          if-no-files-found: ignore
       - name: "☕️ Setup EA JDK (test target)"
         uses: actions/setup-java@v6.0.0
         with:
           distribution: 'jdkfile'
-          jdkFile: ${{ runner.temp }}/java_package.tar.gz
-          java-version: ${{ matrix.jdk-version }}
+          jdk-file: ${{ steps.openjdk.outputs.jdk-file }}
+          java-version: ${{ steps.openjdk.outputs.java-version }}
+          architecture: x64
       - name: "📌 Capture EA JAVA_HOME"
         shell: bash
         run: echo "EA_JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
@@ -351,26 +454,28 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
           check-latest: true
-      # See the lts job for rationale; same prefix lets all jobs share the cache.
+      # Isolated from the lts/additional grape and gradle-deps prefixes: a
+      # compromised java.net matching-pair substitute must not poison caches
+      # those jobs restore. The ea job still warms its own lineage.
       - name: "🍇 Cache @Grab artifacts (~/.groovy/grapes + ~/.m2/repository)"
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.groovy/grapes
             ~/.m2/repository
-          key: ${{ runner.os }}-grape-${{ github.run_id }}
+          key: ${{ runner.os }}-ea-grape-${{ github.run_id }}
           restore-keys: |
-            ${{ runner.os }}-grape-
-      # See the lts job for the Gradle dependency cache rationale.
+            ${{ runner.os }}-ea-grape-
+      # Isolated gradle-deps lineage; see the grape-cache comment above.
       - name: "🗄 Cache Gradle dependencies (~/.gradle/caches/modules-2 + wrapper)"
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.gradle/caches/modules-2
             ~/.gradle/wrapper
-          key: gradle-deps-${{ runner.os }}-build-${{ github.base_ref || github.ref_name }}-${{ hashFiles('versions.properties', 'gradle/wrapper/gradle-wrapper.properties', 'settings.gradle', 'build-logic/build.gradle') }}
+          key: gradle-deps-ea-${{ runner.os }}-build-${{ github.base_ref || github.ref_name }}-${{ hashFiles('versions.properties', 'gradle/wrapper/gradle-wrapper.properties', 'settings.gradle', 'build-logic/build.gradle') }}
           restore-keys: |
-            gradle-deps-${{ runner.os }}-build-${{ github.base_ref || github.ref_name }}-
+            gradle-deps-ea-${{ runner.os }}-build-${{ github.base_ref || github.ref_name }}-
       - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         # The action's own caching is disabled: dependency jars and wrapper
         # dists are cached by the explicit branch-keyed step above instead.
@@ -434,5 +539,5 @@ jobs:
         uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: build-reports-ea
+          name: build-reports-ea-${{ steps.openjdk.outputs.java-version || 'unresolved' }}
           path: '**/build/reports/'
