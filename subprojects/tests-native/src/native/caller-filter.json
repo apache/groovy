@@ -1,0 +1,8 @@
+{
+  "rules": [
+    {"excludeClasses": "**"},
+    {"includeClasses": "groovy.**"},
+    {"includeClasses": "org.codehaus.groovy.**"},
+    {"includeClasses": "org.apache.groovy.**"}
+  ]
+}

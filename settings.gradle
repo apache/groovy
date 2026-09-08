@@ -91,6 +91,7 @@ def subprojects = [
         'asciidoc-extensions',
         'performance',
         'tests-preview',
+        'tests-native',
         'binary-compatibility',
         'stress'
 ]
