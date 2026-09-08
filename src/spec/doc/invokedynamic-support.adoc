@@ -268,7 +268,10 @@ only for what it uses; a statically compiled program that never links a dynamic 
 none of the invokedynamic entries. Reflection over the application's classes and the JDK types it
 uses dynamically, Groovy API classes it calls dynamically, `java.lang.reflect.Proxy` instances for
 closures coerced to interfaces, and serialization depend on the application, and the native-image
-agent remains the way to record them. One thing the agent does not see: a closure passed where a
+agent remains the way to record them. Run the agent with `-Dgroovy.indy.aot.link=true`, which
+makes the JVM link call sites as the image will: the image dispatches through the reflective cold
+tier, which creates metaclasses a JIT-linked call site never touches, and a recording made without
+the property misses them. One thing the agent does not see either way: a closure passed where a
 dynamic call expects a single-abstract-method interface is coerced through a method handle, so the
 proxy entry for that interface (`{"type": {"proxy": ["java.util.function.Function"]}}`) has to be
 added by hand, or the call fails with `MissingMethodException` in the image.

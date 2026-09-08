@@ -196,6 +196,7 @@ final class NativeImageMetadataTest {
         def negatives = negativeEntries()
         assert !negatives.isEmpty()
         Set<String> names = negatives*.type as Set
+        assert 'groovy.runtime.metaclass.org.codehaus.groovy.runtime.DefaultGroovyMethodsMetaClass' in names
         assert names.containsAll(['groovy.lang.ClosureBeanInfo', 'groovy.lang.ClosureCustomizer',
                                   'groovy.runtime.metaclass.groovy.lang.ClosureMetaClass',
                                   // the Introspector walks the superclass chain
@@ -219,6 +220,7 @@ final class NativeImageMetadataTest {
                 'groovy.lang.IntRange',
                 'org.codehaus.groovy.runtime.GStringImpl',
                 'org.codehaus.groovy.runtime.CurriedClosure',
+                'groovy.lang.Reference',
                 Closure.IDENTITY.class.name,
                 GString.EMPTY.class.name,
         ])

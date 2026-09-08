@@ -189,6 +189,9 @@
             "type": "groovy.runtime.metaclass.java.lang.ClassMetaClass"
         },
         {
+            "type": "groovy.runtime.metaclass.java.lang.FloatMetaClass"
+        },
+        {
             "type": "groovy.runtime.metaclass.java.lang.IntegerMetaClass"
         },
         {
@@ -213,6 +216,15 @@
             "type": "groovy.runtime.metaclass.org.apache.groovy.runtime.async.DefaultAsyncScopeMetaClass"
         },
         {
+            "type": "groovy.runtime.metaclass.probe$_run_closure10$_closure11MetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.probe$_run_closure10$_closure12MetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.probe$_run_closure10MetaClass"
+        },
+        {
             "type": "groovy.runtime.metaclass.probe$_run_closure1MetaClass"
         },
         {
@@ -235,12 +247,6 @@
         },
         {
             "type": "groovy.runtime.metaclass.probe$_run_closure8MetaClass"
-        },
-        {
-            "type": "groovy.runtime.metaclass.probe$_run_closure9$_closure10MetaClass"
-        },
-        {
-            "type": "groovy.runtime.metaclass.probe$_run_closure9$_closure11MetaClass"
         },
         {
             "type": "groovy.runtime.metaclass.probe$_run_closure9MetaClass"
@@ -305,6 +311,12 @@
         },
         {
             "type": "java.lang.ClassCustomizer"
+        },
+        {
+            "type": "java.lang.FloatBeanInfo"
+        },
+        {
+            "type": "java.lang.FloatCustomizer"
         },
         {
             "type": "java.lang.IntegerBeanInfo"
@@ -470,6 +482,57 @@
             ]
         },
         {
+            "type": "probe$_run_closure10",
+            "methods": [
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        "java.lang.Object"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure10$_closure11",
+            "methods": [
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure10$_closure11BeanInfo"
+        },
+        {
+            "type": "probe$_run_closure10$_closure11Customizer"
+        },
+        {
+            "type": "probe$_run_closure10$_closure12",
+            "methods": [
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure10$_closure12BeanInfo"
+        },
+        {
+            "type": "probe$_run_closure10$_closure12Customizer"
+        },
+        {
+            "type": "probe$_run_closure10BeanInfo"
+        },
+        {
+            "type": "probe$_run_closure10Customizer"
+        },
+        {
             "type": "probe$_run_closure1BeanInfo"
         },
         {
@@ -622,44 +685,16 @@
                 {
                     "name": "doCall",
                     "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
                         "java.lang.Object"
                     ]
                 }
             ]
-        },
-        {
-            "type": "probe$_run_closure9$_closure10",
-            "methods": [
-                {
-                    "name": "doCall",
-                    "parameterTypes": [
-                        
-                    ]
-                }
-            ]
-        },
-        {
-            "type": "probe$_run_closure9$_closure10BeanInfo"
-        },
-        {
-            "type": "probe$_run_closure9$_closure10Customizer"
-        },
-        {
-            "type": "probe$_run_closure9$_closure11",
-            "methods": [
-                {
-                    "name": "doCall",
-                    "parameterTypes": [
-                        
-                    ]
-                }
-            ]
-        },
-        {
-            "type": "probe$_run_closure9$_closure11BeanInfo"
-        },
-        {
-            "type": "probe$_run_closure9$_closure11Customizer"
         },
         {
             "type": "probe$_run_closure9BeanInfo"
@@ -683,14 +718,14 @@
         {
             "type": {
                 "proxy": [
-                    "java.util.function.Function"
+                    "java.util.function.Supplier"
                 ]
             }
         },
         {
             "type": {
                 "proxy": [
-                    "java.util.function.Supplier"
+                    "java.util.function.Function"
                 ]
             }
         }
