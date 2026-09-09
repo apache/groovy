@@ -659,13 +659,28 @@ public abstract class ScopedLocal<T> {
         }
 
         /**
+         * The Java feature version, or 0 on a runtime without {@code Runtime.version()}
+         * (Android's ART), which has no {@code ScopedValue} either (GROOVY-12385).
+         * Kept local rather than shared with the VM plugin factory: this class is
+         * repackaged into groovy-concurrent-java, which must not depend on it.
+         */
+        static int featureVersion() {
+            try {
+                return Runtime.version().feature();
+            } catch (LinkageError | SecurityException e) {
+                // NoSuchMethodError on a runtime without Runtime.version()
+                return 0;
+            }
+        }
+
+        /**
          * Detects the availability of finalized {@code ScopedValue} support and,
          * when present, prepares adapted method handles for exact invocation.
          *
          * @return the discovered bindings, or an unavailable marker on failure
          */
         private static ScopedValueBindings detect() {
-            if (Runtime.version().feature() < 25) {
+            if (featureVersion() < 25) {
                 return unavailable();
             }
 
