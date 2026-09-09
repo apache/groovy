@@ -106,7 +106,8 @@ class GroovyLibraryExtension {
                     Map<String, String> mappingPatterns,
                     Map<String, List<String>> libraryExcludes,
                     List<String> allExcludes,
-                    Map<String, String> resources
+                    Map<String, String> resources,
+                    Map<String, List<String>> relocationExcludes = [:]
     ) {
         grooid.set(true)
         def grooidJar = tasks.register("grooidJar", RepackageJarTask) {
@@ -125,6 +126,7 @@ class GroovyLibraryExtension {
                 }.files
             }
             it.patterns = mappingPatterns
+            it.relocationExcludes = relocationExcludes
             it.excludesPerLibrary = libraryExcludes
             it.sourceExcludes = allExcludes
             it.generateOsgiManifest = false

@@ -56,8 +56,31 @@ groovyLibrary {
             ['META-INF/NOTICE', 'META-INF/INDEX.LIST'],
             [
                     (project.relativePath(rootProject.file('notices/NOTICE-GROOIDJARJAR'))): 'META-INF/NOTICE'
+            ],
+            [
+                    // openbeans predates java.beans.Transient (Java 7); rewriting the annotation
+                    // would point at a class that does not exist and break the Verifier (GROOVY-12391)
+                    'java.beans.**': ['java.beans.Transient']
             ]
     )
+}
+
+// GROOVY-12391: the exclusion above must hold in the produced jar, or the grooid jar
+// cannot compile anything (the Verifier resolves the annotation class when it loads)
+tasks.named('grooidJar') {
+    doLast {
+        def jar = new java.util.zip.ZipFile(archiveFile.get().asFile)
+        try {
+            ['groovy/lang/GroovyObjectSupport.class', 'org/codehaus/groovy/classgen/Verifier.class'].each { entry ->
+                def bytes = new String(jar.getInputStream(jar.getEntry(entry)).bytes, 'ISO-8859-1')
+                if (bytes.contains('groovyjarjaropenbeans/Transient') || !bytes.contains('java/beans/Transient')) {
+                    throw new GradleException("$entry in the grooid jar must keep referencing java.beans.Transient")
+                }
+            }
+        } finally {
+            jar.close()
+        }
+    }
 }
 
 groovyCore {

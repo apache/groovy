@@ -89,6 +89,23 @@ abstract class RepackageJarTask extends ShadowJar {
     @Input
     Map<String, String> patterns = [:]
 
+    /**
+     * Classes left untouched by a relocation pattern, keyed by the pattern
+     * ({@code 'java.beans.**': ['java.beans.Transient']}): a type the JDK has but
+     * the repackaged replacement library does not, so rewriting the reference
+     * would point at a class that never exists (GROOVY-12391).
+     * <p>
+     * Values are passed to Shadow's relocator exclusion as given. Shadow accepts
+     * the dotted class name used here as well as the slashed internal form and
+     * its {@code *} / {@code **} patterns, normalising all of them before
+     * matching. An exclusion that did not apply would not fail silently: the
+     * root build's {@code grooidJar} task checks the produced jar still
+     * references {@code java.beans.Transient}.
+     */
+    @Input
+    @Optional
+    Map<String, List<String>> relocationExcludes = [:]
+
     @Input
     @Optional
     Map<String, List<String>> excludesPerLibrary = [:]
@@ -223,10 +240,11 @@ abstract class RepackageJarTask extends ShadowJar {
             // rewritten to groovyjarjaropenbeans the lookup no-ops. Type/descriptor
             // remapping is unaffected (skipStringConstants only gates LDC strings).
             // See GROOVY-12199 / Bucket 4a.
-            if (shouldSkipStringConstants(prefix)) {
-                relocate(prefix, destination) { it.skipStringConstants = true }
-            } else {
-                relocate(prefix, destination)
+            List<String> untouched = relocationExcludes[pattern] ?: []
+            boolean skipStrings = shouldSkipStringConstants(prefix)
+            relocate(prefix, destination) { relocator ->
+                if (skipStrings) relocator.skipStringConstants = true
+                untouched.each { relocator.exclude(it) }
             }
         }
 
