@@ -329,6 +329,9 @@ public class NativeImageMetadataGenerator {
         for (Class<?> extension : instanceExtensions) generator.scannedHolder(registry, extension);
         for (Class<?> extension : staticExtensions) generator.scannedHolder(registry, extension);
         if ("groovy-xml".equals(artifactId)) generator.jaxpFactories();
+        // the Java-only concurrency jar repackages the async runtime without the groovy jar,
+        // whose metadata carries this family, so a pure-Java image needs its own copy (GROOVY-12380)
+        if ("groovy-concurrent-java".equals(artifactId)) generator.asyncRuntime();
         return generator.toJson();
     }
 
