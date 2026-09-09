@@ -211,6 +211,36 @@ try {
   provider does not recognise. If you ship a custom JAXP provider that
   doesn't implement `FEATURE_SECURE_PROCESSING`, hardening is best-effort
   and your factory may fall back to provider defaults.
+* For that narrow case — a non-JDK JAXP provider on the classpath, where you
+  want protection that does not depend on the provider honouring the JAXP
+  feature flags — you can optionally add
+  https://commons.apache.org/proper/commons-secure-xml/[Apache Commons Secure XML]
+  to *your* project (Groovy itself does not depend on it). It installs an
+  implementation-independent floor: external references resolve to empty content
+  on any provider. Compose it with Groovy's APIs by injecting a Commons-secured
+  parser into the constructor:
++
+[source,groovy]
+----
+import org.apache.commons.xml.secure.SecureSAXParserFactory
+import org.apache.commons.xml.secure.SecureDocumentBuilderFactory
+
+// SAX-based (XmlParser / XmlSlurper) — Groovy's GPath on top of Commons' floor
+def sp = SecureSAXParserFactory.newInstance().newSAXParser()
+def root = new XmlSlurper(sp).parseText(text)
+
+// DOM-based (DOMBuilder)
+def db = SecureDocumentBuilderFactory.newInstance().newDocumentBuilder()
+def dom = new DOMBuilder(db)
+----
++
+This is defence-in-depth for a small residual: on the stock JDK, Groovy's own
+defaults already block XXE, entity expansion and external resource access, so
+no extra dependency is needed. Two caveats: injection applies only to parsers
+you construct explicitly (the convenience entry points such as `new XmlParser()`
+and `XmlUtil.*` keep using Groovy's own hardened factories), and it bypasses
+Groovy's factory configuration — so set `jdk.xml.maxElementDepth` on the injected
+parser yourself if you also want Groovy's element-depth bound.
 * `SchemaFactory` instances returned by `FactorySupport.createSchemaFactory`
   enable `FEATURE_SECURE_PROCESSING` but do *not* set `ACCESS_EXTERNAL_SCHEMA`.
   This preserves the ability to resolve `<xs:import schemaLocation="...">`
