@@ -25,6 +25,7 @@ import org.codehaus.groovy.reflection.GeneratedMetaMethod
 import org.codehaus.groovy.runtime.DefaultGroovyMethods
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl
+import org.codehaus.groovy.vmplugin.VMPluginFactory
 import org.codehaus.groovy.vmplugin.v8.IndyInterface
 import org.junit.jupiter.api.Test
 
@@ -164,6 +165,18 @@ final class NativeImageMetadataTest {
             assert entry.condition.typeReached == REGISTRY
             assert NativeImageMetadataGenerator.isGroovyOwned(entry.type as String)
             assert entry.allDeclaredConstructors && entry.allDeclaredMethods && entry.allDeclaredFields && entry.allPublicMethods
+        }
+    }
+
+    @Test
+    void vmPluginLocatesTheGroovyJarByLoadingTwoOfItsClasses() {
+        // getDefaultImportClasses loads these by name to find the groovy jar;
+        // the condition must be the live plugin, not a deprecated ancestor.
+        String plugin = VMPluginFactory.plugin.class.name
+        ['groovy.lang.GroovySystem', 'groovy.beans.ListenerList'].each { name ->
+            def hits = reflection().findAll { it.type == name && it.condition.typeReached == plugin }
+            assert hits.size() == 1 : "$name under $plugin: $hits"
+            assert hits[0].keySet() == ['condition', 'type'] as Set : "name-only load: ${hits[0]}"
         }
     }
 

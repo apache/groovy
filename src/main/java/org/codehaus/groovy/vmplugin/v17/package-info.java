@@ -19,5 +19,9 @@
 
 /**
  * Java 17 VM plugin. Compatibility layer for Java 17 LTS features.
+ * <p>
+ * This is the {@link org.codehaus.groovy.vmplugin.VMPluginFactory} entry point
+ * for Groovy 6 (JDK 17+). JPMS accessibility and default-import discovery are
+ * inherited from {@code org.codehaus.groovy.vmplugin.v9}.
  */
 package org.codehaus.groovy.vmplugin.v17;
