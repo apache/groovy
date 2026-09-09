@@ -522,6 +522,45 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12393 (grails-core#16157): `x == null || x.foo()` guard on a closure or for-loop
+    // parameter must not merge the "assignment voids instanceof" marker
+    // into a `void` type for the variable in the then block
+    @Test
+    void testInstanceOf23a() {
+        assertScript '''
+            List one(Collection val, Class type) {
+                List result = []
+                val.each { item ->
+                    if (item == null || type.isAssignableFrom(item.getClass())) {
+                        result << item
+                    }
+                }
+                result
+            }
+            Map two(Map val, Class type) {
+                Map result = [:]
+                val.each { key, item ->
+                    if (item == null || type.isAssignableFrom(item.getClass())) {
+                        result[key] = item
+                    }
+                }
+                result
+            }
+            List three(Collection val) {
+                List result = []
+                for (item in val) {
+                    if (item == null || item.hashCode() > 0) {
+                        result << item
+                    }
+                }
+                result
+            }
+            assert one(['a', null, 1], String) == ['a', null]
+            assert two([a: 'a', b: null, c: 1], String) == [a: 'a', b: null]
+            assert three(['a', null]) == ['a', null]
+        '''
+    }
+
     // GROOVY-11888: method resolution on union type — toString() is on Object
     // and should be found via (String|List) union
     @Test

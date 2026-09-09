@@ -1213,6 +1213,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         lhs.keySet().removeIf(k -> k instanceof Object[]);
         rhs.keySet().removeIf(k -> k instanceof Object[]);
 
+        // GROOVY-12393: VOID_TYPE is not an instanceof type; it marks a write to the
+        // variable (see storeType) that voids earlier instanceof guards. Carry the
+        // marker to the enclosing scope and keep it out of the union types below.
+        for (var map : List.of(lhs, rhs)) {
+            for (var it = map.entrySet().iterator(); it.hasNext(); ) {
+                var entry = it.next();
+                if (entry.getValue().removeIf(VOID_TYPE::equals)) {
+                    List<ClassNode> enclosing = typeCheckingContext.peekTemporaryTypeInfo(entry.getKey());
+                    if (!enclosing.contains(VOID_TYPE)) enclosing.add(VOID_TYPE);
+                    if (entry.getValue().isEmpty()) it.remove();
+                }
+            }
+        }
+
         for (var entry : lhs.entrySet()) {
             if (rhs.containsKey(entry.getKey())) {
                 // main case: (x instanceof A || x instanceof B) produces A|B type
