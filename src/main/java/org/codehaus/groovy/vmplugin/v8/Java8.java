@@ -248,6 +248,29 @@ public class Java8 implements VMPlugin {
         return gts;
     }
 
+    /**
+     * Whether the reflection API exposes type-use annotations: {@code AnnotatedType}
+     * with the {@code getAnnotated*} accessors, and {@code TypeVariable} as an
+     * {@code AnnotatedElement}, both added together for JSR 308 in Java 8. Runtimes
+     * built on the JDK class library without that feature (Android's ART) lack
+     * both, and {@code TypeVariable.getAnnotations()} fails there with
+     * {@code NoSuchMethodError} just as {@code getAnnotatedSuperclass()} does.
+     * Type annotations on precompiled classes are then not seen, which is the
+     * only possible outcome there (GROOVY-12389).
+     */
+    private static final boolean TYPE_ANNOTATIONS = typeAnnotationsAvailable();
+    private static final Annotation[] NO_ANNOTATIONS = new Annotation[0];
+
+    static boolean typeAnnotationsAvailable() {
+        try {
+            Class.class.getMethod("getAnnotatedSuperclass");
+            TypeVariable.class.getMethod("getAnnotations");
+            return true;
+        } catch (ReflectiveOperationException | LinkageError | SecurityException e) {
+            return false;
+        }
+    }
+
     private GenericsType[] configureTypeParameters(final TypeVariable<?>[] tp, final AnnotatedNode declaration) {
         final int n = tp.length;
         if (n == 0) return null;
@@ -257,7 +280,7 @@ public class Java8 implements VMPlugin {
             ClassNode[] bounds = configureTypes(tp[i].getBounds());
             gt[i] = configureTypeVariableDefinition(t, bounds);
             gt[i].setGenericDeclaration(declaration);
-            for (Annotation annotation : tp[i].getAnnotations()) {
+            for (Annotation annotation : TYPE_ANNOTATIONS ? tp[i].getAnnotations() : NO_ANNOTATIONS) {
                 gt[i].setType(addTypeAnnotation(gt[i].getType(), annotation));
             }
         }
@@ -358,7 +381,7 @@ public class Java8 implements VMPlugin {
             Field[] fields = clazz.getDeclaredFields();
             for (Field f : fields) {
                 ClassNode rt = makeClassNode(compileUnit, f.getGenericType(), f.getType());
-                rt = applyTypeAnnotations(f.getAnnotatedType(), rt);
+                if (TYPE_ANNOTATIONS) rt = applyTypeAnnotations(f.getAnnotatedType(), rt);
                 FieldNode fn = new FieldNode(f.getName(), f.getModifiers(), rt, classNode, getValue(f));
                 setAnnotationMetaData(f.getAnnotations(), fn);
                 classNode.addField(fn);
@@ -366,7 +389,7 @@ public class Java8 implements VMPlugin {
             Method[] methods = ReflectionUtils.getDeclaredMethodsSorted(clazz);
             for (Method m : methods) {
                 ClassNode rt = makeClassNode(compileUnit, m.getGenericReturnType(), m.getReturnType());
-                rt = applyTypeAnnotations(m.getAnnotatedReturnType(), rt);
+                if (TYPE_ANNOTATIONS) rt = applyTypeAnnotations(m.getAnnotatedReturnType(), rt);
                 Parameter[] params = makeParameters(compileUnit, m.getGenericParameterTypes(), m.getParameterTypes(), m.getParameterAnnotations(), m);
                 ClassNode[] exceptions = makeClassNodes(compileUnit, m.getGenericExceptionTypes(), m.getExceptionTypes());
                 applyExceptionTypeAnnotations(m, exceptions);
@@ -396,8 +419,10 @@ public class Java8 implements VMPlugin {
             Class<?> sc = clazz.getSuperclass();
             if (sc != null) {
                 ClassNode superClass = makeClassNode(compileUnit, clazz.getGenericSuperclass(), sc);
-                AnnotatedType annotatedSuperclass = clazz.getAnnotatedSuperclass();
-                if (annotatedSuperclass != null) superClass = applyTypeAnnotations(annotatedSuperclass, superClass);
+                if (TYPE_ANNOTATIONS) {
+                    AnnotatedType annotatedSuperclass = clazz.getAnnotatedSuperclass();
+                    if (annotatedSuperclass != null) superClass = applyTypeAnnotations(annotatedSuperclass, superClass);
+                }
                 classNode.setUnresolvedSuperClass(superClass);
             }
             makeInterfaceTypes(compileUnit, classNode, clazz);
@@ -521,9 +546,11 @@ public class Java8 implements VMPlugin {
                 }
                 ret[i] = makeClassNode(cu, interfaceTypes[i], (Class<?>) type);
             }
-            AnnotatedType[] annotatedInterfaces = clazz.getAnnotatedInterfaces();
-            for (int i = 0, m = Math.min(annotatedInterfaces.length, n); i < m; i += 1) {
-                ret[i] = applyTypeAnnotations(annotatedInterfaces[i], ret[i]);
+            if (TYPE_ANNOTATIONS) {
+                AnnotatedType[] annotatedInterfaces = clazz.getAnnotatedInterfaces();
+                for (int i = 0, m = Math.min(annotatedInterfaces.length, n); i < m; i += 1) {
+                    ret[i] = applyTypeAnnotations(annotatedInterfaces[i], ret[i]);
+                }
             }
             classNode.setInterfaces(ret);
         }
@@ -646,8 +673,8 @@ public class Java8 implements VMPlugin {
             }
             // synthetic parameters (e.g. of inner class constructors) may not be
             // included in the annotated parameter types; skip on length mismatch
-            AnnotatedType[] annotatedTypes = ((Executable) member).getAnnotatedParameterTypes();
-            if (annotatedTypes.length == n) {
+            AnnotatedType[] annotatedTypes = TYPE_ANNOTATIONS ? ((Executable) member).getAnnotatedParameterTypes() : null;
+            if (annotatedTypes != null && annotatedTypes.length == n) {
                 for (int i = 0; i < n; i += 1) {
                     params[i].setType(applyTypeAnnotations(annotatedTypes[i], params[i].getType()));
                 }
@@ -664,6 +691,7 @@ public class Java8 implements VMPlugin {
      * @param exceptions the exception class nodes created for the member
      */
     private void applyExceptionTypeAnnotations(final Executable member, final ClassNode[] exceptions) {
+        if (!TYPE_ANNOTATIONS) return;
         AnnotatedType[] annotatedTypes = member.getAnnotatedExceptionTypes();
         for (int i = 0, n = Math.min(annotatedTypes.length, exceptions.length); i < n; i += 1) {
             exceptions[i] = applyTypeAnnotations(annotatedTypes[i], exceptions[i]);
