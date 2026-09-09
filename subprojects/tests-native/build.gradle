@@ -96,7 +96,8 @@ def foldedLookups = ['groovy.runtime.metaclass.CustomMetaClassCreationHandle'] a
 // creation runs the JavaBeans Introspector over the probe's receivers, and MethodDescriptor resolves
 // method parameter types by name; on a JVM those classes are still cached so no lookup happens,
 // in an image each must be registered. Kept across updateProbeMetadata like the proxy entries.
-def handListedTypes = ['java.nio.file.WatchEvent$Modifier'] as Set
+// (java.nio.file.WatchEvent$Modifier moved into groovy-nio's own metadata, GROOVY-12394.)
+def handListedTypes = [] as Set
 
 tasks.withType(Exec).configureEach {
     onlyIf('a GraalVM is configured (-Pgroovy.native.home or GRAALVM_HOME)') { graalvmPresent.get() }

@@ -244,6 +244,20 @@ final class NativeImageMetadataTest {
     }
 
     @Test
+    void nioModuleMetadataCoversPathIntrospection() {
+        // the Introspector resolves Path.register's varargs parameter type by name when a Path
+        // gets a metaclass; the agent never records it, so the module ships it (GROOVY-12394)
+        def parsed = new JsonSlurper().parseText(NativeImageMetadataGenerator.generateForModule('groovy-nio', [], [])) as Map
+        def entries = (parsed.reflection as List<Map>).findAll { it.type == 'java.nio.file.WatchEvent$Modifier' }
+        assert entries.size() == 1
+        // registry-conditioned: the lookup precedes any extension method call, so NioExtensions is not yet reached
+        assert entries[0].condition.typeReached == MetaClassRegistryImpl.name
+        assert entries[0].keySet() == ['condition', 'type'] as Set : "type-only entry: ${entries[0]}"
+        def other = new JsonSlurper().parseText(NativeImageMetadataGenerator.generateForModule('groovy-xml', [], [])) as Map
+        assert !(other.reflection as List<Map>).any { it.type == 'java.nio.file.WatchEvent$Modifier' }
+    }
+
+    @Test
     void xmlModuleMetadataCoversFactorySupportsJaxpLookups() {
         // groovy-xml's FactorySupport asks ServiceLoader for each JAXP factory (a resource read an
         // exact-mode image must allow though the JDK ships no such file) and then instantiates the

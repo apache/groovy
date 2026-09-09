@@ -329,6 +329,7 @@ public class NativeImageMetadataGenerator {
         for (Class<?> extension : instanceExtensions) generator.scannedHolder(registry, extension);
         for (Class<?> extension : staticExtensions) generator.scannedHolder(registry, extension);
         if ("groovy-xml".equals(artifactId)) generator.jaxpFactories();
+        if ("groovy-nio".equals(artifactId)) generator.pathIntrospection();
         // the Java-only concurrency jar repackages the async runtime without the groovy jar,
         // whose metadata carries this family, so a pure-Java image needs its own copy (GROOVY-12380)
         if ("groovy-concurrent-java".equals(artifactId)) generator.asyncRuntime();
@@ -356,6 +357,22 @@ public class NativeImageMetadataGenerator {
             resource(support, "META-INF/services/" + factory[0]);
             method(support, factory[1], "<init>");
         }
+    }
+
+    /**
+     * What creating a metaclass for a {@code java.nio.file.Path} does on every
+     * groovy-nio user's behalf: the JavaBeans Introspector builds a
+     * {@code MethodDescriptor} for {@code Path.register} and resolves its
+     * varargs parameter type {@code WatchEvent.Modifier} by name. The agent
+     * never records that lookup, since on a JVM the class is already loaded,
+     * so an application's own recording cannot cover it and an exact-mode
+     * image fails on it (GROOVY-12394). Conditioned on the registry, like the
+     * module's extension entries: the lookup happens while the metaclass is
+     * created, before any extension method runs, so the extension class has
+     * not been reached at that point.
+     */
+    private void pathIntrospection() {
+        addName(MetaClassRegistryImpl.class.getName(), "java.nio.file.WatchEvent$Modifier", NONE);
     }
 
     private void resource(String condition, String glob) {

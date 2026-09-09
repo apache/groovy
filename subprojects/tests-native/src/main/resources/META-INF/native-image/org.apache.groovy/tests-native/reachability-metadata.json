@@ -1216,9 +1216,6 @@
                     "java.util.function.Function"
                 ]
             }
-        },
-        {
-            "type": "java.nio.file.WatchEvent$Modifier"
         }
     ]
 }
