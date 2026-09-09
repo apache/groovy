@@ -44,7 +44,7 @@ public class VMPluginFactory {
     private static final VMPlugin PLUGIN = createPlugin();
 
     private static VMPlugin createPlugin() {
-        int specVer = Runtime.version().feature();
+        int specVer = featureVersion();
         for (Map.Entry<Integer, Supplier<VMPlugin>> entry : PLUGIN_MAP.entrySet()) {
             if (specVer >= entry.getKey()) {
                 try {
@@ -59,6 +59,16 @@ public class VMPluginFactory {
             }
         }
         return null;
+    }
+
+    /**
+     * The Java feature version of the running VM; see {@link JavaFeatureVersion#current()}.
+     *
+     * @return the feature version, never below the lowest supported release
+     * @since 6.0.0
+     */
+    public static int featureVersion() {
+        return JavaFeatureVersion.current();
     }
 
     /**
