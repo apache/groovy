@@ -219,6 +219,7 @@ public class Java9 extends Java8 {
     /** {@inheritDoc} */
     @Override
     public boolean trySetAccessible(final AccessibleObject ao) {
+        if (!MODULES_AVAILABLE) return super.trySetAccessible(ao);
         return ao.trySetAccessible();
     }
 
@@ -239,6 +240,7 @@ public class Java9 extends Java8 {
     public boolean checkCanSetAccessible(final AccessibleObject accessibleObject, final Class<?> callerClass) {
 
         if (!super.checkCanSetAccessible(accessibleObject, callerClass)) return false;
+        if (!MODULES_AVAILABLE) return true;
 
         if (callerClass == MethodHandle.class) {
             throw new IllegalCallerException(); // should not happen
@@ -263,6 +265,7 @@ public class Java9 extends Java8 {
     /** {@inheritDoc} */
     @Override
     public boolean checkAccessible(final Class<?> accessingClass, final Class<?> declaringClass, final int memberModifiers, final boolean allowIllegalAccess) {
+        if (!MODULES_AVAILABLE) return super.checkAccessible(accessingClass, declaringClass, memberModifiers, allowIllegalAccess);
         Module accessingModule = accessingClass.getModule();
         Module declaringModule = declaringClass.getModule();
         String packageName = declaringClass.getPackageName();
@@ -294,25 +297,46 @@ public class Java9 extends Java8 {
     private static final Map<String, Set<String>> CONCEALED_PACKAGES_TO_OPEN;
     private static final Map<String, Set<String>> EXPORTED_PACKAGES_TO_OPEN;
 
-    static {
-        ModuleFinder finder = ModuleFinder.ofSystem();
-        Map<String, ModuleDescriptor> packages = new HashMap<>(1024);
-        finder.findAll().stream()
-                .map(ModuleReference::descriptor)
-                .forEach(md -> md.packages().forEach(pn -> packages.putIfAbsent(pn, md)));
+    /**
+     * Whether the running VM has the Java Platform Module System. Runtimes built
+     * on the JDK class library without it (Android's ART) lack {@code Module},
+     * {@code ModuleFinder} and {@code trySetAccessible}; there the Java 8
+     * accessibility rules apply and the package tables below stay empty
+     * (GROOVY-12383).
+     */
+    private static final boolean MODULES_AVAILABLE = modulesAvailable();
 
+    static boolean modulesAvailable() {
+        try {
+            // every JPMS API this class relies on, not just the one it uses first
+            Class.class.getMethod("getModule");
+            AccessibleObject.class.getMethod("trySetAccessible");
+            Class.forName("java.lang.module.ModuleFinder", false, Java9.class.getClassLoader());
+            return true;
+        } catch (ReflectiveOperationException | LinkageError | SecurityException e) {
+            return false;
+        }
+    }
+
+    static {
         Map<String, Set<String>> concealedPackagesToOpen = new ConcurrentHashMap<>(64);
         Map<String, Set<String>> exportedPackagesToOpen = new ConcurrentHashMap<>(64);
+        if (MODULES_AVAILABLE) {
+            ModuleFinder finder = ModuleFinder.ofSystem();
+            Map<String, ModuleDescriptor> packages = new HashMap<>(1024);
+            finder.findAll().stream()
+                    .map(ModuleReference::descriptor)
+                    .forEach(md -> md.packages().forEach(pn -> packages.putIfAbsent(pn, md)));
 
-        for (String j8pn : JAVA8_PACKAGES()) {
-            ModuleDescriptor descriptor = packages.get(j8pn);
-            if (descriptor == null || isOpen(descriptor, j8pn)) continue;
+            for (String j8pn : JAVA8_PACKAGES()) {
+                ModuleDescriptor descriptor = packages.get(j8pn);
+                if (descriptor == null || isOpen(descriptor, j8pn)) continue;
 
-            Map<String, Set<String>> packagesToOpen =
-                isExported(descriptor, j8pn) ? exportedPackagesToOpen : concealedPackagesToOpen;
-            packagesToOpen.computeIfAbsent(descriptor.name(), k -> new HashSet<>(128)).add(j8pn);
+                Map<String, Set<String>> packagesToOpen =
+                    isExported(descriptor, j8pn) ? exportedPackagesToOpen : concealedPackagesToOpen;
+                packagesToOpen.computeIfAbsent(descriptor.name(), k -> new HashSet<>(128)).add(j8pn);
+            }
         }
-
         CONCEALED_PACKAGES_TO_OPEN = concealedPackagesToOpen;
         EXPORTED_PACKAGES_TO_OPEN = exportedPackagesToOpen;
     }
