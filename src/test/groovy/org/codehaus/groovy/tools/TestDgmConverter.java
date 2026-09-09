@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import junit.framework.TestCase;
+import org.objectweb.asm.Type;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.DgmProxyFactoryConfig;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
@@ -845,6 +846,45 @@ public class TestDgmConverter extends TestCase {
         } finally {
             if (previous == null) System.clearProperty(DgmProxyFactoryConfig.PROPERTY);
             else System.setProperty(DgmProxyFactoryConfig.PROPERTY, previous);
+        }
+    }
+
+    /**
+     * GROOVY-12388: the adapters' static initialisers must not carry a MethodType
+     * constant, which Android's D8 accepts only from API 28; they build the type
+     * from class constants instead. D8 rejects the constant anywhere in the class,
+     * so every method is scanned for it; the {@code methodType} call replacing it
+     * is expected in the static initialiser.
+     */
+    public void testAdapterInitialisersUseNoMethodTypeConstants() throws Exception {
+        List<File> adapters = findAllDgmClassFiles();
+        assertFalse("no adapters found", adapters.isEmpty());
+        for (File adapter : adapters) {
+            byte[] bytes = Files.readAllBytes(adapter.toPath());
+            List<String> methodTypeConstants = new ArrayList<>();
+            boolean[] initialiserBuildsMethodType = {false};
+            new ClassReader(bytes).accept(new ClassVisitor(Opcodes.ASM9) {
+                @Override
+                public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                    boolean initialiser = "<clinit>".equals(name);
+                    return new MethodVisitor(Opcodes.ASM9) {
+                        @Override
+                        public void visitLdcInsn(Object value) {
+                            if (value instanceof Type type && type.getSort() == Type.METHOD) {
+                                methodTypeConstants.add(name + ": " + type);
+                            }
+                        }
+                        @Override
+                        public void visitMethodInsn(int opcode, String owner, String mname, String mdesc, boolean isInterface) {
+                            if (initialiser && "java/lang/invoke/MethodType".equals(owner) && "methodType".equals(mname)) {
+                                initialiserBuildsMethodType[0] = true;
+                            }
+                        }
+                    };
+                }
+            }, 0);
+            assertTrue(adapter.getName() + " has MethodType constants: " + methodTypeConstants, methodTypeConstants.isEmpty());
+            assertTrue(adapter.getName() + " does not build its MethodType in <clinit>", initialiserBuildsMethodType[0]);
         }
     }
 }

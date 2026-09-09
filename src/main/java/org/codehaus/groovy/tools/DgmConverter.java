@@ -41,6 +41,8 @@ import java.util.List;
 import static java.lang.System.Logger.Level.INFO;
 
 import static org.objectweb.asm.Opcodes.AALOAD;
+import static org.objectweb.asm.Opcodes.ANEWARRAY;
+import static org.objectweb.asm.Opcodes.AASTORE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -457,8 +459,23 @@ public class DgmConverter {
         mv.visitLdcInsn(Type.getObjectType(ownerInternal));
         // String methodName = "<method name>"
         mv.visitLdcInsn(method.getName());
-        // MethodType methodType = MethodType.methodType(<return>, <param1>, <param2>, ...)
-        mv.visitLdcInsn(getMethodType(method.getDescriptor()));
+        // MethodType methodType = MethodType.methodType(<return>.class, new Class[]{<param1>.class, ...})
+        // built from class constants rather than an ldc MethodType: Android's D8 accepts a
+        // MethodType constant only from API 28, a class constant from the API 26 that
+        // invokedynamic itself needs (GROOVY-12388)
+        Type methodType = getMethodType(method.getDescriptor());
+        pushClassConstant(mv, methodType.getReturnType());
+        Type[] parameterTypes = methodType.getArgumentTypes();
+        BytecodeHelper.pushConstant(mv, parameterTypes.length);
+        mv.visitTypeInsn(ANEWARRAY, "java/lang/Class");
+        for (int i = 0; i < parameterTypes.length; i++) {
+            mv.visitInsn(DUP);
+            BytecodeHelper.pushConstant(mv, i);
+            pushClassConstant(mv, parameterTypes[i]);
+            mv.visitInsn(AASTORE);
+        }
+        mv.visitMethodInsn(INVOKESTATIC, "java/lang/invoke/MethodType", "methodType",
+            "(Ljava/lang/Class;[Ljava/lang/Class;)Ljava/lang/invoke/MethodType;", false);
         // TARGET = lookup.findStatic(ownerClass, methodName, methodType)
         mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandles$Lookup", "findStatic",
             "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/MethodHandle;", false);
@@ -467,6 +484,30 @@ public class DgmConverter {
         mv.visitInsn(RETURN);
         mv.visitMaxs(0, 0);
         mv.visitEnd();
+    }
+
+    /**
+     * Pushes the {@code Class} for a type: the wrapper's {@code TYPE} field for a
+     * primitive or {@code void}, a class constant otherwise.
+     */
+    private static void pushClassConstant(MethodVisitor mv, Type type) {
+        String wrapper = switch (type.getSort()) {
+            case Type.VOID -> "java/lang/Void";
+            case Type.BOOLEAN -> "java/lang/Boolean";
+            case Type.CHAR -> "java/lang/Character";
+            case Type.BYTE -> "java/lang/Byte";
+            case Type.SHORT -> "java/lang/Short";
+            case Type.INT -> "java/lang/Integer";
+            case Type.FLOAT -> "java/lang/Float";
+            case Type.LONG -> "java/lang/Long";
+            case Type.DOUBLE -> "java/lang/Double";
+            default -> null;
+        };
+        if (wrapper != null) {
+            mv.visitFieldInsn(GETSTATIC, wrapper, "TYPE", "Ljava/lang/Class;");
+        } else {
+            mv.visitLdcInsn(type);
+        }
     }
 
     private static void createGetTargetMethodHandleMethod(ClassWriter cw, String className) {
