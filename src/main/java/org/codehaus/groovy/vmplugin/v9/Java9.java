@@ -55,6 +55,13 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
+ * Java 9+ JPMS support: module-aware accessibility checks,
+ * {@code MethodHandles.privateLookupIn}, and default-import class discovery
+ * via the {@code jrt:} filesystem.
+ * <p>
+ * Groovy 6 selects {@link Java17} as the {@link org.codehaus.groovy.vmplugin.VMPluginFactory}
+ * entry point; this class remains the JPMS implementation that {@link Java17} inherits.
+ *
  * @deprecated Use {@link Java17} instead. Groovy 6.0 requires JDK 17+.
  */
 @Deprecated(since = "6.0.0", forRemoval = true)
@@ -286,12 +293,20 @@ public class Java9 extends Java8 {
         return false;
     }
 
+    /**
+     * JDK 8 packages in {@code module} that are now concealed.
+     * Unknown modules are not inserted into the map: callers only test membership.
+     */
     private static Set<String> concealedPackageList(final Module module) {
-        return CONCEALED_PACKAGES_TO_OPEN.computeIfAbsent(module.getName(), m -> new HashSet<>());
+        return CONCEALED_PACKAGES_TO_OPEN.getOrDefault(module.getName(), Set.of());
     }
 
+    /**
+     * JDK 8 packages in {@code module} that are exported but not open.
+     * Unknown modules are not inserted into the map: callers only test membership.
+     */
     private static Set<String> exportedPackageList(final Module module) {
-        return EXPORTED_PACKAGES_TO_OPEN.computeIfAbsent(module.getName(), m -> new HashSet<>());
+        return EXPORTED_PACKAGES_TO_OPEN.getOrDefault(module.getName(), Set.of());
     }
 
     private static final Map<String, Set<String>> CONCEALED_PACKAGES_TO_OPEN;

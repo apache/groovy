@@ -62,12 +62,12 @@ import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
+import org.codehaus.groovy.vmplugin.v17.Java17;
 import org.codehaus.groovy.vmplugin.v8.IndyArrayAccess;
 import org.codehaus.groovy.vmplugin.v8.IndyCompoundAssign;
 import org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures;
 import org.codehaus.groovy.vmplugin.v8.IndyInterface;
 import org.codehaus.groovy.vmplugin.v8.IndyMath;
-import org.codehaus.groovy.vmplugin.v9.Java9;
 
 import java.io.File;
 import java.io.IOException;
@@ -118,6 +118,11 @@ import java.util.concurrent.Executors;
  * Its classes obtain method handles to their own methods and to a few JDK and
  * MOP methods through a {@code Lookup} held in a run-time-initialised class,
  * which the image builder cannot fold, so the targets are registered.</li>
+ * <li><b>Default-import class discovery</b> (conditional on {@link Java17}).
+ * {@code getDefaultImportClasses} loads {@code GroovySystem} and
+ * {@code groovy.beans.ListenerList} by name to locate the groovy jar; those
+ * names are not constant {@code Class.forName} arguments the image builder
+ * can fold.</li>
  * <li><b>Groovy-owned types that get a metaclass</b> (conditional on the
  * registry too, since a metaclass can be created for a class before the class
  * initialises). {@code CachedClass} reads their declared constructors, methods
@@ -409,6 +414,7 @@ public class NativeImageMetadataGenerator {
         NativeImageMetadataGenerator generator = new NativeImageMetadataGenerator();
         generator.registryBootstrap(records);
         generator.indyMachinery();
+        generator.defaultImportClassLookups();
         generator.asyncRuntime();
         generator.introspectedTypes(records);
         return generator.toJson();
@@ -529,9 +535,17 @@ public class NativeImageMetadataGenerator {
         String reflectionUtils = ReflectionUtils.class.getName();
         method(reflectionUtils, Class.class, "isSealed");
         method(reflectionUtils, Class.class, "getPermittedSubclasses");
-        // the Java 9 plugin locates the groovy jar by loading two of its classes by name
-        addName(Java9.class.getName(), GroovySystem.class.getName(), NONE);
-        addName(Java9.class.getName(), "groovy.beans.ListenerList", NONE); // Groovy source, not visible here
+    }
+
+    /**
+     * {@code getDefaultImportClasses} locates the groovy jar by loading two of
+     * its classes by name. Condition on {@link Java17}, not a deprecated Java 9
+     * ancestor.
+     */
+    private void defaultImportClassLookups() {
+        String vmPlugin = Java17.class.getName();
+        addName(vmPlugin, GroovySystem.class.getName(), NONE);
+        addName(vmPlugin, "groovy.beans.ListenerList", NONE); // Groovy source, not visible here
     }
 
     private void introspectedTypes(List<GeneratedMetaMethod.DgmMethodRecord> records) {
