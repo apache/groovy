@@ -31,7 +31,24 @@ import static java.lang.System.Logger.Level.ERROR;
  */
 public class Exceptions {
 
-    private static final System.Logger LOGGER = System.getLogger(Exceptions.class.getName());
+    /**
+     * Holds the logger so that loading this class does not resolve
+     * {@code System.Logger}, a Java 9 API absent from some runtimes built on
+     * the JDK class library (Android's ART); where it is unavailable the
+     * exception prints its stack trace the ordinary way (GROOVY-12386).
+     */
+    private static final class Log {
+        static final System.Logger LOGGER = create();
+
+        private static System.Logger create() {
+            try {
+                return System.getLogger(Exceptions.class.getName());
+            } catch (LinkageError | RuntimeException e) {
+                // NoSuchMethodError where the Java 9 logging API is absent; SecurityException in a sandbox
+                return null;
+            }
+        }
+    }
 
     /**
      * Throws a generic internal JSON exception.
@@ -234,10 +251,14 @@ public class Exceptions {
          */
         @Override
         public void printStackTrace() {
-            LOGGER.log(ERROR, this.getMessage());
+            if (Log.LOGGER == null) {
+                super.printStackTrace();
+                return;
+            }
+            Log.LOGGER.log(ERROR, this.getMessage());
 
             if (getCause() != null) {
-                LOGGER.log(ERROR, "This Exception was wrapped, the original exception stack trace is:", getCause());
+                Log.LOGGER.log(ERROR, "This Exception was wrapped, the original exception stack trace is:", getCause());
             } else {
                 super.printStackTrace();
             }

@@ -29,7 +29,24 @@ import static java.lang.System.Logger.Level.WARNING;
  */
 class Sys {
 
-    private static final System.Logger LOGGER = System.getLogger(Sys.class.getName());
+    /**
+     * Holds the logger so that loading this class does not resolve
+     * {@code System.Logger}, a Java 9 API absent from some runtimes built on
+     * the JDK class library (Android's ART); the logger is only needed on a
+     * failure path (GROOVY-12386).
+     */
+    private static final class Log {
+        static final System.Logger LOGGER = create();
+
+        private static System.Logger create() {
+            try {
+                return System.getLogger(Sys.class.getName());
+            } catch (LinkageError | RuntimeException e) {
+                // NoSuchMethodError where the Java 9 logging API is absent; SecurityException in a sandbox
+                return null;
+            }
+        }
+    }
 
     private static final boolean is1_8OrLater;
     private static final boolean is1_7;
@@ -55,7 +72,9 @@ class Sys {
                     v = new BigDecimal("1.9");
                 }
             } catch (Exception ex) {
-                LOGGER.log(WARNING, "Unable to determine build number or version", ex);
+                if (Log.LOGGER != null) {
+                    Log.LOGGER.log(WARNING, "Unable to determine build number or version", ex);
+                }
             }
         } else if ("1.8.0".equals(sversion)) {
             v = new BigDecimal("1.8");
