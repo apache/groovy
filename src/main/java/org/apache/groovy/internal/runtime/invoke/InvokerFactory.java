@@ -141,10 +141,12 @@ public final class InvokerFactory {
         if (SystemUtil.getBooleanSafe(PROPERTY_DISABLE, false)) {
             return false;
         }
-        if (!HiddenClassDefiner.isEnabled()) {
+        // Android first: ART has no hidden classes, and merely initialising
+        // HiddenClassDefiner there fails on Lookup.ClassOption.
+        if (AndroidSupport.isRunningAndroid()) {
             return false;
         }
-        return !AndroidSupport.isRunningAndroid();
+        return HiddenClassDefiner.isEnabled();
     }
 
     /**

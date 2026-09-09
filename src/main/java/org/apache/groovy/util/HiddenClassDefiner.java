@@ -123,8 +123,13 @@ public final class HiddenClassDefiner {
      * Nestmate with the default (weak) lifecycle. Default hidden classes are
      * weakly held; {@link Lookup.ClassOption#STRONG} is not requested.
      */
-    private static final Lookup.ClassOption[] NESTMATE_WEAK =
-            new Lookup.ClassOption[]{Lookup.ClassOption.NESTMATE};
+    private static final class Options {
+        // Held in a nested holder so that loading HiddenClassDefiner itself does
+        // not resolve Lookup.ClassOption, which runtimes without hidden classes
+        // (Android's ART) do not have.
+        static final Lookup.ClassOption[] NESTMATE_WEAK =
+                new Lookup.ClassOption[]{Lookup.ClassOption.NESTMATE};
+    }
 
     private HiddenClassDefiner() {
     }
@@ -161,7 +166,7 @@ public final class HiddenClassDefiner {
         }
         try {
             final byte[] aligned = alignPackage(bytes, lookup.lookupClass());
-            return lookup.defineHiddenClass(aligned, initialize, NESTMATE_WEAK).lookupClass();
+            return lookup.defineHiddenClass(aligned, initialize, Options.NESTMATE_WEAK).lookupClass();
         } catch (IllegalAccessException | SecurityException | LinkageError e) {
             return null;
         } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
@@ -350,9 +355,9 @@ public final class HiddenClassDefiner {
             final byte[] aligned = alignPackage(bytes, lookup.lookupClass());
             if (withClassData) {
                 return lookup.defineHiddenClassWithClassData(
-                        aligned, classData, initialize, NESTMATE_WEAK);
+                        aligned, classData, initialize, Options.NESTMATE_WEAK);
             }
-            return lookup.defineHiddenClass(aligned, initialize, NESTMATE_WEAK);
+            return lookup.defineHiddenClass(aligned, initialize, Options.NESTMATE_WEAK);
         } catch (IllegalAccessException | SecurityException | LinkageError
                  | IllegalArgumentException | IndexOutOfBoundsException e) {
             // LinkageError includes NoClassDefFoundError and, on current JDKs,

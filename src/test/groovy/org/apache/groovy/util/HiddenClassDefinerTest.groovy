@@ -68,6 +68,17 @@ class HiddenClassDefinerTest {
      * Production Java call sites capture {@code MethodHandles.lookup()} in a
      * {@code static final} field of the nest-host class itself.
      */
+    @Test
+    void loadingTheDefinerDoesNotResolveLookupClassOption() {
+        // GROOVY-12384: the ClassOption array lives in a nested holder so that a runtime
+        // without hidden classes (Android's ART) can load the definer and ask isEnabled()
+        def optionArray = MethodHandles.Lookup.ClassOption[]
+        assert HiddenClassDefiner.declaredFields.every { it.type != optionArray }
+        assert HiddenClassDefiner.declaredClasses.any { holder ->
+            holder.declaredFields.any { it.type == optionArray }
+        }
+    }
+
     private static final Lookup LOOKUP = MethodHandles.privateLookupIn(
             HiddenClassDefinerTest, MethodHandles.lookup())
 
