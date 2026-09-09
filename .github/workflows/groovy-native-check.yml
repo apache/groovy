@@ -47,6 +47,9 @@ on:
       - 'src/main/java/groovy/lang/**'
       - 'src/resources/META-INF/native-image/**'
       - 'subprojects/tests-native/**'
+      - 'subprojects/groovy-nio/src/main/**'
+      - 'subprojects/groovy-xml/src/main/**'
+      - 'subprojects/groovy-json/src/main/**'
       - '.github/workflows/groovy-native-check.yml'
   pull_request:
     paths:
@@ -59,6 +62,9 @@ on:
       - 'src/main/java/groovy/lang/**'
       - 'src/resources/META-INF/native-image/**'
       - 'subprojects/tests-native/**'
+      - 'subprojects/groovy-nio/src/main/**'
+      - 'subprojects/groovy-xml/src/main/**'
+      - 'subprojects/groovy-json/src/main/**'
       - '.github/workflows/groovy-native-check.yml'
   schedule:
     - cron: '0 5 * * 1'  # weekly Monday 05:00 UTC

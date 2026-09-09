@@ -25,7 +25,15 @@
 // Keep the marker lines: the build asserts on `PROBE OK`.
 
 import groovy.concurrent.AsyncScope
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
+import groovy.xml.MarkupBuilder
+import groovy.xml.XmlParser
+import groovy.xml.XmlSlurper
+
+import java.nio.file.Files
+import java.nio.file.Path
 
 import static org.apache.groovy.runtime.async.AsyncSupport.await
 
@@ -75,6 +83,29 @@ def async = AsyncScope.withScope { scope ->
     await(a) + await(b)
 }
 
+// modules: groovy-nio (Path extensions), groovy-xml (parsers and a builder),
+// groovy-json (slurper and output over the application's own class)
+Path tmp = Files.createTempFile('probe', '.txt')
+tmp.text = 'one\ntwo\nthree\n'
+tmp << 'four\n'
+def lines = tmp.readLines()
+def counted = 0
+tmp.eachLine { counted++ }
+def firstLine = tmp.withReader { it.readLine() }
+Files.delete(tmp)
+
+def slurped = new XmlSlurper().parseText('<root><item id="1">alpha</item><item id="2">beta</item></root>')
+def itemNames = slurped.item.collect { it.text() }
+def parsed = new XmlParser().parseText('<root><item id="1">alpha</item><item id="2">beta</item></root>')
+def itemIds = parsed.item*.@id
+def writer = new StringWriter()
+new MarkupBuilder(writer).root { item(id: 3, 'gamma') }
+def built = writer.toString()
+
+def json = JsonOutput.toJson([point: p, names: names, nested: [ok: true]])
+def back = new JsonSlurper().parseText(json)
+def pretty = JsonOutput.prettyPrint(json)
+
 println "numbers=$numbers total=$total"
 println "words=$words"
 println "point=$p dyn=$dyn"
@@ -90,6 +121,12 @@ println "static=$statically"
 println "async=$async"
 println "captured=$captured floats=${floats.sum()}"
 println "metaClass=${p.metaClass.class.simpleName} methods=${p.metaClass.methods.size() > 0}"
+println "nio lines=$lines counted=$counted first=$firstLine"
+println "xml names=$itemNames ids=$itemIds built=${built.contains('gamma')}"
+println "json back=${back.point} pretty=${pretty.count('\n') > 0}"
+assert lines == ['one', 'two', 'three', 'four'] && counted == 4 && firstLine == 'one'
+assert itemNames == ['alpha', 'beta'] && itemIds == ['1', '2'] && built.contains('<item id=\'3\'>gamma</item>')
+assert back.point.x == 4 && back.point.y == 6 && back.names.size() == 3 && back.nested.ok == true
 assert total == 220 && curried(2) == 42 && p.x == 4
 assert person.greet() == 'hello, groovy' && sorted == [1, 2, 3] && statically == 45 && async == 42 && captured == 6 && floats.sum() == 4.0f
 println 'PROBE OK'

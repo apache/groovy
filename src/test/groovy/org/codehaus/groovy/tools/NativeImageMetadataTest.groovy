@@ -244,6 +244,30 @@ final class NativeImageMetadataTest {
     }
 
     @Test
+    void xmlModuleMetadataCoversFactorySupportsJaxpLookups() {
+        // groovy-xml's FactorySupport asks ServiceLoader for each JAXP factory (a resource read an
+        // exact-mode image must allow though the JDK ships no such file) and then instantiates the
+        // JDK default implementation by name; both are conditional on FactorySupport being reached
+        def parsed = new JsonSlurper().parseText(NativeImageMetadataGenerator.generateForModule('groovy-xml', [], [])) as Map
+        def resources = parsed.resources as List<Map>
+        assert resources*.glob as Set == [
+                'META-INF/services/javax.xml.parsers.SAXParserFactory',
+                'META-INF/services/javax.xml.parsers.DocumentBuilderFactory',
+                'META-INF/services/javax.xml.stream.XMLInputFactory',
+                'META-INF/services/javax.xml.transform.TransformerFactory',
+                'META-INF/services/javax.xml.validation.SchemaFactory',
+                'META-INF/services/javax.xml.xpath.XPathFactory',
+        ] as Set
+        assert resources.every { it.condition.typeReached == 'groovy.xml.FactorySupport' }
+        def sax = (parsed.reflection as List<Map>).find { it.type == 'com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl' }
+        assert sax.condition.typeReached == 'groovy.xml.FactorySupport'
+        assert sax.methods*.name == ['<init>']
+
+        // other modules get no resources section at all
+        assert !(new JsonSlurper().parseText(NativeImageMetadataGenerator.generateForModule('groovy-nio', [], [])) as Map).containsKey('resources')
+    }
+
+    @Test
     void entriesAreUnique() {
         def keys = reflection().collect { [it.condition.typeReached, it.type] }
         assert keys.size() == (keys as Set).size()

@@ -273,8 +273,12 @@ Each Groovy module that registers extension methods through a descriptor (`groov
 `groovy-xml`, `groovy-dateutil`, `groovy-datetime`, `groovy-sql`, `groovy-swing`, `groovy-jsr223`,
 `groovy-ginq`, `groovy-macro` and `groovy-macro-library`) ships the equivalent for itself under
 `META-INF/native-image/org.apache.groovy/<module>/`: the extension classes the registry loads by
-name and scans, and the types in their signatures. Modules without a descriptor, `groovy-json` and
-`groovy-http-builder` among them, need none: what they reflect over is the application's data.
+name and scans, and the types in their signatures. `groovy-xml` adds what `FactorySupport` does for
+every XML user: the JAXP factory lookups, a `ServiceLoader` resource read that an exact-mode image
+must allow even though the JDK ships no such file, and the JDK's default implementations it then
+instantiates by name. `groovy-json` ships only the `ServiceLoader`-loaded string service its parser
+uses. Modules that reflect over nothing but the application's data, `groovy-http-builder` among
+them, need none.
 
 Every entry is conditional on the class that performs the access being reached, so an image pays
 only for what it uses; a statically compiled program that never links a dynamic call site carries
