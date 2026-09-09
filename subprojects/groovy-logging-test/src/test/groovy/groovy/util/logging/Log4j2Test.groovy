@@ -48,7 +48,8 @@ final class Log4j2Test {
         @Override
         void append(LogEvent ev) {
             // Log4j2 re-cycles log events so extract and store the relevant info
-            events.add([level: ev.level, message: ev.message.formattedMessage])
+            events.add([level: ev.level, message: ev.message.formattedMessage,
+                        source: ev.source, marker: ev.marker, thrown: ev.thrown])
         }
     }
 
@@ -356,5 +357,167 @@ final class Log4j2Test {
 
         assert appenderForCustomCategory.getEvents().size() == 1
         assert appender.getEvents().size() == 0
+    }
+
+    // GROOVY-12378 -------------------------------------------------------------
+
+    /** line number (1-based) of the first line of {@code source} containing {@code needle} */
+    private static int lineOf(String source, String needle) {
+        int idx = source.readLines().findIndexOf { it.contains(needle) }
+        assert idx >= 0 : "no line contains $needle"
+        idx + 1
+    }
+
+    /** each test compiles its own class: Log4j2 loggers are cached by name, and a
+     *  second appender registered under an existing name is ignored */
+    private static String staticLocationSource(String className) { '''
+        @groovy.util.logging.Log4j2(staticLocation = true)
+        class CLASSNAME {
+            static int evaluations = 0
+            static String expensive() { evaluations++; 'expensive' }
+
+            def instanceMethod() {
+                log.info('plain')                       // L1 simple arguments: no guard
+                log.warn("interpolated ${expensive()}") // L2 guarded
+                [1].each {
+                    log.error('from closure')            // L3 inside a closure
+                }
+            }
+            static void staticMethod() {
+                log.debug('static {}', 42)               // L4 parameterised
+            }
+            def withThrowable() {
+                try { throw new IllegalStateException('boom') } catch (e) { log.error('failed', e) }
+            }
+            def withMarker(org.apache.logging.log4j.Marker m) {
+                log.info(m, 'marked {}', 'x')
+            }
+            def withMarkerAndThrowable(org.apache.logging.log4j.Marker m, Throwable t) {
+                log.warn(m, 'both {}', 'y', t)
+            }
+        }
+    '''.replace('CLASSNAME', className) }
+
+    @Test
+    void testStaticLocationSuppliesCompileTimeLocations() {
+        String source = staticLocationSource('LocatedA')
+        Class clazz = new GroovyClassLoader().parseClass(source, 'LocatedA.groovy')
+        clazz.log.addAppender(appender)
+        clazz.log.setLevel(Level.ALL)
+        clazz.newInstance().instanceMethod()
+        clazz.staticMethod()
+
+        def events = appender.events
+        assert events*.message == ['plain', 'interpolated expensive', 'from closure', 'static 42']
+        assert events*.source*.className == ['LocatedA'] * 4
+        assert events*.source*.fileName == ['LocatedA.groovy'] * 4
+        assert events*.source*.methodName == ['instanceMethod', 'instanceMethod', 'instanceMethod', 'staticMethod']
+        assert events*.source*.lineNumber == ['L1', 'L2', 'L3', 'L4'].collect { lineOf(source, it) }
+
+        // one synthetic static final field per logging statement
+        def locations = clazz.declaredFields.findAll { it.name.startsWith('$log$loc$') }
+        assert locations.size() == 7
+        assert locations.every { isStatic(it.modifiers) && isFinal(it.modifiers) && it.synthetic && it.type == StackTraceElement }
+    }
+
+    @Test
+    void testStaticLocationKeepsGuardForNonSimpleArguments() {
+        Class clazz = new GroovyClassLoader().parseClass(staticLocationSource('LocatedB'), 'LocatedB.groovy')
+        clazz.log.addAppender(appender)
+        clazz.log.setLevel(Level.ERROR)
+        clazz.newInstance().instanceMethod()
+
+        assert clazz.evaluations == 0 : 'a disabled level must not evaluate the interpolated argument'
+        assert appender.events*.message == ['from closure']
+    }
+
+    @Test
+    void testStaticLocationThrowableAndMarker() {
+        Class clazz = new GroovyClassLoader().parseClass(staticLocationSource('LocatedC'), 'LocatedC.groovy')
+        clazz.log.addAppender(appender)
+        clazz.log.setLevel(Level.ALL)
+        def marker = org.apache.logging.log4j.MarkerManager.getMarker('GROOVY12378')
+        def instance = clazz.newInstance()
+        instance.withThrowable()
+        instance.withMarker(marker)
+        instance.withMarkerAndThrowable(marker, new IllegalArgumentException('bad'))
+
+        def events = appender.events
+        assert events.size() == 3
+        assert events[0].message == 'failed'
+        assert events[0].thrown instanceof IllegalStateException
+        assert events[0].source.methodName == 'withThrowable'
+        assert events[1].message == 'marked x'
+        assert events[1].marker == marker
+        assert events[1].thrown == null
+        assert events[1].source.methodName == 'withMarker'
+        assert events[2].message == 'both y'
+        assert events[2].marker == marker
+        assert events[2].thrown instanceof IllegalArgumentException
+        assert events[2].source.methodName == 'withMarkerAndThrowable'
+    }
+
+    @Test
+    void testStaticLocationWithCompileStatic() {
+        Class clazz = new GroovyClassLoader().parseClass('''
+            @groovy.transform.CompileStatic
+            @groovy.util.logging.Log4j2(staticLocation = true)
+            class LocatedStatic {
+                void run(String who) {
+                    log.info("hello $who")
+                    log.warn('plain')
+                }
+            }
+        ''', 'LocatedStatic.groovy')
+        clazz.log.addAppender(appender)
+        clazz.log.setLevel(Level.ALL)
+        clazz.newInstance().run('world')
+
+        def events = appender.events
+        assert events*.message == ['hello world', 'plain']
+        assert events*.source*.className == ['LocatedStatic', 'LocatedStatic']
+        assert events*.source*.methodName == ['run', 'run']
+        assert events*.source*.lineNumber == [6, 7]
+    }
+
+    @Test
+    void testStaticLocationOffLeavesCallsAlone() {
+        Class clazz = new GroovyClassLoader().parseClass('''
+            @groovy.util.logging.Log4j2
+            class NotLocated {
+                def run() { log.info('plain') }
+            }
+        ''', 'NotLocated.groovy')
+        assert !clazz.declaredFields.any { it.name.startsWith('$log$loc$') }
+    }
+
+    @Test
+    void testStaticLocationRejectedByStrategyWithoutSupport() {
+        // a Log-family annotation whose strategy does not support compile-time locations
+        def err = shouldFail(org.codehaus.groovy.control.MultipleCompilationErrorsException) {
+            new GroovyClassLoader().parseClass('''
+                @groovy.util.logging.Log4j2Test.NoLocationLog(staticLocation = true)
+                class Unsupported {
+                    def run() { log.info('plain') }
+                }
+            ''')
+        }
+        assert err.message.contains('staticLocation is not supported by ' + NoLocationStrategy.name + ': locations are looked up at run time here')
+    }
+
+    @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE)
+    @java.lang.annotation.Target(java.lang.annotation.ElementType.TYPE)
+    @org.codehaus.groovy.transform.GroovyASTTransformationClass('org.codehaus.groovy.transform.LogASTTransformation')
+    static @interface NoLocationLog {
+        String value() default 'log'
+        String category() default org.codehaus.groovy.transform.LogASTTransformation.DEFAULT_CATEGORY_NAME
+        String visibilityId() default groovy.transform.Undefined.STRING
+        Class<? extends org.codehaus.groovy.transform.LogASTTransformation.LoggingStrategy> loggingStrategy() default NoLocationStrategy
+        boolean staticLocation() default false
+    }
+
+    static class NoLocationStrategy extends Log4j2.Log4j2LoggingStrategy {
+        NoLocationStrategy(GroovyClassLoader loader) { super(loader) }
+        @Override String staticLocationUnsupportedReason() { 'locations are looked up at run time here' }
     }
 }

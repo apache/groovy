@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -44,14 +45,22 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.lang.reflect.Method;
+import java.io.File;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 import static org.objectweb.asm.Opcodes.ACC_TRANSIENT;
 
 /**
@@ -101,9 +110,21 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
         if (!(targetClass instanceof ClassNode classNode))
             throw new GroovyBugError("Class annotation " + logAnnotation.getClassNode().getName() + " annotated no Class, this must not happen.");
 
+        final boolean staticLocation = lookupStaticLocation(logAnnotation);
+        if (staticLocation) {
+            String unsupported = loggingStrategy.staticLocationUnsupportedReason();
+            if (unsupported != null) {
+                addError("staticLocation is not supported by " + loggingStrategy.getClass().getName() + ": " + unsupported, logAnnotation);
+                return;
+            }
+        }
+        final String sourceFileName = new File(sourceUnit.getName()).getName();
+        final List<FieldNode> locationFields = new ArrayList<>();
+
         var transformer = new ClassCodeExpressionTransformer() {
             private boolean inClosure;
             private FieldNode logNode;
+            private String currentMethod = "<clinit>";
 
             @Override
             protected SourceUnit getSourceUnit() {
@@ -129,6 +150,55 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
                     return closure;
                 }
                 return super.transform(exp);
+            }
+
+            @Override
+            protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
+                String previous = currentMethod;
+                currentMethod = isConstructor ? "<init>" : node.getName();
+                try {
+                    super.visitConstructorOrMethod(node, isConstructor);
+                } finally {
+                    currentMethod = previous;
+                }
+            }
+
+            @Override
+            public void visitField(final FieldNode node) {
+                String previous = currentMethod;
+                currentMethod = node.isStatic() ? "<clinit>" : "<init>";
+                try {
+                    super.visitField(node);
+                } finally {
+                    currentMethod = previous;
+                }
+            }
+
+            @Override
+            public void visitObjectInitializerStatements(final ClassNode node) {
+                String previous = currentMethod;
+                currentMethod = "<init>";
+                try {
+                    super.visitObjectInitializerStatements(node);
+                } finally {
+                    currentMethod = previous;
+                }
+            }
+
+            /**
+             * A compile-time {@code StackTraceElement} for a logging statement, held in a
+             * synthetic static field of the annotated class (GROOVY-12378). The field is
+             * registered only once the strategy accepts the rewrite, and fields are added
+             * after the traversal, since a statement in a field initializer is visited
+             * while the class's field list is being iterated.
+             */
+            private FieldNode locationFieldFor(final MethodCallExpression mce, final ClassNode owner) {
+                String name = "$log$loc$" + (locationFields.size() + 1);
+                Expression init = ctorX(ClassHelper.make(StackTraceElement.class), args(
+                        constX(owner.getName()), constX(currentMethod), constX(sourceFileName), constX(mce.getLineNumber())));
+                FieldNode field = new FieldNode(name, ACC_STATIC | ACC_FINAL | ACC_SYNTHETIC, ClassHelper.make(StackTraceElement.class), owner, init);
+                field.setSynthetic(true);
+                return field;
             }
 
             @Override
@@ -171,8 +241,19 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
                     variableExpression.setAccessedVariable(logNode);
                 }
 
+                boolean simpleArguments = usesSimpleMethodArgumentsOnly(mce);
+                if (staticLocation) {
+                    FieldNode location = locationFieldFor(mce, logNode.getOwner());
+                    Expression withLocation = loggingStrategy.wrapLoggingMethodCallWithLocation(
+                            receiver, methodName, mce, fieldX(location), !simpleArguments);
+                    if (withLocation != null) {
+                        locationFields.add(location);
+                        return withLocation;
+                    }
+                }
+
                 // do not bother with guard if we have "simple" args since there are no savings
-                if (usesSimpleMethodArgumentsOnly(mce)) return null;
+                if (simpleArguments) return null;
 
                 return loggingStrategy.wrapLoggingMethodCall(receiver, methodName, mce);
             }
@@ -196,6 +277,9 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
 
         };
         transformer.visitClass(classNode);
+        for (FieldNode locationField : locationFields) {
+            classNode.addField(locationField);
+        }
 
         // GROOVY-6373: references to 'log' field are normally already FieldNodes by now, so revisit scoping
         new VariableScopeVisitor(sourceUnit, true).visitClass(classNode);
@@ -208,6 +292,11 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
         } else {
             return "log";
         }
+    }
+
+    private static boolean lookupStaticLocation(final AnnotationNode logAnnotation) {
+        Expression member = logAnnotation.getMember("staticLocation");
+        return member instanceof ConstantExpression constant && Boolean.TRUE.equals(constant.getValue());
     }
 
     private static String lookupCategoryName(final AnnotationNode logAnnotation) {
@@ -302,6 +391,40 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
         }
 
         Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression);
+
+        /**
+         * Why {@link #wrapLoggingMethodCallWithLocation} cannot be used with this
+         * strategy in the current compilation, for the compile error reported when
+         * {@code staticLocation} is requested anyway. A strategy whose logging API
+         * accepts a caller-supplied location returns {@code null} when that API is
+         * resolvable, and names what is missing from the compile classpath when it
+         * is not. By default compile-time locations are not implemented.
+         *
+         * @return the reason compile-time locations are unavailable, or {@code null} if they are supported
+         * @since 6.0.0
+         */
+        default String staticLocationUnsupportedReason() {
+            return "it does not implement compile-time locations";
+        }
+
+        /**
+         * Rewrites a logging call so that the logging framework is handed the
+         * statement's location, computed at compile time, instead of walking the
+         * stack at run time (GROOVY-12378). Only called when
+         * {@link #staticLocationUnsupportedReason()} returned {@code null}.
+         *
+         * @param logVariable the logger expression
+         * @param methodName the logging method that was called, e.g. {@code info}
+         * @param originalCall the call as written; its arguments are the call's arguments
+         * @param location an expression yielding the {@code StackTraceElement} for the statement
+         * @param guard whether the arguments are worth guarding with a level check
+         *              (they are not all constants or variables)
+         * @return the replacement expression, or {@code null} to leave the call unchanged
+         * @since 6.0.0
+         */
+        default Expression wrapLoggingMethodCallWithLocation(Expression logVariable, String methodName, MethodCallExpression originalCall, Expression location, boolean guard) {
+            return null;
+        }
     }
 
     /**
