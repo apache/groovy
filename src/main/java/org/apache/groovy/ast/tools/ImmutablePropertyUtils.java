@@ -19,6 +19,7 @@
 package org.apache.groovy.ast.tools;
 
 import groovy.transform.ImmutableOptions;
+import org.apache.groovy.internal.util.ImmutableTypes;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -39,14 +40,12 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.annotation.Annotation;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -68,81 +67,6 @@ public class ImmutablePropertyUtils {
     private static final String MEMBER_KNOWN_IMMUTABLE_CLASSES = "knownImmutableClasses";
     private static final String MEMBER_KNOWN_IMMUTABLES = "knownImmutables";
 
-    /**
-     * Currently leaving BigInteger and BigDecimal in list but see:
-     * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6348370
-     *
-     * Also, Color is not final so while not normally used with child
-     * classes, it isn't strictly immutable. Use at your own risk.
-     *
-     * This list can be extended by providing "known immutable" classes
-     * via Immutable.knownImmutableClasses
-     */
-    private static final Set<String> BUILTIN_IMMUTABLES = Set.of(
-            "boolean",
-            "byte",
-            "char",
-            "double",
-            "float",
-            "int",
-            "long",
-            "short",
-            "java.lang.Class",
-            "java.lang.Boolean",
-            "java.lang.Byte",
-            "java.lang.Character",
-            "java.lang.Double",
-            "java.lang.Float",
-            "java.lang.Integer",
-            "java.lang.Long",
-            "java.lang.Short",
-            "java.lang.String",
-            "java.math.BigInteger",
-            "java.math.BigDecimal",
-            "java.awt.Color",
-            "java.net.URI",
-            "java.util.UUID",
-            "java.util.regex.Pattern",
-            "java.time.DayOfWeek",
-            "java.time.Duration",
-            "java.time.Instant",
-            "java.time.LocalDate",
-            "java.time.LocalDateTime",
-            "java.time.LocalTime",
-            "java.time.Month",
-            "java.time.MonthDay",
-            "java.time.OffsetDateTime",
-            "java.time.OffsetTime",
-            "java.time.Period",
-            "java.time.Year",
-            "java.time.YearMonth",
-            "java.time.ZonedDateTime",
-            "java.time.ZoneOffset",
-            "java.time.ZoneRegion",
-            "java.time.chrono.ChronoLocalDate",
-            "java.time.chrono.ChronoLocalDateTime",
-            "java.time.chrono.Chronology",
-            "java.time.chrono.ChronoPeriod",
-            "java.time.chrono.ChronoZonedDateTime",
-            "java.time.chrono.Era",
-            "java.time.format.DecimalStyle",
-            "java.time.format.FormatStyle",
-            "java.time.format.ResolverStyle",
-            "java.time.format.SignStyle",
-            "java.time.format.TextStyle",
-            "java.time.temporal.IsoFields",
-            "java.time.temporal.JulianFields",
-            "java.time.temporal.ValueRange",
-            "java.time.temporal.WeekFields",
-            "java.io.File"
-    );
-
-    private static final Set<String> BUILTIN_IMMUTABLE_ANNOTATIONS = Set.of(
-            "groovy.transform.Immutable",
-            "groovy.transform.KnownImmutable",
-          //"javax.annotation.concurrent.Immutable", // its RetentionPolicy is CLASS, can not be got via reflection
-            "net.jcip.annotations.Immutable" // supported by Findbugs and IntelliJ IDEA
-    );
 
     private ImmutablePropertyUtils() { }
 
@@ -287,7 +211,7 @@ public class ImmutablePropertyUtils {
     }
 
     private static boolean matchingImmutableMarkerName(final String name) {
-        return BUILTIN_IMMUTABLE_ANNOTATIONS.contains(name);
+        return ImmutableTypes.isImmutableMarker(name);
     }
 
     /**
@@ -297,16 +221,7 @@ public class ImmutablePropertyUtils {
      * @return {@code true} if the type is treated as built-in immutable
      */
     public static boolean isBuiltinImmutable(final String typeName) {
-        return BUILTIN_IMMUTABLES.contains(typeName);
-    }
-
-    private static boolean hasImmutableAnnotation(final Class<?> clazz) {
-        Annotation[] annotations = clazz.getAnnotations();
-        for (Annotation next : annotations) {
-            String name = next.annotationType().getName();
-            if (matchingImmutableMarkerName(name)) return true;
-        }
-        return false;
+        return ImmutableTypes.isBuiltinImmutable(typeName);
     }
 
     /**
@@ -316,7 +231,7 @@ public class ImmutablePropertyUtils {
      * @return {@code true} if the class is treated as immutable
      */
     public static boolean builtinOrMarkedImmutableClass(final Class<?> clazz) {
-        return isBuiltinImmutable(clazz.getName()) || hasImmutableAnnotation(clazz);
+        return ImmutableTypes.builtinOrMarkedImmutableClass(clazz);
     }
 
     /**

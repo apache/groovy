@@ -21,7 +21,7 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.transform.Pure;
-import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
+import org.apache.groovy.internal.util.ImmutableTypes;
 import org.apache.groovy.lang.annotation.GroovyABI;
 
 import java.io.IOException;
@@ -493,7 +493,7 @@ public class GStringImpl extends GString {
     private static boolean checkValuesStringConstant(Object[] values) {
         for (Object value : values) {
             if (null == value) continue;
-            if (!(ImmutablePropertyUtils.builtinOrMarkedImmutableClass(value.getClass())
+            if (!(ImmutableTypes.builtinOrMarkedImmutableClass(value.getClass())
                     || toStringMarkedPure(value.getClass())
                     || (value instanceof GStringImpl && ((GStringImpl) value).cacheable))) {
                 return false;
