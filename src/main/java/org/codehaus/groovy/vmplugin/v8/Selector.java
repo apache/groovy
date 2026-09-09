@@ -37,6 +37,7 @@ import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.reflection.android.AndroidSupport;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
@@ -1168,7 +1169,9 @@ public abstract class Selector {
                     // if the metaclass call fails we may still want to fall back to call
                     // GroovyObject#invokeMethod if the receiver is a GroovyObject
                     if (LOG_ENABLED) LOG.info("add MissingMethod handler for GroovyObject#invokeMethod fallback path");
-                    handle = MethodHandles.catchException(handle, MissingMethodException.class, GROOVY_OBJECT_INVOKER);
+                    handle = AndroidSupport.isRunningAndroid()
+                            ? IndyCatchCompat.withGroovyObjectFallback(handle) // GROOVY-12387
+                            : MethodHandles.catchException(handle, MissingMethodException.class, GROOVY_OBJECT_INVOKER);
                 }
             }
             handle = MethodHandles.insertArguments(handle, 1, name);
@@ -1319,12 +1322,16 @@ public abstract class Selector {
             //TODO: if we would know exactly which paths require the exceptions
             //      and which paths not, we can sometimes save this guard
             if (handle == null || !catchException) return;
-            Class<?> returnType = handle.type().returnType();
-            if (returnType != Object.class) {
-                MethodType mtype = MethodType.methodType(returnType, GroovyRuntimeException.class);
-                handle = MethodHandles.catchException(handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION.asType(mtype));
+            if (AndroidSupport.isRunningAndroid()) {
+                handle = IndyCatchCompat.unwrapping(handle); // GROOVY-12387
             } else {
-                handle = MethodHandles.catchException(handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION);
+                Class<?> returnType = handle.type().returnType();
+                if (returnType != Object.class) {
+                    MethodType mtype = MethodType.methodType(returnType, GroovyRuntimeException.class);
+                    handle = MethodHandles.catchException(handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION.asType(mtype));
+                } else {
+                    handle = MethodHandles.catchException(handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION);
+                }
             }
             if (LOG_ENABLED) LOG.info("added GroovyRuntimeException unwrapper");
         }
