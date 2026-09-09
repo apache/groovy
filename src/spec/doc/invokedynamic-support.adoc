@@ -181,7 +181,13 @@ context.frameworkPackages.addAll([
 ----
 
 Log4j2:: Log4j2 has no equivalent skip list; its location is always the frame following the logger's
-own class. Use `@CompileStatic` for the classes whose log locations matter.
+own class. Its answer is a location supplied by the caller, which Groovy's `@Log4j2` transform can
+provide at compile time: `@Log4j2(staticLocation = true)` rewrites each logging statement to
+`log.at<Level>().withLocation(location).log(...)`, with the level of the original call, so
+`log.warn(msg)` becomes `log.atWarn().withLocation(location).log(msg)`, where `location` is a
+`StackTraceElement` for the statement held in a static field of the annotated class. That location is correct however the call is
+dispatched and costs no stack walk. It covers statements made through the injected field only; for a
+hand-declared logger, use `@CompileStatic` where locations matter.
 
 Stack traces:: The logger settings above change what a logger reports as the source; they do not
 remove the frames from exception stack traces. `org.codehaus.groovy.runtime.StackTraceUtils.sanitize`
@@ -212,7 +218,8 @@ native-image -Djdk.logger.packages=org.codehaus.groovy,groovy.lang,com.oracle.sv
 Logback:: Add `com.oracle.svm.core.reflect`, `com.oracle.svm.core.methodhandles` and
 `java.lang.invoke` to the framework packages shown above.
 
-Log4j2:: No workaround; use `@CompileStatic` where locations matter.
+Log4j2:: `@Log4j2(staticLocation = true)` as above, which needs no native-image settings; for a
+hand-declared logger, use `@CompileStatic` where locations matter.
 
 === DGM adapters in native images
 
