@@ -1,0 +1,45 @@
+{
+  "reflection": [
+    {
+      "condition": {
+        "typeReached": "org.apache.groovy.json.internal.FastStringUtils"
+      },
+      "type": "org.apache.groovy.json.DefaultFastStringServiceFactory",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "condition": {
+        "typeReached": "groovy.json.JsonTokenType"
+      },
+      "type": "groovy.json.JsonTokenType$1"
+    },
+    {
+      "condition": {
+        "typeReached": "groovy.json.JsonTokenType"
+      },
+      "type": "groovy.json.JsonTokenType$1BeanInfo"
+    },
+    {
+      "condition": {
+        "typeReached": "groovy.json.JsonTokenType"
+      },
+      "type": "groovy.json.JsonTokenType$1Customizer"
+    },
+    {
+      "condition": {
+        "typeReached": "groovy.json.JsonTokenType"
+      },
+      "type": "groovy.runtime.metaclass.groovy.json.JsonTokenType$1MetaClass"
+    }
+  ],
+  "resources": [
+    {
+      "glob": "META-INF/services/org.apache.groovy.json.FastStringServiceFactory"
+    }
+  ]
+}

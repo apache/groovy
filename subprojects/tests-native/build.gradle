@@ -61,7 +61,14 @@ plugins {
 
 dependencies {
     implementation project(':')
+    // modules the probe exercises; their repackaged jars carry their own metadata
+    // (groovy-json ships none by design: what it reflects over is the application's data)
+    implementation projects.groovyNio
+    implementation projects.groovyXml
+    implementation projects.groovyJson
 }
+
+def probeModules = ['groovy-nio', 'groovy-xml', 'groovy-json']
 
 def graalvmHome = providers.gradleProperty('groovy.native.home')
         .orElse(providers.environmentVariable('GRAALVM_HOME'))
@@ -70,7 +77,9 @@ def graalvmBin = { String tool -> graalvmHome.map { "$it/bin/$tool" as String } 
 
 // what a Java user of org.apache.groovy:groovy gets: the repackaged jar, not the classes directory
 def coreJar = rootProject.tasks.named('repackageJar').flatMap { it.archiveFile }
-def probeClasspath = files(coreJar, sourceSets.main.output)
+def moduleJars = probeModules.collect { project(":$it").tasks.named('repackageJar').flatMap { it.archiveFile } }
+def groovyJars = files(coreJar, moduleJars)
+def probeClasspath = files(groovyJars, sourceSets.main.output)
 def nativeDir = layout.buildDirectory.dir('native')
 def agentDir = nativeDir.map { it.dir('agent') }
 def agentAllDir = nativeDir.map { it.dir('agent-all') }
@@ -83,6 +92,11 @@ def groovyOwned = { String type -> groovyPackages.any { type.startsWith(it) } }
 // Names the runtime looks up with a constant string, which the image builder
 // folds: the agent records them, the jar need not ship them.
 def foldedLookups = ['groovy.runtime.metaclass.CustomMetaClassCreationHandle'] as Set
+// Entries the JVM agent cannot record but --exact-reachability-metadata needs: Groovy's metaclass
+// creation runs the JavaBeans Introspector over the probe's receivers, and MethodDescriptor resolves
+// method parameter types by name; on a JVM those classes are still cached so no lookup happens,
+// in an image each must be registered. Kept across updateProbeMetadata like the proxy entries.
+def handListedTypes = ['java.nio.file.WatchEvent$Modifier'] as Set
 
 tasks.withType(Exec).configureEach {
     onlyIf('a GraalVM is configured (-Pgroovy.native.home or GRAALVM_HOME)') { graalvmPresent.get() }
@@ -93,6 +107,7 @@ def registerAgentRun = { String name, Provider<Directory> outputDir, boolean fil
         group = 'verification'
         description = "Runs the probe on the GraalVM JVM under the native-image agent${filtered ? ', recording Groovy callers only' : ''}"
         dependsOn rootProject.tasks.named('repackageJar'), classes
+        probeModules.each { dependsOn project(":$it").tasks.named('repackageJar') }
         inputs.files(probeClasspath)
         if (filtered) inputs.file(callerFilter)
         outputs.dir(outputDir)
@@ -141,8 +156,15 @@ def metadataByType = { File json ->
     byType
 }
 
-def shippedMetadata = { File jar ->
-    metadataByType(zipTree(jar).matching { include 'META-INF/native-image/org.apache.groovy/groovy/reachability-metadata.json' }.singleFile)
+// the union of what the groovy jar and the module jars on the probe classpath ship
+def shippedMetadata = { Iterable<File> jars ->
+    def byType = [:].withDefault { [:] }
+    jars.each { File jar ->
+        zipTree(jar).matching { include 'META-INF/native-image/org.apache.groovy/*/reachability-metadata.json' }.each { File json ->
+            metadataByType(json).each { type, flags -> byType[type].putAll(flags) }
+        }
+    }
+    byType
 }
 
 def checkNativeMetadata = tasks.register('checkNativeMetadata') {
@@ -150,7 +172,7 @@ def checkNativeMetadata = tasks.register('checkNativeMetadata') {
     description = 'Fails if the agent recorded a Groovy-owned reflective need the jar does not ship metadata for'
     dependsOn nativeAgentRun
     onlyIf('a GraalVM is configured (-Pgroovy.native.home or GRAALVM_HOME)') { graalvmPresent.get() }
-    inputs.files(coreJar)
+    inputs.files(groovyJars)
     inputs.dir(agentDir)
     doLast {
         def recording = agentDir.get().file('reachability-metadata.json').asFile
@@ -160,7 +182,7 @@ def checkNativeMetadata = tasks.register('checkNativeMetadata') {
                     "does not apply to Groovy 6); found: " + (agentDir.get().asFile.list() ?: []).join(', '))
         }
         def recorded = new JsonSlurper().parse(recording).reflection
-        def shipped = shippedMetadata(coreJar.get().asFile)
+        def shipped = shippedMetadata(groovyJars.files)
         def probeOwn = metadataByType(probeMetadata.asFile)
         def missing = []
         recorded.each { Map e ->
@@ -181,7 +203,7 @@ def checkNativeMetadata = tasks.register('checkNativeMetadata') {
             }
         }
         if (missing) {
-            throw new GradleException("The runtime needs reflection metadata the groovy jar does not ship; " +
+            throw new GradleException("The runtime needs reflection metadata the groovy jar and the module jars do not ship; " +
                     "extend NativeImageMetadataGenerator for:\n  " + missing.join('\n  '))
         }
         logger.lifecycle("checkNativeMetadata: ${recorded.size()} recorded entries, every Groovy-owned one is shipped")
@@ -192,8 +214,9 @@ def registerImage = { String suffix, boolean exact ->
     def image = nativeDir.map { it.file("probe$suffix") }
     def compile = tasks.register("nativeCompile$suffix", Exec) {
         group = 'verification'
-        description = "Builds the probe into a native image${exact ? ' with --exact-reachability-metadata' : ''}, with only the jar's metadata for Groovy's part"
+        description = "Builds the probe into a native image${exact ? ' with --exact-reachability-metadata' : ''}, with only the jars' metadata for Groovy's part"
         dependsOn rootProject.tasks.named('repackageJar'), classes
+        probeModules.each { dependsOn project(":$it").tasks.named('repackageJar') }
         inputs.files(probeClasspath)
         outputs.file(image)
         doFirst {
@@ -238,16 +261,17 @@ tasks.register('updateProbeMetadata') {
     onlyIf('a GraalVM is configured (-Pgroovy.native.home or GRAALVM_HOME)') { graalvmPresent.get() }
     doLast {
         def recorded = new JsonSlurper().parse(agentAllDir.get().file('reachability-metadata.json').asFile).reflection
-        def shipped = shippedMetadata(coreJar.get().asFile)
+        def shipped = shippedMetadata(groovyJars.files)
         // dynamic proxies the agent does not see: a closure coerced to a SAM parameter at a dynamic
         // call site is proxied through a method handle the agent does not instrument, so the
         // interfaces recorded here by hand are carried over from the current file
-        def proxies = probeMetadata.asFile.exists() ?
-                new JsonSlurper().parse(probeMetadata.asFile).reflection.findAll { !(it.type instanceof String) } : []
-        recorded = recorded + proxies.findAll { p -> !recorded.any { it.type == p.type } }
+        def previous = probeMetadata.asFile.exists() ? new JsonSlurper().parse(probeMetadata.asFile).reflection : []
+        def carried = previous.findAll { !(it.type instanceof String) || it.type in handListedTypes }
+        recorded = recorded + carried.findAll { p -> !recorded.any { it.type == p.type } }
         def keep = recorded.findAll { Map e ->
             def type = e.type
             if (!(type instanceof String)) return true // a dynamic proxy: which interfaces are coerced is the application's
+            if (type in handListedTypes) return true
             if (type in foldedLookups) return false
             if (!shipped.containsKey(type)) return true
             !(e.keySet() - ['type', 'condition']).every { covers(shipped[type], it, e) }

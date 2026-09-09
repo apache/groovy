@@ -88,6 +88,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.Executors;
 
 /**
@@ -278,6 +279,8 @@ public class NativeImageMetadataGenerator {
     private final Map<String, Map<String, EnumSet<Flag>>> entries = new TreeMap<>();
     /** Individually named methods, keyed like {@link #entries}, for JDK classes too big to register wholesale. */
     private final Map<String, Map<String, Set<String>>> methods = new TreeMap<>();
+    /** resource globs by condition: lookups the runtime performs that an exact-mode image must allow */
+    private final Map<String, Set<String>> resources = new TreeMap<>();
 
     /**
      * Writes the metadata file under {@code targetDirectory}.
@@ -312,16 +315,48 @@ public class NativeImageMetadataGenerator {
                                         String targetDirectory) throws IOException {
         File file = new File(targetDirectory, "META-INF/native-image/org.apache.groovy/" + artifactId + "/" + METADATA_FILE).getCanonicalFile();
         file.getParentFile().mkdirs();
-        Files.write(file.toPath(), generateForModule(instanceExtensions, staticExtensions).getBytes(StandardCharsets.UTF_8));
+        Files.write(file.toPath(), generateForModule(artifactId, instanceExtensions, staticExtensions).getBytes(StandardCharsets.UTF_8));
         return file.getPath();
     }
 
     static String generateForModule(List<Class<?>> instanceExtensions, List<Class<?>> staticExtensions) {
+        return generateForModule(null, instanceExtensions, staticExtensions);
+    }
+
+    static String generateForModule(String artifactId, List<Class<?>> instanceExtensions, List<Class<?>> staticExtensions) {
         NativeImageMetadataGenerator generator = new NativeImageMetadataGenerator();
         String registry = MetaClassRegistryImpl.class.getName();
         for (Class<?> extension : instanceExtensions) generator.scannedHolder(registry, extension);
         for (Class<?> extension : staticExtensions) generator.scannedHolder(registry, extension);
+        if ("groovy-xml".equals(artifactId)) generator.jaxpFactories();
         return generator.toJson();
+    }
+
+    /**
+     * What {@code groovy.xml.FactorySupport} does on every XML user's behalf:
+     * each JAXP {@code newInstance} first asks {@code ServiceLoader} for a
+     * provider, a resource lookup an exact-mode image must allow even though
+     * the JDK ships no such file, and then instantiates the JDK's default
+     * implementation by name.
+     */
+    private void jaxpFactories() {
+        String support = "groovy.xml.FactorySupport";
+        String[][] factories = {
+                {"javax.xml.parsers.SAXParserFactory", "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl"},
+                {"javax.xml.parsers.DocumentBuilderFactory", "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl"},
+                {"javax.xml.stream.XMLInputFactory", "com.sun.xml.internal.stream.XMLInputFactoryImpl"},
+                {"javax.xml.transform.TransformerFactory", "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"},
+                {"javax.xml.validation.SchemaFactory", "com.sun.org.apache.xerces.internal.jaxp.validation.XMLSchemaFactory"},
+                {"javax.xml.xpath.XPathFactory", "com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl"},
+        };
+        for (String[] factory : factories) {
+            resource(support, "META-INF/services/" + factory[0]);
+            method(support, factory[1], "<init>");
+        }
+    }
+
+    private void resource(String condition, String glob) {
+        resources.computeIfAbsent(condition, k -> new TreeSet<>()).add(glob);
     }
 
     /**
@@ -572,7 +607,20 @@ public class NativeImageMetadataGenerator {
                 first = false;
             }
         }
-        json.append("\n  ]\n}\n");
+        json.append("\n  ]");
+        if (!resources.isEmpty()) {
+            json.append(",\n  \"resources\": [");
+            first = true;
+            for (Map.Entry<String, Set<String>> condition : resources.entrySet()) {
+                for (String glob : condition.getValue()) {
+                    json.append(first ? "\n" : ",\n").append("    {\"condition\": {\"typeReached\": \"").append(condition.getKey())
+                        .append("\"}, \"glob\": \"").append(glob).append("\"}");
+                    first = false;
+                }
+            }
+            json.append("\n  ]");
+        }
+        json.append("\n}\n");
         return json.toString();
     }
 

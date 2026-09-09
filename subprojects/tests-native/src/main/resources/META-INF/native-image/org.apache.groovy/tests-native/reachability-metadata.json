@@ -168,6 +168,52 @@
             "type": "groovy.concurrent.Awaitable"
         },
         {
+            "type": "groovy.json.JsonOutput",
+            "methods": [
+                {
+                    "name": "prettyPrint",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                },
+                {
+                    "name": "toJson",
+                    "parameterTypes": [
+                        "java.util.Map"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "groovy.json.JsonOutputBeanInfo"
+        },
+        {
+            "type": "groovy.json.JsonOutputCustomizer"
+        },
+        {
+            "type": "groovy.json.JsonSlurper",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "parseText",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "groovy.json.JsonSlurperBeanInfo"
+        },
+        {
+            "type": "groovy.json.JsonSlurperCustomizer"
+        },
+        {
             "type": "groovy.runtime.metaclass.Named$Trait$HelperMetaClass"
         },
         {
@@ -181,6 +227,39 @@
         },
         {
             "type": "groovy.runtime.metaclass.groovy.concurrent.AsyncScopeMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.groovy.json.JsonOutputMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.groovy.json.JsonSlurperMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.groovy.util.NodeListMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.groovy.util.NodeMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.groovy.xml.MarkupBuilderMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.groovy.xml.XmlParserMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.groovy.xml.XmlSlurperMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.groovy.xml.slurpersupport.NodeChildMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.groovy.xml.slurpersupport.NodeChildrenMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.java.io.BufferedReaderMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.java.io.StringWriterMetaClass"
         },
         {
             "type": "groovy.runtime.metaclass.java.lang.BooleanMetaClass"
@@ -201,6 +280,9 @@
             "type": "groovy.runtime.metaclass.java.lang.StringMetaClass"
         },
         {
+            "type": "groovy.runtime.metaclass.java.nio.file.FilesMetaClass"
+        },
+        {
             "type": "groovy.runtime.metaclass.java.util.ArrayListMetaClass"
         },
         {
@@ -210,19 +292,34 @@
             "type": "groovy.runtime.metaclass.java.util.LinkedHashMapMetaClass"
         },
         {
+            "type": "groovy.runtime.metaclass.org.apache.groovy.json.internal.LazyMapMetaClass"
+        },
+        {
             "type": "groovy.runtime.metaclass.org.apache.groovy.runtime.async.AsyncSupportMetaClass"
         },
         {
             "type": "groovy.runtime.metaclass.org.apache.groovy.runtime.async.DefaultAsyncScopeMetaClass"
         },
         {
-            "type": "groovy.runtime.metaclass.probe$_run_closure10$_closure11MetaClass"
+            "type": "groovy.runtime.metaclass.probe$_run_closure10$_closure15MetaClass"
         },
         {
-            "type": "groovy.runtime.metaclass.probe$_run_closure10$_closure12MetaClass"
+            "type": "groovy.runtime.metaclass.probe$_run_closure10$_closure16MetaClass"
         },
         {
             "type": "groovy.runtime.metaclass.probe$_run_closure10MetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.probe$_run_closure11MetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.probe$_run_closure12MetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.probe$_run_closure13MetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.probe$_run_closure14MetaClass"
         },
         {
             "type": "groovy.runtime.metaclass.probe$_run_closure1MetaClass"
@@ -255,7 +352,187 @@
             "type": "groovy.runtime.metaclass.probeMetaClass"
         },
         {
+            "type": "groovy.runtime.metaclass.sun.nio.fs.UnixPathMetaClass"
+        },
+        {
+            "type": "groovy.util.BuilderSupport"
+        },
+        {
+            "type": "groovy.util.BuilderSupportBeanInfo"
+        },
+        {
+            "type": "groovy.util.BuilderSupportCustomizer"
+        },
+        {
+            "type": "groovy.util.NodeBeanInfo"
+        },
+        {
+            "type": "groovy.util.NodeCustomizer"
+        },
+        {
+            "type": "groovy.util.NodeList"
+        },
+        {
+            "type": "groovy.util.NodeListBeanInfo"
+        },
+        {
+            "type": "groovy.util.NodeListCustomizer"
+        },
+        {
+            "type": "groovy.xml.MarkupBuilder",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "java.io.Writer"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "groovy.xml.MarkupBuilderBeanInfo"
+        },
+        {
+            "type": "groovy.xml.MarkupBuilderCustomizer"
+        },
+        {
+            "type": "groovy.xml.XmlParser",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "parseText",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "groovy.xml.XmlParserBeanInfo"
+        },
+        {
+            "type": "groovy.xml.XmlParserCustomizer"
+        },
+        {
+            "type": "groovy.xml.XmlSlurper",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "parseText",
+                    "parameterTypes": [
+                        "java.lang.String"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "groovy.xml.XmlSlurperBeanInfo"
+        },
+        {
+            "type": "groovy.xml.XmlSlurperCustomizer"
+        },
+        {
+            "type": "groovy.xml.slurpersupport.GPathResult"
+        },
+        {
+            "type": "groovy.xml.slurpersupport.GPathResult$1"
+        },
+        {
+            "type": "groovy.xml.slurpersupport.GPathResultBeanInfo"
+        },
+        {
+            "type": "groovy.xml.slurpersupport.GPathResultCustomizer"
+        },
+        {
+            "type": "groovy.xml.slurpersupport.NodeChild",
+            "methods": [
+                {
+                    "name": "text",
+                    "parameterTypes": [
+                        
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "groovy.xml.slurpersupport.NodeChildBeanInfo"
+        },
+        {
+            "type": "groovy.xml.slurpersupport.NodeChildCustomizer"
+        },
+        {
+            "type": "groovy.xml.slurpersupport.NodeChildren"
+        },
+        {
+            "type": "groovy.xml.slurpersupport.NodeChildrenBeanInfo"
+        },
+        {
+            "type": "groovy.xml.slurpersupport.NodeChildrenCustomizer"
+        },
+        {
             "type": "java.beans.PropertyVetoException"
+        },
+        {
+            "type": "java.io.BufferedReader",
+            "methods": [
+                {
+                    "name": "readLine",
+                    "parameterTypes": [
+                        
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.io.BufferedReaderBeanInfo"
+        },
+        {
+            "type": "java.io.BufferedReaderCustomizer"
+        },
+        {
+            "type": "java.io.ReaderBeanInfo"
+        },
+        {
+            "type": "java.io.ReaderCustomizer"
+        },
+        {
+            "type": "java.io.StringWriter",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "toString",
+                    "parameterTypes": [
+                        
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.io.StringWriterBeanInfo"
+        },
+        {
+            "type": "java.io.StringWriterCustomizer"
+        },
+        {
+            "type": "java.io.WriterBeanInfo"
+        },
+        {
+            "type": "java.io.WriterCustomizer"
         },
         {
             "type": "java.lang.Boolean",
@@ -334,6 +611,12 @@
             "type": "java.lang.String",
             "methods": [
                 {
+                    "name": "contains",
+                    "parameterTypes": [
+                        "java.lang.CharSequence"
+                    ]
+                },
+                {
                     "name": "split",
                     "parameterTypes": [
                         "java.lang.String"
@@ -354,10 +637,50 @@
             "type": "java.lang.StringCustomizer"
         },
         {
-            "type": "java.lang.reflect.Constructor[]"
+            "type": "java.nio.Buffer"
         },
         {
-            "type": "java.lang.reflect.TypeVariable[]"
+            "type": "java.nio.CharBuffer"
+        },
+        {
+            "type": "java.nio.file.DirectoryStream$Filter"
+        },
+        {
+            "type": "java.nio.file.FileVisitor"
+        },
+        {
+            "type": "java.nio.file.Files",
+            "methods": [
+                {
+                    "name": "createTempFile",
+                    "parameterTypes": [
+                        "java.lang.String",
+                        "java.lang.String",
+                        "java.nio.file.attribute.FileAttribute[]"
+                    ]
+                },
+                {
+                    "name": "delete",
+                    "parameterTypes": [
+                        "java.nio.file.Path"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "java.nio.file.FilesBeanInfo"
+        },
+        {
+            "type": "java.nio.file.FilesCustomizer"
+        },
+        {
+            "type": "java.nio.file.WatchService"
+        },
+        {
+            "type": "java.nio.file.attribute.FileAttribute"
+        },
+        {
+            "type": "java.nio.file.attribute.UserPrincipal"
         },
         {
             "type": "java.util.AbstractMapBeanInfo"
@@ -370,6 +693,9 @@
         },
         {
             "type": "java.util.ArrayListCustomizer"
+        },
+        {
+            "type": "java.util.Calendar"
         },
         {
             "type": "java.util.Date",
@@ -407,16 +733,25 @@
             "type": "java.util.Map$Entry[]"
         },
         {
-            "type": "java.util.concurrent.CompletionStage"
+            "type": "java.util.function.UnaryOperator"
         },
         {
-            "type": "java.util.function.UnaryOperator"
+            "type": "javax.xml.parsers.SAXParser"
         },
         {
             "type": "jdk.internal.jrtfs.JrtFileSystemProvider"
         },
         {
             "type": "jdk.internal.reflect.CallerSensitive"
+        },
+        {
+            "type": "org.apache.groovy.json.internal.LazyMap"
+        },
+        {
+            "type": "org.apache.groovy.json.internal.LazyMapBeanInfo"
+        },
+        {
+            "type": "org.apache.groovy.json.internal.LazyMapCustomizer"
         },
         {
             "type": "org.apache.groovy.runtime.async.AsyncSupport",
@@ -446,6 +781,36 @@
         },
         {
             "type": "org.codehaus.groovy.reflection.ParameterTypes"
+        },
+        {
+            "type": "org.xml.sax.Attributes"
+        },
+        {
+            "type": "org.xml.sax.ContentHandler"
+        },
+        {
+            "type": "org.xml.sax.DTDHandler"
+        },
+        {
+            "type": "org.xml.sax.EntityResolver"
+        },
+        {
+            "type": "org.xml.sax.ErrorHandler"
+        },
+        {
+            "type": "org.xml.sax.Locator"
+        },
+        {
+            "type": "org.xml.sax.XMLReader"
+        },
+        {
+            "type": "org.xml.sax.helpers.DefaultHandler"
+        },
+        {
+            "type": "org.xml.sax.helpers.DefaultHandlerBeanInfo"
+        },
+        {
+            "type": "org.xml.sax.helpers.DefaultHandlerCustomizer"
         },
         {
             "type": "probe",
@@ -493,7 +858,7 @@
             ]
         },
         {
-            "type": "probe$_run_closure10$_closure11",
+            "type": "probe$_run_closure10$_closure15",
             "methods": [
                 {
                     "name": "doCall",
@@ -504,13 +869,13 @@
             ]
         },
         {
-            "type": "probe$_run_closure10$_closure11BeanInfo"
+            "type": "probe$_run_closure10$_closure15BeanInfo"
         },
         {
-            "type": "probe$_run_closure10$_closure11Customizer"
+            "type": "probe$_run_closure10$_closure15Customizer"
         },
         {
-            "type": "probe$_run_closure10$_closure12",
+            "type": "probe$_run_closure10$_closure16",
             "methods": [
                 {
                     "name": "doCall",
@@ -521,16 +886,108 @@
             ]
         },
         {
-            "type": "probe$_run_closure10$_closure12BeanInfo"
+            "type": "probe$_run_closure10$_closure16BeanInfo"
         },
         {
-            "type": "probe$_run_closure10$_closure12Customizer"
+            "type": "probe$_run_closure10$_closure16Customizer"
         },
         {
             "type": "probe$_run_closure10BeanInfo"
         },
         {
             "type": "probe$_run_closure10Customizer"
+        },
+        {
+            "type": "probe$_run_closure11",
+            "methods": [
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        "java.lang.Object"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure11BeanInfo"
+        },
+        {
+            "type": "probe$_run_closure11Customizer"
+        },
+        {
+            "type": "probe$_run_closure12",
+            "methods": [
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        "java.lang.Object"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure12BeanInfo"
+        },
+        {
+            "type": "probe$_run_closure12Customizer"
+        },
+        {
+            "type": "probe$_run_closure13",
+            "methods": [
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        "java.lang.Object"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure13BeanInfo"
+        },
+        {
+            "type": "probe$_run_closure13Customizer"
+        },
+        {
+            "type": "probe$_run_closure14",
+            "methods": [
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "doCall",
+                    "parameterTypes": [
+                        "java.lang.Object"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "probe$_run_closure14BeanInfo"
+        },
+        {
+            "type": "probe$_run_closure14Customizer"
         },
         {
             "type": "probe$_run_closure1BeanInfo"
@@ -709,6 +1166,37 @@
             "type": "probeCustomizer"
         },
         {
+            "type": "sun.nio.fs.UnixPath"
+        },
+        {
+            "type": "sun.nio.fs.UnixPathBeanInfo"
+        },
+        {
+            "type": "sun.nio.fs.UnixPathCustomizer"
+        },
+        {
+            "type": "sun.security.provider.NativePRNG",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "java.security.SecureRandomParameters"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "sun.security.provider.SHA",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        
+                    ]
+                }
+            ]
+        },
+        {
             "type": {
                 "proxy": [
                     "java.util.Comparator"
@@ -728,6 +1216,9 @@
                     "java.util.function.Function"
                 ]
             }
+        },
+        {
+            "type": "java.nio.file.WatchEvent$Modifier"
         }
     ]
 }
