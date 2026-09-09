@@ -268,6 +268,21 @@ final class NativeImageMetadataTest {
     }
 
     @Test
+    void concurrentJavaModuleMetadataCarriesTheAsyncRuntimeFamily() {
+        // GROOVY-12380: the Java-only jar replaces the groovy jar, whose metadata carries this family
+        def entries = (new JsonSlurper().parseText(NativeImageMetadataGenerator.generateForModule('groovy-concurrent-java', [], [])) as Map).reflection as List<Map>
+        def executors = entries.findAll { it.type == 'java.util.concurrent.Executors' }
+        assert executors*.condition*.typeReached as Set == ['org.apache.groovy.runtime.async.AsyncExecutors', 'org.apache.groovy.runtime.async.DefaultPool'] as Set
+        assert executors.every { it.methods*.name == ['newVirtualThreadPerTaskExecutor'] }
+        def scopedValue = entries.find { it.type == 'java.lang.ScopedValue' }
+        assert scopedValue.condition.typeReached == 'org.apache.groovy.runtime.async.ScopedLocal'
+        assert scopedValue.methods*.name as Set == ['newInstance', 'get', 'isBound', 'where'] as Set
+        assert entries.find { it.type == 'java.lang.ScopedValue$Carrier' }?.methods*.name == ['run']
+        // nothing that needs the groovy jar: no registry family
+        assert !entries.any { it.condition.typeReached == REGISTRY }
+    }
+
+    @Test
     void entriesAreUnique() {
         def keys = reflection().collect { [it.condition.typeReached, it.type] }
         assert keys.size() == (keys as Set).size()

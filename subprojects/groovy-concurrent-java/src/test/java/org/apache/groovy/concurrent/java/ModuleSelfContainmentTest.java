@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -116,6 +117,38 @@ class ModuleSelfContainmentTest {
             assertTrue(members > 0, "nothing was reflected over");
         }
         assertTrue(failures.isEmpty(), () -> "classes that cannot be reflected over without Groovy core: " + failures);
+    }
+
+    /**
+     * GROOVY-12380: the jar ships the async runtime's GraalVM reachability metadata,
+     * since it replaces the groovy jar that otherwise carries it, and every Groovy
+     * class that metadata names is inside this jar.
+     */
+    @Test
+    void shipsReachabilityMetadataForTheClassesItContains() throws IOException {
+        String path = "META-INF/native-image/org.apache.groovy/groovy-concurrent-java/reachability-metadata.json";
+        try (JarFile jar = new JarFile(moduleJar().toFile())) {
+            JarEntry entry = jar.getJarEntry(path);
+            assertTrue(entry != null, path + " is missing from the jar");
+            String json;
+            try (InputStream in = jar.getInputStream(entry)) {
+                json = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            }
+            Set<String> named = new TreeSet<>();
+            Matcher m = Pattern.compile("\"(?:typeReached|type)\": \"([^\"]+)\"").matcher(json);
+            while (m.find()) named.add(m.group(1));
+            assertTrue(named.contains("org.apache.groovy.runtime.async.DefaultPool"), "async family missing: " + named);
+            assertTrue(named.contains("org.apache.groovy.runtime.async.ScopedLocal"), "async family missing: " + named);
+            assertTrue(named.contains("java.util.concurrent.Executors"), "async family missing: " + named);
+            List<String> absent = new ArrayList<>();
+            for (String type : named) {
+                if ((type.startsWith("groovy.") || type.startsWith("org.apache.groovy.") || type.startsWith("org.codehaus.groovy."))
+                        && jar.getJarEntry(type.replace('.', '/') + ".class") == null) {
+                    absent.add(type);
+                }
+            }
+            assertTrue(absent.isEmpty(), "metadata names Groovy classes this jar does not contain: " + absent);
+        }
     }
 
     private static Path moduleJar() {
