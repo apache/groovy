@@ -18,7 +18,7 @@ limitations under the License.
 
 ## Supported Versions
 
-The latest released version in the Groovy 5.0.x stream of releases
+The latest released version in the Groovy 5.1.x stream of releases
 is the currently recommended version of Groovy and requires JDK11 as a minimum.
 Users still working on JDK 8 should use the latest 4.0.x version.
 
@@ -33,13 +33,14 @@ were renamed due to split package remediation ([GROOVY-10542](https://issues.apa
 | 2.5.x    | :x:                |                                      |
 | 3.0.x    | :white_check_mark: | Reduced releases on this branch (\*) |
 | 4.0.x    | :white_check_mark: |                                      |
-| 5.0.x    | :white_check_mark: |                                      |
-| 6.0.x    | :grey_question:    | Beta releases status (**)            |
+| 5.0.x    | :white_check_mark: | Previous stable stream               |
+| 5.1.x    | :white_check_mark: | Currently recommended stable         |
+| 6.0.x    | :grey_question:    | RC releases status (**)              |
 
 (\*) The 3.0.x stream is no longer the focus of the core team,
 but we are currently still doing critical security fixes if needed.
 
-(**) While in early stages of pre-release, security fixes are
+(**) While in pre-release, security fixes are
 done on a best-effort basis.
 
 `@Incubating` APIs carry reduced-priority status for security fixes.
@@ -98,9 +99,9 @@ Software Foundation's central security address). You may also, or
 instead, write to the Apache Groovy PMC's private list,
 **private@groovy.apache.org**.
 
-Apache Groovy follows the Apache
-[general guidelines for handling security vulnerabilities](http://www.apache.org/security/committers.html)
-and the [ASF security process](https://www.apache.org/security/).
+Apache Groovy follows the ASF's foundation-wide
+[vulnerability reporting process](https://security.apache.org/report/); see also
+the [general guidelines for handling security vulnerabilities](http://www.apache.org/security/committers.html).
 
 ## Disclosure hygiene for contributors
 
