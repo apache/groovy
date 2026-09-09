@@ -1166,6 +1166,167 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12000: a !instanceof inside !(... && ...) must not produce a positive smart-cast in the then branch;
+    // !(cond && !(x instanceof T)) is true when cond is false, whatever x is
+    @Test
+    void testNotInstanceof10() {
+        for (test in ['!(x instanceof String)', 'x !instanceof String']) {
+            assertScript """
+                @groovy.transform.CompileStatic
+                class T {
+                    static int f(Object x, boolean cond) {
+                        if (!(cond && $test)) {
+                            return x.hashCode() // x is some Object -- no checkcast
+                        } else {
+                            return -1
+                        }
+                    }
+                }
+                assert T.f(42, false) == Integer.valueOf(42).hashCode()
+                assert T.f('s', false) == 's'.hashCode()
+                assert T.f('s', true)  == 's'.hashCode()
+                assert T.f(42, true)   == -1
+            """
+            // ternary form
+            assertScript """
+                @groovy.transform.CompileStatic
+                class T {
+                    static int g(Object x, boolean cond) {
+                        return !(cond && $test) ? x.hashCode() : -1
+                    }
+                }
+                assert T.g(42, false) == Integer.valueOf(42).hashCode()
+                assert T.g(42, true)  == -1
+            """
+            shouldFailWithMessages """
+                @groovy.transform.TypeChecked
+                void test(Object x, boolean cond) {
+                    if (!(cond && $test)) {
+                        x.length()
+                    }
+                }
+            """,
+            'Cannot find matching method java.lang.Object#length()'
+        }
+    }
+
+    // GROOVY-12000: De Morgan: !(!(x instanceof A) && !(x instanceof B)) is (x instanceof A || x instanceof B)
+    @Test
+    void testNotInstanceof11() {
+        for (test in [['!(x instanceof CharSequence)', '!(x instanceof Number)'], ['x !instanceof CharSequence', 'x !instanceof Number']]) {
+            assertScript """
+                @groovy.transform.CompileStatic
+                class T {
+                    static String f(Object x) {
+                        if (!(${test[0]} && ${test[1]})) {
+                            return x.toString() // (CharSequence | Number)
+                        } else {
+                            return 'neither'
+                        }
+                    }
+                }
+                assert T.f('s') == 's'
+                assert T.f(42) == '42'
+                assert T.f([]) == 'neither'
+            """
+            shouldFailWithMessages """
+                @groovy.transform.TypeChecked
+                void test(Object x) {
+                    if (!(${test[0]} && ${test[1]})) {
+                        x.intValue() // not an intersection
+                    }
+                }
+            """,
+            'Cannot find matching method (java.lang.CharSequence | java.lang.Number)#intValue()'
+        }
+    }
+
+    // GROOVY-12000: (x !instanceof A || x !instanceof B) narrows x to A & B in the else branch
+    @Test
+    void testNotInstanceof12() {
+        for (test in ['!(x instanceof CharSequence) || !(x instanceof Comparable)', 'x !instanceof CharSequence || x !instanceof Comparable']) {
+            assertScript """
+                @groovy.transform.CompileStatic
+                class T {
+                    static int f(Object x) {
+                        if ($test) {
+                            return -1
+                        } else {
+                            return x.length() + x.compareTo('ab')
+                        }
+                    }
+                    static int g(Object x) {
+                        if ($test) return -1
+                        return x.length()
+                    }
+                }
+                assert T.f('ab') == 2
+                assert T.f(42) == -1
+                assert T.g('ab') == 2
+                assert T.g([]) == -1
+            """
+            shouldFailWithMessages """
+                @groovy.transform.TypeChecked
+                void test(Object x) {
+                    if ($test) {
+                        x.length()
+                    }
+                }
+            """,
+            'Cannot find matching method java.lang.Object#length()'
+        }
+    }
+
+    // GROOVY-12000: union of interfaces on a class-typed receiver is checked per alternative:
+    // Number & (Cloneable | Closeable) is (Number & Cloneable) | (Number & Closeable)
+    @Test
+    void testMultipleInstanceOfWithClassTypedReceiver() {
+        for (test in ['number instanceof Cloneable || number instanceof Closeable', '!(number instanceof Cloneable || number instanceof Closeable)']) {
+            String then = test.startsWith('!') ? 'return -number.intValue()' : 'return number.intValue()'
+            String other = test.startsWith('!') ? 'return number.intValue()' : 'return -number.intValue()'
+            assertScript """
+                class N extends Number implements Cloneable {
+                    int intValue() { 7 }
+                    long longValue() { 7 }
+                    float floatValue() { 7 }
+                    double doubleValue() { 7 }
+                }
+                @groovy.transform.CompileStatic
+                int test(Number number) {
+                    if ($test) {
+                        $then
+                    } else {
+                        $other
+                    }
+                }
+                assert test(new N()) == 7
+                assert test(42) == -42
+            """
+            String call = test.startsWith('!') ? 'if ($test) { } else { number.close() }' : 'if ($test) { number.close() }'
+            shouldFailWithMessages """
+                @groovy.transform.TypeChecked
+                void test(Number number) {
+                    ${call.replace('$test', test)}
+                }
+            """,
+            'Cannot find matching method ((java.lang.Number & java.lang.Cloneable) | (java.lang.Number & java.io.Closeable))#close()'
+        }
+        // a nested instanceof narrows every alternative; (Integer & Cloneable) | Integer is Integer
+        assertScript '''
+            @groovy.transform.CompileStatic
+            int test(Number number) {
+                if (number instanceof Cloneable || number instanceof Comparable) {
+                    if (number instanceof Integer) {
+                        return number + 2
+                    }
+                }
+                return -1
+            }
+            assert test(3) == 5
+            assert test(3.5d) == -1
+        '''
+    }
+
     // GROOVY-10217
     @Test
     void testInstanceOfThenSubscriptOperator() {

@@ -936,8 +936,23 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public void visitNotExpression(final NotExpression expression) {
         typeCheckingContext.pushTemporaryTypeInfo();
         super.visitNotExpression(expression);
+        var tti = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
+        // GROOVY-12000: a negative ("!instanceof") entry may only be re-flipped into a positive
+        // smart-cast when the operand is itself a single negated check, or an "||" whose operands
+        // pin their negatives down; "!(L && R)" only guarantees "!L || !R", so drop them there
+        Expression operand = stripParentheses(expression.getExpression());
+        if (!(operand instanceof NotExpression) && !isBinaryOperation(operand, COMPARE_NOT_INSTANCEOF, LOGICAL_OR)) {
+            List<ClassNode> types = new ArrayList<>();
+            Object key = negatedInstanceOfConjunctionKey(operand, types);
+            if (key != null) { // !(x !instanceof A && x !instanceof B) is (x instanceof A || x instanceof B)
+                tti.clear();
+                typeCheckingContext.peekTemporaryTypeInfo(key).add(newUnionTypeClassNode(types));
+            } else {
+                tti.keySet().removeIf(k -> k instanceof Object[]);
+            }
+        }
         // GROOVY-9455: !(x instanceof T) shouldn't propagate T as inferred type
-        typeCheckingContext.temporaryIfBranchTypeInformation.pop().forEach(this::putNotInstanceOfTypeInfo);
+        tti.forEach(this::putNotInstanceOfTypeInfo);
     }
 
     /** {@inheritDoc} */
@@ -1036,7 +1051,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     rightExpression.visit(this);
 
                     var rhs = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
-                    propagateTemporaryTypeInfo(lhs, rhs); // `instanceof` on either side?
+                    propagateTemporaryTypeInfo(lhs, rhs, leftExpression, rightExpression); // `instanceof` on either side?
                 }
             }
 
@@ -1160,6 +1175,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     boolean compatible = rType.isInterface();
                     for (int i = 0; !compatible && i < union.getDelegates().length; i += 1) {
                         ClassNode delegate = union.getDelegates()[i];
+                        if (delegate instanceof WideningCategories.LowestUpperBoundClassNode) delegate = delegate.getUnresolvedSuperClass(); // GROOVY-12000
                         compatible = delegate.isInterface() || delegate.isDerivedFrom(rType) || rType.isDerivedFrom(delegate);
                     }
                     if (!compatible) {
@@ -1186,9 +1202,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private void propagateTemporaryTypeInfo(final Map<Object, List<ClassNode>> lhs,
-                                            final Map<Object, List<ClassNode>> rhs) {
-        // TODO: deal with (x !instanceof T)
+    private void propagateTemporaryTypeInfo(final Map<Object, List<ClassNode>> lhs, final Map<Object, List<ClassNode>> rhs,
+                                            final Expression leftExpression, final Expression rightExpression) {
+        // GROOVY-12000: (x !instanceof A || x !instanceof B) narrows x to A & B in the else branch; keep the
+        // negative entries of each operand whose falsity pins them down, merged per key so that the else-branch
+        // sign-flip yields the intersection -- the entries are inert in the then branch (never read positively)
+        var negatives = new LinkedHashMap<Object, List<ClassNode>>();
+        if (canInvertNarrowingForElseBranch(leftExpression)) collectNegativeTypeInfo(lhs, negatives);
+        if (canInvertNarrowingForElseBranch(rightExpression)) collectNegativeTypeInfo(rhs, negatives);
         lhs.keySet().removeIf(k -> k instanceof Object[]);
         rhs.keySet().removeIf(k -> k instanceof Object[]);
 
@@ -1212,6 +1233,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 var types = new LinkedList<>(entry.getValue());
                 types.addFirst(v instanceof ASTNode n ? getType(n) : v.getType());
                 typeCheckingContext.peekTemporaryTypeInfo(v).add(newUnionTypeClassNode(types));
+            }
+        }
+
+        negatives.forEach(this::putNotInstanceOfTypeInfo);
+    }
+
+    private static void collectNegativeTypeInfo(final Map<Object, List<ClassNode>> tti, final Map<Object, List<ClassNode>> negatives) {
+        for (var entry : tti.entrySet()) {
+            if (entry.getKey() instanceof Object[] arr) {
+                negatives.computeIfAbsent(arr[1], k -> new ArrayList<>()).addAll(entry.getValue());
             }
         }
     }
@@ -7592,6 +7623,47 @@ out:    for (ClassNode type : todo) {
         return true;
     }
 
+    private static Expression stripParentheses(Expression expression) {
+        while (expression instanceof BooleanExpression be && !(expression instanceof NotExpression)) {
+            expression = be.getExpression();
+        }
+        return expression;
+    }
+
+    private static boolean isBinaryOperation(final Expression expression, final int... operations) {
+        if (expression instanceof BinaryExpression be) {
+            int op = be.getOperation().getType();
+            for (int operation : operations) {
+                if (op == operation) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * GROOVY-12000: If {@code expression} is a conjunction ({@code &&} or {@code &})
+     * of negated instanceof checks -- {@code !(x instanceof T)} or {@code x !instanceof T} --
+     * that all test the same variable or property, returns that variable's temporary type
+     * info key and adds the tested types to {@code types} in source order; otherwise returns
+     * null. Such a conjunction under a {@code !} is, by De Morgan, a disjunction of positive
+     * checks: {@code !(!(x instanceof A) && !(x instanceof B))} narrows {@code x} to {@code A | B}.
+     */
+    private Object negatedInstanceOfConjunctionKey(final Expression expression, final List<ClassNode> types) {
+        Expression expr = stripParentheses(expression);
+        if (expr instanceof NotExpression ne) {
+            expr = stripParentheses(ne.getExpression());
+            if (!isBinaryOperation(expr, KEYWORD_INSTANCEOF)) return null;
+        } else if (isBinaryOperation(expr, LOGICAL_AND, BITWISE_AND)) {
+            Object left = negatedInstanceOfConjunctionKey(((BinaryExpression) expr).getLeftExpression(), types);
+            return left != null && left.equals(negatedInstanceOfConjunctionKey(((BinaryExpression) expr).getRightExpression(), types)) ? left : null;
+        } else if (!isBinaryOperation(expr, COMPARE_NOT_INSTANCEOF)) {
+            return null;
+        }
+        BinaryExpression check = (BinaryExpression) expr;
+        types.add(check.getRightExpression().getType());
+        return extractTemporaryTypeInfoKey(check.getLeftExpression());
+    }
+
     /**
      * Computes the key to use for {@link TypeCheckingContext#temporaryIfBranchTypeInformation}.
      */
@@ -7682,7 +7754,25 @@ out:    for (ClassNode type : todo) {
     }
 
     private static ClassNode newIntersectionTypeClassNode(final Collection<ClassNode> types) {
-        Map<Boolean, List<ClassNode>> spec = types.stream().collect(Collectors.partitioningBy(ClassNode::isInterface));
+        int i = 0; // GROOVY-12000: distribute over a union so each alternative stands alone: T & (A | B) is (T & A) | (T & B)
+        for (ClassNode type : types) {
+            if (type instanceof UnionTypeClassNode union) {
+                List<ClassNode> alternatives = new ArrayList<>();
+                for (ClassNode delegate : union.getDelegates()) {
+                    List<ClassNode> copy = new ArrayList<>(types);
+                    copy.set(i, delegate);
+                    ClassNode alternative = newIntersectionTypeClassNode(copy);
+                    if (alternatives.stream().noneMatch(a -> implementsInterfaceOrIsSubclassOf(alternative, a))) {
+                        alternatives.removeIf(a -> implementsInterfaceOrIsSubclassOf(a, alternative)); // subsumed
+                        alternatives.add(alternative);
+                    }
+                }
+                return newUnionTypeClassNode(alternatives);
+            }
+            i += 1;
+        }
+        Map<Boolean, List<ClassNode>> spec = types.stream().filter(t -> types.stream().noneMatch(o -> o != t // drop members implied by another member
+                && implementsInterfaceOrIsSubclassOf(o, t) && !implementsInterfaceOrIsSubclassOf(t, o))).collect(Collectors.partitioningBy(ClassNode::isInterface));
         ClassNode[] interfaces = spec.get(Boolean.TRUE ).toArray(ClassNode[]::new);
         List<ClassNode> supers = spec.get(Boolean.FALSE);
         if (interfaces.length == 0) return supers.get(0);
