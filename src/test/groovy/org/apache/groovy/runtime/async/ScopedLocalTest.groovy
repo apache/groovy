@@ -836,4 +836,13 @@ class ScopedLocalTest {
             assertEquals('computed', result)
         }
     }
+
+    @Test
+    @DisplayName('GROOVY-12385: ScopedValue detection reads the feature version defensively')
+    void featureVersionMatchesTheRuntimeOnAJvm() {
+        def bindings = ScopedLocal.declaredClasses.find { it.simpleName == 'ScopedValueBindings' }
+        def featureVersion = bindings.getDeclaredMethod('featureVersion')
+        featureVersion.accessible = true
+        assertEquals(Runtime.version().feature(), featureVersion.invoke(null))
+    }
 }
