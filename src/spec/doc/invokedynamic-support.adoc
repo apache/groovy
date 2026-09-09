@@ -214,6 +214,40 @@ Logback:: Add `com.oracle.svm.core.reflect`, `com.oracle.svm.core.methodhandles`
 
 Log4j2:: No workaround; use `@CompileStatic` where locations matter.
 
+=== The JDK AOT cache
+
+JDK 25 can archive the classes an application loads and links, together with the lambda and string
+concatenation call sites in them, into an _AOT cache_ (JEP 514, building on JEP 483) that later runs
+map in instead of loading, verifying and linking the same classes again. Groovy's runtime is a good
+candidate: a dynamic program links a few thousand runtime classes before it does any work. Nothing in
+Groovy needs configuring; the recipe is the JDK's own:
+
+----
+# training run: exercise the application; the JVM writes the cache on exit
+java -XX:AOTCacheOutput=app.aot -cp app.jar:groovy-6.0.0.jar my.Main
+# every run after that
+java -XX:AOTCache=app.aot -cp app.jar:groovy-6.0.0.jar my.Main
+----
+
+Three constraints come from the JDK. The class path must consist of jars: a populated directory
+makes the training run fail with `Cannot have non-empty directory in paths`. The same jars,
+unchanged, must be on the class path when the cache is used, and a mismatch makes the JVM silently
+run without it; add `-XX:AOTMode=on` to turn that into an error, or `-Xlog:aot` to see why. And
+classes the Groovy compiler defines at run time, a script run through the `groovy` command or code
+compiled by `GroovyShell`, cannot be archived, so compile the application with `groovyc` and put the
+classes in a jar for the cache to cover it. JDK 24 needs the two-step form,
+`-XX:AOTMode=record -XX:AOTConfiguration=app.aotconf` for the training run followed by
+`-XX:AOTMode=create -XX:AOTConfiguration=app.aotconf -XX:AOTCache=app.aot -XX:+AOTClassLinking`.
+
+What the cache does for a Groovy program, measured on the small dynamic program the build uses to
+check native images: nearly every class comes from the cache rather than the jars, the hidden classes
+for the lambdas in the runtime's own classes come with them, and startup plus run drops by roughly
+40%. What it does not do: Groovy's dynamic call sites are bootstrapped by `IndyInterface`, and JDK 25
+archives only call sites the JDK's own bootstrap methods link, so every dynamic site still links on
+its first call in each run, with the method selection and the `MethodHandle` chain built then. Those
+chains are the `LambdaForm` classes a run with the cache still spins. The reflective cold tier makes
+no measurable difference to that, so its default can stay.
+
 === DGM adapters in native images
 
 Every method Groovy adds to the JDK classes (the _default Groovy methods_, or DGM) is dispatched
