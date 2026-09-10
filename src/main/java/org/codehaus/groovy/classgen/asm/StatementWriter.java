@@ -69,6 +69,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constantBooleanValue;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isEmptyStatement;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mayReachLoopCondition;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.mayCompleteNormally;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThroughToNextSwitchCase;
 import static org.objectweb.asm.Opcodes.ALOAD;
@@ -538,12 +539,14 @@ public class StatementWriter {
             compileStack.pop();
         }
 
-        // Survivors per JLS §6.3.2.2-200-C on the outer frame.
+        // Survivors per JLS §6.3.2.2-200-C on the outer frame: an arm that cannot
+        // complete normally (§14.22, so break/continue count -- the same predicate
+        // as VariableScopeVisitor) introduces the other path's bindings after the if.
         Set<String> survivors = new HashSet<>();
-        if (!ifFallsThrough) {
+        if (!mayCompleteNormally(statement.getIfBlock())) {
             survivors.addAll(bindings.whenFalseNames());
         }
-        if (!elseEmpty && !elseFallsThrough) {
+        if (!elseEmpty && !mayCompleteNormally(statement.getElseBlock())) {
             survivors.addAll(bindings.whenTrueNames());
         }
         survivors.retainAll(introduced);

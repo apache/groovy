@@ -114,6 +114,7 @@ public class CompileStack {
      * the slot indices recorded here remain valid for the whole method.
      */
     private final Map<String, BytecodeVariable> patternVariables = new HashMap<>();
+    private final Set<String> predeclaredPatternVariables = new HashSet<>();
     /** map containing named labels of parenting blocks */
     private Map<String, Label> superBlockNamedLabels = new HashMap<>();
     /** map containing named labels of current block */
@@ -526,6 +527,7 @@ public class CompileStack {
         stackVariables.clear();
         usedVariables.clear();
         patternVariables.clear();
+        predeclaredPatternVariables.clear();
         finallyBlocks.clear();
         resetVariableIndex(false);
         superBlockNamedLabels.clear();
@@ -1090,6 +1092,34 @@ public class CompileStack {
         if (variable != null) {
             patternVariables.put(variable.getName(), variable);
         }
+    }
+
+    /**
+     * Records a pattern variable whose slot was allocated (and null-initialised)
+     * ahead of its {@code instanceof} site, so that every path reaching a later
+     * read has the slot initialised: the right operand of {@code &&} / {@code ||}
+     * is skipped when the left operand decides the result, and a slot first
+     * stored inside that operand would be undefined at the join otherwise.
+     *
+     * @see #takePredeclaredPatternVariable(String)
+     * @since 7.0.0
+     */
+    public void predeclarePatternVariable(final BytecodeVariable variable) {
+        recordPatternVariable(variable);
+        predeclaredPatternVariables.add(variable.getName());
+    }
+
+    /**
+     * Returns and forgets the pre-declared slot for the named pattern variable,
+     * or {@code null} when the {@code instanceof} site has to allocate one.
+     *
+     * @since 7.0.0
+     */
+    public BytecodeVariable takePredeclaredPatternVariable(final String name) {
+        if (predeclaredPatternVariables.remove(name)) {
+            return patternVariables.get(name);
+        }
+        return null;
     }
 
     /**
