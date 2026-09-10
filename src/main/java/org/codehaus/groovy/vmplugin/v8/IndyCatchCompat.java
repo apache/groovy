@@ -26,6 +26,7 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.function.Function;
 
 /**
  * Exception handling around a call-site target expressed in plain Java rather
@@ -44,8 +45,11 @@ import java.lang.invoke.MethodType;
  * on Android; on a JVM the combinator stays and the runtime never calls
  * these wrappers.
  * <p>
- * The wrappers box and collect arguments on every call, which is acceptable
- * on ART, where method handle chains are interpreted anyway.
+ * Each wrapper is a lambda behind a JDK {@link Function}, and the only handle
+ * looked up by name is {@code Function.apply}, a library member: nothing of this
+ * class is looked up by name, so a shrinker such as R8 needs no keep rule for it
+ * (GROOVY-12395). The wrappers box and collect arguments on every call, which is
+ * acceptable on ART, where method handle chains are interpreted anyway.
  */
 final class IndyCatchCompat {
 
@@ -54,16 +58,13 @@ final class IndyCatchCompat {
     private static final MethodType SPREAD_TYPE =
             MethodType.methodType(Object.class, Object[].class);
 
-    private static final MethodHandle INVOKE_WITH_FALLBACK;
-    private static final MethodHandle INVOKE_UNWRAPPING;
+    /** {@code (Function, Object)Object}: the JDK interface method every wrapper runs through. */
+    private static final MethodHandle APPLY;
 
     static {
         try {
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            INVOKE_WITH_FALLBACK = lookup.findStatic(IndyCatchCompat.class, "invokeWithFallback",
-                    MethodType.methodType(Object.class, MethodHandle.class, Object.class, String.class, Object[].class));
-            INVOKE_UNWRAPPING = lookup.findStatic(IndyCatchCompat.class, "invokeUnwrapping",
-                    MethodType.methodType(Object.class, MethodHandle.class, Object[].class));
+            APPLY = MethodHandles.publicLookup().findVirtual(Function.class, "apply",
+                    MethodType.methodType(Object.class, Object.class));
         } catch (ReflectiveOperationException e) {
             throw new GroovyBugError(e);
         }
@@ -81,7 +82,20 @@ final class IndyCatchCompat {
      * @return a handle of the same type with the fallback attached
      */
     static MethodHandle withGroovyObjectFallback(final MethodHandle target) {
-        return INVOKE_WITH_FALLBACK.bindTo(target.asType(INVOKE_TYPE));
+        MethodHandle exact = target.asType(INVOKE_TYPE);
+        Function<Object[], Object> body = args -> {
+            Object receiver = args[0];
+            String name = (String) args[1];
+            Object[] arguments = (Object[]) args[2];
+            try {
+                return exact.invokeExact(receiver, name, arguments);
+            } catch (MissingMethodException e) {
+                return IndyGuardsFiltersAndSignatures.invokeGroovyObjectInvoker(e, receiver, name, arguments);
+            } catch (Throwable t) {
+                throw sneakyThrow(t);
+            }
+        };
+        return asHandle(body, 3).asType(INVOKE_TYPE);
     }
 
     /**
@@ -96,22 +110,25 @@ final class IndyCatchCompat {
         MethodType type = target.type();
         int arity = type.parameterCount();
         MethodHandle spread = target.asSpreader(Object[].class, arity).asType(SPREAD_TYPE);
-        return INVOKE_UNWRAPPING.bindTo(spread).asCollector(Object[].class, arity).asType(type);
+        Function<Object[], Object> body = args -> {
+            try {
+                return spread.invokeExact(args);
+            } catch (GroovyRuntimeException e) {
+                throw sneakyThrow(ScriptBytecodeAdapter.unwrap(e));
+            } catch (Throwable t) {
+                throw sneakyThrow(t);
+            }
+        };
+        return asHandle(body, arity).asType(type);
     }
 
-    private static Object invokeWithFallback(final MethodHandle target, final Object receiver, final String name, final Object[] args) throws Throwable {
-        try {
-            return target.invokeExact(receiver, name, args);
-        } catch (MissingMethodException e) {
-            return IndyGuardsFiltersAndSignatures.invokeGroovyObjectInvoker(e, receiver, name, args);
-        }
+    /** A handle of {@code arity} {@code Object} parameters that collects them into the function's array. */
+    private static MethodHandle asHandle(final Function<Object[], Object> body, final int arity) {
+        return APPLY.bindTo(body).asType(SPREAD_TYPE).asCollector(Object[].class, arity);
     }
 
-    private static Object invokeUnwrapping(final MethodHandle target, final Object[] args) throws Throwable {
-        try {
-            return target.invokeExact(args);
-        } catch (GroovyRuntimeException e) {
-            throw ScriptBytecodeAdapter.unwrap(e);
-        }
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> RuntimeException sneakyThrow(final Throwable t) throws T {
+        throw (T) t;
     }
 }
