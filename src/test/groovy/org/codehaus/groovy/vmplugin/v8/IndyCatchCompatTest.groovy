@@ -30,6 +30,11 @@ import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
 import java.lang.invoke.MethodType
 
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.Opcodes
+
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertFalse
 import static org.junit.jupiter.api.Assertions.assertThrows
@@ -132,5 +137,26 @@ final class IndyCatchCompatTest {
         assertEquals('why', e.message)
         def passThrough = IndyCatchCompat.unwrapping(target('succeed'))
         assertEquals('n(7)', passThrough.invokeWithArguments(null, 'n', [7] as Object[]))
+    }
+
+    @Test
+    void nothingOfTheClassIsLookedUpByName() {
+        // GROOVY-12395: a shrinker (R8) renames members it cannot see reflected on; the wrappers
+        // must not obtain handles to this class's own members by name, only to a JDK member
+        def bytes = IndyCatchCompat.getResourceAsStream('IndyCatchCompat.class').bytes
+        def ownMembers = IndyCatchCompat.declaredMethods*.name as Set
+        def byName = []
+        new ClassReader(bytes).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    void visitLdcInsn(Object value) {
+                        if (value instanceof String && value in ownMembers) byName << "$name: '$value'"
+                    }
+                }
+            }
+        }, 0)
+        assertEquals([], byName)
     }
 }
