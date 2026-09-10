@@ -333,7 +333,18 @@ tier, which creates metaclasses a JIT-linked call site never touches, and a reco
 the property misses them. One thing the agent does not see either way: a closure passed where a
 dynamic call expects a single-abstract-method interface is coerced through a method handle, so the
 proxy entry for that interface (`{"type": {"proxy": ["java.util.function.Function"]}}`) has to be
-added by hand, or the call fails with `MissingMethodException` in the image.
+added by hand, or the call fails with `MissingMethodException` in the image. The same applies to
+a method pointer such as `Integer::sum` passed as a functional interface, and the JDK's
+`Gatherer` factories take up to four such closures at once.
+
+A recording made with the agent contains Groovy's own needs alongside the application's, and it
+is tempting to drop everything in a Groovy package to leave only the application's share. Do not
+filter by package name: keep an entry unless the metadata the Groovy jars ship covers that type
+and its members. Two kinds of entry are the application's even though their names look like
+Groovy's: third-party libraries that live in `groovy.*` packages, such as an extension module's
+extension class loaded by name, and Groovy API classes the application itself reaches
+reflectively, such as `groovy.servlet.GroovyServlet` constructed from dynamic code. The build's
+native probe (`subprojects/tests-native`) shows the coverage check in `updateProbeMetadata`.
 
 The JDK side of the type hierarchies is the one of the JDK Groovy was built with, plus the sequenced
 collection interfaces JDK 21 added. That only matters under `--exact-reachability-metadata`, where a
