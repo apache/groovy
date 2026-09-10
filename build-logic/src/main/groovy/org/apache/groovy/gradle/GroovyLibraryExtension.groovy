@@ -248,6 +248,12 @@ class GroovyLibraryExtension {
                 t.description = 'Generates the GraalVM reachability metadata for the module\'s extension classes'
                 t.mainClass.set('org.codehaus.groovy.tools.NativeImageMetadataGenerator')
                 t.classpath = javaPluginExtension.sourceSets.getByName('main').runtimeClasspath
+                // Without an explicit bound the JVM sizes this fork by ergonomics
+                // (max 1/4 of RAM, initial 1/64), so every library module scales its
+                // heap with the developer's machine. The generator only loads the
+                // descriptor's extension classes and writes JSON, so cap it: enough
+                // of these run in parallel that the ergonomic default overcommits.
+                t.maxHeapSize = '512m'
                 t.inputs.property('extensionClasses', extensionClasses)
                 t.inputs.property('staticExtensionClasses', staticExtensionClasses)
                 t.outputs.dir(metadataDir)

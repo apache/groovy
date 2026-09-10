@@ -89,9 +89,10 @@ tasks.withType(GroovyCompile).configureEach {
     options.incrementalAfterFailure = true
 
     // Forked groovyc (groovycMain_mx=1g) overlapping Test (groovyJUnit_mx=2g)
-    // overcommits GHA RAM; the worker dies and Gradle reports MessageIOException
+    // overcommits RAM; the worker dies and Gradle reports MessageIOException
     // / Connection reset on compileGroovy. Same limiter Test already uses.
-    if (sharedConfiguration.isRunningOnCI) {
-        usesService(ConcurrentExecutionControlBuildService.restrict(GroovyCompile, gradle, 2))
-    }
+    // Not CI-specific: a many-core dev box runs more forks than CI does, so
+    // scale the limit with the machine rather than gating on isRunningOnCI.
+    usesService(ConcurrentExecutionControlBuildService.restrict(GroovyCompile, gradle,
+        Math.max(2, Runtime.runtime.availableProcessors().intdiv(4))))
 }
