@@ -539,8 +539,11 @@ public class NativeImageMetadataGenerator {
 
     /**
      * {@code getDefaultImportClasses} locates the groovy jar by loading two of
-     * its classes by name. Condition on {@link Java17}, not a deprecated Java 9
-     * ancestor.
+     * its classes by name. The condition must be the class {@link VMPluginFactory}
+     * instantiates, since that is the one an image reaches: an ancestor only
+     * worked while it was initialised on the way to the subclass, and the
+     * metadata test pins the condition to the live plugin so that collapsing
+     * the hierarchy (Groovy 7) cannot leave these entries dormant.
      */
     private void defaultImportClassLookups() {
         String vmPlugin = Java17.class.getName();

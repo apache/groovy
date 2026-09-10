@@ -26,6 +26,7 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.vmplugin.v17.Java17;
 import org.codehaus.groovy.vmplugin.v8.Java8;
 
@@ -59,7 +60,7 @@ import java.util.stream.Collectors;
  * {@code MethodHandles.privateLookupIn}, and default-import class discovery
  * via the {@code jrt:} filesystem.
  * <p>
- * Groovy 6 selects {@link Java17} as the {@link org.codehaus.groovy.vmplugin.VMPluginFactory}
+ * Groovy 6 selects {@link Java17} as the {@link VMPluginFactory}
  * entry point; this class remains the JPMS implementation that {@link Java17} inherits.
  *
  * @deprecated Use {@link Java17} instead. Groovy 6.0 requires JDK 17+.

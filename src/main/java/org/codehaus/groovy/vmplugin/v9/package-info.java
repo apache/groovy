@@ -20,8 +20,11 @@
 /**
  * Java 9 VM plugin. Compatibility layer for the Java 9 module system (JPMS).
  * <p>
- * Groovy 6 requires JDK 17+ and selects {@link org.codehaus.groovy.vmplugin.v17.Java17}
- * as the {@link org.codehaus.groovy.vmplugin.VMPluginFactory} entry point; types in this
+ * Groovy 6 requires JDK 17+ and selects {@link Java17}
+ * as the {@link VMPluginFactory} entry point; types in this
  * package remain the inherited JPMS implementation and are not constructed directly.
  */
 package org.codehaus.groovy.vmplugin.v9;
+
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
+import org.codehaus.groovy.vmplugin.v17.Java17;
