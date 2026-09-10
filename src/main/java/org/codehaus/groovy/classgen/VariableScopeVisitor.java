@@ -86,7 +86,7 @@ import static java.lang.reflect.Modifier.isStatic;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.mayCompleteNormally;
 import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 
 /**
@@ -703,13 +703,14 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         statement.getElseBlock().visit(this);
         popState();
 
-        // After the if-else:
+        // After the if-else ("cannot complete normally", JLS §14.22: return, throw,
+        // yield, break or continue):
         // §6.3.2.2-200-C-B: if-block (S) is abrupt → e.whenFalse() survive after.
-        if (!maybeFallsThrough(statement.getIfBlock())) {
+        if (!mayCompleteNormally(statement.getIfBlock())) {
             declarePatternVariables(bindings.whenFalse());
         }
         // §6.3.2.2-200-C-A: else-block (T) is abrupt → e.whenTrue() survive after.
-        if (!statement.getElseBlock().isEmpty() && !maybeFallsThrough(statement.getElseBlock())) {
+        if (!statement.getElseBlock().isEmpty() && !mayCompleteNormally(statement.getElseBlock())) {
             declarePatternVariables(bindings.whenTrue());
         }
     }

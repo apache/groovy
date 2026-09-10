@@ -27,6 +27,8 @@ import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
@@ -952,6 +954,7 @@ public class BinaryExpressionHelper {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
 
+        predeclarePatternVariables(expression.getRightExpression());
         expression.getLeftExpression().visit(acg);
         operandStack.doGroovyCast(ClassHelper.boolean_TYPE);
         Label falseCase = operandStack.jump(IFEQ);
@@ -976,6 +979,7 @@ public class BinaryExpressionHelper {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
 
+        predeclarePatternVariables(expression.getRightExpression());
         expression.getLeftExpression().visit(acg);
         operandStack.doGroovyCast(ClassHelper.boolean_TYPE);
         Label trueCase = operandStack.jump(IFNE);
@@ -1167,6 +1171,39 @@ public class BinaryExpressionHelper {
      *
      * @param expression an {@code instanceof} binary expression
      */
+    /**
+     * Allocates and null-initialises the slots of the pattern variables declared
+     * by {@code instanceof} tests in the right operand of {@code &&} / {@code ||}
+     * before the left operand runs. The right operand is skipped when the left
+     * one decides the result, so a slot first stored there would be undefined at
+     * the join that follows and any later read (a following conjunct, the then
+     * branch) would fail verification (GROOVY-12242).
+     */
+    private void predeclarePatternVariables(final Expression rightOperand) {
+        CompileStack compileStack = controller.getCompileStack();
+        rightOperand.visit(new CodeVisitorSupport() {
+            @Override
+            public void visitBinaryExpression(final BinaryExpression be) {
+                int op = be.getOperation().getType();
+                if ((op == KEYWORD_INSTANCEOF || op == COMPARE_NOT_INSTANCEOF)
+                        && be.getRightExpression() instanceof DeclarationExpression decl
+                        && !decl.isMultipleAssignmentDeclaration()) {
+                    Variable variable = decl.getVariableExpression();
+                    if (compileStack.getVariable(variable.getName(), false) == null) {
+                        BytecodeVariable v = compileStack.defineVariable(variable, decl.getType(), false);
+                        compileStack.predeclarePatternVariable(v);
+                    }
+                }
+                super.visitBinaryExpression(be);
+            }
+
+            @Override
+            public void visitClosureExpression(final ClosureExpression expression) {
+                // a closure body is another method; its pattern variables are its own
+            }
+        });
+    }
+
     private void evaluateInstanceof(final BinaryExpression expression) {
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
@@ -1187,8 +1224,11 @@ public class BinaryExpressionHelper {
 
         if (patternMatch) {
             var variable = (Variable) ((BinaryExpression) expression.getRightExpression()).getLeftExpression();
-            BytecodeVariable v = compileStack.defineVariable(variable, targetType, false);
-            compileStack.recordPatternVariable(v);
+            BytecodeVariable v = compileStack.takePredeclaredPatternVariable(variable.getName());
+            if (v == null) {
+                v = compileStack.defineVariable(variable, targetType, false);
+                compileStack.recordPatternVariable(v);
+            }
             MethodVisitor mv = controller.getMethodVisitor();
 
             mv.visitInsn(DUP_X1); // stack: ..., check, value, check
