@@ -32,12 +32,13 @@ were renamed due to split package remediation ([GROOVY-10542](https://issues.apa
 | <= 2.4.x | :x:                |                                      |
 | 2.5.x    | :x:                |                                      |
 | 3.0.x    | :white_check_mark: | Reduced releases on this branch (\*) |
-| 4.0.x    | :white_check_mark: |                                      |
-| 5.0.x    | :white_check_mark: | Previous stable stream               |
+| 4.0.x    | :white_check_mark: | Reduced releases on this branch (\*) |
+| 5.0.x    | :white_check_mark: | Previous stable stream (\*)          |
 | 5.1.x    | :white_check_mark: | Currently recommended stable         |
 | 6.0.x    | :grey_question:    | RC releases status (**)              |
+| 7.0.x    | :grey_question:    | pre-releases status (**)             |
 
-(\*) The 3.0.x stream is no longer the focus of the core team,
+(\*) The 3.0.x, 4.0.x, and 5.0.x streams are no longer the focus of the core team,
 but we are currently still doing critical security fixes if needed.
 
 (**) While in pre-release, security fixes are

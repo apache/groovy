@@ -22,7 +22,6 @@
 = Apache Groovy
 The Groovy development team
 :revdate: 24-02-2014
-:build-icon: https://ci.groovy-lang.org/app/rest/builds/buildType:(id:MasterTestJdk11)/statusIcon
 :github-build-icon: https://github.com/apache/groovy/actions/workflows/groovy-build-test.yml/badge.svg?branch=master
 :sonarcloud-icon: https://sonarcloud.io/api/project_badges/measure?project=apache_groovy&metric=sqale_rating
 :noheader:
@@ -52,7 +51,6 @@ The Groovy development team
 image::https://raw.githubusercontent.com/groovy/artwork/master/medium.png[]
 image:{jdk-icon}[jdk, link={jdk}]
 image:{apache-license-icon}[Apache License 2, link={apache-license-link}]
-// image:{build-icon}[teamcity build status, link={groovy-ci}]
 image:{github-build-icon}[github build status, link={github-ci}]
 image:{codecov-icon}[codecov, link={codecov}]
 // image:{sonarcloud-icon}[maintainability rating, link={sonarcloud}]
@@ -126,8 +124,6 @@ the `gradlew` command instead of `gradle`. (On Unix-like systems, use `./gradlew
 
 == Building from Source
 
-// Build is image:{build-icon}[build status, link={groovy-ci}].
-
 To build you will need:
 
 * {jdk}[JDK 17+]
@@ -184,9 +180,10 @@ The omission of package name: class is `semantics.PowerAssertTest` but only `Pow
 The build uses Gradle dependency verification, so adding or bumping a dependency requires regenerating `gradle/verification-metadata.xml`.
 For the regeneration recipe (including the preferred `--dry-run` approach), see the *Dependency verification* section of link:CONTRIBUTING.md[`CONTRIBUTING.md`].
 
-== Continuous Integration Server
+== Continuous Integration
 
-The official CI server runs {groovy-ci}[here] and is sponsored by https://www.jetbrains.com[JetBrains].
+Builds run primarily on {github-ci}[GitHub Actions]; the workflows live under `.github/workflows`.
+A TeamCity server, sponsored by https://www.jetbrains.com[JetBrains], also runs builds {groovy-ci}[here].
 
 == Java Profiler
 

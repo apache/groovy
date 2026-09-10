@@ -41,6 +41,7 @@ def cappedTracks = [
     [group: 'org.codehaus.groovy', name: 'groovy',                 current: versions.latest3,        maxPrefix: '3.0.'],
     [group: 'org.apache.groovy',   name: 'groovy',                 current: versions.latest4,        maxPrefix: '4.0.'],
     [group: 'org.apache.groovy',   name: 'groovy',                 current: versions.latest5,        maxPrefix: '5.'],
+    [group: 'org.apache.groovy',   name: 'groovy',                 current: versions.latest6,        maxPrefix: '6.0.'],
 ]
 def capByCoord = cappedTracks.collectEntries { [("${it.group}:${it.name}".toString()): it.maxPrefix] }
 

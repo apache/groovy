@@ -39,9 +39,9 @@
 #
 #   --line N     latest *released* Groovy of major line N (3|4|5),
 #                resolved via the pin table below. There is no 6.x
-#                entry: the community Docker Official images do not
-#                publish 6.x alpha/beta; testing 6.x / master
-#                (6.0.0-SNAPSHOT) is the separate local-build path
+#                or 7.x entries: the community Docker Official images do not
+#                publish 6.x RC or later; testing 6.x / master
+#                (7.0.0-SNAPSHOT) is the separate local-build path
 #                (Option B), which this script refuses.
 #   --image REF  explicit image ref/digest, bypassing the table.
 #
