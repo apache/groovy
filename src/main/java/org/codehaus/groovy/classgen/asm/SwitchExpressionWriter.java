@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm;
 import org.apache.groovy.ast.tools.SwitchExpressionUtils;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.SwitchExpression;
@@ -33,6 +34,8 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
 
+import static org.apache.groovy.ast.tools.SwitchPatternUtils.getSubjectVariable;
+import static org.apache.groovy.ast.tools.SwitchPatternUtils.isPatternArm;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.objectweb.asm.Opcodes.ATHROW;
 import static org.objectweb.asm.Opcodes.DUP;
@@ -89,8 +92,17 @@ public class SwitchExpressionWriter {
         Label endLabel = compileStack.pushSwitchExpression(resultType);
 
         expression.getExpression().visit(acg);
-        ClassNode selectorType = prepareSelectorType(operandStack);
-        int selectorIndex = compileStack.defineTemporaryVariable("switch", selectorType, true);
+        Parameter subject = getSubjectVariable(expression);
+        ClassNode selectorType;
+        int selectorIndex;
+        if (subject != null) { // GEP-19: pattern tests and bindings read the selector by name
+            selectorType = operandStack.box();
+            operandStack.remove(1);
+            selectorIndex = compileStack.defineVariable(subject, selectorType, true).getIndex();
+        } else {
+            selectorType = prepareSelectorType(operandStack);
+            selectorIndex = compileStack.defineTemporaryVariable("switch", selectorType, true);
+        }
 
         if (!writeOptimizedSwitch(expression, selectorIndex, selectorType)) {
             writeIsCaseSwitch(expression, selectorIndex, selectorType);
@@ -99,7 +111,7 @@ public class SwitchExpressionWriter {
         mv.visitLabel(endLabel);
         operandStack.push(resultType);
 
-        compileStack.removeVar(selectorIndex);
+        if (subject == null) compileStack.removeVar(selectorIndex);
         compileStack.popSwitchExpression();
     }
 
@@ -186,18 +198,38 @@ public class SwitchExpressionWriter {
 
         acg.onLineNumber(caseStatement, "visitCaseStatement");
 
-        writeIsCaseComparison(caseStatement, selectorIndex, selectorType);
+        boolean patternArm = isPatternArm(caseStatement);
+        if (patternArm) {
+            writePatternTest(caseStatement);
+        } else {
+            writeIsCaseComparison(caseStatement, selectorIndex, selectorType);
+        }
 
         Label miss = controller.getOperandStack().jump(IFEQ);
 
         mv.visitLabel(thisTarget);
+        if (patternArm) { // `break <arm>` in the matching steps continues with the next case test
+            controller.getCompileStack().pushBreakable(caseStatement.getStatementLabels(), miss);
+        }
         caseStatement.getCode().visit(acg);
+        if (patternArm) {
+            controller.getCompileStack().pop();
+        }
 
         if (nextTarget != null && maybeFallsThrough(caseStatement.getCode())) {
             mv.visitJumpInsn(GOTO, nextTarget);
         }
 
         mv.visitLabel(miss);
+    }
+
+    /**
+     * Emits the boolean test of a pattern arm (GEP-19): the label expression is
+     * evaluated as a boolean rather than passed to {@code isCase}.
+     */
+    protected void writePatternTest(final CaseStatement caseStatement) {
+        caseStatement.getExpression().visit(controller.getAcg());
+        controller.getOperandStack().doGroovyCast(ClassHelper.boolean_TYPE);
     }
 
     /**

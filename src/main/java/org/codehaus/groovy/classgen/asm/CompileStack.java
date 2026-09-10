@@ -793,6 +793,21 @@ public class CompileStack {
         return namedBreakLabel;
     }
 
+    /**
+     * Registers {@code breakLabel} as the named break target for each label name
+     * and pushes an element onto the state stack so that a later call to
+     * {@link #pop()} restores the previous state. Used for a pattern arm of a
+     * switch (GEP-19), whose {@code break <arm>} continues with the next case test.
+     *
+     * @param labelNames the statement labels naming the breakable region
+     * @param breakLabel the existing bytecode label to jump to
+     * @since 7.0.0
+     */
+    public void pushBreakable(final List<String> labelNames, final Label breakLabel) {
+        pushState();
+        registerNamedLabels(labelNames, breakLabel, null);
+    }
+
     private void registerNamedLabels(final List<String> labelNames, final Label namedBreakLabel, final Label namedContinueLabel) {
         if (labelNames == null) return;
 
