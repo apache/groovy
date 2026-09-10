@@ -20,6 +20,13 @@ plugins {
     id 'org.apache.groovy-performance'
 }
 
+cyclonedxDirectBom {
+    // A benchmark-only transitive dependency (mstor -> jcrom) has a POM that
+    // cannot be resolved into an effective model, which the plugin logs noisily
+    // during metadata resolution. This module is never published, so skip it.
+    includeMetadataResolution = false
+}
+
 performanceTests {
     versions 'current', versions.latest3, versions.latest4, versions.latest5
 

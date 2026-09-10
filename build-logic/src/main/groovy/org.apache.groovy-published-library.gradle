@@ -883,7 +883,8 @@ cyclonedxDirectBom {
     skipConfigs = ['compileClasspath', 'detached.*', 'test.*']
 
     includeLicenseText = false
-    includeMetadataResolution = false
+    // resolve each dependency's effective POM so components carry license info
+    includeMetadataResolution = true
 
     organizationalEntity = oe
     licenseChoice = lc
@@ -891,4 +892,28 @@ cyclonedxDirectBom {
 
     xmlOutput.unsetConvention()
     jsonOutput = "build/reports/cyclonedx/${project.name}.json"
+
+    // Post-process the generated SBOM to fix two gaps in what the plugin emits:
+    // - inter-module (project) components are not resolved via POM metadata, so
+    //   they carry no license; every Groovy module is Apache-2.0
+    // - the plugin's SPDX name mapping turns the "The BSD License" name used by
+    //   the ANTLR, ST4 and JLine POMs into BSD-4-Clause, but those projects are
+    //   all under the 3-clause BSD license (as recorded in our LICENSE files)
+    doLast {
+        def bom = file(jsonOutput.get())
+        def json = new groovy.json.JsonSlurper().parse(bom)
+        json.components?.each { component ->
+            if (component.group == 'org.apache.groovy' && !component.licenses) {
+                component.licenses = [[license: [id: 'Apache-2.0']]]
+            }
+            if (component.group in ['me.sunlan', 'org.antlr', 'org.jline']) {
+                component.licenses?.each { entry ->
+                    if (entry.license?.id == 'BSD-4-Clause') {
+                        entry.license.id = 'BSD-3-Clause'
+                    }
+                }
+            }
+        }
+        bom.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(json)) + '\n'
+    }
 }
