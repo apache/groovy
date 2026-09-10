@@ -64,6 +64,55 @@ final class SemanticPredicatesTest {
         assert !SemanticPredicates.isAnnotatedLoopStatement(tokens('@java.lang.Deprecated String name'))
     }
 
+    @Test
+    void 'identifier assign distinguishes named annotation pairs from single values'() {
+        assert SemanticPredicates.isIdentifierAssign(tokens('a = 1'))
+        assert SemanticPredicates.isIdentifierAssign(tokens('value = 1'))
+        assert SemanticPredicates.isIdentifierAssign(tokens('class = 1'))
+        assert !SemanticPredicates.isIdentifierAssign(tokens('1'))
+        assert !SemanticPredicates.isIdentifierAssign(tokens('a + 1'))
+        assert !SemanticPredicates.isIdentifierAssign(tokens('a'))
+        assert !SemanticPredicates.isIdentifierAssign(tokens('[1]'))
+        assert !SemanticPredicates.isIdentifierAssign(tokens('@Bar'))
+    }
+
+    @Test
+    void 'followed by java letter in GString is a char-class check'() {
+        assert SemanticPredicates.isFollowedByJavaLetterInGString(CharStreams.fromString('name'))
+        assert SemanticPredicates.isFollowedByJavaLetterInGString(CharStreams.fromString('{x}'))
+        assert SemanticPredicates.isFollowedByJavaLetterInGString(CharStreams.fromString('_x'))
+        assert SemanticPredicates.isFollowedByJavaLetterInGString(CharStreams.fromString('Ä'))
+        assert !SemanticPredicates.isFollowedByJavaLetterInGString(CharStreams.fromString('$x'))
+        assert !SemanticPredicates.isFollowedByJavaLetterInGString(CharStreams.fromString('1x'))
+        assert !SemanticPredicates.isFollowedByJavaLetterInGString(CharStreams.fromString(''))
+        assert !SemanticPredicates.isFollowedByJavaLetterInGString(CharStreams.fromString(' '))
+    }
+
+    @Test
+    void 'followed by whitespaces ignores only ASCII horizontal whitespace'() {
+        assert SemanticPredicates.isFollowedByWhiteSpaces(CharStreams.fromString(''))
+        assert SemanticPredicates.isFollowedByWhiteSpaces(CharStreams.fromString(' \t\f'))
+        assert SemanticPredicates.isFollowedByWhiteSpaces(CharStreams.fromString('  \ncode'))
+        assert !SemanticPredicates.isFollowedByWhiteSpaces(CharStreams.fromString(' x'))
+        assert !SemanticPredicates.isFollowedByWhiteSpaces(CharStreams.fromString('\u00A0'))
+    }
+
+    @Test
+    void 'named and single-element annotations still parse'() {
+        ['@Foo class C {}',
+         '@Foo() class C {}',
+         '@Foo(1) class C {}',
+         '@Foo(a = 1) class C {}',
+         '@Foo(value = 1, other = 2) class C {}',
+         '@Foo(a + 1) class C {}',
+         '@Foo(class = 1) class C {}'
+        ].each { src ->
+            GroovyLangParser p = parser(src)
+            assert p.compilationUnit() != null
+            assert 0 == p.numberOfSyntaxErrors: "Failed to parse `${src}`"
+        }
+    }
+
     private static GroovyParser.ExpressionContext parseExpression(String source) {
         GroovyLangParser parser = parser(source)
         GroovyParser.ExpressionContext expression = parser.expression()

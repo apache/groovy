@@ -25,7 +25,6 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ModifierNode;
 
 import java.util.BitSet;
-import java.util.regex.Pattern;
 
 import static org.apache.groovy.parser.antlr4.GroovyParser.ASSIGN;
 import static org.apache.groovy.parser.antlr4.GroovyParser.AT;
@@ -44,30 +43,51 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.RPAREN;
 import static org.apache.groovy.parser.antlr4.GroovyParser.StringLiteral;
 import static org.apache.groovy.parser.antlr4.GroovyParser.WHILE;
 import static org.apache.groovy.parser.antlr4.GroovyParser.YIELD;
-import static org.apache.groovy.parser.antlr4.util.StringUtils.matches;
 
 /**
  * Some semantic predicates for altering the behaviour of the lexer and parser
  */
 public class SemanticPredicates {
-    private static final Pattern NONSPACES_PATTERN = Pattern.compile("\\S+?");
-    private static final Pattern LETTER_AND_LEFTCURLY_PATTERN = Pattern.compile("[a-zA-Z_{]");
-    private static final Pattern NONSURROGATE_PATTERN = Pattern.compile("[^\u0000-\u007F\uD800-\uDBFF]");
-    private static final Pattern SURROGATE_PAIR1_PATTERN = Pattern.compile("[\uD800-\uDBFF]");
-    private static final Pattern SURROGATE_PAIR2_PATTERN = Pattern.compile("[\uDC00-\uDFFF]");
     private static final int PATH_EXPRESSION_ARGUMENTS = 2;
     private static final int PATH_EXPRESSION_CLOSURE_OR_LAMBDA = 3;
 
     /**
+     * Token types accepted by {@code elementValuePairName} ({@code identifier | keywords}).
+     * Used to distinguish {@code @Foo(a = 1)} (named pairs) from a single element value.
+     */
+    private static final BitSet ELEMENT_VALUE_PAIR_NAME_TYPES = new BitSet();
+    static {
+        int[] types = {
+                Identifier, CapitalizedIdentifier,
+                GroovyParser.ABSTRACT, GroovyParser.AS, GroovyParser.ASSERT, GroovyParser.ASYNC, GroovyParser.AWAIT,
+                GroovyParser.BREAK, GroovyParser.CASE, GroovyParser.CATCH, GroovyParser.CLASS, GroovyParser.CONST,
+                GroovyParser.CONTINUE, GroovyParser.DEF, GroovyParser.DEFAULT, GroovyParser.DEFER, GroovyParser.DO,
+                GroovyParser.ELSE, GroovyParser.ENUM, GroovyParser.EXTENDS, GroovyParser.FINAL, GroovyParser.FINALLY,
+                GroovyParser.FOR, GroovyParser.GOTO, GroovyParser.IF, GroovyParser.IMPLEMENTS, GroovyParser.IMPORT,
+                GroovyParser.IN, GroovyParser.INSTANCEOF, GroovyParser.INTERFACE, GroovyParser.NATIVE, GroovyParser.NEW,
+                GroovyParser.NON_SEALED, GroovyParser.PACKAGE, GroovyParser.PERMITS, GroovyParser.RECORD,
+                GroovyParser.RETURN, GroovyParser.SEALED, GroovyParser.STATIC, GroovyParser.STRICTFP, GroovyParser.SUPER,
+                GroovyParser.SWITCH, GroovyParser.SYNCHRONIZED, GroovyParser.THIS, GroovyParser.THROW, GroovyParser.THROWS,
+                GroovyParser.TRANSIENT, GroovyParser.TRAIT, GroovyParser.THREADSAFE, GroovyParser.TRY, GroovyParser.VAL,
+                GroovyParser.VAR, GroovyParser.VOLATILE, GroovyParser.WHILE, GroovyParser.YIELD,
+                GroovyParser.NullLiteral, GroovyParser.BooleanLiteral, BuiltInPrimitiveType, GroovyParser.VOID,
+                GroovyParser.PUBLIC, GroovyParser.PROTECTED, GroovyParser.PRIVATE, GroovyParser.MODULE
+        };
+        for (int t : types) {
+            ELEMENT_VALUE_PAIR_NAME_TYPES.set(t);
+        }
+    }
+
+    /**
      * Check whether the next characters are only white spaces until the end of line or end of file.
+     * Matches Java regex {@code \s} minus the newlines the loop already stops at: space, tab, VT, FF.
      */
     public static boolean isFollowedByWhiteSpaces(CharStream cs) {
-        for (int index = 1, c = cs.LA(index); !('\r' == c || '\n' == c || CharStream.EOF == c); index++, c = cs.LA(index)) {
-            if (matches(String.valueOf((char) c), NONSPACES_PATTERN)) {
+        for (int index = 1, c = cs.LA(index); c != '\r' && c != '\n' && c != CharStream.EOF; index++, c = cs.LA(index)) {
+            if (c != ' ' && c != '\t' && c != '\f' && c != '\u000B') {
                 return false;
             }
         }
-
         return true;
     }
 
@@ -92,32 +112,38 @@ public class SemanticPredicates {
     public static boolean isFollowedByJavaLetterInGString(CharStream cs) {
         int c1 = cs.LA(1);
 
-        if ('$' == c1) { // single $ is not a valid identifier
+        if (c1 == '$' || c1 < 0) { // single $ is not a valid identifier; EOF is not either
             return false;
         }
 
-        String str1 = String.valueOf((char) c1);
-
-        if (matches(str1, LETTER_AND_LEFTCURLY_PATTERN)) {
+        if (c1 == '{' || c1 == '_'
+                || (c1 >= 'A' && c1 <= 'Z')
+                || (c1 >= 'a' && c1 <= 'z')) {
             return true;
         }
 
-        if (matches(str1, NONSURROGATE_PATTERN)
-                && Character.isJavaIdentifierPart(c1)) {
-            return true;
+        if (c1 <= 0x7F) {
+            return false;
         }
 
-        int c2 = cs.LA(2);
-        String str2 = String.valueOf((char) c2);
-
-        if (matches(str1, SURROGATE_PAIR1_PATTERN)
-                && matches(str2, SURROGATE_PAIR2_PATTERN)
-                && Character.isJavaIdentifierPart(Character.toCodePoint((char) c1, (char) c2))) {
-
-            return true;
+        if (c1 >= 0xD800 && c1 <= 0xDBFF) {
+            int c2 = cs.LA(2);
+            return c2 >= 0xDC00 && c2 <= 0xDFFF
+                    && Character.isJavaIdentifierPart(Character.toCodePoint((char) c1, (char) c2));
         }
 
-        return false;
+        return Character.isJavaIdentifierPart(c1);
+    }
+
+    /**
+     * {@code true} when the upcoming tokens are {@code name '=' ...}, i.e. a named
+     * annotation element-value pair rather than a single element value. Inside
+     * annotation parentheses newlines are already hidden, so {@code LT(2)} is the
+     * token after the name.
+     */
+    public static boolean isIdentifierAssign(TokenStream ts) {
+        int t1 = ts.LT(1).getType();
+        return t1 >= 0 && ELEMENT_VALUE_PAIR_NAME_TYPES.get(t1) && ASSIGN == ts.LT(2).getType();
     }
 
     /**

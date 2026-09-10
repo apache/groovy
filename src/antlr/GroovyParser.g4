@@ -28,8 +28,8 @@
  */
 
 /**
- * The Groovy grammar is based on the official grammar for Java:
- * https://github.com/antlr/grammars-v4/blob/master/java/Java.g4
+ * The Groovy grammar is based on the optimized Java grammar:
+ * https://github.com/antlr/grammars-v4/tree/master/java/java
  */
 parser grammar GroovyParser;
 
@@ -527,8 +527,10 @@ annotation
     ;
 
 elementValues
+    // Gated like the optimized Java grammar's IsNotIdentifierAssign: `@Foo(a = 1)`
+    // is named pairs only, so AdaptivePredict does not also explore assignment.
     :   elementValuePairs
-    |   elementValue
+    |   { !SemanticPredicates.isIdentifierAssign(_input) }? elementValue
     ;
 
 annotationName : qualifiedClassName ;
@@ -546,7 +548,6 @@ elementValuePairName
     |   keywords
     ;
 
-// TODO verify the potential performance issue because rule expression contains sub-rule assignments(https://github.com/antlr/grammars-v4/issues/215)
 elementValue
     :   elementValueArrayInitializer
     |   annotation

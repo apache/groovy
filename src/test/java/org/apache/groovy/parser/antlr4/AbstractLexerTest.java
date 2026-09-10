@@ -30,6 +30,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static org.apache.groovy.parser.antlr4.GroovyLexer.CapitalizedIdentifier;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.FloatingPointLiteral;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.GStringBegin;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.GStringEnd;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.GStringPathPart;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.Identifier;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.IntegerLiteral;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -397,6 +404,49 @@ final class AbstractLexerTest {
         assertEquals(Token.EOF, tokens.get(tokens.size() - 1).getType());
     }
 
+    @Test
+    void asciiIdentifierSplitIsPureDfa() {
+        assertEquals(CapitalizedIdentifier, firstDefaultChannel("Foo").getType());
+        assertEquals(CapitalizedIdentifier, firstDefaultChannel("A").getType());
+        assertEquals(Identifier, firstDefaultChannel("foo").getType());
+        assertEquals(Identifier, firstDefaultChannel("$foo").getType());
+        assertEquals(Identifier, firstDefaultChannel("_foo").getType());
+    }
+
+    @Test
+    void unicodeIdentifierSplitFollowsUppercase() {
+        assertEquals(CapitalizedIdentifier, firstDefaultChannel("Äbc").getType());
+        assertEquals(Identifier, firstDefaultChannel("λ").getType());
+    }
+
+    @Test
+    void flattenedNumberLiteralsStillMatch() {
+        assertEquals(IntegerLiteral, firstDefaultChannel("0").getType());
+        assertEquals(IntegerLiteral, firstDefaultChannel("123").getType());
+        assertEquals(IntegerLiteral, firstDefaultChannel("1_000").getType());
+        assertEquals(IntegerLiteral, firstDefaultChannel("0xFF").getType());
+        assertEquals(IntegerLiteral, firstDefaultChannel("0b101").getType());
+        assertEquals(IntegerLiteral, firstDefaultChannel("07").getType());
+        assertEquals(IntegerLiteral, firstDefaultChannel("1G").getType());
+        assertEquals(FloatingPointLiteral, firstDefaultChannel("1.5").getType());
+        assertEquals(FloatingPointLiteral, firstDefaultChannel(".5").getType());
+        assertEquals(FloatingPointLiteral, firstDefaultChannel("1e10").getType());
+        assertEquals(FloatingPointLiteral, firstDefaultChannel("0x1p1").getType());
+        assertEquals(FloatingPointLiteral, firstDefaultChannel("1.5G").getType());
+    }
+
+    @Test
+    void gstringPathStillUsesDotFragmentReplacement() {
+        List<Token> tokens = defaultChannel("\"$foo.bar\"");
+        List<Integer> types = new ArrayList<>();
+        for (Token t : tokens) {
+            types.add(t.getType());
+        }
+        assertTrue(types.contains(GStringBegin), types.toString());
+        assertTrue(types.contains(GStringPathPart), types.toString());
+        assertTrue(types.contains(GStringEnd), types.toString());
+    }
+
     private static GroovyLangLexer displayLexer() {
         return new GroovyLangLexer(CharStreams.fromString("x"));
     }
@@ -416,6 +466,20 @@ final class AbstractLexerTest {
             t = lexer.nextToken();
             tokens.add(t);
         } while (t.getType() != Token.EOF);
+        return tokens;
+    }
+
+    private static Token firstDefaultChannel(final String src) {
+        return defaultChannel(src).get(0);
+    }
+
+    private static List<Token> defaultChannel(final String src) {
+        List<Token> tokens = new ArrayList<>();
+        for (Token t : collect(src)) {
+            if (t.getType() != Token.EOF && t.getChannel() == Token.DEFAULT_CHANNEL) {
+                tokens.add(t);
+            }
+        }
         return tokens;
     }
 
