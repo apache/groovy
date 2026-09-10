@@ -183,6 +183,8 @@ distribution {
                             '.settings',       // used by Eclipse
                             '.classpath',      // used by Eclipse
                             '.gradle',         // used by Gradle
+                            '**/*.dryrun.*',   // gitignored output of `--write-verification-metadata --dry-run`
+                            '**/.jqwik-database', // gitignored jqwik test-run state
                             '**/*.class'       // a source release should never bundle bytecode
                                                // even from stale output dirs in a dirty checkout
                     if (project.projectDir.name == 'performance') {
@@ -225,6 +227,8 @@ distribution {
                             '.classpath',     // used by Eclipse
                             '.gradle',        // used by Gradle
                             '*.gpg',          // used by Gradle
+                            '**/*.dryrun.*',  // gitignored output of `--write-verification-metadata --dry-run`
+                            '**/.jqwik-database', // gitignored jqwik test-run state
                             '**/*.class'      // a source release should never bundle bytecode
                 }
             }
