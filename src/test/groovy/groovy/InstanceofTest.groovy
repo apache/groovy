@@ -26,6 +26,7 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import java.util.List
 import java.util.Map
 
+import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 final class InstanceofTest {
@@ -1111,5 +1112,60 @@ final class InstanceofTest {
         }
         assert f('ab') == 'AB'
         assert f(1) == 'early'
+    }
+
+    // GROOVY-12242 follow-up: a pattern variable bound in a later conjunct is
+    // read after the join of the enclosing `&&`; its slot must exist on every path
+    @Test
+    void testPatternVariableBoundInLaterConjunct() {
+        assertScript '''
+            def m(Object p) {
+                if (p instanceof String s && s.length() > 0 && s.trim() instanceof String t) {
+                    return t
+                }
+                return -1
+            }
+            assert m(' ab ') == 'ab'
+            assert m('') == -1
+            assert m(42) == -1
+        '''
+        assertScript '''
+            def m(Object p) {
+                if (!(p instanceof String s) || s.isEmpty() || !(s.trim() instanceof String t)) {
+                    return -1
+                }
+                return t
+            }
+            assert m(' ab ') == 'ab'
+            assert m(42) == -1
+        '''
+    }
+
+    // GROOVY-12242 follow-up: JLS §14.22 -- break and continue cannot complete
+    // normally either, so the other path's bindings survive the if (§6.3.2.2-200-C)
+    @Test
+    void testVariableScopeAfterAbruptBreakOrContinue() {
+        assertScript '''
+            def m(List items) {
+                def out = []
+                for (o in items) {
+                    if (!(o instanceof String s)) continue
+                    out << s.toUpperCase()
+                }
+                out
+            }
+            assert m(['a', 1, 'b']) == ['A', 'B']
+        '''
+        assertScript '''
+            def m(List items) {
+                def out = []
+                for (o in items) {
+                    if (o !instanceof String s) break
+                    out << s.toUpperCase()
+                }
+                out
+            }
+            assert m(['a', 'b', 1, 'c']) == ['A', 'B']
+        '''
     }
 }
