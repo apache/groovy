@@ -66,7 +66,7 @@ final class AstNodeToScriptAdapterTest {
         String result = compileToScript(script, CompilePhase.CONVERSION)
 
         assert result.contains('switch (2)')
-        assert result.contains('case 1:')
+        assert result.contains('case 1 ->')
         assert result.contains("yield 'a'")
         assert result.contains("yield 'b'")
         assert result.contains('default ->')
@@ -1421,5 +1421,33 @@ b $$v"""/$,
         // it uses delegate) keeps its generated closure class and is marked with that name
         assert result.contains('/* => Demo.$packed$closure$0() */')
         assert result.contains('/* => Demo$_declines_closure1 */')
+    }
+
+    @Test // GEP-19
+    void testPatternMatchingRendersAsWrittenUntilLowered() {
+        String script = '''
+            record Point(int x, int y) {}
+            def describe(o) {
+                if (o instanceof Point(var x, var y)) return x + y
+                if (o instanceof String s) return s
+                switch (o) {
+                    case Integer i when i > 0 -> 'positive'
+                    case [var a, var b]       -> 'pair'
+                    default                   -> 'other'
+                }
+            }
+        '''
+        String result = compileToScript(script, CompilePhase.CANONICALIZATION)
+
+        assert result.contains('o instanceof Point(var x, var y)')
+        assert result.contains('o instanceof java.lang.String s')
+        assert result.contains('case java.lang.Integer i when i > 0 ->')
+        assert result.contains('case [var a, var b] ->')
+        assert !result.contains('__$$')
+
+        // once lowered, the code the compiler compiles is shown
+        result = compileToScript(script, CompilePhase.INSTRUCTION_SELECTION)
+        assert result.contains('__$$pv')
+        assert result.contains('org.apache.groovy.runtime.RecordPatternSupport.componentsOrEmpty')
     }
 }

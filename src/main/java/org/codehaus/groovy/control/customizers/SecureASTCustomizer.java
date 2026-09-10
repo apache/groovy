@@ -60,6 +60,7 @@ import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.SpreadMapExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
@@ -1829,6 +1830,31 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             assertStatementAuthorized(statement);
             statement.getExpression().visit(this);
             statement.getCode().visit(this);
+        }
+
+        /**
+         * Validates a pattern match (GEP-19) and then visits what the script
+         * author wrote in it: the matched value of {@code instanceof}, the
+         * {@code when} guard, the literal elements of list and map patterns,
+         * and the variables the pattern declares, whose types are checked
+         * like those of any variable. The customizer runs before the compiler
+         * derives the code that implements the match, so that code is never
+         * what gets checked.
+         *
+         * @param expression the pattern expression to visit
+         * @since 7.0.0
+         */
+        @Override
+        public void visitPatternExpression(final PatternExpression expression) {
+            assertExpressionAuthorized(expression);
+            if (expression.getSource() != null) expression.getSource().visit(this);
+            if (expression.getGuard() != null) expression.getGuard().visit(this);
+            for (Expression element : expression.getPattern().expressions()) {
+                element.visit(this);
+            }
+            for (VariableExpression binding : expression.getBindings()) {
+                binding.visit(this);
+            }
         }
 
         /**

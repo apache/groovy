@@ -62,6 +62,7 @@ import org.codehaus.groovy.ast.expr.MethodPointerExpression
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression
 import org.codehaus.groovy.ast.expr.NamedArgumentListExpression
 import org.codehaus.groovy.ast.expr.NotExpression
+import org.codehaus.groovy.ast.expr.PatternExpression
 import org.codehaus.groovy.ast.expr.PostfixExpression
 import org.codehaus.groovy.ast.expr.PrefixExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
@@ -654,6 +655,16 @@ class TreeNodeBuildingVisitor extends CodeVisitorSupport {
     @Override
     void visitCaseStatement(CaseStatement node) {
         addNode(node, CaseStatement, { super.visitCaseStatement(it) })
+    }
+
+    /**
+     * Adds a pattern match node to the tree (GEP-19). Its children are what was
+     * written in the match until instruction selection, and the code the
+     * compiler derived from the pattern afterwards.
+     */
+    @Override
+    void visitPatternExpression(PatternExpression node) {
+        addNode(node, PatternExpression, { super.visitPatternExpression(it) })
     }
 
     /** Adds a break statement node to the tree. */

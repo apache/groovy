@@ -26,6 +26,9 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
+import org.apache.groovy.ast.pattern.MatchPattern.RecordPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.RestPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.TypePattern;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.DynamicVariable;
@@ -54,6 +57,7 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.SpreadMapExpression;
 import org.codehaus.groovy.ast.expr.SwitchExpression;
@@ -1036,6 +1040,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         } else if (exp instanceof SwitchExpression se) {
             visitSwitchExpression(se);
             ret = se;
+        } else if (exp instanceof PatternExpression pe) {
+            ret = transformPatternExpression(pe);
         } else if (exp instanceof ConstructorCallExpression) {
             ret = transformConstructorCallExpression((ConstructorCallExpression) exp);
         } else if (exp instanceof AnnotationConstantExpression) {
@@ -1502,6 +1508,24 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         newDeclExpr.copyNodeMetaData(de);
         fixDeclaringClass(newDeclExpr);
         return newDeclExpr;
+    }
+
+    /**
+     * Resolves the types a pattern (GEP-19) names, in place, and then the
+     * expressions written in the match: the matched value, the guard and the
+     * literal elements. The variables the pattern binds share the type nodes
+     * of their type patterns, so they are resolved with them.
+     */
+    protected Expression transformPatternExpression(final PatternExpression pe) {
+        pe.getPattern().forEach(pattern -> {
+            ClassNode type = pattern instanceof TypePattern typed ? typed.type()
+                    : pattern instanceof RecordPattern record ? record.type()
+                    : pattern instanceof RestPattern rest ? rest.type() : null;
+            if (type != null) {
+                resolveOrFail(type, type.getLineNumber() > 0 ? type : pe);
+            }
+        });
+        return pe.transformExpression(this);
     }
 
     // TODO: get normal resolving to set declaring class
