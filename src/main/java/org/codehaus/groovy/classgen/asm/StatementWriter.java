@@ -63,13 +63,15 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
+import static org.apache.groovy.ast.tools.SwitchPatternUtils.getSubjectVariable;
+import static org.apache.groovy.ast.tools.SwitchPatternUtils.isPatternArm;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ConditionValue;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constantBooleanValue;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isEmptyStatement;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.mayReachLoopCondition;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mayCompleteNormally;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.mayReachLoopCondition;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThroughToNextSwitchCase;
 import static org.objectweb.asm.Opcodes.ALOAD;
@@ -723,7 +725,15 @@ public class StatementWriter {
         CompileStack compileStack = controller.getCompileStack();
         Label breakLabel = compileStack.pushSwitch(statement.getStatementLabels());
 
-        int switchVariableIndex = compileStack.defineTemporaryVariable("switch", exprType, true);
+        Parameter subject = getSubjectVariable(statement);
+        int switchVariableIndex;
+        if (subject != null) { // GEP-19: pattern tests and bindings read the selector by name
+            controller.getOperandStack().box();
+            controller.getOperandStack().remove(1);
+            switchVariableIndex = compileStack.defineVariable(subject, exprType, true).getIndex();
+        } else {
+            switchVariableIndex = compileStack.defineTemporaryVariable("switch", exprType, true);
+        }
 
         List<CaseStatement> caseStatements = statement.getCaseStatements();
         int caseCount = caseStatements.size();
@@ -742,7 +752,7 @@ public class StatementWriter {
         if (maybeFallsThrough(statement) || statement.getStatementLabels() != null) {
             controller.getMethodVisitor().visitLabel(breakLabel);
         }
-        compileStack.removeVar(switchVariableIndex);
+        if (subject == null) compileStack.removeVar(switchVariableIndex);
         compileStack.pop();
     }
 
@@ -750,13 +760,25 @@ public class StatementWriter {
         controller.getAcg().onLineNumber(caseStatement, "visitCaseStatement");
         MethodVisitor mv = controller.getMethodVisitor();
 
-        controller.getBinaryExpressionHelper().writeIsCase(switchVariableIndex, switchType, caseStatement.getExpression());
+        boolean patternArm = isPatternArm(caseStatement);
+        if (patternArm) { // GEP-19: the label is a boolean test on the subject variable
+            caseStatement.getExpression().visit(controller.getAcg());
+            controller.getOperandStack().doGroovyCast(ClassHelper.boolean_TYPE);
+        } else {
+            controller.getBinaryExpressionHelper().writeIsCase(switchVariableIndex, switchType, caseStatement.getExpression());
+        }
 
         Label l0 = controller.getOperandStack().jump(IFEQ);
 
         mv.visitLabel(thisLabel);
 
+        if (patternArm) { // `break <arm>` in the matching steps continues with the next case test
+            controller.getCompileStack().pushBreakable(caseStatement.getStatementLabels(), l0);
+        }
         caseStatement.getCode().visit(controller.getAcg());
+        if (patternArm) {
+            controller.getCompileStack().pop();
+        }
 
         // now if we don't finish with a break we need to jump past the next comparison
         if (nextLabel != null && maybeFallsThroughToNextSwitchCase(caseStatement.getCode(), switchStatement)) {
