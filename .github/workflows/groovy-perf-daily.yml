@@ -58,9 +58,9 @@ jobs:
         with:
           cache-disabled: true
 
-      # Compiles a fixed set of source files using current + latest 3.x/4.x/5.x.
+      # Compiles a fixed set of source files using current + latest 3.x/4.x/5.x/6.x.
       # Versions tracked are configured in subprojects/performance/build.gradle
-      # via `versions 'current', versions.latest3, versions.latest4, versions.latest5`.
+      # via `versions 'current', versions.latest3, versions.latest4, versions.latest5, versions.latest6`.
       - name: Compiler performance tests
         run: ./gradlew :perf:performanceTests
         timeout-minutes: 120

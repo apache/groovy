@@ -28,7 +28,7 @@ cyclonedxDirectBom {
 }
 
 performanceTests {
-    versions 'current', versions.latest3, versions.latest4, versions.latest5
+    versions 'current', versions.latest3, versions.latest4, versions.latest5, versions.latest6
 
     testFiles project.files("src/files") +
             project.files('src/jmh/groovy/org/apache/groovy/bench/Ackermann.groovy') +

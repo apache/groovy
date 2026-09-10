@@ -43,7 +43,7 @@
 <h1>Groovy compiler performance (normalised against current)</h1>
 <p class="intro">
   Each daily run compiles a fixed set of Groovy source files using <code>current</code>
-  (master) and the latest releases of Groovy 3.x, 4.x and 5.x. The <code>current</code>
+  (master) and the latest releases of Groovy 3.x, 4.x, 5.x and 6.x. The <code>current</code>
   measurement from the same run is divided by each series, so <code>current = 1.0</code> by
   construction. Values above 1 mean that version compiles faster than current; values below
   1 mean it compiles slower. The trends show how current drifts relative to the released lines.
@@ -70,6 +70,7 @@
 (function () {
   const SERIES = [
     { name: 'compile@current',  label: 'current (master)', color: '#1F77B4' },
+    { name: 'compile@groovy-6', label: 'Groovy 6.x',       color: '#9467BD' },
     { name: 'compile@groovy-5', label: 'Groovy 5.x',       color: '#2CA02C' },
     { name: 'compile@groovy-4', label: 'Groovy 4.x',       color: '#FF7F0E' },
     { name: 'compile@groovy-3', label: 'Groovy 3.x',       color: '#D62728' },
