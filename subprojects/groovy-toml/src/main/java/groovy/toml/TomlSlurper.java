@@ -22,6 +22,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import groovy.json.JsonDateHandling;
+import groovy.json.JsonParserType;
 import groovy.json.JsonSlurper;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.apache.groovy.toml.util.TomlConverter;
@@ -44,12 +46,52 @@ import java.nio.file.Path;
 @Incubating
 public class TomlSlurper {
     private final JsonSlurper jsonSlurper;
+    private JsonDateHandling dateHandling = JsonDateHandling.STRING;
 
     /**
      * Creates a TOML parser that produces standard Groovy data structures.
      */
     public TomlSlurper() {
         this.jsonSlurper = new JsonSlurper();
+    }
+
+    /**
+     * Returns how a date-like string is handled when parsing.
+     *
+     * @return the current date handling, {@link JsonDateHandling#STRING} by default
+     * @see #setDateHandling(JsonDateHandling)
+     * @since 6.0.0
+     */
+    public JsonDateHandling getDateHandling() {
+        return dateHandling;
+    }
+
+    /**
+     * Chooses what a string in full ISO-8601 or JSON-date form becomes, matching the
+     * date handling {@link JsonSlurper} offers. The default is {@link JsonDateHandling#STRING}:
+     * a date-like string is left as a {@code String}, which is what this slurper has always
+     * produced. A date carrying no time, such as {@code "2026-09-04"}, is left as a
+     * {@code String} whatever is chosen here.
+     * <p>
+     * Choosing anything other than {@link JsonDateHandling#STRING} switches the underlying
+     * parser to {@link JsonParserType#INDEX_OVERLAY} so the conversion takes effect; as a
+     * consequence, the iteration order of a map with more than a handful of entries is no
+     * longer the document order. Pass {@code null} or {@link JsonDateHandling#STRING} to
+     * restore the default parser and string handling.
+     *
+     * @param dateHandling what a date-like string should become
+     * @return this slurper, for chaining
+     * @since 6.0.0
+     */
+    public TomlSlurper setDateHandling(JsonDateHandling dateHandling) {
+        this.dateHandling = dateHandling == null ? JsonDateHandling.STRING : dateHandling;
+        if (this.dateHandling == JsonDateHandling.STRING) {
+            jsonSlurper.setType(JsonParserType.CHAR_BUFFER);
+        } else {
+            jsonSlurper.setType(JsonParserType.INDEX_OVERLAY);
+            jsonSlurper.setDateHandling(this.dateHandling);
+        }
+        return this;
     }
 
     /**
