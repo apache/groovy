@@ -214,6 +214,18 @@ public abstract class AbstractLexer extends Lexer implements SyntaxErrorReportab
     }
 
     /**
+     * Invalid octal ({@code 08}, {@code 09}, {@code 08L}) reports at the
+     * token start. Using the start index rather than a running digit count keeps
+     * the caret correct for a later invalid octal in the same file, and for a
+     * suffix after the digits.
+     *
+     * @param errorIgnored when {@code true}, keep tokenising (IDE highlighting)
+     */
+    void requireInvalidOctal(final boolean errorIgnored) {
+        requireAtTokenStart(errorIgnored, "Invalid octal number");
+    }
+
+    /**
      * {@link SyntaxErrorReportable#require} positions relative to the current
      * lexer cursor. After scanning to EOF that cursor is past the comment, so
      * the offset is token-start minus current (line and column).

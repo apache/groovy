@@ -253,6 +253,31 @@ options {
         return Character.isJavaIdentifierPart(codePoint) && !Character.isIdentifierIgnorable(codePoint);
     }
 
+    /**
+     * Code point just consumed. After a UTF-16 surrogate pair, {@code LA(-1)}
+     * is the low surrogate and is never uppercase — {@code Character.isUpperCase}
+     * must see the pair (GROOVY-12398).
+     */
+    private int lastConsumedCodePoint() {
+        int c1 = _input.LA(-1);
+        int c2 = _input.LA(-2);
+        if (c1 >= Character.MIN_LOW_SURROGATE && c1 <= Character.MAX_LOW_SURROGATE
+                && c2 >= Character.MIN_HIGH_SURROGATE && c2 <= Character.MAX_HIGH_SURROGATE) {
+            return Character.toCodePoint((char) c2, (char) c1);
+        }
+        return c1;
+    }
+
+    private boolean isSupplementaryCapitalizedIdentifierStart() {
+        int cp = lastConsumedCodePoint();
+        return Character.isJavaIdentifierStart(cp) && Character.isUpperCase(cp);
+    }
+
+    private boolean isSupplementaryUncapitalizedIdentifierStart() {
+        int cp = lastConsumedCodePoint();
+        return Character.isJavaIdentifierStart(cp) && !Character.isUpperCase(cp);
+    }
+
     public boolean isErrorIgnored() {
         return errorIgnored;
     }
@@ -521,7 +546,7 @@ IntegerLiteral
         ) (Underscore { require(errorIgnored, "Number ending with underscores is invalid", -1, false); })?
 
     // !!! Error Alternative !!!
-    |   '0' [0-9]+ { require(errorIgnored, "Invalid octal number", -getText().length(), false); } IntegerTypeSuffix?
+    |   '0' [0-9]+ { requireInvalidOctal(errorIgnored); } IntegerTypeSuffix?
     ;
 
 fragment
@@ -854,15 +879,18 @@ ELVIS_ASSIGN    : '?=';
 
 
 // §3.8 Identifiers (must appear after all keywords in the grammar)
-// ASCII is a pure-DFA split ([A-Z] vs [a-z$_]); Unicode still needs predicates.
+// ASCII is a pure-DFA split ([A-Z] vs [a-z$_]) — no predicate on that hot path.
+// BMP non-ASCII still uses LA(-1). Supplementary-plane letters must use the
+// decoded code point: LA(-1) after a surrogate pair is the low surrogate,
+// which is never uppercase, so the old isUpperCase(LA(-1)) test silently
+// classified every supplementary identifier as Identifier (GROOVY-12398).
 CapitalizedIdentifier
     :   [A-Z] JavaLetterOrDigit*
     |   ~[\u0000-\u007F\uD800-\uDBFF]
         { isJavaIdentifierStartAndNotIdentifierIgnorable(_input.LA(-1)) && Character.isUpperCase(_input.LA(-1)) }?
         JavaLetterOrDigit*
     |   [\uD800-\uDBFF] [\uDC00-\uDFFF]
-        { Character.isJavaIdentifierStart(Character.toCodePoint((char) _input.LA(-2), (char) _input.LA(-1)))
-          && Character.isUpperCase(Character.toCodePoint((char) _input.LA(-2), (char) _input.LA(-1))) }?
+        { isSupplementaryCapitalizedIdentifierStart() }?
         JavaLetterOrDigit*
     ;
 
@@ -872,8 +900,7 @@ Identifier
         { isJavaIdentifierStartAndNotIdentifierIgnorable(_input.LA(-1)) && !Character.isUpperCase(_input.LA(-1)) }?
         JavaLetterOrDigit*
     |   [\uD800-\uDBFF] [\uDC00-\uDFFF]
-        { Character.isJavaIdentifierStart(Character.toCodePoint((char) _input.LA(-2), (char) _input.LA(-1)))
-          && !Character.isUpperCase(Character.toCodePoint((char) _input.LA(-2), (char) _input.LA(-1))) }?
+        { isSupplementaryUncapitalizedIdentifierStart() }?
         JavaLetterOrDigit*
     ;
 

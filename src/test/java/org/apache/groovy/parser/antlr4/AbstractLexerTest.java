@@ -417,6 +417,54 @@ final class AbstractLexerTest {
     void unicodeIdentifierSplitFollowsUppercase() {
         assertEquals(CapitalizedIdentifier, firstDefaultChannel("Äbc").getType());
         assertEquals(Identifier, firstDefaultChannel("λ").getType());
+        // title case is not uppercase — still Identifier
+        assertEquals(Identifier, firstDefaultChannel("\u01C5").getType());
+    }
+
+    /**
+     * GROOVY-12398: after a surrogate pair, {@code LA(-1)} is the low
+     * surrogate (never uppercase). Classification must use the code point.
+     * U+10400 DESERET CAPITAL LETTER LONG I / U+10428 DESERET SMALL LETTER LONG I.
+     */
+    @Test
+    void supplementaryPlaneIdentifierSplitUsesCodePoint() {
+        assertEquals(CapitalizedIdentifier, firstDefaultChannel("\uD801\uDC00").getType());
+        assertEquals(Identifier, firstDefaultChannel("\uD801\uDC28").getType());
+        assertEquals(CapitalizedIdentifier, firstDefaultChannel("\uD801\uDC00Name").getType());
+        assertEquals(Identifier, firstDefaultChannel("\uD801\uDC28name").getType());
+    }
+
+    @Test
+    void invalidOctalReportsAtTokenStart() {
+        GroovySyntaxError first = assertThrows(GroovySyntaxError.class,
+                () -> drain(new GroovyLangLexer(CharStreams.fromString("08"))));
+        assertEquals(1, first.getLine());
+        assertEquals(1, first.getColumn());
+
+        GroovySyntaxError withSuffix = assertThrows(GroovySyntaxError.class,
+                () -> drain(new GroovyLangLexer(CharStreams.fromString("08L"))));
+        assertEquals(1, withSuffix.getColumn());
+
+        GroovySyntaxError afterPrefix = assertThrows(GroovySyntaxError.class,
+                () -> drain(new GroovyLangLexer(CharStreams.fromString("x=08"))));
+        assertEquals(3, afterPrefix.getColumn());
+
+        // first of two invalid octals still points at column 1, not a drifted count
+        GroovySyntaxError two = assertThrows(GroovySyntaxError.class,
+                () -> drain(new GroovyLangLexer(CharStreams.fromString("08 09"))));
+        assertEquals(1, two.getColumn());
+    }
+
+    @Test
+    void errorIgnoredTokenizesSuccessiveInvalidOctals() {
+        GroovyLangLexer lexer = new GroovyLangLexer(CharStreams.fromString("08 09 08L"));
+        lexer.setErrorIgnored(true);
+        List<Token> tokens = defaultChannel(lexer);
+        assertEquals(3, tokens.size(), texts(tokens).toString());
+        assertEquals(IntegerLiteral, tokens.get(0).getType());
+        assertEquals(IntegerLiteral, tokens.get(1).getType());
+        assertEquals(IntegerLiteral, tokens.get(2).getType());
+        assertEquals("08L", tokens.get(2).getText());
     }
 
     @Test
@@ -474,8 +522,12 @@ final class AbstractLexerTest {
     }
 
     private static List<Token> defaultChannel(final String src) {
+        return defaultChannel(new GroovyLangLexer(CharStreams.fromString(src)));
+    }
+
+    private static List<Token> defaultChannel(final GroovyLangLexer lexer) {
         List<Token> tokens = new ArrayList<>();
-        for (Token t : collect(src)) {
+        for (Token t : collect(lexer)) {
             if (t.getType() != Token.EOF && t.getChannel() == Token.DEFAULT_CHANNEL) {
                 tokens.add(t);
             }

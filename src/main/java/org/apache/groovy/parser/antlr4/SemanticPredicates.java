@@ -45,7 +45,15 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.WHILE;
 import static org.apache.groovy.parser.antlr4.GroovyParser.YIELD;
 
 /**
- * Some semantic predicates for altering the behaviour of the lexer and parser
+ * Semantic predicates for the lexer and parser.
+ * <p>
+ * Lexer helpers on this class run on the tokenisation hot path (GString
+ * {@code $}, slashy strings, newline-as-separator). They use direct character
+ * tests, not regular expressions. Parser helpers such as
+ * {@link #isIdentifierAssign(TokenStream)} are O(1) bitset lookups so
+ * {@code AdaptivePredict} can skip exploring assignment as an annotation
+ * element value (GROOVY-12398).
+ * </p>
  */
 public class SemanticPredicates {
     private static final int PATH_EXPRESSION_ARGUMENTS = 2;
@@ -54,6 +62,8 @@ public class SemanticPredicates {
     /**
      * Token types accepted by {@code elementValuePairName} ({@code identifier | keywords}).
      * Used to distinguish {@code @Foo(a = 1)} (named pairs) from a single element value.
+     * Must stay in sync with those two parser rules; {@code MODULE} is in
+     * {@code identifier} but not in {@code keywords}.
      */
     private static final BitSet ELEMENT_VALUE_PAIR_NAME_TYPES = new BitSet();
     static {
