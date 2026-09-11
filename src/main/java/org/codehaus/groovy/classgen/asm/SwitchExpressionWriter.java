@@ -227,12 +227,22 @@ public class SwitchExpressionWriter {
     }
 
     /**
+     * Whether an unmatched selector completes the expression with {@code null}
+     * rather than throwing: a switch in implicit-return position (GROOVY-12399).
+     *
+     * @since 6.0.0
+     */
+    protected static boolean unmatchedYieldsNull(final SwitchExpression expression) {
+        return Boolean.TRUE.equals(expression.getNodeMetaData(UNMATCHED_YIELDS_NULL));
+    }
+
+    /**
      * Completes the expression for an unmatched selector: {@code null} (cast
      * to the result type) for a switch in implicit-return position, otherwise
      * an {@code IllegalStateException} (GROOVY-12399).
      */
     private void writeUnmatchedSelector(final SwitchExpression expression, final int selectorIndex, final ClassNode selectorType) {
-        if (Boolean.TRUE.equals(expression.getNodeMetaData(UNMATCHED_YIELDS_NULL))) {
+        if (unmatchedYieldsNull(expression)) {
             CompileStack.SwitchExpressionContext context = controller.getCompileStack().requireSwitchExpressionContext();
             OperandStack operandStack = controller.getOperandStack();
             controller.getMethodVisitor().visitInsn(ACONST_NULL);

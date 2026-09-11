@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen
 
 import groovy.transform.CompileStatic
+import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.junit.jupiter.api.Test
@@ -276,5 +277,114 @@ final class Groovy12399 {
             assert f(1) == null
             assert f(42) == null
         '''
+    }
+
+    @Test
+    void statementSwitchNestedInColonArmDoesNothingWhenUnmatched() {
+        for (arm in ["log << 'two'", "{ log << 'two' }"]) {
+            assertBoth """
+                def f(int x, int y) {
+                    def log = []
+                    def r = switch (x) {
+                        case 1:
+                            switch (y) { case 2 -> $arm }
+                            yield 'one'
+                        default:
+                            yield 'other'
+                    }
+                    [r, log]
+                }
+                assert f(1, 2) == ['one', ['two']]
+                assert f(1, 3) == ['one', []]
+            """
+        }
+    }
+
+    @Test
+    void implicitReturnCompleteEnumYieldsNullForNullSelector() {
+        assertBoth '''
+            enum Flag { ON, OFF }
+            String m(Flag f) {
+                switch (f) {
+                    case Flag.ON  -> 'on'
+                    case Flag.OFF -> 'off'
+                }
+            }
+            assert m(Flag.ON) == 'on'
+            assert m(null) == null
+        '''
+    }
+
+    @Test
+    void implicitReturnCompleteEnumYieldsNullForConstantAddedLater() {
+        File v1 = File.createTempDir()
+        File v2 = File.createTempDir()
+        try {
+            compileTo(v1, 'enum Flag { ON, OFF }', '''
+                @groovy.transform.CompileStatic
+                class User {
+                    static String lenient(Flag f) {
+                        switch (f) {
+                            case Flag.ON  -> 'on'
+                            case Flag.OFF -> 'off'
+                        }
+                    }
+                    static String strict(Flag f) {
+                        return switch (f) {
+                            case Flag.ON  -> 'on'
+                            case Flag.OFF -> 'off'
+                        }
+                    }
+                }
+            ''')
+            compileTo(v2, 'enum Flag { ON, OFF, MAYBE }')
+            def loader = new URLClassLoader([v2, v1]*.toURI()*.toURL() as URL[], getClass().classLoader)
+            def user = loader.loadClass('User')
+            def maybe = Enum.valueOf(loader.loadClass('Flag'), 'MAYBE')
+            assert user.lenient(maybe) == null
+            shouldFail(IncompatibleClassChangeError) { user.strict(maybe) }
+        } finally {
+            v1.deleteDir()
+            v2.deleteDir()
+        }
+    }
+
+    @Test
+    void voidMethodAndConstructorEndWithAStatement() {
+        assertScript '''
+            import groovy.transform.ASTTest
+            import org.codehaus.groovy.ast.expr.SwitchExpression
+            import org.codehaus.groovy.ast.stmt.ExpressionStatement
+            import org.codehaus.groovy.ast.stmt.SwitchStatement
+            import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
+
+            class C {
+                @ASTTest(phase=SEMANTIC_ANALYSIS, value={
+                    assert node.code.statements[-1] instanceof SwitchStatement
+                })
+                C(int i) { switch (i) { case 1 -> println 'one' } }
+
+                @ASTTest(phase=SEMANTIC_ANALYSIS, value={
+                    assert node.code.statements[-1] instanceof SwitchStatement
+                })
+                void v(int i) { switch (i) { case 1 -> println 'one' } }
+
+                @ASTTest(phase=SEMANTIC_ANALYSIS, value={
+                    def last = node.code.statements[-1]
+                    assert last instanceof ExpressionStatement && last.expression instanceof SwitchExpression
+                })
+                def value(int i) { switch (i) { case 1 -> 'one' } }
+            }
+            def c = new C(2)
+            c.v(2)
+            assert c.value(1) == 'one'
+            assert c.value(2) == null
+        '''
+    }
+
+    private static void compileTo(final File dir, final String... sources) {
+        def unit = new CompilationUnit(new CompilerConfiguration(targetDirectory: dir))
+        sources.eachWithIndex { String source, int i -> unit.addSource("Source${i}.groovy", source) }
+        unit.compile()
     }
 }
