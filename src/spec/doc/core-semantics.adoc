@@ -216,6 +216,16 @@ selector throws `IllegalStateException`. Under `@TypeChecked` /
 `@CompileStatic` a non-exhaustive switch expression (no `default`, and not a
 complete enum) is a compile-time error.
 
+As in Java, the arrow only decides fall-through; whether a `switch` is a
+statement or an expression is decided by its position
+(link:https://issues.apache.org/jira/browse/GROOVY-12399[GROOVY-12399]).
+A `switch` whose value is not used is a statement, whatever its arm shape,
+and simply does nothing when unmatched. A `switch` that is the last statement
+of a method, closure or script body is that body's implicit return value: it
+keeps its value, but an unmatched selector yields `null` rather than throwing
+and no exhaustiveness is required. Use `return switch (...) {...}` there for
+the strict expression rules.
+
 [source,groovy]
 ----
 include::../test/SemanticsTest.groovy[tags=switch_expression,indent=0]

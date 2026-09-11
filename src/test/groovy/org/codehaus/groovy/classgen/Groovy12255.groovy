@@ -537,7 +537,7 @@ final class Groovy12255 {
             enum Flag { ON, OFF }
 
             String m(Flag f) {
-                switch (f) {
+                return switch (f) {
                     case Flag.ON  -> 'on'
                     case Flag.OFF -> 'off'
                 }
@@ -1045,11 +1045,12 @@ final class Groovy12255 {
 
     @Test
     void typeCheckedUnmatchedIsError() {
-        // exhaustiveness is a static type-checker error
+        // exhaustiveness is a static type-checker error (in expression position;
+        // implicit-return position yields null when unmatched, GROOVY-12399)
         def err = shouldFail(MultipleCompilationErrorsException, '''
             @groovy.transform.TypeChecked
             def meth(int a) {
-                switch (a) {
+                return switch (a) {
                     case 1 -> 'one'
                 }
             }
