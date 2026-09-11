@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789023894960,
+  "lastUpdate": 1789110621040,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -6000,6 +6000,63 @@ window.BENCHMARK_DATA = {
             "range": "±16.57",
             "unit": "ms",
             "extra": "5.1.2"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "3eca1c94b999d74d955407862a53d21bfbd9f7dd",
+          "message": "GROOVY-12397: VerifyError for a pattern variable bound in a later && / || operand; break and continue end an if arm\n\nA pattern variable declared in the right operand of && or || had its slot\nallocated (and null-initialised) at its instanceof site only. That operand\nis skipped when the left one decides the result, so at the join a later read\nof the slot (a following conjunct, the then branch) failed verification:\n\n    if (p instanceof String s && s.length() > 0 && s.trim() instanceof String t)\n\nthrew VerifyError. BinaryExpressionHelper now pre-declares the pattern\nvariables of the right operand before the left operand runs, and the\ninstanceof site reuses the pre-declared slot (CompileStack keeps the set).\n\nVariableScopeVisitor and the if-statement writer also treated an arm ending\nin break or continue as completing normally, so that\n\n    if (!(o instanceof String s)) continue\n\ndid not introduce `s` after the if as JLS §6.3.2.2-200-C / §14.22 require.\nBoth now use mayCompleteNormally.",
+          "timestamp": "2026-09-10T09:50:21Z",
+          "url": "https://github.com/apache/groovy/commit/3eca1c94b999d74d955407862a53d21bfbd9f7dd"
+        },
+        "date": 1789110617104,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 537.2566666666667,
+            "range": "±17.94",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 649.9066666666666,
+            "range": "±208.25",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 566.7633333333333,
+            "range": "±141.26",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 456.65999999999997,
+            "range": "±18.41",
+            "unit": "ms",
+            "extra": "5.1.2"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 492.19333333333327,
+            "range": "±23.55",
+            "unit": "ms",
+            "extra": "6.0.0-RC-1"
           }
         ]
       }
