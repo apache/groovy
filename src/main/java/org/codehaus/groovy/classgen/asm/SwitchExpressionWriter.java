@@ -237,19 +237,17 @@ public class SwitchExpressionWriter {
     }
 
     /**
-     * Completes the expression for an unmatched selector: {@code null} (cast
-     * to the result type) for a switch in implicit-return position, otherwise
-     * an {@code IllegalStateException} (GROOVY-12399).
+     * Completes the expression for an unmatched selector: {@code null} for a
+     * switch in implicit-return position, otherwise an
+     * {@code IllegalStateException} (GROOVY-12399).
      */
     private void writeUnmatchedSelector(final SwitchExpression expression, final int selectorIndex, final ClassNode selectorType) {
         if (unmatchedYieldsNull(expression)) {
-            CompileStack.SwitchExpressionContext context = controller.getCompileStack().requireSwitchExpressionContext();
-            OperandStack operandStack = controller.getOperandStack();
-            controller.getMethodVisitor().visitInsn(ACONST_NULL);
-            operandStack.push(ClassHelper.OBJECT_TYPE);
-            operandStack.doGroovyCast(context.resultType);
-            operandStack.remove(1);
-            controller.getMethodVisitor().visitJumpInsn(GOTO, context.endLabel);
+            // the result type is always a reference type, so a plain null needs no
+            // cast; like `yield`, leave the operand stack model empty at the jump
+            MethodVisitor mv = controller.getMethodVisitor();
+            mv.visitInsn(ACONST_NULL);
+            mv.visitJumpInsn(GOTO, controller.getCompileStack().requireSwitchExpressionContext().endLabel);
         } else {
             throwUnmatchedSelector(selectorIndex, selectorType);
         }
