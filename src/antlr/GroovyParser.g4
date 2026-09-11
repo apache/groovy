@@ -544,6 +544,9 @@ elementValuePair
     ;
 
 elementValuePairName
+    // FIRST of this rule is computed from the ATN in SemanticPredicates
+    // (isIdentifierAssign). A new token alternative on identifier or keywords
+    // is enough; do not maintain a parallel Java token list.
     :   identifier
     |   keywords
     ;
@@ -1275,8 +1278,6 @@ className
     :   CapitalizedIdentifier
     ;
 
-// Tokens added here or to keywords must also be listed in
-// SemanticPredicates.ELEMENT_VALUE_PAIR_NAME_TYPES (annotation name = value).
 identifier
     :   Identifier
     |   CapitalizedIdentifier
@@ -1301,7 +1302,6 @@ builtInType
     ;
 
 keywords
-    // Keep ELEMENT_VALUE_PAIR_NAME_TYPES in sync when adding alternatives.
     :   ABSTRACT
     |   AS
     |   ASSERT

@@ -22,6 +22,8 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.Token
 import org.antlr.v4.runtime.TokenStream
+import org.antlr.v4.runtime.atn.LL1Analyzer
+import org.antlr.v4.runtime.atn.PredictionContext
 import org.junit.jupiter.api.Test
 
 final class SemanticPredicatesTest {
@@ -96,6 +98,22 @@ final class SemanticPredicatesTest {
             assert SemanticPredicates.isIdentifierAssign(tokens("${name} = 1")):
                     "expected ${name} = 1 to be a named annotation pair"
         }
+    }
+
+    @Test
+    void 'identifier assign FIRST is taken from the elementValuePairName ATN'() {
+        def atn = GroovyParser._ATN
+        def look = new LL1Analyzer(atn).LOOK(
+                atn.ruleToStartState[GroovyParser.RULE_elementValuePairName],
+                PredictionContext.EMPTY_LOCAL)
+        assert look.contains(GroovyParser.MODULE): 'MODULE is in identifier, not keywords'
+        assert look.contains(GroovyParser.Identifier)
+        assert look.contains(GroovyParser.CapitalizedIdentifier)
+        assert look.contains(GroovyParser.CLASS)
+        assert look.contains(GroovyParser.BuiltInPrimitiveType)
+        assert !look.contains(GroovyParser.ASSIGN)
+        assert !look.contains(GroovyParser.IntegerLiteral)
+        assert !look.contains(Token.EOF)
     }
 
     @Test

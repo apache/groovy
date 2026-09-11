@@ -21,6 +21,10 @@ package org.apache.groovy.parser.antlr4;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStream;
+import org.antlr.v4.runtime.atn.ATN;
+import org.antlr.v4.runtime.atn.LL1Analyzer;
+import org.antlr.v4.runtime.atn.PredictionContext;
+import org.antlr.v4.runtime.misc.IntervalSet;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ModifierNode;
 
@@ -60,32 +64,33 @@ public class SemanticPredicates {
     private static final int PATH_EXPRESSION_CLOSURE_OR_LAMBDA = 3;
 
     /**
-     * Token types accepted by {@code elementValuePairName} ({@code identifier | keywords}).
-     * Used to distinguish {@code @Foo(a = 1)} (named pairs) from a single element value.
-     * Must stay in sync with those two parser rules; {@code MODULE} is in
-     * {@code identifier} but not in {@code keywords}.
+     * FIRST({@code elementValuePairName}), taken from the generated ATN so a
+     * new token alternative on {@code identifier} or {@code keywords} is picked
+     * up without a parallel Java list. Used to distinguish {@code @Foo(a = 1)}
+     * (named pairs) from a single element value.
      */
-    private static final BitSet ELEMENT_VALUE_PAIR_NAME_TYPES = new BitSet();
-    static {
-        int[] types = {
-                Identifier, CapitalizedIdentifier,
-                GroovyParser.ABSTRACT, GroovyParser.AS, GroovyParser.ASSERT, GroovyParser.ASYNC, GroovyParser.AWAIT,
-                GroovyParser.BREAK, GroovyParser.CASE, GroovyParser.CATCH, GroovyParser.CLASS, GroovyParser.CONST,
-                GroovyParser.CONTINUE, GroovyParser.DEF, GroovyParser.DEFAULT, GroovyParser.DEFER, GroovyParser.DO,
-                GroovyParser.ELSE, GroovyParser.ENUM, GroovyParser.EXTENDS, GroovyParser.FINAL, GroovyParser.FINALLY,
-                GroovyParser.FOR, GroovyParser.GOTO, GroovyParser.IF, GroovyParser.IMPLEMENTS, GroovyParser.IMPORT,
-                GroovyParser.IN, GroovyParser.INSTANCEOF, GroovyParser.INTERFACE, GroovyParser.NATIVE, GroovyParser.NEW,
-                GroovyParser.NON_SEALED, GroovyParser.PACKAGE, GroovyParser.PERMITS, GroovyParser.RECORD,
-                GroovyParser.RETURN, GroovyParser.SEALED, GroovyParser.STATIC, GroovyParser.STRICTFP, GroovyParser.SUPER,
-                GroovyParser.SWITCH, GroovyParser.SYNCHRONIZED, GroovyParser.THIS, GroovyParser.THROW, GroovyParser.THROWS,
-                GroovyParser.TRANSIENT, GroovyParser.TRAIT, GroovyParser.THREADSAFE, GroovyParser.TRY, GroovyParser.VAL,
-                GroovyParser.VAR, GroovyParser.VOLATILE, GroovyParser.WHILE, GroovyParser.YIELD,
-                GroovyParser.NullLiteral, GroovyParser.BooleanLiteral, BuiltInPrimitiveType, GroovyParser.VOID,
-                GroovyParser.PUBLIC, GroovyParser.PROTECTED, GroovyParser.PRIVATE, GroovyParser.MODULE
-        };
-        for (int t : types) {
-            ELEMENT_VALUE_PAIR_NAME_TYPES.set(t);
+    private static final BitSet ELEMENT_VALUE_PAIR_NAME_TYPES =
+            firstTokens(GroovyParser.RULE_elementValuePairName);
+
+    /**
+     * Tokens that can appear first in {@code ruleIndex}. {@code EPSILON}/{@code EOF}
+     * are dropped; an empty result means the ATN shape is not what the gate
+     * assumes and the grammar change needs a look.
+     */
+    private static BitSet firstTokens(final int ruleIndex) {
+        ATN atn = GroovyParser._ATN;
+        IntervalSet look = new LL1Analyzer(atn).LOOK(
+                atn.ruleToStartState[ruleIndex], PredictionContext.EMPTY_LOCAL);
+        BitSet bits = new BitSet();
+        for (int t : look.toList()) {
+            if (t >= Token.MIN_USER_TOKEN_TYPE) {
+                bits.set(t);
+            }
         }
+        if (bits.isEmpty()) {
+            throw new GroovyBugError("FIRST set of parser rule " + ruleIndex + " is empty");
+        }
+        return bits;
     }
 
     /**
