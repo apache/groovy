@@ -265,7 +265,10 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         CompileStack compileStack = controller.getCompileStack();
 
         boolean hasDefault = expression.getDefaultStatement() != null && !expression.getDefaultStatement().isEmpty();
-        boolean complete = !hasDefault && group.keys.size() == enumConstantCount(enumType);
+        // in implicit-return position an unmatched selector, null or a constant
+        // added after compilation, yields null like any other (GROOVY-12399)
+        boolean complete = !hasDefault && !unmatchedYieldsNull(expression)
+                && group.keys.size() == enumConstantCount(enumType);
 
         // a null selector matches no constant label; with no default it must
         // throw ISE, never the complete-enum ICCE

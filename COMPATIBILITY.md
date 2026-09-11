@@ -361,10 +361,11 @@ only decides fall-through; the position decides whether a value is produced
 (GROOVY-12399). A `switch` whose value is not used is a `SwitchStatement`,
 whatever its arm shape, and does nothing when unmatched. In expression
 position it is a `SwitchExpression` (every path must `yield` or `throw`).
-A switch in implicit-return position (the last statement of a method,
-closure or script body) keeps its value, but an unmatched selector yields
-`null` rather than throwing and no exhaustiveness is required, as in 4.x /
-5.x; write `return switch (...) {...}` for the strict expression rules.
+A switch in implicit-return position (the last statement of a closure, a
+script or a method that returns a value) keeps its value, but an unmatched
+selector yields `null` rather than throwing and no exhaustiveness is
+required, as in 4.x / 5.x; write `return switch (...) {...}` for the strict
+expression rules.
 
 **Who is affected (runtime behaviour).** A dynamic switch expression whose
 selector matches no arm now throws `IllegalStateException`. Previously the
