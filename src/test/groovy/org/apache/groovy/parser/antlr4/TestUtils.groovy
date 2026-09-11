@@ -24,6 +24,7 @@ package org.apache.groovy.parser.antlr4
     import groovy.util.logging.Log
     import org.apache.groovy.parser.antlr4.util.ASTComparatorCategory
     import org.apache.groovy.parser.antlr4.util.AstDumper
+    import org.apache.groovy.parser.antlr4.util.AstXmlDumper
     import org.codehaus.groovy.ast.ConstructorNode
     import org.codehaus.groovy.ast.FieldNode
     import org.codehaus.groovy.ast.GenericsType
@@ -43,6 +44,7 @@ package org.apache.groovy.parser.antlr4
     import org.codehaus.groovy.ast.stmt.WhileStatement
     import org.codehaus.groovy.control.CompilationUnit
     import org.codehaus.groovy.control.CompilerConfiguration
+    import org.codehaus.groovy.control.ErrorCollector
     import org.codehaus.groovy.control.ParserPlugin
     import org.codehaus.groovy.control.ParserPluginFactory
     import org.codehaus.groovy.control.Phases
@@ -115,7 +117,8 @@ final class TestUtils {
     /**
      * Compile {@code source} through CONVERSION and return the diagnostic
      * text. Fails the test if the source parses. Shared by
-     * {@code SyntaxErrorTest} and {@code CommonSyntaxErrorTest}.
+     * {@code SyntaxErrorTest}, {@code CommonSyntaxErrorTest} and
+     * {@code ParserNegativeSyntaxTest}.
      */
     @CompileDynamic
     static String compileMessage(String source) {
@@ -130,6 +133,50 @@ final class TestUtils {
         } catch (e) {
             return (e.message ?: e.toString()).replace('\r\n', '\n')
         }
+    }
+
+    /**
+     * Parse {@code source} through CONVERSION and return the module AST.
+     * Fails the test if parsing reports errors.
+     */
+    @CompileDynamic
+    static ModuleNode parseModule(String source) {
+        CompilerConfiguration config = antlr4Config
+        def loader = new GroovyClassLoader()
+        SourceUnit unit = new SourceUnit('test.groovy', source, config, loader, new ErrorCollector(config))
+        unit.parse()
+        unit.completePhase()
+        unit.nextPhase()
+        unit.convert()
+        ModuleNode ast = unit.AST
+        Assertions.assertNotNull(ast, 'parse returned null')
+        if (ast.context?.errorCollector?.hasErrors()) {
+            Assertions.fail(ast.context.errorCollector.errors.join('\n'))
+        }
+        return ast
+    }
+
+    /**
+     * Pretty-printed XML dump of the AST of {@code source}, including
+     * source positions on every node.
+     */
+    static String dumpAst(String source) {
+        return AstXmlDumper.dump(parseModule(source))
+    }
+
+    /**
+     * Parse {@code source} and assert its XML AST dump matches {@code expected}.
+     */
+    static void expectAst(String source, String expected) {
+        Assertions.assertEquals(normalizeAst(expected), normalizeAst(dumpAst(source)))
+    }
+
+    static String normalizeAst(String s) {
+        return s.replace('\r\n', '\n')
+            .replaceAll(/[ \t]+\n/, '\n')
+            .replaceAll(/\n{2,}/, '\n')
+            .replaceAll(/^\n+/, '')
+            .replaceAll(/\n+\z/, '\n')
     }
 
     /**
