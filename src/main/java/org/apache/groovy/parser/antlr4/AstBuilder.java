@@ -1179,7 +1179,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         ParserRuleContext blockStatement = stmtAlt.getParent();
         ParserRuleContext blockStatements = blockStatement != null ? blockStatement.getParent() : null;
         ParserRuleContext group = blockStatements != null ? blockStatements.getParent() : null;
-        return !(group instanceof SwitchBlockStatementExpressionGroupContext);
+        return !(group instanceof SwitchBlockStatementExpressionGroupContext g && isArrowGroup(g));
+    }
+
+    /** Whether a switch-expression group uses arrow labels, making its sole statement the arm value. */
+    private static boolean isArrowGroup(final SwitchBlockStatementExpressionGroupContext group) {
+        return group.switchExpressionLabel(0).ac.getType() == ARROW;
     }
 
     private boolean isEnclosingSwitchUsedAsStatement() {
@@ -2454,9 +2459,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         // colon-only), but as in Java (JEP 361) the arrow only decides fall-through;
         // the position decides whether a value is produced. A switch whose value is
         // not used, or whose arrow block arms do not yield, is a SwitchStatement.
-        // In implicit-return position (the last statement of a method, closure or
-        // script body) the value is used, but an unmatched selector yields null
-        // rather than throwing, as it did in 4.x/5.x (GROOVY-12399).
+        // In implicit-return position (the last statement of a closure, a script or
+        // a method that returns a value) the value is used, but an unmatched selector
+        // yields null rather than throwing, as it did in 4.x/5.x (GROOVY-12399).
         if (expr instanceof SwitchExpression se && ctx.getParent() instanceof ExpressionStmtAltContext statement) {
             if (switchExpressionHasIncompleteArm(se) || !isSwitchValueUsed(statement)) {
                 return configureAST(switchExpressionAsStatement(se), ctx);
@@ -2473,24 +2478,25 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
      * expression of an arrow arm of an enclosing switch expression, or it is
      * in implicit-return position.
      */
-    private static boolean isSwitchValueUsed(final StatementContext statement) {
+    private boolean isSwitchValueUsed(final StatementContext statement) {
         ParserRuleContext blockStatements = statement.getParent() instanceof BlockStatementContext bs ? bs.getParent() : null;
-        if (blockStatements != null && blockStatements.getParent() instanceof SwitchBlockStatementExpressionGroupContext) {
-            return true;
+        if (blockStatements != null && blockStatements.getParent() instanceof SwitchBlockStatementExpressionGroupContext group) {
+            return isArrowGroup(group); // a colon arm's statements are discarded; its value comes from `yield`
         }
         return isImplicitReturnPosition(statement);
     }
 
     /**
      * Whether {@code statement} is where the compiler would add an implicit
-     * {@code return} (see {@code ReturnAdder}): the last statement of a method,
-     * lambda, closure or script body, followed through nested blocks, the
+     * {@code return} (see {@code ReturnAdder}): the last statement of a lambda,
+     * closure or script body, or of a method that returns a value (not a
+     * {@code void} method or a constructor), followed through nested blocks, the
      * branches of an {@code if}, the try and catch blocks of a {@code try}, a
      * {@code synchronized} block and the arms of a colon-form switch statement
      * (allowing for a trailing {@code break}). Loop bodies and {@code finally}
      * blocks are not return positions.
      */
-    private static boolean isImplicitReturnPosition(final ParserRuleContext statement) {
+    private boolean isImplicitReturnPosition(final ParserRuleContext statement) {
         ParserRuleContext parent = statement.getParent();
         if (parent instanceof LabeledStmtAltContext || parent instanceof ConditionalStmtAltContext
                 || parent instanceof TryCatchStmtAltContext) {
@@ -2503,7 +2509,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (parent instanceof CatchClauseContext) {
             return isImplicitReturnPosition(parent.getParent());
         }
-        if (parent instanceof MethodBodyContext || parent instanceof LambdaBodyContext || parent instanceof ClosureContext) {
+        if (parent instanceof MethodBodyContext) {
+            return returnsValue(parent.getParent());
+        }
+        if (parent instanceof LambdaBodyContext || parent instanceof ClosureContext) {
             return true;
         }
         if (parent instanceof BlockStmtAltContext || parent instanceof SynchronizedStmtAltContext) {
@@ -2534,6 +2543,22 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return last == parent;
         }
         return false;
+    }
+
+    /**
+     * Whether the method or constructor declaring a body returns a value: not a
+     * {@code void} method, a constructor or a compact constructor, whose bodies
+     * get no implicit {@code return} (see {@code ReturnAdder}).
+     */
+    private boolean returnsValue(final ParserRuleContext declaration) {
+        if (!(declaration instanceof MethodDeclarationContext method)) {
+            return false; // compact constructor
+        }
+        if (asBoolean(method.returnType())) {
+            return method.returnType().VOID() == null;
+        }
+        ClassNode classNode = classNodeStack.peek();
+        return classNode == null || !this.visitMethodName(method.methodName()).equals(classNode.getNodeMetaData(CLASS_NAME));
     }
 
     /** Whether {@code blockStatement} is the last one of {@code blockStatements}, allowing for a trailing {@code break}. */
