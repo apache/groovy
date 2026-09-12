@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -360,6 +361,28 @@ final class Groovy12399 {
             """
             assert err.message.contains('does not cover the value')
         }
+    }
+
+    @Test
+    void implicitReturnWithPrimitiveReturnTypeUnboxesNullWhenUnmatched() {
+        // The switch keeps its value, so a primitive return type converts the
+        // null of an unmatched selector. Dynamically the value is untyped and
+        // the conversion is a Groovy cast; under @CompileStatic the inferred
+        // type is Integer and the conversion is an unboxing, which is what
+        // Groovy does for any null wrapper, as `int m() { Integer i = null; i }`
+        // shows in either mode. Note that every other way a method falls off
+        // its end yields the type's default value instead.
+        def script = """
+            int f(int i) {
+                switch (i) {
+                    case 1 -> 1
+                }
+            }
+            assert f(1) == 1
+            f(2)
+        """
+        shouldFail(GroovyCastException) { assertScript(script) }
+        shouldFail(NullPointerException) { new GroovyShell(staticConfig()).evaluate(script) }
     }
 
     @Test
