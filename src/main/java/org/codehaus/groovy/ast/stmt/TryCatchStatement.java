@@ -28,10 +28,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a try { ... } catch { ... } finally { ... } statement in Groovy.
+ * Represents a <code>try { ... } catch { ... } finally { ... }</code> statement in Groovy.
  * A try-catch statement combines exception handling with optional resource management (try-with-resources).
  * It contains a main try block, zero or more {@link CatchStatement}s for exception handlers,
- * an optional finally block, and optional resource declarations that implement AutoCloseable.
+ * an optional finally block, and optional resource declarations that implement {@link AutoCloseable}.
  *
  * @see Statement
  * @see CatchStatement
@@ -69,7 +69,7 @@ public class TryCatchStatement extends Statement {
     /**
      * Returns the try block {@link Statement}, which is executed when the try-catch is entered.
      *
-     * @return the try block {@link Statement}}
+     * @return the try block {@link Statement}
      */
     public Statement getTryStatement() {
         return tryStatement;
@@ -79,7 +79,7 @@ public class TryCatchStatement extends Statement {
      * Returns the finally block {@link Statement}, executed after the try and catch blocks complete.
      * May be null if no finally clause is present.
      *
-     * @return the finally block {@link Statement}}, or null
+     * @return the finally block {@link Statement}, or null
      */
     public Statement getFinallyStatement() {
         return finallyStatement;
@@ -114,7 +114,9 @@ public class TryCatchStatement extends Statement {
      *
      * @param idx
      *      the index of the resource statement
-     * @return the resource {@link ExpressionStatement}} at the index, or null if the index is out of bounds
+     * @return the resource {@link ExpressionStatement} at the index, or null if the index is out of bounds
+     *
+     * @since 3.0.0
      */
     public ExpressionStatement getResourceStatement(int idx) {
         if (idx >= 0 && idx < resourceStatements.size()) {
@@ -127,6 +129,8 @@ public class TryCatchStatement extends Statement {
      * Returns the list of all resource {@link ExpressionStatement}s declared in try-with-resources.
      *
      * @return a {@link List} of resource {@link ExpressionStatement}s
+     *
+     * @since 3.0.0
      */
     public List<ExpressionStatement> getResourceStatements() {
         return resourceStatements;
@@ -138,6 +142,8 @@ public class TryCatchStatement extends Statement {
      * @param expression
      *      the {@link Expression} to check
      * @return true if the expression is a resource declaration, false otherwise
+     *
+     * @since 3.0.0
      */
     public static boolean isResource(final Expression expression) {
         return Boolean.TRUE.equals(expression.getNodeMetaData("_IS_RESOURCE"));
@@ -146,32 +152,32 @@ public class TryCatchStatement extends Statement {
     //--------------------------------------------------------------------------
 
     /**
-     * Sets the try block {@link Statement}}.
+     * Sets the try block {@link Statement}.
      *
      * @param tryStatement
-     *      the try block {@link Statement}}
+     *      the try block {@link Statement}
      */
     public void setTryStatement(Statement tryStatement) {
         this.tryStatement = tryStatement;
     }
 
     /**
-     * Sets the finally block {@link Statement}}.
+     * Sets the finally block {@link Statement}.
      *
      * @param finallyStatement
-     *      the finally block {@link Statement}}, or null for no finally clause
+     *      the finally block {@link Statement}, or null for no finally clause
      */
     public void setFinallyStatement(Statement finallyStatement) {
         this.finallyStatement = finallyStatement;
     }
 
     /**
-     * Replaces the {@link CatchStatement}} at the specified index.
+     * Replaces the {@link CatchStatement} at the specified index.
      *
      * @param idx
      *      the index of the catch statement to replace
      * @param catchStatement
-     *      the new {@link CatchStatement}}
+     *      the new {@link CatchStatement}
      */
     public void setCatchStatement(int idx, CatchStatement catchStatement) {
         catchStatements.set(idx, catchStatement);
@@ -188,11 +194,11 @@ public class TryCatchStatement extends Statement {
     }
 
     /**
-     * Adds a {@link CatchStatement}} to this try-catch block and returns this for method chaining.
+     * Adds a {@link CatchStatement} to this try-catch block.
      *
      * @param catchStatement
-     *      the {@link CatchStatement}} to add
-     * @return this {@link TryCatchStatement}} for method chaining
+     *      the {@link CatchStatement} to add
+     * @return this {@link TryCatchStatement} for method chaining
      */
     public TryCatchStatement addCatch(CatchStatement catchStatement) {
         catchStatements.add(catchStatement);
@@ -208,13 +214,15 @@ public class TryCatchStatement extends Statement {
     }
 
     /**
-     * Adds a resource {@link ExpressionStatement}} representing a try-with-resources declaration.
+     * Adds an {@link ExpressionStatement} representing a try-with-resources declaration.
      * The expression must be a {@link DeclarationExpression} or {@link VariableExpression}.
      *
      * @param resourceStatement
-     *      the resource {@link ExpressionStatement}} to add
-     * @return this {@link TryCatchStatement}} for method chaining
+     *      the resource {@link ExpressionStatement} to add
+     * @return this {@link TryCatchStatement} for method chaining
      * @throws GroovyBugError if the resource expression is not a DeclarationExpression or VariableExpression
+     *
+     * @since 3.0.0
      */
     public TryCatchStatement addResource(ExpressionStatement resourceStatement) {
         Expression resourceExpression = resourceStatement.getExpression();

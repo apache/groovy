@@ -79,8 +79,9 @@ public class CompilerConfiguration {
      * </p>
      *
      * @see #isErrorRecoveryEnabled()
-     * @since 5.0.0
+     * @since 6.0.0
      */
+    @Incubating
     public static final String ERROR_RECOVERY = "errorRecovery";
 
     /** Joint Compilation Option for enabling generating stubs in memory. */
@@ -1544,6 +1545,7 @@ public class CompilerConfiguration {
 
     /**
      * Checks if invoke dynamic is enabled.
+     * <p>
      * Enabled by default since Groovy 4.0. Can be disabled by setting
      * the system property {@code groovy.target.indy} to {@code false}
      * or by setting the {@code indy} optimization option to {@code false}.
@@ -1580,7 +1582,7 @@ public class CompilerConfiguration {
      * </p>
      *
      * @return {@code true} if parser error recovery is enabled
-     * @since 5.0.0
+     * @since 6.0.0
      */
     public boolean isErrorRecoveryEnabled() {
         return Boolean.TRUE.equals(getOptimizationOptions().get(ERROR_RECOVERY));
