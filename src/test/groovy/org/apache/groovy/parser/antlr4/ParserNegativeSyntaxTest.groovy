@@ -3451,6 +3451,28 @@ final class ParserNegativeSyntaxTest {
     }
 
     @Test
+    void 'invalid octal number caret is the digit not a drifted count'() {
+        expectParseError 'def n = 08', '''\
+            |Invalid octal number @ line 1, column 9.
+            |   def n = 08
+            |           ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'invalid octal with suffix caret is still the token start'() {
+        expectParseError 'def n = 08L', '''\
+            |Invalid octal number @ line 1, column 9.
+            |   def n = 08L
+            |           ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
     void 'shebang not on the first line'() {
         expectContainsOnce 'x = 1\n#!/usr/bin/env groovy', 'Shebang comment should appear at the first line'
     }

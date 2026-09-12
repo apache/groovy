@@ -95,7 +95,13 @@ verbatim keeps the reference precise; paraphrasing tends to drift.
 - Grammar lives in `src/antlr/GroovyLexer.g4` and
   `src/antlr/GroovyParser.g4`. The generated parser is regenerated
   from these sources on every build, so changes belong in the `.g4`
-  files.
+  files. Lexer number literals use character classes rather than
+  one-character fragment chains (optimized Java grammar style). ASCII
+  identifiers are a predicate-free DFA split (`A-Z` vs `a-z$_`);
+  supplementary-plane letters classify capitalized vs not from the
+  decoded code point, not `LA(-1)` (a low surrogate is never
+  uppercase). Annotation `elementValues` is gated so `AdaptivePredict`
+  does not also explore assignment (GROOVY-12398).
 - The ANTLR Gradle plugin generates `GroovyLexer`, `GroovyParser`,
   `GroovyParserVisitor`, and `GroovyParserBaseVisitor` into
   `build/generated/sources/antlr4/org/apache/groovy/parser/antlr4/`.
