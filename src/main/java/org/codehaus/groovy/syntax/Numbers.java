@@ -186,13 +186,13 @@ public class Numbers {
         switch (type) {
             case 'i':
                 if (radix == 10 && (value.compareTo(MAX_INTEGER) > 0 || value.compareTo(MIN_INTEGER) < 0)) {
-                    throw new NumberFormatException("Number of value " + value + " does not fit in the range of int, but int was enforced.");
+                    throw new NumberFormatException("Integer number too large: " + value);
                 } else {
                     return value.intValue();
                 }
             case 'l':
                 if (radix == 10 && (value.compareTo(MAX_LONG) > 0 || value.compareTo(MIN_LONG) < 0)) {
-                    throw new NumberFormatException("Number of value " + value + " does not fit in the range of long, but long was enforced.");
+                    throw new NumberFormatException("Long number too large: " + value);
                 } else {
                     return value.longValue();
                 }

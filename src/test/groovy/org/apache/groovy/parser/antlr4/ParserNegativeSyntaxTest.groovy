@@ -43,7 +43,7 @@ final class ParserNegativeSyntaxTest {
             |    def x()
             |}
             |'''.stripMargin(), '''\
-            |You defined a method[x] without a body. Try adding a method body, or declare it abstract @ line 2, column 5.
+            |Method 'x' is missing a body. Add a method body, or declare it abstract @ line 2, column 5.
             |       def x()
             |       ^
             |
@@ -56,7 +56,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |def w()
             |'''.stripMargin(), '''\
-            |You cannot define a method[w] without method body in the script. Try  adding a method body @ line 1, column 1.
+            |Scripts cannot declare method 'w' without a body. Add a method body @ line 1, column 1.
             |   def w()
             |   ^
             |
@@ -69,7 +69,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |abstract u() {}
             |'''.stripMargin(), '''\
-            |You cannot define an abstract method[u] in the script. Try removing the 'abstract' @ line 1, column 1.
+            |Scripts cannot declare abstract method 'u'. Remove 'abstract' @ line 1, column 1.
             |   abstract u() {}
             |   ^
             |
@@ -84,7 +84,7 @@ final class ParserNegativeSyntaxTest {
             |    void a()
             |}
             |'''.stripMargin(), '''\
-            |annotation method cannot have void return type @ line 2, column 5.
+            |Annotation type elements cannot have a void return type @ line 2, column 5.
             |       void a()
             |       ^
             |
@@ -139,7 +139,7 @@ final class ParserNegativeSyntaxTest {
             |    }
             |}
             |'''.stripMargin(), '''\
-            |Annotation type element should not have body @ line 2, column 5.
+            |Annotation type elements cannot have a body @ line 2, column 5.
             |       String a() {
             |       ^
             |
@@ -152,9 +152,22 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |def foo = new double[][5]
             |'''.stripMargin(), '''\
-            |Unexpected input: '5' @ line 1, column 24.
+            |Cannot specify an array size after an empty dimension @ line 1, column 24.
             |   def foo = new double[][5]
             |                          ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'array size with initializer'() {
+        expectParseError '''\
+            |def foo = new double[2] { 1.0, 2.0 }
+            |'''.stripMargin(), '''\
+            |Cannot combine an array size with an array initializer @ line 1, column 25.
+            |   def foo = new double[2] { 1.0, 2.0 }
+            |                           ^
             |
             |1 error
             |'''.stripMargin()
@@ -165,7 +178,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |def foo = new double[]
             |'''.stripMargin(), '''\
-            |Missing '{' @ line 2, column 1.
+            |Array dimension missing; specify a size or add an initializer '{}' @ line 2, column 1.
             |1 error
             |'''.stripMargin()
     }
@@ -192,7 +205,7 @@ final class ParserNegativeSyntaxTest {
             |    Foo() {}
             |}
             |'''.stripMargin(), '''\
-            |Invalid method declaration: Foo @ line 3, column 5.
+            |Anonymous classes cannot declare constructors @ line 3, column 5.
             |       Foo() {}
             |       ^
             |
@@ -209,7 +222,7 @@ final class ParserNegativeSyntaxTest {
             |    }
             |}
             |'''.stripMargin(), '''\
-            |Only record can have compact constructor @ line 3, column 12.
+            |Compact constructors are only allowed in records @ line 3, column 12.
             |       public Person {
             |              ^
             |
@@ -222,7 +235,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |def x = (1;2;3)
             |'''.stripMargin(), '''\
-            |Unexpected input: ';' @ line 1, column 11.
+            |Unexpected ';' @ line 1, column 11.
             |   def x = (1;2;3)
             |             ^
             |
@@ -252,7 +265,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |List<Integer list2 = new ArrayList<Integer>()
             |'''.stripMargin(), '''\
-            |Unexpected input: 'List<Integer' @ line 1, column 1.
+            |Missing '>' @ line 1, column 1.
             |   List<Integer list2 = new ArrayList<Integer>()
             |   ^
             |
@@ -265,7 +278,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |class Foo { static final Foo() {} }
             |'''.stripMargin(), '''\
-            |Constructor has an incorrect modifier 'static'. @ line 1, column 13.
+            |Modifier 'static' is not allowed on a constructor @ line 1, column 13.
             |   class Foo { static final Foo() {} }
             |               ^
             |
@@ -281,10 +294,21 @@ final class ParserNegativeSyntaxTest {
             |println 123
             |while (false)
             |'''.stripMargin(), '''\
-            |Unexpected input: '123\\nprintln' @ line 3, column 1.
+            |do-while body must be a single statement; wrap multiple statements in '{ }' @ line 3, column 1.
             |   println 123
             |   ^
             |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'do without while'() {
+        expectParseError '''\
+            |do
+            |println 123
+            |'''.stripMargin(), '''\
+            |Missing 'while' @ line 3, column 1.
             |1 error
             |'''.stripMargin()
     }
@@ -321,7 +345,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |1 = 2
             |'''.stripMargin(), '''\
-            |The LHS of an assignment should be a variable or a field accessing expression @ line 1, column 1.
+            |The left-hand side of an assignment must be a variable or a field @ line 1, column 1.
             |   1 = 2
             |   ^
             |
@@ -349,7 +373,7 @@ final class ParserNegativeSyntaxTest {
             |    import java.util.*
             |}
             |'''.stripMargin(), '''\
-            |Unexpected input: 'import' @ line 2, column 5.
+            |'import' is only allowed at the beginning of a compilation unit @ line 2, column 5.
             |       import java.util.*
             |       ^
             |
@@ -381,9 +405,24 @@ final class ParserNegativeSyntaxTest {
             |    }
             |}
             |'''.stripMargin(), '''\
-            |You defined an abstract method[foo] with a body. Try removing the method body, or declare it default or private @ line 2, column 5.
+            |Abstract method 'foo' cannot have a body. Remove the method body, or declare it default or private @ line 2, column 5.
             |       def foo(a, b) {
             |       ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'interface annotation-style default'() {
+        expectParseError '''\
+            |interface I {
+            |    def m() default {1}
+            |}
+            |'''.stripMargin(), '''\
+            |'default' cannot follow a method header; put 'default' before the method name @ line 2, column 13.
+            |       def m() default {1}
+            |               ^
             |
             |1 error
             |'''.stripMargin()
@@ -437,7 +476,7 @@ final class ParserNegativeSyntaxTest {
             |    }
             |}()
             |'''.stripMargin(), '''\
-            |Unexpected input: '(' @ line 2, column 12.
+            |Method definition not expected here @ line 2, column 12.
             |       def say(String msg) {
             |              ^
             |
@@ -476,7 +515,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |foo(String a)
             |'''.stripMargin(), '''\
-            |Invalid method declaration @ line 1, column 4.
+            |Invalid method declaration; a return type or 'def' is required @ line 1, column 4.
             |   foo(String a)
             |      ^
             |
@@ -489,7 +528,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |def def m() {}
             |'''.stripMargin(), '''\
-            |Cannot repeat modifier[def] @ line 1, column 5.
+            |Cannot repeat modifier 'def' @ line 1, column 5.
             |   def def m() {}
             |       ^
             |
@@ -504,7 +543,7 @@ final class ParserNegativeSyntaxTest {
             |    private public a
             |}
             |'''.stripMargin(), '''\
-            |Cannot specify modifier[public] when access scope has already been defined @ line 2, column 13.
+            |Cannot specify modifier 'public' when the access scope has already been defined @ line 2, column 13.
             |       private public a
             |               ^
             |
@@ -517,7 +556,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |volatile x() {}
             |'''.stripMargin(), '''\
-            |Method has an incorrect modifier 'volatile'. @ line 1, column 1.
+            |Modifier 'volatile' is not allowed on a method @ line 1, column 1.
             |   volatile x() {}
             |   ^
             |
@@ -551,7 +590,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |2147483648I
             |'''.stripMargin(), '''\
-            |Number of value 2147483648 does not fit in the range of int, but int was enforced. @ line 1, column 1.
+            |Integer number too large: 2147483648 @ line 1, column 1.
             |   2147483648I
             |   ^
             |
@@ -590,7 +629,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |(1 + 2))
             |'''.stripMargin(), '''\
-            |Unexpected input: ')' @ line 1, column 8.
+            |Unexpected ')' @ line 1, column 8.
             |   (1 + 2))
             |          ^
             |
@@ -656,7 +695,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |class Fruit(String name, double price) {}
             |'''.stripMargin(), '''\
-            |header declaration is only allowed for record declaration @ line 1, column 12.
+            |Only records can have a compact header, for example: record Fruit(...) @ line 1, column 12.
             |   class Fruit(String name, double price) {}
             |              ^
             |
@@ -669,7 +708,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |record Fruit {}
             |'''.stripMargin(), '''\
-            |header declaration of record is expected @ line 1, column 8.
+            |Record 'Fruit' is missing a header, for example: record Fruit(...) @ line 1, column 8.
             |   record Fruit {}
             |          ^
             |
@@ -949,7 +988,7 @@ final class ParserNegativeSyntaxTest {
             |    default -> throw new RuntimeException('z')
             |}
             |'''.stripMargin(), '''\
-            |Expect only 1 statement, but 2 statements found @ line 3, column 15.
+            |Arrow switch cases must contain a single statement, but 2 were found @ line 3, column 15.
             |       case 6 -> def x = 'a'; yield x
             |                 ^
             |
@@ -971,6 +1010,24 @@ final class ParserNegativeSyntaxTest {
     }
 
     @Test
+    void 'default not last in switch'() {
+        expectParseError '''\
+            |switch (a) {
+            |    default:
+            |        break
+            |    case 1:
+            |        break
+            |}
+            |'''.stripMargin(), '''\
+            |A default branch must appear as the last branch of a switch @ line 2, column 5.
+            |       default:
+            |       ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
     void 'duplicate default in switch'() {
         expectParseError '''\
             |switch (a) {
@@ -982,9 +1039,9 @@ final class ParserNegativeSyntaxTest {
             |        break
             |}
             |'''.stripMargin(), '''\
-            |a switch must only have one default branch @ line 5, column 9.
-            |           break
-            |           ^
+            |A switch can have only one default branch @ line 6, column 5.
+            |       default:
+            |       ^
             |
             |1 error
             |'''.stripMargin()
@@ -1010,7 +1067,7 @@ final class ParserNegativeSyntaxTest {
             |    abstract m() {}
             |}
             |'''.stripMargin(), '''\
-            |Abstract method should not have method body @ line 2, column 5.
+            |Abstract method cannot have a body @ line 2, column 5.
             |       abstract m() {}
             |       ^
             |
@@ -1064,7 +1121,7 @@ final class ParserNegativeSyntaxTest {
             |    void field
             |}
             |'''.stripMargin(), '''\
-            |void is not allowed here @ line 2, column 5.
+            |'void' type is not allowed here @ line 2, column 5.
             |       void field
             |       ^
             |
@@ -1093,6 +1150,22 @@ final class ParserNegativeSyntaxTest {
             |enum declaration cannot have type parameters @ line 1, column 7.
             |   enum E<T> {}
             |         ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'enum comma before members'() {
+        expectParseError '''\
+            |enum E {
+            |  X, Y,
+            |  def z() { }
+            |}
+            |'''.stripMargin(), '''\
+            |';' expected after the last enum constant @ line 3, column 3.
+            |     def z() { }
+            |     ^
             |
             |1 error
             |'''.stripMargin()
@@ -1208,7 +1281,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError('''\
             |1 = 2
             |'''.stripMargin(), '''\
-            |The LHS of an assignment should be a variable or a field accessing expression @ line 1, column 1.
+            |The left-hand side of an assignment must be a variable or a field @ line 1, column 1.
             |   1 = 2
             |   ^
             |
@@ -1216,7 +1289,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError('''\
             |m() = 2
             |'''.stripMargin(), '''\
-            |The LHS of an assignment should be a variable or a field accessing expression @ line 1, column 1.
+            |The left-hand side of an assignment must be a variable or a field @ line 1, column 1.
             |   m() = 2
             |   ^
             |
@@ -1224,7 +1297,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError('''\
             |[1, 2] = 2
             |'''.stripMargin(), '''\
-            |The LHS of an assignment should be a variable or a field accessing expression @ line 1, column 1.
+            |The left-hand side of an assignment must be a variable or a field @ line 1, column 1.
             |   [1, 2] = 2
             |   ^
             |
@@ -1232,7 +1305,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError('''\
             |[a: 1, b: 2] = 2
             |'''.stripMargin(), '''\
-            |The LHS of an assignment should be a variable or a field accessing expression @ line 1, column 1.
+            |The left-hand side of an assignment must be a variable or a field @ line 1, column 1.
             |   [a: 1, b: 2] = 2
             |   ^
             |
@@ -1240,7 +1313,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError('''\
             |"$x" = 2
             |'''.stripMargin(), '''\
-            |The LHS of an assignment should be a variable or a field accessing expression @ line 1, column 1.
+            |The left-hand side of an assignment must be a variable or a field @ line 1, column 1.
             |   "$x" = 2
             |   ^
             |
@@ -1248,7 +1321,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError('''\
             |'x' = 2
             |'''.stripMargin(), '''\
-            |The LHS of an assignment should be a variable or a field accessing expression @ line 1, column 1.
+            |The left-hand side of an assignment must be a variable or a field @ line 1, column 1.
             |   'x' = 2
             |   ^
             |
@@ -1286,9 +1359,9 @@ final class ParserNegativeSyntaxTest {
             |
             |
             |'''.stripMargin(), '''\
-            |a switch must only have one default branch @ line 5, column 9.
-            |           break;
-            |           ^
+            |A switch can have only one default branch @ line 6, column 5.
+            |       default:
+            |       ^
             |
             |1 error'''.stripMargin())
     }
@@ -1432,7 +1505,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError('''\
             |(1 + 2))
             |'''.stripMargin(), '''\
-            |Unexpected input: ')' @ line 1, column 8.
+            |Unexpected ')' @ line 1, column 8.
             |   (1 + 2))
             |          ^
             |
@@ -1536,7 +1609,7 @@ final class ParserNegativeSyntaxTest {
             |    def x()
             |}
             |'''.stripMargin(), '''\
-            |You defined a method[x] without a body. Try adding a method body, or declare it abstract @ line 2, column 5.
+            |Method 'x' is missing a body. Add a method body, or declare it abstract @ line 2, column 5.
             |       def x()
             |       ^
             |
@@ -1547,7 +1620,7 @@ final class ParserNegativeSyntaxTest {
             |    def y()
             |}
             |'''.stripMargin(), '''\
-            |You defined a method[y] without a body. Try adding a method body, or declare it abstract @ line 3, column 5.
+            |Method 'y' is missing a body. Add a method body, or declare it abstract @ line 3, column 5.
             |       def y()
             |       ^
             |
@@ -1557,7 +1630,7 @@ final class ParserNegativeSyntaxTest {
             |    def z()
             |}
             |'''.stripMargin(), '''\
-            |You defined a method[z] without a body. Try adding a method body, or declare it abstract @ line 2, column 5.
+            |Method 'z' is missing a body. Add a method body, or declare it abstract @ line 2, column 5.
             |       def z()
             |       ^
             |
@@ -1565,7 +1638,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError('''\
             |def w()
             |'''.stripMargin(), '''\
-            |You cannot define a method[w] without method body in the script. Try  adding a method body @ line 1, column 1.
+            |Scripts cannot declare method 'w' without a body. Add a method body @ line 1, column 1.
             |   def w()
             |   ^
             |
@@ -1573,7 +1646,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError('''\
             |abstract v()
             |'''.stripMargin(), '''\
-            |You cannot define an abstract method[v] without method body in the script. Try removing the 'abstract' and adding a method body @ line 1, column 1.
+            |Scripts cannot declare abstract method 'v'. Remove 'abstract' and add a method body @ line 1, column 1.
             |   abstract v()
             |   ^
             |
@@ -1581,7 +1654,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError('''\
             |abstract u() {}
             |'''.stripMargin(), '''\
-            |You cannot define an abstract method[u] in the script. Try removing the 'abstract' @ line 1, column 1.
+            |Scripts cannot declare abstract method 'u'. Remove 'abstract' @ line 1, column 1.
             |   abstract u() {}
             |   ^
             |
@@ -1619,7 +1692,7 @@ final class ParserNegativeSyntaxTest {
             |println 123
             |while(false)
             |'''.stripMargin(), [
-            'Unexpected input: \'123\\nprintln\' @ line 3, column 1.',
+            'do-while body must be a single statement; wrap multiple statements in \'{ }\' @ line 3, column 1.',
             '   println 123',
             '   ^',
             '',
@@ -1652,7 +1725,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError('''\
             |def def m() {}
             |'''.stripMargin(), '''\
-            |Cannot repeat modifier[def] @ line 1, column 5.
+            |Cannot repeat modifier 'def' @ line 1, column 5.
             |   def def m() {}
             |       ^
             |
@@ -1660,7 +1733,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError('''\
             |public public class A {}
             |'''.stripMargin(), '''\
-            |Cannot repeat modifier[public] @ line 1, column 8.
+            |Cannot repeat modifier 'public' @ line 1, column 8.
             |   public public class A {}
             |          ^
             |
@@ -1668,7 +1741,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError('''\
             |final final int a = 1;
             |'''.stripMargin(), '''\
-            |Cannot repeat modifier[final] @ line 1, column 7.
+            |Cannot repeat modifier 'final' @ line 1, column 7.
             |   final final int a = 1;
             |         ^
             |
@@ -1678,7 +1751,7 @@ final class ParserNegativeSyntaxTest {
             |    private public a
             |}
             |'''.stripMargin(), '''\
-            |Cannot specify modifier[public] when access scope has already been defined @ line 2, column 13.
+            |Cannot specify modifier 'public' when the access scope has already been defined @ line 2, column 13.
             |       private public a
             |               ^
             |
@@ -1688,7 +1761,7 @@ final class ParserNegativeSyntaxTest {
             |    protected public a
             |}
             |'''.stripMargin(), '''\
-            |Cannot specify modifier[public] when access scope has already been defined @ line 2, column 15.
+            |Cannot specify modifier 'public' when the access scope has already been defined @ line 2, column 15.
             |       protected public a
             |                 ^
             |
@@ -1696,7 +1769,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError('''\
             |volatile x() {}
             |'''.stripMargin(), '''\
-            |Method has an incorrect modifier 'volatile'. @ line 1, column 1.
+            |Modifier 'volatile' is not allowed on a method @ line 1, column 1.
             |   volatile x() {}
             |   ^
             |
@@ -1712,7 +1785,7 @@ final class ParserNegativeSyntaxTest {
             |}
             |
             |'''.stripMargin(), '''\
-            |Invalid method declaration: Foo @ line 3, column 5.
+            |Anonymous classes cannot declare constructors @ line 3, column 5.
             |       Foo() {}
             |       ^
             |
@@ -1735,7 +1808,7 @@ final class ParserNegativeSyntaxTest {
             |}
             |
             |'''.stripMargin(), '''\
-            |Only record can have compact constructor @ line 7, column 12.
+            |Compact constructors are only allowed in records @ line 7, column 12.
             |       public Person {
             |              ^
             |
@@ -1762,12 +1835,12 @@ final class ParserNegativeSyntaxTest {
             |
             |class Person {
             |    Person {
-            |        // Only record can have compact constructor
+            |        // Compact constructors are only allowed in records
             |    }
             |}
             |
             |'''.stripMargin(), '''\
-            |Only record can have compact constructor @ line 4, column 5.
+            |Compact constructors are only allowed in records @ line 4, column 5.
             |       Person {
             |       ^
             |
@@ -1809,7 +1882,7 @@ final class ParserNegativeSyntaxTest {
             |  def z() { }
             |}
             |'''.stripMargin(), '''\
-            |Unexpected input: ',\\n  def' @ line 3, column 3.
+            |';' expected after the last enum constant @ line 3, column 3.
             |     def z() { }
             |     ^
             |
@@ -1824,7 +1897,7 @@ final class ParserNegativeSyntaxTest {
             |    void a()
             |}
             |'''.stripMargin(), '''\
-            |annotation method cannot have void return type @ line 2, column 5.
+            |Annotation type elements cannot have a void return type @ line 2, column 5.
             |       void a()
             |       ^
             |
@@ -1878,7 +1951,7 @@ final class ParserNegativeSyntaxTest {
             |    String a() {
             |    }
             |}'''.stripMargin(), '''\
-            |Annotation type element should not have body @ line 2, column 5.
+            |Annotation type elements cannot have a body @ line 2, column 5.
             |       String a() {
             |       ^
             |
@@ -1979,7 +2052,7 @@ final class ParserNegativeSyntaxTest {
             |}()
             |
             |'''.stripMargin(), '''\
-            |Unexpected input: '(' @ line 2, column 12.
+            |Method definition not expected here @ line 2, column 12.
             |       def say(String msg) {
             |              ^
             |
@@ -2008,7 +2081,7 @@ final class ParserNegativeSyntaxTest {
             |foo(String a)
             |
             |'''.stripMargin(), '''\
-            |Invalid method declaration @ line 1, column 4.
+            |Invalid method declaration; a return type or 'def' is required @ line 1, column 4.
             |   foo(String a)
             |      ^
             |
@@ -2017,7 +2090,7 @@ final class ParserNegativeSyntaxTest {
             |foo(int a)
             |
             |'''.stripMargin(), '''\
-            |Invalid method declaration @ line 1, column 4.
+            |Invalid method declaration; a return type or 'def' is required @ line 1, column 4.
             |   foo(int a)
             |      ^
             |
@@ -2029,7 +2102,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError('''\
             |class Foo { static final Foo() {}}
             |'''.stripMargin(), '''\
-            |Constructor has an incorrect modifier 'static'. @ line 1, column 13.
+            |Modifier 'static' is not allowed on a constructor @ line 1, column 13.
             |   class Foo { static final Foo() {}}
             |               ^
             |
@@ -2049,7 +2122,7 @@ final class ParserNegativeSyntaxTest {
         expectParseError('''\
             |def x = (1;2;3)
             |'''.stripMargin(), '''\
-            |Unexpected input: ';' @ line 1, column 11.
+            |Unexpected ';' @ line 1, column 11.
             |   def x = (1;2;3)
             |             ^
             |
@@ -2117,7 +2190,7 @@ final class ParserNegativeSyntaxTest {
             |    def m() default {1}
             |}
             |'''.stripMargin(), '''\
-            |Unexpected input: 'default' @ line 2, column 13.
+            |'default' cannot follow a method header; put 'default' before the method name @ line 2, column 13.
             |       def m() default {1}
             |               ^
             |
@@ -2133,7 +2206,7 @@ final class ParserNegativeSyntaxTest {
             |}
             |
             |'''.stripMargin(), '''\
-            |void is not allowed here @ line 2, column 5.
+            |'void' type is not allowed here @ line 2, column 5.
             |       void field
             |       ^
             |
@@ -2146,7 +2219,7 @@ final class ParserNegativeSyntaxTest {
             |}
             |
             |'''.stripMargin(), '''\
-            |void is not allowed here @ line 3, column 9.
+            |'void' type is not allowed here @ line 3, column 9.
             |           void bar = null
             |           ^
             |
@@ -2225,7 +2298,7 @@ final class ParserNegativeSyntaxTest {
             |2147483648I
             |
             |'''.stripMargin(), '''\
-            |Number of value 2147483648 does not fit in the range of int, but int was enforced. @ line 1, column 1.
+            |Integer number too large: 2147483648 @ line 1, column 1.
             |   2147483648I
             |   ^
             |
@@ -2234,7 +2307,7 @@ final class ParserNegativeSyntaxTest {
             |9223372036854775808L
             |
             |'''.stripMargin(), '''\
-            |Number of value 9223372036854775808 does not fit in the range of long, but long was enforced. @ line 1, column 1.
+            |Long number too large: 9223372036854775808 @ line 1, column 1.
             |   9223372036854775808L
             |   ^
             |
@@ -2397,7 +2470,7 @@ final class ParserNegativeSyntaxTest {
             |}
             |
             |'''.stripMargin(), [
-            'Unexpected input: \'{\\n    import\' @ line 2, column 5.',
+            '\'import\' is only allowed at the beginning of a compilation unit @ line 2, column 5.',
             '       import java.util.*',
             '       ^',
             '',
@@ -2409,7 +2482,7 @@ final class ParserNegativeSyntaxTest {
             |}
             |
             |'''.stripMargin(), '''\
-            |Unexpected input: 'import' @ line 2, column 5.
+            |'import' is only allowed at the beginning of a compilation unit @ line 2, column 5.
             |       import java.util.*
             |       ^
             |
@@ -2426,7 +2499,7 @@ final class ParserNegativeSyntaxTest {
             |}
             |
             |'''.stripMargin(), '''\
-            |Abstract method should not have method body @ line 4, column 5.
+            |Abstract method cannot have a body @ line 4, column 5.
             |       abstract m() {}
             |       ^
             |
@@ -2453,7 +2526,7 @@ final class ParserNegativeSyntaxTest {
             |class Fruit(String name, double price) {}
             |
             |'''.stripMargin(), '''\
-            |header declaration is only allowed for record declaration @ line 3, column 12.
+            |Only records can have a compact header, for example: record Fruit(...) @ line 3, column 12.
             |   class Fruit(String name, double price) {}
             |              ^
             |
@@ -2464,7 +2537,7 @@ final class ParserNegativeSyntaxTest {
             |record Fruit {}
             |
             |'''.stripMargin(), '''\
-            |header declaration of record is expected @ line 3, column 8.
+            |Record 'Fruit' is missing a header, for example: record Fruit(...) @ line 3, column 8.
             |   record Fruit {}
             |          ^
             |
@@ -2555,7 +2628,7 @@ final class ParserNegativeSyntaxTest {
             |record R1(int x[]) { }
             |
             |'''.stripMargin(), '''\
-            |Invalid method declaration @ line 4, column 10.
+            |Invalid method declaration; a return type or 'def' is required @ line 4, column 10.
             |   record R1(int x[]) { }
             |            ^
             |
@@ -2633,7 +2706,7 @@ final class ParserNegativeSyntaxTest {
             |def foo = new double[][5]
             |
             |'''.stripMargin(), '''\
-            |Unexpected input: '5' @ line 1, column 24.
+            |Cannot specify an array size after an empty dimension @ line 1, column 24.
             |   def foo = new double[][5]
             |                          ^
             |
@@ -2641,13 +2714,13 @@ final class ParserNegativeSyntaxTest {
         expectParseError('''\
             |def foo = new double[]
             |'''.stripMargin(), '''\
-            |Missing '{' @ line 2, column 1.
+            |Array dimension missing; specify a size or add an initializer '{}' @ line 2, column 1.
             |1 error'''.stripMargin())
         expectParseError('''\
             |def foo = new double[2] { 1.0, 2.0 }
             |
             |'''.stripMargin(), '''\
-            |Unexpected input: '{' @ line 1, column 25.
+            |Cannot combine an array size with an array initializer @ line 1, column 25.
             |   def foo = new double[2] { 1.0, 2.0 }
             |                           ^
             |
@@ -2783,7 +2856,7 @@ final class ParserNegativeSyntaxTest {
             |}
             |
             |'''.stripMargin(), '''\
-            |Expect only 1 statement, but 2 statements found @ line 4, column 15.
+            |Arrow switch cases must contain a single statement, but 2 were found @ line 4, column 15.
             |       case 6 -> def x = 'a'; yield x
             |                 ^
             |
@@ -3556,5 +3629,114 @@ final class ParserNegativeSyntaxTest {
     void 'space between question and bracket is ternary not safe index'() {
         // '?[' is one token; `a? [0]` tokenises as `a` `?` `[0]` (incomplete ternary)
         expectContains 'a? [0]', "Missing ':'"
+    }
+
+    @Test
+    void 'integer literal below the int minimum'() {
+        expectParseError '''\
+            |-2147483649I
+            |'''.stripMargin(), '''\
+            |Integer number too large: -2147483649 @ line 1, column 1.
+            |   -2147483649I
+            |   ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'long literal below the long minimum'() {
+        expectParseError '''\
+            |-9223372036854775809L
+            |'''.stripMargin(), '''\
+            |Long number too large: -9223372036854775809 @ line 1, column 1.
+            |   -9223372036854775809L
+            |   ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'anonymous class constructor named after the implemented interface'() {
+        expectParseError '''\
+            |new Runnable() {
+            |    Runnable() {}
+            |}
+            |'''.stripMargin(), '''\
+            |Anonymous classes cannot declare constructors @ line 2, column 5.
+            |       Runnable() {}
+            |       ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'anonymous class method that is not a constructor-shaped super name'() {
+        expectParseError '''\
+            |class Foo {}
+            |new Foo() {
+            |    Bar() {}
+            |}
+            |'''.stripMargin(), '''\
+            |Invalid method declaration: Bar @ line 3, column 5.
+            |       Bar() {}
+            |       ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'named inner class method that is not a constructor'() {
+        expectParseError '''\
+            |class Outer {
+            |    class Inner {
+            |        Bar() {}
+            |    }
+            |}
+            |'''.stripMargin(), '''\
+            |Invalid method declaration: Bar @ line 3, column 9.
+            |           Bar() {}
+            |           ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'unclosed type argument as a comparison plus command argument'() {
+        // Spaces make `<` a comparison; `name` is then a command argument.
+        // AstBuilder rewrites that shape to javac's `'>' expected`.
+        expectParseError '''\
+            |List < Integer name
+            |'''.stripMargin(), '''\
+            |Missing '>' @ line 1, column 1.
+            |   List < Integer name
+            |   ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'unclosed type argument whose left operand is a class literal'() {
+        expectParseError '''\
+            |List<String> < Integer name
+            |'''.stripMargin(), '''\
+            |Missing '>' @ line 1, column 1.
+            |   List<String> < Integer name
+            |   ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'command argument after a comparison that is not two type names'() {
+        expectContains 'list < Integer name', "Unexpected input: 'list < Integer'"
+        expectContains 'Integer < list name', "Unexpected input: 'Integer < list'"
+        expectContains 'foo() < Integer name', "Unexpected input: 'foo() < Integer'"
     }
 }

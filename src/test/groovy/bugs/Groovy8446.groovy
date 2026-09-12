@@ -52,6 +52,6 @@ final class Groovy8446 {
                 def meth(void... args) {}
             }
         '''
-        assert err.message =~ /void\[\] is an invalid type|void is not allowed here/
+        assert err.message =~ /void\[\] is an invalid type|'void' type is not allowed here|void is not allowed here/
     }
 }

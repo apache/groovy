@@ -25,10 +25,14 @@ import org.apache.groovy.parser.antlr4.GroovyParser;
 import org.codehaus.groovy.ast.ASTNode;
 
 import static groovy.lang.Tuple.tuple;
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 
 /**
- * Utilities for configuring node positions
+ * Utilities for configuring AST source positions.
+ * <p>
+ * Line and column numbers are 1-based; the end column is exclusive.
+ * {@code -1} means the node is synthetic or generated and has no span in
+ * the source. Authored nodes should be stamped through these helpers so
+ * tooling can tell them apart ({@code lineNumber > 0}).
  */
 public class PositionConfigureUtils {
     /**
@@ -97,12 +101,28 @@ public class PositionConfigureUtils {
         return astNode;
     }
 
+    /**
+     * Sets the start from {@code ctx} and the end from {@code initialStop}
+     * when that node has an authored end position. Otherwise the end comes
+     * from {@code ctx}'s stop token.
+     * <p>
+     * Groovy truth is non-null, so a synthetic {@code ConstantExpression}
+     * (default {@code -1} coordinates) must not be treated as a stop: it
+     * would wipe the parent's end. The same applies to
+     * {@code EmptyExpression.INSTANCE}.
+     *
+     * @param astNode     node to modify
+     * @param ctx         parse context supplying the start (and fallback end)
+     * @param initialStop authored initializer whose end should be used, or
+     *                    {@code null}/unpositioned to use {@code ctx}'s stop
+     * @return {@code astNode}
+     */
     public static <T extends ASTNode> T configureAST(T astNode, GroovyParser.GroovyParserRuleContext ctx, ASTNode initialStop) {
         Token start = ctx.getStart();
         astNode.setLineNumber(start.getLine());
         astNode.setColumnNumber(start.getCharPositionInLine() + 1);
 
-        if (asBoolean(initialStop)) {
+        if (hasEndPosition(initialStop)) {
             astNode.setLastLineNumber(initialStop.getLastLineNumber());
             astNode.setLastColumnNumber(initialStop.getLastColumnNumber());
         } else {
@@ -119,11 +139,22 @@ public class PositionConfigureUtils {
         astNode.setLastColumnNumber(endPosition.getV2());
     }
 
+    /**
+     * Sets the start from {@code start} and the end from {@code stop} when
+     * that node has an authored end position. Otherwise the end is copied
+     * from {@code start}. See {@link #configureAST(ASTNode, GroovyParser.GroovyParserRuleContext, ASTNode)}.
+     *
+     * @param astNode node to modify
+     * @param start   node supplying the start (and fallback end)
+     * @param stop    authored node whose end should be used, or
+     *                {@code null}/unpositioned to use {@code start}'s end
+     * @return {@code astNode}
+     */
     public static <T extends ASTNode> T configureAST(T astNode, ASTNode start, ASTNode stop) {
         astNode.setLineNumber(start.getLineNumber());
         astNode.setColumnNumber(start.getColumnNumber());
 
-        if (asBoolean(stop)) {
+        if (hasEndPosition(stop)) {
             astNode.setLastLineNumber(stop.getLastLineNumber());
             astNode.setLastColumnNumber(stop.getLastColumnNumber());
         } else {
@@ -132,5 +163,13 @@ public class PositionConfigureUtils {
         }
 
         return astNode;
+    }
+
+    /**
+     * {@link ASTNode} defaults to {@code -1}; line numbers are 1-based, so a
+     * last line of {@code 0} is also treated as missing.
+     */
+    private static boolean hasEndPosition(final ASTNode node) {
+        return node != null && node.getLastLineNumber() > 0;
     }
 }
