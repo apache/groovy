@@ -25,6 +25,8 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.net.URI;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
@@ -45,6 +47,30 @@ public abstract class XStreamUtils {
     private static final System.Logger LOGGER = System.getLogger(XStreamUtils.class.getName());
 
     /**
+     * Serializes {@code ast} to XML. This is the in-memory form of
+     * {@code groovy.ast=xml}; {@link #serialize(String, Object)} writes the same
+     * document next to the source.
+     *
+     * @param ast the AST object to serialize
+     * @return the XStream XML document
+     */
+    public static String toXML(final Object ast) {
+        StringWriter writer = new StringWriter();
+        toXML(ast, writer);
+        return writer.toString();
+    }
+
+    /**
+     * Serializes {@code ast} to XML on {@code writer}.
+     *
+     * @param ast the AST object to serialize
+     * @param writer the destination
+     */
+    public static void toXML(final Object ast, final Writer writer) {
+        new XStream(new StaxDriver()).toXML(ast, writer);
+    }
+
+    /**
      * Serializes the supplied AST object to an XML file next to the named source. The file is
      * given the source file's permissions, so it exposes no more than the source already does;
      * where there is no source file to match, or the filesystem has no POSIX permissions, the
@@ -56,7 +82,6 @@ public abstract class XStreamUtils {
     public static void serialize(final String name, final Object ast) {
         if (name == null || name.isEmpty()) return;
 
-        XStream xstream = new XStream(new StaxDriver());
         FileWriter astFileWriter = null;
         try {
             File astFile = astFile(name);
@@ -69,7 +94,7 @@ public abstract class XStreamUtils {
             // does not expose to others what the source kept to its owner
             createWithPermissions(astFile.toPath(), astDumpPermissions(name));
             astFileWriter = new FileWriter(astFile, false);
-            xstream.toXML(ast, astFileWriter);
+            toXML(ast, astFileWriter);
             LOGGER.log(DEBUG, "Written AST to {0}.xml", name);
 
         } catch (Exception e) {

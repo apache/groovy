@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Branch coverage for {@link AbstractLexer} unexpected-character diagnostics
  * and {@link AbstractLexer#getCharErrorDisplay(int)}. End-to-end messages live
- * in {@code CommonSyntaxErrorTest}.
+ * in {@code ParserNegativeSyntaxTest}.
  */
 final class AbstractLexerTest {
 
