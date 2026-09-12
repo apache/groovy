@@ -30,6 +30,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static org.apache.groovy.parser.antlr4.GroovyLexer.CapitalizedIdentifier;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.FloatingPointLiteral;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.GStringBegin;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.GStringEnd;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.GStringPathPart;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.Identifier;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.IntegerLiteral;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -397,6 +404,97 @@ final class AbstractLexerTest {
         assertEquals(Token.EOF, tokens.get(tokens.size() - 1).getType());
     }
 
+    @Test
+    void asciiIdentifierSplitIsPureDfa() {
+        assertEquals(CapitalizedIdentifier, firstDefaultChannel("Foo").getType());
+        assertEquals(CapitalizedIdentifier, firstDefaultChannel("A").getType());
+        assertEquals(Identifier, firstDefaultChannel("foo").getType());
+        assertEquals(Identifier, firstDefaultChannel("$foo").getType());
+        assertEquals(Identifier, firstDefaultChannel("_foo").getType());
+    }
+
+    @Test
+    void unicodeIdentifierSplitFollowsUppercase() {
+        assertEquals(CapitalizedIdentifier, firstDefaultChannel("Äbc").getType());
+        assertEquals(Identifier, firstDefaultChannel("λ").getType());
+        // title case is not uppercase — still Identifier
+        assertEquals(Identifier, firstDefaultChannel("\u01C5").getType());
+    }
+
+    /**
+     * GROOVY-12398: after a surrogate pair, {@code LA(-1)} is the low
+     * surrogate (never uppercase). Classification must use the code point.
+     * U+10400 DESERET CAPITAL LETTER LONG I / U+10428 DESERET SMALL LETTER LONG I.
+     */
+    @Test
+    void supplementaryPlaneIdentifierSplitUsesCodePoint() {
+        assertEquals(CapitalizedIdentifier, firstDefaultChannel("\uD801\uDC00").getType());
+        assertEquals(Identifier, firstDefaultChannel("\uD801\uDC28").getType());
+        assertEquals(CapitalizedIdentifier, firstDefaultChannel("\uD801\uDC00Name").getType());
+        assertEquals(Identifier, firstDefaultChannel("\uD801\uDC28name").getType());
+    }
+
+    @Test
+    void invalidOctalReportsAtTokenStart() {
+        GroovySyntaxError first = assertThrows(GroovySyntaxError.class,
+                () -> drain(new GroovyLangLexer(CharStreams.fromString("08"))));
+        assertEquals(1, first.getLine());
+        assertEquals(1, first.getColumn());
+
+        GroovySyntaxError withSuffix = assertThrows(GroovySyntaxError.class,
+                () -> drain(new GroovyLangLexer(CharStreams.fromString("08L"))));
+        assertEquals(1, withSuffix.getColumn());
+
+        GroovySyntaxError afterPrefix = assertThrows(GroovySyntaxError.class,
+                () -> drain(new GroovyLangLexer(CharStreams.fromString("x=08"))));
+        assertEquals(3, afterPrefix.getColumn());
+
+        // first of two invalid octals still points at column 1, not a drifted count
+        GroovySyntaxError two = assertThrows(GroovySyntaxError.class,
+                () -> drain(new GroovyLangLexer(CharStreams.fromString("08 09"))));
+        assertEquals(1, two.getColumn());
+    }
+
+    @Test
+    void errorIgnoredTokenizesSuccessiveInvalidOctals() {
+        GroovyLangLexer lexer = new GroovyLangLexer(CharStreams.fromString("08 09 08L"));
+        lexer.setErrorIgnored(true);
+        List<Token> tokens = defaultChannel(lexer);
+        assertEquals(3, tokens.size(), texts(tokens).toString());
+        assertEquals(IntegerLiteral, tokens.get(0).getType());
+        assertEquals(IntegerLiteral, tokens.get(1).getType());
+        assertEquals(IntegerLiteral, tokens.get(2).getType());
+        assertEquals("08L", tokens.get(2).getText());
+    }
+
+    @Test
+    void flattenedNumberLiteralsStillMatch() {
+        assertEquals(IntegerLiteral, firstDefaultChannel("0").getType());
+        assertEquals(IntegerLiteral, firstDefaultChannel("123").getType());
+        assertEquals(IntegerLiteral, firstDefaultChannel("1_000").getType());
+        assertEquals(IntegerLiteral, firstDefaultChannel("0xFF").getType());
+        assertEquals(IntegerLiteral, firstDefaultChannel("0b101").getType());
+        assertEquals(IntegerLiteral, firstDefaultChannel("07").getType());
+        assertEquals(IntegerLiteral, firstDefaultChannel("1G").getType());
+        assertEquals(FloatingPointLiteral, firstDefaultChannel("1.5").getType());
+        assertEquals(FloatingPointLiteral, firstDefaultChannel(".5").getType());
+        assertEquals(FloatingPointLiteral, firstDefaultChannel("1e10").getType());
+        assertEquals(FloatingPointLiteral, firstDefaultChannel("0x1p1").getType());
+        assertEquals(FloatingPointLiteral, firstDefaultChannel("1.5G").getType());
+    }
+
+    @Test
+    void gstringPathStillUsesDotFragmentReplacement() {
+        List<Token> tokens = defaultChannel("\"$foo.bar\"");
+        List<Integer> types = new ArrayList<>();
+        for (Token t : tokens) {
+            types.add(t.getType());
+        }
+        assertTrue(types.contains(GStringBegin), types.toString());
+        assertTrue(types.contains(GStringPathPart), types.toString());
+        assertTrue(types.contains(GStringEnd), types.toString());
+    }
+
     private static GroovyLangLexer displayLexer() {
         return new GroovyLangLexer(CharStreams.fromString("x"));
     }
@@ -416,6 +514,24 @@ final class AbstractLexerTest {
             t = lexer.nextToken();
             tokens.add(t);
         } while (t.getType() != Token.EOF);
+        return tokens;
+    }
+
+    private static Token firstDefaultChannel(final String src) {
+        return defaultChannel(src).get(0);
+    }
+
+    private static List<Token> defaultChannel(final String src) {
+        return defaultChannel(new GroovyLangLexer(CharStreams.fromString(src)));
+    }
+
+    private static List<Token> defaultChannel(final GroovyLangLexer lexer) {
+        List<Token> tokens = new ArrayList<>();
+        for (Token t : collect(lexer)) {
+            if (t.getType() != Token.EOF && t.getChannel() == Token.DEFAULT_CHANNEL) {
+                tokens.add(t);
+            }
+        }
         return tokens;
     }
 

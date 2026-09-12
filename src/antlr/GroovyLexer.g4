@@ -28,8 +28,8 @@
  */
 
 /**
- * The Groovy grammar is based on the official grammar for Java:
- * https://github.com/antlr/grammars-v4/blob/master/java/Java.g4
+ * The Groovy grammar is based on the optimized Java grammar:
+ * https://github.com/antlr/grammars-v4/tree/master/java/java
  */
 lexer grammar GroovyLexer;
 
@@ -48,7 +48,6 @@ options {
     private boolean errorIgnored;
     private long tokenIndex;
     private int  lastTokenType;
-    private int  invalidDigitCount;
 
     /**
      * When {@code false}, the {@code val} keyword is treated as a regular
@@ -254,6 +253,31 @@ options {
         return Character.isJavaIdentifierPart(codePoint) && !Character.isIdentifierIgnorable(codePoint);
     }
 
+    /**
+     * Code point just consumed. After a UTF-16 surrogate pair, {@code LA(-1)}
+     * is the low surrogate and is never uppercase — {@code Character.isUpperCase}
+     * must see the pair (GROOVY-12398).
+     */
+    private int lastConsumedCodePoint() {
+        int c1 = _input.LA(-1);
+        int c2 = _input.LA(-2);
+        if (c1 >= Character.MIN_LOW_SURROGATE && c1 <= Character.MAX_LOW_SURROGATE
+                && c2 >= Character.MIN_HIGH_SURROGATE && c2 <= Character.MAX_HIGH_SURROGATE) {
+            return Character.toCodePoint((char) c2, (char) c1);
+        }
+        return c1;
+    }
+
+    private boolean isSupplementaryCapitalizedIdentifierStart() {
+        int cp = lastConsumedCodePoint();
+        return Character.isJavaIdentifierStart(cp) && Character.isUpperCase(cp);
+    }
+
+    private boolean isSupplementaryUncapitalizedIdentifierStart() {
+        int cp = lastConsumedCodePoint();
+        return Character.isJavaIdentifierStart(cp) && !Character.isUpperCase(cp);
+    }
+
     public boolean isErrorIgnored() {
         return errorIgnored;
     }
@@ -343,7 +367,7 @@ GStringIdentifier
 
 mode GSTRING_PATH_MODE;
 GStringPathPart
-    :   Dot IdentifierInGString
+    :   '.' IdentifierInGString
     ;
 RollBackOne
     :   . {
@@ -509,6 +533,10 @@ WHILE         : 'while';
 YIELD         : 'yield';
 
 // §3.10.1 Integer Literals
+// Digit sequences use character classes (optimized Java grammar style) so the
+// lexer DFA does not walk a chain of one-character fragment rules. The invalid
+// octal alt validates once at the end rather than counting digits in an action
+// loop, which would prevent DFA compilation of this token.
 
 IntegerLiteral
     :   (   DecimalIntegerLiteral
@@ -518,12 +546,7 @@ IntegerLiteral
         ) (Underscore { require(errorIgnored, "Number ending with underscores is invalid", -1, false); })?
 
     // !!! Error Alternative !!!
-    |   Zero ([0-9] { invalidDigitCount++; })+ { require(errorIgnored, "Invalid octal number", -(invalidDigitCount + 1), false); } IntegerTypeSuffix?
-    ;
-
-fragment
-Zero
-    :   '0'
+    |   '0' [0-9]+ { requireInvalidOctal(errorIgnored); } IntegerTypeSuffix?
     ;
 
 fragment
@@ -553,35 +576,18 @@ IntegerTypeSuffix
 
 fragment
 DecimalNumeral
-    :   Zero
-    |   NonZeroDigit (Digits? | Underscores Digits)
+    :   '0'
+    |   [1-9] (Digits? | Underscores Digits)
     ;
 
 fragment
 Digits
-    :   Digit (DigitOrUnderscore* Digit)?
-    ;
-
-fragment
-Digit
-    :   Zero
-    |   NonZeroDigit
-    ;
-
-fragment
-NonZeroDigit
-    :   [1-9]
-    ;
-
-fragment
-DigitOrUnderscore
-    :   Digit
-    |   Underscore
+    :   [0-9] ([0-9_]* [0-9])?
     ;
 
 fragment
 Underscores
-    :   Underscore+
+    :   '_'+
     ;
 
 fragment
@@ -591,12 +597,12 @@ Underscore
 
 fragment
 HexNumeral
-    :   Zero [xX] HexDigits
+    :   '0' [xX] HexDigits
     ;
 
 fragment
 HexDigits
-    :   HexDigit (HexDigitOrUnderscore* HexDigit)?
+    :   HexDigit ([0-9a-fA-F_]* HexDigit)?
     ;
 
 fragment
@@ -605,51 +611,23 @@ HexDigit
     ;
 
 fragment
-HexDigitOrUnderscore
-    :   HexDigit
-    |   Underscore
-    ;
-
-fragment
 OctalNumeral
-    :   Zero Underscores? OctalDigits
+    :   '0' '_'* OctalDigits
     ;
 
 fragment
 OctalDigits
-    :   OctalDigit (OctalDigitOrUnderscore* OctalDigit)?
-    ;
-
-fragment
-OctalDigit
-    :   [0-7]
-    ;
-
-fragment
-OctalDigitOrUnderscore
-    :   OctalDigit
-    |   Underscore
+    :   [0-7] ([0-7_]* [0-7])?
     ;
 
 fragment
 BinaryNumeral
-    :   Zero [bB] BinaryDigits
+    :   '0' [bB] BinaryDigits
     ;
 
 fragment
 BinaryDigits
-    :   BinaryDigit (BinaryDigitOrUnderscore* BinaryDigit)?
-    ;
-
-fragment
-BinaryDigit
-    :   [01]
-    ;
-
-fragment
-BinaryDigitOrUnderscore
-    :   BinaryDigit
-    |   Underscore
+    :   [01] ([01_]* [01])?
     ;
 
 // §3.10.2 Floating-Point Literals
@@ -662,29 +640,14 @@ FloatingPointLiteral
 
 fragment
 DecimalFloatingPointLiteral
-    :   Digits? Dot Digits ExponentPart? FloatTypeSuffix?
+    :   Digits? '.' Digits ExponentPart? FloatTypeSuffix?
     |   Digits ExponentPart FloatTypeSuffix?
     |   Digits FloatTypeSuffix
     ;
 
 fragment
 ExponentPart
-    :   ExponentIndicator SignedInteger
-    ;
-
-fragment
-ExponentIndicator
-    :   [eE]
-    ;
-
-fragment
-SignedInteger
-    :   Sign? Digits
-    ;
-
-fragment
-Sign
-    :   [+\-]
+    :   [eE] [+\-]? Digits
     ;
 
 fragment
@@ -699,22 +662,13 @@ HexadecimalFloatingPointLiteral
 
 fragment
 HexSignificand
-    :   HexNumeral Dot?
-    |   Zero [xX] HexDigits? Dot HexDigits
+    :   HexNumeral '.'?
+    |   '0' [xX] HexDigits? '.' HexDigits
     ;
 
 fragment
 BinaryExponent
-    :   BinaryExponentIndicator SignedInteger
-    ;
-
-fragment
-BinaryExponentIndicator
-    :   [pP]
-    ;
-
-fragment
-Dot :   '.'
+    :   [pP] [+\-]? Digits
     ;
 
 // §3.10.3 Boolean Literals
@@ -739,20 +693,15 @@ EscapeSequence
 
 fragment
 OctalEscape
-    :   Backslash OctalDigit
-    |   Backslash OctalDigit OctalDigit
-    |   Backslash ZeroToThree OctalDigit OctalDigit
+    :   Backslash [0-7]
+    |   Backslash [0-7] [0-7]
+    |   Backslash [0-3] [0-7] [0-7]
     ;
 
 // Groovy allows 1 or more u's after the backslash
 fragment
 UnicodeEscape
     :   Backslash 'u' HexDigit HexDigit HexDigit HexDigit
-    ;
-
-fragment
-ZeroToThree
-    :   [0-3]
     ;
 
 // Groovy Escape Sequences
@@ -886,7 +835,7 @@ RBRACK          : ']'  { this.exitParen();      } -> popMode;
 
 SEMI            : ';';
 COMMA           : ',';
-DOT             : Dot;
+DOT             : '.';
 
 // §3.12 Operators
 
@@ -930,12 +879,29 @@ ELVIS_ASSIGN    : '?=';
 
 
 // §3.8 Identifiers (must appear after all keywords in the grammar)
+// ASCII is a pure-DFA split ([A-Z] vs [a-z$_]) — no predicate on that hot path.
+// BMP non-ASCII still uses LA(-1). Supplementary-plane letters must use the
+// decoded code point: LA(-1) after a surrogate pair is the low surrogate,
+// which is never uppercase, so the old isUpperCase(LA(-1)) test silently
+// classified every supplementary identifier as Identifier (GROOVY-12398).
 CapitalizedIdentifier
-    :   JavaLetter {Character.isUpperCase(_input.LA(-1))}? JavaLetterOrDigit*
+    :   [A-Z] JavaLetterOrDigit*
+    |   ~[\u0000-\u007F\uD800-\uDBFF]
+        { isJavaIdentifierStartAndNotIdentifierIgnorable(_input.LA(-1)) && Character.isUpperCase(_input.LA(-1)) }?
+        JavaLetterOrDigit*
+    |   [\uD800-\uDBFF] [\uDC00-\uDFFF]
+        { isSupplementaryCapitalizedIdentifierStart() }?
+        JavaLetterOrDigit*
     ;
 
 Identifier
-    :   JavaLetter JavaLetterOrDigit*
+    :   [a-z$_] JavaLetterOrDigit*
+    |   ~[\u0000-\u007F\uD800-\uDBFF]
+        { isJavaIdentifierStartAndNotIdentifierIgnorable(_input.LA(-1)) && !Character.isUpperCase(_input.LA(-1)) }?
+        JavaLetterOrDigit*
+    |   [\uD800-\uDBFF] [\uDC00-\uDFFF]
+        { isSupplementaryUncapitalizedIdentifierStart() }?
+        JavaLetterOrDigit*
     ;
 
 fragment

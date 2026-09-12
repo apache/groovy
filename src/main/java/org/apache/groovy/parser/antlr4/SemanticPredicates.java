@@ -21,11 +21,14 @@ package org.apache.groovy.parser.antlr4;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStream;
+import org.antlr.v4.runtime.atn.ATN;
+import org.antlr.v4.runtime.atn.LL1Analyzer;
+import org.antlr.v4.runtime.atn.PredictionContext;
+import org.antlr.v4.runtime.misc.IntervalSet;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ModifierNode;
 
 import java.util.BitSet;
-import java.util.regex.Pattern;
 
 import static org.apache.groovy.parser.antlr4.GroovyParser.ASSIGN;
 import static org.apache.groovy.parser.antlr4.GroovyParser.AT;
@@ -44,30 +47,62 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.RPAREN;
 import static org.apache.groovy.parser.antlr4.GroovyParser.StringLiteral;
 import static org.apache.groovy.parser.antlr4.GroovyParser.WHILE;
 import static org.apache.groovy.parser.antlr4.GroovyParser.YIELD;
-import static org.apache.groovy.parser.antlr4.util.StringUtils.matches;
 
 /**
- * Some semantic predicates for altering the behaviour of the lexer and parser
+ * Semantic predicates for the lexer and parser.
+ * <p>
+ * Lexer helpers on this class run on the tokenisation hot path (GString
+ * {@code $}, slashy strings, newline-as-separator). They use direct character
+ * tests, not regular expressions. Parser helpers such as
+ * {@link #isIdentifierAssign(TokenStream)} are O(1) bitset lookups so
+ * {@code AdaptivePredict} can skip exploring assignment as an annotation
+ * element value (GROOVY-12398).
+ * </p>
  */
 public class SemanticPredicates {
-    private static final Pattern NONSPACES_PATTERN = Pattern.compile("\\S+?");
-    private static final Pattern LETTER_AND_LEFTCURLY_PATTERN = Pattern.compile("[a-zA-Z_{]");
-    private static final Pattern NONSURROGATE_PATTERN = Pattern.compile("[^\u0000-\u007F\uD800-\uDBFF]");
-    private static final Pattern SURROGATE_PAIR1_PATTERN = Pattern.compile("[\uD800-\uDBFF]");
-    private static final Pattern SURROGATE_PAIR2_PATTERN = Pattern.compile("[\uDC00-\uDFFF]");
     private static final int PATH_EXPRESSION_ARGUMENTS = 2;
     private static final int PATH_EXPRESSION_CLOSURE_OR_LAMBDA = 3;
 
     /**
+     * FIRST({@code elementValuePairName}), taken from the generated ATN so a
+     * new token alternative on {@code identifier} or {@code keywords} is picked
+     * up without a parallel Java list. Used to distinguish {@code @Foo(a = 1)}
+     * (named pairs) from a single element value.
+     */
+    private static final BitSet ELEMENT_VALUE_PAIR_NAME_TYPES =
+            firstTokens(GroovyParser.RULE_elementValuePairName);
+
+    /**
+     * Tokens that can appear first in {@code ruleIndex}. {@code EPSILON}/{@code EOF}
+     * are dropped; an empty result means the ATN shape is not what the gate
+     * assumes and the grammar change needs a look.
+     */
+    private static BitSet firstTokens(final int ruleIndex) {
+        ATN atn = GroovyParser._ATN;
+        IntervalSet look = new LL1Analyzer(atn).LOOK(
+                atn.ruleToStartState[ruleIndex], PredictionContext.EMPTY_LOCAL);
+        BitSet bits = new BitSet();
+        for (int t : look.toList()) {
+            if (t >= Token.MIN_USER_TOKEN_TYPE) {
+                bits.set(t);
+            }
+        }
+        if (bits.isEmpty()) {
+            throw new GroovyBugError("FIRST set of parser rule " + ruleIndex + " is empty");
+        }
+        return bits;
+    }
+
+    /**
      * Check whether the next characters are only white spaces until the end of line or end of file.
+     * Matches Java regex {@code \s} minus the newlines the loop already stops at: space, tab, VT, FF.
      */
     public static boolean isFollowedByWhiteSpaces(CharStream cs) {
-        for (int index = 1, c = cs.LA(index); !('\r' == c || '\n' == c || CharStream.EOF == c); index++, c = cs.LA(index)) {
-            if (matches(String.valueOf((char) c), NONSPACES_PATTERN)) {
+        for (int index = 1, c = cs.LA(index); c != '\r' && c != '\n' && c != CharStream.EOF; index++, c = cs.LA(index)) {
+            if (c != ' ' && c != '\t' && c != '\f' && c != '\u000B') {
                 return false;
             }
         }
-
         return true;
     }
 
@@ -92,32 +127,38 @@ public class SemanticPredicates {
     public static boolean isFollowedByJavaLetterInGString(CharStream cs) {
         int c1 = cs.LA(1);
 
-        if ('$' == c1) { // single $ is not a valid identifier
+        if (c1 == '$' || c1 < 0) { // single $ is not a valid identifier; EOF is not either
             return false;
         }
 
-        String str1 = String.valueOf((char) c1);
-
-        if (matches(str1, LETTER_AND_LEFTCURLY_PATTERN)) {
+        if (c1 == '{' || c1 == '_'
+                || (c1 >= 'A' && c1 <= 'Z')
+                || (c1 >= 'a' && c1 <= 'z')) {
             return true;
         }
 
-        if (matches(str1, NONSURROGATE_PATTERN)
-                && Character.isJavaIdentifierPart(c1)) {
-            return true;
+        if (c1 <= 0x7F) {
+            return false;
         }
 
-        int c2 = cs.LA(2);
-        String str2 = String.valueOf((char) c2);
-
-        if (matches(str1, SURROGATE_PAIR1_PATTERN)
-                && matches(str2, SURROGATE_PAIR2_PATTERN)
-                && Character.isJavaIdentifierPart(Character.toCodePoint((char) c1, (char) c2))) {
-
-            return true;
+        if (c1 >= 0xD800 && c1 <= 0xDBFF) {
+            int c2 = cs.LA(2);
+            return c2 >= 0xDC00 && c2 <= 0xDFFF
+                    && Character.isJavaIdentifierPart(Character.toCodePoint((char) c1, (char) c2));
         }
 
-        return false;
+        return Character.isJavaIdentifierPart(c1);
+    }
+
+    /**
+     * {@code true} when the upcoming tokens are {@code name '=' ...}, i.e. a named
+     * annotation element-value pair rather than a single element value. Inside
+     * annotation parentheses newlines are already hidden, so {@code LT(2)} is the
+     * token after the name.
+     */
+    public static boolean isIdentifierAssign(TokenStream ts) {
+        int t1 = ts.LT(1).getType();
+        return t1 >= 0 && ELEMENT_VALUE_PAIR_NAME_TYPES.get(t1) && ASSIGN == ts.LT(2).getType();
     }
 
     /**
