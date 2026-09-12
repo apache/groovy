@@ -18,14 +18,13 @@
  */
 package org.codehaus.groovy.ast;
 
+import groovy.lang.annotation.ExtendedElementType;
+import groovy.lang.annotation.ExtendedTarget;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
-
-import groovy.lang.annotation.ExtendedElementType;
-import groovy.lang.annotation.ExtendedTarget;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -262,10 +261,11 @@ public class AnnotationNode extends ASTNode {
 
     @Override
     public String getText() {
-        String text = "@" + classNode.getName();
-        if (members != null) {
+        String text = "@" + getClassNode().getName();
+        Map<String, Expression> members = getMembers();
+        if (!members.isEmpty()) {
             var memberText = new StringJoiner(", ", "(", ")");
-            for (Map.Entry<String,Expression> entry : members.entrySet()) {
+            for (Map.Entry<String, Expression> entry : members.entrySet()) {
                 memberText.add(entry.getKey() + "=" + getText(entry.getValue()));
             }
             text += memberText;

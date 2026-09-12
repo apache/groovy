@@ -478,8 +478,8 @@ public abstract class Traits {
      */
     @SuppressWarnings("unchecked")
     public static <T> T getAsType(Object self, Class<T> clazz) {
-        if (self instanceof GeneratedGroovyProxy) {
-            Object proxyTarget = ((GeneratedGroovyProxy)self).getProxyTarget();
+        if (self instanceof GeneratedGroovyProxy proxy) {
+            Object proxyTarget = proxy.getProxyTarget();
             if (clazz.isAssignableFrom(proxyTarget.getClass())) {
                 return (T) proxyTarget;
             }

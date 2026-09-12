@@ -60,6 +60,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
@@ -131,8 +132,8 @@ public abstract class TraitComposer {
         ClassNode staticFieldHelperClassNode = helpers.getStaticFieldHelper();
         Map<String, ClassNode> genericsSpec = GenericsUtils.createGenericsSpec(trait, GenericsUtils.createGenericsSpec(cNode));
 
-        var hMethods = new ArrayList<MethodNode>(helperClassNode.getMethods());
-        if (hMethods.size() > 1) {
+        List<MethodNode> hMethods = helperClassNode.getMethods();
+        if (hMethods.size() > 1) { hMethods = new ArrayList<>(hMethods);
             hMethods.sort(Comparator.comparing(MethodNodeUtils::methodDescriptorWithoutReturnType));
         }
         for (MethodNode methodNode : hMethods) {
@@ -184,8 +185,8 @@ public abstract class TraitComposer {
             // implementation of methods
             List<MethodNode> declaredMethods = new LinkedList<>();
             int pos = 0; // keep direct getters at start but in declaration order
-            List<MethodNode> fhMethods = new ArrayList<>(fieldHelperClassNode.getMethods());
-            if (fhMethods.size() > 1) {
+            List<MethodNode> fhMethods = fieldHelperClassNode.getMethods();
+            if (fhMethods.size() > 1) { fhMethods = new ArrayList<>(fhMethods);
                 fhMethods.sort(Comparator.comparing(MethodNodeUtils::methodDescriptorWithoutReturnType));
             }
             for (MethodNode declaredMethod : fhMethods) {
@@ -197,8 +198,8 @@ public abstract class TraitComposer {
             }
 
             if (staticFieldHelperClassNode != null) {
-                List<MethodNode> sfhMethods = new ArrayList<>(staticFieldHelperClassNode.getMethods());
-                if (sfhMethods.size() > 1) {
+                List<MethodNode> sfhMethods = staticFieldHelperClassNode.getMethods();
+                if (sfhMethods.size() > 1) { sfhMethods = new ArrayList<>(sfhMethods);
                     sfhMethods.sort(Comparator.comparing(MethodNodeUtils::methodDescriptorWithoutReturnType));
                 }
                 for (MethodNode declaredMethod : sfhMethods) {

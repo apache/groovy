@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.classgen;
 
-import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -49,6 +48,7 @@ import java.util.StringJoiner;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoArgConstructor;
+import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptor;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.arrayX;
@@ -287,7 +287,6 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                 }
             } else {
                 var initList = (ListExpression) field.getInitialExpression();
-                field.setInitialValueExpression(null);
                 List<MapEntryExpression> savedMapEntries = new ArrayList<>();
                 for (Expression exp : initList.getExpressions()) {
                     if (exp instanceof MapEntryExpression) {
@@ -300,7 +299,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                             if (!methodNode.isAbstract()) continue;
                             MethodNode enumConstMethod = inner.getMethod(methodNode.getName(), methodNode.getParameters());
                             if (enumConstMethod == null || enumConstMethod.isAbstract()) {
-                                addError(field, "Can't have an abstract method in enum constant " + field.getName() + ". Implement method '" + MethodNodeUtils.methodDescriptor(methodNode,true) + "'.");
+                                addError(field, "Can't have an abstract method in enum constant " + field.getName() + ". Implement method '" + methodDescriptor(methodNode, true) + "'.");
                             }
                         }
                         if (inner.getVariableScope() == null) {
@@ -319,6 +318,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                 if (!savedMapEntries.isEmpty()) {
                     args.getExpressions().add(2, mapX(savedMapEntries));
                 }
+                field.setInitialValueExpression(null);
             }
             arrayInit.add(fieldX(field));
             Expression init = callX(enumType, "$INIT", args);

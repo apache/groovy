@@ -94,17 +94,16 @@ public class ImportCustomizer extends CompilationCustomizer {
         }
     }
 
-    private static void expandModuleImport(final SourceUnit source, final ModuleNode ast, final String moduleName) {
-        ModuleFinder finder = ModuleImportHelper.moduleFinder(source);
+    private static void expandModuleImport(final SourceUnit sourceUnit, final ModuleNode moduleNode, final String moduleName) {
+        ModuleFinder finder = ModuleImportHelper.moduleFinder(sourceUnit);
         List<String> packageNames = ModuleImportHelper.resolveModulePackages(moduleName, finder);
-        Set<String> skip = new HashSet<>(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
-        ast.getStarImports().stream().map(ImportNode::getPackageName).forEach(skip::add);
-        ast.getModuleStarImports().stream().map(ImportNode::getPackageName).forEach(skip::add);
-        for (String pkg : packageNames) {
-            String packageName = pkg + ".";
-            if (!skip.contains(packageName)) {
-                ast.addModuleStarImport(packageName, Collections.emptyList());
-                skip.add(packageName);
+        Set<String> skip = new HashSet<>();
+        Collections.addAll(skip, ResolveVisitor.DEFAULT_IMPORTS);
+        for (var in : moduleNode.getStarImports()) skip.add(in.getPackageName());
+        for (var in : moduleNode.getModuleStarImports()) skip.add(in.getPackageName());
+        for (String pn : packageNames) { String packageName = pn + ".";
+            if (skip.add(packageName)) {
+                moduleNode.addModuleStarImport(packageName, Collections.emptyList());
             }
         }
     }

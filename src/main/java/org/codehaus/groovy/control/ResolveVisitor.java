@@ -946,7 +946,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     }
                 }
             }
-            // Module-expanded star imports — lowest precedence per JLS 6.4.1.
+            // Module-expanded star imports -- lowest precedence per JLS 6.4.1.
             // Only consulted if nothing above resolved the type, and ambiguity
             // between two module-expanded packages is a compile-time error
             // (matching Java's behavior per JLS 7.5.5 Example 7.5.5-3).
@@ -1198,8 +1198,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)
                 || (!Modifier.isPrivate(modifiers) && Objects.equals(innerType.getPackageName(), outerType.getPackageName()));
     }
-
-
 
     private boolean directlyImplementsTrait(final ClassNode trait) {
         ClassNode[] interfaces = currentClass.getInterfaces();

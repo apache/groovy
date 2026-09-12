@@ -142,7 +142,7 @@ public final class ExpressionUtils {
                     Object leftV = ((ConstantExpression) left).getValue();
                     if (leftV == null) leftV = "null";
                     if (leftV instanceof String) {
-                        return configure(be, new ConstantExpression(((String)leftV) + ((ConstantExpression) right).getValue()));
+                        return configure(be, new ConstantExpression(((String) leftV) + ((ConstantExpression) right).getValue()));
                     }
                 }
             }
@@ -212,7 +212,7 @@ public final class ExpressionUtils {
                 if (field != null && !field.isEnum() && field.isFinal() && field.isStatic()) {
                     Expression value = transformInlineConstants(field.getInitialValueExpression(), field.getType()); // GROOVY-10750, GROOVY-10068
                     if (value instanceof ConstantExpression) {
-                        return configure(exp, new ConstantExpression(((ConstantExpression) value).getValue()));
+                        return configure(exp, new ConstantExpression(((ConstantExpression) value).getValue(), true));
                     }
                 }
             }
@@ -221,7 +221,7 @@ public final class ExpressionUtils {
                 if (!field.isEnum() && field.isFinal() && field.isStatic()) {
                     Expression value = transformInlineConstants(field.getInitialValueExpression(), field.getType()); // GROOVY-11207, GROOVY-10068
                     if (value instanceof ConstantExpression) {
-                        return configure(exp, new ConstantExpression(((ConstantExpression) value).getValue()));
+                        return configure(exp, new ConstantExpression(((ConstantExpression) value).getValue(), true));
                     }
                 }
             }

@@ -616,7 +616,7 @@ public class ClassHelper {
     }
 
     static class ClassHelperCache {
-        static ManagedIdentityConcurrentMap<Class, SoftReference<ClassNode>> classCache = new ManagedIdentityConcurrentMap<>(128);
+        static Map<Class, SoftReference<ClassNode>> classCache = new ManagedIdentityConcurrentMap<>(128);
     }
 
     public static boolean isSAMType(final ClassNode type) {

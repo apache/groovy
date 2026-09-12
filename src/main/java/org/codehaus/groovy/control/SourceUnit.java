@@ -212,13 +212,9 @@ public class SourceUnit extends ProcessingUnit {
 
         buildAST();
 
-        if ("xml".equals(getProperty("groovy.ast"))) {
+        if ("xml".equals(System.getProperty("groovy.ast"))) {
             XStreamUtils.serialize(name, ast);
         }
-    }
-
-    private String getProperty(String key) {
-        return System.getProperty(key);
     }
 
     /**

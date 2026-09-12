@@ -42,7 +42,6 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -257,8 +256,8 @@ public class AnnotationCollectorTransform {
         List<AnnotationNode> ret = new ArrayList<>(annotations.size());
         for (AnnotationNode an : annotations) {
             ClassNode type = an.getClassNode();
-            if (type.getName().equals(ANNOTATIONCOLLECTOR_CLASS_NAME)
-                    || "java.lang.annotation".equals(type.getPackageName())
+            if ("java.lang.annotation".equals(type.getPackageName())
+                    || ANNOTATIONCOLLECTOR_CLASS_NAME.equals(type.getName())
                     || "org.apache.groovy.lang.annotation.Incubating".equals(type.getName())) continue;
             AnnotationNode toAdd = new AnnotationNode(type);
             copyMembers(an, toAdd);
@@ -281,14 +280,12 @@ public class AnnotationCollectorTransform {
     private static List<AnnotationNode> getTargetListFromClass(final ClassNode alias) {
         ClassNode cn = getSerializeClass(alias);
         Class<?> c = cn.getTypeClass();
-        Object[][] data;
         try {
             Method m = c.getMethod("value");
-            if (!Modifier.isStatic(m.getModifiers()))
+            if ((m.getModifiers() & ACC_STATIC) == 0) {
                 throw new NoSuchMethodException("non-static value()");
-
-            data = (Object[][]) m.invoke(null);
-            return makeListOfAnnotations(data);
+            }
+            return makeListOfAnnotations((Object[][]) m.invoke(null));
         } catch (NoSuchMethodException | ClassCastException e) {
             throw new GroovyRuntimeException("Expecting static method `Object[][] value()`" +
                     " in " + cn.toString(false) + ". Was it compiled from a Java source?");

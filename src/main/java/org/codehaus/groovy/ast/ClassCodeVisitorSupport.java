@@ -272,6 +272,8 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
         super.visitDeclarationExpression(expression);
     }
 
+    //--------------------------------------------------------------------------
+
     /**
      * Visits an {@link AssertStatement}, invoking the statement hook before parent traversal.
      *
@@ -411,19 +413,6 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     }
 
     /**
-     * Visits a {@link YieldStatement}, invoking the statement hook before parent
-     * traversal (GROOVY-12255).
-     *
-     * @param statement the yield statement to visit
-     * @since 6.0.0
-     */
-    @Override
-    public void visitYieldStatement(final YieldStatement statement) {
-        visitStatement(statement);
-        super.visitYieldStatement(statement);
-    }
-
-    /**
      * Visits a {@link SynchronizedStatement}, invoking the statement hook before parent traversal.
      *
      * @param statement the synchronized statement to visit
@@ -467,6 +456,20 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
         visitStatementAnnotations(statement);
         super.visitWhileLoop(statement);
     }
+
+    /**
+     * Visits a {@link YieldStatement}, invoking the statement hook before parent traversal.
+     *
+     * @param statement the yield statement to visit
+     * @since 6.0.0
+     */
+    @Override
+    public void visitYieldStatement(final YieldStatement statement) {
+        visitStatement(statement);
+        super.visitYieldStatement(statement);
+    }
+
+    //--------------------------------------------------------------------------
 
     /**
      * Hook method called when visiting any {@link Statement}. Subclasses may override

@@ -375,7 +375,7 @@ public class ClassNodeUtils {
                 Class<?> tc = cn.getTypeClass();
                 Class<?> sc = tc.getSuperclass();
                 return sc != null && sc.isSealed() && !(Modifier.isFinal(tc.getModifiers()) || tc.isSealed());
-            } catch (AssertionError | LinkageError ignore) {
+            } catch (AssertionError | LinkageError | RuntimeException ignore) {
             }
         }
         ClassNode sc = cn.getSuperClass();

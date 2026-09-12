@@ -32,7 +32,6 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
@@ -68,6 +67,7 @@ import java.util.regex.Pattern;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.eqX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
@@ -470,10 +470,9 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         List<Statement> grabInitializers = new ArrayList<>();
         MapExpression basicArgs = new MapExpression();
         // Pass the class's own ClassLoader so chooseClassLoader doesn't have to walk the
-        // call stack — the stack-walk depth is tuned for the compile-time path, not the
+        // call stack -- the stack-walk depth is tuned for the compile-time path, not the
         // generated static-initializer path, and would overshoot into java.lang.reflect frames.
-        basicArgs.addMapEntryExpression(constX("classLoader"),
-                callX(new ClassExpression(classNode.getPlainNodeReference()), "getClassLoader"));
+        basicArgs.addMapEntryExpression(constX("classLoader"), callX(classX(classNode.getPlainNodeReference()), "getClassLoader"));
         if (autoDownload != null)  {
             basicArgs.addMapEntryExpression(constX(AUTO_DOWNLOAD_SETTING), constX(autoDownload));
         }

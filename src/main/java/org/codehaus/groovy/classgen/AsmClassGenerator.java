@@ -1727,13 +1727,13 @@ public class AsmClassGenerator extends ClassGenerator {
      * Creates helper class literal fields for interface bytecode generation.
      */
     protected void createInterfaceSyntheticStaticFields() {
-        var icl = controller.getInterfaceClassLoadingClass();
         // GROOVY-11982: also materialise the helper when a call-site array
         // prologue was emitted (every default/static method body under
         // indy=false, even one that registers no call sites -- GROOVY-12235),
         // otherwise CallSiteWriter routes INVOKESTATIC at a class never emitted
         boolean hasCallSitePrologue = controller.getCallSiteWriter().isPrologueEmitted();
         if (referencedClasses.isEmpty() && !hasCallSitePrologue) return;
+        var icl = controller.getInterfaceClassLoadingClass();
         addInnerClass(icl);
         for (Map.Entry<String, ClassNode> entry : referencedClasses.entrySet()) {
             // generate a field node

@@ -285,8 +285,11 @@ public class MethodNode extends AnnotatedNode {
      * @return true if this method is a default interface method
      */
     public boolean isDefault() {
-        return (modifiers & (ACC_ABSTRACT | ACC_PUBLIC | ACC_STATIC)) == ACC_PUBLIC
-            && getDeclaringClass() != null && getDeclaringClass().isInterface();
+        if ((modifiers & (ACC_ABSTRACT | ACC_PUBLIC | ACC_STATIC)) == ACC_PUBLIC) {
+            ClassNode declaringClass = getDeclaringClass();
+            return declaringClass != null && declaringClass.isInterface();
+        }
+        return false;
     }
 
     /**
