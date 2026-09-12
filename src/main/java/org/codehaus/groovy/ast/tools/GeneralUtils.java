@@ -1876,15 +1876,14 @@ public class GeneralUtils {
             Expression valueExpression = retentionPolicyAnnotation.getMember("value");
             if (!(valueExpression instanceof PropertyExpression propertyExpression)) continue;
 
-            boolean processAnnotation = propertyExpression.getProperty() instanceof ConstantExpression
-                    && ("RUNTIME".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue())
-                        || "CLASS".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue()));
+            boolean processAnnotation = propertyExpression.getProperty() instanceof ConstantExpression property
+                    && ("RUNTIME".equals(property.getValue()) || "CLASS".equals(property.getValue()));
             if (processAnnotation)  {
                 AnnotationNode newAnnotation = new AnnotationNode(annotation.getClassNode());
                 for (Map.Entry<String, Expression> member : annotation.getMembers().entrySet())  {
                     newAnnotation.addMember(member.getKey(), member.getValue());
                 }
-                newAnnotation.setSourcePosition(annotatedNode);
+                newAnnotation.setSourcePosition(annotation);
 
                 copied.add(newAnnotation);
             }
