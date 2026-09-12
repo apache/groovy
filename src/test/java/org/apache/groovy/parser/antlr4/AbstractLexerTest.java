@@ -436,22 +436,22 @@ final class AbstractLexerTest {
 
     @Test
     void invalidOctalReportsAtTokenStart() {
-        GroovySyntaxError first = assertThrows(GroovySyntaxError.class,
-                () -> drain(new GroovyLangLexer(CharStreams.fromString("08"))));
+        GroovyLangLexer firstLexer = lexer("08");
+        GroovySyntaxError first = assertThrows(GroovySyntaxError.class, () -> drain(firstLexer));
         assertEquals(1, first.getLine());
         assertEquals(1, first.getColumn());
 
-        GroovySyntaxError withSuffix = assertThrows(GroovySyntaxError.class,
-                () -> drain(new GroovyLangLexer(CharStreams.fromString("08L"))));
+        GroovyLangLexer suffixLexer = lexer("08L");
+        GroovySyntaxError withSuffix = assertThrows(GroovySyntaxError.class, () -> drain(suffixLexer));
         assertEquals(1, withSuffix.getColumn());
 
-        GroovySyntaxError afterPrefix = assertThrows(GroovySyntaxError.class,
-                () -> drain(new GroovyLangLexer(CharStreams.fromString("x=08"))));
+        GroovyLangLexer prefixLexer = lexer("x=08");
+        GroovySyntaxError afterPrefix = assertThrows(GroovySyntaxError.class, () -> drain(prefixLexer));
         assertEquals(3, afterPrefix.getColumn());
 
         // first of two invalid octals still points at column 1, not a drifted count
-        GroovySyntaxError two = assertThrows(GroovySyntaxError.class,
-                () -> drain(new GroovyLangLexer(CharStreams.fromString("08 09"))));
+        GroovyLangLexer twoLexer = lexer("08 09");
+        GroovySyntaxError two = assertThrows(GroovySyntaxError.class, () -> drain(twoLexer));
         assertEquals(1, two.getColumn());
     }
 
@@ -497,6 +497,10 @@ final class AbstractLexerTest {
 
     private static GroovyLangLexer displayLexer() {
         return new GroovyLangLexer(CharStreams.fromString("x"));
+    }
+
+    private static GroovyLangLexer lexer(final String src) {
+        return new GroovyLangLexer(CharStreams.fromString(src));
     }
 
     private static void drain(GroovyLangLexer lexer) {

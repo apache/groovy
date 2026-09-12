@@ -1160,18 +1160,6 @@ public class BinaryExpressionHelper {
     }
 
     /**
-     * Emits bytecode for {@code e instanceof T} and, when the right-hand side is
-     * a JEP&nbsp;394 type pattern ({@code e instanceof T t}), conditionally stores
-     * the checked value into the pattern variable {@code t}.
-     * <p>
-     * The slot is allocated and {@linkplain CompileStack#recordPatternVariable
-     * recorded} immediately so a short-circuit {@code &&} RHS can reference
-     * {@code t}. Path-level name visibility after the condition is administered
-     * by CompileStack hide/push/pop (see {@link StatementWriter#writeIfElse}).
-     *
-     * @param expression an {@code instanceof} binary expression
-     */
-    /**
      * Allocates and null-initialises the slots of the pattern variables declared
      * by {@code instanceof} tests in the right operand of {@code &&} / {@code ||}
      * before the left operand runs. The right operand is skipped when the left
@@ -1204,6 +1192,18 @@ public class BinaryExpressionHelper {
         });
     }
 
+    /**
+     * Emits bytecode for {@code e instanceof T} and, when the right-hand side is
+     * a JEP&nbsp;394 type pattern ({@code e instanceof T t}), conditionally stores
+     * the checked value into the pattern variable {@code t}.
+     * <p>
+     * The slot is allocated and {@linkplain CompileStack#recordPatternVariable
+     * recorded} immediately so a short-circuit {@code &&} RHS can reference
+     * {@code t}. Path-level name visibility after the condition is administered
+     * by CompileStack hide/push/pop (see {@link StatementWriter#writeIfElse}).
+     *
+     * @param expression an {@code instanceof} binary expression
+     */
     private void evaluateInstanceof(final BinaryExpression expression) {
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();

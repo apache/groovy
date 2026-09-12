@@ -1101,12 +1101,16 @@ public class CompileStack {
      * is skipped when the left operand decides the result, and a slot first
      * stored inside that operand would be undefined at the join otherwise.
      *
+     * @param variable the pattern local whose slot was allocated ahead of the
+     *                 {@code instanceof} site; ignored if {@code null}
      * @see #takePredeclaredPatternVariable(String)
      * @since 7.0.0
      */
     public void predeclarePatternVariable(final BytecodeVariable variable) {
-        recordPatternVariable(variable);
-        predeclaredPatternVariables.add(variable.getName());
+        if (variable != null) {
+            recordPatternVariable(variable);
+            predeclaredPatternVariables.add(variable.getName());
+        }
     }
 
     /**
