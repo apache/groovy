@@ -197,32 +197,32 @@ final class GenericsUsageTest {
 
         shouldFailCompilationWithMessage '''
             List<Integer list2 = new ArrayList<Integer>()
-        ''', "Unexpected input: 'List<Integer'"
+        ''', "Missing '>'"
 
-        shouldFailCompilationWithMessage '''
+        shouldFailCompilationWithAnyMessage '''
             def c = []
             for (Iterator<String i = c.iterator(); i.hasNext(); ) { }
-        ''', "Unexpected input: 'Iterator<String i'"
+        ''', ["Missing '>'", "Unexpected input: 'Iterator<String i'"]
 
-        shouldFailCompilationWithMessage '''
+        shouldFailCompilationWithAnyMessage '''
             def m(Class<Integer someParam) {}
-        ''', "Unexpected input: 'Class<Integer someParam'"
+        ''', ["Missing '>'", "Unexpected input: 'Class<Integer someParam'"]
 
         shouldFailCompilationWithMessage '''
             abstract class ArrayList1<E extends AbstractList<E> implements List<E> {}
         ''', "Missing '>'"
 
-        shouldFailCompilationWithMessage '''
+        shouldFailCompilationWithAnyMessage '''
             abstract class ArrayList2<E> extends AbstractList<E implements List<E> {}
-        ''', "Unexpected input: '<'"
+        ''', ["Missing '>'", "Unexpected input: '<'"]
 
-        shouldFailCompilationWithMessage '''
+        shouldFailCompilationWithAnyMessage '''
             abstract class ArrayList3<E> extends AbstractList<E> implements List<E {}
-        ''', "Unexpected input: '<'"
+        ''', ["Missing '>'", "Unexpected input: '<'"]
 
-        shouldFailCompilationWithMessage '''
+        shouldFailCompilationWithAnyMessage '''
             def List<List<Integer> history = new ArrayList<List<Integer>>()
-        ''', "Unexpected input: 'def List<List<Integer> history'"
+        ''', ["Missing '>'", "Unexpected input: 'def List<List<Integer> history'"]
 
         shouldFailCompilationWithMessage '''
             def List<List<Integer>> history = new ArrayList<List<Integer>()

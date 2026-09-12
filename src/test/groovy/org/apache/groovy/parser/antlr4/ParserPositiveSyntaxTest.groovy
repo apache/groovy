@@ -36,7 +36,8 @@ import static org.apache.groovy.parser.antlr4.TestUtils.parseModule
  * <p>
  * Each snippet is compiled through {@code CONVERSION} and asserted against
  * a pretty-printed XML AST dump ({@link AstXmlDumper})
- * that includes source positions on every node.
+ * that includes source positions. Authored nodes carry line/column
+ * information; synthetic or generated nodes remain at {@code -1}.
  */
 @AutoFinal
 final class ParserPositiveSyntaxTest {
@@ -460,7 +461,10 @@ final class ParserPositiveSyntaxTest {
             |'''.stripMargin(), '''\
             |<Module line="-1" column="-1" lastLine="-1" lastColumn="-1">
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
-            |  <ClassNode line="1" column="1" lastLine="1" lastColumn="43" kind="record" name="Fruit"/>
+            |  <ClassNode line="1" column="1" lastLine="1" lastColumn="43" kind="record" name="Fruit">
+            |    <PropertyNode line="1" column="14" lastLine="1" lastColumn="25" name="name" type="String" modifiers="public final"/>
+            |    <PropertyNode line="1" column="27" lastLine="1" lastColumn="39" name="price" type="double" modifiers="public final"/>
+            |  </ClassNode>
             |</Module>
             |'''.stripMargin()
         expectAst '''\
@@ -477,6 +481,9 @@ final class ParserPositiveSyntaxTest {
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.TupleConstructor" members="pre"/>
             |  <ClassNode line="1" column="1" lastLine="8" lastColumn="2" kind="record" name="Point">
+            |    <PropertyNode line="1" column="14" lastLine="1" lastColumn="19" name="x" type="int" modifiers="public final"/>
+            |    <PropertyNode line="1" column="21" lastLine="1" lastColumn="26" name="y" type="int" modifiers="public final"/>
+            |    <PropertyNode line="1" column="28" lastLine="1" lastColumn="40" name="color" type="String" modifiers="public final"/>
             |    <ConstructorNode line="5" column="5" lastLine="7" lastColumn="6" name="&lt;init&gt;">
             |      <Parameter line="5" column="18" lastLine="5" lastColumn="23" name="x" type="int"/>
             |      <Parameter line="5" column="25" lastLine="5" lastColumn="30" name="y" type="int"/>
@@ -550,7 +557,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="1" column="1" lastLine="3" lastColumn="2" token="=">
             |        <VariableExpression line="1" column="5" lastLine="1" lastColumn="6" name="r"/>
             |        <ConstructorCallExpression line="1" column="9" lastLine="3" lastColumn="2" type="test$1" anonymous="true">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="1" column="21" lastLine="1" lastColumn="23"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -623,6 +630,83 @@ final class ParserPositiveSyntaxTest {
             |    </FieldNode>
             |    <FieldNode line="4" column="5" lastLine="4" lastColumn="20" name="age" type="int" modifiers="private"/>
             |    <FieldNode line="7" column="5" lastLine="7" lastColumn="31" name="extra" type="java.lang.Object" modifiers="protected static"/>
+            |    <PropertyNode line="5" column="5" lastLine="5" lastColumn="29" name="country" type="String" modifiers="public">
+            |      <ConstantExpression line="5" column="22" lastLine="5" lastColumn="29" value="China"/>
+            |    </PropertyNode>
+            |    <PropertyNode line="5" column="31" lastLine="5" lastColumn="52" name="location" type="String" modifiers="public">
+            |      <ConstantExpression line="5" column="42" lastLine="5" lastColumn="52" value="Shanghai"/>
+            |    </PropertyNode>
+            |    <PropertyNode line="6" column="5" lastLine="6" lastColumn="31" name="title" type="String" modifiers="public final">
+            |      <ConstantExpression line="6" column="26" lastLine="6" lastColumn="31" value="dev"/>
+            |    </PropertyNode>
+            |  </ClassNode>
+            |</Module>
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'source positions not covered elsewhere'() {
+        // Interface primitive with an authored initializer (AA1 only has synthetic 0 / String NAME).
+        expectAst '''\
+            |interface I1 { int a = 1 }
+            |'''.stripMargin(), '''\
+            |<Module line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |  <ClassNode line="1" column="1" lastLine="1" lastColumn="27" kind="interface" name="I1">
+            |    <FieldNode line="1" column="16" lastLine="1" lastColumn="25" name="a" type="int" modifiers="public static final">
+            |      <ConstantExpression line="1" column="24" lastLine="1" lastColumn="25" value="1"/>
+            |    </FieldNode>
+            |  </ClassNode>
+            |</Module>
+            |'''.stripMargin()
+        // Multi-declarator: second field must not keep lastLine -1 from the synthetic default.
+        expectAst '''\
+            |interface I2 { int a, b }
+            |'''.stripMargin(), '''\
+            |<Module line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |  <ClassNode line="1" column="1" lastLine="1" lastColumn="26" kind="interface" name="I2">
+            |    <FieldNode line="1" column="16" lastLine="1" lastColumn="24" name="a" type="int" modifiers="public static final">
+            |      <ConstantExpression line="-1" column="-1" lastLine="-1" lastColumn="-1" value="0"/>
+            |    </FieldNode>
+            |    <FieldNode line="1" column="23" lastLine="1" lastColumn="24" name="b" type="int" modifiers="public static final">
+            |      <ConstantExpression line="-1" column="-1" lastLine="-1" lastColumn="-1" value="0"/>
+            |    </FieldNode>
+            |  </ClassNode>
+            |</Module>
+            |'''.stripMargin()
+        // Property without a visibility modifier (synthetic field is omitted from the dump).
+        expectAst '''\
+            |class C { int a }
+            |'''.stripMargin(), '''\
+            |<Module line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |  <ClassNode line="1" column="1" lastLine="1" lastColumn="18" kind="class" name="C">
+            |    <PropertyNode line="1" column="11" lastLine="1" lastColumn="16" name="a" type="int" modifiers="public"/>
+            |  </ClassNode>
+            |</Module>
+            |'''.stripMargin()
+        // Enum constant with empty parens: FieldNode span includes `()`.
+        expectAst '''\
+            |enum E { A() }
+            |'''.stripMargin(), '''\
+            |<Module line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |  <ClassNode line="1" column="1" lastLine="1" lastColumn="15" kind="enum" name="E" extends="java.lang.Enum&lt;E&gt;">
+            |    <FieldNode line="1" column="10" lastLine="1" lastColumn="13" name="A" type="E" modifiers="public static final" enumConstant="true"/>
+            |  </ClassNode>
+            |</Module>
+            |'''.stripMargin()
+        // GROOVY-11492 multi-line `{ }` (the existing @interface D case is one line).
+        expectAst '''\
+            |@interface D {
+            |    String[] zero() default {
+            |    }
+            |}
+            |'''.stripMargin(), '''\
+            |<Module line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |  <ClassNode line="1" column="1" lastLine="4" lastColumn="2" kind="annotation" name="D" implements="java.lang.annotation.Annotation">
+            |    <MethodNode line="2" column="5" lastLine="3" lastColumn="6" name="zero" modifiers="abstract" returnType="String[]">
+            |      <ExpressionStatement line="2" column="29" lastLine="3" lastColumn="6">
+            |        <ListExpression line="2" column="29" lastLine="3" lastColumn="6"/>
+            |      </ExpressionStatement>
+            |    </MethodNode>
             |  </ClassNode>
             |</Module>
             |'''.stripMargin()
@@ -939,7 +1023,7 @@ final class ParserPositiveSyntaxTest {
             |      </BlockStatement>
             |    </ForStatement>
             |    <ForStatement line="4" column="1" lastLine="4" lastColumn="44">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="4" column="6" lastLine="4" lastColumn="40">
             |        <ClosureListExpression line="4" column="6" lastLine="4" lastColumn="23">
             |          <DeclarationExpression line="4" column="6" lastLine="4" lastColumn="15" token="=">
             |            <VariableExpression line="4" column="10" lastLine="4" lastColumn="11" name="i" type="java.lang.Integer"/>
@@ -966,7 +1050,7 @@ final class ParserPositiveSyntaxTest {
             |      <BlockStatement line="4" column="42" lastLine="4" lastColumn="44"/>
             |    </ForStatement>
             |    <ForStatement line="5" column="1" lastLine="5" lastColumn="12">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="5" column="6" lastLine="5" lastColumn="8">
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
@@ -3671,12 +3755,12 @@ final class ParserPositiveSyntaxTest {
             |  <ClassNode line="45" column="1" lastLine="49" lastColumn="2" kind="annotation" name="D" implements="java.lang.annotation.Annotation">
             |    <MethodNode line="46" column="5" lastLine="46" lastColumn="32" name="zero" modifiers="abstract" returnType="String[]">
             |      <ExpressionStatement line="46" column="29" lastLine="46" lastColumn="32">
-            |        <ListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |        <ListExpression line="46" column="29" lastLine="46" lastColumn="32"/>
             |      </ExpressionStatement>
             |    </MethodNode>
             |    <MethodNode line="47" column="5" lastLine="47" lastColumn="38" name="one" modifiers="abstract" returnType="String[]">
             |      <ExpressionStatement line="47" column="29" lastLine="47" lastColumn="38">
-            |        <ListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |        <ListExpression line="47" column="29" lastLine="47" lastColumn="38">
             |          <ConstantExpression line="47" column="31" lastLine="47" lastColumn="36" value="foo"/>
             |        </ListExpression>
             |      </ExpressionStatement>
@@ -6384,7 +6468,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="14" column="1" lastLine="14" lastColumn="24" token="=">
             |        <VariableExpression line="14" column="5" lastLine="14" lastColumn="10" name="robot"/>
             |        <ConstructorCallExpression line="14" column="13" lastLine="14" lastColumn="24" type="Robot">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="14" column="22" lastLine="14" lastColumn="24"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -6746,7 +6830,7 @@ final class ParserPositiveSyntaxTest {
             |      <BooleanExpression line="71" column="8" lastLine="71" lastColumn="73">
             |        <BinaryExpression line="71" column="8" lastLine="71" lastColumn="73" token="==">
             |          <ConstructorCallExpression line="71" column="8" lastLine="71" lastColumn="38" type="HashMap&lt;String, Integer&gt;">
-            |            <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |            <ArgumentListExpression line="71" column="36" lastLine="71" lastColumn="38"/>
             |          </ConstructorCallExpression>
             |          <MethodCallExpression line="71" column="42" lastLine="71" lastColumn="73">
             |            <MethodReferenceExpression line="71" column="66" lastLine="71" lastColumn="71">
@@ -6763,7 +6847,7 @@ final class ParserPositiveSyntaxTest {
             |      <BooleanExpression line="72" column="8" lastLine="72" lastColumn="57">
             |        <BinaryExpression line="72" column="8" lastLine="72" lastColumn="57" token="==">
             |          <ConstructorCallExpression line="72" column="8" lastLine="72" lastColumn="30" type="HashSet&lt;Integer&gt;">
-            |            <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |            <ArgumentListExpression line="72" column="28" lastLine="72" lastColumn="30"/>
             |          </ConstructorCallExpression>
             |          <MethodCallExpression line="72" column="34" lastLine="72" lastColumn="57">
             |            <MethodReferenceExpression line="72" column="50" lastLine="72" lastColumn="55">
@@ -6780,7 +6864,7 @@ final class ParserPositiveSyntaxTest {
             |      <BooleanExpression line="74" column="8" lastLine="74" lastColumn="39">
             |        <BinaryExpression line="74" column="8" lastLine="74" lastColumn="39" token="==">
             |          <ConstructorCallExpression line="74" column="8" lastLine="74" lastColumn="21" type="HashSet">
-            |            <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |            <ArgumentListExpression line="74" column="19" lastLine="74" lastColumn="21"/>
             |          </ConstructorCallExpression>
             |          <MethodCallExpression line="74" column="25" lastLine="74" lastColumn="39">
             |            <MethodReferenceExpression line="74" column="32" lastLine="74" lastColumn="37">
@@ -6797,7 +6881,7 @@ final class ParserPositiveSyntaxTest {
             |      <BooleanExpression line="75" column="8" lastLine="75" lastColumn="37">
             |        <BinaryExpression line="75" column="8" lastLine="75" lastColumn="37" token="==">
             |          <ConstructorCallExpression line="75" column="8" lastLine="75" lastColumn="20" type="String">
-            |            <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |            <ArgumentListExpression line="75" column="18" lastLine="75" lastColumn="20"/>
             |          </ConstructorCallExpression>
             |          <MethodCallExpression line="75" column="24" lastLine="75" lastColumn="37">
             |            <MethodReferenceExpression line="75" column="30" lastLine="75" lastColumn="35">
@@ -7315,7 +7399,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="1" column="1" lastLine="1" lastColumn="30" token="=">
             |        <VariableExpression line="1" column="5" lastLine="1" lastColumn="10" name="shell"/>
             |        <ConstructorCallExpression line="1" column="13" lastLine="1" lastColumn="30" type="GroovyShell">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="1" column="28" lastLine="1" lastColumn="30"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -11632,7 +11716,7 @@ final class ParserPositiveSyntaxTest {
             |      <PropertyExpression line="41" column="1" lastLine="41" lastColumn="14" safe="true" spreadSafe="true">
             |        <BinaryExpression line="41" column="2" lastLine="41" lastColumn="11" token="[">
             |          <VariableExpression line="41" column="1" lastLine="41" lastColumn="2" name="a"/>
-            |          <ListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |          <ListExpression line="41" column="2" lastLine="41" lastColumn="11">
             |            <SpreadExpression line="41" column="3" lastLine="41" lastColumn="10">
             |              <ListExpression line="41" column="4" lastLine="41" lastColumn="10">
             |                <ConstantExpression line="41" column="5" lastLine="41" lastColumn="6" value="2"/>
@@ -12073,7 +12157,7 @@ final class ParserPositiveSyntaxTest {
             |          <MethodCallExpression line="120" column="29" lastLine="120" lastColumn="36">
             |            <MethodCallExpression line="119" column="22" lastLine="119" lastColumn="47">
             |              <ConstructorCallExpression line="118" column="33" lastLine="118" lastColumn="53" type="ResolveOptions">
-            |                <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |                <ArgumentListExpression line="118" column="51" lastLine="118" lastColumn="53"/>
             |              </ConstructorCallExpression>
             |              <ConstantExpression line="119" column="14" lastLine="119" lastColumn="22" value="setConfs"/>
             |              <CastExpression line="119" column="23" lastLine="119" lastColumn="46" kind="as" type="String[]">
@@ -13591,7 +13675,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="1" column="1" lastLine="1" lastColumn="28" token="=">
             |        <VariableExpression line="1" column="6" lastLine="1" lastColumn="10" name="list" type="List"/>
             |        <ConstructorCallExpression line="1" column="13" lastLine="1" lastColumn="28" type="ArrayList">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="1" column="26" lastLine="1" lastColumn="28"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -13599,7 +13683,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="2" column="1" lastLine="2" lastColumn="39" token="=">
             |        <VariableExpression line="2" column="6" lastLine="2" lastColumn="11" name="list2" type="List"/>
             |        <ConstructorCallExpression line="2" column="14" lastLine="2" lastColumn="39" type="java.util.ArrayList">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="2" column="37" lastLine="2" lastColumn="39"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -13607,7 +13691,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="3" column="1" lastLine="3" lastColumn="45" token="=">
             |        <VariableExpression line="3" column="14" lastLine="3" lastColumn="19" name="list3" type="List&lt;String&gt;"/>
             |        <ConstructorCallExpression line="3" column="22" lastLine="3" lastColumn="45" type="ArrayList&lt;String&gt;">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="3" column="43" lastLine="3" lastColumn="45"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -13615,7 +13699,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="4" column="1" lastLine="4" lastColumn="55" token="=">
             |        <VariableExpression line="4" column="14" lastLine="4" lastColumn="19" name="list4" type="List&lt;String&gt;"/>
             |        <ConstructorCallExpression line="4" column="22" lastLine="4" lastColumn="55" type="java.util.ArrayList&lt;String&gt;">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="4" column="53" lastLine="4" lastColumn="55"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -13623,7 +13707,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="5" column="1" lastLine="5" lastColumn="39" token="=">
             |        <VariableExpression line="5" column="14" lastLine="5" lastColumn="19" name="list5" type="List&lt;String&gt;"/>
             |        <ConstructorCallExpression line="5" column="22" lastLine="5" lastColumn="39" type="ArrayList">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="5" column="37" lastLine="5" lastColumn="39"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -13631,7 +13715,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="7" column="1" lastLine="7" lastColumn="24" token="=">
             |        <VariableExpression line="7" column="5" lastLine="7" lastColumn="6" name="x"/>
             |        <ConstructorCallExpression line="7" column="9" lastLine="7" lastColumn="24" type="A&lt;EE, TT&gt;">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="7" column="22" lastLine="7" lastColumn="24"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -13754,7 +13838,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="22" column="1" lastLine="22" lastColumn="19" token="=">
             |        <VariableExpression line="22" column="5" lastLine="22" lastColumn="7" name="bb"/>
             |        <ConstructorCallExpression line="22" column="10" lastLine="22" lastColumn="19" type="A.B">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="22" column="17" lastLine="22" lastColumn="19"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -13776,17 +13860,17 @@ final class ParserPositiveSyntaxTest {
             |    </ExpressionStatement>
             |    <ExpressionStatement line="30" column="1" lastLine="30" lastColumn="8">
             |      <ConstructorCallExpression line="30" column="1" lastLine="30" lastColumn="8" type="a">
-            |        <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |        <ArgumentListExpression line="30" column="6" lastLine="30" lastColumn="8"/>
             |      </ConstructorCallExpression>
             |    </ExpressionStatement>
             |    <ExpressionStatement line="31" column="1" lastLine="31" lastColumn="9">
             |      <ConstructorCallExpression line="31" column="1" lastLine="31" lastColumn="9" type="$a">
-            |        <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |        <ArgumentListExpression line="31" column="7" lastLine="31" lastColumn="9"/>
             |      </ConstructorCallExpression>
             |    </ExpressionStatement>
             |    <ExpressionStatement line="32" column="1" lastLine="32" lastColumn="24">
             |      <ConstructorCallExpression line="32" column="1" lastLine="32" lastColumn="24" type="as.def.in.trait.a">
-            |        <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |        <ArgumentListExpression line="32" column="22" lastLine="32" lastColumn="24"/>
             |      </ConstructorCallExpression>
             |    </ExpressionStatement>
             |  </BlockStatement>
@@ -15986,7 +16070,7 @@ final class ParserPositiveSyntaxTest {
             |<Module line="-1" column="-1" lastLine="-1" lastColumn="-1">
             |  <BlockStatement line="-1" column="-1" lastLine="-1" lastColumn="-1">
             |    <ForStatement line="1" column="1" lastLine="1" lastColumn="32">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="1" column="6" lastLine="1" lastColumn="28">
             |        <DeclarationExpression line="1" column="6" lastLine="1" lastColumn="15" token="=">
             |          <VariableExpression line="1" column="10" lastLine="1" lastColumn="11" name="i" type="java.lang.Integer"/>
             |          <ConstantExpression line="1" column="14" lastLine="1" lastColumn="15" value="0"/>
@@ -15997,7 +16081,7 @@ final class ParserPositiveSyntaxTest {
             |      <BlockStatement line="1" column="30" lastLine="1" lastColumn="32"/>
             |    </ForStatement>
             |    <ForStatement line="2" column="1" lastLine="4" lastColumn="2">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="2" column="6" lastLine="2" lastColumn="28">
             |        <DeclarationExpression line="2" column="6" lastLine="2" lastColumn="15" token="=">
             |          <VariableExpression line="2" column="10" lastLine="2" lastColumn="11" name="i" type="java.lang.Integer"/>
             |          <ConstantExpression line="2" column="14" lastLine="2" lastColumn="15" value="0"/>
@@ -16008,7 +16092,7 @@ final class ParserPositiveSyntaxTest {
             |      <BlockStatement line="2" column="30" lastLine="4" lastColumn="2"/>
             |    </ForStatement>
             |    <ForStatement line="5" column="1" lastLine="7" lastColumn="2">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="5" column="6" lastLine="5" lastColumn="28">
             |        <DeclarationExpression line="5" column="6" lastLine="5" lastColumn="15" token="=">
             |          <VariableExpression line="5" column="10" lastLine="5" lastColumn="11" name="i" type="java.lang.Integer"/>
             |          <ConstantExpression line="5" column="14" lastLine="5" lastColumn="15" value="0"/>
@@ -16019,7 +16103,7 @@ final class ParserPositiveSyntaxTest {
             |      <BlockStatement line="6" column="1" lastLine="7" lastColumn="2"/>
             |    </ForStatement>
             |    <ForStatement line="8" column="1" lastLine="12" lastColumn="2">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="8" column="6" lastLine="10" lastColumn="11">
             |        <DeclarationExpression line="8" column="6" lastLine="8" lastColumn="15" token="=">
             |          <VariableExpression line="8" column="10" lastLine="8" lastColumn="11" name="i" type="java.lang.Integer"/>
             |          <ConstantExpression line="8" column="14" lastLine="8" lastColumn="15" value="0"/>
@@ -16030,7 +16114,7 @@ final class ParserPositiveSyntaxTest {
             |      <BlockStatement line="11" column="1" lastLine="12" lastColumn="2"/>
             |    </ForStatement>
             |    <ForStatement line="13" column="1" lastLine="15" lastColumn="2">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="13" column="5" lastLine="13" lastColumn="7">
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
@@ -16038,7 +16122,7 @@ final class ParserPositiveSyntaxTest {
             |      <BlockStatement line="13" column="9" lastLine="15" lastColumn="2"/>
             |    </ForStatement>
             |    <ForStatement line="16" column="1" lastLine="18" lastColumn="2">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="16" column="5" lastLine="16" lastColumn="16">
             |        <DeclarationExpression line="16" column="5" lastLine="16" lastColumn="14" token="=">
             |          <VariableExpression line="16" column="9" lastLine="16" lastColumn="10" name="i" type="java.lang.Integer"/>
             |          <ConstantExpression line="16" column="13" lastLine="16" lastColumn="14" value="0"/>
@@ -16049,7 +16133,7 @@ final class ParserPositiveSyntaxTest {
             |      <BlockStatement line="16" column="18" lastLine="18" lastColumn="2"/>
             |    </ForStatement>
             |    <ForStatement line="19" column="1" lastLine="21" lastColumn="2">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="19" column="5" lastLine="19" lastColumn="11">
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
             |        <ConstantExpression line="19" column="6" lastLine="19" lastColumn="10" value="true"/>
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
@@ -16057,7 +16141,7 @@ final class ParserPositiveSyntaxTest {
             |      <BlockStatement line="19" column="13" lastLine="21" lastColumn="2"/>
             |    </ForStatement>
             |    <ForStatement line="22" column="1" lastLine="24" lastColumn="2">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="22" column="5" lastLine="22" lastColumn="12">
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
             |        <ConstantExpression line="22" column="7" lastLine="22" lastColumn="12" value="false"/>
@@ -16065,7 +16149,7 @@ final class ParserPositiveSyntaxTest {
             |      <BlockStatement line="22" column="14" lastLine="24" lastColumn="2"/>
             |    </ForStatement>
             |    <ForStatement line="26" column="1" lastLine="28" lastColumn="2">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="26" column="6" lastLine="26" lastColumn="28">
             |        <DeclarationExpression line="26" column="6" lastLine="26" lastColumn="15" token="=">
             |          <VariableExpression line="26" column="10" lastLine="26" lastColumn="11" name="i" type="java.lang.Integer"/>
             |          <ConstantExpression line="26" column="14" lastLine="26" lastColumn="15" value="0"/>
@@ -16081,7 +16165,7 @@ final class ParserPositiveSyntaxTest {
             |      <BlockStatement line="26" column="30" lastLine="28" lastColumn="2"/>
             |    </ForStatement>
             |    <ForStatement line="30" column="1" lastLine="32" lastColumn="2">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="30" column="6" lastLine="30" lastColumn="24">
             |        <BinaryExpression line="30" column="6" lastLine="30" lastColumn="11" token="=">
             |          <VariableExpression line="30" column="6" lastLine="30" lastColumn="7" name="i"/>
             |          <ConstantExpression line="30" column="10" lastLine="30" lastColumn="11" value="0"/>
@@ -16097,7 +16181,7 @@ final class ParserPositiveSyntaxTest {
             |      <BlockStatement line="30" column="26" lastLine="32" lastColumn="2"/>
             |    </ForStatement>
             |    <ForStatement line="34" column="1" lastLine="36" lastColumn="2">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="34" column="5" lastLine="34" lastColumn="7">
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
@@ -16227,7 +16311,7 @@ final class ParserPositiveSyntaxTest {
             |      </BlockStatement>
             |    </ForStatement>
             |    <ForStatement line="21" column="1" lastLine="22" lastColumn="19">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="21" column="6" lastLine="21" lastColumn="8">
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
@@ -16246,7 +16330,7 @@ final class ParserPositiveSyntaxTest {
             |      </DeclarationExpression>
             |    </ExpressionStatement>
             |    <ForStatement line="26" column="1" lastLine="26" lastColumn="25">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="26" column="6" lastLine="26" lastColumn="23">
             |        <BinaryExpression line="26" column="6" lastLine="26" lastColumn="11" token="=">
             |          <VariableExpression line="26" column="6" lastLine="26" lastColumn="7" name="i"/>
             |          <ConstantExpression line="26" column="10" lastLine="26" lastColumn="11" value="0"/>
@@ -16353,7 +16437,7 @@ final class ParserPositiveSyntaxTest {
             |        </DeclarationExpression>
             |      </ExpressionStatement>
             |      <ForStatement line="6" column="5" lastLine="9" lastColumn="6">
-            |        <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |        <ClosureListExpression line="6" column="10" lastLine="6" lastColumn="69">
             |          <DeclarationExpression line="6" column="10" lastLine="6" lastColumn="37" token="=">
             |            <TupleExpression line="6" column="14" lastLine="6" lastColumn="28">
             |              <VariableExpression line="6" column="15" lastLine="6" lastColumn="20" name="i" type="java.lang.Integer"/>
@@ -16417,7 +16501,7 @@ final class ParserPositiveSyntaxTest {
             |        </BinaryExpression>
             |      </ExpressionStatement>
             |      <ForStatement line="13" column="5" lastLine="16" lastColumn="6">
-            |        <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |        <ClosureListExpression line="13" column="10" lastLine="13" lastColumn="58">
             |          <ClosureListExpression line="13" column="10" lastLine="13" lastColumn="26">
             |            <DeclarationExpression line="13" column="10" lastLine="13" lastColumn="19" token="=">
             |              <VariableExpression line="13" column="14" lastLine="13" lastColumn="15" name="i" type="java.lang.Integer"/>
@@ -16485,7 +16569,7 @@ final class ParserPositiveSyntaxTest {
             |        </DeclarationExpression>
             |      </ExpressionStatement>
             |      <ForStatement line="23" column="5" lastLine="26" lastColumn="6">
-            |        <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |        <ClosureListExpression line="23" column="10" lastLine="23" lastColumn="57">
             |          <BinaryExpression line="23" column="10" lastLine="23" lastColumn="25" token="=">
             |            <TupleExpression line="23" column="10" lastLine="23" lastColumn="16">
             |              <VariableExpression line="23" column="11" lastLine="23" lastColumn="12" name="i"/>
@@ -16549,7 +16633,7 @@ final class ParserPositiveSyntaxTest {
             |        </BinaryExpression>
             |      </ExpressionStatement>
             |      <ForStatement line="30" column="5" lastLine="33" lastColumn="6">
-            |        <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |        <ClosureListExpression line="30" column="10" lastLine="30" lastColumn="58">
             |          <ClosureListExpression line="30" column="10" lastLine="30" lastColumn="26">
             |            <DeclarationExpression line="30" column="10" lastLine="30" lastColumn="19" token="=">
             |              <VariableExpression line="30" column="14" lastLine="30" lastColumn="15" name="i" type="java.lang.Integer"/>
@@ -16676,7 +16760,7 @@ final class ParserPositiveSyntaxTest {
             |        </DeclarationExpression>
             |      </ExpressionStatement>
             |      <ForStatement line="6" column="5" lastLine="8" lastColumn="6">
-            |        <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |        <ClosureListExpression line="6" column="10" lastLine="6" lastColumn="38">
             |          <ClosureListExpression line="6" column="10" lastLine="6" lastColumn="26">
             |            <DeclarationExpression line="6" column="10" lastLine="6" lastColumn="19" token="=">
             |              <VariableExpression line="6" column="14" lastLine="6" lastColumn="15" name="i" type="java.lang.Integer"/>
@@ -16731,7 +16815,7 @@ final class ParserPositiveSyntaxTest {
             |        </DeclarationExpression>
             |      </ExpressionStatement>
             |      <ForStatement line="14" column="5" lastLine="17" lastColumn="6">
-            |        <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |        <ClosureListExpression line="14" column="10" lastLine="14" lastColumn="39">
             |          <ClosureListExpression line="14" column="10" lastLine="14" lastColumn="22">
             |            <BinaryExpression line="14" column="10" lastLine="14" lastColumn="15" token="=">
             |              <VariableExpression line="14" column="10" lastLine="14" lastColumn="11" name="i"/>
@@ -16789,7 +16873,7 @@ final class ParserPositiveSyntaxTest {
             |        </DeclarationExpression>
             |      </ExpressionStatement>
             |      <ForStatement line="24" column="5" lastLine="26" lastColumn="6">
-            |        <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |        <ClosureListExpression line="24" column="10" lastLine="24" lastColumn="38">
             |          <ClosureListExpression line="24" column="10" lastLine="24" lastColumn="26">
             |            <DeclarationExpression line="24" column="10" lastLine="24" lastColumn="19" token="=">
             |              <VariableExpression line="24" column="14" lastLine="24" lastColumn="15" name="i" type="java.lang.Integer"/>
@@ -16844,7 +16928,7 @@ final class ParserPositiveSyntaxTest {
             |        </DeclarationExpression>
             |      </ExpressionStatement>
             |      <ForStatement line="32" column="5" lastLine="35" lastColumn="6">
-            |        <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |        <ClosureListExpression line="32" column="10" lastLine="32" lastColumn="39">
             |          <ClosureListExpression line="32" column="10" lastLine="32" lastColumn="22">
             |            <BinaryExpression line="32" column="10" lastLine="32" lastColumn="15" token="=">
             |              <VariableExpression line="32" column="10" lastLine="32" lastColumn="11" name="i"/>
@@ -17673,7 +17757,7 @@ final class ParserPositiveSyntaxTest {
             |      </BlockStatement>
             |    </ForStatement>
             |    <ForStatement line="27" column="1" lastLine="29" lastColumn="2">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="27" column="13" lastLine="27" lastColumn="35">
             |        <DeclarationExpression line="27" column="13" lastLine="27" lastColumn="22" token="=">
             |          <VariableExpression line="27" column="17" lastLine="27" lastColumn="18" name="i" type="java.lang.Integer"/>
             |          <ConstantExpression line="27" column="21" lastLine="27" lastColumn="22" value="0"/>
@@ -17691,7 +17775,7 @@ final class ParserPositiveSyntaxTest {
             |      </BlockStatement>
             |    </ForStatement>
             |    <ForStatement line="31" column="1" lastLine="33" lastColumn="2">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="31" column="20" lastLine="31" lastColumn="42">
             |        <DeclarationExpression line="31" column="20" lastLine="31" lastColumn="29" token="=">
             |          <VariableExpression line="31" column="24" lastLine="31" lastColumn="25" name="i" type="java.lang.Integer"/>
             |          <ConstantExpression line="31" column="28" lastLine="31" lastColumn="29" value="0"/>
@@ -17709,7 +17793,7 @@ final class ParserPositiveSyntaxTest {
             |      </BlockStatement>
             |    </ForStatement>
             |    <ForStatement line="35" column="1" lastLine="39" lastColumn="2">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="37" column="6" lastLine="37" lastColumn="28">
             |        <DeclarationExpression line="37" column="6" lastLine="37" lastColumn="15" token="=">
             |          <VariableExpression line="37" column="10" lastLine="37" lastColumn="11" name="i" type="java.lang.Integer"/>
             |          <ConstantExpression line="37" column="14" lastLine="37" lastColumn="15" value="0"/>
@@ -17982,7 +18066,7 @@ final class ParserPositiveSyntaxTest {
             |      </DeclarationExpression>
             |    </ExpressionStatement>
             |    <ForStatement line="21" column="1" lastLine="29" lastColumn="2">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="27" column="6" lastLine="27" lastColumn="27">
             |        <DeclarationExpression line="27" column="6" lastLine="27" lastColumn="15" token="=">
             |          <VariableExpression line="27" column="10" lastLine="27" lastColumn="11" name="i" type="java.lang.Integer"/>
             |          <ConstantExpression line="27" column="14" lastLine="27" lastColumn="15" value="0"/>
@@ -22754,6 +22838,13 @@ final class ParserPositiveSyntaxTest {
             |    </AssertStatement>
             |  </BlockStatement>
             |  <ClassNode line="6" column="1" lastLine="20" lastColumn="2" kind="class" name="Resource" implements="Closeable">
+            |    <PropertyNode line="7" column="5" lastLine="7" lastColumn="19" name="resourceId" type="int" modifiers="public"/>
+            |    <PropertyNode line="8" column="5" lastLine="8" lastColumn="34" name="closedResourceIds" type="java.lang.Object" modifiers="public static">
+            |      <ListExpression line="8" column="32" lastLine="8" lastColumn="34"/>
+            |    </PropertyNode>
+            |    <PropertyNode line="9" column="5" lastLine="9" lastColumn="37" name="exMsg" type="java.lang.Object" modifiers="public static">
+            |      <ConstantExpression line="9" column="20" lastLine="9" lastColumn="37" value="failed to close"/>
+            |    </PropertyNode>
             |    <ConstructorNode line="11" column="5" lastLine="13" lastColumn="6" name="&lt;init&gt;">
             |      <Parameter line="11" column="21" lastLine="11" lastColumn="35" name="resourceId" type="int"/>
             |      <BlockStatement line="11" column="37" lastLine="13" lastColumn="6">
@@ -27732,6 +27823,13 @@ final class ParserPositiveSyntaxTest {
             |    </AssertStatement>
             |  </BlockStatement>
             |  <ClassNode line="6" column="1" lastLine="20" lastColumn="2" kind="class" name="Resource" implements="Closeable">
+            |    <PropertyNode line="7" column="5" lastLine="7" lastColumn="19" name="resourceId" type="int" modifiers="public"/>
+            |    <PropertyNode line="8" column="5" lastLine="8" lastColumn="34" name="closedResourceIds" type="java.lang.Object" modifiers="public static">
+            |      <ListExpression line="8" column="32" lastLine="8" lastColumn="34"/>
+            |    </PropertyNode>
+            |    <PropertyNode line="9" column="5" lastLine="9" lastColumn="37" name="exMsg" type="java.lang.Object" modifiers="public static">
+            |      <ConstantExpression line="9" column="20" lastLine="9" lastColumn="37" value="failed to close"/>
+            |    </PropertyNode>
             |    <ConstructorNode line="11" column="5" lastLine="13" lastColumn="6" name="&lt;init&gt;">
             |      <Parameter line="11" column="21" lastLine="11" lastColumn="35" name="resourceId" type="int"/>
             |      <BlockStatement line="11" column="37" lastLine="13" lastColumn="6">
@@ -30914,7 +31012,10 @@ final class ParserPositiveSyntaxTest {
             |      </MethodCallExpression>
             |    </ExpressionStatement>
             |  </BlockStatement>
-            |  <ClassNode line="3" column="1" lastLine="6" lastColumn="2" kind="class" name="SpecialSafeIndex"/>
+            |  <ClassNode line="3" column="1" lastLine="6" lastColumn="2" kind="class" name="SpecialSafeIndex">
+            |    <PropertyNode line="4" column="5" lastLine="4" lastColumn="16" name="name" type="String" modifiers="public"/>
+            |    <PropertyNode line="5" column="5" lastLine="5" lastColumn="20" name="location" type="String" modifiers="public"/>
+            |  </ClassNode>
             |  <AnnotationNode line="8" column="1" lastLine="8" lastColumn="15" class="CompileStatic"/>
             |  <MethodNode line="8" column="1" lastLine="13" lastColumn="2" name="csSpecialSafeIndex" returnType="java.lang.Object">
             |    <BlockStatement line="9" column="26" lastLine="13" lastColumn="2">
@@ -31392,7 +31493,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="18" column="1" lastLine="18" lastColumn="21" token="=">
             |        <VariableExpression line="18" column="5" lastLine="18" lastColumn="6" name="p"/>
             |        <ConstructorCallExpression line="18" column="9" lastLine="18" lastColumn="21" type="Person">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="18" column="19" lastLine="18" lastColumn="21"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -31514,7 +31615,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="35" column="1" lastLine="35" lastColumn="16" token="=">
             |        <VariableExpression line="35" column="5" lastLine="35" lastColumn="6" name="c"/>
             |        <ConstructorCallExpression line="35" column="9" lastLine="35" lastColumn="16" type="C">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="35" column="14" lastLine="35" lastColumn="16"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -32922,7 +33023,7 @@ final class ParserPositiveSyntaxTest {
             |      </BlockStatement>
             |    </WhileStatement>
             |    <ForStatement line="98" column="1" lastLine="99" lastColumn="18">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="98" column="5" lastLine="98" lastColumn="7">
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
@@ -32935,7 +33036,7 @@ final class ParserPositiveSyntaxTest {
             |      </ExpressionStatement>
             |    </ForStatement>
             |    <ForStatement line="101" column="1" lastLine="102" lastColumn="22">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="101" column="5" lastLine="101" lastColumn="7">
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
@@ -32956,7 +33057,7 @@ final class ParserPositiveSyntaxTest {
             |      </BlockStatement>
             |    </ForStatement>
             |    <ForStatement line="104" column="1" lastLine="105" lastColumn="26">
-            |      <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |      <ClosureListExpression line="104" column="5" lastLine="104" lastColumn="7">
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
             |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
@@ -33420,12 +33521,31 @@ final class ParserPositiveSyntaxTest {
             |  <AnnotationNode line="27" column="1" lastLine="27" lastColumn="17" class="Test5" members="a,b"/>
             |  <AnnotationNode line="28" column="1" lastLine="28" lastColumn="17" class="Test6" members="a,b"/>
             |  <ClassNode line="21" column="1" lastLine="45" lastColumn="2" kind="class" name="M" generics="&lt;T extends A &amp; B &amp; C&gt;" extends="A" implements="X,Y,Z"/>
-            |  <ClassNode line="49" column="1" lastLine="51" lastColumn="2" kind="class" name="OutputTransforms"/>
-            |  <ClassNode line="53" column="1" lastLine="55" lastColumn="2" kind="class" name="OutputTransforms2"/>
+            |  <ClassNode line="49" column="1" lastLine="51" lastColumn="2" kind="class" name="OutputTransforms">
+            |    <PropertyNode line="50" column="9" lastLine="50" lastColumn="63" name="localTransforms" type="java.lang.Object" modifiers="public static final">
+            |      <MethodCallExpression line="50" column="41" lastLine="50" lastColumn="63" implicitThis="true">
+            |        <ConstantExpression line="50" column="41" lastLine="50" lastColumn="61" value="loadOutputTransforms"/>
+            |        <ArgumentListExpression line="50" column="61" lastLine="50" lastColumn="63"/>
+            |      </MethodCallExpression>
+            |    </PropertyNode>
+            |  </ClassNode>
+            |  <ClassNode line="53" column="1" lastLine="55" lastColumn="2" kind="class" name="OutputTransforms2">
+            |    <AnnotationNode line="54" column="9" lastLine="54" lastColumn="14" class="Lazy"/>
+            |    <PropertyNode line="54" column="9" lastLine="54" lastColumn="63" name="localTransforms" type="java.lang.Object" modifiers="public static">
+            |      <MethodCallExpression line="54" column="41" lastLine="54" lastColumn="63" implicitThis="true">
+            |        <ConstantExpression line="54" column="41" lastLine="54" lastColumn="61" value="loadOutputTransforms"/>
+            |        <ArgumentListExpression line="54" column="61" lastLine="54" lastColumn="63"/>
+            |      </MethodCallExpression>
+            |    </PropertyNode>
+            |  </ClassNode>
             |  <ClassNode line="57" column="1" lastLine="60" lastColumn="2" kind="class" name="XX">
             |    <FieldNode line="59" column="9" lastLine="59" lastColumn="22" name="x" type="java.lang.Object" modifiers="private">
             |      <ConstantExpression line="59" column="21" lastLine="59" lastColumn="22" value="1"/>
             |    </FieldNode>
+            |    <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.CompileStatic"/>
+            |    <PropertyNode line="58" column="9" lastLine="58" lastColumn="14" name="x" type="java.lang.Object" modifiers="public">
+            |      <ConstantExpression line="59" column="21" lastLine="59" lastColumn="22" value="1"/>
+            |    </PropertyNode>
             |  </ClassNode>
             |  <ClassNode line="47" column="1" lastLine="47" lastColumn="11" kind="class" name="a"/>
             |</Module>'''.stripMargin())
@@ -33791,6 +33911,30 @@ final class ParserPositiveSyntaxTest {
             |      <ConstantExpression line="9" column="36" lastLine="9" lastColumn="44" value="field2"/>
             |    </FieldNode>
             |    <FieldNode line="21" column="5" lastLine="21" lastColumn="49" name="protectedStaticDefField" type="java.lang.Object" modifiers="protected static"/>
+            |    <PropertyNode line="10" column="5" lastLine="10" lastColumn="24" name="someProperty" type="String" modifiers="public"/>
+            |    <PropertyNode line="11" column="5" lastLine="11" lastColumn="43" name="someProperty2" type="String" modifiers="public">
+            |      <ConstantExpression line="11" column="28" lastLine="11" lastColumn="43" value="someProperty2"/>
+            |    </PropertyNode>
+            |    <PropertyNode line="12" column="5" lastLine="12" lastColumn="43" name="someProperty3" type="String" modifiers="public">
+            |      <ConstantExpression line="12" column="28" lastLine="12" lastColumn="43" value="someProperty3"/>
+            |    </PropertyNode>
+            |    <PropertyNode line="13" column="13" lastLine="13" lastColumn="44" name="someProperty4" type="String" modifiers="public">
+            |      <ConstantExpression line="13" column="29" lastLine="13" lastColumn="44" value="someProperty4"/>
+            |    </PropertyNode>
+            |    <PropertyNode line="14" column="5" lastLine="14" lastColumn="58" name="someProperty5" type="String" modifiers="public"/>
+            |    <PropertyNode line="14" column="27" lastLine="14" lastColumn="58" name="someProperty6" type="String" modifiers="public">
+            |      <ConstantExpression line="14" column="43" lastLine="14" lastColumn="58" value="someProperty6"/>
+            |    </PropertyNode>
+            |    <PropertyNode line="15" column="5" lastLine="15" lastColumn="49" name="someProperty7" type="String" modifiers="public final">
+            |      <ConstantExpression line="15" column="34" lastLine="15" lastColumn="49" value="someProperty7"/>
+            |    </PropertyNode>
+            |    <PropertyNode line="16" column="5" lastLine="16" lastColumn="56" name="someProperty8" type="String" modifiers="public static final">
+            |      <ConstantExpression line="16" column="41" lastLine="16" lastColumn="56" value="someProperty8"/>
+            |    </PropertyNode>
+            |    <AnnotationNode line="18" column="5" lastLine="18" lastColumn="11" class="Test3"/>
+            |    <PropertyNode line="18" column="5" lastLine="19" lastColumn="56" name="someProperty9" type="String" modifiers="public static final">
+            |      <ConstantExpression line="19" column="41" lastLine="19" lastColumn="56" value="someProperty9"/>
+            |    </PropertyNode>
             |  </ClassNode>
             |</Module>'''.stripMargin())
         expectAst('''\
@@ -33998,7 +34142,7 @@ final class ParserPositiveSyntaxTest {
             |      <BlockStatement line="22" column="40" lastLine="28" lastColumn="10">
             |        <ExpressionStatement line="23" column="13" lastLine="27" lastColumn="14">
             |          <ConstructorCallExpression line="23" column="13" lastLine="27" lastColumn="14" type="AA$ProtectedFinalInner$1" anonymous="true">
-            |            <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |            <ArgumentListExpression line="23" column="18" lastLine="23" lastColumn="20"/>
             |          </ConstructorCallExpression>
             |        </ExpressionStatement>
             |      </BlockStatement>
@@ -34054,7 +34198,7 @@ final class ParserPositiveSyntaxTest {
             |  <BlockStatement line="-1" column="-1" lastLine="-1" lastColumn="-1">
             |    <ExpressionStatement line="1" column="1" lastLine="1" lastColumn="11">
             |      <ConstructorCallExpression line="1" column="1" lastLine="1" lastColumn="11" type="test$1" anonymous="true">
-            |        <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |        <ArgumentListExpression line="1" column="6" lastLine="1" lastColumn="8"/>
             |      </ConstructorCallExpression>
             |    </ExpressionStatement>
             |    <ExpressionStatement line="2" column="1" lastLine="16" lastColumn="2">
@@ -34071,17 +34215,17 @@ final class ParserPositiveSyntaxTest {
             |      <BlockStatement line="19" column="26" lastLine="26" lastColumn="6">
             |        <ExpressionStatement line="20" column="9" lastLine="20" lastColumn="25">
             |          <ConstructorCallExpression line="20" column="9" lastLine="20" lastColumn="25" type="OuterAA$1" anonymous="true">
-            |            <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |            <ArgumentListExpression line="20" column="20" lastLine="20" lastColumn="22"/>
             |          </ConstructorCallExpression>
             |        </ExpressionStatement>
             |        <ExpressionStatement line="21" column="9" lastLine="24" lastColumn="11">
             |          <ConstructorCallExpression line="21" column="9" lastLine="24" lastColumn="11" type="OuterAA$2" anonymous="true">
-            |            <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |            <ArgumentListExpression line="21" column="20" lastLine="21" lastColumn="22"/>
             |          </ConstructorCallExpression>
             |        </ExpressionStatement>
             |        <ExpressionStatement line="25" column="9" lastLine="25" lastColumn="25">
             |          <ConstructorCallExpression line="25" column="9" lastLine="25" lastColumn="25" type="OuterAA$3" anonymous="true">
-            |            <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |            <ArgumentListExpression line="25" column="20" lastLine="25" lastColumn="22"/>
             |          </ConstructorCallExpression>
             |        </ExpressionStatement>
             |      </BlockStatement>
@@ -34094,12 +34238,12 @@ final class ParserPositiveSyntaxTest {
             |        <BlockStatement line="21" column="24" lastLine="24" lastColumn="10">
             |          <ExpressionStatement line="22" column="13" lastLine="22" lastColumn="29">
             |            <ConstructorCallExpression line="22" column="13" lastLine="22" lastColumn="29" type="OuterAA$2$1" anonymous="true">
-            |              <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |              <ArgumentListExpression line="22" column="24" lastLine="22" lastColumn="26"/>
             |            </ConstructorCallExpression>
             |          </ExpressionStatement>
             |          <ExpressionStatement line="23" column="13" lastLine="23" lastColumn="29">
             |            <ConstructorCallExpression line="23" column="13" lastLine="23" lastColumn="29" type="OuterAA$2$2" anonymous="true">
-            |              <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |              <ArgumentListExpression line="23" column="24" lastLine="23" lastColumn="26"/>
             |            </ConstructorCallExpression>
             |          </ExpressionStatement>
             |        </BlockStatement>
@@ -34115,12 +34259,12 @@ final class ParserPositiveSyntaxTest {
             |      <BlockStatement line="3" column="23" lastLine="15" lastColumn="6">
             |        <ExpressionStatement line="4" column="9" lastLine="4" lastColumn="19">
             |          <ConstructorCallExpression line="4" column="9" lastLine="4" lastColumn="19" type="test$2$1" anonymous="true">
-            |            <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |            <ArgumentListExpression line="4" column="14" lastLine="4" lastColumn="16"/>
             |          </ConstructorCallExpression>
             |        </ExpressionStatement>
             |        <ExpressionStatement line="5" column="9" lastLine="14" lastColumn="10">
             |          <ConstructorCallExpression line="5" column="9" lastLine="14" lastColumn="10" type="test$2$2" anonymous="true">
-            |            <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |            <ArgumentListExpression line="5" column="14" lastLine="5" lastColumn="16"/>
             |          </ConstructorCallExpression>
             |        </ExpressionStatement>
             |      </BlockStatement>
@@ -34133,7 +34277,7 @@ final class ParserPositiveSyntaxTest {
             |        <BlockStatement line="6" column="13" lastLine="13" lastColumn="14">
             |          <ExpressionStatement line="7" column="17" lastLine="12" lastColumn="18">
             |            <ConstructorCallExpression line="7" column="17" lastLine="12" lastColumn="18" type="test$2$2$1" anonymous="true">
-            |              <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |              <ArgumentListExpression line="7" column="22" lastLine="7" lastColumn="24"/>
             |            </ConstructorCallExpression>
             |          </ExpressionStatement>
             |        </BlockStatement>
@@ -34146,12 +34290,12 @@ final class ParserPositiveSyntaxTest {
             |        <BlockStatement line="8" column="21" lastLine="11" lastColumn="22">
             |          <ExpressionStatement line="9" column="25" lastLine="9" lastColumn="35">
             |            <ConstructorCallExpression line="9" column="25" lastLine="9" lastColumn="35" type="test$2$2$1$1" anonymous="true">
-            |              <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |              <ArgumentListExpression line="9" column="30" lastLine="9" lastColumn="32"/>
             |            </ConstructorCallExpression>
             |          </ExpressionStatement>
             |          <ExpressionStatement line="10" column="25" lastLine="10" lastColumn="35">
             |            <ConstructorCallExpression line="10" column="25" lastLine="10" lastColumn="35" type="test$2$2$1$2" anonymous="true">
-            |              <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |              <ArgumentListExpression line="10" column="30" lastLine="10" lastColumn="32"/>
             |            </ConstructorCallExpression>
             |          </ExpressionStatement>
             |        </BlockStatement>
@@ -34175,6 +34319,7 @@ final class ParserPositiveSyntaxTest {
             |  <PackageNode line="1" column="1" lastLine="1" lastColumn="13" name="core"/>
             |  <ClassNode line="3" column="1" lastLine="7" lastColumn="2" kind="class" name="À">
             |    <FieldNode line="4" column="5" lastLine="4" lastColumn="15" name="f" type="À" modifiers="public"/>
+            |    <PropertyNode line="5" column="12" lastLine="5" lastColumn="15" name="p" type="À" modifiers="public"/>
             |    <MethodNode line="6" column="5" lastLine="6" lastColumn="20" name="m" modifiers="static" returnType="À">
             |      <BlockStatement line="6" column="18" lastLine="6" lastColumn="20"/>
             |    </MethodNode>
@@ -34294,28 +34439,28 @@ final class ParserPositiveSyntaxTest {
             |  <PackageNode line="1" column="1" lastLine="1" lastColumn="13" name="core"/>
             |  <ImportNode line="3" column="1" lastLine="3" lastColumn="29" type="java.sql.SQLException"/>
             |  <ClassNode line="5" column="1" lastLine="42" lastColumn="2" kind="interface" name="AA1">
-            |    <FieldNode line="6" column="9" lastLine="-1" lastColumn="-1" name="a" type="int" modifiers="public static final">
+            |    <FieldNode line="6" column="9" lastLine="6" lastColumn="14" name="a" type="int" modifiers="public static final">
             |      <ConstantExpression line="-1" column="-1" lastLine="-1" lastColumn="-1" value="0"/>
             |    </FieldNode>
-            |    <FieldNode line="7" column="9" lastLine="-1" lastColumn="-1" name="b" type="long" modifiers="public static final">
+            |    <FieldNode line="7" column="9" lastLine="7" lastColumn="15" name="b" type="long" modifiers="public static final">
             |      <ConstantExpression line="-1" column="-1" lastLine="-1" lastColumn="-1" value="0"/>
             |    </FieldNode>
-            |    <FieldNode line="8" column="9" lastLine="-1" lastColumn="-1" name="c" type="double" modifiers="public static final">
+            |    <FieldNode line="8" column="9" lastLine="8" lastColumn="17" name="c" type="double" modifiers="public static final">
             |      <ConstantExpression line="-1" column="-1" lastLine="-1" lastColumn="-1" value="0.0"/>
             |    </FieldNode>
-            |    <FieldNode line="9" column="9" lastLine="-1" lastColumn="-1" name="d" type="char" modifiers="public static final">
+            |    <FieldNode line="9" column="9" lastLine="9" lastColumn="15" name="d" type="char" modifiers="public static final">
             |      <ConstantExpression line="-1" column="-1" lastLine="-1" lastColumn="-1" value="\u0000"/>
             |    </FieldNode>
-            |    <FieldNode line="10" column="9" lastLine="-1" lastColumn="-1" name="e" type="short" modifiers="public static final">
+            |    <FieldNode line="10" column="9" lastLine="10" lastColumn="16" name="e" type="short" modifiers="public static final">
             |      <ConstantExpression line="-1" column="-1" lastLine="-1" lastColumn="-1" value="0"/>
             |    </FieldNode>
-            |    <FieldNode line="11" column="9" lastLine="-1" lastColumn="-1" name="f" type="byte" modifiers="public static final">
+            |    <FieldNode line="11" column="9" lastLine="11" lastColumn="15" name="f" type="byte" modifiers="public static final">
             |      <ConstantExpression line="-1" column="-1" lastLine="-1" lastColumn="-1" value="0"/>
             |    </FieldNode>
-            |    <FieldNode line="12" column="9" lastLine="-1" lastColumn="-1" name="g" type="float" modifiers="public static final">
+            |    <FieldNode line="12" column="9" lastLine="12" lastColumn="16" name="g" type="float" modifiers="public static final">
             |      <ConstantExpression line="-1" column="-1" lastLine="-1" lastColumn="-1" value="0.0"/>
             |    </FieldNode>
-            |    <FieldNode line="13" column="9" lastLine="-1" lastColumn="-1" name="h" type="boolean" modifiers="public static final">
+            |    <FieldNode line="13" column="9" lastLine="13" lastColumn="18" name="h" type="boolean" modifiers="public static final">
             |      <ConstantExpression line="-1" column="-1" lastLine="-1" lastColumn="-1" value="false"/>
             |    </FieldNode>
             |    <FieldNode line="14" column="9" lastLine="14" lastColumn="17" name="i" type="String" modifiers="public static final"/>
@@ -34365,7 +34510,7 @@ final class ParserPositiveSyntaxTest {
             |  <ClassNode line="5" column="1" lastLine="7" lastColumn="2" kind="interface" name="Koo2">
             |    <FieldNode line="6" column="5" lastLine="6" lastColumn="53" name="INNER" type="Inner" modifiers="public static final">
             |      <ConstructorCallExpression line="6" column="39" lastLine="6" lastColumn="53" type="Koo2$1" anonymous="true">
-            |        <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |        <ArgumentListExpression line="6" column="48" lastLine="6" lastColumn="50"/>
             |      </ConstructorCallExpression>
             |    </FieldNode>
             |  </ClassNode>
@@ -34722,6 +34867,7 @@ final class ParserPositiveSyntaxTest {
             |    <FieldNode line="4" column="5" lastLine="4" lastColumn="6" name="B" type="E1" modifiers="public static final" enumConstant="true"/>
             |    <FieldNode line="4" column="7" lastLine="4" lastColumn="8" name="C" type="E1" modifiers="public static final" enumConstant="true"/>
             |    <FieldNode line="5" column="5" lastLine="5" lastColumn="6" name="D" type="E1" modifiers="public static final" enumConstant="true"/>
+            |    <PropertyNode line="7" column="5" lastLine="7" lastColumn="13" name="prop" type="java.lang.Object" modifiers="public"/>
             |    <MethodNode line="6" column="5" lastLine="6" lastColumn="27" name="proc" modifiers="private" returnType="void">
             |      <BlockStatement line="6" column="25" lastLine="6" lastColumn="27"/>
             |    </MethodNode>
@@ -34729,6 +34875,7 @@ final class ParserPositiveSyntaxTest {
             |  <ClassNode line="59" column="1" lastLine="66" lastColumn="2" kind="enum" name="E10" extends="java.lang.Enum&lt;E10&gt;">
             |    <FieldNode line="60" column="5" lastLine="60" lastColumn="9" name="X" type="E10" modifiers="public static final" enumConstant="true"/>
             |    <FieldNode line="60" column="11" lastLine="60" lastColumn="15" name="Y" type="E10" modifiers="public static final" enumConstant="true"/>
+            |    <PropertyNode line="62" column="5" lastLine="62" lastColumn="17" name="value" type="Object" modifiers="public"/>
             |    <ConstructorNode line="63" column="5" lastLine="65" lastColumn="6" name="&lt;init&gt;">
             |      <Parameter line="63" column="9" lastLine="63" lastColumn="14" name="value"/>
             |      <BlockStatement line="63" column="16" lastLine="65" lastColumn="6">
@@ -34858,6 +35005,9 @@ final class ParserPositiveSyntaxTest {
             |    <FieldNode line="15" column="5" lastLine="15" lastColumn="30" name="age" type="int" modifiers="private final">
             |      <ConstantExpression line="15" column="29" lastLine="15" lastColumn="30" value="2"/>
             |    </FieldNode>
+            |    <PropertyNode line="16" column="5" lastLine="16" lastColumn="31" name="title" type="String" modifiers="public final">
+            |      <ConstantExpression line="16" column="24" lastLine="16" lastColumn="31" value="title"/>
+            |    </PropertyNode>
             |    <ConstructorNode line="17" column="5" lastLine="17" lastColumn="24" name="&lt;init&gt;">
             |      <Parameter line="17" column="15" lastLine="17" lastColumn="20" name="x" type="int"/>
             |      <BlockStatement line="17" column="22" lastLine="17" lastColumn="24"/>
@@ -34951,6 +35101,7 @@ final class ParserPositiveSyntaxTest {
             |  <ClassNode line="50" column="1" lastLine="56" lastColumn="2" kind="enum" name="E9" extends="java.lang.Enum&lt;E9&gt;">
             |    <FieldNode line="51" column="5" lastLine="51" lastColumn="9" name="A" type="E9" modifiers="public static final" enumConstant="true"/>
             |    <FieldNode line="51" column="11" lastLine="51" lastColumn="15" name="B" type="E9" modifiers="public static final" enumConstant="true"/>
+            |    <PropertyNode line="52" column="5" lastLine="52" lastColumn="17" name="value" type="Object" modifiers="public"/>
             |    <ConstructorNode line="53" column="5" lastLine="55" lastColumn="6" name="&lt;init&gt;">
             |      <Parameter line="53" column="8" lastLine="53" lastColumn="13" name="value"/>
             |      <BlockStatement line="53" column="15" lastLine="55" lastColumn="6">
@@ -35025,6 +35176,7 @@ final class ParserPositiveSyntaxTest {
             |    <FieldNode line="159" column="5" lastLine="159" lastColumn="24" name="DIAMONDS" type="Suit" modifiers="public static final" enumConstant="true"/>
             |    <FieldNode line="160" column="5" lastLine="160" lastColumn="22" name="HEARTS" type="Suit" modifiers="public static final" enumConstant="true"/>
             |    <FieldNode line="161" column="5" lastLine="161" lastColumn="24" name="SPADES" type="Suit" modifiers="public static final" enumConstant="true"/>
+            |    <PropertyNode line="163" column="5" lastLine="163" lastColumn="22" name="color" type="Color" modifiers="public final"/>
             |    <ConstructorNode line="164" column="5" lastLine="166" lastColumn="6" name="&lt;init&gt;">
             |      <Parameter line="164" column="10" lastLine="164" lastColumn="21" name="color" type="Color"/>
             |      <BlockStatement line="164" column="23" lastLine="166" lastColumn="6">
@@ -35742,6 +35894,30 @@ final class ParserPositiveSyntaxTest {
             |      <ConstantExpression line="9" column="36" lastLine="9" lastColumn="44" value="field2"/>
             |    </FieldNode>
             |    <FieldNode line="21" column="5" lastLine="21" lastColumn="49" name="protectedStaticDefField" type="java.lang.Object" modifiers="protected static"/>
+            |    <PropertyNode line="10" column="5" lastLine="10" lastColumn="24" name="someProperty" type="String" modifiers="public"/>
+            |    <PropertyNode line="11" column="5" lastLine="11" lastColumn="43" name="someProperty2" type="String" modifiers="public">
+            |      <ConstantExpression line="11" column="28" lastLine="11" lastColumn="43" value="someProperty2"/>
+            |    </PropertyNode>
+            |    <PropertyNode line="12" column="5" lastLine="12" lastColumn="43" name="someProperty3" type="String" modifiers="public">
+            |      <ConstantExpression line="12" column="28" lastLine="12" lastColumn="43" value="someProperty3"/>
+            |    </PropertyNode>
+            |    <PropertyNode line="13" column="13" lastLine="13" lastColumn="44" name="someProperty4" type="String" modifiers="public">
+            |      <ConstantExpression line="13" column="29" lastLine="13" lastColumn="44" value="someProperty4"/>
+            |    </PropertyNode>
+            |    <PropertyNode line="14" column="5" lastLine="14" lastColumn="58" name="someProperty5" type="String" modifiers="public"/>
+            |    <PropertyNode line="14" column="27" lastLine="14" lastColumn="58" name="someProperty6" type="String" modifiers="public">
+            |      <ConstantExpression line="14" column="43" lastLine="14" lastColumn="58" value="someProperty6"/>
+            |    </PropertyNode>
+            |    <PropertyNode line="15" column="5" lastLine="15" lastColumn="49" name="someProperty7" type="String" modifiers="public final">
+            |      <ConstantExpression line="15" column="34" lastLine="15" lastColumn="49" value="someProperty7"/>
+            |    </PropertyNode>
+            |    <PropertyNode line="16" column="5" lastLine="16" lastColumn="56" name="someProperty8" type="String" modifiers="public static final">
+            |      <ConstantExpression line="16" column="41" lastLine="16" lastColumn="56" value="someProperty8"/>
+            |    </PropertyNode>
+            |    <AnnotationNode line="18" column="5" lastLine="18" lastColumn="11" class="Test3"/>
+            |    <PropertyNode line="18" column="5" lastLine="19" lastColumn="56" name="someProperty9" type="String" modifiers="public static final">
+            |      <ConstantExpression line="19" column="41" lastLine="19" lastColumn="56" value="someProperty9"/>
+            |    </PropertyNode>
             |  </ClassNode>
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.Trait"/>
             |  <ClassNode line="24" column="1" lastLine="28" lastColumn="2" kind="trait" name="xx"/>
@@ -35780,7 +35956,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="21" column="1" lastLine="21" lastColumn="22" token="=">
             |        <VariableExpression line="21" column="5" lastLine="21" lastColumn="9" name="duck"/>
             |        <ConstructorCallExpression line="21" column="12" lastLine="21" lastColumn="22" type="Duck">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="21" column="20" lastLine="21" lastColumn="22"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -35899,7 +36075,10 @@ final class ParserPositiveSyntaxTest {
             |    </AssertStatement>
             |  </BlockStatement>
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
-            |  <ClassNode line="3" column="1" lastLine="3" lastColumn="43" kind="record" name="Fruit"/>
+            |  <ClassNode line="3" column="1" lastLine="3" lastColumn="43" kind="record" name="Fruit">
+            |    <PropertyNode line="3" column="14" lastLine="3" lastColumn="25" name="name" type="String" modifiers="public final"/>
+            |    <PropertyNode line="3" column="27" lastLine="3" lastColumn="39" name="price" type="double" modifiers="public final"/>
+            |  </ClassNode>
             |</Module>'''.stripMargin())
         expectAst('''\
             |package core
@@ -35951,6 +36130,8 @@ final class ParserPositiveSyntaxTest {
             |  </ClassNode>
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
             |  <ClassNode line="7" column="1" lastLine="12" lastColumn="2" kind="record" name="Fruit" implements="Eatable">
+            |    <PropertyNode line="7" column="14" lastLine="7" lastColumn="25" name="name" type="String" modifiers="public final"/>
+            |    <PropertyNode line="7" column="27" lastLine="7" lastColumn="39" name="price" type="double" modifiers="public final"/>
             |    <AnnotationNode line="8" column="5" lastLine="8" lastColumn="14" class="Override"/>
             |    <MethodNode line="8" column="5" lastLine="11" lastColumn="6" name="eat" returnType="String">
             |      <BlockStatement line="9" column="18" lastLine="11" lastColumn="6">
@@ -35990,7 +36171,10 @@ final class ParserPositiveSyntaxTest {
             |    </ExpressionStatement>
             |  </BlockStatement>
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
-            |  <ClassNode line="3" column="1" lastLine="3" lastColumn="43" kind="record" name="Fruit"/>
+            |  <ClassNode line="3" column="1" lastLine="3" lastColumn="43" kind="record" name="Fruit">
+            |    <PropertyNode line="3" column="14" lastLine="3" lastColumn="25" name="name" type="String" modifiers="public final"/>
+            |    <PropertyNode line="3" column="27" lastLine="3" lastColumn="39" name="price" type="double" modifiers="public final"/>
+            |  </ClassNode>
             |  <AnnotationNode line="5" column="1" lastLine="5" lastColumn="32" class="groovy.transform.CompileStatic"/>
             |  <MethodNode line="5" column="1" lastLine="10" lastColumn="2" name="test" returnType="void">
             |    <BlockStatement line="6" column="13" lastLine="10" lastColumn="2">
@@ -36065,6 +36249,8 @@ final class ParserPositiveSyntaxTest {
             |  <AnnotationNode line="3" column="1" lastLine="3" lastColumn="32" class="groovy.transform.CompileStatic"/>
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
             |  <ClassNode line="3" column="1" lastLine="9" lastColumn="2" kind="record" name="Fruit">
+            |    <PropertyNode line="4" column="14" lastLine="4" lastColumn="25" name="name" type="String" modifiers="public final"/>
+            |    <PropertyNode line="4" column="27" lastLine="4" lastColumn="39" name="price" type="double" modifiers="public final"/>
             |    <MethodNode line="5" column="5" lastLine="8" lastColumn="6" name="record" returnType="String">
             |      <BlockStatement line="5" column="21" lastLine="8" lastColumn="6">
             |        <ExpressionStatement line="6" column="9" lastLine="6" lastColumn="37">
@@ -36169,6 +36355,8 @@ final class ParserPositiveSyntaxTest {
             |  </BlockStatement>
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
             |  <ClassNode line="3" column="1" lastLine="10" lastColumn="2" kind="record" name="Fruit">
+            |    <PropertyNode line="3" column="14" lastLine="3" lastColumn="25" name="name" type="String" modifiers="public final"/>
+            |    <PropertyNode line="3" column="27" lastLine="3" lastColumn="39" name="price" type="double" modifiers="public final"/>
             |    <MethodNode line="4" column="5" lastLine="6" lastColumn="6" name="name" returnType="String">
             |      <BlockStatement line="4" column="19" lastLine="6" lastColumn="6">
             |        <ReturnStatement line="5" column="9" lastLine="5" lastColumn="20">
@@ -36221,6 +36409,8 @@ final class ParserPositiveSyntaxTest {
             |  <AnnotationNode line="3" column="1" lastLine="3" lastColumn="32" class="groovy.transform.CompileStatic"/>
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
             |  <ClassNode line="3" column="1" lastLine="11" lastColumn="2" kind="record" name="Fruit">
+            |    <PropertyNode line="4" column="14" lastLine="4" lastColumn="25" name="name" type="String" modifiers="public final"/>
+            |    <PropertyNode line="4" column="27" lastLine="4" lastColumn="39" name="price" type="double" modifiers="public final"/>
             |    <MethodNode line="5" column="5" lastLine="7" lastColumn="6" name="name" returnType="String">
             |      <BlockStatement line="5" column="19" lastLine="7" lastColumn="6">
             |        <ReturnStatement line="6" column="9" lastLine="6" lastColumn="20">
@@ -36329,6 +36519,8 @@ final class ParserPositiveSyntaxTest {
             |    <FieldNode line="4" column="5" lastLine="4" lastColumn="46" name="CONST_1" type="String" modifiers="public static final">
             |      <ConstantExpression line="4" column="42" lastLine="4" lastColumn="46" value="C1"/>
             |    </FieldNode>
+            |    <PropertyNode line="3" column="14" lastLine="3" lastColumn="25" name="name" type="String" modifiers="public final"/>
+            |    <PropertyNode line="3" column="27" lastLine="3" lastColumn="39" name="price" type="double" modifiers="public final"/>
             |    <MethodNode line="6" column="5" lastLine="8" lastColumn="6" name="eat" returnType="String">
             |      <BlockStatement line="6" column="18" lastLine="8" lastColumn="6">
             |        <ReturnStatement line="7" column="9" lastLine="7" lastColumn="41">
@@ -36565,7 +36757,10 @@ final class ParserPositiveSyntaxTest {
             |  </BlockStatement>
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.TupleConstructor" members="pre"/>
-            |  <ClassNode line="3" column="1" lastLine="8" lastColumn="2" kind="record" name="Person"/>
+            |  <ClassNode line="3" column="1" lastLine="8" lastColumn="2" kind="record" name="Person">
+            |    <PropertyNode line="3" column="15" lastLine="3" lastColumn="26" name="name" type="String" modifiers="public final"/>
+            |    <PropertyNode line="3" column="28" lastLine="3" lastColumn="35" name="age" type="int" modifiers="public final"/>
+            |  </ClassNode>
             |</Module>'''.stripMargin())
         expectAst('''\
             |package core
@@ -36792,7 +36987,10 @@ final class ParserPositiveSyntaxTest {
             |  <AnnotationNode line="3" column="1" lastLine="3" lastColumn="32" class="groovy.transform.CompileStatic"/>
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.TupleConstructor" members="pre"/>
-            |  <ClassNode line="3" column="1" lastLine="9" lastColumn="2" kind="record" name="Person"/>
+            |  <ClassNode line="3" column="1" lastLine="9" lastColumn="2" kind="record" name="Person">
+            |    <PropertyNode line="4" column="15" lastLine="4" lastColumn="26" name="name" type="String" modifiers="public final"/>
+            |    <PropertyNode line="4" column="28" lastLine="4" lastColumn="35" name="age" type="int" modifiers="public final"/>
+            |  </ClassNode>
             |</Module>'''.stripMargin())
         expectAst('''\
             |package core
@@ -36988,6 +37186,9 @@ final class ParserPositiveSyntaxTest {
             |  <AnnotationNode line="3" column="1" lastLine="3" lastColumn="51" class="groovy.transform.TupleConstructor" members="defaults,pre"/>
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
             |  <ClassNode line="3" column="1" lastLine="14" lastColumn="2" kind="record" name="Point">
+            |    <PropertyNode line="4" column="14" lastLine="4" lastColumn="19" name="x" type="int" modifiers="public final"/>
+            |    <PropertyNode line="4" column="21" lastLine="4" lastColumn="26" name="y" type="int" modifiers="public final"/>
+            |    <PropertyNode line="4" column="28" lastLine="4" lastColumn="40" name="color" type="String" modifiers="public final"/>
             |    <ConstructorNode line="11" column="5" lastLine="13" lastColumn="6" name="&lt;init&gt;">
             |      <Parameter line="11" column="18" lastLine="11" lastColumn="23" name="x" type="int"/>
             |      <Parameter line="11" column="25" lastLine="11" lastColumn="30" name="y" type="int"/>
@@ -37134,6 +37335,9 @@ final class ParserPositiveSyntaxTest {
             |  <AnnotationNode line="3" column="1" lastLine="3" lastColumn="71" class="groovy.transform.TupleConstructor" members="defaults,namedVariant,pre"/>
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
             |  <ClassNode line="3" column="1" lastLine="14" lastColumn="2" kind="record" name="Point">
+            |    <PropertyNode line="4" column="14" lastLine="4" lastColumn="19" name="x" type="int" modifiers="public final"/>
+            |    <PropertyNode line="4" column="21" lastLine="4" lastColumn="26" name="y" type="int" modifiers="public final"/>
+            |    <PropertyNode line="4" column="28" lastLine="4" lastColumn="40" name="color" type="String" modifiers="public final"/>
             |    <ConstructorNode line="11" column="5" lastLine="13" lastColumn="6" name="&lt;init&gt;">
             |      <Parameter line="11" column="18" lastLine="11" lastColumn="23" name="x" type="int"/>
             |      <Parameter line="11" column="25" lastLine="11" lastColumn="30" name="y" type="int"/>
@@ -37284,6 +37488,9 @@ final class ParserPositiveSyntaxTest {
             |  <AnnotationNode line="4" column="1" lastLine="4" lastColumn="51" class="groovy.transform.TupleConstructor" members="defaults,pre"/>
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
             |  <ClassNode line="3" column="1" lastLine="17" lastColumn="2" kind="record" name="Point">
+            |    <PropertyNode line="5" column="14" lastLine="5" lastColumn="19" name="x" type="int" modifiers="public final"/>
+            |    <PropertyNode line="5" column="21" lastLine="5" lastColumn="26" name="y" type="int" modifiers="public final"/>
+            |    <PropertyNode line="5" column="28" lastLine="5" lastColumn="40" name="color" type="String" modifiers="public final"/>
             |    <ConstructorNode line="14" column="5" lastLine="16" lastColumn="6" name="&lt;init&gt;">
             |      <Parameter line="14" column="18" lastLine="14" lastColumn="23" name="x" type="int"/>
             |      <Parameter line="14" column="25" lastLine="14" lastColumn="30" name="y" type="int"/>
@@ -37357,7 +37564,10 @@ final class ParserPositiveSyntaxTest {
             |  </BlockStatement>
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.TupleConstructor" members="pre"/>
-            |  <ClassNode line="3" column="1" lastLine="8" lastColumn="2" kind="record" name="Fruit"/>
+            |  <ClassNode line="3" column="1" lastLine="8" lastColumn="2" kind="record" name="Fruit">
+            |    <PropertyNode line="3" column="14" lastLine="3" lastColumn="25" name="name" type="String" modifiers="public final"/>
+            |    <PropertyNode line="3" column="27" lastLine="3" lastColumn="39" name="price" type="double" modifiers="public final"/>
+            |  </ClassNode>
             |</Module>'''.stripMargin())
         expectAst('''\
             |package core
@@ -37397,7 +37607,9 @@ final class ParserPositiveSyntaxTest {
             |    </AssertStatement>
             |  </BlockStatement>
             |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
-            |  <ClassNode line="3" column="1" lastLine="3" lastColumn="23" kind="record" name="R2"/>
+            |  <ClassNode line="3" column="1" lastLine="3" lastColumn="23" kind="record" name="R2">
+            |    <PropertyNode line="3" column="11" lastLine="3" lastColumn="18" name="x" type="int[]" modifiers="public final"/>
+            |  </ClassNode>
             |</Module>'''.stripMargin())
     }
 
@@ -37448,7 +37660,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="27" column="1" lastLine="27" lastColumn="21" token="=">
             |        <VariableExpression line="27" column="5" lastLine="27" lastColumn="6" name="c"/>
             |        <ConstructorCallExpression line="27" column="9" lastLine="27" lastColumn="21" type="Circle">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="27" column="19" lastLine="27" lastColumn="21"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -37456,7 +37668,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="28" column="1" lastLine="28" lastColumn="24" token="=">
             |        <VariableExpression line="28" column="5" lastLine="28" lastColumn="6" name="r"/>
             |        <ConstructorCallExpression line="28" column="9" lastLine="28" lastColumn="24" type="Rectangle">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="28" column="22" lastLine="28" lastColumn="24"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -37464,7 +37676,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="29" column="1" lastLine="29" lastColumn="21" token="=">
             |        <VariableExpression line="29" column="5" lastLine="29" lastColumn="6" name="s"/>
             |        <ConstructorCallExpression line="29" column="9" lastLine="29" lastColumn="21" type="Square">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="29" column="19" lastLine="29" lastColumn="21"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -40096,7 +40308,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="7" column="1" lastLine="7" lastColumn="14" token="=">
             |        <VariableExpression line="7" column="3" lastLine="7" lastColumn="4" name="b" type="a"/>
             |        <ConstructorCallExpression line="7" column="7" lastLine="7" lastColumn="14" type="a">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="7" column="12" lastLine="7" lastColumn="14"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -40115,7 +40327,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="10" column="1" lastLine="10" lastColumn="31" token="=">
             |        <VariableExpression line="10" column="11" lastLine="10" lastColumn="13" name="b2" type="a&lt;String&gt;"/>
             |        <ConstructorCallExpression line="10" column="16" lastLine="10" lastColumn="31" type="a&lt;String&gt;">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="10" column="29" lastLine="10" lastColumn="31"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -40153,7 +40365,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="16" column="1" lastLine="16" lastColumn="20" token="=">
             |        <VariableExpression line="16" column="8" lastLine="16" lastColumn="10" name="b4" type="core.a"/>
             |        <ConstructorCallExpression line="16" column="13" lastLine="16" lastColumn="20" type="a">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="16" column="18" lastLine="16" lastColumn="20"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -40172,7 +40384,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="19" column="1" lastLine="19" lastColumn="36" token="=">
             |        <VariableExpression line="19" column="16" lastLine="19" lastColumn="18" name="b5" type="core.a&lt;String&gt;"/>
             |        <ConstructorCallExpression line="19" column="21" lastLine="19" lastColumn="36" type="a&lt;String&gt;">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="19" column="34" lastLine="19" lastColumn="36"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -40207,7 +40419,11 @@ final class ParserPositiveSyntaxTest {
             |      </BooleanExpression>
             |    </AssertStatement>
             |  </BlockStatement>
-            |  <ClassNode line="3" column="1" lastLine="5" lastColumn="2" kind="class" name="a" generics="&lt;T&gt;"/>
+            |  <ClassNode line="3" column="1" lastLine="5" lastColumn="2" kind="class" name="a" generics="&lt;T&gt;">
+            |    <PropertyNode line="4" column="5" lastLine="4" lastColumn="14" name="x" type="int" modifiers="public">
+            |      <ConstantExpression line="4" column="13" lastLine="4" lastColumn="14" value="1"/>
+            |    </PropertyNode>
+            |  </ClassNode>
             |</Module>'''.stripMargin())
         expectAst('''\
             |package core
@@ -40418,7 +40634,7 @@ final class ParserPositiveSyntaxTest {
             |      <BinaryExpression line="5" column="1" lastLine="5" lastColumn="12" token="=">
             |        <VariableExpression line="5" column="1" lastLine="5" lastColumn="2" name="b"/>
             |        <ConstructorCallExpression line="5" column="5" lastLine="5" lastColumn="12" type="B">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="5" column="10" lastLine="5" lastColumn="12"/>
             |        </ConstructorCallExpression>
             |      </BinaryExpression>
             |    </ExpressionStatement>
@@ -40440,7 +40656,7 @@ final class ParserPositiveSyntaxTest {
             |      <BinaryExpression line="9" column="1" lastLine="9" lastColumn="21" token="=">
             |        <VariableExpression line="9" column="1" lastLine="9" lastColumn="3" name="b2"/>
             |        <ConstructorCallExpression line="9" column="6" lastLine="9" lastColumn="21" type="B&lt;String&gt;">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="9" column="19" lastLine="9" lastColumn="21"/>
             |        </ConstructorCallExpression>
             |      </BinaryExpression>
             |    </ExpressionStatement>
@@ -40484,7 +40700,7 @@ final class ParserPositiveSyntaxTest {
             |      <BinaryExpression line="17" column="1" lastLine="17" lastColumn="13" token="=">
             |        <VariableExpression line="17" column="1" lastLine="17" lastColumn="3" name="b4"/>
             |        <ConstructorCallExpression line="17" column="6" lastLine="17" lastColumn="13" type="B">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="17" column="11" lastLine="17" lastColumn="13"/>
             |        </ConstructorCallExpression>
             |      </BinaryExpression>
             |    </ExpressionStatement>
@@ -40506,7 +40722,7 @@ final class ParserPositiveSyntaxTest {
             |      <BinaryExpression line="21" column="1" lastLine="21" lastColumn="21" token="=">
             |        <VariableExpression line="21" column="1" lastLine="21" lastColumn="3" name="b5"/>
             |        <ConstructorCallExpression line="21" column="6" lastLine="21" lastColumn="21" type="B&lt;String&gt;">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="21" column="19" lastLine="21" lastColumn="21"/>
             |        </ConstructorCallExpression>
             |      </BinaryExpression>
             |    </ExpressionStatement>
@@ -41525,7 +41741,7 @@ final class ParserPositiveSyntaxTest {
             |          <ConstantExpression line="15" column="8" lastLine="15" lastColumn="9" value="1"/>
             |          <PropertyExpression line="15" column="13" lastLine="15" lastColumn="34">
             |            <ConstructorCallExpression line="15" column="13" lastLine="15" lastColumn="30" type="FieldHolder">
-            |              <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |              <ArgumentListExpression line="15" column="28" lastLine="15" lastColumn="30"/>
             |            </ConstructorCallExpression>
             |            <ConstantExpression line="15" column="31" lastLine="15" lastColumn="34" value="num"/>
             |          </PropertyExpression>
@@ -41538,7 +41754,7 @@ final class ParserPositiveSyntaxTest {
             |          <ConstantExpression line="16" column="8" lastLine="16" lastColumn="9" value="2"/>
             |          <PropertyExpression line="16" column="13" lastLine="16" lastColumn="35">
             |            <ConstructorCallExpression line="16" column="13" lastLine="16" lastColumn="31" type="FieldHolder2">
-            |              <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |              <ArgumentListExpression line="16" column="29" lastLine="16" lastColumn="31"/>
             |            </ConstructorCallExpression>
             |            <ConstantExpression line="16" column="32" lastLine="16" lastColumn="35" value="num"/>
             |          </PropertyExpression>
@@ -41546,16 +41762,28 @@ final class ParserPositiveSyntaxTest {
             |      </BooleanExpression>
             |    </AssertStatement>
             |  </BlockStatement>
-            |  <ClassNode line="1" column="1" lastLine="3" lastColumn="2" kind="class" name="Base"/>
+            |  <ClassNode line="1" column="1" lastLine="3" lastColumn="2" kind="class" name="Base">
+            |    <PropertyNode line="2" column="5" lastLine="2" lastColumn="16" name="num" type="java.lang.Object" modifiers="public">
+            |      <ConstantExpression line="2" column="15" lastLine="2" lastColumn="16" value="0"/>
+            |    </PropertyNode>
+            |  </ClassNode>
             |  <ClassNode line="5" column="1" lastLine="8" lastColumn="2" kind="class" name="FieldHolder" extends="Base">
             |    <FieldNode line="7" column="5" lastLine="7" lastColumn="20" name="num" type="java.lang.Object" modifiers="private">
             |      <ConstantExpression line="7" column="19" lastLine="7" lastColumn="20" value="1"/>
             |    </FieldNode>
+            |    <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.CompileStatic"/>
+            |    <PropertyNode line="6" column="5" lastLine="6" lastColumn="12" name="num" type="java.lang.Object" modifiers="public">
+            |      <ConstantExpression line="7" column="19" lastLine="7" lastColumn="20" value="1"/>
+            |    </PropertyNode>
             |  </ClassNode>
             |  <ClassNode line="10" column="1" lastLine="13" lastColumn="2" kind="class" name="FieldHolder2" extends="Base">
             |    <FieldNode line="11" column="5" lastLine="11" lastColumn="20" name="num" type="java.lang.Object" modifiers="private">
             |      <ConstantExpression line="11" column="19" lastLine="11" lastColumn="20" value="2"/>
             |    </FieldNode>
+            |    <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.CompileStatic"/>
+            |    <PropertyNode line="12" column="5" lastLine="12" lastColumn="12" name="num" type="java.lang.Object" modifiers="public">
+            |      <ConstantExpression line="11" column="19" lastLine="11" lastColumn="20" value="2"/>
+            |    </PropertyNode>
             |  </ClassNode>
             |</Module>'''.stripMargin())
     }
@@ -42677,7 +42905,7 @@ final class ParserPositiveSyntaxTest {
             |              <VariableExpression line="44" column="20" lastLine="44" lastColumn="21" name="Y"/>
             |              <ConstantExpression line="44" column="22" lastLine="44" lastColumn="29" value="createX"/>
             |              <ConstructorCallExpression line="44" column="30" lastLine="44" lastColumn="37" type="Y">
-            |                <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |                <ArgumentListExpression line="44" column="35" lastLine="44" lastColumn="37"/>
             |              </ConstructorCallExpression>
             |            </MethodCallExpression>
             |            <ConstantExpression line="44" column="39" lastLine="44" lastColumn="43" value="name"/>
@@ -42754,7 +42982,7 @@ final class ParserPositiveSyntaxTest {
             |      <BlockStatement line="10" column="31" lastLine="12" lastColumn="6">
             |        <ReturnStatement line="11" column="9" lastLine="11" lastColumn="23">
             |          <ConstructorCallExpression line="11" column="16" lastLine="11" lastColumn="23" type="Y">
-            |            <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |            <ArgumentListExpression line="11" column="21" lastLine="11" lastColumn="23"/>
             |          </ConstructorCallExpression>
             |        </ReturnStatement>
             |      </BlockStatement>
@@ -42863,6 +43091,7 @@ final class ParserPositiveSyntaxTest {
             |    </MethodNode>
             |  </ClassNode>
             |  <ClassNode line="2" column="5" lastLine="8" lastColumn="6" kind="class" name="Y$X">
+            |    <PropertyNode line="3" column="9" lastLine="3" lastColumn="17" name="name" type="java.lang.Object" modifiers="public"/>
             |    <ConstructorNode line="5" column="9" lastLine="7" lastColumn="10" name="&lt;init&gt;">
             |      <Parameter line="5" column="18" lastLine="5" lastColumn="29" name="name" type="String"/>
             |      <BlockStatement line="5" column="31" lastLine="7" lastColumn="10">
@@ -46313,7 +46542,7 @@ final class ParserPositiveSyntaxTest {
             |                </DeclarationExpression>
             |              </ExpressionStatement>
             |              <ForStatement line="6" column="9" lastLine="11" lastColumn="10">
-            |                <ClosureListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |                <ClosureListExpression line="6" column="14" lastLine="6" lastColumn="39">
             |                  <DeclarationExpression line="6" column="14" lastLine="6" lastColumn="25" token="=">
             |                    <VariableExpression line="6" column="18" lastLine="6" lastColumn="19" name="i" type="java.lang.Integer"/>
             |                    <ConstantExpression line="6" column="22" lastLine="6" lastColumn="25" value="100"/>
@@ -46411,7 +46640,7 @@ final class ParserPositiveSyntaxTest {
             |          <ConstantExpression line="9" column="8" lastLine="9" lastColumn="13" value="abc"/>
             |          <MethodCallExpression line="9" column="17" lastLine="9" lastColumn="37">
             |            <ConstructorCallExpression line="9" column="17" lastLine="9" lastColumn="26" type="Foo">
-            |              <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |              <ArgumentListExpression line="9" column="24" lastLine="9" lastColumn="26"/>
             |            </ConstructorCallExpression>
             |            <ConstantExpression line="9" column="27" lastLine="9" lastColumn="30" value="foo"/>
             |            <ConstantExpression line="9" column="31" lastLine="9" lastColumn="36" value="abc"/>
@@ -46733,7 +46962,7 @@ final class ParserPositiveSyntaxTest {
             |      <BinaryExpression line="4" column="1" lastLine="4" lastColumn="16" token="=">
             |        <VariableExpression line="4" column="1" lastLine="4" lastColumn="4" name="bar"/>
             |        <ConstructorCallExpression line="4" column="7" lastLine="4" lastColumn="16" type="Foo">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="4" column="14" lastLine="4" lastColumn="16"/>
             |        </ConstructorCallExpression>
             |      </BinaryExpression>
             |    </ExpressionStatement>
@@ -46860,7 +47089,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="52" column="1" lastLine="52" lastColumn="31" token="=">
             |        <VariableExpression line="52" column="5" lastLine="52" lastColumn="11" name="jsr308"/>
             |        <ConstructorCallExpression line="52" column="14" lastLine="52" lastColumn="31" type="JSR308Class">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="52" column="29" lastLine="52" lastColumn="31"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -47150,7 +47379,7 @@ final class ParserPositiveSyntaxTest {
             |          <DeclarationExpression line="26" column="9" lastLine="26" lastColumn="88" token="=">
             |            <VariableExpression line="26" column="38" lastLine="26" lastColumn="46" name="localVar" type="List&lt;String&gt;"/>
             |            <ConstructorCallExpression line="26" column="49" lastLine="26" lastColumn="88" type="ArrayList&lt;String&gt;">
-            |              <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |              <ArgumentListExpression line="26" column="86" lastLine="26" lastColumn="88"/>
             |            </ConstructorCallExpression>
             |          </DeclarationExpression>
             |        </ExpressionStatement>
@@ -47546,7 +47775,7 @@ final class ParserPositiveSyntaxTest {
             |      <DeclarationExpression line="1" column="1" lastLine="6" lastColumn="2" token="=">
             |        <VariableExpression line="1" column="5" lastLine="1" lastColumn="13" name="delegate"/>
             |        <ConstructorCallExpression line="1" column="16" lastLine="6" lastColumn="2" type="test$1" anonymous="true">
-            |          <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          <ArgumentListExpression line="1" column="26" lastLine="1" lastColumn="28"/>
             |        </ConstructorCallExpression>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
@@ -47731,7 +47960,7 @@ final class ParserPositiveSyntaxTest {
             |              <BlockStatement line="18" column="19" lastLine="20" lastColumn="10">
             |                <ExpressionStatement line="19" column="13" lastLine="19" lastColumn="28">
             |                  <ConstructorCallExpression line="19" column="13" lastLine="19" lastColumn="28" type="BarHolder">
-            |                    <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |                    <ArgumentListExpression line="19" column="26" lastLine="19" lastColumn="28"/>
             |                  </ConstructorCallExpression>
             |                </ExpressionStatement>
             |              </BlockStatement>
@@ -47766,7 +47995,7 @@ final class ParserPositiveSyntaxTest {
             |              <BlockStatement line="27" column="19" lastLine="29" lastColumn="10">
             |                <ExpressionStatement line="28" column="13" lastLine="28" lastColumn="28">
             |                  <ConstructorCallExpression line="28" column="13" lastLine="28" lastColumn="28" type="BarHolder">
-            |                    <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |                    <ArgumentListExpression line="28" column="26" lastLine="28" lastColumn="28"/>
             |                  </ConstructorCallExpression>
             |                </ExpressionStatement>
             |              </BlockStatement>
@@ -47805,7 +48034,7 @@ final class ParserPositiveSyntaxTest {
             |                <BlockStatement line="36" column="19" lastLine="38" lastColumn="10">
             |                  <ExpressionStatement line="37" column="13" lastLine="37" lastColumn="28">
             |                    <ConstructorCallExpression line="37" column="13" lastLine="37" lastColumn="28" type="BarHolder">
-            |                      <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |                      <ArgumentListExpression line="37" column="26" lastLine="37" lastColumn="28"/>
             |                    </ConstructorCallExpression>
             |                  </ExpressionStatement>
             |                </BlockStatement>
@@ -47816,7 +48045,7 @@ final class ParserPositiveSyntaxTest {
             |              <BlockStatement line="39" column="21" lastLine="41" lastColumn="10">
             |                <ExpressionStatement line="40" column="13" lastLine="40" lastColumn="28">
             |                  <ConstructorCallExpression line="40" column="13" lastLine="40" lastColumn="28" type="BarHolder">
-            |                    <ArgumentListExpression line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |                    <ArgumentListExpression line="40" column="26" lastLine="40" lastColumn="28"/>
             |                  </ConstructorCallExpression>
             |                </ExpressionStatement>
             |              </BlockStatement>
@@ -48107,7 +48336,16 @@ final class ParserPositiveSyntaxTest {
             |    <MethodNode line="3" column="5" lastLine="3" lastColumn="18" name="table" modifiers="abstract" returnType="Table"/>
             |    <MethodNode line="4" column="5" lastLine="4" lastColumn="31" name="joinColumns" modifiers="abstract" returnType="JoinColumn[]"/>
             |  </ClassNode>
-            |  <ClassNode line="13" column="1" lastLine="23" lastColumn="2" kind="class" name="OtherSection"/>
+            |  <ClassNode line="13" column="1" lastLine="23" lastColumn="2" kind="class" name="OtherSection">
+            |    <AnnotationNode line="14" column="5" lastLine="14" lastColumn="26" class="CollectionOfElements"/>
+            |    <AnnotationNode line="15" column="5" lastLine="19" lastColumn="14" class="JoinTable" members="joinColumns,table"/>
+            |    <AnnotationNode line="20" column="5" lastLine="21" lastColumn="28" class="Column" members="name,nullable"/>
+            |    <PropertyNode line="14" column="5" lastLine="22" lastColumn="51" name="questions" type="Set&lt;String&gt;" modifiers="public">
+            |      <ConstructorCallExpression line="22" column="29" lastLine="22" lastColumn="51" type="HashSet&lt;String&gt;">
+            |        <ArgumentListExpression line="22" column="49" lastLine="22" lastColumn="51"/>
+            |      </ConstructorCallExpression>
+            |    </PropertyNode>
+            |  </ClassNode>
             |  <ClassNode line="6" column="1" lastLine="6" lastColumn="34" kind="annotation" name="Table" implements="java.lang.annotation.Annotation">
             |    <MethodNode line="6" column="19" lastLine="6" lastColumn="32" name="name" modifiers="abstract" returnType="String"/>
             |  </ClassNode>

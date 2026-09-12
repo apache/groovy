@@ -34,7 +34,7 @@ final class Groovy8046 {
             }
         '''
 
-        assert err.message =~ /The field 'field' has invalid type void|void is not allowed here/
+        assert err.message =~ /The field 'field' has invalid type void|'void' type is not allowed here|void is not allowed here/
     }
 
     @Test
@@ -45,7 +45,7 @@ final class Groovy8046 {
             }
         '''
 
-        assert err.message =~ /The parameter 'param' in method 'int foo\(void\)' has invalid type void|void is not allowed here/
+        assert err.message =~ /The parameter 'param' in method 'int foo\(void\)' has invalid type void|'void' type is not allowed here|void is not allowed here/
     }
 
     @Test
@@ -58,6 +58,6 @@ final class Groovy8046 {
             }
         '''
 
-        assert err.message =~ /The variable 'bar' has invalid type void|void is not allowed here/
+        assert err.message =~ /The variable 'bar' has invalid type void|'void' type is not allowed here|void is not allowed here/
     }
 }

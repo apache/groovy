@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.ImportNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.ast.Parameter
+import org.codehaus.groovy.ast.PropertyNode
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.stmt.Statement
 
@@ -116,6 +117,7 @@ final class AstXmlDumper {
                 }
             }
             n.fields.findAll { !it.synthetic }.each { dumpField(it) }
+            n.properties.each { dumpProperty(it) }
             n.declaredConstructors.each { dumpMethod(it, true) }
             n.objectInitializerStatements.each { stmt ->
                 elem('ObjectInitializer', [:]) {
@@ -156,6 +158,22 @@ final class AstXmlDumper {
             }
         } else {
             elem('FieldNode', attrs)
+        }
+    }
+
+    // No-visibility members are properties; the synthetic backing field is omitted above.
+    private void dumpProperty(PropertyNode n) {
+        dumpAnnotations(n)
+        Map attrs = pos(n) + [name: n.name, type: typeName(n.type)]
+        String mods = fieldMods(n.modifiers)
+        if (mods) attrs.modifiers = mods
+        Expression init = n.field?.initialValueExpression
+        if (init) {
+            elem('PropertyNode', attrs) {
+                dumpExpression(init)
+            }
+        } else {
+            elem('PropertyNode', attrs)
         }
     }
 
