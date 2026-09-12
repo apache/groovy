@@ -41,6 +41,18 @@ import java.util.List;
  */
 public final class SwitchExpressionUtils {
 
+    /**
+     * Node metadata key on a {@code SwitchExpression} in implicit-return position
+     * (the last statement of a closure, a script or a method that returns a
+     * value): the switch keeps its value, but an unmatched selector yields
+     * {@code null} instead of throwing
+     * and the type checker does not require exhaustiveness (GROOVY-12399).
+     *
+     * @since 6.0.0
+     */
+    public static final String UNMATCHED_YIELDS_NULL = "_SWITCH_UNMATCHED_YIELDS_NULL";
+
+
     private SwitchExpressionUtils() {
     }
 

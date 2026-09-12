@@ -34,6 +34,8 @@ import org.objectweb.asm.MethodVisitor;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
+import static org.apache.groovy.ast.tools.SwitchExpressionUtils.UNMATCHED_YIELDS_NULL;
+import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ATHROW;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.GOTO;
@@ -213,12 +215,39 @@ public class SwitchExpressionWriter {
         if (defaultStatement != null && !defaultStatement.isEmpty()) {
             defaultStatement.visit(controller.getAcg());
             if (maybeFallsThrough(defaultStatement)) {
-                throwUnmatchedSelector(selectorIndex, selectorType);
+                writeUnmatchedSelector(expression, selectorIndex, selectorType);
             }
             return;
         }
         if (completeEnum) {
             throwIncompatibleClassChangeError();
+        } else {
+            writeUnmatchedSelector(expression, selectorIndex, selectorType);
+        }
+    }
+
+    /**
+     * Whether an unmatched selector completes the expression with {@code null}
+     * rather than throwing: a switch in implicit-return position (GROOVY-12399).
+     *
+     * @since 6.0.0
+     */
+    protected static boolean unmatchedYieldsNull(final SwitchExpression expression) {
+        return Boolean.TRUE.equals(expression.getNodeMetaData(UNMATCHED_YIELDS_NULL));
+    }
+
+    /**
+     * Completes the expression for an unmatched selector: {@code null} for a
+     * switch in implicit-return position, otherwise an
+     * {@code IllegalStateException} (GROOVY-12399).
+     */
+    private void writeUnmatchedSelector(final SwitchExpression expression, final int selectorIndex, final ClassNode selectorType) {
+        if (unmatchedYieldsNull(expression)) {
+            // the result type is always a reference type, so a plain null needs no
+            // cast; like `yield`, leave the operand stack model empty at the jump
+            MethodVisitor mv = controller.getMethodVisitor();
+            mv.visitInsn(ACONST_NULL);
+            mv.visitJumpInsn(GOTO, controller.getCompileStack().requireSwitchExpressionContext().endLabel);
         } else {
             throwUnmatchedSelector(selectorIndex, selectorType);
         }

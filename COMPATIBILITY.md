@@ -356,10 +356,16 @@ Release notes for the 6.0 beta line should call this out (JIRA
 Groovy 6 compiles switch expressions (JEP 361) as first-class AST
 (`SwitchExpression` / `YieldStatement`) instead of desugaring them to an
 immediately-called closure around a switch statement (the GROOVY-9272
-implementation shipped in 4.x / 5.x). A `switch` used as a statement
-whose `->` block arms do not `yield` is a `SwitchStatement` (those blocks
-need not `yield`); the same syntax in expression position is a
-`SwitchExpression` (every path must `yield` or `throw`).
+implementation shipped in 4.x / 5.x). As in Java (JEP 361) the `->` arm
+only decides fall-through; the position decides whether a value is produced
+(GROOVY-12399). A `switch` whose value is not used is a `SwitchStatement`,
+whatever its arm shape, and does nothing when unmatched. In expression
+position it is a `SwitchExpression` (every path must `yield` or `throw`).
+A switch in implicit-return position (the last statement of a closure, a
+script or a method that returns a value) keeps its value, but an unmatched
+selector yields `null` rather than throwing and no exhaustiveness is
+required, as in 4.x / 5.x; write `return switch (...) {...}` for the strict
+expression rules.
 
 **Who is affected (runtime behaviour).** A dynamic switch expression whose
 selector matches no arm now throws `IllegalStateException`. Previously the
