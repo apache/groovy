@@ -1162,24 +1162,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     /**
-     * True when this {@code switch} is a statement (value discarded), not the
-     * value of an enclosing switch-expression arm. Nested
-     * {@code case L -> switch (...)} is the latter: the inner switch is an
-     * expression even though the parser sees it as an expression-statement.
+     * True when the arms of this {@code switch} need not yield: it makes up a
+     * whole statement whose value is either discarded or an implicit return,
+     * so an incomplete arm rewrites it to a {@code SwitchStatement}. Nested
+     * {@code case L -> switch (...)} follows its own switch: the inner one is
+     * an expression only where the outer produces a value.
      */
     private boolean isSwitchUsedAsStatement(final SwitchExpressionContext ctx) {
-        ParserRuleContext p = ctx;
-        while (p != null && !(p instanceof CommandExprAltContext)) {
-            p = p.getParent();
-        }
-        if (!(p instanceof CommandExprAltContext command)
-                || !(command.getParent() instanceof ExpressionStmtAltContext stmtAlt)) {
-            return false;
-        }
-        ParserRuleContext blockStatement = stmtAlt.getParent();
-        ParserRuleContext blockStatements = blockStatement != null ? blockStatement.getParent() : null;
-        ParserRuleContext group = blockStatements != null ? blockStatements.getParent() : null;
-        return !(group instanceof SwitchBlockStatementExpressionGroupContext g && isArrowGroup(g));
+        StatementContext statement = switchAsStatement(ctx);
+        return statement != null && (!isSwitchValueUsed(statement) || isLenientPosition(statement));
     }
 
     /** Whether a switch-expression group uses arrow labels, making its sole statement the arm value. */
@@ -2466,7 +2457,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             if (switchExpressionHasIncompleteArm(se) || !isSwitchValueUsed(statement)) {
                 return configureAST(switchExpressionAsStatement(se), ctx);
             }
-            if (isImplicitReturnPosition(statement)) {
+            if (isLenientPosition(statement)) {
                 se.putNodeMetaData(UNMATCHED_YIELDS_NULL, Boolean.TRUE);
             }
         }
@@ -2474,16 +2465,66 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     /**
-     * Whether the value of a switch expression statement is used: it is the
-     * expression of an arrow arm of an enclosing switch expression, or it is
-     * in implicit-return position.
+     * Whether the value of a switch expression statement is used: it is in
+     * implicit-return position, or it is the expression of an arrow arm whose
+     * own switch produces a value. An arm of a switch that is itself a
+     * statement produces nothing, so a switch nested there is a statement too.
      */
     private boolean isSwitchValueUsed(final StatementContext statement) {
-        ParserRuleContext blockStatements = statement.getParent() instanceof BlockStatementContext bs ? bs.getParent() : null;
-        if (blockStatements != null && blockStatements.getParent() instanceof SwitchBlockStatementExpressionGroupContext group) {
-            return isArrowGroup(group); // a colon arm's statements are discarded; its value comes from `yield`
+        SwitchExpressionContext arm = enclosingArrowArmSwitch(statement);
+        if (arm != null) {
+            StatementContext owner = switchAsStatement(arm);
+            return owner == null || isSwitchValueUsed(owner);
         }
-        return isImplicitReturnPosition(statement);
+        return !isColonArm(statement) && isImplicitReturnPosition(statement);
+    }
+
+    /**
+     * Whether an unmatched selector completes the switch with {@code null}
+     * instead of throwing: implicit-return position, or an arrow arm of a
+     * switch that is itself lenient (GROOVY-12399).
+     */
+    private boolean isLenientPosition(final StatementContext statement) {
+        SwitchExpressionContext arm = enclosingArrowArmSwitch(statement);
+        if (arm != null) {
+            StatementContext owner = switchAsStatement(arm);
+            return owner != null && isLenientPosition(owner);
+        }
+        return !isColonArm(statement) && isImplicitReturnPosition(statement);
+    }
+
+    /** The switch expression whose arrow arm consists of {@code statement}, else null. */
+    private static SwitchExpressionContext enclosingArrowArmSwitch(final StatementContext statement) {
+        ParserRuleContext blockStatements = statement.getParent() instanceof BlockStatementContext bs ? bs.getParent() : null;
+        if (blockStatements == null || !(blockStatements.getParent() instanceof SwitchBlockStatementExpressionGroupContext group)
+                || !isArrowGroup(group)) {
+            return null;
+        }
+        for (ParserRuleContext p = group.getParent(); p != null; p = p.getParent()) {
+            if (p instanceof SwitchExpressionContext se) return se;
+        }
+        return null;
+    }
+
+    /** Whether {@code statement} is in a colon arm, whose statements are discarded; its value comes from {@code yield}. */
+    private static boolean isColonArm(final StatementContext statement) {
+        ParserRuleContext blockStatements = statement.getParent() instanceof BlockStatementContext bs ? bs.getParent() : null;
+        return blockStatements != null && blockStatements.getParent() instanceof SwitchBlockStatementExpressionGroupContext group
+                && !isArrowGroup(group);
+    }
+
+    /**
+     * The statement that {@code ctx} alone makes up, or null when the switch is
+     * part of a larger expression such as {@code foo(switch (x) {...})}, whose
+     * value is used whatever the enclosing statement does with it.
+     */
+    private static StatementContext switchAsStatement(final SwitchExpressionContext ctx) {
+        ParserRuleContext p = ctx.getParent();
+        while (p != null && !(p instanceof StatementContext)) {
+            p = p.getParent();
+        }
+        return p instanceof ExpressionStmtAltContext statement
+                && statement.getStart() == ctx.getStart() && statement.getStop() == ctx.getStop() ? statement : null;
     }
 
     /**
