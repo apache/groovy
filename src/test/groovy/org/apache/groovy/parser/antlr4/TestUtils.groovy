@@ -117,7 +117,7 @@ final class TestUtils {
     /**
      * Compile {@code source} through CONVERSION and return the diagnostic
      * text. Fails the test if the source parses. Shared by
-     * {@code CommonSyntaxErrorTest} and {@code ParserNegativeSyntaxTest}.
+     * {@code ParserNegativeSyntaxTest}.
      */
     @CompileDynamic
     static String compileMessage(String source) {

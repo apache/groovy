@@ -19,6 +19,7 @@
 package org.apache.groovy.parser.antlr4
 
 import groovy.transform.AutoFinal
+import org.apache.groovy.parser.antlr4.util.AstXmlDumper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -34,7 +35,7 @@ import static org.apache.groovy.parser.antlr4.TestUtils.parseModule
  * GroovyParserTest corpus inlined as {@code expectAst} snippets.
  * <p>
  * Each snippet is compiled through {@code CONVERSION} and asserted against
- * a pretty-printed XML AST dump ({@link org.apache.groovy.parser.antlr4.util.AstXmlDumper})
+ * a pretty-printed XML AST dump ({@link AstXmlDumper})
  * that includes source positions on every node.
  */
 @AutoFinal
@@ -4260,7 +4261,7 @@ final class ParserPositiveSyntaxTest {
             |            'hello'
             |            ''world'
             |            'hi''
-            |                        	
+            |
             |
             |            $$
             |            ሴ
@@ -4273,7 +4274,7 @@ final class ParserPositiveSyntaxTest {
             |            'hello'
             |            ''world'
             |            'hi''
-            |                        	
+            |
             |
             |            $
             |            ሴ
@@ -34519,7 +34520,7 @@ final class ParserPositiveSyntaxTest {
             |
             |enum E2 {
             |    A(1), B(2)
-            |    
+            |
             |    public static final String SOME_CONSTANT = '123';
             |    private final String name;
             |    private final int age = 2;
@@ -34678,7 +34679,7 @@ final class ParserPositiveSyntaxTest {
             |
             |enum Orientation1 {
             |    LANDSCAPE, PORTRAIT
-            |    
+            |
             |    @Override
             |    String toString() {
             |        name().toLowerCase().capitalize()
@@ -46389,7 +46390,7 @@ final class ParserPositiveSyntaxTest {
     }
 
     @Test
-    void 'groovy core - BUG'() {
+    void 'groovy core - GROOVY-4757'() {
         expectAst('''\
             |package bugs
             |
