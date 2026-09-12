@@ -57,6 +57,12 @@ class XStreamUtilsTest {
     }
 
     @Test
+    void toXMLIsTheDocumentSerializeWrites() {
+        String xml = XStreamUtils.toXML('placeholder AST content')
+        assert xml.contains('placeholder AST content')
+    }
+
+    @Test
     void dumpForASourceWithoutAFileIsOwnerOnly() {
         // a source compiled from a string has a name but no file to match, so the dump defaults
         // to owner-only rather than the process umask

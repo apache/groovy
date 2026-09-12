@@ -60,8 +60,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue
 
 /**
  * Branch-level coverage for {@link MissingDelimiterDiagnostic} (GROOVY-12169).
- * Complements the end-to-end cases in {@code SyntaxErrorTest} by exercising
- * edge paths that are hard to reach through full compilation alone.
+ * Complements the end-to-end cases in {@code ParserNegativeSyntaxTest} by
+ * exercising edge paths that are hard to reach through full compilation alone.
  */
 final class MissingDelimiterDiagnosticTest {
 

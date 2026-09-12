@@ -402,7 +402,7 @@ final class ErrorStrategyTest {
 
     /**
      * Strategy reporting must not leak ANTLR's stock jargon onto the listener.
-     * The exact sentence is locked by {@code CommonSyntaxErrorTest} / delimiter tests.
+     * The exact sentence is locked by {@code ParserNegativeSyntaxTest} / delimiter tests.
      */
     private static boolean isNonAntlrJargon(final String m) {
         return !m.contains("no viable alternative") && !m.startsWith("mismatched input");
