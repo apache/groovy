@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789110621040,
+  "lastUpdate": 1789196762556,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -6055,6 +6055,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 492.19333333333327,
             "range": "±23.55",
+            "unit": "ms",
+            "extra": "6.0.0-RC-1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "32462579e2689374115525c2ac3e50a1ad86dfb5",
+          "message": "GROOVY-12398: Improve lexer and parser performance (#2921)\n\n* GROOVY-12398: Improve lexer and parser performance\n\nFlatten number-literal fragments to character classes, split ASCII\nidentifiers onto a predicate-free DFA path, replace regex-based lexer\npredicates with direct character tests, and gate annotation element\nvalues so AdaptivePredict does not also explore assignment expressions.\n\n* GROOVY-12398: classify supplementary-plane identifiers by code point\n\nDecode surrogate pairs before isUpperCase so CapitalizedIdentifier is\ncorrect, report invalid octals at the token start, and cover the\nannotation pair-name set plus those edge cases with tests.\n\n* GROOVY-12398: derive annotation pair-name tokens from the ATN\n\nCompute FIRST(elementValuePairName) with LL1Analyzer at startup so\nidentifier and keywords no longer need a parallel Java token list.\n\n* GROOVY-12398: Add tests for invalid octal number parsing\n\n* GROOVY-12398: Remove empty CommonSyntaxErrorTest leftover\n\nThe empty file was added by accident and fails Apache RAT\n(unapproved license). GROOVY-12400 already inlined that corpus\ninto ParserNegativeSyntaxTest.",
+          "timestamp": "2026-09-12T04:46:17Z",
+          "url": "https://github.com/apache/groovy/commit/32462579e2689374115525c2ac3e50a1ad86dfb5"
+        },
+        "date": 1789196758615,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 513.4833333333333,
+            "range": "±17.54",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 650.3733333333333,
+            "range": "±217.18",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 571.4966666666667,
+            "range": "±144.74",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 464.39000000000004,
+            "range": "±18.95",
+            "unit": "ms",
+            "extra": "5.1.2"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 486.74333333333334,
+            "range": "±19.58",
             "unit": "ms",
             "extra": "6.0.0-RC-1"
           }
