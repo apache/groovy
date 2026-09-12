@@ -24,9 +24,12 @@
  * diagnostics ({@link MissingDelimiterDiagnostic} for relocated missing-closer
  * carets; fallback wording lives on {@link AbstractFriendlyErrorStrategy},
  * including reserved keywords, a leading {@code ?[} without a path to
- * attach to, and a singleton expected-punctuation token after optional
- * newlines are ignored). Reporting is one listener dispatch
- * after locate/refine. Diagnostic helpers run only after recognition has
- * already failed so they do not affect steady-state parse performance.
+ * attach to, array-creation mistakes, an unclosed type argument, a method
+ * header in a statement position, an unmatched {@code do}, enum constants
+ * that need {@code ;} before members, and a singleton expected-punctuation
+ * token after optional newlines are ignored). Reporting is one listener
+ * dispatch after locate/refine. Diagnostic helpers run only after
+ * recognition has already failed so they do not affect steady-state parse
+ * performance.
  */
 package org.apache.groovy.parser.antlr4.internal;

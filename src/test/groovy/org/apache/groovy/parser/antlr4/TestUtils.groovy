@@ -157,7 +157,7 @@ final class TestUtils {
 
     /**
      * Pretty-printed XML dump of the AST of {@code source}, including
-     * source positions on every node.
+     * source positions on authored nodes. Synthetic nodes remain at {@code -1}.
      */
     static String dumpAst(String source, CompilerConfiguration compilerConfiguration = CompilerConfiguration.DEFAULT) {
         return AstXmlDumper.dump(parseModule(source, compilerConfiguration))

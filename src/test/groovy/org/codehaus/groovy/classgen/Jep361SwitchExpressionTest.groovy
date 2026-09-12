@@ -188,7 +188,7 @@ final class Jep361SwitchExpressionTest {
                 case 6 -> def x = 'a'; yield x
                 default -> 'z'
             }
-        ''', 'Expect only 1 statement'
+        ''', 'Arrow switch cases must contain a single statement'
     }
 
     //--------------------------------------------------------------------------

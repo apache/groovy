@@ -32,6 +32,7 @@ import org.antlr.v4.runtime.misc.Interval;
 final class ThrowingTokenStream implements TokenStream {
 
     private final RuntimeException failure;
+    private final int reportedSize;
 
     ThrowingTokenStream() {
         this(new IndexOutOfBoundsException("test"));
@@ -42,7 +43,17 @@ final class ThrowingTokenStream implements TokenStream {
      *                or {@link IllegalArgumentException} for strategy catch coverage)
      */
     ThrowingTokenStream(final RuntimeException failure) {
+        this(failure, 0);
+    }
+
+    /**
+     * Same as {@link #ThrowingTokenStream(RuntimeException)} but {@link #size()}
+     * reports {@code reportedSize} so callers that loop {@code 0..size()} still
+     * enter {@link #get(int)} and hit the defensive catch.
+     */
+    ThrowingTokenStream(final RuntimeException failure, final int reportedSize) {
         this.failure = failure;
+        this.reportedSize = reportedSize;
     }
 
     @Override
@@ -109,7 +120,7 @@ final class ThrowingTokenStream implements TokenStream {
 
     @Override
     public int size() {
-        return 0;
+        return reportedSize;
     }
 
     @Override
