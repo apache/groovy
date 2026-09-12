@@ -226,6 +226,12 @@ class UnionTypeClassNode extends ClassNode {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public boolean equals(final Object that) {
+        return that == this || that instanceof UnionTypeClassNode type
+            && type.getUnresolvedName().equals(this.getUnresolvedName());
+    }
+
     /**
      * Returns the abstract methods contributed by all delegate types.
      */
@@ -446,6 +452,15 @@ class UnionTypeClassNode extends ClassNode {
             if (properties != null) answer.addAll(properties);
         }
         return answer;
+    }
+
+    @Override
+    public String getText() {
+        var sj = new StringJoiner(" | ", "(", ")");
+        for (ClassNode delegate : delegates) {
+            sj.add(delegate.getText());
+        }
+        return sj.toString();
     }
 
     /**
