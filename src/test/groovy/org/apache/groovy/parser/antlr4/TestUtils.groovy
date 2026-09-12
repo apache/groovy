@@ -117,8 +117,7 @@ final class TestUtils {
     /**
      * Compile {@code source} through CONVERSION and return the diagnostic
      * text. Fails the test if the source parses. Shared by
-     * {@code SyntaxErrorTest}, {@code CommonSyntaxErrorTest} and
-     * {@code ParserNegativeSyntaxTest}.
+     * {@code CommonSyntaxErrorTest} and {@code ParserNegativeSyntaxTest}.
      */
     @CompileDynamic
     static String compileMessage(String source) {
@@ -140,8 +139,8 @@ final class TestUtils {
      * Fails the test if parsing reports errors.
      */
     @CompileDynamic
-    static ModuleNode parseModule(String source) {
-        CompilerConfiguration config = antlr4Config
+    static ModuleNode parseModule(String source, CompilerConfiguration compilerConfiguration = CompilerConfiguration.DEFAULT) {
+        CompilerConfiguration config = getAntlr4Config(compilerConfiguration)
         def loader = new GroovyClassLoader()
         SourceUnit unit = new SourceUnit('test.groovy', source, config, loader, new ErrorCollector(config))
         unit.parse()
@@ -160,15 +159,15 @@ final class TestUtils {
      * Pretty-printed XML dump of the AST of {@code source}, including
      * source positions on every node.
      */
-    static String dumpAst(String source) {
-        return AstXmlDumper.dump(parseModule(source))
+    static String dumpAst(String source, CompilerConfiguration compilerConfiguration = CompilerConfiguration.DEFAULT) {
+        return AstXmlDumper.dump(parseModule(source, compilerConfiguration))
     }
 
     /**
      * Parse {@code source} and assert its XML AST dump matches {@code expected}.
      */
-    static void expectAst(String source, String expected) {
-        Assertions.assertEquals(normalizeAst(expected), normalizeAst(dumpAst(source)))
+    static void expectAst(String source, String expected, CompilerConfiguration compilerConfiguration = CompilerConfiguration.DEFAULT) {
+        Assertions.assertEquals(normalizeAst(expected), normalizeAst(dumpAst(source, compilerConfiguration)))
     }
 
     static String normalizeAst(String s) {
@@ -176,7 +175,7 @@ final class TestUtils {
             .replaceAll(/[ \t]+\n/, '\n')
             .replaceAll(/\n{2,}/, '\n')
             .replaceAll(/^\n+/, '')
-            .replaceAll(/\n+\z/, '\n')
+            .replaceAll(/\n+\z/, '') + '\n'
     }
 
     /**
@@ -187,7 +186,9 @@ final class TestUtils {
     @CompileDynamic
     static void expectParseError(String source, String expect) {
         def line = (expect =~ /@ line (\d+),/)[0][1]
-        Assertions.assertEquals("startup failed:\ntest.groovy: $line: $expect".toString(), compileMessage(source))
+        String expected = "startup failed:\ntest.groovy: $line: $expect".toString()
+        String actual = compileMessage(source)
+        Assertions.assertEquals(expected.replaceAll(/\n+\z/, '') + '\n', actual.replaceAll(/\n+\z/, '') + '\n')
     }
 
     /**

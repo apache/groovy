@@ -32,8 +32,8 @@ import static org.apache.groovy.parser.antlr4.TestUtils.expectParseError
  * <p>
  * Caret-level contracts for missing {@code ) } / {@code ] } / {@code } },
  * GString {@code $}, unexpected-character glyphs, and declaration-shape
- * errors stay in {@link SyntaxErrorTest}. This class locks the <em>new</em>
- * sentences that are not already dumped there.
+ * errors stay in {@link ParserNegativeSyntaxTest}. This class locks the
+ * <em>new</em> sentences that are not already dumped there.
  * </p>
  */
 @AutoFinal
