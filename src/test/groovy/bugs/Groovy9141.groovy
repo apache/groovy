@@ -34,7 +34,7 @@ final class Groovy9141 {
                 abstract void meth() {}
             }
         '''
-        assert err.message =~ / You defined an abstract method\[meth\] with a body. Try removing the method body @ line /
+        assert err.message =~ / Abstract method 'meth' cannot have a body. Remove the method body @ line /
     }
 
     @Test // not a language requirement but script-level check takes precedence in current implementation
@@ -42,6 +42,6 @@ final class Groovy9141 {
         def err = shouldFail CompilationFailedException, '''
             abstract void meth() {}
         '''
-        assert err.message =~ / You cannot define an abstract method\[meth\] in the script. Try removing the 'abstract' /
+        assert err.message =~ / Scripts cannot declare abstract method 'meth'. Remove 'abstract' /
     }
 }

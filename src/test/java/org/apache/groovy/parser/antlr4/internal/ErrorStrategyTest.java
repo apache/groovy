@@ -31,12 +31,15 @@ import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
+import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.TokenSource;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.atn.AbstractPredicateTransition;
 import org.antlr.v4.runtime.atn.ATN;
 import org.antlr.v4.runtime.atn.ATNState;
 import org.antlr.v4.runtime.atn.PredictionMode;
+import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.misc.IntervalSet;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.apache.groovy.parser.antlr4.GroovyLangLexer;
@@ -497,6 +500,8 @@ final class ErrorStrategyTest {
                 AbstractFriendlyErrorStrategy.keywordMessage(GroovyParser.FINALLY));
         assertEquals("'case' outside of switch",
                 AbstractFriendlyErrorStrategy.keywordMessage(GroovyParser.CASE));
+        assertEquals("'import' is only allowed at the beginning of a compilation unit",
+                AbstractFriendlyErrorStrategy.keywordMessage(GroovyParser.IMPORT));
         assertNull(AbstractFriendlyErrorStrategy.keywordMessage(GroovyParser.DEFAULT),
                 "default as offender is a method/annotation keyword, not 'outside of switch'");
         assertNull(AbstractFriendlyErrorStrategy.keywordMessage(GroovyParser.Identifier));
@@ -766,6 +771,822 @@ final class ErrorStrategyTest {
         assertNull(AbstractFriendlyErrorStrategy.misplacedDefaultClause(e2, colon));
     }
 
+    @Test
+    void arrayCreationMissingDimensionAtEofPrefersJavacWordingOverMissingBrace() {
+        var tokens = lex("new double[]");
+        Token eof = tokens.get(tokens.size() - 1);
+        RecognitionException e = stubException(setOf(GroovyParser.LBRACE), eof, tokens);
+        assertEquals("Array dimension missing; specify a size or add an initializer '{}'",
+                AbstractFriendlyErrorStrategy.arrayCreationMessage(e, eof));
+        assertEquals("Array dimension missing; specify a size or add an initializer '{}'",
+                AbstractFriendlyErrorStrategy.refineFallbackMessage(e, "Missing '{'"));
+    }
+
+    @Test
+    void arrayCreationSizedDimAfterEmptyDim() {
+        var tokens = lex("new double[][5]");
+        Token five = requireType(tokens, GroovyParser.IntegerLiteral);
+        RecognitionException e = stubException(new IntervalSet(), five, tokens);
+        assertEquals("Cannot specify an array size after an empty dimension",
+                AbstractFriendlyErrorStrategy.arrayCreationMessage(e, five));
+        assertEquals("Cannot specify an array size after an empty dimension",
+                AbstractFriendlyErrorStrategy.refineFallbackMessage(e, "Unexpected input: '5'"));
+    }
+
+    @Test
+    void arrayCreationSizeWithInitializer() {
+        var tokens = lex("new double[2] { 1.0, 2.0 }");
+        Token brace = requireType(tokens, GroovyParser.LBRACE);
+        RecognitionException e = stubException(new IntervalSet(), brace, tokens);
+        assertEquals("Cannot combine an array size with an array initializer",
+                AbstractFriendlyErrorStrategy.arrayCreationMessage(e, brace));
+    }
+
+    @Test
+    void arrayCreationIgnoresConstructorCall() {
+        var tokens = lex("new Foo()");
+        Token paren = requireType(tokens, GroovyParser.LPAREN);
+        RecognitionException e = stubException(new IntervalSet(), paren, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.arrayCreationMessage(e, paren));
+    }
+
+    @Test
+    void arrayCreationNulls() {
+        assertNull(AbstractFriendlyErrorStrategy.arrayCreationMessage(null, token(Token.EOF, "<EOF>")));
+        assertNull(AbstractFriendlyErrorStrategy.arrayCreationMessage(stubException(new IntervalSet(), null), null));
+        CommonToken eof = token(Token.EOF, "<EOF>");
+        eof.setTokenIndex(0);
+        assertNull(AbstractFriendlyErrorStrategy.arrayCreationMessage(stubException(new IntervalSet(), eof), eof));
+    }
+
+    @Test
+    void unmatchedTypeArgumentWhenOffenderIsTheTypeName() {
+        var tokens = lex("List<Integer list2 = new ArrayList<Integer>()");
+        Token list = tokens.get(0);
+        RecognitionException e = stubException(new IntervalSet(), list, tokens);
+        assertEquals("Missing '>'", AbstractFriendlyErrorStrategy.unmatchedTypeArgument(e, list));
+        assertEquals("Missing '>'",
+                AbstractFriendlyErrorStrategy.refineFallbackMessage(e, "Unexpected input: 'List<Integer'"));
+    }
+
+    @Test
+    void unmatchedTypeArgumentAfterCapitalizedName() {
+        var tokens = lex("List<Integer x");
+        Token x = null;
+        for (int i = 0; i < tokens.size(); i++) {
+            if (tokens.get(i).getType() == GroovyParser.Identifier && "x".equals(tokens.get(i).getText())) {
+                x = tokens.get(i);
+                break;
+            }
+        }
+        assertNotNull(x);
+        RecognitionException e = stubException(new IntervalSet(), x, tokens);
+        assertEquals("Missing '>'", AbstractFriendlyErrorStrategy.unmatchedTypeArgument(e, x));
+        assertEquals("Missing '>'", AbstractFriendlyErrorStrategy.refineFallbackMessage(e, "Unexpected input: 'List<Integer'"));
+    }
+
+    @Test
+    void unmatchedTypeArgumentIgnoresLeftShift() {
+        var tokens = lex("Integer.SIZE << 1\n(1+2))");
+        Token extraClose = null;
+        int seen = 0;
+        for (int i = 0; i < tokens.size(); i++) {
+            if (tokens.get(i).getType() == GroovyParser.RPAREN) {
+                seen++;
+                if (seen == 2) {
+                    extraClose = tokens.get(i);
+                    break;
+                }
+            }
+        }
+        assertNotNull(extraClose);
+        RecognitionException e = stubException(new IntervalSet(), extraClose, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedTypeArgument(e, extraClose));
+        assertEquals("Unexpected ')'",
+                AbstractFriendlyErrorStrategy.refineFallbackMessage(e, "Unexpected input: ')'"));
+    }
+
+    @Test
+    void unmatchedTypeArgumentDoesNotStealAnEarlierUnrelatedError() {
+        var tokens = lex("(1+2))\nList<Integer x");
+        // first RPAREN is the closer of (1+2); the extra one is later
+        Token extraClose = null;
+        int seen = 0;
+        for (int i = 0; i < tokens.size(); i++) {
+            if (tokens.get(i).getType() == GroovyParser.RPAREN) {
+                seen++;
+                if (seen == 2) {
+                    extraClose = tokens.get(i);
+                    break;
+                }
+            }
+        }
+        assertNotNull(extraClose);
+        RecognitionException e = stubException(new IntervalSet(), extraClose, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedTypeArgument(e, extraClose),
+                "a later unclosed generic must not rewrite an earlier extra ')'");
+        assertEquals("Unexpected ')'",
+                AbstractFriendlyErrorStrategy.refineFallbackMessage(e, "Unexpected input: ')'"));
+    }
+
+    @Test
+    void unmatchedTypeArgumentIgnoresComparison() {
+        var tokens = lex("x < y z");
+        Token z = null;
+        for (int i = 0; i < tokens.size(); i++) {
+            if ("z".equals(tokens.get(i).getText())) {
+                z = tokens.get(i);
+                break;
+            }
+        }
+        assertNotNull(z);
+        RecognitionException e = stubException(new IntervalSet(), z, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedTypeArgument(e, z));
+    }
+
+    @Test
+    void unmatchedTypeArgumentNulls() {
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedTypeArgument(null, token(GroovyParser.Identifier, "x")));
+        Token gt = token(GroovyParser.GT, ">");
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedTypeArgument(stubException(new IntervalSet(), gt), gt));
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedTypeArgument(stubException(new IntervalSet(), null), null));
+    }
+
+    @Test
+    void methodDefinitionNotExpectedAfterDefIdent() {
+        var tokens = lex("{ -> def say(");
+        Token lparen = requireType(tokens, GroovyParser.LPAREN);
+        RecognitionException e = stubException(new IntervalSet(), lparen, tokens);
+        assertEquals("Method definition not expected here",
+                AbstractFriendlyErrorStrategy.methodDefinitionNotExpected(e, lparen));
+        assertEquals("Method definition not expected here",
+                AbstractFriendlyErrorStrategy.refineFallbackMessage(e, "Unexpected input: '('"));
+    }
+
+    @Test
+    void methodDefinitionNotExpectedIgnoresOrdinaryCall() {
+        var tokens = lex("foo(");
+        Token lparen = requireType(tokens, GroovyParser.LPAREN);
+        RecognitionException e = stubException(new IntervalSet(), lparen, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.methodDefinitionNotExpected(e, lparen));
+    }
+
+    @Test
+    void methodDefinitionNotExpectedNulls() {
+        assertNull(AbstractFriendlyErrorStrategy.methodDefinitionNotExpected(null, token(GroovyParser.LPAREN, "(")));
+        Token ident = token(GroovyParser.Identifier, "x");
+        assertNull(AbstractFriendlyErrorStrategy.methodDefinitionNotExpected(stubException(new IntervalSet(), ident), ident));
+        assertNull(AbstractFriendlyErrorStrategy.methodDefinitionNotExpected(stubException(new IntervalSet(), null), null));
+    }
+
+    @Test
+    void unmatchedDoWhileNamesMissingWhile() {
+        var tokens = lex("do\nprintln 123\nprintln");
+        Token println = null;
+        int seen = 0;
+        for (int i = 0; i < tokens.size(); i++) {
+            if ("println".equals(tokens.get(i).getText())) {
+                seen++;
+                if (seen == 2) {
+                    println = tokens.get(i);
+                    break;
+                }
+            }
+        }
+        assertNotNull(println);
+        RecognitionException e = stubException(setOf(GroovyParser.WHILE, GroovyParser.Identifier), println, tokens);
+        assertEquals("Missing 'while'", AbstractFriendlyErrorStrategy.unmatchedDoWhile(e, println));
+        assertEquals("Missing 'while'", AbstractFriendlyErrorStrategy.refineFallbackMessage(e, "Unexpected input: '123\\nprintln'"));
+    }
+
+    @Test
+    void unmatchedDoWhileNamesMultiStatementBodyWhenWhileFollows() {
+        var tokens = lex("do\nprintln 123\nprintln 123\nwhile (false)");
+        Token println = null;
+        int seen = 0;
+        for (int i = 0; i < tokens.size(); i++) {
+            if ("println".equals(tokens.get(i).getText())) {
+                seen++;
+                if (seen == 2) {
+                    println = tokens.get(i);
+                    break;
+                }
+            }
+        }
+        assertNotNull(println);
+        RecognitionException e = stubException(setOf(GroovyParser.WHILE, GroovyParser.Identifier), println, tokens);
+        assertEquals("do-while body must be a single statement; wrap multiple statements in '{ }'",
+                AbstractFriendlyErrorStrategy.unmatchedDoWhile(e, println));
+        assertEquals("do-while body must be a single statement; wrap multiple statements in '{ }'",
+                AbstractFriendlyErrorStrategy.refineFallbackMessage(e, "Unexpected input: '123\\nprintln'"));
+    }
+
+    @Test
+    void unmatchedDoWhileIgnoresWhileLoop() {
+        var tokens = lex("while (true) x");
+        Token x = null;
+        for (int i = 0; i < tokens.size(); i++) {
+            if ("x".equals(tokens.get(i).getText())) {
+                x = tokens.get(i);
+                break;
+            }
+        }
+        assertNotNull(x);
+        RecognitionException e = stubException(new IntervalSet(), x, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedDoWhile(e, x));
+    }
+
+    @Test
+    void unmatchedDoWhileNulls() {
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedDoWhile(null, token(GroovyParser.Identifier, "x")));
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedDoWhile(stubException(new IntervalSet(), null), null));
+    }
+
+    @Test
+    void enumMemberAfterCommaNamesSemicolon() {
+        var tokens = lex("enum E { X, Y,\ndef");
+        Token defTok = requireType(tokens, GroovyParser.DEF);
+        RecognitionException e = stubException(new IntervalSet(), defTok, tokens);
+        assertEquals("';' expected after the last enum constant",
+                AbstractFriendlyErrorStrategy.enumMemberAfterComma(e, defTok));
+        assertEquals("';' expected after the last enum constant",
+                AbstractFriendlyErrorStrategy.refineFallbackMessage(e, "Unexpected input: ',\\n  def'"));
+    }
+
+    @Test
+    void enumMemberAfterCommaIgnoresListLiteral() {
+        var tokens = lex("[a, def]");
+        Token defTok = requireType(tokens, GroovyParser.DEF);
+        RecognitionException e = stubException(new IntervalSet(), defTok, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.enumMemberAfterComma(e, defTok));
+    }
+
+    @Test
+    void enumMemberAfterCommaIgnoresClosedEnumEarlierInFile() {
+        var tokens = lex("enum Color { R, G, B }\ndef x = [1, def]");
+        Token defTok = null;
+        for (int i = tokens.size() - 1; i >= 0; i--) {
+            if (tokens.get(i).getType() == GroovyParser.DEF) {
+                defTok = tokens.get(i);
+                break;
+            }
+        }
+        assertNotNull(defTok);
+        RecognitionException e = stubException(new IntervalSet(), defTok, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.enumMemberAfterComma(e, defTok));
+    }
+
+    @Test
+    void enumMemberAfterCommaNulls() {
+        assertNull(AbstractFriendlyErrorStrategy.enumMemberAfterComma(null, token(GroovyParser.DEF, "def")));
+        Token ident = token(GroovyParser.Identifier, "x");
+        assertNull(AbstractFriendlyErrorStrategy.enumMemberAfterComma(stubException(new IntervalSet(), ident), ident));
+        assertNull(AbstractFriendlyErrorStrategy.enumMemberAfterComma(stubException(new IntervalSet(), null), null));
+    }
+
+    @Test
+    void interfaceDefaultAfterHeader() {
+        var tokens = lex("interface I { def m() default");
+        Token deflt = requireType(tokens, GroovyParser.DEFAULT);
+        RecognitionException e = stubException(new IntervalSet(), deflt, tokens);
+        assertEquals("'default' cannot follow a method header; put 'default' before the method name",
+                AbstractFriendlyErrorStrategy.interfaceDefaultAfterHeader(e, deflt));
+        assertEquals("'default' cannot follow a method header; put 'default' before the method name",
+                AbstractFriendlyErrorStrategy.refineFallbackMessage(e, "Unexpected input: 'default'"));
+    }
+
+    @Test
+    void interfaceDefaultAfterHeaderIgnoresAnnotationType() {
+        var tokens = lex("@interface A { String a() default");
+        Token deflt = requireType(tokens, GroovyParser.DEFAULT);
+        RecognitionException e = stubException(new IntervalSet(), deflt, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.interfaceDefaultAfterHeader(e, deflt));
+    }
+
+    @Test
+    void interfaceDefaultAfterHeaderNulls() {
+        assertNull(AbstractFriendlyErrorStrategy.interfaceDefaultAfterHeader(null, token(GroovyParser.DEFAULT, "default")));
+        Token ident = token(GroovyParser.Identifier, "x");
+        assertNull(AbstractFriendlyErrorStrategy.interfaceDefaultAfterHeader(stubException(new IntervalSet(), ident), ident));
+        assertNull(AbstractFriendlyErrorStrategy.interfaceDefaultAfterHeader(stubException(new IntervalSet(), null), null));
+    }
+
+    @Test
+    void unexpectedPunctuationNamesClosersAndSemicolon() {
+        assertEquals("Unexpected ')'", AbstractFriendlyErrorStrategy.unexpectedPunctuation(token(GroovyParser.RPAREN, ")")));
+        assertEquals("Unexpected ']'", AbstractFriendlyErrorStrategy.unexpectedPunctuation(token(GroovyParser.RBRACK, "]")));
+        assertEquals("Unexpected '}'", AbstractFriendlyErrorStrategy.unexpectedPunctuation(token(GroovyParser.RBRACE, "}")));
+        assertEquals("Unexpected ';'", AbstractFriendlyErrorStrategy.unexpectedPunctuation(token(GroovyParser.SEMI, ";")));
+        assertEquals("Unexpected ','", AbstractFriendlyErrorStrategy.unexpectedPunctuation(token(GroovyParser.COMMA, ",")));
+        assertNull(AbstractFriendlyErrorStrategy.unexpectedPunctuation(token(GroovyParser.Identifier, "x")));
+        assertNull(AbstractFriendlyErrorStrategy.unexpectedPunctuation(null));
+        Token semi = token(GroovyParser.SEMI, ";");
+        RecognitionException e = stubException(new IntervalSet(), semi);
+        assertEquals("Unexpected ';'", AbstractFriendlyErrorStrategy.refineFallbackMessage(e, "Unexpected input: ';'"));
+    }
+
+    @Test
+    void refineFallbackImportKeyword() {
+        Token imp = token(GroovyParser.IMPORT, "import");
+        RecognitionException e = stubException(new IntervalSet(), imp);
+        assertEquals("'import' is only allowed at the beginning of a compilation unit",
+                AbstractFriendlyErrorStrategy.refineFallbackMessage(e, "Unexpected input: 'import'"));
+    }
+
+    @Test
+    void arrayCreationSwallowsStreamFailure() {
+        CommonToken eof = token(Token.EOF, "<EOF>");
+        eof.setTokenIndex(1);
+        RecognitionException e = stubException(new IntervalSet(), eof, new ThrowingTokenStream());
+        assertNull(AbstractFriendlyErrorStrategy.arrayCreationMessage(e, eof));
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedTypeArgument(e, eof));
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedDoWhile(e, eof));
+        CommonToken lparen = token(GroovyParser.LPAREN, "(");
+        lparen.setTokenIndex(1);
+        assertNull(AbstractFriendlyErrorStrategy.methodDefinitionNotExpected(
+                stubException(new IntervalSet(), lparen, new ThrowingTokenStream()), lparen));
+        CommonToken defTok = token(GroovyParser.DEF, "def");
+        defTok.setTokenIndex(1);
+        assertNull(AbstractFriendlyErrorStrategy.enumMemberAfterComma(
+                stubException(new IntervalSet(), defTok, new ThrowingTokenStream()), defTok));
+        CommonToken deflt = token(GroovyParser.DEFAULT, "default");
+        deflt.setTokenIndex(1);
+        assertNull(AbstractFriendlyErrorStrategy.interfaceDefaultAfterHeader(
+                stubException(new IntervalSet(), deflt, new ThrowingTokenStream()), deflt));
+        RecognitionException iae = stubException(new IntervalSet(), eof,
+                new ThrowingTokenStream(new IllegalArgumentException("test")));
+        assertNull(AbstractFriendlyErrorStrategy.arrayCreationMessage(iae, eof));
+    }
+
+    @Test
+    void methodDefinitionNotExpectedAfterVoidReturnType() {
+        var tokens = lex("{ void say(");
+        Token lparen = requireType(tokens, GroovyParser.LPAREN);
+        RecognitionException e = stubException(new IntervalSet(), lparen, tokens);
+        assertEquals("Method definition not expected here",
+                AbstractFriendlyErrorStrategy.methodDefinitionNotExpected(e, lparen));
+    }
+
+    @Test
+    void unmatchedTypeArgumentNestedGenerics() {
+        var tokens = lex("List<List<Integer x");
+        Token x = null;
+        for (int i = 0; i < tokens.size(); i++) {
+            if ("x".equals(tokens.get(i).getText())) {
+                x = tokens.get(i);
+                break;
+            }
+        }
+        assertNotNull(x);
+        RecognitionException e = stubException(new IntervalSet(), x, tokens);
+        assertEquals("Missing '>'", AbstractFriendlyErrorStrategy.unmatchedTypeArgument(e, x));
+    }
+
+    @Test
+    void arrayCreationUnclosedSizedDimensionIsNotRewritten() {
+        var tokens = lex("new int[2");
+        Token eof = tokens.get(tokens.size() - 1);
+        RecognitionException e = stubException(new IntervalSet(), eof, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.arrayCreationMessage(e, eof),
+                "an unfinished [2 must not be named as a finished array-creation mistake");
+    }
+
+    @Test
+    void arrayCreationUnclosedSizedDimensionWhenOffenderIsTheSizeToken() {
+        // Offender is `2`, so the prefix does not include EOF and the inner
+        // scan runs off the end of the dimension without seeing `]` — that is
+        // the `!sawSized` path, distinct from hitting EOF inside the brackets.
+        var tokens = lex("new int[2");
+        Token two = requireType(tokens, GroovyParser.IntegerLiteral);
+        RecognitionException e = stubException(new IntervalSet(), two, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.arrayCreationMessage(e, two));
+    }
+
+    @Test
+    void arrayCreationNestedBracketInsideSizedDimensionIsNotRewritten() {
+        var tokens = lex("new int[2[");
+        Token eof = tokens.get(tokens.size() - 1);
+        RecognitionException e = stubException(new IntervalSet(), eof, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.arrayCreationMessage(e, eof));
+    }
+
+    @Test
+    void arrayCreationSizedThenIdentifierIsNotRewritten() {
+        var tokens = lex("new int[2] foo");
+        Token foo = requireText(tokens, "foo");
+        RecognitionException e = stubException(new IntervalSet(), foo, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.arrayCreationMessage(e, foo));
+    }
+
+    @Test
+    void arrayCreationGenericCreatedNameStillSeesEmptyDimension() {
+        var tokens = lex("new java.util.ArrayList<String>[]");
+        Token eof = tokens.get(tokens.size() - 1);
+        RecognitionException e = stubException(setOf(GroovyParser.LBRACE), eof, tokens);
+        assertEquals("Array dimension missing; specify a size or add an initializer '{}'",
+                AbstractFriendlyErrorStrategy.arrayCreationMessage(e, eof));
+    }
+
+    @Test
+    void arrayCreationIgnoresInputThatIsNotATokenStream() {
+        CommonToken eof = token(Token.EOF, "<EOF>");
+        eof.setTokenIndex(0);
+        RecognitionException e = stubException(new IntervalSet(), eof, null);
+        assertNull(AbstractFriendlyErrorStrategy.arrayCreationMessage(e, eof));
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedTypeArgument(e, eof));
+        assertNull(AbstractFriendlyErrorStrategy.methodDefinitionNotExpected(e, token(GroovyParser.LPAREN, "(")));
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedDoWhile(e, eof));
+        assertNull(AbstractFriendlyErrorStrategy.enumMemberAfterComma(e, token(GroovyParser.DEF, "def")));
+        assertNull(AbstractFriendlyErrorStrategy.interfaceDefaultAfterHeader(e, token(GroovyParser.DEFAULT, "default")));
+    }
+
+    @Test
+    void unmatchedTypeArgumentClosesInnerGenericThenStillReportsMissingGt() {
+        // ANTLR's 4-token lookback from `x` starts at `Map` and would see a
+        // balanced inner generic; NVAE start at `List` is how the real parser
+        // reports this, and it keeps the outer `<` in view after the inner `>`.
+        var tokens = lex("List<Map<Integer> x");
+        Token x = requireText(tokens, "x");
+        Token list = tokens.get(0);
+        NoViableAltException nvae = nvaeStartingAt(tokens, list, x);
+        assertEquals("Missing '>'", AbstractFriendlyErrorStrategy.unmatchedTypeArgument(nvae, x));
+    }
+
+    @Test
+    void unmatchedTypeArgumentNestedLowercaseNameIncrementsDepth() {
+        // `foo<` is not itself a type opener; depth is already > 0 from `List<`.
+        var tokens = lex("List<foo<Integer x");
+        Token x = requireText(tokens, "x");
+        Token list = tokens.get(0);
+        NoViableAltException nvae = nvaeStartingAt(tokens, list, x);
+        assertEquals("Missing '>'", AbstractFriendlyErrorStrategy.unmatchedTypeArgument(nvae, x));
+    }
+
+    @Test
+    void unmatchedTypeArgumentTreatsLeftShiftAsTwoLtTokensNotNestedGenerics() {
+        var tokens = lex("x << y z");
+        Token z = requireText(tokens, "z");
+        NoViableAltException nvae = nvaeStartingAt(tokens, tokens.get(0), z);
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedTypeArgument(nvae, z),
+                "`<<` is a shift, not `List<List<...`");
+    }
+
+    @Test
+    void unmatchedTypeArgumentSkipsHiddenTokensBetweenTypeAndLt() {
+        var tokens = lex("List</*c*/Integer x");
+        Token x = requireText(tokens, "x");
+        Token list = tokens.get(0);
+        NoViableAltException nvae = nvaeStartingAt(tokens, list, x);
+        assertEquals("Missing '>'", AbstractFriendlyErrorStrategy.unmatchedTypeArgument(nvae, x));
+    }
+
+    @Test
+    void unmatchedTypeArgumentStopsAtAssignment() {
+        var tokens = lex("List<Integer x = 1");
+        Token x = requireText(tokens, "x");
+        RecognitionException e = stubException(new IntervalSet(), x, tokens);
+        assertEquals("Missing '>'", AbstractFriendlyErrorStrategy.unmatchedTypeArgument(e, x));
+    }
+
+    @Test
+    void unmatchedTypeArgumentUsesNvaeStartToken() {
+        var tokens = lex("List<Integer x");
+        Token x = requireText(tokens, "x");
+        Token list = tokens.get(0);
+        NoViableAltException nvae = nvaeStartingAt(tokens, list, x);
+        assertEquals("Missing '>'", AbstractFriendlyErrorStrategy.unmatchedTypeArgument(nvae, x));
+    }
+
+    @Test
+    void unmatchedTypeArgumentNegativeTokenIndexStartsAtZero() {
+        var tokens = lex("List<Integer x");
+        CommonToken x = (CommonToken) requireText(tokens, "x");
+        x.setTokenIndex(-1);
+        RecognitionException e = stubException(new IntervalSet(), x, tokens);
+        assertEquals("Missing '>'", AbstractFriendlyErrorStrategy.unmatchedTypeArgument(e, x));
+    }
+
+    @Test
+    void unmatchedTypeArgumentSwallowsGetFailureWhenStreamReportsSize() {
+        CommonToken ident = token(GroovyParser.Identifier, "x");
+        ident.setTokenIndex(0);
+        RecognitionException e = stubException(new IntervalSet(), ident,
+                new ThrowingTokenStream(new IndexOutOfBoundsException("test"), 8));
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedTypeArgument(e, ident));
+        RecognitionException iae = stubException(new IntervalSet(), ident,
+                new ThrowingTokenStream(new IllegalArgumentException("test"), 8));
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedTypeArgument(iae, ident));
+    }
+
+    @Test
+    void methodDefinitionNotExpectedAfterModifiersAndCapitalizedName() {
+        var tokens = lex("{ -> public static Http(");
+        Token lparen = requireType(tokens, GroovyParser.LPAREN);
+        RecognitionException e = stubException(new IntervalSet(), lparen, tokens);
+        assertEquals("Method definition not expected here",
+                AbstractFriendlyErrorStrategy.methodDefinitionNotExpected(e, lparen));
+    }
+
+    @Test
+    void methodDefinitionNotExpectedAfterPrimitiveReturnType() {
+        var tokens = lex("{ -> int say(");
+        Token lparen = requireType(tokens, GroovyParser.LPAREN);
+        RecognitionException e = stubException(new IntervalSet(), lparen, tokens);
+        assertEquals("Method definition not expected here",
+                AbstractFriendlyErrorStrategy.methodDefinitionNotExpected(e, lparen));
+    }
+
+    @Test
+    void methodDefinitionNotExpectedIgnoresNullTokenStream() {
+        CommonToken lparen = token(GroovyParser.LPAREN, "(");
+        lparen.setTokenIndex(1);
+        RecognitionException e = stubException(new IntervalSet(), lparen, null);
+        assertNull(AbstractFriendlyErrorStrategy.methodDefinitionNotExpected(e, lparen));
+    }
+
+    @Test
+    void unmatchedDoWhileIgnoresWhenExpectedSetOmitsWhile() {
+        var tokens = lex("do\nprintln 123\nprintln");
+        Token println = requireNthText(tokens, "println", 2);
+        RecognitionException e = stubException(new IntervalSet(), println, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedDoWhile(e, println),
+                "WITHOUT WHILE in the expected set this is not an unmatched do-while");
+    }
+
+    @Test
+    void unmatchedDoWhileIgnoresWhenWhileAlreadyClosedTheDo() {
+        // `do x while (true)` is a completed do-while; a later offender is not unmatched-do.
+        var tokens = lex("do x while (true)\ny");
+        Token y = requireText(tokens, "y");
+        RecognitionException e = stubException(setOf(GroovyParser.WHILE, GroovyParser.Identifier), y, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedDoWhile(e, y),
+                "a while that already closed the do must not rewrite a later error");
+    }
+
+    @Test
+    void unmatchedDoWhileTreatsQualifiedDoAsAName() {
+        var tokens = lex("foo.do\nprintln x");
+        Token x = requireText(tokens, "x");
+        RecognitionException e = stubException(setOf(GroovyParser.WHILE, GroovyParser.Identifier), x, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedDoWhile(e, x),
+                "foo.do is a property, not a do-while");
+    }
+
+    @Test
+    void unmatchedDoWhileSkipsCommentsBeforeLaterWhile() {
+        var tokens = lex("do\nprintln 1\nprintln 2\n/*c*/\nwhile (false)");
+        Token println = requireNthText(tokens, "println", 2);
+        RecognitionException e = stubException(setOf(GroovyParser.WHILE, GroovyParser.Identifier), println, tokens);
+        assertEquals("do-while body must be a single statement; wrap multiple statements in '{ }'",
+                AbstractFriendlyErrorStrategy.unmatchedDoWhile(e, println));
+    }
+
+    @Test
+    void unmatchedDoWhileSkipsHiddenChannelTokensBeforeLaterWhile() {
+        // The Groovy lexer does not emit comment tokens; hide a newline so
+        // whileAppearsAfter still walks a non-default-channel token.
+        var tokens = lex("do\nprintln 1\nprintln 2\nwhile (false)");
+        Token println = requireNthText(tokens, "println", 2);
+        boolean hid = false;
+        for (int i = println.getTokenIndex() + 1; i < tokens.size(); i++) {
+            Token t = tokens.get(i);
+            if (t.getType() == GroovyParser.NL && t instanceof CommonToken ct) {
+                ct.setChannel(Token.HIDDEN_CHANNEL);
+                hid = true;
+                break;
+            }
+        }
+        assertTrue(hid, "expected a newline after the second println to hide");
+        RecognitionException e = stubException(setOf(GroovyParser.WHILE, GroovyParser.Identifier), println, tokens);
+        assertEquals("do-while body must be a single statement; wrap multiple statements in '{ }'",
+                AbstractFriendlyErrorStrategy.unmatchedDoWhile(e, println));
+    }
+
+    @Test
+    void unmatchedDoWhileQualifiedWhileAfterOffenderIsNotTheLoopKeyword() {
+        var tokens = lex("do\nprintln 1\nprintln 2\nfoo.while");
+        Token println = requireNthText(tokens, "println", 2);
+        RecognitionException e = stubException(setOf(GroovyParser.WHILE, GroovyParser.Identifier), println, tokens);
+        assertEquals("Missing 'while'", AbstractFriendlyErrorStrategy.unmatchedDoWhile(e, println));
+    }
+
+    @Test
+    void unmatchedDoWhileNegativeTokenIndexDoesNotScanAfter() {
+        // tokenIndex -1 makes whileAppearsAfter start at 0 and bail (from < 1).
+        // The source must not contain a later `while`, or defaultChannelPrefix would
+        // expand to the whole stream and treat that while as already matching the do.
+        var tokens = lex("do\nprintln 1\nprintln 2");
+        CommonToken println = (CommonToken) requireNthText(tokens, "println", 2);
+        println.setTokenIndex(-1);
+        RecognitionException e = stubException(setOf(GroovyParser.WHILE, GroovyParser.Identifier), println, tokens);
+        assertEquals("Missing 'while'", AbstractFriendlyErrorStrategy.unmatchedDoWhile(e, println));
+    }
+
+    @Test
+    void unmatchedDoWhileSwallowsExpectedTokensFailure() {
+        CommonToken ident = token(GroovyParser.Identifier, "x");
+        ident.setTokenIndex(0);
+        RecognitionException e = new RecognitionException(null, lex("do x"), null) {
+            @Override
+            public IntervalSet getExpectedTokens() {
+                throw new IllegalArgumentException("bad ATN state");
+            }
+
+            @Override
+            public Token getOffendingToken() {
+                return ident;
+            }
+        };
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedDoWhile(e, ident));
+    }
+
+    @Test
+    void unmatchedDoWhileSwallowsPrefixFailureWhenWhileIsExpected() {
+        CommonToken ident = token(GroovyParser.Identifier, "x");
+        ident.setTokenIndex(1);
+        RecognitionException e = stubException(setOf(GroovyParser.WHILE), ident,
+                new ThrowingTokenStream(new IndexOutOfBoundsException("test"), 8));
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedDoWhile(e, ident));
+    }
+
+    @Test
+    void enumMemberAfterCommaIgnoresMembersAfterEnumSemicolon() {
+        var tokens = lex("enum E { A;\ndef");
+        Token defTok = requireType(tokens, GroovyParser.DEF);
+        RecognitionException e = stubException(new IntervalSet(), defTok, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.enumMemberAfterComma(e, defTok),
+                "after ';' the constant list is closed");
+    }
+
+    @Test
+    void enumMemberAfterCommaSeesSemicolonEvenWhenALaterCommaIsInFrontOfTheOffender() {
+        // COMMA is immediately before `def` (the rewrite's first gate) but a
+        // ';' already closed the constant list, so this is not an enum-member
+        // diagnostic.
+        var tokens = lex("enum E { A; B,\ndef");
+        Token defTok = requireType(tokens, GroovyParser.DEF);
+        RecognitionException e = stubException(new IntervalSet(), defTok, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.enumMemberAfterComma(e, defTok),
+                "a ';' in the enum body closes the constant list even if a later ',' is in front of the member");
+    }
+
+    @Test
+    void enumMemberAfterCommaAcceptsVisibilityAndPrimitiveStarts() {
+        var tokens = lex("enum E { A,\npublic");
+        Token vis = requireType(tokens, GroovyParser.PUBLIC);
+        RecognitionException e = stubException(new IntervalSet(), vis, tokens);
+        assertEquals("';' expected after the last enum constant",
+                AbstractFriendlyErrorStrategy.enumMemberAfterComma(e, vis));
+
+        var tokens2 = lex("enum E { A,\nint");
+        Token prim = requireType(tokens2, GroovyParser.BuiltInPrimitiveType);
+        RecognitionException e2 = stubException(new IntervalSet(), prim, tokens2);
+        assertEquals("';' expected after the last enum constant",
+                AbstractFriendlyErrorStrategy.enumMemberAfterComma(e2, prim));
+    }
+
+    @Test
+    void enumMemberAfterCommaRequiresCommaImmediatelyBefore() {
+        var tokens = lex("enum E { A def");
+        Token defTok = requireType(tokens, GroovyParser.DEF);
+        RecognitionException e = stubException(new IntervalSet(), defTok, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.enumMemberAfterComma(e, defTok));
+    }
+
+    @Test
+    void interfaceDefaultAfterHeaderRequiresInterfaceKeyword() {
+        var tokens = lex("def m() default");
+        Token deflt = requireType(tokens, GroovyParser.DEFAULT);
+        RecognitionException e = stubException(new IntervalSet(), deflt, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.interfaceDefaultAfterHeader(e, deflt));
+    }
+
+    @Test
+    void interfaceDefaultAfterHeaderRequiresClosingParen() {
+        var tokens = lex("interface I { default");
+        Token deflt = requireType(tokens, GroovyParser.DEFAULT);
+        RecognitionException e = stubException(new IntervalSet(), deflt, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.interfaceDefaultAfterHeader(e, deflt));
+    }
+
+    @Test
+    void defaultChannelPrefixNegativeIndexOnEmptyStream() {
+        CommonToken eof = token(Token.EOF, "<EOF>");
+        eof.setTokenIndex(-1);
+        RecognitionException e = stubException(new IntervalSet(), eof, new EmptyTokenStream());
+        assertNull(AbstractFriendlyErrorStrategy.arrayCreationMessage(e, eof));
+    }
+
+    @Test
+    void defaultChannelPrefixNegativeIndexUsesLastToken() {
+        var tokens = lex("new int[]");
+        CommonToken eof = token(Token.EOF, "<EOF>");
+        eof.setTokenIndex(-1);
+        RecognitionException e = stubException(setOf(GroovyParser.LBRACE), eof, tokens);
+        assertEquals("Array dimension missing; specify a size or add an initializer '{}'",
+                AbstractFriendlyErrorStrategy.arrayCreationMessage(e, eof));
+    }
+
+    @Test
+    void arrayCreationCreatedNameAcceptsAnnotationsAndWildcards() {
+        var tokens = lex("new @Ann java.util.List<? extends String, ? super Integer>[]");
+        Token eof = tokens.get(tokens.size() - 1);
+        RecognitionException e = stubException(setOf(GroovyParser.LBRACE), eof, tokens);
+        assertEquals("Array dimension missing; specify a size or add an initializer '{}'",
+                AbstractFriendlyErrorStrategy.arrayCreationMessage(e, eof));
+    }
+
+    @Test
+    void arrayCreationSkipsCommentsInTheCreatedName() {
+        var tokens = lex("new /*c*/ int[]");
+        Token eof = tokens.get(tokens.size() - 1);
+        RecognitionException e = stubException(setOf(GroovyParser.LBRACE), eof, tokens);
+        assertEquals("Array dimension missing; specify a size or add an initializer '{}'",
+                AbstractFriendlyErrorStrategy.arrayCreationMessage(e, eof));
+    }
+
+    @Test
+    void arrayCreationBraceInsideSizedDimensionIsNotRewritten() {
+        var tokens = lex("new int[{");
+        Token brace = requireType(tokens, GroovyParser.LBRACE);
+        RecognitionException e = stubException(new IntervalSet(), brace, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.arrayCreationMessage(e, brace),
+                "an initializer-looking '{' inside the [ ] is not a finished array creation");
+    }
+
+    @Test
+    void unmatchedTypeArgumentStopsAtSemicolon() {
+        var tokens = lex("List<Integer x; y");
+        Token x = requireText(tokens, "x");
+        Token list = tokens.get(0);
+        NoViableAltException nvae = nvaeStartingAt(tokens, list, x);
+        assertEquals("Missing '>'", AbstractFriendlyErrorStrategy.unmatchedTypeArgument(nvae, x));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "{ -> private say(",
+            "{ -> protected say(",
+            "{ -> final say(",
+            "{ -> abstract say("
+    })
+    void methodDefinitionNotExpectedAfterEachHeaderPrefix(final String src) {
+        var tokens = lex(src);
+        Token lparen = requireType(tokens, GroovyParser.LPAREN);
+        RecognitionException e = stubException(new IntervalSet(), lparen, tokens);
+        assertEquals("Method definition not expected here",
+                AbstractFriendlyErrorStrategy.methodDefinitionNotExpected(e, lparen), src);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "enum E { A,\nvoid",
+            "enum E { A,\nprivate",
+            "enum E { A,\nprotected",
+            "enum E { A,\nstatic",
+            "enum E { A,\nfinal",
+            "enum E { A,\nabstract",
+            "enum E { A,\ndefault"
+    })
+    void enumMemberAfterCommaAcceptsEachMemberStart(final String src) {
+        var tokens = lex(src);
+        Token offending = lastDefaultNonEof(tokens);
+        RecognitionException e = stubException(new IntervalSet(), offending, tokens);
+        assertEquals("';' expected after the last enum constant",
+                AbstractFriendlyErrorStrategy.enumMemberAfterComma(e, offending), src);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "foo?.do\nprintln x",
+            "foo*.do\nprintln x",
+            "foo??.do\nprintln x",
+            "foo.&do\nprintln x",
+            "foo::do\nprintln x",
+            "foo.@do\nprintln x"
+    })
+    void unmatchedDoWhileTreatsEachMemberSelectionDoAsAName(final String src) {
+        var tokens = lex(src);
+        Token x = requireText(tokens, "x");
+        RecognitionException e = stubException(setOf(GroovyParser.WHILE, GroovyParser.Identifier), x, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedDoWhile(e, x),
+                "qualified `do` is a name, not a do-while: " + src);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "do\nprintln 1\nprintln 2\nfoo?.while",
+            "do\nprintln 1\nprintln 2\nfoo*.while",
+            "do\nprintln 1\nprintln 2\nfoo.&while",
+            "do\nprintln 1\nprintln 2\nfoo::while"
+    })
+    void unmatchedDoWhileQualifiedWhileAfterOffenderIsNotTheLoopKeywordForEachSelector(final String src) {
+        var tokens = lex(src);
+        Token println = requireNthText(tokens, "println", 2);
+        RecognitionException e = stubException(setOf(GroovyParser.WHILE, GroovyParser.Identifier), println, tokens);
+        assertEquals("Missing 'while'", AbstractFriendlyErrorStrategy.unmatchedDoWhile(e, println), src);
+    }
+
     // --- helpers ----------------------------------------------------------------
 
     private static void assertSafeIndexMessage(final String src) {
@@ -777,12 +1598,56 @@ final class ErrorStrategyTest {
     }
 
     private static Token requireSafeIndex(final CommonTokenStream tokens) {
+        return requireType(tokens, GroovyParser.SAFE_INDEX);
+    }
+
+    private static Token requireType(final CommonTokenStream tokens, final int type) {
         for (int i = 0; i < tokens.size(); i++) {
-            if (tokens.get(i).getType() == GroovyParser.SAFE_INDEX) {
+            if (tokens.get(i).getType() == type) {
                 return tokens.get(i);
             }
         }
-        throw new AssertionError("no SAFE_INDEX in: " + tokens.getText());
+        throw new AssertionError("no token type " + type + " in: " + tokens.getText());
+    }
+
+    private static Token requireText(final CommonTokenStream tokens, final String text) {
+        for (int i = 0; i < tokens.size(); i++) {
+            if (text.equals(tokens.get(i).getText())) {
+                return tokens.get(i);
+            }
+        }
+        throw new AssertionError("no token text '" + text + "' in: " + tokens.getText());
+    }
+
+    private static Token lastDefaultNonEof(final CommonTokenStream tokens) {
+        for (int i = tokens.size() - 1; i >= 0; i--) {
+            Token t = tokens.get(i);
+            if (t.getChannel() == Token.DEFAULT_CHANNEL
+                    && t.getType() != Token.EOF
+                    && t.getType() != GroovyParser.NL) {
+                return t;
+            }
+        }
+        throw new AssertionError("no default-channel token in: " + tokens.getText());
+    }
+
+    private static Token requireNthText(final CommonTokenStream tokens, final String text, final int n) {
+        int seen = 0;
+        for (int i = 0; i < tokens.size(); i++) {
+            if (text.equals(tokens.get(i).getText())) {
+                seen++;
+                if (seen == n) {
+                    return tokens.get(i);
+                }
+            }
+        }
+        throw new AssertionError("no " + n + "th token text '" + text + "' in: " + tokens.getText());
+    }
+
+    private static NoViableAltException nvaeStartingAt(final CommonTokenStream tokens, final Token start, final Token offending) {
+        var parser = new GroovyLangParser(tokens);
+        parser.setContext(new ParserRuleContext());
+        return new NoViableAltException(parser, tokens, start, offending, null, parser.getContext());
     }
 
     private static CommonTokenStream lex(final String src) {
@@ -927,6 +1792,84 @@ final class ErrorStrategyTest {
         @Deprecated
         public String[] getTokenNames() {
             return new String[0];
+        }
+    }
+
+    /**
+     * {@link TokenStream#size()} is 0 so {@code defaultChannelPrefix} with a
+     * negative token index hits {@code size() - 1 < 0} and returns empty.
+     */
+    private static final class EmptyTokenStream implements TokenStream {
+        @Override
+        public Token LT(int k) {
+            return null;
+        }
+
+        @Override
+        public Token get(int index) {
+            throw new IndexOutOfBoundsException("empty");
+        }
+
+        @Override
+        public TokenSource getTokenSource() {
+            return null;
+        }
+
+        @Override
+        public String getText(Interval interval) {
+            return "";
+        }
+
+        @Override
+        public String getText() {
+            return "";
+        }
+
+        @Override
+        public String getText(RuleContext ctx) {
+            return "";
+        }
+
+        @Override
+        public String getText(Object start, Object stop) {
+            return "";
+        }
+
+        @Override
+        public void consume() {
+        }
+
+        @Override
+        public int LA(int i) {
+            return Token.EOF;
+        }
+
+        @Override
+        public int mark() {
+            return 0;
+        }
+
+        @Override
+        public void release(int marker) {
+        }
+
+        @Override
+        public int index() {
+            return 0;
+        }
+
+        @Override
+        public void seek(int index) {
+        }
+
+        @Override
+        public int size() {
+            return 0;
+        }
+
+        @Override
+        public String getSourceName() {
+            return "empty";
         }
     }
 }

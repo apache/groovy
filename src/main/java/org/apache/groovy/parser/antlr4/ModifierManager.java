@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -72,13 +73,13 @@ class ModifierManager {
             if (count == null) {
                 modifierNodeCounter.put(modifierNode, 1);
             } else if (count == 1 && !modifierNode.isRepeatable()) {
-                throw astBuilder.createParsingFailedException("Cannot repeat modifier[" + modifierNode.getText() + "]", modifierNode);
+                throw astBuilder.createParsingFailedException("Cannot repeat modifier '" + modifierNode.getText() + "'", modifierNode);
             }
 
             if (modifierNode.isVisibilityModifier()) {
                 visibilityModifierCount += 1;
                 if (visibilityModifierCount > 1) {
-                    throw astBuilder.createParsingFailedException("Cannot specify modifier[" + modifierNode.getText() + "] when access scope has already been defined", modifierNode);
+                    throw astBuilder.createParsingFailedException("Cannot specify modifier '" + modifierNode.getText() + "' when the access scope has already been defined", modifierNode);
                 }
             }
         }
@@ -95,7 +96,7 @@ class ModifierManager {
     private void validate(List<Integer> invalidModifierList, MethodNode methodNode) {
         modifierNodeList.forEach(e -> {
             if (invalidModifierList.contains(e.getType())) {
-                throw astBuilder.createParsingFailedException(methodNode.getClass().getSimpleName().replace("Node", "") + " has an incorrect modifier '" + e + "'.", methodNode);
+                throw astBuilder.createParsingFailedException("Modifier '" + e + "' is not allowed on a " + methodNode.getClass().getSimpleName().replace("Node", "").toLowerCase(Locale.ROOT), methodNode);
             }
         });
     }
