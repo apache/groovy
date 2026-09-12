@@ -301,6 +301,68 @@ final class Groovy12399 {
     }
 
     @Test
+    void statementSwitchNestedInArrowArmOfStatementSwitch() {
+        assertBoth """
+            def f(int i, int j) {
+                switch (i) {
+                    case 1 -> switch (j) { case 9 -> 'nine' }
+                    default -> 'other'
+                }
+                'done'
+            }
+            assert f(1, 9) == 'done'
+            assert f(1, 5) == 'done'
+            assert f(2, 5) == 'done'
+        """
+    }
+
+    @Test
+    void statementSwitchNestedThreeDeepInArrowArms() {
+        assertBoth """
+            def f(int i, int j, int k) {
+                switch (i) {
+                    case 1 -> switch (j) { case 1 -> switch (k) { case 9 -> 'nine' } }
+                }
+                'done'
+            }
+            assert f(1, 1, 9) == 'done'
+            assert f(1, 1, 5) == 'done'
+        """
+    }
+
+    @Test
+    void implicitReturnSwitchNestedInArrowArmYieldsNullWhenUnmatched() {
+        assertBoth """
+            def f(int i, int j) {
+                switch (i) {
+                    case 1 -> switch (j) { case 9 -> 'nine' }
+                    default -> 'other'
+                }
+            }
+            assert f(1, 9) == 'nine'
+            assert f(1, 5) == null
+            assert f(2, 5) == 'other'
+        """
+    }
+
+    @Test
+    void arrowArmOfExpressionPositionSwitchStaysStrict() {
+        // the outer switch produces a value, so its arm value does too
+        for (outer in ['return switch (i)', 'def unused = switch (i)']) {
+            def err = shouldFail IllegalStateException, """
+                def f(int i, int j) {
+                    $outer {
+                        case 1 -> switch (j) { case 9 -> 'nine' }
+                        default -> 'other'
+                    }
+                }
+                f(1, 5)
+            """
+            assert err.message.contains('does not cover the value')
+        }
+    }
+
+    @Test
     void implicitReturnCompleteEnumYieldsNullForNullSelector() {
         assertBoth '''
             enum Flag { ON, OFF }
