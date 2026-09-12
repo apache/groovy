@@ -115,7 +115,11 @@ public class ImportNode extends AnnotatedNode {
 
         if (!isStatic()) {
             if (isStar()) {
-                return "import " + getPackageName() + "*";
+                if (getPackageName().endsWith(".")) {
+                    return "import " + getPackageName() + "*";
+                } else {
+                    return "import module " + getPackageName();
+                }
             } else if (simpleName == null || simpleName.isEmpty()
                     || simpleName.equals(getType().getNameWithoutPackage())) {
                 return "import " + getClassName();

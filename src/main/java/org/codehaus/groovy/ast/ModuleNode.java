@@ -238,7 +238,7 @@ public class ModuleNode extends ASTNode {
      * Registers a wildcard import (e.g., {@code import java.util.*}).
      * All public classes in the package become available without qualification.
      *
-     * @param packageName the package name (e.g., "java.util")
+     * @param packageName the package name (e.g., "java.util.")
      */
     public void addStarImport(final String packageName) {
         addStarImport(packageName, Collections.emptyList());
@@ -248,11 +248,12 @@ public class ModuleNode extends ASTNode {
      * Registers a wildcard import with optional annotations.
      * All public classes in the package become available without qualification.
      *
-     * @param packageName the package name (e.g., "java.util")
+     * @param packageName the package name (e.g., "java.util.")
      * @param annotations annotations to attach to this import
      */
     public void addStarImport(final String packageName, final List<AnnotationNode> annotations) {
-        ImportNode importNode = new ImportNode(packageName);
+        assert packageName != null && packageName.endsWith(".");
+        var importNode = new ImportNode(packageName);
         importNode.addAnnotations(annotations);
         starImports.add(importNode);
 
