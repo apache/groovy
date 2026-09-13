@@ -220,6 +220,31 @@ particularly exposed to them.
    up substantive upstream fixes; skip cosmetic noise.
 5. Update this document if any finding above changed.
 
+## Embedding API
+
+Hosts that embed groovysh (domain-specific consoles, IDEs) should use
+the public seams rather than copying `Main`:
+
+- `GroovyEngine(CompilerConfiguration)` and
+  `protected GroovyShell createShell(...)` — compile-time customizers
+  (`ImportCustomizer`, `ThreadInterrupt`) without snippet-prepending
+  every import on each evaluation.
+- `GroovyEngine.getClassLoader()` — public accessor for the engine
+  class loader (the field is `protected`).
+- `GroovyshOptions` + `Main.start(GroovyshOptions, String[])` —
+  extra `CommandRegistry` instances, prompt, result/error handlers,
+  banner toggle, optional `Terminal`. Binding variables stay in
+  `GroovyshOptions.bindings`; they are not mixed with embedding hooks.
+- `ExtraConsoleCommands` — public top-level class for `/clear`,
+  `/pwd`, `/cd`, the POSIX-style commands, and `/!`.
+  `Main.ExtraConsoleCommands` is a deprecated subclass.
+
+The user-facing description is
+[`src/spec/doc/groovysh.adoc`](src/spec/doc/groovysh.adoc)
+"Embedding groovysh". Tests live in `GroovyEngineTest`,
+`GroovyshOptionsTest`, `GroovyshEmbeddingTest`, and
+`ExtraConsoleCommandsTest`.
+
 ## Where to read next
 
 - [Root `ARCHITECTURE.md`](../../ARCHITECTURE.md) — project-wide

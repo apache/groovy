@@ -1439,6 +1439,82 @@ image:{reldir_groovysh}/assets/img/widget2.png[Tailtip,width=80%]
 
 You can accept the entire suggestion or a word at a time. Both widgets can be enabled.
 
+[[GroovyShell-Embedding]]
+=== Embedding groovysh
+
+Applications that host groovysh — a domain-specific console, for
+example — should not copy `Main`. The embedding API is
+`Main.start(GroovyshOptions, String[])`, plus constructors on
+`GroovyEngine` for compile-time customizers.
+
+Do not put embedding hooks into the binding `Map` accepted by
+`Main.start(Map, String[])`. That map is only for variables visible to
+evaluated scripts.
+
+==== Compiler configuration
+
+`GroovyEngine` always evaluates with an explicit
+`CompilerConfiguration` (`CompilerConfiguration.DEFAULT` when you pass
+`null`). Use a *mutable copy* (`new CompilerConfiguration()`), not
+`CompilerConfiguration.DEFAULT`, when adding customizers. Typical embedder customizers are
+`ImportCustomizer` (star and static-star imports that would otherwise
+be prepended as snippets on every evaluation) and
+`ASTTransformationCustomizer(ThreadInterrupt)` (so Ctrl+C can stop a
+tight loop after `Main` interrupts the execute thread).
+
+include::../test/EmbeddingSpecTest.groovy[tags=embed_engine_config,indent=0]
+
+Subclasses that need a different `GroovyShell` can override
+`protected GroovyShell createShell(ClassLoader, Binding, CompilerConfiguration)`.
+That method is called from the constructor: do not read subclass fields
+that are assigned after `super(...)`.
+
+`GroovyEngine.getClassLoader()` is the public accessor for the engine
+class loader (the field is `protected`; Java callers cannot read it
+without a getter).
+
+include::../test/EmbeddingSpecTest.groovy[tags=embed_classloader,indent=0]
+
+==== `GroovyshOptions`
+
+`Main.start(GroovyshOptions, String[])` is the programmatic entry point
+that does not call `System.exit`. The options object is built with
+`GroovyshOptions.builder()` and is incubating in 7.0.
+
+Recognized hooks:
+
+* `compilerConfiguration` / `engine` — compile-time customizers, or a
+  pre-built `GroovyEngine`. If both are set, the engine wins.
+* `bindings` / `binding(name, value)` — variables installed on the
+  engine before the REPL starts.
+* `extraCommandRegistry` — additional JLine `CommandRegistry`
+  instances, appended after groovysh's own registries.
+* `prompt` — `Supplier<String>` invoked on each REPL iteration
+  (default `{ 'groovy> ' }`).
+* `resultHandler` — how values are rendered (default:
+  `console.println(result?.toString())`).
+* `errorHandler` — how execution failures are rendered (default:
+  `SystemRegistry.trace`). `UserInterruptException` and
+  `EndOfFileException` stay in `Main` as control flow.
+* `showBanner` — set `false` to suppress groovysh's banner so the host
+  can print its own.
+* `terminal` — optional JLine `Terminal`; when omitted, `Main` builds
+  one from the CLI flags.
+
+include::../test/EmbeddingSpecTest.groovy[tags=embed_options_help,indent=0]
+
+`Main.start(Map, String[])` remains the binding-only overload and
+delegates to `GroovyshOptions`.
+
+==== Extra console commands
+
+`/clear`, `/pwd`, `/cd`, `/ls`, `/cat`, `/grep`, `/head`, `/tail`,
+`/wc`, `/sort`, `/date`, `/echo` and `/!` live in the public
+`ExtraConsoleCommands` class. `Main` still registers it by default.
+Embedders that build their own `SystemRegistry` can construct it
+directly. The former `Main.ExtraConsoleCommands` nested class remains
+as a deprecated subclass for Groovy callers that compiled against it.
+
 [[GroovyShell-Advanced]]
 === Advanced Topics
 

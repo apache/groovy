@@ -18,35 +18,28 @@
  */
 package org.apache.groovy.groovysh
 
+import org.apache.groovy.groovysh.ExtraConsoleCommands as DefaultExtraConsoleCommands
+
 import groovy.cli.internal.CliBuilderInternal
 import groovy.cli.internal.OptionAccessor
 import org.apache.groovy.groovysh.jline.GroovyBuiltins
+import org.apache.groovy.lang.annotation.Incubating
 import org.apache.groovy.groovysh.jline.GroovyCommands
 import org.apache.groovy.groovysh.jline.GroovyConsoleEngine
 import org.apache.groovy.groovysh.jline.GroovyEngine
-import org.apache.groovy.groovysh.jline.GroovyPosixCommands
-import org.apache.groovy.groovysh.jline.GroovyPosixContext
 import org.apache.groovy.groovysh.jline.GroovyPrinter
 import org.apache.groovy.groovysh.jline.GroovySystemRegistry
 import org.apache.groovy.groovysh.util.DocFinder
 import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.jline.builtins.ClasspathResourceUtil
-import org.jline.builtins.Completers
 import org.jline.builtins.ConfigurationPath
-import org.jline.builtins.Options
-import org.jline.builtins.PosixCommands
-import org.jline.builtins.PosixCommandsRegistry
 import org.jline.builtins.SyntaxHighlighter
-import org.jline.console.CommandInput
-import org.jline.console.CommandMethods
 import org.jline.console.CommandRegistry
 import org.jline.console.ConsoleEngine
 import org.jline.console.Printer
-import org.jline.console.impl.JlineCommandRegistry
 import org.jline.console.impl.SystemHighlighter
 import org.jline.keymap.KeyMap
 import org.jline.reader.Binding
-import org.jline.reader.Completer
 import org.jline.reader.EndOfFileException
 import org.jline.reader.LineReader
 import org.jline.reader.LineReader.Option
@@ -55,13 +48,10 @@ import org.jline.reader.Reference
 import org.jline.reader.UserInterruptException
 import org.jline.reader.impl.DefaultParser
 import org.jline.reader.impl.DefaultParser.Bracket
-import org.jline.reader.impl.completer.ArgumentCompleter
-import org.jline.reader.impl.completer.NullCompleter
 import org.jline.terminal.Size
 import org.jline.terminal.Terminal
 import org.jline.terminal.Terminal.Signal
 import org.jline.terminal.TerminalBuilder
-import org.jline.utils.InfoCmp.Capability
 import org.jline.utils.OSUtils
 import org.jline.widget.AutosuggestionWidgets
 import org.jline.widget.TailTipWidgets
@@ -74,235 +64,31 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermission
 import java.nio.file.attribute.PosixFilePermissions
-import java.util.function.Function
 import java.util.function.Supplier
 
 import static org.jline.jansi.AnsiRenderer.render
 
 /**
  * Boots and runs the interactive {@code groovysh} console.
+ * <p>
+ * Applications that embed groovysh should call {@link #start(GroovyshOptions, String[])}
+ * (or the binding-only {@link #start(Map, String[])} overload) rather than
+ * {@link #main(String[])}, which calls {@link System#exit(int)}.
  */
 @SuppressWarnings('deprecation')
 class Main {
     private static final MessageSource messages = new MessageSource(Main)
     /** Preference key that controls whether groovysh starts in interpreter mode. */
     public static final String INTERPRETER_MODE_PREFERENCE_KEY = 'interpreterMode'
-//    private static POSIX_CMDS = []
-    private static GROOVY_POSIX_CMDS = ['/ls', '/wc', '/sort', '/head', '/tail', '/cat', '/grep']
+    private static final List<String> GROOVY_POSIX_CMDS = DefaultExtraConsoleCommands.POSIX_COMMANDS
 
     /**
-     * Registers the extra console commands that augment the interactive shell.
+     * @deprecated since 7.0.0, use {@link DefaultExtraConsoleCommands}
      */
-    @SuppressWarnings("resource")
-    protected static class ExtraConsoleCommands extends JlineCommandRegistry implements CommandRegistry {
-        private final LineReader reader
-        private final GroovyEngine scriptEngine
-        private PosixCommandsRegistry posix
-        private final Map<String, String[]> usage = [:]
-
-        /**
-         * Creates the auxiliary console command registry used by the shell.
-         *
-         * @param workDir initial working directory
-         * @param scriptEngine script engine backing the shell session
-         * @param reader active line reader
-         */
+    @Deprecated(since = '7.0.0')
+    protected static class ExtraConsoleCommands extends DefaultExtraConsoleCommands {
         ExtraConsoleCommands(Path workDir, GroovyEngine scriptEngine, LineReader reader) {
-            super()
-            this.scriptEngine = scriptEngine
-            this.reader = reader
-            def terminal = reader.terminal
-            def context = new GroovyPosixContext(
-                terminal.input(),
-                new PrintStream(terminal.output()),
-                new PrintStream(terminal.output()),
-                workDir,
-                terminal,
-                scriptEngine::get
-            )
-            posix = new PosixCommandsRegistry(context)
-            def cmds = [
-                '/clear': new CommandMethods((Function) this::clear, this::defaultCompleter),
-                '/pwd'  : new CommandMethods((Function) this::pwd, this::defaultCompleter),
-                '/cd'   : new CommandMethods((Function) this::cd, this::optDirCompleter),
-                '/date' : new CommandMethods((Function) this::date, this::defaultCompleter),
-                '/echo' : new CommandMethods((Function) this::echo, this::defaultCompleter),
-                "/!"    : new CommandMethods((Function) this::shell, this::defaultCompleter)
-            ]
-            GROOVY_POSIX_CMDS.each { String cmd ->
-                String base = cmd[1..-1]
-                usage[cmd] = adjustUsage(base, cmd)
-                posix.register(cmd, PosixCommands::"$base")
-                cmds.put(cmd, new CommandMethods((Function) this::posixCommand, this::optFileCompleter))
-            }
-//            POSIX_CMDS.each { String cmd ->
-//                String orig = cmd[1..-1]
-//                usage[cmd] = adjustUsage(orig, cmd)
-//                posix.register(cmd, PosixCommands::"$orig")
-//                cmds.put(cmd, new CommandMethods((Function) this::posix, this::optFileCompleter))
-//            }
-            posix.register('cd', PosixCommands::cd)
-            posix.register('/cd', PosixCommands::cd)
-            posix.register('/pwd', PosixCommands::pwd)
-            posix.register('/date', PosixCommands::date)
-            posix.register('/echo', PosixCommands::echo)
-            registerCommands(cmds)
-        }
-
-        /**
-         * Returns the current working directory tracked by the POSIX command context.
-         *
-         * @return the active working directory
-         */
-        Path currentDir() {
-            posix.context.currentDir
-        }
-
-        private String[] adjustUsage(String from, String to) {
-            try {
-                posix.execute(from, [from, '--help'] as String[])
-            } catch (Options.HelpException e) {
-                e.message.readLines()*.replaceAll("$from ", "$to ") as String[]
-            }
-        }
-
-        /**
-         * Returns the help-group name used for the extra console commands.
-         *
-         * @return the console command group name
-         */
-        @Override
-        String name() {
-            'Console Commands'
-        }
-
-        private Terminal terminal() {
-            return reader?.terminal
-        }
-
-        private List<Completer> optFileCompleter(String command) {
-            [new ArgumentCompleter(NullCompleter.INSTANCE, new Completers.OptionCompleter(new Completers.FilesCompleter(this::currentDir), this::commandOptions, 1))]
-        }
-
-        private List<Completer> optDirCompleter(String command) {
-            [new ArgumentCompleter(NullCompleter.INSTANCE, new Completers.OptionCompleter(new Completers.DirectoriesCompleter(this::currentDir), this::commandOptions, 1))]
-        }
-
-        private void pwd(CommandInput input) {
-            posix(adjustUsage('pwd', '/pwd'), input)
-        }
-
-        private void cd(CommandInput input) {
-            try {
-                parseOptions(adjustUsage('cd', '/cd'), input.args())
-                PosixCommands.cd(context(input), ['/cd', *input.args()] as String[], { Path newPath ->
-                    posix.context.currentDir = newPath
-                    scriptEngine.put('PWD', newPath)
-                })
-            } catch (Exception e) {
-                saveException(e)
-            }
-        }
-
-        private void posixCommand(CommandInput input) {
-            try {
-                String cmd = input.command()
-                String name = cmd[1..-1]
-                GroovyPosixCommands."$name"(context(input), [cmd, *input.xargs()] as Object[])
-            } catch (Exception e) {
-                saveException(e)
-            }
-        }
-
-        private GroovyPosixContext context(CommandInput input) {
-            GroovyPosixContext ctx = new GroovyPosixContext(input.in(), input.out(), input.err(),
-                posix.context.currentDir(), input.terminal(), scriptEngine::get)
-            ctx
-        }
-
-        private void date(CommandInput input) {
-            posix(adjustUsage('date', '/date'), input)
-        }
-
-        private void posix(CommandInput input) {
-            posix(usage[input.command()], input)
-        }
-
-        private void posix(String[] usage, CommandInput input) {
-            try {
-                parseOptions(usage, input.args())
-                PosixCommands."${input.command()[1..-1]}"(context(input), [input.command(), *input.args()] as String[])
-//                posix.execute(input.command(), [input.command(), *input.args()] as String[])
-            } catch (Exception e) {
-                saveException(e)
-            }
-        }
-
-        private void clear(CommandInput input) {
-            final String[] usage = [
-                "/clear -  clear terminal",
-                "Usage: /clear",
-                "  -? --help                       Displays command help"
-            ]
-            try {
-                parseOptions(usage, input.args())
-                terminal().puts(Capability.clear_screen)
-                terminal().flush()
-            } catch (Exception e) {
-                saveException(e)
-            }
-        }
-
-        private void echo(CommandInput input) {
-            posix(adjustUsage('echo', '/echo'), input)
-        }
-
-        private static void executeCommand(List<String> args) throws Exception {
-            def sout = new StringBuilder(), serr = new StringBuilder()
-            def command = OSUtils.IS_WINDOWS ? ['cmd.exe', '/c'] : ['sh', '-c']
-            def proc = new ProcessBuilder().command(command + args.join(' ')).start()
-            proc.consumeProcessOutput(sout, serr)
-            int exitCode = proc.waitFor()
-            if (sout.size()) print sout
-            if (exitCode != 0) {
-                if (serr.size()) print serr
-                throw new Exception("Error occurred in shell!")
-            }
-        }
-
-        private void shell(CommandInput input) {
-            final String[] usage = [
-                "/!<command> -  execute shell command",
-                "Usage: /!<command>",
-                "  -? --help                       Displays command help"
-            ]
-            if (input.args().length == 1 && (input.args()[0].equals("-?") || input.args()[0].equals("--help"))) {
-                try {
-                    parseOptions(usage, input.args())
-                } catch (Exception e) {
-                    saveException(e)
-                }
-            } else {
-                List<String> argv = input.args().toList()
-                if (!argv.isEmpty()) {
-                    try {
-                        executeCommand(argv)
-                    } catch (Exception e) {
-                        saveException(e)
-                    }
-                }
-            }
-        }
-
-        /**
-         * Returns summary text for the specified command.
-         *
-         * @param command command name to describe
-         * @return help lines for the command
-         */
-        @Override
-        List<String> commandInfo(String command) {
-            posix.commandNames.toList()
+            super(workDir, scriptEngine, reader)
         }
     }
 
@@ -425,6 +211,28 @@ class Main {
      * @since 6.0.0
      */
     static int start(Map<String, ?> initialBindings = Collections.emptyMap(), String[] args = new String[0]) {
+        def builder = GroovyshOptions.builder()
+        if (initialBindings) {
+            builder.bindings(initialBindings)
+        }
+        start(builder.build(), args)
+    }
+
+    /**
+     * Programmatic entry point for embedding groovysh with compiler
+     * configuration, extra command registries, prompt, result/error
+     * handlers, and related hooks. Binding variables belong in
+     * {@link GroovyshOptions#getBindings()}, not as ad-hoc map keys.
+     *
+     * @param groovyshOptions embedding options, must not be {@code null}
+     * @param args CLI-like arguments (same as {@link #main(String[])})
+     * @return process exit code (0 for success)
+     *
+     * @since 7.0.0
+     */
+    @Incubating
+    static int start(GroovyshOptions groovyshOptions, String[] args = new String[0]) {
+        Objects.requireNonNull(groovyshOptions, 'groovyshOptions')
         def cli = new CliBuilderInternal(usage: 'groovysh [options] [...]', stopAtNonOption: false,
             header: messages['cli.option.header'])
         cli.with {
@@ -469,18 +277,21 @@ class Main {
             parser.blockCommentDelims(new DefaultParser.BlockCommentDelims('/*', '*/'))
                 .lineCommentDelims(new String[]{'//'})
                 .setEofOnUnclosedBracket(Bracket.CURLY, Bracket.ROUND, Bracket.SQUARE)
-            Terminal terminal = TerminalBuilder.builder().tap{
-                if (options.T) {
-                    type(options.T)
-                }
-                if (options.c) {
-                    encoding(options.c)
-                }
-                if (options.C) {
-                    color(options.C as boolean)
-                }
-                name('groovysh')
-            }.build()
+            Terminal terminal = groovyshOptions.terminal
+            if (terminal == null) {
+                terminal = TerminalBuilder.builder().tap{
+                    if (options.T) {
+                        type(options.T)
+                    }
+                    if (options.c) {
+                        encoding(options.c)
+                    }
+                    if (options.C) {
+                        color(options.C as boolean)
+                    }
+                    name('groovysh')
+                }.build()
+            }
             if (terminal.columns == 0 || terminal.rows == 0) {
                 terminal.size = new Size(120, 40) // hard-coded terminal size when redirecting
             }
@@ -492,13 +303,11 @@ class Main {
             ConfigurationPath configPath = new ConfigurationPath(root, userStateDirectory)
 
             // ScriptEngine and command registries
-            GroovyEngine scriptEngine = new GroovyEngine()
+            GroovyEngine scriptEngine = groovyshOptions.engine ?: new GroovyEngine(groovyshOptions.compilerConfiguration)
 
-            if (initialBindings) {
-                initialBindings.each { k, v ->
-                    if (k != null) {
-                        scriptEngine.put(k, v)
-                    }
+            groovyshOptions.bindings.each { k, v ->
+                if (k != null) {
+                    scriptEngine.put(k, v)
                 }
             }
 
@@ -538,7 +347,7 @@ class Main {
                     LineReader.BLINK_MATCHING_PAREN, 0) // if enabled cursor remains in begin parenthesis (gitbash)
             }
 
-            def extra = new ExtraConsoleCommands(Paths.get(System.getProperty('user.dir')), scriptEngine, reader)
+            def extra = new DefaultExtraConsoleCommands(Paths.get(System.getProperty('user.dir')), scriptEngine, reader)
             Supplier<Path> workDir = extra::currentDir
             scriptEngine.put('PWD', workDir.get())
 
@@ -554,7 +363,9 @@ class Main {
 
             GroovySystemRegistry systemRegistry = new GroovySystemRegistry(parser, terminal, workDir, configPath).tap {
                 groupCommandsInHelp(false)
-                setCommandRegistries(extra, consoleEngine, builtins, groovy)
+                def registries = [extra, consoleEngine, builtins, groovy]
+                registries.addAll(groovyshOptions.extraCommandRegistries)
+                setCommandRegistries(registries.toArray(new CommandRegistry[0]))
                 addCompleter(scriptEngine.scriptCompleter)
                 setScriptDescription(scriptEngine::scriptDescription)
                 renameLocal 'exit', '/exit'
@@ -589,14 +400,18 @@ class Main {
                 systemRegistry.initialize(init.toFile())
             }
 
-            if (options.q) {
-                println render(messages.format('cli.info.version', GroovySystem.version))
-            } else {
-                println render(messages.format('startup_banner.0', GroovySystem.version, System.properties['java.version'], terminal.type))
-                println render(messages['startup_banner.1'])
-                println render(messages['startup_banner.2'])
+            Supplier<String> prompt = groovyshOptions.prompt ?: ({ 'groovy> ' } as Supplier<String>)
+
+            if (groovyshOptions.showBanner) {
+                if (options.q) {
+                    println render(messages.format('cli.info.version', GroovySystem.version))
+                } else {
+                    println render(messages.format('startup_banner.0', GroovySystem.version, System.properties['java.version'], terminal.type))
+                    println render(messages['startup_banner.1'])
+                    println render(messages['startup_banner.2'])
+                }
+                println '-' * (terminal.columns - 1)
             }
-            println '-' * (terminal.columns - 1)
 // for debugging
 //            def index = 0
 //            def lines = ['/slurp /Users/paulk/Projects/groovy/subprojects/groovy-json/src/test/resources/groovy9802.json',
@@ -615,7 +430,7 @@ class Main {
                     } else {
                         // for debugging
 //                        line = lines[index++]
-                        line = reader.readLine("groovy> ")
+                        line = reader.readLine(prompt.get())
                     }
                     line = line.readLines().collect{ s ->
                         // remove Groovy continuation character for repl not Groovy's sake
@@ -629,7 +444,7 @@ class Main {
                         }
                     }
                     Object result = systemRegistry.execute(line)
-                    consoleEngine.println(result?.toString())
+                    emitResult(consoleEngine, result, groovyshOptions.resultHandler)
 //                    consoleEngine.println([(Printer.OBJECT_TO_STRING): [(Object) : {  o -> o.toString() }] ], result)
                 } catch (UserInterruptException e) {
                     // Ignore
@@ -637,14 +452,14 @@ class Main {
                     String pl = e.getPartialLine()
                     if (pl != null) { // execute last line from redirected file (required for Windows)
                         try {
-                            consoleEngine.println(systemRegistry.execute(pl))
+                            emitResult(consoleEngine, systemRegistry.execute(pl), groovyshOptions.resultHandler)
                         } catch (Exception e2) {
-                            systemRegistry.trace(e2)
+                            emitError(systemRegistry, e2, groovyshOptions.errorHandler)
                         }
                     }
                     break
                 } catch (Exception | Error e) {
-                    systemRegistry.trace(e) // print exception and save it to console variable
+                    emitError(systemRegistry, e, groovyshOptions.errorHandler)
                 }
             }
             systemRegistry.close() // persist pipeline completer names etc
@@ -669,7 +484,23 @@ class Main {
      * @since 6.0.0
      */
     static int start(String[] args) {
-        start([:], args)
+        start(GroovyshOptions.builder().build(), args)
+    }
+
+    private static void emitResult(ConsoleEngine console, Object result, GroovyshOptions.ResultHandler handler) throws Exception {
+        if (handler != null) {
+            handler.handle(console, result)
+        } else {
+            console.println(result?.toString())
+        }
+    }
+
+    private static void emitError(GroovySystemRegistry registry, Throwable error, GroovyshOptions.ErrorHandler handler) {
+        if (handler != null) {
+            handler.handle(registry, error)
+        } else {
+            registry.trace(error)
+        }
     }
 
     /**
