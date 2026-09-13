@@ -126,7 +126,7 @@ final class SwitchExpressionStaticCompileTest extends AbstractBytecodeTestCase {
         def bytecode = compile(method: 'm', '''\
             @groovy.transform.CompileStatic
             String m(int n) {
-                switch (n) {
+                return switch (n) {
                     case 1        -> 'one'
                     case 300..400 -> 'range'
                     default       -> 'other'
@@ -269,7 +269,7 @@ final class SwitchExpressionStaticCompileTest extends AbstractBytecodeTestCase {
         assertScript '''
             @groovy.transform.CompileStatic
             String m(Object o, Object label) {
-                switch (o) {
+                return switch (o) {
                     case label -> 's'
                     default -> 'd'
                 }

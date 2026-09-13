@@ -22,7 +22,6 @@ import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
-import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -364,25 +363,22 @@ final class Groovy12399 {
     }
 
     @Test
-    void implicitReturnWithPrimitiveReturnTypeUnboxesNullWhenUnmatched() {
-        // The switch keeps its value, so a primitive return type converts the
-        // null of an unmatched selector. Dynamically the value is untyped and
-        // the conversion is a Groovy cast; under @CompileStatic the inferred
-        // type is Integer and the conversion is an unboxing, which is what
-        // Groovy does for any null wrapper, as `int m() { Integer i = null; i }`
-        // shows in either mode. Note that every other way a method falls off
-        // its end yields the type's default value instead.
-        def script = """
+    void implicitReturnWithPrimitiveReturnTypeYieldsTheDefaultWhenUnmatched() {
+        // The switch is a statement, so an unmatched selector falls off the end
+        // of the method and the implicit return supplies the type's default,
+        // exactly as it does for `int f(int i) { if (i == 1) return 1 }` or for
+        // a colon-form switch. Until GROOVY-12408 the arrow form was the one
+        // shape in the language that threw here instead (GroovyCastException
+        // dynamically, NullPointerException when statically compiled).
+        assertBoth """
             int f(int i) {
                 switch (i) {
                     case 1 -> 1
                 }
             }
             assert f(1) == 1
-            f(2)
+            assert f(2) == 0
         """
-        shouldFail(GroovyCastException) { assertScript(script) }
-        shouldFail(NullPointerException) { new GroovyShell(staticConfig()).evaluate(script) }
     }
 
     @Test
@@ -435,11 +431,11 @@ final class Groovy12399 {
     }
 
     @Test
-    void voidMethodAndConstructorEndWithAStatement() {
+    void voidConstructorAndValueMethodsEndWithAStatement() {
         assertScript '''
             import groovy.transform.ASTTest
             import org.codehaus.groovy.ast.expr.SwitchExpression
-            import org.codehaus.groovy.ast.stmt.ExpressionStatement
+            import org.codehaus.groovy.ast.stmt.ReturnStatement
             import org.codehaus.groovy.ast.stmt.SwitchStatement
             import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
 
@@ -454,16 +450,24 @@ final class Groovy12399 {
                 })
                 void v(int i) { switch (i) { case 1 -> println 'one' } }
 
+                // the value of a method whose last statement is a switch comes
+                // from the implicit return, so the switch is a statement here too
                 @ASTTest(phase=SEMANTIC_ANALYSIS, value={
-                    def last = node.code.statements[-1]
-                    assert last instanceof ExpressionStatement && last.expression instanceof SwitchExpression
+                    assert node.code.statements[-1] instanceof SwitchStatement
                 })
                 def value(int i) { switch (i) { case 1 -> 'one' } }
+
+                @ASTTest(phase=SEMANTIC_ANALYSIS, value={
+                    def last = node.code.statements[-1]
+                    assert last instanceof ReturnStatement && last.expression instanceof SwitchExpression
+                })
+                def asked(int i) { return switch (i) { case 1 -> 'one'; default -> 'other' } }
             }
             def c = new C(2)
             c.v(2)
             assert c.value(1) == 'one'
             assert c.value(2) == null
+            assert c.asked(1) == 'one'
         '''
     }
 

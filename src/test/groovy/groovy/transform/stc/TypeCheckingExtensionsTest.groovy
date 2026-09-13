@@ -625,7 +625,7 @@ final class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         extension = 'groovy/transform/stc/SwitchExpressionIsCaseExtension.groovy'
         shouldFailWithMessages '''
             def m(Object o) {
-                switch (o) {
+                return switch (o) {
                     case String -> 's'
                     default -> 'd'
                 }
@@ -634,7 +634,7 @@ final class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
 
         shouldFailWithMessages '''
             def m(int n) {
-                switch (n) {
+                return switch (n) {
                     case 1..10 -> 'in'
                     default -> 'out'
                 }

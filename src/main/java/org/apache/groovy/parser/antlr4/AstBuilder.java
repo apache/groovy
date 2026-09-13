@@ -164,7 +164,6 @@ import java.util.stream.Collectors;
 
 import static groovy.lang.Tuple.tuple;
 import static org.apache.groovy.parser.antlr4.GroovyParser.*;
-import static org.apache.groovy.ast.tools.SwitchExpressionUtils.UNMATCHED_YIELDS_NULL;
 import static org.apache.groovy.parser.antlr4.util.PositionConfigureUtils.configureAST;
 import static org.apache.groovy.parser.antlr4.util.PositionConfigureUtils.configureEndPosition;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
@@ -1170,7 +1169,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
      */
     private boolean isSwitchUsedAsStatement(final SwitchExpressionContext ctx) {
         StatementContext statement = switchAsStatement(ctx);
-        return statement != null && (!isSwitchValueUsed(statement) || isLenientPosition(statement));
+        return statement != null && !isSwitchValueUsed(statement);
     }
 
     /** Whether a switch-expression group uses arrow labels, making its sole statement the arm value. */
@@ -2449,48 +2448,30 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         // A `switch` with `->` is parsed as a SwitchExpression (switchStatement is
         // colon-only), but as in Java (JEP 361) the arrow only decides fall-through;
         // the position decides whether a value is produced. A switch whose value is
-        // not used, or whose arrow block arms do not yield, is a SwitchStatement.
-        // In implicit-return position (the last statement of a closure, a script or
-        // a method that returns a value) the value is used, but an unmatched selector
-        // yields null rather than throwing, as it did in 4.x/5.x (GROOVY-12399).
-        if (expr instanceof SwitchExpression se && ctx.getParent() instanceof ExpressionStmtAltContext statement) {
-            if (switchExpressionHasIncompleteArm(se) || !isSwitchValueUsed(statement)) {
-                return configureAST(switchExpressionAsStatement(se), ctx);
-            }
-            if (isLenientPosition(statement)) {
-                se.putNodeMetaData(UNMATCHED_YIELDS_NULL, Boolean.TRUE);
-            }
+        // not used, or whose arrow block arms do not yield, is a SwitchStatement,
+        // including where it is the last statement of a method or closure: the
+        // implicit return then applies to the statement, as it does to any other
+        // (GROOVY-12408).
+        if (expr instanceof SwitchExpression se && ctx.getParent() instanceof ExpressionStmtAltContext statement
+                && (switchExpressionHasIncompleteArm(se) || !isSwitchValueUsed(statement))) {
+            return configureAST(switchExpressionAsStatement(se), ctx);
         }
         return configureAST(new ExpressionStatement(expr), ctx);
     }
 
     /**
-     * Whether the value of a switch expression statement is used: it is in
-     * implicit-return position, or it is the expression of an arrow arm whose
-     * own switch produces a value. An arm of a switch that is itself a
-     * statement produces nothing, so a switch nested there is a statement too.
+     * Whether the value of a switch expression statement is used, which it is
+     * only as the expression of an arrow arm whose own switch produces a value.
+     * An arm of a switch that is itself a statement produces nothing, so a
+     * switch nested there is a statement too.
      */
     private boolean isSwitchValueUsed(final StatementContext statement) {
         SwitchExpressionContext arm = enclosingArrowArmSwitch(statement);
-        if (arm != null) {
-            StatementContext owner = switchAsStatement(arm);
-            return owner == null || isSwitchValueUsed(owner);
+        if (arm == null) {
+            return false;
         }
-        return !isColonArm(statement) && isImplicitReturnPosition(statement);
-    }
-
-    /**
-     * Whether an unmatched selector completes the switch with {@code null}
-     * instead of throwing: implicit-return position, or an arrow arm of a
-     * switch that is itself lenient (GROOVY-12399).
-     */
-    private boolean isLenientPosition(final StatementContext statement) {
-        SwitchExpressionContext arm = enclosingArrowArmSwitch(statement);
-        if (arm != null) {
-            StatementContext owner = switchAsStatement(arm);
-            return owner != null && isLenientPosition(owner);
-        }
-        return !isColonArm(statement) && isImplicitReturnPosition(statement);
+        StatementContext owner = switchAsStatement(arm);
+        return owner == null || isSwitchValueUsed(owner);
     }
 
     /** The switch expression whose arrow arm consists of {@code statement}, else null. */
@@ -2506,13 +2487,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return null;
     }
 
-    /** Whether {@code statement} is in a colon arm, whose statements are discarded; its value comes from {@code yield}. */
-    private static boolean isColonArm(final StatementContext statement) {
-        ParserRuleContext blockStatements = statement.getParent() instanceof BlockStatementContext bs ? bs.getParent() : null;
-        return blockStatements != null && blockStatements.getParent() instanceof SwitchBlockStatementExpressionGroupContext group
-                && !isArrowGroup(group);
-    }
-
     /**
      * The statement that {@code ctx} alone makes up, or null when the switch is
      * part of a larger expression such as {@code foo(switch (x) {...})}, whose
@@ -2525,90 +2499,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
         return p instanceof ExpressionStmtAltContext statement
                 && statement.getStart() == ctx.getStart() && statement.getStop() == ctx.getStop() ? statement : null;
-    }
-
-    /**
-     * Whether {@code statement} is where the compiler would add an implicit
-     * {@code return} (see {@code ReturnAdder}): the last statement of a lambda,
-     * closure or script body, or of a method that returns a value (not a
-     * {@code void} method or a constructor), followed through nested blocks, the
-     * branches of an {@code if}, the try and catch blocks of a {@code try}, a
-     * {@code synchronized} block and the arms of a colon-form switch statement
-     * (allowing for a trailing {@code break}). Loop bodies and {@code finally}
-     * blocks are not return positions.
-     */
-    private boolean isImplicitReturnPosition(final ParserRuleContext statement) {
-        ParserRuleContext parent = statement.getParent();
-        if (parent instanceof LabeledStmtAltContext || parent instanceof ConditionalStmtAltContext
-                || parent instanceof TryCatchStmtAltContext) {
-            return isImplicitReturnPosition(parent);
-        }
-        if (parent instanceof IfElseStatementContext || parent instanceof SwitchStatementContext
-                || parent instanceof TryCatchStatementContext) {
-            return isImplicitReturnPosition(parent); // the containing statement alternative
-        }
-        if (parent instanceof CatchClauseContext) {
-            return isImplicitReturnPosition(parent.getParent());
-        }
-        if (parent instanceof MethodBodyContext) {
-            return returnsValue(parent.getParent());
-        }
-        if (parent instanceof LambdaBodyContext || parent instanceof ClosureContext) {
-            return true;
-        }
-        if (parent instanceof BlockStmtAltContext || parent instanceof SynchronizedStmtAltContext) {
-            return isImplicitReturnPosition(parent);
-        }
-        if (parent instanceof BlockStatementsOptContext) {
-            return isImplicitReturnPosition(parent.getParent()); // block or closure
-        }
-        if (parent instanceof BlockContext) {
-            return isImplicitReturnPosition(parent.getParent()); // methodBody, lambdaBody, blockStmtAlt, synchronized, try, catch, finally, class body...
-        }
-        if (parent instanceof BlockStatementContext) {
-            return isLastStatement((BlockStatementsContext) parent.getParent(), parent) && isImplicitReturnPosition(parent.getParent());
-        }
-        if (parent instanceof BlockStatementsContext blockStatements) {
-            ParserRuleContext owner = blockStatements.getParent();
-            if (owner instanceof SwitchBlockStatementGroupContext) {
-                return isImplicitReturnPosition(owner.getParent()); // the switch statement
-            }
-            return isImplicitReturnPosition(owner); // blockStatementsOpt
-        }
-        if (parent instanceof ScriptStatementContext) {
-            ParserRuleContext script = parent.getParent();
-            ScriptStatementContext last = null;
-            for (ParseTree child : script.children) {
-                if (child instanceof ScriptStatementContext candidate && candidate.statement() != null) last = candidate;
-            }
-            return last == parent;
-        }
-        return false;
-    }
-
-    /**
-     * Whether the method or constructor declaring a body returns a value: not a
-     * {@code void} method, a constructor or a compact constructor, whose bodies
-     * get no implicit {@code return} (see {@code ReturnAdder}).
-     */
-    private boolean returnsValue(final ParserRuleContext declaration) {
-        if (!(declaration instanceof MethodDeclarationContext method)) {
-            return false; // compact constructor
-        }
-        if (asBoolean(method.returnType())) {
-            return method.returnType().VOID() == null;
-        }
-        ClassNode classNode = classNodeStack.peek();
-        return classNode == null || !this.visitMethodName(method.methodName()).equals(classNode.getNodeMetaData(CLASS_NAME));
-    }
-
-    /** Whether {@code blockStatement} is the last one of {@code blockStatements}, allowing for a trailing {@code break}. */
-    private static boolean isLastStatement(final BlockStatementsContext blockStatements, final ParserRuleContext blockStatement) {
-        List<? extends BlockStatementContext> list = blockStatements.blockStatement();
-        int n = list.size();
-        if (n == 0) return false;
-        if (list.get(n - 1) == blockStatement) return true;
-        return n > 1 && list.get(n - 2) == blockStatement && list.get(n - 1).statement() instanceof BreakStmtAltContext;
     }
 
     @Override
