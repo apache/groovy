@@ -25,7 +25,9 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.BytecodeVariable;
@@ -37,8 +39,17 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Objects;
 
+import static org.apache.groovy.ast.tools.SwitchExpressionUtils.enumConstantName;
+import static org.apache.groovy.ast.tools.SwitchExpressionUtils.intConstant;
+import static org.apache.groovy.ast.tools.SwitchExpressionUtils.isIntegralType;
+import static org.apache.groovy.ast.tools.SwitchExpressionUtils.isOptimizedIntSwitch;
+import static org.apache.groovy.ast.tools.SwitchExpressionUtils.isOptimizedStringSwitch;
+import static org.apache.groovy.ast.tools.SwitchExpressionUtils.stringConstant;
+import static org.apache.groovy.ast.tools.SwitchExpressionUtils.unwrapEnumType;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ARRAYLENGTH;
@@ -79,6 +90,104 @@ public class StaticTypesStatementWriter extends StatementWriter {
         controller.switchToFastPath();
         super.writeBlockStatement(statement);
         controller.switchToSlowPath();
+    }
+
+    /**
+     * Emits a jump table when the selector and labels are constants of a type
+     * {@code javac} would switch on, matching what a statically compiled switch
+     * expression already gets (GROOVY-12405). Anything else, including repeated
+     * labels, falls back to the sequential {@code isCase} chain.
+     */
+    @Override
+    public void writeSwitch(final SwitchStatement statement) {
+        List<CaseStatement> caseStatements = statement.getCaseStatements();
+        ClassNode selectorType = controller.getTypeChooser()
+                .resolveType(statement.getExpression(), controller.getClassNode());
+        if (!SwitchDispatchWriter.isDispatchable(selectorType, caseStatements)) {
+            super.writeSwitch(statement);
+            return;
+        }
+        writeDispatchSwitch(statement, caseStatements, selectorType);
+    }
+
+    /**
+     * The kind of dispatch is chosen once, from the type the type checker
+     * inferred, because that is what {@code isDispatchable} agreed to. Code
+     * generation can leave something wider on the operand stack, so a
+     * reference selector is coerced to the inferred type before it is stored.
+     */
+    private void writeDispatchSwitch(final SwitchStatement statement, final List<CaseStatement> caseStatements,
+            final ClassNode inferredType) {
+        AsmClassGenerator acg = controller.getAcg();
+        acg.onLineNumber(statement, "visitSwitch");
+        writeStatementLabel(statement);
+
+        statement.getExpression().visit(acg);
+        OperandStack operandStack = controller.getOperandStack();
+        boolean intSwitch = isOptimizedIntSwitch(inferredType, caseStatements);
+        ClassNode selectorType;
+        if (intSwitch) {
+            // unlike the sequential path the selector is not boxed: the jump
+            // table wants the primitive, and a wrapper is unboxed below
+            selectorType = operandStack.getTopOperand();
+        } else {
+            operandStack.doGroovyCast(inferredType);
+            selectorType = inferredType;
+        }
+
+        CompileStack compileStack = controller.getCompileStack();
+        // switch does not have a continue label; use enclosing continue label
+        Label breakLabel = compileStack.pushSwitch(statement.getStatementLabels());
+        int selectorIndex = compileStack.defineTemporaryVariable("switch", selectorType, true);
+
+        SwitchDispatchWriter dispatch = new SwitchDispatchWriter(controller);
+        Label defaultTarget = new Label();
+        ClassNode enumType = unwrapEnumType(inferredType);
+        int scratch = -1;
+        List<Label> targets;
+
+        if (intSwitch) {
+            SwitchDispatchWriter.ArmGroup<Integer> group = dispatch.groupArms(
+                    caseStatements, cs -> intConstant(cs.getExpression()), defaultTarget);
+            targets = group.targets;
+            int intSelector = selectorIndex;
+            if (!isIntegralType(selectorType)) {
+                dispatch.jumpIfNull(selectorIndex, selectorType, defaultTarget);
+                operandStack.load(selectorType, selectorIndex);
+                operandStack.doGroovyCast(ClassHelper.int_TYPE);
+                scratch = intSelector = compileStack.defineTemporaryVariable("$switchInt", ClassHelper.int_TYPE, true);
+            }
+            dispatch.emitIntSwitch(group.keys, targets, defaultTarget, intSelector);
+        } else if (isOptimizedStringSwitch(inferredType, caseStatements)) {
+            SwitchDispatchWriter.ArmGroup<String> group = dispatch.groupArms(
+                    caseStatements, cs -> stringConstant(cs.getExpression()), defaultTarget);
+            targets = group.targets;
+            dispatch.jumpIfNull(selectorIndex, selectorType, defaultTarget);
+            dispatch.emitStringHashDispatch(selectorIndex, group.keys, targets, defaultTarget);
+        } else {
+            SwitchDispatchWriter.ArmGroup<String> group = dispatch.groupArms(
+                    caseStatements, cs -> enumConstantName(cs.getExpression(), enumType), defaultTarget);
+            targets = group.targets;
+            // a null selector matches no constant label, so it takes the default
+            dispatch.jumpIfNull(selectorIndex, selectorType, defaultTarget);
+            scratch = dispatch.loadEnumName(selectorIndex, selectorType);
+            dispatch.emitStringHashDispatch(scratch, group.keys, targets, defaultTarget);
+        }
+
+        // arms are laid out in source order, so one without a jump falls into
+        // the next and then into the default, as the sequential path does
+        dispatch.emitArmCode(caseStatements, targets);
+        controller.getMethodVisitor().visitLabel(defaultTarget);
+        statement.getDefaultStatement().visit(acg);
+
+        if (maybeFallsThrough(statement) || statement.getStatementLabels() != null) {
+            controller.getMethodVisitor().visitLabel(breakLabel);
+        }
+        if (scratch != -1) {
+            compileStack.removeVar(scratch);
+        }
+        compileStack.removeVar(selectorIndex);
+        compileStack.pop();
     }
 
     //--------------------------------------------------------------------------
