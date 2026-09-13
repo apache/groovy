@@ -45,6 +45,15 @@
    plus checksums, while enforcing metadata adds noisy failures on unsigned ancillary POMs for
    no integrity gain.
 
+   Where an artifact is signed, prefer a <trusted-key> entry over a per-version checksum: a
+   trusted key covers every version signed by that key, so routine dependency bumps (including
+   automated ones) need no change to this file, whereas a checksum has to be re-recorded for
+   every new version. Scope a key to the group it signs, and avoid pinning a trusted key to a
+   name or version unless the narrower scope is intentional - a regeneration writes the
+   narrowest scope it happened to observe, which silently reintroduces per-version churn.
+   Per-version checksums remain the right answer for unsigned artifacts and for signing keys
+   that are not in gradle/verification-keyring.keys.
+
    Sources and javadoc jars are trusted by filename regex so IntelliJ (and other IDEs)
    can download them during Gradle import. The CLI build does not resolve those
    ancillary artifacts, and they are not on compile/runtime classpaths.
@@ -74,62 +83,104 @@
          <ignored-key id="91C65920226E26BD" reason="Key couldn't be downloaded from any key server"/>
       </ignored-keys>
       <trusted-keys>
+         <trusted-key id="0057FBD7F284A1C1B4F1E891EE6E41E5483F557D" group="com.github.jnr"/>
          <trusted-key id="0181A4828FA27B6BE6F1F5A68611CD28F472E006">
             <trusting group="org.apache.maven"/>
+            <trusting group="org.codehaus.plexus"/>
             <trusting group="org.jline"/>
          </trusted-key>
          <trusted-key id="019082BC00E0324E2AEF4CF00D3B328562A119A7" group="org.openjdk.jmh"/>
          <trusted-key id="0191E61ACBBE76323AC15C83B5AD94BDD6BDB924" group="me.champeau.openbeans" name="openbeans" version="1.0.2"/>
+         <trusted-key id="03CC5FFA61AAAD3C8FF25E9270F09CC6B876884A" group="org.apache.tika"/>
+         <trusted-key id="042B29E928995B9DB963C636C7CA19B7B620D787" group="com.github.stephenc.jcip"/>
          <trusted-key id="04543577D6A9CC626239C50C7ECBD740FF06AEB5">
-            <trusting group="org.glassfish.jaxb"/>
             <trusting group="^com[.]sun($|([.].*))" regex="true"/>
+            <trusting group="org.glassfish.jaxb"/>
+            <trusting group="org.jvnet.staxex"/>
          </trusted-key>
          <trusted-key id="050A37A2E0577F4BAA095B52602EC18D20C4661C">
             <trusting group="com.thoughtworks.xstream"/>
             <trusting group="io.github.x-stream"/>
          </trusted-key>
          <trusted-key id="051927E24FA091722E05A3B23C03136EA34A60F7" group="org.asciidoctor"/>
+         <trusted-key id="066C167DC7BA919F2E168DFA2E2A3AECF13B25AC" group="com.github.weisj"/>
+         <trusted-key id="06D0369BE1D0B06997DA66E8C33B56C147B01975" group="^org[.]sonarsource[.]scanner($|([.].*))" regex="true"/>
+         <trusted-key id="06D34ED6FF73DE368A772A781063FE98BCECB758" group="com.puppycrawl.tools"/>
          <trusted-key id="073F7A9345756F3B40CDB99E6C70A3B7599C5736">
             <trusting group="org.codehaus.plexus"/>
             <trusting group="org.fusesource.jansi" name="jansi" version="2.4.2"/>
          </trusted-key>
          <trusted-key id="077E8893A6DCC33DD4A4D5B256E73BA9A0B592D0" group="org.apache.logging.log4j"/>
-         <trusted-key id="0785B3EFF60B1B1BEA94E0BB7C25280EAE63EBE5" group="^org[.]apache[.]httpcomponents($|([.].*))" regex="true"/>
+         <trusted-key id="0785B3EFF60B1B1BEA94E0BB7C25280EAE63EBE5">
+            <trusting group="^org[.]apache[.]httpcomponents($|([.].*))" regex="true"/>
+            <trusting group="commons-httpclient"/>
+         </trusted-key>
+         <trusted-key id="07DBC3C1AB1F4468471656061C8D5EF0DF2B70D4" group="cglib"/>
          <trusted-key id="0A123C1ED3F13A6A0140E166C71FB765CD9DE313" group="org.apache.ant"/>
+         <trusted-key id="0CC641C3A62453AB390066C4A41F13C999945293">
+            <trusting group="commons-collections"/>
+            <trusting group="commons-logging"/>
+         </trusted-key>
          <trusted-key id="0E519FB002B9DE71010C6BA9BBF5AC5A3CDBFD37" group="net.javacrumbs.json-unit"/>
          <trusted-key id="120D6F34E627ED3A772EBBFE55C7E5E701832382" group="org.yaml" name="snakeyaml"/>
          <trusted-key id="150FDE3F7787E7D11EF4E12A9B7D32F2D50582E6" group="org.codehaus.mojo" name="animal-sniffer-annotations"/>
-         <trusted-key id="19BEAB2D799C020F17C69126B16698A4ADF4D638" group="org.checkerframework" name="checker-qual"/>
+         <trusted-key id="1616273079FE63E31C938F10F0DF21D1D0A3C384" group="com.google.inject"/>
+         <trusted-key id="19BEAB2D799C020F17C69126B16698A4ADF4D638" group="org.checkerframework"/>
          <trusted-key id="1D04A424F505394DBED15D451D0690E353BE126D" group="net.minidev"/>
          <trusted-key id="1D85469D8559C2E1DF5F925131D2D79DF7E85DD3" group="org.jcommander" name="jcommander" version="1.83"/>
          <trusted-key id="204A1D460C2310A23EE6EF958D3D03C45575D893" group="me.sunlan"/>
+         <trusted-key id="206DF7C48E3D6CB145DDA835FF844A3256C7FB01" group="de.siegmar"/>
+         <trusted-key id="223D3A74B068ECA354DC385CE126833F9CF64915" group="org.apache.xbean"/>
          <trusted-key id="28118C070CB22A0175A2E8D43D12CA2AC19F3181">
             <trusting group="^com[.]fasterxml($|([.].*))" regex="true"/>
             <trusting group="^com[.]fasterxml[.]jackson($|([.].*))" regex="true"/>
+            <trusting group="org.codehaus.woodstox"/>
          </trusted-key>
          <trusted-key id="29BEA2A645F2D6CED7FB12E02B172E3E156466E8" group="^org[.]apache[.]maven($|([.].*))" regex="true"/>
-         <trusted-key id="2B1042677FD8190C7B9FC0DC2161D72E7DCD4258" group="org.sonarsource.scanner.lib"/>
-         <trusted-key id="2B547C530D62B57973F5E8997F5CAFC87B6C2A89" group="me.sunlan"/>
-         <trusted-key id="2DB4F1EF0FA761ECC4EA935C86FDC7E2A11262CB">
-            <trusting group="commons-cli"/>
-            <trusting group="commons-io"/>
-            <trusting group="org.apache.commons"/>
+         <trusted-key id="2B1042677FD8190C7B9FC0DC2161D72E7DCD4258">
+            <trusting group="org.sonarsource.scanner.api"/>
+            <trusting group="org.sonarsource.scanner.gradle"/>
+            <trusting group="org.sonarsource.scanner.lib"/>
          </trusted-key>
-         <trusted-key id="2FC53E6B1F681184F4CCD637F5C81DE10A0B8ECC" group="org.yaml" name="snakeyaml" version="2.3"/>
+         <trusted-key id="2B547C530D62B57973F5E8997F5CAFC87B6C2A89" group="me.sunlan"/>
+         <trusted-key id="2BCBDD0F23EA1CAFCC11D4860374CF2E8DD1BDFD" group="org.sonatype.plexus"/>
+         <trusted-key id="2DB4F1EF0FA761ECC4EA935C86FDC7E2A11262CB">
+            <trusting group="commons-beanutils"/>
+            <trusting group="commons-cli"/>
+            <trusting group="commons-codec"/>
+            <trusting group="commons-io"/>
+            <trusting group="org.apache.bcel"/>
+            <trusting group="org.apache.commons"/>
+            <trusting group="xml-apis"/>
+         </trusted-key>
+         <trusted-key id="2E3A1AFFE42B5F53AF19F780BCF4173966770193" group="org.jetbrains"/>
+         <trusted-key id="2FC53E6B1F681184F4CCD637F5C81DE10A0B8ECC" group="org.yaml" name="snakeyaml"/>
          <trusted-key id="32118CF76C9EC5D918E54967CA80D1F0EB6CA4BA" group="org.codehaus.plexus"/>
+         <trusted-key id="331224E1D7BE883D16E8A685825C06C827AF6B66" group="me.champeau.gradle"/>
          <trusted-key id="34441E504A937F43EB0DAEF96A65176A0FB1CD0B">
             <trusting group="org.apache.groovy"/>
             <trusting group="org.codehaus.groovy"/>
          </trusted-key>
          <trusted-key id="34D6FF19930ADF43AC127792A50569C7CA7FA1F0" group="com.jcraft" name="jsch" version="0.1.55"/>
+         <trusted-key id="36390DE6A0E61EE4C7B4BA02C1D3063467F1EBD1" group="org.asciidoctor"/>
+         <trusted-key id="3690C240CE51B4670D30AD1C38EE757D69184620" group="org.tukaani"/>
+         <trusted-key id="3A4D86C56CA99373B6D8953DBE84D764623A3644" group="org.brotli"/>
+         <trusted-key id="3E97979229E01DFAB9774BBC9054823A859A7237" group="org.apache.felix"/>
+         <trusted-key id="3F2A008A91D11A7FAC4A0786F13D3E721D56BD54" group="org.reflections"/>
          <trusted-key id="3F999BB69041CF17E73BB1CEC038787776A19D18" group="net.javacrumbs.json-unit"/>
          <trusted-key id="416952B945B78A34C6C7678562EBFC78FE4156D1" group="org.jruby"/>
          <trusted-key id="41A1A08C62FCA78B79D3081164A16FAAEC16A4BE" group="org.apache.commons" name="commons-math3"/>
+         <trusted-key id="41B962CF9AA2A26FF1F234D2A6144824624A3CBA" group="io.leangen.geantyref"/>
          <trusted-key id="41CD49B4EF5876F9E9F691DABAC30622339994C4" group="org.jspecify" name="jspecify"/>
+         <trusted-key id="41D266DB4427983A1A4AFB0C3684155E9365C30E" group="com.jayway.jsonpath"/>
+         <trusted-key id="44F4797A52C336FA666CD9271DE461528F1F1B2A" group="org.apache.jackrabbit"/>
          <trusted-key id="47063E8BA7A6450E4A52E7AE466CAED6E0747D50" group="org.apache.maven.plugin-tools"/>
          <trusted-key id="475F3B8E59E6E63AA78067482C7B12F2A511E325" group="org.slf4j"/>
+         <trusted-key id="47B0262CB68BDC81289B13E63B14D24C5988C977" group="org.jcrom"/>
          <trusted-key id="47FF105DF431FF5416B821FEAECDB81D38EA9C89" group="org.commonmark"/>
          <trusted-key id="4857D1CE04E78FAB2A172E8F39B48E1BADDB933F" group="com.gradleup.shadow"/>
+         <trusted-key id="485E371CB07EABE6D5778D4B0C27E8FAC93B3B19" group="com.sun.mail"/>
+         <trusted-key id="48B086A7D843CFA258E83286928FBF39003C0425" group="io.projectreactor"/>
          <trusted-key id="49BC0306DEB0ECE16CDD09652EE4988C55528F25" group="^org[.]jfrog($|([.].*))" regex="true"/>
          <trusted-key id="4AC55A85D30C3499A3219500B7E2662A7640A051" group="com.formdev"/>
          <trusted-key id="4C5F68D09D42BA7FAC888DF9A929EA2321FDBF8F">
@@ -138,73 +189,143 @@
          </trusted-key>
          <trusted-key id="4DB1A49729B053CAF015CEE9A6ADFC93EF34893E" group="org.hamcrest"/>
          <trusted-key id="4F7E32D440EF90A83011A8FC6425559C47CC79C4" group="^javax[.]servlet($|([.].*))" regex="true"/>
+         <trusted-key id="50A628FFAF58480736B1079FD1031D14464180E0" group="org.reactivestreams"/>
+         <trusted-key id="517B94F8D0A46317A28D8AB30DA8A5EC02D11EAD" group="net.sf.jopt-simple"/>
          <trusted-key id="5719E50EAC5A4B1DD390B72C2A742740E08E7F8D" group="org.antlr"/>
          <trusted-key id="5989BAF76217B843D66BE55B2D0E1FB8FE4B68B4" group="^org[.]eclipse[.]jetty($|([.].*))" regex="true"/>
          <trusted-key id="5A022DE16956DECDAD4EBC161FE771E34EF57D42" group="jakarta.servlet.jsp"/>
+         <trusted-key id="5D283C23D9D9DC2D9C2130E6AADF2C18DCF95764" group="com.github.package-url"/>
          <trusted-key id="5E7D42F58249A287BD7384DA25A73BFC746E1035" group="net.sourceforge.htmlunit"/>
          <trusted-key id="60200AC4AE761F1614D6C46766D68DAA073BE985">
             <trusting group="ch.qos.logback"/>
             <trusting group="ch.qos.reload4j"/>
             <trusting group="org.slf4j"/>
          </trusted-key>
-         <trusted-key id="6A814B1F869C2BBEAB7CB7271A2A1C94BDE89688" group="org.apache.maven.resolver"/>
-         <trusted-key id="6A93161EB1990E8346E7BA2B23738DFD7C40DE43" group="org.apache.ant"/>
+         <trusted-key id="6A814B1F869C2BBEAB7CB7271A2A1C94BDE89688">
+            <trusting group="org.apache.maven.resolver"/>
+            <trusting group="org.codehaus.plexus"/>
+         </trusted-key>
+         <trusted-key id="6A93161EB1990E8346E7BA2B23738DFD7C40DE43">
+            <trusting group="org.apache.ant"/>
+            <trusting group="org.apache.ivy"/>
+         </trusted-key>
          <trusted-key id="6BFAB2E3C6490B421B25C76C9C8C892F91F8E6D1" group="org.apache.rat"/>
+         <trusted-key id="6CB87B18A453990EAC9453F87D713008CC07E9AD" group="xerces"/>
+         <trusted-key id="6DD3B8C64EF75253BEB2C53AD908A43FB7EC07AC">
+            <trusting group="com.sun.activation"/>
+            <trusting group="jakarta.activation"/>
+         </trusted-key>
          <trusted-key id="6DE9B8077FBB2F8A019F4904BD17A565509DEE20" group="com.github.javaparser"/>
+         <trusted-key id="6EBDAE68E2E77C0449F1A32BB83A12A027FC6962" group="net.sf.ehcache"/>
          <trusted-key id="6F538074CCEBF35F28AF9B066A0975F8B1127B83" group="org.jetbrains.kotlin"/>
+         <trusted-key id="7464550A61C90BA385FC97A76D9567281201E5E3" group="jakarta.servlet"/>
          <trusted-key id="74CEFDCEADFB95278EDEDF71E5B3BB879D1EC979" group="me.sunlan"/>
+         <trusted-key id="7616EB882DAF57A11477AAF559A252FB1199D873" group="com.google.code.findbugs"/>
          <trusted-key id="76E94E8FF0AB5AF3B6F8366972FEFD1572EB75E1" group="org.spockframework"/>
+         <trusted-key id="78DF98EF7F95578FD545B9A159A7C2A1BD98C013" group="org.jdom"/>
+         <trusted-key id="79156E0351AF8604DE9B186B09A79E1E15A04694" group="org.vafer"/>
+         <trusted-key id="7B121B76A7ED6CE6E60AD51784E913A8E3A748C0" group="org.bouncycastle"/>
          <trusted-key id="7B79ADD11F8A779FE90FD3D0893A028475557671" group="com.gradle"/>
+         <trusted-key id="7FAA0F2206DE228F0DB01AD741321490758AAD6F" group="org.codehaus.groovy"/>
+         <trusted-key id="82F833963889D7ED06F1E4DC6525FD70CC303655">
+            <trusting group="org.apache.maven.shared"/>
+            <trusting group="org.codehaus.mojo"/>
+         </trusted-key>
          <trusted-key id="82F94BBDF95C247BBD21396B9A0B94DEC0FFA7EE" group="org.webjars" name="jquery" version="3.7.1"/>
-         <trusted-key id="8446B9E902A3F3DDEE711FDB8E26FF248BC7AEAD" group="com.github.jnr"/>
+         <trusted-key id="8446B9E902A3F3DDEE711FDB8E26FF248BC7AEAD">
+            <trusting group="com.github.jnr"/>
+            <trusting group="com.headius"/>
+            <trusting group="me.qmx.jitescript"/>
+            <trusting group="org.jruby.jcodings"/>
+         </trusted-key>
          <trusted-key id="84789D24DF77A32433CE1F079EB80E92EB2135B1" group="^org[.]apache($|([.].*))" regex="true"/>
+         <trusted-key id="851264C36365D4FF9427625F38362FD5CFA2668B">
+            <trusting group="org.codenarc"/>
+            <trusting group="org.gmetrics"/>
+         </trusted-key>
          <trusted-key id="88BE34F94BDB2B5357044E2E3A387D43964143E3">
             <trusting group="org.apache.maven"/>
             <trusting group="org.apache.maven.resolver"/>
+            <trusting group="org.apache.maven.shared"/>
             <trusting group="org.eclipse.sisu"/>
          </trusted-key>
          <trusted-key id="8E68968CE7C85B314DF175FD9CC6720FBB1B27BA" group="com.ethlo.time" name="itu" version="1.10.2"/>
+         <trusted-key id="8EAE59EB400E1F6A94945CCD3C1381C7D09AF9E1" group="com.shapesecurity"/>
+         <trusted-key id="8F9A3C6D105B9F57844A721D79E193516BE7998F" group="org.dom4j"/>
          <trusted-key id="93135AA35CDF701AB4E1513AB163E784347A4C24" group="org.ysb33r.gradle"/>
          <trusted-key id="9857C388D7D1D9D031274CD0A5DEF5A76F94A471" group="^com[.]github[.]spotbugs($|([.].*))" regex="true"/>
+         <trusted-key id="99E73B179E66D217E4C969152F732027B9B0B96C" group="org.jboss.bridger"/>
          <trusted-key id="9A072E65CCCDCDD07C5B2C3F405262BDCB017886" group="me.sunlan"/>
-         <trusted-key id="9FFED7A118D45A44E4A1E47130E6F80434A72A7F" group="^org[.]apache[.]maven($|([.].*))" regex="true"/>
+         <trusted-key id="9C60C6B3A5A9DF8FEDD299D65BE0BA8CB80602AE" group="org.apache.ivy"/>
+         <trusted-key id="9FFED7A118D45A44E4A1E47130E6F80434A72A7F">
+            <trusting group="^org[.]apache[.]maven($|([.].*))" regex="true"/>
+            <trusting group="org.sonatype.plexus"/>
+         </trusted-key>
          <trusted-key id="A413F67D71BEEC23ADD0CE0ACB43338E060CF9FA" group="org.jacoco"/>
          <trusted-key id="A5BD02B93E7A40482EB1D66A5F69AD087600B22C" group="org.ow2.asm"/>
          <trusted-key id="A6D6C97108B8585F91B158748671A8DF71296252" group="com.squareup.moshi"/>
          <trusted-key id="AA417737BD805456DB3CBDDE6601E5C08DCCBB96" group="info.picocli" name="picocli"/>
          <trusted-key id="AAAA9D3F580C7223DBD1FF425746EE07D997DDB6" group="net.jqwik"/>
          <trusted-key id="AD296CA014321485EB6780FF8B8E0CB0F6A7657E" group="org.asciidoctor"/>
+         <trusted-key id="AEB1E1AEC035C66FA39589D13EFC46EE83C40224" group="com.networknt"/>
          <trusted-key id="AF7104B493974EA5DDF5044355101494C452D7A2" group="org.crac"/>
          <trusted-key id="B02137D875D833D9B23392ECAE5A7FB608A0221C">
             <trusting group="org.apache.maven"/>
             <trusting group="org.codehaus.plexus"/>
          </trusted-key>
+         <trusted-key id="B18679A17A21DE79FF9DE8B0636D10E7975B6E6F" group="com.ethlo.time"/>
+         <trusted-key id="B2460AF072132DD71CD98A63020BDA623C651E0E" group="io.github.goooler.osgi"/>
+         <trusted-key id="B41089A2DA79B0FA5810252872385FF0AF338D52" group="joda-time"/>
+         <trusted-key id="B59102FF59B40A5528ADEADB99CA0918C37E2AE4" group="net.sourceforge.expectj"/>
          <trusted-key id="B6E73D84EA4FCC47166087253FAAD2CD5ECBB314">
+            <trusting group="commons-beanutils"/>
             <trusting group="commons-cli"/>
             <trusting group="org.apache.commons"/>
          </trusted-key>
-         <trusted-key id="BDB5FA4FE719D787FB3D3197F6D4A1D411E9D1AE" group="com.google.guava"/>
+         <trusted-key id="BC87A3FD0A54480F0BADBEBD21939FF0CA2A6567" group="commons-codec"/>
+         <trusted-key id="BDB5FA4FE719D787FB3D3197F6D4A1D411E9D1AE">
+            <trusting group="com.google.guava"/>
+            <trusting group="com.google.j2objc"/>
+         </trusted-key>
          <trusted-key id="BED597EFC4BF399D3283F697432DC97E7B73F0B6" group="org.apache.ant"/>
-         <trusted-key id="C4F54D8622C95CC3F098721A0F13D5631D6AF36D" group="org.testng" name="testng" version="7.10.2"/>
+         <trusted-key id="C3259D20DAEC4ACE6D57CC83340B090F727518D8" group="com.google.j2objc"/>
+         <trusted-key id="C4F54D8622C95CC3F098721A0F13D5631D6AF36D" group="org.testng" name="testng"/>
          <trusted-key id="C668130C58722C9DC1C0FC633F1EB974E7AB9B37" group="biz.aQute.bnd"/>
+         <trusted-key id="C70B844F002F21F6D2B9C87522E44AC0622B91C3" group="com.beust"/>
          <trusted-key id="C7BE5BCC9FEC15518CFDA882B0F3710FA64900E7" group="com.google.code.gson" name="gson"/>
          <trusted-key id="C7C5042998FCB6E396E8D262BA19949FA2609216" group="app.testlens"/>
+         <trusted-key id="CA491704D613780D2BEE00F2C6FC46EB51CF569C" group="jaxen"/>
          <trusted-key id="CE8075A251547BEE249BC151A2115AE15F6B8B72">
             <trusting group="org.apache.ant"/>
             <trusting group="org.apache.commons"/>
             <trusting group="org.apache.ivy"/>
+            <trusting group="xmlunit"/>
          </trusted-key>
          <trusted-key id="CF17E92C9FFA55316B5DB83901D734EE5EE9C3F8" group="org.eclipse.sisu"/>
+         <trusted-key id="CFC10B69382CBCF5387E51484ECE492B63E38ACF" group="com.h3xstream.findsecbugs"/>
          <trusted-key id="D1436C0DBACEA48702AF97C363F1DD7753B8B315" group="^org[.]sonarsource[.]scanner($|([.].*))" regex="true"/>
+         <trusted-key id="D196A5E3E70732EEB2E5007F1861C322C56014B2" group="commons-lang"/>
          <trusted-key id="D5F46BC0B86AF5DC56DF58F05E975CB00C643DBF" group="com.google.inject" name="guice" version="5.1.0"/>
+         <trusted-key id="D71534DDED75B2DA189E14DF385EF0846E5CF3F3" group="org.mnode.mstor"/>
+         <trusted-key id="D76260C72DF74E66268F7770AB049DF4AB24C1EF" group="org.hsqldb"/>
          <trusted-key id="D790F72EA8FD39551012B62DCF9F3090CE4CB752" group="org.abego.treelayout" name="org.abego.treelayout.core" version="1.0.3"/>
-         <trusted-key id="D878D4A823EAE731B729D1A8D2151178A123C97F" group="com.github.spotbugs"/>
+         <trusted-key id="D878D4A823EAE731B729D1A8D2151178A123C97F">
+            <trusting group="com.github.spotbugs"/>
+            <trusting group="com.github.spotbugs.snom"/>
+         </trusted-key>
          <trusted-key id="DBD744ACE7ADE6AA50DD591F66B50994442D2D40" group="^com[.]squareup($|([.].*))" regex="true"/>
+         <trusted-key id="DC61AE5DFD409C64F592AC1A6FD54E1F311B47E9" group="org.cyclonedx"/>
+         <trusted-key id="E06A36F67D8C1BD13F1F278D0CA7139CBC7026F9" group="dnsjava"/>
          <trusted-key id="E3A9F95079E84CE201F7CF60BEDE11EAF1164480" group="org.hamcrest"/>
          <trusted-key id="E5138A8E9F2E7E42D38B14D99AEE152CDCCEBFCB" group="io.github.hakky54"/>
          <trusted-key id="E5C3B1929191DF06136CCB2B164779204E106A76" group="org.javassist" name="javassist"/>
+         <trusted-key id="E6A04C98C11CA6FD765BE838156E8DA37ABC7C91" group="com.sleepycat"/>
+         <trusted-key id="E9C9747A809C424B5BC9DD4A4783A0225D80620F" group="org.jparsec"/>
+         <trusted-key id="E9CC3CD1AE59E851E4DB3FA350FFD7487D34B5B9" group="io.reactivex.rxjava3"/>
          <trusted-key id="EA022560A81E5BD48DB3D18B54AC8E2D98CFEAC6" group="org.ysb33r.gradle"/>
+         <trusted-key id="EA23DB1360D9029481E7F2EFECDFEA3CB4493B94" group="jline"/>
          <trusted-key id="EAFC1F3B2FCED6AFD046C7D5734AEF3D43509290" group="org.osgi"/>
+         <trusted-key id="EB1B3DE71713C9EC2E87CC26EE92349AD86DE446" group="com.google.j2objc"/>
          <trusted-key id="EC23FD5875DFF32547D5257F631ECF66932B28BA">
             <trusting group="com.github.jnr"/>
             <trusting group="com.headius"/>
@@ -218,20 +339,29 @@
          </trusted-key>
          <trusted-key id="F254B35617DC255D9344BCFA873A8E86B4372146" group="org.codehaus.plexus"/>
          <trusted-key id="F3184BCD55F4D016E30D4C9BF42E87F9665015C9" group="org.jsoup"/>
+         <trusted-key id="F3D15B8FF9902805DE4BE6B18DC6F3D0ABDBD017" group="org.codehaus.plexus"/>
          <trusted-key id="F4DD59C90148BDC52BEB90A4530AA5F25C25011F">
             <trusting group="commons-codec"/>
+            <trusting group="commons-io"/>
+            <trusting group="commons-net"/>
+            <trusting group="org.apache.bcel"/>
             <trusting group="org.apache.commons"/>
          </trusted-key>
+         <trusted-key id="FA1703B1D287CAEA3A60F931E0130A3ED5A2079E" group="org.webjars"/>
          <trusted-key id="FA77DCFEF2EE6EB2DEBEDD2C012579464D01C06A">
             <trusting group="org.apache.maven.doxia"/>
             <trusting group="org.codehaus.plexus"/>
          </trusted-key>
+         <trusted-key id="FA7929F83AD44C4590F6CC6815C71C0A4E0B8EDD" group="net.java.dev.jna"/>
          <trusted-key id="FB11D4BB7B244678337AAD8BC7BF26D0BB617866" group="^org[.]apache[.]maven($|([.].*))" regex="true"/>
+         <trusted-key id="FC411CD3CB7DCB0ABC9801058118B3BCDB1A5000" group="jakarta.xml.bind"/>
          <trusted-key id="FF6E2C001948C5F2F38B0CC385911F425EC61B51">
             <trusting group="junit"/>
+            <trusting group="org.apiguardian"/>
             <trusting group="org.junit"/>
             <trusting group="org.junit.jupiter"/>
             <trusting group="org.junit.platform"/>
+            <trusting group="org.junit.vintage"/>
             <trusting group="org.opentest4j"/>
          </trusted-key>
          <trusted-key id="FFFD810FFFDE203D5FA27263BEABCFBEE059E4E5" group="com.github.siom79.japicmp"/>
