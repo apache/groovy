@@ -84,6 +84,8 @@ mistakes AI tooling specifically tends to make.
   restates only what AI tooling specifically needs.
 - [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) "Regression tests
   for JIRA fixes" — companion section on test shape and placement.
+- [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) "Documentation" —
+  source and Groovydoc style.
 - [`AGENTS.md`](../../../AGENTS.md) — ASF licensing / provenance,
   `Assisted-by:` trailer policy, the "what *not* to do" list.
 
@@ -179,6 +181,13 @@ implementing a fix:
     vulnerability response is out of scope for this skill — see
     *When to use this skill*.)
 
+12. **Documenting the JIRA key in Javadoc/GroovyDoc.** AI tooling
+    reaches for `/** … (GROOVY-12345) */` on the method it just
+    changed. Put the key in the commit message and the regression
+    test, not in published API docs. Naming the ticket that
+    introduced the method is not a compatibility explanation —
+    see [Documentation](../../../CONTRIBUTING.md#documentation).
+
 ## Procedure
 
 When triage has produced a reproducer and pointed at an area:
@@ -268,7 +277,9 @@ Before producing the hand-back artefact:
       `// GROOVY-<NNNN>` comment), correct tree.
 - [ ] Working-tree diff contains only the test, the production
       change, and any directly-required edit. No drive-by
-      reformat, stray imports, or speculative refactor.
+      reformat, stray imports, or speculative refactor. Source
+      and Groovydoc style matches
+      [Documentation](../../../CONTRIBUTING.md#documentation).
 - [ ] No new public API surface introduced unless the fix required
       it; if it did,
       [`COMPATIBILITY.md`](../../../COMPATIBILITY.md) was
@@ -293,6 +304,8 @@ Before producing the hand-back artefact:
   the TDD ordering, scope discipline, and IDE-vs-build pitfalls.
 - [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) "Regression tests
   for JIRA fixes" — test shape and placement.
+- [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) "Documentation" —
+  source and Groovydoc style.
 - [`AGENTS.md`](../../../AGENTS.md) — provenance and licensing,
   trailer policy, the "what *not* to do" list.
 - [`COMPATIBILITY.md`](../../../COMPATIBILITY.md) — observable API

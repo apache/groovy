@@ -144,6 +144,14 @@ tests:
    user-facing example* belongs in the spec test. See
    [Executable AsciiDoc examples](../../../CONTRIBUTING.md#executable-asciidoc-examples).
 
+9. **Unused imports or unneeded FQNs in test source.** Same
+   source-style rule as production — see
+   [Documentation](../../../CONTRIBUTING.md#documentation).
+   Inline `<pre class="...groovyTestCase">` blocks are published
+   Groovydoc. A `// GROOVY-` comment above a regression-test
+   method is required, not a violation — see
+   [Regression tests for JIRA fixes](../../../CONTRIBUTING.md#regression-tests-for-jira-fixes).
+
 ## Procedure
 
 When writing or modifying a test:
@@ -184,6 +192,10 @@ Before declaring the change ready:
       path separators) baked into assertions — see
       [Test-writing pitfalls](../../../CONTRIBUTING.md#test-writing-pitfalls).
 - [ ] `git status` shows no scratch files in the working tree.
+- [ ] Test source and inline Javadoc match
+      [Documentation](../../../CONTRIBUTING.md#documentation). A
+      `// GROOVY-` comment on a regression-test method is
+      required, not a violation.
 - [ ] Commit message references `GROOVY-NNNNN` where applicable.
 
 ## References
@@ -191,6 +203,8 @@ Before declaring the change ready:
 - [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) "Tests" — the
   canonical test conventions (framework, naming, AsciiDoc
   pattern, pitfalls).
+- [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) "Documentation" —
+  source and Groovydoc style (including inline Javadoc tests).
 - [`ARCHITECTURE.md`](../../../ARCHITECTURE.md) — overall test
   layout.
 - [`COMPATIBILITY.md`](../../../COMPATIBILITY.md) — what

@@ -118,7 +118,10 @@ Follow what's already in the tree. Specifically:
   requires it; public API is covenanted and hard to remove.
 - Do not introduce new runtime dependencies without discussion — every new
   dependency needs a license review and potentially a `NOTICE` / `LICENSE` update.
-- Remove unused imports and dead code you introduce.
+- Remove unused imports and dead code you introduce. Source and
+  Groovydoc style — unneeded fully-qualified names, and JIRA issue
+  keys in doc comments — is in "Documentation" in
+  [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 For API/behaviour changes, add or update tests alongside the code change.
 
