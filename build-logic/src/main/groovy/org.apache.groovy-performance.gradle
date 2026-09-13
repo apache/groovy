@@ -17,9 +17,11 @@
  *  under the License.
  */
 
+import org.apache.groovy.gradle.ConcurrentExecutionControlBuildService
 import org.apache.groovy.gradle.DispatchMetricsSummary
 import org.apache.groovy.gradle.PerformanceTestsExtension
 import org.apache.groovy.gradle.PerformanceTestSummary
+import org.apache.groovy.gradle.SharedConfiguration
 import org.gradle.api.attributes.Attribute
 
 plugins {
@@ -186,6 +188,16 @@ sonarqube {
 
 tasks.named('test') {
     useJUnitPlatform()
+    // This module does not apply groovy-tested, so without this it is a
+    // third Test lane next to the global cap of 2, and the worker inherits
+    // the JVM ergonomic heap (1/4 of RAM — 6g on a 23g box). Parity tests
+    // then fork children with the same default. Join the existing limiter
+    // and cap both heaps.
+    minHeapSize = '64m'
+    maxHeapSize = '512m'
+    jvmArgs "-XX:ActiveProcessorCount=${sharedConfiguration.testActiveProcessorCount}"
+    usesService(ConcurrentExecutionControlBuildService.restrict(Test, gradle,
+        SharedConfiguration.TEST_MAX_CONCURRENT_TASKS))
 }
 
 tasks.named('jmh') {

@@ -102,7 +102,10 @@ class SetPropertyParityTest {
     private static int fork(boolean setProperty, List<String> mainAndArgs, StringBuilder mergedOutput) {
         def java = new File(System.getProperty('java.home'), 'bin/java').absolutePath
         def cp = System.getProperty('java.class.path')
-        def cmd = [java, '-cp', cp, "-Dgroovy.indy.setproperty=${setProperty}".toString()] + mainAndArgs
+        // Uncapped children inherit the ergonomic heap (1/4 RAM). The corpus
+        // / probe compile is small; 256m avoids a 6g spike next to test workers.
+        def cmd = [java, '-Xms64m', '-Xmx256m', '-XX:ActiveProcessorCount=1', '-cp', cp,
+                   "-Dgroovy.indy.setproperty=${setProperty}".toString()] + mainAndArgs
         def pb = new ProcessBuilder(cmd)
         pb.redirectErrorStream(true)
         def process = pb.start()

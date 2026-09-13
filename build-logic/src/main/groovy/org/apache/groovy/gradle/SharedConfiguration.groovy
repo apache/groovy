@@ -87,6 +87,69 @@ class SharedConfiguration {
         logger.lifecycle "user.dir: ${userdir}"
     }
 
+    /**
+     * Concurrent {@code Test} tasks admitted by
+     * {@code ConcurrentExecutionControlBuildService}. Task-level, not
+     * worker-level: peak test JVMs are this times {@link #getTestMaxParallelForks()}.
+     * Keep at 2 — raising it without cutting heap/forks overcommits RAM
+     * (GHA and a 6-core/23GiB workstation alike).
+     */
+    static final int TEST_MAX_CONCURRENT_TASKS = 2
+
+    /** Processors the daemon JVM sees; used to size forks and {@code ActiveProcessorCount}. */
+    static int availableProcessors() {
+        Runtime.runtime.availableProcessors()
+    }
+
+    /**
+     * {@code maxParallelForks} for {@code Test} tasks.
+     * CI stays at 1 (GHA RAM and worker-teardown races). Locally leave ~2
+     * CPUs for GC/OS/IDE, then one fork per remaining pair: 6-core → 2,
+     * 8-core → 3, 16-core → 7. Combined with {@link #TEST_MAX_CONCURRENT_TASKS}
+     * that is 4 workers on a 6-core box rather than 6, which otherwise
+     * each size G1/C2 as if they owned all 6 CPUs (load 16–18).
+     */
+    int getTestMaxParallelForks() {
+        if (isRunningOnCI) {
+            return 1
+        }
+        int n = availableProcessors()
+        if (n <= 2) {
+            return 1
+        }
+        return Math.max(1, (n - 2).intdiv(2))
+    }
+
+    /**
+     * Concurrent forked {@code GroovyCompile} workers.
+     * CI stays at 2 (1g groovyc overlapping 2g Test OOMs GHA).
+     * Locally {@code max(2, nproc/4)} so a 6-core box stays at 2 and a
+     * 16-core box can use 4 — do not use nproc/2, which adds fully-sized
+     * G1 workers on the same CPUs the Test limiter already occupies.
+     */
+    int getGroovyCompileMaxConcurrent() {
+        if (isRunningOnCI) {
+            return 2
+        }
+        return Math.max(2, availableProcessors().intdiv(4))
+    }
+
+    /**
+     * {@code -XX:ActiveProcessorCount} for each test / groovyc worker so
+     * G1 ({@code ParallelGCThreads}) and C2 ({@code CICompilerCount}) do
+     * not assume they own the whole machine. Floor, not ceil: ceil(n/slots)
+     * is 2 for every n>=3 and 4 workers then claim 8 CPUs. Floor is 1
+     * on a 6-core box (and on JDK 25 that selects Serial GC, which is the
+     * right collector when packing several worker JVMs).
+     */
+    int getTestActiveProcessorCount() {
+        int slots = TEST_MAX_CONCURRENT_TASKS * getTestMaxParallelForks()
+        if (slots < 1) {
+            slots = 1
+        }
+        return Math.max(1, availableProcessors().intdiv(slots))
+    }
+
     private static boolean detectCi(File file, Logger logger) {
         // Prefer standard CI environment variables. GitHub Actions sets CI=true and
         // GITHUB_ACTIONS=true on every OS; path-only detection historically matched only

@@ -16,6 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+import org.apache.groovy.gradle.ConcurrentExecutionControlBuildService
+import org.apache.groovy.gradle.SharedConfiguration
+
 plugins {
     id 'groovy'
     id 'org.apache.groovy-common'
@@ -28,8 +31,17 @@ dependencies {
 }
 
 tasks.withType(Test).configureEach {
+    // Same as groovy-performance: this module is not groovy-tested, so it
+    // would otherwise sit outside the global Test cap with an ergonomic heap.
+    minHeapSize = '64m'
+    maxHeapSize = '512m'
+    jvmArgs "-XX:ActiveProcessorCount=${sharedConfiguration.testActiveProcessorCount}"
+    usesService(ConcurrentExecutionControlBuildService.restrict(Test, gradle,
+        SharedConfiguration.TEST_MAX_CONCURRENT_TASKS))
     if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_14)) {
-        jvmArgs += "--enable-preview"
+        // Append, same as the original `jvmArgs +=`. JavaForkOptions.jvmArgs()
+        // adds; do not use setJvmArgs / `jvmArgs =`, which would drop APC above.
+        jvmArgs '--enable-preview'
     }
 }
 

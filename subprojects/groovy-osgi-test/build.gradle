@@ -17,11 +17,15 @@
  *  under the License.
  */
 
+import org.apache.groovy.gradle.ConcurrentExecutionControlBuildService
+import org.apache.groovy.gradle.SharedConfiguration
+
 // Minimal OSGi integration test using embedded Apache Felix.
 // Installs the Groovy bundle and verifies resolution + class loading.
 
 plugins {
     id 'java'
+    id 'org.apache.groovy-common'
 }
 
 dependencies {
@@ -39,4 +43,11 @@ test {
     dependsOn ':repackageJar', ':groovy-json:jar'
     systemProperty 'groovy.bundle.path', groovyJar.absolutePath
     systemProperty 'groovy.json.bundle.path', jsonJar.absolutePath
+    // Not groovy-tested: without this it is a third Test lane with an
+    // ergonomic heap (1/4 RAM) next to the global cap of 2.
+    minHeapSize = '64m'
+    maxHeapSize = '512m'
+    jvmArgs "-XX:ActiveProcessorCount=${sharedConfiguration.testActiveProcessorCount}"
+    usesService(ConcurrentExecutionControlBuildService.restrict(Test, gradle,
+        SharedConfiguration.TEST_MAX_CONCURRENT_TASKS))
 }
