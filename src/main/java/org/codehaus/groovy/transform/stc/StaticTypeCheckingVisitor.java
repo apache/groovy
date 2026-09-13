@@ -5113,6 +5113,7 @@ trying: for (ClassNode[] signature : signatures) {
             Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
             try {
                 super.visitSwitch(statement);
+                checkSwitchDuplicateLabels(statement.getExpression(), statement.getCaseStatements());
             } finally {
                 popAssignmentTracking(oldTracker);
             }
@@ -5156,7 +5157,7 @@ trying: for (ClassNode[] signature : signatures) {
             expression.setType(resultType);
 
             typeCheckSwitchExpressionIsCase(expression);
-            checkSwitchExpressionDuplicateLabels(expression);
+            checkSwitchDuplicateLabels(expression.getExpression(), expression.getCaseStatements());
             checkSwitchExpressionExhaustiveness(expression);
         } finally {
             typeCheckingContext.popTemporaryTypeInfo();
@@ -5211,21 +5212,22 @@ trying: for (ClassNode[] signature : signatures) {
     }
 
     /**
-     * Reports a repeated constant case label in a switch expression. Sequential
-     * {@code isCase} semantics make the second arm dead code, and the optimized
-     * {@code tableswitch}/{@code lookupswitch} forms cannot represent it at all,
-     * so it is rejected here, uniformly for type-checked and statically-compiled
-     * code (GROOVY-12289). Labels compared are the same ones the optimizers key
-     * on: int-family, String and enum constants; anything else (GStrings, calls,
-     * regex or collection labels) cannot be proven duplicated statically and is
-     * left to sequential first-match-wins dispatch.
+     * Reports a repeated constant case label, in a switch statement as well as
+     * a switch expression. Sequential {@code isCase} semantics make the second
+     * arm dead code, and the optimized {@code tableswitch}/{@code lookupswitch}
+     * forms cannot represent it at all, so it is rejected here, uniformly for
+     * type-checked and statically-compiled code (GROOVY-12289, GROOVY-12406).
+     * Labels compared are the same ones the optimizers key on: int-family,
+     * String and enum constants; anything else (GStrings, calls, regex or
+     * collection labels) cannot be proven duplicated statically and is left to
+     * sequential first-match-wins dispatch.
      *
      * @since 6.0.0
      */
-    private void checkSwitchExpressionDuplicateLabels(final SwitchExpression expression) {
-        ClassNode enumType = unwrapEnumType(getType(expression.getExpression()));
+    private void checkSwitchDuplicateLabels(final Expression selector, final List<CaseStatement> caseStatements) {
+        ClassNode enumType = unwrapEnumType(getType(selector));
         Set<Object> seen = new HashSet<>();
-        for (CaseStatement caseStatement : expression.getCaseStatements()) {
+        for (CaseStatement caseStatement : caseStatements) {
             Expression label = caseStatement.getExpression();
             Object key = null;
             if (enumType != null && enumType.isEnum()) {

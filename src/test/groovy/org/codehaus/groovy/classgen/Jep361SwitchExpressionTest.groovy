@@ -675,8 +675,50 @@ final class Jep361SwitchExpressionTest {
     }
 
     @Test
-    void duplicateLabelInSwitchStatementIsNotAnError() {
+    void duplicateLabelInSwitchStatementIsTypeCheckingError() {
+        // GROOVY-12289 left statements out; GROOVY-12406 closes the gap, so the
+        // diagnostic no longer depends on position, any more than Java's does
+        for (mode in ['@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            for (dup in [
+                    [decl: 'int x',    arms: "case 1: return 'a'; case 1: return 'b'",   label: '1'],
+                    [decl: 'String x', arms: 'case "a": return 1; case "a": return 2',   label: 'a'],
+                    [decl: 'int x',    arms: "case 1: return 'a'; case 2: return 'b'; case 1: return 'c'", label: '1']]) {
+                def err = shouldFail MultipleCompilationErrorsException, """
+                    $mode
+                    def m(${dup.decl}) { switch (x) { ${dup.arms}; default: return 'z' } }
+                """
+                assert err.message.contains('[Static type checking] - Duplicate case label: ' + dup.label)
+            }
+        }
+    }
+
+    @Test
+    void duplicateEnumLabelInSwitchStatementIsTypeCheckingError() {
+        for (mode in ['@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            def err = shouldFail MultipleCompilationErrorsException, """
+                enum E { X, Y }
+                $mode
+                def m(E e) { switch (e) { case E.X: return 1; case E.X: return 2; default: return 0 } }
+            """
+            assert err.message.contains('[Static type checking] - Duplicate case label: E.X')
+        }
+    }
+
+    @Test
+    void repeatedNonConstantLabelInSwitchStatementIsAllowed() {
+        // two labels can only be compared when both values are known statically
         assertBoth '''
+            @groovy.transform.TypeChecked
+            def m(Object o, Object a, Object b) {
+                switch (o) { case a: return 'x'; case b: return 'y'; default: return 'z' }
+            }
+            assert m('q', 'q', 'q') == 'x'
+        '''
+    }
+
+    @Test
+    void duplicateLabelInSwitchStatementStillRunsDynamically() {
+        assertScript '''
             def m(int x) { switch (x) { case 1: return 'a'; case 1: return 'b'; default: return 'c' } }
             assert m(1) == 'a'
             assert m(9) == 'c'
