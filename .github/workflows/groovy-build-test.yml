@@ -429,6 +429,35 @@ jobs:
             echo "jdk-url=$url"
           } >> "$GITHUB_OUTPUT"
           echo "Ready: java-version=$version (${size} bytes)"
+
+          # Nothing in the repo records which build this job actually ran —
+          # only the major, via `jdk-page` in the matrix above. Surface the
+          # resolved build on the run page so it is visible without digging
+          # through step logs (which expire sooner than one may want to look
+          # back). `channel` is the signal that the canary has outlived its
+          # purpose: once jdk.java.net serves this major from /java/GA/, the
+          # job is testing a released JDK and the matrix should move to the
+          # next one.
+          lower_url="$(printf '%s' "$url" | tr 'A-Z' 'a-z')"
+          case "$lower_url" in
+            */java/ga/*) channel='GA (released — bump the canary to the next JDK)' ;;
+            */early_access/*|*/early-access/*) channel='early access' ;;
+            *) channel='unknown' ;;
+          esac
+          if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+            {
+              echo "### EA canary JDK: \`$version\`"
+              echo
+              echo '| | |'
+              echo '|---|---|'
+              echo "| page | $PAGE |"
+              echo "| java-version | \`$version\` |"
+              echo "| channel | $channel |"
+              echo "| tarball | \`${url##*/}\` |"
+              echo "| sha256 | \`$digest\` (verified) |"
+              echo "| url | $url |"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: "📦 Upload jdk.java.net page on resolve failure"
         if: failure() && steps.openjdk.outcome == 'failure'
         uses: actions/upload-artifact@v7
