@@ -22,6 +22,7 @@ import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
 import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
 import org.apache.groovy.groovysh.Main;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ModuleImportHelper;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
@@ -165,6 +166,7 @@ public class GroovyEngine implements ScriptEngine {
             "java.math.BigDecimal");
     private final Map<String, Class<?>> defaultNameClass = new TreeMap<>();
     private final GroovyShell shell;
+    private final CompilerConfiguration compilerConfiguration;
     /** Shared binding that stores variables visible to interactive scripts. */
     protected Binding sharedData;
     private final List<Snippet> snippets = new ArrayList<>();
@@ -207,15 +209,103 @@ public class GroovyEngine implements ScriptEngine {
      * Constructs a new GroovyEngine with default configuration.
      */
     public GroovyEngine() {
-        sharedData = new Binding();
-// for debugging
-//        sharedData.setVariable("engine", this);
-        classLoader = new EngineClassLoader();
-        shell = new GroovyShell(classLoader, sharedData);
+        this(null, null, null);
+    }
+
+    /**
+     * Constructs a GroovyEngine that evaluates with the given compiler configuration.
+     * <p>
+     * Embedders that previously installed an {@code ImportCustomizer} or
+     * {@code ASTTransformationCustomizer} (for example {@code ThreadInterrupt})
+     * on groovysh's {@link CompilerConfiguration} should pass that configuration
+     * here. {@link CompilerConfiguration#DEFAULT} is immutable; start from
+     * {@code new CompilerConfiguration()} when adding customizers.
+     *
+     * @param configuration compiler configuration, or {@code null} for
+     *                      {@link CompilerConfiguration#DEFAULT}
+     * @since 7.0.0
+     */
+    public GroovyEngine(CompilerConfiguration configuration) {
+        this(null, null, configuration);
+    }
+
+    /**
+     * Constructs a GroovyEngine with an explicit parent class loader, binding,
+     * and compiler configuration.
+     *
+     * @param parent parent class loader, or {@code null} to use the thread
+     *               context class loader
+     * @param binding shared binding, or {@code null} to create a new one
+     * @param configuration compiler configuration, or {@code null} for
+     *                      {@link CompilerConfiguration#DEFAULT}
+     * @since 7.0.0
+     */
+    public GroovyEngine(ClassLoader parent, Binding binding, CompilerConfiguration configuration) {
+        sharedData = binding != null ? binding : new Binding();
+        compilerConfiguration = configuration != null ? configuration : CompilerConfiguration.DEFAULT;
+        classLoader = resolveClassLoader(parent, compilerConfiguration);
+        GroovyShell created = createShell(classLoader, sharedData, compilerConfiguration);
+        if (created.getClassLoader() != classLoader) {
+            throw new IllegalStateException(
+                    "createShell must return a GroovyShell whose class loader is the engine class loader");
+        }
+        shell = created;
         for (String s : DEFAULT_IMPORTS) {
             addToNameClass(s, defaultNameClass);
         }
         nameClass = new HashMap<>(defaultNameClass);
+    }
+
+    private static EngineClassLoader resolveClassLoader(ClassLoader parent, CompilerConfiguration configuration) {
+        if (parent instanceof EngineClassLoader
+                && ((EngineClassLoader) parent).hasCompatibleConfiguration(configuration)) {
+            return (EngineClassLoader) parent;
+        }
+        if (parent != null) {
+            return new EngineClassLoader(parent, configuration);
+        }
+        return new EngineClassLoader(configuration);
+    }
+
+    /**
+     * Creates the {@link GroovyShell} used to evaluate statements.
+     * <p>
+     * Called from the constructor, so overrides must not rely on subclass fields
+     * that are assigned after {@code super(...)} returns. Primitive fields and
+     * static state are safe; instance initializers of the subclass have not
+     * run yet. The returned shell must use {@code classLoader} as its loader
+     * (the default implementation does this via
+     * {@link GroovyClassLoader#hasCompatibleConfiguration(CompilerConfiguration)}),
+     * otherwise engine internals that cast to {@link EngineClassLoader} will fail.
+     *
+     * @param classLoader the engine class loader
+     * @param binding the shared binding
+     * @param configuration the compiler configuration, never {@code null}
+     * @return a shell that uses {@code classLoader} as its loader
+     * @since 7.0.0
+     */
+    protected GroovyShell createShell(ClassLoader classLoader, Binding binding, CompilerConfiguration configuration) {
+        return new GroovyShell(classLoader, binding, configuration);
+    }
+
+    /**
+     * Returns the class loader used to parse and load scripts for this engine.
+     *
+     * @return the engine class loader
+     * @since 7.0.0
+     */
+    public EngineClassLoader getClassLoader() {
+        return classLoader;
+    }
+
+    /**
+     * Returns the compiler configuration this engine was constructed with.
+     *
+     * @return the compiler configuration, never {@code null}
+     * @since 7.0.0
+     */
+    public CompilerConfiguration getCompilerConfiguration() {
+        return compilerConfiguration;
     }
 
     /**
@@ -1148,6 +1238,39 @@ public class GroovyEngine implements ScriptEngine {
          */
         public EngineClassLoader() {
             super();
+        }
+
+        /**
+         * Constructs an EngineClassLoader with the given compiler configuration
+         * and the current thread's context class loader as parent.
+         *
+         * @param configuration compiler configuration, or {@code null} for the default
+         * @since 7.0.0
+         */
+        public EngineClassLoader(CompilerConfiguration configuration) {
+            super(Thread.currentThread().getContextClassLoader(), configuration);
+        }
+
+        /**
+         * Constructs an EngineClassLoader with the given parent class loader.
+         *
+         * @param parent the parent class loader
+         * @since 7.0.0
+         */
+        public EngineClassLoader(ClassLoader parent) {
+            super(parent);
+        }
+
+        /**
+         * Constructs an EngineClassLoader with the given parent class loader
+         * and compiler configuration.
+         *
+         * @param parent the parent class loader
+         * @param configuration compiler configuration, or {@code null} for the default
+         * @since 7.0.0
+         */
+        public EngineClassLoader(ClassLoader parent, CompilerConfiguration configuration) {
+            super(parent, configuration);
         }
 
         /**
@@ -2177,7 +2300,7 @@ public class GroovyEngine implements ScriptEngine {
                 sharedData.setVariable(entry.getKey(), obj);
             }
             groovyEngine.getObjectCloner().purgeCache();
-            shell = new GroovyShell(groovyEngine.shell.getClassLoader(), sharedData);
+            shell = new GroovyShell(groovyEngine.shell.getClassLoader(), sharedData, groovyEngine.compilerConfiguration);
             try {
                 File file = OSUtils.IS_WINDOWS ? new File("NUL") : new File("/dev/null");
                 OutputStream outputStream = new FileOutputStream(file);

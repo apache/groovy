@@ -18,7 +18,19 @@
  */
 package org.apache.groovy.groovysh.jline
 
+import groovy.lang.Binding
+import groovy.lang.GroovyClassLoader
+import groovy.lang.GroovyShell
+import groovy.transform.ThreadInterrupt
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.jline.console.CmdLine
 import org.junit.jupiter.api.Test
+
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Direct tests for {@link GroovyEngine}. The engine is the foundation of the
@@ -161,5 +173,175 @@ class GroovyEngineTest {
         // patterns that show up in REPL workflows.
         engine.execute('greet = { name -> "hi, $name" }')
         assert engine.execute("greet('paul')") == 'hi, paul'
+    }
+
+    @Test
+    void defaultConstructorUsesDefaultCompilerConfiguration() {
+        def engine = new GroovyEngine()
+        assert engine.compilerConfiguration.is(CompilerConfiguration.DEFAULT)
+        assert engine.classLoader.hasCompatibleConfiguration(CompilerConfiguration.DEFAULT)
+        assert engine.classLoader.is(engine.getClassLoader())
+    }
+
+    @Test
+    void nullCompilerConfigurationUsesDefault() {
+        def engine = new GroovyEngine((CompilerConfiguration) null)
+        assert engine.compilerConfiguration.is(CompilerConfiguration.DEFAULT)
+        assert engine.execute('2 + 2') == 4
+    }
+
+    @Test
+    void importCustomizerMakesTypesAvailableWithoutSnippetImports() {
+        def imports = new ImportCustomizer()
+        imports.addImports('java.util.concurrent.atomic.AtomicInteger')
+        def config = new CompilerConfiguration()
+        config.addCompilationCustomizers(imports)
+        def engine = new GroovyEngine(config)
+
+        assert engine.execute('new AtomicInteger(7).get()') == 7
+        assert engine.imports.isEmpty()
+    }
+
+    @Test
+    void starAndStaticStarImportCustomizers() {
+        def imports = new ImportCustomizer()
+        imports.addStarImports('java.util.concurrent.atomic')
+        imports.addStaticStars('java.lang.Math')
+        def config = new CompilerConfiguration()
+        config.addCompilationCustomizers(imports)
+        def engine = new GroovyEngine(config)
+
+        assert engine.execute('new AtomicInteger(3).get()') == 3
+        assert engine.execute('abs(-4)') == 4
+    }
+
+    @Test
+    void sharedBindingAndParentClassLoaderAreHonoured() {
+        def parent = new URLClassLoader(new URL[0], ClassLoader.systemClassLoader)
+        def binding = new Binding(foo: 11)
+        def config = new CompilerConfiguration()
+        def engine = new GroovyEngine(parent, binding, config)
+
+        assert engine.classLoader.parent.is(parent)
+        assert engine.execute('foo') == 11
+        engine.execute('bar = 22')
+        assert binding.getVariable('bar') == 22
+        assert engine.compilerConfiguration.is(config)
+    }
+
+    @Test
+    void compatibleEngineClassLoaderIsReused() {
+        def config = new CompilerConfiguration()
+        def loader = new GroovyEngine.EngineClassLoader(config)
+        def engine = new GroovyEngine(loader, new Binding(), config)
+        assert engine.classLoader.is(loader)
+    }
+
+    @Test
+    void incompatibleEngineClassLoaderIsWrapped() {
+        def config1 = new CompilerConfiguration()
+        def config2 = new CompilerConfiguration()
+        def loader = new GroovyEngine.EngineClassLoader(config1)
+        def engine = new GroovyEngine(loader, new Binding(), config2)
+        assert !engine.classLoader.is(loader)
+        assert engine.classLoader.parent.is(loader)
+        assert engine.classLoader.hasCompatibleConfiguration(config2)
+    }
+
+    @Test
+    void createShellIsInvokedFromTheConstructor() {
+        def engine = new RecordingEngine()
+        assert engine.createShellCalls == 1
+        assert engine.execute('1 + 1') == 2
+    }
+
+    @Test
+    void createShellMustKeepTheEngineClassLoader() {
+        def thrown = false
+        try {
+            new MismatchedLoaderEngine()
+        } catch (IllegalStateException e) {
+            thrown = e.message.contains('createShell')
+        }
+        assert thrown
+    }
+
+    @Test
+    void threadInterruptCustomizerStopsALoopOnInterrupt() {
+        def config = new CompilerConfiguration()
+        config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt))
+        def engine = new GroovyEngine(config)
+        def thrown = new AtomicReference<Throwable>()
+        def started = new CountDownLatch(1)
+        engine.put('started', started)
+        def thread = Thread.start {
+            try {
+                engine.execute('started.countDown(); def n = 0; while (true) { n++ }')
+            } catch (Throwable t) {
+                thrown.set(t)
+            }
+        }
+        assert started.await(5, TimeUnit.SECONDS)
+        thread.interrupt()
+        thread.join(5000)
+        assert !thread.alive
+        assert thrown.get() != null
+        assert containsInterrupted(thrown.get())
+    }
+
+    @Test
+    @SuppressWarnings('deprecation')
+    void inspectorStillConstructsAgainstACustomConfiguration() {
+        def imports = new ImportCustomizer()
+        imports.addImports('java.util.concurrent.atomic.AtomicInteger')
+        def config = new CompilerConfiguration()
+        config.addCompilationCustomizers(imports)
+        def engine = new GroovyEngine(config)
+        engine.execute('n = new AtomicInteger(1)')
+        // scriptDescription constructs Inspector, which previously built a GroovyShell
+        // with CompilerConfiguration.DEFAULT and would drop the customizer
+        engine.scriptDescription(new CmdLine('n', 'n', '', ['n'], CmdLine.DescriptionType.COMMAND))
+        assert engine.execute('new AtomicInteger(2).get()') == 2
+    }
+
+    @Test
+    void engineClassLoaderConstructors() {
+        def config = new CompilerConfiguration()
+        def parent = ClassLoader.systemClassLoader
+        assert new GroovyEngine.EngineClassLoader() != null
+        assert new GroovyEngine.EngineClassLoader(config).hasCompatibleConfiguration(config)
+        assert new GroovyEngine.EngineClassLoader(parent).parent.is(parent)
+        assert new GroovyEngine.EngineClassLoader(parent, config).parent.is(parent)
+    }
+
+    private static boolean containsInterrupted(Throwable t) {
+        while (t != null) {
+            if (t instanceof InterruptedException) {
+                return true
+            }
+            t = t.cause
+        }
+        false
+    }
+
+    private static class MismatchedLoaderEngine extends GroovyEngine {
+        @Override
+        protected GroovyShell createShell(ClassLoader classLoader, Binding binding, CompilerConfiguration configuration) {
+            return new GroovyShell(new GroovyClassLoader(), binding, configuration)
+        }
+    }
+
+    private static class RecordingEngine extends GroovyEngine {
+        int createShellCalls
+
+        RecordingEngine() {
+            super()
+        }
+
+        @Override
+        protected GroovyShell createShell(ClassLoader classLoader, Binding binding, CompilerConfiguration configuration) {
+            createShellCalls++
+            return super.createShell(classLoader, binding, configuration)
+        }
     }
 }
