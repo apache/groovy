@@ -128,9 +128,10 @@ compiler/runtime work:
    needs. The phase table is in
    [Compilation pipeline](../../../ARCHITECTURE.md#compilation-pipeline).
 
-7. **Wildcard imports.** Match the explicit-import convention
-   already in the tree — see
-   [Compiler and runtime conventions](../../../ARCHITECTURE.md#compiler-and-runtime-conventions).
+7. **Wildcard imports, unused imports, or unneeded FQNs.** Match
+   the explicit-import convention already in the tree — see
+   [Compiler and runtime conventions](../../../ARCHITECTURE.md#compiler-and-runtime-conventions)
+   and [Documentation](../../../CONTRIBUTING.md#documentation).
 
 8. **Adding public API surface "for completeness".** Public API
    is covenanted — see
@@ -197,7 +198,9 @@ Before declaring the change ready:
 - [ ] No edits to files under `build/generated/`.
 - [ ] No formatting changes outside the lines that needed to
       change.
-- [ ] Imports are explicit, not wildcards.
+- [ ] Imports are explicit, not wildcards. Unused imports,
+      unneeded FQNs, and JIRA keys in Javadoc/GroovyDoc match
+      [Documentation](../../../CONTRIBUTING.md#documentation).
 - [ ] AST node construction uses `ClassHelper` for known types
       and `GeneralUtils` factories where applicable.
 - [ ] AST transformation declares a phase, and the phase is the
@@ -229,7 +232,7 @@ Before declaring the change ready:
 - [`COMPATIBILITY.md`](../../../COMPATIBILITY.md) — stability
   tiers, breaking-change policy, binary-compatibility check.
 - [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) — build, test,
-  fix workflow.
+  fix workflow, and "Documentation" (source and Groovydoc style).
 - [`AGENTS.md`](../../../AGENTS.md) — AI-contributor guidance,
   provenance rules.
 - `src/main/java/org/codehaus/groovy/control/CompilePhase.java`
