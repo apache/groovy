@@ -45293,28 +45293,27 @@ final class ParserPositiveSyntaxTest {
             |    </ExpressionStatement>
             |    <TryCatchStatement line="2" column="1" lastLine="9" lastColumn="2">
             |      <BlockStatement line="2" column="5" lastLine="7" lastColumn="2">
-            |        <ExpressionStatement line="3" column="5" lastLine="6" lastColumn="6">
-            |          <SwitchExpression line="3" column="5" lastLine="6" lastColumn="6">
-            |            <VariableExpression line="3" column="12" lastLine="3" lastColumn="13" name="a"/>
-            |            <CaseStatement line="4" column="9" lastLine="4" lastColumn="13">
-            |              <ConstantExpression line="4" column="14" lastLine="4" lastColumn="15" value="8"/>
-            |              <BlockStatement line="4" column="19" lastLine="4" lastColumn="22">
-            |                <YieldStatement line="4" column="19" lastLine="4" lastColumn="22">
-            |                  <ConstantExpression line="4" column="19" lastLine="4" lastColumn="22" value="b"/>
-            |                </YieldStatement>
-            |              </BlockStatement>
-            |            </CaseStatement>
-            |            <default>
-            |              <BlockStatement line="5" column="20" lastLine="5" lastColumn="51">
-            |                <ThrowStatement line="5" column="20" lastLine="5" lastColumn="51">
-            |                  <ConstructorCallExpression line="5" column="26" lastLine="5" lastColumn="51" type="RuntimeException">
-            |                    <ConstantExpression line="5" column="47" lastLine="5" lastColumn="50" value="z"/>
-            |                  </ConstructorCallExpression>
-            |                </ThrowStatement>
-            |              </BlockStatement>
-            |            </default>
-            |          </SwitchExpression>
-            |        </ExpressionStatement>
+            |        <SwitchStatement line="3" column="5" lastLine="6" lastColumn="6">
+            |          <VariableExpression line="3" column="12" lastLine="3" lastColumn="13" name="a"/>
+            |          <CaseStatement line="4" column="9" lastLine="4" lastColumn="13">
+            |            <ConstantExpression line="4" column="14" lastLine="4" lastColumn="15" value="8"/>
+            |            <BlockStatement line="4" column="19" lastLine="4" lastColumn="22">
+            |              <ExpressionStatement line="4" column="19" lastLine="4" lastColumn="22">
+            |                <ConstantExpression line="4" column="19" lastLine="4" lastColumn="22" value="b"/>
+            |              </ExpressionStatement>
+            |              <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <default>
+            |            <BlockStatement line="5" column="20" lastLine="5" lastColumn="51">
+            |              <ThrowStatement line="5" column="20" lastLine="5" lastColumn="51">
+            |                <ConstructorCallExpression line="5" column="26" lastLine="5" lastColumn="51" type="RuntimeException">
+            |                  <ConstantExpression line="5" column="47" lastLine="5" lastColumn="50" value="z"/>
+            |                </ConstructorCallExpression>
+            |              </ThrowStatement>
+            |            </BlockStatement>
+            |          </default>
+            |        </SwitchStatement>
             |      </BlockStatement>
             |      <CatchStatement line="7" column="3" lastLine="9" lastColumn="2" type="java.lang.Object" variable="e">
             |        <BlockStatement line="7" column="13" lastLine="9" lastColumn="2">
@@ -45496,25 +45495,24 @@ final class ParserPositiveSyntaxTest {
             |        <ConstantExpression line="3" column="9" lastLine="3" lastColumn="14" value="123"/>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
-            |    <ExpressionStatement line="4" column="1" lastLine="6" lastColumn="2">
-            |      <SwitchExpression line="4" column="1" lastLine="6" lastColumn="2">
-            |        <VariableExpression line="4" column="9" lastLine="4" lastColumn="10" name="a"/>
-            |        <CaseStatement line="5" column="5" lastLine="5" lastColumn="9">
-            |          <VariableExpression line="5" column="10" lastLine="5" lastColumn="16" name="String"/>
-            |          <BlockStatement line="5" column="22" lastLine="5" lastColumn="27">
-            |            <YieldStatement line="5" column="22" lastLine="5" lastColumn="27">
-            |              <MethodCallExpression line="5" column="22" lastLine="5" lastColumn="27" implicitThis="true">
-            |                <ConstantExpression line="5" column="22" lastLine="5" lastColumn="25" value="prt"/>
-            |                <ArgumentListExpression line="5" column="25" lastLine="5" lastColumn="27"/>
-            |              </MethodCallExpression>
-            |            </YieldStatement>
-            |          </BlockStatement>
-            |        </CaseStatement>
-            |        <default>
-            |          < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
-            |        </default>
-            |      </SwitchExpression>
-            |    </ExpressionStatement>
+            |    <SwitchStatement line="4" column="1" lastLine="6" lastColumn="2">
+            |      <VariableExpression line="4" column="9" lastLine="4" lastColumn="10" name="a"/>
+            |      <CaseStatement line="5" column="5" lastLine="5" lastColumn="9">
+            |        <VariableExpression line="5" column="10" lastLine="5" lastColumn="16" name="String"/>
+            |        <BlockStatement line="5" column="22" lastLine="5" lastColumn="27">
+            |          <ExpressionStatement line="5" column="22" lastLine="5" lastColumn="27">
+            |            <MethodCallExpression line="5" column="22" lastLine="5" lastColumn="27" implicitThis="true">
+            |              <ConstantExpression line="5" column="22" lastLine="5" lastColumn="25" value="prt"/>
+            |              <ArgumentListExpression line="5" column="25" lastLine="5" lastColumn="27"/>
+            |            </MethodCallExpression>
+            |          </ExpressionStatement>
+            |          <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |        </BlockStatement>
+            |      </CaseStatement>
+            |      <default>
+            |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |      </default>
+            |    </SwitchStatement>
             |    <AssertStatement line="7" column="1" lastLine="7" lastColumn="16">
             |      <BooleanExpression line="7" column="8" lastLine="7" lastColumn="16">
             |        <BinaryExpression line="7" column="8" lastLine="7" lastColumn="16" token="==">
@@ -45558,25 +45556,24 @@ final class ParserPositiveSyntaxTest {
             |        <ConstantExpression line="3" column="9" lastLine="3" lastColumn="14" value="123"/>
             |      </DeclarationExpression>
             |    </ExpressionStatement>
-            |    <ExpressionStatement line="4" column="1" lastLine="6" lastColumn="2">
-            |      <SwitchExpression line="4" column="1" lastLine="6" lastColumn="2">
-            |        <VariableExpression line="4" column="9" lastLine="4" lastColumn="10" name="a"/>
-            |        <CaseStatement line="5" column="5" lastLine="5" lastColumn="9">
-            |          <VariableExpression line="5" column="10" lastLine="5" lastColumn="16" name="String"/>
-            |          <BlockStatement line="5" column="20" lastLine="5" lastColumn="25">
-            |            <YieldStatement line="5" column="20" lastLine="5" lastColumn="25">
-            |              <MethodCallExpression line="5" column="20" lastLine="5" lastColumn="25" implicitThis="true">
-            |                <ConstantExpression line="5" column="20" lastLine="5" lastColumn="23" value="prt"/>
-            |                <ArgumentListExpression line="5" column="23" lastLine="5" lastColumn="25"/>
-            |              </MethodCallExpression>
-            |            </YieldStatement>
-            |          </BlockStatement>
-            |        </CaseStatement>
-            |        <default>
-            |          < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
-            |        </default>
-            |      </SwitchExpression>
-            |    </ExpressionStatement>
+            |    <SwitchStatement line="4" column="1" lastLine="6" lastColumn="2">
+            |      <VariableExpression line="4" column="9" lastLine="4" lastColumn="10" name="a"/>
+            |      <CaseStatement line="5" column="5" lastLine="5" lastColumn="9">
+            |        <VariableExpression line="5" column="10" lastLine="5" lastColumn="16" name="String"/>
+            |        <BlockStatement line="5" column="20" lastLine="5" lastColumn="25">
+            |          <ExpressionStatement line="5" column="20" lastLine="5" lastColumn="25">
+            |            <MethodCallExpression line="5" column="20" lastLine="5" lastColumn="25" implicitThis="true">
+            |              <ConstantExpression line="5" column="20" lastLine="5" lastColumn="23" value="prt"/>
+            |              <ArgumentListExpression line="5" column="23" lastLine="5" lastColumn="25"/>
+            |            </MethodCallExpression>
+            |          </ExpressionStatement>
+            |          <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |        </BlockStatement>
+            |      </CaseStatement>
+            |      <default>
+            |        < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |      </default>
+            |    </SwitchStatement>
             |    <AssertStatement line="7" column="1" lastLine="7" lastColumn="16">
             |      <BooleanExpression line="7" column="8" lastLine="7" lastColumn="16">
             |        <BinaryExpression line="7" column="8" lastLine="7" lastColumn="16" token="==">
