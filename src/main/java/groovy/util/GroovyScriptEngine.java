@@ -145,6 +145,7 @@ public class GroovyScriptEngine implements ResourceConnector {
          */
         public ScriptClassLoader(GroovyClassLoader loader) {
             super(loader);
+            setResLoader();
         }
 
         /**
@@ -161,14 +162,16 @@ public class GroovyScriptEngine implements ResourceConnector {
         private void setResLoader() {
             final GroovyResourceLoader rl = getResourceLoader();
             setResourceLoader(className -> {
-                String filename;
                 for (String extension : getConfig().getScriptExtensions()) {
-                    filename = className.replace('.', File.separatorChar) + "." + extension;
+                    String filename = className.replace('.', '/') + "." + extension;
+                    URLConnection dependentScriptConn = null;
                     try {
-                        URLConnection dependentScriptConn = rc.getResourceConnection(filename);
+                        dependentScriptConn = rc.getResourceConnection(filename);
                         return dependentScriptConn.getURL();
                     } catch (ResourceException e) {
-                        //TODO: maybe do something here?
+                        // Missing this extension; try the next one, then the parent loader.
+                    } finally {
+                        forceClose(dependentScriptConn);
                     }
                 }
                 return rl.loadGroovySource(className);
@@ -189,7 +192,12 @@ public class GroovyScriptEngine implements ResourceConnector {
             for (String depSourcePath : cache.get(".")) {
                 try {
                     cache.get(depSourcePath);
-                    cu.addSource(getResourceConnection(depSourcePath).getURL());
+                    URLConnection conn = rc.getResourceConnection(depSourcePath);
+                    try {
+                        cu.addSource(conn.getURL());
+                    } finally {
+                        forceClose(conn);
+                    }
                 } catch (ResourceException e) {
                     /* ignore */
                 }
@@ -216,24 +224,23 @@ public class GroovyScriptEngine implements ResourceConnector {
                         try {
                             String finalName = name + "." + ext;
                             URLConnection conn = rc.getResourceConnection(finalName);
-                            URL url = conn.getURL();
-                            String path = url.toExternalForm();
-                            ScriptCacheEntry entry = scriptCache.get(path);
-                            Class clazz = null;
-                            if (entry != null) clazz = entry.scriptClass;
-                            if (GroovyScriptEngine.this.isSourceNewer(entry)) {
-                                try {
+                            try {
+                                URL url = conn.getURL();
+                                String path = url.toExternalForm();
+                                ScriptCacheEntry entry = scriptCache.get(path);
+                                Class clazz = null;
+                                if (entry != null) clazz = entry.scriptClass;
+                                if (GroovyScriptEngine.this.isSourceNewer(entry)) {
                                     SourceUnit su = compilationUnit.addSource(url);
                                     return new LookupResult(su, null);
-                                } finally {
-                                    forceClose(conn);
                                 }
-                            } else {
                                 precompiledEntries.put(origName, path);
-                            }
-                            if (clazz != null) {
-                                ClassNode cn = ClassHelper.make(clazz);
-                                return new LookupResult(null, cn);
+                                if (clazz != null) {
+                                    ClassNode cn = ClassHelper.make(clazz);
+                                    return new LookupResult(null, cn);
+                                }
+                            } finally {
+                                forceClose(conn);
                             }
                         } catch (ResourceException re) {
                             // skip

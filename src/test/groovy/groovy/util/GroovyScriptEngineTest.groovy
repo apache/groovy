@@ -86,4 +86,94 @@ final class GroovyScriptEngineTest {
         assert counts['Script1'] == 1
         assert counts['Foo'] == 1
     }
+
+    @Test
+    void resourceLoaderClosesConnectorConnection() {
+        File scriptFile = new File(temporaryFolder, 'Foo.groovy')
+        scriptFile.text = 'class Foo {}'
+
+        TrackingURLConnection tracking = null
+        ResourceConnector rc = { String name ->
+            File f = new File(temporaryFolder, name)
+            if (!f.exists()) throw new ResourceException("missing $name")
+            tracking = new TrackingURLConnection(f)
+            tracking
+        }
+
+        GroovyScriptEngine engine = new GroovyScriptEngine(rc)
+        engine.config.scriptExtensions = new LinkedHashSet(['groovy'])
+
+        URL url = engine.groovyClassLoader.resourceLoader.loadGroovySource('Foo')
+        assert url != null
+        assert tracking != null
+        assert tracking.inputStreamOpened : 'URLConnection obtained only for its URL must still be closed'
+    }
+
+    @Test
+    void resourceLoaderUsesCustomConnectorWhenParentIsGroovyClassLoader() {
+        new File(temporaryFolder, 'Helper.groovy').text = 'class Helper { def ping() { "pong" } }'
+
+        ResourceConnector rc = { String name ->
+            File f = new File(temporaryFolder, name)
+            if (!f.exists()) throw new ResourceException("missing $name")
+            f.toURI().toURL().openConnection()
+        }
+
+        GroovyScriptEngine engine = new GroovyScriptEngine(rc, new GroovyClassLoader())
+        Class helper = engine.groovyClassLoader.loadClass('Helper')
+        assert helper.newInstance().ping() == 'pong'
+    }
+
+    @Test
+    void resourceLoaderTriesNextExtensionWhenFirstIsMissing() {
+        new File(temporaryFolder, 'Helper.gy').text = 'class Helper { def ping() { "pong" } }'
+
+        GroovyScriptEngine engine = new GroovyScriptEngine([temporaryFolder.toURI().toURL()] as URL[])
+        engine.config.scriptExtensions = new LinkedHashSet(['groovy', 'gy'])
+
+        Class helper = engine.groovyClassLoader.loadClass('Helper')
+        assert helper.newInstance().ping() == 'pong'
+    }
+
+    @Test
+    void resourceLoaderRequestsForwardSlashPathsForPackagedClasses() {
+        File pkg = new File(temporaryFolder, 'com/example')
+        pkg.mkdirs()
+        new File(pkg, 'Helper.groovy').text = 'package com.example; class Helper { def ping() { "pong" } }'
+
+        def requested = []
+        ResourceConnector rc = { String name ->
+            requested << name
+            File f = new File(temporaryFolder, name)
+            if (!f.exists()) throw new ResourceException("missing $name")
+            f.toURI().toURL().openConnection()
+        }
+
+        GroovyScriptEngine engine = new GroovyScriptEngine(rc)
+        engine.config.scriptExtensions = new LinkedHashSet(['groovy'])
+
+        Class helper = engine.groovyClassLoader.loadClass('com.example.Helper')
+        assert helper.newInstance().ping() == 'pong'
+        assert requested.contains('com/example/Helper.groovy')
+    }
+
+    static final class TrackingURLConnection extends URLConnection {
+        boolean inputStreamOpened
+        private final File file
+
+        TrackingURLConnection(File file) {
+            super(file.toURI().toURL())
+            this.file = file
+        }
+
+        @Override
+        void connect() {
+        }
+
+        @Override
+        InputStream getInputStream() {
+            inputStreamOpened = true
+            file.newInputStream()
+        }
+    }
 }
