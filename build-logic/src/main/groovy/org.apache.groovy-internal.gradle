@@ -80,7 +80,11 @@ tasks.withType(AbstractCompile).configureEach {
 
 tasks.withType(GroovyCompile).configureEach {
     groovyOptions.fork = true
-    groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4.cache.threshold=0", "-Dgroovy.target.bytecode=${sharedConfiguration.groovyTargetBytecodeVersion.get()}" as String]
+    groovyOptions.forkOptions.jvmArgs += [
+        "-Dgroovy.antlr4.cache.threshold=0",
+        "-Dgroovy.target.bytecode=${sharedConfiguration.groovyTargetBytecodeVersion.get()}" as String,
+        "-XX:ActiveProcessorCount=${sharedConfiguration.testActiveProcessorCount}" as String
+    ]
     groovyOptions.forkOptions.memoryMaximumSize = sharedConfiguration.groovycMaxMemory.get()
     groovyClasspath = configurations.groovyCompilerClasspath
 
@@ -91,8 +95,8 @@ tasks.withType(GroovyCompile).configureEach {
     // Forked groovyc (groovycMain_mx=1g) overlapping Test (groovyJUnit_mx=2g)
     // overcommits RAM; the worker dies and Gradle reports MessageIOException
     // / Connection reset on compileGroovy. Same limiter Test already uses.
-    // Not CI-specific: a many-core dev box runs more forks than CI does, so
-    // scale the limit with the machine rather than gating on isRunningOnCI.
+    // CI stays at 2; locally max(2, nproc/4) so a many-core box can scale
+    // without a 6-core machine growing extra fully-sized G1 workers.
     usesService(ConcurrentExecutionControlBuildService.restrict(GroovyCompile, gradle,
-        Math.max(2, Runtime.runtime.availableProcessors().intdiv(4))))
+        sharedConfiguration.groovyCompileMaxConcurrent))
 }

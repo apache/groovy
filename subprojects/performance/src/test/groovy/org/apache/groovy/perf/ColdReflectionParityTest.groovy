@@ -95,7 +95,10 @@ class ColdReflectionParityTest {
 
         def java = new File(System.getProperty('java.home'), 'bin/java').absolutePath
         def cp = System.getProperty('java.class.path')
-        def cmd = [java, '-cp', cp]
+        // Uncapped children inherit the ergonomic heap (1/4 RAM). The corpus
+        // is a short script; 256m is enough and avoids a 6g spike next to
+        // the already-running test workers.
+        def cmd = [java, '-Xms64m', '-Xmx256m', '-XX:ActiveProcessorCount=1', '-cp', cp]
         // pin the state explicitly when asked, so the on/off cases do not depend on
         // the default; null leaves the property unset to exercise the default itself
         if (coldReflection != null) cmd << "-Dgroovy.indy.cold.reflection=${coldReflection}".toString()
