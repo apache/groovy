@@ -1,0 +1,2414 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+ifndef::core-syntax[]
+:core-syntax: core-syntax.adoc
+endif::[]
+ifndef::core-operators[]
+:core-operators: core-operators.adoc
+endif::[]
+ifndef::core-program-structure[]
+:core-program-structure: core-program-structure.adoc
+endif::[]
+ifndef::core-semantics[]
+:core-semantics: core-semantics.adoc
+endif::[]
+
+[[groovy-grammar]]
+= Grammar
+
+This chapter is a complete specification of the Groovy language syntax
+recognised at compilation phase `PARSING`. It is written for readers who
+need a closed, citable grammar -- language researchers, tool authors,
+and implementers. Informal syntax, examples, and runtime meaning live
+in <<{core-syntax}#_syntax,Syntax>>,
+<<{core-operators}#groovy-operators,Operators>>,
+<<{core-program-structure}#_program_structure,Program structure>>, and
+<<{core-semantics}#_semantics,Semantics>>.
+
+The executable grammar is `src/antlr/GroovyLexer.g4` and
+`src/antlr/GroovyParser.g4`. This chapter is a complete EBNF projection
+of those files: every parser rule, lexer token, fragment, and mode
+appears. The `.g4` files remain the implementation source of truth --
+if a production here and a rule there disagree, the rule wins until
+this chapter is updated.
+
+== Status and scope
+
+Groovy's surface syntax is **not a pure context-free grammar**. The
+specification has three layers:
+
+. a *lexical context machine* (lexer modes, grouping stack, newline
+  hiding, token-type rewrites);
+. a *CFG skeleton* in Groovy Spec EBNF, using the ANTLR parser rule
+  names as nonterminals;
+. a finite list of *restrictions* R1, R2, ... that filter or
+  disambiguate that skeleton (the analogue of JLS static restrictions /
+  ECMA-262 early errors).
+
+Lexer alternatives are *ordered* (first match among those whose
+predicates hold, then longest match). Parser alternatives of
+`expression` are ordered by precedence (earlier binds tighter).
+Conversion of the parse tree to AST (`AstBuilder`, compilation phase
+`CONVERSION`), semantic analysis, type checking, and AST transforms are
+out of scope. The CFG is an intentional over-approximation: some
+programs that match it are rejected later. Those cases are listed
+under <<grammar-overapprox>> rather than hidden by inventing extra
+productions.
+
+This chapter does **not** re-introduce parser error alternatives for
+missing `)`, `]`, or `}` (GROOVY-9588). Recognition failures share the
+diagnostic path described in `ARCHITECTURE.md`.
+
+[[grammar-notation]]
+== Notation
+
+[[grammar-ebnf-legend]]
+=== Groovy Spec EBNF
+
+Productions are written in `[source,ebnf]` blocks. The operator set is
+W3C EBNF; the names are ANTLR 4 rule names.
+
+[cols="1,2,2", options="header"]
+|===
+| Construct
+| Meaning
+| Example
+
+| `N ::= ...`
+| Production for nonterminal `N`
+| `sep ::= (NL \| ';')+`
+
+| `A \| B`
+| Alternation (one of)
+| `'class' \| 'interface'`
+
+| `( ... )`
+| Grouping
+| `'static'? qualifiedName`
+
+| `X?`
+| Optional (zero or one)
+| `packageDeclaration?`
+
+| `X*`
+| Kleene star (zero or more)
+| `NL*`
+
+| `X+`
+| One or more
+| `(NL \| ';')+`
+
+| `'foo'`
+| Terminal with that exact spelling (see <<grammar-vocabulary>>)
+| `'import'`
+
+| `Identifier`
+| Terminal with no unique spelling (token name)
+| `GStringBegin`
+
+| `/* R12 */`
+| This alternative is subject to restriction R12. Lexer fragments with
+  such marks are *ordered*: try earlier alternatives first.
+| `'$' /* R2 fails */`
+
+| `fragment F`
+| Lexer fragment: not a token, only used by other lexer productions
+| `fragment Digits`
+
+| `<MODE>`
+| Lexer start condition (mode). The production applies only in that mode
+| `<DQ_GSTRING_MODE>`
+|===
+
+Concatenation is juxtaposition (W3C, not ISO 14977 comma). Square
+brackets and braces are Groovy terminals (lists, closures), so
+ISO 14977 optional/repetition brackets are not used.
+
+A bare `A | B` in a parser production is unordered alternation (the
+CFG skeleton). Where the g4 is ordered -- lexer rules, lexer
+fragments with predicates, and predicated parser alternatives -- this
+chapter annotates the restricted alternative with `/* R */`.
+Reconstructing a lexer from the unordered `|` of a fragment without
+those comments yields a different language.
+
+There is **no** `nls` nonterminal in `GroovyParser.g4`. Optional
+newlines are written `NL*` in situ. The statement separator is `sep`.
+
+Left-recursive `expression` is a CFG production. Associativity that
+ANTLR marks with `<assoc=right>` is recorded in the precedence table,
+not with a special EBNF operator. Earlier alternatives of
+`expression` bind tighter (ANTLR 4 left-recursion).
+
+ANTLR parameterized rules (`classBody[int t]`,
+`expressionList[boolean canSpread]`) are not parameterized EBNF.
+Syntactic parameters become named specialisations plus
+<<grammar-parameter-bijection>>; parameters that exist only to tag the
+CST for `AstBuilder` are notes, not syntax.
+
+Parser alternative labels (`#castExprAlt`, ...) are visitor names, not
+nonterminals.
+
+[[grammar-vocabulary]]
+== Terminal vocabulary
+
+=== Keywords and identifier sets
+
+The lexer always emits a dedicated token for a keyword spelling (except
+`val` when R5 disables it). The parser then *re-accepts* some of those
+tokens as names.
+
+Four concentric sets:
+
+* `identifier` -- unquoted names, labels, type names, unquoted method
+  names.
+* `keywords` -- after `.` (`namePart`), as map keys, as annotation
+  element names.
+* `qualifiedNameElement` -- package / import pieces, additionally
+  `'def'` `'in'` `'as'` `'trait'`.
+* `methodName` -- `identifier` or `stringLiteral` (quoted names of any
+  spelling, including reserved words).
+
+`className` is only `CapitalizedIdentifier`.
+
+[cols="1,1,1,1,2", options="header"]
+|===
+| Lexeme
+| Token
+| In `identifier`?
+| In `keywords`?
+| Notes
+
+| `abstract` `assert` `break` `case` `catch` `class` `continue` `default` `do` `else` `enum` `extends` `final` `finally` `for` `if` `implements` `import` `instanceof` `interface` `native` `new` `package` `return` `static` `strictfp` `super` `switch` `synchronized` `this` `throw` `throws` `transient` `try` `volatile` `while`
+| matching keyword token
+| no
+| yes
+| reserved
+
+| `public` `protected` `private`
+| `PUBLIC` `PROTECTED` `PRIVATE`
+| no
+| yes
+| reserved
+
+| `void` and primitives
+| `VOID` / `BuiltInPrimitiveType`
+| no
+| yes
+| primitives are one token type (see below)
+
+| `true` `false` `null`
+| `BooleanLiteral` / `NullLiteral`
+| no
+| yes
+| reserved words, not `identifier`
+
+| `def`
+| `DEF`
+| no
+| yes
+| also `qualifiedNameElement`; a modifier, not a type production
+
+| `const` `goto` `threadsafe`
+| `CONST` `GOTO` `THREADSAFE`
+| no
+| yes
+| reserved and unused. Not in `identifier`: a bare use is a *parse*
+  error. In `keywords`, so legal after `.`, as a map key, and as an
+  annotation element name.
+
+| `non-sealed`
+| `NON_SEALED`
+| no
+| yes
+| one token, including the hyphen
+
+| `as` `in` `trait` `record` `sealed` `permits` `var` `yield` `async` `await` `defer` `module`
+| matching token
+| **yes**
+| `module`: **no**; others: yes
+| contextual. `module` is in `identifier` only (for `import module`)
+
+| `val`
+| `VAL` or `Identifier` (R5)
+| **yes** (always: token `VAL` or `Identifier`)
+| **yes** only when the token is `VAL`
+| feature flag `groovy.val.enabled` (default `true`). When false, `val`
+  is `Identifier` and is therefore not a `variableModifier`.
+|===
+
+`BuiltInPrimitiveType` is a **single** token type whose spellings are
+the fragments `boolean` `char` `byte` `short` `int` `long` `float`
+`double`. Those fragments are not independent tokens.
+
+`it` is **not** a token. Implicit closure parameters are semantic.
+
+The tutorial keyword tables in <<{core-syntax}#_syntax,Syntax>> are a
+user-facing cut. This chapter follows the g4. In particular the grammar
+has `yield` (not `yields`), and `async` / `await` / `defer` / `module` /
+`val` as tokens.
+
+=== Operators and separators
+
+Lexer tokens with unique spelling (parser productions quote the
+lexeme):
+
+[cols="2,1,3", options="header"]
+|===
+| Lexeme
+| Token
+| Role
+
+| `..` `<..` `..<` `<..<`
+| `RANGE_INCLUSIVE` `RANGE_EXCLUSIVE_LEFT` `RANGE_EXCLUSIVE_RIGHT` `RANGE_EXCLUSIVE_FULL`
+| ranges (shift precedence)
+
+| `*.` `?.` `??.` `.&` `::`
+| `SPREAD_DOT` `SAFE_DOT` `SAFE_CHAIN_DOT` `METHOD_POINTER` `METHOD_REFERENCE`
+| path operators. `'??.'` is syntax even if omitted from the operators tutorial
+
+| `?[`
+| `SAFE_INDEX`
+| safe index; pushes grouping (R9)
+
+| `?:` `?=`
+| `ELVIS` `ELVIS_ASSIGN`
+| elvis / elvis-assign
+
+| `=~` `==~`
+| `REGEX_FIND` `REGEX_MATCH`
+| regex find / match
+
+| `**` `**=`
+| `POWER` `POWER_ASSIGN`
+| power
+
+| `<=>` `===` `!==` `==>`
+| `SPACESHIP` `IDENTICAL` `NOT_IDENTICAL` `IMPLIES`
+|
+
+| `->`
+| `ARROW`
+| closure / lambda / switch-expression arrow
+
+| `!instanceof` `!in`
+| `NOT_INSTANCEOF` `NOT_IN`
+| R6
+
+| `(` `)` `{` `}` `[` `]`
+| `LPAREN` `RPAREN` `LBRACE` `RBRACE` `LBRACK` `RBRACK`
+| grouping; each opener `pushMode(DEFAULT_MODE)`
+
+| `;` `,` `.` `@` `...`
+| `SEMI` `COMMA` `DOT` `AT` `ELLIPSIS`
+|
+
+| `=` `>` `<` `!` `~` `?` `:` `==` `\<=` `>=` `!=` `&&` `\|\|` `++` `--` `+` `-` `*` `/` `&` `\|` `^` `%`
+| `ASSIGN` `GT` `LT` `NOT` `BITNOT` `QUESTION` `COLON` `EQUAL` `LE` `GE` `NOTEQUAL` `AND` `OR` `INC` `DEC` `ADD` `SUB` `MUL` `DIV` `BITAND` `BITOR` `XOR` `MOD`
+| `/` as an *operator* is `DIV`, never written `'/'` in parser EBNF (R1)
+
+| `+=` `-=` `*=` `/=` `&=` `\|=` `^=` `%=` `<<=` `>>=` `>>>=`
+| matching `*_ASSIGN` tokens
+| shift *assignments* are tokens; shift *operators* are not
+|===
+
+There are **no** `LSHIFT` / `RSHIFT` / `URSHIFT` lexer tokens. The
+parser composes `'<' '<'`, `'>' '>'`, `'>' '>' '>'` so
+`List<List<T>>` can close.
+
+=== Literals as token names
+
+`IntegerLiteral`, `FloatingPointLiteral`, `BooleanLiteral`,
+`NullLiteral`, `StringLiteral`, `GStringBegin`, `GStringPart`,
+`GStringEnd`, `GStringPathPart`, `Identifier`, `CapitalizedIdentifier`,
+`NL`.
+
+Quote style of an interpolating string is **not** a parser token:
+`TdqGStringBegin`, `SlashyGStringBegin`, and
+`DollarSlashyGStringBegin` are rewritten to `GStringBegin` (similarly
+`GStringPart` / `GStringEnd`).
+
+[[grammar-lexical]]
+== Lexical structure
+
+=== Input elements
+
+The lexer produces a stream of default-channel tokens for the parser,
+plus skipped or hidden trivia. Successful tokenisation never takes the
+`UNEXPECTED_CHAR` / unclosed-comment / invalid-octal paths
+(`AbstractLexer`); those are diagnostics, not language
+(<<grammar-invalid>>).
+
+=== White space and line escapes
+
+[source,ebnf]
+----
+WS ::= ([ \t]+ | LineEscape+)          /* skip */
+
+fragment LineEscape     ::= '\\' LineTerminator
+fragment LineTerminator ::= '\r'? '\n' | '\r'
+----
+
+Spaces and tabs are skipped. A backslash immediately followed by a line
+terminator is also skipped (line continuation) and is **not** `NL`.
+
+=== Line terminators, comments, shebang
+
+[source,ebnf]
+----
+NL ::= LineTerminator                  /* then R9 */
+
+SL_COMMENT ::=
+    '//' ~[\r\n\uFFFF]*                /* -> type(NL); then R9 */
+
+ML_COMMENT ::=
+    '/*' .*? ('*/' | EOF)              /* -> type(NL); then R10.
+                                          unclosed: diagnostic at opener */
+
+SH_COMMENT ::=                         /* skip; R11 */
+    '#!' ShCommand (LineTerminator '#!' ShCommand)*
+
+fragment ShCommand ::= ~[\r\n\uFFFF]*
+----
+
+There is no comment channel. `//` and `/* ... */` are rewritten to
+token type `NL`, so a comment can act as a statement separator when it
+stays on the default channel.
+
+Groovydoc (`/** ... */` and runtime `/**@ ... */`) is **not** a
+distinct token. It is `ML_COMMENT`; `GroovydocManager` attaches it
+after parse. Groovydoc *tag* semantics are excluded.
+
+`SH_COMMENT` is skipped when R11 holds (`tokenIndex == 0`). Leading
+skipped `WS` (spaces, tabs, line-escapes) does not increment
+`tokenIndex`, so a shebang after leading spaces is still skipped. A
+prior *default-channel* token -- including a leading `NL` -- is not
+allowed. Extra `#!` lines immediately after a line terminator are
+part of the same `SH_COMMENT` token.
+
+=== The grouping stack and newline significance
+
+`(`/`[`/`{`/`?[` record a grouping frame (`enterParen`) and
+`pushMode(DEFAULT_MODE)`. The matching closer pops both.
+
+Restriction R9: `NL` (and `SL_COMMENT` rewritten to `NL`) is moved to
+the **hidden** channel when the stack top is:
+
+* `'('` whose *preceding default-channel token* is not `'try'`, or
+* `'['`, or
+* `'?['`.
+
+Newlines inside `{ ... }` are **significant**. Try-with-resources
+`try ( ... )` does **not** hide newlines (`TRY` on the `(` frame).
+Angle brackets `'<'` / `'>'` do **not** push a grouping frame, which
+is why `typeArguments` writes `NL*` explicitly.
+
+`$\{` in a GString also calls `enterParen()` (see
+<<grammar-gstring-lexical>>), so the interpolation's `'{'` -- not an
+enclosing `'('` / `'['` -- is the stack top while the closure body is
+tokenised.
+
+Restriction R10: `/* ... */` remains a visible `NL` only when it is
+**not** inside grouping (R9) **and** only whitespace remains until end
+of line or file. So `a /*c*/ b` is not two statements; `a /*c*/` then
+newline then `b` is.
+
+Inside grouping, hidden `NL` is absent from the parser token stream.
+Parser productions still write `NL*` / `sep`; those match only
+*visible* `NL`.
+
+`lastTokenType` (used by slashy-string vs `DIV`, R1) is updated only
+for default-channel tokens. Hidden newlines do not change it.
+
+=== Identifiers
+
+[source,ebnf]
+----
+CapitalizedIdentifier ::=
+      [A-Z] JavaLetterOrDigit*
+    | ~[\u0000-\u007F\uD800-\uDBFF]    /* R7 BMP, uppercase */
+      JavaLetterOrDigit*
+    | [\uD800-\uDBFF] [\uDC00-\uDFFF]  /* R7 supplementary, uppercase */
+      JavaLetterOrDigit*
+
+Identifier ::=
+      [a-z$_] JavaLetterOrDigit*
+    | ~[\u0000-\u007F\uD800-\uDBFF]    /* R7 BMP, not uppercase */
+      JavaLetterOrDigit*
+    | [\uD800-\uDBFF] [\uDC00-\uDFFF]  /* R7 supplementary, not uppercase */
+      JavaLetterOrDigit*
+
+fragment JavaLetter ::=
+      [a-zA-Z$_]
+    | ~[\u0000-\u007F\uD800-\uDBFF]    /* R7 BMP start, not ignorable */
+    | [\uD800-\uDBFF] [\uDC00-\uDFFF]  /* supplementary start (code point) */
+
+fragment JavaLetterOrDigit ::=
+      [a-zA-Z0-9$_]
+    | ~[\u0000-\u007F\uD800-\uDBFF]    /* R7 BMP part, not ignorable */
+    | [\uD800-\uDBFF] [\uDC00-\uDFFF]  /* supplementary part (code point) */
+
+fragment JavaLetterInGString ::=
+    JavaLetter                         /* R8: last consumed char is not '$' */
+
+fragment JavaLetterOrDigitInGString ::=
+    JavaLetterOrDigit                  /* R8 */
+
+fragment IdentifierInGString ::=
+    JavaLetterInGString JavaLetterOrDigitInGString*
+----
+
+ASCII is a predicate-free DFA split (`[A-Z]` vs `[a-z$_]`).
+Supplementary-plane letters classify capitalized vs not from the
+decoded code point, not `LA(-1)` (a low surrogate is never uppercase;
+GROOVY-12398). Identifier-ignorable start and continuation characters
+are rejected on the *BMP* path (R7); the supplementary-plane path
+tests `Character.isJavaIdentifierStart` / `Part` and case only.
+GString identifiers cannot contain `$` (R8).
+
+`$` and `_` are allowed in `Identifier`. A leading `$` or `_` is
+always `Identifier`, never `CapitalizedIdentifier`.
+
+This is stricter and more precise than the identifier ranges in the
+syntax tutorial.
+
+=== `!in` / `!instanceof` / `val`
+
+See R5 and R6.
+
+=== Numeric literals
+
+[source,ebnf]
+----
+IntegerLiteral ::=
+      (DecimalIntegerLiteral | HexIntegerLiteral
+       | OctalIntegerLiteral | BinaryIntegerLiteral)
+      Underscore?                      /* trailing '_' is then a diagnostic */
+
+fragment DecimalIntegerLiteral ::= DecimalNumeral IntegerTypeSuffix?
+fragment HexIntegerLiteral     ::= HexNumeral     IntegerTypeSuffix?
+fragment OctalIntegerLiteral   ::= OctalNumeral   IntegerTypeSuffix?
+fragment BinaryIntegerLiteral  ::= BinaryNumeral  IntegerTypeSuffix?
+fragment IntegerTypeSuffix     ::= [lLiIgG]
+fragment DecimalNumeral        ::= '0' | [1-9] (Digits? | Underscores Digits)
+fragment Digits                ::= [0-9] ([0-9_]* [0-9])?
+fragment Underscores           ::= '_'+
+fragment Underscore            ::= '_'
+fragment HexNumeral            ::= '0' [xX] HexDigits
+fragment HexDigits             ::= HexDigit ([0-9a-fA-F_]* HexDigit)?
+fragment HexDigit              ::= [0-9a-fA-F]
+fragment OctalNumeral          ::= '0' '_'* OctalDigits
+fragment OctalDigits           ::= [0-7] ([0-7_]* [0-7])?
+fragment BinaryNumeral         ::= '0' [bB] BinaryDigits
+fragment BinaryDigits          ::= [01] ([01_]* [01])?
+
+FloatingPointLiteral ::=
+      (DecimalFloatingPointLiteral | HexadecimalFloatingPointLiteral)
+      Underscore?
+
+fragment DecimalFloatingPointLiteral ::=
+      Digits? '.' Digits ExponentPart? FloatTypeSuffix?
+    | Digits ExponentPart FloatTypeSuffix?
+    | Digits FloatTypeSuffix
+fragment ExponentPart    ::= [eE] [+-]? Digits
+fragment FloatTypeSuffix ::= [fFdDgG]
+fragment HexadecimalFloatingPointLiteral ::=
+    HexSignificand BinaryExponent FloatTypeSuffix?
+fragment HexSignificand ::= HexNumeral '.'? | '0' [xX] HexDigits? '.' HexDigits
+fragment BinaryExponent ::= [pP] [+-]? Digits
+----
+
+Suffix `G`/`g` is `BigInteger` / `BigDecimal` at conversion, not a
+distinct token. Invalid octal (`08`, `09`, ...) and trailing `_` are
+lexer diagnostics, not language (<<grammar-invalid>>).
+
+=== Ordinary string literals (`StringLiteral`)
+
+A string with **no** interpolating `$` is `StringLiteral`:
+
+[source,ebnf]
+----
+StringLiteral ::=
+      '"'  DqStringCharacter*  '"'
+    | "'"  SqStringCharacter*  "'"
+    | '/'  SlashyStringCharacter+ '/'     /* R1; at least one inner char */
+    | '"""' TdqStringCharacter* '"""'
+    | "'''" TsqStringCharacter* "'''"
+    | '$/' DollarSlashyStringCharacter+ '/$'
+
+fragment DqStringCharacter ::= ~["\r\n\\$] | EscapeSequence
+fragment SqStringCharacter ::= ~['\r\n\\]  | EscapeSequence
+fragment TdqStringCharacter ::=
+      ~["\\$]
+    | '"' /* R3 */
+    | EscapeSequence
+fragment TsqStringCharacter ::=
+      ~['\\]
+    | "'" /* R3 */
+    | EscapeSequence
+fragment SlashyStringCharacter ::=
+      '\\' '/'
+    | '$'                 /* R2 fails */
+    | ~[/$\u0000]
+fragment DollarSlashyStringCharacter ::=
+      '$$'
+    | '$/$'               /* R4: LA(-4) != '$' */
+    | '$/'                /* R4: LA(1) != '$' */
+    | '/'                 /* R4: LA(1) != '$' */
+    | '$'                 /* R2 fails */
+    | ~[/$\u0000]
+
+fragment EscapeSequence ::=
+      '\\' [btnfrs"'\\]
+    | OctalEscape
+    | UnicodeEscape                    /* '\' 'u' HexDigit{4} -- exactly one u */
+    | '\\' '$'
+    | LineEscape
+fragment OctalEscape ::=
+      '\\' [0-7]
+    | '\\' [0-7] [0-7]
+    | '\\' [0-3] [0-7] [0-7]
+fragment UnicodeEscape ::=
+    '\\' 'u' HexDigit HexDigit HexDigit HexDigit
+----
+
+Empty `//` is `SL_COMMENT`, not an empty slashy string (the slashy
+alternative requires `SlashyStringCharacter+`). Empty `$/$` is not
+`StringLiteral` either.
+
+The g4 comment "Groovy allows 1 or more u's after the backslash" does
+**not** match the production: `UnicodeEscape` is exactly one `u`.
+
+[[grammar-gstring-lexical]]
+=== GString lexical contexts
+
+An interpolating string is **not** `StringLiteral`. At the first
+interpolating `$` the lexer emits `GStringBegin` and enters a mode
+machine. The parser later sees only:
+
+[source,ebnf]
+----
+gstring ::=
+    GStringBegin gstringValue (GStringPart gstringValue)* GStringEnd
+
+gstringValue ::=
+    gstringPath
+  | closure
+
+gstringPath ::=
+    identifier GStringPathPart*
+----
+
+==== Modes
+
+[cols="1,3", options="header"]
+|===
+| Mode
+| Role
+
+| `DEFAULT_MODE`
+| Normal source. Also re-entered for `$\{ ... }` and nested grouping.
+
+| `DQ_GSTRING_MODE`
+| Body of `"..."` after the first interpolating `$`
+
+| `TDQ_GSTRING_MODE`
+| Body of `"""..."""`
+
+| `SLASHY_GSTRING_MODE`
+| Body of `/.../`
+
+| `DOLLAR_SLASHY_GSTRING_MODE`
+| Body of `$/.../$`
+
+| `GSTRING_TYPE_SELECTOR_MODE`
+| Just after `$`: either `'{'` or an `IdentifierInGString`
+
+| `GSTRING_PATH_MODE`
+| After a bare identifier: zero or more `'.' IdentifierInGString`,
+  then one-character pushback (`RollBackOne`)
+|===
+
+Opening (all in `DEFAULT_MODE`). The last three rules rewrite their
+token type to `GStringBegin`; each still pushes its own body mode and
+then `GSTRING_TYPE_SELECTOR_MODE`:
+
+[source,ebnf]
+----
+GStringBegin ::=
+    '"' DqStringCharacter* '$'
+    /* push DQ_GSTRING_MODE, GSTRING_TYPE_SELECTOR_MODE */
+
+TdqGStringBegin ::=
+    '"""' TdqStringCharacter* '$'
+    /* type(GStringBegin);
+       push TDQ_GSTRING_MODE, GSTRING_TYPE_SELECTOR_MODE */
+
+SlashyGStringBegin ::=                 /* R1; R2 on the interpolating '$' */
+    '/' SlashyStringCharacter* '$'
+    /* type(GStringBegin);
+       push SLASHY_GSTRING_MODE, GSTRING_TYPE_SELECTOR_MODE */
+
+DollarSlashyGStringBegin ::=           /* R2 on the interpolating '$' */
+    '$/' DollarSlashyStringCharacter* '$'
+    /* type(GStringBegin);
+       push DOLLAR_SLASHY_GSTRING_MODE, GSTRING_TYPE_SELECTOR_MODE */
+----
+
+Quote bodies accumulate with `-> more` (not parser tokens). Every
+body mode has a character rule:
+
+[source,ebnf]
+----
+<DQ_GSTRING_MODE>
+GStringEnd       ::= '"'               /* popMode */
+GStringPart      ::= '$'               /* push GSTRING_TYPE_SELECTOR_MODE */
+GStringCharacter ::= DqStringCharacter /* more */
+
+<TDQ_GSTRING_MODE>
+TdqGStringEnd       ::= '"""'          /* type(GStringEnd), popMode */
+TdqGStringPart      ::= '$'            /* type(GStringPart);
+                                          push GSTRING_TYPE_SELECTOR_MODE */
+TdqGStringCharacter ::= TdqStringCharacter /* more */
+
+<SLASHY_GSTRING_MODE>
+SlashyGStringEnd       ::= '$'? '/'    /* type(GStringEnd), popMode */
+SlashyGStringPart      ::= '$'         /* R2; type(GStringPart);
+                                          push GSTRING_TYPE_SELECTOR_MODE */
+SlashyGStringCharacter ::= SlashyStringCharacter /* more */
+
+<DOLLAR_SLASHY_GSTRING_MODE>
+DollarSlashyGStringEnd       ::= '/$'  /* type(GStringEnd), popMode */
+DollarSlashyGStringPart      ::= '$'   /* R2; type(GStringPart);
+                                          push GSTRING_TYPE_SELECTOR_MODE */
+DollarSlashyGStringCharacter ::= DollarSlashyStringCharacter /* more */
+----
+
+Selector and path:
+
+[source,ebnf]
+----
+<GSTRING_TYPE_SELECTOR_MODE>
+GStringLBrace     ::= '{'
+    /* enterParen(); type(LBRACE); popMode; push DEFAULT_MODE */
+GStringIdentifier ::= IdentifierInGString
+    /* type(Identifier); popMode; push GSTRING_PATH_MODE */
+
+<GSTRING_PATH_MODE>
+GStringPathPart ::= '.' IdentifierInGString
+RollBackOne     ::= .
+    /* popMode. If EOF after '"' or '/', type(GStringEnd);
+       else channel HIDDEN. emit() calls rollbackOneChar()
+       only when the type is still RollBackOne. */
+----
+
+`RollBackOne` is not a parser terminal. When the type remains
+`RollBackOne`, `emit()` rolls the input back one character so the
+parent GString mode can re-lex it. The EOF-after-`"`/`/` path *is*
+the `GStringEnd` token and does **not** roll back.
+
+`gstringPath` is only `identifier` followed by `'.' ident` segments.
+A method call in interpolation must be a `closure`:
+`"$\{foo.bar()}"`, not `"$foo.bar()"`.
+
+==== How `$\{ ... }` contains real Groovy
+
+`GStringLBrace` records a `'{'` grouping frame (`enterParen()`),
+emits `LBRACE`, and pushes `DEFAULT_MODE`. The parser matches
+`closure`. So `"$\{ x + 1 }"`, `"$\{ def a = 1; a }"`, and
+`"$\{ -> x }"` are all `gstringValue -> closure` syntactically.
+Conversion may unwrap a no-arrow single expression; that unwrap is not
+this grammar.
+
+Because `'('`, `'['`, `'{'`, and `'?['` all `pushMode(DEFAULT_MODE)`,
+an interpolation may contain nested strings and GStrings. That is mode
+nesting, not a CFG of characters.
+
+==== Dollar vs interpolation (R2)
+
+In `"..."` and `"""..."""`, every `$` that is not `\$` starts
+interpolation.
+
+In `/.../` and `$/.../$`, `$` starts interpolation only if R2 holds.
+Therefore `/$5/` and `/$()/` are legal slashy *strings*. The same text
+in double quotes is a GString (or a parse failure at the selector).
+
+=== Slashy string vs division vs comment (R1)
+
+Tokenisation of `/` is a three-way (plus comment):
+
+* `//` -> `SL_COMMENT`
+* slashy `StringLiteral` / `SlashyGStringBegin` when R1 holds and the
+  next character is not `*` (`/*` is `ML_COMMENT`)
+* otherwise `DIV`
+
+R1 forbids slashy strings when the previous **default-channel** token
+is one of `DEC`, `INC`, `THIS`, `RBRACE`, `RBRACK`, `RPAREN`,
+`GStringEnd`, `NullLiteral`, `StringLiteral`, `BooleanLiteral`,
+`IntegerLiteral`, `FloatingPointLiteral`, `Identifier`,
+`CapitalizedIdentifier`.
+
+Examples: `a++ / b` is division; `list[i] / n` is division;
+`x = /foo/` is a slashy string (`ASSIGN` is not in the set).
+
+[[grammar-restrictions]]
+== Restrictions
+
+Each restriction cites its implementation site. They are not CFG.
+
+=== Lexical
+
+**R1** (`isRegexAllowed`, `LA(1) != '*'`)::
+`/.../` is a slashy string only if the previous default-channel token
+is not in the set listed above, and the character after the opening
+`/` is not `*`.
+
+**R2** (`isFollowedByJavaLetterInGString`)::
+In slashy and dollar-slashy *text* (including the interpolating `$` of
+`SlashyGStringBegin` / `DollarSlashyGStringBegin` and the `'$'`
+alternative of `SlashyStringCharacter` / `DollarSlashyStringCharacter`),
+`$` opens interpolation iff the next character is `{`, `_`, an ASCII
+letter, or a non-ASCII Java identifier part (surrogate pairs included).
+Otherwise `$` is a string character. Double-quoted GString `$`
+(unescaped) always starts interpolation.
+
+**R3** (`TdqStringCharacter` / `TsqStringCharacter`)::
+An interior `"` (resp. `'`) is a character when the g4 lookahead holds:
+
+    LA(1) != Q || LA(2) != Q
+      || LA(3) == Q && (LA(4) != Q || LA(5) != Q)
+
+where `Q` is the quote. That is the four-/five-quote exception: a run
+that looks like a closer is a character plus a closer when a fourth
+quote follows. It is not merely "not the start of `"""` / `'''`".
+
+**R4** (`DollarSlashyStringCharacter`)::
+Ordered, predicated alternatives:
+
+* `$/$` (escaped closer) only if `LA(-4) != '$'` after the match;
+* `$/` (escaped slash) only if `LA(1) != '$'`;
+* `/` as a character only if `LA(1) != '$'`;
+* `$` as a character only if R2 *fails*.
+
+**R5** (`VAL : 'val' {isValEnabled()}?`)::
+If `groovy.val.enabled` is `false` (default `true`), `val` is
+`Identifier`, not `VAL`.
+
+**R6** (`NOT_INSTANCEOF`, `NOT_IN`)::
+`!instanceof` is one token only if followed by space / tab / CR / LF.
+`!in` is one token only if followed by space / tab / CR / LF / `[` /
+`(` / `{`. Otherwise they are `NOT` plus `INSTANCEOF` / `IN`
+(`!internal` is not `NOT_IN`).
+
+**R7** (`CapitalizedIdentifier` / `Identifier`, `JavaLetter`,
+`JavaLetterOrDigit`)::
+ASCII is the DFA split `[A-Z]` vs `[a-z$_]`. BMP non-ASCII starts and
+continuations require `Character.isJavaIdentifierStart` / `Part` **and
+not** `Character.isIdentifierIgnorable`. Supplementary-plane letters
+use the decoded code point (GROOVY-12398) and test start/part plus
+case only -- they do **not** test identifier-ignorable.
+
+**R8** (`JavaLetterInGString`)::
+GString identifiers cannot contain `$`.
+
+**R9** (`isInsideParens` / `ignoreTokenInsideParens`)::
+Newline hiding as in <<grammar-lexical>>.
+
+**R10** (`ignoreMultiLineCommentConditionally`)::
+Multiline-comment channel as in <<grammar-lexical>>.
+
+**R11** (`SH_COMMENT`)::
+`#!` is skipped when `tokenIndex == 0`. Skipped `WS` does not increment
+`tokenIndex`; a prior default-channel token (including `NL`) does.
+This is not "the first character of the file must be `#`".
+
+=== Parser disambiguation and context gates
+
+**R12** (`isInvalidMethodDeclaration` on `scriptStatement`)::
+A script-level `methodDeclaration` is refused when the next two tokens
+are `(Identifier | CapitalizedIdentifier | StringLiteral | YIELD)`
+immediately followed by `'('`. That input is a call (or `yield(...)`),
+parsed through `statement`.
+
+**R13** (`isInvalidLocalVariableDeclaration`)::
+A `localVariableDeclaration` is refused when the upcoming tokens look
+like a command rather than a typed local. The predicate:
+
+* walks a dotted name (`foo.Bar`) and then inspects the last segment;
+* treats the construct as a local if that segment is a primitive, a
+  modifier, starts with an uppercase code point, is `@` (unless it is
+  an annotated `for` / `while` / `do`), or is followed by `'='` /
+  `'<'` / `'['` at the documented `LT` offsets (`string x = 1` is a
+  local; `string x` is a command).
+
+Consequence: `String x` and `java.lang.String x` are locals;
+`string x` and `java.lang.string x` are commands.
+
+**R14** (`isIdentifierAssign` on `elementValues`)::
+`@Foo(a = 1)` is `elementValuePairs` only. A single `elementValue` is
+not attempted when `LT(1)` is in FIRST(`elementValuePairName`) and
+`LT(2)` is `'='` (GROOVY-12398 / AdaptivePredict).
+
+**R15** (`classBody` `{ $t == 2 }?`)::
+Enum bodies may start with `enumConstants`. Other `classBody` values
+may not.
+
+**R16** (`methodDeclaration` `{ $ct == 3 }?`)::
+`default` annotation element values only when the enclosing type is
+`@interface` (`ct == 3`). Script methods use `ct == 9` and do not get
+this alternative.
+
+**R17** (`isFollowingArgumentsOrClosure`)::
+In `commandExpression`, the optional `argumentList` after `expression`
+is absent if that expression is a postfix path whose last
+`pathElement` has `t` equal to 2 or 3 (already `arguments` or
+`closureOrLambdaExpression`).
+
+**R18** (`pathExpression` `{ LT(2) == DOT }? STATIC`)::
+Bare `static` is a path head only when immediately followed by `.`
+(e.g. `static.unused = { -> }`).
+
+**R19** (`inSwitchExpressionLevel > 0`)::
+`yield expression` is a statement only while parsing
+`switchExpression`.
+
+**R20** (`inAsyncClosureLevel > 0`)::
+`defer statementExpression` only while parsing the `async`
+closure/lambda alternative of `expression`.
+
+**R21** (`AstBuilder.visitExpressionListElement`)::
+`'*' expression` (spread) is parsed everywhere
+`expressionListElement` occurs; **rejected** in `forInit` /
+`forUpdate` (`canSpread == false`). This is conversion, not
+recognition.
+
+`<assoc=right>` on `==>`, ternary / elvis, and assignment is CFG
+disambiguation of an ambiguous grammar, recorded in the precedence
+table, not numbered here.
+
+[[grammar-compilation-unit]]
+== Compilation units
+
+The parser start rule is `compilationUnit`. One compilation unit is one
+source file: optional package, then a sequence of script statements,
+then end of file. Leading `NL` tokens (blank lines, and comments
+rewritten to `NL`) are permitted before the package.
+
+[source,ebnf]
+----
+compilationUnit ::=
+    NL* (packageDeclaration sep?)? scriptStatements? EOF
+
+scriptStatements ::=
+    scriptStatement (sep scriptStatement)* sep?
+
+scriptStatement ::=
+      importDeclaration
+    | typeDeclaration
+    | methodDeclaration                 /* R12; g4 call is methodDeclaration[3, 9] */
+    | statement
+
+packageDeclaration ::=
+    annotationsOpt 'package' qualifiedName
+
+importDeclaration ::=
+    annotationsOpt 'import'
+    (   'module' qualifiedName
+      | 'static'? qualifiedName ('.' '*' | 'as' identifier)?
+    )
+
+sep ::=
+    (NL | ';')+
+----
+
+A compilation unit is a *script* in the syntactic sense: it may mix
+imports, type declarations, script-level methods, and statements in
+one list. Conversion wraps script statements in a generated class;
+that wrapping is not syntax. There is no Java-style "one public type
+per compilation unit" production. JEP 445 compatible-script *shape* is
+conversion, not a second start rule.
+
+=== Package and import
+
+If a package declaration is present it is the first non-`NL`
+construct; the CFG already enforces that.
+
+`importDeclaration` has two branches:
+
+* `import module qualifiedName` -- JEP 476-style module import. The g4
+  does not admit `import module p.*` or `import module p as x`.
+* `import static? qualifiedName` with optional `.*` or
+  `as identifier`.
+
+`'module'` is token `MODULE` and is also an alternative of
+`identifier`.
+
+Default imports (`java.lang.*`, ...) are inserted later. They are not
+productions.
+
+Package names may contain `'def'` `'in'` `'as'` `'trait'`
+(`qualifiedNameElement`) for integration with existing Java packages.
+
+=== Script-level methods (R12)
+
+The g4 writes the method alternative as
+`{ !SemanticPredicates.isInvalidMethodDeclaration(_input) }?
+methodDeclaration[3, 9]`.
+
+R12: if the next two tokens are a name or string (or `yield`)
+immediately followed by `'('`, the alternative is not taken.
+
+The parameters `[3, 9]` are not EBNF. `9` records "enclosing type is
+script" for conversion. The `default` annotation-element alternative
+is gated by R16 and does **not** apply to script methods.
+
+A script method without a body is accepted by the CFG (the body is
+optional) and rejected by `AstBuilder`. That check is conversion, not
+R12.
+
+=== Newlines between script statements
+
+Adjacent `scriptStatement`s require `sep`: at least one visible
+newline or semicolon. Two statements on one line need `';'`. A
+trailing `sep` before `EOF` is allowed.
+
+Inside `'('`, `'['`, or `'?['`, `NL` is hidden (R9), so those
+newlines do not satisfy `sep`. Inside `'{'` they do. The
+try-with-resources list uses `sep` between resources *because*
+`try (` is exempt from R9.
+
+[[grammar-types-and-names]]
+== Types and names
+
+[source,ebnf]
+----
+qualifiedName ::=
+    qualifiedNameElement ('.' qualifiedNameElement)*
+
+qualifiedNameElement ::=
+    identifier | 'def' | 'in' | 'as' | 'trait'
+
+qualifiedNameElements ::=
+    (qualifiedNameElement '.')*
+
+qualifiedClassName ::=
+    qualifiedNameElements identifier
+
+qualifiedStandardClassName ::=
+    qualifiedNameElements className ('.' className)*
+
+className ::=
+    CapitalizedIdentifier
+
+identifier ::=
+      Identifier
+    | CapitalizedIdentifier
+    | 'as' | 'async' | 'await' | 'defer' | 'in' | 'module'
+    | 'permits' | 'record' | 'sealed' | 'trait' | 'val' | 'var' | 'yield'
+
+keywords ::=
+      'abstract' | 'as' | 'assert' | 'async' | 'await' | 'break'
+    | 'case' | 'catch' | 'class' | 'const' | 'continue' | 'def'
+    | 'default' | 'defer' | 'do' | 'else' | 'enum' | 'extends'
+    | 'final' | 'finally' | 'for' | 'goto' | 'if' | 'implements'
+    | 'import' | 'in' | 'instanceof' | 'interface' | 'native'
+    | 'new' | 'non-sealed' | 'package' | 'permits' | 'record'
+    | 'return' | 'sealed' | 'static' | 'strictfp' | 'super'
+    | 'switch' | 'synchronized' | 'this' | 'throw' | 'throws'
+    | 'transient' | 'trait' | 'threadsafe' | 'try' | 'val' | 'var'
+    | 'volatile' | 'while' | 'yield'
+    | NullLiteral | BooleanLiteral
+    | BuiltInPrimitiveType | 'void'
+    | 'public' | 'protected' | 'private'
+
+builtInType ::=
+    BuiltInPrimitiveType | 'void'
+
+type ::=
+    annotationsOpt
+    ( 'void'                           /* parsed; rejected at conversion */
+    | primitiveType
+    | referenceType
+    )
+    dim0*
+
+primitiveType ::=
+    BuiltInPrimitiveType
+
+referenceType ::=                       /* GROOVY-12319 rare types */
+    qualifiedClassName
+    (typeArguments ('.' identifier typeArguments?)*)?
+
+standardType ::=                        /* restricted form of type */
+    annotationsOpt
+    ( primitiveType | standardClassOrInterfaceType )
+    dim0*
+
+standardClassOrInterfaceType ::=        /* restricted form of referenceType */
+    qualifiedStandardClassName
+    (typeArguments ('.' className typeArguments?)*)?
+
+matchingType ::=                        /* instanceof pattern (JEP 394) */
+    standardType identifier?
+
+notInstanceofType ::=
+    matchingType
+  | castParExpression
+
+typeParameters ::=
+    '<' NL* typeParameter (',' NL* typeParameter)* NL* '>'
+
+typeParameter ::=
+    annotationsOpt className ('extends' NL* typeBound)?
+
+typeBound ::=
+    type ('&' NL* type)*
+
+typeList ::=
+    type (',' NL* type)*
+
+typeArguments ::=
+    '<' NL* typeArgument (',' NL* typeArgument)* NL* '>'
+
+typeArgument ::=
+    type
+  | annotationsOpt '?' (('extends' | 'super') NL* type)?
+
+typeArgumentsOrDiamond ::=
+    '<' '>'
+  | typeArguments
+
+nonWildcardTypeArguments ::=
+    '<' NL* typeList NL* '>'
+
+dim0 ::=
+    annotationsOpt '[' ']'
+
+dim1 ::=
+    annotationsOpt '[' expression ']'
+
+intersectionType ::=
+    type ('&' NL* type)*
+
+castParExpression ::=
+    '(' intersectionType ')'
+
+coercionType ::=
+    castParExpression                  /* (T) or (A & B & ...) */
+  | type
+
+annotatedQualifiedClassName ::=
+    annotationsOpt qualifiedClassName
+
+qualifiedClassNameList ::=
+    annotatedQualifiedClassName (',' NL* annotatedQualifiedClassName)*
+----
+
+`'module'` is in `identifier` and **not** in `keywords`. Intersection
+types appear in **casts and `as`**, not as general types. `void` as a
+value type is parsed (`type` has a `'void'` alternative marked error
+in the g4) and rejected later.
+
+`instanceof` takes `matchingType` (optional pattern variable).
+`!instanceof` takes `notInstanceofType`; conversion rejects
+intersection on `!instanceof`.
+
+[[grammar-declarations]]
+== Declarations
+
+=== Modifiers
+
+[source,ebnf]
+----
+typeDeclaration ::=
+    classOrInterfaceModifiersOpt classDeclaration
+
+classOrInterfaceModifiersOpt ::=
+    (classOrInterfaceModifiers NL*)?
+
+classOrInterfaceModifiers ::=
+    classOrInterfaceModifier (NL* classOrInterfaceModifier)*
+
+classOrInterfaceModifier ::=
+      annotation
+    | 'public' | 'protected' | 'private' | 'static' | 'abstract'
+    | 'sealed' | 'non-sealed'
+    | 'final'                          /* class only, semantically */
+    | 'strictfp'
+    | 'default'                        /* interface only, semantically */
+
+modifier ::=
+      classOrInterfaceModifier
+    | 'native' | 'synchronized' | 'transient' | 'volatile'
+    | 'def' | 'val' | 'var'
+
+modifiersOpt ::= (modifiers NL*)?
+modifiers    ::= modifier (NL* modifier)*
+
+variableModifier ::=
+      annotation
+    | 'final' | 'def' | 'val' | 'var'
+    | 'public' | 'protected' | 'private' | 'static' | 'abstract' | 'strictfp'
+
+variableModifiersOpt ::= (variableModifiers NL*)?
+variableModifiers    ::= variableModifier (NL* variableModifier)*
+----
+
+Repeat modifiers, illegal combinations (`sealed` + `non-sealed`,
+`sealed` + `final`, `permits` without `sealed`), and "visibility
+implies field not property" are conversion / later phases.
+
+=== Type declarations
+
+One production `classDeclaration` with local `t` set from the keyword:
+
+[source,ebnf]
+----
+classDeclaration ::=
+    ( 'class' | 'interface' | 'enum' | '@' 'interface' | 'trait' | 'record' )
+    identifier
+    (NL* typeParameters)?
+    (NL* formalParameters)?            /* record header; illegal for others at conversion */
+    (NL* 'extends'    NL* typeList)?
+    (NL* 'implements' NL* typeList)?
+    (NL* 'permits'    NL* typeList)?
+    NL* classBody                      /* R15: enum vs others */
+----
+
+[cols="1,1,2", options="header"]
+|===
+| `t`
+| Keyword
+| Body
+
+| 0
+| `'class'`
+| `classBody` without `enumConstants`
+
+| 1
+| `'interface'`
+| same
+
+| 2
+| `'enum'`
+| R15: may start with `enumConstants`
+
+| 3
+| `'@' 'interface'`
+| same as class; methods may have `default` values (R16)
+
+| 4
+| `'trait'`
+| Groovy-only keyword
+
+| 5
+| `'record'`
+| header via optional `formalParameters`
+|===
+
+`@Sealed` / `@RecordType` / `@Trait` *annotation* styles are
+annotations plus AST transforms, not additional keywords.
+
+[source,ebnf]
+----
+classBody ::=
+    '{' NL*
+    (
+        enumConstants                  /* R15, t == 2 */
+        ( (NL* ',')?
+        | ((NL* ',')? NL* ';')? NL*
+          classBodyDeclaration (sep classBodyDeclaration)*
+        )
+      | (classBodyDeclaration (sep classBodyDeclaration)*)?
+    )
+    sep? '}'
+
+enumConstants ::=
+    enumConstant (NL* ',' NL* enumConstant)*
+
+enumConstant ::=
+    annotationsOpt identifier arguments? anonymousInnerClassDeclaration?
+
+classBodyDeclaration ::=
+      ('static' NL*)? block            /* instance / static initializer */
+    | memberDeclaration
+
+memberDeclaration ::=
+      methodDeclaration
+    | fieldDeclaration
+    | modifiersOpt (classDeclaration | compactConstructorDeclaration)
+----
+
+Nested types are `modifiersOpt classDeclaration`. Anonymous inner
+classes use `classBody` with `t == 0` regardless of the ANTLR
+parameter on `anonymousInnerClassDeclaration`.
+
+=== Methods, constructors, fields
+
+[source,ebnf]
+----
+methodDeclaration ::=
+    modifiersOpt typeParameters? (returnType NL*)?
+    methodName formalParameters
+    (   ('default' NL* elementValue)   /* R16: @interface only */
+      | NL* 'throws' NL* qualifiedClassNameList (NL* methodBody)?
+      | NL* methodBody
+    )?
+
+compactConstructorDeclaration ::=
+    methodName NL* methodBody          /* no parameter list */
+
+methodName ::=
+    identifier | stringLiteral
+
+returnType ::=
+    standardType | 'void'
+
+fieldDeclaration ::=
+    variableDeclaration
+
+variableDeclaration ::=
+      modifiers NL*
+      ( type? variableDeclarators
+      | typeNamePairs NL* '=' NL* variableInitializer
+      )
+    | type variableDeclarators
+
+variableDeclarators ::=
+    variableDeclarator (',' NL* variableDeclarator)*
+
+variableDeclarator ::=
+    variableDeclaratorId (NL* '=' NL* variableInitializer)?
+
+variableDeclaratorId ::=
+    identifier
+
+variableInitializer ::=
+    enhancedStatementExpression
+
+formalParameters ::=
+    '(' formalParameterList? ')'
+
+formalParameterList ::=
+    (formalParameter | thisFormalParameter) (',' NL* formalParameter)*
+
+thisFormalParameter ::=
+    type 'this'
+
+formalParameter ::=
+    variableModifiersOpt type? '...'? variableDeclaratorId
+    (NL* '=' NL* expression)?
+
+methodBody ::=
+    block
+----
+
+There is **no** separate constructor production. A constructor is a
+`methodDeclaration` with no `returnType`, name equal to the class
+name, and a body -- those checks are `AstBuilder`. Compact
+constructors are syntax; "records only, name equals record name" is
+conversion.
+
+Properties are **not** a production. The same field production is a
+property at conversion when it has no visibility modifier.
+
+Default argument values, optional types, and varargs are syntax.
+Duplicate / non-last varargs, `val`/`var` as a return type, and
+script abstract methods are conversion.
+
+=== Annotations
+
+[source,ebnf]
+----
+annotationsOpt ::=
+    (annotation (NL* annotation)* NL*)?
+
+annotation ::=
+    '@' annotationName (NL* '(' elementValues? ')')?
+
+annotationName ::=
+    qualifiedClassName
+
+elementValues ::=
+      elementValuePairs
+    | elementValue                     /* R14 */
+
+elementValuePairs ::=
+    elementValuePair (',' elementValuePair)*
+
+elementValuePair ::=
+    elementValuePairName NL* '=' NL* elementValue
+
+elementValuePairName ::=
+    identifier | keywords
+
+elementValue ::=
+      elementValueArrayInitializer
+    | annotation
+    | expression
+
+elementValueArrayInitializer ::=
+      '[' (elementValue (',' elementValue)* ','?)? ']'
+    | '{' (elementValue ',')+ elementValue? '}'   /* at least one comma, vs closure */
+----
+
+`elementValue` is a general `expression` (closures as annotation
+values are syntax). Inside annotation parentheses, newlines are
+already hidden (R9), so R14 can look at `LT(2)`.
+
+[[grammar-statements]]
+== Statements
+
+[source,ebnf]
+----
+block ::=
+    '{' sep? blockStatementsOpt '}'
+
+blockStatementsOpt ::=
+    blockStatements?
+
+blockStatements ::=
+    blockStatement (sep blockStatement)* sep?
+
+blockStatement ::=
+    statement
+
+statement ::=
+      block
+    | conditionalStatement
+    | loopStatement
+    | tryCatchStatement
+    | 'synchronized' expressionInPar NL* block
+    | 'return' expression?
+    | 'throw' expression
+    | breakStatement
+    | continueStatement
+    | yieldStatement                   /* R19 */
+    | 'yield' 'return' NL* expression  /* always; generator */
+    | 'defer' NL* statementExpression  /* R20 */
+    | identifier ':' NL* statement
+    | assertStatement
+    | localVariableDeclaration         /* R13 */
+    | statementExpression
+    | ';'
+
+conditionalStatement ::=
+    ifElseStatement | switchStatement
+
+ifElseStatement ::=
+    'if' expressionInPar NL* statement
+    ((NL* | sep) 'else' NL* statement)?
+
+switchStatement ::=
+    'switch' expressionInPar NL*
+    '{' NL* (switchBlockStatementGroup+ NL*)? '}'
+
+switchBlockStatementGroup ::=
+    switchLabel (NL* switchLabel)* NL* blockStatements
+
+switchLabel ::=
+      'case' expression ':'
+    | 'default' ':'
+
+loopStatement ::=
+      annotationsOpt 'for' 'await'? '(' forControl ')' NL* statement
+    | annotationsOpt 'while' expressionInPar NL* statement
+    | annotationsOpt 'do' NL* statement NL* 'while' expressionInPar
+
+forControl ::=
+    enhancedForControl | originalForControl
+
+enhancedForControl ::=
+    (indexVariable ',')? variableModifiersOpt type? identifier
+    (':' | 'in') expression
+
+indexVariable ::=
+    (BuiltInPrimitiveType | 'def' | 'val' | 'var')? identifier
+
+originalForControl ::=
+    forInit? ';' expression? ';' forUpdate?
+
+forInit ::=
+    localVariableDeclaration | expressionList   /* canSpread false: R21 */
+
+forUpdate ::=
+    expressionList                              /* canSpread false: R21 */
+
+continueStatement ::= 'continue' identifier?
+breakStatement    ::= 'break'    identifier?
+yieldStatement    ::= 'yield' expression
+
+tryCatchStatement ::=
+    'try' resources? NL* block
+    (NL* catchClause)*
+    (NL* finallyBlock)?
+
+resources ::=
+    '(' NL* resourceList sep? ')'
+
+resourceList ::=
+    resource (sep resource)*
+
+resource ::=
+    localVariableDeclaration | expression
+
+catchClause ::=
+    'catch' '(' variableModifiersOpt catchType? identifier ')' NL* block
+
+catchType ::=
+    qualifiedClassName ('|' qualifiedClassName)*
+
+finallyBlock ::=
+    'finally' NL* block
+
+assertStatement ::=
+    'assert' expression (NL* (':' | ',') NL* expression)?
+
+localVariableDeclaration ::=
+    variableDeclaration                /* R13 */
+
+typeNamePairs ::=
+    '(' ( typeNamePair (',' typeNamePair)*
+        | keyedPair    (',' keyedPair)*
+        ) ')'
+
+typeNamePair ::=
+    ('def' | 'val' | 'var' | type)? '*'? variableDeclaratorId
+
+keyedPair ::=
+    identifier ':' ('def' | 'val' | 'var' | type)? variableDeclaratorId
+
+variableNames ::=
+    '(' variableDeclaratorId (',' variableDeclaratorId)+ ')'
+----
+
+Switch **statement** labels are `case expression ':'` / `default ':'`
+only -- no arrow, no `expressionList`, no `yield`. Switch
+**expressions** are a different nonterminal
+(<<grammar-expressions>>).
+
+`yield expression` is gated by R19. `yield return expression` is a
+**separate**, always-available alternative and must not be folded into
+`yieldStatement`.
+
+`defer` is gated by R20. `for await` is syntax (`'await'?` on `for`).
+Loop annotations (`annotationsOpt` on `for`/`while`/`do`) are syntax;
+R13 keeps `@Ann for (` as a loop.
+
+`assert` allows `:` **or** `,` before the message. `try { }` with no
+catch, finally, or resources is parsed and rejected later. TWR
+resources are separated by `sep` (newline or `;`), not only `;`.
+
+`variableNames` requires **at least two** identifiers. `(a) = ...` is
+ordinary assignment; nested `((a))` is rejected at conversion.
+
+[[grammar-expressions]]
+== Expressions
+
+Two facts must not be simplified away:
+
+* The CFG of operators is the left-recursive rule `expression`. ANTLR
+  binds *earlier alternatives tighter*.
+* Every *statement* expression is a `commandExpression`. Command
+  syntax is not a side dialect.
+
+=== Compact form
+
+The alternatives below are those of `expression` in `GroovyParser.g4`,
+in the same order. Shift and assignment operators are inlined (there
+are no `LSHIFT` / `RSHIFT` / `URSHIFT` lexer tokens).
+
+[source,ebnf]
+----
+expression ::=
+      castParExpression castOperandExpression          /* cast, tightest */
+    | 'async' NL* closureOrLambdaExpression            /* R20 enters */
+    | 'await' NL*
+          ( '(' expression (',' NL* expression)* ')'
+          | expression (',' NL* expression)*
+          )
+    | postfixExpression
+    | switchExpression                                 /* R19 enters */
+    | ('~' | '!') NL* expression
+    | expression '**' NL* expression                   /* left-assoc */
+    | ('++' | '--' | '+' | '-') expression
+    | expression NL* ('*' | DIV | '%') NL* expression
+    | expression ('+' | '-') NL* expression            /* no NL before +/− */
+    | expression NL*
+          ('<' '<' | '>' '>' '>' | '>' '>'
+          | '..' | '<..' | '..<' | '<..<')
+          NL* expression
+    | expression NL* 'instanceof' NL* matchingType
+    | expression NL* '!instanceof' NL* notInstanceofType
+    | expression NL* 'as' NL* coercionType
+    | expression NL* ('<=' | '>=' | '>' | '<' | 'in' | '!in')
+                 NL* expression
+    | expression NL*
+          ('===' | '!==' | '==' | '!=' | '<=>') NL* expression
+    | expression NL* ('=~' | '==~') NL* expression
+    | expression NL* '&'  NL* expression
+    | expression NL* '^'  NL* expression
+    | expression NL* '|'  NL* expression
+    | expression NL* '&&' NL* expression
+    | expression NL* '||' NL* expression
+    | expression NL* '==>' NL* expression              /* right-assoc */
+    | expression NL*
+          ( '?' NL* expression NL* ':' NL* | '?:' NL* )
+          expression                                   /* right-assoc */
+    | variableNames NL* '=' NL* statementExpression    /* prefix; right-assoc */
+    | expression NL*
+          ('=' | '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^='
+          | '>>=' | '>>>=' | '<<=' | '%=' | '**=' | '?=')
+          NL* enhancedStatementExpression              /* right-assoc */
+
+castOperandExpression ::=              /* restricted form of expression */
+      castParExpression castOperandExpression
+    | postfixExpression
+    | ('~' | '!') NL* castOperandExpression
+    | ('++' | '--' | '+' | '-') castOperandExpression
+
+postfixExpression ::=
+    pathExpression ('++' | '--')?
+
+statementExpression ::=
+    commandExpression
+
+enhancedExpression ::=
+    expression | standardLambdaExpression
+
+enhancedStatementExpression ::=
+    statementExpression | standardLambdaExpression
+
+expressionInPar ::=
+    '(' enhancedStatementExpression ')'
+
+parExpression ::=
+    expressionInPar
+
+expressionList ::=
+    expressionListElement (',' NL* expressionListElement)*
+
+expressionListElement ::=
+    '*'? expression                    /* R21: spread rejected in forInit/forUpdate */
+----
+
+`DIV` is the division token, spelling `'/'`. It is not written `'/'`
+here because that character also opens slashy strings (R1).
+
+`castOperandExpression` exists so `(int) a + b` is `((int) a) + b` and
+`(int) ++x` is a cast of a prefix.
+
+`await` takes a full `expression` (or a parenthesised list). So
+`await a + b` is `await (a + b)`.
+
+=== Precedence and associativity
+
+Derived from the alternative **order** of `expression` as implemented
+by the generated `expression(int)` method, not copied from the tutorial
+table in `core-operators.adoc`. Rows are tightest first. The column
+"Level (g4 comment)" repeats the comments in the g4; the *(atom)* row
+is tighter than that numbering's "level 1".
+
+Because `instanceof`, `!instanceof`, `as`, and comparisons are
+**separate** alternatives, ANTLR assigns them distinct numeric
+precedences (tighter in that order). The g4 comments still call the
+group "level 7"; the table keeps that grouping and notes the split.
+
+[cols="1,2,2,1", options="header"]
+|===
+| Level (g4 comment)
+| Operators / forms
+| Alternative
+| Assoc.
+
+| (atom)
+| `(T) e`, `async { }`, `await e`, path/postfix, `switch (e) { }`
+| `#castExprAlt` `#asyncClosureExprAlt` `#awaitExprAlt` `#postfixExprAlt` `#switchExprAlt`
+| n/a
+
+| 1
+| `~` `!`
+| `#unaryNotExprAlt`
+| prefix
+
+| 2
+| `**`
+| `#powerExprAlt`
+| **left** (not marked `<assoc=right>`)
+
+| 3
+| prefix `++` `--` `+` `-`
+| `#unaryAddExprAlt`
+| prefix
+
+| 4
+| `*` `/` `%`
+| `#multiplicativeExprAlt`
+| left
+
+| 5
+| `+` `-`
+| `#additiveExprAlt`
+| left
+
+| 6
+| `<<` `>>` `>>>` `..` `..<` `<..<` `<..`
+| `#shiftExprAlt`
+| left
+
+| 7
+| `instanceof`, then `!instanceof`, then `as`, then `< \<= > >= in !in`
+| `#relationalExprAlt` (four alts; earlier is tighter)
+| left / type RHS
+
+| 8
+| `==` `!=` `<=>` `===` `!==`
+| `#equalityExprAlt`
+| left
+
+| 8.5
+| `=~` `==~`
+| `#regexExprAlt`
+| left
+
+| 9
+| `&`
+| `#andExprAlt`
+| left
+
+| 10
+| `^`
+| `#exclusiveOrExprAlt`
+| left
+
+| 11
+| `\|`
+| `#inclusiveOrExprAlt`
+| left
+
+| 12
+| `&&`
+| `#logicalAndExprAlt`
+| left
+
+| 13
+| `\|\|`
+| `#logicalOrExprAlt`
+| left
+
+| 13.5
+| `==>`
+| `#implicationExprAlt`
+| **right**
+
+| 14
+| `? :` `?:`
+| `#conditionalExprAlt`
+| **right**
+
+| 15
+| assignment operators
+| `#assignmentExprAlt` (`_prec(1)`; RHS is `enhancedStatementExpression`)
+| **right**
+
+| (prefix)
+| `(a, b) = ...`
+| `#multipleAssignmentExprAlt` (not left-recursive; parsed as a prefix
+  alternative of `expression`, like cast)
+| n/a
+|===
+
+Notes the tutorial table does not make:
+
+* `**` sits *between* `!` and unary minus: `!a ** b` is `(!a) ** b`;
+  `-a ** b` is `-(a ** b)` (Python-style). The g4 comments call these
+  levels 1, 2, 3.
+* `**` is **left**-associative in this grammar.
+* Path operators `.` `?.` `??.` `*.` `.&` `::` `.@` `()` `{}` `[]`
+  `?[]` live in `pathElement`, inside `postfixExpression`, tighter
+  than the table above.
+* Newline **before** `+`, `-`, or `**` is *not* part of those
+  operators (`NL*` is only on the right). At script top level that
+  newline is `sep` and the next line starts a new `statement`.
+  Newline before `*`, `/`, comparison, `=`, ... *is* allowed when the
+  `NL` is visible.
+
+=== Path expressions
+
+[source,ebnf]
+----
+pathExpression ::=
+    ( primary
+    | 'static'                         /* R18: only when next token is '.' */
+    )
+    pathElement*
+
+pathElement ::=
+      NL*
+      ( '.' NL*
+            ( 'new' nonWildcardTypeArguments? creator
+            | ('@' | nonWildcardTypeArguments)? namePart
+            )
+        | ( '*.' | '?.' | '??.' ) NL* ('@' | nonWildcardTypeArguments)? namePart
+        | '.&' NL* namePart
+        | '::' NL* nonWildcardTypeArguments? namePart
+        | closureOrLambdaExpression
+      )
+    | arguments
+    | indexPropertyArgs
+    | namedPropertyArgs
+
+namePart ::=
+    identifier | stringLiteral | dynamicMemberName | keywords
+
+dynamicMemberName ::=
+    parExpression | gstring
+
+indexPropertyArgs ::=
+    ('?[' | '[') expressionList? ']'
+
+namedPropertyArgs ::=
+    ('?[' | '[') (namedPropertyArgList | ':') ']'
+----
+
+`pathElement` `t` codes (CST tags for R17 / conversion, not EBNF
+parameters): 1 namePart, 2 arguments, 3 closure/lambda, 4 index, 5
+named index, 6 `outer.new Inner(...)`.
+
+`arguments` / index / named index do **not** have a leading `NL*` in
+this production. A newline before `(` at script level is `sep`, not a
+call. Inside grouping, that newline is hidden (R9).
+
+The unimplemented proposal `a.\{foo}` as inline `with` is a comment in
+the g4, not a production.
+
+=== Primaries, lists, maps, creation
+
+[source,ebnf]
+----
+primary ::=
+      identifier typeArguments?
+    | literal
+    | gstring
+    | 'new' NL* nonWildcardTypeArguments? creator
+    | nonWildcardTypeArguments? 'this'
+    | nonWildcardTypeArguments? 'super'
+    | parExpression
+    | closureOrLambdaExpression
+    | list
+    | map
+    | builtInType
+
+literal ::=
+    IntegerLiteral | FloatingPointLiteral | stringLiteral
+  | BooleanLiteral | NullLiteral
+
+stringLiteral ::=
+    StringLiteral
+
+list ::=
+    '[' expressionList? ','? ']'
+
+map ::=
+    '[' (mapEntryList ','? | ':') ']'
+
+mapEntryList ::=
+    mapEntry (',' mapEntry)*
+
+mapEntry ::=
+      mapEntryLabel ':' NL* enhancedExpression
+    | '*' ':' NL* enhancedExpression
+
+mapEntryLabel ::=
+    keywords | primary
+
+creator ::=
+    createdName
+    (   NL* arguments anonymousInnerClassDeclaration?
+      | dim0+ NL* arrayInitializer
+      | dim1+ dim0*
+    )
+
+createdName ::=
+    annotationsOpt
+    ( primitiveType
+    | qualifiedClassName
+      (typeArgumentsOrDiamond ('.' identifier typeArgumentsOrDiamond?)*)?
+    )
+
+arrayInitializer ::=
+    '{' NL*
+    ( (arrayInitializer | variableInitializer) NL*
+      (',' NL* (arrayInitializer | variableInitializer) NL*)*
+    )?
+    ','? NL* '}'
+
+anonymousInnerClassDeclaration ::=
+    classBody
+
+arguments ::=
+    '(' enhancedArgumentListInPar? ','? ')'
+
+enhancedArgumentListInPar ::=
+    enhancedArgumentListElement
+    (',' NL* enhancedArgumentListElement)*
+
+enhancedArgumentListElement ::=
+      expressionListElement
+    | standardLambdaExpression
+    | namedPropertyArg
+
+argumentList ::=                        /* command / chain args; restricted form */
+    firstArgumentListElement
+    (',' NL* argumentListElement)*
+
+firstArgumentListElement ::=
+    expressionListElement | namedArg
+
+argumentListElement ::=
+    expressionListElement | namedPropertyArg
+
+namedArg ::=
+      namedArgLabel ':' NL* enhancedExpression
+    | '*' ':' NL* enhancedExpression
+
+namedPropertyArg ::=
+      namedPropertyArgLabel ':' NL* enhancedExpression
+    | '*' ':' NL* enhancedExpression
+
+namedArgLabel ::=
+    keywords | namedArgPrimary
+
+namedPropertyArgLabel ::=
+    keywords | namedPropertyArgPrimary
+
+namedPropertyArgList ::=
+    namedPropertyArg (',' namedPropertyArg)*
+
+namedArgPrimary ::=
+    identifier | literal | gstring
+
+namedPropertyArgPrimary ::=
+    identifier | literal | gstring | parExpression | list | map
+----
+
+Trailing commas are allowed in lists, maps, and argument lists.
+`[:]` is the empty map. `*` `:` is map spread.
+
+=== Command expressions (R17)
+
+[source,ebnf]
+----
+commandExpression ::=
+    expression
+    argumentList?                      /* R17 */
+    commandArgument*
+
+commandArgument ::=
+    commandPrimary (pathElement+ | argumentList)?
+
+commandPrimary ::=                     /* restricted primary */
+    identifier | literal | gstring
+----
+
+Every statement expression is a `commandExpression`: an `expression`
+followed by an optional `argumentList` (R17) and zero or more
+`commandArgument`s. A bare `foo` is therefore a `commandExpression`
+with both tails empty. Parentheses around a call may be omitted when
+R17 allows an `argumentList` (the callee is not already a `(...)` or
+`{...}` path element). Further words are a *command chain*:
+
+* `a b c()` -> `a(b).c()`
+* `a b c()()` -> `a(b).c().call()`
+* `a b c[x]` -> `a(b).c[x]`
+* `a b c { x }` -> `a(b).c({ x })`
+
+R17: `foo(1) bar` does not treat `bar` as a second positional argument
+of `foo`; `foo 1 bar` may.
+
+`commandPrimary` cannot be `new`, `this`, a parenthesised expression,
+a list, a map, or a closure. Those remain ordinary `expression` heads.
+
+Parenthesised `arguments` may contain `standardLambdaExpression`;
+command `argumentList` may not (only `expressionListElement` /
+`namedArg` on the first element).
+
+=== Closures and lambdas
+
+[source,ebnf]
+----
+closure ::=
+    '{' (NL* (formalParameterList NL*)? '->')? sep? blockStatementsOpt '}'
+
+lambdaExpression ::=                   /* Groovy lambda: parentheses required */
+    lambdaParameters NL* '->' NL* lambdaBody
+
+lambdaParameters ::=
+    formalParameters                   /* single id without () is NOT here */
+
+standardLambdaExpression ::=
+    standardLambdaParameters NL* '->' NL* lambdaBody
+
+standardLambdaParameters ::=
+    formalParameters | variableDeclaratorId
+
+lambdaBody ::=
+    block | statementExpression
+
+closureOrLambdaExpression ::=
+    closure | lambdaExpression
+----
+
+`{ a -> a * 2 }` is a **closure**. The g4 comments out a
+`variableDeclaratorId` alternative on `lambdaParameters` so that form
+is not stolen from closures (GROOVY-8991). Java-style
+`(params) -> body` and `x -> body` are `standardLambdaExpression`,
+used in parenthesised argument lists and as
+`enhancedStatementExpression`.
+
+=== Switch expressions
+
+[source,ebnf]
+----
+switchExpression ::=
+    'switch' expressionInPar NL*
+    '{' NL* switchBlockStatementExpressionGroup* NL* '}'
+
+switchBlockStatementExpressionGroup ::=
+    (switchExpressionLabel NL*)+ blockStatements
+
+switchExpressionLabel ::=
+    ('case' expressionList | 'default') ('->' | ':')
+----
+
+While this production is active, R19 allows `yield expression`.
+`return` / `break` / `continue` inside a switch expression are
+conversion errors.
+
+Which production matches is a matter of *context and labels*.
+`switchStatement` (under `conditionalStatement`) admits only
+`case expression ':'` / `default ':'`. Arrow labels exist only on
+`switchExpression`. An arrow `switch` in statement position is
+therefore `statementExpression` -> `switchExpression`, not
+`switchStatement`.
+
+[[grammar-gstring-parser]]
+== GString in the parser
+
+Parser `gstring` does not know the quote style. Interpolation is
+`gstringPath` or `closure` only -- not an arbitrary `expression`
+nonterminal. `gstringPath` cannot include a call: `"$foo.bar()"` is
+a path `foo.bar` followed by the characters `()`; `"$\{foo.bar()}"`
+is a closure. Conversion may unwrap a no-arrow single-expression
+closure.
+
+[[grammar-parameter-bijection]]
+== Parameterised-rule bijection
+
+[cols="1,1,1,2", options="header"]
+|===
+| g4 rule
+| Parameter
+| Used in recognition?
+| Published form
+
+| `classDeclaration`
+| locals `t` 0..5
+| sets `t` from keyword
+| one production; keyword choice is syntax
+
+| `classBody[t]`
+| `t == 2` gates `enumConstants`
+| **yes** (R15)
+| one production with R15
+
+| `classBodyDeclaration[t]` `memberDeclaration[t]`
+| passed through
+| only to `methodDeclaration[0, t]`
+| one production; `t` is AST/context
+
+| `methodDeclaration[t, ct]`
+| `ct == 3` gates `default`
+| **`ct` yes (R16); `t` no**
+| one production with R16. Script call is `[3, 9]`
+
+| `returnType[ct]`
+| unused in the production
+| no
+| one production; parameter dropped
+
+| `variableDeclaration[t]`
+| unused (0 local / 1 field is `AstBuilder`)
+| no
+| one production
+
+| `creator[t]` `anonymousInnerClassDeclaration[t]`
+| unused in the production
+| no
+| one production
+
+| `expressionList[canSpread]` `expressionListElement[canSpread]`
+| `MUL?` always parsed
+| conversion (R21)
+| `'*'? expression`
+
+| `pathExpression` / `pathElement` `returns [int t]`
+| CST tag
+| R17 reads `t`
+| not an EBNF parameter
+|===
+
+[[grammar-basecontext]]
+== Restricted forms (`baseContext`)
+
+ANTLR `options { baseContext = X; }` shares a generated context class.
+Each is still a distinct production and is listed above:
+
+[cols="1,1,2", options="header"]
+|===
+| Rule
+| Base
+| Drops / tightens
+
+| `standardType`
+| `type`
+| no `'void'` alternative; uses `standardClassOrInterfaceType`
+
+| `standardClassOrInterfaceType`
+| `referenceType`
+| `className` (`CapitalizedIdentifier`) instead of `identifier`
+
+| `lambdaExpression`
+| `standardLambdaExpression`
+| parameters must be `formalParameters`
+
+| `lambdaParameters`
+| `standardLambdaParameters`
+| no single `variableDeclaratorId`
+
+| `castOperandExpression`
+| `expression`
+| only cast, postfix, unary not, unary add/sub
+
+| `commandPrimary`
+| `primary`
+| `identifier` `literal` `gstring` only
+
+| `namedArgPrimary`
+| `primary`
+| identifier / literal / gstring
+
+| `namedPropertyArgPrimary`
+| `primary`
+| plus parExpression / list / map
+
+| `namedPropertyArgList`
+| `mapEntryList`
+| `namedPropertyArg` elements
+
+| `namedPropertyArg` `namedArg`
+| `mapEntry`
+| corresponding labels
+
+| `namedPropertyArgLabel` `namedArgLabel`
+| `mapEntryLabel`
+| corresponding primaries
+
+| `argumentList`
+| `enhancedArgumentListInPar`
+| no `standardLambdaExpression`; first element may be `namedArg`
+
+| `firstArgumentListElement` `argumentListElement`
+| `enhancedArgumentListElement`
+| as above
+|===
+
+[[grammar-overapprox]]
+== Syntactic over-approximation
+
+The CFG accepts programs that conversion or later phases reject.
+Representative cases (not an exhaustive semantic-analysis list):
+
+* `'void'` as a value type; `void[]`.
+* `formalParameters` on non-records; `extends` / `implements` /
+  `permits` / `typeParameters` on kinds that cannot have them;
+  `var` / `val` as a type name.
+* Methods without bodies in classes; abstract methods with bodies;
+  annotation methods with a body or `void`; script abstract methods.
+* Compact constructor outside a record / name mismatch.
+* `this(...)` / `super(...)` not the first constructor statement
+  (grammar allows them anywhere a path can appear).
+* `try { }` with no catch, finally, or resources.
+* Switch: more than one `default`; switch **expression**
+  `return` / `break` / `continue`.
+* Nested `((a)) = ...`; assignment LHS not variable / property / index.
+* `!instanceof (A & B)`; non-reifiable `instanceof`.
+* Spread `*` in `forInit` / `forUpdate` (R21). Spread is *recognised*
+  wherever `expressionListElement` occurs, including
+  `switchExpressionLabel` (`case *x ->`); R21 conversion-checks only
+  for-init/update.
+* `for await` is not gated by `inAsyncClosureLevel` (only `defer` is
+  R20).
+* Command chains inside `arrayInitializer`.
+* Primitive type used as a method name `int()`.
+
+[[grammar-invalid]]
+== Invalid input and diagnostics
+
+These are **not** language productions:
+
+* Parser error alternatives for missing `)` / `]` / `}` -- removed
+  (GROOVY-9588). `MissingDelimiterDiagnostic` may relocate the caret
+  after recognition has already failed.
+* `UNEXPECTED_CHAR` -- unexpected character; an unexpected quote is
+  reported as an unclosed string unless a scan-ahead finds an illegal
+  escape in an otherwise closed literal.
+* Invalid octal (`'0' [0-9]+` error alternative).
+* Number ending with `_`.
+* Unclosed `/*` (`requireUnclosedComment` at the opener).
+* Shebang when `tokenIndex != 0` (R11).
+* `GroovyLangLexer.nextToken`: EOF in `GSTRING_TYPE_SELECTOR_MODE`
+  (`Illegal string body character after dollar sign`).
+* `errorIgnored` IDE tokenisation.
+
+[[grammar-excluded]]
+== Intentionally excluded
+
+Not syntax (not in the g4 as productions of the language):
+
+* AST transforms and their annotations as *language forms*
+  (`@CompileStatic`, `@TypeChecked`, `@Field`, `@Sealed` as the
+  *alternative* to the `sealed` keyword, ...).
+* Groovydoc tag semantics (lexing of `/**` is in; tags are not).
+* Type checking, Groovy Truth, operator overloading, optional
+  `return` of the last expression.
+* Default imports.
+* Runtime GString evaluation and `hashCode` coercion.
+* Implicit closure parameter `it`.
+* JEP 445 script classification.
+* Trait *implementation* (the `trait` keyword is syntax; mixin
+  semantics are a transform).
+* Java `module-info` compilation units; Java text blocks as a
+  distinct form (Groovy `"""` is triple-quoted String/GString);
+  Java 21+ switch type / record / pattern labels and `when` guards
+  (Groovy `case` is `expression` / `expressionList`).
+
+[[grammar-index]]
+== Production index
+
+Every named parser rule in `GroovyParser.g4` appears in this chapter.
+There is no `nls` rule. Lexer modes are listed under
+<<grammar-gstring-lexical>>. Parser-visible tokens and fragments are
+in <<grammar-vocabulary>> and <<grammar-lexical>>; rewritten lexer
+rules follow this index.
+
+* <<grammar-compilation-unit,Compilation units>>::
+  `compilationUnit`, `scriptStatements`, `scriptStatement`,
+  `packageDeclaration`, `importDeclaration`, `sep`
+* <<grammar-types-and-names,Types and names>>::
+  `qualifiedName`, `qualifiedNameElement`, `qualifiedNameElements`,
+  `qualifiedClassName`, `qualifiedStandardClassName`, `className`,
+  `identifier`, `keywords`, `builtInType`, `type`, `primitiveType`,
+  `referenceType`, `standardType`, `standardClassOrInterfaceType`,
+  `matchingType`, `notInstanceofType`, `typeParameters`,
+  `typeParameter`, `typeBound`, `typeList`, `typeArguments`,
+  `typeArgument`, `typeArgumentsOrDiamond`,
+  `nonWildcardTypeArguments`, `dim0`, `dim1`, `intersectionType`,
+  `castParExpression`, `coercionType`,
+  `annotatedQualifiedClassName`, `qualifiedClassNameList`
+* <<grammar-declarations,Declarations>>::
+  `typeDeclaration`, `modifier`, `modifiersOpt`, `modifiers`,
+  `classOrInterfaceModifiersOpt`, `classOrInterfaceModifiers`,
+  `classOrInterfaceModifier`, `variableModifier`,
+  `variableModifiersOpt`, `variableModifiers`, `classDeclaration`,
+  `classBody`, `enumConstants`, `enumConstant`,
+  `classBodyDeclaration`, `memberDeclaration`, `methodDeclaration`,
+  `compactConstructorDeclaration`, `methodName`, `returnType`,
+  `fieldDeclaration`, `variableDeclarators`, `variableDeclarator`,
+  `variableDeclaratorId`, `variableInitializer`, `formalParameters`,
+  `formalParameterList`, `thisFormalParameter`, `formalParameter`,
+  `methodBody`, `annotationsOpt`, `annotation`, `elementValues`,
+  `annotationName`, `elementValuePairs`, `elementValuePair`,
+  `elementValuePairName`, `elementValue`,
+  `elementValueArrayInitializer`
+* <<grammar-statements,Statements>>::
+  `block`, `blockStatementsOpt`, `blockStatements`, `blockStatement`,
+  `statement`, `conditionalStatement`, `ifElseStatement`,
+  `switchStatement`, `switchBlockStatementGroup`, `switchLabel`,
+  `loopStatement`, `forControl`, `enhancedForControl`,
+  `indexVariable`, `originalForControl`, `forInit`, `forUpdate`,
+  `continueStatement`, `breakStatement`, `yieldStatement`,
+  `tryCatchStatement`, `resources`, `resourceList`, `resource`,
+  `catchClause`, `catchType`, `finallyBlock`, `assertStatement`,
+  `localVariableDeclaration`, `variableDeclaration`, `typeNamePairs`,
+  `typeNamePair`, `keyedPair`, `variableNames`
+* <<grammar-expressions,Expressions>>::
+  `expression`, `castOperandExpression`, `postfixExpression`,
+  `statementExpression`, `enhancedExpression`,
+  `enhancedStatementExpression`, `expressionInPar`, `parExpression`,
+  `expressionList`, `expressionListElement`, `pathExpression`,
+  `pathElement`, `namePart`, `dynamicMemberName`,
+  `indexPropertyArgs`, `namedPropertyArgs`, `primary`, `literal`,
+  `stringLiteral`, `gstring`, `gstringValue`, `gstringPath`, `list`,
+  `map`, `mapEntryList`, `mapEntry`, `mapEntryLabel`, `creator`,
+  `createdName`, `arrayInitializer`,
+  `anonymousInnerClassDeclaration`, `arguments`,
+  `enhancedArgumentListInPar`, `enhancedArgumentListElement`,
+  `argumentList`, `firstArgumentListElement`, `argumentListElement`,
+  `namedArg`, `namedPropertyArg`, `namedArgLabel`,
+  `namedPropertyArgLabel`, `namedPropertyArgList`, `namedArgPrimary`,
+  `namedPropertyArgPrimary`, `commandExpression`, `commandArgument`,
+  `commandPrimary`, `closure`, `lambdaExpression`,
+  `lambdaParameters`, `standardLambdaExpression`,
+  `standardLambdaParameters`, `lambdaBody`,
+  `closureOrLambdaExpression`, `switchExpression`,
+  `switchBlockStatementExpressionGroup`, `switchExpressionLabel`
+
+A unique-spelling keyword or operator `'foo'` is token `FOO`, except:
+`non-sealed` is `NON_SEALED`; the eight primitives are one token
+`BuiltInPrimitiveType`; `true`/`false` are `BooleanLiteral`; `null`
+is `NullLiteral`; `/` as an operator is `DIV`.
+
+Lexer token names in `GroovyLexer.g4` (parser-visible, rewritten, skip,
+and diagnostic). This list is the coverage checklist; spellings and
+roles are in <<grammar-vocabulary>> and <<grammar-lexical>>.
+
+`AS`, `DEF`, `IN`, `TRAIT`, `THREADSAFE`, `ASYNC`, `AWAIT`, `DEFER`,
+`BuiltInPrimitiveType`, `ABSTRACT`, `ASSERT`, `BREAK`, `CASE`, `CATCH`,
+`CLASS`, `CONST`, `CONTINUE`, `DEFAULT`, `DO`, `ELSE`, `ENUM`,
+`EXTENDS`, `FINAL`, `FINALLY`, `FOR`, `IF`, `GOTO`, `IMPLEMENTS`,
+`IMPORT`, `INSTANCEOF`, `INTERFACE`, `MODULE`, `NATIVE`, `NEW`,
+`NON_SEALED`, `PACKAGE`, `PERMITS`, `PRIVATE`, `PROTECTED`, `PUBLIC`,
+`RECORD`, `RETURN`, `SEALED`, `STATIC`, `STRICTFP`, `SUPER`, `SWITCH`,
+`SYNCHRONIZED`, `THIS`, `THROW`, `THROWS`, `TRANSIENT`, `TRY`, `VAL`,
+`VAR`, `VOID`, `VOLATILE`, `WHILE`, `YIELD`, `IntegerLiteral`,
+`FloatingPointLiteral`, `BooleanLiteral`, `NullLiteral`,
+`StringLiteral`, `GStringBegin`, `GStringPart`, `GStringEnd`,
+`GStringPathPart`, `TdqGStringBegin`, `TdqGStringPart`, `TdqGStringEnd`,
+`TdqGStringCharacter`, `SlashyGStringBegin`, `SlashyGStringPart`,
+`SlashyGStringEnd`, `SlashyGStringCharacter`, `DollarSlashyGStringBegin`,
+`DollarSlashyGStringPart`, `DollarSlashyGStringEnd`,
+`DollarSlashyGStringCharacter`, `GStringCharacter`, `GStringLBrace`,
+`GStringIdentifier`, `RollBackOne`, `RANGE_INCLUSIVE`,
+`RANGE_EXCLUSIVE_LEFT`, `RANGE_EXCLUSIVE_RIGHT`, `RANGE_EXCLUSIVE_FULL`,
+`SPREAD_DOT`, `SAFE_DOT`, `SAFE_INDEX`, `SAFE_CHAIN_DOT`, `ELVIS`,
+`METHOD_POINTER`, `METHOD_REFERENCE`, `REGEX_FIND`, `REGEX_MATCH`,
+`POWER`, `POWER_ASSIGN`, `SPACESHIP`, `IDENTICAL`, `IMPLIES`,
+`NOT_IDENTICAL`, `ARROW`, `NOT_INSTANCEOF`, `NOT_IN`, `LPAREN`,
+`RPAREN`, `LBRACE`, `RBRACE`, `LBRACK`, `RBRACK`, `SEMI`, `COMMA`,
+`DOT`, `ASSIGN`, `GT`, `LT`, `NOT`, `BITNOT`, `QUESTION`, `COLON`,
+`EQUAL`, `LE`, `GE`, `NOTEQUAL`, `AND`, `OR`, `INC`, `DEC`, `ADD`,
+`SUB`, `MUL`, `DIV`, `BITAND`, `BITOR`, `XOR`, `MOD`, `ADD_ASSIGN`,
+`SUB_ASSIGN`, `MUL_ASSIGN`, `DIV_ASSIGN`, `AND_ASSIGN`, `OR_ASSIGN`,
+`XOR_ASSIGN`, `MOD_ASSIGN`, `LSHIFT_ASSIGN`, `RSHIFT_ASSIGN`,
+`URSHIFT_ASSIGN`, `ELVIS_ASSIGN`, `CapitalizedIdentifier`, `Identifier`,
+`AT`, `ELLIPSIS`, `WS`, `NL`, `ML_COMMENT`, `SL_COMMENT`, `SH_COMMENT`,
+`UNEXPECTED_CHAR`.
+
+Lexer rules that are rewritten before the parser sees them:
+
+== Rewritten and mode-local lexer rules (not parser terminals)
+
+These names exist in `GroovyLexer.g4` and are rewritten or accumulated;
+the parser never sees the original name.
+
+[cols="1,2", options="header"]
+|===
+| Lexer rule
+| Fate
+
+| `TdqGStringBegin` `SlashyGStringBegin` `DollarSlashyGStringBegin`
+| `-> type(GStringBegin)` and `pushMode` of the matching body mode plus
+  `GSTRING_TYPE_SELECTOR_MODE`
+
+| `TdqGStringEnd` `SlashyGStringEnd` `DollarSlashyGStringEnd`
+| `-> type(GStringEnd)`, `popMode`
+
+| `TdqGStringPart` `SlashyGStringPart` `DollarSlashyGStringPart`
+| `-> type(GStringPart)`, `pushMode(GSTRING_TYPE_SELECTOR_MODE)`
+
+| `GStringCharacter` `TdqGStringCharacter` `SlashyGStringCharacter` `DollarSlashyGStringCharacter`
+| `-> more` (glued into the following `GStringPart` / `GStringEnd`)
+
+| `GStringLBrace`
+| `enterParen()`; `-> type(LBRACE)`; `popMode`; `pushMode(DEFAULT_MODE)`
+
+| `GStringIdentifier`
+| `-> type(Identifier)`; `popMode`; `pushMode(GSTRING_PATH_MODE)`
+
+| `RollBackOne`
+| `popMode`. Usually `HIDDEN` *and* `rollbackOneChar()`. At EOF after
+  `"` or `/`, `type(GStringEnd)` and **no** rollback.
+|===
+
+== Lexer fragments
+
+Every fragment used by a token:
+
+`DqStringCharacter`, `SqStringCharacter`, `TdqStringCharacter`,
+`TsqStringCharacter`, `SlashyStringCharacter`,
+`DollarSlashyStringCharacter`, `BOOLEAN`, `BYTE`, `CHAR`, `DOUBLE`,
+`FLOAT`, `INT`, `LONG`, `SHORT`, `DecimalIntegerLiteral`,
+`HexIntegerLiteral`, `OctalIntegerLiteral`, `BinaryIntegerLiteral`,
+`IntegerTypeSuffix`, `DecimalNumeral`, `Digits`, `Underscores`,
+`Underscore`, `HexNumeral`, `HexDigits`, `HexDigit`, `OctalNumeral`,
+`OctalDigits`, `BinaryNumeral`, `BinaryDigits`,
+`DecimalFloatingPointLiteral`, `ExponentPart`, `FloatTypeSuffix`,
+`HexadecimalFloatingPointLiteral`, `HexSignificand`, `BinaryExponent`,
+`EscapeSequence`, `OctalEscape`, `UnicodeEscape`, `DollarEscape`,
+`LineEscape`, `LineTerminator`, `SlashEscape`, `Backslash`, `Slash`,
+`Dollar`, `GStringQuotationMark`, `SqStringQuotationMark`,
+`TdqStringQuotationMark`, `TsqStringQuotationMark`,
+`DollarSlashyGStringQuotationMarkBegin`,
+`DollarSlashyGStringQuotationMarkEnd`, `DollarSlashEscape`,
+`DollarDollarEscape`, `DollarSlashDollarEscape`, `IdentifierInGString`,
+`JavaLetter`, `JavaLetterInGString`, `JavaLetterOrDigit`,
+`JavaLetterOrDigitInGString`, `ShCommand`.
+
+The fragments used by tokens are defined in <<grammar-lexical>>
+(`JavaLetter`, `Digits`, `HexDigits`, `OctalEscape`, `UnicodeEscape`,
+`ShCommand`, string-character fragments, ...). The remaining
+punctuation and primitive-spelling fragments are:
+
+[source,ebnf]
+----
+fragment GStringQuotationMark ::= '"'
+fragment SqStringQuotationMark ::= "'"
+fragment TdqStringQuotationMark ::= '"""'
+fragment TsqStringQuotationMark ::= "'''"
+fragment DollarSlashyGStringQuotationMarkBegin ::= '$/'
+fragment DollarSlashyGStringQuotationMarkEnd   ::= '/$'
+fragment DollarSlashEscape       ::= '$/'
+fragment DollarDollarEscape      ::= '$$'
+fragment DollarSlashDollarEscape ::= '$/$'
+fragment DollarEscape            ::= '\\' '$'
+fragment SlashEscape             ::= '\\' '/'
+fragment Backslash               ::= '\\'
+fragment Slash                   ::= '/'
+fragment Dollar                  ::= '$'
+fragment BOOLEAN ::= 'boolean'
+fragment BYTE    ::= 'byte'
+fragment CHAR    ::= 'char'
+fragment DOUBLE  ::= 'double'
+fragment FLOAT   ::= 'float'
+fragment INT     ::= 'int'
+fragment LONG    ::= 'long'
+fragment SHORT   ::= 'short'
+----

@@ -45,6 +45,7 @@ include::../../../../../src/spec/doc/core-introduction.adoc[]
 
 :core-concurrent-actors:
 :core-domain-specific-languages:
+:core-grammar:
 :core-metaprogramming:
 :core-object-orientation:
 :core-operators:
@@ -63,6 +64,8 @@ include::../../../../../src/spec/doc/core-introduction.adoc[]
 :sql-userguide:
 
 include::../../../../../src/spec/doc/core-syntax.adoc[leveloffset=+2]
+
+include::../../../../../src/spec/doc/core-grammar.adoc[leveloffset=+2]
 
 include::../../../../../src/spec/doc/core-operators.adoc[leveloffset=+2]
 
