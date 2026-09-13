@@ -247,7 +247,9 @@ above. Each bites contributors quickly if missed:
   exposure.
 - **Explicit imports, not wildcards.** The codebase uses explicit
   per-class imports; new code should match. IDE-default wildcard
-  imports get flagged in review.
+  imports get flagged in review. Unused imports and unneeded
+  fully-qualified names: see
+  [Documentation](CONTRIBUTING.md#documentation).
 - **New code prefers `org.apache.groovy.*`.** Legacy code under
   `org.codehaus.groovy.*` stays where it is for compatibility,
   but new packages should follow the `org.apache.groovy.*`

@@ -342,7 +342,9 @@ then fix**:
 6. **Diff the working tree.** Anything outside the regression test
    and the production change needs a reason. Drive-by reformatting
    and stray imports should be reverted; they hide real changes in
-   review.
+   review. Unused imports, unneeded fully-qualified names, and
+   JIRA keys in Groovydoc/Javadoc: see
+   [Documentation](#documentation).
 7. **Commit with a JIRA reference.** `GROOVY-NNNNN: <short subject>`
    on the first line — see
    [Submitting a pull request](#submitting-a-pull-request).
@@ -544,6 +546,27 @@ contributing code, please treat documentation as part of the change:
 - **Groovydoc is part of the public API.** Public classes and methods
   need accurate Groovydoc/Javadoc. Match the style of existing classes
   in the module you're editing.
+- **No unused imports, and no unneeded fully-qualified names.** Use
+  explicit per-class imports (not wildcards — see
+  [`ARCHITECTURE.md`](ARCHITECTURE.md#compiler-and-runtime-conventions)).
+  Drop an import that nothing in the file uses. Prefer the simple
+  name once the type is in scope (imported, same package, or packages
+  imported by default, e.g. `java.lang`) — including in Groovydoc/Javadoc
+  `{@link}`, `{@code}`, and `{@see}`.
+- **Keep JIRA keys out of Groovydoc/Javadoc.** Do not cite a JIRA
+  issue key (`GROOVY-` plus the issue number; the digit count is
+  not fixed) in a Javadoc or Groovydoc comment — including in
+  `{@link}`, `{@see}`, and parenthetical `(GROOVY-…)` — except
+  when the prose is explaining a compatibility constraint (binary
+  compatibility, a behavioural change across versions, a restored
+  ABI). Naming the ticket that introduced a method or change is
+  not that exception. Published API docs describe behaviour, not
+  the ticket. The key belongs in the commit message and in the
+  regression test — see
+  [Regression tests for JIRA fixes](#regression-tests-for-jira-fixes)
+  and [Submitting a pull request](#submitting-a-pull-request).
+  This rule is about published doc comments, not about `// GROOVY-`
+  markers on tests or in production code.
 
 Cross-version reference documentation, the GDK, and the website itself
 live in the separate [`groovy-website`](https://github.com/apache/groovy-website)
