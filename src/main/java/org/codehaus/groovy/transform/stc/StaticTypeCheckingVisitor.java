@@ -158,7 +158,6 @@ import java.util.stream.IntStream;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
-import static org.apache.groovy.ast.tools.SwitchExpressionUtils.UNMATCHED_YIELDS_NULL;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.enumConstantName;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.intConstant;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.isIntegralType;
@@ -5284,9 +5283,6 @@ trying: for (ClassNode[] signature : signatures) {
     private void checkSwitchExpressionExhaustiveness(final SwitchExpression expression) {
         if (expression.getDefaultStatement() != null && !expression.getDefaultStatement().isEmpty()) {
             return;
-        }
-        if (Boolean.TRUE.equals(expression.getNodeMetaData(UNMATCHED_YIELDS_NULL))) {
-            return; // GROOVY-12399: implicit-return position yields null when unmatched
         }
         Expression selector = expression.getExpression();
         ClassNode selectorType = getType(selector);

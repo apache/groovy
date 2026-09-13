@@ -358,20 +358,25 @@ Groovy 6 compiles switch expressions (JEP 361) as first-class AST
 immediately-called closure around a switch statement (the GROOVY-9272
 implementation shipped in 4.x / 5.x). As in Java (JEP 361) the `->` arm
 only decides fall-through; the position decides whether a value is produced
-(GROOVY-12399). A `switch` whose value is not used is a `SwitchStatement`,
-whatever its arm shape, and does nothing when unmatched. In expression
-position it is a `SwitchExpression` (every path must `yield` or `throw`).
-A switch in implicit-return position (the last statement of a closure, a
-script or a method that returns a value) keeps its value, but an unmatched
-selector yields `null` rather than throwing and no exhaustiveness is
-required, as in 4.x / 5.x; write `return switch (...) {...}` for the strict
-expression rules.
+(GROOVY-12399, GROOVY-12408). A `switch` whose value is not used is a
+`SwitchStatement`, whatever its arm shape, and does nothing when unmatched.
+That includes the last statement of a closure, a script or a method: the
+implicit return applies to the statement, as it does to an `if` or a
+colon-form `switch`. In expression position it is a `SwitchExpression` and
+every path must `yield` or `throw`; write `return switch (...) {...}`, or
+assign the result, to ask for that.
 
-**Who is affected (runtime behaviour).** A dynamic switch expression whose
-selector matches no arm now throws `IllegalStateException`. Previously the
-desugared closure completed without a `return` and the expression evaluated
-to `null`. Under `@TypeChecked` / `@CompileStatic`, a non-exhaustive switch
-expression (no `default`, and not a complete enum) is a compile-time error.
+**Who is affected (runtime behaviour).** A switch *expression* whose selector
+matches no arm throws `IllegalStateException`, where the 4.x / 5.x desugared
+closure completed without a `return` and evaluated to `null`. A switch
+*statement* does nothing, as before. The difference is visible where a method
+body is a bare `switch`: it is a statement, so an unmatched selector leaves
+the method's default value (`null`, or `0` / `false` for a primitive return
+type) rather than the `null` a 5.x expression produced, and rather than the
+`GroovyCastException` 5.x raised when coercing that `null` to a primitive.
+Under `@TypeChecked` / `@CompileStatic`, a non-exhaustive switch expression
+(no `default`, and not a complete enum) is a compile-time error; a statement
+needs no `default`.
 
 **Who is affected (AST tools).** Visitors, macros, and AST transforms that
 assumed a switch expression was a `MethodCallExpression` wrapping a
