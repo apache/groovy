@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789196777682,
+  "lastUpdate": 1789283488729,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -3609,6 +3609,58 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/apache/groovy/commit/32462579e2689374115525c2ac3e50a1ad86dfb5"
         },
         "date": 1789196777086,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3995,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 440,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 843,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1504,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Eric Milles",
+            "username": "eric-milles",
+            "email": "eric.milles@thomsonreuters.com"
+          },
+          "committer": {
+            "name": "Eric Milles",
+            "username": "eric-milles",
+            "email": "eric.milles@thomsonreuters.com"
+          },
+          "id": "6e21db629c295c1753966e665581f4e2c9a043d0",
+          "message": "remove unused imports",
+          "timestamp": "2026-09-12T17:23:21Z",
+          "url": "https://github.com/apache/groovy/commit/6e21db629c295c1753966e665581f4e2c9a043d0"
+        },
+        "date": 1789283487985,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
