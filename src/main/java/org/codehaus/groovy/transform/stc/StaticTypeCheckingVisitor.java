@@ -5127,7 +5127,16 @@ trying: for (ClassNode[] signature : signatures) {
             } finally {
                 popAssignmentTracking(oldTracker);
             }
-            checkPatternSwitchLabels(statement.getExpression(), statement.getCaseStatements());
+            PatternCoverage coverage = checkPatternSwitchLabels(statement.getExpression(), statement.getCaseStatements());
+            // JEP 441: a switch statement has to be exhaustive only when it uses a
+            // pattern label. Constant and class-literal labels never demand a
+            // default, so every switch statement written before patterns existed
+            // keeps compiling; a class literal can still help satisfy the check
+            // once a pattern has triggered it.
+            if (statement.getCaseStatements().stream().anyMatch(cs -> isPatternArm(cs))) {
+                checkSwitchExhaustiveness(statement, statement.getExpression(), statement.getCaseStatements(),
+                        statement.getDefaultStatement(), coverage, "statement");
+            }
         } finally {
             typeCheckingContext.popTemporaryTypeInfo();
             typeCheckingContext.popEnclosingSwitchStatement();
@@ -5171,7 +5180,8 @@ trying: for (ClassNode[] signature : signatures) {
             typeCheckSwitchExpressionIsCase(expression);
             checkSwitchDuplicateLabels(expression.getExpression(), expression.getCaseStatements());
             PatternCoverage coverage = checkPatternSwitchLabels(expression.getExpression(), expression.getCaseStatements());
-            checkSwitchExpressionExhaustiveness(expression, coverage);
+            checkSwitchExhaustiveness(expression, expression.getExpression(), expression.getCaseStatements(),
+                    expression.getDefaultStatement(), coverage, "expression");
         } finally {
             typeCheckingContext.popTemporaryTypeInfo();
             typeCheckingContext.popEnclosingSwitchExpression();
@@ -5297,20 +5307,28 @@ trying: for (ClassNode[] signature : signatures) {
         return typeCheckingContext.getEnclosingSwitchSelector();
     }
 
-    private void checkSwitchExpressionExhaustiveness(final SwitchExpression expression, final PatternCoverage coverage) {
-        if (expression.getDefaultStatement() != null && !expression.getDefaultStatement().isEmpty()) {
+    /**
+     * Reports a switch that does not cover every input, for an expression, which
+     * must always be exhaustive, and for a statement that carries a pattern label,
+     * which must be exhaustive under JEP 441 (GEP-19). A {@code default}, a
+     * complete set of enum constants, an unconditional pattern, or type tests
+     * covering a sealed hierarchy all satisfy it.
+     */
+    private void checkSwitchExhaustiveness(final ASTNode node, final Expression selector,
+            final List<CaseStatement> caseStatements, final Statement defaultStatement,
+            final PatternCoverage coverage, final String kind) {
+        if (defaultStatement != null && !defaultStatement.isEmpty()) {
             return;
         }
-        Expression selector = expression.getExpression();
         ClassNode selectorType = getType(selector);
-        if (selectorType != null && selectorType.isEnum() && coversAllEnumConstants(expression, selectorType)) {
+        if (selectorType != null && selectorType.isEnum() && coversAllEnumConstants(caseStatements, selectorType)) {
             return;
         }
         // GEP-19: an unconditional pattern, or type tests covering a sealed hierarchy, are exhaustive
         if (coverage.unconditional() || coversAllPermittedSubclasses(wrapTypeIfNecessary(selectorType), coverage.typeTests())) {
             return;
         }
-        addError("the switch expression does not cover all possible input values", expression);
+        addError("the switch " + kind + " does not cover all possible input values", node);
     }
 
     /**
@@ -5408,7 +5426,7 @@ trying: for (ClassNode[] signature : signatures) {
         return true;
     }
 
-    private boolean coversAllEnumConstants(final SwitchExpression expression, final ClassNode enumType) {
+    private boolean coversAllEnumConstants(final List<CaseStatement> caseStatements, final ClassNode enumType) {
         Set<String> remaining = new LinkedHashSet<>();
         for (FieldNode field : enumType.redirect().getFields()) {
             if (field.isEnum()) {
@@ -5426,7 +5444,7 @@ trying: for (ClassNode[] signature : signatures) {
         if (remaining.isEmpty()) {
             return false;
         }
-        for (CaseStatement caseStatement : expression.getCaseStatements()) {
+        for (CaseStatement caseStatement : caseStatements) {
             Expression caseExpr = caseStatement.getExpression();
             if (caseExpr instanceof VariableExpression variable) {
                 remaining.remove(variable.getName());
