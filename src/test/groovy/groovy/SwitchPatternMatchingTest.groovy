@@ -985,6 +985,55 @@ final class SwitchPatternMatchingTest {
     }
 
     @Test
+    void testMapPatternRestAcceptsVarSpelling() {
+        // `var...` is the canonical spelling in GEP-19; `def...` and the bare
+        // `...` shortcut are the same binding
+        assertScript '''
+            def m(o) {
+                switch (o) {
+                    case [a: var x, var... rest] -> rest
+                    default                      -> 'no'
+                }
+            }
+            assert m([a: 1, b: 2, c: 3]) == [b: 2, c: 3]
+        '''
+        assertScript '''
+            def m(o) {
+                switch (o) {
+                    case [a: var x, def... rest] -> rest
+                    default                      -> 'no'
+                }
+            }
+            assert m([a: 1, b: 2, c: 3]) == [b: 2, c: 3]
+        '''
+    }
+
+    @Test
+    void testMapPatternRestTakesNoTypePrefix() {
+        // a map rest is always a Map, unlike a list rest which may be typed
+        shouldFail '''
+            def r = switch ([a: 1, b: 2]) {
+                case [a: var x, Integer... rest] -> rest
+                default                          -> 'no'
+            }
+        '''
+    }
+
+    @Test
+    void testMapPatternRestBindsANewMap() {
+        assertScript '''
+            def source = [a: 1, b: 2]
+            def r = switch (source) {
+                case [a: var x, var... rest] -> rest
+                default                      -> null
+            }
+            r.b = 99
+            assert source.b == 2
+            assert r.b == 99
+        '''
+    }
+
+    @Test
     void testMapPatternSupportsAtMostOneRestBinding() {
         def err = shouldFail '''
             def r = switch ([a: 1]) {
