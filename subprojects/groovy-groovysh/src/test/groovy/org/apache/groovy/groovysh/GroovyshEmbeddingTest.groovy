@@ -21,7 +21,11 @@ package org.apache.groovy.groovysh
 import org.apache.groovy.groovysh.jline.GroovyEngine
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.jline.reader.Candidate
 import org.jline.reader.LineReader
+import org.jline.reader.Parser
+import org.jline.reader.impl.completer.AggregateCompleter
+import org.jline.reader.impl.completer.StringsCompleter
 import org.jline.shell.CommandSession
 import org.jline.shell.impl.AbstractCommand
 import org.jline.shell.impl.SimpleCommandGroup
@@ -251,6 +255,42 @@ class GroovyshEmbeddingTest {
             .build())
         assert rc == 0
         assert prompts.contains('gremlin> ')
+    }
+
+    @Test
+    void onReaderReadyCanContributeAGlobalCompleter() {
+        LineReader captured = null
+        int rc = Main.start(options()
+            .onReaderReady { LineReader reader, registry ->
+                captured = reader
+                // groovysh has already assigned its own completer; supplement it
+                reader.completer = new AggregateCompleter(registry.completer(),
+                    new StringsCompleter('gremlinStep'))
+            }
+            .resultHandler { p, r -> }
+            .build(), '-e', '1')
+        assert rc == 0
+        assert captured != null
+
+        def candidates = new ArrayList<Candidate>()
+        def line = captured.parser.parse('gremlinSt', 'gremlinSt'.length(), Parser.ParseContext.COMPLETE)
+        captured.completer.complete(captured, line, candidates)
+        assert candidates*.value().contains('gremlinStep')
+    }
+
+    @Test
+    void onReaderReadyRunsAfterTheRegistryIsWired() {
+        def order = []
+        int rc = Main.start(options()
+            .groups(group('/ping', []))
+            .onReaderReady { LineReader reader, registry ->
+                order << (registry.hasCommand('/ping') ? 'registry-ready' : 'registry-incomplete')
+                order << (reader.completer != null ? 'completer-set' : 'completer-missing')
+            }
+            .resultHandler { p, r -> }
+            .build(), '-e', '1')
+        assert rc == 0
+        assert order == ['registry-ready', 'completer-set']
     }
 
     @Test

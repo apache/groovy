@@ -19,6 +19,7 @@
 package org.apache.groovy.groovysh;
 
 import org.apache.groovy.groovysh.jline.GroovyEngine;
+import org.apache.groovy.groovysh.jline.GroovySystemRegistry;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.jline.console.Printer;
@@ -34,6 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -101,7 +103,7 @@ public final class GroovyshOptions {
     private final boolean showBanner;
     private final Terminal terminal;
     private final Path historyFile;
-    private final Consumer<LineReader> onReaderReady;
+    private final BiConsumer<LineReader, GroovySystemRegistry> onReaderReady;
 
     private GroovyshOptions(Builder builder) {
         this.compilerConfiguration = builder.compilerConfiguration;
@@ -232,13 +234,14 @@ public final class GroovyshOptions {
     }
 
     /**
-     * Callback invoked once the {@link LineReader} has been built, for settings
-     * this class does not model — the secondary prompt pattern, key bindings,
-     * reader options.
+     * Callback invoked once the reader and the command registry are both wired,
+     * immediately before the REPL starts, for settings this class does not
+     * model — the secondary prompt pattern, key bindings, reader options, and
+     * the completer.
      *
      * @return the callback, or {@code null}
      */
-    public Consumer<LineReader> getOnReaderReady() {
+    public BiConsumer<LineReader, GroovySystemRegistry> getOnReaderReady() {
         return onReaderReady;
     }
 
@@ -260,7 +263,7 @@ public final class GroovyshOptions {
         private boolean showBanner = true;
         private Terminal terminal;
         private Path historyFile;
-        private Consumer<LineReader> onReaderReady;
+        private BiConsumer<LineReader, GroovySystemRegistry> onReaderReady;
 
         private Builder() {
         }
@@ -451,13 +454,36 @@ public final class GroovyshOptions {
         }
 
         /**
-         * Registers a callback invoked once the {@link LineReader} is built.
-         * Mirrors {@code ShellBuilder.onReaderReady(Consumer)}.
+         * Registers a callback invoked once the reader is wired, immediately
+         * before the REPL starts. Mirrors {@code ShellBuilder.onReaderReady(Consumer)}.
          *
          * @param onReaderReady the callback, or {@code null} for none
          * @return this builder
          */
         public Builder onReaderReady(Consumer<LineReader> onReaderReady) {
+            this.onReaderReady = onReaderReady == null ? null
+                    : (reader, registry) -> onReaderReady.accept(reader);
+            return this;
+        }
+
+        /**
+         * Registers a callback invoked once the reader and the command registry
+         * are both wired, immediately before the REPL starts. Mirrors
+         * {@code ShellBuilder.onReaderReady(BiConsumer)}.
+         * <p>
+         * This is the hook for completion. groovysh has already assigned
+         * {@code reader.setCompleter(registry.completer())} by the time the
+         * callback runs, so an embedder contributing its own completion wraps
+         * that, for example
+         * {@code reader.setCompleter(new AggregateCompleter(registry.completer(), mine))}.
+         * Candidates from an {@code AggregateCompleter} are merged, so a
+         * completer added this way supplements groovysh's rather than replacing
+         * it; assign a completer of your own to replace it outright.
+         *
+         * @param onReaderReady the callback, or {@code null} for none
+         * @return this builder
+         */
+        public Builder onReaderReady(BiConsumer<LineReader, GroovySystemRegistry> onReaderReady) {
             this.onReaderReady = onReaderReady;
             return this;
         }
