@@ -21,6 +21,7 @@ package org.apache.groovy.groovysh
 import org.apache.groovy.groovysh.jline.GroovyEngine
 import org.apache.groovy.groovysh.jline.GroovyPosixCommands
 import org.apache.groovy.groovysh.jline.GroovyPosixContext
+import org.apache.groovy.lang.annotation.Incubating
 import org.jline.builtins.Completers
 import org.jline.builtins.Options
 import org.jline.builtins.PosixCommands
@@ -38,6 +39,7 @@ import org.jline.utils.InfoCmp.Capability
 import org.jline.utils.OSUtils
 
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Function
 
 /**
@@ -54,7 +56,8 @@ import java.util.function.Function
  *
  * @since 7.0.0
  */
-@SuppressWarnings('resource')
+@Incubating
+@SuppressWarnings(['resource', 'deprecation'])
 class ExtraConsoleCommands extends JlineCommandRegistry implements CommandRegistry {
 
     /**
@@ -62,8 +65,21 @@ class ExtraConsoleCommands extends JlineCommandRegistry implements CommandRegist
      */
     static final List<String> POSIX_COMMANDS = ['/ls', '/wc', '/sort', '/head', '/tail', '/cat', '/grep'].asImmutable()
 
+    private static final String[] CLEAR_USAGE = [
+        '/clear -  clear terminal',
+        'Usage: /clear',
+        '  -? --help                       Displays command help'
+    ]
+
+    private static final String[] SHELL_USAGE = [
+        '/!<command> -  execute shell command',
+        'Usage: /!<command>',
+        '  -? --help                       Displays command help'
+    ]
+
     private final LineReader reader
     private final GroovyEngine scriptEngine
+    private final Map<String, List<String>> commandInfos = new ConcurrentHashMap<>()
     private PosixCommandsRegistry posix
 
     /**
@@ -193,13 +209,8 @@ class ExtraConsoleCommands extends JlineCommandRegistry implements CommandRegist
     }
 
     private void clear(CommandInput input) {
-        final String[] usage = [
-            "/clear -  clear terminal",
-            "Usage: /clear",
-            "  -? --help                       Displays command help"
-        ]
         try {
-            parseOptions(usage, input.args())
+            parseOptions(CLEAR_USAGE, input.args())
             terminal().puts(Capability.clear_screen)
             terminal().flush()
         } catch (Exception e) {
@@ -225,14 +236,9 @@ class ExtraConsoleCommands extends JlineCommandRegistry implements CommandRegist
     }
 
     private void shell(CommandInput input) {
-        final String[] usage = [
-            "/!<command> -  execute shell command",
-            "Usage: /!<command>",
-            "  -? --help                       Displays command help"
-        ]
         if (input.args().length == 1 && (input.args()[0].equals("-?") || input.args()[0].equals("--help"))) {
             try {
-                parseOptions(usage, input.args())
+                parseOptions(SHELL_USAGE, input.args())
             } catch (Exception e) {
                 saveException(e)
             }
@@ -249,13 +255,35 @@ class ExtraConsoleCommands extends JlineCommandRegistry implements CommandRegist
     }
 
     /**
-     * Returns summary text for the specified command.
+     * Returns summary text for the specified command. The first entry is the
+     * one-line description JLine renders beside the command in {@code /help}
+     * and in completion candidates.
      *
      * @param command command name to describe
-     * @return help lines for the command
+     * @return help lines for the command, empty when it is not one of ours
      */
     @Override
     List<String> commandInfo(String command) {
-        posix.commandNames.toList()
+        commandInfos.computeIfAbsent(command) { String cmd ->
+            String[] usage = usageFor(cmd)
+            usage == null || usage.length == 0 ? [] : [summarise(usage[0])].asImmutable()
+        }
+    }
+
+    private String[] usageFor(String command) {
+        switch (command) {
+            case '/clear' -> CLEAR_USAGE
+            case '/!' -> SHELL_USAGE
+            default -> hasCommand(command) ? adjustUsage(command[1..-1], command) : null
+        }
+    }
+
+    /**
+     * Reduces a usage headline such as {@code "/ls -  list files"} to the
+     * description alone.
+     */
+    private static String summarise(String headline) {
+        int dash = headline.indexOf(' -')
+        (dash < 0 ? headline : headline.substring(dash + 2)).trim()
     }
 }

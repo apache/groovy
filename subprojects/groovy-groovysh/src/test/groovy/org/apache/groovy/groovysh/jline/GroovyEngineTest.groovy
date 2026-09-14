@@ -18,9 +18,6 @@
  */
 package org.apache.groovy.groovysh.jline
 
-import groovy.lang.Binding
-import groovy.lang.GroovyClassLoader
-import groovy.lang.GroovyShell
 import groovy.transform.ThreadInterrupt
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
@@ -274,9 +271,11 @@ class GroovyEngineTest {
         def thrown = new AtomicReference<Throwable>()
         def started = new CountDownLatch(1)
         engine.put('started', started)
-        def thread = Thread.start {
+        // daemon, and bounded: if the interrupt is ever missed the loop must still end
+        // rather than spin a core for the rest of the forked JVM's life
+        def thread = Thread.startDaemon {
             try {
-                engine.execute('started.countDown(); def n = 0; while (true) { n++ }')
+                engine.execute('started.countDown(); def n = 0L; while (n < 100_000_000_000L) { n++ }')
             } catch (Throwable t) {
                 thrown.set(t)
             }

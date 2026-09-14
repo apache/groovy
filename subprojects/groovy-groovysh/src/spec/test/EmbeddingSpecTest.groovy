@@ -23,7 +23,16 @@ import org.apache.groovy.groovysh.Main
 import org.apache.groovy.groovysh.jline.GroovyEngine
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.jline.reader.LineReader
+import org.jline.shell.CommandSession
+import org.jline.shell.impl.AbstractCommand
+import org.jline.shell.impl.SimpleCommandGroup
+import org.jline.terminal.Size
+import org.jline.terminal.impl.DumbTerminal
 import org.junit.jupiter.api.Test
+
+import java.nio.charset.StandardCharsets
+import java.nio.file.Path
 
 /**
  * Executable examples for embedding groovysh. Included from
@@ -45,11 +54,35 @@ class EmbeddingSpecTest {
     }
 
     @Test
-    void optionsBuilderHelpPath() {
-        // tag::embed_options_help[]
-        int rc = Main.start(GroovyshOptions.builder().showBanner(false).build(), '--help')
-        assert rc == 0
-        // end::embed_options_help[]
+    void optionsBuilderHooks() {
+        def terminal = new DumbTerminal('embedded', 'dumb',
+            new ByteArrayInputStream(new byte[0]), new ByteArrayOutputStream(), StandardCharsets.UTF_8)
+        terminal.size = new Size(80, 24)
+        def results = []
+        try {
+            // tag::embed_options_hooks[]
+            int rc = Main.start(GroovyshOptions.builder()
+                .terminal(terminal)                                    // host-supplied terminal
+                .showBanner(false)                                     // the host prints its own
+                .prompt { 'gremlin> ' }                                // primary prompt
+                .onReaderReady { LineReader reader ->                  // continuation prompt, key bindings
+                    reader.setVariable(LineReader.SECONDARY_PROMPT_PATTERN, '.......> ')
+                }
+                .historyFile(Path.of(System.getProperty('user.home'), '.myapp_history'))
+                .binding('answer', 42)                                 // visible to evaluated code
+                .groups(new SimpleCommandGroup('MyApp', new AbstractCommand('/ping') {
+                    @Override
+                    Object execute(CommandSession session, String[] args) { 'pong' }
+                }))
+                .resultHandler { printer, result -> results << result }  // render values your way
+                .errorHandler { error, defaultTrace -> defaultTrace.accept(error) }
+                .build(), '-e', 'answer')
+            assert rc == 0
+            assert 42 in results
+            // end::embed_options_hooks[]
+        } finally {
+            terminal.close()
+        }
     }
 
     @Test

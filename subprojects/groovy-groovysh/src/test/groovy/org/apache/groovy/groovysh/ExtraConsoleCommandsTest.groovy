@@ -173,10 +173,29 @@ class ExtraConsoleCommandsTest {
     }
 
     @Test
-    void commandInfoReturnsPosixCommandNames() {
-        def info = extra.commandInfo('/pwd')
-        assert info instanceof List
-        assert !info.isEmpty()
+    void commandInfoDescribesTheCommandItIsAskedAbout() {
+        assert extra.commandInfo('/pwd') == ['print working directory']
+        assert extra.commandInfo('/clear') == ['clear terminal']
+        assert extra.commandInfo('/!') == ['execute shell command']
+        assert extra.commandInfo('/ls') == ['list files']
+        // every command gets its own description rather than a shared list
+        def described = extra.commandNames().collectEntries { [it, extra.commandInfo(it)] }
+        assert described.every { _, info -> info.size() == 1 && info[0] }
+        assert described.values().flatten().toSet().size() == described.size()
+    }
+
+    @Test
+    void commandInfoIsEmptyForAnUnknownCommand() {
+        assert extra.commandInfo('/nope') == []
+    }
+
+    @Test
+    void helpDescribesEachConsoleCommand() {
+        system.execute('/help')
+        def help = terminalOutput()
+        assert help.contains('clear terminal')
+        assert help.contains('print working directory')
+        assert help.contains('list files')
     }
 
     @Test
