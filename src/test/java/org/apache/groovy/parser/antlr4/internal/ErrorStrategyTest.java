@@ -905,6 +905,67 @@ final class ErrorStrategyTest {
     }
 
     @Test
+    void unmatchedTypeArgumentIgnoresComparisonAgainstACapitalizedName() {
+        // an uppercase constant on the left is not a type argument list:
+        // `MAX < x` has no closing '>' because it never had an opening one
+        var tokens = lex("if (MAX < x) { println 1 +\n}");
+        Token brace = requireType(tokens, GroovyParser.LBRACE);
+        RecognitionException e = stubException(new IntervalSet(), brace, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedTypeArgument(e, brace));
+    }
+
+    @Test
+    void unmatchedTypeArgumentIgnoresComparisonAgainstAConstantField() {
+        var tokens = lex("if (Integer.MAX_VALUE < x) { println 1 +\n}");
+        Token brace = requireType(tokens, GroovyParser.LBRACE);
+        RecognitionException e = stubException(new IntervalSet(), brace, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedTypeArgument(e, brace));
+    }
+
+    @Test
+    void unmatchedTypeArgumentIgnoresLeftShiftWithinTheScanWindow() {
+        // the shift sits next to the offender, so the scan really does reach it
+        var tokens = lex("def y = X << 2 +");
+        Token plus = requireText(tokens, "+");
+        RecognitionException e = stubException(new IntervalSet(), plus, tokens);
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedTypeArgument(e, plus));
+    }
+
+    @Test
+    void unmatchedTypeArgumentAcceptsAPrimitiveTypeArgument() {
+        var tokens = lex("List<int[] list = null");
+        Token list = tokens.get(0);
+        RecognitionException e = stubException(new IntervalSet(), list, tokens);
+        assertEquals("Missing '>'", AbstractFriendlyErrorStrategy.unmatchedTypeArgument(e, list));
+    }
+
+    @Test
+    void unmatchedTypeArgumentAcceptsAWildcardTypeArgument() {
+        var tokens = lex("List<? extends Number list = null");
+        Token list = tokens.get(0);
+        RecognitionException e = stubException(new IntervalSet(), list, tokens);
+        assertEquals("Missing '>'", AbstractFriendlyErrorStrategy.unmatchedTypeArgument(e, list));
+    }
+
+    @Test
+    void unmatchedTypeArgumentAcceptsATypeArgumentOnTheNextLine() {
+        // a newline between '<' and the type argument does not settle the question
+        var tokens = lex("List<\nInteger x");
+        Token x = requireText(tokens, "x");
+        RecognitionException e = stubException(new IntervalSet(), x, tokens);
+        assertEquals("Missing '>'", AbstractFriendlyErrorStrategy.unmatchedTypeArgument(e, x));
+    }
+
+    @Test
+    void unmatchedTypeArgumentAcceptsATrailingLtAtEndOfInput() {
+        // `class Foo<` — nothing follows the '<' to disprove a type argument list
+        var tokens = lex("class Foo<");
+        Token eof = requireType(tokens, Token.EOF);
+        RecognitionException e = stubException(new IntervalSet(), eof, tokens);
+        assertEquals("Missing '>'", AbstractFriendlyErrorStrategy.unmatchedTypeArgument(e, eof));
+    }
+
+    @Test
     void unmatchedTypeArgumentNulls() {
         assertNull(AbstractFriendlyErrorStrategy.unmatchedTypeArgument(null, token(GroovyParser.Identifier, "x")));
         Token gt = token(GroovyParser.GT, ">");
@@ -1213,13 +1274,15 @@ final class ErrorStrategyTest {
     }
 
     @Test
-    void unmatchedTypeArgumentNestedLowercaseNameIncrementsDepth() {
-        // `foo<` is not itself a type opener; depth is already > 0 from `List<`.
+    void unmatchedTypeArgumentDeclinesALowercaseTypeArgument() {
+        // A type argument must look like a type. Declining `List<foo` costs a
+        // less specific sentence for an unconventionally named class; accepting
+        // any lowercase name would rewrite every `MAX < x` comparison.
         var tokens = lex("List<foo<Integer x");
         Token x = requireText(tokens, "x");
         Token list = tokens.get(0);
         NoViableAltException nvae = nvaeStartingAt(tokens, list, x);
-        assertEquals("Missing '>'", AbstractFriendlyErrorStrategy.unmatchedTypeArgument(nvae, x));
+        assertNull(AbstractFriendlyErrorStrategy.unmatchedTypeArgument(nvae, x));
     }
 
     @Test
