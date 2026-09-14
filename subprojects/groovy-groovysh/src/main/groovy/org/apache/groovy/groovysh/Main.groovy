@@ -76,7 +76,6 @@ import static org.jline.jansi.AnsiRenderer.render
  * (or the binding-only {@link #start(Map, String[])} overload) rather than
  * {@link #main(String[])}, which calls {@link System#exit(int)}.
  */
-@SuppressWarnings('deprecation')
 class Main {
     private static final MessageSource messages = new MessageSource(Main)
     /** Preference key that controls whether groovysh starts in interpreter mode. */
