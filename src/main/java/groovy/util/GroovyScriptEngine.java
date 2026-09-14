@@ -162,6 +162,10 @@ public class GroovyScriptEngine implements ResourceConnector {
         private void setResLoader() {
             final GroovyResourceLoader rl = getResourceLoader();
             setResourceLoader(className -> {
+                // getConfig() binds to the enclosing GroovyScriptEngine, not to this
+                // class loader, which has none of its own. That is deliberate: the
+                // engine's configuration drives resolution on both constructor paths,
+                // including the one that inherits its parent loader's configuration.
                 for (String extension : getConfig().getScriptExtensions()) {
                     String filename = className.replace('.', '/') + "." + extension;
                     URLConnection dependentScriptConn = null;

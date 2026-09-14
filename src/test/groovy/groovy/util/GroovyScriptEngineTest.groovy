@@ -157,6 +157,48 @@ final class GroovyScriptEngineTest {
         assert requested.contains('com/example/Helper.groovy')
     }
 
+    @Test
+    void recompilationResolvesDependenciesThroughTheCustomConnector() {
+        new File(temporaryFolder, 'Dep.groovy').text = 'class Dep { static String greet() { "one" } }'
+        new File(temporaryFolder, 'Main.groovy').text = 'Dep.greet()'
+
+        ResourceConnector rc = { String name ->
+            // names arrive either as a resource name or as a previously resolved URL
+            File f = name.startsWith('file:') ? new File(URI.create(name)) : new File(temporaryFolder, name)
+            if (!f.exists()) throw new ResourceException("missing $name")
+            f.toURI().toURL().openConnection()
+        }
+
+        // the engine's own roots-based connector must never be consulted when a
+        // custom connector was supplied; recording it gives a binary signal
+        List<String> bypassed = []
+        def engine = new GroovyScriptEngine(rc) {
+            long time = 1000
+
+            @Override
+            protected long getCurrentTime() { time }
+
+            @Override
+            URLConnection getResourceConnection(String resourceName) throws ResourceException {
+                bypassed << resourceName
+                super.getResourceConnection(resourceName)
+            }
+        }
+        engine.config.minimumRecompilationInterval = 0
+
+        assert engine.run('Main.groovy', new Binding()) == 'one'
+
+        // make the dependency strictly newer, then force the staleness check to run
+        File dep = new File(temporaryFolder, 'Dep.groovy')
+        dep.text = 'class Dep { static String greet() { "two" } }'
+        dep.setLastModified(dep.lastModified() + 10_000)
+        engine.@time += 10_000
+
+        assert engine.run('Main.groovy', new Binding()) == 'two'
+        assert bypassed.isEmpty(),
+            "recompilation bypassed the custom ResourceConnector for $bypassed"
+    }
+
     static final class TrackingURLConnection extends URLConnection {
         boolean inputStreamOpened
         private final File file
