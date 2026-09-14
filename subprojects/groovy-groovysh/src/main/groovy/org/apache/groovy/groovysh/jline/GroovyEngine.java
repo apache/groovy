@@ -91,7 +91,6 @@ import java.util.stream.Stream;
  * You must be very careful when using GroovyEngine in a multithreaded environment. The Binding instance is not
  * thread safe, and it is shared by all scripts.
  */
-@SuppressWarnings("deprecation")
 public class GroovyEngine implements ScriptEngine {
     /**
      * Serialization/deserialization format options.
@@ -1070,6 +1069,7 @@ public class GroovyEngine implements ScriptEngine {
      * @param line the command line to describe
      * @return the command description
      */
+    @SuppressWarnings("deprecation") // org.jline.console command-description API
     public CmdDesc scriptDescription(CmdLine line) {
         return new Inspector(this).scriptDescription(line);
     }
@@ -1920,6 +1920,7 @@ public class GroovyEngine implements ScriptEngine {
         private static final List<String> VALUES = Arrays.asList("true", "false");
         private static final String REGEX_GET_METHOD = "get[A-Z].*";
         private final GroovyEngine groovyEngine;
+        @SuppressWarnings("deprecation") // org.jline.console.SystemRegistry
         private final SystemRegistry systemRegistry = SystemRegistry.get();
         private Inspector inspector;
         private AccessRules access;
@@ -2578,6 +2579,7 @@ public class GroovyEngine implements ScriptEngine {
          * @param line the command line to describe
          * @return the command description
          */
+        @SuppressWarnings("deprecation") // org.jline.console command-description API
         public CmdDesc scriptDescription(CmdLine line) {
             CmdDesc out = null;
             try {
@@ -2625,6 +2627,7 @@ public class GroovyEngine implements ScriptEngine {
             return out;
         }
 
+        @SuppressWarnings("deprecation") // org.jline.console command-description API
         private CmdDesc methodDescription(CmdLine line) {
             CmdDesc out = new CmdDesc();
             List<String> args = line.getArgs();
@@ -2804,6 +2807,7 @@ public class GroovyEngine implements ScriptEngine {
             return out;
         }
 
+        @SuppressWarnings("deprecation") // org.jline.console command-description API
         private CmdDesc checkSyntax(CmdLine line) {
             CmdDesc out = new CmdDesc();
             int openingRound = Brackets.indexOfOpeningRound(line.getHead());
