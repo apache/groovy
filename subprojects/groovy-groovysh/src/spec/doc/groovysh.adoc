@@ -1520,9 +1520,25 @@ Recognized hooks:
   one from the CLI flags.
 * `historyFile` — where to persist history; when omitted, groovysh's
   own `groovysh_history`.
-* `onReaderReady` — a `Consumer<LineReader>` called once the reader
-  exists, for settings the builder does not model: the continuation
-  prompt (`SECONDARY_PROMPT_PATTERN`), key bindings, reader options.
+* `onReaderReady` — called once the reader and the command registry
+  are both wired, immediately before the REPL starts, for settings the
+  builder does not model: the continuation prompt
+  (`SECONDARY_PROMPT_PATTERN`), key bindings, reader options, and
+  completion. Takes a `Consumer<LineReader>`, or a
+  `BiConsumer<LineReader, GroovySystemRegistry>` when the registry is
+  needed too. groovysh has already assigned
+  `reader.completer = registry.completer()` by then, so an embedder
+  contributing domain completion wraps it:
++
+[source,groovy]
+----
+reader.completer = new AggregateCompleter(registry.completer(), myCompleter)
+----
++
+`AggregateCompleter` merges candidates, so a completer added that way
+supplements groovysh's rather than replacing it. Assigning a completer
+of your own replaces it outright. Per-command completion needs none of
+this — it comes from `Command.completer()` on a contributed `group`.
 
 [source,groovy]
 .Embedding with `GroovyshOptions`
