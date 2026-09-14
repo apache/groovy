@@ -21,22 +21,32 @@ package org.apache.groovy.groovysh;
 import org.apache.groovy.groovysh.jline.GroovyEngine;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.jline.console.CommandRegistry;
-import org.jline.console.ConsoleEngine;
-import org.jline.console.SystemRegistry;
+import org.jline.console.Printer;
+import org.jline.reader.LineReader;
+import org.jline.shell.CommandGroup;
+import org.jline.shell.ShellBuilder;
 import org.jline.terminal.Terminal;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
  * Configuration for embedding groovysh programmatically via
  * {@link Main#start(GroovyshOptions, String[])}.
+ * <p>
+ * Where a setting has an equivalent on JLine's {@link ShellBuilder},
+ * this class deliberately uses the same name and parameter type, so that a future
+ * move of groovysh onto {@code org.jline.shell} is re-plumbing rather than a break
+ * in Groovy's API. The Groovy-specific settings — compiler configuration, engine,
+ * bindings, banner, and the result/error handlers a language REPL needs and a
+ * command shell does not — have no such equivalent.
  * <p>
  * Binding variables stay in {@link #getBindings()}; they are not mixed
  * with embedding hooks. Construct with {@link #builder()}.
@@ -44,7 +54,6 @@ import java.util.function.Supplier;
  * @since 7.0.0
  */
 @Incubating
-@SuppressWarnings("deprecation")
 public final class GroovyshOptions {
 
     /**
@@ -55,11 +64,11 @@ public final class GroovyshOptions {
         /**
          * Renders {@code result} after a line has been executed.
          *
-         * @param console the console engine used by the session
-         * @param result the value returned by {@code SystemRegistry.execute}, which may be {@code null}
+         * @param printer the printer used by the session
+         * @param result the value returned by the command dispatch, which may be {@code null}
          * @throws Exception if rendering fails; groovysh then routes it to the error handler
          */
-        void handle(ConsoleEngine console, Object result) throws Exception;
+        void handle(Printer printer, Object result) throws Exception;
     }
 
     /**
@@ -72,32 +81,41 @@ public final class GroovyshOptions {
          * {@code UserInterruptException} and {@code EndOfFileException} are
          * not delivered here; {@link Main} treats those as control flow.
          *
-         * @param registry the system registry for the session
+         * A handler that throws is not caught again: the error escapes the REPL
+         * loop and {@link Main#start(GroovyshOptions, String[])} returns 1.
+         *
          * @param error the thrown error or exception
+         * @param defaultTrace groovysh's own renderer, for a handler that wants to delegate
          */
-        void handle(SystemRegistry registry, Throwable error);
+        void handle(Throwable error, Consumer<Throwable> defaultTrace);
     }
 
     private final CompilerConfiguration compilerConfiguration;
     private final GroovyEngine engine;
     private final Map<String, Object> bindings;
-    private final List<CommandRegistry> extraCommandRegistries;
+    private final List<CommandGroup> groups;
     private final Supplier<String> prompt;
+    private final Supplier<String> rightPrompt;
     private final ResultHandler resultHandler;
     private final ErrorHandler errorHandler;
     private final boolean showBanner;
     private final Terminal terminal;
+    private final Path historyFile;
+    private final Consumer<LineReader> onReaderReady;
 
     private GroovyshOptions(Builder builder) {
         this.compilerConfiguration = builder.compilerConfiguration;
         this.engine = builder.engine;
         this.bindings = Collections.unmodifiableMap(new LinkedHashMap<>(builder.bindings));
-        this.extraCommandRegistries = Collections.unmodifiableList(new ArrayList<>(builder.extraCommandRegistries));
+        this.groups = Collections.unmodifiableList(new ArrayList<>(builder.groups));
         this.prompt = builder.prompt;
+        this.rightPrompt = builder.rightPrompt;
         this.resultHandler = builder.resultHandler;
         this.errorHandler = builder.errorHandler;
         this.showBanner = builder.showBanner;
         this.terminal = builder.terminal;
+        this.historyFile = builder.historyFile;
+        this.onReaderReady = builder.onReaderReady;
     }
 
     /**
@@ -139,12 +157,14 @@ public final class GroovyshOptions {
     }
 
     /**
-     * Extra command registries appended after groovysh's own registries.
+     * Command groups contributed by the embedder. They are resolved
+     * <em>before</em> groovysh's own commands, so a group may override a
+     * built-in command name.
      *
      * @return an unmodifiable list, never {@code null}
      */
-    public List<CommandRegistry> getExtraCommandRegistries() {
-        return extraCommandRegistries;
+    public List<CommandGroup> getGroups() {
+        return groups;
     }
 
     /**
@@ -157,7 +177,16 @@ public final class GroovyshOptions {
     }
 
     /**
-     * Result renderer. {@code null} means print {@code result?.toString()} via the console engine.
+     * Right-hand prompt supplier invoked on each REPL iteration.
+     *
+     * @return the right prompt supplier, or {@code null} for none
+     */
+    public Supplier<String> getRightPrompt() {
+        return rightPrompt;
+    }
+
+    /**
+     * Result renderer. {@code null} means print {@code result?.toString()} via the printer.
      *
      * @return the result handler, or {@code null}
      */
@@ -166,7 +195,7 @@ public final class GroovyshOptions {
     }
 
     /**
-     * Error renderer. {@code null} means {@code SystemRegistry.trace(error)}.
+     * Error renderer. {@code null} means groovysh's own trace.
      *
      * @return the error handler, or {@code null}
      */
@@ -193,6 +222,27 @@ public final class GroovyshOptions {
     }
 
     /**
+     * History file for the session. {@code null} means groovysh's own
+     * {@code groovysh_history} in the user state directory.
+     *
+     * @return the history file, or {@code null}
+     */
+    public Path getHistoryFile() {
+        return historyFile;
+    }
+
+    /**
+     * Callback invoked once the {@link LineReader} has been built, for settings
+     * this class does not model — the secondary prompt pattern, key bindings,
+     * reader options.
+     *
+     * @return the callback, or {@code null}
+     */
+    public Consumer<LineReader> getOnReaderReady() {
+        return onReaderReady;
+    }
+
+    /**
      * Builder for {@link GroovyshOptions}.
      *
      * @since 7.0.0
@@ -202,12 +252,15 @@ public final class GroovyshOptions {
         private CompilerConfiguration compilerConfiguration;
         private GroovyEngine engine;
         private final Map<String, Object> bindings = new LinkedHashMap<>();
-        private final List<CommandRegistry> extraCommandRegistries = new ArrayList<>();
+        private final List<CommandGroup> groups = new ArrayList<>();
         private Supplier<String> prompt;
+        private Supplier<String> rightPrompt;
         private ResultHandler resultHandler;
         private ErrorHandler errorHandler;
         private boolean showBanner = true;
         private Terminal terminal;
+        private Path historyFile;
+        private Consumer<LineReader> onReaderReady;
 
         private Builder() {
         }
@@ -267,39 +320,77 @@ public final class GroovyshOptions {
         }
 
         /**
-         * Appends an extra command registry.
+         * Appends command groups. Mirrors {@code ShellBuilder.groups(CommandGroup...)}.
          *
-         * @param registry the registry to append, must not be {@code null}
+         * @param groups groups to append; {@code null} entries are rejected
          * @return this builder
          */
-        public Builder extraCommandRegistry(CommandRegistry registry) {
-            this.extraCommandRegistries.add(Objects.requireNonNull(registry, "registry"));
-            return this;
-        }
-
-        /**
-         * Appends extra command registries.
-         *
-         * @param registries registries to append; {@code null} is ignored
-         * @return this builder
-         */
-        public Builder extraCommandRegistries(Iterable<? extends CommandRegistry> registries) {
-            if (registries != null) {
-                for (CommandRegistry registry : registries) {
-                    extraCommandRegistry(registry);
+        public Builder groups(CommandGroup... groups) {
+            if (groups != null) {
+                for (CommandGroup group : groups) {
+                    this.groups.add(Objects.requireNonNull(group, "group"));
                 }
             }
             return this;
         }
 
         /**
-         * Sets the prompt supplier. Called once per REPL iteration.
+         * Appends command groups.
+         *
+         * @param groups groups to append; {@code null} is ignored
+         * @return this builder
+         */
+        public Builder groups(Iterable<? extends CommandGroup> groups) {
+            if (groups != null) {
+                for (CommandGroup group : groups) {
+                    this.groups.add(Objects.requireNonNull(group, "group"));
+                }
+            }
+            return this;
+        }
+
+        /**
+         * Sets a fixed prompt. Mirrors {@code ShellBuilder.prompt(String)}.
+         *
+         * @param prompt the prompt text, or {@code null} for {@code "groovy> "}
+         * @return this builder
+         */
+        public Builder prompt(String prompt) {
+            this.prompt = prompt == null ? null : () -> prompt;
+            return this;
+        }
+
+        /**
+         * Sets the prompt supplier, called once per REPL iteration.
+         * Mirrors {@code ShellBuilder.prompt(Supplier)}.
          *
          * @param prompt the supplier, or {@code null} for {@code "groovy> "}
          * @return this builder
          */
         public Builder prompt(Supplier<String> prompt) {
             this.prompt = prompt;
+            return this;
+        }
+
+        /**
+         * Sets a fixed right-hand prompt. Mirrors {@code ShellBuilder.rightPrompt(String)}.
+         *
+         * @param rightPrompt the prompt text, or {@code null} for none
+         * @return this builder
+         */
+        public Builder rightPrompt(String rightPrompt) {
+            this.rightPrompt = rightPrompt == null ? null : () -> rightPrompt;
+            return this;
+        }
+
+        /**
+         * Sets the right-hand prompt supplier. Mirrors {@code ShellBuilder.rightPrompt(Supplier)}.
+         *
+         * @param rightPrompt the supplier, or {@code null} for none
+         * @return this builder
+         */
+        public Builder rightPrompt(Supplier<String> rightPrompt) {
+            this.rightPrompt = rightPrompt;
             return this;
         }
 
@@ -317,7 +408,7 @@ public final class GroovyshOptions {
         /**
          * Sets the error handler.
          *
-         * @param errorHandler the handler, or {@code null} for {@code SystemRegistry.trace}
+         * @param errorHandler the handler, or {@code null} for groovysh's own trace
          * @return this builder
          */
         public Builder errorHandler(ErrorHandler errorHandler) {
@@ -338,12 +429,36 @@ public final class GroovyshOptions {
 
         /**
          * Supplies a terminal instead of letting {@link Main} build one from CLI flags.
+         * Mirrors {@code ShellBuilder.terminal(Terminal)}.
          *
          * @param terminal the terminal, or {@code null} to build the default
          * @return this builder
          */
         public Builder terminal(Terminal terminal) {
             this.terminal = terminal;
+            return this;
+        }
+
+        /**
+         * Sets the history file. Mirrors {@code ShellBuilder.historyFile(Path)}.
+         *
+         * @param historyFile the file, or {@code null} for groovysh's own
+         * @return this builder
+         */
+        public Builder historyFile(Path historyFile) {
+            this.historyFile = historyFile;
+            return this;
+        }
+
+        /**
+         * Registers a callback invoked once the {@link LineReader} is built.
+         * Mirrors {@code ShellBuilder.onReaderReady(Consumer)}.
+         *
+         * @param onReaderReady the callback, or {@code null} for none
+         * @return this builder
+         */
+        public Builder onReaderReady(Consumer<LineReader> onReaderReady) {
+            this.onReaderReady = onReaderReady;
             return this;
         }
 

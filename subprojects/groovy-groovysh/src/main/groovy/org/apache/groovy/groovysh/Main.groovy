@@ -18,23 +18,23 @@
  */
 package org.apache.groovy.groovysh
 
-import org.apache.groovy.groovysh.ExtraConsoleCommands as DefaultExtraConsoleCommands
-
 import groovy.cli.internal.CliBuilderInternal
 import groovy.cli.internal.OptionAccessor
+import org.apache.groovy.groovysh.ExtraConsoleCommands as DefaultExtraConsoleCommands
 import org.apache.groovy.groovysh.jline.GroovyBuiltins
-import org.apache.groovy.lang.annotation.Incubating
 import org.apache.groovy.groovysh.jline.GroovyCommands
 import org.apache.groovy.groovysh.jline.GroovyConsoleEngine
 import org.apache.groovy.groovysh.jline.GroovyEngine
 import org.apache.groovy.groovysh.jline.GroovyPrinter
 import org.apache.groovy.groovysh.jline.GroovySystemRegistry
 import org.apache.groovy.groovysh.util.DocFinder
+import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.jline.builtins.ClasspathResourceUtil
 import org.jline.builtins.ConfigurationPath
 import org.jline.builtins.SyntaxHighlighter
 import org.jline.console.CommandRegistry
+import org.jline.console.impl.CommandRegistryAdapter
 import org.jline.console.ConsoleEngine
 import org.jline.console.Printer
 import org.jline.console.impl.SystemHighlighter
@@ -64,6 +64,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermission
 import java.nio.file.attribute.PosixFilePermissions
+import java.util.function.Consumer
 import java.util.function.Supplier
 
 import static org.jline.jansi.AnsiRenderer.render
@@ -335,8 +336,9 @@ class Main {
                 // handles the concurrent-creation race, and falls back on non-POSIX file systems.
                 // Creating it here first is what used to defeat that and leave it at the umask
                 // default. Only an already-open file is adjusted.
-                .variable(LineReader.HISTORY_FILE,
-                    tightenStateFile(userStateDirectory.resolve('groovysh_history')))
+                .variable(LineReader.HISTORY_FILE, groovyshOptions.historyFile != null
+                    ? groovyshOptions.historyFile
+                    : tightenStateFile(userStateDirectory.resolve('groovysh_history')))
                 .option(Option.INSERT_BRACKET, true)
                 .option(Option.EMPTY_WORD_OPTIONS, false)
                 .option(Option.USE_FORWARD_SLASH, true)
@@ -346,6 +348,7 @@ class Main {
                 reader.setVariable(
                     LineReader.BLINK_MATCHING_PAREN, 0) // if enabled cursor remains in begin parenthesis (gitbash)
             }
+            groovyshOptions.onReaderReady?.accept(reader)
 
             def extra = new DefaultExtraConsoleCommands(Paths.get(System.getProperty('user.dir')), scriptEngine, reader)
             Supplier<Path> workDir = extra::currentDir
@@ -363,8 +366,8 @@ class Main {
 
             GroovySystemRegistry systemRegistry = new GroovySystemRegistry(parser, terminal, workDir, configPath).tap {
                 groupCommandsInHelp(false)
-                def registries = [extra, consoleEngine, builtins, groovy]
-                registries.addAll(groovyshOptions.extraCommandRegistries)
+                def registries = groovyshOptions.groups.collect { new CommandRegistryAdapter(it) as CommandRegistry }
+                registries.addAll([extra, consoleEngine, builtins, groovy])
                 setCommandRegistries(registries.toArray(new CommandRegistry[0]))
                 addCompleter(scriptEngine.scriptCompleter)
                 setScriptDescription(scriptEngine::scriptDescription)
@@ -401,6 +404,7 @@ class Main {
             }
 
             Supplier<String> prompt = groovyshOptions.prompt ?: ({ 'groovy> ' } as Supplier<String>)
+            Supplier<String> rightPrompt = groovyshOptions.rightPrompt
 
             if (groovyshOptions.showBanner) {
                 if (options.q) {
@@ -430,7 +434,7 @@ class Main {
                     } else {
                         // for debugging
 //                        line = lines[index++]
-                        line = reader.readLine(prompt.get())
+                        line = reader.readLine(prompt.get(), rightPrompt?.get(), (Character) null, null)
                     }
                     line = line.readLines().collect{ s ->
                         // remove Groovy continuation character for repl not Groovy's sake
@@ -444,7 +448,7 @@ class Main {
                         }
                     }
                     Object result = systemRegistry.execute(line)
-                    emitResult(consoleEngine, result, groovyshOptions.resultHandler)
+                    emitResult(printer, result, groovyshOptions.resultHandler)
 //                    consoleEngine.println([(Printer.OBJECT_TO_STRING): [(Object) : {  o -> o.toString() }] ], result)
                 } catch (UserInterruptException e) {
                     // Ignore
@@ -452,7 +456,7 @@ class Main {
                     String pl = e.getPartialLine()
                     if (pl != null) { // execute last line from redirected file (required for Windows)
                         try {
-                            emitResult(consoleEngine, systemRegistry.execute(pl), groovyshOptions.resultHandler)
+                            emitResult(printer, systemRegistry.execute(pl), groovyshOptions.resultHandler)
                         } catch (Exception e2) {
                             emitError(systemRegistry, e2, groovyshOptions.errorHandler)
                         }
@@ -487,19 +491,20 @@ class Main {
         start(GroovyshOptions.builder().build(), args)
     }
 
-    private static void emitResult(ConsoleEngine console, Object result, GroovyshOptions.ResultHandler handler) throws Exception {
+    private static void emitResult(Printer printer, Object result, GroovyshOptions.ResultHandler handler) throws Exception {
         if (handler != null) {
-            handler.handle(console, result)
+            handler.handle(printer, result)
         } else {
-            console.println(result?.toString())
+            printer.println(result?.toString())
         }
     }
 
     private static void emitError(GroovySystemRegistry registry, Throwable error, GroovyshOptions.ErrorHandler handler) {
+        Consumer<Throwable> defaultTrace = registry::trace
         if (handler != null) {
-            handler.handle(registry, error)
+            handler.handle(error, defaultTrace)
         } else {
-            registry.trace(error)
+            defaultTrace.accept(error)
         }
     }
 

@@ -22,6 +22,7 @@ import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
 import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
 import org.apache.groovy.groovysh.Main;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ModuleImportHelper;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
@@ -225,6 +226,7 @@ public class GroovyEngine implements ScriptEngine {
      *                      {@link CompilerConfiguration#DEFAULT}
      * @since 7.0.0
      */
+    @Incubating
     public GroovyEngine(CompilerConfiguration configuration) {
         this(null, null, configuration);
     }
@@ -232,14 +234,24 @@ public class GroovyEngine implements ScriptEngine {
     /**
      * Constructs a GroovyEngine with an explicit parent class loader, binding,
      * and compiler configuration.
+     * <p>
+     * As with {@link GroovyShell}, an {@link EngineClassLoader} whose configuration
+     * is the same instance as {@code configuration} becomes the engine class loader
+     * itself rather than its parent; any other loader is wrapped. Two engines sharing
+     * one loader that way also share its class cache, so a cache purge from either —
+     * {@code /reset} and the type-redefinition paths do this — discards the other's
+     * classes, and their script classes occupy one namespace. Pass a plain
+     * {@link ClassLoader}, or a configuration this loader does not already hold, to
+     * get a child loader instead.
      *
-     * @param parent parent class loader, or {@code null} to use the thread
-     *               context class loader
+     * @param parent class loader to use as parent, or to adopt as described above;
+     *               {@code null} uses the thread context class loader
      * @param binding shared binding, or {@code null} to create a new one
      * @param configuration compiler configuration, or {@code null} for
      *                      {@link CompilerConfiguration#DEFAULT}
      * @since 7.0.0
      */
+    @Incubating
     public GroovyEngine(ClassLoader parent, Binding binding, CompilerConfiguration configuration) {
         sharedData = binding != null ? binding : new Binding();
         compilerConfiguration = configuration != null ? configuration : CompilerConfiguration.DEFAULT;
@@ -284,6 +296,7 @@ public class GroovyEngine implements ScriptEngine {
      * @return a shell that uses {@code classLoader} as its loader
      * @since 7.0.0
      */
+    @Incubating
     protected GroovyShell createShell(ClassLoader classLoader, Binding binding, CompilerConfiguration configuration) {
         return new GroovyShell(classLoader, binding, configuration);
     }
@@ -294,6 +307,7 @@ public class GroovyEngine implements ScriptEngine {
      * @return the engine class loader
      * @since 7.0.0
      */
+    @Incubating
     public EngineClassLoader getClassLoader() {
         return classLoader;
     }
@@ -304,6 +318,7 @@ public class GroovyEngine implements ScriptEngine {
      * @return the compiler configuration, never {@code null}
      * @since 7.0.0
      */
+    @Incubating
     public CompilerConfiguration getCompilerConfiguration() {
         return compilerConfiguration;
     }
@@ -1247,16 +1262,22 @@ public class GroovyEngine implements ScriptEngine {
          * @param configuration compiler configuration, or {@code null} for the default
          * @since 7.0.0
          */
+        @Incubating
         public EngineClassLoader(CompilerConfiguration configuration) {
             super(Thread.currentThread().getContextClassLoader(), configuration);
         }
 
         /**
-         * Constructs an EngineClassLoader with the given parent class loader.
+         * Constructs an EngineClassLoader with the given parent class loader and
+         * {@link CompilerConfiguration#DEFAULT}. Use
+         * {@link #EngineClassLoader(ClassLoader, CompilerConfiguration)} to supply
+         * an engine's configuration, so that the engine adopts this loader rather
+         * than wrapping it.
          *
          * @param parent the parent class loader
          * @since 7.0.0
          */
+        @Incubating
         public EngineClassLoader(ClassLoader parent) {
             super(parent);
         }
@@ -1269,6 +1290,7 @@ public class GroovyEngine implements ScriptEngine {
          * @param configuration compiler configuration, or {@code null} for the default
          * @since 7.0.0
          */
+        @Incubating
         public EngineClassLoader(ClassLoader parent, CompilerConfiguration configuration) {
             super(parent, configuration);
         }
