@@ -746,11 +746,25 @@ public class StatementWriter {
         compileStack.pop();
     }
 
+    /**
+     * Emits one {@code isCase} test, leaving a boolean on the operand stack.
+     * The seam a statically compiled switch overrides so that a label resolves
+     * the same way it does in a switch expression (GROOVY-12407).
+     *
+     * @param caseStatement the arm whose label is being tested
+     * @param selectorIndex local variable slot holding the switch selector
+     * @param selectorType  type of that slot
+     */
+    protected void writeIsCaseComparison(final CaseStatement caseStatement,
+            final int selectorIndex, final ClassNode selectorType) {
+        controller.getBinaryExpressionHelper().writeIsCase(selectorIndex, selectorType, caseStatement.getExpression());
+    }
+
     private void writeCaseStatement(final CaseStatement caseStatement, final SwitchStatement switchStatement, final int switchVariableIndex, final ClassNode switchType, final Label thisLabel, final Label nextLabel) {
         controller.getAcg().onLineNumber(caseStatement, "visitCaseStatement");
         MethodVisitor mv = controller.getMethodVisitor();
 
-        controller.getBinaryExpressionHelper().writeIsCase(switchVariableIndex, switchType, caseStatement.getExpression());
+        writeIsCaseComparison(caseStatement, switchVariableIndex, switchType);
 
         Label l0 = controller.getOperandStack().jump(IFEQ);
 

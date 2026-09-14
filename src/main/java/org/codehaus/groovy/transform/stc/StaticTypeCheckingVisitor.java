@@ -5116,6 +5116,9 @@ trying: for (ClassNode[] signature : signatures) {
             } finally {
                 popAssignmentTracking(oldTracker);
             }
+            // resolved where a switch expression resolves its own labels, outside
+            // the tracking block, so that the two positions see the same types
+            typeCheckSwitchIsCase(statement.getExpression(), statement.getCaseStatements(), false);
         } finally {
             typeCheckingContext.popTemporaryTypeInfo();
             typeCheckingContext.popEnclosingSwitchStatement();
@@ -5155,7 +5158,7 @@ trying: for (ClassNode[] signature : signatures) {
             storeType(expression, resultType);
             expression.setType(resultType);
 
-            typeCheckSwitchExpressionIsCase(expression);
+            typeCheckSwitchIsCase(expression.getExpression(), expression.getCaseStatements(), true);
             checkSwitchDuplicateLabels(expression.getExpression(), expression.getCaseStatements());
             checkSwitchExpressionExhaustiveness(expression);
         } finally {
@@ -5168,19 +5171,28 @@ trying: for (ClassNode[] signature : signatures) {
      * Resolves {@code isCase} for every non-null label by running method
      * selection on a dummy call. Type-checking extensions, instance methods,
      * DGM and other extensions all see that call. A selected target is stored
-     * on the {@link CaseStatement} for {@code writeDirectMethodCall}; no target
-     * is a compilation error. Primitive int constant switches skip this: their
-     * stack type cannot erase, so tableswitch is guaranteed. Wrapper, String
-     * and enum selectors can erase to {@code Object} (list {@code getAt}, etc.).
+     * on the {@link CaseStatement} for {@code writeDirectMethodCall}. Primitive
+     * int constant switches skip this: their stack type cannot erase, so
+     * tableswitch is guaranteed. Wrapper, String and enum selectors can erase
+     * to {@code Object} (list {@code getAt}, etc.).
+     * <p>
+     * A switch statement resolves its labels the same way, so that the method
+     * a label calls does not depend on whether the switch is in statement or
+     * expression position (GROOVY-12407). It differs in one respect: a label
+     * with no applicable {@code isCase} is an error in a switch expression but
+     * keeps the dynamic call in a switch statement, because rejecting it would
+     * stop code compiling that has always compiled.
+     *
+     * @param required whether a missing target is a compilation error
      */
-    private void typeCheckSwitchExpressionIsCase(final SwitchExpression expression) {
-        Expression selector = expression.getExpression();
+    private void typeCheckSwitchIsCase(final Expression selector,
+            final List<CaseStatement> caseStatements, final boolean required) {
         ClassNode selectorType = getType(selector);
         if (isIntegralType(selectorType)
-                && isOptimizedIntSwitch(selectorType, expression.getCaseStatements())) {
+                && isOptimizedIntSwitch(selectorType, caseStatements)) {
             return;
         }
-        for (CaseStatement caseStatement : expression.getCaseStatements()) {
+        for (CaseStatement caseStatement : caseStatements) {
             Expression caseValue = caseStatement.getExpression();
             if (isNullConstant(caseValue)) {
                 continue;
@@ -5197,7 +5209,7 @@ trying: for (ClassNode[] signature : signatures) {
             MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
             if (target == null) {
                 MethodNode enclosing = typeCheckingContext.getEnclosingMethod();
-                if (enclosing == null || !isSkipMode(enclosing)) {
+                if (required && (enclosing == null || !isSkipMode(enclosing))) {
                     addNoMatchingMethodError(caseType, "isCase", new ClassNode[]{getWrapper(selectorType)}, caseValue);
                 }
                 continue;
