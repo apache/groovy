@@ -347,7 +347,6 @@ class Main {
                 reader.setVariable(
                     LineReader.BLINK_MATCHING_PAREN, 0) // if enabled cursor remains in begin parenthesis (gitbash)
             }
-            groovyshOptions.onReaderReady?.accept(reader)
 
             def extra = new DefaultExtraConsoleCommands(Paths.get(System.getProperty('user.dir')), scriptEngine, reader)
             Supplier<Path> workDir = extra::currentDir
@@ -397,6 +396,9 @@ class Main {
             KeyMap<Binding> keyMap = reader.keyMaps.get("main")
             keyMap.bind(new Reference(Widgets.TAILTIP_TOGGLE), KeyMap.alt("s"))
             keyMap.bind(new Reference(Widgets.AUTOSUGGEST_TOGGLE), KeyMap.alt("v"))
+            // last, so an embedder sees the reader fully wired — completer included
+            groovyshOptions.onReaderReady?.accept(reader, systemRegistry)
+
             def init = configPath.getUserConfig('groovysh_init.groovy')
             if (init) {
                 systemRegistry.initialize(init.toFile())
