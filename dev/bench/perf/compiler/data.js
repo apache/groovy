@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789283469111,
+  "lastUpdate": 1789370595722,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -6168,6 +6168,63 @@ window.BENCHMARK_DATA = {
           {
             "name": "compile@groovy-6",
             "value": 502.94666666666666,
+            "range": "±21.09",
+            "unit": "ms",
+            "extra": "6.0.0-RC-1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "9deecd29542113a13dfa35dec04f650a3d0d388c",
+          "message": "GROOVY-12404: GroovyScriptEngine resource loader leaks URLConnections and ignores a custom ResourceConnector",
+          "timestamp": "2026-09-13T03:35:22Z",
+          "url": "https://github.com/apache/groovy/commit/9deecd29542113a13dfa35dec04f650a3d0d388c"
+        },
+        "date": 1789370591224,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 541.7833333333333,
+            "range": "±16.99",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 671.0966666666667,
+            "range": "±218.75",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 583.6233333333333,
+            "range": "±144.16",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 481.0666666666667,
+            "range": "±19.15",
+            "unit": "ms",
+            "extra": "5.1.2"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 496.05666666666673,
             "range": "±21.09",
             "unit": "ms",
             "extra": "6.0.0-RC-1"
