@@ -511,9 +511,17 @@ abstract class AbstractFriendlyErrorStrategy extends DefaultErrorStrategy {
 
     /**
      * {@code List<Integer name} / {@code new ArrayList<Integer(} — an
-     * unmatched {@code <} after a capitalized type name is a missing
-     * {@code >}, not a comparison. {@code x < y z} (lowercase left
-     * operand) is left to the generic sentence.
+     * unmatched {@code <} between a capitalized type name and a type
+     * argument is a missing {@code >}, not a comparison.
+     * <p>
+     * Both sides have to look like a type, because the absence of a closing
+     * {@code >} proves nothing on its own: a comparison never has one
+     * either. {@code MAX < x} and {@code Integer.MAX_VALUE < x} would
+     * otherwise be rewritten whenever an unrelated error follows, and so
+     * would the shift in {@code X << 2}. See {@link #isTypeArgumentStart}.
+     * A {@code <} that ends the input ({@code class Foo<}) keeps the
+     * {@code >} advice: there is no following token to disprove it.
+     * </p>
      * <p>
      * ANTLR's offending token for {@code List<Integer name} is often
      * {@code List} (the NVAE start), so a prefix-up-to-offender scan
@@ -546,6 +554,7 @@ abstract class AbstractFriendlyErrorStrategy extends DefaultErrorStrategy {
             }
             int depth = 0;
             boolean typeOpener = false;
+            boolean pendingOpener = false;
             Token prev = null;
             int n = tokens.size();
             int seen = 0;
@@ -555,8 +564,18 @@ abstract class AbstractFriendlyErrorStrategy extends DefaultErrorStrategy {
                     continue;
                 }
                 int type = t.getType();
+                // a `<` opens a type argument list only if a type argument follows;
+                // a newline may separate the two, so it does not settle the question.
+                // A `<` that ends the input (`class Foo<`) has nothing to disprove it
+                if (pendingOpener && type != NL) {
+                    pendingOpener = false;
+                    if (isTypeArgumentStart(type) || type == Token.EOF) {
+                        depth++;
+                        typeOpener = true;
+                    }
+                }
                 if (type == Token.EOF || type == SEMI || type == ASSIGN
-                        || (type == NL && depth == 0 && i > lo)) {
+                        || (type == NL && depth == 0 && !pendingOpener && i > lo)) {
                     if (i > lo) {
                         break;
                     }
@@ -570,8 +589,7 @@ abstract class AbstractFriendlyErrorStrategy extends DefaultErrorStrategy {
                         continue;
                     }
                     if (prev != null && prev.getType() == CapitalizedIdentifier) {
-                        depth++;
-                        typeOpener = true;
+                        pendingOpener = true;
                     } else if (depth > 0) {
                         depth++;
                     }
@@ -771,6 +789,20 @@ abstract class AbstractFriendlyErrorStrategy extends DefaultErrorStrategy {
             case SEMI -> "Unexpected ';'";
             case COMMA -> "Unexpected ','";
             default -> null;
+        };
+    }
+
+    /**
+     * What may begin a type argument: a capitalized type name, a primitive
+     * (for an array type argument) or a wildcard. A lowercase name is not
+     * accepted, so a fully qualified {@code List<java.util.Date name} keeps
+     * the generic sentence rather than risk claiming a missing {@code >} for
+     * every comparison.
+     */
+    private static boolean isTypeArgumentStart(final int type) {
+        return switch (type) {
+            case CapitalizedIdentifier, BuiltInPrimitiveType, QUESTION -> true;
+            default -> false;
         };
     }
 
