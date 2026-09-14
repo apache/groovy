@@ -340,6 +340,123 @@ final class SwitchStatementStaticCompileTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    // GROOVY-12407
+
+    @Test
+    void statementLabelResolvesTheSameMethodAsAnExpressionLabel() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class C {
+                private static Object hidden() { Integer }  // defeats flow typing
+                static String expression(Object x) {
+                    Object label = hidden()
+                    return switch (x) { case label -> 'y'; default -> 'n' }
+                }
+                static String statement(Object x) {
+                    Object label = hidden()
+                    String r = 'n'
+                    switch (x) { case label -> r = 'y'; default -> r = 'n' }
+                    r
+                }
+            }
+            // the label is declared Object, so both positions select
+            // DGM.isCase(Object,Object) rather than dispatching on the runtime Class
+            assert C.expression(1) == 'n'
+            assert C.statement(1) == C.expression(1)
+        '''
+    }
+
+    @Test
+    void statementLabelCallsTheSelectedIsCaseDirectly() {
+        def bytecode = compile(method: 'm', '''\
+            @groovy.transform.CompileStatic
+            String m(Object x) {
+                Object label = Integer
+                String r = 'n'
+                switch (x) { case label -> r = 'y'; default -> r = 'n' }
+                r
+            }
+        ''')
+        assert bytecode.toString().contains('DefaultGroovyMethods.isCase')
+        assert !bytecode.toString().contains('ScriptBytecodeAdapter.isCase')
+    }
+
+    @Test
+    void statementLabelUsesAUserDefinedIsCase() {
+        assertScript '''
+            class Even {
+                boolean isCase(Integer n) { n % 2 == 0 }
+            }
+            @groovy.transform.CompileStatic
+            String m(Integer n) {
+                String r = 'odd'
+                switch (n) { case new Even() -> r = 'even'; default -> r = 'odd' }
+                r
+            }
+            assert m(4) == 'even'
+            assert m(5) == 'odd'
+        '''
+    }
+
+    @Test
+    void statementCaseNullKeepsTheDynamicComparison() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            String m(Object x) {
+                String r = 'other'
+                switch (x) { case null -> r = 'nothing'; default -> r = 'other' }
+                r
+            }
+            assert m(null) == 'nothing'
+            assert m(1) == 'other'
+        '''
+    }
+
+    @Test
+    void assigningTheLabelInsideTheBodyDoesNotChangeItsResolution() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class C {
+                private static Object hidden() { Integer }
+                static String expression(Object x) {
+                    Object label = hidden()
+                    return switch (x) {
+                        case label -> { label = 'reassigned'; yield 'y' }
+                        default -> 'n'
+                    }
+                }
+                static String statement(Object x) {
+                    Object label = hidden()
+                    String r = 'n'
+                    switch (x) {
+                        case label -> { label = 'reassigned'; r = 'y' }
+                        default -> r = 'n'
+                    }
+                    r
+                }
+            }
+            assert C.statement(1) == C.expression(1)
+        '''
+    }
+
+    @Test
+    void statementColonFormResolvesStaticallyToo() {
+        def bytecode = compile(method: 'm', '''\
+            @groovy.transform.CompileStatic
+            String m(Object x) {
+                Object label = Integer
+                String r = 'n'
+                switch (x) {
+                    case label: r = 'y'; break
+                    default: r = 'n'
+                }
+                r
+            }
+        ''')
+        assert bytecode.toString().contains('DefaultGroovyMethods.isCase')
+        assert !bytecode.toString().contains('ScriptBytecodeAdapter.isCase')
+    }
+
     @Test
     void dynamicStatementIsUnaffected() {
         def bytecode = compile(method: 'm', '''\

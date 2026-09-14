@@ -111,6 +111,21 @@ public class StaticTypesStatementWriter extends StatementWriter {
     }
 
     /**
+     * Emits the {@code isCase} call the type checker selected, so a label in
+     * statement position resolves the same method it would in a switch
+     * expression (GROOVY-12407). Arms with no selected target, including
+     * {@code case null} and anything under {@code TypeCheckingMode.SKIP},
+     * keep the dynamic comparison.
+     */
+    @Override
+    protected void writeIsCaseComparison(final CaseStatement caseStatement,
+            final int selectorIndex, final ClassNode selectorType) {
+        if (!StaticTypesIsCaseWriter.writeDirectIsCase(controller, caseStatement, selectorIndex, selectorType)) {
+            super.writeIsCaseComparison(caseStatement, selectorIndex, selectorType);
+        }
+    }
+
+    /**
      * The kind of dispatch is chosen once, from the type the type checker
      * inferred, because that is what {@code isDispatchable} agreed to. Code
      * generation can leave something wider on the operand stack, so a

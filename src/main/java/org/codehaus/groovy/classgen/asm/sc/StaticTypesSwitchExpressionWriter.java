@@ -21,24 +21,19 @@ package org.codehaus.groovy.classgen.asm.sc;
 import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.SwitchExpressionWriter;
-import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
 
-import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.ICONST_1;
@@ -101,27 +96,11 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
             writeNullIdentity(selectorIndex, selectorType);
             return;
         }
-        MethodNode target = caseStatement.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-        if (target == null) {
+        if (!StaticTypesIsCaseWriter.writeDirectIsCase(controller, caseStatement, selectorIndex, selectorType)) {
             // TypeCheckingMode.SKIP (and any residual miss): SBA keeps a boolean
             // on the operand stack for the following IFEQ.
             super.writeIsCaseComparison(caseStatement, selectorIndex, selectorType);
-            return;
         }
-        OperandStack operandStack = controller.getOperandStack();
-        VariableSlotLoader selector = new VariableSlotLoader(selectorType, selectorIndex, operandStack);
-        MethodCallExpression call = callX(caseValue, "isCase", args(selector));
-        call.setImplicitThis(false);
-        call.setMethodTarget(target);
-        call.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, target);
-        call.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, ClassHelper.boolean_TYPE);
-        if (caseStatement.getNodeMetaData(StaticTypesMarker.PV_METHODS_ACCESS) != null) {
-            call.putNodeMetaData(StaticTypesMarker.PV_METHODS_ACCESS,
-                    caseStatement.getNodeMetaData(StaticTypesMarker.PV_METHODS_ACCESS));
-        }
-        call.setSourcePosition(caseValue);
-        call.visit(controller.getAcg());
-        operandStack.doGroovyCast(ClassHelper.boolean_TYPE);
     }
 
     /**
