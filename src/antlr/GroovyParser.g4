@@ -874,10 +874,12 @@ mapPattern
         RBRACK
     ;
 
-// `... rest` binds the entries not named by the pattern; `...` discards them
+// `var... rest` binds the entries not named by the pattern as a new Map;
+// `... rest` and `...` are the same shortcuts the list form uses. No type
+// prefix: the rest of a map pattern is always a Map.
 mapPatternEntry
     :   mapEntryLabel COLON NL* listPatternElement
-    |   ELLIPSIS identifier?
+    |   (DEF | VAR)? ELLIPSIS identifier?
     ;
 
 caseGuard
