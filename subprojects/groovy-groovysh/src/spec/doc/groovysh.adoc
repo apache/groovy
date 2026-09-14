@@ -1462,7 +1462,11 @@ be prepended as snippets on every evaluation) and
 `ASTTransformationCustomizer(ThreadInterrupt)` (so Ctrl+C can stop a
 tight loop after `Main` interrupts the execute thread).
 
+[source,groovy]
+.Compile-time customizers on the engine
+----
 include::../test/EmbeddingSpecTest.groovy[tags=embed_engine_config,indent=0]
+----
 
 Subclasses that need a different `GroovyShell` can override
 `protected GroovyShell createShell(ClassLoader, Binding, CompilerConfiguration)`.
@@ -1473,7 +1477,11 @@ that are assigned after `super(...)`.
 class loader (the field is `protected`; Java callers cannot read it
 without a getter).
 
+[source,groovy]
+.The engine class loader
+----
 include::../test/EmbeddingSpecTest.groovy[tags=embed_classloader,indent=0]
+----
 
 ==== `GroovyshOptions`
 
@@ -1481,27 +1489,46 @@ include::../test/EmbeddingSpecTest.groovy[tags=embed_classloader,indent=0]
 that does not call `System.exit`. The options object is built with
 `GroovyshOptions.builder()` and is incubating in 7.0.
 
+Where a setting has an equivalent on JLine's `ShellBuilder`, it
+deliberately carries the same name and parameter type, so that a
+future move of groovysh onto `org.jline.shell` does not break this
+API.
+
 Recognized hooks:
 
 * `compilerConfiguration` / `engine` — compile-time customizers, or a
   pre-built `GroovyEngine`. If both are set, the engine wins.
 * `bindings` / `binding(name, value)` — variables installed on the
   engine before the REPL starts.
-* `extraCommandRegistry` — additional JLine `CommandRegistry`
-  instances, appended after groovysh's own registries.
+* `groups` — additional JLine `CommandGroup` instances
+  (`org.jline.shell`, the undeprecated successor to `CommandRegistry`;
+  groovysh adapts them internally). They are resolved *before*
+  groovysh's own commands, so a group may override a built-in
+  command name.
 * `prompt` — `Supplier<String>` invoked on each REPL iteration
   (default `{ 'groovy> ' }`).
-* `resultHandler` — how values are rendered (default:
-  `console.println(result?.toString())`).
-* `errorHandler` — how execution failures are rendered (default:
-  `SystemRegistry.trace`). `UserInterruptException` and
-  `EndOfFileException` stay in `Main` as control flow.
+* `resultHandler` — how values are rendered, given the session
+  `Printer` (default: `printer.println(result?.toString())`).
+* `errorHandler` — how execution failures are rendered, given the
+  error and groovysh's own renderer to delegate to (default: the
+  latter). `UserInterruptException` and `EndOfFileException` stay in
+  `Main` as control flow.
 * `showBanner` — set `false` to suppress groovysh's banner so the host
   can print its own.
+* `rightPrompt` — optional right-hand prompt.
 * `terminal` — optional JLine `Terminal`; when omitted, `Main` builds
   one from the CLI flags.
+* `historyFile` — where to persist history; when omitted, groovysh's
+  own `groovysh_history`.
+* `onReaderReady` — a `Consumer<LineReader>` called once the reader
+  exists, for settings the builder does not model: the continuation
+  prompt (`SECONDARY_PROMPT_PATTERN`), key bindings, reader options.
 
-include::../test/EmbeddingSpecTest.groovy[tags=embed_options_help,indent=0]
+[source,groovy]
+.Embedding with `GroovyshOptions`
+----
+include::../test/EmbeddingSpecTest.groovy[tags=embed_options_hooks,indent=0]
+----
 
 `Main.start(Map, String[])` remains the binding-only overload and
 delegates to `GroovyshOptions`.
@@ -1510,7 +1537,10 @@ delegates to `GroovyshOptions`.
 
 `/clear`, `/pwd`, `/cd`, `/ls`, `/cat`, `/grep`, `/head`, `/tail`,
 `/wc`, `/sort`, `/date`, `/echo` and `/!` live in the public
-`ExtraConsoleCommands` class. `Main` still registers it by default.
+`ExtraConsoleCommands` class. It implements JLine's deprecated
+`org.jline.console.CommandRegistry`, as groovysh's own registries
+still do; prefer `GroovyshOptions.groups` and `org.jline.shell`
+for new embedder commands. `Main` still registers it by default.
 Embedders that build their own `SystemRegistry` can construct it
 directly. The former `Main.ExtraConsoleCommands` nested class remains
 as a deprecated subclass for Groovy callers that compiled against it.

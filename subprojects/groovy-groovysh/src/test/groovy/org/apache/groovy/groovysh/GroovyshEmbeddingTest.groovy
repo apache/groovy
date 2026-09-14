@@ -21,10 +21,10 @@ package org.apache.groovy.groovysh
 import org.apache.groovy.groovysh.jline.GroovyEngine
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
-import org.jline.console.CommandInput
-import org.jline.console.CommandMethods
-import org.jline.console.CommandRegistry
-import org.jline.console.impl.JlineCommandRegistry
+import org.jline.reader.LineReader
+import org.jline.shell.CommandSession
+import org.jline.shell.impl.AbstractCommand
+import org.jline.shell.impl.SimpleCommandGroup
 import org.jline.terminal.Size
 import org.jline.terminal.Terminal
 import org.jline.terminal.impl.DumbTerminal
@@ -35,7 +35,6 @@ import org.junit.jupiter.api.io.TempDir
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
-import java.util.function.Function
 
 /**
  * End-to-end coverage of {@link Main#start(GroovyshOptions, String[])}
@@ -83,7 +82,7 @@ class GroovyshEmbeddingTest {
     void resultHandlerSeesEvaluatedValue() {
         def results = []
         int rc = Main.start(options()
-            .resultHandler { c, r -> results << r }
+            .resultHandler { p, r -> results << r }
             .build(), '-e', '2 + 3')
         assert rc == 0
         assert 5 in results
@@ -94,7 +93,7 @@ class GroovyshEmbeddingTest {
         def results = []
         int rc = Main.start(options()
             .binding('answer', 42)
-            .resultHandler { c, r -> results << r }
+            .resultHandler { p, r -> results << r }
             .build(), '-e', 'answer')
         assert rc == 0
         assert 42 in results
@@ -109,7 +108,7 @@ class GroovyshEmbeddingTest {
         def results = []
         int rc = Main.start(options()
             .compilerConfiguration(config)
-            .resultHandler { c, r -> results << r }
+            .resultHandler { p, r -> results << r }
             .build(), '-e', 'new AtomicInteger(9).get()')
         assert rc == 0
         assert 9 in results
@@ -123,29 +122,80 @@ class GroovyshEmbeddingTest {
         int rc = Main.start(options()
             .engine(engine)
             .compilerConfiguration(new CompilerConfiguration())
-            .resultHandler { c, r -> results << r }
+            .resultHandler { p, r -> results << r }
             .build(), '-e', 'marker')
         assert rc == 0
         assert 'from-engine' in results
     }
 
     @Test
-    void extraCommandRegistryIsInvoked() {
-        def ping = new PingRegistry()
+    void commandGroupIsInvoked() {
+        def hits = []
         int rc = Main.start(options()
-            .extraCommandRegistry(ping)
-            .resultHandler { c, r -> }
+            .groups(group('/ping', hits))
+            .resultHandler { p, r -> }
             .build(), '-e', '/ping')
         assert rc == 0
-        assert ping.hits == ['ping']
+        assert hits == ['/ping']
+    }
+
+    @Test
+    void aCommandGroupCanOverrideABuiltIn() {
+        def hits = []
+        int rc = Main.start(options()
+            .groups(group('/imports', hits))
+            .resultHandler { p, r -> }
+            .build(), '-e', '/imports')
+        assert rc == 0
+        assert hits == ['/imports'] // groovysh's own /imports did not run
+    }
+
+    @Test
+    void historyFileIsHonoured() {
+        // JLine only writes the file once a line is actually read, and -e short-circuits
+        // readLine, so assert the reader was configured with the embedder's path
+        def history = tempHome.resolve('embedder_history')
+        def configured = null
+        int rc = Main.start(options()
+            .historyFile(history)
+            .onReaderReady { LineReader r -> configured = r.getVariable(LineReader.HISTORY_FILE) }
+            .resultHandler { p, r -> }
+            .build(), '-e', '1 + 1')
+        assert rc == 0
+        assert configured == history
+    }
+
+    @Test
+    void historyFileDefaultsToGroovyshWhenUnset() {
+        def configured = null
+        int rc = Main.start(options()
+            .onReaderReady { LineReader r -> configured = r.getVariable(LineReader.HISTORY_FILE) }
+            .resultHandler { p, r -> }
+            .build(), '-e', '1 + 1')
+        assert rc == 0
+        assert (configured as Path).fileName.toString() == 'groovysh_history'
+    }
+
+    @Test
+    void onReaderReadyCanSetTheSecondaryPrompt() {
+        def seen = null
+        int rc = Main.start(options()
+            .onReaderReady { LineReader r ->
+                r.setVariable(LineReader.SECONDARY_PROMPT_PATTERN, 'gremlin...> ')
+                seen = r.getVariable(LineReader.SECONDARY_PROMPT_PATTERN)
+            }
+            .resultHandler { p, r -> }
+            .build(), '-e', '1')
+        assert rc == 0
+        assert seen == 'gremlin...> '
     }
 
     @Test
     void errorHandlerReceivesThrownFailures() {
         def errors = []
         int rc = Main.start(options()
-            .resultHandler { c, r -> }
-            .errorHandler { r, t -> errors << t }
+            .resultHandler { p, r -> }
+            .errorHandler { t, trace -> errors << t }
             .build(), '-e', 'throw new RuntimeException("boom")')
         assert rc == 0
         assert errors.any { containsMessage(it, 'boom') }
@@ -154,7 +204,7 @@ class GroovyshEmbeddingTest {
     @Test
     void bannerCanBeSuppressed() {
         def captured = captureStdout {
-            Main.start(options().resultHandler { c, r -> }.build(), '-e', '1')
+            Main.start(options().resultHandler { p, r -> }.build(), '-e', '1')
         }
         assert !captured.contains('Groovy Shell')
     }
@@ -164,7 +214,7 @@ class GroovyshEmbeddingTest {
         def captured = captureStdout {
             Main.start(options()
                 .showBanner(true)
-                .resultHandler { c, r -> }
+                .resultHandler { p, r -> }
                 .build(), '-e', '1')
         }
         assert captured.contains('Groovy Shell')
@@ -175,7 +225,7 @@ class GroovyshEmbeddingTest {
         def captured = captureStdout {
             Main.start(options()
                 .showBanner(true)
-                .resultHandler { c, r -> }
+                .resultHandler { p, r -> }
                 .build(), '-q', '-e', '1')
         }
         assert captured.contains(GroovySystem.version)
@@ -197,7 +247,7 @@ class GroovyshEmbeddingTest {
                 prompts << 'gremlin> '
                 'gremlin> '
             }
-            .resultHandler { c, r -> }
+            .resultHandler { p, r -> }
             .build())
         assert rc == 0
         assert prompts.contains('gremlin> ')
@@ -240,27 +290,16 @@ class GroovyshEmbeddingTest {
         false
     }
 
-    private static class PingRegistry extends JlineCommandRegistry implements CommandRegistry {
-        final List<String> hits = []
+    private static SimpleCommandGroup group(String name, List<String> hits) {
+        new SimpleCommandGroup('Embedder', new AbstractCommand(name) {
+            @Override
+            String description() { 'a command contributed by the embedder' }
 
-        PingRegistry() {
-            registerCommands([
-                '/ping': new CommandMethods((Function) this::ping, this::defaultCompleter)
-            ])
-        }
-
-        @Override
-        String name() {
-            'Ping'
-        }
-
-        @Override
-        List<String> commandInfo(String command) {
-            ['ping the extra registry']
-        }
-
-        private void ping(CommandInput input) {
-            hits << 'ping'
-        }
+            @Override
+            Object execute(CommandSession session, String[] args) {
+                hits << name
+                null
+            }
+        })
     }
 }

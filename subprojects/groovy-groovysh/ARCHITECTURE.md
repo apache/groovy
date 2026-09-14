@@ -239,6 +239,44 @@ the public seams rather than copying `Main`:
   `/pwd`, `/cd`, the POSIX-style commands, and `/!`.
   `Main.ExtraConsoleCommands` is a deprecated subclass.
 
+Where a `GroovyshOptions` setting has an equivalent on JLine's
+`ShellBuilder`, it uses the same name and parameter type on purpose.
+
+## JLine: which API we are on, and why
+
+groovysh is built on `org.jline.console` — `SystemRegistryImpl`,
+`ConsoleEngineImpl`, `Builtins`, `JlineCommandRegistry`,
+`DefaultPrinter`, `ScriptEngine`. None of those *classes* is
+deprecated, but five interfaces in that package are, as of JLine 4.0:
+`CommandRegistry`, `ConsoleEngine`, `SystemRegistry`, `CommandMethods`,
+`CommandInput` (plus the `CmdDesc` / `CmdLine` / `ArgDesc` description
+types).
+
+The successor is `org.jline.shell` (`Shell`, `CommandDispatcher`,
+`CommandGroup`, `Command`, `ShellBuilder`), a compile-scope transitive
+dependency of `jline-console` and so already on our classpath. We have
+not moved onto it, for one structural reason: it models a *command*
+shell, not a language REPL. `DefaultCommandDispatcher` throws
+`UnknownCommandException` instead of falling through to a script
+engine, and `Shell.run()` discards the value of `dispatcher.execute`,
+so there is nowhere to print a result. Those semantics are exactly
+what the deprecated console layer supplies. In JLine 4.4.3 the console
+implementations contain no references to `org.jline.shell` either, so
+there is no upstream migration to follow yet.
+
+What we do instead: keep the deprecated types out of the *published*
+embedding API. `GroovyshOptions.groups` takes `org.jline.shell.CommandGroup`
+and wraps it with `CommandRegistryAdapter`; the result and error
+handlers take `Printer` and plain JDK types.
+
+Revisit when JLine rebases the console implementations on
+`org.jline.shell`, or announces a removal release for
+`org.jline.console`. The migration path, when it comes, is a
+`CommandDispatcher` subclass: `DefaultCommandDispatcher.execute(String)`
+is public, non-final and returns `Object`, so it can intercept the
+unknown-command path and delegate to `GroovyEngine` while keeping
+JLine's pipelines, redirection and job control.
+
 The user-facing description is
 [`src/spec/doc/groovysh.adoc`](src/spec/doc/groovysh.adoc)
 "Embedding groovysh". Tests live in `GroovyEngineTest`,

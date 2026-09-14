@@ -20,12 +20,15 @@ package org.apache.groovy.groovysh
 
 import org.apache.groovy.groovysh.jline.GroovyEngine
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.jline.console.CommandRegistry
-import org.jline.console.impl.JlineCommandRegistry
+import org.jline.shell.CommandGroup
+import org.jline.shell.CommandSession
+import org.jline.shell.impl.AbstractCommand
+import org.jline.shell.impl.SimpleCommandGroup
 import org.jline.terminal.impl.DumbTerminal
 import org.junit.jupiter.api.Test
 
 import java.nio.charset.StandardCharsets
+import java.nio.file.Path
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -42,8 +45,11 @@ class GroovyshOptionsTest {
         assert options.compilerConfiguration == null
         assert options.engine == null
         assert options.bindings.isEmpty()
-        assert options.extraCommandRegistries.isEmpty()
+        assert options.groups.isEmpty()
         assert options.prompt == null
+        assert options.rightPrompt == null
+        assert options.historyFile == null
+        assert options.onReaderReady == null
         assert options.resultHandler == null
         assert options.errorHandler == null
         assert options.showBanner
@@ -78,28 +84,26 @@ class GroovyshOptionsTest {
     }
 
     @Test
-    void extraRegistriesAppend() {
-        def first = new DummyRegistry('first')
-        def second = new DummyRegistry('second')
+    void groupsAppend() {
+        def first = group('first')
+        def second = group('second')
         def options = GroovyshOptions.builder()
-            .extraCommandRegistry(first)
-            .extraCommandRegistries([second])
+            .groups(first)
+            .groups([second])
             .build()
-        assert options.extraCommandRegistries == [first, second]
+        assert options.groups == [first, second]
     }
 
     @Test
-    void extraCommandRegistriesNullIsIgnored() {
-        def options = GroovyshOptions.builder()
-            .extraCommandRegistries(null)
-            .build()
-        assert options.extraCommandRegistries.isEmpty()
+    void groupsNullIsIgnored() {
+        assert GroovyshOptions.builder().groups((Iterable) null).build().groups.isEmpty()
+        assert GroovyshOptions.builder().groups((CommandGroup[]) null).build().groups.isEmpty()
     }
 
     @Test
-    void extraCommandRegistryRejectsNull() {
+    void groupsRejectNullEntries() {
         shouldFail(NullPointerException) {
-            GroovyshOptions.builder().extraCommandRegistry(null)
+            GroovyshOptions.builder().groups([null])
         }
     }
 
@@ -114,13 +118,13 @@ class GroovyshOptionsTest {
     void mapsAndListsAreUnmodifiable() {
         def options = GroovyshOptions.builder()
             .binding('a', 1)
-            .extraCommandRegistry(new DummyRegistry('d'))
+            .groups(group('d'))
             .build()
         shouldFail(UnsupportedOperationException) {
             options.bindings.put('b', 2)
         }
         shouldFail(UnsupportedOperationException) {
-            options.extraCommandRegistries.add(new DummyRegistry('x'))
+            options.groups.add(group('x'))
         }
     }
 
@@ -129,8 +133,8 @@ class GroovyshOptionsTest {
         def config = new CompilerConfiguration()
         def engine = new GroovyEngine()
         def prompt = { 'gremlin> ' }
-        GroovyshOptions.ResultHandler results = { c, r -> }
-        GroovyshOptions.ErrorHandler errors = { r, t -> }
+        GroovyshOptions.ResultHandler results = { p, r -> }
+        GroovyshOptions.ErrorHandler errors = { t, trace -> }
         def terminal = new DumbTerminal(
             'groovysh-test', 'dumb',
             new ByteArrayInputStream(new byte[0]),
@@ -141,6 +145,8 @@ class GroovyshOptionsTest {
                 .compilerConfiguration(config)
                 .engine(engine)
                 .prompt(prompt)
+                .rightPrompt('[rp]')
+                .historyFile(Path.of('history.txt'))
                 .resultHandler(results)
                 .errorHandler(errors)
                 .showBanner(false)
@@ -149,6 +155,8 @@ class GroovyshOptionsTest {
             assert options.compilerConfiguration.is(config)
             assert options.engine.is(engine)
             assert options.prompt.get() == 'gremlin> '
+            assert options.rightPrompt.get() == '[rp]'
+            assert options.historyFile.fileName.toString() == 'history.txt'
             assert options.resultHandler.is(results)
             assert options.errorHandler.is(errors)
             assert !options.showBanner
@@ -158,16 +166,10 @@ class GroovyshOptionsTest {
         }
     }
 
-    private static class DummyRegistry extends JlineCommandRegistry implements CommandRegistry {
-        private final String group
-
-        DummyRegistry(String group) {
-            this.group = group
-        }
-
-        @Override
-        String name() {
-            group
-        }
+    private static CommandGroup group(String name) {
+        new SimpleCommandGroup(name, new AbstractCommand("/${name}") {
+            @Override
+            Object execute(CommandSession session, String[] args) { null }
+        })
     }
 }

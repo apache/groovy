@@ -46,6 +46,7 @@ dependencies {
     implementation "org.jline:jline-builtins:${versions.jline}"
     implementation "org.jline:jline-reader:${versions.jline}"
     implementation "org.jline:jline-console:${versions.jline}"
+    implementation "org.jline:jline-shell:${versions.jline}"
     implementation "org.jline:jline-terminal-jni:${versions.jline}"
     implementation("org.jline:jline-terminal:${versions.jline}") {
 //        exclude(group: 'junit', module: 'junit')
