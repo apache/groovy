@@ -226,8 +226,11 @@ class ExtraConsoleCommands extends JlineCommandRegistry implements CommandRegist
         def sout = new StringBuilder(), serr = new StringBuilder()
         def command = OSUtils.IS_WINDOWS ? ['cmd.exe', '/c'] : ['sh', '-c']
         def proc = new ProcessBuilder().command(command + args.join(' ')).start()
-        proc.consumeProcessOutput(sout, serr)
-        int exitCode = proc.waitFor()
+        // waitForProcessOutput joins the two reader threads before returning;
+        // consumeProcessOutput only starts them, and waitFor waits for the
+        // process rather than for them, so the output could still be unread
+        proc.waitForProcessOutput(sout, serr)
+        int exitCode = proc.exitValue()
         if (sout.size()) print sout
         if (exitCode != 0) {
             if (serr.size()) print serr
