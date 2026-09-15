@@ -1,0 +1,6 @@
+Eclipse LSP4J
+
+This product bundles Eclipse LSP4J and Eclipse LSP4J JSON-RPC
+(org.eclipse.lsp4j) as binary dependencies of the optional groovy-lsp module.
+Those artifacts are licensed under the Eclipse Public License 2.0.
+See licenses/lsp4j-license.txt.
