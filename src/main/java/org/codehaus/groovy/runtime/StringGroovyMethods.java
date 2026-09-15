@@ -1296,7 +1296,9 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     public static String getAt(final CharSequence self, final Collection indices) {
         StringBuilder answer = new StringBuilder();
         for (Object value : indices) {
-            if (value instanceof Range) {
+            if (value instanceof EmptyRange) {
+                // an empty range contributes no characters
+            } else if (value instanceof Range) {
                 answer.append(getAt(self, (Range) value));
             } else if (value instanceof Collection) {
                 answer.append(getAt(self, (Collection) value));
@@ -1403,8 +1405,19 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects a List of values from a Matcher using a Collection
-     * to identify the indices to be selected.
+     * Selects a List of values from a Matcher using a (potentially nested)
+     * Collection to identify the indices to be selected.
+     * A range among the indices has its bounds resolved against the number of
+     * matches, so a negative bound counts back from the last match and an empty
+     * range contributes no elements.
+     * <pre class="language-groovy groovyTestCase">
+     * def matcher = 'a1b2c3d4' =~ /[a-z]\d/
+     * assert matcher[1, 3] == ['b2', 'd4']
+     * assert matcher[1..-1] == ['b2', 'c3', 'd4']
+     * assert matcher[0, 2..&lt;-1] == ['a1', 'c3']
+     * assert matcher[0, [1, 3]] == ['a1', 'b2', 'd4']
+     * assert matcher[0..1, 2..&lt;2] == ['a1', 'b2']
+     * </pre>
      *
      * @param self    a Matcher
      * @param indices a Collection of indices
@@ -1412,22 +1425,46 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @since 1.6.0
      */
-    public static List getAt(final Matcher self, Collection indices) {
-        List result = new ArrayList();
-        if (indices instanceof IntRange) {
-            int size = (int) size(self);
-            RangeInfo info = subListBorders(size, (Range) indices);
-            indices = new IntRange(((IntRange)indices).getInclusive(), info.from, info.to - 1);
+    public static List getAt(final Matcher self, final Collection indices) {
+        if (indices instanceof EmptyRange) {
+            return new ArrayList();
         }
+        if (indices instanceof Range) {
+            return matcherSubList(self, (Range) indices);
+        }
+        List result = new ArrayList();
         for (Object value : indices) {
-            if (value instanceof Range) {
-                result.addAll(getAt(self, (Range) value));
+            if (value instanceof EmptyRange) {
+                // an empty range contributes no elements
+            } else if (value instanceof Range) {
+                result.addAll(matcherSubList(self, (Range) value));
+            } else if (value instanceof Collection) {
+                result.addAll(getAt(self, (Collection) value));
             } else {
                 int idx = DefaultTypeTransformation.intUnbox(value);
                 result.add(getAt(self, idx));
             }
         }
         return result;
+    }
+
+    /**
+     * Reads the window of matches a range selects. The range is resolved against
+     * the number of matches, then the window is read directly; rebuilding a range
+     * from the resolved borders would lose the reversal and could not tell an empty
+     * window apart from a one element reversed one.
+     *
+     * @param self  a Matcher
+     * @param range the range of indices of interest
+     * @return the matches corresponding to the resolved range
+     */
+    private static List matcherSubList(final Matcher self, final Range range) {
+        RangeInfo info = subListBorders((int) size(self), range);
+        List answer = new ArrayList(info.to - info.from);
+        for (int i = info.from; i < info.to; i += 1) {
+            answer.add(getAt(self, i));
+        }
+        return info.reverse ? DefaultGroovyMethods.reverse(answer) : answer;
     }
 
     /**
