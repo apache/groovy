@@ -342,6 +342,79 @@ final class GroovyMethodsTest {
         assert list[0<..<1] == []
     }
 
+    // GROOVY-12412
+    @Test
+    void testGetAtMultipleIndicesIncludingRanges() {
+        def expected = [1, 2, 3, 4, 5, 6, 7, 8]
+        def reversed = [1, 2, 3, 8, 7, 6, 5, 4, 3, 2, 1]
+        def exclusive = [1, 2, 3, 4, 5, 6, 7]
+
+        // a range nested within a multi-index subscript resolves its bounds against the
+        // size, exactly as it does when it is the only index
+        assert (1..8).toList()[0..2, 3..-1] == expected
+        assert (1..8).toList()[0..2, -1..0] == reversed
+        assert (1..8).toList()[0..2, 3..<-1] == exclusive
+        assert (1..8).toList()[0..2, 2..<2] == [1, 2, 3]
+
+        assert ((1..8) as Integer[])[0..2, 3..-1] == expected
+        assert ((1..8) as Integer[])[0..2, -1..0] == reversed
+        assert ((1..8) as Integer[])[0..2, 3..<-1] == exclusive
+        assert ((1..8) as Integer[])[0..2, 2..<2] == [1, 2, 3]
+
+        [int[], long[], short[], byte[], double[], float[]].each { type ->
+            def array = (1..8).asType(type)
+            assert array[0..2, 3..-1]*.intValue() == expected
+            assert array[0..2, -1..0]*.intValue() == reversed
+            assert array[0..2, 3..<-1]*.intValue() == exclusive
+            assert array[0..2, 2..<2]*.intValue() == [1, 2, 3]
+        }
+
+        def chars = ('a'..'h') as char[]
+        assert chars[0..2, 3..-1].join() == 'abcdefgh'
+        assert chars[0..2, 2..<2].join() == 'abc'
+
+        def flags = [true, false, true, false, true, false, true, false] as boolean[]
+        assert flags[0..2, 3..-1] == [true, false, true, false, true, false, true, false]
+        assert flags[0..2, 2..<2] == [true, false, true]
+
+        assert 'abcdefgh'[0..2, 3..-1] == 'abcdefgh'
+        assert 'abcdefgh'[0..2, 2..<2] == 'abc'
+        assert [1, 2, 3, 4, 5, 6, 7, 8].withDefault { 0 }[0..2, 3..-1] == expected
+
+        // a bare negative index within a multi-index subscript is unchanged
+        assert (1..8).toList()[1, 0..1, [0, [-1]]] == [2, 1, 2, 1, 8]
+        assert ((1..8) as int[])[1, 0..1, [0, [-1]]] == [2, 1, 2, 1, 8]
+    }
+
+    @Test
+    void testGetAtSingleRangeResolvesBoundsOnEveryReceiver() {
+        def expected = [4, 5, 6, 7, 8]
+
+        // a sole range index resolves its bounds against the size whatever the range
+        // implementation is, not only for an IntRange
+        assert (1..8).toList()[3L..-1L] == expected
+        assert ((1..8) as Integer[])[3L..-1L] == expected
+
+        [int[], long[], short[], byte[], double[], float[]].each { type ->
+            def array = (1..8).asType(type)
+            assert array[3..-1]*.intValue() == expected
+            assert array[3L..-1L]*.intValue() == expected
+            assert array[3.0..-1.0]*.intValue() == expected
+            assert array[7..3]*.intValue() == [8, 7, 6, 5, 4]
+            assert array[3..<-1]*.intValue() == [4, 5, 6, 7]
+            assert array[2..<2] == []
+            assert array[new ObjectRange(3 as Integer, -1 as Integer)]*.intValue() == expected
+        }
+
+        def chars = ('a'..'h') as char[]
+        assert chars[3L..-1L].join() == 'defgh'
+        assert chars[2..<2] == []
+
+        def flags = [true, false, true, false, true, false, true, false] as boolean[]
+        assert flags[3L..-1L] == [false, true, false, true, false]
+        assert flags[2..<2] == []
+    }
+
     @Test
     void testCharSequenceGetAt() {
         def x = "matrix"

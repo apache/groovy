@@ -4139,7 +4139,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Boolean> getAt(boolean[] array, Range<?> range) {
-        return primitiveArrayGet(array, range);
+        return primitiveArraySubList(array, range);
     }
 
     /**
@@ -4158,7 +4158,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Byte> getAt(byte[] array, Range<?> range) {
-        return primitiveArrayGet(array, range);
+        return primitiveArraySubList(array, range);
     }
 
     /**
@@ -4177,7 +4177,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Character> getAt(char[] array, Range<?> range) {
-        return primitiveArrayGet(array, range);
+        return primitiveArraySubList(array, range);
     }
 
     /**
@@ -4196,7 +4196,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Short> getAt(short[] array, Range<?> range) {
-        return primitiveArrayGet(array, range);
+        return primitiveArraySubList(array, range);
     }
 
     /**
@@ -4206,6 +4206,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array[2..&lt;2] == [] // EmptyRange
      * assert array[(0..5.5).step(2)] == [1, 5, 9]   // NumberRange
      * assert array[(1..5.5).step(2)] == [3, 7, 11]  // NumberRange
+     * assert array[1L..-2L] == [3, 5, 7, 9]         // negative bounds count back from the end
      * </pre>
      *
      * @param array an int array
@@ -4215,7 +4216,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Integer> getAt(int[] array, Range<?> range) {
-        return primitiveArrayGet(array, range);
+        return primitiveArraySubList(array, range);
     }
 
     /**
@@ -4234,7 +4235,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Long> getAt(long[] array, Range<?> range) {
-        return primitiveArrayGet(array, range);
+        return primitiveArraySubList(array, range);
     }
 
     /**
@@ -4253,7 +4254,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Float> getAt(float[] array, Range<?> range) {
-        return primitiveArrayGet(array, range);
+        return primitiveArraySubList(array, range);
     }
 
     /**
@@ -4272,7 +4273,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Double> getAt(double[] array, Range<?> range) {
-        return primitiveArrayGet(array, range);
+        return primitiveArraySubList(array, range);
     }
 
     /**
@@ -4488,7 +4489,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Boolean> getAt(boolean[] array, ObjectRange range) {
-        return primitiveArrayGet(array, range);
+        return primitiveArraySubList(array, range);
     }
 
     /**
@@ -4506,7 +4507,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Byte> getAt(byte[] array, ObjectRange range) {
-        return primitiveArrayGet(array, range);
+        return primitiveArraySubList(array, range);
     }
 
     /**
@@ -4524,7 +4525,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Character> getAt(char[] array, ObjectRange range) {
-        return primitiveArrayGet(array, range);
+        return primitiveArraySubList(array, range);
     }
 
     /**
@@ -4542,7 +4543,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Short> getAt(short[] array, ObjectRange range) {
-        return primitiveArrayGet(array, range);
+        return primitiveArraySubList(array, range);
     }
 
     /**
@@ -4560,7 +4561,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Integer> getAt(int[] array, ObjectRange range) {
-        return primitiveArrayGet(array, range);
+        return primitiveArraySubList(array, range);
     }
 
     /**
@@ -4578,7 +4579,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Long> getAt(long[] array, ObjectRange range) {
-        return primitiveArrayGet(array, range);
+        return primitiveArraySubList(array, range);
     }
 
     /**
@@ -4596,7 +4597,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Float> getAt(float[] array, ObjectRange range) {
-        return primitiveArrayGet(array, range);
+        return primitiveArraySubList(array, range);
     }
 
     /**
@@ -4614,7 +4615,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static List<Double> getAt(double[] array, ObjectRange range) {
-        return primitiveArrayGet(array, range);
+        return primitiveArraySubList(array, range);
     }
 
     /**
@@ -4725,10 +4726,15 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Supports the subscript operator for an int array
      * with a (potentially nested) collection giving the desired indices.
+     * A range among the indices has its bounds resolved against the array
+     * length, just as it does when it is the only index, so a negative bound
+     * counts back from the end and an empty range contributes no elements.
      * <pre class="language-groovy groovyTestCase">
      * int[] array = [0, 2, 4, 6, 8]
      * assert array[2, 3] == [4, 6]
      * assert array[1, 0..1, [0, [-1]]] == [2, 0, 2, 0, 8]
+     * assert array[0, 2..-1] == [0, 4, 6, 8]
+     * assert array[0..1, 2..&lt;2] == [0, 2]
      * </pre>
      *
      * @param array   an int array
@@ -4810,7 +4816,9 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> List<T> getAt(T[] array, Collection<?> indices) {
         List<T> answer = new ArrayList<>(indices.size());
         for (Object value : indices) {
-            if (value instanceof Range) {
+            if (value instanceof EmptyRange) {
+                // an empty range contributes no elements
+            } else if (value instanceof Range) {
                 answer.addAll(getAt(array, (Range<?>) value));
             } else if (value instanceof Collection) {
                 answer.addAll(getAt(array, (Collection<?>) value));
@@ -12516,7 +12524,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         List answer = new ArrayList<>();
         for (Object value : indices) {
             if (value instanceof Range) {
-                answer.addAll(primitiveArrayGet(self, (Range) value));
+                answer.addAll(primitiveArraySubList(self, (Range) value));
             } else if (value instanceof List) {
                 answer.addAll(primitiveArrayGet(self, (List) value));
             } else {
@@ -12525,6 +12533,29 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return answer;
+    }
+
+    /**
+     * Implements the nested getAt(Range) case for primitive type arrays. The range is resolved
+     * against the array length, as the typed {@code getAt(IntRange)} overloads do, so that
+     * negative and exclusive bounds behave the same as they do for object arrays and lists.
+     *
+     * @param self  an array object
+     * @param range the range of indices of interest
+     * @return the values from the array corresponding to the resolved range
+     * @since 6.0.0
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static List primitiveArraySubList(final Object self, final Range range) {
+        if (range instanceof EmptyRange) {
+            return new ArrayList();
+        }
+        RangeInfo info = subListBorders(Array.getLength(self), range);
+        List answer = new ArrayList<>(info.to - info.from);
+        for (int i = info.from; i < info.to; i += 1) {
+            answer.add(Array.get(self, i));
+        }
+        return info.reverse ? DefaultGroovyMethods.reverse(answer) : answer;
     }
 
     private static void throwNoSuchElementIfEmpty(final int size, final String method) {

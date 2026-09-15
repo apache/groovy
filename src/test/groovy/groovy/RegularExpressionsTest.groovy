@@ -117,8 +117,37 @@ final class RegularExpressionsTest {
         assert [["se", "s"], [" ple", " pl"]] == matcher[1..2]
         assert [["chee", "ch"], [" ple", " pl"], ["ase", "as"]] == matcher[0, 2..3]
 
+        // a nested collection of indices threw until the subscript forms were
+        // brought into line with the other aggregates
         matcher = "cheese please" =~ /([^e]+)e+/
-        shouldFail { matcher[0, [1, 2]] }
+        assert [["chee", "ch"], ["se", "s"], [" ple", " pl"]] == matcher[0, [1, 2]]
+    }
+
+    @Test
+    void testMatcherRangeIndicesMatchOtherAggregates() {
+        def matcher = 'a1b2c3d4' =~ /[a-z]\d/
+        def list = ['a1', 'b2', 'c3', 'd4']
+
+        assert matcher[0..3]   == list
+        assert matcher[1..-1]  == ['b2', 'c3', 'd4']
+        assert matcher[1..<3]  == ['b2', 'c3']
+        assert matcher[1<..3]  == ['c3', 'd4']
+        assert matcher[1<..<3] == ['c3']
+        assert matcher[1..<-1] == ['b2', 'c3']
+        assert matcher[3..1]   == ['d4', 'c3', 'b2']
+        assert matcher[3..<1]  == ['d4', 'c3']
+        assert matcher[2..<2]  == []
+
+        assert matcher[0, 2..<-1]    == ['a1', 'c3']
+        assert matcher[0..1, 2..<2]  == ['a1', 'b2']
+        assert matcher[0, [1, 3]]    == ['a1', 'b2', 'd4']
+        assert matcher[0, [1, [-1]]] == ['a1', 'b2', 'd4']
+
+        // the same index expression selects the same positions from a list
+        [{ it[1..<3] }, { it[3..1] }, { it[3..<1] }, { it[1..<-1] },
+         { it[0, 2..<-1] }, { it[0..1, 2..<2] }, { it[0, [1, 3]] }].each { subscript ->
+            assert subscript(matcher) == subscript(list)
+        }
     }
 
     @Test
