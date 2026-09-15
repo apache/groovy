@@ -1,0 +1,153 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Groovy Language Server (`groovy-lsp`)
+:toc:
+
+The `groovy-lsp` module is Apache Groovy's implementation of the
+https://microsoft.github.io/language-server-protocol/[Language Server Protocol].
+It speaks LSP 3.18 over JSON-RPC (stdio by default) and ignores unknown
+3.19 capabilities so newer clients keep working.
+
+== Running
+
+From an installed Groovy distribution:
+
+[source,shell]
+----
+groovylsp
+----
+
+Editors start that process and communicate on stdin/stdout. Optional flags:
+
+* `--stdio` — default
+* `--socket <port>` — accept one TCP client
+* `--version` / `--help`
+
+Do not write to stdout from Groovy code running inside the server; the
+launcher redirects `System.out` to `System.err` so stray prints cannot
+break the protocol stream.
+
+== Features
+
+The server advertises and implements:
+
+* Incremental text synchronization
+* Diagnostics (push and pull)
+* Completion (keywords, snippets, members, workspace types with
+  auto-import, GDK when a prefix is typed) and `completionItem/resolve`
+* Hover, signature help (overloads)
+* Definition, type definition, implementation, declaration, references
+  (by declaration identity, not unqualified name)
+* Document highlight, document symbols, workspace symbols
+* Prepare-rename and rename (declarations and compiler-bound calls only;
+  unbound dynamic calls are refused)
+* Code actions (organize imports, remove unused imports, add import,
+  implement abstract methods, insert inferred field types, add package
+  from the file path, create a missing class stub, generate getters
+  and setters / toString / equals and hashCode / constructor, add
+  `@Override`)
+* Code lenses showing reference counts
+* Rename a class also renames the file when the names match
+* Formatting, range formatting, and newline on-type indent
+* Folding ranges, selection ranges
+* Semantic tokens (full and range)
+* Inlay hints (parameter types)
+* Document links for imports (`file:` URIs)
+* Call hierarchy and type hierarchy (prepare, incoming/outgoing, super/sub)
+* Workspace folders, watched files, configuration
+* Command: `groovy.lsp.organizeImports` (preserves star, static and alias
+  imports; applies a workspace edit when the client supports it)
+* Command: `groovy.lsp.showReferences` (used by reference-count code lenses)
+
+Not advertised (they do not apply to Groovy source, or need a debugger):
+document color, notebooks, inline completion, inline values, monikers.
+
+== Configuration
+
+Client settings under `groovy` (or the root of `workspace/didChangeConfiguration`):
+
+* `classpath` — extra jars and directories
+* `sourcePaths` — extra source roots relative to workspace folders
+* `grapeEnabled` — allow `@Grab` during compile (default `false`)
+* `astTestEnabled` — allow `@ASTTest` during compile (default `false`)
+
+== Classpath
+
+Pass the project classpath from the editor. The server does not invoke
+Gradle or Maven itself; that keeps it free of a Tooling API dependency
+and of surprise downloads. If those settings are empty, it looks for
+conventional Groovy source roots (`src/main/groovy`, `src/test/groovy`,
+`src`) and jars under `lib/` or `libs/`. Unchanged buffers are not
+recompiled.
+
+== Positions
+
+Groovy AST columns are 1-based Unicode code points (GROOVY-12085).
+That is **compiler behaviour**, not an LSP break. Protocol
+positions stay 0-based in the encoding negotiated at `initialize`
+(`utf-16` by default). The server converts in both directions,
+including supplementary-plane characters. Existing LSP clients do
+not need to change how they send positions.
+
+Rename and highlight select an identifier by searching the node's
+source span in groovy-lsp (`Positions.toNameRange`). The compiler
+AST does not grow extra name-span fields for the language server.
+
+== Purpose and non-goals
+
+`groovy-lsp` is Apache Groovy's *language core* for the Language
+Server Protocol. Editors start `groovylsp` and talk stdio JSON-RPC.
+AI tools are expected to use the same process, and a later
+`groovy-mcp` module is expected to wrap it so a model can query
+Groovy structure and types without embedding the compiler.
+
+It is meant to be used **directly by an IDE or editor**, and as a
+library other Groovy language servers can embed. Plugins implement
+`org.apache.groovy.lsp.spi.GroovyLspExtension` and register with
+`ServiceLoader` (tests use `ExtensionHost.of`). That is the seam for
+Jenkins GDSL, a static-type-checking intelligence pass, extra
+commands, and a later `groovy-mcp` without forking the stdio loop.
+
+It is not a complete workspace/IDE: it does not invoke Gradle or Maven,
+does not joint-compile Java, does not load GDSL itself, and does not
+debug or run tests. The client supplies `groovy.classpath`. Conventional
+`src/main/groovy` and `lib/*.jar` are used only when those settings
+are empty. Eclipse JDT based servers cannot swap out this compiler.
+
+Other Groovy language servers remain appropriate when you need what
+they specialize in:
+
+* https://github.com/GroovyLanguageServer/groovy-language-server[Prominic groovy-language-server]
+  — the earlier community server this module does not fork
+* https://github.com/trustytrojan/groovyls[trustytrojan/groovyls]
+  — Apache 2.0 fork with Jenkins GDSL and a forced static type check
+* https://github.com/tomaszrup/groovy-language-server-edt[tomaszrup/groovy-language-server-edt]
+  — EPL 2.0, Eclipse JDT + groovy-eclipse, joint Java/Groovy
+
+== Rename and dynamically typed Groovy
+
+`MethodCallExpression.methodTarget` is often empty in dynamic Groovy.
+Hover may then show a unique arity match on a resolved receiver and
+mark it `_inferred_`. Definition returns every such candidate.
+**Rename and prepare-rename do not:** they run only on declarations
+and on calls/properties the compiler actually bound. A name-and-arity
+heuristic must not rewrite the wrong method.
