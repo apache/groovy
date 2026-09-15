@@ -8411,7 +8411,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> List<T> getAt(List<T> self, Collection indices) {
         List<T> answer = new ArrayList<>(indices.size());
         for (Object value : indices) {
-            if (value instanceof Collection) {
+            if (value instanceof EmptyRange) {
+                // an empty range contributes no elements
+            } else if (value instanceof Range) {
+                answer.addAll(getAt(self, (Range) value));
+            } else if (value instanceof Collection) {
                 answer.addAll(getAt(self, (Collection) value));
             } else {
                 int idx = DefaultTypeTransformation.intUnbox(value);

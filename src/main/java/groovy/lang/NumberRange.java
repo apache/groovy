@@ -229,7 +229,12 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
         if (stepSize.intValue() != 1) {
             throw new IllegalStateException("Step must be 1 when used by subList!");
         }
-        return IntRange.subListBorders(((Number) from).intValue(), ((Number) to).intValue(), inclusiveLeft, inclusiveRight, size);
+        // the bounds are held in ascending order, so recover the order they were written in;
+        // otherwise a negative bound, which counts back from the end, cannot be told apart
+        // from a reversed range, and 3..-1 indexes the same elements as -1..3
+        Number rawFrom = (Number) (reverse ? to : from);
+        Number rawTo = (Number) (reverse ? from : to);
+        return IntRange.subListBorders(rawFrom.intValue(), rawTo.intValue(), inclusiveLeft, inclusiveRight, size);
     }
 
     /**
