@@ -38,6 +38,8 @@ concurrency:
 
 jobs:
   validate:
+    # the weekly schedule only matters upstream; PRs and pushes still validate in forks
+    if: github.event_name != 'schedule' || github.repository == 'apache/groovy'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1

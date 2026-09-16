@@ -25,6 +25,7 @@ permissions:
 
 jobs:
   benchmark:
+    if: github.repository == 'apache/groovy'   # don't run (or comment on commits) in forks
     permissions:
       contents: write         # gh-pages push
       deployments: write

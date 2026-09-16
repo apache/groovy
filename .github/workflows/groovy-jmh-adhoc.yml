@@ -33,6 +33,7 @@ permissions:
 
 jobs:
   benchmark:
+    if: github.repository == 'apache/groovy'   # don't run (or push gh-pages) in forks
     permissions:
       contents: write         # gh-pages push
       deployments: write
