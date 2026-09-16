@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789456518338,
+  "lastUpdate": 1789542776945,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -6283,6 +6283,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 490.13666666666666,
             "range": "±22.18",
+            "unit": "ms",
+            "extra": "6.0.0-RC-1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "0041ce8c3a6364687a59aaad943a3264be4a2237",
+          "message": "GROOVY-12407: resolve case labels the same way in either switch position\n\nUnder @CompileStatic a switch expression called the isCase method the type\nchecker selected, while a switch statement called ScriptBytecodeAdapter and\ndispatched on the label's runtime type. The same label could therefore give\ntwo different answers:\n\n    private static Object hidden() { Integer }   // defeats flow typing\n    Object label = hidden()\n\n    switch (x) { case label -> r = 'y'; default -> r = 'n' }  // y\n    return switch (x) { case label -> 'y'; default -> 'n' }   // n\n\nNeither released version behaved that way: 5.1.2 desugared both positions to\nthe same closure, and 6.0.0-RC-1 compiled every arrow switch as an expression\nso both got the selected method. The split appeared when GROOVY-12399 and\nGROOVY-12408 correctly returned value-discarding arrow switches to statement\nposition, where only the dynamic path existed.\n\nThe type checker now selects an isCase target for the labels of a switch\nstatement as well, and StatementWriter grows the writeIsCaseComparison seam\nthe switch expression writer already had, so the statically compiled writer\ncan emit that target directly. The emission itself moves to\nStaticTypesIsCaseWriter, shared by both writers.\n\nA label with no applicable isCase stays a compile error in a switch\nexpression but keeps the dynamic call in a switch statement: rejecting it\nwould stop code compiling that has always compiled. case null likewise keeps\nthe dynamic comparison, which already handles null. Dynamic Groovy is\nuntouched, and jump-table dispatch from GROOVY-12405 still takes precedence\nwhere it applies.",
+          "timestamp": "2026-09-14T12:18:31Z",
+          "url": "https://github.com/apache/groovy/commit/0041ce8c3a6364687a59aaad943a3264be4a2237"
+        },
+        "date": 1789542772203,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 513.5566666666666,
+            "range": "±18.92",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 647.69,
+            "range": "±208.95",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 567.6133333333335,
+            "range": "±140.61",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 468.1033333333333,
+            "range": "±19.99",
+            "unit": "ms",
+            "extra": "5.1.2"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 479.6499999999999,
+            "range": "±21.17",
             "unit": "ms",
             "extra": "6.0.0-RC-1"
           }
