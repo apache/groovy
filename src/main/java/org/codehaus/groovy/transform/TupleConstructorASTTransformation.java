@@ -328,7 +328,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
 
     private static Parameter createParam(final FieldNode fNode, final String name, final DefaultsMode defaultsMode, final AbstractASTTransformation xform, final boolean makeImmutable) {
         ClassNode fType = fNode.getType();
-        ClassNode type = fType.getPlainNodeReference();
+        ClassNode type = fType.getPlainNodeReference(false);
         type.setGenericsTypes(fType.getGenericsTypes());
         type.setGenericsPlaceHolder(fType.isGenericsPlaceHolder());
 

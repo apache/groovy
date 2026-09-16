@@ -115,6 +115,38 @@ final class RecordTest {
     }
 
     @Test
+    void testTypeUseAnnotationOnPrimitiveRecordComponent() {
+        assertScript shell, '''
+            import java.lang.annotation.*
+            import java.lang.reflect.AnnotatedElement
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.TYPE_USE])
+            @interface NonNeg {}
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.RECORD_COMPONENT, ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER, ElementType.TYPE_USE])
+            @interface Both {}
+
+            record Point(@NonNeg int x, @Both long y) {}
+
+            def check = { AnnotatedElement ae, Class expected ->
+                def annos = ae.annotations
+                assert annos.size() == 1 && annos[0].annotationType() == expected
+            }
+            Point.recordComponents.each { rc ->
+                def expected = rc.name == 'x' ? NonNeg : Both
+                check(rc.annotatedType, expected)
+                check(rc.accessor.annotatedReturnType, expected)
+                check(Point.getDeclaredField(rc.name).annotatedType, expected)
+            }
+            def ctor = Point.getDeclaredConstructor(int, long)
+            check(ctor.annotatedParameterTypes[0], NonNeg)
+            check(ctor.annotatedParameterTypes[1], Both)
+        '''
+    }
+
+    @Test
     void testNativeRecordOnJDK16_java() {
         assumeTrue(isAtLeastJdk('16.0'))
 

@@ -227,7 +227,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             }
             for (PropertyNode pNode : pList) {
                 ClassNode pType = pNode.getOriginType();
-                ClassNode type = pType.getPlainNodeReference();
+                ClassNode type = pType.getPlainNodeReference(false);
                 type.setGenericsPlaceHolder(pType.isGenericsPlaceHolder());
                 type.setGenericsTypes(pType.getGenericsTypes());
                 RecordComponentNode rec = new RecordComponentNode(cNode, pNode.getName(), type, pNode.getAnnotations());
