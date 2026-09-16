@@ -71,7 +71,7 @@ class ClassSignatureParser {
                         }
                     });
                 } else {
-                    type[0] = type[0].getPlainNodeReference();
+                    type[0] = type[0].getPlainNodeReference(false);
                 }
 
                 RecordComponentNode recordComponent = new RecordComponentNode(classNode, rc.name, type[0]);
