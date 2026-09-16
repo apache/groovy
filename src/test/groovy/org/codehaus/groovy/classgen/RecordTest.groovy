@@ -275,6 +275,62 @@ final class RecordTest {
         }
     }
 
+    // GROOVY-12415
+    @Test
+    void testPrecompiledJavaRecordWithTypeUseAnnotationOnPrimitiveComponent() {
+        assumeTrue(isAtLeastJdk('16.0'))
+
+        def sourceDir = File.createTempDir()
+        def config = new CompilerConfiguration(
+            targetDirectory: File.createTempDir(),
+            jointCompilationOptions: [memStub: true]
+        )
+        try {
+            def a = new File(sourceDir, 'Point.java')
+            a.write '''
+                package demo;
+
+                import java.lang.annotation.*;
+
+                public record Point(@Point.NonNeg int x, int y) {
+                    @Retention(RetentionPolicy.RUNTIME)
+                    @Target(ElementType.TYPE_USE)
+                    public @interface NonNeg {}
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a)
+            cu.compile()
+
+            def pointClass = loader.loadClass('demo.Point')
+            def stub = AsmDecompiler.parseClass(loader.getResource('demo/Point.class'))
+            def resolver = new AsmReferenceResolver(new ClassNodeResolver(), new CompilationUnit(loader))
+            def recordComponents = new DecompiledClassNode(stub, resolver).recordComponents
+            assert recordComponents.size() == 2
+            assert recordComponents[0].type == ClassHelper.int_TYPE
+            assert recordComponents[0].type !== ClassHelper.int_TYPE
+            assert recordComponents[0].type.typeAnnotations*.classNode == [ClassHelper.make(loader.loadClass('demo.Point$NonNeg'))]
+            assert recordComponents[1].type.typeAnnotations.isEmpty()
+            assert ClassHelper.int_TYPE.typeAnnotations.isEmpty()
+
+            def shell2 = GroovyShell.withConfig {
+                ast(mode)
+            }
+            shell2.classLoader.addClasspath(config.targetDirectory.absolutePath)
+            assertScript shell2, '''
+                import demo.Point
+                int sum(Point p) { p.x + p.y }
+                assert sum(new Point(3, 4)) == 7
+            '''
+            assert pointClass.recordComponents[0].annotatedType.annotations.size() == 1
+        } finally {
+            sourceDir.deleteDir()
+            config.targetDirectory.deleteDir()
+        }
+    }
+
     @Test
     void testNativeRecordOnJDK16ByDefault() {
         assumeTrue(isAtLeastJdk('16.0'))
