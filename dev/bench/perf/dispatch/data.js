@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789456536529,
+  "lastUpdate": 1789542794094,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -3765,6 +3765,58 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/apache/groovy/commit/0041ce8c3a6364687a59aaad943a3264be4a2237"
         },
         "date": 1789456535718,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3996,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 440,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 843,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1505,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "0041ce8c3a6364687a59aaad943a3264be4a2237",
+          "message": "GROOVY-12407: resolve case labels the same way in either switch position\n\nUnder @CompileStatic a switch expression called the isCase method the type\nchecker selected, while a switch statement called ScriptBytecodeAdapter and\ndispatched on the label's runtime type. The same label could therefore give\ntwo different answers:\n\n    private static Object hidden() { Integer }   // defeats flow typing\n    Object label = hidden()\n\n    switch (x) { case label -> r = 'y'; default -> r = 'n' }  // y\n    return switch (x) { case label -> 'y'; default -> 'n' }   // n\n\nNeither released version behaved that way: 5.1.2 desugared both positions to\nthe same closure, and 6.0.0-RC-1 compiled every arrow switch as an expression\nso both got the selected method. The split appeared when GROOVY-12399 and\nGROOVY-12408 correctly returned value-discarding arrow switches to statement\nposition, where only the dynamic path existed.\n\nThe type checker now selects an isCase target for the labels of a switch\nstatement as well, and StatementWriter grows the writeIsCaseComparison seam\nthe switch expression writer already had, so the statically compiled writer\ncan emit that target directly. The emission itself moves to\nStaticTypesIsCaseWriter, shared by both writers.\n\nA label with no applicable isCase stays a compile error in a switch\nexpression but keeps the dynamic call in a switch statement: rejecting it\nwould stop code compiling that has always compiled. case null likewise keeps\nthe dynamic comparison, which already handles null. Dynamic Groovy is\nuntouched, and jump-table dispatch from GROOVY-12405 still takes precedence\nwhere it applies.",
+          "timestamp": "2026-09-14T12:18:31Z",
+          "url": "https://github.com/apache/groovy/commit/0041ce8c3a6364687a59aaad943a3264be4a2237"
+        },
+        "date": 1789542792521,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
