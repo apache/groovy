@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789542794094,
+  "lastUpdate": 1789629193352,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -3817,6 +3817,58 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/apache/groovy/commit/0041ce8c3a6364687a59aaad943a3264be4a2237"
         },
         "date": 1789542792521,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3996,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 440,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 843,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1505,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "c3c8739432010c729cbfafe71b9c9e9aafddfb4b",
+          "message": "GROOVY-12413: TYPE_USE annotations on primitive record components and tuple-constructor parameters are duplicated or misapplied",
+          "timestamp": "2026-09-16T11:57:09Z",
+          "url": "https://github.com/apache/groovy/commit/c3c8739432010c729cbfafe71b9c9e9aafddfb4b"
+        },
+        "date": 1789629192373,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
