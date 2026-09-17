@@ -410,6 +410,33 @@ final class SecureASTCustomizerTest {
         }
     }
 
+    // GROOVY-12416: a primitive receiver is checked as its wrapper type
+    @Test
+    void testIndirectImportCheckBoxesPrimitiveReceivers() {
+        customizer.allowedImports = ['java.lang.Object', 'java.lang.Integer', 'java.lang.Long',
+                                     'java.lang.Boolean', 'java.lang.Double']
+        customizer.indirectImportCheckEnabled = true
+        def shell = new GroovyShell(configuration)
+        shell.evaluate('3.times { }')
+        shell.evaluate('3L.times { }')
+        shell.evaluate('true.and(false)')
+        shell.evaluate('1.5d.abs()')
+        shell.evaluate('int[] a = [1]; a.size()')
+        shell.evaluate('return 3.&times')
+        // a literal and a typed local are checked alike
+        shell.evaluate('int n = 3; n.times { }')
+    }
+
+    @Test
+    void testIndirectImportCheckRejectsPrimitiveReceiverWhenWrapperNotAllowed() {
+        customizer.allowedImports = ['java.lang.Object']
+        customizer.indirectImportCheckEnabled = true
+        def shell = new GroovyShell(configuration)
+        assert hasSecurityException { shell.evaluate('3.times { }') }
+        assert hasSecurityException { shell.evaluate('return 3.&times') }
+        assert hasSecurityException { shell.evaluate('int n = 3; n.times { }') }
+    }
+
     @Test
     void testAllowedIndirectImports() {
         customizer.allowedImports = ['java.util.ArrayList']
