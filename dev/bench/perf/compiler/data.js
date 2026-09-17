@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789542776945,
+  "lastUpdate": 1789629176560,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -6340,6 +6340,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 479.6499999999999,
             "range": "±21.17",
+            "unit": "ms",
+            "extra": "6.0.0-RC-1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "c3c8739432010c729cbfafe71b9c9e9aafddfb4b",
+          "message": "GROOVY-12413: TYPE_USE annotations on primitive record components and tuple-constructor parameters are duplicated or misapplied",
+          "timestamp": "2026-09-16T11:57:09Z",
+          "url": "https://github.com/apache/groovy/commit/c3c8739432010c729cbfafe71b9c9e9aafddfb4b"
+        },
+        "date": 1789629172723,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 518.3333333333333,
+            "range": "±18.1",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 627.55,
+            "range": "±206.37",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 567.12,
+            "range": "±140.89",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 461.1633333333333,
+            "range": "±20.74",
+            "unit": "ms",
+            "extra": "5.1.2"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 470.34666666666664,
+            "range": "±19.78",
             "unit": "ms",
             "extra": "6.0.0-RC-1"
           }
