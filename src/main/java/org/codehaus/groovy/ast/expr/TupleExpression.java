@@ -25,13 +25,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.StringJoiner;
 
 /**
  * Represents a tuple or grouped list of expressions, typically used for method arguments,
  * multiple assignment targets, or other contexts requiring multiple values.
  * A tuple expression is a simple container for an ordered list of {@link Expression} objects
  * and implements {@link Iterable} for convenient traversal.
- * 
+ *
  * @see {@link Expression} for the contained expressions
  * @see {@link MethodCallExpression} for usage in method arguments
  * @see {@link ConstructorCallExpression} for usage in constructor arguments
@@ -52,7 +53,7 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
 
     /**
      * Creates a tuple expression containing a single expression.
-     * 
+     *
      * @param expr the expression to add (non-null)
      */
     public TupleExpression(final Expression expr) {
@@ -62,7 +63,7 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
 
     /**
      * Creates a tuple expression containing two expressions.
-     * 
+     *
      * @param expr1 the first expression (non-null)
      * @param expr2 the second expression (non-null)
      */
@@ -74,7 +75,7 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
 
     /**
      * Creates a tuple expression containing three expressions.
-     * 
+     *
      * @param expr1 the first expression (non-null)
      * @param expr2 the second expression (non-null)
      * @param expr3 the third expression (non-null)
@@ -88,7 +89,7 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
 
     /**
      * Creates a tuple expression with pre-allocated capacity.
-     * 
+     *
      * @param capacity the initial capacity for the internal list
      */
     public TupleExpression(final int capacity) {
@@ -97,7 +98,7 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
 
     /**
      * Creates a tuple expression from an existing list of expressions.
-     * 
+     *
      * @param expressions the list of expressions (non-null)
      */
     public TupleExpression(final List<Expression> expressions) {
@@ -106,7 +107,7 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
 
     /**
      * Creates a tuple expression from an array of expressions.
-     * 
+     *
      * @param expressionArray the array of expressions (non-null)
      */
     public TupleExpression(final Expression[] expressionArray) {
@@ -116,7 +117,7 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
 
     /**
      * Adds an expression to this tuple.
-     * 
+     *
      * @param expression the expression to add (non-null)
      * @return this tuple expression for method chaining
      */
@@ -127,7 +128,7 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
 
     /**
      * Returns the expression at the specified index.
-     * 
+     *
      * @param i the index of the expression
      * @return the expression at the specified index
      * @throws IndexOutOfBoundsException if the index is out of range
@@ -139,7 +140,7 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
     /**
      * Returns the list of all expressions in this tuple.
      * Note: The returned list may be mutable; modifications affect this tuple.
-     * 
+     *
      * @return a list of expressions (non-null)
      */
     public List<Expression> getExpressions() {
@@ -150,7 +151,7 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
 
     /**
      * Returns an unmodifiable iterator over the expressions in this tuple.
-     * 
+     *
      * @return an iterator of expressions
      */
     @Override
@@ -174,18 +175,11 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
 
     @Override
     public String getText() {
-        StringBuilder buffer = new StringBuilder("(");
-        boolean first = true;
+        var joiner = new StringJoiner(", ", "(", ")");
         for (Expression expression : getExpressions()) {
-            if (first) {
-                first = false;
-            } else {
-                buffer.append(", ");
-            }
-            buffer.append(expression.getText());
+            joiner.add( expression.getText() );
         }
-        buffer.append(")");
-        return buffer.toString();
+        return joiner.toString();
     }
 
     @Override

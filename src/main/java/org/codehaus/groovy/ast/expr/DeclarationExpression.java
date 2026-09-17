@@ -24,6 +24,8 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.syntax.Token;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.formatTypeName;
+import static org.codehaus.groovy.ast.MultipleAssignmentMetadata.MAP_KEY;
+import static org.codehaus.groovy.ast.MultipleAssignmentMetadata.REST_BINDING;
 
 /**
  * Represents one or more local variables. Typically it is a single local variable
@@ -157,17 +159,26 @@ public class DeclarationExpression extends BinaryExpression {
             } else {
                 text.append(formatTypeName(v.getOriginType()));
             }
-            text.append(' ').append(v.getText());
+            text.append(' ').append(v.getName());
         } else {
             TupleExpression t = getTupleExpression();
             text.append("def (");
             for (Expression e : t.getExpressions()) {
                 if (e instanceof VariableExpression v) {
+                    if (v.getNodeMetaData(MAP_KEY) instanceof String label) {
+                        text.append(label).append(": ");
+                    }
                     if (!v.isDynamicTyped()) {
                         text.append(formatTypeName(v.getOriginType())).append(' ');
                     }
+                    if (Boolean.TRUE.equals(v.getNodeMetaData(REST_BINDING))) {
+                        text.append('*');
+                    }
+                    text.append(v.getName());
+                } else {
+                    text.append(e.getText());
                 }
-                text.append(e.getText()).append(", ");
+                text.append(", ");
             }
             text.setLength(text.length() - 2);
             text.append(')');
