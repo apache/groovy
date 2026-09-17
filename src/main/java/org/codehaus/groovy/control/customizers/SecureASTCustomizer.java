@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.control.customizers;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
@@ -1384,8 +1385,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
                         assertImportIsAllowed(expression.getType().getName());
                     } else if (expression instanceof MethodCallExpression) {
                         MethodCallExpression expr = (MethodCallExpression) expression;
-                        ClassNode objectExpressionType = expr.getObjectExpression().getType();
-                        final String typename = getExpressionType(objectExpressionType).getName();
+                        final String typename = getReceiverType(expr.getObjectExpression().getType()).getName();
                         assertImportIsAllowed(typename);
                         assertStaticImportIsAllowed(expr.getMethodAsString(), typename);
                     } else if (expression instanceof StaticMethodCallExpression) {
@@ -1413,6 +1413,19 @@ public class SecureASTCustomizer extends CompilationCustomizer {
          */
         protected ClassNode getExpressionType(ClassNode objectExpressionType) {
             return objectExpressionType.isArray() ? getExpressionType(objectExpressionType.getComponentType()) : objectExpressionType;
+        }
+
+        /**
+         * Returns the type the import rules are checked against for the receiver of a method
+         * call: the effective type from {@link #getExpressionType(ClassNode)}, with a primitive
+         * replaced by its wrapper. A call on {@code 3} is checked as a call on
+         * {@code java.lang.Integer}, the same as a call on a local variable declared {@code int}.
+         *
+         * @param receiverType the declared or literal type of the receiver
+         * @return the class name to check, never a primitive
+         */
+        private ClassNode getReceiverType(final ClassNode receiverType) {
+            return ClassHelper.getWrapper(getExpressionType(receiverType));
         }
 
         /**
