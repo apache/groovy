@@ -116,6 +116,7 @@ final class RecordTest {
 
     @Test
     void testTypeUseAnnotationOnPrimitiveRecordComponent() {
+        assumeTrue(isAtLeastJdk('16.0'))
         assertScript shell, '''
             import java.lang.annotation.*
             import java.lang.reflect.AnnotatedElement
