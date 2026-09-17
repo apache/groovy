@@ -66,4 +66,44 @@ final class DeclarationExpressionTest {
 
         assert ast.text == 'def (String one, CharSequence two) = [1, 2]'
     }
+
+    // GROOVY-11964
+    @Test
+    void getTextForRestBindingDeclaration1() {
+        def ast = macro {
+            def (head, *tail) = 1..9
+        }
+
+        assert ast.text == 'def (head, *tail) = (1..9)'
+    }
+
+    // GROOVY-11964
+    @Test
+    void getTextForRestBindingDeclaration2() {
+        def ast = macro {
+            def (Number head, Number *tail) = 1..9
+        }
+
+        assert ast.text == 'def (Number head, Number *tail) = (1..9)'
+    }
+
+    // GROOVY-11964
+    @Test
+    void getTextForDestructuringDeclaration1() {
+        def ast = macro {
+            def (from: one, to: two) = 1..2
+        }
+
+        assert ast.text == 'def (from: one, to: two) = (1..2)'
+    }
+
+    // GROOVY-11964
+    @Test
+    void getTextForDestructuringDeclaration2() {
+        def ast = macro {
+            def (from: int one, to: Number two) = 1..2
+        }
+
+        assert ast.text == 'def (from: int one, to: Number two) = (1..2)'
+    }
 }
