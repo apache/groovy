@@ -28,6 +28,7 @@ import groovy.concurrent.AsyncScope
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
+import groovy.transform.MapConstructor
 import groovy.xml.MarkupBuilder
 import groovy.xml.XmlParser
 import groovy.xml.XmlSlurper
@@ -50,6 +51,20 @@ trait Named {
 
 class Person implements Named {
     Person(String name) { this.name = name }
+}
+
+// enum constants and named-argument constructors are compiled to a call of
+// ImmutableASTTransformation.checkPropNames, made by name at run time
+enum Suit {
+    HEARTS('red'), SPADES('black')
+    final String colour
+    Suit(String colour) { this.colour = colour }
+}
+
+@MapConstructor
+class Card {
+    Suit suit
+    int rank
 }
 
 @CompileStatic
@@ -75,6 +90,7 @@ Comparator<Integer> byValue = { a, b -> a <=> b }
 def sorted = [3, 1, 2].toSorted(byValue)
 def statically = StaticHelper.twice(21) + StaticHelper.join(['a', 'b']).size()
 float[] floats = ['1.5', '2.5']*.toFloat() as float[] // `as T[]` goes through the MOP on DefaultGroovyMethods itself
+def card = new Card(suit: Suit.HEARTS, rank: 7)
 def captured = 0
 [1, 2, 3].each { captured += it } // a reassigned captured local lives in a groovy.lang.Reference
 def async = AsyncScope.withScope { scope ->
@@ -120,6 +136,7 @@ println "sorted=$sorted"
 println "static=$statically"
 println "async=$async"
 println "captured=$captured floats=${floats.sum()}"
+println "card=${card.suit} ${card.suit.colour} ${card.rank} suits=${Suit.values()*.name()}"
 println "metaClass=${p.metaClass.class.simpleName} methods=${p.metaClass.methods.size() > 0}"
 println "nio lines=$lines counted=$counted first=$firstLine"
 println "xml names=$itemNames ids=$itemIds built=${built.contains('gamma')}"
@@ -129,4 +146,5 @@ assert itemNames == ['alpha', 'beta'] && itemIds == ['1', '2'] && built.contains
 assert back.point.x == 4 && back.point.y == 6 && back.names.size() == 3 && back.nested.ok == true
 assert total == 220 && curried(2) == 42 && p.x == 4
 assert person.greet() == 'hello, groovy' && sorted == [1, 2, 3] && statically == 45 && async == 42 && captured == 6 && floats.sum() == 4.0f
+assert card.suit == Suit.HEARTS && card.suit.colour == 'red' && card.rank == 7 && Suit.values().size() == 2
 println 'PROBE OK'
