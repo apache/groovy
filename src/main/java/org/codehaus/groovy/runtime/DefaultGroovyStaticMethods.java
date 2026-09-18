@@ -112,10 +112,24 @@ public class DefaultGroovyStaticMethods {
      * @since 3.0.0
      */
     public static String dumpAll(Thread self){
-        ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
-        return Arrays.stream(threadMxBean.dumpAllThreads(true, true))
-                .map(ThreadInfo::toString)
-                .collect(Collectors.joining(""));
+        return ThreadDumps.all();
+    }
+
+    /**
+     * Keeps the {@code java.lang.management} code out of this class's own
+     * methods. A platform without that module (Android, a jlinked runtime)
+     * refuses reflection over a class whose declared methods mention its
+     * types, which would cost every static extension method at once, and a
+     * method reference is turned into such a declared method by D8. This
+     * nested class is loaded only when {@link #dumpAll} runs.
+     */
+    private static class ThreadDumps {
+        static String all() {
+            ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
+            return Arrays.stream(threadMxBean.dumpAllThreads(true, true))
+                    .map(ThreadInfo::toString)
+                    .collect(Collectors.joining(""));
+        }
     }
 
     /**

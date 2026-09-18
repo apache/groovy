@@ -43,6 +43,8 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static java.lang.reflect.Modifier.isProtected;
 import static java.lang.reflect.Modifier.isPublic;
@@ -113,6 +115,11 @@ public class CachedClass {
                     .map(m -> new CachedMethod(CachedClass.this, m))
                     .toArray(CachedMethod[]::new);
             } catch (LinkageError e) {
+                // a missing type in a declared signature, say: leaving the list empty is the
+                // only option, but a silent one costs every method of the class and shows up
+                // far away as MissingMethodExceptions
+                Logger.getLogger(CachedClass.class.getName()).log(Level.WARNING,
+                        "The declared methods of " + getTheClass().getName() + " cannot be read, so none of them will be available to Groovy", e);
                 declaredMethods = CachedMethod.EMPTY_ARRAY;
             }
 
