@@ -61,6 +61,7 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
+import org.codehaus.groovy.transform.ImmutableASTTransformation;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.vmplugin.v17.Java17;
 import org.codehaus.groovy.vmplugin.v8.IndyArrayAccess;
@@ -197,6 +198,7 @@ public class NativeImageMetadataGenerator {
             Binding.class,
             NullObject.class,
             Reference.class, // holds a captured local variable that a closure reassigns
+            ImmutableASTTransformation.class, // checkPropNames, called by name from enum constants and named-argument constructors
     };
 
     /**

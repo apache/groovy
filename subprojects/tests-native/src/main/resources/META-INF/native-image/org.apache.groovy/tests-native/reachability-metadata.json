@@ -1,6 +1,35 @@
 {
     "reflection": [
         {
+            "type": "Card",
+            "methods": [
+                {
+                    "name": "<init>",
+                    "parameterTypes": [
+                        "java.util.Map"
+                    ]
+                },
+                {
+                    "name": "getRank",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "getSuit",
+                    "parameterTypes": [
+                        
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "CardBeanInfo"
+        },
+        {
+            "type": "CardCustomizer"
+        },
+        {
             "type": "Named",
             "methods": [
                 {
@@ -139,7 +168,41 @@
             "type": "StaticHelperCustomizer"
         },
         {
-            "type": "android.app.Activity"
+            "type": "Suit",
+            "fields": [
+                {
+                    "name": "HEARTS"
+                }
+            ],
+            "methods": [
+                {
+                    "name": "$INIT",
+                    "parameterTypes": [
+                        "java.lang.Object[]"
+                    ]
+                },
+                {
+                    "name": "getColour",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "values",
+                    "parameterTypes": [
+                        
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "SuitBeanInfo"
+        },
+        {
+            "type": "SuitCustomizer"
+        },
+        {
+            "type": "Suit[]"
         },
         {
             "type": "groovy.concurrent.AsyncScope",
@@ -214,6 +277,9 @@
             "type": "groovy.json.JsonSlurperCustomizer"
         },
         {
+            "type": "groovy.runtime.metaclass.CardMetaClass"
+        },
+        {
             "type": "groovy.runtime.metaclass.Named$Trait$HelperMetaClass"
         },
         {
@@ -224,6 +290,9 @@
         },
         {
             "type": "groovy.runtime.metaclass.StaticHelperMetaClass"
+        },
+        {
+            "type": "groovy.runtime.metaclass.SuitMetaClass"
         },
         {
             "type": "groovy.runtime.metaclass.groovy.concurrent.AsyncScopeMetaClass"
@@ -590,6 +659,12 @@
             "type": "java.lang.ClassCustomizer"
         },
         {
+            "type": "java.lang.EnumBeanInfo"
+        },
+        {
+            "type": "java.lang.EnumCustomizer"
+        },
+        {
             "type": "java.lang.FloatBeanInfo"
         },
         {
@@ -635,6 +710,15 @@
         },
         {
             "type": "java.lang.StringCustomizer"
+        },
+        {
+            "type": "java.lang.module.ModuleFinder"
+        },
+        {
+            "type": "java.lang.reflect.AccessibleObject"
+        },
+        {
+            "type": "java.lang.reflect.TypeVariable"
         },
         {
             "type": "java.nio.Buffer"
