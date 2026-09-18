@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789629176560,
+  "lastUpdate": 1789715675511,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -6397,6 +6397,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 470.34666666666664,
             "range": "±19.78",
+            "unit": "ms",
+            "extra": "6.0.0-RC-1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "04e40a60089ea1a1aabd42eb3b6bafbf47d1fde3",
+          "message": "GROOVY-12416: SecureASTCustomizer indirect import check does not box primitive receiver types",
+          "timestamp": "2026-09-17T09:51:49Z",
+          "url": "https://github.com/apache/groovy/commit/04e40a60089ea1a1aabd42eb3b6bafbf47d1fde3"
+        },
+        "date": 1789715670959,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 508.43999999999994,
+            "range": "±17.25",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 643.0833333333334,
+            "range": "±216.81",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 553.4466666666667,
+            "range": "±141.41",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 454.66999999999996,
+            "range": "±21.19",
+            "unit": "ms",
+            "extra": "5.1.2"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 475.62000000000006,
+            "range": "±19.4",
             "unit": "ms",
             "extra": "6.0.0-RC-1"
           }
