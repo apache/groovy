@@ -79,12 +79,27 @@ public class Java9 extends Java8 {
     @Override
     public Class<?>[] getPluginDefaultGroovyMethods() {
         Class<?>[] answer = super.getPluginDefaultGroovyMethods();
+        if (!hasSystemLogger()) {
+            // the class extends System.Logger and nothing else: where the platform has no
+            // such type (Android) its methods have no receiver, and reflecting on the class
+            // to register them would fail anyway
+            return answer;
+        }
 
         final int n = answer.length;
         answer = Arrays.copyOf(answer, n + 1);
         answer[n] = PluginDefaultGroovyMethods.class;
 
         return answer;
+    }
+
+    private static boolean hasSystemLogger() {
+        try {
+            Class.forName("java.lang.System$Logger", false, Java9.class.getClassLoader());
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
     }
 
     /** {@inheritDoc} */
