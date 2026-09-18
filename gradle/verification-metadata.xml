@@ -94,9 +94,9 @@
          <trusted-key id="03CC5FFA61AAAD3C8FF25E9270F09CC6B876884A" group="org.apache.tika"/>
          <trusted-key id="042B29E928995B9DB963C636C7CA19B7B620D787" group="com.github.stephenc.jcip"/>
          <trusted-key id="04543577D6A9CC626239C50C7ECBD740FF06AEB5">
-            <trusting group="^com[.]sun($|([.].*))" regex="true"/>
             <trusting group="org.glassfish.jaxb"/>
             <trusting group="org.jvnet.staxex"/>
+            <trusting group="^com[.]sun($|([.].*))" regex="true"/>
          </trusted-key>
          <trusted-key id="050A37A2E0577F4BAA095B52602EC18D20C4661C">
             <trusting group="com.thoughtworks.xstream"/>
@@ -112,8 +112,8 @@
          </trusted-key>
          <trusted-key id="077E8893A6DCC33DD4A4D5B256E73BA9A0B592D0" group="org.apache.logging.log4j"/>
          <trusted-key id="0785B3EFF60B1B1BEA94E0BB7C25280EAE63EBE5">
-            <trusting group="^org[.]apache[.]httpcomponents($|([.].*))" regex="true"/>
             <trusting group="commons-httpclient"/>
+            <trusting group="^org[.]apache[.]httpcomponents($|([.].*))" regex="true"/>
          </trusted-key>
          <trusted-key id="07DBC3C1AB1F4468471656061C8D5EF0DF2B70D4" group="cglib"/>
          <trusted-key id="0A123C1ED3F13A6A0140E166C71FB765CD9DE313" group="org.apache.ant"/>
@@ -132,9 +132,9 @@
          <trusted-key id="206DF7C48E3D6CB145DDA835FF844A3256C7FB01" group="de.siegmar"/>
          <trusted-key id="223D3A74B068ECA354DC385CE126833F9CF64915" group="org.apache.xbean"/>
          <trusted-key id="28118C070CB22A0175A2E8D43D12CA2AC19F3181">
+            <trusting group="org.codehaus.woodstox"/>
             <trusting group="^com[.]fasterxml($|([.].*))" regex="true"/>
             <trusting group="^com[.]fasterxml[.]jackson($|([.].*))" regex="true"/>
-            <trusting group="org.codehaus.woodstox"/>
          </trusted-key>
          <trusted-key id="29BEA2A645F2D6CED7FB12E02B172E3E156466E8" group="^org[.]apache[.]maven($|([.].*))" regex="true"/>
          <trusted-key id="2B1042677FD8190C7B9FC0DC2161D72E7DCD4258">
@@ -258,8 +258,8 @@
          <trusted-key id="9A072E65CCCDCDD07C5B2C3F405262BDCB017886" group="me.sunlan"/>
          <trusted-key id="9C60C6B3A5A9DF8FEDD299D65BE0BA8CB80602AE" group="org.apache.ivy"/>
          <trusted-key id="9FFED7A118D45A44E4A1E47130E6F80434A72A7F">
-            <trusting group="^org[.]apache[.]maven($|([.].*))" regex="true"/>
             <trusting group="org.sonatype.plexus"/>
+            <trusting group="^org[.]apache[.]maven($|([.].*))" regex="true"/>
          </trusted-key>
          <trusted-key id="A413F67D71BEEC23ADD0CE0ACB43338E060CF9FA" group="org.jacoco"/>
          <trusted-key id="A5BD02B93E7A40482EB1D66A5F69AD087600B22C" group="org.ow2.asm"/>
