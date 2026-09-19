@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789715688692,
+  "lastUpdate": 1789801346718,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -3921,6 +3921,58 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/apache/groovy/commit/04e40a60089ea1a1aabd42eb3b6bafbf47d1fde3"
         },
         "date": 1789715687560,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3994,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 438,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 841,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1505,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "committer": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "id": "40e59c5c116e53e96013a06a97c09923b7752969",
+          "message": "GROOVY-12424: Bump versions gradle plugin to 0.64.0",
+          "timestamp": "2026-09-18T15:30:32Z",
+          "url": "https://github.com/apache/groovy/commit/40e59c5c116e53e96013a06a97c09923b7752969"
+        },
+        "date": 1789801345934,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
