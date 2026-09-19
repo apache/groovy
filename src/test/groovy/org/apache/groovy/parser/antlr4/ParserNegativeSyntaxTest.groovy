@@ -261,13 +261,26 @@ final class ParserNegativeSyntaxTest {
     }
 
     @Test
-    void 'unclosed type argument'() {
+    void 'unclosed type argument - 1'() {
         expectParseError '''\
             |List<Integer list2 = new ArrayList<Integer>()
             |'''.stripMargin(), '''\
-            |Missing '>' @ line 1, column 1.
+            |Missing '>' @ line 1, column 13.
             |   List<Integer list2 = new ArrayList<Integer>()
-            |   ^
+            |               ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'unclosed type argument - 2'() {
+        expectParseError '''\
+            |List<List<Integer> list2 = new ArrayList<>()
+            |'''.stripMargin(), '''\
+            |Missing '>' @ line 1, column 19.
+            |   List<List<Integer> list2 = new ArrayList<>()
+            |                     ^
             |
             |1 error
             |'''.stripMargin()
@@ -3712,9 +3725,9 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |List < Integer name
             |'''.stripMargin(), '''\
-            |Missing '>' @ line 1, column 1.
+            |Missing '>' @ line 1, column 15.
             |   List < Integer name
-            |   ^
+            |                 ^
             |
             |1 error
             |'''.stripMargin()
@@ -3725,9 +3738,9 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |List<String> < Integer name
             |'''.stripMargin(), '''\
-            |Missing '>' @ line 1, column 1.
+            |Missing '>' @ line 1, column 23.
             |   List<String> < Integer name
-            |   ^
+            |                         ^
             |
             |1 error
             |'''.stripMargin()

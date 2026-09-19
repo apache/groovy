@@ -2598,7 +2598,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             if ("<".equals(bin.getOperation().getText())
                     && looksLikeTypeName(bin.getLeftExpression())
                     && looksLikeTypeName(bin.getRightExpression())) {
-                throw createParsingFailedException("Missing '>'", bin);
+                // javac points at the position the missing '>' would occupy: right
+                // after the type argument that stands in for it (`right`), not at the
+                // start of the whole comparison (`List`, possibly several tokens away).
+                Expression right = bin.getRightExpression();
+                Tuple2<Integer, Integer> afterRight = tuple(right.getLastLineNumber(), right.getLastColumnNumber());
+                throw createParsingFailedException("Missing '>'", afterRight, afterRight);
             }
             throw createParsingFailedException("Unexpected input: '" + getOriginalText(ctx.expression()) + "'", ctx.expression());
         }
