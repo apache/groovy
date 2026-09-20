@@ -36,7 +36,7 @@ public class DocLinkExtensionRegistry implements ExtensionRegistry {
     @Override
     public void register(Asciidoctor asciidoctor) {
         asciidoctor.javaExtensionRegistry()
-                .inlineMacro(new DocLinkMacroProcessor("jdk", false))
+                .inlineMacro(new DocLinkMacroProcessor("jdk", true, true))
                 .inlineMacro(new DocLinkMacroProcessor("gjdk", false))
                 .inlineMacro(new DocLinkMacroProcessor("gapi", false))
                 .inlineMacro(new DocLinkMacroProcessor("gapid", true));

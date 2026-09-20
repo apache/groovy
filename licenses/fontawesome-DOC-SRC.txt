@@ -1,0 +1,10 @@
+Font Awesome License
+
+The following files are used within documentation:
+
+    src/spec/doc/assets/css/fontawesome.min.css
+    src/spec/doc/assets/fonts/fa701/fa-solid-900.woff2
+
+These files are part of Font Awesome Free, made available under a combination
+of the CC BY 4.0, SIL OFL 1.1 and MIT licenses:
+licenses/fontawesome-license.txt

@@ -1,0 +1,12 @@
+Open Sans and Source Code Pro Licenses
+
+The following files are used within documentation:
+
+    src/spec/doc/assets/css/webfonts.css
+    src/spec/doc/assets/fonts/googlefonts/open-sans-latin.woff2
+    src/spec/doc/assets/fonts/googlefonts/open-sans-latin-ext.woff2
+    src/spec/doc/assets/fonts/googlefonts/source-code-pro-latin.woff2
+    src/spec/doc/assets/fonts/googlefonts/source-code-pro-latin-ext.woff2
+
+These fonts are made available under the SIL Open Font License, Version 1.1:
+licenses/webfonts-license.txt

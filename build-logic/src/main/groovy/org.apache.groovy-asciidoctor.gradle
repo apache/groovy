@@ -61,13 +61,28 @@ asciidoctor {
     resources {
         from("${rootProject.projectDir}/src/spec/doc/assets") {
             include 'css/style.css'
+            // self-hosted icon font: docs.groovy-lang.org sends a CSP of style-src 'self',
+            // which blocks Asciidoctor's default CDN-hosted Font Awesome stylesheet
+            include 'css/fontawesome.min.css'
+            include 'fonts/fa701/**'
+            // likewise self-hosted: Asciidoctor otherwise pulls prettify from the same CDN,
+            // and style.css would otherwise @import its body/code fonts from Google Fonts
+            include 'js/prettify/**'
+            include 'css/webfonts.css'
+            include 'fonts/googlefonts/**'
         }
         from(layout.buildDirectory.dir("tmp/asciidoctor-assets")) {
             exclude 'css/style.css'
+            exclude 'css/fontawesome.min.css'
+            exclude 'fonts/fa701/**'
+            exclude 'js/prettify/**'
+            exclude 'css/webfonts.css'
+            exclude 'fonts/googlefonts/**'
         }
         into 'assets'
     }
     attributes 'source-highlighter': 'prettify',
+            prettifydir: 'assets/js/prettify',
             groovyversion: groovyVersion,
             'groovy-major-version': major,
             'groovy-minor-version': minor,
@@ -75,13 +90,14 @@ asciidoctor {
             'groovy-full-version': groovyVersion,
             'groovy-short-version': "${major}.${minor}",
             'javaParserVersion': versions.javaParser,
-            'jdk-base-url': "https://docs.oracle.com/en/java/javase/${17}/docs/api/index.html",
+            'jdk-base-url': "https://docs.oracle.com/en/java/javase/17/docs/api/",
             'gjdk-base-url': "https://docs.groovy-lang.org/${versions.groovy}/html/groovy-jdk/index.html",
             'gapi-base-url': "https://docs.groovy-lang.org/${versions.groovy}/html/gapi/index.html",
             'gapid-base-url': "https://docs.groovy-lang.org/${versions.groovy}/html/gapi/",
             doctype: 'book',
             revnumber: groovyVersion,
             icons: 'font',
+            'iconfont-cdn': 'assets/css/fontawesome.min.css',
             toc2: '',
             linkcss: '',
             stylesheet: "assets/css/style.css",

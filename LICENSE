@@ -211,6 +211,19 @@ For details, see licenses/asciidoc-style-license.txt.
 
 ------------------------------------------------------------------------
 
+Font Awesome License
+
+The following files are used within documentation:
+
+    src/spec/doc/assets/css/fontawesome.min.css
+    src/spec/doc/assets/fonts/fa701/fa-solid-900.woff2
+
+These files are part of Font Awesome Free, made available under a combination
+of the CC BY 4.0, SIL OFL 1.1 and MIT licenses:
+licenses/fontawesome-license.txt
+
+------------------------------------------------------------------------
+
 JLine3 License
 
 The following source files within this product:
@@ -271,6 +284,20 @@ licenses/normalize-stylesheet-license.txt
 
 ------------------------------------------------------------------------
 
+Google Code Prettify License
+
+The following files are used within documentation:
+
+    src/spec/doc/assets/js/prettify/run_prettify.min.js
+    src/spec/doc/assets/js/prettify/prettify.min.css
+
+These files are from google-code-prettify
+(https://github.com/googlearchive/code-prettify), Copyright 2006 Google Inc.
+They are made available under the Apache License, Version 2.0, the full text
+of which appears at the top of this file.
+
+------------------------------------------------------------------------
+
 Prism License
 
 The prism.js, prism.min.css, prism-dark.min.css, and the
@@ -279,3 +306,18 @@ component provide client-side syntax highlighting for code
 snippets in the generated documentation. They are made available
 under a MIT License:
 licenses/prism-license.txt
+
+------------------------------------------------------------------------
+
+Open Sans and Source Code Pro Licenses
+
+The following files are used within documentation:
+
+    src/spec/doc/assets/css/webfonts.css
+    src/spec/doc/assets/fonts/googlefonts/open-sans-latin.woff2
+    src/spec/doc/assets/fonts/googlefonts/open-sans-latin-ext.woff2
+    src/spec/doc/assets/fonts/googlefonts/source-code-pro-latin.woff2
+    src/spec/doc/assets/fonts/googlefonts/source-code-pro-latin-ext.woff2
+
+These fonts are made available under the SIL Open Font License, Version 1.1:
+licenses/webfonts-license.txt
