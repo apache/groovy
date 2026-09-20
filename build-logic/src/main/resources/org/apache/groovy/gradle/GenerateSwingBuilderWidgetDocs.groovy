@@ -177,8 +177,32 @@ static String formatType(Class type) {
     name = name.replaceAll(/^java\.awt\./, 'awt.')
     name = name.replaceAll(/^javax\.swing\./, '')
     name = name.replaceAll(/^java\.util\./, '')
+    // Nested classes read better with javadoc's dot separator than the binary "$" form
+    name = name.replace('$' as char, '.' as char)
     // Simplify primitive wrapper names
     return name
+}
+
+/**
+ * Render a property type as a monospaced javadoc link when it is a JDK class,
+ * otherwise as plain monospaced text.
+ * <p>
+ * Arrays and primitives are left unlinked: the jdk: macro has no javadoc page for a
+ * primitive, and an array's trailing "[]" would prematurely close the macro's attribute list.
+ */
+static String typeLink(Class type) {
+    def display = formatType(type)
+    if (type == null || type.isArray() || type.isPrimitive()) return "`${display}`"
+    def name = type.name
+    if (!name.startsWith('java.') && !name.startsWith('javax.')) return "`${display}`"
+    return "`jdk:${name}[${display}]`"
+}
+
+/**
+ * The class declaring a property, used to group inherited members separately.
+ */
+static Class declaringClassOf(PropertyDescriptor pd) {
+    pd.readMethod?.declaringClass ?: pd.writeMethod?.declaringClass
 }
 
 // ============================================================
@@ -337,19 +361,37 @@ widgetDetails.sort { it.key }.each { nodeName, detail ->
     def props = detail.beanProps
     if (props) {
         out << "==== Properties\n\n"
-        out << '[cols="2,2,1,1", options="header"]\n'
-        out << "|===\n"
-        out << "| Property | Type | Readable | Writable\n\n"
-        props.each { PropertyDescriptor pd ->
-            def type = pd.propertyType ? formatType(pd.propertyType) : 'Object'
-            def readable = pd.readMethod ? 'icon:check[]' : ''
-            def writable = pd.writeMethod ? 'icon:check[]' : ''
-            out << "| `${pd.name}`\n"
-            out << "| `${type}`\n"
-            out << "| ${readable}\n"
-            out << "| ${writable}\n\n"
+
+        // Group by declaring class so a widget's own properties come first and
+        // inherited ones follow in order of increasing distance up the hierarchy.
+        def byOwner = props.groupBy { declaringClassOf(it) }
+        def owners = []
+        for (Class c = swingClass; c != null && c != Object; c = c.superclass) {
+            if (byOwner.containsKey(c)) owners << c
         }
-        out << "|===\n\n"
+        // properties declared on an interface, or whose owner is unknown, trail the hierarchy
+        owners.addAll((byOwner.keySet() - owners).sort { it?.name ?: '' })
+
+        owners.each { Class owner ->
+            def label = owner == null ? 'Other properties'
+                : owner == swingClass ? "Declared in ${owner.simpleName}"
+                : "Inherited from ${owner.simpleName}"
+            // a bold lead-in rather than a table title, which would add a numbered
+            // "Table N." caption for every one of these several hundred tables
+            out << "*${label}*\n\n"
+            out << '[cols="2,2,1,1", options="header"]\n'
+            out << "|===\n"
+            out << "| Property | Type | Readable | Writable\n\n"
+            byOwner[owner].each { PropertyDescriptor pd ->
+                def readable = pd.readMethod ? 'icon:check[]' : ''
+                def writable = pd.writeMethod ? 'icon:check[]' : ''
+                out << "| `${pd.name}`\n"
+                out << "| ${typeLink(pd.propertyType)}\n"
+                out << "| ${readable}\n"
+                out << "| ${writable}\n\n"
+            }
+            out << "|===\n\n"
+        }
     }
 }
 

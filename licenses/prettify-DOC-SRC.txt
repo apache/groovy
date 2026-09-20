@@ -1,0 +1,11 @@
+Google Code Prettify License
+
+The following files are used within documentation:
+
+    src/spec/doc/assets/js/prettify/run_prettify.min.js
+    src/spec/doc/assets/js/prettify/prettify.min.css
+
+These files are from google-code-prettify
+(https://github.com/googlearchive/code-prettify), Copyright 2006 Google Inc.
+They are made available under the Apache License, Version 2.0, the full text
+of which appears at the top of this file.

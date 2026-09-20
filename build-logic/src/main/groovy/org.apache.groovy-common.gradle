@@ -65,6 +65,9 @@ tasks.named('rat') {
                 'out/**', '*.ipr', '**/*.iml', '*.iws', '.idea/**', // Intellij files
                 '**/style.css', // MIT license as per NOTICE/LICENSE files
                 '**/jquery-2.1.1.min.js', // MIT license as per NOTICE/LICENSE files
+                '**/fontawesome.min.css', '**/fonts/fa701/**', // Font Awesome Free, CC BY 4.0/SIL OFL 1.1/MIT as per NOTICE/LICENSE files
+                '**/js/prettify/**', // google-code-prettify, Apache 2.0 as per NOTICE/LICENSE files
+                '**/css/webfonts.css', '**/fonts/googlefonts/**', // Open Sans/Source Code Pro, SIL OFL 1.1 as per NOTICE/LICENSE files
                 '**/dashboard/vendor/**', // third-party MIT JS vendored for the gh-pages perf dashboard only; excluded from source zip
                 '**/groovy/console/ui/icons/*.svg', // Material Symbols, Apache 2.0 (see credits.txt)
                 '**/META-INF/native-image/**/*.json', // GraalVM reachability metadata; JSON cannot carry a license header

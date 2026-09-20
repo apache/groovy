@@ -1,0 +1,35 @@
+Font Awesome Free 7.0.1
+Copyright 2025 Fonticons, Inc.
+https://fontawesome.com
+
+Font Awesome Free is free, open source, and GPL friendly. It can be used for
+commercial projects, open source projects, or really almost whatever you want.
+The Font Awesome Free download is licensed under a combination of the following
+licenses, depending on which part of the package you are using.
+
+Icons - CC BY 4.0 License (https://creativecommons.org/licenses/by/4.0/)
+
+    In the Font Awesome Free download, the CC BY 4.0 license applies to all
+    icons packaged as .svg and .js file types.
+
+Fonts - SIL OFL 1.1 License (https://scripts.sil.org/OFL)
+
+    In the Font Awesome Free download, the SIL OFL license applies to all
+    icons packaged as web and desktop font files.
+
+Code - MIT License (https://opensource.org/licenses/MIT)
+
+    In the Font Awesome Free download, the MIT license applies to all non-font
+    and non-icon files.
+
+Attribution
+
+    Attribution is required by MIT, SIL OFL, and CC BY licenses. Downloaded
+    Font Awesome Free files already contain embedded comments with sufficient
+    attribution, so you shouldn't need to do anything additional when using
+    these files normally.
+
+    All brand icons are trademarks of their respective owners. The use of these
+    trademarks does not indicate endorsement of the trademark holder by Font
+    Awesome, nor vice versa. Brand icons should only be used to represent the
+    company or product to which they refer.
