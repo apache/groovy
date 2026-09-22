@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789975493671,
+  "lastUpdate": 1790061225254,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -4077,6 +4077,58 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/apache/groovy/commit/039af83dc9224006aa54eb58aa1ca1b1562187d3"
         },
         "date": 1789975492686,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3996,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 440,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 843,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1505,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "039af83dc9224006aa54eb58aa1ca1b1562187d3",
+          "message": "format tweaks for swingbuilder widgets",
+          "timestamp": "2026-09-20T19:34:09Z",
+          "url": "https://github.com/apache/groovy/commit/039af83dc9224006aa54eb58aa1ca1b1562187d3"
+        },
+        "date": 1790061223683,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
