@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790061207467,
+  "lastUpdate": 1790147814710,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -6682,6 +6682,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 505.38666666666666,
             "range": "±21.32",
+            "unit": "ms",
+            "extra": "6.0.0-RC-1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]",
+            "email": "49699333+dependabot[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "realbluesun@hotmail.com"
+          },
+          "id": "5a130715f3d6171b52a836649c07dc126d7decbe",
+          "message": "Bump actions/setup-java from 6.0.0 to 6.0.1\n\nBumps [actions/setup-java](https://github.com/actions/setup-java) from 6.0.0 to 6.0.1.\n- [Release notes](https://github.com/actions/setup-java/releases)\n- [Commits](https://github.com/actions/setup-java/compare/v6.0.0...v6.0.1)\n\n---\nupdated-dependencies:\n- dependency-name: actions/setup-java\n  dependency-version: 6.0.1\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>",
+          "timestamp": "2026-09-20T01:24:44Z",
+          "url": "https://github.com/apache/groovy/commit/5a130715f3d6171b52a836649c07dc126d7decbe"
+        },
+        "date": 1790147809825,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 512.8866666666667,
+            "range": "±20",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 630.9533333333334,
+            "range": "±204.38",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 551.74,
+            "range": "±144.98",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 449.91999999999996,
+            "range": "±20.03",
+            "unit": "ms",
+            "extra": "5.1.2"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 472.77666666666664,
+            "range": "±21.08",
             "unit": "ms",
             "extra": "6.0.0-RC-1"
           }
