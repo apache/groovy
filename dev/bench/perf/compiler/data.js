@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790147814710,
+  "lastUpdate": 1790233687176,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -6739,6 +6739,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 472.77666666666664,
             "range": "±21.08",
+            "unit": "ms",
+            "extra": "6.0.0-RC-1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "053b9214b17cff8aebc0aedbc844417fb98f73fe",
+          "message": "styling tweaks",
+          "timestamp": "2026-09-24T04:50:14Z",
+          "url": "https://github.com/apache/groovy/commit/053b9214b17cff8aebc0aedbc844417fb98f73fe"
+        },
+        "date": 1790233681761,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 352.9233333333333,
+            "range": "±21.3",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 470.16333333333336,
+            "range": "±158.24",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 400.75666666666666,
+            "range": "±105.73",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 322.95,
+            "range": "±16.97",
+            "unit": "ms",
+            "extra": "5.1.2"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 338.49,
+            "range": "±18.81",
             "unit": "ms",
             "extra": "6.0.0-RC-1"
           }
