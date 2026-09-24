@@ -2594,11 +2594,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 && baseExpr instanceof BinaryExpression bin
                 && !"[".equals(bin.getOperation().getText())) {
             // `List<Integer name` is parsed as the comparison `List < Integer` plus a
-            // command argument. javac: `'>' expected`.
+            // following argument list. javac: `'>' expected`. Unmatched `>` in the
+            // error strategy keeps ANTLR's offender; point at that list, not at `List`.
+            // An identifier after `T < U` is argumentList, not commandArgument.
             if ("<".equals(bin.getOperation().getText())
                     && looksLikeTypeName(bin.getLeftExpression())
                     && looksLikeTypeName(bin.getRightExpression())) {
-                throw createParsingFailedException("Missing '>'", bin);
+                throw createParsingFailedException("Missing '>'", ctx.enhancedArgumentListInPar());
             }
             throw createParsingFailedException("Unexpected input: '" + getOriginalText(ctx.expression()) + "'", ctx.expression());
         }
