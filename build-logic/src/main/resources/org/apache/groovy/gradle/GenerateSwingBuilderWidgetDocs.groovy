@@ -171,31 +171,49 @@ def getProperties = { Class clazz ->
 static String formatType(Class type) {
     if (type == null) return 'Object'
     if (type.isArray()) return formatType(type.componentType) + '[]'
+    if (type.isPrimitive()) return type.name
+
     def name = type.name
-    // Simplify common java.lang and java.awt types
-    name = name.replaceAll(/^java\.lang\./, '')
-    name = name.replaceAll(/^java\.awt\./, 'awt.')
-    name = name.replaceAll(/^javax\.swing\./, '')
-    name = name.replaceAll(/^java\.util\./, '')
     // Nested classes read better with javadoc's dot separator than the binary "$" form
     name = name.replace('$' as char, '.' as char)
-    // Simplify primitive wrapper names
+
+    // Use concise labels for JDK types (e.g. java.awt.Color -> Color,
+    // java.awt.Window$Type -> Window.Type).
+    def pkg = type.package?.name
+    if (pkg && (pkg.startsWith('java.') || pkg.startsWith('javax.'))) {
+        return name.substring(pkg.length() + 1)
+    }
+
     return name
+}
+
+static boolean isJdkType(Class type) {
+    def name = type?.name
+    return name != null && (name.startsWith('java.') || name.startsWith('javax.'))
 }
 
 /**
  * Render a property type as a monospaced javadoc link when it is a JDK class,
  * otherwise as plain monospaced text.
  * <p>
- * Arrays and primitives are left unlinked: the jdk: macro has no javadoc page for a
- * primitive, and an array's trailing "[]" would prematurely close the macro's attribute list.
+ * Primitives are left unlinked because the jdk: macro has no javadoc page for a primitive.
+ * Arrays link to their component type and retain any [] suffix.
  */
 static String typeLink(Class type) {
-    def display = formatType(type)
-    if (type == null || type.isArray() || type.isPrimitive()) return "`${display}`"
-    def name = type.name
-    if (!name.startsWith('java.') && !name.startsWith('javax.')) return "`${display}`"
-    return "`jdk:${name}[${display}]`"
+    if (type == null) return "`${formatType(type)}`"
+
+    Class baseType = type
+    int dimensions = 0
+    while (baseType.isArray()) {
+        baseType = baseType.componentType
+        dimensions++
+    }
+
+    def suffix = '[]' * dimensions
+    def escapedSuffix = '&#91;&#93;' * dimensions
+    def baseDisplay = formatType(baseType)
+    if (baseType.isPrimitive() || !isJdkType(baseType)) return "`${baseDisplay}${suffix}`"
+    return "`jdk:${baseType.name}[${baseDisplay}${escapedSuffix}]`"
 }
 
 /**
@@ -342,8 +360,9 @@ widgetDetails.sort { it.key }.each { nodeName, detail ->
 
     if (swingClass) {
         def jdkPackage = swingClass.name.startsWith('javax.swing') || swingClass.name.startsWith('java.awt')
-        out << "[horizontal]\n"
-        out << "Swing Class:: `${swingClass.name}`\n"
+        def swingClassDisplay = formatType(swingClass)
+        out << "[horizontal.compact]\n"
+        out << "Swing Class:: `${swingClassDisplay}`\n"
         out << "Leaf:: ${detail.isLeaf ?: false}\n"
         if (jdkPackage) {
             out << "API Docs:: jdk:${swingClass.name}[${swingClass.simpleName} javadoc]\n"
