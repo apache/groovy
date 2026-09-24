@@ -643,9 +643,8 @@ These are explicit methods (not node factories) available on `SwingBuilder`:
 === action
 
 [horizontal.compact]
-Swing Class:: `Action`
+Swing Class:: `jdk:javax.swing.Action[Action]`
 Leaf:: false
-API Docs:: jdk:javax.swing.Action[Action javadoc]
 
 .Basic usage
 [source,groovy]
@@ -718,9 +717,8 @@ swing.bindProxy()
 === borderLayout
 
 [horizontal.compact]
-Swing Class:: `BorderLayout`
+Swing Class:: `jdk:java.awt.BorderLayout[BorderLayout]`
 Leaf:: false
-API Docs:: jdk:java.awt.BorderLayout[BorderLayout javadoc]
 
 .Basic usage
 [source,groovy]
@@ -754,9 +752,8 @@ swing.borderLayout()
 === boundedRangeModel
 
 [horizontal.compact]
-Swing Class:: `DefaultBoundedRangeModel`
+Swing Class:: `jdk:javax.swing.DefaultBoundedRangeModel[DefaultBoundedRangeModel]`
 Leaf:: false
-API Docs:: jdk:javax.swing.DefaultBoundedRangeModel[DefaultBoundedRangeModel javadoc]
 
 .Basic usage
 [source,groovy]
@@ -810,9 +807,8 @@ swing.boundedRangeModel()
 === box
 
 [horizontal.compact]
-Swing Class:: `Box`
+Swing Class:: `jdk:javax.swing.Box[Box]`
 Leaf:: false
-API Docs:: jdk:javax.swing.Box[Box javadoc]
 
 .Basic usage
 [source,groovy]
@@ -1169,9 +1165,8 @@ swing.boxLayout()
 === button
 
 [horizontal.compact]
-Swing Class:: `JButton`
+Swing Class:: `jdk:javax.swing.JButton[JButton]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JButton[JButton javadoc]
 
 .Basic usage
 [source,groovy]
@@ -1690,9 +1685,8 @@ swing.button('Click Me')
 === buttonGroup
 
 [horizontal.compact]
-Swing Class:: `ButtonGroup`
+Swing Class:: `jdk:javax.swing.ButtonGroup[ButtonGroup]`
 Leaf:: true
-API Docs:: jdk:javax.swing.ButtonGroup[ButtonGroup javadoc]
 
 .Basic usage
 [source,groovy]
@@ -1731,9 +1725,8 @@ swing.buttonGroup()
 === cardLayout
 
 [horizontal.compact]
-Swing Class:: `CardLayout`
+Swing Class:: `jdk:java.awt.CardLayout[CardLayout]`
 Leaf:: false
-API Docs:: jdk:java.awt.CardLayout[CardLayout javadoc]
 
 .Basic usage
 [source,groovy]
@@ -1789,9 +1782,8 @@ swing.cellRenderer()
 === checkBox
 
 [horizontal.compact]
-Swing Class:: `JCheckBox`
+Swing Class:: `jdk:javax.swing.JCheckBox[JCheckBox]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JCheckBox[JCheckBox javadoc]
 
 .Basic usage
 [source,groovy]
@@ -2305,9 +2297,8 @@ swing.checkBox('Click Me')
 === checkBoxMenuItem
 
 [horizontal.compact]
-Swing Class:: `JCheckBoxMenuItem`
+Swing Class:: `jdk:javax.swing.JCheckBoxMenuItem[JCheckBoxMenuItem]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JCheckBoxMenuItem[JCheckBoxMenuItem javadoc]
 
 .Basic usage
 [source,groovy]
@@ -2865,9 +2856,8 @@ swing.closureColumn()
 === colorChooser
 
 [horizontal.compact]
-Swing Class:: `JColorChooser`
+Swing Class:: `jdk:javax.swing.JColorChooser[JColorChooser]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JColorChooser[JColorChooser javadoc]
 
 .Basic usage
 [source,groovy]
@@ -3260,9 +3250,8 @@ swing.columnModel()
 === comboBox
 
 [horizontal.compact]
-Swing Class:: `JComboBox`
+Swing Class:: `jdk:javax.swing.JComboBox[JComboBox]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JComboBox[JComboBox javadoc]
 
 .Basic usage
 [source,groovy]
@@ -3714,9 +3703,8 @@ swing.compoundBorder()
 === container
 
 [horizontal.compact]
-Swing Class:: `Component`
+Swing Class:: `jdk:java.awt.Component[Component]`
 Leaf:: false
-API Docs:: jdk:java.awt.Component[Component javadoc]
 
 .Basic usage
 [source,groovy]
@@ -3775,9 +3763,8 @@ swing.container()
 === desktopPane
 
 [horizontal.compact]
-Swing Class:: `JDesktopPane`
+Swing Class:: `jdk:javax.swing.JDesktopPane[JDesktopPane]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JDesktopPane[JDesktopPane javadoc]
 
 .Basic usage
 [source,groovy]
@@ -4166,9 +4153,8 @@ swing.desktopPane()
 === dialog
 
 [horizontal.compact]
-Swing Class:: `JDialog`
+Swing Class:: `jdk:javax.swing.JDialog[JDialog]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JDialog[JDialog javadoc]
 
 .Basic usage
 [source,groovy]
@@ -4592,9 +4578,8 @@ swing.dialog(title: 'My Window')
 === editorPane
 
 [horizontal.compact]
-Swing Class:: `JEditorPane`
+Swing Class:: `jdk:javax.swing.JEditorPane[JEditorPane]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JEditorPane[JEditorPane javadoc]
 
 .Basic usage
 [source,groovy]
@@ -5136,9 +5121,8 @@ swing.etchedBorder()
 === fileChooser
 
 [horizontal.compact]
-Swing Class:: `JFileChooser`
+Swing Class:: `jdk:javax.swing.JFileChooser[JFileChooser]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JFileChooser[JFileChooser javadoc]
 
 .Basic usage
 [source,groovy]
@@ -5599,9 +5583,8 @@ swing.fileChooser()
 === flowLayout
 
 [horizontal.compact]
-Swing Class:: `FlowLayout`
+Swing Class:: `jdk:java.awt.FlowLayout[FlowLayout]`
 Leaf:: false
-API Docs:: jdk:java.awt.FlowLayout[FlowLayout javadoc]
 
 .Basic usage
 [source,groovy]
@@ -5645,9 +5628,8 @@ swing.flowLayout()
 === formattedTextField
 
 [horizontal.compact]
-Swing Class:: `JFormattedTextField`
+Swing Class:: `jdk:javax.swing.JFormattedTextField[JFormattedTextField]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JFormattedTextField[JFormattedTextField javadoc]
 
 .Basic usage
 [source,groovy]
@@ -6204,9 +6186,8 @@ swing.formattedTextField()
 === frame
 
 [horizontal.compact]
-Swing Class:: `JFrame`
+Swing Class:: `jdk:javax.swing.JFrame[JFrame]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JFrame[JFrame javadoc]
 
 .Basic usage
 [source,groovy]
@@ -6645,9 +6626,8 @@ swing.frame(title: 'My Window')
 === gbc
 
 [horizontal.compact]
-Swing Class:: `GridBagConstraints`
+Swing Class:: `jdk:java.awt.GridBagConstraints[GridBagConstraints]`
 Leaf:: false
-API Docs:: jdk:java.awt.GridBagConstraints[GridBagConstraints javadoc]
 
 .Basic usage
 [source,groovy]
@@ -6672,9 +6652,8 @@ swing.glue()
 === gridBagConstraints
 
 [horizontal.compact]
-Swing Class:: `GridBagConstraints`
+Swing Class:: `jdk:java.awt.GridBagConstraints[GridBagConstraints]`
 Leaf:: false
-API Docs:: jdk:java.awt.GridBagConstraints[GridBagConstraints javadoc]
 
 .Basic usage
 [source,groovy]
@@ -6688,9 +6667,8 @@ swing.gridBagConstraints()
 === gridBagLayout
 
 [horizontal.compact]
-Swing Class:: `GridBagLayout`
+Swing Class:: `jdk:java.awt.GridBagLayout[GridBagLayout]`
 Leaf:: true
-API Docs:: jdk:java.awt.GridBagLayout[GridBagLayout javadoc]
 
 .Basic usage
 [source,groovy]
@@ -6729,9 +6707,8 @@ swing.gridBagLayout()
 === gridLayout
 
 [horizontal.compact]
-Swing Class:: `GridLayout`
+Swing Class:: `jdk:java.awt.GridLayout[GridLayout]`
 Leaf:: false
-API Docs:: jdk:java.awt.GridLayout[GridLayout javadoc]
 
 .Basic usage
 [source,groovy]
@@ -6775,9 +6752,8 @@ swing.gridLayout()
 === hbox
 
 [horizontal.compact]
-Swing Class:: `Box`
+Swing Class:: `jdk:javax.swing.Box[Box]`
 Leaf:: false
-API Docs:: jdk:javax.swing.Box[Box javadoc]
 
 .Basic usage
 [source,groovy]
@@ -7156,9 +7132,8 @@ swing.hstrut()
 === imageIcon
 
 [horizontal.compact]
-Swing Class:: `ImageIcon`
+Swing Class:: `jdk:javax.swing.ImageIcon[ImageIcon]`
 Leaf:: false
-API Docs:: jdk:javax.swing.ImageIcon[ImageIcon javadoc]
 
 .Basic usage
 [source,groovy]
@@ -7217,9 +7192,8 @@ swing.imageIcon(url: getClass().getResource('/icon.png'))
 === internalFrame
 
 [horizontal.compact]
-Swing Class:: `JInternalFrame`
+Swing Class:: `jdk:javax.swing.JInternalFrame[JInternalFrame]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JInternalFrame[JInternalFrame javadoc]
 
 .Basic usage
 [source,groovy]
@@ -7700,9 +7674,8 @@ swing.internalFrame()
 === label
 
 [horizontal.compact]
-Swing Class:: `JLabel`
+Swing Class:: `jdk:javax.swing.JLabel[JLabel]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JLabel[JLabel javadoc]
 
 .Basic usage
 [source,groovy]
@@ -8103,9 +8076,8 @@ swing.label('Hello')
 === layeredPane
 
 [horizontal.compact]
-Swing Class:: `JLayeredPane`
+Swing Class:: `jdk:javax.swing.JLayeredPane[JLayeredPane]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JLayeredPane[JLayeredPane javadoc]
 
 .Basic usage
 [source,groovy]
@@ -8472,9 +8444,8 @@ swing.lineBorder()
 === list
 
 [horizontal.compact]
-Swing Class:: `JList`
+Swing Class:: `jdk:javax.swing.JList[JList]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JList[JList javadoc]
 
 .Basic usage
 [source,groovy]
@@ -9040,9 +9011,8 @@ swing.matteBorder()
 === menu
 
 [horizontal.compact]
-Swing Class:: `JMenu`
+Swing Class:: `jdk:javax.swing.JMenu[JMenu]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JMenu[JMenu javadoc]
 
 .Basic usage
 [source,groovy]
@@ -9649,9 +9619,8 @@ swing.menu()
 === menuBar
 
 [horizontal.compact]
-Swing Class:: `JMenuBar`
+Swing Class:: `jdk:javax.swing.JMenuBar[JMenuBar]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JMenuBar[JMenuBar javadoc]
 
 .Basic usage
 [source,groovy]
@@ -10042,9 +10011,8 @@ swing.menuBar()
 === menuItem
 
 [horizontal.compact]
-Swing Class:: `JMenuItem`
+Swing Class:: `jdk:javax.swing.JMenuItem[JMenuItem]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JMenuItem[JMenuItem javadoc]
 
 .Basic usage
 [source,groovy]
@@ -10600,9 +10568,8 @@ swing.onRender()
 === optionPane
 
 [horizontal.compact]
-Swing Class:: `JOptionPane`
+Swing Class:: `jdk:javax.swing.JOptionPane[JOptionPane]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JOptionPane[JOptionPane javadoc]
 
 .Basic usage
 [source,groovy]
@@ -11008,9 +10975,8 @@ swing.optionPane()
 === overlayLayout
 
 [horizontal.compact]
-Swing Class:: `OverlayLayout`
+Swing Class:: `jdk:javax.swing.OverlayLayout[OverlayLayout]`
 Leaf:: false
-API Docs:: jdk:javax.swing.OverlayLayout[OverlayLayout javadoc]
 
 .Basic usage
 [source,groovy]
@@ -11039,9 +11005,8 @@ swing.overlayLayout()
 === panel
 
 [horizontal.compact]
-Swing Class:: `JPanel`
+Swing Class:: `jdk:javax.swing.JPanel[JPanel]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JPanel[JPanel javadoc]
 
 .Basic usage
 [source,groovy]
@@ -11387,9 +11352,8 @@ swing.panel()
 === passwordField
 
 [horizontal.compact]
-Swing Class:: `JPasswordField`
+Swing Class:: `jdk:javax.swing.JPasswordField[JPasswordField]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JPasswordField[JPasswordField javadoc]
 
 .Basic usage
 [source,groovy]
@@ -11931,9 +11895,8 @@ swing.passwordField(text: 'initial text', columns: 20)
 === popupMenu
 
 [horizontal.compact]
-Swing Class:: `JPopupMenu`
+Swing Class:: `jdk:javax.swing.JPopupMenu[JPopupMenu]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JPopupMenu[JPopupMenu javadoc]
 
 .Basic usage
 [source,groovy]
@@ -12355,9 +12318,8 @@ swing.prepareEditor()
 === progressBar
 
 [horizontal.compact]
-Swing Class:: `JProgressBar`
+Swing Class:: `jdk:javax.swing.JProgressBar[JProgressBar]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JProgressBar[JProgressBar javadoc]
 
 .Basic usage
 [source,groovy]
@@ -12769,9 +12731,8 @@ swing.propertyColumn()
 === radioButton
 
 [horizontal.compact]
-Swing Class:: `JRadioButton`
+Swing Class:: `jdk:javax.swing.JRadioButton[JRadioButton]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JRadioButton[JRadioButton javadoc]
 
 .Basic usage
 [source,groovy]
@@ -13280,9 +13241,8 @@ swing.radioButton('Click Me')
 === radioButtonMenuItem
 
 [horizontal.compact]
-Swing Class:: `JRadioButtonMenuItem`
+Swing Class:: `jdk:javax.swing.JRadioButtonMenuItem[JRadioButtonMenuItem]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JRadioButtonMenuItem[JRadioButtonMenuItem javadoc]
 
 .Basic usage
 [source,groovy]
@@ -13857,9 +13817,8 @@ swing.rigidArea()
 === scrollBar
 
 [horizontal.compact]
-Swing Class:: `JScrollBar`
+Swing Class:: `jdk:javax.swing.JScrollBar[JScrollBar]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JScrollBar[JScrollBar javadoc]
 
 .Basic usage
 [source,groovy]
@@ -14255,9 +14214,8 @@ swing.scrollBar()
 === scrollPane
 
 [horizontal.compact]
-Swing Class:: `JScrollPane`
+Swing Class:: `jdk:javax.swing.JScrollPane[JScrollPane]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JScrollPane[JScrollPane javadoc]
 
 .Basic usage
 [source,groovy]
@@ -14673,9 +14631,8 @@ swing.scrollPane()
 === separator
 
 [horizontal.compact]
-Swing Class:: `JSeparator`
+Swing Class:: `jdk:javax.swing.JSeparator[JSeparator]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JSeparator[JSeparator javadoc]
 
 .Basic usage
 [source,groovy]
@@ -15026,9 +14983,8 @@ swing.separator()
 === slider
 
 [horizontal.compact]
-Swing Class:: `JSlider`
+Swing Class:: `jdk:javax.swing.JSlider[JSlider]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JSlider[JSlider javadoc]
 
 .Basic usage
 [source,groovy]
@@ -15454,9 +15410,8 @@ swing.slider()
 === spinner
 
 [horizontal.compact]
-Swing Class:: `JSpinner`
+Swing Class:: `jdk:javax.swing.JSpinner[JSpinner]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JSpinner[JSpinner javadoc]
 
 .Basic usage
 [source,groovy]
@@ -15832,9 +15787,8 @@ swing.spinner()
 === spinnerDateModel
 
 [horizontal.compact]
-Swing Class:: `SpinnerDateModel`
+Swing Class:: `jdk:javax.swing.SpinnerDateModel[SpinnerDateModel]`
 Leaf:: false
-API Docs:: jdk:javax.swing.SpinnerDateModel[SpinnerDateModel javadoc]
 
 .Basic usage
 [source,groovy]
@@ -15906,9 +15860,8 @@ swing.spinnerDateModel()
 === spinnerListModel
 
 [horizontal.compact]
-Swing Class:: `SpinnerListModel`
+Swing Class:: `jdk:javax.swing.SpinnerListModel[SpinnerListModel]`
 Leaf:: false
-API Docs:: jdk:javax.swing.SpinnerListModel[SpinnerListModel javadoc]
 
 .Basic usage
 [source,groovy]
@@ -15965,9 +15918,8 @@ swing.spinnerListModel()
 === spinnerNumberModel
 
 [horizontal.compact]
-Swing Class:: `SpinnerNumberModel`
+Swing Class:: `jdk:javax.swing.SpinnerNumberModel[SpinnerNumberModel]`
 Leaf:: false
-API Docs:: jdk:javax.swing.SpinnerNumberModel[SpinnerNumberModel javadoc]
 
 .Basic usage
 [source,groovy]
@@ -16039,9 +15991,8 @@ swing.spinnerNumberModel()
 === splitPane
 
 [horizontal.compact]
-Swing Class:: `JSplitPane`
+Swing Class:: `jdk:javax.swing.JSplitPane[JSplitPane]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JSplitPane[JSplitPane javadoc]
 
 .Basic usage
 [source,groovy]
@@ -16452,9 +16403,8 @@ swing.splitPane()
 === springLayout
 
 [horizontal.compact]
-Swing Class:: `SpringLayout`
+Swing Class:: `jdk:javax.swing.SpringLayout[SpringLayout]`
 Leaf:: false
-API Docs:: jdk:javax.swing.SpringLayout[SpringLayout javadoc]
 
 .Basic usage
 [source,groovy]
@@ -16468,9 +16418,8 @@ swing.springLayout()
 === tabbedPane
 
 [horizontal.compact]
-Swing Class:: `JTabbedPane`
+Swing Class:: `jdk:javax.swing.JTabbedPane[JTabbedPane]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JTabbedPane[JTabbedPane javadoc]
 
 .Basic usage
 [source,groovy]
@@ -16916,9 +16865,8 @@ swing.tabbedPane()
 === table
 
 [horizontal.compact]
-Swing Class:: `JTable`
+Swing Class:: `jdk:javax.swing.JTable[JTable]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JTable[JTable javadoc]
 
 .Basic usage
 [source,groovy]
@@ -17510,9 +17458,8 @@ swing.tableCellRenderer()
 === tableColumn
 
 [horizontal.compact]
-Swing Class:: `TableColumn`
+Swing Class:: `jdk:javax.swing.table.TableColumn[TableColumn]`
 Leaf:: false
-API Docs:: jdk:javax.swing.table.TableColumn[TableColumn javadoc]
 
 .Basic usage
 [source,groovy]
@@ -17629,9 +17576,8 @@ swing.td()
 === textArea
 
 [horizontal.compact]
-Swing Class:: `JTextArea`
+Swing Class:: `jdk:javax.swing.JTextArea[JTextArea]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JTextArea[JTextArea javadoc]
 
 .Basic usage
 [source,groovy]
@@ -18165,9 +18111,8 @@ swing.textArea(text: 'initial text', columns: 20)
 === textField
 
 [horizontal.compact]
-Swing Class:: `JTextField`
+Swing Class:: `jdk:javax.swing.JTextField[JTextField]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JTextField[JTextField javadoc]
 
 .Basic usage
 [source,groovy]
@@ -18691,9 +18636,8 @@ swing.textField(text: 'initial text', columns: 20)
 === textPane
 
 [horizontal.compact]
-Swing Class:: `JTextPane`
+Swing Class:: `jdk:javax.swing.JTextPane[JTextPane]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JTextPane[JTextPane javadoc]
 
 .Basic usage
 [source,groovy]
@@ -19246,9 +19190,8 @@ swing.titledBorder()
 === toggleButton
 
 [horizontal.compact]
-Swing Class:: `JToggleButton`
+Swing Class:: `jdk:javax.swing.JToggleButton[JToggleButton]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JToggleButton[JToggleButton javadoc]
 
 .Basic usage
 [source,groovy]
@@ -19757,9 +19700,8 @@ swing.toggleButton('Click Me')
 === toolBar
 
 [horizontal.compact]
-Swing Class:: `JToolBar`
+Swing Class:: `jdk:javax.swing.JToolBar[JToolBar]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JToolBar[JToolBar javadoc]
 
 .Basic usage
 [source,groovy]
@@ -20146,9 +20088,8 @@ swing.tr()
 === tree
 
 [horizontal.compact]
-Swing Class:: `JTree`
+Swing Class:: `jdk:javax.swing.JTree[JTree]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JTree[JTree javadoc]
 
 .Basic usage
 [source,groovy]
@@ -20704,9 +20645,8 @@ swing.tree()
 === vbox
 
 [horizontal.compact]
-Swing Class:: `Box`
+Swing Class:: `jdk:javax.swing.Box[Box]`
 Leaf:: false
-API Docs:: jdk:javax.swing.Box[Box javadoc]
 
 .Basic usage
 [source,groovy]
@@ -21063,9 +21003,8 @@ swing.vglue()
 === viewport
 
 [horizontal.compact]
-Swing Class:: `JViewport`
+Swing Class:: `jdk:javax.swing.JViewport[JViewport]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JViewport[JViewport javadoc]
 
 .Basic usage
 [source,groovy]
@@ -21462,9 +21401,8 @@ swing.vstrut()
 === widget
 
 [horizontal.compact]
-Swing Class:: `Component`
+Swing Class:: `jdk:java.awt.Component[Component]`
 Leaf:: true
-API Docs:: jdk:java.awt.Component[Component javadoc]
 
 .Basic usage
 [source,groovy]
@@ -21523,9 +21461,8 @@ swing.widget()
 === window
 
 [horizontal.compact]
-Swing Class:: `JWindow`
+Swing Class:: `jdk:javax.swing.JWindow[JWindow]`
 Leaf:: false
-API Docs:: jdk:javax.swing.JWindow[JWindow javadoc]
 
 .Basic usage
 [source,groovy]
