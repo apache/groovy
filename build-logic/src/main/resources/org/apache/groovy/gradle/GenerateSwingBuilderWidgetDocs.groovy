@@ -362,11 +362,12 @@ widgetDetails.sort { it.key }.each { nodeName, detail ->
         def jdkPackage = swingClass.name.startsWith('javax.swing') || swingClass.name.startsWith('java.awt')
         def swingClassDisplay = formatType(swingClass)
         out << "[horizontal.compact]\n"
-        out << "Swing Class:: `${swingClassDisplay}`\n"
-        out << "Leaf:: ${detail.isLeaf ?: false}\n"
         if (jdkPackage) {
-            out << "API Docs:: jdk:${swingClass.name}[${swingClass.simpleName} javadoc]\n"
+            out << "Swing Class:: `jdk:${swingClass.name}[${swingClassDisplay}]`\n"
+        } else {
+            out << "Swing Class:: `${swingClassDisplay}`\n"
         }
+        out << "Leaf:: ${detail.isLeaf ?: false}\n"
         out << "\n"
     }
 
@@ -420,3 +421,5 @@ println "Generated SwingBuilder widget documentation:"
 println "  Output: ${outFile.absolutePath}"
 println "  Categories: ${groups.size()}"
 println "  Total nodes: ${factories.size()}"
+
+

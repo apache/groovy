@@ -1540,14 +1540,15 @@ td.hdlist1, td.hdlist2 {
 /* Keep generated Swing widget metadata blocks visually tight. */
 .hdlist.compact td.hdlist2 > p,
 .hdlist.compact td.hdlist1 > p {
+    margin-top: 0.1em;
     margin-bottom: 0;
 }
 
 .hdlist.compact td.hdlist1,
 .hdlist.compact td.hdlist2 {
-    padding-top: 0.2em;
-    padding-bottom: 0.2em;
-    line-height: 1.2;
+    padding-top: 0.1em;
+    padding-bottom: 0.1em;
+    line-height: 1.1;
 }
 
 .literalblock + .colist, .listingblock + .colist {
