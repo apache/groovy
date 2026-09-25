@@ -165,8 +165,8 @@ image:{reldir_console}/assets/img/gconsole-dark-theme.png[Dark Theme]
 * You can modify the classpath with which the script in the console is
 being run by adding a new JAR or a directory to the classpath from the
 `Script` menu
-* Error hyperlinking from the output area when a compilation error is
-expected or when an exception is thrown
+* Clicking the line and column of a compilation error, or a stack-trace
+reference to the script being edited, moves the caret to that position
 
 [[GroovyConsole-EmbeddingtheConsole]]
 == Embedding the Console
