@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790233700908,
+  "lastUpdate": 1790320182095,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -4233,6 +4233,58 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/apache/groovy/commit/053b9214b17cff8aebc0aedbc844417fb98f73fe"
         },
         "date": 1790233699609,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3996,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 440,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 843,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1505,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "cafab9086c06afecb52c7d9ce8ca286fa7d12ea6",
+          "message": "GROOVY-12430: Bump logback to 1.6.4 (test dependency)",
+          "timestamp": "2026-09-25T05:56:04Z",
+          "url": "https://github.com/apache/groovy/commit/cafab9086c06afecb52c7d9ce8ca286fa7d12ea6"
+        },
+        "date": 1790320181095,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
