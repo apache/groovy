@@ -137,9 +137,10 @@ public abstract class BaseJsonParser implements JsonParser {
      * Default maximum nesting depth for arrays/objects. A small, crafted but deeply-nested
      * document would otherwise drive the recursive-descent parsers into a
      * {@link StackOverflowError}; this Groovy-level bound turns that into a clean
-     * {@link JsonException} instead. Chosen to match Jackson's
-     * {@code StreamReadConstraints} default so JSON is bounded consistently with the
-     * Jackson-backed YAML/TOML/CSV slurpers, while sitting far above any realistic document.
+     * {@link JsonException} instead. Chosen to match the nesting limit of the Jackson-backed
+     * YAML/TOML/CSV slurpers (Jackson 2's {@code StreamReadConstraints} default, which they keep
+     * on Jackson 3) so JSON is bounded consistently with them, while sitting far above any
+     * realistic document.
      */
     public static final int DEFAULT_MAX_NESTING_DEPTH = 1000;
 
