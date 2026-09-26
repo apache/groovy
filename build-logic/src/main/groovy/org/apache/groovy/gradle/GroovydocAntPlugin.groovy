@@ -32,9 +32,12 @@ import org.gradle.api.tasks.javadoc.Groovydoc
 /**
  * Replaces Gradle's built-in {@code Groovydoc} task execution with a direct
  * {@code AntBuilder} invocation of Groovy's {@code org.codehaus.groovy.ant.Groovydoc}
- * Ant task. This exposes properties not available on the Gradle task type:
- * {@code javaVersion}, {@code showInternal}, {@code noIndex}, {@code noDeprecatedList},
- * {@code noHelp}, {@code syntaxHighlighter}, {@code theme}, and additional stylesheets.
+ * Ant task. The extension carries {@code javaVersion}, {@code showInternal},
+ * {@code noIndex}, {@code noDeprecatedList}, {@code noHelp}, {@code syntaxHighlighter},
+ * {@code theme}, {@code preLanguage}, and additional stylesheets. Gradle 9.8 also
+ * declares the matching task properties as required inputs, and the Groovy plugin
+ * only supplies conventions on projects that apply it, so this plugin copies the
+ * extension values onto every {@code Groovydoc} task.
  *
  * <p>The Gradle task is retained as the configuration surface (source, classpath,
  * titles, links, access, etc.). Only the execution action is swapped. Set
@@ -70,6 +73,16 @@ class GroovydocAntPlugin implements Plugin<Project> {
     @CompileDynamic
     private static void configureGroovydocTasks(Project project, GroovydocAntExtension extension) {
         project.tasks.withType(Groovydoc).configureEach { gdoc ->
+            // Required task inputs since Gradle 9.8. convention() tracks the
+            // extension, including values set after this callback is registered.
+            gdoc.showInternal.convention(extension.showInternal)
+            gdoc.noIndex.convention(extension.noIndex)
+            gdoc.noDeprecatedList.convention(extension.noDeprecatedList)
+            gdoc.noHelp.convention(extension.noHelp)
+            gdoc.syntaxHighlighter.convention(extension.syntaxHighlighter)
+            gdoc.theme.convention(extension.theme)
+            gdoc.preLanguage.convention(extension.preLanguage)
+
             gdoc.inputs.property('antJavaVersion', extension.javaVersion.orElse(''))
             gdoc.inputs.property('antShowInternal', extension.showInternal)
             gdoc.inputs.property('antNoIndex', extension.noIndex)
