@@ -16,24 +16,18 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-plugins {
-    id 'org.apache.groovy-library'
-}
+package groovy.csv
 
-dependencies {
-    api project(':')  // TomlBuilder extends GroovyObjectSupport...
-    implementation "tools.jackson.dataformat:jackson-dataformat-toml:${versions.jackson3}"
-    implementation projects.groovyJson
-    testImplementation projects.groovyTest
-    testRuntimeOnly projects.groovyAnt // for JavadocAssertionTests
-}
+import org.junit.jupiter.api.Test
 
-plugins.withId('eclipse') {
-    eclipse.classpath.file.whenMerged {
-        entries.removeAll { entry -> entry.path in ['/groovy-ant', '/groovy-groovydoc'] }
+/**
+ * groovy-csv applies Jackson 3's default {@code StreamReadConstraints}: a field may hold
+ * up to 100,000,000 characters (Jackson 2 allowed 20,000,000).
+ */
+class CsvLimitsTest {
+
+    @Test
+    void testFieldLongerThanJackson2AllowedParses() {
+        assert new CsvSlurper().parseText('h\n' + 'x' * 21_000_000 + '\n')[0].h.size() == 21_000_000
     }
-}
-
-groovyLibrary {
-    optionalModule()
 }

@@ -22,11 +22,10 @@ plugins {
 
 dependencies {
     api project(':')
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:${versions.jackson}"
-    implementation "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
-    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${versions.jackson}"
+    implementation "tools.jackson.dataformat:jackson-dataformat-csv:${versions.jackson3}"
+    implementation "tools.jackson.core:jackson-databind:${versions.jackson3}"
     testImplementation projects.groovyTest
-    testRuntimeOnly "com.fasterxml.jackson.core:jackson-annotations:${versions.jacksonAnnotations}"
+    testRuntimeOnly "com.fasterxml.jackson.core:jackson-annotations:${versions.jackson3Annotations}"
     testRuntimeOnly projects.groovyAnt // for JavadocAssertionTests
 }
 
