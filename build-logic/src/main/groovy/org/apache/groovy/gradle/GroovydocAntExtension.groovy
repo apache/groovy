@@ -27,10 +27,10 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 
 /**
- * Configures the {@link GroovydocAntPlugin}. Exposes Ant-task-only Groovydoc
- * options that Gradle's built-in {@code Groovydoc} task type doesn't surface,
- * plus a {@link #useAntBuilder} kill-switch for reverting to Gradle's native
- * execution per project.
+ * Configures the {@link GroovydocAntPlugin}. Holds the Groovydoc options the
+ * Ant task executes, which the plugin also copies onto Gradle's {@code Groovydoc}
+ * task properties, plus a {@link #useAntBuilder} kill-switch for reverting to
+ * Gradle's native execution per project.
  */
 @CompileStatic
 class GroovydocAntExtension {
