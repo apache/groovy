@@ -23,8 +23,8 @@ import org.junit.jupiter.api.Test
 import static groovy.test.GroovyAssert.shouldFail
 
 /**
- * Jackson 3 lowered its default nesting depth to 500; groovy-yaml keeps the 1000 levels
- * it allowed on Jackson 2, the same bound JsonSlurper and XmlParser apply.
+ * groovy-yaml applies Jackson 3's default {@code StreamReadConstraints} and
+ * {@code StreamWriteConstraints}: at most 500 levels of nesting (Jackson 2 allowed 1000).
  */
 class YamlLimitsTest {
 
@@ -39,28 +39,24 @@ class YamlLimitsTest {
     }
 
     @Test
-    void testParseAllowsNestingOf1000Levels() {
-        assert new YamlSlurper().parseText(nested(1000)) == nestedList(1000)
+    void testParseAllowsNestingOf500Levels() {
+        assert new YamlSlurper().parseText(nested(500)) == nestedList(500)
+        assert new YamlSlurper().parseTextAs(List, nested(500)) == nestedList(500)
     }
 
     @Test
-    void testParseRejectsNestingBeyond1000Levels() {
+    void testParseRejectsNestingBeyond500Levels() {
         def e = shouldFail {
-            new YamlSlurper().parseText(nested(1001))
+            new YamlSlurper().parseText(nested(501))
         }
-        assert e.message.contains('1000')
+        assert e.message.contains('500')
     }
 
     @Test
-    void testParseAsAllowsNestingOf1000Levels() {
-        assert new YamlSlurper().parseTextAs(List, nested(1000)) == nestedList(1000)
-    }
-
-    @Test
-    void testBuilderWritesNestingOf1000Levels() {
+    void testBuilderWritesNestingOf500Levels() {
         def yaml = new YamlBuilder()
-        yaml(nestedList(1000))
-        assert new YamlSlurper().parseText(yaml.toString()) == nestedList(1000)
-        assert new YamlSlurper().parseText(YamlBuilder.toYaml(nestedList(1000))) == nestedList(1000)
+        yaml(nestedList(500))
+        assert new YamlSlurper().parseText(yaml.toString()) == nestedList(500)
+        assert new YamlSlurper().parseText(YamlBuilder.toYaml(nestedList(500))) == nestedList(500)
     }
 }

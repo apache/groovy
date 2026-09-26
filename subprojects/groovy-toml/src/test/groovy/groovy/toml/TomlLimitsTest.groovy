@@ -23,9 +23,9 @@ import org.junit.jupiter.api.Test
 import static groovy.test.GroovyAssert.shouldFail
 
 /**
- * Jackson 3 lowered its default nesting depth to 500 and raised its default string length to
- * 100,000,000; groovy-toml keeps the limits it had on Jackson 2: 1000 levels, the same bound
- * JsonSlurper and XmlParser apply, and 20,000,000 characters.
+ * groovy-toml applies Jackson 3's default {@code StreamReadConstraints} and
+ * {@code StreamWriteConstraints}: at most 500 levels of nesting (Jackson 2 allowed 1000),
+ * counting the root table as the first.
  */
 class TomlLimitsTest {
 
@@ -40,37 +40,23 @@ class TomlLimitsTest {
     }
 
     @Test
-    void testParseAllowsNestingOf1000Levels() {
-        // the root table is the first level
-        assert new TomlSlurper().parseText("a = ${nested(999)}").a == nestedList(999)
+    void testParseAllowsNestingOf500Levels() {
+        assert new TomlSlurper().parseText("a = ${nested(499)}").a == nestedList(499)
+        assert new TomlSlurper().parseTextAs(Map, "a = ${nested(499)}").a == nestedList(499)
     }
 
     @Test
-    void testParseRejectsNestingBeyond1000Levels() {
+    void testParseRejectsNestingBeyond500Levels() {
         def e = shouldFail {
-            new TomlSlurper().parseText("a = ${nested(1000)}")
+            new TomlSlurper().parseText("a = ${nested(500)}")
         }
-        assert e.message.contains('1000')
+        assert e.message.contains('500')
     }
 
     @Test
-    void testParseAsAllowsNestingOf1000Levels() {
-        assert new TomlSlurper().parseTextAs(Map, "a = ${nested(999)}").a == nestedList(999)
-    }
-
-    @Test
-    void testBuilderWritesNestingOf1000Levels() {
+    void testBuilderWritesNestingOf500Levels() {
         def toml = new TomlBuilder()
-        toml(a: nestedList(999))
-        assert new TomlSlurper().parseText(toml.toString()).a == nestedList(999)
-    }
-
-    @Test
-    void testStringLengthLimitIsKept() {
-        assert new TomlSlurper().parseText('a = "' + 'x' * 19_000_000 + '"').a.size() == 19_000_000
-        def e = shouldFail {
-            new TomlSlurper().parseText('a = "' + 'x' * 21_000_000 + '"')
-        }
-        assert e.message.contains('20000000')
+        toml(a: nestedList(499))
+        assert new TomlSlurper().parseText(toml.toString()).a == nestedList(499)
     }
 }

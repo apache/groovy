@@ -24,10 +24,7 @@ import groovy.json.JsonSlurper;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.apache.groovy.toml.util.TomlConverter;
 import tools.jackson.core.JacksonException;
-import tools.jackson.core.StreamReadConstraints;
-import tools.jackson.core.StreamWriteConstraints;
 import tools.jackson.databind.cfg.DateTimeFeature;
-import tools.jackson.dataformat.toml.TomlFactory;
 import tools.jackson.dataformat.toml.TomlMapper;
 
 import java.io.File;
@@ -180,23 +177,10 @@ public class TomlSlurper {
         }
     }
 
-    // the same limits as TomlConverter, which handles the untyped parse path: Jackson 2's, not
-    // Jackson 3's lower nesting depth and higher string length
-    private static final StreamReadConstraints READ_CONSTRAINTS = StreamReadConstraints.builder()
-            .maxNestingDepth(1000)
-            .maxStringLength(20_000_000)
-            .build();
-    private static final StreamWriteConstraints WRITE_CONSTRAINTS = StreamWriteConstraints.builder()
-            .maxNestingDepth(1000)
-            .build();
-
     // TomlMapper is thread-safe once configured, so a single shared instance is reused.
     // Jackson 2's defaults keep databinding behaving as it did before Jackson 3
     // (for example failing on an unknown property); java.time support is built in.
-    private static final TomlMapper MAPPER = TomlMapper.builder(TomlFactory.builder()
-                    .streamReadConstraints(READ_CONSTRAINTS)
-                    .streamWriteConstraints(WRITE_CONSTRAINTS)
-                    .build())
+    private static final TomlMapper MAPPER = TomlMapper.builder()
             .configureForJackson2()
             .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
             .disable(DateTimeFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)

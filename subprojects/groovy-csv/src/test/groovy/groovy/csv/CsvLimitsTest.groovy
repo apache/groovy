@@ -20,20 +20,14 @@ package groovy.csv
 
 import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.shouldFail
-
 /**
- * Jackson 3 raised its default string length to 100,000,000; groovy-csv keeps the
- * 20,000,000 characters a field could hold on Jackson 2.
+ * groovy-csv applies Jackson 3's default {@code StreamReadConstraints}: a field may hold
+ * up to 100,000,000 characters (Jackson 2 allowed 20,000,000).
  */
 class CsvLimitsTest {
 
     @Test
-    void testFieldLengthLimitIsKept() {
-        assert new CsvSlurper().parseText('h\n' + 'x' * 19_000_000 + '\n')[0].h.size() == 19_000_000
-        def e = shouldFail {
-            new CsvSlurper().parseText('h\n' + 'x' * 21_000_000 + '\n')
-        }
-        assert e.message.contains('20000000')
+    void testFieldLongerThanJackson2AllowedParses() {
+        assert new CsvSlurper().parseText('h\n' + 'x' * 21_000_000 + '\n')[0].h.size() == 21_000_000
     }
 }
