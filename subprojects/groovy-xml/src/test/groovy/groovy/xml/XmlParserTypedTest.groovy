@@ -18,7 +18,10 @@
  */
 package groovy.xml
 
+import groovy.transform.CompileStatic
 import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
 
 class XmlParserTypedTest {
 
@@ -114,6 +117,28 @@ class XmlParserTypedTest {
         assert config.host == 'localhost'
         assert config.port == 8080
         assert config.debug == true
+    }
+
+    @Test
+    void testParseTextAsRejectsUnknownElement() {
+        // Jackson 3 ignores unknown properties by default; typed parsing keeps Jackson 2's behaviour.
+        // A dynamic call site unwraps the XmlRuntimeException to the Jackson exception it carries.
+        def e = shouldFail {
+            new XmlParser().parseTextAs(ServerConfig, '<server><host>localhost</host><colour>red</colour></server>')
+        }
+        assert e.message.contains('colour')
+    }
+
+    @Test
+    @CompileStatic
+    void testParseTextAsRejectsUnknownElementWithXmlRuntimeException() {
+        try {
+            new XmlParser().parseTextAs(ServerConfig, '<server><host>localhost</host><colour>red</colour></server>')
+            assert false : 'an unknown element should fail the conversion'
+        } catch (XmlRuntimeException e) {
+            assert e.message.contains(ServerConfig.name)
+            assert e.cause.message.contains('colour')
+        }
     }
 
     @Test

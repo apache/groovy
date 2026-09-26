@@ -135,6 +135,7 @@
             <trusting group="org.codehaus.woodstox"/>
             <trusting group="^com[.]fasterxml($|([.].*))" regex="true"/>
             <trusting group="^com[.]fasterxml[.]jackson($|([.].*))" regex="true"/>
+            <trusting group="^tools[.]jackson($|([.].*))" regex="true"/>
          </trusted-key>
          <trusted-key id="29BEA2A645F2D6CED7FB12E02B172E3E156466E8" group="^org[.]apache[.]maven($|([.].*))" regex="true"/>
          <trusted-key id="2B1042677FD8190C7B9FC0DC2161D72E7DCD4258">
