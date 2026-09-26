@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790320167851,
+  "lastUpdate": 1790406526200,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -6853,6 +6853,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 355.8833333333334,
             "range": "±16.77",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "62467aaaf679c15c5b2ac338f0e5426a10e21a6c",
+          "message": "Bump gradle/wrapper version to 9.8.0",
+          "timestamp": "2026-09-26T06:02:04Z",
+          "url": "https://github.com/apache/groovy/commit/62467aaaf679c15c5b2ac338f0e5426a10e21a6c"
+        },
+        "date": 1790406522052,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 493.1366666666666,
+            "range": "±19",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 628.2566666666667,
+            "range": "±215.91",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 545.2433333333333,
+            "range": "±145.04",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 442.0866666666667,
+            "range": "±18.73",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 442.32000000000005,
+            "range": "±20.14",
             "unit": "ms",
             "extra": "6.0.0"
           }
