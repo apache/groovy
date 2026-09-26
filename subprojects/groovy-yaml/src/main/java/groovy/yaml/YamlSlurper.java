@@ -23,7 +23,10 @@ import groovy.json.JsonParserType;
 import groovy.json.JsonSlurper;
 import org.apache.groovy.yaml.util.YamlConverter;
 import tools.jackson.core.JacksonException;
+import tools.jackson.core.StreamReadConstraints;
+import tools.jackson.core.StreamWriteConstraints;
 import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.dataformat.yaml.YAMLFactory;
 import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.File;
@@ -181,13 +184,26 @@ public class YamlSlurper {
         }
     }
 
+    // the same limits as YamlConverter, which handles the untyped parse path: Jackson 2's, not
+    // Jackson 3's lower nesting depth and higher string length
+    private static final StreamReadConstraints READ_CONSTRAINTS = StreamReadConstraints.builder()
+            .maxNestingDepth(1000)
+            .maxStringLength(20_000_000)
+            .build();
+    private static final StreamWriteConstraints WRITE_CONSTRAINTS = StreamWriteConstraints.builder()
+            .maxNestingDepth(1000)
+            .build();
+
     // YAMLMapper is thread-safe once built, so a single shared instance is reused
     private static final YAMLMapper MAPPER = mapperBuilder().build();
 
     static YAMLMapper.Builder mapperBuilder() {
         // Jackson 2's defaults keep databinding behaving as it did before Jackson 3
         // (for example failing on an unknown property); java.time support is built in
-        return YAMLMapper.builder()
+        return YAMLMapper.builder(YAMLFactory.builder()
+                        .streamReadConstraints(READ_CONSTRAINTS)
+                        .streamWriteConstraints(WRITE_CONSTRAINTS)
+                        .build())
                 .configureForJackson2()
                 .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
                 .disable(DateTimeFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE);

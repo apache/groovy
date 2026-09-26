@@ -20,9 +20,11 @@ package groovy.csv;
 
 import org.apache.groovy.lang.annotation.Incubating;
 import tools.jackson.core.JacksonException;
+import tools.jackson.core.StreamReadConstraints;
 import tools.jackson.databind.MapperFeature;
 import tools.jackson.databind.MappingIterator;
 import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.dataformat.csv.CsvFactory;
 import tools.jackson.dataformat.csv.CsvMapper;
 import tools.jackson.dataformat.csv.CsvReadFeature;
 import tools.jackson.dataformat.csv.CsvSchema;
@@ -75,7 +77,13 @@ public class CsvSlurper {
     // support is built in. Jackson 2's CsvMapper also sorted properties alphabetically, which
     // configureForJackson2() does not restore: a plain class's columns are alphabetical while
     // record components keep their declaration order, as the user guide documents.
-    private static final CsvMapper MAPPER = CsvMapper.builder()
+    private static final CsvMapper MAPPER = CsvMapper.builder(CsvFactory.builder()
+                    // Jackson 3 raised the default string length from 20,000,000 to 100,000,000;
+                    // a field longer than Jackson 2 allowed still fails
+                    .streamReadConstraints(StreamReadConstraints.builder()
+                            .maxStringLength(20_000_000)
+                            .build())
+                    .build())
             .configureForJackson2()
             .enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)
             .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
