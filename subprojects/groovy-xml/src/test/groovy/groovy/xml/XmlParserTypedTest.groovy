@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.fail
 
 class XmlParserTypedTest {
 
@@ -132,9 +133,10 @@ class XmlParserTypedTest {
     @Test
     @CompileStatic
     void testParseTextAsRejectsUnknownElementWithXmlRuntimeException() {
+        // called directly: a closure, like a dynamic call site, would unwrap the exception
         try {
             new XmlParser().parseTextAs(ServerConfig, '<server><host>localhost</host><colour>red</colour></server>')
-            assert false : 'an unknown element should fail the conversion'
+            fail('an unknown element should fail the conversion')
         } catch (XmlRuntimeException e) {
             assert e.message.contains(ServerConfig.name)
             assert e.cause.message.contains('colour')
