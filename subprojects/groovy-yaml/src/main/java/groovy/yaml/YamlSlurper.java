@@ -18,15 +18,13 @@
  */
 package groovy.yaml;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import groovy.json.JsonDateHandling;
 import groovy.json.JsonParserType;
 import groovy.json.JsonSlurper;
 import org.apache.groovy.yaml.util.YamlConverter;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.File;
 import java.io.IOException;
@@ -177,17 +175,22 @@ public class YamlSlurper {
      */
     public <T> T parseAs(Class<T> type, Reader reader) {
         try {
-            return mapper(new YAMLFactory()).readValue(reader, type);
-        } catch (IOException e) {
+            return MAPPER.readValue(reader, type);
+        } catch (JacksonException e) {
             throw new YamlRuntimeException(e);
         }
     }
 
-    static ObjectMapper mapper(YAMLFactory factory) {
-        return new ObjectMapper(factory)
-                .registerModule(new JavaTimeModule())
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                .disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE);
+    // YAMLMapper is thread-safe once built, so a single shared instance is reused
+    private static final YAMLMapper MAPPER = mapperBuilder().build();
+
+    static YAMLMapper.Builder mapperBuilder() {
+        // Jackson 2's defaults keep databinding behaving as it did before Jackson 3
+        // (for example failing on an unknown property); java.time support is built in
+        return YAMLMapper.builder()
+                .configureForJackson2()
+                .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .disable(DateTimeFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE);
     }
 
     /**
