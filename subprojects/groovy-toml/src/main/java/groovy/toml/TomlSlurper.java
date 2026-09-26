@@ -18,15 +18,14 @@
  */
 package groovy.toml;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.dataformat.toml.TomlMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import groovy.json.JsonDateHandling;
 import groovy.json.JsonParserType;
 import groovy.json.JsonSlurper;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.apache.groovy.toml.util.TomlConverter;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.dataformat.toml.TomlMapper;
 
 import java.io.File;
 import java.io.IOException;
@@ -173,16 +172,18 @@ public class TomlSlurper {
     public <T> T parseAs(Class<T> type, Reader reader) {
         try {
             return mapper().readValue(reader, type);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new TomlRuntimeException(e);
         }
     }
 
-    // TomlMapper is thread-safe once configured, so a single shared instance is reused
+    // TomlMapper is thread-safe once configured, so a single shared instance is reused.
+    // Jackson 2's defaults keep databinding behaving as it did before Jackson 3
+    // (for example failing on an unknown property); java.time support is built in.
     private static final TomlMapper MAPPER = TomlMapper.builder()
-            .addModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-            .disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
+            .configureForJackson2()
+            .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+            .disable(DateTimeFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
             .build();
 
     static TomlMapper mapper() {
