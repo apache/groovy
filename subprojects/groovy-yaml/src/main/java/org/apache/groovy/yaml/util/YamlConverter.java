@@ -44,7 +44,9 @@ public final class YamlConverter {
      */
     public static String convertYamlToJson(Reader yamlReader) {
         try {
-            List<Object> resultList = YAML_MAPPER.readerFor(Object.class).readValues(yamlReader).readAll();
+            // an explicit parser keeps a root-level sequence intact: an ObjectReader would treat it
+            // as a wrapped sequence of values and drop the outer list
+            List<Object> resultList = YAML_MAPPER.readValues(YAML_MAPPER.createParser(yamlReader), Object.class).readAll();
             Object yaml = 1 == resultList.size() ? resultList.get(0) : resultList;
             return JSON_MAPPER.writeValueAsString(yaml);
         } catch (JacksonException e) {
