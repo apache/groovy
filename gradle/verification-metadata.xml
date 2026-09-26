@@ -155,7 +155,10 @@
             <trusting group="xml-apis"/>
          </trusted-key>
          <trusted-key id="2E3A1AFFE42B5F53AF19F780BCF4173966770193" group="org.jetbrains"/>
-         <trusted-key id="2FC53E6B1F681184F4CCD637F5C81DE10A0B8ECC" group="org.yaml" name="snakeyaml"/>
+         <trusted-key id="2FC53E6B1F681184F4CCD637F5C81DE10A0B8ECC">
+            <trusting group="org.snakeyaml" name="snakeyaml-engine"/>
+            <trusting group="org.yaml" name="snakeyaml"/>
+         </trusted-key>
          <trusted-key id="32118CF76C9EC5D918E54967CA80D1F0EB6CA4BA" group="org.codehaus.plexus"/>
          <trusted-key id="331224E1D7BE883D16E8A685825C06C827AF6B66" group="me.champeau.gradle"/>
          <trusted-key id="34441E504A937F43EB0DAEF96A65176A0FB1CD0B">

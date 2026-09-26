@@ -18,13 +18,12 @@
  */
 package org.apache.groovy.yaml.util;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import groovy.yaml.YamlRuntimeException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
-import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
 
@@ -33,6 +32,11 @@ import java.util.List;
  *  @since 3.0.0
  */
 public final class YamlConverter {
+    // Jackson 2's defaults keep the conversion producing what it did before Jackson 3;
+    // both mappers are thread-safe once built, so they are shared
+    private static final JsonMapper JSON_MAPPER = JsonMapper.builderWithJackson2Defaults().build();
+    private static final YAMLMapper YAML_MAPPER = YAMLMapper.builder().configureForJackson2().build();
+
     /**
      * Convert yaml to json
      * @param yamlReader the reader of yaml
@@ -40,13 +44,10 @@ public final class YamlConverter {
      */
     public static String convertYamlToJson(Reader yamlReader) {
         try {
-            List<Object> resultList =
-                    new ObjectMapper()
-                            .readValues(new YAMLFactory().createParser(yamlReader), Object.class)
-                            .readAll();
+            List<Object> resultList = YAML_MAPPER.readerFor(Object.class).readValues(yamlReader).readAll();
             Object yaml = 1 == resultList.size() ? resultList.get(0) : resultList;
-            return new ObjectMapper().writeValueAsString(yaml);
-        } catch (IOException e) {
+            return JSON_MAPPER.writeValueAsString(yaml);
+        } catch (JacksonException e) {
             throw new YamlRuntimeException(e);
         }
     }
@@ -58,10 +59,10 @@ public final class YamlConverter {
      */
     public static String convertJsonToYaml(Reader jsonReader) {
         try {
-            JsonNode json = new ObjectMapper().readTree(jsonReader);
+            JsonNode json = JSON_MAPPER.readTree(jsonReader);
 
-            return new YAMLMapper().writeValueAsString(json);
-        } catch (IOException e) {
+            return YAML_MAPPER.writeValueAsString(json);
+        } catch (JacksonException e) {
             throw new YamlRuntimeException(e);
         }
     }

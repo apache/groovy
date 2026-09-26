@@ -187,9 +187,9 @@ aliases, not alias support.
 
 The SnakeYAML library resolves anchors, aliases, and merge keys in full. This is not
 part of `groovy-yaml` — it is a second YAML parser used directly, shown here because
-the need is common. Today SnakeYAML happens to reach the classpath transitively via
-the Jackson YAML backend; that arrangement is not yours to rely on (and ends with
-Jackson 3), so declare `org.yaml:snakeyaml` as a dependency if you use this.
+the need is common. The Jackson 3 YAML backend that `groovy-yaml` uses is built on
+SnakeYAML Engine, not SnakeYAML, so declare `org.yaml:snakeyaml` as a dependency if you
+use this.
 
 [source,groovy]
 ----
