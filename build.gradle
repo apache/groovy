@@ -159,8 +159,7 @@ dependencies {
     testImplementation projects.groovyTestJunit6 // for groovy.junit6.plugin.ForkedJvm
     testImplementation "net.jcip:jcip-annotations:${versions.jcipAnnotations}"
     testImplementation "com.github.javaparser:javaparser-core:${versions.javaParser}"
-    testImplementation "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
-    testImplementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${versions.jackson}"
+    testImplementation "tools.jackson.core:jackson-databind:${versions.jackson3}"
 
     testFixturesImplementation projects.groovyXml
     testFixturesImplementation projects.groovyTest
