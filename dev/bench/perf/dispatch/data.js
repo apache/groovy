@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790406540803,
+  "lastUpdate": 1790493112309,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -4337,6 +4337,58 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/apache/groovy/commit/62467aaaf679c15c5b2ac338f0e5426a10e21a6c"
         },
         "date": 1790406540044,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3996,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 440,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 843,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1505,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]",
+            "email": "49699333+dependabot[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "realbluesun@hotmail.com"
+          },
+          "id": "824277454069fa973028ca5d85b414be224a8229",
+          "message": "Bump github/codeql-action from 4.38.0 to 4.38.1\n\nBumps [github/codeql-action](https://github.com/github/codeql-action) from 4.38.0 to 4.38.1.\n- [Release notes](https://github.com/github/codeql-action/releases)\n- [Changelog](https://github.com/github/codeql-action/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/github/codeql-action/compare/v4.38.0...v4.38.1)\n\n---\nupdated-dependencies:\n- dependency-name: github/codeql-action\n  dependency-version: 4.38.1\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>",
+          "timestamp": "2026-09-27T01:24:36Z",
+          "url": "https://github.com/apache/groovy/commit/824277454069fa973028ca5d85b414be224a8229"
+        },
+        "date": 1790493111162,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
