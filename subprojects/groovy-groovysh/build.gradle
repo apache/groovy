@@ -33,6 +33,8 @@ dependencies {
     implementation projects.groovyXml
     implementation projects.groovyJson
     implementation projects.groovyNio
+    compileOnly projects.groovyLsp
+    testImplementation projects.groovyLsp
     testImplementation projects.groovyTest
     testImplementation projects.groovyCsv         // for /slurp .csv default coverage
     testImplementation projects.groovyMarkdown    // for /slurp .md default coverage

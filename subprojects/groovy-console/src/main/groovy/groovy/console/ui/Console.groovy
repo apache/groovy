@@ -294,6 +294,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     CompilerConfiguration config
     /** Shell used to compile and run scripts. */
     GroovyShell shell
+    /** Optional groovy-lsp host; null when groovy-lsp is not on the classpath. */
+    def languageHost
     /** Counter used for generated script names. */
     int scriptNameCounter = 0
     /** Interceptor that captures stdout. */
@@ -507,6 +509,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt))
         }
         shell = new GroovyShell(parent, binding, config)
+        languageHost?.setParentLoader(shell.classLoader)
     }
 
     /** Default Swing delegates used to build the console frame and menu bar. */
@@ -579,7 +582,24 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         }
         installInterceptor()
         updateTitle()
+        installLanguageHost()
         swing.doLater inputArea.&requestFocus
+    }
+
+    /**
+     * Attaches the optional groovy-lsp host when that module is on the
+     * classpath. The host class is loaded reflectively so groovy-console
+     * stays usable without groovy-lsp or LSP4J.
+     */
+    private void installLanguageHost() {
+        try {
+            Class.forName('org.apache.groovy.lsp.internal.engine.GroovyLanguageEngine')
+            def hostClass = Class.forName('groovy.console.ui.language.ConsoleLanguageHost')
+            languageHost = hostClass.getMethod('attach', JTextPane, ClassLoader)
+                    .invoke(null, inputArea, shell.classLoader)
+        } catch (Exception | LinkageError ignored) {
+            languageHost = null
+        }
     }
 
     /**
@@ -1067,6 +1087,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         if (askToInterruptScript()) {
             def exit = askToSaveFile()
             if (exit) {
+                languageHost?.close()
+                languageHost = null
                 if (frame instanceof Window) {
                     frame.hide()
                     frame.dispose()
@@ -1114,6 +1136,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         nativeFullScreenForMac(swing.consoleFrame)
         swing.consoleFrame.pack()
         swing.consoleFrame.show()
+        consoleController.installLanguageHost()
         swing.doLater swing.inputArea.&requestFocus
     }
 
@@ -1145,6 +1168,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                     listeners.each { inputArea.document.addDocumentListener(it) }
                     setDirty(false)
                     inputArea.caretPosition = 0
+                    languageHost?.refresh()
                 }
             } finally {
                 swing.edt { inputArea.editable = true }
@@ -1713,6 +1737,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             fc.selectedFiles?.each { file ->
                 shell.getClassLoader().addURL(file.toURL())
             }
+            languageHost?.setParentLoader(shell.classLoader)
         }
     }
 
@@ -1725,6 +1750,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             currentClasspathDir = fc.currentDirectory
             Preferences.userNodeForPackage(Console).put('currentClasspathDir', currentClasspathDir.path)
             shell.getClassLoader().addURL(fc.selectedFile.toURL())
+            languageHost?.setParentLoader(shell.classLoader)
         }
     }
 

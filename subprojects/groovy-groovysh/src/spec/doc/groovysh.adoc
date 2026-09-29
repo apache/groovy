@@ -38,6 +38,13 @@ to https://github.com/jline/jline3[JLine3].
 * ANSI colors (prompt, exception traces, etc).
 * Simple, yet robust, command system with online help, user alias
 support and more.
+* When the optional `groovy-lsp` jar is on the classpath, tab
+completion and tail-tip descriptions also consult a compiler-backed
+session over the current buffer (imports, types, methods, and
+binding variables). `/grab` remains the way to add Maven artifacts;
+the language session notices the loader change. Lines still evaluate
+through `GroovyEngine`. The language session answers questions about
+the buffer.
 
 [[GroovyShell-Command-lineOptionsandArguments]]
 === Command-line Options and Arguments
