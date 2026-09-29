@@ -20,12 +20,20 @@ package org.apache.groovy.lsp.internal.engine
 
 import org.apache.groovy.lsp.internal.LanguageServerContext
 import org.apache.groovy.lsp.internal.compile.CompilationSnapshot
+import org.eclipse.lsp4j.CompletionItem
+import org.eclipse.lsp4j.CompletionItemKind
+import org.eclipse.lsp4j.MarkupContent
 import org.eclipse.lsp4j.MessageActionItem
 import org.eclipse.lsp4j.MessageParams
+import org.eclipse.lsp4j.ParameterInformation
+import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.PublishDiagnosticsParams
 import org.eclipse.lsp4j.Range
 import org.eclipse.lsp4j.ShowMessageRequestParams
+import org.eclipse.lsp4j.TextEdit
+import org.eclipse.lsp4j.SignatureInformation
 import org.eclipse.lsp4j.WorkspaceSymbol
+import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.services.LanguageClient
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
@@ -189,6 +197,80 @@ final class GroovyLanguageEngineTest {
         def symbol = toSymbol.invoke(engine, new WorkspaceSymbol()) as GroovyLanguageEngine.Symbol
         assert symbol.location().uri() == URI.create('file:///')
         assert symbol.kind() == 'Object'
+    }
+
+    @Test
+    void candidateSignatureAndTokenHelpersCoverMarkupAndDeltas() {
+        engine = new GroovyLanguageEngine()
+        def toCandidate = GroovyLanguageEngine.getDeclaredMethod('toCandidate', CompletionItem)
+        toCandidate.accessible = true
+        def item = new CompletionItem('n')
+        item.kind = CompletionItemKind.Method
+        item.detail = 'int'
+        item.insertText = null
+        item.documentation = Either.forLeft('_inferred_ x')
+        def candidate = toCandidate.invoke(null, item) as GroovyLanguageEngine.Candidate
+        assert candidate.inferred()
+        assert candidate.insertText() == 'n'
+
+        item.documentation = Either.forRight(new MarkupContent('markdown', 'docs'))
+        def marked = toCandidate.invoke(null, item) as GroovyLanguageEngine.Candidate
+        assert marked.documentation() == 'docs'
+        item.documentation = Either.forLeft(null)
+        assert (toCandidate.invoke(null, item) as GroovyLanguageEngine.Candidate).documentation() == ''
+        item.kind = null
+        item.detail = null
+        def empty = toCandidate.invoke(null, item) as GroovyLanguageEngine.Candidate
+        assert empty.documentation() == ''
+        assert empty.kind() == ''
+        assert empty.detail() == ''
+
+        def markupOrString = GroovyLanguageEngine.getDeclaredMethod('markupOrString', Either)
+        markupOrString.accessible = true
+        assert markupOrString.invoke(null, [null] as Object[]) == ''
+        assert markupOrString.invoke(null, Either.forLeft(null)) == ''
+        assert markupOrString.invoke(null, Either.forRight(new MarkupContent('markdown', ''))) == ''
+
+        def decode = GroovyLanguageEngine.getDeclaredMethod('decodeTokens', List)
+        decode.accessible = true
+        assert (decode.invoke(null, [null] as Object[]) as List).isEmpty()
+        assert (decode.invoke(null, []) as List).isEmpty()
+        def tokens = decode.invoke(null, [0, 0, 1, 4, 0, 1, 2, 3, 99, 1]) as List
+        assert tokens.size() == 2
+        assert tokens[0].type() == 'method'
+        assert tokens[1].type() == ''
+
+        def parameterLabel = GroovyLanguageEngine.getDeclaredMethod('parameterLabel', ParameterInformation)
+        parameterLabel.accessible = true
+        assert parameterLabel.invoke(null, new ParameterInformation()) == ''
+        def param = new ParameterInformation()
+        param.label = Either.forLeft('p')
+        assert parameterLabel.invoke(null, param) == 'p'
+        param.label = Either.forRight(null)
+        assert parameterLabel.invoke(null, param) == ''
+
+        def toSignature = GroovyLanguageEngine.getDeclaredMethod('toSignature', SignatureInformation)
+        toSignature.accessible = true
+        def info = new SignatureInformation()
+        info.parameters = [param, null]
+        def signature = toSignature.invoke(null, info) as GroovyLanguageEngine.Signature
+        assert signature.parameters().size() == 2
+        info.documentation = Either.forRight(new MarkupContent('markdown', 'sig'))
+        assert (toSignature.invoke(null, info) as GroovyLanguageEngine.Signature).documentation() == 'sig'
+
+        def toChanges = GroovyLanguageEngine.getDeclaredMethod('toChanges', URI, List)
+        toChanges.accessible = true
+        assert (toChanges.invoke(engine, GroovyLanguageEngine.CONSOLE_URI, null) as List).isEmpty()
+        assert (toChanges.invoke(engine, GroovyLanguageEngine.CONSOLE_URI, [null]) as List).isEmpty()
+        def rangeless = new TextEdit()
+        rangeless.newText = 'x'
+        assert (toChanges.invoke(engine, GroovyLanguageEngine.CONSOLE_URI, [rangeless]) as List).isEmpty()
+        def withRange = new TextEdit()
+        withRange.range = new Range(new Position(0, 0), new Position(0, 1))
+        withRange.newText = ''
+        def changes = toChanges.invoke(engine, GroovyLanguageEngine.CONSOLE_URI, [withRange]) as List
+        assert changes.size() == 1
+        assert changes[0].newText() == ''
     }
 
     private static final class ClearingClient implements LanguageClient {

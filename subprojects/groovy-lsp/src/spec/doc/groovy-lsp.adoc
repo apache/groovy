@@ -175,8 +175,12 @@ Groovy structure and types without embedding the compiler.
 It is meant to be used **directly by an IDE or editor**, and as an
 in-process language-services library (`GroovyLanguageEngine` over
 `feature/*` + `compile/*`) with the LSP server as the first client
-(`protocol/*`). A later `groovy-mcp` module is expected to wrap that
-same engine. There is no public extension SPI in this first cut.
+(`protocol/*`). Unsaved buffers use `groovy-buffer:` URIs
+(`groovy-buffer:console` for Groovy Console, `groovy-buffer:repl`
+for groovysh); those hosts load the engine reflectively when the
+`groovy-lsp` jar is present. A later `groovy-mcp` module is expected
+to wrap that same engine. There is no public extension SPI in this
+first cut.
 Eclipse JDT / groovy-eclipse servers remain a parallel stack. GDSL is
 not implemented here. Hover Groovydoc is rendered as Markdown.
 

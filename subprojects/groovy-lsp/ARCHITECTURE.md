@@ -132,7 +132,7 @@ call. Wrong edits are worse for an agent than a refused rename.
 │  GroovyTextDocumentService                   │
 │  GroovyWorkspaceService                      │
 ├──────────────────────────────────────────────┤
-│  engine/*    (in-process Path API, snippets) │
+│  engine/*    (in-process Path/URI API)       │
 │  feature/*   one type per LSP feature        │
 ├──────────────────────────────────────────────┤
 │  compile/*   (CompilationUnit, AstQuery)     │
@@ -177,10 +177,20 @@ call. Wrong edits are worse for an agent than a refused rename.
   Types that resolved from Java sources jump via `JavaSymbolIndex`
   (javac `Trees`, captured before `generate()`).
 - **In-process engine.** `GroovyLanguageEngine` is the library facade
-  (console, groovysh, a later MCP adapter). It reads files from disk,
-  compiles through the same snapshot as the LSP handlers, and returns
-  JDK types with source snippets. Positions are 0-based UTF-16.
-  Rename returns edits; it does not write files. Workspace symbol
+  (console, groovysh, a later MCP adapter). It compiles through the
+  same snapshot as the LSP handlers and returns JDK types with source
+  snippets — no JSON-RPC, no LSP4J in result records. Positions are
+  0-based UTF-16. Rename, format and organize-imports return edits;
+  they do not write files. Path methods read a file from disk when
+  that URI is not already open. Buffer methods
+  (`openBuffer` / `updateBuffer` / `closeBuffer`) take any URI;
+  `groovy-buffer:console` and `groovy-buffer:repl` are the console
+  and groovysh conventions. The engine does not add workspace folders,
+  so constructing it never compiles a checkout root. Completions,
+  semantic tokens and signature help are URI queries on an open
+  buffer. `setParentLoader` / `setClasspath` / `putExtra` are how a
+  host points the compile at a GroovyShell or REPL loader and busts
+  the fingerprint after in-place classpath changes. Workspace symbol
   search accepts CamelHumps (`ASF` → `AbstractServerFactory`) as well
   as a case-insensitive substring. Hover Groovydoc is Markdown
   (`{@code}`, `{@link}`, `@param`).
@@ -200,8 +210,10 @@ call. Wrong edits are worse for an agent than a refused rename.
   line. Compile reports `window/workDoneProgress` when the client
   supports it. References skip files that do not contain the
   identifier as a word.
-- **Compile cache.** A fingerprint of open buffers, extra-file mtimes
-  and settings skips a full recompile when nothing changed. Compile
+- **Compile cache.** A fingerprint of open buffers, extra-file mtimes,
+  settings and parent-loader identity skips a full recompile when
+  nothing changed. In-place `addURL` on the same loader still needs
+  `putExtra`. Compile
   runs off the session lock so document sync is not blocked; a
   generation counter drops superseded compiles. When the client omits
   classpath and source paths, `WorkspaceLayout` uses `src/main/groovy`
@@ -256,6 +268,10 @@ In-process: construct `GroovyLanguageServer`, connect a collecting
 the debounce in unit tests). Do not set `initialize.rootUri` to the
 process working directory — that would compile the whole checkout.
 JSON-RPC round-trips are not required to prove feature logic.
+`GroovyLanguageEngine` tests use `openBuffer` with `groovy-buffer:*`
+URIs (or a temp file) and never add workspace folders. Console and
+groovysh adapters live in those subprojects (`compileOnly` plus
+`Class.forName`) so groovy-all does not grow an LSP4J dependency.
 
 ## Related
 

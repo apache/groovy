@@ -34,8 +34,10 @@ New Groovy-specific behaviour that is not protocol adaptation belongs
 in one `feature/*` type (not a shared grab bag), `compile/*`, or the
 in-process `engine/*` facade, not a public SPI. Call and override
 resolution lives in `MethodBinding`, shared by navigation, hover,
-completion and rename. In-process callers use `GroovyLanguageEngine` (paths and
-JDK types). Configuration is `workspace/didChangeConfiguration` and
+completion and rename. In-process callers use `GroovyLanguageEngine`
+(paths, `groovy-buffer:*` URIs, and JDK result records).
+Hosts (console, groovysh) take a `compileOnly` dependency and load the
+engine with `Class.forName`. Configuration is `workspace/didChangeConfiguration` and
 `workspace/configuration` under the `groovy` section (see
 `groovy-lsp.adoc`). Do not add OSGi, extra JSON-RPC methods, or a
 second hover/completion SPI. Do not add Maven/Gradle invocation,

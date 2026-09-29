@@ -76,6 +76,7 @@ public final class LanguageServerContext {
     private final AtomicReference<PositionEncoding> positionEncoding = new AtomicReference<>(PositionEncoding.UTF16);
     private final AtomicReference<CompilerSettings> settings = new AtomicReference<>(CompilerSettings.defaults());
     private final AtomicReference<CompilationSnapshot> snapshot = new AtomicReference<>(CompilationSnapshot.EMPTY);
+    private final AtomicReference<ClassLoader> parentLoader = new AtomicReference<>();
     private volatile boolean initialized;
     private volatile boolean shutdown;
     private volatile Integer exitCode;
@@ -107,6 +108,7 @@ public final class LanguageServerContext {
             final CompilerSettings effective;
             final List<Path> extra;
             final Collection<TextDocument> open;
+            final ClassLoader loader;
             final String fingerprint;
             final boolean reuse;
             synchronized (this) {
@@ -124,7 +126,8 @@ public final class LanguageServerContext {
                 effective = WorkspaceLayout.withInferred(settings.get(), folders);
                 extra = scanner.scan(folders, effective.getSourcePaths());
                 open = documents.snapshot();
-                fingerprint = fingerprint(open, extra, effective);
+                loader = compileParentLoader();
+                fingerprint = fingerprint(open, extra, effective, loader);
                 if (fingerprint.equals(compileFingerprint) && snapshot.get() != CompilationSnapshot.EMPTY) {
                     // Another compile already committed this snapshot but may
                     // not have published yet. Fall through to publishDiagnostics.
@@ -140,7 +143,7 @@ public final class LanguageServerContext {
                 beginProgress(token, "Compiling Groovy");
                 CompilationSnapshot compiled;
                 try {
-                    compiled = compiler.compile(open, extra, effective, getClass().getClassLoader());
+                    compiled = compiler.compile(open, extra, effective, loader);
                 } finally {
                     endProgress(token);
                 }
@@ -358,9 +361,35 @@ public final class LanguageServerContext {
         return settings.get();
     }
 
-    public void setSettings(final CompilerSettings settings) {
+    public synchronized void setSettings(final CompilerSettings settings) {
         this.settings.set(settings);
         compileFingerprint = null;
+    }
+
+    /**
+     * Parent loader for the next compile. {@code null} uses this class's loader.
+     * The compile fingerprint is cleared only when the loader identity changes,
+     * so hosts can re-assert the same GroovyShell or REPL loader cheaply.
+     *
+     * @param parentLoader GroovyShell or REPL loader, or {@code null}
+     */
+    public synchronized void setParentLoader(final ClassLoader parentLoader) {
+        ClassLoader previous = this.parentLoader.getAndSet(parentLoader);
+        if (previous != parentLoader) {
+            compileFingerprint = null;
+        }
+    }
+
+    /**
+     * @return the parent loader, or {@code null} when the session default is used
+     */
+    public ClassLoader getParentLoader() {
+        return parentLoader.get();
+    }
+
+    private ClassLoader compileParentLoader() {
+        ClassLoader loader = parentLoader.get();
+        return loader == null ? getClass().getClassLoader() : loader;
     }
 
     public CompilationSnapshot getSnapshot() {
@@ -431,13 +460,29 @@ public final class LanguageServerContext {
      */
     public static String fingerprint(final Collection<TextDocument> open, final Collection<Path> extra,
                                      final CompilerSettings settings) {
+        return fingerprint(open, extra, settings, null);
+    }
+
+    /**
+     * Stable key including the parent loader identity. In-place
+     * {@code addURL} on the same loader still needs {@code extra}.
+     *
+     * @param open open documents
+     * @param extra workspace files
+     * @param settings effective settings
+     * @param parentLoader compile parent loader
+     * @return a fingerprint
+     */
+    public static String fingerprint(final Collection<TextDocument> open, final Collection<Path> extra,
+                                     final CompilerSettings settings, final ClassLoader parentLoader) {
         StringBuilder builder = new StringBuilder();
         builder.append(settings.getClasspath()).append('|')
                 .append(settings.getSourcePaths()).append('|')
                 .append(settings.isGrapeEnabled()).append('|')
                 .append(settings.isAstTestEnabled()).append('|')
                 .append(settings.getThroughPhase()).append('|')
-                .append(settings.getExtra());
+                .append(settings.getExtra()).append('|')
+                .append(System.identityHashCode(parentLoader));
         if (open != null) {
             for (TextDocument document : open) {
                 builder.append('\n').append(document.getUri()).append(':')
