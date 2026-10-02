@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790839137371,
+  "lastUpdate": 1790925413226,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -4612,6 +4612,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.hidden",
             "value": 841,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1505,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "23e5e69dc72f31643457a40c8ec79bed19c30608",
+          "message": "fix array links + indexed property grouping as per groovy-website issue#46",
+          "timestamp": "2026-10-02T05:13:20Z",
+          "url": "https://github.com/apache/groovy/commit/23e5e69dc72f31643457a40c8ec79bed19c30608"
+        },
+        "date": 1790925412276,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3996,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 440,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 843,
             "unit": "classes"
           },
           {
