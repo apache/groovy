@@ -42,6 +42,7 @@ import groovy.swing.factory.WidgetFactory
 
 import java.beans.BeanInfo
 import java.beans.Introspector
+import java.beans.IndexedPropertyDescriptor
 import java.beans.PropertyDescriptor
 
 // Headless mode should be set via -Djava.awt.headless=true on the JVM command line
@@ -220,7 +221,22 @@ static String typeLink(Class type) {
  * The class declaring a property, used to group inherited members separately.
  */
 static Class declaringClassOf(PropertyDescriptor pd) {
-    pd.readMethod?.declaringClass ?: pd.writeMethod?.declaringClass
+    pd.readMethod?.declaringClass ?: pd.writeMethod?.declaringClass ?:
+        (pd instanceof IndexedPropertyDescriptor ?
+            (pd.indexedReadMethod?.declaringClass ?: pd.indexedWriteMethod?.declaringClass) : null)
+}
+
+/**
+ * Indexed bean properties can expose accessors only via indexedReadMethod/indexedWriteMethod.
+ */
+static boolean isReadable(PropertyDescriptor pd) {
+    if (pd.readMethod) return true
+    return pd instanceof IndexedPropertyDescriptor && pd.indexedReadMethod
+}
+
+static boolean isWritable(PropertyDescriptor pd) {
+    if (pd.writeMethod) return true
+    return pd instanceof IndexedPropertyDescriptor && pd.indexedWriteMethod
 }
 
 // ============================================================
@@ -403,8 +419,8 @@ widgetDetails.sort { it.key }.each { nodeName, detail ->
             out << "|===\n"
             out << "| Property | Type | Readable | Writable\n\n"
             byOwner[owner].each { PropertyDescriptor pd ->
-                def readable = pd.readMethod ? 'icon:check[]' : ''
-                def writable = pd.writeMethod ? 'icon:check[]' : ''
+                def readable = isReadable(pd) ? 'icon:check[]' : ''
+                def writable = isWritable(pd) ? 'icon:check[]' : ''
                 out << "| `${pd.name}`\n"
                 out << "| ${typeLink(pd.propertyType)}\n"
                 out << "| ${readable}\n"
