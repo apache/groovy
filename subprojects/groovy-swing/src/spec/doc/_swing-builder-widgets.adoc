@@ -1045,6 +1045,11 @@ swing.box()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -1062,6 +1067,11 @@ swing.box()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -1127,24 +1137,6 @@ swing.box()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -1576,6 +1568,11 @@ swing.button('Click Me')
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -1593,6 +1590,11 @@ swing.button('Click Me')
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -1658,24 +1660,6 @@ swing.button('Click Me')
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -2188,6 +2172,11 @@ swing.checkBox('Click Me')
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -2205,6 +2194,11 @@ swing.checkBox('Click Me')
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -2270,24 +2264,6 @@ swing.checkBox('Click Me')
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -2761,6 +2737,11 @@ swing.checkBoxMenuItem('Click Me')
 | icon:check[]
 | icon:check[]
 
+| `focusTraversalKeys`
+| `Object`
+| icon:check[]
+| icon:check[]
+
 | `focusTraversalPolicy`
 | `jdk:java.awt.FocusTraversalPolicy[FocusTraversalPolicy]`
 | icon:check[]
@@ -2823,19 +2804,6 @@ swing.checkBoxMenuItem('Click Me')
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -3119,6 +3087,11 @@ swing.colorChooser()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -3136,6 +3109,11 @@ swing.colorChooser()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -3201,24 +3179,6 @@ swing.colorChooser()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -3306,6 +3266,11 @@ swing.comboBox()
 | `jdk:javax.swing.ComboBoxEditor[ComboBoxEditor]`
 | icon:check[]
 | icon:check[]
+
+| `itemAt`
+| `Object`
+| icon:check[]
+| 
 
 | `itemCount`
 | `int`
@@ -3578,6 +3543,11 @@ swing.comboBox()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -3595,6 +3565,11 @@ swing.comboBox()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -3660,29 +3635,6 @@ swing.comboBox()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
-
-| `itemAt`
-| `Object`
-| 
-| 
 
 |===
 
@@ -3800,6 +3752,11 @@ swing.desktopPane()
 | icon:check[]
 | 
 
+| `allFramesInLayer`
+| `Object`
+| icon:check[]
+| 
+
 | `desktopManager`
 | `jdk:javax.swing.DesktopManager[DesktopManager]`
 | icon:check[]
@@ -3822,6 +3779,16 @@ swing.desktopPane()
 [cols="2,2,1,1", options="header"]
 |===
 | Property | Type | Readable | Writable
+
+| `componentCountInLayer`
+| `Object`
+| icon:check[]
+| 
+
+| `componentsInLayer`
+| `Object`
+| icon:check[]
+| 
 
 | `optimizedDrawingEnabled`
 | `boolean`
@@ -4029,6 +3996,11 @@ swing.desktopPane()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -4046,6 +4018,11 @@ swing.desktopPane()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -4111,39 +4088,6 @@ swing.desktopPane()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `allFramesInLayer`
-| `Object`
-| 
-| 
-
-| `component`
-| `Object`
-| 
-| 
-
-| `componentCountInLayer`
-| `Object`
-| 
-| 
-
-| `componentsInLayer`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -4311,6 +4255,11 @@ swing.dialog(title: 'My Window')
 | icon:check[]
 | 
 
+| `focusTraversalKeys`
+| `Object`
+| icon:check[]
+| icon:check[]
+
 | `focusableWindow`
 | `boolean`
 | icon:check[]
@@ -4459,6 +4408,11 @@ swing.dialog(title: 'My Window')
 | icon:check[]
 | 
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -4551,24 +4505,6 @@ swing.dialog(title: 'My Window')
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -4979,6 +4915,11 @@ swing.editorPane(text: 'initial text', columns: 20)
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -4996,6 +4937,11 @@ swing.editorPane(text: 'initial text', columns: 20)
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -5061,24 +5007,6 @@ swing.editorPane(text: 'initial text', columns: 20)
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -5474,6 +5402,11 @@ swing.fileChooser()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -5491,6 +5424,11 @@ swing.fileChooser()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -5556,24 +5494,6 @@ swing.fileChooser()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -6077,6 +5997,11 @@ swing.formattedTextField()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -6094,6 +6019,11 @@ swing.formattedTextField()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -6159,24 +6089,6 @@ swing.formattedTextField()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -6364,6 +6276,11 @@ swing.frame(title: 'My Window')
 | icon:check[]
 | 
 
+| `focusTraversalKeys`
+| `Object`
+| icon:check[]
+| icon:check[]
+
 | `focusableWindow`
 | `boolean`
 | icon:check[]
@@ -6507,6 +6424,11 @@ swing.frame(title: 'My Window')
 | icon:check[]
 | 
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -6599,24 +6521,6 @@ swing.frame(title: 'My Window')
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -6990,6 +6894,11 @@ swing.hbox()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -7007,6 +6916,11 @@ swing.hbox()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -7072,24 +6986,6 @@ swing.hbox()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -7570,6 +7466,11 @@ swing.internalFrame()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -7584,6 +7485,11 @@ swing.internalFrame()
 | `jdk:java.awt.event.ContainerListener[ContainerListener&#91;&#93;]`
 | icon:check[]
 | 
+
+| `focusTraversalKeys`
+| `Object`
+| icon:check[]
+| icon:check[]
 
 | `focusTraversalPolicy`
 | `jdk:java.awt.FocusTraversalPolicy[FocusTraversalPolicy]`
@@ -7647,24 +7553,6 @@ swing.internalFrame()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -7967,6 +7855,11 @@ swing.label('Hello')
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -7984,6 +7877,11 @@ swing.label('Hello')
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -8052,24 +7950,6 @@ swing.label('Hello')
 
 |===
 
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
-
-|===
-
 '''
 
 [[swing-widget-layeredPane]]
@@ -8095,6 +7975,16 @@ swing.layeredPane()
 
 | `accessibleContext`
 | `jdk:javax.accessibility.AccessibleContext[AccessibleContext]`
+| icon:check[]
+| 
+
+| `componentCountInLayer`
+| `Object`
+| icon:check[]
+| 
+
+| `componentsInLayer`
+| `Object`
 | icon:check[]
 | 
 
@@ -8314,6 +8204,11 @@ swing.layeredPane()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -8331,6 +8226,11 @@ swing.layeredPane()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -8396,34 +8296,6 @@ swing.layeredPane()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `componentCountInLayer`
-| `Object`
-| 
-| 
-
-| `componentsInLayer`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -8614,6 +8486,11 @@ swing.list()
 | `selectionForeground`
 | `jdk:java.awt.Color[Color]`
 | icon:check[]
+| icon:check[]
+
+| `selectionInterval`
+| `Object`
+| 
 | icon:check[]
 
 | `selectionMode`
@@ -8842,6 +8719,11 @@ swing.list()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -8859,6 +8741,11 @@ swing.list()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -8924,29 +8811,6 @@ swing.list()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
-
-| `selectionInterval`
-| `Object`
-| 
-| 
 
 |===
 
@@ -9053,8 +8917,18 @@ swing.menu()
 | icon:check[]
 | icon:check[]
 
+| `item`
+| `Object`
+| icon:check[]
+| 
+
 | `itemCount`
 | `int`
+| icon:check[]
+| 
+
+| `menuComponent`
+| `Object`
 | icon:check[]
 | 
 
@@ -9072,6 +8946,11 @@ swing.menu()
 | `jdk:javax.swing.event.MenuListener[MenuListener&#91;&#93;]`
 | icon:check[]
 | 
+
+| `menuLocation`
+| `Object`
+| 
+| icon:check[]
 
 | `popupMenu`
 | `jdk:javax.swing.JPopupMenu[JPopupMenu]`
@@ -9520,6 +9399,11 @@ swing.menu()
 | icon:check[]
 | icon:check[]
 
+| `focusTraversalKeys`
+| `Object`
+| icon:check[]
+| icon:check[]
+
 | `focusTraversalPolicy`
 | `jdk:java.awt.FocusTraversalPolicy[FocusTraversalPolicy]`
 | icon:check[]
@@ -9585,34 +9469,6 @@ swing.menu()
 
 |===
 
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
-
-| `item`
-| `Object`
-| 
-| 
-
-| `menuComponent`
-| `Object`
-| 
-| 
-
-| `menuLocation`
-| `Object`
-| 
-| 
-
-|===
-
 '''
 
 [[swing-widget-menuBar]]
@@ -9661,6 +9517,11 @@ swing.menuBar()
 | icon:check[]
 | 
 
+| `componentAtIndex`
+| `Object`
+| icon:check[]
+| 
+
 | `helpMenu`
 | `jdk:javax.swing.JMenu[JMenu]`
 | icon:check[]
@@ -9670,6 +9531,11 @@ swing.menuBar()
 | `jdk:java.awt.Insets[Insets]`
 | icon:check[]
 | icon:check[]
+
+| `menu`
+| `Object`
+| icon:check[]
+| 
 
 | `menuCount`
 | `int`
@@ -9917,6 +9783,11 @@ swing.menuBar()
 | icon:check[]
 | icon:check[]
 
+| `focusTraversalKeys`
+| `Object`
+| icon:check[]
+| icon:check[]
+
 | `focusTraversalPolicy`
 | `jdk:java.awt.FocusTraversalPolicy[FocusTraversalPolicy]`
 | icon:check[]
@@ -9979,29 +9850,6 @@ swing.menuBar()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `componentAtIndex`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
-
-| `menu`
-| `Object`
-| 
-| 
 
 |===
 
@@ -10462,6 +10310,11 @@ swing.menuItem('Click Me')
 | icon:check[]
 | icon:check[]
 
+| `focusTraversalKeys`
+| `Object`
+| icon:check[]
+| icon:check[]
+
 | `focusTraversalPolicy`
 | `jdk:java.awt.FocusTraversalPolicy[FocusTraversalPolicy]`
 | icon:check[]
@@ -10524,19 +10377,6 @@ swing.menuItem('Click Me')
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -10866,6 +10706,11 @@ swing.optionPane()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -10883,6 +10728,11 @@ swing.optionPane()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -10948,24 +10798,6 @@ swing.optionPane()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -11243,6 +11075,11 @@ swing.panel()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -11260,6 +11097,11 @@ swing.panel()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -11325,24 +11167,6 @@ swing.panel()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -11786,6 +11610,11 @@ swing.passwordField(text: 'initial text', columns: 20)
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -11803,6 +11632,11 @@ swing.passwordField(text: 'initial text', columns: 20)
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -11871,24 +11705,6 @@ swing.passwordField(text: 'initial text', columns: 20)
 
 |===
 
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
-
-|===
-
 '''
 
 [[swing-widget-popupMenu]]
@@ -11937,6 +11753,11 @@ swing.popupMenu()
 | icon:check[]
 | 
 
+| `componentAtIndex`
+| `Object`
+| icon:check[]
+| 
+
 | `invoker`
 | `jdk:java.awt.Component[Component]`
 | icon:check[]
@@ -11950,6 +11771,11 @@ swing.popupMenu()
 | `lightWeightPopupEnabled`
 | `boolean`
 | icon:check[]
+| icon:check[]
+
+| `location`
+| `Object`
+| 
 | icon:check[]
 
 | `margin`
@@ -12218,6 +12044,11 @@ swing.popupMenu()
 | icon:check[]
 | icon:check[]
 
+| `focusTraversalKeys`
+| `Object`
+| icon:check[]
+| icon:check[]
+
 | `focusTraversalPolicy`
 | `jdk:java.awt.FocusTraversalPolicy[FocusTraversalPolicy]`
 | icon:check[]
@@ -12275,29 +12106,6 @@ swing.popupMenu()
 | `jdk:java.lang.String[String]`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `componentAtIndex`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
-
-| `location`
-| `Object`
-| 
-| 
 
 |===
 
@@ -12611,6 +12419,11 @@ swing.progressBar()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -12628,6 +12441,11 @@ swing.progressBar()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -12693,24 +12511,6 @@ swing.progressBar()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -13132,6 +12932,11 @@ swing.radioButton('Click Me')
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -13149,6 +12954,11 @@ swing.radioButton('Click Me')
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -13214,24 +13024,6 @@ swing.radioButton('Click Me')
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -13700,6 +13492,11 @@ swing.radioButtonMenuItem('Click Me')
 | icon:check[]
 | icon:check[]
 
+| `focusTraversalKeys`
+| `Object`
+| icon:check[]
+| icon:check[]
+
 | `focusTraversalPolicy`
 | `jdk:java.awt.FocusTraversalPolicy[FocusTraversalPolicy]`
 | icon:check[]
@@ -13762,19 +13559,6 @@ swing.radioButtonMenuItem('Click Me')
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -14105,6 +13889,11 @@ swing.scrollBar()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -14122,6 +13911,11 @@ swing.scrollBar()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -14187,24 +13981,6 @@ swing.scrollBar()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -14522,6 +14298,11 @@ swing.scrollPane()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -14539,6 +14320,11 @@ swing.scrollPane()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -14604,24 +14390,6 @@ swing.scrollPane()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -14874,6 +14642,11 @@ swing.separator()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -14891,6 +14664,11 @@ swing.separator()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -14956,24 +14734,6 @@ swing.separator()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -15301,6 +15061,11 @@ swing.slider()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -15318,6 +15083,11 @@ swing.slider()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -15383,24 +15153,6 @@ swing.slider()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -15678,6 +15430,11 @@ swing.spinner()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -15695,6 +15452,11 @@ swing.spinner()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -15760,24 +15522,6 @@ swing.spinner()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -16294,6 +16038,11 @@ swing.splitPane()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -16311,6 +16060,11 @@ swing.splitPane()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -16379,24 +16133,6 @@ swing.splitPane()
 
 |===
 
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
-
-|===
-
 '''
 
 [[swing-widget-springLayout]]
@@ -16450,10 +16186,55 @@ swing.tabbedPane()
 | icon:check[]
 | 
 
+| `backgroundAt`
+| `Object`
+| icon:check[]
+| icon:check[]
+
+| `boundsAt`
+| `Object`
+| icon:check[]
+| 
+
 | `changeListeners`
 | `jdk:javax.swing.event.ChangeListener[ChangeListener&#91;&#93;]`
 | icon:check[]
 | 
+
+| `componentAt`
+| `Object`
+| icon:check[]
+| icon:check[]
+
+| `disabledIconAt`
+| `Object`
+| icon:check[]
+| icon:check[]
+
+| `displayedMnemonicIndexAt`
+| `Object`
+| icon:check[]
+| icon:check[]
+
+| `enabledAt`
+| `Object`
+| 
+| icon:check[]
+
+| `foregroundAt`
+| `Object`
+| icon:check[]
+| icon:check[]
+
+| `iconAt`
+| `Object`
+| icon:check[]
+| icon:check[]
+
+| `mnemonicAt`
+| `Object`
+| icon:check[]
+| icon:check[]
 
 | `model`
 | `jdk:javax.swing.SingleSelectionModel[SingleSelectionModel]`
@@ -16467,6 +16248,11 @@ swing.tabbedPane()
 
 | `selectedIndex`
 | `int`
+| icon:check[]
+| icon:check[]
+
+| `tabComponentAt`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -16489,6 +16275,16 @@ swing.tabbedPane()
 | `int`
 | icon:check[]
 | 
+
+| `titleAt`
+| `Object`
+| icon:check[]
+| icon:check[]
+
+| `toolTipTextAt`
+| `Object`
+| icon:check[]
+| icon:check[]
 
 |===
 
@@ -16696,6 +16492,11 @@ swing.tabbedPane()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -16713,6 +16514,11 @@ swing.tabbedPane()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -16781,84 +16587,6 @@ swing.tabbedPane()
 
 |===
 
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `backgroundAt`
-| `Object`
-| 
-| 
-
-| `boundsAt`
-| `Object`
-| 
-| 
-
-| `component`
-| `Object`
-| 
-| 
-
-| `componentAt`
-| `Object`
-| 
-| 
-
-| `disabledIconAt`
-| `Object`
-| 
-| 
-
-| `displayedMnemonicIndexAt`
-| `Object`
-| 
-| 
-
-| `enabledAt`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
-
-| `foregroundAt`
-| `Object`
-| 
-| 
-
-| `iconAt`
-| `Object`
-| 
-| 
-
-| `mnemonicAt`
-| `Object`
-| 
-| 
-
-| `tabComponentAt`
-| `Object`
-| 
-| 
-
-| `titleAt`
-| `Object`
-| 
-| 
-
-| `toolTipTextAt`
-| `Object`
-| 
-| 
-
-|===
-
 '''
 
 [[swing-widget-table]]
@@ -16922,6 +16650,11 @@ swing.table()
 | icon:check[]
 | icon:check[]
 
+| `columnClass`
+| `Object`
+| icon:check[]
+| 
+
 | `columnCount`
 | `int`
 | icon:check[]
@@ -16932,9 +16665,19 @@ swing.table()
 | icon:check[]
 | icon:check[]
 
+| `columnName`
+| `Object`
+| icon:check[]
+| 
+
 | `columnSelectionAllowed`
 | `boolean`
 | icon:check[]
+| icon:check[]
+
+| `columnSelectionInterval`
+| `Object`
+| 
 | icon:check[]
 
 | `dragEnabled`
@@ -17015,6 +16758,11 @@ swing.table()
 | `rowSelectionAllowed`
 | `boolean`
 | icon:check[]
+| icon:check[]
+
+| `rowSelectionInterval`
+| `Object`
+| 
 | icon:check[]
 
 | `rowSorter`
@@ -17318,6 +17066,11 @@ swing.table()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -17335,6 +17088,11 @@ swing.table()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -17400,44 +17158,6 @@ swing.table()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `columnClass`
-| `Object`
-| 
-| 
-
-| `columnName`
-| `Object`
-| 
-| 
-
-| `columnSelectionInterval`
-| `Object`
-| 
-| 
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
-
-| `rowSelectionInterval`
-| `Object`
-| 
-| 
 
 |===
 
@@ -17610,6 +17330,21 @@ swing.textArea(text: 'initial text', columns: 20)
 
 | `lineCount`
 | `int`
+| icon:check[]
+| 
+
+| `lineEndOffset`
+| `Object`
+| icon:check[]
+| 
+
+| `lineOfOffset`
+| `Object`
+| icon:check[]
+| 
+
+| `lineStartOffset`
+| `Object`
 | icon:check[]
 | 
 
@@ -17987,6 +17722,11 @@ swing.textArea(text: 'initial text', columns: 20)
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -18004,6 +17744,11 @@ swing.textArea(text: 'initial text', columns: 20)
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -18069,39 +17814,6 @@ swing.textArea(text: 'initial text', columns: 20)
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
-
-| `lineEndOffset`
-| `Object`
-| 
-| 
-
-| `lineOfOffset`
-| `Object`
-| 
-| 
-
-| `lineStartOffset`
-| `Object`
-| 
-| 
 
 |===
 
@@ -18527,6 +18239,11 @@ swing.textField(text: 'initial text', columns: 20)
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -18544,6 +18261,11 @@ swing.textField(text: 'initial text', columns: 20)
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -18609,24 +18331,6 @@ swing.textField(text: 'initial text', columns: 20)
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -19070,6 +18774,11 @@ swing.textPane(text: 'initial text', columns: 20)
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -19087,6 +18796,11 @@ swing.textPane(text: 'initial text', columns: 20)
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -19152,24 +18866,6 @@ swing.textPane(text: 'initial text', columns: 20)
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -19591,6 +19287,11 @@ swing.toggleButton('Click Me')
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -19608,6 +19309,11 @@ swing.toggleButton('Click Me')
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -19676,24 +19382,6 @@ swing.toggleButton('Click Me')
 
 |===
 
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
-
-|===
-
 '''
 
 [[swing-widget-toolBar]]
@@ -19736,6 +19424,11 @@ swing.toolBar()
 | `boolean`
 | icon:check[]
 | icon:check[]
+
+| `componentAtIndex`
+| `Object`
+| icon:check[]
+| 
 
 | `floatable`
 | `boolean`
@@ -19963,6 +19656,11 @@ swing.toolBar()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -19980,6 +19678,11 @@ swing.toolBar()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -20045,29 +19748,6 @@ swing.toolBar()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `componentAtIndex`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -20215,6 +19895,11 @@ swing.tree()
 | icon:check[]
 | icon:check[]
 
+| `pathForRow`
+| `Object`
+| icon:check[]
+| 
+
 | `preferredScrollableViewportSize`
 | `jdk:java.awt.Dimension[Dimension]`
 | icon:check[]
@@ -20224,6 +19909,11 @@ swing.tree()
 | `boolean`
 | icon:check[]
 | icon:check[]
+
+| `rowBounds`
+| `Object`
+| icon:check[]
+| 
 
 | `rowCount`
 | `int`
@@ -20259,6 +19949,11 @@ swing.tree()
 | `boolean`
 | icon:check[]
 | 
+
+| `selectionInterval`
+| `Object`
+| 
+| icon:check[]
 
 | `selectionModel`
 | `jdk:javax.swing.tree.TreeSelectionModel[TreeSelectionModel]`
@@ -20521,6 +20216,11 @@ swing.tree()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -20538,6 +20238,11 @@ swing.tree()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -20603,39 +20308,6 @@ swing.tree()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
-
-| `pathForRow`
-| `Object`
-| 
-| 
-
-| `rowBounds`
-| `Object`
-| 
-| 
-
-| `selectionInterval`
-| `Object`
-| 
-| 
 
 |===
 
@@ -20883,6 +20555,11 @@ swing.vbox()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -20900,6 +20577,11 @@ swing.vbox()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -20965,24 +20647,6 @@ swing.vbox()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -21281,6 +20945,11 @@ swing.viewport()
 |===
 | Property | Type | Readable | Writable
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -21298,6 +20967,11 @@ swing.viewport()
 
 | `focusCycleRoot`
 | `boolean`
+| icon:check[]
+| icon:check[]
+
+| `focusTraversalKeys`
+| `Object`
 | icon:check[]
 | icon:check[]
 
@@ -21363,24 +21037,6 @@ swing.viewport()
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
@@ -21576,6 +21232,11 @@ swing.window(title: 'My Window')
 | icon:check[]
 | 
 
+| `focusTraversalKeys`
+| `Object`
+| icon:check[]
+| icon:check[]
+
 | `focusableWindow`
 | `boolean`
 | icon:check[]
@@ -21724,6 +21385,11 @@ swing.window(title: 'My Window')
 | icon:check[]
 | 
 
+| `component`
+| `Object`
+| icon:check[]
+| 
+
 | `componentCount`
 | `int`
 | icon:check[]
@@ -21816,24 +21482,6 @@ swing.window(title: 'My Window')
 | `boolean`
 | icon:check[]
 | icon:check[]
-
-|===
-
-*Other properties*
-
-[cols="2,2,1,1", options="header"]
-|===
-| Property | Type | Readable | Writable
-
-| `component`
-| `Object`
-| 
-| 
-
-| `focusTraversalKeys`
-| `Object`
-| 
-| 
 
 |===
 
