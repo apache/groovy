@@ -743,7 +743,10 @@ type conversion (e.g. `String` to `int`, `boolean`, `BigDecimal`), use
 The `parseTextAs` and `parseAs` methods on `XmlParser` parse XML directly
 into typed objects using Jackson's `ObjectMapper.convertValue`, which
 handles type conversion automatically. This requires `jackson-databind`
-on the classpath -- a clear error is thrown if it is absent.
+on the classpath -- a clear error is thrown if it is absent. Jackson 3
+(`tools.jackson.core:jackson-databind`) is used when present, otherwise
+Jackson 2 (`com.fasterxml.jackson.core:jackson-databind`); either way an
+element with no matching property fails the conversion.
 
 [source,groovy]
 ----
@@ -784,8 +787,8 @@ directly:
 
 [source,groovy]
 ----
-@Grab('com.fasterxml.jackson.dataformat:jackson-dataformat-xml')
-import com.fasterxml.jackson.dataformat.xml.XmlMapper
+@Grab('tools.jackson.dataformat:jackson-dataformat-xml')
+import tools.jackson.dataformat.xml.XmlMapper
 
 def config = new XmlMapper().readValue(xmlString, ServerConfig)
 ----

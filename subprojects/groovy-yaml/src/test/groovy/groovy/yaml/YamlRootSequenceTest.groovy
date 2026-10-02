@@ -16,24 +16,34 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-plugins {
-    id 'org.apache.groovy-library'
-}
+package groovy.yaml
 
-dependencies {
-    api project(':')  // TomlBuilder extends GroovyObjectSupport...
-    implementation "tools.jackson.dataformat:jackson-dataformat-toml:${versions.jackson3}"
-    implementation projects.groovyJson
-    testImplementation projects.groovyTest
-    testRuntimeOnly projects.groovyAnt // for JavadocAssertionTests
-}
+import org.junit.jupiter.api.Test
 
-plugins.withId('eclipse') {
-    eclipse.classpath.file.whenMerged {
-        entries.removeAll { entry -> entry.path in ['/groovy-ant', '/groovy-groovydoc'] }
+/**
+ * A sequence at the root of a document is the document's value, not a list of documents.
+ */
+class YamlRootSequenceTest {
+
+    private static Object parse(String yaml) {
+        new YamlSlurper().parseText(yaml)
     }
-}
 
-groovyLibrary {
-    optionalModule()
+    @Test
+    void testSingleItemRootSequenceStaysAList() {
+        assert parse('- x') == ['x']
+        assert parse('[1]') == [1]
+    }
+
+    @Test
+    void testNestedRootSequenceKeepsEveryLevel() {
+        assert parse('[[[]]]') == [[[]]]
+        assert parse('- - a\n  - b\n') == [['a', 'b']]
+    }
+
+    @Test
+    void testDocumentsThatAreSequencesAreCollectedAsAList() {
+        assert parse('---\n- a\n---\n- b\n') == [['a'], ['b']]
+        assert parse('---\n- only\n') == ['only']
+    }
 }

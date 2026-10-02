@@ -20,18 +20,22 @@ package org.apache.groovy.xml.util;
 
 import groovy.xml.XmlRuntimeException;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 
 /**
  * Internal helper for optional Jackson databinding support.
  * Uses reflection to avoid a compile-time dependency on jackson-databind.
+ * Jackson 3 ({@code tools.jackson.core:jackson-databind}) is used when present,
+ * otherwise Jackson 2 ({@code com.fasterxml.jackson.core:jackson-databind}).
  *
  * @since 6.0.0
  */
 public class JacksonHelper {
 
-    private static final String OBJECT_MAPPER_CLASS = "com.fasterxml.jackson.databind.ObjectMapper";
+    private static final String JACKSON3_JSON_MAPPER_CLASS = "tools.jackson.databind.json.JsonMapper";
+    private static final String JACKSON2_OBJECT_MAPPER_CLASS = "com.fasterxml.jackson.databind.ObjectMapper";
 
     // Lazily cached mapper and method — initialized on first use, thread-safe via volatile + holder
     private static volatile Object cachedMapper;
@@ -39,7 +43,7 @@ public class JacksonHelper {
 
     /**
      * Converts a Map to a typed object using Jackson's ObjectMapper.convertValue.
-     * Requires jackson-databind on the classpath.
+     * Requires jackson-databind (Jackson 3 or Jackson 2) on the classpath.
      *
      * @param map  the source map
      * @param type the target type
@@ -55,6 +59,9 @@ public class JacksonHelper {
             return type.cast(cachedConvertValue.invoke(cachedMapper, map, type));
         } catch (XmlRuntimeException e) {
             throw e;
+        } catch (InvocationTargetException e) {
+            // report Jackson's own exception rather than the reflective wrapper
+            throw new XmlRuntimeException("Failed to convert XML map to " + type.getName(), e.getCause());
         } catch (Exception e) {
             throw new XmlRuntimeException("Failed to convert XML map to " + type.getName(), e);
         }
@@ -62,15 +69,29 @@ public class JacksonHelper {
 
     private static synchronized void initMapper() {
         if (cachedMapper != null) return;
-        Class<?> omClass = loadOptionalClass(OBJECT_MAPPER_CLASS);
-        if (omClass == null) {
-            throw new XmlRuntimeException(
-                    "Typed XML parsing requires jackson-databind on the classpath. "
-                            + "Add com.fasterxml.jackson.core:jackson-databind to your dependencies.");
-        }
+        Object mapper;
         try {
-            cachedMapper = omClass.getDeclaredConstructor().newInstance();
-            cachedConvertValue = omClass.getMethod("convertValue", Object.class, Class.class);
+            Class<?> jsonMapperClass = loadOptionalClass(JACKSON3_JSON_MAPPER_CLASS);
+            if (jsonMapperClass != null) {
+                // Jackson 2's defaults (for example failing on an unknown property), so a typed
+                // parse behaves the same whichever Jackson version the application carries
+                Object builder = jsonMapperClass.getMethod("builderWithJackson2Defaults").invoke(null);
+                mapper = builder.getClass().getMethod("build").invoke(builder);
+            } else {
+                Class<?> objectMapperClass = loadOptionalClass(JACKSON2_OBJECT_MAPPER_CLASS);
+                if (objectMapperClass == null) {
+                    throw new XmlRuntimeException(
+                            "Typed XML parsing requires jackson-databind on the classpath. "
+                                    + "Add tools.jackson.core:jackson-databind (Jackson 3) or "
+                                    + "com.fasterxml.jackson.core:jackson-databind (Jackson 2) to your dependencies.");
+                }
+                mapper = objectMapperClass.getDeclaredConstructor().newInstance();
+            }
+            // publish the method before the mapper: convertMapToType reads cachedMapper unsynchronized
+            cachedConvertValue = mapper.getClass().getMethod("convertValue", Object.class, Class.class);
+            cachedMapper = mapper;
+        } catch (XmlRuntimeException e) {
+            throw e;
         } catch (Exception e) {
             throw new XmlRuntimeException("Failed to initialize Jackson ObjectMapper", e);
         }
