@@ -186,6 +186,8 @@ final class AstBuilderHelperTest {
                         }
                         """, "Annotation type elements cannot have a void return type"),
                 Arguments.of("List < Integer name", "Missing '>'"),
+                Arguments.of("List < Integer 1, 2", "Missing '>'"),
+                Arguments.of("List < Integer name foo", "Missing '>'"),
                 Arguments.of("1 = 2", "The left-hand side of an assignment must be a variable or a field"),
                 Arguments.of("foo(String a)", "Invalid method declaration; a return type or 'def' is required"),
                 Arguments.of("""

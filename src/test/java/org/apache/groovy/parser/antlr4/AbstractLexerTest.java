@@ -31,12 +31,15 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.apache.groovy.parser.antlr4.GroovyLexer.CapitalizedIdentifier;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.DIV;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.FloatingPointLiteral;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.StringLiteral;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.GStringBegin;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.GStringEnd;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.GStringPathPart;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.Identifier;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.IntegerLiteral;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.NL;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -148,8 +151,76 @@ final class AbstractLexerTest {
                 Arguments.of("\"C:\\Users\\me\"", "Illegal escape character: '\\U'", 1, 4),
                 Arguments.of("\"C:\\Users", "Illegal escape character: '\\U'", 1, 4),
                 Arguments.of("/* comment", "Unclosed comment", 1, 1),
-                Arguments.of("    /* comment", "Unclosed comment", 1, 5)
+                Arguments.of("    /* comment", "Unclosed comment", 1, 5),
+                Arguments.of("/hello", "Unclosed string literal", 1, 1),
+                Arguments.of("    /hello", "Unclosed string literal", 1, 5),
+                Arguments.of("/hello\nworld", "Unclosed string literal", 1, 1),
+                Arguments.of("/", "Unclosed string literal", 1, 1)
         );
+    }
+
+    @Test
+    void closedSlashyAndDivisionStayDistinct() {
+        List<Token> slashy = defaultChannel("/ab/");
+        assertEquals(StringLiteral, slashy.get(0).getType());
+        assertEquals("/ab/", slashy.get(0).getText());
+
+        List<Token> division = defaultChannel("a / b");
+        assertEquals(Identifier, division.get(0).getType());
+        assertEquals(DIV, division.get(1).getType());
+        assertEquals(Identifier, division.get(2).getType());
+
+        List<Token> dollar = defaultChannel("$/ab/$");
+        assertEquals(StringLiteral, dollar.get(0).getType());
+        assertEquals("$/ab/$", dollar.get(0).getText());
+    }
+
+    @Test
+    void errorIgnoredUnclosedSlashyTokenizesWithoutThrowing() {
+        GroovyLangLexer lexer = new GroovyLangLexer(CharStreams.fromString("s = /hello"));
+        lexer.setErrorIgnored(true);
+        List<Token> tokens = assertDoesNotThrow(() -> collect(lexer));
+        assertEquals(Token.EOF, tokens.get(tokens.size() - 1).getType());
+        assertTrue(tokens.stream().anyMatch(t -> t.getType() == StringLiteral && "/hello".equals(t.getText())),
+                tokens.toString());
+    }
+
+    @Test
+    void closedSlashyAfterNewlineIsStillAString() {
+        List<Token> tokens = defaultChannel("9\n/3/");
+        assertEquals(IntegerLiteral, tokens.get(0).getType());
+        assertEquals(StringLiteral, tokens.get(2).getType());
+        assertEquals("/3/", tokens.get(2).getText());
+    }
+
+    @Test
+    void lineCommentIsNotAnEmptySlashy() {
+        // Bare // is length 2, the same length as an empty slashy. StringLiteral
+        // is the earlier rule, so it would win that tie.
+        List<Token> tokens = defaultChannel("s = //\n1");
+        assertTrue(tokens.stream().anyMatch(t -> t.getType() == NL && "//".equals(t.getText())),
+                tokens.toString());
+        assertTrue(tokens.stream().noneMatch(t -> t.getType() == StringLiteral || t.getType() == DIV),
+                tokens.toString());
+        assertEquals(IntegerLiteral, tokens.get(tokens.size() - 1).getType());
+    }
+
+    @Test
+    void divisionAcrossLinesIsNotAnUnclosedSlashy() {
+        List<Token> tokens = defaultChannel("9\n/\n3");
+        assertEquals(IntegerLiteral, tokens.get(0).getType());
+        assertEquals(DIV, tokens.get(2).getType());
+        assertEquals(IntegerLiteral, tokens.get(4).getType());
+    }
+
+    @Test
+    void dollarThenDivisionIsNotAString() {
+        // `$` is an identifier. `$/2` is division, not an unclosed dollar-slashy string.
+        List<Token> tokens = defaultChannel("($/2)");
+        assertEquals(Identifier, tokens.get(1).getType());
+        assertEquals("$", tokens.get(1).getText());
+        assertEquals(DIV, tokens.get(2).getType());
+        assertEquals(IntegerLiteral, tokens.get(3).getType());
     }
 
     @Test
