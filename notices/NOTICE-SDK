@@ -40,6 +40,13 @@ which is available under the terms of the Eclipse Public License v1.0
 This product bundles several of the JUnit5 jars (junit.org)
 which are available under the terms of the Eclipse Public License v2.0
 
+Eclipse LSP4J
+
+This product bundles Eclipse LSP4J and Eclipse LSP4J JSON-RPC
+(org.eclipse.lsp4j) as binary dependencies of the optional groovy-lsp module.
+Those artifacts are licensed under the Eclipse Public License 2.0.
+See licenses/lsp4j-license.txt.
+
 This product embeds the OpenBeans jar within its grooid jar artifacts
 OpenBeans includes/uses files from Apache Harmony and the following notice applies
 Copyright 2006, 2010 The Apache Software Foundation.

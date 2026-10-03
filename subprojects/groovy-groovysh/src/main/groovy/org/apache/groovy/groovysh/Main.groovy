@@ -40,6 +40,7 @@ import org.jline.console.Printer
 import org.jline.console.impl.SystemHighlighter
 import org.jline.keymap.KeyMap
 import org.jline.reader.Binding
+import org.jline.reader.Completer
 import org.jline.reader.EndOfFileException
 import org.jline.reader.LineReader
 import org.jline.reader.LineReader.Option
@@ -267,6 +268,7 @@ class Main {
             return 0
         }
         String evaluate = options.e ?: null
+        def languageSession = null
 
         try {
             DefaultParser parser = new DefaultParser(
@@ -376,6 +378,7 @@ class Main {
                 invoke '/alias', '/h', '/help'
                 setConsoleOption "ignoreUnknownPipes", true
             }
+            languageSession = installLanguageSession(scriptEngine, systemRegistry)
 
             def highlighter = new SystemHighlighter(commandHighlighter, argsHighlighter, groovyHighlighter).tap {
                 if (!OSUtils.IS_WINDOWS) {
@@ -476,6 +479,8 @@ class Main {
         } catch (Throwable t) {
             t.printStackTrace()
             return 1
+        } finally {
+            languageSession?.close()
         }
         return 0
     }
@@ -490,6 +495,28 @@ class Main {
      */
     static int start(String[] args) {
         start(GroovyshOptions.builder().build(), args)
+    }
+
+    /**
+     * Attaches the optional groovy-lsp session when that module is on the
+     * classpath. Loaded reflectively so groovysh stays usable without
+     * groovy-lsp or LSP4J.
+     *
+     * @param scriptEngine REPL engine
+     * @param systemRegistry command registry
+     * @return the session, or {@code null}
+     */
+    private static Object installLanguageSession(GroovyEngine scriptEngine, GroovySystemRegistry systemRegistry) {
+        try {
+            Class.forName('org.apache.groovy.lsp.internal.engine.GroovyLanguageEngine')
+            def sessionClass = Class.forName('org.apache.groovy.groovysh.language.GroovyshLanguageSession')
+            def session = sessionClass.getConstructor(GroovyEngine).newInstance(scriptEngine)
+            systemRegistry.addCompleter((Completer) session)
+            systemRegistry.setScriptDescription { line -> session.scriptDescription(line) }
+            return session
+        } catch (Throwable ignored) {
+            return null
+        }
     }
 
     private static void emitResult(Printer printer, Object result, GroovyshOptions.ResultHandler handler) throws Exception {

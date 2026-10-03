@@ -167,6 +167,12 @@ being run by adding a new JAR or a directory to the classpath from the
 `Script` menu
 * Error hyperlinking from the output area when a compilation error is
 expected or when an exception is thrown
+* When the optional `groovy-lsp` jar is on the classpath, the editor
+compiles the unsaved buffer in the background and underlines compiler
+diagnostics. `Ctrl+Space` offers compiler-backed completions. Adding
+jars or directories to the classpath is visible to that compile.
+Scripts still run through `GroovyShell`. The language host answers
+questions about the buffer.
 
 [[GroovyConsole-EmbeddingtheConsole]]
 == Embedding the Console

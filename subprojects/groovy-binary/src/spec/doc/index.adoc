@@ -99,6 +99,8 @@ include::../../../../../subprojects/groovy-console/src/spec/doc/groovy-console.a
 
 include::../../../../../subprojects/groovy-groovydoc/src/spec/doc/groovydoc.adoc[leveloffset=+2]
 
+include::../../../../../subprojects/groovy-lsp/src/spec/doc/groovy-lsp.adoc[leveloffset=+2]
+
 include::../../../../../src/spec/doc/tools-ide.adoc[leveloffset=+2]
 
 == User Guides

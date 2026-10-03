@@ -297,6 +297,7 @@ guide when working in its directory tree.
 | Subproject | Scope |
 |---|---|
 | [`groovy-groovysh`](subprojects/groovy-groovysh/AGENTS.md) | Interactive REPL — vendored JLine forks, terminal-aware test infrastructure, JLine bump procedure (subproject `ARCHITECTURE.md` is the canonical contributor map) |
+| [`groovy-lsp`](subprojects/groovy-lsp/AGENTS.md) | Language Server Protocol — LSP4J transport, compiler-backed features, position encoding, capability policy (subproject `ARCHITECTURE.md` is the canonical contributor map) |
 
 ## Where to ask
 

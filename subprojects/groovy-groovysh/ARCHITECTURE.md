@@ -238,6 +238,15 @@ the public seams rather than copying `Main`:
 - `ExtraConsoleCommands` — public top-level class for `/clear`,
   `/pwd`, `/cd`, the POSIX-style commands, and `/!`.
   `Main.ExtraConsoleCommands` is a deprecated subclass.
+- Optional `groovy-lsp`: `GroovyshLanguageSession` is loaded from
+  `Main` with `Class.forName` when
+  `org.apache.groovy.lsp.internal.engine.GroovyLanguageEngine` is
+  present. groovysh depends on groovy-lsp as `compileOnly` so
+  groovy-all does not grow an LSP4J dependency. The session
+  implements JLine `Completer`, wraps `scriptDescription`, and
+  composes `GroovyEngine.getBuffer()` plus binding type
+  declarations plus the current line onto `groovy-buffer:repl`.
+  Tests for it live at the engine layer (no terminal).
 
 Where a `GroovyshOptions` setting has an equivalent on JLine's
 `ShellBuilder`, it uses the same name and parameter type on purpose.
