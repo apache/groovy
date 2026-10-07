@@ -68,6 +68,9 @@ public class LocatedMessage extends SimpleMessage {
 
     @Override
     public Diagnostic toDiagnostic() {
+        if (context == null) {
+            return new Diagnostic(sourceName(owner), -1, -1, message);
+        }
         return new Diagnostic(sourceName(owner), context.getStartLine(), context.getStartColumn(), message);
     }
 
@@ -82,9 +85,9 @@ public class LocatedMessage extends SimpleMessage {
         if (owner instanceof SourceUnit source) {
 
             String name = source.getName();
-            int line = context.getStartLine();
-            int column = context.getStartColumn();
-            String sample = source.getSample(line, column, janitor);
+            int line = context == null ? -1 : context.getStartLine();
+            int column = context == null ? -1 : context.getStartColumn();
+            String sample = line > 0 ? source.getSample(line, column, janitor) : null;
 
             if (sample != null) {
                 writer.println(sample);

@@ -304,6 +304,18 @@ Eclipse Public License v2.0.  For details, see licenses/junit5-license.txt.
 
 ------------------------------------------------------------------------
 
+Eclipse LSP4J License
+
+This product bundles Eclipse LSP4J (`org.eclipse.lsp4j:org.eclipse.lsp4j`)
+and Eclipse LSP4J JSON-RPC (`org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc`)
+as binary dependencies of the optional `groovy-lsp` module.
+
+Those artifacts are licensed under the Eclipse Public License 2.0.
+See licenses/lsp4j-license.txt for the full license text.
+The source of those artifacts is not mixed into Apache Groovy's source tree.
+
+------------------------------------------------------------------------
+
 MXParser License (dependency of the optional XStream dependency
 used when serializing AST as XML)
 
