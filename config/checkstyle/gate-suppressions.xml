@@ -32,59 +32,60 @@
   graduates to the gate before the tree is clean for it may add a temporary
   baseline section here; shrink it as files are cleaned and never add to it
   for new code.
-  The `files` attribute is a regex matched against the path.
+  The `files` attribute is a regex matched against the path; separators are
+  written [/\\] so that it matches on Windows as well.
 -->
 <suppressions>
 
     <!-- deliberate exceptions: the simple name is taken by another import -->
     <!-- XmlUtil imports groovy.util.Node and works with org.w3c.dom.Node as well -->
-    <suppress id="FullyQualifiedName" files="subprojects/groovy-xml/src/main/java/groovy/xml/XmlUtil\.java$"/>
-    <suppress id="FullyQualifiedNameInJavadoc" files="subprojects/groovy-xml/src/main/java/groovy/xml/XmlUtil\.java$"/>
+    <suppress id="FullyQualifiedName" files="subprojects[/\\]groovy-xml[/\\]src[/\\]main[/\\]java[/\\]groovy[/\\]xml[/\\]XmlUtil\.java$"/>
+    <suppress id="FullyQualifiedNameInJavadoc" files="subprojects[/\\]groovy-xml[/\\]src[/\\]main[/\\]java[/\\]groovy[/\\]xml[/\\]XmlUtil\.java$"/>
     <!-- XmlExtensions imports org.w3c.dom.Node and extends groovy.util.Node as well -->
-    <suppress id="FullyQualifiedName" files="subprojects/groovy-xml/src/main/java/org/apache/groovy/xml/extensions/XmlExtensions\.java$"/>
-    <suppress id="FullyQualifiedNameInJavadoc" files="subprojects/groovy-xml/src/main/java/org/apache/groovy/xml/extensions/XmlExtensions\.java$"/>
+    <suppress id="FullyQualifiedName" files="subprojects[/\\]groovy-xml[/\\]src[/\\]main[/\\]java[/\\]org[/\\]apache[/\\]groovy[/\\]xml[/\\]extensions[/\\]XmlExtensions\.java$"/>
+    <suppress id="FullyQualifiedNameInJavadoc" files="subprojects[/\\]groovy-xml[/\\]src[/\\]main[/\\]java[/\\]org[/\\]apache[/\\]groovy[/\\]xml[/\\]extensions[/\\]XmlExtensions\.java$"/>
     <!-- DOMCategory imports groovy.namespace.QName and takes a javax.xml.namespace.QName as well -->
-    <suppress id="FullyQualifiedName" files="subprojects/groovy-xml/src/main/java/groovy/xml/dom/DOMCategory\.java$"/>
+    <suppress id="FullyQualifiedName" files="subprojects[/\\]groovy-xml[/\\]src[/\\]main[/\\]java[/\\]groovy[/\\]xml[/\\]dom[/\\]DOMCategory\.java$"/>
     <!-- DataSet imports org.codehaus.groovy.ast.stmt.Statement and closes java.sql.Statements as well -->
-    <suppress id="FullyQualifiedName" files="subprojects/groovy-sql/src/main/java/groovy/sql/DataSet\.java$"/>
-    <suppress id="FullyQualifiedNameInJavadoc" files="subprojects/groovy-sql/src/main/java/groovy/sql/DataSet\.java$"/>
+    <suppress id="FullyQualifiedName" files="subprojects[/\\]groovy-sql[/\\]src[/\\]main[/\\]java[/\\]groovy[/\\]sql[/\\]DataSet\.java$"/>
+    <suppress id="FullyQualifiedNameInJavadoc" files="subprojects[/\\]groovy-sql[/\\]src[/\\]main[/\\]java[/\\]groovy[/\\]sql[/\\]DataSet\.java$"/>
     <!-- Groovyc imports org.apache.tools.ant.types.Path and handles a java.nio.file.Path as well -->
-    <suppress id="FullyQualifiedName" files="subprojects/groovy-ant/src/main/java/org/codehaus/groovy/ant/Groovyc\.java$"/>
+    <suppress id="FullyQualifiedName" files="subprojects[/\\]groovy-ant[/\\]src[/\\]main[/\\]java[/\\]org[/\\]codehaus[/\\]groovy[/\\]ant[/\\]Groovyc\.java$"/>
     <!-- GroovyPosixCommands imports org.jline.utils.InputStreamReader and reads with a java.io.InputStreamReader as well -->
-    <suppress id="FullyQualifiedName" files="subprojects/groovy-groovysh/src/main/groovy/org/apache/groovy/groovysh/jline/GroovyPosixCommands\.java$"/>
+    <suppress id="FullyQualifiedName" files="subprojects[/\\]groovy-groovysh[/\\]src[/\\]main[/\\]groovy[/\\]org[/\\]apache[/\\]groovy[/\\]groovysh[/\\]jline[/\\]GroovyPosixCommands\.java$"/>
     <!-- the deprecated callsite classes point at their namesakes in org.codehaus.groovy.runtime -->
-    <suppress id="FullyQualifiedNameInJavadoc" files="subprojects/groovy-callsite/src/main/java/org/codehaus/groovy/runtime/callsite/BooleanClosure(ForMapPredicate|Predicate|Wrapper)\.java$"/>
+    <suppress id="FullyQualifiedNameInJavadoc" files="subprojects[/\\]groovy-callsite[/\\]src[/\\]main[/\\]java[/\\]org[/\\]codehaus[/\\]groovy[/\\]runtime[/\\]callsite[/\\]BooleanClosure(ForMapPredicate|Predicate|Wrapper)\.java$"/>
     <!-- the contract generators import the annotation and work with the same-named domain class as well -->
-    <suppress id="FullyQualifiedName" files="subprojects/groovy-contracts/src/main/java/org/apache/groovy/contracts/generation/(ClassInvariant|Postcondition|Precondition)Generator\.java$"/>
-    <suppress id="FullyQualifiedNameInJavadoc" files="subprojects/groovy-contracts/src/main/java/org/apache/groovy/contracts/generation/(ClassInvariant|Postcondition|Precondition)Generator\.java$"/>
+    <suppress id="FullyQualifiedName" files="subprojects[/\\]groovy-contracts[/\\]src[/\\]main[/\\]java[/\\]org[/\\]apache[/\\]groovy[/\\]contracts[/\\]generation[/\\](ClassInvariant|Postcondition|Precondition)Generator\.java$"/>
+    <suppress id="FullyQualifiedNameInJavadoc" files="subprojects[/\\]groovy-contracts[/\\]src[/\\]main[/\\]java[/\\]org[/\\]apache[/\\]groovy[/\\]contracts[/\\]generation[/\\](ClassInvariant|Postcondition|Precondition)Generator\.java$"/>
     <!-- groovydoc fixtures: the two Foo classes link to each other by name, which is what the alias test renders -->
-    <suppress id="FullyQualifiedNameInJavadoc" files="subprojects/groovy-groovydoc/src/test/groovy/org/codehaus/groovy/tools/groovydoc/testfiles/alias/(api|lib)/Foo\.java$"/>
+    <suppress id="FullyQualifiedNameInJavadoc" files="subprojects[/\\]groovy-groovydoc[/\\]src[/\\]test[/\\]groovy[/\\]org[/\\]codehaus[/\\]groovy[/\\]tools[/\\]groovydoc[/\\]testfiles[/\\]alias[/\\](api|lib)[/\\]Foo\.java$"/>
     <!-- org.apache.groovy.util.Arrays is itself named Arrays and delegates to java.util.Arrays -->
-    <suppress id="FullyQualifiedName" files="src/main/java/org/apache/groovy/util/Arrays\.java$"/>
-    <suppress id="FullyQualifiedNameInJavadoc" files="src/main/java/org/apache/groovy/util/Arrays\.java$"/>
+    <suppress id="FullyQualifiedName" files="src[/\\]main[/\\]java[/\\]org[/\\]apache[/\\]groovy[/\\]util[/\\]Arrays\.java$"/>
+    <suppress id="FullyQualifiedNameInJavadoc" files="src[/\\]main[/\\]java[/\\]org[/\\]apache[/\\]groovy[/\\]util[/\\]Arrays\.java$"/>
     <!-- AstBuilder imports the ANTLR Token and builds org.codehaus.groovy.syntax.Tokens as well -->
-    <suppress id="FullyQualifiedName" files="src/main/java/org/apache/groovy/parser/antlr4/AstBuilder\.java$"/>
+    <suppress id="FullyQualifiedName" files="src[/\\]main[/\\]java[/\\]org[/\\]apache[/\\]groovy[/\\]parser[/\\]antlr4[/\\]AstBuilder\.java$"/>
     <!-- DefaultGroovyMethods imports the groovy.lang.groovydoc.Groovydoc class and reads the groovy.lang.Groovydoc annotation as well -->
-    <suppress id="FullyQualifiedName" files="src/main/java/org/codehaus/groovy/runtime/DefaultGroovyMethods\.java$"/>
+    <suppress id="FullyQualifiedName" files="src[/\\]main[/\\]java[/\\]org[/\\]codehaus[/\\]groovy[/\\]runtime[/\\]DefaultGroovyMethods\.java$"/>
     <!-- GroovydocManager imports the groovy.lang.Groovydoc annotation and builds groovy.lang.groovydoc.Groovydoc values -->
-    <suppress id="FullyQualifiedName" files="src/main/java/org/apache/groovy/parser/antlr4/GroovydocManager\.java$"/>
-    <suppress id="FullyQualifiedNameInJavadoc" files="src/main/java/org/apache/groovy/parser/antlr4/GroovydocManager\.java$"/>
+    <suppress id="FullyQualifiedName" files="src[/\\]main[/\\]java[/\\]org[/\\]apache[/\\]groovy[/\\]parser[/\\]antlr4[/\\]GroovydocManager\.java$"/>
+    <suppress id="FullyQualifiedNameInJavadoc" files="src[/\\]main[/\\]java[/\\]org[/\\]apache[/\\]groovy[/\\]parser[/\\]antlr4[/\\]GroovydocManager\.java$"/>
     <!-- the gls test bases import org.codehaus.groovy.ast.ClassNode and inspect ASM's org.objectweb.asm.tree.ClassNode as well -->
-    <suppress id="FullyQualifiedName" files="src/test/groovy/gls/(annotations/AnnotationsTestBase|generics/GenericsTestBase)\.java$"/>
+    <suppress id="FullyQualifiedName" files="src[/\\]test[/\\]groovy[/\\]gls[/\\](annotations[/\\]AnnotationsTestBase|generics[/\\]GenericsTestBase)\.java$"/>
     <!-- DelegatesTo declares its own nested @Target, so the annotation is java.lang.annotation.Target in full -->
-    <suppress id="FullyQualifiedName" files="src/main/java/groovy/lang/DelegatesTo\.java$"/>
+    <suppress id="FullyQualifiedName" files="src[/\\]main[/\\]java[/\\]groovy[/\\]lang[/\\]DelegatesTo\.java$"/>
     <!-- DateUtilExtensions imports java.util.Date and converts java.sql.Dates as well -->
-    <suppress id="FullyQualifiedName" files="subprojects/groovy-dateutil/src/main/java/org/apache/groovy/dateutil/extensions/DateUtilExtensions\.java$"/>
-    <suppress id="FullyQualifiedNameInJavadoc" files="subprojects/groovy-dateutil/src/main/java/org/apache/groovy/dateutil/extensions/DateUtilExtensions\.java$"/>
+    <suppress id="FullyQualifiedName" files="subprojects[/\\]groovy-dateutil[/\\]src[/\\]main[/\\]java[/\\]org[/\\]apache[/\\]groovy[/\\]dateutil[/\\]extensions[/\\]DateUtilExtensions\.java$"/>
+    <suppress id="FullyQualifiedNameInJavadoc" files="subprojects[/\\]groovy-dateutil[/\\]src[/\\]main[/\\]java[/\\]org[/\\]apache[/\\]groovy[/\\]dateutil[/\\]extensions[/\\]DateUtilExtensions\.java$"/>
     <!-- JavacJavaCompiler implements the package's own JavaCompiler and drives a javax.tools.JavaCompiler -->
-    <suppress id="FullyQualifiedName" files="src/main/java/org/codehaus/groovy/tools/javac/JavacJavaCompiler\.java$"/>
+    <suppress id="FullyQualifiedName" files="src[/\\]main[/\\]java[/\\]org[/\\]codehaus[/\\]groovy[/\\]tools[/\\]javac[/\\]JavacJavaCompiler\.java$"/>
     <!-- the shell Preferences class is itself named Preferences and stores through java.util.prefs.Preferences -->
-    <suppress id="FullyQualifiedName" files="src/main/java/org/codehaus/groovy/tools/shell/util/Preferences\.java$"/>
+    <suppress id="FullyQualifiedName" files="src[/\\]main[/\\]java[/\\]org[/\\]codehaus[/\\]groovy[/\\]tools[/\\]shell[/\\]util[/\\]Preferences\.java$"/>
     <!-- ReferenceManager shares its package with org.codehaus.groovy.util.Reference and polls java.lang.ref.References from the queue -->
-    <suppress id="FullyQualifiedName" files="src/main/java/org/codehaus/groovy/util/ReferenceManager\.java$"/>
+    <suppress id="FullyQualifiedName" files="src[/\\]main[/\\]java[/\\]org[/\\]codehaus[/\\]groovy[/\\]util[/\\]ReferenceManager\.java$"/>
     <!-- the deprecated v7 IndyInterface delegates to its v8 namesake -->
-    <suppress id="FullyQualifiedName" files="src/main/java/org/codehaus/groovy/vmplugin/v7/IndyInterface\.java$"/>
+    <suppress id="FullyQualifiedName" files="src[/\\]main[/\\]java[/\\]org[/\\]codehaus[/\\]groovy[/\\]vmplugin[/\\]v7[/\\]IndyInterface\.java$"/>
     <!-- Java8 imports org.codehaus.groovy.ast.Parameter and reads java.lang.reflect.Parameters as well -->
-    <suppress id="FullyQualifiedName" files="src/main/java/org/codehaus/groovy/vmplugin/v8/Java8\.java$"/>
+    <suppress id="FullyQualifiedName" files="src[/\\]main[/\\]java[/\\]org[/\\]codehaus[/\\]groovy[/\\]vmplugin[/\\]v8[/\\]Java8\.java$"/>
 
 </suppressions>
