@@ -310,6 +310,75 @@ final class MethodSelectionTest extends CompilableTestSupport {
         '''
     }
 
+    // GROOVY-12439
+    @Test
+    void testBDandBIPreferDoubleOverFloat() {
+        for (big in ['5.0', '5G']) {
+            assertScript """
+                class C {
+                    static m(float... x)          { 'float...'  }
+                    static m(double... x)         { 'double...' }
+                    static m2(float a, float b)   { 'float'     }
+                    static m2(double a, double b) { 'double'    }
+                    static m3(Float a, Float b)   { 'Float'     }
+                    static m3(Double a, Double b) { 'Double'    }
+                }
+
+                def z = 1
+                def d = $big
+                assert C.m(d) == 'double...'
+                assert C.m(z, d) == 'double...'
+                assert C.m(5, z, d) == 'double...'
+                assert C.m(1, 2, 3, 4, 5, 6, 7, 8, d) == 'double...'
+                assert C.m(d, d) == 'double...'
+                assert C.m2(z, d) == 'double'
+                assert C.m2(d, z) == 'double'
+                assert C.m2(d, d) == 'double'
+                assert C.m3(z, d) == 'Double'
+
+                // integral arguments alone still select float, as javac does
+                assert C.m(z, 5) == 'float...'
+                assert C.m2(z, 5) == 'float'
+            """
+        }
+    }
+
+    // GROOVY-12439
+    @Test
+    void testBDandBIStillApplicableToFloat() {
+        for (big in ['5.0', '5G']) {
+            assertScript """
+                class C {
+                    static m(float... x)        { x as List }
+                    static m2(float a, float b) { [a, b]    }
+                }
+
+                def d = $big
+                assert C.m(1, d) == [1f, 5f]
+                assert C.m2(1, d) == [1f, 5f]
+            """
+        }
+    }
+
+    // GROOVY-12439
+    @Test
+    void testBDandBIPreferNonVarargsFloatOverVarargsDouble() {
+        for (big in ['5.0', '5G']) {
+            assertScript """
+                class C {
+                    static m(float x)      { 'float'     }
+                    static m(double... x)  { 'double...' }
+                    static m2(Float x)     { 'Float'     }
+                    static m2(Double... x) { 'Double...' }
+                }
+
+                def d = $big
+                assert C.m(d) == 'float'
+                assert C.m2(d) == 'Float'
+            """
+        }
+    }
+
     @Test
     void testCallWithExendedBigDecimal() {
         assertScript '''
