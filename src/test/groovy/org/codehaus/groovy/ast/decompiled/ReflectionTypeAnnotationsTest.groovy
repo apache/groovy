@@ -20,8 +20,14 @@ package org.codehaus.groovy.ast.decompiled
 
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.decompiled.support.WhereAnno
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.junit.jupiter.api.Test
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.Opcodes
+import org.objectweb.asm.Type
+import org.objectweb.asm.TypeReference
 
 /**
  * Tests that the reflection path ({@code VMPlugin#configureClassNode}) ingests type-use
@@ -96,6 +102,32 @@ final class ReflectionTypeAnnotationsTest {
         // shared nodes must not pick up the per-use annotations
         assert ClassHelper.STRING_TYPE.typeAnnotations.isEmpty()
         assert ClassHelper.int_TYPE.typeAnnotations.isEmpty()
+    }
+
+    // GROOVY-12434: class files from earlier Groovy versions may repeat a non-repeatable type annotation
+    @Test
+    void "duplicate type use annotations are skipped"() {
+        def writer = new ClassWriter(0)
+        writer.visit(Opcodes.V17, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, 'DuplicateTypeAnnotations', null, 'java/lang/Object', null)
+        def returnAnno = { MethodVisitor mv, String value ->
+            def av = mv.visitTypeAnnotation(TypeReference.newTypeReference(TypeReference.METHOD_RETURN).value, null, Type.getDescriptor(WhereAnno), true)
+            av.visit('value', value)
+            av.visitEnd()
+        }
+        def mv = writer.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, 'dup', '()Ljava/lang/String;', null, null)
+        returnAnno(mv, 'dup')
+        returnAnno(mv, 'dup')
+        mv.visitEnd()
+        mv = writer.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, 'ok', '()Ljava/lang/String;', null, null)
+        returnAnno(mv, 'ok')
+        mv.visitEnd()
+        writer.visitEnd()
+
+        def loader = new GroovyClassLoader(getClass().classLoader)
+        def type = ClassHelper.make(loader.defineClass('DuplicateTypeAnnotations', writer.toByteArray()))
+
+        assert annos(type.getDeclaredMethods('dup')[0].returnType) == []
+        assert annos(type.getDeclaredMethods('ok' )[0].returnType) == ['ok']
     }
 
     private static List<String> annos(ClassNode type) {
