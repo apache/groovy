@@ -105,7 +105,7 @@ public class Java16 extends Java10 {
     protected void makeRecordComponents(final CompileUnit cu, final ClassNode cn, final Class<?> c) {
         if (c.isRecord()) cn.setRecordComponents(Arrays.stream(c.getRecordComponents()).map(rc -> {
             ClassNode type = makeClassNode(cu, rc.getGenericType(), rc.getType());
-            type = applyTypeAnnotations(rc.getAnnotatedType(), type);
+            type = applyTypeAnnotations(rc::getAnnotatedType, type);
             return new RecordComponentNode(cn, rc.getName(), type, Arrays.stream(rc.getAnnotations()).map(this::toAnnotationNode).collect(Collectors.toList()));
         }).collect(Collectors.toList()));
     }
