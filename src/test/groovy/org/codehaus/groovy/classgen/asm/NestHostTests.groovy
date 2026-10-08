@@ -22,6 +22,8 @@ import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.assertScript
+
 final class NestHostTests {
 
     private List<Class> compileScript(String script) {
@@ -176,5 +178,59 @@ final class NestHostTests {
                 'C$_bbb_closure3', 'C$_bbb_closure3$_closure10'
             ]
         }
+    }
+
+    // GROOVY-12440
+    @Test
+    void testNestHost8() {
+        def types = compileScript '''
+            @groovy.transform.CompileStatic
+            class C {
+                static class D {
+                    String value
+                }
+                def aaa(D d) {
+                    { -> d.value = ['a'].collect { it }.join(',') }
+                }
+                def bbb(D d) {
+                    d.with { value = ['b'].collect { it }.join(',') }
+                    d.with { it.value = ['c'].collect { it }.join(','); value = ['d'].collect { it }.join(',') }
+                }
+                def ccc() {
+                    { -> [1, 2].collect { Integer i -> i } }
+                }
+            }
+        '''
+
+        types.each { type ->
+            assert type.nestHost.name == 'C'
+            assert type.nestMembers*.name.sort() == types*.name.sort()
+        }
+    }
+
+    // GROOVY-12440
+    @Test
+    void testNestHost9() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class C {
+                static class D {
+                    String value
+                }
+                void assign(D d) {
+                    Closure c = { -> d.value = ['a'].collect { it }.join(',') }
+                    c.call()
+                }
+                List<Integer> callPrivate() {
+                    Closure<List<Integer>> c = { -> [1, 2].collect { Integer i -> secret(i) } }
+                    c.call()
+                }
+                private int secret(Integer i) {
+                    i * 10
+                }
+            }
+
+            assert new C().callPrivate() == [10, 20]
+        '''
     }
 }

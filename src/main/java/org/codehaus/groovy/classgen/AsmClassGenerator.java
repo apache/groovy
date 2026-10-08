@@ -127,6 +127,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -475,12 +476,15 @@ public class AsmClassGenerator extends ClassGenerator {
     private void moreNestmateEntries(final ClassNode classNode) {
         // edge case: nest host closures-within-closures
         int[] n = {this.context.getClosureClassIndex()};
+        // GROOVY-12440: count each expression once; TemporaryVariableExpression exposes its value more than once
+        var counted = Collections.newSetFromMap(new IdentityHashMap<ClosureExpression, Boolean>());
         for (ClassNode innerClass : getInnerClasses()) {
             if (innerClass instanceof InterfaceHelperClassNode) continue;
             var toVisit = new TreeMap<String, ClosureExpression>(); // GROOVY-11780
             var visitor = new CodeVisitorSupport() {
                 private String name = BytecodeHelper.getClassInternalName(innerClass);
                 private void visitNested(final String kind, final ClosureExpression expr) {
+                    if (!counted.add(expr)) return;
                     String nest = name + "$_" + kind + n[0]++;
                     classVisitor.visitNestMember(nest);
                     toVisit.put(nest, expr);
