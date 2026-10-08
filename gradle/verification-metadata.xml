@@ -316,6 +316,7 @@
          <trusted-key id="DBD744ACE7ADE6AA50DD591F66B50994442D2D40" group="^com[.]squareup($|([.].*))" regex="true"/>
          <trusted-key id="DC61AE5DFD409C64F592AC1A6FD54E1F311B47E9" group="org.cyclonedx"/>
          <trusted-key id="E06A36F67D8C1BD13F1F278D0CA7139CBC7026F9" group="dnsjava"/>
+         <trusted-key id="E2879931BCA1A42E55F2D64DD9B2DFBD9F3298BA" group="com.gradle"/>
          <trusted-key id="E3A9F95079E84CE201F7CF60BEDE11EAF1164480" group="org.hamcrest"/>
          <trusted-key id="E5138A8E9F2E7E42D38B14D99AEE152CDCCEBFCB" group="io.github.hakky54"/>
          <trusted-key id="E5C3B1929191DF06136CCB2B164779204E106A76" group="org.javassist" name="javassist"/>
