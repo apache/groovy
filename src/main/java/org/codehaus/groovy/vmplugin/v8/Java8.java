@@ -46,6 +46,7 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.vmplugin.v17.Java17;
 
 import java.lang.annotation.Annotation;
+import java.lang.annotation.AnnotationFormatError;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -74,6 +75,7 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Java 8 based functions.
@@ -260,6 +262,7 @@ public class Java8 implements VMPlugin {
      */
     private static final boolean TYPE_ANNOTATIONS = typeAnnotationsAvailable();
     private static final Annotation[] NO_ANNOTATIONS = new Annotation[0];
+    private static final AnnotatedType[] NO_ANNOTATED_TYPES = new AnnotatedType[0];
 
     static boolean typeAnnotationsAvailable() {
         try {
@@ -381,7 +384,7 @@ public class Java8 implements VMPlugin {
             Field[] fields = clazz.getDeclaredFields();
             for (Field f : fields) {
                 ClassNode rt = makeClassNode(compileUnit, f.getGenericType(), f.getType());
-                if (TYPE_ANNOTATIONS) rt = applyTypeAnnotations(f.getAnnotatedType(), rt);
+                if (TYPE_ANNOTATIONS) rt = applyTypeAnnotations(f::getAnnotatedType, rt);
                 FieldNode fn = new FieldNode(f.getName(), f.getModifiers(), rt, classNode, getValue(f));
                 setAnnotationMetaData(f.getAnnotations(), fn);
                 classNode.addField(fn);
@@ -389,7 +392,7 @@ public class Java8 implements VMPlugin {
             Method[] methods = ReflectionUtils.getDeclaredMethodsSorted(clazz);
             for (Method m : methods) {
                 ClassNode rt = makeClassNode(compileUnit, m.getGenericReturnType(), m.getReturnType());
-                if (TYPE_ANNOTATIONS) rt = applyTypeAnnotations(m.getAnnotatedReturnType(), rt);
+                if (TYPE_ANNOTATIONS) rt = applyTypeAnnotations(m::getAnnotatedReturnType, rt);
                 Parameter[] params = makeParameters(compileUnit, m.getGenericParameterTypes(), m.getParameterTypes(), m.getParameterAnnotations(), m);
                 ClassNode[] exceptions = makeClassNodes(compileUnit, m.getGenericExceptionTypes(), m.getExceptionTypes());
                 applyExceptionTypeAnnotations(m, exceptions);
@@ -419,10 +422,7 @@ public class Java8 implements VMPlugin {
             Class<?> sc = clazz.getSuperclass();
             if (sc != null) {
                 ClassNode superClass = makeClassNode(compileUnit, clazz.getGenericSuperclass(), sc);
-                if (TYPE_ANNOTATIONS) {
-                    AnnotatedType annotatedSuperclass = clazz.getAnnotatedSuperclass();
-                    if (annotatedSuperclass != null) superClass = applyTypeAnnotations(annotatedSuperclass, superClass);
-                }
+                if (TYPE_ANNOTATIONS) superClass = applyTypeAnnotations(clazz::getAnnotatedSuperclass, superClass);
                 classNode.setUnresolvedSuperClass(superClass);
             }
             makeInterfaceTypes(compileUnit, classNode, clazz);
@@ -547,9 +547,10 @@ public class Java8 implements VMPlugin {
                 ret[i] = makeClassNode(cu, interfaceTypes[i], (Class<?>) type);
             }
             if (TYPE_ANNOTATIONS) {
-                AnnotatedType[] annotatedInterfaces = clazz.getAnnotatedInterfaces();
+                AnnotatedType[] annotatedInterfaces = getAnnotatedTypes(clazz::getAnnotatedInterfaces);
                 for (int i = 0, m = Math.min(annotatedInterfaces.length, n); i < m; i += 1) {
-                    ret[i] = applyTypeAnnotations(annotatedInterfaces[i], ret[i]);
+                    AnnotatedType annotatedInterface = annotatedInterfaces[i];
+                    ret[i] = applyTypeAnnotations(() -> annotatedInterface, ret[i]);
                 }
             }
             classNode.setInterfaces(ret);
@@ -583,6 +584,33 @@ public class Java8 implements VMPlugin {
             return front;
         }
         return back.getPlainNodeReference();
+    }
+
+    /**
+     * Applies type-use annotations (JSR 308) of the supplied annotated type to the given class node,
+     * leaving the class node unchanged if the class file holds type annotations the JDK rejects;
+     * for example, a non-repeatable annotation written twice by an earlier Groovy version.
+     *
+     * @param annotatedType supplies the reflective annotated type, or {@code null} if there is none
+     * @param classNode the class node created for that position
+     * @return the annotated class node: either the input node or a per-use replacement for it
+     * @since 6.0.1
+     */
+    protected ClassNode applyTypeAnnotations(final Supplier<AnnotatedType> annotatedType, final ClassNode classNode) {
+        try {
+            AnnotatedType type = annotatedType.get();
+            return type != null ? applyTypeAnnotations(type, classNode) : classNode;
+        } catch (AnnotationFormatError e) { // GROOVY-12434
+            return classNode;
+        }
+    }
+
+    private static AnnotatedType[] getAnnotatedTypes(final Supplier<AnnotatedType[]> annotatedTypes) {
+        try {
+            return annotatedTypes.get();
+        } catch (AnnotationFormatError e) { // GROOVY-12434
+            return NO_ANNOTATED_TYPES;
+        }
     }
 
     /**
@@ -673,10 +701,11 @@ public class Java8 implements VMPlugin {
             }
             // synthetic parameters (e.g. of inner class constructors) may not be
             // included in the annotated parameter types; skip on length mismatch
-            AnnotatedType[] annotatedTypes = TYPE_ANNOTATIONS ? ((Executable) member).getAnnotatedParameterTypes() : null;
+            AnnotatedType[] annotatedTypes = TYPE_ANNOTATIONS ? getAnnotatedTypes(((Executable) member)::getAnnotatedParameterTypes) : null;
             if (annotatedTypes != null && annotatedTypes.length == n) {
                 for (int i = 0; i < n; i += 1) {
-                    params[i].setType(applyTypeAnnotations(annotatedTypes[i], params[i].getType()));
+                    AnnotatedType annotatedType = annotatedTypes[i];
+                    params[i].setType(applyTypeAnnotations(() -> annotatedType, params[i].getType()));
                 }
             }
         }
@@ -692,9 +721,10 @@ public class Java8 implements VMPlugin {
      */
     private void applyExceptionTypeAnnotations(final Executable member, final ClassNode[] exceptions) {
         if (!TYPE_ANNOTATIONS) return;
-        AnnotatedType[] annotatedTypes = member.getAnnotatedExceptionTypes();
+        AnnotatedType[] annotatedTypes = getAnnotatedTypes(member::getAnnotatedExceptionTypes);
         for (int i = 0, n = Math.min(annotatedTypes.length, exceptions.length); i < n; i += 1) {
-            exceptions[i] = applyTypeAnnotations(annotatedTypes[i], exceptions[i]);
+            AnnotatedType annotatedType = annotatedTypes[i];
+            exceptions[i] = applyTypeAnnotations(() -> annotatedType, exceptions[i]);
         }
     }
 
