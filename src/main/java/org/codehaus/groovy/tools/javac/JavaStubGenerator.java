@@ -863,7 +863,7 @@ public class JavaStubGenerator {
         if (!isInterfaceOrTrait(classNode)) {
             int modifiers = methodNode.getModifiers();
             if (classNode.isEnum()) modifiers &= ~Opcodes.ACC_ABSTRACT;
-            else if (isDefaultTraitImpl(methodNode)) modifiers ^= Opcodes.ACC_ABSTRACT;
+            else if (isDefaultTraitImpl(methodNode)) modifiers &= ~Opcodes.ACC_ABSTRACT; // GROOVY-12427: may be static
             if (methodNode.isSyntheticPublic() && hasPackageScopeXform(methodNode, PackageScopeTarget.METHODS)) modifiers &= ~Opcodes.ACC_PUBLIC;
 
             printModifiers(out, modifiers);
