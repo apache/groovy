@@ -272,13 +272,36 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         }
         if (!typeUseAnnos.isEmpty()) {
             while (targetType.isArray()) targetType = targetType.getComponentType();
-            targetType.addTypeAnnotations(typeUseAnnos);
+            // GROOVY-12434: a type node shared with a copied member (e.g. a trait method and
+            // its helper or forwarder) may already hold the same annotation or a copy of it
+            List<AnnotationNode> existing = targetType.getTypeAnnotations();
+            for (AnnotationNode anno : typeUseAnnos) {
+                if (existing.stream().noneMatch(e -> isSameAnnotation(e, anno))) {
+                    targetType.addTypeAnnotation(anno);
+                }
+            }
             for (AnnotationNode anno : typeUseAnnos) {
                 if (!anno.isTargetAllowed(keepTarget)) {
                     mixed.remove(anno);
                 }
             }
         }
+    }
+
+    /**
+     * Duplicates are already rejected or collected into a container for each member, so an
+     * annotation of the same type with the same member values is the same annotation or a copy
+     * of it, as made by {@link org.codehaus.groovy.ast.tools.GeneralUtils#copyAnnotatedNodeAnnotations}.
+     */
+    private static boolean isSameAnnotation(final AnnotationNode a, final AnnotationNode b) {
+        if (a == b) return true;
+        if (!a.getClassNode().equals(b.getClassNode())) return false;
+        Map<String, Expression> aMembers = a.getMembers(), bMembers = b.getMembers();
+        if (aMembers.size() != bMembers.size()) return false;
+        for (Map.Entry<String, Expression> member : aMembers.entrySet()) {
+            if (bMembers.get(member.getKey()) != member.getValue()) return false;
+        }
+        return true;
     }
 
     protected void visitAnnotations(final AnnotatedNode node, final int target) {
