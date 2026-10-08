@@ -2180,6 +2180,31 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    // GROOVY-12434
+    @Test
+    void testAnnotationShouldBeCarriedOver3() {
+        assertScript shell, '''
+            // TYPE_USE annotation defined outside the script, so reflection can resolve it
+            import org.codehaus.groovy.ast.decompiled.support.WhereAnno
+
+            trait Named {
+                @WhereAnno('getName') String getName() { null }
+                static @WhereAnno('make') String make() { null }
+            }
+            class Person implements Named {
+            }
+
+            def helper = Named.classLoader.loadClass('Named$Trait$Helper')
+            def methods = [Named.getMethod('getName')] + helper.declaredMethods.findAll { it.name in ['getName', 'make'] }
+            assert methods.size() == 3
+            for (method in methods) {
+                // reading a duplicated annotation throws AnnotationFormatError
+                assert method.annotatedReturnType.annotations*.value() == [method.name]
+            }
+            assert new Person().name == null
+        '''
+    }
+
     @Test
     void testShouldCompileTraitMethodStatically() {
         def err = shouldFail shell, '''
