@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791443976457,
+  "lastUpdate": 1791530518561,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -4961,6 +4961,58 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/apache/groovy/commit/7e7018c96a7711f2f03c57e58cc53362d93e6042"
         },
         "date": 1791443975903,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3994,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 438,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 841,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1505,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "eb8258db745741b08cc170d4e798783677dfbbe1",
+          "message": "Bump org.apache.maven.shared:maven-shared-utils from 3.4.2 to 3.5.0",
+          "timestamp": "2026-10-08T17:12:17Z",
+          "url": "https://github.com/apache/groovy/commit/eb8258db745741b08cc170d4e798783677dfbbe1"
+        },
+        "date": 1791530517881,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
