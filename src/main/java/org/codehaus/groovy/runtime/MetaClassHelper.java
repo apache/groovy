@@ -229,6 +229,13 @@ public class MetaClassHelper {
             Object.class
     };
 
+    // GROOVY-12439: penalty for the lossy BigInteger/BigDecimal to float/Float conversions,
+    // so that they never tie with or beat a wider alternative; each other argument can lean
+    // at most 3 towards a float candidate, and 254 * 3 < LOSSY for the JVM's 255 argument
+    // maximum, while 255 * (LOSSY + 19) << PRIMITIVE_SHIFT stays well below VARGS_SHIFT,
+    // so, as in Java, a lossy non-varargs method is still preferred over a varargs one
+    private static final int LOSSY = 1 << 10;
+
     private static final int[][] PRIMITIVE_DISTANCE_TABLE = {
             //                    0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19
             /*boolean[0]*/      { 0,  1,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,  2,},
@@ -243,12 +250,12 @@ public class MetaClassHelper {
             /*Integer[9]*/      {18, 19, 14, 15, 12, 13, 16, 17,  1,  0,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11,},
             /*long[10]*/        {18, 19, 14, 15, 12, 13, 16, 17, 10, 11,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9,},
             /*Long[11]*/        {18, 19, 14, 15, 12, 13, 16, 17, 10, 11,  1,  0,  2,  3,  4,  5,  6,  7,  8,  9,},
-            /*BigInteger[12]*/  {18, 19,  9, 10,  7,  8, 16, 17,  5,  6,  3,  4,  0, 14, 15, 12, 13, 11,  1,  2,},
+            /*BigInteger[12]*/  {18, 19,  9, 10,  7,  8, 16, 17,  5,  6,  3,  4,  0, 14 + LOSSY, 15 + LOSSY, 12, 13, 11,  1,  2,},
             /*float[13]*/       {18, 19, 14, 15, 12, 13, 16, 17, 10, 11,  8,  9,  7,  0,  1,  2,  3,  4,  5,  6,},
             /*Float[14]*/       {18, 19, 14, 15, 12, 13, 16, 17, 10, 11,  8,  9,  7,  1,  0,  2,  3,  4,  5,  6,},
             /*double[15]*/      {18, 19, 14, 15, 12, 13, 16, 17, 10, 11,  8,  9,  7,  5,  6,  0,  1,  2,  3,  4,},
             /*Double[16]*/      {18, 19, 14, 15, 12, 13, 16, 17, 10, 11,  8,  9,  7,  5,  6,  1,  0,  2,  3,  4,},
-            /*BigDecimal[17]*/  {18, 19, 14, 15, 12, 13, 16, 17, 10, 11,  8,  9,  7,  5,  6,  3,  4,  0,  1,  2,},
+            /*BigDecimal[17]*/  {18, 19, 14, 15, 12, 13, 16, 17, 10, 11,  8,  9,  7,  5 + LOSSY,  6 + LOSSY,  3,  4,  0,  1,  2,},
             /*Number[18]*/      {18, 19, 14, 15, 12, 13, 16, 17, 10, 11,  8,  9,  7,  5,  6,  3,  4,  2,  0,  1,},
             /*Object[19]*/      {18, 19, 14, 15, 12, 13, 16, 17, 10, 11,  8,  9,  7,  5,  6,  3,  4,  2,  1,  0,},
     };
