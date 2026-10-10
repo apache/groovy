@@ -18,6 +18,9 @@
  */
 package org.apache.groovy.parser.antlr4;
 
+import groovy.lang.GroovyClassLoader;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.InnerClassNode;
@@ -31,6 +34,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.Phases;
+import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -42,7 +46,10 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.codehaus.groovy.control.CompilerConfiguration.ERROR_RECOVERY;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -50,6 +57,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code isAnonymousConstructorDeclaration} defends against (interfaces live
  * on {@code new Interface()}, which is stored as the unresolved super type).
  * The same is true of empty / null names in {@code looksLikeTypeName}.
+ * A binary command with a command argument and no argument list is also
+ * unreachable: a following primary is always the argument list.
  */
 final class AstBuilderHelperTest {
 
@@ -186,6 +195,8 @@ final class AstBuilderHelperTest {
                         }
                         """, "Annotation type elements cannot have a void return type"),
                 Arguments.of("List < Integer name", "Missing '>'"),
+                Arguments.of("List < Integer 1, 2", "Missing '>'"),
+                Arguments.of("List < Integer name foo", "Missing '>'"),
                 Arguments.of("1 = 2", "The left-hand side of an assignment must be a variable or a field"),
                 Arguments.of("foo(String a)", "Invalid method declaration; a return type or 'def' is required"),
                 Arguments.of("""
@@ -201,6 +212,45 @@ final class AstBuilderHelperTest {
                         """, "Cannot specify modifier 'public' when the access scope has already been defined"),
                 Arguments.of("volatile x() {}", "Modifier 'volatile' is not allowed on a method")
         );
+    }
+
+    @Test
+    void missingGtWithoutAnArgumentListStaysOnUnexpectedInput() {
+        // `List < Integer name foo` has both an argument list and a command
+        // argument. Drop the list so the `<` guard must not anchor on null.
+        String source = "List < Integer name foo";
+        CompilerConfiguration config = new CompilerConfiguration();
+        SourceUnit unit = new SourceUnit("test.groovy", source, config,
+                new GroovyClassLoader(), new ErrorCollector(config));
+        AstBuilder builder = new AstBuilder(unit, false, false);
+
+        GroovyLangLexer lexer = new GroovyLangLexer(CharStreams.fromString(source));
+        GroovyLangParser parser = new GroovyLangParser(new CommonTokenStream(lexer));
+        GroovyParser.CommandExpressionContext command = commandExpression(parser.compilationUnit());
+        assertNotNull(command.enhancedArgumentListInPar());
+        command.children.removeIf(child -> child instanceof GroovyParser.EnhancedArgumentListInParContext);
+
+        assertThrows(CompilationFailedException.class, () -> builder.visitCommandExpression(command));
+        List<String> messages = unit.getErrorCollector().getErrors().stream()
+                .filter(SyntaxErrorMessage.class::isInstance)
+                .map(msg -> ((SyntaxErrorMessage) msg).getCause().getMessage())
+                .toList();
+        assertEquals(List.of("Unexpected input: 'List < Integer' @ line 1, column 1."), messages);
+    }
+
+    private static GroovyParser.CommandExpressionContext commandExpression(final GroovyParser.CompilationUnitContext unit) {
+        GroovyParser.CommandExpressionContext[] found = new GroovyParser.CommandExpressionContext[1];
+        new GroovyParserBaseVisitor<Void>() {
+            @Override
+            public Void visitCommandExpression(final GroovyParser.CommandExpressionContext ctx) {
+                if (ctx.enhancedArgumentListInPar() != null && !ctx.commandArgument().isEmpty()) {
+                    found[0] = ctx;
+                }
+                return super.visitCommandExpression(ctx);
+            }
+        }.visit(unit);
+        assertNotNull(found[0]);
+        return found[0];
     }
 
     @Test
