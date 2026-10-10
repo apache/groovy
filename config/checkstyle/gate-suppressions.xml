@@ -87,5 +87,10 @@
     <suppress id="FullyQualifiedName" files="src[/\\]main[/\\]java[/\\]org[/\\]codehaus[/\\]groovy[/\\]vmplugin[/\\]v7[/\\]IndyInterface\.java$"/>
     <!-- Java8 imports org.codehaus.groovy.ast.Parameter and reads java.lang.reflect.Parameters as well -->
     <suppress id="FullyQualifiedName" files="src[/\\]main[/\\]java[/\\]org[/\\]codehaus[/\\]groovy[/\\]vmplugin[/\\]v8[/\\]Java8\.java$"/>
+    <!-- DiagnosticConverter imports org.eclipse.lsp4j.Diagnostic and reads org.codehaus.groovy.control.messages.Diagnostic as well -->
+    <suppress id="FullyQualifiedName" files="subprojects[/\\]groovy-lsp[/\\]src[/\\]main[/\\]java[/\\]org[/\\]apache[/\\]groovy[/\\]lsp[/\\]internal[/\\]diagnostic[/\\]DiagnosticConverter\.java$"/>
+    <!-- the language-server AstQuery is itself named AstQuery and calls org.codehaus.groovy.ast.query.AstQuery -->
+    <suppress id="FullyQualifiedName" files="subprojects[/\\]groovy-lsp[/\\]src[/\\]main[/\\]java[/\\]org[/\\]apache[/\\]groovy[/\\]lsp[/\\]internal[/\\]compile[/\\]AstQuery\.java$"/>
+    <suppress id="FullyQualifiedNameInJavadoc" files="subprojects[/\\]groovy-lsp[/\\]src[/\\]main[/\\]java[/\\]org[/\\]apache[/\\]groovy[/\\]lsp[/\\]internal[/\\]compile[/\\]AstQuery\.java$"/>
 
 </suppressions>

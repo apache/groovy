@@ -96,8 +96,9 @@ public class ASTNode implements NodeMetaDataHandler {
 
     /**
      * Returns the column number where this AST node begins in the source file.
-     * Column numbers are 0-indexed. Returns -1 if position information is unavailable
-     * (for synthetic or generated nodes).
+     * Column numbers are 1-based and count Unicode code points (the lexer reads
+     * an ANTLR {@code CodePointCharStream}). Returns -1 if position information
+     * is unavailable (for synthetic or generated nodes).
      *
      * @return the starting column number, or -1 if not available
      */
@@ -107,7 +108,8 @@ public class ASTNode implements NodeMetaDataHandler {
 
     /**
      * Sets the starting column number for this AST node in the source file.
-     * Column numbers are 0-indexed. Use -1 to indicate unavailable position.
+     * Column numbers are 1-based and count Unicode code points. Use -1 to
+     * indicate unavailable position.
      *
      * @param columnNumber the starting column number to set
      */
@@ -118,7 +120,7 @@ public class ASTNode implements NodeMetaDataHandler {
     /**
      * Returns the line number where this AST node ends in the source file.
      * Line numbers start from 1. Returns -1 if position information is unavailable.
-     * The end position is typically inclusive (last line of the node's span).
+     * The end line is inclusive (the last line of the node's span).
      *
      * @return the ending line number, or -1 if not available
      */
@@ -129,7 +131,7 @@ public class ASTNode implements NodeMetaDataHandler {
     /**
      * Sets the ending line number for this AST node in the source file.
      * Line numbers are 1-indexed. Use -1 to indicate unavailable position.
-     * The end position should typically be inclusive (last line of the node's span).
+     * The end line should be inclusive (the last line of the node's span).
      *
      * @param lastLineNumber the ending line number to set
      */
@@ -139,8 +141,9 @@ public class ASTNode implements NodeMetaDataHandler {
 
     /**
      * Returns the column number where this AST node ends in the source file.
-     * Column numbers are 0-indexed. Returns -1 if position information is unavailable.
-     * The end position is typically exclusive (one past the last character).
+     * Column numbers are 1-based and count Unicode code points. Returns -1 if
+     * position information is unavailable. The end column is exclusive (one
+     * past the last code point of the node's span).
      *
      * @return the ending column number, or -1 if not available
      */
@@ -150,8 +153,9 @@ public class ASTNode implements NodeMetaDataHandler {
 
     /**
      * Sets the ending column number for this AST node in the source file.
-     * Column numbers are 0-indexed. Use -1 to indicate unavailable position.
-     * The end position should typically be exclusive (one past the last character).
+     * Column numbers are 1-based and count Unicode code points. Use -1 to
+     * indicate unavailable position. The end column should be exclusive
+     * (one past the last code point of the node's span).
      *
      * @param lastColumnNumber the ending column number to set
      */
