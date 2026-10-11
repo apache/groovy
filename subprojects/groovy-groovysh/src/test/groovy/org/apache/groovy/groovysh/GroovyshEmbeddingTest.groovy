@@ -22,6 +22,7 @@ import org.apache.groovy.groovysh.jline.GroovyEngine
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.jline.reader.Candidate
+import org.jline.reader.Completer
 import org.jline.reader.LineReader
 import org.jline.reader.Parser
 import org.jline.reader.impl.completer.AggregateCompleter
@@ -73,6 +74,31 @@ class GroovyshEmbeddingTest {
             System.setProperty('user.home', oldHome)
         }
         terminal?.close()
+    }
+
+    @Test
+    void startClosesAMissingSessionWhenSetupFails() {
+        def engine = new GroovyEngine() {
+            @Override
+            Completer getScriptCompleter() {
+                throw new IllegalStateException('completer')
+            }
+        }
+        // The Inspector completer is only asked for when the language session
+        // is off. A failure there is still a setup error. A missing language
+        // jar is a LinkageError and does not take this path.
+        engine.put('GROOVY_OPTIONS', [noSyntaxCheck: true])
+        def err = new ByteArrayOutputStream()
+        def old = System.err
+        System.err = new PrintStream(err)
+        int rc
+        try {
+            rc = Main.start(options().engine(engine).build(), '-e', '1')
+        } finally {
+            System.err = old
+        }
+        assert rc == 1
+        assert err.toString().contains('completer')
     }
 
     @Test

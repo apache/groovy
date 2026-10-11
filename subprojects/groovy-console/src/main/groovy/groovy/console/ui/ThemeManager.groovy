@@ -177,9 +177,9 @@ class ThemeManager {
     /**
      * Returns the attributes for a single theme style key as a plain map
      * (foreground/background Colors plus bold/italic/underline Booleans).
-     * Consumed by SmartDocumentFilter so ANTLR-token-driven highlighting
+     * Consumed by SmartDocumentFilter so semantic-token highlighting
      * picks up the same theme values as the regex-based GroovyFilter styles.
-     * Returns an empty map if the theme doesn't define the key.
+     * Returns an empty map when {@code key} is blank or the theme does not define it.
      */
     static Map getStyleAttrs(String key) {
         if (!key) return [:]

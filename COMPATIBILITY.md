@@ -548,6 +548,39 @@ so `japicmp` sees nothing — this is a behavioural change only.
 Groovy 6 is the major version for the change. On 3.0.x/4.0.x/5.0.x/5.1.x the
 coercion still initializes the class.
 
+### Groovy 7 — Groovy Console smart highlighter and the language host
+
+`SmartDocumentFilter.getLatestTokenList()` now returns delimiter spans
+(`offset`, `length`, `text`) from semantic tokens, not ANTLR `Token`s.
+`HIGHLIGHTED_TOKEN_TYPE_LIST` is no longer published. Both types have been
+public since 3.0, so this is a source and binary break for embedders that
+read the lexer token list. Brace matching uses the new spans.
+`GroovyLanguageClient` is `@Internal`. `GroovyLanguageEngine` lives in an
+internal package; hosts talk to `GroovyLanguageClient`.
+
+`groovy-console` and `groovy-groovysh` depend on `groovy-lsp` at runtime,
+so a distribution that includes those modules also includes LSP4J and Gson.
+`groovy-groovysh` no longer puts `groovy-console` on its compile classpath.
+`/console` from the shell needs `groovy-console` available separately and
+fails quietly when it is absent.
+
+`ImportCustomizer` reports star imports as package names without a
+trailing dot (`java.io`, not `java.io.`). `getImportClassNames`,
+`getStarImports`, `getStaticStarImports`, `getAliases` and
+`getStaticImports` are new in 7.0.0.
+
+A distribution that omits `groovy-lsp` or Gson still opens the console
+and groovysh. The console uses regex highlighting, leaves the language
+host unset, and disables Compiler Assistance on that window. A warning
+is logged for the highlighter and another for the host. The saved
+preference is not changed. The shell uses its Inspector completer and
+prints one warning. `noSyntaxCheck` set in
+`groovysh_init.groovy` is applied before the language session starts.
+
+`@ASTTest` stays a no-op when `groovy.asttest.enable` is `false`. A
+per-thread override used by in-process tooling can only force that
+no-op. It cannot evaluate the closure against that property.
+
 ### Groovy 7 — `SignatureCodec` version 1 no longer round-trips a union node
 
 `SignatureCodecVersion1` used to encode a checker-only `UnionTypeClassNode` by

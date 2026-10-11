@@ -19,6 +19,14 @@
 package org.apache.groovy.groovysh.commands
 
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
+
+import java.awt.AWTError
+import java.awt.HeadlessException
+import java.awt.event.ActionEvent
+import java.lang.reflect.Field
+import java.util.EventObject
+import java.util.concurrent.TimeUnit
 
 /**
  * Tests for the {@code /console} command. The command launches a Swing
@@ -29,10 +37,9 @@ class ConsoleCommandTest extends SystemTestSupport {
 
     @Test
     void consoleIsRegisteredWhenObjectBrowserOnClasspath() {
-        // /console is conditionally registered: present iff
-        // groovy.console.ui.ObjectBrowser is on the classpath. The test
-        // module pulls groovy-console in transitively, so it should be
-        // there. If anyone removes that dep without intent, this fails.
+        // /console is registered only when groovy.console.ui.ObjectBrowser
+        // is on the runtime classpath. The test runtime supplies that jar.
+        // The shell itself does not compile against groovy-console.
         assert '/console' in groovy.commandNames()
     }
 
@@ -45,5 +52,63 @@ class ConsoleCommandTest extends SystemTestSupport {
         int before = printer.output.size()
         system.execute('/console --help')
         assert printer.output.size() > before
+    }
+
+    @Test
+    @Timeout(value = 15, unit = TimeUnit.SECONDS)
+    void consoleCommandLoadsTheConsoleByName() {
+        String stackKey = 'groovy.sanitized.stacktraces'
+        String fullKey = 'groovy.full.stacktrace'
+        String previousStack = System.getProperty(stackKey)
+        String previousFull = System.getProperty(fullKey)
+        Class<?> consoleClass = Class.forName('groovy.console.ui.Console')
+        def controllers = consoleClass.getDeclaredField('consoleControllers')
+        controllers.accessible = true
+        Set before = ((List) controllers.get(null)).collect { System.identityHashCode(it) } as Set
+        Throwable thrown = null
+        try {
+            try {
+                system.execute('/console')
+            } catch (Throwable caught) {
+                thrown = caught
+            }
+            List added = addedSince(controllers, before)
+            assert !added.isEmpty() || headless(thrown)
+        } finally {
+            def exit = consoleClass.getMethod('exit', EventObject)
+            addedSince(controllers, before).each { console ->
+                try {
+                    exit.invoke(console, new ActionEvent(this, 0, 'exit'))
+                } catch (Throwable ignored) {
+                    // The frame was never shown.
+                }
+                ((List) controllers.get(null)).remove(console)
+            }
+            restoreProperty(stackKey, previousStack)
+            restoreProperty(fullKey, previousFull)
+        }
+    }
+
+    private static List addedSince(Field controllers, Set before) {
+        ((List) controllers.get(null)).findAll { !before.contains(System.identityHashCode(it)) }
+    }
+
+    private static boolean headless(Throwable thrown) {
+        Throwable cursor = thrown
+        while (cursor != null) {
+            if (cursor instanceof HeadlessException || cursor instanceof AWTError) {
+                return true
+            }
+            cursor = cursor.cause
+        }
+        false
+    }
+
+    private static void restoreProperty(String key, String previous) {
+        if (previous == null) {
+            System.clearProperty(key)
+        } else {
+            System.setProperty(key, previous)
+        }
     }
 }

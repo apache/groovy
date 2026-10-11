@@ -1097,6 +1097,13 @@ public class GroovyEngine implements ScriptEngine {
     }
 
     /**
+     * @return whether compiler-backed completion and tail-tips are turned off
+     */
+    public boolean isNoSyntaxCheck() {
+        return Boolean.TRUE.equals(groovyOption(NO_SYNTAX_CHECK, Boolean.FALSE));
+    }
+
+    /**
      * Returns the value of a specific option from the given options map.
      *
      * @param options the options map
@@ -1920,8 +1927,6 @@ public class GroovyEngine implements ScriptEngine {
         private static final List<String> VALUES = Arrays.asList("true", "false");
         private static final String REGEX_GET_METHOD = "get[A-Z].*";
         private final GroovyEngine groovyEngine;
-        @SuppressWarnings("deprecation") // org.jline.console.SystemRegistry
-        private final SystemRegistry systemRegistry = SystemRegistry.get();
         private Inspector inspector;
         private AccessRules access;
         private boolean metaMethodCompletion;
@@ -1941,7 +1946,9 @@ public class GroovyEngine implements ScriptEngine {
         public void complete(LineReader reader, ParsedLine commandLine, List<Candidate> candidates) {
             assert commandLine != null;
             assert candidates != null;
-            if (systemRegistry.isCommandOrScript(commandLine)
+            @SuppressWarnings("deprecation")
+            SystemRegistry systemRegistry = SystemRegistry.get();
+            if ((systemRegistry != null && systemRegistry.isCommandOrScript(commandLine))
                     || (commandLine.wordIndex() > 0
                             && commandLine.words().get(0).equals("import"))) {
                 return;
@@ -2056,15 +2063,39 @@ public class GroovyEngine implements ScriptEngine {
                             // ignore
                         } finally {
                             param = wordbuffer.substring(eqsep + 1, varsep + 1);
-                            Helpers.doCandidates(
-                                    candidates,
-                                    Helpers.nextDomain(param, CandidateType.STATIC_METHOD, inspector.shell),
-                                    curBuf,
-                                    CandidateType.PACKAGE);
+                            // A script variable such as `a` after `def a = []` is not a
+                            // package. Scanning the classpath for `a.` blocks the reader
+                            // thread, so Tab and the following Backspace appear stuck.
+                            if (!knownReceiver(param)) {
+                                Helpers.doCandidates(
+                                        candidates,
+                                        Helpers.nextDomain(param, CandidateType.STATIC_METHOD, inspector.shell),
+                                        curBuf,
+                                        CandidateType.PACKAGE);
+                            }
                         }
                     }
                 }
             }
+        }
+
+        /**
+         * True when {@code dotted} is {@code name.} and {@code name} is a
+         * script variable, binding variable, or class already defined in
+         * this session. Package prefixes such as {@code java.util.} are not.
+         */
+        private boolean knownReceiver(String dotted) {
+            int dot = dotted == null ? -1 : dotted.lastIndexOf('.');
+            if (dot <= 0) {
+                return false;
+            }
+            String name = dotted.substring(0, dot);
+            if (name.isEmpty() || name.indexOf('.') >= 0) {
+                return false;
+            }
+            return groovyEngine.variables.containsKey(name)
+                    || inspector.hasVariable(name)
+                    || inspector.nameClass().containsKey(name);
         }
 
         private boolean completingConstructor(ParsedLine commandLine) {

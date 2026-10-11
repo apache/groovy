@@ -41,6 +41,7 @@ import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.EmptyStatement
 import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.vmplugin.JavaFeatureVersion
 import org.eclipse.lsp4j.CompletionItemKind
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 
@@ -216,6 +217,11 @@ final class LanguageQualityTest {
         def extra = LanguageServerContext.fingerprint([a], [],
                 new CompilerSettings([], [], CompilerSettings.defaults().throughPhase, false, false, [gdsl: 'x']))
         assert extra != left
+        def loader = new GroovyClassLoader()
+        def before = LanguageServerContext.fingerprint([a], [], CompilerSettings.defaults(), loader)
+        loader.addURL(URI.create('file:/tmp/lsp-fingerprint.jar').toURL())
+        def after = LanguageServerContext.fingerprint([a], [], CompilerSettings.defaults(), loader)
+        assert before != after
     }
 
     @Test
@@ -224,7 +230,7 @@ final class LanguageQualityTest {
         def uri = fixture.open('Hello.groovy', 'class Hello {\n  def x = "".ea\n}\n')
         def result = fixture.server.textDocumentService.completion(
                 new CompletionParams(new TextDocumentIdentifier(uri), new Position(1, 15))).get()
-        assert result.getRight().items.any { it.label == 'each' && it.detail == 'GDK' }
+        assert result.getRight().items.any { it.label == 'each' && it.detail?.contains('each(') }
     }
 
     @Test
@@ -260,19 +266,163 @@ final class LanguageQualityTest {
     }
 
     @Test
-    void gdkIsOmittedWithoutAPrefix() {
+    void knownReceiverListsExtensionMethodsWithoutAPrefix() {
         fixture = new LspFixture()
         def uri = fixture.open('Hello.groovy', 'class Hello {\n  def x = "".\n}\n')
         def result = fixture.server.textDocumentService.completion(
                 new CompletionParams(new TextDocumentIdentifier(uri), new Position(1, 13))).get()
         def labels = result.getRight().items*.label
-        assert !('each' in labels)
+        assert 'each' in labels
+        assert 'length' in labels
+
+        def bare = fixture.open('Bare.groovy', "def a = ''\na.\n")
+        def bareItems = itemsAt(bare, 1, 'a.'.length())
+        def bareLabels = bareItems*.label
+        def narrowed = fixture.open('Narrow.groovy', "def a = ''\na.sp\n")
+        def narrowLabels = labelsAt(narrowed, 1, 'a.sp'.length())
+        def expectedNarrow = ['split', 'splitEachLine', 'sprintf']
+        // java.lang.String#splitWithDelimiters is a native JDK method added in JDK 21
+        // (JDK-8315392); older feature versions have no such member to complete.
+        if (JavaFeatureVersion.current() >= 21) {
+            expectedNarrow += 'splitWithDelimiters'
+        }
+        assert narrowLabels.containsAll(expectedNarrow)
+        assert bareLabels.containsAll(narrowLabels)
+        assert bareItems.any { it.label == 'findAll' && it.detail?.contains('(CharSequence regex, Closure closure)') }
+        assert bareItems.any { it.label == 'findGroups' && it.detail?.contains('(CharSequence regex)') }
+        assert bareItems.any { it.label == 'findBalancedGroups' && it.detail?.contains('(String openRegex, String closeRegex)') }
+        assert bareItems.any { it.label == 'findIndexOf' && it.detail?.contains('(Closure condition)') }
+        assert bareItems.any { it.label == 'findIndexOf' && it.detail?.contains('(int startIndex, Closure condition)') }
+        assert bareItems.findAll { it.label?.startsWith('find') }.every { item ->
+            def text = item.detail ?: ''
+            !text.contains('arg0') && !text.contains('arg1')
+        }
+
+        def shortName = new TextDocument(fileUri('file:///tmp/cov-gdk-short.groovy'), 'groovy', 1, 'foo.e')
+        def shortItems = new CompletionService().complete(shortName, null, new Position(0, 5), UTF16).items
+        assert shortItems.every { it.label != 'each' }
     }
+
+    @Test
+    void arrayTypesUseSourceNames() {
+        assert CompletionService.typeName(null) == 'Object'
+        assert CompletionService.typeName(ClassHelper.make(String)) == 'String'
+        assert CompletionService.typeName(ClassHelper.make(String[])) == 'String[]'
+        assert CompletionService.typeName(ClassHelper.make(char[])) == 'char[]'
+        assert CompletionService.typeName(ClassHelper.make(byte[])) == 'byte[]'
+        assert CompletionService.typeName(ClassHelper.make(byte[][])) == 'byte[][]'
+        assert CompletionService.typeName(ClassHelper.make(int)) == 'int'
+        assert !CompletionService.typeName(ClassHelper.make(String[])).contains(';')
+        assert !CompletionService.typeName(ClassHelper.make(char[])).startsWith('[')
+
+        fixture = new LspFixture()
+        def split = fixture.open('Split.groovy', "def b = ''\nb.spl\n")
+        def splits = itemsAt(split, 1, 'b.spl'.length())
+        assert splits.any { it.label == 'split' && it.detail?.startsWith('String[] ') && !it.detail.contains('String;') }
+        def copy = fixture.open('Copy.groovy', "def b = ''\nb.copyV\n")
+        def copies = itemsAt(copy, 1, 'b.copyV'.length())
+        assert copies.any { it.label == 'copyValueOf' && it.detail?.contains('(char[] ') && !it.detail.contains('[C') }
+        def bytes = fixture.open('Bytes.groovy', "def b = ''\nb.getBytes\n")
+        def byteItems = itemsAt(bytes, 1, 'b.getBytes'.length())
+        assert byteItems.any { it.label == 'getBytes' && it.detail?.startsWith('byte[] ') && !it.detail.contains('[B') }
+        def at = fixture.open('At.groovy', "def b = ''\nb.charAt\n")
+        def atItems = itemsAt(at, 1, 'b.charAt'.length())
+        assert atItems.any { it.label == 'charAt' && it.detail == 'char charAt(int index)' }
+    }
+
+    @Test
+    void dotCompletionListsReceiverMembers() {
+        fixture = new LspFixture()
+        def members = fixture.open('Members.groovy', '''\
+            def a = new ArrayList()
+            def a.
+            '''.stripIndent())
+        def labels = labelsAt(members, 1, 'def a.'.length())
+        assert 'add' in labels
+        assert 'get' in labels
+        assert 'size' in labels
+        assert !('abstract' in labels)
+        def extension = fixture.open('Extension.groovy', 'def a = []\na.re\n')
+        def extensionItems = itemsAt(extension, 1, 'a.re'.length())
+        assert extensionItems.any { it.label == 'removeAt' && it.detail?.contains('removeAt(int ') && it.detail.startsWith('Object ') }
+        assert extensionItems.any { it.label == 'reverse' && it.detail?.contains('reverse(') && it.detail.contains(' ') }
+
+        def partial = fixture.open('Partial.groovy', 'def a = new ArrayList()\ndef a.ad\n')
+        def partialLabels = labelsAt(partial, 1, 'def a.ad'.length())
+        assert 'add' in partialLabels
+        assert !('abstract' in partialLabels)
+        assert !('size' in partialLabels)
+
+        def safe = fixture.open('Safe.groovy', 'def a = new ArrayList()\na?.\n')
+        assert 'add' in labelsAt(safe, 1, 'a?.'.length())
+
+        def spread = fixture.open('Spread.groovy', 'def a = new ArrayList()\na*.\n')
+        assert 'add' in labelsAt(spread, 1, 'a*.'.length())
+
+        def typed = fixture.open('Typed.groovy', 'String s = "hi"\ns.\n')
+        def typedLabels = labelsAt(typed, 1, 's.'.length())
+        assert 'substring' in typedLabels
+        assert !('abstract' in typedLabels)
+
+        def stat = fixture.open('Static.groovy', 'System.\n')
+        def staticItems = itemsAt(stat, 0, 'System.'.length())
+        def staticLabels = staticItems*.label
+        assert 'out' in staticLabels
+        assert 'currentTimeMillis' in staticLabels
+        assert staticItems.any { it.label == 'currentTimeMillis' && it.kind == CompletionItemKind.Method }
+        assert staticItems.every { it.kind != CompletionItemKind.Function }
+
+        def shadow = fixture.open('Shadow.groovy', '''\
+            def a = new ArrayList()
+            def a = new HashMap()
+            a.
+            '''.stripIndent())
+        def shadowLabels = labelsAt(shadow, 2, 'a.'.length())
+        assert 'put' in shadowLabels
+        assert !('add' in shadowLabels)
+
+        def prop = fixture.open('Prop.groovy', '''\
+            class Box { String name }
+            def b = new Box()
+            b.
+            '''.stripIndent())
+        assert 'name' in labelsAt(prop, 2, 'b.'.length())
+
+        def chain = fixture.open('Chain.groovy', '''\
+            class Box { String name }
+            def b = new Box()
+            b.name.
+            '''.stripIndent())
+        assert 'substring' in labelsAt(chain, 2, 'b.name.'.length())
+
+        def inherited = fixture.open('Inherited.groovy', '''\
+            class Super { String title }
+            class Child extends Super {}
+            def c = new Child()
+            c.
+            '''.stripIndent())
+        assert 'title' in labelsAt(inherited, 3, 'c.'.length())
+
+        def call = fixture.open('Call.groovy', 'def a = new ArrayList()\na.iterator.\n')
+        def callLabels = labelsAt(call, 1, 'a.iterator.'.length())
+        assert 'next' in callLabels || 'hasNext' in callLabels
+    }
+
+    private List<String> labelsAt(String uri, int line, int character) {
+        itemsAt(uri, line, character)*.label
+    }
+
+    private List itemsAt(String uri, int line, int character) {
+        fixture.server.textDocumentService.completion(
+                new CompletionParams(new TextDocumentIdentifier(uri), new Position(line, character)))
+                .get().getRight().items
+    }
+
     @Test
     void completionResolvesDocsAndGdkWithoutModule() {
         def gdk = new TextDocument(fileUri('file:///tmp/cov-gdk.groovy'), 'groovy', 1, 'foo.ea')
         def gdkItems = new CompletionService().complete(gdk, null, new Position(0, 6), UTF16).items
-        assert gdkItems.any { it.label == 'each' && it.detail == 'GDK' }
+        assert gdkItems.any { it.label == 'each' && it.detail?.contains('each(') && it.detail.contains(')') }
 
         def uri = fileUri('file:///tmp/cov-docs.groovy')
         def snap = compileOf(uri, 'class Hello {}\n')

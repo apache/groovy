@@ -38,6 +38,7 @@ final class ImportCustomizerTest {
     @Test
     void testAddImport() {
         importCustomizer.addImports('java.util.concurrent.atomic.AtomicInteger')
+        assert importCustomizer.importClassNames == ['java.util.concurrent.atomic.AtomicInteger']
         def shell = new GroovyShell(configuration)
         shell.evaluate('new AtomicInteger(0)')
         // no exception means success
@@ -46,6 +47,8 @@ final class ImportCustomizerTest {
     @Test
     void testAddImportWithAlias() {
         importCustomizer.addImport('AI', 'java.util.concurrent.atomic.AtomicInteger')
+        assert importCustomizer.aliases == [AI: 'java.util.concurrent.atomic.AtomicInteger']
+        assert importCustomizer.importClassNames.isEmpty()
         def shell = new GroovyShell(configuration)
         shell.evaluate('new AI(0)')
         // no exception means success
@@ -70,6 +73,7 @@ final class ImportCustomizerTest {
     @Test
     void testAddStaticImport() {
         importCustomizer.addStaticImport('java.lang.Math', 'PI')
+        assert importCustomizer.staticImports == ['java.lang.Math.PI']
         def shell = new GroovyShell(configuration)
         shell.evaluate('PI')
         // no exception means success
@@ -78,6 +82,7 @@ final class ImportCustomizerTest {
     @Test
     void testAddStaticImportWithAlias() {
         importCustomizer.addStaticImport('pi', 'java.lang.Math', 'PI')
+        assert importCustomizer.staticImports == ['pi=java.lang.Math.PI']
         def shell = new GroovyShell(configuration)
         shell.evaluate('pi')
         // no exception means success
@@ -86,6 +91,7 @@ final class ImportCustomizerTest {
     @Test
     void testAddStaticStarImport() {
         importCustomizer.addStaticStars('java.lang.Math')
+        assert importCustomizer.staticStarImports == ['java.lang.Math']
         def shell = new GroovyShell(configuration)
         shell.evaluate('PI')
         // no exception means success
@@ -94,6 +100,8 @@ final class ImportCustomizerTest {
     @Test
     void testAddStarImport() {
         importCustomizer.addStarImports('java.util.concurrent.atomic')
+        assert importCustomizer.starImports == ['java.util.concurrent.atomic']
+        assert importCustomizer.importClassNames.isEmpty()
         def shell = new GroovyShell(configuration)
         shell.evaluate('new AtomicInteger(0)')
         // no exception means success
