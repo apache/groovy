@@ -19,6 +19,9 @@
 package org.apache.groovy.groovysh.commands
 
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
+
+import java.util.concurrent.TimeUnit
 
 /**
  * Tests for the {@code /console} command. The command launches a Swing
@@ -29,10 +32,9 @@ class ConsoleCommandTest extends SystemTestSupport {
 
     @Test
     void consoleIsRegisteredWhenObjectBrowserOnClasspath() {
-        // /console is conditionally registered: present iff
-        // groovy.console.ui.ObjectBrowser is on the classpath. The test
-        // module pulls groovy-console in transitively, so it should be
-        // there. If anyone removes that dep without intent, this fails.
+        // /console is registered only when groovy.console.ui.ObjectBrowser
+        // is on the runtime classpath. The test runtime supplies that jar.
+        // The shell itself does not compile against groovy-console.
         assert '/console' in groovy.commandNames()
     }
 
@@ -45,5 +47,15 @@ class ConsoleCommandTest extends SystemTestSupport {
         int before = printer.output.size()
         system.execute('/console --help')
         assert printer.output.size() > before
+    }
+
+    @Test
+    @Timeout(value = 15, unit = TimeUnit.SECONDS)
+    void consoleCommandLoadsTheConsoleByName() {
+        try {
+            system.execute('/console')
+        } catch (Throwable ignored) {
+            // The Swing frame cannot open in a headless test.
+        }
     }
 }

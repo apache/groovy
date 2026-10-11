@@ -74,8 +74,21 @@ public final class GroovyCompiler implements AutoCloseable {
      */
     public CompilationSnapshot compile(final Collection<TextDocument> openDocuments, final Collection<Path> extraFiles,
                                        final CompilerSettings settings, final ClassLoader parentLoader) {
+        return compile(openDocuments, extraFiles, settings, parentLoader, null);
+    }
+
+    /**
+     * Compiles with an optional host {@link CompilerConfiguration} so import
+     * and AST customizers from Console or groovysh are visible.
+     *
+     * @param hostConfiguration console or groovysh configuration, or {@code null}
+     * @return an immutable snapshot
+     */
+    public CompilationSnapshot compile(final Collection<TextDocument> openDocuments, final Collection<Path> extraFiles,
+                                       final CompilerSettings settings, final ClassLoader parentLoader,
+                                       final CompilerConfiguration hostConfiguration) {
         synchronized (this) {
-            CompilerConfiguration configuration = settings.toConfiguration();
+            CompilerConfiguration configuration = settings.toConfiguration(hostConfiguration);
             return withProcessFlags(settings, () ->
                     compileUnit(openDocuments, extraFiles, settings, parentLoader, configuration));
         }

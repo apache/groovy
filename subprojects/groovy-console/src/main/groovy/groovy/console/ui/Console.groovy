@@ -25,6 +25,7 @@ import com.github.javaparser.ast.CompilationUnit
 import com.github.javaparser.ast.body.TypeDeclaration
 import groovy.cli.internal.CliBuilderInternal
 import groovy.cli.internal.OptionAccessor
+import groovy.console.ui.language.ConsoleLanguageHost
 import groovy.console.ui.text.FindReplaceUtility
 import groovy.console.ui.text.GroovyFilter
 import groovy.console.ui.text.SmartDocumentFilter
@@ -34,14 +35,7 @@ import groovy.transform.EqualsAndHashCode
 import groovy.transform.ThreadInterrupt
 import groovy.transform.TupleConstructor
 import groovy.ui.GroovyMain
-import org.antlr.v4.gui.TreeViewer
-import org.antlr.v4.gui.Trees
-import org.antlr.v4.runtime.CharStreams
-import org.antlr.v4.runtime.CommonTokenStream
-import org.apache.groovy.antlr.LexerFrame
 import org.apache.groovy.io.StringBuilderWriter
-import org.apache.groovy.parser.antlr4.GroovyLangLexer
-import org.apache.groovy.parser.antlr4.GroovyLangParser
 import org.apache.groovy.util.JavaShell
 import org.apache.groovy.util.SystemUtil
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -66,6 +60,9 @@ import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JOptionPane
 import javax.swing.JScrollPane
+import javax.swing.JTextArea
+import javax.swing.JTree
+import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.JSplitPane
 import javax.swing.JTextPane
 import javax.swing.RootPaneContainer
@@ -89,10 +86,11 @@ import javax.swing.text.html.HTML
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
-import java.awt.Container
 import java.awt.Dimension
 import java.awt.EventQueue
 import java.awt.Font
+import java.awt.Frame
+import java.awt.HeadlessException
 import java.awt.Toolkit
 import java.awt.Window
 import java.awt.event.ActionEvent
@@ -100,7 +98,6 @@ import java.awt.event.ComponentEvent
 import java.awt.event.ComponentListener
 import java.awt.event.FocusEvent
 import java.awt.event.FocusListener
-import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.awt.event.WindowFocusListener
 import java.util.logging.Logger
@@ -294,6 +291,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     CompilerConfiguration config
     /** Shell used to compile and run scripts. */
     GroovyShell shell
+    /** In-process language host for diagnostics and completions. */
+    private ConsoleLanguageHost languageHost
     /** Counter used for generated script names. */
     int scriptNameCounter = 0
     /** Interceptor that captures stdout. */
@@ -507,6 +506,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt))
         }
         shell = new GroovyShell(parent, binding, config)
+        languageHost?.bind(shell.classLoader, config)
     }
 
     /** Default Swing delegates used to build the console frame and menu bar. */
@@ -579,7 +579,18 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         }
         installInterceptor()
         updateTitle()
+        installLanguageHost()
         swing.doLater inputArea.&requestFocus
+    }
+
+    /**
+     * Attaches the in-process language host to the editor and publishes
+     * the console compiler configuration. groovy-console depends on
+     * groovy-lsp, so the host is always constructed.
+     */
+    @CompileStatic
+    private void installLanguageHost() {
+        languageHost = ConsoleLanguageHost.attach(inputArea, shell.classLoader, config)
     }
 
     /**
@@ -954,7 +965,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             }
         }
 
-        // update SmartDocumentFilter styles (ANTLR token-based highlighting)
+        // update SmartDocumentFilter styles (groovy-lsp semantic tokens)
         SmartDocumentFilter.updateStyles()
 
         // force re-parse to apply new colors to existing text — suppress
@@ -1007,6 +1018,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         if (threadInterrupt) {
             config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt))
         }
+        languageHost?.bind(shell.classLoader, config)
     }
 
     /** Updates cached selection bounds and the row/column display. */
@@ -1067,6 +1079,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         if (askToInterruptScript()) {
             def exit = askToSaveFile()
             if (exit) {
+                languageHost?.close()
+                languageHost = null
                 if (frame instanceof Window) {
                     frame.hide()
                     frame.dispose()
@@ -1114,6 +1128,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         nativeFullScreenForMac(swing.consoleFrame)
         swing.consoleFrame.pack()
         swing.consoleFrame.show()
+        consoleController.installLanguageHost()
         swing.doLater swing.inputArea.&requestFocus
     }
 
@@ -1145,6 +1160,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                     listeners.each { inputArea.document.addDocumentListener(it) }
                     setDirty(false)
                     inputArea.caretPosition = 0
+                    languageHost?.refresh()
                 }
             } finally {
                 swing.edt { inputArea.editable = true }
@@ -1373,61 +1389,63 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     /** Opens the CST viewer for the current editor contents. */
     void inspectCst(EventObject evt = null) {
-        String text = this.inputEditor.textEditor.text
-        def charStream = CharStreams.fromReader(new StringReader(text))
-        def lexer = new GroovyLangLexer(charStream)
-        def tokens = new CommonTokenStream(lexer)
-        def parser = new GroovyLangParser(tokens)
-        def tree = parser.compilationUnit()
-        // Trees.inspect spawns its own dialog on the EDT; we wait off-EDT then
-        // hop back on to theme it — ANTLR's TreeViewer defaults to black text
-        // on white/transparent boxes, which ignores the app theme otherwise.
-        def future = Trees.inspect(tree, parser)
-        Thread.start {
-            def dialog = future.get()
-            SwingUtilities.invokeLater { themeCstDialog(dialog) }
-        }
-    }
-
-    private void themeCstDialog(JDialog dialog) {
-        TreeViewer viewer = findTreeViewer(dialog)
-        if (!viewer) return
-        applyCstColors(viewer)
-        // track theme switches so an already-open CST dialog keeps pace
-        def listener = { SwingUtilities.invokeLater { applyCstColors(viewer); viewer.repaint() } } as Runnable
-        ThemeManager.addThemeChangeListener(listener)
-        dialog.addWindowListener(new WindowAdapter() {
-            @Override void windowClosed(WindowEvent e) {
-                ThemeManager.removeThemeChangeListener(listener)
-            }
-        })
-    }
-
-    private static void applyCstColors(TreeViewer viewer) {
-        boolean dark = ThemeManager.isDark()
-        viewer.textColor = dark ? new Color(210, 210, 210) : Color.BLACK
-        viewer.boxColor = dark ? new Color(50, 55, 65) : Color.WHITE
-        viewer.borderColor = null  // null = no box outline around each label (TreeViewer default)
-        viewer.highlightedBoxColor = dark ? new Color(80, 120, 80) : new Color(200, 255, 200)
-        viewer.background = dark ? new Color(43, 43, 43) : Color.WHITE
-    }
-
-    private static TreeViewer findTreeViewer(Container container) {
-        for (Component comp : container.components) {
-            if (comp instanceof TreeViewer) return (TreeViewer) comp
-            if (comp instanceof Container) {
-                TreeViewer found = findTreeViewer((Container) comp)
-                if (found) return found
-            }
-        }
-        null
+        showStructure('CST', languageHost?.cst(inputArea?.text ?: ''))
     }
 
     /** Opens the lexer token inspector for the current editor contents. */
     void inspectTokens(EventObject evt = null) {
-        def content = inputArea.getText()
-        def lf = new LexerFrame(new StringReader(content))
-        lf.visible = true
+        def rows = languageHost?.tokens(inputArea?.text ?: '') ?: []
+        def lines = rows.collect { "${it.line}:${it.character} ${it.name} ${it.text}" }
+        showText('Token Stream', lines.join('\n'))
+    }
+
+    private void showStructure(String title, Map root) {
+        def modelRoot = structureNode(root)
+        def tree = new JTree(modelRoot)
+        showComponent(title, new JScrollPane(tree))
+    }
+
+    private static DefaultMutableTreeNode structureNode(Map node) {
+        def label = node?.name ?: ''
+        if (node?.text) {
+            label = label + ' ' + node.text
+        }
+        def treeNode = new DefaultMutableTreeNode(label)
+        (node?.children ?: []).each { child ->
+            if (child instanceof Map) {
+                treeNode.add(structureNode(child))
+            }
+        }
+        treeNode
+    }
+
+    private void showText(String title, String body) {
+        def area = new JTextArea(body ?: '')
+        area.editable = false
+        area.font = new Font('Monospaced', Font.PLAIN, 12)
+        showComponent(title, new JScrollPane(area))
+    }
+
+    private void showComponent(String title, Component content) {
+        boolean dark = ThemeManager.isDark()
+        content.background = dark ? new Color(43, 43, 43) : Color.WHITE
+        content.foreground = dark ? new Color(210, 210, 210) : Color.BLACK
+        try {
+            Frame owner = frame instanceof Frame ? (Frame) frame : null
+            def dialog = JDialog.getConstructor(Frame, String, boolean.class).newInstance(owner, title, false)
+            dialog.contentPane.add(content)
+            dialog.setSize(640, 480)
+            dialog.visible = true
+        } catch (Exception ex) {
+            // Constructor.newInstance wraps HeadlessException.
+            def cursor = ex
+            while (cursor != null && !(cursor instanceof HeadlessException)) {
+                cursor = cursor.cause
+            }
+            if (cursor == null) {
+                throw ex
+            }
+        }
     }
 
     /**
@@ -1713,6 +1731,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             fc.selectedFiles?.each { file ->
                 shell.getClassLoader().addURL(file.toURL())
             }
+            languageHost?.bind(shell.classLoader, config)
         }
     }
 
@@ -1725,6 +1744,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             currentClasspathDir = fc.currentDirectory
             Preferences.userNodeForPackage(Console).put('currentClasspathDir', currentClasspathDir.path)
             shell.getClassLoader().addURL(fc.selectedFile.toURL())
+            languageHost?.bind(shell.classLoader, config)
         }
     }
 

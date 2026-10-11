@@ -22,8 +22,10 @@ plugins {
 
 dependencies {
     implementation project(':')
-    implementation "org.eclipse.lsp4j:org.eclipse.lsp4j:${versions.lsp4j}"
-    implementation "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:${versions.lsp4j}"
+    // Public server methods use these types, so embedders such as the
+    // console can compile against the same API a remote client speaks.
+    api "org.eclipse.lsp4j:org.eclipse.lsp4j:${versions.lsp4j}"
+    api "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:${versions.lsp4j}"
     testImplementation projects.groovyTest
 }
 

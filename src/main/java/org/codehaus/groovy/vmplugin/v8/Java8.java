@@ -39,6 +39,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.reflection.ReflectionParameterNames;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.vmplugin.VMPlugin;
@@ -736,6 +737,13 @@ public class Java8 implements VMPlugin {
      */
     protected void fillParameterNames(final String[] names, final Member member) {
         try {
+            if (member instanceof Executable executable) {
+                String[] resolved = ReflectionParameterNames.names(executable);
+                for (int i = 0, n = Math.min(names.length, resolved.length); i < n; i += 1) {
+                    names[i] = resolved[i] != null ? resolved[i] : "arg" + i;
+                }
+                return;
+            }
             java.lang.reflect.Parameter[] parameters = ((Executable) member).getParameters();
             for (int i = 0, n = names.length; i < n; i += 1) {
                 names[i] = parameters[i].getName();

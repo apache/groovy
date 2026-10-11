@@ -19,8 +19,16 @@
 package org.apache.groovy.lsp.internal.engine
 
 import org.apache.groovy.lsp.internal.LanguageServerContext
+import org.apache.groovy.lsp.internal.compile.CompilationSnapshot
 import org.apache.groovy.lsp.internal.compile.CompilerSettings
 import org.apache.groovy.lsp.internal.feature.LanguageFeatures
+import org.apache.groovy.lsp.internal.feature.SemanticTokensService
+import org.apache.groovy.lsp.internal.position.PositionEncoding
+import org.apache.groovy.lsp.internal.workspace.DocumentStore
+import org.apache.groovy.lsp.internal.workspace.TextDocument
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.eclipse.lsp4j.TextDocumentItem
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 
@@ -120,6 +128,137 @@ final class GroovyLanguageEngineBufferTest {
         def one = LanguageServerContext.fingerprint([], [], CompilerSettings.defaults(), new GroovyClassLoader())
         def two = LanguageServerContext.fingerprint([], [], CompilerSettings.defaults(), new GroovyClassLoader())
         assert one != two
+        def loader = new GroovyClassLoader()
+        def before = LanguageServerContext.fingerprint([], [], CompilerSettings.defaults(), loader)
+        loader.addURL(URI.create('file:/tmp/lsp-url-stamp.jar').toURL())
+        def afterUrls = LanguageServerContext.fingerprint([], [], CompilerSettings.defaults(), loader)
+        assert before != afterUrls
+        def host = new CompilerConfiguration()
+        def withHost = LanguageServerContext.fingerprint([], [], CompilerSettings.defaults(), loader, host)
+        def otherHost = LanguageServerContext.fingerprint([], [], CompilerSettings.defaults(), loader, new CompilerConfiguration())
+        assert withHost != otherHost
+        assert withHost == LanguageServerContext.fingerprint([], [], CompilerSettings.defaults(), loader, host)
+        def mutated = new CompilerConfiguration()
+        def beforeCustomizers = LanguageServerContext.fingerprint([], [], CompilerSettings.defaults(), loader, mutated)
+        mutated.addCompilationCustomizers(new ImportCustomizer())
+        def afterCustomizers = LanguageServerContext.fingerprint([], [], CompilerSettings.defaults(), loader, mutated)
+        assert beforeCustomizers != afterCustomizers
+    }
+
+    @Test
+    void hostCompilerConfigurationImportsAreVisibleOnTheNextQuery() {
+        engine = new GroovyLanguageEngine()
+        engine.openBuffer(BUFFER, 'groovy', 'ConcurrentHashMap m\n')
+        def before = engine.diagnostics(BUFFER)
+        assert before.any { (it.message() ?: '').contains('ConcurrentHashMap') }
+        def configuration = new CompilerConfiguration()
+        def imports = new ImportCustomizer()
+        imports.addImports('java.util.concurrent.ConcurrentHashMap')
+        configuration.addCompilationCustomizers(imports)
+        engine.setHostConfiguration(configuration)
+        assert engine.context().hostConfiguration.is(configuration)
+        configuration.scriptBaseClass = 'groovy.lang.Script'
+        def copied = CompilerSettings.defaults().toConfiguration(configuration)
+        assert copied.compilationCustomizers.contains(imports)
+        assert copied.scriptBaseClass == 'groovy.lang.Script'
+        assert copied.tolerance == 0
+        def after = engine.diagnostics(BUFFER)
+        assert !after.any { (it.message() ?: '').contains('ConcurrentHashMap') }
+        engine.setHostConfiguration(null)
+        def reset = engine.diagnostics(BUFFER)
+        assert reset.any { (it.message() ?: '').contains('ConcurrentHashMap') }
+    }
+
+    @Test
+    void sameTextKeepsTheBufferVersion() {
+        engine = new GroovyLanguageEngine()
+        engine.openBuffer(BUFFER, 'groovy', 'class A {}')
+        int version = engine.context().documents.get(BUFFER).version
+        engine.updateBuffer(BUFFER, 'class A {}')
+        assert engine.context().documents.get(BUFFER).version == version
+        engine.diagnostics(BUFFER, 'class A {}')
+        assert engine.context().documents.get(BUFFER).version == version
+        engine.updateBuffer(BUFFER, '')
+        assert engine.context().documents.get(BUFFER).version == version + 1
+        engine.updateBuffer(BUFFER, null)
+        assert engine.context().documents.get(BUFFER).text == ''
+        assert engine.context().documents.get(BUFFER).version == version + 1
+    }
+
+    @Test
+    void repeatedHostConfigurationPublishesInPlaceImportEdits() {
+        engine = new GroovyLanguageEngine()
+        engine.openBuffer(BUFFER, 'groovy', 'ConcurrentHashMap m\n')
+        def configuration = new CompilerConfiguration()
+        def imports = new ImportCustomizer()
+        configuration.addCompilationCustomizers(imports)
+        engine.setHostConfiguration(configuration)
+        assert engine.diagnostics(BUFFER).any { (it.message() ?: '').contains('ConcurrentHashMap') }
+        imports.addImports('java.util.concurrent.ConcurrentHashMap')
+        assert engine.diagnostics(BUFFER).any { (it.message() ?: '').contains('ConcurrentHashMap') }
+        engine.setHostConfiguration(configuration)
+        assert !engine.diagnostics(BUFFER).any { (it.message() ?: '').contains('ConcurrentHashMap') }
+    }
+
+    @Test
+    void declaredNamesReadsScriptMembersAndTypesFromTheAst() {
+        engine = new GroovyLanguageEngine()
+        engine.openBuffer(BUFFER, 'groovy', '''\
+            class Box {}
+            def ping() { 1 }
+            int kept = 7
+            x = 1
+            def outer() {
+                int inner = 1
+            }
+            '''.stripIndent())
+        def names = engine.declaredNames(BUFFER)
+        assert names.contains('Box')
+        assert names.contains('ping')
+        assert names.contains('kept')
+        assert names.contains('x')
+        assert names.contains('outer')
+        assert !names.contains('inner')
+        assert !names.contains('run')
+        assert !names.contains('main')
+        engine.updateBuffer(BUFFER, '''\
+            def (a, b) = [1, 2]
+            if (true) {
+                z = 3
+            }
+            try {
+                w = 4
+            } catch (Exception e) {
+            }
+            def skip = { hidden = 1 }
+            Runnable r = () -> { alsoHidden = 2 }
+            '''.stripIndent())
+        def destructured = engine.declaredNames(BUFFER)
+        assert destructured.contains('a')
+        assert destructured.contains('b')
+        assert destructured.contains('z')
+        assert destructured.contains('w')
+        assert !destructured.contains('hidden')
+        assert !destructured.contains('alsoHidden')
+        assert GroovyLanguageEngine.positionOf('ab\ncd', 4) == [1, 1] as int[]
+        assert GroovyLanguageEngine.offsetOf('ab\ncd', 1, 1) == 4
+        assert GroovyLanguageEngine.offsetOf('ab\ncd', 0, 99) == 2
+        assert GroovyLanguageEngine.positionOf('ab\r\ncd', 4) == [1, 0] as int[]
+        assert GroovyLanguageEngine.offsetOf('ab\r\ncd', 1, 0) == 4
+        assert GroovyLanguageEngine.positionOf(null, 1) == [0, 0] as int[]
+        assert GroovyLanguageEngine.offsetOf('', 0, 0) == 0
+        assert GroovyLanguageEngine.flattenSnippet('class ${1:Name} {\n    $0\n}') == 'class Name {\n    \n}'
+        assert GroovyLanguageEngine.flattenSnippetLine('class ${1:Name} {\n    $0\n}') == 'class Name {'
+        assert GroovyLanguageEngine.spanOf('ab', 0, 0, 0, 0) == [0, 1] as int[]
+        assert GroovyLanguageEngine.spanOf('abc', 0, 3, 0, 3) == [2, 3] as int[]
+        assert GroovyLanguageEngine.spanOf('abc', 9, 0, 9, 0) == [2, 3] as int[]
+        assert GroovyLanguageEngine.spanOf('ab\r', 0, 3, 0, 3) == [2, 3] as int[]
+        engine.updateBuffer(BUFFER, 'class Broken { def x = }')
+        assert engine.diagnostics(BUFFER, 'class Broken { def x = }').any { it.message() }
+        assert engine.describe(BUFFER, 'class Sample {}', 0, 6).contains('Sample')
+        assert engine.complete(BUFFER, 'class Sample { def ping() { ping() } }', 0, 6) != null
+        assert engine.signatures(BUFFER, 'class Sample { def ping() { ping() } }', 0, 6) != null
+        assert engine.declaredNames(BUFFER, 'class Box {}').contains('Box')
     }
 
     @Test
@@ -149,6 +288,71 @@ final class GroovyLanguageEngineBufferTest {
         int callColumn = callLines[callLine].indexOf('ping(1,') + 'ping(1,'.length()
         def set = engine.signatures(BUFFER, callLine, callColumn)
         assert set.signatures().any { it.label()?.contains('ping') } || set.signatures() != null
+    }
+
+    @Test
+    void lexicalTokensNeedNoSessionAndKeepIncompleteInput() {
+        assert GroovyLanguageEngine.lexicalTokens(null).isEmpty()
+        assert GroovyLanguageEngine.lexicalTokens('').isEmpty()
+        def tokens = GroovyLanguageEngine.lexicalTokens('def n = 1 // c')
+        assert tokens.any { it.type() == 'keyword' && it.length() == 3 }
+        assert tokens.any { it.type() == 'variable' }
+        assert tokens.any { it.type() == 'number' }
+        assert tokens.any { it.type() == 'comment' }
+        def incomplete = GroovyLanguageEngine.lexicalTokens('def x =')
+        assert incomplete.any { it.type() == 'keyword' }
+        assert incomplete.any { it.type() == 'variable' }
+        assert GroovyLanguageEngine.TOKEN_TYPES.contains('keyword')
+        assert GroovyLanguageEngine.spanOf('def n = 1', new GroovyLanguageEngine.Token(0, 0, 3, 'keyword', 0)) == [0, 3] as int[]
+        assert GroovyLanguageEngine.spanOf('ab', null as GroovyLanguageEngine.Token) == [0, 0] as int[]
+        assert GroovyLanguageEngine.spanOf('ab', new GroovyLanguageEngine.Token(0, 0, -3, 'keyword', 0)) == [0, 0] as int[]
+        assert GroovyLanguageEngine.spanOf(null, new GroovyLanguageEngine.Token(0, 0, 3, 'keyword', 0)) == [0, 0] as int[]
+        assert GroovyLanguageEngine.flattenSnippet(null) == ''
+        assert GroovyLanguageEngine.flattenSnippet('') == ''
+        def hit = new GroovyLanguageEngine.Hit(URI.create('groovy-buffer:t'), 0, 2, 0, 0, 'x', 'Error')
+        assert GroovyLanguageEngine.spanOf('ab\ncd', hit) == [2, 3] as int[]
+        assert GroovyLanguageEngine.spanOf('ab', null as GroovyLanguageEngine.Hit) == [0, 0] as int[]
+        def slashy = GroovyLanguageEngine.lexicalTokens('def s = /z/\n$/y/$\n')
+        assert slashy.any { it.type() == 'string' }
+        def gstring = GroovyLanguageEngine.lexicalTokens('def s = "n:${x}"\n')
+        assert gstring.any { it.type() == 'string' }
+    }
+
+    @Test
+    void tokensWithTextCompileAndUpgradeClassNames() {
+        engine = new GroovyLanguageEngine()
+        engine.openBuffer(BUFFER, 'groovy', '')
+        def src = 'class Sample {}\n'
+        engine.updateBuffer(BUFFER, src)
+        def overlay = engine.tokens(BUFFER)
+        assert overlay.any { it.type() == 'class' && it.length() == 6 }
+        assert overlay.any { it.type() == 'keyword' }
+        engine.updateBuffer(BUFFER, '''\
+            class Box {
+                def ping(int n) { n }
+            }
+            '''.stripIndent())
+        def members = engine.tokens(BUFFER)
+        assert members.any { it.type() == 'method' }
+        assert members.any { it.type() == 'parameter' }
+        engine.updateBuffer(BUFFER, '')
+        engine.tokens(BUFFER)
+        engine.updateBuffer(BUFFER, 'package p\nimport java.util.List\nenum E { A }\ninterface I {}\n')
+        def javaish = engine.tokens(BUFFER)
+        assert javaish.any { it.type() == 'keyword' }
+        assert engine.declaredNames(BUFFER) != null
+        assert GroovyLanguageEngine.lexicalTokens('def x', null).isEmpty()
+        assert GroovyLanguageEngine.TOKEN_TYPES.contains('decorator')
+        assert GroovyLanguageEngine.TOKEN_TYPES.contains('operator')
+    }
+
+    @Test
+    void javaBufferWithoutAModuleHasNoCompiledTokens() {
+        engine = new GroovyLanguageEngine()
+        engine.openBuffer(BUFFER, 'java', 'class A { int n; }')
+        assert engine.context().snapshot.get(BUFFER).module == null
+        assert engine.declaredNames(BUFFER).isEmpty()
+        assert engine.tokens(BUFFER).isEmpty()
     }
 
     @Test
@@ -268,5 +472,57 @@ final class GroovyLanguageEngineBufferTest {
         assert renamed.newName() == 'Renamed'
         assert renamed.changeCount() >= 1
         assert renamed.changes().every { it.newText() == 'Renamed' }
+    }
+
+    @Test
+    void bufferEdgesAndHostFingerprintBranches() {
+        engine = new GroovyLanguageEngine()
+        def fresh = URI.create('groovy-buffer:fresh')
+        engine.updateBuffer(fresh, 'class Z {}')
+        assert engine.context().documents.get(fresh).version == 1
+        engine.context().documents.open(new TextDocumentItem(fresh.toString(), '', 3, 'class Z {}'))
+        engine.updateBuffer(fresh, 'class Y {}')
+        assert engine.context().documents.get(fresh).languageId == 'groovy'
+        def store = engine.context().documents
+        def documents = DocumentStore.getDeclaredField('documents')
+        documents.accessible = true
+        documents.get(store).put(fresh, new TextDocument(fresh, null, 8, 'class Y {}'))
+        engine.updateBuffer(fresh, 'class X {}')
+        assert engine.context().documents.get(fresh).languageId == 'groovy'
+
+        def bare = CompilerSettings.defaults().toConfiguration(new CompilerConfiguration())
+        assert bare.compilationCustomizers.empty
+        assert bare.scriptBaseClass == null
+
+        assert TextDocument.positionOf(null, 3) == [0, 0] as int[]
+        assert TextDocument.positionOf('', 4) == [0, 0] as int[]
+        assert TextDocument.positionOf('ab', -3) == [0, 0] as int[]
+        assert TextDocument.positionOf('ab\rcd', 3) == [1, 0] as int[]
+        assert TextDocument.positionOf('ab\r', 3) == [1, 0] as int[]
+        assert GroovyLanguageEngine.spanOf('', 0, 0, 0, 0) == [0, 0] as int[]
+        assert GroovyLanguageEngine.spanOf('ab', 0, 0, 0, 2) == [0, 2] as int[]
+        assert GroovyLanguageEngine.flattenSnippetLine('plain') == 'plain'
+
+        def nullList = new URLClassLoader(new URL[0], GroovyLanguageEngineBufferTest.classLoader) {
+            @Override
+            URL[] getURLs() { null }
+        }
+        def nullElement = new URLClassLoader(new URL[0], GroovyLanguageEngineBufferTest.classLoader) {
+            @Override
+            URL[] getURLs() { [null, new File('/tmp/lsp-edge').toURI().toURL()] as URL[] }
+        }
+        def missing = LanguageServerContext.fingerprint([], [], CompilerSettings.defaults(), nullList)
+        def listed = LanguageServerContext.fingerprint([], [], CompilerSettings.defaults(), nullElement)
+        assert missing != listed
+        assert listed.contains('file:')
+
+        assert SemanticTokensService.lexicalTokenSpans('def x', [], PositionEncoding.UTF16).isEmpty()
+        assert SemanticTokensService.lexicalTokenSpans('def x', [null], PositionEncoding.UTF16).isEmpty()
+
+        engine.openBuffer(BUFFER, 'groovy', 'class A {}')
+        engine.context().setSnapshot(CompilationSnapshot.EMPTY)
+        engine.context().setShutdown(true)
+        assert engine.declaredNames(BUFFER).isEmpty()
+        assert engine.tokens(BUFFER).isEmpty()
     }
 }

@@ -220,6 +220,7 @@ final class SupportServicesTest {
         assert decoded.any { it.type == SemanticTokensService.TOKEN_TYPES.indexOf('number') }
         assert decoded.any { it.type == SemanticTokensService.TOKEN_TYPES.indexOf('comment') }
         assert decoded.any { it.type == SemanticTokensService.TOKEN_TYPES.indexOf('string') }
+        assert decoded.any { it.type == SemanticTokensService.TOKEN_TYPES.indexOf('variable') }
     }
 
     @Test

@@ -535,6 +535,32 @@ final class WorkspaceLayoutTest {
 
 
     @Test
+    void clientImportSettingsBecomeCustomizers() {
+        def both = CompilerSettings.defaults().withExtra([
+                imports: 'java.util.concurrent.ConcurrentHashMap, ,',
+                starImports: ' java.nio.file , ',
+                scriptBaseClass: 'groovy.lang.Script'
+        ]).toConfiguration()
+        assert both.scriptBaseClass == 'groovy.lang.Script'
+        assert both.compilationCustomizers.size() == 1
+        def shell = new GroovyShell(both)
+        assert shell.evaluate('ConcurrentHashMap m = [:]; m != null')
+        assert shell.evaluate('Path p = null; true')
+
+        def baseOnly = CompilerSettings.defaults().withExtra([
+                scriptBaseClass: 'groovy.lang.Script', imports: '', starImports: ''
+        ]).toConfiguration()
+        assert baseOnly.scriptBaseClass == 'groovy.lang.Script'
+        assert baseOnly.compilationCustomizers.empty
+
+        assert CompilerSettings.defaults().withExtra([starImports: 'java.io']).toConfiguration()
+                .compilationCustomizers.size() == 1
+        assert CompilerSettings.defaults().withExtra([imports: ' , ']).toConfiguration()
+                .compilationCustomizers.size() == 1
+        assert CompilerSettings.defaults().toConfiguration().compilationCustomizers.empty
+    }
+
+    @Test
     void privateConstructorCanBeInvoked() {
         [PackageGuess].each { Class type ->
             def ctor = type.getDeclaredConstructor()
