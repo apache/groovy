@@ -392,6 +392,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     resolveOrFail(t, t);
                 }
             }
+            node.setReturnType(node.getReturnType()); // GROOVY-12426: clears descriptor cached before types were resolved
 
             currentMethod = node;
             super.visitConstructorOrMethod(node, isConstructor);

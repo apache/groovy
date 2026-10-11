@@ -67,6 +67,7 @@ import static org.codehaus.groovy.transform.DelegateASTTransformation.filterMeth
 import static org.codehaus.groovy.transform.DelegateASTTransformation.getGenericPlaceholderNames;
 import static org.codehaus.groovy.transform.DelegateASTTransformation.getParamName;
 import static org.codehaus.groovy.transform.DelegateASTTransformation.shouldSkipPropertyMethod;
+import static org.codehaus.groovy.transform.DelegateASTTransformation.uncachedDescriptor;
 import static org.codehaus.groovy.transform.StubberSupport.addStubMethod;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_NATIVE;
@@ -212,10 +213,12 @@ public class DelegateASTStubber extends AbstractASTTransformation {
         }
 
         // Same precedence rule as runtime: skip if owner has a non-abstract,
-        // non-static method with the same descriptor.
+        // non-static method with the same descriptor. Descriptors are not cached
+        // as types are not yet resolved (GROOVY-12426).
+        String descriptor = uncachedDescriptor(candidate);
         for (MethodNode mn : ownMethods) {
             if (!mn.isAbstract() && !mn.isStatic()
-                    && mn.getTypeDescriptor().equals(candidate.getTypeDescriptor())) return;
+                    && uncachedDescriptor(mn).equals(descriptor)) return;
         }
 
         Parameter[] params = candidate.getParameters();
