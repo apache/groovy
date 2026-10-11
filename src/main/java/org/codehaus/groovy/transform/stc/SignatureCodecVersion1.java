@@ -33,8 +33,11 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Arrays;
 
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
+import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
@@ -59,16 +62,44 @@ public class SignatureCodecVersion1 implements SignatureCodec {
         this.classLoader = classLoader;
     }
 
-    private void doEncode(final ClassNode node, DataOutputStream dos) throws IOException {
-        dos.writeUTF(node.getClass().getSimpleName());
-        if (node instanceof UnionTypeClassNode union) {
-            ClassNode[] delegates = union.getDelegates();
-            dos.writeInt(delegates.length);
-            for (ClassNode delegate : delegates) {
-                doEncode(delegate, dos);
+    /** Checker-only unions must not appear in class-file signatures. */
+    private static ClassNode toClassFileType(final UnionTypeClassNode union) {
+        ClassNode[] arms = union.getDelegates();
+        if (arms == null || arms.length == 0) {
+            return OBJECT_TYPE;
+        }
+        return stableBound(lowestUpperBound(Arrays.asList(arms)));
+    }
+
+    /** A lowest-upper-bound node has no single binary name. */
+    private static ClassNode stableBound(final ClassNode lub) {
+        if (lub == null) {
+            return OBJECT_TYPE;
+        }
+        if (lub instanceof UnionTypeClassNode nested) {
+            return toClassFileType(nested);
+        }
+        if (lub instanceof WideningCategories.LowestUpperBoundClassNode) {
+            ClassNode upper = lub.getUnresolvedSuperClass(false);
+            if (upper == null || isObjectType(upper)) {
+                return OBJECT_TYPE;
             }
+            return stableBound(upper);
+        }
+        String name = lub.getName();
+        if (name == null || name.isEmpty() || name.charAt(0) == '<') {
+            return OBJECT_TYPE;
+        }
+        return lub;
+    }
+
+    private void doEncode(final ClassNode node, DataOutputStream dos) throws IOException {
+        if (node instanceof UnionTypeClassNode union) {
+            doEncode(toClassFileType(union), dos);
             return;
-        } else if (node instanceof WideningCategories.LowestUpperBoundClassNode lub) {
+        }
+        dos.writeUTF(node.getClass().getSimpleName());
+        if (node instanceof WideningCategories.LowestUpperBoundClassNode lub) {
             dos.writeUTF(lub.getLubName());
             doEncode(lub.getUnresolvedSuperClass(), dos);
             ClassNode[] interfaces = lub.getInterfaces();
@@ -140,11 +171,14 @@ public class SignatureCodecVersion1 implements SignatureCodec {
         String classNodeType = dis.readUTF();
         if (UnionTypeClassNode.class.getSimpleName().equals(classNodeType)) {
             int len = dis.readInt();
+            if (len <= 0) {
+                return OBJECT_TYPE;
+            }
             ClassNode[] delegates = new ClassNode[len];
             for (int i = 0; i < len; i++) {
                 delegates[i] = doDecode(dis);
             }
-            return new UnionTypeClassNode(delegates);
+            return toClassFileType(new UnionTypeClassNode(delegates));
         } else if (WideningCategories.LowestUpperBoundClassNode.class.getSimpleName().equals(classNodeType)) {
             String name = dis.readUTF();
             ClassNode upper = doDecode(dis);
