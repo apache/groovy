@@ -18,6 +18,7 @@
  */
 package groovy.console.ui;
 
+import groovy.console.ui.text.GroovyFilter;
 import groovy.console.ui.text.MatchingHighlighter;
 import groovy.console.ui.text.SmartDocumentFilter;
 import groovy.console.ui.text.StructuredSyntaxResources;
@@ -231,7 +232,7 @@ public class ConsoleTextEditor extends JScrollPane {
         initActions();
 
         DefaultStyledDocument doc = new DefaultStyledDocument();
-        doc.setDocumentFilter(new SmartDocumentFilter(doc));
+        doc.setDocumentFilter(highlightingFilter(doc));
         textEditor.setDocument(doc);
 
         // add a document listener, to hint whether the line number gutter has to be repainted
@@ -460,28 +461,100 @@ public class ConsoleTextEditor extends JScrollPane {
     }
 
     /**
+     * Semantic highlighter when groovy-lsp (and Gson) can be linked.
+     * A missing jar surfaces as {@link LinkageError} while the filter class
+     * initialises. The editor then uses the regex highlighter and stays open.
+     *
+     * @param doc document to highlight
+     * @return the installed filter
+     */
+    static DocumentFilter highlightingFilter(DefaultStyledDocument doc) {
+        return highlightingFilter(doc, SmartDocumentFilter::new);
+    }
+
+    /**
+     * Same as {@link #highlightingFilter(DefaultStyledDocument)}, with the
+     * semantic filter supplied by the caller so a test can simulate a missing jar.
+     *
+     * @param doc document to highlight
+     * @param semantic opens the semantic filter
+     * @return the installed filter
+     */
+    static DocumentFilter highlightingFilter(DefaultStyledDocument doc, FilterSource semantic) {
+        try {
+            return semantic.open(doc);
+        } catch (LinkageError error) {
+            return regexFilter(doc, error);
+        }
+    }
+
+    /**
+     * Opens a document filter. Production passes the smart-highlighter constructor.
+     */
+    @FunctionalInterface
+    interface FilterSource {
+        /**
+         * @param doc document to highlight
+         * @return the filter
+         */
+        DocumentFilter open(DefaultStyledDocument doc);
+    }
+
+    /**
      * Replaces the current syntax highlighter document filter.
+     * A missing language-services jar falls back to regex highlighting.
      *
      * @param clazz the filter type to instantiate for the current document
      */
     public void enableHighLighter(Class<? extends DocumentFilter> clazz) {
         DefaultStyledDocument doc = (DefaultStyledDocument) textEditor.getDocument();
+        closeHighlighter();
 
         try {
-            DocumentFilter documentFilter = clazz.getConstructor(doc.getClass()).newInstance(doc);
-            doc.setDocumentFilter(documentFilter);
-
-            disableMatchingHighlighter();
-            if (documentFilter instanceof SmartDocumentFilter smartDocumentFilter) {
-                enableMatchingHighlighter(smartDocumentFilter);
-            }
+            DocumentFilter documentFilter = clazz == SmartDocumentFilter.class
+                    ? highlightingFilter(doc)
+                    : clazz.getConstructor(doc.getClass()).newInstance(doc);
+            installFilter(doc, documentFilter);
+        } catch (LinkageError error) {
+            installFilter(doc, regexFilter(doc, error));
         } catch (ReflectiveOperationException e) {
-            e.printStackTrace();
+            Throwable cause = e.getCause();
+            if (cause instanceof LinkageError link) {
+                installFilter(doc, regexFilter(doc, link));
+            } else {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static DocumentFilter regexFilter(DefaultStyledDocument doc, LinkageError error) {
+        LOGGER.log(WARNING, "Groovy language services are unavailable ({0}); using regex highlighting.",
+                error.getClass().getSimpleName());
+        return new GroovyFilter(doc);
+    }
+
+    private void installFilter(DefaultStyledDocument doc, DocumentFilter documentFilter) {
+        doc.setDocumentFilter(documentFilter);
+        disableMatchingHighlighter();
+        if (documentFilter instanceof SmartDocumentFilter smartDocumentFilter) {
+            enableMatchingHighlighter(smartDocumentFilter);
         }
     }
 
     private void enableMatchingHighlighter(SmartDocumentFilter smartDocumentFilter) {
         textEditor.addCaretListener(new MatchingHighlighter(smartDocumentFilter, textEditor));
+    }
+
+    /**
+     * Closes the smart highlighter's language client, if one is installed.
+     */
+    public void closeHighlighter() {
+        if (textEditor == null || !(textEditor.getDocument() instanceof DefaultStyledDocument doc)) {
+            return;
+        }
+        if (doc.getDocumentFilter() instanceof SmartDocumentFilter smartDocumentFilter) {
+            smartDocumentFilter.close();
+        }
     }
 
     private void disableMatchingHighlighter() {

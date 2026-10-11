@@ -51,6 +51,21 @@ public final class GroovyKeywords {
     }
 
     /**
+     * @param type a {@link GroovyLexer} token type
+     * @return {@code true} when {@code type} is painted as a reserved word
+     */
+    public static boolean isKeywordType(final int type) {
+        return KEYWORD_TOKEN_TYPES.contains(type);
+    }
+
+    /**
+     * Lexer token types painted as reserved words: vocabulary word
+     * keywords, {@code !in}/{@code !instanceof}, primitives, {@code true},
+     * {@code false} and {@code null}.
+     */
+    public static final List<Integer> KEYWORD_TOKEN_TYPES = List.copyOf(keywordTokenTypes());
+
+    /**
      * Declaration modifiers, using the lexer token types so the spelling
      * still comes from the vocabulary.
      */
@@ -61,6 +76,27 @@ public final class GroovyKeywords {
             GroovyLexer.TRANSIENT, GroovyLexer.VOLATILE));
 
     private GroovyKeywords() {
+    }
+
+    private static List<Integer> keywordTokenTypes() {
+        List<Integer> types = new ArrayList<>();
+        Vocabulary vocabulary = GroovyLexer.VOCABULARY;
+        for (int type = 1; type <= vocabulary.getMaxTokenType(); type++) {
+            if (isKeywordTokenType(vocabulary, type)) {
+                types.add(type);
+            }
+        }
+        return types;
+    }
+
+    private static boolean isKeywordTokenType(final Vocabulary vocabulary, final int type) {
+        if (type == GroovyLexer.NOT_IN || type == GroovyLexer.NOT_INSTANCEOF
+                || type == GroovyLexer.BuiltInPrimitiveType
+                || type == GroovyLexer.BooleanLiteral
+                || type == GroovyLexer.NullLiteral) {
+            return true;
+        }
+        return isWordKeyword(unquote(vocabulary.getLiteralName(type)));
     }
 
     private static TreeSet<String> keywords() {

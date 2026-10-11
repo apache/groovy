@@ -20,6 +20,7 @@ package org.apache.groovy.groovysh
 
 import groovy.cli.internal.CliBuilderInternal
 import groovy.cli.internal.OptionAccessor
+import groovy.transform.PackageScope
 import org.apache.groovy.groovysh.ExtraConsoleCommands as DefaultExtraConsoleCommands
 import org.apache.groovy.groovysh.jline.GroovyBuiltins
 import org.apache.groovy.groovysh.jline.GroovyCommands
@@ -27,6 +28,7 @@ import org.apache.groovy.groovysh.jline.GroovyConsoleEngine
 import org.apache.groovy.groovysh.jline.GroovyEngine
 import org.apache.groovy.groovysh.jline.GroovyPrinter
 import org.apache.groovy.groovysh.jline.GroovySystemRegistry
+import org.apache.groovy.groovysh.language.GroovyshLanguageSession
 import org.apache.groovy.groovysh.util.DocFinder
 import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.tools.shell.util.MessageSource
@@ -267,6 +269,7 @@ class Main {
             return 0
         }
         String evaluate = options.e ?: null
+        GroovyshLanguageSession languageSession = null
 
         try {
             DefaultParser parser = new DefaultParser(
@@ -331,6 +334,10 @@ class Main {
                 .variable(LineReader.SECONDARY_PROMPT_PATTERN, "%M%P > ")
                 .variable(LineReader.INDENTATION, 2)
                 .variable(LineReader.LIST_MAX, 100)
+                // A tall member list must not ask "see all N possibilities?".
+                // That prompt reads the next key, so Backspace looks frozen
+                // and never deletes the character before the caret.
+                .variable(LineReader.TOO_MANY_CANDIDATES, 'show')
                 // Left for JLine to create: DefaultHistory creates the history file owner-only,
                 // handles the concurrent-creation race, and falls back on non-POSIX file systems.
                 // Creating it here first is what used to defeat that and leave it at the umask
@@ -367,8 +374,6 @@ class Main {
                 def registries = groovyshOptions.groups.collect { new CommandRegistryAdapter(it) as CommandRegistry }
                 registries.addAll([extra, consoleEngine, builtins, groovy])
                 setCommandRegistries(registries.toArray(new CommandRegistry[0]))
-                addCompleter(scriptEngine.scriptCompleter)
-                setScriptDescription(scriptEngine::scriptDescription)
                 renameLocal 'exit', '/exit'
                 renameLocal 'help', '/help'
                 invoke '/alias', '/x', '/exit'
@@ -396,13 +401,12 @@ class Main {
             KeyMap<Binding> keyMap = reader.keyMaps.get("main")
             keyMap.bind(new Reference(Widgets.TAILTIP_TOGGLE), KeyMap.alt("s"))
             keyMap.bind(new Reference(Widgets.AUTOSUGGEST_TOGGLE), KeyMap.alt("v"))
-            // last, so an embedder sees the reader fully wired — completer included
-            groovyshOptions.onReaderReady?.accept(reader, systemRegistry)
-
+            // groovysh_init.groovy is the CLI place that sets noSyntaxCheck.
+            // The session is chosen after that file runs, then the embedder
+            // callback sees the completer that choice installed.
             def init = configPath.getUserConfig('groovysh_init.groovy')
-            if (init) {
-                systemRegistry.initialize(init.toFile())
-            }
+            languageSession = attachLanguageSession(scriptEngine, systemRegistry, init?.toFile())
+            groovyshOptions.onReaderReady?.accept(reader, systemRegistry)
 
             Supplier<String> prompt = groovyshOptions.prompt ?: ({ 'groovy> ' } as Supplier<String>)
             Supplier<String> rightPrompt = groovyshOptions.rightPrompt
@@ -476,6 +480,8 @@ class Main {
         } catch (Throwable t) {
             t.printStackTrace()
             return 1
+        } finally {
+            languageSession?.close()
         }
         return 0
     }
@@ -490,6 +496,60 @@ class Main {
      */
     static int start(String[] args) {
         start(GroovyshOptions.builder().build(), args)
+    }
+
+    /**
+     * Runs {@code groovysh_init.groovy} when that file exists, then attaches
+     * the language session. The init file is the CLI place a user sets
+     * {@code noSyntaxCheck}, so the flag is read after the file runs.
+     *
+     * @param scriptEngine REPL engine
+     * @param systemRegistry command registry
+     * @param init user init script, or {@code null}
+     * @return the session, or {@code null} when syntax checking is off or the language jar is absent
+     */
+    @PackageScope
+    static GroovyshLanguageSession attachLanguageSession(GroovyEngine scriptEngine, GroovySystemRegistry systemRegistry, File init) {
+        if (init != null) {
+            systemRegistry.initialize(init)
+        }
+        installLanguageSession(scriptEngine, systemRegistry, null)
+    }
+
+    /**
+     * Attaches the in-process language session unless {@code noSyntaxCheck}
+     * is set. In that case Tab keeps {@code scriptCompleter} and tail-tips
+     * stay on the engine's Inspector path. Only one of those completers is
+     * registered. A missing groovy-lsp or Gson jar is a {@link LinkageError};
+     * the shell then uses the Inspector path and prints one warning.
+     *
+     * @param scriptEngine REPL engine
+     * @param systemRegistry command registry
+     * @param open constructs the session, or {@code null} for the real constructor
+     * @return the session, or {@code null} when syntax checking is off or the language jar is absent
+     */
+    @PackageScope
+    static GroovyshLanguageSession installLanguageSession(GroovyEngine scriptEngine, GroovySystemRegistry systemRegistry,
+                                                          Closure<GroovyshLanguageSession> open) {
+        if (scriptEngine.isNoSyntaxCheck()) {
+            useInspector(scriptEngine, systemRegistry)
+            return null
+        }
+        try {
+            GroovyshLanguageSession session = open != null ? open.call() : new GroovyshLanguageSession(scriptEngine)
+            systemRegistry.addCompleter(session)
+            systemRegistry.setScriptDescription(session::scriptDescription)
+            return session
+        } catch (LinkageError error) {
+            System.err.println("Groovy language services are unavailable (${error.class.simpleName}); Tab uses the shell completer.")
+            useInspector(scriptEngine, systemRegistry)
+            return null
+        }
+    }
+
+    private static void useInspector(GroovyEngine scriptEngine, GroovySystemRegistry systemRegistry) {
+        systemRegistry.addCompleter(scriptEngine.scriptCompleter)
+        systemRegistry.setScriptDescription(scriptEngine::scriptDescription)
     }
 
     private static void emitResult(Printer printer, Object result, GroovyshOptions.ResultHandler handler) throws Exception {

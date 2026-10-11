@@ -784,7 +784,7 @@ final class NavigationIdentityTest {
         def completion = new CompletionService()
         def gdkDoc = new TextDocument(URI.create('file:///gdk.groovy'), 'groovy', 1, 'foo.each')
         def gdk = completion.complete(gdkDoc, CompilationSnapshot.EMPTY, new Position(0, 8), UTF16)
-        assert gdk.items.any { it.detail == 'GDK' }
+        assert gdk.items.any { it.label == 'each' && it.detail?.contains('each(') }
         assert completion.complete(null, snapshot, new Position(0, 0), UTF16).items.any { it.kind.toString() == 'Keyword' }
         assert CompletionService.prefixAt(null, null, UTF16) == ''
         assert !CompletionService.isMemberAccess(null, null, UTF16)

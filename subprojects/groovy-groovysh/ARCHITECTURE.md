@@ -238,6 +238,28 @@ the public seams rather than copying `Main`:
 - `ExtraConsoleCommands` — public top-level class for `/clear`,
   `/pwd`, `/cd`, the POSIX-style commands, and `/!`.
   `Main.ExtraConsoleCommands` is a deprecated subclass.
+- `groovy-lsp`: groovysh takes an `implementation` dependency and does
+  not depend on groovy-console. `/console` and `/inspect --gui` load
+  `groovy.console.ui` by name when that jar is already on the classpath.
+  `GroovyshLanguageSession` is an `@Internal` adapter constructed
+  from `Main`. It implements JLine `Completer`, wraps
+  `scriptDescription`, and composes `GroovyEngine.getBuffer()` plus
+  binding type declarations plus the current line onto its own
+  buffer URI (`groovy-buffer:repl`). The server does not assign
+  that name. The adapter speaks `GroovyLanguageServer` with LSP4J
+  messages, in-process, and does not import `org.apache.groovy.lsp.internal`.
+  `SYNTAX` tail-tips return compiler diagnostics and
+  do not evaluate; `METHOD` signatures use the full line so an
+  unclosed `(` is visible. `/grab` is noticed because the compile
+  fingerprint includes the parent loader's URLs. The session publishes
+  that loader, classpath, and import customizers only when the
+  `CompilerConfiguration` instance changes. In-place edits are
+  not a groovysh path: the field is final, and interactive imports are
+  buffer snippets. Binding
+  names already in the REPL buffer come from the `groovy.scriptNames`
+  command. Snippet insert text is flattened with
+  `flattenSnippetLine`. Tests for it live at the session layer (no
+  terminal).
 
 Where a `GroovyshOptions` setting has an equivalent on JLine's
 `ShellBuilder`, it uses the same name and parameter type on purpose.

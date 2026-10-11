@@ -65,6 +65,7 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import org.apache.groovy.lsp.internal.compile.CompilationSnapshot
 import org.apache.groovy.lsp.internal.feature.LanguageFeatures
 import org.apache.groovy.lsp.internal.position.PositionEncoding
@@ -303,6 +304,74 @@ final class GroovyLanguageServerTest {
         } finally {
             release.countDown()
             Files.deleteIfExists(folder)
+        }
+    }
+
+    @Test
+    void publishDiagnosticsSkipsANullSnapshot() {
+        fixture = new LspFixture()
+        int before = fixture.publishedParams.size()
+        def field = LanguageServerContext.getDeclaredField('snapshot')
+        field.accessible = true
+        (field.get(fixture.server.context) as AtomicReference).set(null)
+        fixture.server.context.publishDiagnostics()
+        assert fixture.publishedParams.size() == before
+    }
+
+    /**
+     * A compile that already observed a deleted file must not publish its
+     * diagnostics after a later compile has cleared that URI.
+     */
+    @Test
+    void staleCompileDoesNotRepublishDiagnosticsForARemovedFile() {
+        def entered = new CountDownLatch(1)
+        def release = new CountDownLatch(1)
+        def held = new AtomicBoolean()
+        def brokenUri = new AtomicReference<String>()
+        fixture = new LspFixture() {
+            @Override
+            void publishDiagnostics(PublishDiagnosticsParams params) {
+                if (params?.uri?.endsWith('Broken.groovy') && params.diagnostics
+                        && held.compareAndSet(false, true)) {
+                    brokenUri.set(params.uri)
+                    entered.countDown()
+                    assert release.await(10, TimeUnit.SECONDS)
+                }
+                super.publishDiagnostics(params)
+            }
+        }
+        def folder = Files.createTempDirectory('groovy-lsp-stale')
+        def broken = folder.resolve('Broken.groovy')
+        Files.writeString(broken, 'class Broken {')
+        def added = new WorkspaceFolder(folder.toUri().toString(), 'tmp')
+        def publisher = Thread.start {
+            fixture.server.workspaceService.didChangeWorkspaceFolders(new DidChangeWorkspaceFoldersParams(
+                    new WorkspaceFoldersChangeEvent([added], [])))
+            fixture.server.context.recompile()
+        }
+        Thread clearer = null
+        try {
+            assert entered.await(10, TimeUnit.SECONDS)
+            Files.delete(broken)
+            fixture.server.workspaceService.didChangeWorkspaceFolders(new DidChangeWorkspaceFoldersParams(
+                    new WorkspaceFoldersChangeEvent([], [added])))
+            clearer = Thread.start {
+                fixture.server.context.recompile()
+            }
+            // The held notification owns the publish lock. Give the clearer time
+            // to finish compiling and wait behind that lock before the hold ends.
+            Thread.sleep(300)
+            release.countDown()
+            publisher.join(10_000)
+            clearer.join(10_000)
+            assert !publisher.alive
+            assert !clearer.alive
+            assert fixture.diagnostics[brokenUri.get()] == []
+        } finally {
+            release.countDown()
+            publisher.join(10_000)
+            clearer?.join(10_000)
+            Files.deleteIfExists(broken)
         }
     }
 
@@ -567,6 +636,35 @@ final class GroovyLanguageServerTest {
                 [new WorkspaceFolder(folder.toUri().toString(), 'root')], [])))
         assert ws.executeCommand(new ExecuteCommandParams('groovy.lsp.organizeImports', [uri])).get() != null
         assert ws.executeCommand(new ExecuteCommandParams('unknown', [])).get() == null
+    }
+
+    @Test
+    void inProcessCommandsPublishLoaderNamesAndSkipBackgroundCompile() {
+        fixture = new LspFixture()
+        def uri = fixture.open('Names.groovy', 'int kept = 7\ndef ping() {}\n')
+        def ws = fixture.server.workspaceService
+        assert ws.executeCommand(new ExecuteCommandParams('groovy.compile', [uri])).get() == null
+        def names = ws.executeCommand(new ExecuteCommandParams('groovy.scriptNames', [uri])).get()
+        assert names instanceof List
+        assert names.contains('ping')
+        assert ws.executeCommand(new ExecuteCommandParams('groovy.scriptNames', ['groovy-buffer:missing'])).get() == []
+        assert ws.executeCommand(new ExecuteCommandParams('groovy.scriptNames', [])).get() == null
+
+        def loader = new URLClassLoader(new URL[0], GroovyLanguageServerTest.classLoader)
+        try {
+            assert ws.executeCommand(new ExecuteCommandParams('groovy.parentLoader', [loader])).get() == null
+            assert fixture.server.context.parentLoader.is(loader)
+            assert ws.executeCommand(new ExecuteCommandParams('groovy.parentLoader', ['nope'])).get() == null
+            assert fixture.server.context.parentLoader.is(loader)
+            assert ws.executeCommand(new ExecuteCommandParams('groovy.parentLoader', [])).get() == null
+            assert fixture.server.context.parentLoader == null
+        } finally {
+            loader.close()
+        }
+
+        ws.didChangeConfiguration(new DidChangeConfigurationParams([groovy: [compile: 'false']]))
+        assert fixture.server.context.settings.extra.compile == 'false'
+        fixture.server.context.scheduleRecompile(50)
     }
 
     @Test

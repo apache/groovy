@@ -141,9 +141,11 @@ public final class GroovyTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(final CompletionParams params) {
+        context.recompile();
         return withDocument(params.getTextDocument().getUri(), Either.forRight(new CompletionList(false, List.of())),
                 document -> Either.forRight(features.completions().complete(document, context.getSnapshot(),
-                        params.getPosition(), context.getPositionEncoding())));
+                        params.getPosition(), context.getPositionEncoding(),
+                        context.getParentLoader(), context.getHostConfiguration(), context.getSettings())));
     }
 
     @Override
@@ -153,6 +155,7 @@ public final class GroovyTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<Hover> hover(final HoverParams params) {
+        context.recompile();
         return withDocument(params.getTextDocument().getUri(), null,
                 document -> features.hovers().hover(document, context.getSnapshot(), params.getPosition(),
                         context.getPositionEncoding()));
@@ -160,6 +163,7 @@ public final class GroovyTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<SignatureHelp> signatureHelp(final SignatureHelpParams params) {
+        context.recompile();
         return withDocument(params.getTextDocument().getUri(), new SignatureHelp(List.of(), 0, 0),
                 document -> features.signatureHelp().signatureHelp(document, context.getSnapshot(), params.getPosition(),
                         context.getPositionEncoding()));
@@ -314,8 +318,9 @@ public final class GroovyTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<SemanticTokens> semanticTokensFull(final SemanticTokensParams params) {
-        return fromCompiled(params.getTextDocument().getUri(),
-                compiled -> features.semanticTokens().semanticTokens(compiled, context.getPositionEncoding()));
+        return withDocument(params.getTextDocument().getUri(), new SemanticTokens(List.of()),
+                document -> features.semanticTokens().semanticTokens(document.getText(),
+                        context.getSnapshot().get(document), context.getPositionEncoding()));
     }
 
     @Override

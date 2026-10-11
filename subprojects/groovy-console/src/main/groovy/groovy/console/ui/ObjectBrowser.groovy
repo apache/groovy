@@ -22,6 +22,7 @@ import groovy.beans.Bindable
 import groovy.inspect.Inspector
 import groovy.swing.SwingBuilder
 import groovy.swing.table.TableSorter
+import org.apache.groovy.lsp.GroovyLanguageClient
 
 import javax.swing.ToolTipManager
 import javax.swing.WindowConstants
@@ -32,7 +33,6 @@ import java.awt.datatransfer.StringSelection
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 
-import static groovy.console.ui.text.SmartDocumentFilter.HIGHLIGHTED_TOKEN_TYPE_LIST
 import static groovy.inspect.Inspector.MEMBER_DECLARER_IDX
 import static groovy.inspect.Inspector.MEMBER_EXCEPTIONS_IDX
 import static groovy.inspect.Inspector.MEMBER_MODIFIER_IDX
@@ -42,7 +42,7 @@ import static groovy.inspect.Inspector.MEMBER_PARAMS_IDX
 import static groovy.inspect.Inspector.MEMBER_TYPE_IDX
 import static groovy.inspect.Inspector.MEMBER_VALUE_IDX
 import static javax.swing.ListSelectionModel.SINGLE_SELECTION
-import static org.apache.groovy.parser.antlr4.GroovyLexer.VOCABULARY
+
 /**
  * A little GUI to show some of the Inspector capabilities.
  * Starting this script opens the ObjectBrowser on "some String".
@@ -179,9 +179,8 @@ class ObjectBrowser {
                     return p
                 }.join('\n').trim()
 
-                for (def ln in (HIGHLIGHTED_TOKEN_TYPE_LIST.collect {
-                                    VOCABULARY.getLiteralName(it)?.replace("'", '')
-                                }.grep { it } + ['module', 'true', 'false'])) {
+                // Lexer vocabulary, including primitives, true, false, and null.
+                for (def ln in lexerWords()) {
                     content = content.replaceAll(/\b(${ln})\b/, '<b>$1</b>')
                 }
                 content = content.replace('\n', '<br/>').replace(',', '<b>,</b>').replace(':', '<b>:</b>')
@@ -450,6 +449,11 @@ class ObjectBrowser {
         pane.setMessage('An interactive GUI to explore object capabilities.\nVersion ' + version)
         def dialog = pane.createDialog(frame, 'About Groovy Object Browser')
         dialog.show()
+    }
+
+    /** Keywords reported by groovy-lsp, including primitives and literals. */
+    private static List<String> lexerWords() {
+        GroovyLanguageClient.keywordList()
     }
 }
 
