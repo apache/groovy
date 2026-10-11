@@ -18,6 +18,7 @@
  */
 package groovy.http
 
+import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -95,6 +96,7 @@ class HttpBuilderTest {
             exchange.responseBody.withCloseable { it.write(bytes) }
         }
         server.createContext('/redirect-me') { exchange ->
+            consumeRequest(exchange)
             exchange.responseHeaders.add('Location', '/redirect-target')
             exchange.sendResponseHeaders(302, -1)
             exchange.close()
@@ -572,10 +574,23 @@ class HttpBuilderTest {
 
     private void redirect(String path, int status, String location) {
         server.createContext(path) { exchange ->
+            consumeRequest(exchange)
             exchange.responseHeaders.add('Location', location)
             exchange.sendResponseHeaders(status, -1)
             exchange.close()
         }
+    }
+
+    /**
+     * Read the request entity before the response is completed.
+     * {@code com.sun.net.httpserver} closes the connection when the body is
+     * still unread at write-finished time, and it does so without sending
+     * {@code Connection: close}. The JDK client then reuses that socket for
+     * the next hop. {@code PUT} and {@code POST} are not retried, so the hop
+     * fails with {@code HTTP/1.1 header parser received no bytes}.
+     */
+    private static void consumeRequest(HttpExchange exchange) {
+        exchange.requestBody.withCloseable { it.readAllBytes() }
     }
 
     private void text(String path, String body) {

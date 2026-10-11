@@ -60,12 +60,14 @@ class HttpBuilderRedirectHeaderTest {
 
         // The redirect target is passed as the query so one handler serves every case.
         origin.createContext('/redirect') { HttpExchange exchange ->
+            consumeRequest(exchange)
             exchange.responseHeaders.add('Location', exchange.requestURI.query)
             exchange.sendResponseHeaders(302, -1)
             exchange.close()
         }
         // 307 variant: the method and body are preserved across the hop.
         origin.createContext('/redirect307') { HttpExchange exchange ->
+            consumeRequest(exchange)
             exchange.responseHeaders.add('Location', exchange.requestURI.query)
             exchange.sendResponseHeaders(307, -1)
             exchange.close()
@@ -82,6 +84,7 @@ class HttpBuilderRedirectHeaderTest {
         }
         // Second hop for the return-to-origin case.
         elsewhere.createContext('/bounce') { HttpExchange exchange ->
+            consumeRequest(exchange)
             exchange.responseHeaders.add('Location', URLDecoder.decode(exchange.requestURI.query, 'UTF-8'))
             exchange.sendResponseHeaders(302, -1)
             exchange.close()
@@ -101,6 +104,18 @@ class HttpBuilderRedirectHeaderTest {
         received.clear()
         arrivals.set(0)
         receivedBody = null
+    }
+
+    /**
+     * Read the request entity before the response is completed.
+     * {@code com.sun.net.httpserver} closes the connection when the body is
+     * still unread at write-finished time, and it does so without sending
+     * {@code Connection: close}. The JDK client then reuses that socket for
+     * the next hop. {@code PUT} and {@code POST} are not retried, so the hop
+     * fails with {@code HTTP/1.1 header parser received no bytes}.
+     */
+    private static void consumeRequest(HttpExchange exchange) {
+        exchange.requestBody.withCloseable { it.readAllBytes() }
     }
 
     private static void record(HttpExchange exchange) {
