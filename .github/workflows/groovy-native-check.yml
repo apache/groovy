@@ -87,7 +87,7 @@ jobs:
       # GraalVM renamed its builds from jdk-25.0.x to graal-25.x in 2026, and
       # with `java-version` alone (or with setup-java) the resolution stops at
       # the January jdk-25.0.2 build, which predates the fix Groovy 6 needs.
-      - uses: graalvm/setup-graalvm@0426e2e191540e8514dff98dc52a5f5146a2a276 # v1.6.6
+      - uses: graalvm/setup-graalvm@27b360dbb857524eaf0b4c4cef364d38e5b4f173 # v1.6.7
         with:
           version: '25.3'
           java-version: '25'
