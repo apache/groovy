@@ -29,6 +29,9 @@ dependencies {
     implementation "org.ow2.asm:asm-util:${versions.asm}"
     implementation projects.groovyGrapeIvy
     implementation projects.groovyTemplates
+    // Editor language services. implementation, not api: the engine stays
+    // internal, and LSP4J is not part of this module's published API.
+    implementation projects.groovyLsp
     runtimeOnly "org.abego.treelayout:org.abego.treelayout.core:${versions.treelayout}"
     testImplementation projects.groovyTest
     testImplementation testFixtures(projects.groovySwing)

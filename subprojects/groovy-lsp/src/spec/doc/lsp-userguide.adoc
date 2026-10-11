@@ -162,6 +162,19 @@ Extra `groovy.*` keys are stored as strings.
 A list becomes its text.
 Changing one of them forces the next compile onto a fresh class loader.
 `groovy.dependencies` is one such key.
+`groovy.imports` and `groovy.starImports` are comma-separated class or package names.
+An empty value adds no import customizer, so the next compile does not keep the previous client import list.
+`groovy.scriptBaseClass` sets the script base class.
+`groovy.compile` set to `false` skips the debounced compile.
+`textDocument/semanticTokens` still returns lexical tokens for that buffer.
+An in-process client may pass a `ClassLoader` to the `groovy.parentLoader` command.
+A remote client sends `groovy.classpath` instead.
+`groovy.scriptNames` returns the script-level names of an open document.
+`groovy.keywords` returns the lexer keywords.
+`groovy.tokens` returns the lenient lexer tokens of an open document.
+`groovy.cst` returns its concrete syntax tree.
+None of those three compile the buffer.
+`groovy.compile` compiles immediately and publishes diagnostics.
 The server records it and does not download it.
 
 [WARNING]
@@ -279,9 +292,9 @@ Completion is triggered by `.` and `@`, and by an explicit completion request.
 The list can contain:
 
 * keywords taken from the Groovy lexer, plus snippets for `class`, `interface`, `trait`, `enum`, `for`, `if`, and `try`
-* members of the receiver at the caret, inserted as a snippet
+* members of the receiver after `.`, `?.`, or `*.`, inserted as a snippet. An unfinished statement still uses the receiver's declared type or the type of its initializer. Keywords are not offered on a member access. A class name such as `String.` offers that class's members
 * types declared in the workspace, with an additional edit that adds an unambiguous import
-* GDK methods, after the first two characters of the name
+* extension methods of a resolved receiver, including the GDK, listed with that receiver's own members. An unresolved receiver still needs the first two characters of the name, so the whole catalog is not offered for a bare dot
 * unimplemented abstract methods, as `@Override` snippets inside a class body
 * parameter names at a call, inserted as `name: ` when the call is bound or has a single arity match
 
@@ -457,10 +470,15 @@ class Folded {
 `// region` and `// endregion` work the same way, with or without the `#`.
 
 Semantic tokens cover the whole file or a range.
-The legend is append-only: `namespace`, `class`, `enum`, `interface`, `method`, `property`, `variable`, `parameter`, `keyword`, `string`, `number`, and `comment`.
-Lexer tokens contribute keywords, strings (GString pieces, without treating the interpolated expression as a string), numbers, and comments.
+The legend is append-only: `namespace`, `class`, `enum`, `interface`, `method`, `property`, `variable`, `parameter`, `keyword`, `string`, `number`, `comment`, `operator`, `decorator`, and `delimiter`.
+Lexer tokens contribute keywords, strings (GString pieces, without treating the interpolated expression as a string), numbers, comments, `@`, comma or semicolon, and structural brackets (`( )`, `[ ]`, `{ }`, and `?[`).
+A bracket inside a string or a comment is not a `delimiter` token.
 The AST then paints package and import names, types, methods, properties, parameters, and the identifiers at use sites.
-Modifier bits are `declaration`, `static`, and `deprecated`.
+Modifier bits are `declaration`, `static`, `deprecated`, `slashy`, and `singleQuoted`.
+A string without `slashy` or `singleQuoted` is double-quoted.
+A GString part uses the modifier of the token that opened the literal.
+The `$` that ends a GString begin or part is not part of the string token.
+When the compiled snapshot describes different text, the full semantic-token request uses the lexer only.
 The server does not advertise multiline token support.
 A multiline comment or triple-quoted string is split into one token per line.
 
@@ -480,8 +498,19 @@ Selection ranges grow from the caret through each enclosing AST node, so each re
 [[lsp-in-process]]
 == In-process use
 
-Console, groovysh, and tests can use the same snapshot without speaking JSON-RPC.
-`GroovyLanguageEngine` is that facade.
+Groovy Console and groovysh depend on this module and share `GroovyLanguageClient`, which calls `GroovyLanguageServer` in-process.
+The messages are the ones a remote editor sends.
+`initialize` does not set a workspace root, because that would compile the process directory.
+`textDocument/didChange` sends the whole buffer.
+The same text does not change the document version, so a later compile can reuse the snapshot.
+A highlighter sets `groovy.compile` to `false` and asks for `textDocument/semanticTokens`.
+That request does not compile.
+Configuration is `workspace/didChangeConfiguration`.
+The in-process commands are `groovy.compile`, `groovy.parentLoader` (a `ClassLoader` in this JVM), and `groovy.scriptNames`.
+The calls are ordinary method calls.
+They are not serialized to JSON on each keystroke.
+
+`GroovyLanguageEngine` is a second, internal facade for tests and for a host that wants JDK records instead of LSP types.
 Its results are JDK records.
 They do not use LSP4J types.
 The engine does not scan workspace folders and does not reserve buffer names.
@@ -528,14 +557,29 @@ It does not append the `_inferred_` line that the protocol hover adds.
 `symbols` matches workspace symbols, including CamelHumps.
 `rename` returns edits and does not write them.
 `format` and `organizeImports` also return edits.
-`tokens` returns absolute semantic-token spans for a host highlighter.
+`tokens` returns absolute compiled semantic-token spans.
+Those spans need a compiled snapshot, so do not call `tokens(URI)` on the Swing EDT.
+`lexicalTokens(text)` is the same legend for a caller that already holds the engine.
+Groovy Console paints `textDocument/semanticTokens` instead, so a highlight does not compile.
+Identifiers stay `variable` until a compiled `tokens(uri)` overlay replaces them.
 `compileNow` compiles immediately.
 `scheduleCompile` compiles after the delay you pass.
-`setParentLoader`, `setClasspath`, and `putExtra` are the session controls.
+`diagnostics`, `complete`, `describe`, `signatures`, and `declaredNames` each have a form that takes the buffer text, replaces it, then queries.
+The same text keeps the document version, so the snapshot is reused.
+`flattenSnippet` strips LSP snippet placeholders.
+`flattenSnippetLine` keeps the first line.
+`positionOf`, `offsetOf`, and `spanOf` convert 0-based UTF-16 positions.
+CR, LF, and CRLF are line breaks. A character past the end of a line stays on that line.
+A zero-width range at the end of the text paints the last character.
+`setParentLoader`, `setClasspath`, `setHostConfiguration`, and `putExtra` are the session controls.
+`setParentLoader` records loader identity and, for a `URLClassLoader`, its URL list, so an in-place `addURL` is visible on the next compile.
+`setHostConfiguration` copies the script base class and compilation customizers from a Console or groovysh `CompilerConfiguration` into the tooling compile.
+Every call drops the cached compile, including a repeat with the same instance, so call it after an in-place customizer edit and not before every query.
 `putExtra` records one opaque string and, like a classpath change, forces the next compile onto a fresh loader.
 
-Hosts that must not put LSP4J on the Groovy classpath can depend on `groovy-lsp` as `compileOnly` and load the engine with `Class.forName`.
-Groovy Console and groovysh do that.
+A third-party host that must keep LSP4J off its own compile classpath can depend on `groovy-lsp` as `compileOnly` and load `GroovyLanguageServer` or `GroovyLanguageEngine` with `Class.forName`.
+Console and groovysh do not do that.
+They compile against the protocol types.
 
 ****
 *Inferred results.*

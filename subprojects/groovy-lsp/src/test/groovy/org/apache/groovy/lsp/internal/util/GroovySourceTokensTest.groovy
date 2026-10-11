@@ -63,4 +63,16 @@ final class GroovySourceTokensTest {
         assert GroovySourceTokens.tokenize('1_').isEmpty()
         assert GroovySourceTokens.covering('1_', 0) == null
     }
+
+    @Test
+    void tokenizeLenientKeepsTokensOnIncompleteInput() {
+        def tokens = GroovySourceTokens.tokenizeLenient('def x =')
+        assert tokens.any { it.text == 'def' }
+        assert GroovySourceTokens.tokenizeLenient('1_').any { it.text.contains('1') }
+        assert GroovySourceTokens.tokenizeLenient(null).isEmpty()
+        assert GroovySourceTokens.tokenizeLenient('').isEmpty()
+        def gstring = GroovySourceTokens.tokenizeLenient('"foo$')
+        assert gstring.any { it.text.contains('foo') || it.text.contains('"') }
+        assert GroovySourceTokens.tokenizeLenient('#!only') != null
+    }
 }

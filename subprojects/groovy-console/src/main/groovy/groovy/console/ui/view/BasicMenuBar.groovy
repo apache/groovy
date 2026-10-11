@@ -59,6 +59,8 @@ menuBar {
         menuItem(largerFontAction)
         menuItem(smallerFontAction)
         checkBoxMenuItem(smartHighlighterAction, selected: controller.smartHighlighter)
+        checkBoxMenuItem(compilerAssistanceAction, selected: controller.compilerAssistance)
+        menuItem(completionShortcutAction)
         separator()
         checkBoxMenuItem(captureStdOutAction, selected: controller.captureStdOut)
         checkBoxMenuItem(captureStdErrAction, selected: controller.captureStdErr)

@@ -18,7 +18,19 @@
  */
 package org.apache.groovy.groovysh.commands
 
+import org.jline.console.CommandInput
+import org.jline.console.CommandRegistry
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
+
+import javax.swing.SwingUtilities
+import java.awt.AWTError
+import java.awt.Frame
+import java.awt.GraphicsEnvironment
+import java.awt.HeadlessException
+import java.awt.Window
+import java.lang.reflect.InvocationTargetException
+import java.util.concurrent.TimeUnit
 
 /**
  * Tests for the {@code /inspect} command. Exercises GroovyCommands and the
@@ -49,5 +61,73 @@ class InspectTest extends SystemTestSupport {
         assert out.contains('propertyInfo')
         assert out.contains('publicFields')
         assert out.contains('classProps')
+    }
+
+    @Test
+    @Timeout(value = 15, unit = TimeUnit.SECONDS)
+    void inspectGuiLoadsTheObjectBrowserByName() {
+        console.execute('dummy', "data = 'hi'")
+        // ObjectBrowser is loaded by name. A headless JVM fails while
+        // creating the frame, and JLine rethrows that failure. A JVM with
+        // a display opens the window and the command returns. Requiring an
+        // exception in both cases fails whenever the display is available.
+        Throwable thrown = null
+        try {
+            system.execute('/inspect --gui $data')
+        } catch (Throwable failure) {
+            thrown = failure
+        } finally {
+            closeObjectBrowser()
+        }
+        if (thrown != null) {
+            assert uiStartupFailure(thrown) : thrown
+        } else {
+            assert !GraphicsEnvironment.isHeadless()
+        }
+        // Call the command with the flag still in its arguments. The shell
+        // parser can consume a registered option before the method runs.
+        def direct = new CommandInput('/inspect', ['--gui', 'hi'] as Object[],
+                new CommandRegistry.CommandSession(terminal, System.in, System.out, System.err))
+        assert groovy.inspect(direct) == null
+        closeObjectBrowser()
+    }
+
+    private static boolean uiStartupFailure(Throwable failure) {
+        Throwable cursor = failure
+        while (cursor != null) {
+            if (cursor instanceof HeadlessException || cursor instanceof AWTError) {
+                return true
+            }
+            String message = cursor.message
+            if (message != null && (message.contains('frame') || message.contains('Headless') || message.contains('X11'))) {
+                return true
+            }
+            cursor = cursor.cause
+        }
+        return false
+    }
+
+    private static void closeObjectBrowser() {
+        if (GraphicsEnvironment.isHeadless()) {
+            return
+        }
+        Runnable close = {
+            for (Window window : Window.getWindows()) {
+                if (window instanceof Frame && 'Groovy Object Browser' == ((Frame) window).title) {
+                    window.dispose()
+                }
+            }
+        }
+        try {
+            if (SwingUtilities.isEventDispatchThread()) {
+                close.run()
+            } else {
+                SwingUtilities.invokeAndWait(close)
+            }
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt()
+        } catch (InvocationTargetException ignored) {
+            // The window is already gone.
+        }
     }
 }

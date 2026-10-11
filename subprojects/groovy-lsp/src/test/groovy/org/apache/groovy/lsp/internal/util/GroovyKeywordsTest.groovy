@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.lsp.internal.util
 
+import org.apache.groovy.lsp.internal.engine.GroovyLanguageEngine
 import org.apache.groovy.parser.antlr4.GroovyLexer
 import org.junit.jupiter.api.Test
 
@@ -37,6 +38,7 @@ final class GroovyKeywordsTest {
         assert !words.contains('==')
         assert !words.contains('!in')
         assert GroovyLexer.VOCABULARY.getLiteralName(GroovyLexer.AS).contains('as')
+        assert GroovyLanguageEngine.keywords().is(words)
     }
 
     @Test
@@ -59,6 +61,23 @@ final class GroovyKeywordsTest {
         assert GroovyKeywords.isKeyword('def')
         assert !GroovyKeywords.isKeyword(null)
         assert !GroovyKeywords.isKeyword('notAKeyword')
+    }
+
+    @Test
+    void keywordTokenTypesCoverVocabularyWordsAndSpecials() {
+        def types = GroovyKeywords.KEYWORD_TOKEN_TYPES
+        assert types.contains(GroovyLexer.DEF)
+        assert types.contains(GroovyLexer.CLASS)
+        assert types.contains(GroovyLexer.NOT_IN)
+        assert types.contains(GroovyLexer.NOT_INSTANCEOF)
+        assert types.contains(GroovyLexer.BuiltInPrimitiveType)
+        assert types.contains(GroovyLexer.BooleanLiteral)
+        assert types.contains(GroovyLexer.NullLiteral)
+        assert types.every { it > 0 }
+        assert types.size() == types.toSet().size()
+        assert GroovyKeywords.isKeywordType(GroovyLexer.DEF)
+        assert GroovyKeywords.isKeywordType(GroovyLexer.NOT_IN)
+        assert !GroovyKeywords.isKeywordType(GroovyLexer.Identifier)
     }
 
     @Test

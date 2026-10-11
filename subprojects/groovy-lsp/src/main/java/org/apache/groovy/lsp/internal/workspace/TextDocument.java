@@ -120,6 +120,42 @@ public record TextDocument(URI uri, String languageId, int version, String text)
     }
 
     /**
+     * Maps a UTF-16 document offset to a 0-based line and character.
+     * CR, LF, and CRLF are line breaks. The character is a UTF-16 unit
+     * count on that line.
+     *
+     * @param document full text
+     * @param offset UTF-16 offset
+     * @return {@code {line, character}}
+     */
+    public static int[] positionOf(final String document, final int offset) {
+        if (document == null || document.isEmpty() || offset <= 0) {
+            return new int[] {0, 0};
+        }
+        int capped = Math.min(offset, document.length());
+        int line = 0;
+        int character = 0;
+        int i = 0;
+        while (i < capped) {
+            char c = document.charAt(i);
+            if (c == '\r') {
+                if (i + 1 < document.length() && document.charAt(i + 1) == '\n') {
+                    i++;
+                }
+                line++;
+                character = 0;
+            } else if (c == '\n') {
+                line++;
+                character = 0;
+            } else {
+                character++;
+            }
+            i++;
+        }
+        return new int[] {line, character};
+    }
+
+    /**
      * Converts an LSP position to a UTF-16 offset in {@code document}.
      *
      * @param document full text
