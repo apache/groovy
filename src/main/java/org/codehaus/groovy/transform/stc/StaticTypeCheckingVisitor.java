@@ -124,6 +124,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
 import org.codehaus.groovy.transform.RecordTypeASTTransformation;
+import org.codehaus.groovy.transform.SealedASTTransformation;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
@@ -5229,9 +5230,10 @@ trying: for (ClassNode[] signature : signatures) {
      * forms cannot represent it at all, so it is rejected here, uniformly for
      * type-checked and statically-compiled code (GROOVY-12289, GROOVY-12406).
      * Labels compared are the same ones the optimizers key on: int-family,
-     * String and enum constants; anything else (GStrings, calls, regex or
-     * collection labels) cannot be proven duplicated statically and is left to
-     * sequential first-match-wins dispatch.
+     * String and enum constants, plus a {@code ClassExpression} naming a
+     * permitted subclass of a native sealed selector; anything else (GStrings,
+     * calls, regex or collection labels) cannot be proven duplicated statically
+     * and is left to sequential first-match-wins dispatch.
      *
      * @since 6.0.0
      */
@@ -5249,6 +5251,7 @@ trying: for (ClassNode[] signature : signatures) {
             }
             if (key == null) key = intConstant(label);
             if (key == null) key = stringConstant(label);
+            if (key == null) key = permittedSubclassLabelKey(selector, label);
             if (key != null && !seen.add(key)) {
                 addStaticTypeError("Duplicate case label: " + label.getText(), label);
             }
@@ -5301,7 +5304,78 @@ trying: for (ClassNode[] signature : signatures) {
         if (selectorType != null && selectorType.isEnum() && coversAllEnumConstants(expression, selectorType)) {
             return;
         }
+        if (coversAllPermittedSubclasses(expression, selectorType)) {
+            return;
+        }
         addError("the switch expression does not cover all possible input values", expression);
+    }
+
+    /**
+     * True when {@code selectorType} is a closed native sealed hierarchy.
+     * Primary class nodes use {@link SealedASTTransformation#wouldBeNativeSealed}
+     * so the result does not depend on transform order. Class files use a
+     * non-empty permitted-subclass list; {@link ClassNode#isSealed()} is not
+     * consulted because emulated sealed types keep a runtime {@code @Sealed}.
+     */
+    private boolean nativeSealedClosed(final ClassNode selectorType) {
+        if (selectorType == null) {
+            return false;
+        }
+        ClassNode node = selectorType.redirect();
+        if (node.isPrimaryClassNode()) {
+            return SealedASTTransformation.wouldBeNativeSealed(node, getSourceUnit().getConfiguration().getTargetBytecode());
+        }
+        return !node.getPermittedSubclasses().isEmpty();
+    }
+
+    private Object permittedSubclassLabelKey(final Expression selector, final Expression label) {
+        if (!(label instanceof ClassExpression classExpression)) {
+            return null;
+        }
+        ClassNode selectorType = getType(selector);
+        if (!nativeSealedClosed(selectorType)) {
+            return null;
+        }
+        List<ClassNode> permitted = selectorType.getPermittedSubclasses();
+        if (permitted == null || permitted.isEmpty()) {
+            return null;
+        }
+        String labelName = classExpression.getType().redirect().getName();
+        for (ClassNode permittedType : permitted) {
+            if (permittedType.redirect().getName().equals(labelName)) {
+                // Namespaced like enum keys so a type case never collides
+                // with a string label of the same spelling.
+                return Map.entry(selectorType.redirect(), labelName);
+            }
+        }
+        return null;
+    }
+
+    private boolean coversAllPermittedSubclasses(final SwitchExpression expression, final ClassNode selectorType) {
+        if (!nativeSealedClosed(selectorType)) {
+            return false;
+        }
+        ClassNode sealedType = selectorType.redirect();
+        List<ClassNode> permitted = sealedType.getPermittedSubclasses();
+        if (permitted == null || permitted.isEmpty()) {
+            return false;
+        }
+        Set<ClassNode> remaining = new LinkedHashSet<>(permitted);
+        if (!sealedType.isInterface() && !sealedType.isAbstract()) {
+            remaining.add(sealedType);
+        }
+        for (CaseStatement caseStatement : expression.getCaseStatements()) {
+            Expression caseExpr = caseStatement.getExpression();
+            if (caseExpr instanceof ClassExpression classExpression) {
+                ClassNode caseType = classExpression.getType().redirect();
+                // A type case is a member of the sealed hierarchy. Unrelated
+                // labels (including a mis-resolved Object) stay ordinary isCase.
+                if (caseType.equals(sealedType) || implementsInterfaceOrIsSubclassOf(caseType, sealedType)) {
+                    remaining.removeIf(p -> implementsInterfaceOrIsSubclassOf(p.redirect(), caseType));
+                }
+            }
+        }
+        return remaining.isEmpty();
     }
 
     private boolean coversAllEnumConstants(final SwitchExpression expression, final ClassNode enumType) {
