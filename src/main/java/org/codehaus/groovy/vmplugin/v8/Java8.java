@@ -109,7 +109,9 @@ public class Java8 implements VMPlugin {
         ClassNode cn2 = ClassHelper.makeWithoutCaching(name);
         cn2.setGenericsPlaceHolder(true);
 
-        cn.setGenericsTypes(new GenericsType[]{new GenericsType(cn2)});
+        GenericsType gt = new GenericsType(cn2);
+        gt.setResolved(true); // placeholder from bytecode/reflection; nothing to resolve in referencing class
+        cn.setGenericsTypes(new GenericsType[]{gt});
         cn.setRedirect(ClassHelper.OBJECT_TYPE);
         return cn;
     }
