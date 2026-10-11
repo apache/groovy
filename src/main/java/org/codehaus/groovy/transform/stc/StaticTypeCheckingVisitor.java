@@ -3757,6 +3757,24 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * Adds {@link TypeChecked.TypeCheckingInfo} metadata for an inferred method return type.
      */
     protected void addTypeCheckingInfoAnnotation(final MethodNode node) {
+        addTypeCheckingInfoAnnotation(node, CURRENT_SIGNATURE_PROTOCOL_VERSION, getTransformLoader());
+    }
+
+    /**
+     * Writes {@code TypeCheckingInfo} using protocol {@code version}. A version
+     * this compiler does not implement leaves {@code node} unchanged and does
+     * not call {@link SignatureCodec#encode}.
+     */
+    void addTypeCheckingInfoAnnotation(final MethodNode node, final int version, final ClassLoader loader) {
+        addTypeCheckingInfoAnnotation(node, SignatureCodecFactory.getCodec(version, loader));
+    }
+
+    /**
+     * Writes {@code TypeCheckingInfo} with the supplied codec. A {@code null}
+     * codec, or an {@code encode} result of {@code null}, leaves {@code node}
+     * unchanged.
+     */
+    void addTypeCheckingInfoAnnotation(final MethodNode node, final SignatureCodec codec) {
         // TypeChecked$TypeCheckingInfo cannot be applied on constructors
         if (node.isConstructor()) return;
 
@@ -3764,11 +3782,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         // annotation to the method node
         ClassNode rtype = getInferredReturnType(node);
         if (rtype != null && node.getAnnotations(TYPECHECKING_INFO_NODE).isEmpty()) {
-            AnnotationNode anno = new AnnotationNode(TYPECHECKING_INFO_NODE);
-            anno.setMember("version", CURRENT_SIGNATURE_PROTOCOL);
-            SignatureCodec codec = SignatureCodecFactory.getCodec(CURRENT_SIGNATURE_PROTOCOL_VERSION, getTransformLoader());
+            if (codec == null) return;
             String genericsSignature = codec.encode(rtype);
             if (genericsSignature != null) {
+                AnnotationNode anno = new AnnotationNode(TYPECHECKING_INFO_NODE);
+                anno.setMember("version", CURRENT_SIGNATURE_PROTOCOL);
                 ConstantExpression signature = new ConstantExpression(genericsSignature);
                 signature.setType(STRING_TYPE);
                 anno.setMember("inferredType", signature);
@@ -7829,13 +7847,41 @@ out:    for (ClassNode type : todo) {
      */
     public static class SignatureCodecFactory {
         /**
-         * Returns the codec implementation for the requested signature version.
+         * Returns the codec implementation for the requested signature version,
+         * or {@code null} when this compiler does not implement {@code version}.
+         *
+         * @param version the {@code TypeCheckingInfo.version} member
+         * @param classLoader loader used by version 1 to resolve class names
+         * @return the codec, or {@code null} for an unknown, negative, or
+         *         experimental version
          */
         public static SignatureCodec getCodec(final int version, final ClassLoader classLoader) {
             return switch (version) {
                 case 1 -> new SignatureCodecVersion1(classLoader);
                 default -> null;
             };
+        }
+
+        /**
+         * Decodes an inferred return type, or returns {@code declared} when
+         * {@code version} has no codec. {@code null} from {@link #getCodec}
+         * means there is no inferred signature. The caller uses the method's
+         * declared return type. This method does not read {@code signature}
+         * in that case.
+         *
+         * @param version the {@code TypeCheckingInfo.version} member
+         * @param signature the annotation's {@code inferredType} string
+         * @param loader class loader passed to the codec
+         * @param declared the method's declared return type
+         * @return the decoded inferred type, or {@code declared}
+         */
+        static ClassNode inferredReturnOrDeclared(final int version, final String signature,
+                final ClassLoader loader, final ClassNode declared) {
+            SignatureCodec codec = getCodec(version, loader);
+            if (codec == null) {
+                return declared;
+            }
+            return codec.decode(signature);
         }
     }
 
