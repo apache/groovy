@@ -548,6 +548,18 @@ so `japicmp` sees nothing — this is a behavioural change only.
 Groovy 6 is the major version for the change. On 3.0.x/4.0.x/5.0.x/5.1.x the
 coercion still initializes the class.
 
+### Groovy 7 — `SignatureCodec` version 1 no longer round-trips a union node
+
+`SignatureCodecVersion1` used to encode a checker-only `UnionTypeClassNode` by
+name and rebuild one on decode. Newly encoded signatures store the lowest upper
+bound that has a stable binary name, or `Object`. Historical payloads that still
+carry the `UnionTypeClassNode` tag are consumed and then widened the same way.
+
+The method descriptors are unchanged, so `japicmp` does not report this.
+Callers of `SignatureCodecVersion1.decode` that expected a union node now
+receive the shared supertype. The compiler has not written
+`@TypeCheckingInfo` inferred-return annotations since GROOVY-6401 (2013).
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
