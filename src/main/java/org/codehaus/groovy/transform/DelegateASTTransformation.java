@@ -275,7 +275,8 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
     static Collection<MethodNode> filterMethods(final Collection<MethodNode> methods, final DelegateDescription delegate, final boolean allNames, final boolean includeDeprecated) {
         Set<String> groovyObjectMethods = ClassHelper.GROOVY_OBJECT_TYPE.getMethods().stream().map(MethodNode::getTypeDescriptor).collect(toSet());
         Set<String> javaObjectMethods = ClassHelper.OBJECT_TYPE.getMethods().stream().map(MethodNode::getTypeDescriptor).collect(toSet());
-        Set<String> ownClassMethods = delegate.owner.getMethods().stream().map(MethodNode::getTypeDescriptor).collect(toSet());
+        // GROOVY-12426: may run before types are resolved, so avoid caching descriptors (see uncachedDescriptor)
+        Set<String> ownClassMethods = delegate.owner.getMethods().stream().map(DelegateASTTransformation::uncachedDescriptor).collect(toSet());
 
         methods.removeIf(candidate -> {
             if (!candidate.isPublic() || candidate.isStatic() || (candidate.getModifiers () & ACC_SYNTHETIC) != 0) return true;
@@ -284,16 +285,28 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
             if (!includeDeprecated && !candidate.getAnnotations(DEPRECATED_TYPE).isEmpty()) return true;
 
-            if (groovyObjectMethods.contains(candidate.getTypeDescriptor())) return true;
+            String descriptor = uncachedDescriptor(candidate);
 
-            if (javaObjectMethods.contains(candidate.getTypeDescriptor())) return true;
+            if (groovyObjectMethods.contains(descriptor)) return true;
 
-            if (ownClassMethods.contains(candidate.getTypeDescriptor())) return true;
+            if (javaObjectMethods.contains(descriptor)) return true;
+
+            if (ownClassMethods.contains(descriptor)) return true;
 
             return false;
         });
 
         return methods;
+    }
+
+    /**
+     * Computes the type descriptor without caching it on the method. The
+     * joint-compilation stubber calls this before types are fully resolved,
+     * and resolving a type can change its name (e.g. {@code Outer.Inner} to
+     * {@code Outer$Inner}), so a cached descriptor would go stale.
+     */
+    static String uncachedDescriptor(final MethodNode mn) {
+        return MethodNodeUtils.methodDescriptor(mn, false);
     }
 
     private boolean checkPropertyOrMethodList(final ClassNode cNode, final List<String> propertyNameList, final String listName, final AnnotationNode anno, final String typeName) {
