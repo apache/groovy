@@ -47,7 +47,14 @@ options {
 @members {
     private boolean errorIgnored;
     private long tokenIndex;
-    private int  lastTokenType;
+    /** Previous default-channel token. {@link Token#INVALID_TYPE} at the start of an input. */
+    private int  lastTokenType = Token.INVALID_TYPE;
+    /**
+     * Last default-channel token whose type is not {@code NL}.
+     * Stays {@link Token#INVALID_TYPE} until one is seen. Not {@link Token#EOF}:
+     * a negative index is rejected by {@link java.util.BitSet#get(int)}.
+     */
+    private int  lastRealTokenType = Token.INVALID_TYPE;
 
     /**
      * When {@code false}, the {@code val} keyword is treated as a regular
@@ -67,7 +74,12 @@ options {
         this.tokenIndex++;
 
         int tokenType = token.getType();
-        if (Token.DEFAULT_CHANNEL == token.getChannel()) {
+        // EOF is negative. Recording it makes the next slashy decision call
+        // BitSet.get(-1). setInputStream rewinds only through reset().
+        if (tokenType >= 0 && Token.DEFAULT_CHANNEL == token.getChannel()) {
+            if (NL != tokenType) {
+                this.lastRealTokenType = tokenType;
+            }
             this.lastTokenType = tokenType;
         }
 
@@ -76,6 +88,13 @@ options {
         }
 
         super.emit(token);
+    }
+
+    @Override
+    public void reset() {
+        super.reset();
+        this.lastTokenType = Token.INVALID_TYPE;
+        this.lastRealTokenType = Token.INVALID_TYPE;
     }
 
     /**
@@ -106,7 +125,24 @@ options {
     }
 
     private boolean isRegexAllowed() {
-        return !REGEX_CHECK_SET.get(this.lastTokenType);
+        return !isDivisionOperand(this.lastTokenType);
+    }
+
+    /**
+     * A {@code /} that reaches EOF is an unclosed slashy string only when the
+     * previous real token (ignoring {@code NL}) could not be the left operand
+     * of division. {@code 9 \n / \n 3} stays division; {@code s = /hello} does not.
+     * {@link Token#INVALID_TYPE} (no real token yet, including a leading newline)
+     * is not an operand.
+     */
+    private boolean isUnclosedSlashy() {
+        int decision = this.lastTokenType == NL ? this.lastRealTokenType : this.lastTokenType;
+        return !isDivisionOperand(decision);
+    }
+
+    /** {@code REGEX_CHECK_SET} rejects a negative type, and {@link Token#EOF} is not an operand. */
+    private static boolean isDivisionOperand(final int tokenType) {
+        return tokenType >= 0 && REGEX_CHECK_SET.get(tokenType);
     }
 
     /**
@@ -289,13 +325,26 @@ options {
 
 
 // §3.10.5 String Literals
+// A quote that never closes matches nothing here, so it is UNEXPECTED_CHAR.
+// requireUnexpectedCharacter maps that quote to "Unclosed string literal"
+// unless the remainder is an illegal escape. `/` is also DIV, so an unclosed
+// `/.../` cannot use that fall-through and is an EOF alternative of this rule.
+// isUnclosedSlashy() is the first edge of that alternative, before any body
+// character is read. `*` is safe because the follower is EOF, not `/`:
+// `//` is not an empty slashy. EOF stays here so a second rule cannot
+// swallow source after a real closer.
 StringLiteral
     :   GStringQuotationMark  DqStringCharacter*  GStringQuotationMark
     |   SqStringQuotationMark  SqStringCharacter*  SqStringQuotationMark
-    |   Slash { this.isRegexAllowed() && _input.LA(1) != '*' }?  SlashyStringCharacter+  Slash
+    |   Slash { this.isRegexAllowed() && _input.LA(1) != '*' }?
+            (   SlashyStringCharacter+ Slash
+            |   { this.isUnclosedSlashy() }? SlashyStringCharacter* EOF { requireUnclosedString(errorIgnored); }
+            )
 
     |   TdqStringQuotationMark  TdqStringCharacter*  TdqStringQuotationMark
     |   TsqStringQuotationMark  TsqStringCharacter*  TsqStringQuotationMark
+    // `$/` is also identifier `$` plus division. An EOF alternative here would
+    // reject `($/2)` and `$/=`. Unclosed `$/...` stays a later error.
     |   DollarSlashyGStringQuotationMarkBegin  DollarSlashyStringCharacter+  DollarSlashyGStringQuotationMarkEnd
     ;
 

@@ -1581,7 +1581,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     private void transformRecordHeaderToProperties(final ClassDeclarationContext ctx, final ClassNode classNode) {
-        Parameter[] parameters = this.visitFormalParameters(ctx.formalParameters());
+        // visitFormalParameters returns Parameter.EMPTY_ARRAY, never null. The public
+        // static field is not a null-safe yield for javabugs:S2259.
+        Parameter[] parameters = Objects.requireNonNull(this.visitFormalParameters(ctx.formalParameters()));
         classNode.putNodeMetaData(RECORD_HEADER, parameters);
 
         final int n = parameters.length;
@@ -2594,11 +2596,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 && baseExpr instanceof BinaryExpression bin
                 && !"[".equals(bin.getOperation().getText())) {
             // `List<Integer name` is parsed as the comparison `List < Integer` plus a
-            // command argument. javac: `'>' expected`.
-            if ("<".equals(bin.getOperation().getText())
+            // following argument list. javac: `'>' expected`. Unmatched `>` in the
+            // error strategy keeps ANTLR's offender; point at that list, not at `List`.
+            // An identifier after `T < U` is argumentList, not commandArgument.
+            // The list is the caret. Without one, keep the Unexpected input path
+            // below instead of passing a null anchor.
+            if (hasArgumentList
+                    && "<".equals(bin.getOperation().getText())
                     && looksLikeTypeName(bin.getLeftExpression())
                     && looksLikeTypeName(bin.getRightExpression())) {
-                throw createParsingFailedException("Missing '>'", bin);
+                throw createParsingFailedException("Missing '>'", ctx.enhancedArgumentListInPar());
             }
             throw createParsingFailedException("Unexpected input: '" + getOriginalText(ctx.expression()) + "'", ctx.expression());
         }
