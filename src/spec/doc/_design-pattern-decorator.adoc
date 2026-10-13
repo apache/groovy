@@ -243,7 +243,7 @@ FINEST: StopWatch 'util.Calc.add': running time (millis) = 16
 
 You may have to adjust your `logging.properties` file for messages at log level `FINEST` to be displayed.
 
-== Asynchronous Decorators using GPars
+== Asynchronous Decorators using Awaitable
 
 The following example is inspired by some of the early example code for the
 http://design.cs.iastate.edu/~panini/[Panini] programming language.

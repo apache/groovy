@@ -1,0 +1,227 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+[[gpars-migration]]
+== Coming from GPars
+
+Before Groovy 6, http://gpars.org/[GPars] was the usual library for
+parallel collections, actors, agents and dataflow in Groovy. The
+`groovy.concurrent` package covers most of the same ground, rebuilt around
+virtual threads, structured concurrency and `async`/`await`. GPars still
+works with Groovy 6, so existing code can keep using it and move over one
+feature at a time, but new code rarely needs it. The tables below map each
+GPars construct to its Groovy 6 counterpart.
+
+The biggest change in style is that results are `Awaitable` values rather
+than GPars `Promise` or `Future` objects, and that you `await` them instead
+of calling `get()` or `getVal()`. `await` also accepts any
+`java.util.concurrent.Future`, including the one GPars' `callAsync` returns.
+
+[[gpars-migration-parallel]]
+=== Parallel collections
+
+[cols="2,3", options="header"]
+|===
+| GPars | Groovy 6
+
+| `GParsPool.withPool { … }`, `withPool(n) { … }`
+| `ParallelScope.withPool(Pool.cpu()) { scope -> … }`, `withPool(n) { scope -> … }`.
+  Parallel methods also work outside any scope, on the common pool
+
+| `withExistingPool(pool) { … }`
+| `ParallelScope.withPool(pool) { scope -> … }` with a `Pool`
+
+| `eachParallel`, `eachWithIndexParallel`, `collectParallel`,
+  `collectManyParallel`, `findAllParallel`, `findParallel`,
+  `findAnyParallel`, `grepParallel`, `splitParallel`, `anyParallel`,
+  `everyParallel`, `countParallel`, `groupByParallel`, `injectParallel`
+| Same names, on any `Collection`
+
+| `sumParallel()`
+| `sumParallel { a, b -> a + b }`. The accumulator is required
+
+| `minParallel { it.age }`, `maxParallel()`
+| `minParallel { a, b -> a.age <=> b.age }`. A two-argument comparator is required
+
+| `foldParallel`
+| `injectParallel`
+
+| `makeConcurrent()`, `asConcurrent { }`, `ParallelEnhancer`
+| Call the `…Parallel` methods directly
+
+| `collection.parallel` (`map`, `filter`, `reduce` on a parallel array)
+| `parallelStream()`, or chain the `…Parallel` methods
+
+| `GParsExecutorsPool`
+| `Pool.io()` or `Pool.virtual()`
+
+| `executeAsync(…)`, `executeAsyncAndWait(…)`
+| `async { }` per task, then `await Awaitable.all(…)`
+
+| `speculate(…)`
+| `await Awaitable.first(…)`, the first to succeed
+
+| `runForkJoin(…)`
+| `java.util.concurrent.RecursiveTask` on a `ForkJoinPool`
+|===
+
+GPars added its parallel methods to maps, strings and other iterable
+objects as well. Groovy 6 adds them to `Collection` only, so call
+`entrySet()`, `toList()` or similar first.
+
+The closures passed to the Groovy 6 methods are converted to
+`java.util.function` types, so their parameter count is fixed. For example,
+`minParallel` and `maxParallel` take a two-argument comparator and do not
+accept GPars' one-argument form.
+
+[[gpars-migration-async]]
+=== Asynchronous functions
+
+[cols="2,3", options="header"]
+|===
+| GPars | Groovy 6
+
+| `closure.callAsync(args)`
+| `async { closure(args) }`
+
+| `closure.asyncFun()`
+| A closure or method that returns `async { … }`. See
+  <<async-closure-factories,Async Closure Factories>>
+
+| `Promise.then { … }`
+| `awaitable.then { … }`, or plain sequential code after `await`
+
+| `Dataflow.whenAllBound(a, b) { x, y -> … }`
+| `def (x, y) = await(a, b)`
+|===
+
+[[gpars-migration-agents-actors]]
+=== Agents and actors
+
+[cols="2,3", options="header"]
+|===
+| GPars | Groovy 6
+
+| `new Agent(0)`
+| `Agent.create(0)`
+
+| `agent << { updateValue(it + 1) }`
+| `agent.send { it + 1 }`. The closure returns the new value
+
+| `agent.val`, `agent.valAsync { … }`
+| `await agent.getAsync()` waits for pending updates; `agent.get()` reads at once
+
+| `agent.sendAndWait { … }`
+| `await agent.sendAndGet { … }`
+
+| `agent.addListener { oldValue, newValue -> … }`
+| `for await (v in agent.changes())`, or any `Flow.Subscriber`
+
+| `Actors.reactor { it * 2 }`
+| `Actor.reactor { it * 2 }`
+
+| `Actors.actor { loop { react { msg -> … } } }` holding state in local variables
+| `Actor.stateful(initial) { state, msg -> … }`, returning the new state
+
+| `Actors.messageHandler { when { String s -> … } }`, `DynamicDispatchActor`
+| A `switch` on the message inside `Actor.reactor` or `Actor.stateful`
+
+| `actor << msg`, `actor.send(msg)`
+| `actor.send(msg)`
+
+| `actor.sendAndWait(msg)`
+| `await actor.sendAndGet(msg)`
+
+| `actor.sendAndContinue(msg) { reply -> … }`
+| `actor.sendAndGet(msg).then { reply -> … }`
+
+| Nested `react` calls that change what the actor accepts next
+| `ctx.become(handler)`, `ctx.stash()` and `ctx.unstashAll()` with the `ActorContext` handler forms
+
+| `@groovyx.gpars.activeobject.ActiveObject`, `@ActiveMethod`
+| `@groovy.transform.ActiveObject`, `@groovy.transform.ActiveMethod`.
+  `blocking` defaults to `true` in both
+
+| `DefaultPGroup`, `actor.parallelGroup = group`
+| `ActorOptions.DEFAULTS.withExecutor(pool)`
+|===
+
+[[gpars-migration-dataflow]]
+=== Dataflow
+
+[cols="2,3", options="header"]
+|===
+| GPars | Groovy 6
+
+| `Dataflow.task { … }`
+| `async { … }`
+
+| `DataflowVariable`, `v << value`
+| `groovy.concurrent.DataflowVariable`, `v << value`
+
+| `v.val`, `v.get()`
+| `await v`
+
+| `v.whenBound { … }`, `v.then { … }`
+| `v.then { … }`
+
+| `v.bindError(e)`
+| `v.bindError(e)`
+
+| `Dataflows`
+| `groovy.concurrent.Dataflows`
+
+| `DataflowQueue`
+| `AsyncChannel.create(n)`. Buffers are bounded, where `DataflowQueue` is not
+
+| `SyncDataflowQueue`
+| `AsyncChannel.create()`, a rendezvous channel
+
+| `DataflowBroadcast`, `createReadChannel()`
+| `BroadcastChannel`, `subscribe()`
+
+| `Dataflow.select(a, b)`
+| `ChannelSelect.from(a, b)`
+
+| `PoisonPill`
+| `close()`
+
+| `Dataflow.operator(…)`, `selector(…)`, `splitter(…)`, and channel methods such as `chainWith`, `filter` and `tap`
+| An `async` loop over input channels, or `map`, `filter`, `merge`, `split` and `tap` on `AsyncChannel`
+|===
+
+GPars' CSP helpers (`PAR`, `ALT`) are covered in
+<<async-channels-csp,Coming from JCSP or GroovyCSP>>.
+
+[[gpars-migration-not-included]]
+=== Not carried over
+
+Some GPars features have no `groovy.concurrent` counterpart:
+
+* Software transactional memory (`GParsStm`, built on Multiverse)
+* Remote actors and remote dataflow
+* `KanbanFlow`
+* `LazyDataflowVariable`
+* Dataflow operator lifecycle features such as event listeners,
+  `StopGently` and pause/resume
+
+Keep GPars for code that depends on them, or use a dedicated library for
+that concern.

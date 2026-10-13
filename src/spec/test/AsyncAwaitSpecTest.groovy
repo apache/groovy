@@ -260,6 +260,37 @@ final class AsyncAwaitSpecTest {
         '''
     }
 
+    @Test
+    void testCspProcessNetwork() {
+        assertScript '''
+        import groovy.concurrent.AsyncChannel
+        import groovy.concurrent.AsyncScope
+
+        // tag::csp_network[]
+        def numbers = AsyncChannel.create()        // rendezvous, like JCSP's one2one()
+        def squares = AsyncChannel.create()
+
+        def received = AsyncScope.withScope { scope ->   // PAR
+            scope.async {                                  // GNumbers, bounded
+                for (n in 1..5) await numbers.send(n)
+                numbers.close()                            // the poison pill
+            }
+            scope.async {                                  // GSquares
+                for await (n in numbers) await squares.send(n * n)
+                squares.close()                            // pass the poison on
+            }
+            def sink = scope.async {                       // GPrint, collecting
+                def seen = []
+                for await (sq in squares) seen << sq
+                seen
+            }
+            await sink
+        }
+        assert received == [1, 4, 9, 16, 25]
+        // end::csp_network[]
+        '''
+    }
+
     // === Defer ===
 
     @Test

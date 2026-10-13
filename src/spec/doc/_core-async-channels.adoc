@@ -401,3 +401,82 @@ through the same single-threaded delivery path as `onNext` /
 `onComplete`, preserving §1.3 signal serialization; subscribers do
 not see those signals racing on the caller's thread.
 ====
+
+[[async-channels-csp]]
+== Coming from JCSP or GroovyCSP
+
+Channels, select, preconditions and timer branches give `groovy.concurrent`
+the core vocabulary of CSP, so process networks written with
+https://www.cs.kent.ac.uk/projects/ofa/jcsp/[JCSP], or with the GroovyCSP
+helpers (`PAR`, `ALT`) that shipped in GPars, translate shape for shape.
+A process becomes an `async` task, a `PAR` becomes a scope, and the poison
+pill that shuts a network down becomes `close()`:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=csp_network,indent=0]
+----
+
+Each stage reads until its input is closed and drained, then closes its own
+output, so shutdown flows down the network just as poison does.
+`AsyncScope.withScope` does not return until every process in it has
+finished, and a failing process cancels the rest.
+
+[cols="2,3", options="header"]
+|===
+| JCSP / GroovyCSP | `groovy.concurrent`
+
+| `Channel.one2one()` (unbuffered)
+| `AsyncChannel.create()`, a rendezvous channel: a send waits for its receive
+
+| `Channel.one2one(new Buffer(n))`
+| `AsyncChannel.create(n)`
+
+| `any2one`, `one2any`, `any2any`
+| Any `AsyncChannel`. Channel ends are not owned, so any task may send or receive
+
+| `out.write(v)` / `in.read()`
+| `await c.send(v)` / `await c.receive()`, or `for await (v in c)` to read until closed
+
+| A `CSProcess`
+| An `async { }` task, or a method that returns one
+
+| `PAR`
+| `AsyncScope.withScope { scope -> scope.async { … } … }`
+
+| Poison
+| `close()`. Receivers drain what was sent, then see the channel as closed
+
+| `GDelta` and other copy-to-every-output processes
+| `BroadcastChannel` and `subscribe()`, or `tap` for a single copy
+
+| `ALT` with `priSelect()`
+| `ChannelSelect.from(a, b).select()`, which prefers channels in list order
+
+| `ALT` with `fairSelect()`
+| `ChannelSelect.from(a, b).fair()`, built once and kept across calls
+
+| `ALT` with `select()`, an arbitrary choice
+| `random()`
+
+| `select(boolean[] preCondition)`
+| `receive(c).when { … }` on each offer, or `select(boolean... enabled)`
+
+| `CSTimer` as an `ALT` guard
+| `ChannelSelect.after(millis)` for a timeout that re-arms every round,
+  or `AsyncChannel.after(millis)` for one fixed deadline
+
+| Output guards (sending inside an `ALT`)
+| `offers(send(c, v), receive(d))`
+
+| `Barrier` (`sync`, `enroll`, `resign`)
+| `java.util.concurrent.Phaser` (`arriveAndAwaitAdvance`, `register`, `arriveAndDeregister`)
+
+| `Crew` (concurrent read, exclusive write)
+| `@WithReadLock` / `@WithWriteLock`
+|===
+
+The rendezvous default matters when porting: a JCSP network that relies on
+unbuffered channels for synchronisation should use `AsyncChannel.create()`,
+not a buffered channel, or a producer will run ahead of its consumer.
+JCSP's networked and mobile channels have no counterpart.
