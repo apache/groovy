@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791876908365,
+  "lastUpdate": 1791967996127,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -7879,6 +7879,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 485.1133333333334,
             "range": "±18.26",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "23a75d2fc22c6956b21eb866b16413e9e43b63a8",
+          "message": "GROOVY-12450: Provide some of Groovy's enhanced record features (getAt, toMap, toList, size) for groovy.time.Timed",
+          "timestamp": "2026-10-13T09:58:11Z",
+          "url": "https://github.com/apache/groovy/commit/23a75d2fc22c6956b21eb866b16413e9e43b63a8"
+        },
+        "date": 1791967990284,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 430.8766666666667,
+            "range": "±16.48",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 540.9466666666667,
+            "range": "±180.46",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 463.63,
+            "range": "±119.35",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 371.87000000000006,
+            "range": "±17.52",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 388.6133333333334,
+            "range": "±21.48",
             "unit": "ms",
             "extra": "6.0.0"
           }
