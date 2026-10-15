@@ -1017,7 +1017,7 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitBinaryExpression(final BinaryExpression expression) {
         onLineNumber(expression, "visitBinaryExpression: " + expression.getOperation().getText());
         controller.getBinaryExpressionHelper().eval(expression);
-        controller.getAssertionWriter().record(expression.getOperation());
+        if (!isValueElided(expression)) controller.getAssertionWriter().record(expression.getOperation());
         doPostVisit(expression); // GROOVY-5746
     }
 
@@ -1242,7 +1242,7 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitMethodCallExpression(final MethodCallExpression call) {
         onLineNumber(call, "visitMethodCallExpression: \"" + call.getMethod() + "\":");
         controller.getInvocationWriter().writeInvokeMethod(call);
-        controller.getAssertionWriter().record(call.getMethod());
+        if (!isValueElided(call)) controller.getAssertionWriter().record(call.getMethod());
     }
 
     /**
@@ -1252,7 +1252,7 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitStaticMethodCallExpression(final StaticMethodCallExpression call) {
         onLineNumber(call, "visitStaticMethodCallExpression: \"" + call.getMethod() + "\":");
         controller.getInvocationWriter().writeInvokeStaticMethod(call);
-        controller.getAssertionWriter().record(call);
+        if (!isValueElided(call)) controller.getAssertionWriter().record(call);
         maybeInnerClassEntry(call.getOwnerType());
     }
 
@@ -2737,6 +2737,14 @@ public class AsmClassGenerator extends ClassGenerator {
     private void doPostVisit(final ASTNode node) {
         Consumer<WriterController> callback = node.getNodeMetaData("classgen.callback");
         if (callback != null) callback.accept(controller);
+    }
+
+    /**
+     * GROOVY-12453: an expression whose value was elided left nothing on the
+     * operand stack, so there is no value for a power assert to record.
+     */
+    private static boolean isValueElided(final Expression exp) {
+        return Boolean.TRUE.equals(exp.getNodeMetaData(ELIDE_EXPRESSION_VALUE));
     }
 
     private static boolean isParameterReference(Expression exp) {
