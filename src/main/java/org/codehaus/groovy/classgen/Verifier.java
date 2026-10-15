@@ -815,7 +815,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         Statement getterBlock = node.getGetterBlock();
         if (getterBlock == null && !node.isPrivate()) {
             MethodNode getter = classNode.getGetterMethod(getterName, !node.isStatic());
-            if (getter == null && isPrimitiveBoolean(node.getType())) {
+            if (getter == null && node.getGetterName() == null && isPrimitiveBoolean(node.getType())) {
                 getter = classNode.getGetterMethod("is" + capitalize(name), !node.isStatic());
             }
             if (methodNeedsReplacement(getter,
