@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791968010358,
+  "lastUpdate": 1792048742015,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -5273,6 +5273,58 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/apache/groovy/commit/23a75d2fc22c6956b21eb866b16413e9e43b63a8"
         },
         "date": 1791968009675,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4006,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 440,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 852,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1514,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "237fdb54b39c4f9d27064aeca0870eadb0888da3",
+          "message": "GROOVY-12427: Joint compilation stub declares a precompiled trait's static methods \"static abstract\" on implementing classes",
+          "timestamp": "2026-10-08T16:27:09Z",
+          "url": "https://github.com/apache/groovy/commit/237fdb54b39c4f9d27064aeca0870eadb0888da3"
+        },
+        "date": 1792048741499,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
