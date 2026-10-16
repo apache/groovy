@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792048726854,
+  "lastUpdate": 1792135247754,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -7993,6 +7993,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 478.86333333333334,
             "range": "±18.8",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "committer": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "realbluesun@hotmail.com"
+          },
+          "id": "400d8a7df85d08b1d92d07c268c07e06a29ff471",
+          "message": "GROOVY-12447: STC: treat a complete native sealed type-case set as an exhaustive switch expression",
+          "timestamp": "2026-10-11T09:34:45Z",
+          "url": "https://github.com/apache/groovy/commit/400d8a7df85d08b1d92d07c268c07e06a29ff471"
+        },
+        "date": 1792135243243,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 528.7766666666666,
+            "range": "±16.45",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 663.9,
+            "range": "±222.32",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 605.2733333333333,
+            "range": "±153.25",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 467.85999999999996,
+            "range": "±18.49",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 475.7033333333333,
+            "range": "±20.88",
             "unit": "ms",
             "extra": "6.0.0"
           }
