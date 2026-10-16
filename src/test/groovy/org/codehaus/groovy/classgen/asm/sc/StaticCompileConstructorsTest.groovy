@@ -61,6 +61,32 @@ final class StaticCompileConstructorsTest extends ConstructorsSTCTest implements
         assert method.count('ACONST_NULL') == 0
     }
 
+    // GROOVY-12453
+    @Test
+    void testMapConstructorWithinPowerAssert() {
+        assertScript '''
+            class Person {
+                def name, age
+            }
+            def fred = 'fred', n = 25
+            assert new Person([name: fred, age: n])
+            assert new Person(name: fred, age: n).name == 'fred'
+            assert Objects.equals(fred, new Person(name: fred, age: n).name) // operand already on stack
+
+            def err = null
+            try {
+                assert new Person(name: fred, age: n).age == 26
+            } catch (AssertionError e) {
+                err = e
+            }
+            def lines = err.message.normalize().readLines()*.stripTrailing()
+            int i = lines.indexOf('assert new Person(name: fred, age: n).age == 26')
+            assert i >= 0
+            assert lines[i + 1] == '                        |          |  |'
+            assert lines[i + 2] == "                        'fred'     25 25"
+        '''
+    }
+
     @Test
     void testPrivateConstructorFromClosure() {
         assertScript '''
