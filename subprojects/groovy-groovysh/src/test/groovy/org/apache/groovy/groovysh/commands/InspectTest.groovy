@@ -19,6 +19,9 @@
 package org.apache.groovy.groovysh.commands
 
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
+
+import java.util.concurrent.TimeUnit
 
 /**
  * Tests for the {@code /inspect} command. Exercises GroovyCommands and the
@@ -49,5 +52,27 @@ class InspectTest extends SystemTestSupport {
         assert out.contains('propertyInfo')
         assert out.contains('publicFields')
         assert out.contains('classProps')
+    }
+
+    @Test
+    @Timeout(value = 15, unit = TimeUnit.SECONDS)
+    void inspectGuiLoadsTheObjectBrowserByName() {
+        console.execute('dummy', "data = 'hi'")
+        // The command loads ObjectBrowser by name. A headless JVM cannot
+        // open the frame, and JLine rethrows the saved failure.
+        Throwable thrown = null
+        try {
+            system.execute('/inspect --gui $data')
+        } catch (Throwable failure) {
+            thrown = failure
+        }
+        assert thrown != null
+        String text = ''
+        Throwable cursor = thrown
+        while (cursor != null) {
+            text += String.valueOf(cursor.message) + ' '
+            cursor = cursor.cause
+        }
+        assert text.contains('frame') || text.contains('Headless')
     }
 }

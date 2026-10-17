@@ -636,7 +636,8 @@ If you embed or script with Groovy, **you** own these:
 11. **Ship only the modules you use.** `org.apache.groovy:groovy` is the
     core runtime and compiler. `groovy-all` is an aggregate that also brings
     in the interactive and developer tooling — `groovy-groovysh`,
-    `groovy-console`, `groovy-swing`, `groovy-servlet`, `groovy-jmx`,
+    `groovy-console` (and their `groovy-lsp` runtime dependency),
+    `groovy-swing`, `groovy-servlet`, `groovy-jmx`,
     `groovy-groovydoc`, `groovy-docgenerator` — and both Grape engines;
     a server-side application rarely needs any of them. This is not only
     about what an attacker can reach. A module changes behavior by being

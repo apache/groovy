@@ -18,8 +18,6 @@
  */
 package org.apache.groovy.groovysh.jline
 
-import groovy.console.ui.Console
-import groovy.console.ui.ObjectBrowser
 import org.apache.groovy.groovysh.Main
 import org.apache.groovy.groovysh.util.ClassUtils
 import org.jline.builtins.Completers
@@ -994,7 +992,11 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
     void console(CommandInput input) {
         checkArgCount(input, [0, 1])
         if (maybePrintHelp(input, '/console')) return
-        Console c = new Console(engine.sharedData)
+        // Loaded by name so groovysh does not compile against groovy-console.
+        // The command is registered only when that jar is already on the classpath.
+        def c = Class.forName('groovy.console.ui.Console')
+                .getConstructor(Binding)
+                .newInstance(engine.sharedData)
         def poller = new javax.swing.Timer(100, null)
         poller.addActionListener({ e ->
             if (c.inputArea != null) {
@@ -1039,7 +1041,9 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                 out = inspector.properties()
                 options[Printer.VALUE_STYLE] = engine.groovyOption(GroovyEngine.NANORC_VALUE, DEFAULT_NANORC_VALUE)
             } else if (consoleUi && (option == '-g' || option == '--gui')) {
-                ObjectBrowser.inspect(obj)
+                Class.forName('groovy.console.ui.ObjectBrowser')
+                        .getMethod('inspect', Object)
+                        .invoke(null, obj)
             } else {
                 throw new IllegalArgumentException('Unknown option: ' + option)
             }

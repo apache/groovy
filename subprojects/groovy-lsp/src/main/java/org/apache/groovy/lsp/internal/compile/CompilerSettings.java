@@ -20,6 +20,8 @@ package org.apache.groovy.lsp.internal.compile;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
+import org.codehaus.groovy.control.customizers.CompilationCustomizer;
+import org.codehaus.groovy.control.customizers.ImportCustomizer;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -33,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-
 
 /**
  * Compilation options for the language server. Grape and {@code @ASTTest}
@@ -241,7 +242,28 @@ public record CompilerSettings(List<String> classpath, List<String> sourcePaths,
      * @return the configuration
      */
     public CompilerConfiguration toConfiguration() {
+        return toConfiguration(null);
+    }
+
+    /**
+     * Builds a tooling configuration, copying semantic customizers from
+     * {@code host} when present (imports, AST transforms, script base class).
+     * Grape and {@code @ASTTest} still follow these settings.
+     *
+     * @param host console or groovysh configuration, or {@code null}
+     * @return the configuration
+     */
+    public CompilerConfiguration toConfiguration(final CompilerConfiguration host) {
         CompilerConfiguration configuration = new CompilerConfiguration();
+        if (host != null) {
+            if (host.getScriptBaseClass() != null) {
+                configuration.setScriptBaseClass(host.getScriptBaseClass());
+            }
+            List<CompilationCustomizer> customizers = host.getCompilationCustomizers();
+            if (!customizers.isEmpty()) {
+                configuration.addCompilationCustomizers(customizers.toArray(CompilationCustomizer[]::new));
+            }
+        }
         configuration.setTolerance(0);
         configuration.setTargetBytecode(CompilerConfiguration.JDK17);
         if (!classpath.isEmpty()) {
@@ -259,7 +281,48 @@ public record CompilerSettings(List<String> classpath, List<String> sourcePaths,
         }
         configuration.setDisabledGlobalASTTransformations(disabled);
         configuration.getOptimizationOptions().put(CompilerConfiguration.GROOVYDOC, Boolean.TRUE);
+        applyClientImports(configuration, extra);
         return configuration;
+    }
+
+    /**
+     * {@code groovy.imports} and {@code groovy.starImports} are comma-separated
+     * class or package names. An empty value adds nothing, which clears a
+     * previous client import list because each compile builds a fresh
+     * configuration.
+     */
+    private static void applyClientImports(final CompilerConfiguration configuration,
+                                           final Map<String, String> extra) {
+        if (extra == null || extra.isEmpty()) {
+            return;
+        }
+        String imports = extra.get("imports");
+        String stars = extra.get("starImports");
+        String base = extra.get("scriptBaseClass");
+        if (base != null && !base.isEmpty()) {
+            configuration.setScriptBaseClass(base);
+        }
+        if ((imports == null || imports.isEmpty()) && (stars == null || stars.isEmpty())) {
+            return;
+        }
+        ImportCustomizer customizer = new ImportCustomizer();
+        if (imports != null) {
+            for (String name : imports.split(",")) {
+                String trimmed = name.trim();
+                if (!trimmed.isEmpty()) {
+                    customizer.addImports(trimmed);
+                }
+            }
+        }
+        if (stars != null) {
+            for (String name : stars.split(",")) {
+                String trimmed = name.trim();
+                if (!trimmed.isEmpty()) {
+                    customizer.addStarImports(trimmed);
+                }
+            }
+        }
+        configuration.addCompilationCustomizers(customizer);
     }
 
     /**

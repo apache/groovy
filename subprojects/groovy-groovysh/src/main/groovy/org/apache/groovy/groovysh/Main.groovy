@@ -27,6 +27,7 @@ import org.apache.groovy.groovysh.jline.GroovyConsoleEngine
 import org.apache.groovy.groovysh.jline.GroovyEngine
 import org.apache.groovy.groovysh.jline.GroovyPrinter
 import org.apache.groovy.groovysh.jline.GroovySystemRegistry
+import org.apache.groovy.groovysh.language.GroovyshLanguageSession
 import org.apache.groovy.groovysh.util.DocFinder
 import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.tools.shell.util.MessageSource
@@ -267,6 +268,7 @@ class Main {
             return 0
         }
         String evaluate = options.e ?: null
+        GroovyshLanguageSession languageSession = null
 
         try {
             DefaultParser parser = new DefaultParser(
@@ -331,6 +333,10 @@ class Main {
                 .variable(LineReader.SECONDARY_PROMPT_PATTERN, "%M%P > ")
                 .variable(LineReader.INDENTATION, 2)
                 .variable(LineReader.LIST_MAX, 100)
+                // A tall member list must not ask "see all N possibilities?".
+                // That prompt reads the next key, so Backspace looks frozen
+                // and never deletes the character before the caret.
+                .variable(LineReader.TOO_MANY_CANDIDATES, 'show')
                 // Left for JLine to create: DefaultHistory creates the history file owner-only,
                 // handles the concurrent-creation race, and falls back on non-POSIX file systems.
                 // Creating it here first is what used to defeat that and leave it at the umask
@@ -368,7 +374,6 @@ class Main {
                 registries.addAll([extra, consoleEngine, builtins, groovy])
                 setCommandRegistries(registries.toArray(new CommandRegistry[0]))
                 addCompleter(scriptEngine.scriptCompleter)
-                setScriptDescription(scriptEngine::scriptDescription)
                 renameLocal 'exit', '/exit'
                 renameLocal 'help', '/help'
                 invoke '/alias', '/x', '/exit'
@@ -376,6 +381,7 @@ class Main {
                 invoke '/alias', '/h', '/help'
                 setConsoleOption "ignoreUnknownPipes", true
             }
+            languageSession = installLanguageSession(scriptEngine, systemRegistry)
 
             def highlighter = new SystemHighlighter(commandHighlighter, argsHighlighter, groovyHighlighter).tap {
                 if (!OSUtils.IS_WINDOWS) {
@@ -476,6 +482,8 @@ class Main {
         } catch (Throwable t) {
             t.printStackTrace()
             return 1
+        } finally {
+            languageSession?.close()
         }
         return 0
     }
@@ -490,6 +498,23 @@ class Main {
      */
     static int start(String[] args) {
         start(GroovyshOptions.builder().build(), args)
+    }
+
+    /**
+     * Attaches the in-process language session. groovysh depends on
+     * groovy-lsp, so the session is always constructed. The session reads
+     * the engine's compiler configuration. An import typed at the prompt
+     * is buffer text.
+     *
+     * @param scriptEngine REPL engine
+     * @param systemRegistry command registry
+     * @return the session
+     */
+    private static GroovyshLanguageSession installLanguageSession(GroovyEngine scriptEngine, GroovySystemRegistry systemRegistry) {
+        GroovyshLanguageSession session = new GroovyshLanguageSession(scriptEngine)
+        systemRegistry.addCompleter(session)
+        systemRegistry.setScriptDescription(session::scriptDescription)
+        return session
     }
 
     private static void emitResult(Printer printer, Object result, GroovyshOptions.ResultHandler handler) throws Exception {

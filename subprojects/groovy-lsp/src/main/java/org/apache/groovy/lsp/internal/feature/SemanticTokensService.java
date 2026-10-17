@@ -46,6 +46,7 @@ import org.eclipse.lsp4j.SemanticTokens;
 import org.eclipse.lsp4j.SemanticTokensLegend;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -55,9 +56,11 @@ public final class SemanticTokensService {
 
     public static final List<String> TOKEN_TYPES = List.of(
             "namespace", "class", "enum", "interface", "method", "property",
-            "variable", "parameter", "keyword", "string", "number", "comment"
+            "variable", "parameter", "keyword", "string", "number", "comment",
+            "operator", "decorator", "delimiter"
     );
-    public static final List<String> TOKEN_MODIFIERS = List.of("declaration", "static", "deprecated");
+    public static final List<String> TOKEN_MODIFIERS = List.of(
+            "declaration", "static", "deprecated", "slashy", "singleQuoted");
 
     private static final int TOKEN_NAMESPACE = 0;
     private static final int TOKEN_CLASS = 1;
@@ -71,9 +74,23 @@ public final class SemanticTokensService {
     private static final int TOKEN_STRING = 9;
     private static final int TOKEN_NUMBER = 10;
     private static final int TOKEN_COMMENT = 11;
+    private static final int TOKEN_OPERATOR = 12;
+    private static final int TOKEN_DECORATOR = 13;
+    private static final int TOKEN_DELIMITER = 14;
     private static final int MOD_DECLARATION = 1;
     private static final int MOD_STATIC = 2;
     private static final int MOD_DEPRECATED = 4;
+    private static final int MOD_SLASHY = 8;
+    private static final int MOD_SINGLE = 16;
+    private static final Comparator<TokenSpan> SPAN_ORDER = (left, right) -> {
+        if (left.line() != right.line()) {
+            return Integer.compare(left.line(), right.line());
+        }
+        if (left.character() != right.character()) {
+            return Integer.compare(left.character(), right.character());
+        }
+        return Integer.compare(right.length(), left.length());
+    };
 
     /**
      * One absolute semantic-token span. {@code line} and {@code character}
@@ -127,16 +144,45 @@ public final class SemanticTokensService {
             addUseSiteTokens(tokens, document, encoding, range, module);
         }
         addLexicalTokens(document.getText(), tokens, encoding, range);
-        tokens.sort((left, right) -> {
-            if (left.line() != right.line()) {
-                return Integer.compare(left.line(), right.line());
-            }
-            if (left.character() != right.character()) {
-                return Integer.compare(left.character(), right.character());
-            }
-            return Integer.compare(right.length(), left.length());
-        });
+        tokens.sort(SPAN_ORDER);
         dedupeSameSpan(tokens);
+        return List.copyOf(tokens);
+    }
+
+    /**
+     * Lenient lexical spans for a live highlighter. Incomplete input still
+     * tokenizes. No AST and no compile. Identifiers are {@code variable}
+     * until a compiled overlay upgrades them.
+     *
+     * @param text document text
+     * @param encoding negotiated encoding
+     * @return spans, never {@code null}
+     */
+    public static List<TokenSpan> lexicalTokenSpans(final String text, final PositionEncoding encoding) {
+        if (text == null || text.isEmpty()) {
+            return List.of();
+        }
+        return lexicalTokenSpans(text, GroovySourceTokens.tokenizeLenient(text), encoding);
+    }
+
+    /**
+     * Lenient lexical spans from an already-tokenized walk so a live
+     * highlighter does not lex the buffer twice.
+     *
+     * @param text document text
+     * @param lexerTokens ANTLR tokens, possibly {@code null}
+     * @param encoding negotiated encoding
+     * @return spans, never {@code null}
+     */
+    public static List<TokenSpan> lexicalTokenSpans(final String text,
+                                                    final List<Token> lexerTokens,
+                                                    final PositionEncoding encoding) {
+        if (text == null || text.isEmpty() || lexerTokens == null || lexerTokens.isEmpty()) {
+            return List.of();
+        }
+        List<TokenSpan> tokens = new ArrayList<>();
+        addLexicalTokens(text, lexerTokens, tokens, encoding, null);
+        tokens.sort(SPAN_ORDER);
         return List.copyOf(tokens);
     }
 
@@ -169,6 +215,23 @@ public final class SemanticTokensService {
             prevChar = token.character();
         }
         return new SemanticTokens(data);
+    }
+
+    /**
+     * Tokens for an open buffer. A compiled overlay is used only when it
+     * describes this exact text, so a highlighter does not wait for a compile.
+     *
+     * @param text current document text
+     * @param overlay compiled document, or {@code null}
+     * @param encoding negotiated encoding
+     * @return protocol tokens, never {@code null}
+     */
+    public SemanticTokens semanticTokens(final String text, final CompiledDocument overlay,
+                                         final PositionEncoding encoding) {
+        if (overlay != null && text != null && text.equals(overlay.getText())) {
+            return encode(tokenSpans(overlay, encoding));
+        }
+        return encode(lexicalTokenSpans(text, encoding));
     }
 
     public SemanticTokens semanticTokens(final CompiledDocument document, final PositionEncoding encoding) {
@@ -237,11 +300,28 @@ public final class SemanticTokensService {
         if (text == null || text.isEmpty()) {
             return;
         }
-        for (Token token : GroovySourceTokens.tokenize(text)) {
+        addLexicalTokens(text, GroovySourceTokens.tokenize(text), tokens, encoding, range);
+    }
+
+    private static void addLexicalTokens(final String text, final List<Token> lexerTokens,
+                                         final List<TokenSpan> tokens, final PositionEncoding encoding,
+                                         final Range range) {
+        // GString parts do not repeat the opening delimiter. The modifier
+        // chosen for StringLiteral or GStringBegin applies until the next one.
+        int openString = 0;
+        for (Token token : lexerTokens) {
             if (token != null) {
                 int type = lexicalType(token);
                 if (type >= 0) {
-                    addLexerSpans(text, tokens, encoding, range, token, type);
+                    int modifiers = 0;
+                    if (type == TOKEN_STRING) {
+                        int tokenType = token.getType();
+                        if (tokenType == GroovyLexer.StringLiteral || tokenType == GroovyLexer.GStringBegin) {
+                            openString = stringModifier(token.getText());
+                        }
+                        modifiers = openString;
+                    }
+                    addLexerSpans(text, tokens, encoding, range, token, type, modifiers);
                 }
             }
         }
@@ -263,15 +343,29 @@ public final class SemanticTokensService {
             }
             return -1;
         }
-        if (type == GroovyLexer.NOT_IN || type == GroovyLexer.NOT_INSTANCEOF
-                || GroovyKeywords.isKeyword(token.getText())) {
+        if (type == GroovyLexer.AT) {
+            return TOKEN_DECORATOR;
+        }
+        if (type == GroovyLexer.COMMA || type == GroovyLexer.SEMI) {
+            return TOKEN_OPERATOR;
+        }
+        if (type == GroovyLexer.LPAREN || type == GroovyLexer.RPAREN
+                || type == GroovyLexer.LBRACK || type == GroovyLexer.RBRACK
+                || type == GroovyLexer.LBRACE || type == GroovyLexer.RBRACE
+                || type == GroovyLexer.SAFE_INDEX) {
+            return TOKEN_DELIMITER;
+        }
+        if (GroovyKeywords.isKeywordType(type)) {
             return TOKEN_KEYWORD;
+        }
+        if (type == GroovyLexer.Identifier || type == GroovyLexer.CapitalizedIdentifier) {
+            return TOKEN_VARIABLE;
         }
         return -1;
     }
 
     private static void addLexerSpans(final String text, final List<TokenSpan> tokens, final PositionEncoding encoding,
-                                      final Range range, final Token token, final int type) {
+                                      final Range range, final Token token, final int type, final int modifiers) {
         String tokenText = token.getText();
         if (tokenText == null || tokenText.isEmpty()) {
             return;
@@ -284,14 +378,37 @@ public final class SemanticTokensService {
             boolean trailingEmpty = part.isEmpty() && i == parts.length - 1 && tokenText.endsWith("\n");
             int lineI = line + i;
             if (!trailingEmpty && lineInRange(range, lineI)) {
+                String painted = part;
+                boolean trimDollar = (token.getType() == GroovyLexer.GStringBegin
+                        || token.getType() == GroovyLexer.GStringPart) && painted.endsWith("$");
+                if (trimDollar) {
+                    painted = painted.substring(0, painted.length() - 1);
+                }
+                if (painted.isEmpty()) {
+                    continue;
+                }
                 String row = Positions.lineText(text, lineI + 1);
                 int startCodePoints = i == 0 ? codePointColumn : 0;
-                int endCodePoints = startCodePoints + part.codePointCount(0, part.length());
+                int endCodePoints = startCodePoints + painted.codePointCount(0, painted.length());
                 int startChar = Positions.groovyColumnToCharacter(row, startCodePoints + 1, encoding);
                 int endChar = Positions.groovyColumnToCharacter(row, endCodePoints + 1, encoding);
-                tokens.add(new TokenSpan(lineI, startChar, Math.max(endChar - startChar, 1), type, 0));
+                tokens.add(new TokenSpan(lineI, startChar, Math.max(endChar - startChar, 1), type, modifiers));
             }
         }
+    }
+
+    /**
+     * Quote style of the token that opened the literal.
+     * A double-quoted literal, including a GString, is modifier {@code 0}.
+     */
+    private static int stringModifier(final String body) {
+        if (body != null && (body.startsWith("$/") || body.startsWith("/"))) {
+            return MOD_SLASHY;
+        }
+        if (body != null && body.startsWith("\"")) {
+            return 0;
+        }
+        return MOD_SINGLE;
     }
 
     private static void dedupeSameSpan(final List<TokenSpan> tokens) {
