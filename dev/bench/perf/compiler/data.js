@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792135247754,
+  "lastUpdate": 1792220974464,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -8050,6 +8050,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 475.7033333333333,
             "range": "±20.88",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "committer": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "realbluesun@hotmail.com"
+          },
+          "id": "9e625d0f0675115c727a30b76bceff78182a6283",
+          "message": "GROOVY-12446: STC: stop writing UnionTypeClassNode into inferred-return signatures",
+          "timestamp": "2026-10-11T08:44:43Z",
+          "url": "https://github.com/apache/groovy/commit/9e625d0f0675115c727a30b76bceff78182a6283"
+        },
+        "date": 1792220969742,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 570.63,
+            "range": "±31.25",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 658.0066666666667,
+            "range": "±207.47",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 598.3933333333332,
+            "range": "±147.36",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 483.27666666666664,
+            "range": "±18.64",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 469.71999999999997,
+            "range": "±21.63",
             "unit": "ms",
             "extra": "6.0.0"
           }
