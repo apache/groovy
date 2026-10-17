@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792135260438,
+  "lastUpdate": 1792220988261,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -5392,6 +5392,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.hidden",
             "value": 852,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1514,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "committer": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "realbluesun@hotmail.com"
+          },
+          "id": "9e625d0f0675115c727a30b76bceff78182a6283",
+          "message": "GROOVY-12446: STC: stop writing UnionTypeClassNode into inferred-return signatures",
+          "timestamp": "2026-10-11T08:44:43Z",
+          "url": "https://github.com/apache/groovy/commit/9e625d0f0675115c727a30b76bceff78182a6283"
+        },
+        "date": 1792220987589,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4004,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 438,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 850,
             "unit": "classes"
           },
           {
