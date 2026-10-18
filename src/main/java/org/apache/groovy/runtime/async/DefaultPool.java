@@ -98,21 +98,26 @@ public final class DefaultPool implements Pool {
     /**
      * Creates a fixed-size pool backed by {@link ForkJoinPool} for
      * work-stealing and parallel stream isolation.
+     * <p>
+     * Parallelism is {@code size} and is a hard cap. Blocked workers are
+     * not replaced, so CPU-bound work cannot raise the thread count.
+     * A parallel-collection callback that blocks can stall the pool when
+     * every worker blocks with a sibling still queued; leave one spare
+     * thread, or use {@link #virtual()} / {@link #io()} for waiting work.
      */
     public static Pool fixed(int size) {
         if (size <= 0) throw new IllegalArgumentException("Pool size must be > 0, got: " + size);
-        ForkJoinPool fjp = new ForkJoinPool(size);
-        return new DefaultPool(fjp, size, false);
+        return new DefaultPool(new ForkJoinPool(size), size, false);
     }
 
     /**
      * Creates a pool sized to {@code availableProcessors()}, backed by
      * {@link ForkJoinPool}. Ideal for CPU-bound work and parallel collections.
+     * The parallelism cap matches {@link #fixed(int)}.
      */
     public static Pool cpu() {
         int size = Runtime.getRuntime().availableProcessors();
-        ForkJoinPool fjp = new ForkJoinPool(size);
-        return new DefaultPool(fjp, size, false);
+        return new DefaultPool(new ForkJoinPool(size), size, false);
     }
 
     /**
