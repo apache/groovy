@@ -32,6 +32,7 @@ final class PoolTest {
 
             def pool = Pool.fixed(4)
             assert pool.poolSize == 4
+            assert pool.asForkJoinPool().parallelism == 4
             assert !pool.usesVirtualThreads()
             pool.close()
         '''
@@ -44,6 +45,7 @@ final class PoolTest {
 
             def pool = Pool.cpu()
             assert pool.poolSize == Runtime.runtime.availableProcessors()
+            assert pool.asForkJoinPool().parallelism == pool.poolSize
             assert !pool.usesVirtualThreads()
             pool.close()
         '''

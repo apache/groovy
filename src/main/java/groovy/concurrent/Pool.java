@@ -67,6 +67,9 @@ public interface Pool extends Executor, AutoCloseable {
      * for I/O-bound workloads where tasks spend time waiting. On JDK
      * versions that do not support virtual threads, falls back to a
      * cached daemon thread pool.
+     * <p>
+     * Parallel collection methods submit one task per element to this
+     * pool. They do not fall back to {@link ForkJoinPool#commonPool()}.
      *
      * @return a new virtual thread pool
      */
@@ -76,6 +79,13 @@ public interface Pool extends Executor, AutoCloseable {
 
     /**
      * Creates a fixed-size thread pool with daemon threads.
+     * <p>
+     * The pool is a {@link ForkJoinPool} whose parallelism is {@code size}.
+     * That parallelism is a hard cap: blocked workers are not replaced.
+     * Parallel collection methods run at this cap. A blocking callback can
+     * stall the pool when every worker blocks with a sibling still queued;
+     * leave one spare thread, or use {@link #virtual()} / {@link #io()}
+     * for waiting work.
      *
      * @param size the number of threads (must be &gt; 0)
      * @return a new fixed pool
@@ -99,8 +109,10 @@ public interface Pool extends Executor, AutoCloseable {
      * Creates a larger pool suitable for I/O-bound or blocking operations.
      * <p>
      * If virtual threads are available, returns a virtual thread pool
-     * (the ideal choice for I/O). Otherwise returns a fixed pool sized
-     * to {@link ConcurrentConfig#getDefaultParallelism()}.
+     * (the ideal choice for I/O) and parallel collection methods run on
+     * it. Otherwise returns {@link #fixed(int)} sized to
+     * {@link ConcurrentConfig#getDefaultParallelism()}, which has that
+     * pool's parallelism cap.
      *
      * @return a new I/O pool
      */
@@ -154,6 +166,10 @@ public interface Pool extends Executor, AutoCloseable {
     /**
      * Returns the underlying {@link ForkJoinPool}, if this pool is backed
      * by one. Required for parallel stream isolation.
+     * <p>
+     * Parallel collection methods catch {@link UnsupportedOperationException}
+     * and run on this pool as an {@link Executor} instead of the common
+     * fork-join pool. Any other exception propagates.
      *
      * @return the ForkJoinPool
      * @throws UnsupportedOperationException if this pool is not ForkJoinPool-backed
