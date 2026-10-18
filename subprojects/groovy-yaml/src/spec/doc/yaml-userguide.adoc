@@ -92,6 +92,21 @@ YAML parsers that represent a `null` value with a library-provided singleton obj
 
 [NOTE]
 ====
+Since Groovy 7, `YamlSlurper` resolves unquoted values by the YAML 1.2 JSON schema, as
+its Jackson 3 backend does. Only lowercase `true`, `false` and `null`, and plain decimal
+numbers such as `12`, `-3` or `1.5`, become booleans, `null` and numbers. Every other
+unquoted value is a `String`, including the YAML 1.1 words `yes`, `no`, `on` and `off`,
+capitalised forms such as `True`, `FALSE` and `Null`, `~`, and numbers written as `0x1F`,
+`017` or `1_000`. Groovy 6 and earlier read these as booleans, `null` or integers.
+
+A non-empty `String` is true in Groovy, so a document that writes `enabled: off` now
+yields `'off'` and tests as true, without any error. Write `true` and `false` for
+booleans. The typed `parseAs`/`parseTextAs` API fails instead: it rejects `off` for a
+`boolean` property.
+====
+
+[NOTE]
+====
 For the untyped `parse`/`parseText` API, YAML date and time values are returned as
 `String`. `YamlSlurper` routes the untyped path through a YAML-to-JSON conversion,
 and JSON has no native temporal types. Use the typed `parseAs`/`parseTextAs` API
