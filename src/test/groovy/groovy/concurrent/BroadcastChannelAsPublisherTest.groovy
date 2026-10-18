@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 import static groovy.test.GroovyAssert.assertScript
+import static org.junit.jupiter.api.Assertions.assertThrows
 
 final class BroadcastChannelAsPublisherTest {
 
@@ -218,5 +219,61 @@ final class BroadcastChannelAsPublisherTest {
             }
             assert collected == ['x', 'y', 'z']
         '''
+    }
+
+    @Test
+    void forAwaitOverPublisherThrowsARetainedFailure() {
+        def broadcast = BroadcastChannel.create()
+        def publisher = broadcast.asPublisher()
+        def failure = new IllegalStateException('pub-boom')
+        async {
+            waitUntil { broadcast.subscriberCount > 0 }
+            await broadcast.send('a')
+            broadcast.close(failure)
+        }
+        def seen = []
+        def error = assertThrows(IllegalStateException) {
+            for await (item in publisher) {
+                seen << item
+            }
+        }
+        assert seen == ['a']
+        assert error.is(failure)
+        assert broadcast.closeCause.is(failure)
+    }
+
+    @Test
+    void drainReceivesTheFailureFromTheClosedChannel() {
+        // The drain task is blocked in receive() when the broadcast fails,
+        // so the failure arrives as the cause of ChannelClosedException
+        // rather than from a later isClosed() check.
+        def broadcast = BroadcastChannel.create()
+        def publisher = broadcast.asPublisher()
+        def failure = new IllegalStateException('from-receive')
+        def error = new AtomicReference<Throwable>()
+        def done = new CountDownLatch(1)
+        publisher.subscribe(new Flow.Subscriber<String>() {
+            @Override void onSubscribe(Flow.Subscription subscription) {
+                subscription.request(Long.MAX_VALUE)
+            }
+            @Override void onNext(String item) { }
+            @Override void onError(Throwable thrown) {
+                error.set(thrown)
+                done.countDown()
+            }
+            @Override void onComplete() { done.countDown() }
+        })
+        waitUntil { subscriberWaiting(broadcast) }
+        assert broadcast.close(failure)
+        assert done.await(2, TimeUnit.SECONDS)
+        assert error.get().is(failure)
+    }
+
+    /** The publisher's backing channel has a receiver parked in {@code receive()}. */
+    private static boolean subscriberWaiting(BroadcastChannel<?> broadcast) {
+        def subscribers = BroadcastChannel.getDeclaredField('subscribers')
+        subscribers.accessible = true
+        def channels = subscribers.get(broadcast) as List<AsyncChannel<?>>
+        return !channels.isEmpty() && channels[0].toString().contains('waitingReceivers=1')
     }
 }
