@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
@@ -101,8 +102,7 @@ public final class DefaultPool implements Pool {
      */
     public static Pool fixed(int size) {
         if (size <= 0) throw new IllegalArgumentException("Pool size must be > 0, got: " + size);
-        ForkJoinPool fjp = new ForkJoinPool(size);
-        return new DefaultPool(fjp, size, false);
+        return new DefaultPool(newWorkStealingPool(size), size, false);
     }
 
     /**
@@ -111,8 +111,32 @@ public final class DefaultPool implements Pool {
      */
     public static Pool cpu() {
         int size = Runtime.getRuntime().availableProcessors();
-        ForkJoinPool fjp = new ForkJoinPool(size);
-        return new DefaultPool(fjp, size, false);
+        return new DefaultPool(newWorkStealingPool(size), size, false);
+    }
+
+    /**
+     * ForkJoinPool whose blocked workers are replaced up to {@code parallelism}.
+     * <p>
+     * {@code new ForkJoinPool(parallelism)} leaves {@code minimumRunnable} at 1.
+     * A parallel callback that still has a forked sibling then blocks inside
+     * {@code managedBlock}, and compensation often only decrements the active
+     * count: the other worker has already left the idle stack, missed the
+     * fork, and parked. Matching {@code minimumRunnable} to the parallelism
+     * makes that compensation wake or create a replacement, so a pool of
+     * size {@code n} can run {@code n} concurrent blockers.
+     */
+    private static ForkJoinPool newWorkStealingPool(int parallelism) {
+        return new ForkJoinPool(
+                parallelism,
+                ForkJoinPool.defaultForkJoinWorkerThreadFactory,
+                null,
+                false,
+                0,
+                Integer.MAX_VALUE,
+                parallelism,
+                null,
+                60L,
+                TimeUnit.SECONDS);
     }
 
     /**

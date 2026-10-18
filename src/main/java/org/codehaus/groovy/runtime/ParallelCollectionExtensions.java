@@ -26,7 +26,10 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
@@ -49,12 +52,21 @@ import java.util.stream.IntStream;
  * not the common pool.
  * <p>
  * <b>Blocking work:</b> closures that block (I/O, locks, barriers, timed waits)
- * hold ForkJoin worker threads. Prefer a dedicated
- * {@link ParallelScope#withPool(int, Function)
- * ParallelScope.withPool(n)} with {@code n} large enough for the expected
- * concurrent blockers, or an I/O-oriented pool ({@link Pool#io()},
- * {@link Pool#virtual()}) for blocking workloads. Relying on the shared
- * common pool for blocking bodies can stall under contention.
+ * hold the ForkJoin worker that runs them. A parallel stream forks sibling
+ * tasks onto that worker's queue and then runs one leaf inline. If the leaf
+ * blocks, an idle worker is not always signalled again, so the sibling never
+ * starts. When the worker still has queued tasks, the callback therefore runs
+ * inside {@link ForkJoinPool#managedBlock} so an idle worker is released (or a
+ * spare is created) before the callback blocks. Replacement happens when the
+ * pool's {@code minimumRunnable} is at least its parallelism;
+ * {@link Pool#fixed(int)} and {@link Pool#cpu()} are built that way. The JDK
+ * default of 1 can leave the sibling queued while every other worker parks.
+ * A pool of size {@code n} can then host {@code n} concurrent blockers. Fewer
+ * threads than concurrent blockers can still stall. Prefer
+ * {@link ParallelScope#withPool(int, Function) ParallelScope.withPool(n)}
+ * sized to that concurrency, or an I/O-oriented pool ({@link Pool#io()},
+ * {@link Pool#virtual()}) for blocking workloads. The shared common pool
+ * remains vulnerable to contention from unrelated tasks.
  * <p>
  * Inspired by GPars' {@code GParsPoolUtil} category methods.
  *
@@ -84,7 +96,7 @@ public class ParallelCollectionExtensions {
      */
     public static <T> void eachParallel(Collection<T> self, Consumer<T> action) {
         withCurrentFJP(fjp ->
-                fjp.submit(() -> self.parallelStream().forEach(action)).join()
+                fjp.submit(() -> self.parallelStream().forEach(compensate(action))).join()
         );
     }
 
@@ -95,7 +107,7 @@ public class ParallelCollectionExtensions {
      */
     public static <T, R> List<R> collectParallel(Collection<T> self, Function<T, R> transform) {
         return withCurrentFJP(fjp ->
-                fjp.submit(() -> self.parallelStream().map(transform).collect(toListCollector())).join()
+                fjp.submit(() -> self.parallelStream().map(compensate(transform)).collect(toListCollector())).join()
         );
     }
 
@@ -106,7 +118,7 @@ public class ParallelCollectionExtensions {
      */
     public static <T> List<T> findAllParallel(Collection<T> self, Predicate<T> filter) {
         return withCurrentFJP(fjp ->
-                fjp.submit(() -> self.parallelStream().filter(filter).collect(toListCollector())).join()
+                fjp.submit(() -> self.parallelStream().filter(compensate(filter)).collect(toListCollector())).join()
         );
     }
 
@@ -118,7 +130,7 @@ public class ParallelCollectionExtensions {
      */
     public static <T> T findParallel(Collection<T> self, Predicate<T> filter) {
         return withCurrentFJP(fjp ->
-                fjp.submit(() -> self.parallelStream().filter(filter).findFirst().orElse(null)).join()
+                fjp.submit(() -> self.parallelStream().filter(compensate(filter)).findFirst().orElse(null)).join()
         );
     }
 
@@ -128,7 +140,7 @@ public class ParallelCollectionExtensions {
      */
     public static <T> T findAnyParallel(Collection<T> self, Predicate<T> filter) {
         return withCurrentFJP(fjp ->
-                fjp.submit(() -> self.parallelStream().filter(filter).findAny().orElse(null)).join()
+                fjp.submit(() -> self.parallelStream().filter(compensate(filter)).findAny().orElse(null)).join()
         );
     }
 
@@ -139,7 +151,7 @@ public class ParallelCollectionExtensions {
      */
     public static <T> boolean anyParallel(Collection<T> self, Predicate<T> predicate) {
         return withCurrentFJP(fjp ->
-                fjp.submit(() -> self.parallelStream().anyMatch(predicate)).join()
+                fjp.submit(() -> self.parallelStream().anyMatch(compensate(predicate))).join()
         );
     }
 
@@ -148,7 +160,7 @@ public class ParallelCollectionExtensions {
      */
     public static <T> boolean everyParallel(Collection<T> self, Predicate<T> predicate) {
         return withCurrentFJP(fjp ->
-                fjp.submit(() -> self.parallelStream().allMatch(predicate)).join()
+                fjp.submit(() -> self.parallelStream().allMatch(compensate(predicate))).join()
         );
     }
 
@@ -157,7 +169,7 @@ public class ParallelCollectionExtensions {
      */
     public static <T> long countParallel(Collection<T> self, Predicate<T> predicate) {
         return withCurrentFJP(fjp ->
-                fjp.submit(() -> self.parallelStream().filter(predicate).count()).join()
+                fjp.submit(() -> self.parallelStream().filter(compensate(predicate)).count()).join()
         );
     }
 
@@ -168,7 +180,7 @@ public class ParallelCollectionExtensions {
      */
     public static <T> T minParallel(Collection<T> self, Comparator<T> comparator) {
         return withCurrentFJP(fjp ->
-                fjp.submit(() -> self.parallelStream().min(comparator).orElse(null)).join()
+                fjp.submit(() -> self.parallelStream().min(compensate(comparator)).orElse(null)).join()
         );
     }
 
@@ -177,7 +189,7 @@ public class ParallelCollectionExtensions {
      */
     public static <T> T maxParallel(Collection<T> self, Comparator<T> comparator) {
         return withCurrentFJP(fjp ->
-                fjp.submit(() -> self.parallelStream().max(comparator).orElse(null)).join()
+                fjp.submit(() -> self.parallelStream().max(compensate(comparator)).orElse(null)).join()
         );
     }
 
@@ -186,7 +198,7 @@ public class ParallelCollectionExtensions {
      */
     public static <T> T sumParallel(Collection<T> self, BinaryOperator<T> accumulator) {
         return withCurrentFJP(fjp ->
-                fjp.submit(() -> self.parallelStream().reduce(accumulator).orElse(null)).join()
+                fjp.submit(() -> self.parallelStream().reduce(compensate(accumulator)).orElse(null)).join()
         );
     }
 
@@ -197,7 +209,7 @@ public class ParallelCollectionExtensions {
                                                           Function<T, K> classifier) {
         return withCurrentFJP(fjp ->
                 fjp.submit(() -> self.parallelStream()
-                        .collect(Collectors.groupingBy(classifier))).join()
+                        .collect(Collectors.groupingBy(compensate(classifier)))).join()
         );
     }
 
@@ -210,10 +222,11 @@ public class ParallelCollectionExtensions {
      */
     public static <T> void eachWithIndexParallel(Collection<T> self, BiConsumer<T, Integer> action) {
         List<T> list = self instanceof List ? (List<T>) self : new ArrayList<>(self);
+        BiConsumer<T, Integer> body = compensate(action);
         withCurrentFJP(fjp -> {
             fjp.submit(() ->
                     IntStream.range(0, list.size()).parallel()
-                            .forEach(i -> action.accept(list.get(i), i))).join();
+                            .forEach(i -> body.accept(list.get(i), i))).join();
             return null;
         });
     }
@@ -225,9 +238,12 @@ public class ParallelCollectionExtensions {
     public static <T, R> List<R> collectManyParallel(Collection<T> self,
                                                       Function<T, ? extends Collection<R>> transform) {
         return withCurrentFJP(fjp ->
-                fjp.submit(() -> self.parallelStream()
-                        .flatMap(e -> transform.apply(e).stream())
-                        .collect(toListCollector())).join()
+                fjp.submit(() -> {
+                    Function<T, ? extends Collection<R>> body = compensate(transform);
+                    return self.parallelStream()
+                            .flatMap(e -> body.apply(e).stream())
+                            .collect(toListCollector());
+                }).join()
         );
     }
 
@@ -241,7 +257,7 @@ public class ParallelCollectionExtensions {
         return withCurrentFJP(fjp ->
                 fjp.submit(() -> {
                     Map<Boolean, List<T>> parts = self.parallelStream()
-                            .collect(Collectors.partitioningBy(predicate));
+                            .collect(Collectors.partitioningBy(compensate(predicate)));
                     return List.of(parts.get(true), parts.get(false));
                 }).join()
         );
@@ -258,7 +274,7 @@ public class ParallelCollectionExtensions {
      */
     public static <T> T injectParallel(Collection<T> self, T seed, BinaryOperator<T> accumulator) {
         return withCurrentFJP(fjp ->
-                fjp.submit(() -> self.parallelStream().reduce(seed, accumulator)).join()
+                fjp.submit(() -> self.parallelStream().reduce(seed, compensate(accumulator))).join()
         );
     }
 
@@ -271,9 +287,13 @@ public class ParallelCollectionExtensions {
      */
     public static <T> List<T> grepParallel(Collection<T> self, Object filter) {
         return withCurrentFJP(fjp ->
-                fjp.submit(() -> self.parallelStream()
-                        .filter(e -> InvokerHelper.invokeMethod(filter, "isCase", e) != Boolean.FALSE)
-                        .collect(toListCollector())).join()
+                fjp.submit(() -> {
+                    Predicate<T> matches = e ->
+                            InvokerHelper.invokeMethod(filter, "isCase", e) != Boolean.FALSE;
+                    return self.parallelStream()
+                            .filter(compensate(matches))
+                            .collect(toListCollector());
+                }).join()
         );
     }
 
@@ -296,5 +316,133 @@ public class ParallelCollectionExtensions {
             fjp = ForkJoinPool.commonPool();
         }
         return operation.apply(fjp);
+    }
+
+    /**
+     * True when this ForkJoin worker still has tasks in its queue. A parallel
+     * stream forks those siblings and then runs one leaf inline; if the leaf
+     * blocks, the fork signal is not always enough to wake an idle worker.
+     * Callers then run the callback via {@link #block}. An empty queue stays
+     * on the uncompensated path.
+     * <p>
+     * {@link ForkJoinTask#getQueuedTaskCount()} is this worker's queue depth.
+     * The pool-wide {@link ForkJoinPool#getQueuedTaskCount()} estimate can
+     * miss a sibling that is still queued here, which would skip compensation
+     * and leave that sibling stranded.
+     */
+    private static boolean hasQueuedWork() {
+        Thread current = Thread.currentThread();
+        if (!(current instanceof ForkJoinWorkerThread)) {
+            return false;
+        }
+        return ForkJoinTask.getQueuedTaskCount() > 0;
+    }
+
+    private static void block(Runnable action) {
+        try {
+            ForkJoinPool.managedBlock(new BlockingAction(action));
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            sneakyThrow(ex);
+        }
+    }
+
+    private static final class BlockingAction implements ForkJoinPool.ManagedBlocker {
+        private final Runnable action;
+
+        private BlockingAction(Runnable action) {
+            this.action = action;
+        }
+
+        @Override
+        public boolean isReleasable() {
+            return false;
+        }
+
+        @Override
+        public boolean block() {
+            action.run();
+            return true;
+        }
+    }
+
+    private static <T> Consumer<T> compensate(Consumer<T> action) {
+        Objects.requireNonNull(action);
+        return value -> {
+            if (hasQueuedWork()) {
+                block(() -> action.accept(value));
+            } else {
+                action.accept(value);
+            }
+        };
+    }
+
+    private static <T, U> BiConsumer<T, U> compensate(BiConsumer<T, U> action) {
+        Objects.requireNonNull(action);
+        return (left, right) -> {
+            if (hasQueuedWork()) {
+                block(() -> action.accept(left, right));
+            } else {
+                action.accept(left, right);
+            }
+        };
+    }
+
+    private static <T, R> Function<T, R> compensate(Function<T, R> function) {
+        Objects.requireNonNull(function);
+        return value -> {
+            if (!hasQueuedWork()) {
+                return function.apply(value);
+            }
+            Object[] box = new Object[1];
+            block(() -> box[0] = function.apply(value));
+            return cast(box[0]);
+        };
+    }
+
+    private static <T> Predicate<T> compensate(Predicate<T> predicate) {
+        Objects.requireNonNull(predicate);
+        return value -> {
+            if (!hasQueuedWork()) {
+                return predicate.test(value);
+            }
+            boolean[] box = new boolean[1];
+            block(() -> box[0] = predicate.test(value));
+            return box[0];
+        };
+    }
+
+    private static <T> Comparator<T> compensate(Comparator<T> comparator) {
+        Objects.requireNonNull(comparator);
+        return (left, right) -> {
+            if (!hasQueuedWork()) {
+                return comparator.compare(left, right);
+            }
+            int[] box = new int[1];
+            block(() -> box[0] = comparator.compare(left, right));
+            return box[0];
+        };
+    }
+
+    private static <T> BinaryOperator<T> compensate(BinaryOperator<T> operator) {
+        Objects.requireNonNull(operator);
+        return (left, right) -> {
+            if (!hasQueuedWork()) {
+                return operator.apply(left, right);
+            }
+            Object[] box = new Object[1];
+            block(() -> box[0] = operator.apply(left, right));
+            return cast(box[0]);
+        };
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T cast(Object value) {
+        return (T) value;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> void sneakyThrow(Throwable thrown) throws T {
+        throw (T) thrown;
     }
 }

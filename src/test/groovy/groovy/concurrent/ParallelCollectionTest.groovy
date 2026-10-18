@@ -41,8 +41,13 @@ final class ParallelCollectionTest {
 
     @Test
     void testEachParallelRunsConcurrently() {
-        // Same rationale as ParallelAnnotationTest.testParallelForRunsConcurrently:
-        // dedicated pool isolates the barrier rendezvous from commonPool contention.
+        // CyclicBarrier.await is unmanaged blocking. parallelStream forks the
+        // sibling leaf onto the same worker queue and then blocks in the leaf
+        // it runs inline. An idle worker is not always signalled, so one party
+        // waits out the timeout (wrapped as UndeclaredThrowableException by the
+        // SAM Consumer proxy and again by ForkJoinTask). Repeat on one pool:
+        // the first round starts the workers, later rounds run after they have
+        // parked — the case that used to miss the second party.
         assertScript '''
             import groovy.concurrent.ParallelScope
             import java.util.concurrent.CopyOnWriteArraySet
@@ -52,15 +57,43 @@ final class ParallelCollectionTest {
             int parties = 2
             ParallelScope.withPool(parties) { scope ->
                 def threadNames = new CopyOnWriteArraySet()
-                def barrier = new CyclicBarrier(parties)
+                20.times {
+                    def barrier = new CyclicBarrier(parties)
 
-                // IntRange path: same collection shape as `@Parallel for (i in 1..n)`
-                (1..parties).eachParallel { item ->
-                    threadNames << Thread.currentThread().name
-                    barrier.await(5, TimeUnit.SECONDS)
+                    // IntRange path: same collection shape as `@Parallel for (i in 1..n)`
+                    (1..parties).eachParallel { item ->
+                        threadNames << Thread.currentThread().name
+                        barrier.await(5, TimeUnit.SECONDS)
+                    }
                 }
 
-                assert threadNames.size() == parties
+                // A spare worker is allowed: managedBlock may replace a blocked one.
+                assert threadNames.size() >= parties
+            }
+        '''
+    }
+
+    @Test
+    void testEachWithIndexParallelRunsConcurrently() {
+        // Same missed-signal stall as testEachParallelRunsConcurrently, on the
+        // IntStream.range path eachWithIndexParallel uses. Repeat so later
+        // rounds run after the pool's workers have parked. A pool of size
+        // == parties stays enough because Pool.fixed replaces a blocked worker.
+        assertScript '''
+            import groovy.concurrent.ParallelScope
+            import java.util.concurrent.CyclicBarrier
+            import java.util.concurrent.TimeUnit
+
+            int parties = 2
+            ParallelScope.withPool(parties) { scope ->
+                10.times {
+                    def barrier = new CyclicBarrier(parties)
+                    def items = [0, 1]
+                    items.eachWithIndexParallel { item, index ->
+                        assert item == index
+                        barrier.await(5, TimeUnit.SECONDS)
+                    }
+                }
             }
         '''
     }

@@ -47,7 +47,8 @@ import java.util.function.Function;
  * <p>
  * Blocking loop bodies should run inside
  * {@link ParallelScope#withPool(int, Function)
- * ParallelScope.withPool(n)} (or an I/O pool); see
+ * ParallelScope.withPool(n)} with {@code n} at least the number of
+ * concurrent blockers (or an I/O pool); see
  * {@link ParallelCollectionExtensions}.
  *
  * @since 6.0.0
