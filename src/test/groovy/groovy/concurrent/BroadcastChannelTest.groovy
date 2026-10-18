@@ -21,6 +21,7 @@ package groovy.concurrent
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static org.junit.jupiter.api.Assertions.assertThrows
 
 final class BroadcastChannelTest {
 
@@ -91,5 +92,78 @@ final class BroadcastChannelTest {
             assert earlyResults == ['first', 'second']
             assert lateResults == ['second']
         '''
+    }
+
+    @Test
+    void closeWithAFailureReachesEverySubscriber() {
+        def broadcast = BroadcastChannel.create()
+        def first = broadcast.subscribe()
+        def second = broadcast.subscribe()
+        def failure = new IllegalStateException('broadcast-boom')
+        await broadcast.send('a')
+        assert broadcast.close(failure)
+
+        for (sub in [first, second]) {
+            assert await(sub.receive()) == 'a'
+            def error = assertThrows(IllegalStateException) {
+                for await (ignored in sub) {
+                }
+            }
+            assert error.is(failure)
+        }
+        assert broadcast.closeCause.is(failure)
+
+        def late = assertThrows(ChannelClosedException) {
+            broadcast.subscribe()
+        }
+        assert late.cause.is(failure)
+        def sent = assertThrows(ChannelClosedException) {
+            await broadcast.send('late')
+        }
+        assert sent.cause.is(failure)
+        assert sent.message == 'BroadcastChannel is closed'
+
+        broadcast.close()
+        assert !broadcast.close(new IllegalStateException('later'))
+        assert broadcast.closeCause.is(failure)
+    }
+
+    @Test
+    void closeNullEndsSubscribersNormally() {
+        def broadcast = BroadcastChannel.create()
+        def sub = broadcast.subscribe()
+        await broadcast.send('a')
+        assert broadcast.close(null)
+        def seen = []
+        for await (value in sub) {
+            seen << value
+        }
+        assert seen == ['a']
+        assert broadcast.closeCause == null
+
+        def closed = BroadcastChannel.create()
+        def child = closed.subscribe()
+        closed.close()
+        assert !closed.close(new IllegalStateException('late'))
+        def drained = []
+        for await (value in child) {
+            drained << value
+        }
+        assert drained.isEmpty()
+        assert closed.closeCause == null
+        def rejected = assertThrows(ChannelClosedException) {
+            closed.subscribe()
+        }
+        assert rejected.cause == null
+
+        def empty = BroadcastChannel.create()
+        def only = new IllegalStateException('only')
+        assert empty.close(only)
+        assert !empty.close(null)
+        assert empty.closeCause.is(only)
+        def late = assertThrows(ChannelClosedException) {
+            empty.subscribe()
+        }
+        assert late.cause.is(only)
     }
 }

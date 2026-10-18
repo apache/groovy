@@ -71,6 +71,8 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
     private final Deque<PendingOp<T>> waitingReceivers = new ConcurrentLinkedDeque<>();
     private final int capacity;
     private volatile boolean closed;
+    /** Failure passed to {@link #close(Throwable)}, published before {@link #closed}. */
+    private volatile Throwable closeCause; // NOSONAR java:S3077 — published as a reference; the Throwable is not mutated
     /**
      * Run once, outside the lock, by the call that closes the channel; {@code null} for none.
      * {@link AtomicReference} rather than {@code volatile}: java:S3077 flags a volatile
@@ -286,9 +288,27 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
 
     @Override
     public boolean close() {
+        return finishClose(null);
+    }
+
+    @Override
+    public Throwable getCloseCause() {
+        return closeCause;
+    }
+
+    /** Retains {@code cause} and closes. Does not call the interface default. */
+    @Override
+    public boolean close(Throwable cause) {
+        return finishClose(cause);
+    }
+
+    private boolean finishClose(Throwable cause) {
         lock.lock();
         try {
-            if (closed) return false;
+            if (closed) {
+                return false;
+            }
+            closeCause = cause;
             closed = true;
             finishCloseLocked();
         } finally {
@@ -344,7 +364,13 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
     /**
      * Returns a blocking iterator that receives values until the channel
      * is closed and drained. Each {@code next()} call blocks until a value
-     * is available. {@link ChannelClosedException} signals end-of-iteration.
+     * is available. A {@link ChannelClosedException} with no cause ends
+     * iteration. A failure retained by {@link #close(Throwable)} is that
+     * exception's cause and is thrown here, once, for the caller to catch.
+     * {@code for}, {@code each}, {@code collect} and {@code toList} all use
+     * this iterator. A Java enhanced {@code for} calls {@code hasNext()},
+     * which may throw a checked exception that {@link Iterator} does not
+     * declare.
      */
     @Override
     public Iterator<T> iterator() {
@@ -364,6 +390,10 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
                 return true;
             } catch (ChannelClosedException e) {
                 done = true;
+                Throwable failure = e.getCause();
+                if (failure != null) {
+                    AsyncSupport.rethrow(failure);
+                }
                 return false;
             }
         }
@@ -510,12 +540,21 @@ public final class DefaultAsyncChannel<T> implements AsyncChannel<T> {
         }
     }
 
-    private static ChannelClosedException closedForSend() {
-        return new ChannelClosedException("channel is closed for send");
+    private ChannelClosedException closedForSend() {
+        return closed("channel is closed for send");
     }
 
-    private static ChannelClosedException closedForReceive() {
-        return new ChannelClosedException("channel is closed");
+    private ChannelClosedException closedForReceive() {
+        return closed("channel is closed");
+    }
+
+    /** One terminal signal. A retained failure rides on the cause. */
+    private ChannelClosedException closed(String message) {
+        Throwable cause = closeCause;
+        if (cause == null) {
+            return new ChannelClosedException(message);
+        }
+        return new ChannelClosedException(message, cause);
     }
 
     /**
