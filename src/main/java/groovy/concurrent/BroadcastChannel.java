@@ -62,6 +62,10 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class BroadcastChannel<T> {
 
     private final CopyOnWriteArrayList<AsyncChannel<T>> subscribers = new CopyOnWriteArrayList<>();
+    /** Guards {@link #closed} together with membership of {@link #subscribers}. */
+    private final Object lock = new Object();
+    /** Failure passed to {@link #close(Throwable)}, published before {@link #closed}. */
+    private volatile Throwable closeCause; // NOSONAR java:S3077 — published as a reference; the Throwable is not mutated
     private volatile boolean closed;
 
     private BroadcastChannel() { }
@@ -94,9 +98,11 @@ public final class BroadcastChannel<T> {
      * @return a new subscriber channel
      */
     public AsyncChannel<T> subscribe(int bufferSize) {
-        if (closed) throw new ChannelClosedException("BroadcastChannel is closed");
         AsyncChannel<T> sub = AsyncChannel.create(bufferSize);
-        subscribers.add(sub);
+        synchronized (lock) {
+            if (closed) throw closedNow();
+            subscribers.add(sub);
+        }
         return sub;
     }
 
@@ -105,11 +111,12 @@ public final class BroadcastChannel<T> {
      *
      * @param value the value to broadcast
      * @return an Awaitable that completes when all subscribers have accepted the value
-     * @throws ChannelClosedException if the broadcast channel is closed
+     * @throws ChannelClosedException if the broadcast channel is closed.
+     *         The cause is the failure passed to {@link #close(Throwable)}, when there is one.
      */
     public Awaitable<Void> send(T value) {
         Objects.requireNonNull(value, "value must not be null");
-        if (closed) throw new ChannelClosedException("BroadcastChannel is closed");
+        if (closed) throw closedNow();
         CompletableFuture<?>[] futures = subscribers.stream()
                 .map(sub -> {
                     try {
@@ -124,12 +131,56 @@ public final class BroadcastChannel<T> {
 
     /**
      * Closes this broadcast channel and all subscriber channels.
+     * Idempotent. A later {@link #close(Throwable)} does not add a failure.
      */
     public void close() {
-        closed = true;
-        for (AsyncChannel<T> sub : subscribers) {
-            sub.close();
+        close(null);
+    }
+
+    /**
+     * Closes this broadcast channel because {@code cause} failed the producer.
+     * <p>
+     * Values already accepted by a subscriber remain receivable. Iteration
+     * on each subscriber throws {@code cause}. {@code null} is a normal close,
+     * the same as {@link #close()}. Returns {@code true} when this call closes
+     * the broadcast. The first close wins, so a later call returns {@code false}
+     * and leaves the retained failure unchanged. A subscriber that arrives
+     * afterwards fails at once with {@link ChannelClosedException} carrying
+     * this cause.
+     *
+     * @param cause the failure each subscriber should surface, or {@code null}
+     * @return {@code true} if this call closed the broadcast
+     * @since 6.0.1
+     */
+    public boolean close(Throwable cause) {
+        synchronized (lock) {
+            if (closed) {
+                return false;
+            }
+            closeCause = cause;
+            closed = true;
         }
+        for (AsyncChannel<T> sub : subscribers) {
+            sub.close(cause);
+        }
+        return true;
+    }
+
+    /**
+     * Returns the failure passed to {@link #close(Throwable)}, or {@code null}
+     * when this broadcast is open or was closed normally.
+     *
+     * @return the retained failure, or {@code null}
+     * @since 6.0.1
+     */
+    public Throwable getCloseCause() {
+        return closeCause;
+    }
+
+    private ChannelClosedException closedNow() {
+        Throwable cause = closeCause;
+        if (cause == null) return new ChannelClosedException("BroadcastChannel is closed");
+        return new ChannelClosedException("BroadcastChannel is closed", cause);
     }
 
     /**
@@ -162,8 +213,9 @@ public final class BroadcastChannel<T> {
      *       broadcast send when no demand exists (sender-side backpressure).</li>
      *   <li>Cancellation: closes this subscriber's channel and removes it
      *       from the broadcast's subscriber set.</li>
-     *   <li>Completion: signals {@code onComplete} when the broadcast channel
-     *       is closed and the per-subscriber buffer drained.</li>
+     *   <li>Completion: signals {@code onComplete} when the subscriber channel
+     *       is closed normally and drained. {@link #close(Throwable)} signals
+     *       {@code onError} with that failure instead.</li>
      * </ul>
      * <p>
      * <b>Backpressure policy (important).</b> This bridge uses lossless,
@@ -302,8 +354,7 @@ public final class BroadcastChannel<T> {
                     // If the upstream channel has closed and drained, emit
                     // onComplete even when demand == 0.
                     if (channel.isClosed() && channel.getBufferedSize() == 0) {
-                        subscriber.onComplete();
-                        cancel();
+                        completeOrFail(null);
                         return;
                     }
                     if (demand.get() == 0) {
@@ -322,10 +373,7 @@ public final class BroadcastChannel<T> {
                     try {
                         item = AsyncSupport.await(channel.receive());
                     } catch (ChannelClosedException e) {
-                        if (!cancelled.get()) {
-                            subscriber.onComplete();
-                            cancel();
-                        }
+                        completeOrFail(e.getCause());
                         return;
                     }
                     if (cancelled.get()) return;
@@ -345,6 +393,22 @@ public final class BroadcastChannel<T> {
                     cancel();
                 }
             }
+        }
+
+        /** A retained failure fails the subscriber. A normal close completes it. */
+        private void completeOrFail(Throwable cause) {
+            if (cancelled.get()) {
+                return;
+            }
+            if (cause == null) {
+                cause = channel.getCloseCause();
+            }
+            if (cause != null) {
+                subscriber.onError(cause);
+            } else {
+                subscriber.onComplete();
+            }
+            cancel();
         }
     }
 }

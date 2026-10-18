@@ -546,6 +546,14 @@ public class AsyncSupport {
         return t;
     }
 
+    /**
+     * Rethrows {@code failure} as itself, including a checked exception.
+     * Kept in this package so the pure-Java concurrent jar stays self-contained.
+     */
+    static void rethrow(Throwable failure) {
+        sneakyThrow(failure);
+    }
+
     @SuppressWarnings("unchecked")
     private static <T extends Throwable> void sneakyThrow(Throwable t) throws T {
         throw (T) t;

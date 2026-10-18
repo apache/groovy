@@ -38,6 +38,56 @@ With virtual threads, this blocking is essentially free.
 Since channels implement `Iterable`, they also work with regular `for` loops
 and Groovy collection methods.
 
+[[async-channel-failure]]
+=== When the producer fails
+
+`AsyncChannel.produce` runs the producer and closes the channel when the
+body finishes. A normal return is a normal close. A thrown failure is
+passed to `close(cause)`. `send` waits until the channel accepts the value:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=channel_failure,indent=0]
+----
+
+`close(cause)` is that underlying call. It returns `true` when that call
+closes the channel. The first close wins, so a later close returns `false`
+and leaves the retained failure unchanged. `close(null)` is a normal close.
+A producer that does not use `produce` writes the same try / close / catch
+around its own sends.
+
+Values already sent are still delivered. `receive` and `send` then fail
+with `ChannelClosedException`, and the producer's exception is its cause.
+A loop written with `receive` has to read that cause. Catching
+`ChannelClosedException` and ignoring `getCause()` drops the failure.
+
+`for await` throws the producer's exception after the values already sent.
+The loop does not catch it. The code that reads the channel writes the
+`try` / `catch`.
+
+The same iterator backs a plain `for` loop and the collection methods
+`each`, `collect` and `toList`, so those throw the failure too. A Java
+enhanced `for` calls `Iterator.hasNext()`, which can throw a checked
+exception that `Iterator` does not declare. Java code cannot catch that
+exception by its checked type.
+
+A custom `AsyncChannel` that does not override `close(Throwable)` still
+just closes, so iteration ends instead of throwing. `defer { channel.close() }`
+is a normal close: it stops the loop, and the task's exception stays on
+the `Awaitable` returned by `async`.
+`map`, `filter`, `split` and `tap` carry a failure through to their
+output, so the same `try` / `catch` sees it at the end of the pipeline.
+Closing one side of a `split` does not fail the other. `merge` closes its
+output when either input fails, after it has forwarded values a relay has
+already taken and values already buffered on the other input. It keeps
+taking from that input while the buffer is non-empty, so a producer that
+refills the buffer delays the failure until a gap appears. It does not
+close that input. A producer still waiting to hand a value over is not
+released. When both inputs fail, the first failure retained on the output
+wins.
+`BroadcastChannel.close(failure)` returns the same boolean and closes every
+subscriber the same way.
+
 [[async-channel-composition]]
 == Channel Composition
 
@@ -82,7 +132,10 @@ for await (val in pipeline) { process(val) }
 
 === merge
 
-Combines two channels into one, interleaving values as they arrive:
+Combines two channels into one, interleaving values as they arrive.
+The output closes when both inputs have closed normally. If either input
+fails, values already taken or buffered are forwarded and the output then
+closes with that failure:
 
 [source,groovy]
 ----
@@ -131,8 +184,13 @@ println "Channel ${result.index}: ${result.value}"
 
 A select takes exactly one value from exactly one channel; the other
 channels are left untouched. When several channels already have a value
-waiting, the one listed first is taken. If every channel is closed and
-drained, `select()` fails with `ChannelClosedException`.
+waiting, the one met first in registration order is taken. Priority order
+meets them as listed. `fair()` and `random()` change that order, as
+described below. A channel closed with a failure still delivers a value
+that was already buffered. The failure fails the select only when nothing
+buffered remains. A normal close does not fail the select. That channel
+is skipped until every channel has closed normally, and only then does
+`select()` fail with `ChannelClosedException`.
 
 That priority by list order means a channel that always has a value
 waiting starves the channels listed after it. `fair()` returns a select

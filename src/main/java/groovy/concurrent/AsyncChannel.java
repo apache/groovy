@@ -25,8 +25,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -55,6 +57,20 @@ import java.util.function.Predicate;
  *     println item   // prints 'a', then 'b'
  * }
  * }</pre>
+ * {@link #produce(int, Consumer) produce} runs a producer and closes the
+ * channel when it finishes, normally or with the failure it throws.
+ * A producer that does not use {@code produce} catches that failure and
+ * passes it to {@link #close(Throwable)}. {@code for await} throws that
+ * failure after
+ * the values already sent, and the code that reads the channel writes the
+ * {@code try}/{@code catch}. A plain {@code for} loop, {@code each},
+ * {@code collect} and {@code toList} use the same iterator and throw it
+ * too. A Java enhanced {@code for} calls {@code Iterator.hasNext()}, which
+ * may throw a checked exception that {@code Iterator} does not declare.
+ * {@code receive} and {@code send} still fail with
+ * {@link ChannelClosedException}; the failure is that exception's
+ * {@linkplain Throwable#getCause() cause}, so a hand-written loop has to
+ * read the cause or the failure is dropped.
  *
  * @param <T> the payload type
  * @see Awaitable
@@ -76,6 +92,70 @@ public interface AsyncChannel<T> extends Iterable<T> {
      */
     static <T> AsyncChannel<T> create(int capacity) {
         return new DefaultAsyncChannel<>(capacity);
+    }
+
+    /**
+     * Starts a producer for a new unbuffered channel.
+     * <p>
+     * The body runs asynchronously. {@link Producer#send(Object)} waits until
+     * the channel accepts each value. When the body returns, the channel is
+     * closed normally. When the body throws, the channel is closed with that
+     * failure, after the values already accepted. A {@link ChannelClosedException}
+     * from {@code send} means the channel was closed by its consumer; that is
+     * not recorded as a producer failure.
+     *
+     * @param body the producer; must not be {@code null}
+     * @param <T> the payload type
+     * @return the channel the body sends to
+     * @throws NullPointerException if {@code body} is null
+     * @see #produce(int, Consumer)
+     * @since 6.0.1
+     */
+    static <T> AsyncChannel<T> produce(Consumer<? super Producer<T>> body) {
+        return produce(0, body);
+    }
+
+    /**
+     * Starts a producer for a new channel of the given capacity.
+     * See {@link #produce(Consumer)}.
+     *
+     * @param capacity the maximum buffer size; 0 for unbuffered
+     * @param body the producer; must not be {@code null}
+     * @param <T> the payload type
+     * @return the channel the body sends to
+     * @throws NullPointerException if {@code body} is null
+     * @throws IllegalArgumentException if {@code capacity} is negative
+     * @since 6.0.1
+     */
+    static <T> AsyncChannel<T> produce(int capacity, Consumer<? super Producer<T>> body) {
+        Objects.requireNonNull(body, "body must not be null");
+        AsyncChannel<T> channel = create(capacity);
+        Producer<T> producer = new Producer<>(channel);
+        AsyncSupport.getExecutor().execute(() -> runProducer(channel, producer, body));
+        return channel;
+    }
+
+    /**
+     * Runs {@code body} and closes {@code channel}. The body can throw an
+     * {@link Error} or a checked exception; that failure has to close the
+     * channel on this thread rather than escape the executor.
+     */
+    private static <T> void runProducer(AsyncChannel<T> channel, Producer<T> producer,
+                                        Consumer<? super Producer<T>> body) {
+        Throwable failure = null;
+        try {
+            body.accept(producer);
+        } catch (Throwable thrown) {
+            Throwable unwrapped = AsyncSupport.unwrap(thrown);
+            // send throws ChannelClosedException only after the consumer has
+            // already closed the channel. A ChannelClosedException thrown while
+            // the channel is still open is the producer's own failure.
+            if (!(unwrapped instanceof ChannelClosedException) || !channel.isClosed()) {
+                failure = unwrapped;
+            }
+        } finally {
+            channel.close(failure);
+        }
     }
 
     /**
@@ -150,7 +230,8 @@ public interface AsyncChannel<T> extends Iterable<T> {
      * <p>
      * The returned {@link Awaitable} completes when the value has been
      * delivered to a receiver or buffered. Sending to a closed channel
-     * fails immediately with {@link ChannelClosedException}.
+     * fails immediately with {@link ChannelClosedException}. When the channel
+     * was closed with a failure, that failure is the exception's cause.
      *
      * @param value the value to send; must not be {@code null}
      * @return an Awaitable that completes when the send succeeds
@@ -163,7 +244,11 @@ public interface AsyncChannel<T> extends Iterable<T> {
      * <p>
      * The returned {@link Awaitable} completes when a value is available.
      * Receiving from a closed, empty channel fails with
-     * {@link ChannelClosedException}.
+     * {@link ChannelClosedException}. When the channel was closed with a
+     * failure, that failure is the exception's cause. A loop that catches
+     * only {@code ChannelClosedException} drops the failure unless it reads
+     * {@link Throwable#getCause()}. {@code for await} throws the failure
+     * itself; the code that reads the channel writes the {@code try}/{@code catch}.
      *
      * @return an Awaitable that yields the next value
      */
@@ -177,8 +262,99 @@ public interface AsyncChannel<T> extends Iterable<T> {
      * drained, subsequent receives also fail.
      *
      * @return {@code true} if this call actually closed the channel
+     * @see #close(Throwable)
      */
     boolean close();
+
+    /**
+     * Closes this channel because {@code cause} failed the producer.
+     * <p>
+     * Values already buffered are still delivered. {@code receive} and
+     * {@code send} then fail with {@link ChannelClosedException}, and
+     * {@code cause} is that exception's cause. {@code for await} throws
+     * {@code cause} after those values. The reading code writes the
+     * {@code try}/{@code catch}. A normal {@link #close()} still ends the
+     * loop without throwing.
+     * <p>
+     * {@code null} means a normal close, the same as {@link #close()}.
+     * Returns {@code true} when this call closes the channel. The first
+     * close wins, so a later call returns {@code false} and leaves any
+     * retained failure unchanged.
+     * <p>
+     * The default implementation calls {@link #close()} and returns its
+     * result. It does not retain {@code cause}. An implementation that does
+     * not override this method therefore ends iteration without throwing
+     * {@code cause}. The channel returned by {@link #create(int)} retains
+     * {@code cause}. An implementation of {@link #close()} must not call
+     * this method unless it also overrides it: the default calls
+     * {@link #close()} again.
+     *
+     * @param cause the failure iteration should throw, or {@code null} for a normal close
+     * @return {@code true} if this call closed the channel
+     * @since 6.0.1
+     */
+    default boolean close(Throwable cause) {
+        return close();
+    }
+
+    /**
+     * Returns the failure passed to {@link #close(Throwable)}, or {@code null}
+     * when this channel is open, was closed normally, or does not retain a cause.
+     * <p>
+     * The default is {@code null}. {@code receive} and {@code send} do not
+     * throw this failure; it is the {@linkplain Throwable#getCause() cause}
+     * of the {@link ChannelClosedException} they throw.
+     *
+     * @return the retained failure, or {@code null}
+     * @since 6.0.1
+     */
+    default Throwable getCloseCause() {
+        return null;
+    }
+
+    /**
+     * Reads {@code source} until it closes, {@code step} returns {@code false},
+     * or {@code step} throws, then runs {@code close}. A close of {@code source}
+     * keeps that close's cause, and {@code null} means a normal close. A
+     * throwable from {@code step} is the failure to retain. A closed output is
+     * not one of those: {@code step} reports it by returning {@code false}
+     * (see {@link #offer}), and that output's own close is left as it is.
+     */
+    private static <T> void pump(AsyncChannel<? extends T> source, Predicate<T> step,
+                                 Consumer<Throwable> close) {
+        Throwable failure = null;
+        try {
+            while (true) {
+                T item;
+                try {
+                    item = AsyncSupport.await(source.receive());
+                } catch (ChannelClosedException closed) {
+                    failure = closed.getCause();
+                    break;
+                }
+                if (!step.test(item)) break;
+            }
+        } catch (Throwable thrown) {
+            failure = AsyncSupport.unwrap(thrown);
+        } finally {
+            close.accept(failure);
+        }
+    }
+
+    /**
+     * Sends {@code item} to {@code out}.
+     *
+     * @return {@code false} when {@code out} is already closed, so the caller
+     *         stops without adopting {@code out}'s close cause
+     */
+    private static <T> boolean offer(AsyncChannel<? super T> out, T item) {
+        try {
+            AsyncSupport.await(out.send(item));
+            return true;
+        } catch (ChannelClosedException ignored) {
+            return false;
+        }
+    }
 
     // ---- Composition (each returns a new channel) -----------------------
     //
@@ -186,10 +362,17 @@ public interface AsyncChannel<T> extends Iterable<T> {
     // using explicit receive()/await, writes to the output channel(s),
     // and closes them when the source is exhausted. We use receive()
     // directly rather than the Iterable iterator to avoid blocking
-    // iterator issues on JDK 17 (no virtual threads).
+    // iterator issues on JDK 17 (no virtual threads). A failure from the
+    // source, or thrown by the callback, is retained on the output. A normal
+    // close is not. merge forwards a value a relay has already taken, then
+    // retains a failure without waiting for the other input to end. An output
+    // the consumer has already closed stops that send and is not treated as
+    // a failure of the source.
 
     /**
      * Returns a new channel that passes only elements matching the predicate.
+     * The result closes when this channel does. A failure from this channel
+     * or from {@code predicate} is retained, so {@code for await} throws it.
      *
      * @param predicate the filter function
      * @return a new filtered channel
@@ -197,24 +380,17 @@ public interface AsyncChannel<T> extends Iterable<T> {
      */
     default AsyncChannel<T> filter(Predicate<T> predicate) {
         AsyncChannel<T> out = create(getCapacity());
-        AsyncSupport.getExecutor().execute(() -> {
-            try {
-                while (true) {
-                    T item = AsyncSupport.await(receive());
-                    if (predicate.test(item)) {
-                        AsyncSupport.await(out.send(item));
-                    }
-                }
-            } catch (ChannelClosedException ignored) {
-            } finally {
-                out.close();
-            }
-        });
+        AsyncSupport.getExecutor().execute(() -> pump(this, item -> {
+            if (!predicate.test(item)) return true;
+            return offer(out, item);
+        }, out::close));
         return out;
     }
 
     /**
      * Returns a new channel that transforms each element using the function.
+     * The result closes when this channel does. A failure from this channel
+     * or from {@code transform} is retained, so {@code for await} throws it.
      *
      * @param transform the mapping function
      * @param <R>       the output element type
@@ -223,58 +399,105 @@ public interface AsyncChannel<T> extends Iterable<T> {
      */
     default <R> AsyncChannel<R> map(Function<T, R> transform) {
         AsyncChannel<R> out = create(getCapacity());
-        AsyncSupport.getExecutor().execute(() -> {
-            try {
-                while (true) {
-                    T item = AsyncSupport.await(receive());
-                    AsyncSupport.await(out.send(transform.apply(item)));
-                }
-            } catch (ChannelClosedException ignored) {
-            } finally {
-                out.close();
-            }
-        });
+        AsyncSupport.getExecutor().execute(() -> pump(this,
+                item -> offer(out, transform.apply(item)), out::close));
         return out;
     }
 
     /**
      * Returns a new channel that receives values from both this channel and
-     * the other channel. Values are interleaved as they arrive. The output
-     * closes when both inputs are exhausted.
+     * {@code other}. Values are interleaved as they arrive.
+     * <p>
+     * The output closes when both inputs have closed normally. A failure
+     * from either input closes the output with that failure once every value
+     * a relay has already taken, and every value already buffered on the
+     * other input, has been forwarded. The relay keeps taking from that
+     * input while its buffer is non-empty, so a producer that refills the
+     * buffer delays the failure until a gap appears. The other input is not
+     * closed. A producer still waiting to hand a value over is not released.
+     * When both inputs fail, the first failure retained on the output wins.
+     * A later normal close does not replace it.
      *
      * @param other the channel to merge with
      * @return a new merged channel
+     * @throws NullPointerException if {@code other} is null
      * @since 6.0.0
      */
     default AsyncChannel<T> merge(AsyncChannel<? extends T> other) {
+        Objects.requireNonNull(other, "other must not be null");
         AsyncChannel<T> out = create(getCapacity());
-        var remaining = new AtomicInteger(2);
-        Runnable closer = () -> {
-            if (remaining.decrementAndGet() == 0) out.close();
-        };
-        AsyncSupport.getExecutor().execute(() -> {
-            try {
-                while (true) AsyncSupport.await(out.send(AsyncSupport.await(this.receive())));
-            } catch (ChannelClosedException ignored) {
-            } finally {
-                closer.run();
-            }
-        });
-        AsyncSupport.getExecutor().execute(() -> {
-            try {
-                while (true) AsyncSupport.await(out.send(AsyncSupport.await(other.receive())));
-            } catch (ChannelClosedException ignored) {
-            } finally {
-                closer.run();
-            }
-        });
+        // A failure must not take a count. If it did, the sibling's normal
+        // end could be the decrement that reaches zero and close the output
+        // with no cause before the failure is retained.
+        var openInputs = new AtomicInteger(2);
+        var left = new MergeRelay();
+        var right = new MergeRelay();
+        relay(this, out, openInputs, left, right);
+        relay(other, out, openInputs, right, left);
         return out;
     }
 
     /**
+     * Forwards {@code in} to {@code out}. A failure first lets {@code sibling}
+     * finish values it has already taken or that are already buffered, then
+     * closes {@code out}. A normal end closes {@code out} only after every
+     * input has ended the same way.
+     */
+    private static <T> void relay(AsyncChannel<? extends T> in, AsyncChannel<T> out,
+                                  AtomicInteger openInputs, MergeRelay self, MergeRelay sibling) {
+        AsyncSupport.getExecutor().execute(() -> {
+            Throwable failure = null;
+            try {
+                while (true) {
+                    // An empty input must not be received once the sibling has
+                    // failed: that receive would remove a later value and then
+                    // find the output closed. Buffered values are already the
+                    // sender's and are forwarded.
+                    if (self.isStopping() && in.getBufferedSize() == 0) break;
+                    Awaitable<? extends T> pending = in.receive();
+                    self.publish(pending);
+                    // A sender can commit between isDone() and cancel().
+                    // cancel() then returns false and the value is already
+                    // out of the input; awaiting it forwards that value.
+                    if (self.isStopping() && !pending.isDone() && pending.cancel()) {
+                        break;
+                    }
+                    T item;
+                    try {
+                        item = AsyncSupport.await(pending);
+                    } catch (ChannelClosedException closed) {
+                        failure = closed.getCause();
+                        break;
+                    } catch (CancellationException cancelled) {
+                        break;
+                    } finally {
+                        self.clearPending(pending);
+                    }
+                    if (!offer(out, item)) break;
+                }
+            } catch (Throwable thrown) {
+                Throwable unwrapped = AsyncSupport.unwrap(thrown);
+                if (!(unwrapped instanceof CancellationException)) {
+                    failure = unwrapped;
+                }
+            } finally {
+                self.markIdle();
+                if (failure != null) {
+                    sibling.stopAndWait();
+                    out.close(failure);
+                } else if (openInputs.decrementAndGet() == 0) {
+                    out.close();
+                }
+            }
+        });
+    }
+
+    /**
      * Returns two new channels: elements matching the predicate go to the
-     * first, non-matching to the second. Both are closed when this channel
-     * is exhausted.
+     * first, non-matching to the second. Both close when this channel does,
+     * and both retain a failure from this channel or from {@code predicate}.
+     * Closing one result stops the split and closes the other normally; a
+     * failure close of one result is not copied onto the other.
      *
      * @param predicate the split condition
      * @return a list of two channels: [matching, non-matching]
@@ -283,29 +506,20 @@ public interface AsyncChannel<T> extends Iterable<T> {
     default List<AsyncChannel<T>> split(Predicate<T> predicate) {
         AsyncChannel<T> trueOut = create(getCapacity());
         AsyncChannel<T> falseOut = create(getCapacity());
-        AsyncSupport.getExecutor().execute(() -> {
-            try {
-                while (true) {
-                    T item = AsyncSupport.await(receive());
-                    if (predicate.test(item)) {
-                        AsyncSupport.await(trueOut.send(item));
-                    } else {
-                        AsyncSupport.await(falseOut.send(item));
-                    }
-                }
-            } catch (ChannelClosedException ignored) {
-            } finally {
-                trueOut.close();
-                falseOut.close();
-            }
-        });
+        AsyncSupport.getExecutor().execute(() -> pump(this, item ->
+                offer(predicate.test(item) ? trueOut : falseOut, item), failure -> {
+            trueOut.close(failure);
+            falseOut.close(failure);
+        }));
         return List.of(trueOut, falseOut);
     }
 
     /**
      * Returns a new channel that receives all values from this channel while
      * also sending a copy of each value to the tap channel. Useful for
-     * logging, monitoring, or forking a side pipeline.
+     * logging, monitoring, or forking a side pipeline. A closed tap is
+     * ignored and the pass-through continues. A failure from this channel
+     * is retained on the result.
      *
      * @param tap the channel to send copies to
      * @return a new pass-through channel
@@ -313,19 +527,107 @@ public interface AsyncChannel<T> extends Iterable<T> {
      */
     default AsyncChannel<T> tap(AsyncChannel<T> tap) {
         AsyncChannel<T> out = create(getCapacity());
-        AsyncSupport.getExecutor().execute(() -> {
-            try {
-                while (true) {
-                    T item = AsyncSupport.await(receive());
-                    try { AsyncSupport.await(tap.send(item)); }
-                    catch (ChannelClosedException ignored) { }
-                    AsyncSupport.await(out.send(item));
-                }
-            } catch (ChannelClosedException ignored) {
-            } finally {
-                out.close();
-            }
-        });
+        AsyncSupport.getExecutor().execute(() -> pump(this, item -> {
+            offer(tap, item); // a closed tap does not stop the pass-through
+            return offer(out, item);
+        }, out::close));
         return out;
+    }
+
+    /**
+     * Blocking sender for {@link AsyncChannel#produce(int, Consumer)}.
+     * <p>
+     * {@link #send(Object)} waits until the channel accepts the value, so a
+     * rendezvous producer does not run ahead of its consumer.
+     *
+     * @param <T> the payload type
+     * @since 6.0.1
+     */
+    final class Producer<T> {
+        private final AsyncChannel<T> channel;
+
+        private Producer(AsyncChannel<T> channel) {
+            this.channel = channel;
+        }
+
+        /**
+         * Sends {@code value} and waits until it is buffered or delivered.
+         *
+         * @param value the value to send; must not be {@code null}
+         * @throws ChannelClosedException if the channel is closed
+         * @throws NullPointerException if {@code value} is null
+         */
+        public void send(T value) {
+            AsyncSupport.await(channel.send(value));
+        }
+
+        /**
+         * Returns the channel this producer sends to.
+         *
+         * @return the underlying channel
+         */
+        public AsyncChannel<T> getChannel() {
+            return channel;
+        }
+    }
+}
+
+/**
+ * Handshake for the two relays of {@link AsyncChannel#merge(AsyncChannel)}.
+ * A failure waits until the sibling is idle, after cancelling a receive that
+ * has not taken a value, so a value already removed from that input is
+ * forwarded before the output closes.
+ */
+final class MergeRelay {
+    private final Object lock = new Object();
+    /** False until the relay task exits. Starts false so a failure waits for it. */
+    private boolean idle;
+    private boolean stopping;
+    private Awaitable<?> pending;
+
+    boolean isStopping() {
+        synchronized (lock) {
+            return stopping;
+        }
+    }
+
+    void publish(Awaitable<?> receive) {
+        synchronized (lock) {
+            pending = receive;
+        }
+    }
+
+    void clearPending(Awaitable<?> receive) {
+        synchronized (lock) {
+            if (pending == receive) pending = null;
+        }
+    }
+
+    void markIdle() {
+        synchronized (lock) {
+            pending = null;
+            idle = true;
+            lock.notifyAll();
+        }
+    }
+
+    /** Cancels a receive that has not completed, then waits until the relay exits. */
+    void stopAndWait() {
+        Awaitable<?> toCancel;
+        synchronized (lock) {
+            stopping = true;
+            toCancel = pending;
+        }
+        if (toCancel != null) toCancel.cancel();
+        synchronized (lock) {
+            while (!idle) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        }
     }
 }

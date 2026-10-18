@@ -332,8 +332,16 @@ public final class ChannelSelect {
      * exception, add a timer offer from {@link #after(long)} or receive
      * from a timer channel from {@link AsyncChannel#after(long)}.
      * <p>
-     * If every offer's channel is closed, the result fails with
-     * {@link ChannelClosedException}. If every offer is guarded off (see
+     * If every offer's channel is closed normally, the result fails with
+     * {@link ChannelClosedException}. A channel closed with a failure still
+     * delivers a value that is already buffered. The failure fails the
+     * select only when that offer's next operation is the close. Which of
+     * a buffered value and such a failure is met first follows registration
+     * order: list order here, rotation for {@link #fair()}, and a shuffle
+     * for {@link #random()}. A transfer that has already committed stays
+     * the result: the claim admits one outcome, so that value is not
+     * discarded when a close races it.
+     * If every offer is guarded off (see
      * {@link Offer#when(BooleanSupplier)}) there is nothing to wait for and
      * the result fails with {@link IllegalStateException}.
      * <p>
@@ -441,8 +449,14 @@ public final class ChannelSelect {
                     } else {
                         resend(ch, value);
                     }
-                } else if (error instanceof ChannelClosedException && closedCount.incrementAndGet() == count) {
-                    winner.completeExceptionally(new ChannelClosedException("all channels are closed"));
+                } else if (error instanceof ChannelClosedException closed) {
+                    Throwable cause = closed.getCause();
+                    if (cause != null) {
+                        failIfUnclaimed(winner, branches, timers, cause);
+                    } else if (closedCount.incrementAndGet() == count) {
+                        failIfUnclaimed(winner, branches, timers,
+                                new ChannelClosedException("all channels are closed"));
+                    }
                 }
             });
         }
@@ -498,6 +512,19 @@ public final class ChannelSelect {
      */
     private boolean isEnabled(int index, boolean[] enabled) {
         return (enabled == null || enabled[index]) && offers.get(index).isEnabled();
+    }
+
+    /**
+     * Fails {@code winner} with {@code cause} only when no offer has committed.
+     * The claim is the same gate {@link Winner#cancel} uses, so a transfer
+     * that already holds it stays the result and its value is not discarded.
+     * Losers are withdrawn before the caller observes the failure.
+     */
+    private static void failIfUnclaimed(Winner winner, Awaitable<?>[] branches,
+                                        AsyncChannel<?>[] timers, Throwable cause) {
+        if (!winner.claim.tryCommitCancel()) return;
+        withdraw(branches, timers);
+        winner.completeExceptionally(cause);
     }
 
     /**
