@@ -75,3 +75,11 @@ groovyLibrary {
         extensionClasses = 'org.apache.groovy.groovyfx.extensions.FXExtensions'
     }
 }
+
+// The reachability-metadata generator registered by moduleDescriptor reflects
+// over FXExtensions, whose signatures mention JavaFX types, so the compile-only
+// JavaFX jars have to be on its classpath although they are not part of the
+// module's runtime.
+tasks.named('nativeImageMetadata', JavaExec) {
+    classpath += configurations.compileClasspath
+}
