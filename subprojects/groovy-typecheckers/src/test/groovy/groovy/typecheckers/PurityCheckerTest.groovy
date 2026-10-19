@@ -590,4 +590,252 @@ final class PurityCheckerTest {
             assert new A().compute(5) == 11
         '''
     }
+
+    // === @Pure parameters and locals (GROOVY-12460) ===
+
+    private static final String PIPELINE = '''
+        import groovy.transform.Pure
+        import java.util.function.Function
+
+        class Maths {
+            @Pure static int square(int x) { x * x }
+            static int noisy(int x) { println x; x }
+        }
+
+        class Pipeline {
+            @Pure
+            static int applyTwice(@Pure Closure<Integer> f, int x) { f(f.call(x)) }
+
+            @Pure
+            static int applyFn(@Pure Function<Integer, Integer> f, int x) { f.apply(x) }
+        }
+    '''
+
+    @Test
+    void pure_method_may_invoke_pure_closure_parameter() {
+        assertScript strictShell, PIPELINE + '''
+            assert Pipeline.applyTwice({ int v -> v + 1 }, 3) == 5
+            assert Pipeline.applyFn((Integer v) -> v * 3, 3) == 9
+        '''
+    }
+
+    @Test
+    void pure_method_may_not_invoke_unannotated_closure_parameter() {
+        def err = shouldFail strictShell, '''
+            import groovy.transform.Pure
+            class A {
+                @Pure
+                static int applyTwice(Closure<Integer> f, int x) { f(f(x)) }
+            }
+        '''
+        assert err.message.contains("call to 'f.call()'")
+    }
+
+    @Test
+    void closure_with_captured_write_rejected_for_pure_parameter() {
+        def err = shouldFail strictShell, PIPELINE + '''
+            int counter = 0
+            Pipeline.applyTwice({ int v -> counter++; v }, 3)
+        '''
+        assert err.message.contains("@Pure violation in closure passed to @Pure parameter 'f': write to captured variable 'counter'")
+    }
+
+    @Test
+    void closure_with_own_locals_accepted_for_pure_parameter() {
+        assertScript strictShell, PIPELINE + '''
+            assert Pipeline.applyTwice({ int v -> int w = v; w += 1; w }, 3) == 5
+        '''
+    }
+
+    @Test
+    void closure_with_logging_rejected_for_pure_parameter() {
+        def err = shouldFail strictShell, PIPELINE + '''
+            Pipeline.applyTwice({ int v -> println v; v }, 3)
+        '''
+        assert err.message.contains("@Pure violation in closure passed to @Pure parameter 'f': 'println()' is a logging/output call")
+    }
+
+    @Test
+    void closure_with_logging_accepted_for_pure_parameter_when_allowed() {
+        assertScript loggingShell, PIPELINE + '''
+            assert Pipeline.applyTwice({ int v -> println v; v }, 3) == 3
+        '''
+    }
+
+    @Test
+    void closure_with_nondeterminism_or_io_rejected_for_pure_parameter() {
+        def err = shouldFail strictShell, PIPELINE + '''
+            Pipeline.applyTwice({ int v -> v + (int) System.nanoTime() }, 3)
+        '''
+        assert err.message.contains("closure passed to @Pure parameter 'f': 'java.lang.System.nanoTime()' is non-deterministic")
+        err = shouldFail strictShell, PIPELINE + '''
+            Pipeline.applyTwice({ int v -> new File('x').text.size() + v }, 3)
+        '''
+        assert err.message.contains("closure passed to @Pure parameter 'f': 'new File(...)' is an I/O operation")
+    }
+
+    @Test
+    void lambda_rejected_like_closure_for_pure_parameter() {
+        def err = shouldFail strictShell, PIPELINE + '''
+            Pipeline.applyFn((Integer v) -> { println v; v }, 3)
+        '''
+        assert err.message.contains("closure passed to @Pure parameter 'f': 'println()' is a logging/output call")
+    }
+
+    @Test
+    void method_reference_to_pure_method_accepted_for_pure_parameter() {
+        assertScript strictShell, PIPELINE + '''
+            assert Pipeline.applyTwice(Maths.&square, 3) == 81
+            assert Pipeline.applyFn(Maths::square, 3) == 9
+        '''
+    }
+
+    @Test
+    void method_reference_to_unannotated_method_rejected_for_pure_parameter() {
+        def err = shouldFail strictShell, PIPELINE + '''
+            Pipeline.applyTwice(Maths.&noisy, 3)
+        '''
+        assert err.message.contains("method reference passed to @Pure parameter 'f' does not refer to a @Pure method")
+    }
+
+    @Test
+    void pure_local_accepted_and_unannotated_local_rejected_for_pure_parameter() {
+        assertScript strictShell, PIPELINE + '''
+            @Pure Closure<Integer> inc = { int v -> v + 1 }
+            assert Pipeline.applyTwice(inc, 3) == 5
+        '''
+        def err = shouldFail strictShell, PIPELINE + '''
+            Closure<Integer> inc = { int v -> v + 1 }
+            Pipeline.applyTwice(inc, 3)
+        '''
+        assert err.message.contains("'inc' passed to @Pure parameter 'f' is not declared @Pure")
+    }
+
+    @Test
+    void pure_local_is_checked_where_assigned() {
+        def err = shouldFail strictShell, PIPELINE + '''
+            @Pure Closure<Integer> inc = { int v -> println v; v + 1 }
+        '''
+        assert err.message.contains("closure assigned to @Pure variable 'inc': 'println()' is a logging/output call")
+        err = shouldFail strictShell, PIPELINE + '''
+            @Pure Closure<Integer> inc = { int v -> v + 1 }
+            inc = { int v -> println v; v }
+        '''
+        assert err.message.contains("closure assigned to @Pure variable 'inc': 'println()' is a logging/output call")
+    }
+
+    @Test
+    void pure_parameter_may_be_passed_on() {
+        assertScript strictShell, PIPELINE + '''
+            class Twice {
+                @Pure
+                static int run(@Pure Closure<Integer> g, int x) { Pipeline.applyTwice(g, x) }
+            }
+            assert Twice.run({ int v -> v * 2 }, 1) == 4
+        '''
+    }
+
+    @Test
+    void closure_argument_violation_reported_once_inside_pure_method() {
+        def err = shouldFail strictShell, PIPELINE + '''
+            class Caller {
+                @Pure
+                static int run(int x) { Pipeline.applyTwice({ int v -> println v; v }, x) }
+            }
+        '''
+        assert err.message.count("'println()' is a logging/output call") == 1
+    }
+
+    // === Closure-taking GDK and stream methods ===
+
+    @Test
+    void pure_method_may_use_closure_taking_gdk_methods() {
+        assertScript strictShell, '''
+            import groovy.transform.Pure
+            class A {
+                @Pure static List<Integer> doubled(List<Integer> xs) { xs.collect { int v -> v * 2 } }
+                @Pure static int total(List<Integer> xs) { xs.inject(0) { int a, int b -> a + b } }
+                @Pure static List<Integer> evens(List<Integer> xs) { xs.findAll { int v -> v % 2 == 0 }.toSorted() }
+                @Pure static boolean anyBig(List<Integer> xs) { xs.any { int v -> v > 10 } }
+                @Pure static int squares(List<Integer> xs) {
+                    int sum = 0
+                    xs.each { int v -> sum += v * v }   // writes a local of the @Pure method: fine
+                    sum
+                }
+            }
+            assert A.doubled([1, 2]) == [2, 4]
+            assert A.total([1, 2, 3]) == 6
+            assert A.evens([4, 1, 2]) == [2, 4]
+            assert !A.anyBig([1, 2])
+            assert A.squares([1, 2]) == 5
+        '''
+    }
+
+    @Test
+    void pure_method_may_use_stream_pipelines() {
+        assertScript strictShell, '''
+            import groovy.transform.Pure
+            class A {
+                @Pure static List<Integer> doubled(List<Integer> xs) {
+                    xs.stream().map(v -> v * 2).filter(v -> v > 2).toList()
+                }
+            }
+            assert A.doubled([1, 2, 3]) == [4, 6]
+        '''
+    }
+
+    @Test
+    void impure_closure_body_in_gdk_call_reported_for_body_only() {
+        def err = shouldFail strictShell, '''
+            import groovy.transform.Pure
+            class A {
+                @Pure static void shout(List<Integer> xs) { xs.each { int v -> println v } }
+            }
+        '''
+        assert err.message.contains("'println()' is a logging/output call")
+        assert !err.message.contains("xs.each()")
+    }
+
+    @Test
+    void gdk_call_mutating_parameter_in_closure_rejected() {
+        def err = shouldFail strictShell, '''
+            import groovy.transform.Pure
+            class A {
+                @Pure static int leak(List<Integer> xs, List<Integer> sink) {
+                    xs.each { int v -> sink.add(v) }
+                    xs.size()
+                }
+            }
+        '''
+        assert err.message.contains("call to 'sink.add()'")
+    }
+
+    @Test
+    void gdk_call_with_unannotated_closure_variable_rejected() {
+        def err = shouldFail strictShell, '''
+            import groovy.transform.Pure
+            class A {
+                @Pure static List<Integer> mapAll(List<Integer> xs, Closure<Integer> f) { xs.collect(f) }
+            }
+        '''
+        assert err.message.contains("call to 'xs.collect()'")
+        assertScript strictShell, '''
+            import groovy.transform.Pure
+            class A {
+                @Pure static List<Integer> mapAll(List<Integer> xs, @Pure Closure<Integer> f) { xs.collect(f) }
+            }
+            assert A.mapAll([1, 2]) { int v -> v + 1 } == [2, 3]
+        '''
+    }
+
+    @Test
+    void mutating_gdk_sort_still_rejected() {
+        def err = shouldFail strictShell, '''
+            import groovy.transform.Pure
+            class A {
+                @Pure static List<Integer> sorted(List<Integer> xs) { xs.sort { int a, int b -> a <=> b } }
+            }
+        '''
+        assert err.message.contains("call to 'xs.sort()'")
+    }
 }

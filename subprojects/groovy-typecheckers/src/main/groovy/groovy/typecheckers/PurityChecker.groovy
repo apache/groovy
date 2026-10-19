@@ -21,23 +21,34 @@ package groovy.typecheckers
 import org.apache.groovy.ast.tools.ImmutablePropertyUtils
 import org.apache.groovy.lang.annotation.Incubating
 import org.apache.groovy.typecheckers.CheckingVisitor
+import org.codehaus.groovy.ast.AnnotatedNode
+import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.FieldNode
 import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.Variable
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.ClassExpression
+import org.codehaus.groovy.ast.expr.ClosureExpression
+import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression
 import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.MethodPointerExpression
 import org.codehaus.groovy.ast.expr.PostfixExpression
 import org.codehaus.groovy.ast.expr.PrefixExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
+import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.syntax.Types
+import org.codehaus.groovy.transform.stc.ExtensionMethodNode
 import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
 import org.codehaus.groovy.transform.stc.StaticTypesMarker
+
+import java.util.regex.Matcher
 
 import static org.codehaus.groovy.syntax.Types.isAssignment
 
@@ -69,6 +80,14 @@ import static org.codehaus.groovy.syntax.Types.isAssignment
  *   <li>{@code @Contract(pure = true)} (JetBrains) — treated as {@code @Pure}</li>
  *   <li>{@code @Memoized} — treated as effectively pure</li>
  * </ul>
+ * <p>
+ * {@code @Pure} may also be placed on a parameter or local variable holding a closure, lambda
+ * or method reference. An argument for a {@code @Pure} parameter, or a value assigned to a
+ * {@code @Pure} local, must be a closure or lambda whose body is pure and writes no captured
+ * variable, a method reference to a {@code @Pure} method, or another {@code @Pure} variable.
+ * Inside a {@code @Pure} method, invoking a {@code @Pure} parameter or local is pure, as are
+ * the closure-taking GDK and stream methods listed in {@code CLOSURE_PURE_METHODS} when
+ * their functional arguments are pure.
  *
  * @since 6.0.0
  * @see groovy.transform.Pure
@@ -95,6 +114,24 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
             // Type info
             'getMetaClass', 'respondsTo', 'hasProperty',
     )
+
+    // GDK and java.util.stream methods that are pure whenever their functional arguments are pure.
+    // Mutating forms such as sort and unique are deliberately absent (use toSorted and toUnique).
+    private static final Set<String> CLOSURE_PURE_METHODS = Set.of(
+            // GDK
+            'collect', 'collectMany', 'collectEntries', 'collectNested', 'inject',
+            'find', 'findAll', 'findResult', 'findResults', 'findIndexOf', 'findIndexValues',
+            'any', 'every', 'count', 'countBy', 'sum', 'max', 'min', 'groupBy',
+            'toSorted', 'toUnique', 'each', 'eachWithIndex', 'reverseEach', 'withIndex', 'indexed',
+            'takeWhile', 'dropWhile',
+            // java.util.stream
+            'map', 'filter', 'flatMap', 'reduce', 'mapToInt', 'mapToLong', 'mapToDouble', 'mapToObj',
+            'sorted', 'distinct', 'limit', 'skip', 'boxed', 'toList', 'anyMatch', 'allMatch', 'noneMatch',
+            'findFirst', 'findAny', 'average',
+    )
+
+    // Node metadata key marking the declared variable of a @Pure local
+    private static final String PURE_LOCAL = 'groovy.typecheckers.PurityChecker.PURE_LOCAL'
 
     // Known non-deterministic static methods (class.method)
     private static final Map<String, Set<String>> NONDETERMINISTIC_STATIC_METHODS = [
@@ -173,6 +210,11 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
         Set<String> baseAllows = parseAllows(options?.allows as String)
 
         afterVisitMethod { MethodNode mn ->
+            // closures already checked as arguments for @Pure parameters or values of @Pure locals
+            Set<ClosureExpression> checked = Collections.newSetFromMap(new IdentityHashMap<>())
+            markPureLocals(mn)
+            mn.code?.visit(makeArgumentVisitor(baseAllows, checked))
+
             Set<String> allows = baseAllows
 
             if (hasPureAnno(mn) || hasMemoizedAnno(mn) || hasContractPureAnno(mn)) {
@@ -185,7 +227,7 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                 return // no purity annotation — nothing to check
             }
 
-            mn.code?.visit(makeVisitor(allows, mn))
+            mn.code?.visit(makeVisitor(allows, null, null, checked))
         }
     }
 
@@ -194,8 +236,135 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
         allowsStr.split('\\|')*.trim()*.toUpperCase(Locale.ROOT) as Set<String>
     }
 
-    private static boolean hasPureAnno(MethodNode method) {
-        method.annotations?.any { it.classNode?.nameWithoutPackage in PURE_ANNOS } ?: false
+    private static boolean hasPureAnno(AnnotatedNode node) {
+        node.annotations?.any { it.classNode?.nameWithoutPackage in PURE_ANNOS } ?: false
+    }
+
+    private static boolean hasAnyPureAnno(MethodNode method) {
+        hasPureAnno(method) || hasSideEffectFreeAnno(method) || hasContractPureAnno(method) || hasMemoizedAnno(method)
+    }
+
+    private static Variable targetVariable(VariableExpression ve) {
+        Variable v = ve
+        while (v instanceof VariableExpression && v.accessedVariable != null && !v.accessedVariable.is(v)) {
+            v = v.accessedVariable
+        }
+        v
+    }
+
+    /**
+     * A parameter declared {@code @Pure}, or a local whose declaration is annotated {@code @Pure}.
+     */
+    private static boolean isPureVariable(Expression expr) {
+        if (!(expr instanceof VariableExpression)) return false
+        Variable v = targetVariable(expr)
+        if (v instanceof Parameter) return hasPureAnno(v)
+        v instanceof VariableExpression && v.getNodeMetaData(PURE_LOCAL)
+    }
+
+    private static void markPureLocals(MethodNode mn) {
+        mn.code?.visit(new CheckingVisitor() {
+            @Override
+            void visitDeclarationExpression(DeclarationExpression decl) {
+                super.visitDeclarationExpression(decl)
+                if (!decl.isMultipleAssignmentDeclaration() && hasPureAnno(decl)) {
+                    decl.variableExpression.putNodeMetaData(PURE_LOCAL, Boolean.TRUE)
+                }
+            }
+        })
+    }
+
+    private boolean isPureMethodPointer(MethodPointerExpression pointer) {
+        if (!(pointer.methodName instanceof ConstantExpression)) return false
+        String name = pointer.methodName.text
+        Expression receiver = pointer.expression
+        ClassNode type = receiver instanceof ClassExpression ? receiver.type : getType(receiver)
+        if (type == null) return false
+        if (ImmutablePropertyUtils.isBuiltinImmutable(type.name)) return true
+        List<MethodNode> candidates = []
+        for (ClassNode c = type; c != null; c = c.superClass) {
+            candidates.addAll(c.getMethods(name))
+        }
+        candidates && candidates.every { hasAnyPureAnno(it) }
+    }
+
+    /**
+     * Checks a value supplied for a {@code @Pure} parameter or assigned to a {@code @Pure} local.
+     */
+    private void checkPureValue(Expression value, String role, Set<String> allows, Set<ClosureExpression> checked) {
+        if (value instanceof ClosureExpression) { // includes lambdas
+            if (checked.add(value)) {
+                value.code?.visit(makeVisitor(allows, role, value, checked))
+            }
+        } else if (value instanceof MethodPointerExpression) { // includes method references
+            if (!isPureMethodPointer(value)) {
+                addStaticTypeError("@Pure violation: method reference ${role} does not refer to a @Pure method", value)
+            }
+        } else if (value instanceof VariableExpression) {
+            if (!isPureVariable(value)) {
+                addStaticTypeError("@Pure violation: '${value.name}' ${role} is not declared @Pure", value)
+            }
+        } else if (!(value instanceof ConstantExpression && value.isNullExpression())) {
+            addStaticTypeError("@Pure violation: value ${role} cannot be verified as pure", value)
+        }
+    }
+
+    /**
+     * Visits any method body, checking arguments for {@code @Pure} parameters and values assigned to {@code @Pure} locals.
+     */
+    private CheckingVisitor makeArgumentVisitor(Set<String> allows, Set<ClosureExpression> checked) {
+        new CheckingVisitor() {
+
+            @Override
+            void visitDeclarationExpression(DeclarationExpression decl) {
+                super.visitDeclarationExpression(decl)
+                def var = decl.isMultipleAssignmentDeclaration() ? null : decl.variableExpression
+                if (var?.getNodeMetaData(PURE_LOCAL)) {
+                    checkPureValue(decl.rightExpression, "assigned to @Pure variable '${var.name}'", allows, checked)
+                }
+            }
+
+            @Override
+            void visitBinaryExpression(BinaryExpression expression) {
+                super.visitBinaryExpression(expression)
+                if (!(expression instanceof DeclarationExpression) && expression.operation.type == Types.ASSIGN
+                        && isPureVariable(expression.leftExpression)) {
+                    checkPureValue(expression.rightExpression, "assigned to @Pure variable '${expression.leftExpression.text}'", allows, checked)
+                }
+            }
+
+            @Override
+            void visitMethodCallExpression(MethodCallExpression call) {
+                super.visitMethodCallExpression(call)
+                checkArguments(call, call.arguments)
+            }
+
+            @Override
+            void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
+                super.visitStaticMethodCallExpression(call)
+                checkArguments(call, call.arguments)
+            }
+
+            @Override
+            void visitConstructorCallExpression(ConstructorCallExpression call) {
+                super.visitConstructorCallExpression(call)
+                checkArguments(call, call.arguments)
+            }
+
+            private void checkArguments(Expression call, Expression arguments) {
+                def target = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET)
+                if (!(target instanceof MethodNode)) return
+                Parameter[] params = target.parameters
+                if (!params?.any { hasPureAnno(it) }) return
+                List<Expression> args = arguments instanceof TupleExpression ? arguments.expressions : [arguments]
+                args.eachWithIndex { Expression arg, int i ->
+                    Parameter param = i < params.length ? params[i] : (params[-1].type.isArray() ? params[-1] : null)
+                    if (param != null && hasPureAnno(param)) {
+                        checkPureValue(arg, "passed to @Pure parameter '${param.name}'", allows, checked)
+                    }
+                }
+            }
+        }
     }
 
     private static boolean hasSideEffectFreeAnno(MethodNode method) {
@@ -217,18 +386,46 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
         method.annotations?.any { it.classNode?.nameWithoutPackage in MEMOIZED_ANNOS } ?: false
     }
 
-    private CheckingVisitor makeVisitor(Set<String> allows, MethodNode methodNode) {
+    /**
+     * Creates the visitor checking a {@code @Pure} method body, or (when {@code root} is given) the body of a
+     * closure that must be pure, where {@code role} describes where the closure is passed or assigned.
+     */
+    private CheckingVisitor makeVisitor(Set<String> allows, String role, ClosureExpression root, Set<ClosureExpression> checked) {
         boolean allowLogging = 'LOGGING' in allows
         boolean allowMetrics = 'METRICS' in allows
         boolean allowIO = 'IO' in allows
         boolean allowNondeterminism = 'NONDETERMINISM' in allows
+        // variables declared within root; writes to any other local are writes to captured variables
+        Set<Variable> rootLocals = Collections.newSetFromMap(new IdentityHashMap<>())
+        if (root?.parameters) rootLocals.addAll(root.parameters)
 
         new CheckingVisitor() {
 
+            private void report(String message, Expression node) {
+                if (role) {
+                    message = message.replaceFirst(/^@Pure (violation|warning): /, '@Pure $1 in closure ' + Matcher.quoteReplacement(role) + ': ')
+                }
+                addStaticTypeError(message, node)
+            }
+
             @Override
             void visitDeclarationExpression(DeclarationExpression decl) {
+                // Local variable declarations are always fine; record them before the initializing assignment is visited
+                if (root != null) {
+                    if (decl.isMultipleAssignmentDeclaration()) {
+                        rootLocals.addAll(decl.tupleExpression.expressions)
+                    } else {
+                        rootLocals.add(decl.variableExpression)
+                    }
+                }
                 super.visitDeclarationExpression(decl)
-                // Local variable declarations are always fine
+            }
+
+            @Override
+            void visitClosureExpression(ClosureExpression expression) {
+                if (checked.contains(expression)) return // checked against its own @Pure parameter or local
+                if (root != null && expression.parameters) rootLocals.addAll(expression.parameters)
+                super.visitClosureExpression(expression)
             }
 
             @Override
@@ -275,15 +472,17 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                 if (target instanceof PropertyExpression) {
                     def objExpr = target.objectExpression
                     if (objExpr instanceof VariableExpression && objExpr.isThisExpression()) {
-                        addStaticTypeError("@Pure violation: field assignment to 'this.${target.propertyAsString}'", context)
+                        report("@Pure violation: field assignment to 'this.${target.propertyAsString}'", context)
                     } else if (objExpr instanceof VariableExpression && !objExpr.isThisExpression()) {
                         // Writing to a property on a parameter or local variable (e.g., param.x = 1)
-                        addStaticTypeError("@Pure violation: property assignment to '${objExpr.name}.${target.propertyAsString}'", context)
+                        report("@Pure violation: property assignment to '${objExpr.name}.${target.propertyAsString}'", context)
                     }
                 } else if (target instanceof VariableExpression) {
                     Variable accessedVar = findTargetVariable(target)
                     if (accessedVar instanceof FieldNode) {
-                        addStaticTypeError("@Pure violation: field assignment to '${accessedVar.name}'", context)
+                        report("@Pure violation: field assignment to '${accessedVar.name}'", context)
+                    } else if (root != null && !rootLocals.contains(accessedVar) && target.name != 'it') {
+                        report("@Pure violation: write to captured variable '${target.name}'", context)
                     }
                 }
             }
@@ -300,10 +499,13 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                     return
                 }
 
+                // Invoking a @Pure parameter or local (f(x), f.call(x), f.apply(x))
+                if (isPureVariable(receiver) && isInvocation(receiver, methodName)) return
+
                 // Check logging by method name (println, print, printf — including implicit this)
                 if (methodName in LOGGING_METHOD_NAMES) {
                     if (!allowLogging) {
-                        addStaticTypeError("@Pure violation: '${methodName}()' is a logging/output call (allow with LOGGING)", call)
+                        report("@Pure violation: '${methodName}()' is a logging/output call (allow with LOGGING)", call)
                     }
                     return
                 }
@@ -316,7 +518,7 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                     // Check logging by receiver type
                     if (LOGGING_TYPE_PREFIXES.any { typeName.startsWith(it) }) {
                         if (!allowLogging) {
-                            addStaticTypeError("@Pure violation: call to '${methodName}()' on logging type (allow with LOGGING)", call)
+                            report("@Pure violation: call to '${methodName}()' on logging type (allow with LOGGING)", call)
                         }
                         return
                     }
@@ -324,7 +526,7 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                     // Check metrics by receiver type
                     if (METRICS_TYPE_PREFIXES.any { typeName.startsWith(it) }) {
                         if (!allowMetrics) {
-                            addStaticTypeError("@Pure violation: call to '${methodName}()' on metrics type (allow with METRICS)", call)
+                            report("@Pure violation: call to '${methodName}()' on metrics type (allow with METRICS)", call)
                         }
                         return
                     }
@@ -332,7 +534,7 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                     // Check I/O by receiver type (but not PrintStream used for logging)
                     if (IO_TYPE_PREFIXES.any { typeName.startsWith(it) }) {
                         if (!allowIO) {
-                            addStaticTypeError("@Pure violation: call to '${methodName}()' is an I/O operation (allow with IO)", call)
+                            report("@Pure violation: call to '${methodName}()' is an I/O operation (allow with IO)", call)
                         }
                         return
                     }
@@ -341,7 +543,7 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                     Set<String> nonDetMethods = NONDETERMINISTIC_INSTANCE_METHODS[typeName]
                     if (nonDetMethods && methodName in nonDetMethods) {
                         if (!allowNondeterminism) {
-                            addStaticTypeError("@Pure violation: '${typeName}.${methodName}()' is non-deterministic (allow with NONDETERMINISM)", call)
+                            report("@Pure violation: '${typeName}.${methodName}()' is non-deterministic (allow with NONDETERMINISM)", call)
                         }
                         return
                     }
@@ -359,16 +561,19 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                 // Known pure method name
                 if (methodName in KNOWN_PURE_METHODS) return
 
+                // GDK or stream method that is pure when its functional arguments are pure
+                if (isClosurePolymorphic(targetMethod, methodName) && functionalArguments(call).every { isPureFunctionalArgument(it) }) return
+
                 // Unknown — warn
                 String receiverName = resolveReceiverName(receiver)
                 if (receiverName) {
-                    addStaticTypeError("@Pure warning: call to '${receiverName}.${methodName}()' — purity cannot be verified (consider adding @Pure)", call)
+                    report("@Pure warning: call to '${receiverName}.${methodName}()' — purity cannot be verified (consider adding @Pure)", call)
                 } else if (!(receiver instanceof VariableExpression && receiver.isThisExpression())) {
-                    addStaticTypeError("@Pure warning: call to '${methodName}()' — purity cannot be verified", call)
+                    report("@Pure warning: call to '${methodName}()' — purity cannot be verified", call)
                 } else {
                     // Call on this — check callee
                     if (targetMethod instanceof MethodNode) {
-                        addStaticTypeError("@Pure warning: call to 'this.${methodName}()' — purity cannot be verified (consider adding @Pure)", call)
+                        report("@Pure warning: call to 'this.${methodName}()' — purity cannot be verified (consider adding @Pure)", call)
                     }
                 }
             }
@@ -384,7 +589,7 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                 Set<String> nonDetMethods = NONDETERMINISTIC_STATIC_METHODS[ownerName]
                 if (nonDetMethods && methodName in nonDetMethods) {
                     if (!allowNondeterminism) {
-                        addStaticTypeError("@Pure violation: '${ownerName}.${methodName}()' is non-deterministic (allow with NONDETERMINISM)", call)
+                        report("@Pure violation: '${ownerName}.${methodName}()' is non-deterministic (allow with NONDETERMINISM)", call)
                     }
                     return
                 }
@@ -392,7 +597,7 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                 // I/O static methods
                 if (IO_TYPE_PREFIXES.any { ownerName.startsWith(it) }) {
                     if (!allowIO) {
-                        addStaticTypeError("@Pure violation: '${ownerName}.${methodName}()' is an I/O operation (allow with IO)", call)
+                        report("@Pure violation: '${ownerName}.${methodName}()' is an I/O operation (allow with IO)", call)
                     }
                     return
                 }
@@ -418,7 +623,7 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                 // Non-deterministic constructors (new Date(), new Random())
                 if (typeName in NONDETERMINISTIC_CONSTRUCTORS) {
                     if (!allowNondeterminism) {
-                        addStaticTypeError("@Pure violation: 'new ${call.type.nameWithoutPackage}()' is non-deterministic (allow with NONDETERMINISM)", call)
+                        report("@Pure violation: 'new ${call.type.nameWithoutPackage}()' is non-deterministic (allow with NONDETERMINISM)", call)
                     }
                     return
                 }
@@ -426,12 +631,42 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                 // I/O constructors (new File(...), new Socket(...), etc.)
                 if (IO_CONSTRUCTOR_PREFIXES.any { typeName.startsWith(it) }) {
                     if (!allowIO) {
-                        addStaticTypeError("@Pure violation: 'new ${call.type.nameWithoutPackage}(...)' is an I/O operation (allow with IO)", call)
+                        report("@Pure violation: 'new ${call.type.nameWithoutPackage}(...)' is an I/O operation (allow with IO)", call)
                     }
                 }
             }
 
             // ---- helpers ----
+
+            private boolean isInvocation(Expression receiver, String methodName) {
+                if (methodName == 'call' || methodName == 'doCall') return true
+                ClassNode type = getType(receiver)
+                MethodNode sam = type != null ? ClassHelper.findSAM(type) : null
+                sam != null && sam.name == methodName
+            }
+
+            private boolean isClosurePolymorphic(Object target, String methodName) {
+                if (!(methodName in CLOSURE_PURE_METHODS) || !(target instanceof MethodNode)) return false
+                if (target instanceof ExtensionMethodNode) {
+                    return target.extensionMethodNode.declaringClass.name.startsWith('org.codehaus.groovy.runtime.')
+                }
+                target.declaringClass.name.startsWith('java.util.stream.')
+            }
+
+            private List<Expression> functionalArguments(MethodCallExpression call) {
+                List<Expression> args = call.arguments instanceof TupleExpression ? ((TupleExpression) call.arguments).expressions : [call.arguments]
+                args.findAll { Expression arg ->
+                    if (arg instanceof ClosureExpression || arg instanceof MethodPointerExpression) return true
+                    ClassNode type = getType(arg)
+                    type != null && (type.name == 'groovy.lang.Closure' || ClassHelper.isSAMType(type))
+                }
+            }
+
+            private boolean isPureFunctionalArgument(Expression arg) {
+                if (arg instanceof ClosureExpression) return true // its body is visited as part of this method
+                if (arg instanceof MethodPointerExpression) return isPureMethodPointer(arg)
+                isPureVariable(arg)
+            }
 
             private String resolveReceiverName(Expression receiver) {
                 if (receiver instanceof VariableExpression) return receiver.name

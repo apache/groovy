@@ -1319,8 +1319,53 @@ The checker uses a layered approach to determine if a call is pure:
 2. *Callee has `@Memoized`* -- the call is effectively pure
 3. *Receiver type is immutable* (String, Integer, BigDecimal, etc.) -- all calls are pure
 4. *Method is in the known-pure list* (`size`, `get`, `contains`, `isEmpty`, `toString`, etc.) -- pure
-5. *Call matches an effect category* -- error unless that category is in `allows`
-6. *None of the above* -- warning: purity cannot be verified
+5. *Receiver is a `@Pure` parameter or local being invoked* (`f(x)`, `f.call(x)`, `f.apply(x)`) -- pure
+6. *Method is a closure-taking GDK or stream method* (`collect`, `inject`, `findAll`, `map`, `filter`, etc.)
+   and every closure, lambda or method reference argument is pure -- pure
+7. *Call matches an effect category* -- error unless that category is in `allows`
+8. *None of the above* -- warning: purity cannot be verified
+
+=== Pure closure parameters
+
+`@Pure` can also be placed on a parameter or local variable holding a closure, lambda or
+method reference. On a parameter it means the argument must be pure; on a local it means
+the closure assigned to it is checked once and the variable may then be passed on wherever
+a pure argument is required. The argument is accepted if it is:
+
+* a closure or lambda whose body passes the same checks as a `@Pure` method body, and which
+  assigns no variable declared outside the closure (Groovy closures share captured locals);
+* a method reference or method pointer to a `@Pure` method (or any method of an immutable type);
+* a parameter or local itself declared `@Pure`.
+
+Inside a `@Pure` method, invoking a `@Pure` parameter is pure, so a callback can be
+verified rather than refused:
+
+[source,groovy]
+----
+@TypeChecked(extensions = 'groovy.typecheckers.PurityChecker')
+class Pipeline {
+    @Pure
+    static int applyTwice(@Pure Closure<Integer> f, int x) { f(f(x)) }                 // OK
+
+    @Pure
+    static List<Integer> doubled(List<Integer> xs) { xs.collect { int v -> v * 2 } }   // OK
+}
+
+int counter = 0
+Pipeline.applyTwice({ int v -> v + 1 }, 3)               // OK
+Pipeline.applyTwice(Maths.&square, 3)                    // OK if Maths.square is @Pure
+Pipeline.applyTwice({ int v -> counter++; v }, 3)        // ERROR: write to captured variable 'counter'
+Pipeline.applyTwice({ int v -> println v; v }, 3)        // ERROR: logging/output call
+
+@Pure Closure<Integer> inc = { int v -> v + 1 }          // checked here
+Closure<Integer> g = { int v -> v + 1 }
+Pipeline.applyTwice(inc, 3)                              // OK
+Pipeline.applyTwice(g, 3)                                // ERROR: 'g' is not declared @Pure
+----
+
+Closure arguments are checked with the checker's `allows` setting. The closure-taking GDK
+methods that mutate their receiver, such as `sort` and `unique`, are not treated as pure;
+use `toSorted` and `toUnique` instead.
 
 === Reasoning guarantees
 
@@ -1423,7 +1468,7 @@ The checker does *not* currently detect:
 * Mutation through aliases (`def ref = this.list; ref.clear()`)
 * Deep heap mutation (`this.items.get(0).setName("x")`)
 * Mutation via chained property access (`a.b.c = 1`)
-* Side effects within closures passed to higher-order methods
+* Mutation through operators (`list << x`, `map[k] = v`)
 
 These limitations are acceptable for an opt-in checker -- the common cases are caught,
 and unverifiable calls produce warnings.
