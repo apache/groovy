@@ -61,6 +61,7 @@ def subprojects = [
         'groovy-grape-maven',
         'groovy-grape-test',
         'groovy-groovydoc',
+        'groovy-groovyfx',
         'groovy-groovysh',
         'groovy-jmx',
         'groovy-json',
