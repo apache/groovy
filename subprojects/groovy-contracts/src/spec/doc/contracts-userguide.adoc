@@ -545,3 +545,46 @@ When enabled, the checker verifies that method bodies only modify fields declare
 `@Modifies`, and that method calls on non-modifiable receivers use only non-mutating
 operations. See the _Type Checkers_ documentation for details.
 
+
+== Specification holes with @Spec
+
+`@Spec` records a prose specification next to the code it describes. It is written for
+both people and tools: alongside the typed signature and any `@Requires`/`@Ensures`
+contracts, it can serve as the prompt for a tool that generates the code ahead of time.
+Unlike a plain comment, tools can find the specification, and the compiler can tell
+whether the code under it has been written yet.
+
+`@Spec` can be placed on methods, on `for`, `while` and `do-while` loops, and on local
+variable declarations. An annotated element with no code yet is an _unfilled hole_:
+
+* a method with an empty body, including a `void` method
+* a loop with an empty body
+* a local variable declaration with no initializer
+
+Reaching an unfilled hole at runtime throws `UnsupportedOperationException`, instead
+of silently returning `null` or doing nothing:
+
+[source,groovy]
+----
+include::../test/ContractsTest.groovy[tags=spec_unfilled_example,indent=0]
+----
+
+Once code has been written under the specification, the annotation stays in place as
+documentation and has no effect on the generated code:
+
+[source,groovy]
+----
+include::../test/ContractsTest.groovy[tags=spec_filled_example,indent=0]
+----
+
+A filled `void` method that intentionally does nothing can say so with an explicit
+`return`. Abstract methods are left unchanged.
+
+The optional `fill` member is for tools that fill holes: they can record what they
+generated, so a later run can tell whether the specification or the code has changed
+since. The compiler ignores its value, and never generates code from the specification
+itself.
+
+Method-level specifications are retained in the class file and are visible through
+reflection. Specifications on loops and local variable declarations exist only in
+source.
