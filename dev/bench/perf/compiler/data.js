@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792307372194,
+  "lastUpdate": 1792397183166,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -8164,6 +8164,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 462.75,
             "range": "±19.39",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "committer": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "realbluesun@hotmail.com"
+          },
+          "id": "d77e6df56a8d59ca30afbfa4c66afb9c685a22db",
+          "message": "GROOVY-12429: GroovyConsole error link does not place the caret on the reported column",
+          "timestamp": "2026-09-25T00:52:29Z",
+          "url": "https://github.com/apache/groovy/commit/d77e6df56a8d59ca30afbfa4c66afb9c685a22db"
+        },
+        "date": 1792397172343,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 533.8399999999999,
+            "range": "±20.09",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 643.1866666666666,
+            "range": "±214.8",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 575.4300000000001,
+            "range": "±144.54",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 466.15333333333336,
+            "range": "±21.31",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 470.1066666666667,
+            "range": "±17.82",
             "unit": "ms",
             "extra": "6.0.0"
           }
