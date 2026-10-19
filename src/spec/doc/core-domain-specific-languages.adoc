@@ -1160,6 +1160,8 @@ include::../../../subprojects/groovy-json/src/spec/doc/_streaming-jason-builder.
 
 include::../../../subprojects/groovy-swing/src/spec/doc/_swing-builder.adoc[leveloffset=+3]
 
+include::../../../subprojects/groovy-fx/src/spec/doc/_groovyfx.adoc[leveloffset=+3]
+
 include::../../../subprojects/groovy-ant/src/spec/doc/_ant-builder.adoc[leveloffset=+3]
 
 ==== CliBuilder
