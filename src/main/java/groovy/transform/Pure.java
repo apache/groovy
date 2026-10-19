@@ -27,11 +27,16 @@ import java.lang.annotation.Target;
 /**
  * Marks the return value of "pure" method only comes from expressions involving
  * constants or other pure methods.
+ * <p>
+ * On a parameter, declares that the argument must be pure: a closure, lambda or method
+ * reference with no side effects. On a local variable, declares that the closure assigned
+ * to it is pure, so the variable may be passed where a pure argument is required.
+ * These uses are checked by {@code groovy.typecheckers.PurityChecker}.
  *
  * @since 4.0.0
  */
 @Documented
-@Target(ElementType.METHOD)
+@Target({ElementType.METHOD, ElementType.PARAMETER, ElementType.LOCAL_VARIABLE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Pure {
 }
