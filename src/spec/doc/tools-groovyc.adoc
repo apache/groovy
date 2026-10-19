@@ -294,54 +294,75 @@ syntax is compatible with Groovy, but there are a number of places where semanti
 [[section-android]]
 == Android support
 
-It is possible to write an Android application in Groovy. However this requires a special
-version of the compiler, meaning that you cannot use the regular
-<<section-groovyc-compiler,groovyc tool>> to target Android bytecode. In particular, Groovy
-provides specific JAR files for Android, which have a classifier of `grooid`. In order to make
-things easier, a https://github.com/groovy/groovy-android-gradle-plugin[Gradle plugin] adds
-support for the Groovy language in the Android Gradle toolchain.
+Groovy code can run on Android 8.0 (API level 26) and later. Groovy compiles
+dynamic calls to `invokedynamic`, which the Android toolchain only accepts from
+API level 26, so an application using Groovy must set `minSdk` to 26 or higher.
+Earlier Android versions are not supported.
 
-The plugin can be applied like this:
+NOTE: Android support is experimental. The Android runtime (ART) does not provide
+`java.lang.invoke.SwitchPoint`, which the Groovy runtime uses to invalidate call
+sites, so an application currently has to supply its own implementation of that class.
 
-```groovy
+No Groovy-specific Android Gradle plugin is needed. The
+https://github.com/groovy/groovy-android-gradle-plugin[groovy-android-gradle-plugin]
+referenced by earlier versions of this guide targets old releases of the Android
+Gradle Plugin, and older Groovy versions, and is not required with current tooling. Instead:
 
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:2.1.2'
-        classpath 'org.codehaus.groovy:groovy-android-gradle-plugin:1.0.0'
-    }
+* Put the Groovy code in a plain Groovy library module. The
+<<section-groovyc-compiler,groovy compiler>> compiles it on the JVM against the
+`android.jar` stubs of the Android SDK, using the regular Groovy jar.
+* Make the Android application module depend on that library like any other jar.
+D8 converts the Groovy class files to DEX.
+* At run time, use the Android flavour of the Groovy runtime, which has a classifier of
+`grooid`. It is the regular jar with the `java.beans` classes, which Android lacks,
+replaced by a repackaged copy of OpenBeans. Gradle can also select it through the
+`org.apache.groovy:groovy-grooid` capability.
+
+The library module compiles against the regular jar:
+
+[source,groovy,subs="attributes"]
+----
+plugins {
+    id 'groovy'
 }
 
-apply plugin: 'groovyx.android'
-```
-
-Then you will need to add a dependency on the `grooid` version of the Groovy compiler:
-
-```groovy
 dependencies {
-    compile 'org.codehaus.groovy:groovy:2.4.7:grooid'
+    compileOnly 'org.apache.groovy:groovy:{groovy-full-version}'
+    compileOnly files("$sdkDir/platforms/android-36/android.jar")
 }
-```
+----
 
-Note that if a Groovy jar does not provide a `grooid` classifier alternative, then it means
-that the jar is directly compatible with Android. In that case, you can add the dependency directly
-like this:
+The application module supplies the `grooid` jar at run time:
 
-```groovy
-dependencies {
-    compile 'org.codehaus.groovy:groovy:2.4.7:grooid'       // requires the grooid classifier
-    compile ('org.codehaus.groovy:groovy-json:2.4.7') {     // no grooid version available
-        transitive = false                                  // so do not depend on non-grooid version
+[source,groovy,subs="attributes"]
+----
+android {
+    defaultConfig {
+        minSdk 26
     }
 }
-```
 
-Note that the `transitive=false` parameter for `groovy-json` will let Gradle download the JSON support jar
-without adding a dependency onto the normal jar of Groovy.
+dependencies {
+    implementation project(':mylibrary')
+    runtimeOnly 'org.apache.groovy:groovy:{groovy-full-version}:grooid'
+}
+----
 
-Please make sure to go to the https://github.com/groovy/groovy-android-gradle-plugin[plugin homepage] in order to
-find the latest documentation and version.
+Only the `groovy` and `groovy-test` modules have a `grooid` variant. Other modules,
+such as `groovy-json`, are used as they are. Exclude their transitive dependency on
+the regular `groovy` jar, because the `grooid` jar takes its place:
 
+[source,groovy,subs="attributes"]
+----
+dependencies {
+    implementation('org.apache.groovy:groovy-json:{groovy-full-version}') {
+        exclude group: 'org.apache.groovy', module: 'groovy'
+    }
+}
+----
+
+When a release build shrinks the application with R8, the classes and members that
+Groovy looks up reflectively must be kept, including any type the application calls
+dynamically. The reachability metadata that the Groovy jars ship under
+`META-INF/native-image` is a good starting point for the keep rules. Statically
+compiled code (`@CompileStatic`) relies less on reflection and is easier to shrink.
