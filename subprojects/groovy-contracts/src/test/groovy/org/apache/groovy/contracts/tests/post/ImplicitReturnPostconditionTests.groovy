@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.contracts.tests.post
 
+import org.apache.groovy.contracts.ClassInvariantViolation
 import org.apache.groovy.contracts.PostconditionViolation
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
 import org.junit.jupiter.api.Test
@@ -133,5 +134,124 @@ class ImplicitReturnPostconditionTests extends BaseTestClass {
         def clazz = add_class_to_classpath(source)
         assert clazz.leftpad('x', 0, '') == ''
         assert clazz.leftpad('x', 5, 'ab') == 'xxxab'
+    }
+
+    @Test
+    void trailing_implicit_return_after_early_return_is_checked() {
+        // GROOVY-12463: an explicit early return used to stop the implicit-return conversion,
+        // so the trailing value was returned without the postcondition being checked
+        def source = '''
+        import groovy.contracts.*
+
+        class A {
+            @Ensures({ result > 0 })
+            static int f(boolean early) {
+                if (early) return 1
+                -1
+            }
+        }
+        '''
+
+        def clazz = add_class_to_classpath(source)
+        assert clazz.f(true) == 1
+        shouldFail(PostconditionViolation) {
+            clazz.f(false)
+        }
+    }
+
+    @Test
+    void trailing_implicit_return_after_early_return_value_not_corrupted() {
+        def source = '''
+        import groovy.contracts.*
+
+        class A {
+            @Ensures({ true })
+            static int f(boolean early) {
+                if (early) return 1
+                2
+            }
+        }
+        '''
+
+        def clazz = add_class_to_classpath(source)
+        assert clazz.f(true) == 1
+        assert clazz.f(false) == 2
+    }
+
+    @Test
+    void trailing_implicit_if_else_after_early_return_is_checked() {
+        def source = '''
+        import groovy.contracts.*
+
+        class A {
+            @Ensures({ result >= 0 })
+            static int g(int a, int b) {
+                if (a == 0) return 0
+                if (a > b) a else b
+            }
+        }
+        '''
+
+        def clazz = add_class_to_classpath(source)
+        assert clazz.g(0, -5) == 0
+        assert clazz.g(3, 1) == 3
+        shouldFail(PostconditionViolation) {
+            clazz.g(-3, -1)
+        }
+    }
+
+    @Test
+    void trailing_implicit_return_after_early_return_compile_static() {
+        def source = '''
+        import groovy.contracts.*
+        import groovy.transform.CompileStatic
+
+        @CompileStatic
+        class A {
+            @Ensures({ !result.present || result.get() <= 28 })
+            static Optional<Integer> day(String s) {
+                if (!s.isInteger()) return Optional.<Integer>empty()
+                Optional.of(s.toInteger())
+            }
+        }
+        '''
+
+        def clazz = add_class_to_classpath(source)
+        assert !clazz.day('x').present
+        assert clazz.day('12').get() == 12
+        shouldFail(PostconditionViolation) {
+            clazz.day('31')
+        }
+    }
+
+    @Test
+    void trailing_implicit_return_after_early_return_checks_postcondition_and_invariant() {
+        // with both contracts present the implicit-return conversion also runs on the method
+        // after postcondition weaving; each contract must still be checked on the trailing path
+        def source = '''
+        import groovy.contracts.*
+
+        @Invariant({ count >= 0 })
+        class A {
+            int count = 0
+
+            @Ensures({ result < 100 })
+            int m(int x) {
+                if (x == 0) return 1
+                count = x
+                x
+            }
+        }
+        '''
+
+        def a = create_instance_of(source)
+        assert a.m(0) == 1
+        assert a.m(5) == 5
+        shouldFail(ClassInvariantViolation) {
+            a.m(-3)
+        }
+        shouldFail(PostconditionViolation) {
+            a.m(200)
+        }
     }
 }
