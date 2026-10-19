@@ -55,6 +55,27 @@ options {
      * a negative index is rejected by {@link java.util.BitSet#get(int)}.
      */
     private int  lastRealTokenType = Token.INVALID_TYPE;
+    /**
+     * True after a member selector ({@code . ?. *. ??. .& :: @}) until the
+     * name that follows it is emitted. Newlines and comments (both {@code NL})
+     * do not clear it. Type arguments ({@code foo.<T>name}, including
+     * qualified names inside them) stay inside this window.
+     */
+    private boolean pendingMemberName;
+    /** True when {@link #lastRealTokenType} is that name. */
+    private boolean lastRealIsMemberName;
+    /**
+     * True when a value was emitted immediately before {@link #lastRealTokenType}
+     * (newlines ignored). Distinguishes infix {@code in} from the name {@code in}.
+     */
+    private boolean lastRealPrecededByValue;
+    /** Nesting of {@code <...>} while {@link #pendingMemberName} is set. */
+    private int memberTypeArgDepth;
+    /**
+     * Nesting of {@code ()}, {@code []}, and {@code {}} inside that
+     * {@code <...>}. Comparisons there must not move {@link #memberTypeArgDepth}.
+     */
+    private int memberTypeArgGroupDepth;
 
     /**
      * When {@code false}, the {@code val} keyword is treated as a regular
@@ -78,7 +99,7 @@ options {
         // BitSet.get(-1). setInputStream rewinds only through reset().
         if (tokenType >= 0 && Token.DEFAULT_CHANNEL == token.getChannel()) {
             if (NL != tokenType) {
-                this.lastRealTokenType = tokenType;
+                this.noteRealToken(tokenType);
             }
             this.lastTokenType = tokenType;
         }
@@ -95,14 +116,29 @@ options {
         super.reset();
         this.lastTokenType = Token.INVALID_TYPE;
         this.lastRealTokenType = Token.INVALID_TYPE;
+        this.pendingMemberName = false;
+        this.lastRealIsMemberName = false;
+        this.lastRealPrecededByValue = false;
+        this.memberTypeArgDepth = 0;
+        this.memberTypeArgGroupDepth = 0;
     }
 
     /**
-     * Token types after which {@code /.../} must not be treated as a slashy string
-     * (e.g. {@code a++ / b}, {@code list[i] / n}). {@link java.util.BitSet} gives
-     * O(1) membership tests on this hot decision.
+     * Token types after which {@code /.../} is division, not a slashy string
+     * ({@code a++ / b}, {@code list[i] / n}, {@code obj.class / 2}).
+     * Keywords that introduce an expression stay out of this set so
+     * {@code return /a/} and {@code x in /a/} remain strings.
+     * {@link java.util.BitSet} gives O(1) tests on this hot decision.
      */
     private static final BitSet REGEX_CHECK_SET = new BitSet();
+    /**
+     * Keywords followed by an expression or a statement. A slashy after them
+     * is a string ({@code return /a/}, {@code else /a/}) unless the keyword
+     * is a member name ({@code obj.return / 2}).
+     */
+    private static final BitSet STATEMENT_INTRODUCER_SET = new BitSet();
+    /** {@code . ?. *. ??. .& :: @} — the name that follows is a member. */
+    private static final BitSet MEMBER_SELECTOR_SET = new BitSet();
     static {
         int[] regexCheckTypes = {
             DEC,
@@ -117,32 +153,155 @@ options {
             BooleanLiteral,
             IntegerLiteral,
             FloatingPointLiteral,
-            Identifier, CapitalizedIdentifier
+            Identifier, CapitalizedIdentifier,
+            // Value-ending keywords. Not statement introducers, and not {@code in}
+            // (infix {@code x in /a/} must stay a string). See isSlashyForbidden.
+            AS, DEF, TRAIT, THREADSAFE, ASYNC,
+            ABSTRACT, BREAK, CATCH, CLASS, CONST, CONTINUE, DEFAULT,
+            BuiltInPrimitiveType,
+            ENUM, EXTENDS, FINAL, FINALLY, FOR, GOTO, IF, IMPLEMENTS, IMPORT,
+            INSTANCEOF, INTERFACE, MODULE, NATIVE, NEW, NON_SEALED, PACKAGE,
+            PERMITS, PRIVATE, PROTECTED, PUBLIC, RECORD, SEALED, STATIC,
+            STRICTFP, SUPER, SWITCH, SYNCHRONIZED, THROWS, TRANSIENT, TRY,
+            VAL, VAR, VOID, VOLATILE, WHILE
+        };
+        int[] statementIntroducers = {
+            ASSERT, AWAIT, CASE, DEFER, DO, ELSE, RETURN, THROW, YIELD
+        };
+        int[] memberSelectors = {
+            DOT, SAFE_DOT, SPREAD_DOT, SAFE_CHAIN_DOT,
+            METHOD_POINTER, METHOD_REFERENCE, AT
         };
         for (int t : regexCheckTypes) {
             REGEX_CHECK_SET.set(t);
         }
-    }
-
-    private boolean isRegexAllowed() {
-        return !isDivisionOperand(this.lastTokenType);
+        for (int t : statementIntroducers) {
+            STATEMENT_INTRODUCER_SET.set(t);
+        }
+        for (int t : memberSelectors) {
+            MEMBER_SELECTOR_SET.set(t);
+        }
     }
 
     /**
-     * A {@code /} that reaches EOF is an unclosed slashy string only when the
-     * previous real token (ignoring {@code NL}) could not be the left operand
-     * of division. {@code 9 \n / \n 3} stays division; {@code s = /hello} does not.
+     * Remember whether {@code tokenType} is a member name, and whether a
+     * value preceded it. {@code NL} is not passed here.
+     */
+    private void noteRealToken(final int tokenType) {
+        // A member name is a value even when it is not an introducer (obj.in),
+        // and so is a preceding in (in in /a/). yield, await, and defer are
+        // not values: yield in / 2 stays division, so for (yield in /a/) is
+        // not a slashy.
+        this.lastRealPrecededByValue = isDivisionOperand(this.lastRealTokenType)
+                || this.lastRealIsMemberName
+                || IN == this.lastRealTokenType;
+        if (this.pendingMemberName && this.memberTypeArgDepth > 0) {
+            // foo.<a.b>name and foo.<Map<K, V>>name: dots and names inside
+            // the arguments are not a new member selection.
+            this.noteTypeArgumentToken(tokenType);
+            this.lastRealIsMemberName = false;
+        } else if (isMemberSelector(tokenType)) {
+            this.lastRealIsMemberName = false;
+            this.pendingMemberName = true;
+            this.memberTypeArgDepth = 0;
+            this.memberTypeArgGroupDepth = 0;
+        } else if (this.pendingMemberName && LT == tokenType) {
+            this.lastRealIsMemberName = false;
+            this.memberTypeArgDepth = 1;
+            this.memberTypeArgGroupDepth = 0;
+        } else {
+            this.lastRealIsMemberName = this.pendingMemberName;
+            this.pendingMemberName = false;
+            this.memberTypeArgDepth = 0;
+            this.memberTypeArgGroupDepth = 0;
+        }
+        this.lastRealTokenType = tokenType;
+    }
+
+    /**
+     * Track {@code <}/{@code >} that belong to the type argument. {@code >}
+     * inside {@code ()}, {@code []}, or {@code {}} is a comparison or a shift
+     * ({@code foo.<@Ann(x > 1) T>name}).
+     */
+    private void noteTypeArgumentToken(final int tokenType) {
+        if (this.memberTypeArgGroupDepth > 0) {
+            if (isTypeArgGroupOpen(tokenType)) {
+                this.memberTypeArgGroupDepth++;
+            } else if (isTypeArgGroupClose(tokenType)) {
+                this.memberTypeArgGroupDepth--;
+            }
+            return;
+        }
+        if (isTypeArgGroupOpen(tokenType)) {
+            this.memberTypeArgGroupDepth = 1;
+            return;
+        }
+        if (LT == tokenType) {
+            this.memberTypeArgDepth++;
+        } else if (GT == tokenType) {
+            this.memberTypeArgDepth--;
+        }
+    }
+
+    private static boolean isTypeArgGroupOpen(final int tokenType) {
+        return LPAREN == tokenType || LBRACK == tokenType || LBRACE == tokenType;
+    }
+
+    private static boolean isTypeArgGroupClose(final int tokenType) {
+        return RPAREN == tokenType || RBRACK == tokenType || RBRACE == tokenType;
+    }
+
+    private boolean isRegexAllowed() {
+        return !isSlashyForbidden(this.lastTokenType);
+    }
+
+    /**
+     * A {@code /} that reaches EOF is an unclosed slashy string only when a
+     * closed slashy would have been allowed there, looking through {@code NL}
+     * to the last real token. {@code 9 \n / \n 3} and {@code obj.class \n / \n 2}
+     * stay division; {@code s = /hello} and {@code return /hello} do not.
      * {@link Token#INVALID_TYPE} (no real token yet, including a leading newline)
-     * is not an operand.
+     * is not an operand. {@code NL} itself still allows a closed slashy to
+     * start the next line ({@code obj.return \n /a/}).
      */
     private boolean isUnclosedSlashy() {
         int decision = this.lastTokenType == NL ? this.lastRealTokenType : this.lastTokenType;
-        return !isDivisionOperand(decision);
+        return !isSlashyForbidden(decision);
+    }
+
+    /**
+     * Whether {@code /} after {@code tokenType} is division.
+     * {@code return /a/} is a string; {@code obj.return / 2} and {@code obj.class / 2}
+     * are division; {@code x in /a/} is a string; {@code in / 2} is division.
+     * Passing {@code NL} (not a real token) returns false so a closed slashy
+     * may start a line.
+     */
+    private boolean isSlashyForbidden(final int tokenType) {
+        if (isDivisionOperand(tokenType)) {
+            return true;
+        }
+        // The decision token is not the one noteRealToken just described
+        // (isRegexAllowed sees NL). Do not apply the member-name or {@code in} rule.
+        if (tokenType != this.lastRealTokenType) {
+            return false;
+        }
+        if (IN == tokenType) {
+            return !this.lastRealPrecededByValue;
+        }
+        return this.lastRealIsMemberName && isStatementIntroducer(tokenType);
     }
 
     /** {@code REGEX_CHECK_SET} rejects a negative type, and {@link Token#EOF} is not an operand. */
     private static boolean isDivisionOperand(final int tokenType) {
         return tokenType >= 0 && REGEX_CHECK_SET.get(tokenType);
+    }
+
+    private static boolean isStatementIntroducer(final int tokenType) {
+        return STATEMENT_INTRODUCER_SET.get(tokenType);
+    }
+
+    private static boolean isMemberSelector(final int tokenType) {
+        return MEMBER_SELECTOR_SET.get(tokenType);
     }
 
     /**
@@ -333,6 +492,10 @@ options {
 // character is read. `*` is safe because the follower is EOF, not `/`:
 // `//` is not an empty slashy. EOF stays here so a second rule cannot
 // swallow source after a real closer.
+// An interpolated `/text $name` with no closing `/` is SlashyGStringBegin
+// and a GString mode, not this alternative, so it does not say
+// "Unclosed string literal". `$/` has no EOF alternative either:
+// `($/2)` and `$/=` are division.
 StringLiteral
     :   GStringQuotationMark  DqStringCharacter*  GStringQuotationMark
     |   SqStringQuotationMark  SqStringCharacter*  SqStringQuotationMark
@@ -354,6 +517,8 @@ GStringBegin
 TdqGStringBegin
     :   TdqStringQuotationMark   TdqStringCharacter* Dollar -> type(GStringBegin), pushMode(TDQ_GSTRING_MODE), pushMode(GSTRING_TYPE_SELECTOR_MODE)
     ;
+// No EOF alternative. A missing closer (`/hello $name`) stays in the GString
+// modes and keeps that diagnostic; it is not "Unclosed string literal".
 SlashyGStringBegin
     :   Slash { this.isRegexAllowed() && _input.LA(1) != '*' }? SlashyStringCharacter* Dollar { isFollowedByJavaLetterInGString(_input) }? -> type(GStringBegin), pushMode(SLASHY_GSTRING_MODE), pushMode(GSTRING_TYPE_SELECTOR_MODE)
     ;

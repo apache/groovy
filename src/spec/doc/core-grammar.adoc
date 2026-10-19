@@ -593,6 +593,13 @@ Empty `//` is `SL_COMMENT`, not an empty slashy string (the slashy
 alternative requires `SlashyStringCharacter+`). Empty `$/$` is not
 `StringLiteral` either.
 
+An unclosed `/...` that reaches EOF is not a `StringLiteral`
+production. When R1 would have allowed a slashy, the lexer reports
+`Unclosed string literal` at the opener (<<grammar-invalid>>). An
+unclosed interpolated slashy (`/hello $name`, no closing `/`) is
+`SlashyGStringBegin` and does not use that wording. Unclosed `$/...`
+does not either (`($/2)` is division).
+
 The g4 comment "Groovy allows 1 or more u's after the backslash" does
 **not** match the production: `UnicodeEscape` is exactly one `u`.
 
@@ -759,14 +766,45 @@ Tokenisation of `/` is a three-way (plus comment):
   next character is not `*` (`/*` is `ML_COMMENT`)
 * otherwise `DIV`
 
-R1 forbids slashy strings when the previous **default-channel** token
-is one of `DEC`, `INC`, `THIS`, `RBRACE`, `RBRACK`, `RPAREN`,
-`GStringEnd`, `NullLiteral`, `StringLiteral`, `BooleanLiteral`,
-`IntegerLiteral`, `FloatingPointLiteral`, `Identifier`,
-`CapitalizedIdentifier`.
+R1 forbids a slashy when the previous **default-channel** token is a
+value, so `/` is division (`isSlashyForbidden`):
+
+* operands: `DEC`, `INC`, `THIS`, `RBRACE`, `RBRACK`, `RPAREN`,
+  `GStringEnd`, `NullLiteral`, `StringLiteral`, `BooleanLiteral`,
+  `IntegerLiteral`, `FloatingPointLiteral`, `Identifier`,
+  `CapitalizedIdentifier`
+* keywords that can end a value and do not introduce an expression
+  (`class`, `super`, `var`, `int`, `new`, ...). The set is
+  `REGEX_CHECK_SET` in `GroovyLexer.g4`
+
+Keywords that introduce an expression or a statement stay *out* of
+that set, so the slashy is kept:
+
+* `return`, `assert`, `throw`, `case`, `yield`, `await`, `defer`,
+  `else`, `do` (`return /a/`). After a member selector
+  (`.`, `?.`, `*.`, `??.`, `.&`, `::`, `@`; newlines and comments
+  ignored, and `<...>` type arguments in between, including a
+  qualified name and an annotation whose `()` / `[]` / `{}` hide
+  `<` and `>`) the same keyword is a name: `obj.return / 2`,
+  `obj.<T>return / 2`, and `obj.<@Ann(x > 1) T>return / 2` are
+  division.
+* `in` is infix when a value precedes it (`'ab' in /a/`, `in in /a/`,
+  `obj.in in /a/`, also across a newline *before* `in`). A member
+  name counts as that value. Otherwise `in` is a name (`in / 2`,
+  `obj.in / 2`, `return in / 2`). `yield`, `await`, and `defer` are
+  not values, so `yield in / 2` stays division and
+  `for (yield in /a/)` is not a slashy. `for (in in /a/)` is.
+
+`NL` is not a value. A *closed* `/.../` may start a line even after a
+value (`9\n/3/`, `obj.return\n/a/`). An *unclosed* `/` that reaches
+EOF is a string only when a closed slashy would have been allowed at
+that `/` after looking through `NL` (`isUnclosedSlashy`).
+`9\n/\n3` and `obj.class\n/\n2` stay division; `return /hello` with
+no closer is `Unclosed string literal` at the `/`.
 
 Examples: `a++ / b` is division; `list[i] / n` is division;
-`x = /foo/` is a slashy string (`ASSIGN` is not in the set).
+`String.class / 2` is division; `x = /foo/` is a slashy string
+(`ASSIGN` is not a value).
 
 [[grammar-restrictions]]
 == Restrictions
@@ -776,9 +814,11 @@ Each restriction cites its implementation site. They are not CFG.
 === Lexical
 
 **R1** (`isRegexAllowed`, `LA(1) != '*'`)::
-`/.../` is a slashy string only if the previous default-channel token
-is not in the set listed above, and the character after the opening
-`/` is not `*`.
+`/.../` is a slashy string only if `isSlashyForbidden` is false for
+the previous default-channel token (the value set above, with the
+`return` / `in` exceptions), and the character after the opening
+`/` is not `*`. `isUnclosedSlashy` applies the same rule through
+`NL` when `/` reaches EOF.
 
 **R2** (`isFollowedByJavaLetterInGString`)::
 In slashy and dollar-slashy *text* (including the interpolating `$` of
@@ -2183,6 +2223,10 @@ These are **not** language productions:
 * Invalid octal (`'0' [0-9]+` error alternative).
 * Number ending with `_`.
 * Unclosed `/*` (`requireUnclosedComment` at the opener).
+* Unclosed plain `/...` (`requireUnclosedString` at the opener) when
+  R1 would have allowed a slashy. Not used for an unclosed slashy
+  GString (`/hello $name` has no closing `/`): that path stays in
+  the GString modes. Not used for unclosed `$/...` either.
 * Shebang when `tokenIndex != 0` (R11).
 * `GroovyLangLexer.nextToken`: EOF in `GSTRING_TYPE_SELECTOR_MODE`
   (`Illegal string body character after dollar sign`).

@@ -3358,6 +3358,40 @@ final class ParserNegativeSyntaxTest {
     }
 
     @Test
+    void 'unclosed slashy after return'() {
+        // GROOVY-12425: `return` introduces an expression, so a missing closer
+        // stays an unclosed string. A member name `return` divides.
+        expectParseError 'return /hello', '''\
+            |Unclosed string literal @ line 1, column 8.
+            |   return /hello
+            |          ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'unclosed slashy gstring keeps the gstring diagnostic'() {
+        // GROOVY-12425: `/hello $name` is SlashyGStringBegin, not the plain
+        // EOF alternative. The caret sits at end of input, not on the `/`,
+        // and the wording is not "Unclosed string literal".
+        expectParseError 's = /hello $name', '''\
+            |Unexpected end of input @ line 1, column 17.
+            |   s = /hello $name
+            |                   ^
+            |
+            |1 error
+            |'''.stripMargin()
+        expectParseError '/hello $name', '''\
+            |Unexpected end of input @ line 1, column 13.
+            |   /hello $name
+            |               ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
     void 'unclosed double-quoted string'() {
         expectParseError '''\
             |println "Hello

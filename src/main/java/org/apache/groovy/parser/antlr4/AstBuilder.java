@@ -1581,9 +1581,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     private void transformRecordHeaderToProperties(final ClassDeclarationContext ctx, final ClassNode classNode) {
-        // visitFormalParameters returns Parameter.EMPTY_ARRAY, never null. The public
-        // static field is not a null-safe yield for javabugs:S2259.
-        Parameter[] parameters = Objects.requireNonNull(this.visitFormalParameters(ctx.formalParameters()));
+        Parameter[] parameters = this.visitFormalParameters(ctx.formalParameters());
         classNode.putNodeMetaData(RECORD_HEADER, parameters);
 
         final int n = parameters.length;

@@ -597,6 +597,23 @@ final class AbstractLexerTest {
     }
 
     @Test
+    void gstringPathRollsBackANonNameCharacter() {
+        // RollBackOne stays that type when the next character is not a closer,
+        // and emit() rewinds it so the GString mode can lex it.
+        List<Token> tokens = defaultChannel("\"$foo.bar+1\"");
+        assertTrue(tokens.stream().anyMatch(t -> t.getType() == GStringEnd), texts(tokens).toString());
+        assertTrue(String.join("", texts(tokens)).contains("+"), texts(tokens).toString());
+    }
+
+    @Test
+    void blockCommentIsNotASlashy() {
+        List<Token> tokens = defaultChannel("/*c*/");
+        assertTrue(tokens.stream().noneMatch(t ->
+                t.getType() == StringLiteral || t.getType() == DIV || t.getType() == GStringBegin),
+                texts(tokens).toString());
+    }
+
+    @Test
     void gstringPathStillUsesDotFragmentReplacement() {
         List<Token> tokens = defaultChannel("\"$foo.bar\"");
         List<Integer> types = new ArrayList<>();
@@ -606,6 +623,154 @@ final class AbstractLexerTest {
         assertTrue(types.contains(GStringBegin), types.toString());
         assertTrue(types.contains(GStringPathPart), types.toString());
         assertTrue(types.contains(GStringEnd), types.toString());
+    }
+
+    // GROOVY-12425: a keyword that ends a value is a division operand.
+    // return /a/ stays a string; obj.class / 2 and obj.return / 2 divide.
+    @Test
+    void keywordValueBeforeSlashIsDivision() {
+        assertNoSlashy("a.class / 2");
+        assertNoSlashy("a.class /2/ b");
+        assertNoSlashy("a.class /hello $x/");
+        assertNoSlashy("super / 2");
+        assertNoSlashy("int / 2");
+        assertNoSlashy("var / 2");
+        assertNoSlashy("new / 2");
+        assertNoSlashy("Foo::new / 2");
+        assertNoSlashy("a.trait / 2");
+        assertNoSlashy("a.class\n/\n2");
+    }
+
+    @Test
+    void statementIntroducerKeepsAClosedSlashy() {
+        assertSlashy("return /ab/");
+        assertSlashy("assert /ab/");
+        assertSlashy("throw /ab/");
+        assertSlashy("case /ab/");
+        assertSlashy("yield /ab/");
+        assertSlashy("await /ab/");
+        assertSlashy("defer /ab/");
+        assertSlashy("else /ab/");
+        assertSlashy("do /ab/");
+        assertSlashy("return /2/");
+    }
+
+    @Test
+    void memberNameIntroducerIsDivision() {
+        assertNoSlashy("a.return / 2");
+        assertNoSlashy("a.return /2/ b");
+        assertNoSlashy("a\n.return / 2");
+        assertNoSlashy("a./*c*/return / 2");
+        assertNoSlashy("a?.return / 2");
+        assertNoSlashy("a*.return / 2");
+        assertNoSlashy("a??.return / 2");
+        assertNoSlashy("a.&return / 2");
+        assertNoSlashy("A::return / 2");
+        assertNoSlashy("a.@return / 2");
+        assertNoSlashy("a.<T>return / 2");
+        assertNoSlashy("a.<b.c>return / 2");
+        assertNoSlashy("a.<Map<String, Integer>>return / 2");
+        assertNoSlashy("a.<>return / 2");
+        assertNoSlashy("a.<? extends T>return / 2");
+        assertNoSlashy("a.<@Ann(x > 1) T>return / 2");
+        assertNoSlashy("a.<@Ann(x >> 1) T>return / 2");
+        assertNoSlashy("a.<@Ann(x < 1) T>return / 2");
+        assertNoSlashy("a.<@Ann(x[0] > 1) T>return / 2");
+        assertNoSlashy("a.<@Ann(x{0} > 1) T>return / 2");
+        assertNoSlashy("a.<@Ann((x > 1)) T>return / 2");
+        assertNoSlashy("a.return\n/\n2");
+        // A closed slashy may still start the next line.
+        assertSlashy("a.return\n/ab/");
+        assertSlashy("@Deprecated\nreturn /ab/");
+    }
+
+    @Test
+    void infixInKeepsSlashyAndNameInDivides() {
+        assertSlashy("x in /ab/");
+        assertSlashy("x\nin /ab/");
+        assertSlashy("a.class in /ab/");
+        assertSlashy("(x) in /ab/");
+        assertSlashy("in in /ab/");
+        assertSlashy("a.in in /ab/");
+        assertSlashy("a.<T>in in /ab/");
+        assertSlashy("a.yield in /ab/");
+        assertNoSlashy("in / 2");
+        assertNoSlashy("a.in / 2");
+        assertNoSlashy("return in / 2");
+        assertNoSlashy("in /2/ b");
+        assertNoSlashy("in\n/\n2");
+        // yield/await/defer are not values, so the following in is a name.
+        assertNoSlashy("yield in /ab/");
+        assertNoSlashy("await in /ab/");
+        assertNoSlashy("defer in /ab/");
+    }
+
+    @Test
+    void unclosedSlashyAfterReturnStaysAStringDiagnostic() {
+        GroovyLangLexer opened = lexer("return /hello");
+        GroovySyntaxError err = assertThrows(GroovySyntaxError.class, () -> drain(opened));
+        assertEquals("Unclosed string literal", err.getMessage());
+        assertEquals(1, err.getLine());
+        assertEquals(8, err.getColumn());
+    }
+
+    @Test
+    void assignAfterDotDoesNotForbidSlashy() {
+        // '=' after a dot is not a value, so it does not forbid a slashy.
+        assertSlashy("a. = /ab/");
+    }
+
+    @Test
+    void reusedLexerForgetsAPendingMemberSelector() {
+        GroovyLangLexer pending = lexer("a.");
+        drain(pending);
+        pending.setInputStream(CharStreams.fromString("return /ab/"));
+        assertSlashy(pending);
+
+        GroovyLangLexer operand = lexer("a.class");
+        drain(operand);
+        operand.setInputStream(CharStreams.fromString("/hello"));
+        GroovySyntaxError err = assertThrows(GroovySyntaxError.class, () -> drain(operand));
+        assertEquals("Unclosed string literal", err.getMessage());
+        assertEquals(1, err.getLine());
+        assertEquals(1, err.getColumn());
+    }
+
+    @Test
+    void closedSlashyGStringStillTokenizes() {
+        List<Token> tokens = defaultChannel("/hello $name/");
+        assertTrue(tokens.stream().anyMatch(t -> t.getType() == GStringBegin), texts(tokens).toString());
+        assertTrue(tokens.stream().anyMatch(t -> t.getType() == GStringEnd), texts(tokens).toString());
+        assertTrue(tokens.stream().noneMatch(t -> t.getType() == StringLiteral), texts(tokens).toString());
+    }
+
+    @Test
+    void unclosedSlashyGStringReachesEofInTheGStringModes() {
+        // No "Unclosed string literal": the opener is GStringBegin and the
+        // name is an identifier. The parser then reports end of input.
+        List<Token> tokens = defaultChannel("/hello $name");
+        assertEquals(GStringBegin, tokens.get(0).getType());
+        assertEquals("/hello $", tokens.get(0).getText());
+        assertTrue(tokens.stream().anyMatch(t -> t.getType() == Identifier && "name".equals(t.getText())),
+                texts(tokens).toString());
+        assertTrue(tokens.stream().noneMatch(t -> t.getType() == StringLiteral), texts(tokens).toString());
+    }
+
+    private static void assertSlashy(final String src) {
+        assertSlashy(new GroovyLangLexer(CharStreams.fromString(src)));
+    }
+
+    private static void assertSlashy(final GroovyLangLexer lexer) {
+        List<Token> tokens = defaultChannel(lexer);
+        assertTrue(tokens.stream().anyMatch(t -> t.getType() == StringLiteral), texts(tokens).toString());
+        assertFalse(tokens.stream().anyMatch(t -> t.getType() == DIV), texts(tokens).toString());
+    }
+
+    private static void assertNoSlashy(final String src) {
+        List<Token> tokens = defaultChannel(src);
+        assertTrue(tokens.stream().anyMatch(t -> t.getType() == DIV), texts(tokens).toString());
+        assertFalse(tokens.stream().anyMatch(t ->
+                t.getType() == StringLiteral || t.getType() == GStringBegin), texts(tokens).toString());
     }
 
     private static GroovyLangLexer displayLexer() {
