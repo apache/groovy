@@ -60,6 +60,8 @@ public final class CompilerConfigurationTest {
         assertNull(config.getScriptBaseClass());
         assertNull(config.getTargetDirectory());
         assertFalse(config.isClassTagPreemptionDisabled()); // GROOVY-12115
+        assertEquals(Integer.MAX_VALUE, config.getFrameComputationMaxBytes()); // GROOVY-12465
+        assertEquals(Long.MAX_VALUE, config.getFrameComputationMaxOperations());
         // GROOVY-9192: parser error recovery is opt-in
         assertFalse(config.isErrorRecoveryEnabled());
         assertEquals("errorRecovery", CompilerConfiguration.ERROR_RECOVERY);
@@ -88,7 +90,9 @@ public final class CompilerConfigurationTest {
             "groovy.output.verbose=trUE",
             "groovy.mem.stub=true",
             "groovy.generate.stub.in.memory=true",
-            "groovy.recompile.minimumInterval=867892345"})
+            "groovy.recompile.minimumInterval=867892345",
+            "groovy.frame.computation.max.bytes=12345678",
+            "groovy.frame.computation.max.operations=9876543210"})
     public void testSetViaSystemProperties() {
         // Properties are set on the JVM command line via @ForkedJvm; the
         // forked child reads them through the normal System.getProperties()
@@ -103,6 +107,10 @@ public final class CompilerConfigurationTest {
         assertTrue(config.getVerbose());
         assertEquals(10, config.getTolerance());
         assertEquals(867892345, config.getMinimumRecompilationInterval());
+        assertEquals(12345678, config.getFrameComputationMaxBytes());
+        assertEquals(9876543210L, config.getFrameComputationMaxOperations());
+        assertEquals(12345678, new CompilerConfiguration().getFrameComputationMaxBytes());
+        assertEquals(9876543210L, new CompilerConfiguration().getFrameComputationMaxOperations());
         assertEquals(CompilerConfiguration.DEFAULT.getSourceEncoding(), config.getSourceEncoding());
         assertEquals(CompilerConfiguration.DEFAULT.getTargetBytecode(), config.getTargetBytecode());
         assertFalse(config.getRecompileGroovySource());
@@ -138,6 +146,8 @@ public final class CompilerConfigurationTest {
         init.setPluginFactory(pluginFactory);
         init.setLogClassgen(true);
         init.setLogClassgenStackTraceMaxDepth(100);
+        init.setFrameComputationMaxBytes(4096);
+        init.setFrameComputationMaxOperations(8192L);
 
         assertEquals(WarningMessage.POSSIBLE_ERRORS, init.getWarningLevel());
         assertTrue(init.getDebug());
@@ -181,6 +191,8 @@ public final class CompilerConfigurationTest {
         assertEquals(pluginFactory, config.getPluginFactory());
         assertTrue(config.isLogClassgen());
         assertEquals(100, config.getLogClassgenStackTraceMaxDepth());
+        assertEquals(4096, config.getFrameComputationMaxBytes());
+        assertEquals(8192L, config.getFrameComputationMaxOperations());
         assertEquals(1, config.getCompilationCustomizers().size());
     }
 
@@ -298,6 +310,17 @@ public final class CompilerConfigurationTest {
         assertFalse(new CompilerConfiguration().isClassTagPreemptionDisabled());
     }
 
+    @Test // GROOVY-12465
+    public void testFrameComputationLimitsMustBePositive() {
+        CompilerConfiguration config = new CompilerConfiguration();
+        assertThrows(IllegalArgumentException.class, () -> config.setFrameComputationMaxBytes(0));
+        assertThrows(IllegalArgumentException.class, () -> config.setFrameComputationMaxOperations(-1L));
+
+        Properties properties = new Properties();
+        properties.setProperty("groovy.frame.computation.max.operations", "lots");
+        assertThrows(ConfigurationException.class, () -> new CompilerConfiguration(properties));
+    }
+
     @Test
     public void testDefaultConfigurationIsImmutable() {
         CompilerConfiguration config = CompilerConfiguration.DEFAULT;
@@ -319,6 +342,12 @@ public final class CompilerConfigurationTest {
         });
         assertThrows(UnsupportedOperationException.class, () -> {
             config.setLogClassgenStackTraceMaxDepth(100);
+        });
+        assertThrows(UnsupportedOperationException.class, () -> { // GROOVY-12465
+            config.setFrameComputationMaxBytes(4096);
+        });
+        assertThrows(UnsupportedOperationException.class, () -> {
+            config.setFrameComputationMaxOperations(8192L);
         });
         assertThrows(UnsupportedOperationException.class, () -> {
             config.setMinimumRecompilationInterval(975);

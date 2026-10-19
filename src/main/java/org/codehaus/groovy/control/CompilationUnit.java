@@ -915,6 +915,8 @@ public class CompilationUnit extends ProcessingUnit {
      * Per-class {@link ClassWriter} that memoizes {@link #getCommonSuperClass}.
      * {@code COMPUTE_FRAMES} repeats the same internal-name pairs at merge points;
      * the writer (and its maps) live for one generated class and are then discarded.
+     * Frame computation is bounded by the configured limits, which ASM's defaults
+     * would otherwise set too low for large Groovy methods.
      */
     private final class CachingClassWriter extends ClassWriter {
         private final Map<String, ClassNode> classNodeByInternalName = new HashMap<>(8);
@@ -922,6 +924,8 @@ public class CompilationUnit extends ProcessingUnit {
 
         private CachingClassWriter() {
             super(COMPUTE_MAXS | COMPUTE_FRAMES);
+            CompilerConfiguration config = getConfiguration();
+            setComputeLimits(config.getFrameComputationMaxBytes(), config.getFrameComputationMaxOperations());
         }
 
         @Override
