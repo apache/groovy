@@ -1440,6 +1440,79 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12455
+    @Test
+    void testMultipleAssignmentToPropertiesWithSetters() {
+        assertScript '''
+            class C {
+                private String s
+                private Integer n
+                void setString(String s) { this.s = s }
+                String getString() { s }
+                void setNumber(Integer n) { this.n = n }
+                Integer getNumber() { n }
+
+                void m() {
+                    (string, number) = new Tuple2<String, Integer>('answer', 42)
+                }
+            }
+
+            def c = new C()
+            c.m()
+            assert c.string == 'answer'
+            assert c.number == 42
+        '''
+
+        assertScript '''
+            class P {
+                String string
+                Integer number
+            }
+            class C extends P {
+                void m() {
+                    (string, number) = new Tuple2<String, Integer>('answer', 42)
+                }
+                void n() {
+                    (string, number) = ['other', 7]
+                }
+            }
+
+            def c = new C()
+            c.m()
+            assert c.string == 'answer'
+            assert c.number == 42
+            c.n()
+            assert c.string == 'other'
+            assert c.number == 7
+        '''
+
+        shouldFailWithMessages '''
+            class P {
+                String string
+                Integer number
+            }
+            class C extends P {
+                void m() {
+                    (string, number) = new Tuple2<String, String>('answer', '42')
+                }
+            }
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type java.lang.Integer'
+
+        shouldFailWithMessages '''
+            class P {
+                final String string = 'final'
+                Integer number
+            }
+            class C extends P {
+                void m() {
+                    (string, number) = new Tuple2<String, Integer>('answer', 42)
+                }
+            }
+        ''',
+        'Cannot set read-only property: string'
+    }
+
     @Test
     void testMultiAssign() {
         assertScript '''
