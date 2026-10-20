@@ -31,6 +31,7 @@ import groovy.console.ui.text.SmartDocumentFilter
 import groovy.swing.SwingBuilder
 import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
+import groovy.transform.PackageScope
 import groovy.transform.ThreadInterrupt
 import groovy.transform.TupleConstructor
 import groovy.ui.GroovyMain
@@ -59,7 +60,10 @@ import org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation
 import org.codehaus.groovy.vmplugin.VMPluginFactory
 
 import javax.swing.Action
+import javax.swing.ActionMap
 import javax.swing.Icon
+import javax.swing.InputMap
+import javax.swing.JComponent
 import javax.swing.JDialog
 import javax.swing.JFileChooser
 import javax.swing.JFrame
@@ -68,6 +72,7 @@ import javax.swing.JOptionPane
 import javax.swing.JScrollPane
 import javax.swing.JSplitPane
 import javax.swing.JTextPane
+import javax.swing.KeyStroke
 import javax.swing.RootPaneContainer
 import javax.swing.SwingUtilities
 import javax.swing.Timer
@@ -77,6 +82,7 @@ import javax.swing.event.DocumentListener
 import javax.swing.event.HyperlinkEvent
 import javax.swing.event.HyperlinkListener
 import javax.swing.filechooser.FileFilter
+import javax.swing.plaf.UIResource
 import javax.swing.text.AttributeSet
 import javax.swing.text.DefaultStyledDocument
 import javax.swing.text.Document
@@ -981,7 +987,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         }
 
         // let FlatLaf update all Swing component UI delegates
-        FlatLaf.updateUI()
+        updateUIPreservingKeyBindings(Window.windows as List<Container>) { FlatLaf.updateUI() }
 
         // rebuild SVG icon rasters so accent-coloured and foreground-tracking icons pick up the new theme
         Icons.refreshAll()
@@ -1441,6 +1447,45 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         viewer.borderColor = null  // null = no box outline around each label (TreeViewer default)
         viewer.highlightedBoxColor = dark ? new Color(80, 120, 80) : new Color(200, 255, 200)
         viewer.background = dark ? new Color(43, 43, 43) : Color.WHITE
+    }
+
+    /**
+     * Runs a UI-delegate refresh, then restores the key bindings registered directly on the
+     * components under {@code roots}. From JDK 27, uninstalling a UI delegate clears the
+     * component's own ActionMap and InputMaps instead of only detaching the UI-installed parents,
+     * so a runtime theme switch would otherwise leave keys such as Enter and Backspace in the
+     * editor bound to actions that no longer exist.
+     */
+    @PackageScope
+    static void updateUIPreservingKeyBindings(List<Container> roots, Runnable updateUI) {
+        List<Runnable> restorers = []
+        roots.each { saveKeyBindings(it, restorers) }
+        updateUI.run()
+        restorers*.run()
+    }
+
+    private static final List<Integer> INPUT_MAP_CONDITIONS = [
+            JComponent.WHEN_FOCUSED, JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, JComponent.WHEN_IN_FOCUSED_WINDOW]
+
+    private static void saveKeyBindings(Container container, List<Runnable> restorers) {
+        if (container instanceof JComponent) {
+            JComponent comp = (JComponent) container
+            ActionMap actionMap = comp.actionMap
+            if (!(actionMap instanceof UIResource) && actionMap.keys()) {
+                Map<Object, Action> actions = actionMap.keys().collectEntries { [it, actionMap.get(it)] }
+                restorers << { actions.each { k, v -> comp.actionMap.put(k, v) } } as Runnable
+            }
+            INPUT_MAP_CONDITIONS.each { int condition ->
+                InputMap inputMap = comp.getInputMap(condition)
+                if (!(inputMap instanceof UIResource) && inputMap.keys()) {
+                    Map<KeyStroke, Object> bindings = inputMap.keys().collectEntries { [it, inputMap.get(it)] }
+                    restorers << { bindings.each { k, v -> comp.getInputMap(condition).put(k, v) } } as Runnable
+                }
+            }
+        }
+        for (Component child : container.components) {
+            if (child instanceof Container) saveKeyBindings((Container) child, restorers)
+        }
     }
 
     private static TreeViewer findTreeViewer(Container container) {
