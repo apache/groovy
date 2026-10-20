@@ -1369,16 +1369,60 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
 
         for (int i = 0, n = tupleExpressions.size(); i < n; i += 1) {
+            Expression tupleExpression = tupleExpressions.get(i);
             ClassNode valueType = getType(valueExpressions.get(i));
-            ClassNode targetType = getType(tupleExpressions.get(i));
+            // GROOVY-12455: assign a property through its setter, not its getter
+            Boolean setterError = ensureValidSetterForMultipleAssignmentTarget(tupleExpression, valueType);
+            if (setterError != null) {
+                if (setterError) return false;
+                continue;
+            }
+            ClassNode targetType = getType(tupleExpression);
             if (!isAssignableTo(valueType, targetType)) {
                 addStaticTypeError("Cannot assign value of type " + prettyPrintType(valueType) + " to variable of type " + prettyPrintType(targetType), rightExpression);
                 return false;
             }
-            storeType(tupleExpressions.get(i), valueType);
+            storeType(tupleExpression, valueType);
         }
 
         return true;
+    }
+
+    /**
+     * A multiple-assignment target was visited as part of the tuple, so a property reached
+     * through its accessors was resolved for reading (it carries the getter). Resolve it
+     * again as the target of an assignment of the given value type, as for a single assignment,
+     * so that it records the setter.
+     *
+     * @return {@code null} if the target still needs the usual assignment checks, otherwise whether an error was reported
+     */
+    private Boolean ensureValidSetterForMultipleAssignmentTarget(final Expression target, final ClassNode valueType) {
+        MethodNode getter = target.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (!(target instanceof VariableExpression) || getter == null || getter.getParameters().length != 0) {
+            return null;
+        }
+        int errorCount = typeCheckingContext.getErrorCollector().getErrorCount();
+        Expression value = varX("%", valueType);
+        BinaryExpression assignment = assignX(target, value, target);
+        typeCheckingContext.pushEnclosingBinaryExpression(assignment);
+        try {
+            target.visit(this); // a property node target checks its setter here
+        } finally {
+            typeCheckingContext.popEnclosingBinaryExpression();
+        }
+        SetterInfo setterInfo = removeSetterInfo(target);
+        if (setterInfo != null) {
+            return ensureValidSetter(assignment, target, value, setterInfo);
+        }
+        if (typeCheckingContext.getErrorCollector().getErrorCount() > errorCount || addedReadOnlyPropertyError(target)) {
+            return true;
+        }
+        MethodNode setter = target.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (setter == null || setter.getParameters().length != 1) {
+            addStaticTypeError("Cannot set read-only property: " + ((VariableExpression) target).getName(), target);
+            return true;
+        }
+        return null; // the setter of a property node: check the value type as for a field
     }
 
     private ClassNode adjustTypeForSpreading(final ClassNode rightExpressionType, final Expression leftExpression) {
