@@ -163,8 +163,10 @@ public class Types {
     public static final int MOD_EQUAL = 215;   // %=
     /** Power assignment operator ({@code **=}). */
     public static final int POWER_EQUAL = 216;   // **=
-    /** Elvis/null-coalescing assignment operator ({@code ?=}). */
+    /** Elvis assignment operator ({@code ?=}). */
     public static final int ELVIS_EQUAL = 217;   // ?=
+    /** Null-coalescing assignment operator ({@code ??=}). */
+    public static final int NULL_COALESCE_EQUAL = 218;   // ??=
 
     /** Increment operator ({@code ++}). */
     public static final int PLUS_PLUS = 250;   // ++
@@ -647,7 +649,7 @@ public class Types {
                 break;
 
             case ASSIGNMENT_OPERATOR:
-                return specific == EQUAL || (specific >= PLUS_EQUAL && specific <= ELVIS_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
+                return specific == EQUAL || (specific >= PLUS_EQUAL && specific <= NULL_COALESCE_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
                         || (specific >= LEFT_SHIFT_EQUAL && specific <= RIGHT_SHIFT_UNSIGNED_EQUAL)
                         || (specific >= BITWISE_OR_EQUAL && specific <= BITWISE_XOR_EQUAL)
                         || specific == REMAINDER_EQUAL;
@@ -716,7 +718,7 @@ public class Types {
                          RIGHT_SHIFT, RIGHT_SHIFT_UNSIGNED, FIND_REGEX, MATCH_REGEX, DOT_DOT, DOT_DOT_DOT,
                          KEYWORD_INSTANCEOF -> true;
                     default ->
-                        (specific >= COMPARE_NOT_EQUAL && specific <= COMPARE_TO) || (specific >= PLUS && specific <= MOD_EQUAL) || specific == EQUAL || (specific >= PLUS_EQUAL && specific <= ELVIS_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
+                        (specific >= COMPARE_NOT_EQUAL && specific <= COMPARE_TO) || (specific >= PLUS && specific <= MOD_EQUAL) || specific == EQUAL || (specific >= PLUS_EQUAL && specific <= NULL_COALESCE_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
                             || (specific >= LEFT_SHIFT_EQUAL && specific <= RIGHT_SHIFT_UNSIGNED_EQUAL) || (specific >= BITWISE_OR_EQUAL && specific <= BITWISE_XOR_EQUAL);
                 };
 
@@ -1154,6 +1156,7 @@ public class Types {
             case MOD_EQUAL:
             case POWER_EQUAL:
             case ELVIS_EQUAL:
+            case NULL_COALESCE_EQUAL:
             case LOGICAL_OR_EQUAL:
             case LOGICAL_AND_EQUAL:
             case LEFT_SHIFT_EQUAL:
@@ -1430,6 +1433,7 @@ public class Types {
         addTranslation("%=", REMAINDER_EQUAL);
         addTranslation("**=", POWER_EQUAL);
         addTranslation("?=", ELVIS_EQUAL);
+        addTranslation("??=", NULL_COALESCE_EQUAL);
 
         addTranslation("++", PLUS_PLUS);
         addTranslation("--", MINUS_MINUS);

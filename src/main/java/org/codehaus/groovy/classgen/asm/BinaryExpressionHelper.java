@@ -68,7 +68,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.elvisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
@@ -114,6 +113,7 @@ import static org.codehaus.groovy.syntax.Types.MOD;
 import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
 import static org.codehaus.groovy.syntax.Types.MULTIPLY;
 import static org.codehaus.groovy.syntax.Types.MULTIPLY_EQUAL;
+import static org.codehaus.groovy.syntax.Types.NULL_COALESCE_EQUAL;
 import static org.codehaus.groovy.syntax.Types.PLUS;
 import static org.codehaus.groovy.syntax.Types.PLUS_EQUAL;
 import static org.codehaus.groovy.syntax.Types.PLUS_PLUS;
@@ -135,6 +135,7 @@ import static org.objectweb.asm.Opcodes.DUP_X1;
 import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.IFEQ;
 import static org.objectweb.asm.Opcodes.IFNE;
+import static org.objectweb.asm.Opcodes.IFNULL;
 import static org.objectweb.asm.Opcodes.IF_ACMPEQ;
 import static org.objectweb.asm.Opcodes.INSTANCEOF;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
@@ -360,6 +361,7 @@ public class BinaryExpressionHelper {
             break;
 
         case ELVIS_EQUAL:
+        case NULL_COALESCE_EQUAL:
             evaluateElvisEqual(expression);
             break;
 
@@ -495,13 +497,15 @@ public class BinaryExpressionHelper {
     }
 
     /**
-     * Rewrites and evaluates the Elvis-assignment form.
+     * Rewrites and evaluates the Elvis-assignment ({@code ?=}) or
+     * null-coalescing-assignment ({@code ??=}) form.
      *
-     * @param expression the Elvis-assignment expression
+     * @param expression the assignment expression
      */
     public void evaluateElvisEqual(final BinaryExpression expression) {
         Token assign = Token.newSymbol(ASSIGN, expression.getOperation().getStartLine(), expression.getOperation().getStartColumn());
         Expression lhs = expression.getLeftExpression();
+        boolean nullCoalescing = expression.getOperation().getType() == NULL_COALESCE_EQUAL;
 
         // GROOVY-12099: for a subscript Elvis-assignment such as "a[i] ?= b", evaluate the
         // receiver and index once (left-to-right) into temporaries and reuse them for both
@@ -515,7 +519,7 @@ public class BinaryExpressionHelper {
             access.copyNodeMetaData(be);
             access.setSourcePosition(be);
 
-            BinaryExpression assignment = binX(access, assign, elvisX(access, expression.getRightExpression()));
+            BinaryExpression assignment = binX(access, assign, new ElvisOperatorExpression(access, expression.getRightExpression(), nullCoalescing));
             assignment.copyNodeMetaData(expression);
             evaluateEqual(assignment, false);
 
@@ -525,7 +529,7 @@ public class BinaryExpressionHelper {
             return;
         }
 
-        Expression rhs = elvisX(lhs, expression.getRightExpression());
+        Expression rhs = new ElvisOperatorExpression(lhs, expression.getRightExpression(), nullCoalescing);
         BinaryExpression assignment = binX(lhs, assign, rhs);
         assignment.copyNodeMetaData(expression);
         evaluateEqual(assignment, false);
@@ -1521,13 +1525,13 @@ public class BinaryExpressionHelper {
      */
     public void evaluateTernary(final TernaryExpression expression) {
         if (expression instanceof ElvisOperatorExpression) {
-            evaluateElvisExpression(expression);
+            evaluateElvisExpression((ElvisOperatorExpression) expression);
         } else {
             evaluateTernaryExpression(expression);
         }
     }
 
-    private void evaluateElvisExpression(final TernaryExpression expression) {
+    private void evaluateElvisExpression(final ElvisOperatorExpression expression) {
         Expression truePart = expression.getTrueExpression();
         Expression falsePart = expression.getFalseExpression();
 
@@ -1537,16 +1541,29 @@ public class BinaryExpressionHelper {
         ClassNode commonType = WideningCategories.lowestUpperBound(truePartType, falsePartType);
 
         // write "x?:y" as "boolean(x)?T(x):T(y)" where T is common type of x and y
+        // and "x??y" as "x!=null?T(x):T(y)"
         OperandStack operandStack = controller.getOperandStack();
         MethodVisitor mv = controller.getMethodVisitor();
 
-        // load x, dup it and cast to boolean
+        // load x, dup it and test it
         truePart.visit(controller.getAcg());
         int top = operandStack.getStackLength();
         var type = operandStack.getTopOperand();
+        if (expression.isNullCoalescing() && ClassHelper.isPrimitiveType(type)) {
+            // a primitive is never null, so y is never evaluated
+            operandStack.doGroovyCast(commonType);
+            return;
+        }
         operandStack.dup();
-        operandStack.castToBool(top, true);
-        Label l0 = operandStack.jump(IFEQ);
+        Label l0;
+        if (expression.isNullCoalescing()) {
+            l0 = new Label();
+            mv.visitJumpInsn(IFNULL, l0);
+            operandStack.remove(1);
+        } else {
+            operandStack.castToBool(top, true);
+            l0 = operandStack.jump(IFEQ);
+        }
 
         // true path: cast to T
         operandStack.doGroovyCast(commonType);
