@@ -886,6 +886,31 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
     }
 
     @Test
+    void testMethodReturnTypeInferenceWithSoleImplementation() {
+        assertScript '''
+            // tag::method_return_type_sole_implementation[]
+            @groovy.transform.TypeChecked
+            class A {
+                final def compute() { 'some string' }       // <1>
+                def computeFully() {
+                    compute().toUpperCase()                 // <2>
+                }
+            }
+            @groovy.transform.CompileStatic
+            class C {
+                private def name() { 'some name' }          // <3>
+                static def twice(int i) { i * 2 }           // <4>
+                def describe() {
+                    name().toUpperCase() + twice(21).intValue()
+                }
+            }
+            // end::method_return_type_sole_implementation[]
+            assert new A().computeFully() == 'SOME STRING'
+            assert new C().describe() == 'SOME NAME42'
+        '''
+    }
+
+    @Test
     void testClosureParameterTypeInference() {
         shouldFailWithMessages '''
         // tag::cl_pt_failure[]
