@@ -389,6 +389,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final int CURRENT_SIGNATURE_PROTOCOL_VERSION = 1;
     /** Constant expression for the current signature protocol version. */
     protected static final Expression CURRENT_SIGNATURE_PROTOCOL = new ConstantExpression(CURRENT_SIGNATURE_PROTOCOL_VERSION, true);
+    /** Metadata key for the types a method returns, recorded while its return type is inferred. */
+    private static final Object RETURN_TYPES = new Object();
+    /** Metadata key for the return type of a method inferred from the values its body returns. */
+    private static final Object BODY_RETURN_TYPE = new Object();
     /** Cached {@code Closure#getDelegate()} method. */
     protected static final MethodNode GET_DELEGATE = CLOSURE_TYPE.getGetterMethod("getDelegate");
     /** Cached {@code Closure#getOwner()} method. */
@@ -435,11 +439,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             addClosureReturnType(returnType);
         } else if (this.typeCheckingContext.getEnclosingMethod() == null) {
             throw new GroovyBugError("Unexpected return statement at " + returnStatement.getLineNumber() + ":" + returnStatement.getColumnNumber() + " " + returnStatement.getText());
+        } else {
+            recordMethodReturnType(this.typeCheckingContext.getEnclosingMethod(), returnStatement);
         }
     };
 
     /** Return adder used to normalize implicit and explicit returns. */
     protected final ReturnAdder returnAdder = new ReturnAdder(returnListener);
+
+    /** Inferred return types read from precompiled methods. */
+    private final Map<MethodNode, Optional<ClassNode>> precompiledReturnTypes = new HashMap<>();
 
     /** Field currently being visited. */
     protected FieldNode currentField;
@@ -2418,6 +2427,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     if (readMode) {
                         if (getter != null) {
                             ClassNode returnType = inferReturnTypeGenerics(receiverType, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
+                            if (isObjectType(returnType)) { // a sole implementation may have an inferred type
+                                returnType = getCallReturnType(getter, objectExpression instanceof ClassExpression
+                                        || (isThisExpression(objectExpression) && typeCheckingContext.isInStaticContext)); // "this" is the class
+                            }
                             storeInferredTypeForPropertyExpression(pexp, returnType);
                             storeReceiverData(pexp, receiver);
                             storeTargetMethod(pexp, getter);
@@ -3719,6 +3732,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 && typeCheckingContext.alreadyVisitedMethods.add(node)) { // prevent re-visiting method (infinite loop)
             typeCheckingContext.pushErrorCollector(collector);
             boolean osc = typeCheckingContext.isInStaticContext;
+            boolean inferReturnType = isReturnTypeInferenceCandidate(node);
+            if (inferReturnType) { // GROOVY-12472: a call within the body sees the declared type
+                node.removeNodeMetaData(BODY_RETURN_TYPE);
+                node.putNodeMetaData(RETURN_TYPES, new ArrayList<ClassNode>());
+            }
             try {
                 // GROOVY-7890: non-static trait method is static in helper type
                 typeCheckingContext.isInStaticContext = isNonStaticHelperMethod(node) ? false : node.isStatic();
@@ -3726,6 +3744,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 super.visitMethod(node);
             } finally {
                 typeCheckingContext.isInStaticContext = osc;
+            }
+            if (inferReturnType) {
+                publishInferredReturnType(node);
             }
             typeCheckingContext.popErrorCollector();
             node.putNodeMetaData(ERROR_COLLECTOR, collector);
@@ -3815,6 +3836,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         addTypeCheckingInfoAnnotation(node, CURRENT_SIGNATURE_PROTOCOL_VERSION, getTransformLoader());
     }
 
+    private void addTypeCheckingInfoAnnotation(final MethodNode node, final ClassNode rtype) {
+        addTypeCheckingInfoAnnotation(node, rtype, SignatureCodecFactory.getCodec(CURRENT_SIGNATURE_PROTOCOL_VERSION, getTransformLoader()));
+    }
+
     /**
      * Writes {@code TypeCheckingInfo} using protocol {@code version}. A version
      * this compiler does not implement leaves {@code node} unchanged and does
@@ -3830,12 +3855,15 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * unchanged.
      */
     void addTypeCheckingInfoAnnotation(final MethodNode node, final SignatureCodec codec) {
+        addTypeCheckingInfoAnnotation(node, getInferredReturnType(node), codec);
+    }
+
+    private void addTypeCheckingInfoAnnotation(final MethodNode node, final ClassNode rtype, final SignatureCodec codec) {
         // TypeChecked$TypeCheckingInfo cannot be applied on constructors
         if (node.isConstructor()) return;
 
         // if a returned inferred type is available and no @TypeCheckingInfo is on node, then add an
         // annotation to the method node
-        ClassNode rtype = getInferredReturnType(node);
         if (rtype != null && node.getAnnotations(TYPECHECKING_INFO_NODE).isEmpty()) {
             if (codec == null) return;
             String genericsSignature = codec.encode(rtype);
@@ -3848,6 +3876,230 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 node.addAnnotation(anno);
             }
         }
+    }
+
+    //--------------------------------------------------------------------------
+    // GROOVY-12472: inferred return types of methods with a sole implementation
+
+    /**
+     * Indicates whether the return type of {@code node} is inferred from its body:
+     * it is declared {@code def} and, at least for statically dispatched calls, no
+     * other body can run for a call that resolves to it.
+     */
+    private static boolean isReturnTypeInferenceCandidate(final MethodNode node) {
+        return node.isDynamicReturnType() && hasSoleImplementation(node, true);
+    }
+
+    /**
+     * Indicates whether a call that resolves to {@code method} can only run the body
+     * of {@code method}. A final method, or a method of a final class, has no other
+     * body. A private or static method has none only for a statically dispatched
+     * call: a dynamic call can select a same-named method of a subclass. Any other
+     * method, including a package-private or protected one, can be overridden, so
+     * it has no sole implementation even under static compilation.
+     */
+    private static boolean hasSoleImplementation(final MethodNode method, final boolean staticDispatch) {
+        if (method instanceof ConstructorNode || method instanceof ExtensionMethodNode
+                || method.isAbstract() || method.isSynthetic()) {
+            return false;
+        }
+        ClassNode type = method.getDeclaringClass();
+        if (type == null || type.isInterface()
+                || (type.getOuterClass() != null && Traits.isTrait(type.getOuterClass()))) { // trait helper
+            return false;
+        }
+        if (method.isFinal() || Modifier.isFinal(type.getModifiers())) {
+            return true;
+        }
+        return staticDispatch && (method.isPrivate() || method.isStatic());
+    }
+
+    /**
+     * Indicates whether calls at the current position are dispatched statically,
+     * as they are in statically compiled code.
+     *
+     * @since 7.0.0
+     */
+    protected boolean isStaticDispatchScope() {
+        return false;
+    }
+
+    /**
+     * Records the type of a value returned by {@code method}, if the return type
+     * of {@code method} is being inferred.
+     */
+    private void recordMethodReturnType(final MethodNode method, final ReturnStatement statement) {
+        List<ClassNode> types = method.getNodeMetaData(RETURN_TYPES);
+        if (types == null || statement.isReturningNullOrVoid()) return; // null fits any reference type
+        Expression expression = statement.getExpression();
+        ClassNode type = getType(expression);
+        if (type == null || referencesClosureSharedVariable(expression)) {
+            type = OBJECT_TYPE; // not settled until the second pass
+        } else if (isPrimitiveVoid(type)) {
+            return; // the method returns null
+        }
+        types.add(wrapTypeIfNecessary(type));
+    }
+
+    private static boolean referencesClosureSharedVariable(final Expression expression) {
+        boolean[] found = new boolean[1];
+        expression.visit(new CodeVisitorSupport() {
+            @Override
+            public void visitVariableExpression(final VariableExpression ve) {
+                if (ve.isClosureSharedVariable() || (ve.getAccessedVariable() instanceof VariableExpression av && av.isClosureSharedVariable())) {
+                    found[0] = true;
+                }
+            }
+            @Override
+            public void visitClosureExpression(final ClosureExpression ce) {
+                // the closure is the value; its body is not evaluated here
+            }
+        });
+        return found[0];
+    }
+
+    /**
+     * Stores the least upper bound of the types returned by {@code node} as its
+     * inferred return type and, unless {@code node} is private, records it on the
+     * class file for callers compiled later.
+     */
+    private void publishInferredReturnType(final MethodNode node) {
+        List<ClassNode> types = node.getNodeMetaData(RETURN_TYPES);
+        node.removeNodeMetaData(RETURN_TYPES);
+        ClassNode inferred = null;
+        for (ClassNode type : types) {
+            inferred = (inferred == null ? type : lowestUpperBound(inferred, type));
+        }
+        if (inferred != null && isSpecificNamedType(inferred)) {
+            node.putNodeMetaData(BODY_RETURN_TYPE, inferred);
+            if (!node.isPrivate()) {
+                addTypeCheckingInfoAnnotation(node, inferred);
+            }
+        }
+    }
+
+    /**
+     * Indicates whether {@code type} is more specific than {@code Object} and has a
+     * binary name: not a union, a lowest upper bound or a type parameter.
+     */
+    private static boolean isSpecificNamedType(final ClassNode type) {
+        return !isObjectType(type)
+                && !(type instanceof UnionTypeClassNode)
+                && !(type instanceof WideningCategories.LowestUpperBoundClassNode)
+                && !type.isGenericsPlaceHolder()
+                && !GenericsUtils.hasUnresolvedGenerics(type);
+    }
+
+    /**
+     * Returns the type of a call to {@code target}: its inferred return type when
+     * only its body can run for the call and that type is known here, otherwise
+     * its declared return type. A call that names the class of a static method,
+     * explicitly or from a static context, runs that method under any dispatch.
+     * <p>
+     * A precompiled method contributes the type recorded on its class file. A
+     * method of the class being checked is visited first, if necessary; one of
+     * another class of the compilation unit contributes nothing, since whether it
+     * has been checked yet depends on the order in which classes are checked.
+     */
+    private ClassNode getCallReturnType(final MethodNode target, final boolean classReceiver) {
+        ClassNode inferred = null;
+        if (hasSoleImplementation(target, isStaticDispatchScope() || (classReceiver && target.isStatic()))) {
+            if (!target.getDeclaringClass().isPrimaryClassNode()) {
+                inferred = readInferredReturnType(target);
+            } else if (target.isDynamicReturnType() && canInferReturnTypeOnDemand(target)) {
+                inferReturnTypeOnDemand(target);
+                inferred = target.getNodeMetaData(BODY_RETURN_TYPE);
+            }
+        }
+        return inferred != null ? inferred : getType(target);
+    }
+
+    /**
+     * Indicates whether {@code target} can be checked ahead of its turn: it belongs
+     * to the class being checked, is not skipped, and no type-checking extension
+     * expects to see its visit at its declaration.
+     */
+    private boolean canInferReturnTypeOnDemand(final MethodNode target) {
+        ClassNode enclosing = typeCheckingContext.getEnclosingClassNode();
+        if (enclosing == null || enclosing.redirect() != target.getDeclaringClass().redirect() || isSkipMode(target)) {
+            return false;
+        }
+        for (ClassNode type : getTypeCheckingAnnotations()) {
+            for (AnnotationNode anno : target.getAnnotations(type)) {
+                if (anno.getMember("extensions") != null) return false;
+            }
+        }
+        return extension.handlers.stream().allMatch(h -> h instanceof EnumTypeCheckingExtension || h instanceof TraitTypeCheckingExtension);
+    }
+
+    /**
+     * Checks {@code target} now, if it has not been visited yet, as if from its
+     * declaration. Its errors are reported when its turn comes.
+     */
+    private void inferReturnTypeOnDemand(final MethodNode target) {
+        if (typeCheckingContext.alreadyVisitedMethods.contains(target)) return; // visited, or being visited
+        Runnable restore = typeCheckingContext.detachFromEnclosingScope();
+        FieldNode field = currentField;
+        PropertyNode property = currentProperty;
+        currentField = null;
+        currentProperty = null;
+        try {
+            silentlyVisitMethodNode(target);
+        } finally {
+            currentField = field;
+            currentProperty = property;
+            restore.run();
+        }
+    }
+
+    /**
+     * Returns the inferred return type recorded on the class file of a precompiled
+     * method, or {@code null} if there is none this compiler can use.
+     */
+    private ClassNode readInferredReturnType(final MethodNode target) {
+        return precompiledReturnTypes.computeIfAbsent(target, this::decodeInferredReturnType).orElse(null);
+    }
+
+    private Optional<ClassNode> decodeInferredReturnType(final MethodNode method) {
+        List<AnnotationNode> infos = method.getAnnotations(TYPECHECKING_INFO_NODE);
+        if (infos.isEmpty() || !isObjectType(method.getReturnType())) { // a declared return type is the contract
+            return Optional.empty();
+        }
+        AnnotationNode info = infos.get(0);
+        if (info.getMember("version") instanceof ConstantExpression v && v.getValue() instanceof Integer version
+                && info.getMember("inferredType") instanceof ConstantExpression s && s.getValue() instanceof String signature) {
+            SignatureCodec codec = SignatureCodecFactory.getCodec(version, getSourceUnit().getClassLoader());
+            if (codec != null) { // GROOVY-12445: payload of an unknown version is not read
+                try {
+                    ClassNode type = codec.decode(signature);
+                    if (type != null && isSpecificNamedType(type) && isLoaded(type)) {
+                        return Optional.of(type);
+                    }
+                } catch (RuntimeException ignore) {
+                    // unreadable payload: use the declared return type
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    /** Indicates whether every class named by a decoded type was found on the classpath. */
+    private static boolean isLoaded(final ClassNode type) {
+        if (type.isArray()) return isLoaded(type.getComponentType());
+        if (!type.isResolved()) return false;
+        GenericsType[] generics = type.getGenericsTypes();
+        if (generics != null) {
+            for (GenericsType gt : generics) {
+                if (!isLoaded(gt.getType())) return false;
+                if (gt.getLowerBound() != null && !isLoaded(gt.getLowerBound())) return false;
+                if (gt.getUpperBounds() != null) {
+                    for (ClassNode bound : gt.getUpperBounds()) {
+                        if (!isLoaded(bound)) return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     /** {@inheritDoc} */
@@ -3900,7 +4152,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             resolvePlaceholdersFromImplicitTypeHints(args, argumentList, targetMethod.getParameters());
                             typeCheckMethodsWithGenericsOrFail(type, args, targetMethod, call);
 
-                            ClassNode returnType = getType(targetMethod);
+                            ClassNode returnType = getCallReturnType(targetMethod, true);
                             if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
                                 functorsVisited = true; // visit functional argument(s) with selected method
                                 visitMethodCallArguments(type, argumentList, functorsVisited, targetMethod);
@@ -4794,7 +5046,8 @@ out:                if (mn.size() != 1) {
 
                         visitMethodCallArguments(chosenReceiver.getType(), argumentList, true, targetMethod); functorsVisited = true;
 
-                        ClassNode returnType = getType(targetMethod);
+                        ClassNode returnType = getCallReturnType(targetMethod, objectExpression instanceof ClassExpression
+                                || (isThisObjectExpression && typeCheckingContext.isInStaticContext)); // "this" is the class
                         // GROOVY-5470, GROOVY-6091, GROOVY-9604, GROOVY-11399:
                         if (isThisObjectExpression && call.isImplicitThis() && typeCheckingContext.getEnclosingClosure() != null
                                 && (targetMethod == GET_DELEGATE || targetMethod == GET_OWNER || targetMethod == GET_THISOBJECT)) {
