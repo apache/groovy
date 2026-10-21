@@ -441,6 +441,219 @@ final class SwitchPatternMatchingTest {
     }
 
     @Test
+    void testRecordPatternWithPrimitiveTypedComponentsIsUnconditional() {
+        assertScript '''
+            import groovy.transform.TypeChecked
+            record Point(int x, int y) {}
+            @TypeChecked
+            int sum(Point p) {
+                switch (p) {
+                    case Point(int x, int y) -> x + y   // a primitive component is never null
+                }
+            }
+            assert sum(new Point(1, 2)) == 3
+        '''
+    }
+
+    @Test
+    void testRecordPatternWithWrapperSpelledPrimitiveComponentIsUnconditional() {
+        assertScript '''
+            import groovy.transform.TypeChecked
+            record Point(int x, int y) {}
+            @TypeChecked
+            def coords(Point p) {
+                switch (p) {
+                    case Point(Integer x, Integer y) -> [x, y]
+                }
+            }
+            assert coords(new Point(1, 2)) == [1, 2]
+        '''
+    }
+
+    @Test
+    void testRecordPatternWithWideningComponentTypeDoesNotCountTowardsExhaustiveness() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            record Point(int x, int y) {}
+            @TypeChecked
+            def m(Point p) {
+                switch (p) {
+                    case Point(long x, int y) -> x + y   // an Integer component is not a Long
+                }
+            }
+        '''
+        assert err.message.contains('does not cover all possible input values')
+    }
+
+    @Test
+    void testRecordPatternWithReferenceTypedComponentDoesNotCountTowardsExhaustiveness() {
+        // Java counts `Box(Object o)` because a nested total type pattern matches null there;
+        // in Groovy a typed component does not match a null component, so it can fail
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            record Box(Object value) {}
+            @TypeChecked
+            def m(Box b) {
+                switch (b) {
+                    case Box(Object o) -> o
+                }
+            }
+        '''
+        assert err.message.contains('does not cover all possible input values')
+    }
+
+    @Test
+    void testPrimitiveComponentRecordPatternsCoverSealedHierarchy() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            sealed interface Shape permits Circle, Square {}
+            record Circle(double radius) implements Shape {}
+            record Square(double side) implements Shape {}
+            @CompileStatic
+            double area(Shape shape) {
+                return switch (shape) {
+                    case Circle(double r) -> 3 * r * r
+                    case Square(double d) -> d * d
+                }
+            }
+            assert area(new Circle(1)) == 3
+            assert area(new Square(2)) == 4
+        '''
+    }
+
+    @Test
+    void testTotalListPatternIsUnconditionalForListSelector() {
+        assertScript '''
+            import groovy.transform.TypeChecked
+            @TypeChecked
+            def m(List xs) {
+                switch (xs) {
+                    case [...] -> 'any list'
+                }
+            }
+            assert m([]) == 'any list'
+            assert m([1, 2]) == 'any list'
+        '''
+    }
+
+    @Test
+    void testTotalListPatternWithRestBindingIsUnconditional() {
+        assertScript '''
+            import groovy.transform.TypeChecked
+            @TypeChecked
+            def m(List<Integer> xs) {
+                switch (xs) {
+                    case [var... rest] -> rest.size()
+                }
+            }
+            assert m([]) == 0
+            assert m([1, 2, 3]) == 3
+        '''
+    }
+
+    @Test
+    void testTotalListPatternIsUnconditionalForArraySelector() {
+        assertScript '''
+            import groovy.transform.TypeChecked
+            @TypeChecked
+            def m(String[] a) {
+                switch (a) {
+                    case [...] -> 'any array'
+                }
+            }
+            assert m(new String[0]) == 'any array'
+            assert m(['x'] as String[]) == 'any array'
+        '''
+    }
+
+    @Test
+    void testTotalListPatternDoesNotCountForObjectSelector() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            @TypeChecked
+            def m(Object o) {
+                switch (o) {
+                    case [...] -> 'list'
+                }
+            }
+        '''
+        assert err.message.contains('does not cover all possible input values')
+    }
+
+    @Test
+    void testGuardedTotalListPatternDoesNotCountTowardsExhaustiveness() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            @TypeChecked
+            def m(List xs) {
+                switch (xs) {
+                    case [...] when xs.size() > 1 -> 'several'
+                }
+            }
+        '''
+        assert err.message.contains('does not cover all possible input values')
+    }
+
+    @Test
+    void testTypePatternDominatedByEarlierTotalListPattern() {
+        def warnings = patternSwitchWarnings '''
+            import groovy.transform.TypeChecked
+            @TypeChecked
+            def m(List xs) {
+                switch (xs) {
+                    case [...]  -> 'any'
+                    case List l -> 'list'
+                }
+            }
+        '''
+        assert warnings.any { it.contains('dominated by a preceding case label') }
+    }
+
+    @Test
+    void testTypePatternsCoverNestedAbstractSealedHierarchy() {
+        // Polygon is abstract and sealed, so tests for its own permitted subtypes cover it
+        assertScript '''
+            import groovy.transform.TypeChecked
+            sealed interface Shape permits Circle, Polygon {}
+            abstract sealed class Polygon implements Shape permits Square, Triangle {}
+            final class Circle implements Shape {}
+            final class Square extends Polygon {}
+            final class Triangle extends Polygon {}
+            @TypeChecked
+            def name(Shape shape) {
+                switch (shape) {
+                    case Circle c   -> 'circle'
+                    case Square s   -> 'square'
+                    case Triangle t -> 'triangle'
+                }
+            }
+            assert name(new Triangle()) == 'triangle'
+        '''
+    }
+
+    @Test
+    void testLeafTypePatternsDoNotCoverConcreteSealedParent() {
+        // Polygon is concrete, so an instance of Polygon itself is matched by neither leaf
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            sealed interface Shape permits Circle, Polygon {}
+            sealed class Polygon implements Shape permits Square, Triangle {}
+            final class Circle implements Shape {}
+            final class Square extends Polygon {}
+            final class Triangle extends Polygon {}
+            @TypeChecked
+            def name(Shape shape) {
+                switch (shape) {
+                    case Circle c   -> 'circle'
+                    case Square s   -> 'square'
+                    case Triangle t -> 'triangle'
+                }
+            }
+        '''
+        assert err.message.contains('does not cover all possible input values')
+    }
+
+    @Test
     void testTypePatternDominatedByEarlierRecordPattern() {
         def warnings = patternSwitchWarnings '''
             import groovy.transform.TypeChecked
