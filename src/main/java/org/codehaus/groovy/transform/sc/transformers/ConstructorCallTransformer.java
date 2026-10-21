@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
@@ -172,8 +173,10 @@ public class ConstructorCallTransformer {
 
                 objExpression.setSourcePosition(keyExpression); // GROOVY-11956
 
-                varExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET,
-                        keyExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
+                if (keyExpression instanceof ConstantExpression) { // a dynamic key's target is its own (GROOVY-12456)
+                    varExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET,
+                            keyExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
+                }
 
                 Expression setExpression = staticCompilationTransformer.transform(
                         assignX(varExpression, valExpression) // tmp.key = value
