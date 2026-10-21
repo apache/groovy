@@ -37,7 +37,6 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
-import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -69,7 +68,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.eqX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.transform.AbstractASTTransformation.getMemberStringValue;
@@ -487,8 +485,9 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             for (Map.Entry<String, String> e : systemProperties.entrySet()) {
                 block.addStatement(stmt(callX(SYSTEM_CLASSNODE, "setProperty", args(constX(e.getKey()), constX(e.getValue())))));
             }
-            StaticMethodCallExpression enabled = callX(SYSTEM_CLASSNODE, "getProperty", args(constX("groovy.grape.enable"), constX("true")));
-            grabInitializers.add(ifS(eqX(enabled, constX("true")), block));
+            // only set the properties when grapes are enabled; checking for an engine here would
+            // create it before the properties it may depend on are set
+            grabInitializers.add(ifS(callX(grapeClassNode, "getEnableGrapes"), block));
         }
 
         if (!grabExcludeMaps.isEmpty()) {
