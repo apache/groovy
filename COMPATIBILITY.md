@@ -557,8 +557,36 @@ carry the `UnionTypeClassNode` tag are consumed and then widened the same way.
 
 The method descriptors are unchanged, so `japicmp` does not report this.
 Callers of `SignatureCodecVersion1.decode` that expected a union node now
-receive the shared supertype. The compiler has not written
-`@TypeCheckingInfo` inferred-return annotations since GROOVY-6401 (2013).
+receive the shared supertype. Between GROOVY-6401 (2013) and GROOVY-12472 the
+compiler wrote no `@TypeCheckingInfo` inferred-return annotations.
+
+### Groovy 7 — inferred return types of methods with a sole implementation (GROOVY-12472)
+
+A call to a method declared with `def` now has the type the method's body
+returns, rather than `Object`, when no other body can run for the call: a
+`final` method or a method of a `final` class, and a `private` or `static`
+method when the call is statically compiled (or, for a `static` method, names
+its class). The type is inferred within the class being checked and read from
+the class file for a precompiled class. Overridable methods keep their declared
+return type, as since GROOVY-6401.
+
+- **More programs compile.** Code that called such a method and relied on the
+  result had to cast or declare; it now type checks as written.
+- **Statically compiled overload selection can change.** An argument whose type
+  was `Object` now has the inferred type, so `pick(name())` with `pick(Object)`
+  and `pick(String)` overloads selects `pick(String)` where it used to select
+  `pick(Object)`. Type checked (dynamically dispatched) code already selected by
+  the runtime type and is unaffected.
+- **Class files carry `@TypeChecked.TypeCheckingInfo` again**, on each such
+  method that is not `private`. It is a runtime-retained annotation, so code that
+  lists a method's annotations by reflection sees it.
+- **The inferred type is part of the method's contract for statically compiled
+  callers.** A caller compiled against one version of a class relies on the
+  result having the type recorded there; if a later version of the method
+  returns a value of another type, the caller can fail at runtime. Declare the return type of a
+  method whose result type may change between versions.
+
+The method descriptors are unchanged, so `japicmp` does not report this.
 
 ## The binary-compatibility check
 
