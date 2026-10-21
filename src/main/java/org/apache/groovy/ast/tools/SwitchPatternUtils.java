@@ -50,7 +50,12 @@ public final class SwitchPatternUtils {
     public static final String PATTERN_TEST = "_SWITCH_PATTERN_TEST";
     /** On a pattern arm: the {@code ClassNode} tested by a type or record pattern. */
     public static final String PATTERN_HEAD_TYPE = "_SWITCH_PATTERN_TYPE";
-    /** On a pattern arm: {@code Boolean.TRUE} when the arm is conditional (guard, record, list or map pattern). */
+    /**
+     * On a pattern arm: {@code Boolean.TRUE} when the arm is conditional: it has a
+     * guard, is a list or map pattern, or is a record pattern with a typed or nested
+     * component. A record pattern whose components are all {@code var}/{@code def}
+     * bindings or {@code _} is unconditional for its record type.
+     */
     public static final String PATTERN_GUARDED = "_SWITCH_PATTERN_GUARDED";
     /** On a pattern arm: the {@code Integer} arity of a record pattern. */
     public static final String PATTERN_RECORD = "_SWITCH_PATTERN_RECORD";

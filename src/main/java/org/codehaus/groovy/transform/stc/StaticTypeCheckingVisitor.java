@@ -5480,14 +5480,20 @@ trying: for (ClassNode[] signature : signatures) {
                 addStaticTypeError("The case pattern type " + prettyPrintTypeName(typeTest) + " is incompatible with the switch subject type " + prettyPrintTypeName(selectorType), label);
                 continue;
             }
+            boolean guarded = Boolean.TRUE.equals(caseStatement.getNodeMetaData(PATTERN_GUARDED));
             Integer recordPatternArity = caseStatement.getNodeMetaData(PATTERN_RECORD);
             if (recordPatternArity != null) {
                 int componentCount = patternType.getRecordComponents().size();
                 // isRecord() covers zero-component (native) records; a positive component
                 // count covers emulated records; other deconstructables (toList) are unchecked
-                if ((patternType.isRecord() || componentCount > 0) && componentCount != recordPatternArity) {
+                boolean record = patternType.isRecord() || componentCount > 0;
+                if (record && componentCount != recordPatternArity) {
                     addStaticTypeError("The record pattern specifies " + recordPatternArity + " component(s) but " + prettyPrintTypeName(patternType) + " has " + componentCount, label);
                 }
+                // a record pattern that only binds its components is unconditional for a
+                // record, whose arity is known here; a toList() deconstruction can still
+                // disagree on arity at run time, so it never counts toward coverage
+                if (!record) guarded = true;
             }
             for (ClassNode prior : typeTests) {
                 if (implementsInterfaceOrIsSubclassOf(wrappedTest, prior)) {
@@ -5495,7 +5501,7 @@ trying: for (ClassNode[] signature : signatures) {
                     break;
                 }
             }
-            if (!Boolean.TRUE.equals(caseStatement.getNodeMetaData(PATTERN_GUARDED))) {
+            if (!guarded) {
                 typeTests.add(wrappedTest);
                 if (patternType != null && implementsInterfaceOrIsSubclassOf(selectorType, wrappedTest)) unconditional = true;
             }
