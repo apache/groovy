@@ -324,6 +324,26 @@ final class SwitchPatternMatchingTest {
     }
 
     @Test
+    void testReturnFromPatternArmOfSwitchStatement() {
+        // pattern labels are arrow-only, so a statement switch must allow `return` in an arm
+        assertScript '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            def describe(Object o) {
+                switch (o) {
+                    case String s  -> return s.toUpperCase()
+                    case Integer i -> { if (i < 0) return 'negative'; return "int $i" }
+                    default        -> return 'other'
+                }
+            }
+            assert describe('abc') == 'ABC'
+            assert describe(-1) == 'negative'
+            assert describe(7) == 'int 7'
+            assert describe(1.5) == 'other'
+        '''
+    }
+
+    @Test
     void testRecordPatternBindingEveryComponentIsUnconditional() {
         assertScript '''
             import groovy.transform.TypeChecked
