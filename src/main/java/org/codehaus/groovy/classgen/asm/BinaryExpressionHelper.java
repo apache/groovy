@@ -602,6 +602,7 @@ public class BinaryExpressionHelper {
                 evaluateRightHandSide(lhsType, rightExpression, acg, mv, operandStack);
                 ClassNode rhsType = operandStack.getTopOperand();
                 VariableExpression var = (VariableExpression) leftExpression;
+                lhsType = declaredTypeIfNarrowingNotGuaranteed(var, lhsType, rhsType);
                 if (var.isClosureSharedVariable() && ClassHelper.isPrimitiveType(rhsType)) {
                     // GROOVY-5570: if a closure shared variable is a primitive type, it must be boxed
                     rhsType = ClassHelper.getWrapper(rhsType);
@@ -1138,6 +1139,28 @@ public class BinaryExpressionHelper {
         controller.getCompileStack().pushLHS(true);
         leftExpression.visit(controller.getAcg());
         controller.getCompileStack().popLHS();
+    }
+
+    /**
+     * The type chooser may give a declared variable a type narrower than its
+     * declared type (flow typing). When the value on the stack is not already of
+     * that narrower type (for example, it was inferred from generics but the
+     * erased type is wider), casting to it could fail where the declared type
+     * would not, so the declared type is used instead. Uses of the variable that
+     * rely on the narrower type cast at the point of use.
+     */
+    private static ClassNode declaredTypeIfNarrowingNotGuaranteed(final VariableExpression var, final ClassNode lhsType, final ClassNode rhsType) {
+        ClassNode declaredType = var.getOriginType();
+        if (var.isDynamicTyped() || declaredType.equals(lhsType)
+                || ClassHelper.isPrimitiveType(declaredType) || ClassHelper.isPrimitiveType(lhsType) || ClassHelper.isPrimitiveType(rhsType)
+                || !isSubtype(lhsType, declaredType) || isSubtype(rhsType, lhsType)) {
+            return lhsType;
+        }
+        return declaredType;
+    }
+
+    private static boolean isSubtype(final ClassNode type, final ClassNode superType) {
+        return type.isDerivedFrom(superType) || type.implementsInterface(superType);
     }
 
     /**
