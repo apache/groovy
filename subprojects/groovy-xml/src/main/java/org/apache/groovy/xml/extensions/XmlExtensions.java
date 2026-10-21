@@ -78,7 +78,8 @@ public class XmlExtensions {
 
     /**
      * Enables {@code node as Type} coercion for XML Nodes.
-     * Converts the Node to a Map via {@link groovy.util.Node#toMap()} and then
+     * If the {@code Node} already has the requested type it is just returned.
+     * Otherwise, converts the Node to a Map via {@link groovy.util.Node#toMap()} and then
      * uses Groovy's standard Map coercion to produce the typed object.
      * Does not require Jackson on the classpath.
      *
@@ -90,6 +91,9 @@ public class XmlExtensions {
      */
     @SuppressWarnings("unchecked")
     public static <T> T asType(groovy.util.Node self, Class<T> type) {
+        if (type.isInstance(self)) {
+            return (T) self;
+        }
         if (type == Map.class || type == LinkedHashMap.class) {
             return (T) self.toMap();
         }
