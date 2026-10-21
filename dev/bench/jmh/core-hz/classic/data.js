@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792478771810,
+  "lastUpdate": 1792567356857,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Benchmark": [
@@ -42256,6 +42256,280 @@ window.BENCHMARK_DATA = {
           {
             "name": "org.apache.groovy.perf.StcCompilePerfBench.compileStcCorpus ( {\"suite\":\"mixedDense\"} )",
             "value": 122.0450487235294,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "8778bce1a0da05b5bffe27f02819262c849f9d56",
+          "message": "GROOVY-12451: A record with a boolean component x and a hand-written isX() gets no x() accessor",
+          "timestamp": "2026-10-15T03:11:06Z",
+          "url": "https://github.com/apache/groovy/commit/8778bce1a0da05b5bffe27f02819262c849f9d56"
+        },
+        "date": 1792567351385,
+        "tool": "jmh",
+        "benches": [
+          {
+            "name": "org.apache.groovy.perf.HostCalibrationBench.allocationChurn",
+            "value": 43.07183560484174,
+            "unit": "us/op",
+            "extra": "iterations: 3\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.HostCalibrationBench.cpuIntegerOps",
+            "value": 328.079143728469,
+            "unit": "us/op",
+            "extra": "iterations: 3\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.HostCalibrationBench.memoryPointerChase",
+            "value": 732.413425268488,
+            "unit": "us/op",
+            "extra": "iterations: 3\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.LoopsBench.eachIdentity",
+            "value": 41.27217614443294,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.LoopsBench.methodCallInLoop",
+            "value": 9.318408343259318,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.LoopsBench.nestedLoopsWithClosure",
+            "value": 82.18082829599999,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.LoopsBench.originalEachToString",
+            "value": 46.74221571576479,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.LoopsBench.reusedClosureInLoop",
+            "value": 30.807075737999707,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.MetaclassBench.methodCallsWithMetaclassChanges",
+            "value": 401.57408612999996,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.MethodInvocationBench.benchmarkDynamicTypedCalls",
+            "value": 6.936085519986541,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.MethodInvocationBench.benchmarkInterfaceMethodCalls",
+            "value": 7.65039664096957,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.MethodInvocationBench.benchmarkMethodWithObject",
+            "value": 16.933138142509772,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.MethodInvocationBench.benchmarkMethodWithParams",
+            "value": 1.5218255384997132,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.MethodInvocationBench.benchmarkMonomorphicCallSite",
+            "value": 40.44764929000062,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.MethodInvocationBench.benchmarkPolymorphicCallSite",
+            "value": 471.95923356000003,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.MethodInvocationBench.benchmarkSimpleMethodCalls",
+            "value": 1.2428230537094898,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.MethodInvocationBench.benchmarkStaticMethodCalls",
+            "value": 1.134697868668391,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.MethodInvocationBench.benchmarkStaticMethodWithParams",
+            "value": 1.5181949854460024,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.OperatorBench.bigDecimalArithmetic",
+            "value": 6.459705087340363,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.OperatorBench.comparisonOperators",
+            "value": 0.0000075647341239001715,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.OperatorBench.equalsOperator",
+            "value": 0.000007318095812027863,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.OperatorBench.inOperator",
+            "value": 67.53983670666666,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.OperatorBench.integerMultiply",
+            "value": 9.303771251369508,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.OperatorBench.integerPlus",
+            "value": 0.27385892161687125,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.OperatorBench.listGetAt",
+            "value": 26.713414213771927,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.OperatorBench.listLeftShift",
+            "value": 13.014671447297863,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.OperatorBench.listPutAt",
+            "value": 19.810894545264997,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.OperatorBench.mapGetAtPutAt",
+            "value": 55.812800683633625,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.OperatorBench.spaceshipOperator",
+            "value": 4.26832787040763,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.OperatorBench.stringMultiply",
+            "value": 12.364085717498753,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.OperatorBench.unaryMinus",
+            "value": 5.1102613772089045,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.PropertyAccessBench.chainedPropertyAccess",
+            "value": 24.780822102494355,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.PropertyAccessBench.dynamicTypedPropertyAccess",
+            "value": 180.26613187499999,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.PropertyAccessBench.fieldReadWrite",
+            "value": 0.2907845635587221,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.PropertyAccessBench.getterSetterAccess",
+            "value": 194.05158405545455,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.PropertyAccessBench.mapDotPropertyAccess",
+            "value": 43.791482167990544,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.PropertyAccessBench.mapStyleAccess",
+            "value": 35.66376207055138,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.RunnerRegistryBench.listIterator",
+            "value": 4.514035352205161,
+            "unit": "ns/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.RunnerRegistryBench.registryIterator",
+            "value": 4.773855348986442,
+            "unit": "ns/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.StcCompilePerfBench.compileStcCorpus ( {\"suite\":\"dgmDense\"} )",
+            "value": 121.23865005477941,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.StcCompilePerfBench.compileStcCorpus ( {\"suite\":\"overloadDense\"} )",
+            "value": 67.92814180224323,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.StcCompilePerfBench.compileStcCorpus ( {\"suite\":\"mixedDense\"} )",
+            "value": 126.75006347073527,
             "unit": "ms/op",
             "extra": "iterations: 5\nforks: 2\nthreads: 1"
           }
