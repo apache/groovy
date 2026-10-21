@@ -680,9 +680,13 @@ written before patterns existed is affected. Under `@TypeChecked` /
 an enum, by a pattern that covers the selector's type (such as
 `case Object o`), or by type patterns, class-literal labels and record
 patterns that together cover a native sealed hierarchy. A record pattern
-counts only when every component is a `var`/`def` binding or `_`; a typed
-or nested component, a guard, a list pattern and a map pattern can all fail
-at run time and so never count.
+counts only when each component is a `var`/`def` binding, `_`, or a typed
+component whose record component is a primitive of that type, since such a
+component can never be `null`; a typed component on a reference-typed record
+component (which does not match `null`), a nested pattern, a guard and a map
+pattern can all fail at run time and so never count. A list pattern counts
+only in its total form, `[...]` or `[var... rest]`, and only when the
+selector is statically a list, array or `Iterable`.
 
 [source,groovy]
 ----

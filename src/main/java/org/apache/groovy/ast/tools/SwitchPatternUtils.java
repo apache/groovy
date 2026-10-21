@@ -52,13 +52,20 @@ public final class SwitchPatternUtils {
     public static final String PATTERN_HEAD_TYPE = "_SWITCH_PATTERN_TYPE";
     /**
      * On a pattern arm: {@code Boolean.TRUE} when the arm is conditional: it has a
-     * guard, is a list or map pattern, or is a record pattern with a typed or nested
-     * component. A record pattern whose components are all {@code var}/{@code def}
-     * bindings or {@code _} is unconditional for its record type.
+     * guard, is a map pattern, is a list pattern other than a lone untyped rest
+     * binding ({@code [...]}), or is a record pattern with a nested component.
+     * A record pattern with typed components carries {@link #PATTERN_RECORD_COMPONENT_TYPES}
+     * instead, and the type checker decides whether those can fail to match.
      */
     public static final String PATTERN_GUARDED = "_SWITCH_PATTERN_GUARDED";
     /** On a pattern arm: the {@code Integer} arity of a record pattern. */
     public static final String PATTERN_RECORD = "_SWITCH_PATTERN_RECORD";
+    /**
+     * On a record pattern arm without nested components: the {@code List<ClassNode>}
+     * of component pattern types, with {@code null} for a {@code var}/{@code def}
+     * binding or {@code _}, which match every value including {@code null}.
+     */
+    public static final String PATTERN_RECORD_COMPONENT_TYPES = "_SWITCH_PATTERN_RECORD_COMPONENT_TYPES";
     /** On a pattern arm: {@code Boolean.TRUE} for a list pattern. */
     public static final String PATTERN_LIST = "_SWITCH_PATTERN_LIST";
     /** On a pattern arm: {@code Boolean.TRUE} for a map pattern. */

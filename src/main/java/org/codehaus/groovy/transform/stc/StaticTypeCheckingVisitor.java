@@ -170,6 +170,7 @@ import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_HEAD_TYPE;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_LIST;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_MAP;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_RECORD;
+import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_RECORD_COMPONENT_TYPES;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_TEST;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.SUBJECT_VARIABLE;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.getSubjectVariable;
@@ -5462,11 +5463,18 @@ trying: for (ClassNode[] signature : signatures) {
             if (typeTest == null && label instanceof ClassExpression) {
                 typeTest = label.getType(); // a class literal label has type-test semantics
             }
+            boolean guarded = Boolean.TRUE.equals(caseStatement.getNodeMetaData(PATTERN_GUARDED));
             if (typeTest == null) {
-                if (Boolean.TRUE.equals(caseStatement.getNodeMetaData(PATTERN_LIST))
-                        && !selectorType.isArray() && provablyDisjoint(selectorType, ITERABLE_TYPE)) {
-                    // a list pattern destructures List, array and Iterable values only
-                    addStaticTypeError("The list pattern is incompatible with the switch subject type " + prettyPrintTypeName(selectorType), label);
+                if (Boolean.TRUE.equals(caseStatement.getNodeMetaData(PATTERN_LIST))) {
+                    if (!selectorType.isArray() && provablyDisjoint(selectorType, ITERABLE_TYPE)) {
+                        // a list pattern destructures List, array and Iterable values only
+                        addStaticTypeError("The list pattern is incompatible with the switch subject type " + prettyPrintTypeName(selectorType), label);
+                    } else if (!guarded && (selectorType.isArray() || implementsInterfaceOrIsSubclassOf(selectorType, ITERABLE_TYPE))) {
+                        // `[...]` or `[var... rest]` matches every list, array or Iterable,
+                        // so it is unconditional for a selector statically known to be one
+                        if (!selectorType.isArray()) typeTests.add(ITERABLE_TYPE);
+                        unconditional = true;
+                    }
                 }
                 if (Boolean.TRUE.equals(caseStatement.getNodeMetaData(PATTERN_MAP))
                         && provablyDisjoint(selectorType, MAP_TYPE)) {
@@ -5480,7 +5488,6 @@ trying: for (ClassNode[] signature : signatures) {
                 addStaticTypeError("The case pattern type " + prettyPrintTypeName(typeTest) + " is incompatible with the switch subject type " + prettyPrintTypeName(selectorType), label);
                 continue;
             }
-            boolean guarded = Boolean.TRUE.equals(caseStatement.getNodeMetaData(PATTERN_GUARDED));
             Integer recordPatternArity = caseStatement.getNodeMetaData(PATTERN_RECORD);
             if (recordPatternArity != null) {
                 int componentCount = patternType.getRecordComponents().size();
@@ -5490,10 +5497,12 @@ trying: for (ClassNode[] signature : signatures) {
                 if (record && componentCount != recordPatternArity) {
                     addStaticTypeError("The record pattern specifies " + recordPatternArity + " component(s) but " + prettyPrintTypeName(patternType) + " has " + componentCount, label);
                 }
-                // a record pattern that only binds its components is unconditional for a
-                // record, whose arity is known here; a toList() deconstruction can still
-                // disagree on arity at run time, so it never counts toward coverage
-                if (!record) guarded = true;
+                // a record pattern counts toward coverage only for a record, whose arity is
+                // known here (a toList() deconstruction can still disagree at run time), and
+                // only when each component pattern matches every value the record can hold
+                if (!record || !recordPatternIsTotal(patternType, caseStatement.getNodeMetaData(PATTERN_RECORD_COMPONENT_TYPES))) {
+                    guarded = true;
+                }
             }
             for (ClassNode prior : typeTests) {
                 if (implementsInterfaceOrIsSubclassOf(wrappedTest, prior)) {
@@ -5507,6 +5516,36 @@ trying: for (ClassNode[] signature : signatures) {
             }
         }
         return new PatternCoverage(typeTests, unconditional);
+    }
+
+    /**
+     * Whether the component patterns of a record pattern match every instance of
+     * the record (GEP-19). A {@code var}/{@code def} binding or {@code _} (a null
+     * entry) always does, and a typed component does when the record component
+     * is a primitive of that type, which can never be {@code null}. A typed
+     * component on a reference-typed record component does not match a
+     * {@code null} component, so it can fail; nor can a nested pattern be total,
+     * which is why the parser attaches no component types for one.
+     *
+     * @param componentPatternTypes the component pattern types, or null when the pattern has a nested component
+     */
+    private static boolean recordPatternIsTotal(final ClassNode recordType, final List<ClassNode> componentPatternTypes) {
+        if (componentPatternTypes == null) {
+            return false;
+        }
+        List<RecordComponentNode> components = recordType.getRecordComponents();
+        if (components.size() != componentPatternTypes.size()) {
+            return false;
+        }
+        for (int i = 0, n = components.size(); i < n; i += 1) {
+            ClassNode patternComponentType = componentPatternTypes.get(i);
+            if (patternComponentType == null) continue;
+            ClassNode declaredType = components.get(i).getType();
+            if (!isPrimitiveType(declaredType) || !getWrapper(declaredType).equals(getWrapper(patternComponentType))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void addPatternSwitchWarning(final String text, final ASTNode node) {
