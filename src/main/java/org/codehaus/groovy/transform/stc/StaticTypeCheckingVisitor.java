@@ -5416,14 +5416,15 @@ trying: for (ClassNode[] signature : signatures) {
             return;
         }
         ClassNode selectorType = getType(selector);
-        if (selectorType != null && selectorType.isEnum() && coversAllEnumConstants(caseStatements, selectorType)) {
-            return;
-        }
+        boolean exhaustive = selectorType != null && selectorType.isEnum() && coversAllEnumConstants(caseStatements, selectorType);
         // GEP-19: an unconditional pattern, or type tests covering a sealed hierarchy, are exhaustive
-        if (coverage.unconditional() || coversAllPermittedSubclasses(selectorType, coverage.typeTests())) {
-            return;
+        exhaustive = exhaustive || coverage.unconditional() || coversAllPermittedSubclasses(selectorType, coverage.typeTests());
+        if (!exhaustive) {
+            addError("the switch " + kind + " does not cover all possible input values", node);
+        } else if (node instanceof SwitchExpression) {
+            // lets the writer tell an added constant or subtype from an ordinary unmatched value
+            node.putNodeMetaData(StaticTypesMarker.SWITCH_EXHAUSTIVE, Boolean.TRUE);
         }
-        addError("the switch " + kind + " does not cover all possible input values", node);
     }
 
     /**

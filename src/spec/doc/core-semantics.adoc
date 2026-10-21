@@ -184,6 +184,7 @@ if ( ... ) {
 }
 ----
 
+[[switch_case]]
 ===== switch / case
 
 The switch statement in Groovy is backwards compatible with Java code; so you can fall through cases sharing the same code for multiple matches.
@@ -214,7 +215,15 @@ A switch expression produces a value. Arms may use arrow labels
 yielding a value or by throwing; unlike a switch statement, an unmatched
 selector throws `IllegalStateException`. Under `@TypeChecked` /
 `@CompileStatic` a non-exhaustive switch expression (no `default`, and not a
-complete enum) is a compile-time error.
+complete enum) is a compile-time error. A switch expression the type checker
+accepted without a `default` can match nothing only when an enum constant or
+sealed subtype was added after it was compiled; that throws
+`java.lang.MatchException` when compiling for Java 21 or later, as in Java,
+and `IncompatibleClassChangeError` (enum) or `IllegalStateException`
+otherwise. Neither is meant to be caught: add a `default` arm that throws
+when a defined exception is wanted. A `null` selector is matched only by an
+explicit `case null` arm; without one it throws `IllegalStateException` on
+every target.
 
 As in Java, the arrow only decides fall-through; whether a `switch` is a
 statement or an expression is decided by its position
@@ -701,7 +710,12 @@ include::../test/semantics/SwitchPatternsTest.groovy[tags=statement_exhaustivene
 The type checker also reports an error for a pattern that can never match
 the selector's static type, and a warning for a pattern dominated by an
 earlier label, which could never be reached. In dynamic Groovy, patterns are
-matched at run time and bindings are dynamically typed.
+matched at run time and bindings are dynamically typed. An exhaustive switch
+expression that nevertheless matches nothing at run time, because a sealed
+subtype was added after it was compiled, throws as described under
+<<switch_case,switch / case>> above: `MatchException` on a Java 21+ target,
+`IllegalStateException` otherwise. An exhaustive switch statement simply
+does nothing in that case.
 
 == Expressions
 

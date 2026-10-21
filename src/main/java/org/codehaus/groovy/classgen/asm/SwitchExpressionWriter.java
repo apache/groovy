@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.YieldStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -37,13 +38,16 @@ import java.util.List;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.getSubjectVariable;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.isPatternArm;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
+import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ATHROW;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.IFEQ;
+import static org.objectweb.asm.Opcodes.IFNONNULL;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.NEW;
+import static org.objectweb.asm.Opcodes.V21;
 
 /**
  * Emits JVM bytecode for a {@link SwitchExpression}. Completing arms leave the
@@ -60,6 +64,7 @@ public class SwitchExpressionWriter {
 
     private static final String ISE_INTERNAL_NAME = "java/lang/IllegalStateException";
     private static final String ICCE_INTERNAL_NAME = "java/lang/IncompatibleClassChangeError";
+    private static final String MATCH_EXCEPTION_INTERNAL_NAME = "java/lang/MatchException";
     private static final String STRING_BUILDER_INTERNAL_NAME = "java/lang/StringBuilder";
 
     /** The controller coordinating all bytecode writers for the current class. */
@@ -233,11 +238,16 @@ public class SwitchExpressionWriter {
     }
 
     /**
-     * Emits the default arm, or an unmatched-selector throw.
+     * Emits the default arm, or an unmatched-selector throw. A switch proven
+     * exhaustive without a {@code default} (a complete enum, or labels the type
+     * checker found to cover the selector type) can match nothing only when a
+     * constant or subtype was added after it was compiled: on a Java 21+ target
+     * that throws {@code MatchException} as in Java (JEP 441), and otherwise
+     * {@link IncompatibleClassChangeError} for the enum case. A {@code null}
+     * selector is matched only by an explicit {@code case null} label; without
+     * one it throws {@link IllegalStateException} on every target.
      *
-     * @param completeEnum {@code true} when a complete enum switch should throw
-     *                     {@link IncompatibleClassChangeError} instead of
-     *                     {@link IllegalStateException}
+     * @param completeEnum {@code true} when the arms name every constant of the enum selector
      */
     protected void writeDefaultOrThrow(final SwitchExpression expression, final int selectorIndex,
             final ClassNode selectorType, final boolean completeEnum) {
@@ -249,7 +259,10 @@ public class SwitchExpressionWriter {
             }
             return;
         }
-        if (completeEnum) {
+        boolean exhaustive = completeEnum || Boolean.TRUE.equals(expression.getNodeMetaData(StaticTypesMarker.SWITCH_EXHAUSTIVE));
+        if (exhaustive && (controller.getBytecodeVersion() & 0xFFFF) >= V21) {
+            throwMatchException(selectorIndex, selectorType);
+        } else if (completeEnum) {
             throwIncompatibleClassChangeError();
         } else {
             throwUnmatchedSelector(selectorIndex, selectorType);
@@ -261,9 +274,42 @@ public class SwitchExpressionWriter {
      */
     protected void throwUnmatchedSelector(final int selectorIndex, final ClassNode selectorType) {
         MethodVisitor mv = controller.getMethodVisitor();
-        OperandStack operandStack = controller.getOperandStack();
         mv.visitTypeInsn(NEW, ISE_INTERNAL_NAME);
         mv.visitInsn(DUP);
+        pushUnmatchedMessage(selectorIndex, selectorType);
+        mv.visitMethodInsn(INVOKESPECIAL, ISE_INTERNAL_NAME, "<init>", "(Ljava/lang/String;)V", false);
+        mv.visitInsn(ATHROW);
+    }
+
+    /**
+     * Throws {@code MatchException} (Java 21) for an exhaustive switch
+     * expression that matched nothing, after diverting a {@code null} selector
+     * to {@link #throwUnmatchedSelector}.
+     */
+    protected void throwMatchException(final int selectorIndex, final ClassNode selectorType) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        OperandStack operandStack = controller.getOperandStack();
+        if (!ClassHelper.isPrimitiveType(selectorType)) {
+            operandStack.load(selectorType, selectorIndex);
+            Label nonNull = operandStack.jump(IFNONNULL);
+            throwUnmatchedSelector(selectorIndex, selectorType);
+            mv.visitLabel(nonNull);
+        }
+        mv.visitTypeInsn(NEW, MATCH_EXCEPTION_INTERNAL_NAME);
+        mv.visitInsn(DUP);
+        pushUnmatchedMessage(selectorIndex, selectorType);
+        mv.visitInsn(ACONST_NULL);
+        mv.visitMethodInsn(INVOKESPECIAL, MATCH_EXCEPTION_INTERNAL_NAME, "<init>", "(Ljava/lang/String;Ljava/lang/Throwable;)V", false);
+        mv.visitInsn(ATHROW);
+    }
+
+    /**
+     * Leaves the message "the switch expression does not cover the value X" on
+     * the stack, where X is the selector.
+     */
+    private void pushUnmatchedMessage(final int selectorIndex, final ClassNode selectorType) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        OperandStack operandStack = controller.getOperandStack();
         mv.visitTypeInsn(NEW, STRING_BUILDER_INTERNAL_NAME);
         mv.visitInsn(DUP);
         mv.visitLdcInsn("the switch expression does not cover the value ");
@@ -273,8 +319,6 @@ public class SwitchExpressionWriter {
         mv.visitMethodInsn(INVOKEVIRTUAL, STRING_BUILDER_INTERNAL_NAME, "append", "(Ljava/lang/Object;)Ljava/lang/StringBuilder;", false);
         operandStack.remove(1);
         mv.visitMethodInsn(INVOKEVIRTUAL, STRING_BUILDER_INTERNAL_NAME, "toString", "()Ljava/lang/String;", false);
-        mv.visitMethodInsn(INVOKESPECIAL, ISE_INTERNAL_NAME, "<init>", "(Ljava/lang/String;)V", false);
-        mv.visitInsn(ATHROW);
     }
 
     /**
