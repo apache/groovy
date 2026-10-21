@@ -988,7 +988,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public BreakStatement visitBreakStatement(final BreakStatementContext ctx) {
-        if (switchExpressionRuleContextStack.peek() instanceof SwitchExpressionContext) {
+        if (isEnclosingSwitchExpression()) {
             throw createParsingFailedException("switch expression does not support `break`", ctx);
         }
 
@@ -1039,7 +1039,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public ContinueStatement visitContinueStatement(final ContinueStatementContext ctx) {
-        if (switchExpressionRuleContextStack.peek() instanceof SwitchExpressionContext) {
+        if (isEnclosingSwitchExpression()) {
             throw createParsingFailedException("switch expression does not support `continue`", ctx);
         }
 
@@ -1252,6 +1252,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return ctx instanceof SwitchExpressionContext seCtx && isSwitchUsedAsStatement(seCtx);
     }
 
+    /**
+     * Whether the innermost breakable construct is a switch that produces a
+     * value, which {@code break} and {@code continue} cannot leave (JEP 361).
+     * In statement position both target the switch or an enclosing loop, as
+     * in Java.
+     */
+    private boolean isEnclosingSwitchExpression() {
+        ParserRuleContext ctx = switchExpressionRuleContextStack.peek();
+        return ctx instanceof SwitchExpressionContext seCtx && !isSwitchUsedAsStatement(seCtx);
+    }
+
     private static boolean switchArmsIncomplete(final List<Statement> statementList) {
         boolean arrow = false;
         for (Statement statement : statementList) {
@@ -1357,16 +1368,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     /**
-     * True when a switch-expression frame is more recent than any closure or
-     * lambda frame. {@code return} in that region would leave the enclosing
-     * method rather than complete the expression (JEP 361).
+     * True when a switch frame that produces a value is more recent than any
+     * closure or lambda frame. {@code return} in that region would leave the
+     * enclosing method rather than complete the expression (JEP 361). A switch
+     * in statement position produces no value, so {@code return} from one of
+     * its arms is an ordinary return, as in Java, and the scan continues
+     * outward past it.
      */
     private boolean isInsideSwitchExpression() {
         for (var ctx : switchExpressionRuleContextStack) {
-            if (ctx instanceof SwitchExpressionContext) {
-                return true;
-            }
-            if (ctx instanceof ClosureContext || ctx instanceof StandardLambdaExpressionContext) {
+            if (ctx instanceof SwitchExpressionContext seCtx) {
+                if (!isSwitchUsedAsStatement(seCtx)) {
+                    return true;
+                }
+            } else if (ctx instanceof ClosureContext || ctx instanceof StandardLambdaExpressionContext) {
                 return false;
             }
         }
