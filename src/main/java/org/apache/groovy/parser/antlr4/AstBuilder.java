@@ -1448,7 +1448,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             label = armInstanceOfX(varX(switchPatternSubjectStack.peek()), instanceOf, new ClassExpression(pattern.type));
             label.putNodeMetaData(PATTERN_HEAD_TYPE, pattern.type);
             label.putNodeMetaData(PATTERN_RECORD, pattern.components.size());
-            label.putNodeMetaData(PATTERN_GUARDED, Boolean.TRUE); // arity and component checks
+            if (!pattern.bindsEveryComponent()) {
+                label.putNodeMetaData(PATTERN_GUARDED, Boolean.TRUE); // a typed or nested component can fail to match
+            }
         } else if (asBoolean(ctx.listPattern())) {
             appendListPatternArmItems(this.buildListPattern(ctx.listPattern()), subjectVar, instanceOf, items);
             label = constX(Boolean.TRUE, true);
@@ -1935,6 +1937,19 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 if (component.hasBindings()) return true;
             }
             return false;
+        }
+        /**
+         * Whether a record pattern binds or discards every component without
+         * testing it, so that it matches every instance of its type whose
+         * arity agrees (a {@code var}/{@code def} binding and {@code _} match
+         * a {@code null} component; a typed or nested component does not).
+         */
+        boolean bindsEveryComponent() {
+            if (components == null || list || map) return false;
+            for (PatternNode component : components) {
+                if (component.type != null || component.components != null || component.constant != null) return false;
+            }
+            return true;
         }
     }
 

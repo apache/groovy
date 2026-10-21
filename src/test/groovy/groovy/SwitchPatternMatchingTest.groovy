@@ -324,6 +324,120 @@ final class SwitchPatternMatchingTest {
     }
 
     @Test
+    void testRecordPatternBindingEveryComponentIsUnconditional() {
+        assertScript '''
+            import groovy.transform.TypeChecked
+            record Point(int x, int y) {}
+            @TypeChecked
+            def coords(Point p) {
+                switch (p) {
+                    case Point(var x, var y) -> [x, y]
+                }
+            }
+            assert coords(new Point(1, 2)) == [1, 2]
+        '''
+    }
+
+    @Test
+    void testRecordPatternsCoverSealedHierarchy() {
+        assertScript '''
+            import groovy.transform.TypeChecked
+            sealed interface Shape permits Circle, Square {}
+            record Circle(double radius) implements Shape {}
+            record Square(double side) implements Shape {}
+            @TypeChecked
+            def describe(Shape shape) {
+                return switch (shape) {
+                    case Circle(var r) -> "circle $r"
+                    case Square(_)     -> 'square'
+                }
+            }
+            assert describe(new Circle(2)) == 'circle 2.0'
+            assert describe(new Square(5)) == 'square'
+        '''
+    }
+
+    @Test
+    void testRecordPatternWithTypedComponentDoesNotCountTowardsExhaustiveness() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            record Box(Object value) {}
+            @TypeChecked
+            def m(Box b) {
+                switch (b) {
+                    case Box(String s) -> s
+                }
+            }
+        '''
+        assert err.message.contains('does not cover all possible input values')
+    }
+
+    @Test
+    void testNestedRecordPatternDoesNotCountTowardsExhaustiveness() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            record Point(int x, int y) {}
+            record Line(Point start, Point end) {}
+            @TypeChecked
+            def m(Line l) {
+                switch (l) {
+                    case Line(Point(var x, _), var end) -> x
+                }
+            }
+        '''
+        assert err.message.contains('does not cover all possible input values')
+    }
+
+    @Test
+    void testGuardedRecordPatternDoesNotCountTowardsExhaustiveness() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            record Point(int x, int y) {}
+            @TypeChecked
+            def m(Point p) {
+                switch (p) {
+                    case Point(var x, var y) when x > 0 -> x
+                }
+            }
+        '''
+        assert err.message.contains('does not cover all possible input values')
+    }
+
+    @Test
+    void testRecordPatternOverToListDeconstructableDoesNotCountTowardsExhaustiveness() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            class Pair {
+                def toList() { [1, 2] }
+            }
+            @TypeChecked
+            def m(Pair p) {
+                switch (p) {
+                    case Pair(var a, var b) -> a
+                }
+            }
+        '''
+        assert err.message.contains('does not cover all possible input values')
+    }
+
+    @Test
+    void testTypePatternDominatedByEarlierRecordPattern() {
+        def warnings = patternSwitchWarnings '''
+            import groovy.transform.TypeChecked
+            record Point(int x, int y) {}
+            @TypeChecked
+            def m(Object o) {
+                switch (o) {
+                    case Point(var x, var y) -> 'components'
+                    case Point p             -> 'point'
+                    default                  -> 'other'
+                }
+            }
+        '''
+        assert warnings.any { it.contains('dominated by a preceding case label') }
+    }
+
+    @Test
     void testEnumShorthandMixedWithPatternsWhenCompileStatic() {
         assertScript '''
             import groovy.transform.CompileStatic
