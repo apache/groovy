@@ -244,7 +244,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.defaultValueX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.elvisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
@@ -291,6 +290,7 @@ import static org.codehaus.groovy.syntax.Types.LOGICAL_OR;
 import static org.codehaus.groovy.syntax.Types.MINUS_MINUS;
 import static org.codehaus.groovy.syntax.Types.MOD;
 import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
+import static org.codehaus.groovy.syntax.Types.NULL_COALESCE_EQUAL;
 import static org.codehaus.groovy.syntax.Types.PLUS_PLUS;
 import static org.codehaus.groovy.syntax.Types.REMAINDER;
 import static org.codehaus.groovy.syntax.Types.REMAINDER_EQUAL;
@@ -1017,7 +1017,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 };
                 // GROOVY-10628, GROOVY-11563: for "x op= y", find type as if it was "x = x op y"
-                rightExpression = (op == ELVIS_EQUAL ? elvisX(cloneMaker.transform(leftExpression), rightExpression) :
+                rightExpression = (op == ELVIS_EQUAL || op == NULL_COALESCE_EQUAL ? new ElvisOperatorExpression(cloneMaker.transform(leftExpression), rightExpression, op == NULL_COALESCE_EQUAL) :
                         binX(cloneMaker.transform(leftExpression), Token.newSymbol(TokenUtil.removeAssignment(op), expression.getOperation().getStartLine(), expression.getOperation().getStartColumn()), rightExpression));
                 rightExpression.setSourcePosition(expression);
 
@@ -1394,8 +1394,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         // for "x op= y", find type as if it was "x = x op y"
         if (isCompoundAssignment(expression)) {
             Token op = ((BinaryExpression) expression).getOperation();
-            if (op.getType() == ELVIS_EQUAL) { // GROOVY-10419: "x ?= y"
-                valueExpression = elvisX(leftExpression, rightExpression);
+            if (op.getType() == ELVIS_EQUAL || op.getType() == NULL_COALESCE_EQUAL) { // GROOVY-10419: "x ?= y"
+                valueExpression = new ElvisOperatorExpression(leftExpression, rightExpression, op.getType() == NULL_COALESCE_EQUAL);
             } else {
                 op = Token.newSymbol(TokenUtil.removeAssignment(op.getType()), op.getStartLine(), op.getStartColumn());
                 valueExpression = binX(leftExpression, op, rightExpression);
@@ -5971,7 +5971,7 @@ trying: for (ClassNode[] signature : signatures) {
         Expression leftExpression = expr.getLeftExpression();
         Expression rightExpression = expr.getRightExpression();
 
-        if (op == EQUAL || op == ELVIS_EQUAL) {
+        if (op == EQUAL || op == ELVIS_EQUAL || op == NULL_COALESCE_EQUAL) {
             if (leftExpression instanceof VariableExpression) {
                 ClassNode initialType = getOriginalDeclarationType(leftExpression);
                 if (isDynamicTyped(initialType)) { // GROOVY-11353, GROOVY-11375

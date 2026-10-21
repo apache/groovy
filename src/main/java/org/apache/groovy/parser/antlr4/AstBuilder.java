@@ -2708,7 +2708,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 ElvisOperatorExpression elvis = (ElvisOperatorExpression) tree;
                 Expression spliced = this.spliceAtRelationalPrecedence(elvis.getTrueExpression(), leafRepair);
                 if (spliced == null) return null;
-                return configureAST(new ElvisOperatorExpression(spliced, elvis.getFalseExpression()), spliced, elvis.getFalseExpression());
+                return configureAST(new ElvisOperatorExpression(spliced, elvis.getFalseExpression(), elvis.isNullCoalescing()), spliced, elvis.getFalseExpression());
             }
             if (tree instanceof TernaryExpression) {
                 TernaryExpression ternary = (TernaryExpression) tree;
@@ -3878,9 +3878,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public Expression visitConditionalExprAlt(final ConditionalExprAltContext ctx) {
         ctx.fb.putNodeMetaData(IS_INSIDE_CONDITIONAL_EXPRESSION, Boolean.TRUE);
 
-        if (asBoolean(ctx.ELVIS())) { // e.g. a == 6 ?: 0
+        if (asBoolean(ctx.ELVIS()) || asBoolean(ctx.NULL_COALESCE())) { // e.g. a == 6 ?: 0, retries ?? 3
             return configureAST(
-                    new ElvisOperatorExpression((Expression) this.visit(ctx.con), (Expression) this.visit(ctx.fb)),
+                    new ElvisOperatorExpression((Expression) this.visit(ctx.con), (Expression) this.visit(ctx.fb), asBoolean(ctx.NULL_COALESCE())),
                     ctx);
         }
 

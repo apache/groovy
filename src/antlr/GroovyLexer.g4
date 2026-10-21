@@ -804,6 +804,7 @@ SPREAD_DOT              : '*.';
 SAFE_DOT                : '?.';
 SAFE_INDEX              : '?[' { this.enterParen();     } -> pushMode(DEFAULT_MODE);
 SAFE_CHAIN_DOT          : '??.';
+NULL_COALESCE           : '??';
 ELVIS                   : '?:';
 METHOD_POINTER          : '.&';
 METHOD_REFERENCE        : '::';
@@ -876,6 +877,7 @@ LSHIFT_ASSIGN   : '<<=';
 RSHIFT_ASSIGN   : '>>=';
 URSHIFT_ASSIGN  : '>>>=';
 ELVIS_ASSIGN    : '?=';
+NULL_COALESCE_ASSIGN : '??=';
 
 
 // §3.8 Identifiers (must appear after all keywords in the grammar)

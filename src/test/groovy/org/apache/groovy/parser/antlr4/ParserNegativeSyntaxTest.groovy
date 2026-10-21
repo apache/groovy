@@ -3616,11 +3616,6 @@ final class ParserNegativeSyntaxTest {
     }
 
     @Test
-    void 'question then safe index is not a receiver'() {
-        expectContains 'a??[0]', "'?[' requires an expression before it"
-    }
-
-    @Test
     void 'keyword after a dot is still a safe-index receiver'() {
         expectContains 'foo.if?[0)', "Missing ']'"
     }

@@ -292,6 +292,10 @@ lexeme):
 | `ELVIS` `ELVIS_ASSIGN`
 | elvis / elvis-assign
 
+| `??` `??=`
+| `NULL_COALESCE` `NULL_COALESCE_ASSIGN`
+| null-coalescing (conditional precedence) / null-coalescing assign; `??.` is the longer match, so `a??.5` lexes as safe chain
+
 | `=~` `==~`
 | `REGEX_FIND` `REGEX_MATCH`
 | regex find / match
@@ -899,7 +903,7 @@ closure/lambda alternative of `expression`.
 `forUpdate` (`canSpread == false`). This is conversion, not
 recognition.
 
-`<assoc=right>` on `==>`, ternary / elvis, and assignment is CFG
+`<assoc=right>` on `==>`, ternary / elvis / null-coalescing, and assignment is CFG
 disambiguation of an ambiguous grammar, recorded in the precedence
 table, not numbered here.
 
@@ -1570,12 +1574,12 @@ expression ::=
     | expression NL* '||' NL* expression
     | expression NL* '==>' NL* expression              /* right-assoc */
     | expression NL*
-          ( '?' NL* expression NL* ':' NL* | '?:' NL* )
+          ( '?' NL* expression NL* ':' NL* | '?:' NL* | '??' NL* )
           expression                                   /* right-assoc */
     | variableNames NL* '=' NL* statementExpression    /* prefix; right-assoc */
     | expression NL*
           ('=' | '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^='
-          | '>>=' | '>>>=' | '<<=' | '%=' | '**=' | '?=')
+          | '>>=' | '>>>=' | '<<=' | '%=' | '**=' | '?=' | '??=')
           NL* enhancedStatementExpression              /* right-assoc */
 
 castOperandExpression ::=              /* restricted form of expression */
@@ -1719,7 +1723,7 @@ group "level 7"; the table keeps that grouping and notes the split.
 | **right**
 
 | 14
-| `? :` `?:`
+| `? :` `?:` `??`
 | `#conditionalExprAlt`
 | **right**
 
@@ -2308,7 +2312,7 @@ roles are in <<grammar-vocabulary>> and <<grammar-lexical>>.
 `DollarSlashyGStringCharacter`, `GStringCharacter`, `GStringLBrace`,
 `GStringIdentifier`, `RollBackOne`, `RANGE_INCLUSIVE`,
 `RANGE_EXCLUSIVE_LEFT`, `RANGE_EXCLUSIVE_RIGHT`, `RANGE_EXCLUSIVE_FULL`,
-`SPREAD_DOT`, `SAFE_DOT`, `SAFE_INDEX`, `SAFE_CHAIN_DOT`, `ELVIS`,
+`SPREAD_DOT`, `SAFE_DOT`, `SAFE_INDEX`, `SAFE_CHAIN_DOT`, `NULL_COALESCE`, `ELVIS`,
 `METHOD_POINTER`, `METHOD_REFERENCE`, `REGEX_FIND`, `REGEX_MATCH`,
 `POWER`, `POWER_ASSIGN`, `SPACESHIP`, `IDENTICAL`, `IMPLIES`,
 `NOT_IDENTICAL`, `ARROW`, `NOT_INSTANCEOF`, `NOT_IN`, `LPAREN`,
@@ -2318,7 +2322,7 @@ roles are in <<grammar-vocabulary>> and <<grammar-lexical>>.
 `SUB`, `MUL`, `DIV`, `BITAND`, `BITOR`, `XOR`, `MOD`, `ADD_ASSIGN`,
 `SUB_ASSIGN`, `MUL_ASSIGN`, `DIV_ASSIGN`, `AND_ASSIGN`, `OR_ASSIGN`,
 `XOR_ASSIGN`, `MOD_ASSIGN`, `LSHIFT_ASSIGN`, `RSHIFT_ASSIGN`,
-`URSHIFT_ASSIGN`, `ELVIS_ASSIGN`, `CapitalizedIdentifier`, `Identifier`,
+`URSHIFT_ASSIGN`, `ELVIS_ASSIGN`, `NULL_COALESCE_ASSIGN`, `CapitalizedIdentifier`, `Identifier`,
 `AT`, `ELLIPSIS`, `WS`, `NL`, `ML_COMMENT`, `SL_COMMENT`, `SH_COMMENT`,
 `UNEXPECTED_CHAR`.
 
