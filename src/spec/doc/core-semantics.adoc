@@ -245,7 +245,9 @@ Multiple constants may share an arm, and Groovy's usual `isCase` matching
 (Class, regex, Collection, Closure) is available in both the statement and
 the expression forms. Under static compilation, when every case label is an
 `int`, `String` or enum constant, the compiler emits `tableswitch` /
-`lookupswitch` bytecode in the same style as `javac`.
+`lookupswitch` bytecode in the same style as `javac`. Arrow labels may also
+be patterns that destructure the switch value; see
+<<pattern-matching-switch>>.
 
 ==== Looping structures
 ===== Classic for loop
@@ -565,6 +567,137 @@ This is a **breaking change** from earlier Groovy releases that left pattern
 locals visible more widely in dynamic mode. See
 link:https://issues.apache.org/jira/browse/GROOVY-12242[GROOVY-12242] and
 `COMPATIBILITY.md`.
+
+[[pattern-matching-switch]]
+=== Pattern matching in `switch` and `instanceof` (GEP-19)
+
+Since Groovy 7, a `case` label may be a *pattern* that tests the shape of the
+switch value and binds parts of it to new local variables, as specified by
+https://groovy.apache.org/wiki/GEP-19.html[GEP-19]. Patterns use the arrow
+form of label only; a pattern with a colon label is a compile-time error.
+Pattern labels and Groovy's existing `isCase` labels may be mixed freely in
+one `switch`, each keeping its own meaning.
+
+==== Type patterns
+
+A type pattern `case T name ->` matches when the value is an instance of `T`
+and binds `name` to it, typed as `T`, for the arm and for an optional `when`
+guard. A guard is evaluated once the pattern has matched; when it is false
+the arm is skipped and matching continues with the next label.
+
+[source,groovy]
+----
+include::../test/semantics/SwitchPatternsTest.groovy[tags=type_patterns,indent=0]
+----
+
+==== Record patterns
+
+A record pattern `case T(p1, p2, ...) ->` deconstructs a value of record type
+`T` positionally. Each component position takes a nested pattern: a type
+pattern, a `var`/`def` binding, another record pattern, or `_`, which
+discards the component. The value may be a native or emulated Groovy record,
+a Java record, or any class providing a `toList()` method. A pattern whose
+component count differs from the record's never matches, and is a compile
+error under `@TypeChecked` / `@CompileStatic`.
+
+[source,groovy]
+----
+include::../test/semantics/SwitchPatternsTest.groovy[tags=record_patterns,indent=0]
+----
+
+Record patterns are also available on `instanceof`, with the same binding
+and scoping rules as the type patterns of the previous section:
+
+[source,groovy]
+----
+include::../test/semantics/SwitchPatternsTest.groovy[tags=instanceof_record_pattern,indent=0]
+----
+
+==== List patterns
+
+A list pattern `case [e1, e2, ...] ->` destructures a `List`, an array or any
+re-iterable `Iterable`. Elements may be literals, which match by `==`, type
+patterns, `var`/`def` bindings, nested patterns, and at most one rest binding
+`var... name` (or the shortcut `... name`, or bare `...` to discard the rest)
+in any position. Without a rest binding the pattern matches exactly as many
+elements as it names; with one it matches at least that many, and the rest
+binding receives a new list of the others. The empty literal `[]` matches an
+empty list.
+
+[source,groovy]
+----
+include::../test/semantics/SwitchPatternsTest.groovy[tags=list_patterns,indent=0]
+----
+
+==== Map patterns
+
+A map pattern `case [k1: p1, k2: p2, ...] ->` matches a `Map` when every
+named key is present and its value matches the nested pattern; keys must be
+constants. Matching is open: keys the pattern does not name are ignored
+unless a rest binding `var... name` collects them into a new map. The empty
+literal `[:]` matches an empty map.
+
+[source,groovy]
+----
+include::../test/semantics/SwitchPatternsTest.groovy[tags=map_patterns,indent=0]
+----
+
+==== Patterns and `isCase` labels
+
+A `[...]` or `[k: v]` label is read as a pattern only when it is empty or
+contains a binding form (`var x`, `def x`, `Type x`, `_`, a rest binding).
+Any other list or map label keeps its `isCase` meaning, so `case [1, 2, 3]`
+still tests containment and `case [a: 1]` still looks up the value. A guard
+is allowed on pattern labels only. Likewise a call-shaped label such as
+`case foo(bar)` keeps calling `foo`; only a capitalised name with
+pattern-shaped arguments, such as `case Point(var x, _)`, is a record
+pattern.
+
+[source,groovy]
+----
+include::../test/semantics/SwitchPatternsTest.groovy[tags=legacy_labels,indent=0]
+----
+
+A pattern never matches `null`: a `null` value falls through to the next
+label or to `default`, where Java's pattern switch would throw
+`NullPointerException`. A `case null` label matches it as before. Within a
+pattern, a typed element does not match a `null` component, while a
+`var`/`def` binding and `_` do.
+
+[source,groovy]
+----
+include::../test/semantics/SwitchPatternsTest.groovy[tags=null_subject,indent=0]
+----
+
+==== Exhaustiveness
+
+A switch expression must always be exhaustive, as described above. A switch
+*statement* must be exhaustive only when one of its labels is a pattern,
+which is where Java draws the line as well (JEP 441); a statement with only
+constant, class-literal or range labels never needs a `default`, so nothing
+written before patterns existed is affected. Under `@TypeChecked` /
+`@CompileStatic` the check is satisfied by a `default`, by all constants of
+an enum, by a pattern that covers the selector's type (such as
+`case Object o`), or by type patterns, class-literal labels and record
+patterns that together cover a native sealed hierarchy. A record pattern
+counts only when every component is a `var`/`def` binding or `_`; a typed
+or nested component, a guard, a list pattern and a map pattern can all fail
+at run time and so never count.
+
+[source,groovy]
+----
+include::../test/semantics/SwitchPatternsTest.groovy[tags=sealed_exhaustiveness,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/semantics/SwitchPatternsTest.groovy[tags=statement_exhaustiveness,indent=0]
+----
+
+The type checker also reports an error for a pattern that can never match
+the selector's static type, and a warning for a pattern dominated by an
+earlier label, which could never be reached. In dynamic Groovy, patterns are
+matched at run time and bindings are dynamically typed.
 
 == Expressions
 
