@@ -1424,6 +1424,58 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     @Test
+    void testClassPropertyAccess1() {
+        assertScript '''
+            assert Float.isNaN(Float.NaN)
+        '''
+    }
+
+    @Test
+    void testClassPropertyAccess2() {
+        assertScript '''
+            assert Float.isNaN(Float.@NaN)
+        '''
+    }
+
+    @Test
+    void testClassPropertyAccess3() {
+        assertScript '''
+            assert Float.isNaN(Float.class.NaN)
+        '''
+    }
+
+    @Test
+    void testClassPropertyAccess4() {
+        assertScript '''
+            assert Float.isNaN(Float.class.@NaN)
+        '''
+    }
+
+    @Test
+    void testClassPropertyAccess5() {
+        assertScript '''
+            Class<Float> float_class = Float
+            assert Float.isNaN(float_class.NaN)
+        '''
+    }
+
+    @Test
+    void testClassPropertyAccess6() {
+        assertScript '''
+            Class<Float> float_class = Float
+            assert Float.isNaN(float_class.@NaN)
+        '''
+    }
+
+    // GROOVY-12473
+    @Test
+    void testClassPropertyAccess7() {
+        assertScript '''
+            assert Float.isNaN((Float as Class<Float>).NaN)
+        '''
+    }
+
+    @Test
     void testOuterPropertyAccess1() {
         assertScript '''
             class Outer {

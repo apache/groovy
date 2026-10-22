@@ -159,7 +159,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
     /** {@inheritDoc} */
     @Override
     public void makeGetPropertySite(final Expression receiver, final String propertyName, final boolean safe, final boolean implicitThis) {
-        Object dynamic = receiver.getNodeMetaData(StaticCompilationMetadataKeys.RECEIVER_OF_DYNAMIC_PROPERTY);
+        var dynamic = receiver.getNodeMetaData(StaticCompilationMetadataKeys.RECEIVER_OF_DYNAMIC_PROPERTY);
         if (dynamic != null) {
             makeDynamicGetProperty(receiver, propertyName, safe);
             return;
@@ -167,41 +167,54 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
 
         boolean[] isClassReceiver = new boolean[1];
         ClassNode receiverType = getPropertyOwnerType(receiver, isClassReceiver);
-        if (receiverType.isArray() && "length".equals(propertyName)) {
-            receiver.visit(controller.getAcg());
-            controller.getOperandStack().doGroovyCast(receiverType); // GROOVY-5683, GROOVY-11011
-            controller.getMethodVisitor().visitInsn(ARRAYLENGTH);
-            controller.getOperandStack().replace(int_TYPE);
-            return;
-        }
-        // GROOVY-12314: no special case for "size"/"length" on Collection receivers: the
-        // type checker no longer admits either name unless a genuine member backs it, and
-        // rewriting an admitted member to size() produced silently wrong values
 
-        if (makeGetPropertyWithGetter(receiver, receiverType, propertyName, safe, implicitThis)) return;
-
-        boolean isStaticProperty = (receiver instanceof ClassExpression
-                && (receiverType.isDerivedFrom(receiver.getType()) || receiverType.implementsInterface(receiver.getType())));
-
-        // GROOVY-5001, GROOVY-5491, GROOVY-5517, GROOVY-6144, GROOVY-8788: for map types,
-        // replace "map.foo" with "map.get('foo')" -- if no public field "foo" is declared
-        if (!isStaticProperty && isOrImplements(receiverType, MAP_TYPE)
-                && getField(receiverType, propertyName, FieldNode::isPublic) == null) {
-            writeMapDotProperty(receiver, propertyName, safe);
-            return;
-        }
-
-        if (makeGetField(receiver, receiverType, propertyName, safe, implicitThis)) return;
-        if (isThisExpression(receiver) && receiverType.getOuterClass() != null) { // GROOVY-11198: outer field
-            if (makeGetField(receiver, receiverType.getOuterClass(), propertyName, safe, implicitThis)) return;
-        }
         if (isClassReceiver[0]) {
-            if (makeGetPropertyWithGetter(receiver, CLASS_Type, propertyName, safe, implicitThis)) return;
-        }
+            Expression theClass = receiver instanceof ClassExpression ? receiver : classX(receiverType); // GROOVY-12473
 
-        if (!isStaticProperty && isOrImplements(receiverType, LIST_TYPE)) {
-            writeListDotProperty(receiver, propertyName, safe);
-            return;
+            if (makeGetPropertyWithGetter(theClass, receiverType, propertyName, safe, implicitThis)) {
+                return;
+            }
+            if (makeGetField             (theClass, receiverType, propertyName, safe, implicitThis)) {
+                return;
+            }
+            if (makeGetPropertyWithGetter(receiver,   CLASS_Type, propertyName, safe, implicitThis)) {
+                return;
+            }
+        } else {
+            if (receiverType.isArray() && "length".equals(propertyName)) {
+                receiver.visit(controller.getAcg());
+                controller.getOperandStack().doGroovyCast(receiverType); // GROOVY-5683, GROOVY-11011
+                controller.getMethodVisitor().visitInsn(ARRAYLENGTH);
+                controller.getOperandStack().replace(int_TYPE);
+                return;
+            }
+
+            if (makeGetPropertyWithGetter(receiver, receiverType, propertyName, safe, implicitThis)) {
+                return;
+            }
+
+            // GROOVY-5001, GROOVY-5491, GROOVY-5517, GROOVY-6144, GROOVY-8788: for map types,
+            // replace "map.foo" with "map.get('foo')" -- if no public field "foo" is declared
+            if (isOrImplements(receiverType, MAP_TYPE)
+                    && getField(receiverType, propertyName, FieldNode::isPublic) == null) {
+                writeMapDotProperty(receiver, propertyName, safe);
+                return;
+            }
+
+            if (makeGetField(receiver, receiverType, propertyName, safe, implicitThis)) {
+                return;
+            }
+
+            if (isThisExpression(receiver) && receiverType.getOuterClass() != null) { // GROOVY-11198: outer field
+                if (makeGetField(receiver, receiverType.getOuterClass(), propertyName, safe, implicitThis)) {
+                    return;
+                }
+            }
+
+            if (isOrImplements(receiverType, LIST_TYPE)) {
+                writeListDotProperty(receiver, propertyName, safe);
+                return;
+            }
         }
 
         addPropertyAccessError(receiver, propertyName, receiverType);
@@ -794,16 +807,14 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
     }
 
     private ClassNode getPropertyOwnerType(final Expression receiver, final boolean... isClassReceiver) {
-        Object inferredType = receiver.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-        if (inferredType == null && receiver instanceof VariableExpression) {
-            Variable variable = ((VariableExpression) receiver).getAccessedVariable();
-            if (variable instanceof Expression) {
-                inferredType = ((Expression) variable).getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-            }
+        var inferredType = receiver.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        if (inferredType == null && receiver instanceof VariableExpression ve
+                && ve.getAccessedVariable() instanceof Expression variable) {
+            inferredType = variable.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         }
         ClassNode receiverType;
         if (inferredType instanceof ClassNode) {
-            // in case a "flow type" is found, it is preferred to use it instead of the declaration type
+            // in case a "flow type" is found, it is preferred over the declaration type
             receiverType = (ClassNode) inferredType;
         } else {
             receiverType = receiver.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
@@ -811,13 +822,14 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                 receiverType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
             }
         }
-        if (isClassClassNodeWrappingConcreteType(receiverType)) {
-            if (isClassReceiver.length > 0) isClassReceiver[0] = true;
-            receiverType = receiverType.getGenericsTypes()[0].getType();
-        }
         if (isPrimitiveType(receiverType)) {
-            // GROOVY-6590: wrap primitive types
-            receiverType = getWrapper(receiverType);
+            receiverType = getWrapper(receiverType); // GROOVY-6590
+        } else if (isClassType(receiverType)
+                || isClassType(receiver.getType())) { // GROOVY-12473
+            if (isClassReceiver.length > 0) isClassReceiver[0]= true;
+            if (isClassClassNodeWrappingConcreteType(receiverType)) {
+                receiverType = receiverType.getGenericsTypes()[0].getType();
+            }
         }
         return receiverType;
     }
