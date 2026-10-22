@@ -58,8 +58,10 @@ import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.groovy.util.ReversedList;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
+import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureForMapPredicate;
@@ -11608,7 +11610,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 4.0.3
      */
     public static String plus(Map left, String right) {
-        return DefaultGroovyMethods.toString(left) + right;
+        return FormatHelper.toString(left) + right;
     }
 
     /**
@@ -11624,7 +11626,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 4.0.3
      */
     public static String plus(Map left, GString right) {
-        return DefaultGroovyMethods.toString(left) + right;
+        return FormatHelper.toString(left) + right;
     }
 
     /**
@@ -15644,6 +15646,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     // toString
 
     /**
+     * Whether a class declares a {@code toString()} that dynamic dispatch selects
+     * over the matching extension method: one declared by a class below
+     * {@code AbstractCollection}, {@code AbstractMap} or {@code Object} (whichever
+     * the class extends) and visible to Groovy.
+     */
+    private static final ClassValue<Boolean> DECLARES_TO_STRING = new ClassValue<>() {
+        @Override
+        protected Boolean computeValue(final Class<?> type) {
+            Class<?> bound = AbstractCollection.class.isAssignableFrom(type) ? AbstractCollection.class
+                           : AbstractMap.class.isAssignableFrom(type) ? AbstractMap.class : Object.class;
+            for (Class<?> c = type; c != null && c != bound; c = c.getSuperclass()) {
+                for (CachedMethod m : ReflectionCache.getCachedClass(c).getMethods()) {
+                    if (m.getParamsCount() == 0 && !m.isStatic() && "toString".equals(m.getName())) {
+                        return Boolean.TRUE;
+                    }
+                }
+            }
+            return Boolean.FALSE;
+        }
+    };
+
+    private static boolean declaresToString(final Object self) {
+        return self != null && DECLARES_TO_STRING.get(self.getClass());
+    }
+
+    /**
      * Returns the string representation of the given map.
      *
      * @param self a Map
@@ -15652,7 +15680,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String toString(AbstractMap self) {
-        return toMapString(self);
+        return declaresToString(self) ? self.toString() : toMapString(self);
     }
 
     /**
@@ -15666,7 +15694,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String toString(AbstractCollection self) {
-        return toListString(self);
+        return declaresToString(self) ? self.toString() : toListString(self);
     }
 
     /**
@@ -15676,7 +15704,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String toString(Object value) {
-        return FormatHelper.toString(value);
+        return declaresToString(value) ? value.toString() : FormatHelper.toString(value);
     }
 
     //--------------------------------------------------------------------------
