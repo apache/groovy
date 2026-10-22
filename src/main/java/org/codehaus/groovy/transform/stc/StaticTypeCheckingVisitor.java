@@ -94,10 +94,8 @@ import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.BreakStatement;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
-import org.codehaus.groovy.ast.stmt.ContinueStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
@@ -5441,25 +5439,49 @@ trying: for (ClassNode[] signature : signatures) {
                 addError("Incorrect number of parameters. Expected 1 but found " + paramCount, expression);
             }
         }
+        Object selectableKey = extractTemporaryTypeInfoKey(selectable);
+        typeCheckingContext.pushTemporaryTypeInfo(); // GROOVY-12428: narrowing within the case body
         super.visitCaseStatement(statement);
-        if (!maybeFallsThrough(statement.getCode())) {
+        List<ClassNode> bodyTypes = typeCheckingContext.temporaryIfBranchTypeInformation.pop().get(selectableKey);
+        if (!GeneralUtils.mayCompleteNormally(statement.getCode())) { // same analysis as the bytecode generator
             typeCheckingContext.temporaryIfBranchTypeInformation
-                .peek().remove(extractTemporaryTypeInfoKey(selectable));
+                .peek().remove(selectableKey);
             restoreTypeBeforeConditional(); // isolate assignment branch
+        } else {
+            Expression nextLabel = nextCaseLabel(statement, selectable);
+            if (nextLabel != null && !(nextLabel instanceof ClassExpression)) {
+                // the next case may be entered directly and its label does not
+                // refine the selector, so no narrowing survives the fall through
+                typeCheckingContext.temporaryIfBranchTypeInformation
+                    .peek().remove(selectableKey);
+            } else if (bodyTypes != null) {
+                // the next case may be entered directly, so only the selector's narrowing
+                // is kept, for the next label to join; that of other variables is dropped
+                List<ClassNode> tti = typeCheckingContext.peekTemporaryTypeInfo(selectableKey);
+                for (ClassNode type : bodyTypes) {
+                    tti.removeIf(type::isDerivedFrom);
+                    tti.add(type);
+                }
+            }
         }
     }
 
-    private static boolean maybeFallsThrough(Statement statement) {
-        if (statement.isEmpty()) return true;
-        if (statement instanceof BlockStatement)
-            statement = DefaultGroovyMethods.last(((BlockStatement) statement).getStatements());
-        // end break, continue, return or throw
-        if (statement instanceof BreakStatement
-                || statement instanceof ContinueStatement
-                || !GeneralUtils.maybeFallsThrough(statement)) {
-            return false;
+    /**
+     * Returns the label of the case following the given one in the enclosing
+     * switch, or {@code null} if it is the last case (the default statement,
+     * if any, has no label).
+     */
+    private Expression nextCaseLabel(final CaseStatement statement, final Expression selectable) {
+        List<CaseStatement> caseStatements;
+        SwitchStatement switchStatement = typeCheckingContext.getEnclosingSwitchStatement();
+        if (switchStatement != null && switchStatement.getExpression() == selectable) {
+            caseStatements = switchStatement.getCaseStatements();
+        } else {
+            caseStatements = typeCheckingContext.getEnclosingSwitchExpression().getCaseStatements();
         }
-        return true;
+        int index = caseStatements.indexOf(statement);
+        if (index < 0 || index + 1 == caseStatements.size()) return null;
+        return caseStatements.get(index + 1).getExpression();
     }
 
     private void recordAssignment(final VariableExpression lhsExpr, final ClassNode rhsType) {
