@@ -669,6 +669,34 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
     }
 
     @Test
+    void testSwitchInstanceOfInference() {
+        new GroovyShell().evaluate '''
+            // tag::switch_instanceof_inference[]
+            class Greeter {
+                String greeting() { 'Hello' }
+            }
+
+            @groovy.transform.TypeChecked
+            String describe(Object o) {
+                switch (o) {
+                    case Greeter:
+                        return o.greeting()                 // <1>
+                    case ArrayDeque:
+                    case Stack:
+                        return "top: ${o.peek()}"           // <2>
+                    default:
+                        return o.toString()
+                }
+            }
+
+            assert describe(new Greeter()) == 'Hello'
+            assert describe(new Stack().tap { push 3 }) == 'top: 3'
+            assert describe(42) == '42'
+            // end::switch_instanceof_inference[]
+        '''
+    }
+
+    @Test
     void testFlowTyping() {
         new GroovyShell().evaluate '''
             // tag::flowtyping_basics[]
