@@ -4457,6 +4457,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             NotInstanceofTypeContext nit = ctx.notInstanceofType();
             if (nit.matchingType() != null) {
                 nit.matchingType().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
+                if (asBoolean(nit.matchingType().recordPattern())) { // GEP-19: negation of the instanceof form
+                    org.codehaus.groovy.syntax.Token instanceOf = org.codehaus.groovy.syntax.Token.newSymbol(
+                            Types.KEYWORD_INSTANCEOF, ctx.op.getLine(), ctx.op.getCharPositionInLine() + 1);
+                    return configureAST(
+                            new NotExpression(this.createRecordPatternInstanceof(
+                                    (Expression) this.visit(ctx.left),
+                                    instanceOf,
+                                    nit.matchingType().recordPattern())),
+                            ctx);
+                }
                 return configureAST(
                         new BinaryExpression(
                                 (Expression) this.visit(ctx.left),
