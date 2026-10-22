@@ -223,8 +223,12 @@ A `switch` whose value is not used is a statement, whatever its arm shape,
 and simply does nothing when unmatched. That includes a `switch` that is the
 last statement of a closure, a script or a method: the implicit return applies
 to the statement, exactly as it does to an `if` or a colon-form `switch`, so an
-unmatched selector leaves the body's value at the return type's default. Use
-`return switch (...) {...}`, or assign the result, for the expression rules
+unmatched selector leaves the body's value at the return type's default. In its
+arrow arms `return`, `break` and `continue` are allowed, as they are in Java,
+and `yield` completes the switch: its value is the result when the switch is the
+last statement, and is discarded otherwise. A switch expression rejects
+`return`, `break` and `continue`. Use `return switch (...) {...}`, or assign
+the result, for the expression rules
 (link:https://issues.apache.org/jira/browse/GROOVY-12408[GROOVY-12408]).
 
 [source,groovy]
