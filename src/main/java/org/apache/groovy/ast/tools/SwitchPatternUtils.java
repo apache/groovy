@@ -70,6 +70,15 @@ public final class SwitchPatternUtils {
     public static final String PATTERN_LIST = "_SWITCH_PATTERN_LIST";
     /** On a pattern arm: {@code Boolean.TRUE} for a map pattern. */
     public static final String PATTERN_MAP = "_SWITCH_PATTERN_MAP";
+    /**
+     * On the access of a record pattern component: an {@code Object[]} holding the
+     * declared {@code VariableExpression} the record is bound to and the
+     * {@code Integer} component index, so that the type checker can type the
+     * access as the record component.
+     */
+    public static final String PATTERN_RECORD_COMPONENT = "_PATTERN_RECORD_COMPONENT";
+    /** On the {@code DeclarationExpression} binding the value a record pattern deconstructs: {@code Boolean.TRUE}. */
+    public static final String PATTERN_RECORD_BINDING = "_PATTERN_RECORD_BINDING";
 
     private SwitchPatternUtils() {
     }

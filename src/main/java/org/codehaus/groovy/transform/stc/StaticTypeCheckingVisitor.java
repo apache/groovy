@@ -170,6 +170,8 @@ import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_HEAD_TYPE;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_LIST;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_MAP;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_RECORD;
+import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_RECORD_BINDING;
+import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_RECORD_COMPONENT;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_RECORD_COMPONENT_TYPES;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_TEST;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.SUBJECT_VARIABLE;
@@ -1196,6 +1198,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 } else if (!lType.isInterface() && !rType.isInterface() && !(lType.isDerivedFrom(rType) || rType.isDerivedFrom(lType))) {
                     addError("Incompatible instanceof types: " + prettyPrintTypeName(lType) + " and " + prettyPrintTypeName(rType), expression);
+                }
+                if (rightExpression.getNodeMetaData(PATTERN_RECORD_BINDING) != null) { // GEP-19
+                    ClassNode sourceType = lType;
+                    if (leftExpression instanceof VariableExpression ve && ve.getAccessedVariable() instanceof Parameter p
+                            && typeCheckingContext.controlStructureVariables.get(p) != null) {
+                        sourceType = typeCheckingContext.controlStructureVariables.get(p); // the selector type, not the arm's narrowing
+                    }
+                    inferRecordPatternTypeArguments(sourceType, (DeclarationExpression) rightExpression);
                 }
                 pushInstanceOfTypeInfo(leftExpression, rightExpression);
             } else if (op == COMPARE_NOT_INSTANCEOF) { // GROOVY-6429, GROOVY-8321, GROOVY-8412, GROOVY-8523, GROOVY-9931
@@ -4789,6 +4799,12 @@ out:                if (mn.size() != 1) {
                 }
             }
 
+            Object[] recordComponent = call.getNodeMetaData(PATTERN_RECORD_COMPONENT);
+            if (recordComponent != null) { // GEP-19: the access of a record pattern component
+                ClassNode componentType = getRecordPatternComponentType((VariableExpression) recordComponent[0], (Integer) recordComponent[1]);
+                if (componentType != null) storeType(call, componentType);
+            }
+
             // type-checking extension may have changed or cleared target method
             MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
             if (!functorsVisited) {
@@ -5547,6 +5563,48 @@ trying: for (ClassNode[] signature : signatures) {
             }
         }
         return true;
+    }
+
+    /**
+     * Infers the type arguments of a raw generic record pattern type from the
+     * static type of the value it deconstructs (JEP 440), so that {@code Box(var s)}
+     * against a {@code Box<String>} binds {@code s} as a {@code String}.
+     */
+    private void inferRecordPatternTypeArguments(final ClassNode sourceType, final DeclarationExpression binding) {
+        VariableExpression recordVar = binding.getVariableExpression();
+        ClassNode patternType = recordVar.getOriginType();
+        GenericsType[] typeParameters = patternType.redirect().getGenericsTypes();
+        if (typeParameters == null || patternType.getGenericsTypes() != null || sourceType == null || !sourceType.isUsingGenerics()) {
+            return; // not generic, or explicitly parameterized
+        }
+        ClassNode genericPatternType = GenericsUtils.makeClassSafeWithGenerics(patternType.redirect(), typeParameters);
+        // the source type in terms of the pattern's type parameters; a record is final, so the
+        // pattern type is the source type or one of its subtypes, such as a sealed member
+        ClassNode sourceAsSeenByPattern = GenericsUtils.findParameterizedType(sourceType.redirect(), genericPatternType);
+        if (sourceAsSeenByPattern == null) return;
+        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
+        extractGenericsConnections(connections, sourceType, sourceAsSeenByPattern);
+        if (connections.isEmpty()) return;
+        storeType(recordVar, applyGenericsContext(connections, genericPatternType));
+    }
+
+    /**
+     * The static type of a record pattern component (GEP-19): the record
+     * component type with the record's type arguments applied, or
+     * {@code null} when the deconstructed type declares no record components.
+     */
+    private ClassNode getRecordPatternComponentType(final VariableExpression recordVar, final int index) {
+        ClassNode recordType = getType(recordVar);
+        List<RecordComponentNode> components = recordType.redirect().getRecordComponents();
+        if (index >= components.size()) return null;
+        ClassNode componentType = components.get(index).getType();
+        if (recordType.getGenericsTypes() != null) {
+            componentType = applyGenericsContext(GenericsUtils.extractPlaceholders(recordType), componentType);
+        }
+        if (GenericsUtils.hasUnresolvedGenerics(componentType)) {
+            componentType = componentType.getPlainNodeReference(); // an uninferred type parameter erases to its bound
+        }
+        return wrapTypeIfNecessary(componentType);
     }
 
     private void addPatternSwitchWarning(final String text, final ASTNode node) {

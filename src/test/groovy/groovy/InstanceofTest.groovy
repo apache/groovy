@@ -1269,6 +1269,84 @@ final class InstanceofTest {
     }
 
     @Test
+    void testRecordPatternVarComponentTypeCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            record Point(int x, int y) {}
+            record Named(String name, Point at) {}
+            @CompileStatic
+            int m(Object o) {
+                if (o instanceof Point(var x, var y)) return x + y
+                if (o instanceof Named(var n, Point(var x, _))) return n.length() + x
+                return -1
+            }
+            assert m(new Point(3, 4)) == 7
+            assert m(new Named('abc', new Point(10, 0))) == 13
+            assert m('s') == -1
+        '''
+    }
+
+    @Test
+    void testRecordPatternInfersTypeArgumentsCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            sealed interface Opt<T> permits Some, None {}
+            record Some<T>(T value) implements Opt<T> {}
+            record None<T>(String why) implements Opt<T> {}
+            record Box<T>(T value) {}
+            record NumBox<N extends Number>(N value) {}
+            @CompileStatic
+            int box(Box<String> b) {
+                b instanceof Box(var s) ? s.length() : -1
+            }
+            @CompileStatic
+            int opt(Opt<String> o) {
+                if (o instanceof Some(var v)) return v.length()
+                return -1
+            }
+            @CompileStatic
+            int nested(Box<Box<String>> b) {
+                b instanceof Box(Box(var s)) ? s.length() : -1
+            }
+            @CompileStatic
+            int bound(Object o) { // nothing to infer from: the type parameter erases to its bound
+                o instanceof NumBox(var n) ? n.intValue() : -1
+            }
+            assert box(new Box<>('abc')) == 3
+            assert opt(new Some<String>('abcd')) == 4
+            assert opt(new None<String>('no')) == -1
+            assert nested(new Box<>(new Box<>('ab'))) == 2
+            assert bound(new NumBox<>(5)) == 5
+        '''
+    }
+
+    @Test
+    void testRecordPatternExplicitTypeArgumentsCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            record Box<T>(T value) {}
+            @CompileStatic
+            int m(Object o) {
+                o instanceof Box<String>(var s) ? s.length() : -1
+            }
+            assert m(new Box<>('abc')) == 3
+        '''
+    }
+
+    @Test
+    void testRecordPatternInferredTypeArgumentIsCheckedTypeChecked() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            record Box<T>(T value) {}
+            @TypeChecked
+            int m(Box<String> b) {
+                b instanceof Box(var s) ? s.intValue() : -1
+            }
+        '''
+        assert err.message.contains('Cannot find matching method java.lang.String#intValue()')
+    }
+
+    @Test
     void testNotInstanceofRecordPattern() {
         assertScript '''
             record Point(int x, int y) {}

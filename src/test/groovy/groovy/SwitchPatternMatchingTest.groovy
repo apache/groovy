@@ -1599,6 +1599,84 @@ final class SwitchPatternMatchingTest {
         assert err.message.contains('The case pattern type int is incompatible with the switch subject type java.lang.String')
     }
 
+    @Test
+    void testRecordPatternVarComponentTypeCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            record Point(int x, int y) {}
+            record Named(String name, Point at) {}
+            @CompileStatic
+            int m(Object o) {
+                switch (o) {
+                    case Point(var x, var y)        -> x + y
+                    case Named(var n, Point(var x, _)) -> n.length() + x
+                    default                         -> -1
+                }
+            }
+            assert m(new Point(3, 4)) == 7
+            assert m(new Named('abc', new Point(10, 0))) == 13
+            assert m('s') == -1
+        '''
+    }
+
+    @Test
+    void testRecordPatternInfersTypeArgumentsFromSelectorCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            record Box<T>(T value) {}
+            record Pair<A, B>(A left, B right) {}
+            @CompileStatic
+            int m(Box<String> b) {
+                switch (b) {
+                    case Box(var s) -> s.length()
+                }
+            }
+            @CompileStatic
+            int n(Pair<String, Box<Integer>> p) {
+                switch (p) {
+                    case Pair(var s, Box(var i)) -> s.length() + i
+                    default                      -> -1 // a nested pattern does not match a null component
+                }
+            }
+            assert m(new Box<>('abc')) == 3
+            assert n(new Pair<>('ab', new Box<>(5))) == 7
+        '''
+    }
+
+    @Test
+    void testRecordPatternInfersTypeArgumentsOfSealedMemberCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            sealed interface Opt<T> permits Some, None {}
+            record Some<T>(T value) implements Opt<T> {}
+            record None<T>(String why) implements Opt<T> {}
+            @CompileStatic
+            int m(Opt<String> o) {
+                switch (o) {
+                    case Some(var v) -> v.length()
+                    case None(var w) -> -w.length()
+                }
+            }
+            assert m(new Some<String>('abcd')) == 4
+            assert m(new None<String>('no')) == -2
+        '''
+    }
+
+    @Test
+    void testRecordPatternInferredTypeArgumentIsCheckedTypeChecked() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            record Box<T>(T value) {}
+            @TypeChecked
+            int m(Box<String> b) {
+                switch (b) {
+                    case Box(var s) -> s.intValue()
+                }
+            }
+        '''
+        assert err.message.contains('Cannot find matching method java.lang.String#intValue()')
+    }
+
     private static List<String> patternSwitchWarnings(String source) {
         def cu = new CompilationUnit()
         cu.addSource('PatternSwitchTestScript.groovy', source)

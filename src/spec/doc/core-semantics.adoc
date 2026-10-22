@@ -607,7 +607,11 @@ pattern, a `var`/`def` binding, another record pattern, or `_`, which
 discards the component. The value may be a native or emulated Groovy record,
 a Java record, or any class providing a `toList()` method. A pattern whose
 component count differs from the record's never matches, and is a compile
-error under `@TypeChecked` / `@CompileStatic`.
+error under `@TypeChecked` / `@CompileStatic`. There, a `var`/`def` component
+binding takes the type of its record component, and the type arguments of a
+generic record pattern written without them are inferred from the value it
+deconstructs, as in Java: matching `Box(var s)` against a `Box<String>` binds
+`s` as a `String`.
 
 [source,groovy]
 ----
