@@ -624,4 +624,14 @@ final class GrapeIvyTest {
             tempDir.deleteDir()
         }
     }
+
+    // GROOVY-12458
+    @Test
+    void testChooseClassLoaderUsesGroovyClassLoaderAncestorOfPassedLoader() {
+        def loader = new GroovyClassLoader()
+        // a host loader below the GroovyClassLoader, such as one defining compiled script classes
+        def hostLoader = new ClassLoader(loader) {}
+
+        assert new GrapeIvy().chooseClassLoader(classLoader: hostLoader).is(loader)
+    }
 }

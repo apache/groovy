@@ -226,4 +226,22 @@ ${depsXml}
         assert ex.message.contains('for module')
         assert ex.message.contains("should not contain '..'")
     }
+
+    // GROOVY-12458
+    @Test
+    void testGrabIntoGroovyClassLoaderAncestorOfPassedLoader() {
+        File repoDir = new File(Files.createTempDirectory('grape-maven-ancestor-test').toFile(), 'repo')
+
+        String g = 'dev.grape.ancestor'
+        deleteCachedGroup(g)
+        publishArtifact(repoDir, g, 'lib', '1.0.0')
+
+        Grape.addResolver(name: 'local-ancestor-test', root: repoDir.toURI().toString(), m2Compatible: true)
+        def loader = new GroovyClassLoader()
+        // a host loader below the GroovyClassLoader, such as one defining compiled script classes
+        def hostLoader = new ClassLoader(loader) {}
+        Grape.grab(classLoader: hostLoader, [groupId: g, artifactId: 'lib', version: '1.0.0'])
+
+        assert 'lib-1.0.0.jar' in jarNames(loader)
+    }
 }

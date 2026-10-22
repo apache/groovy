@@ -774,6 +774,10 @@ class GrapeMaven implements GrapeEngine {
 
     private ClassLoader chooseClassLoader(Map args) {
         ClassLoader loader = (ClassLoader) args.classLoader
+        // a loader defined below a GroovyClassLoader (e.g. by a host) grabs into that ancestor
+        while (loader && !isValidTargetClassLoader(loader)) {
+            loader = loader.getParent()
+        }
         if (!isValidTargetClassLoader(loader)) {
             Class caller = args.refObject?.getClass() ?:
                 ReflectionUtils.getCallingClass((int) args.calleeDepth ?: 1)
