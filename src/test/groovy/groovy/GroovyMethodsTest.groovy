@@ -35,6 +35,7 @@ import java.util.TreeMap
 import java.util.Vector
 import java.util.concurrent.LinkedBlockingQueue
 
+import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assumptions.assumeFalse
@@ -54,6 +55,64 @@ final class GroovyMethodsTest {
         assert absoluteNumberOne == negativeDouble.abs()
         assert absoluteNumberOne == negativeFloat.abs()
         assert absoluteNumberOne == negativeLong.abs()
+    }
+
+    // GROOVY-12471
+    @Test
+    void testAbsNumber() {
+        assertScript '''
+            import java.util.concurrent.atomic.AtomicLong
+
+            def dynAbs(Number n) { n.abs() }
+            @groovy.transform.CompileStatic
+            def scAbs(Number n) { n.abs() }
+            @groovy.transform.CompileStatic
+            def delta(Number item, Number value) { (item - value).abs() }
+
+            for (abs in [this.&dynAbs, this.&scAbs]) {
+                assert abs(-5) == 5
+                assert abs((short) -5) == 5
+                assert abs(Long.MIN_VALUE + 1) == Long.MAX_VALUE
+                assert abs(-2.5f) == 2.5f
+                assert abs(-2.5d) == 2.5d
+                assert abs(-2.5G) == 2.5G
+                assert abs(-(2G ** 70)) == 2G ** 70
+                assert abs(new AtomicLong(-(1L << 40))) == 1L << 40
+            }
+            assert delta(2.2, 3.3) == 1.1
+            assert delta(Long.MAX_VALUE, 1) == Long.MAX_VALUE - 1
+        '''
+    }
+
+    // GROOVY-12471
+    @Test
+    void testAbsIntegerStaticType() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            int scAbs(Integer i) {
+                int result = i.abs()
+                result
+            }
+            @groovy.transform.CompileStatic
+            int scAbs(Short s) {
+                int result = s.abs()
+                result
+            }
+            @groovy.transform.CompileStatic
+            int scAbs(Byte b) {
+                int result = b.abs()
+                result
+            }
+            assert scAbs(-7) == 7
+            assert scAbs((short) -7) == 7
+            assert scAbs(Short.MIN_VALUE) == 32768
+            assert scAbs((byte) -7) == 7
+            assert scAbs(Byte.MIN_VALUE) == 128
+            assert ((short) -7).abs() == 7
+            assert ((byte) -7).abs() == 7
+            assert ((short) -7).abs() instanceof Integer
+            assert ((byte) -7).abs() instanceof Integer
+        '''
     }
 
     @Test

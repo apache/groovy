@@ -299,16 +299,65 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Gets the absolute value.
-     * <p>
-     * Note: This method is NOT called if number is a BigInteger or BigDecimal,
-     *       because those classes implement a method with a better exact match.
+     * The result keeps the precision of the supplied number, following
+     * the same type rules as Groovy's arithmetic operators.
+     * <pre class="groovyTestCase">
+     * Number n = -2.5
+     * assert n.abs() == 2.5
+     * n = Long.MIN_VALUE + 1
+     * assert n.abs() == Long.MAX_VALUE
+     * </pre>
      *
      * @param number a Number
      * @return the absolute value of that Number
+     * @since 6.0.1
+     */
+    public static Number abs(Number number) {
+        return NumberMath.abs(number);
+    }
+
+    /**
+     * Gets the absolute value as an int.
+     *
+     * @deprecated retained for binary compatibility; truncates values outside the int range
      * @since 1.0
      */
-    public static int abs(Number number) {
+    @Deprecated
+    public static int abs$$bridge(Number number) {
         return Math.abs(number.intValue());
+    }
+
+    /**
+     * Gets the absolute value.
+     *
+     * @param number an Integer
+     * @return the absolute value of that Integer
+     * @since 6.0.1
+     */
+    public static int abs(Integer number) {
+        return Math.abs(number);
+    }
+
+    /**
+     * Gets the absolute value.
+     *
+     * @param number a Short
+     * @return the absolute value of that Short
+     * @since 6.0.1
+     */
+    public static int abs(Short number) {
+        return Math.abs(number);
+    }
+
+    /**
+     * Gets the absolute value.
+     *
+     * @param number a Byte
+     * @return the absolute value of that Byte
+     * @since 6.0.1
+     */
+    public static int abs(Byte number) {
+        return Math.abs(number);
     }
 
     /**
