@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792573108856,
+  "lastUpdate": 1792670785959,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -8335,6 +8335,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 480.4433333333333,
             "range": "±19.95",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "434b75d05fa8bb2628b8908ecac0abd8158474cd",
+          "message": "groovy-lsp: publishDiagnostics could return before a concurrent publisher cleared removed URIs",
+          "timestamp": "2026-10-21T03:34:25Z",
+          "url": "https://github.com/apache/groovy/commit/434b75d05fa8bb2628b8908ecac0abd8158474cd"
+        },
+        "date": 1792670780978,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 558.9300000000001,
+            "range": "±22.27",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 685.6833333333333,
+            "range": "±226.29",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 584.46,
+            "range": "±148.4",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 482.9766666666667,
+            "range": "±19.89",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 488.0766666666667,
+            "range": "±18.74",
             "unit": "ms",
             "extra": "6.0.0"
           }
