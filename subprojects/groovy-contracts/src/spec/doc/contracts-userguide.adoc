@@ -472,6 +472,17 @@ void addAndCount(String item) {
 }
 ----
 
+An empty closure declares that the method modifies nothing. `@Modifies({ [] })`
+means the same:
+
+[source,groovy]
+----
+@Modifies({})
+int total() {
+    items.size() + count
+}
+----
+
 Or use multiple `@Modifies` annotations (via `@Repeatable`):
 
 [source,groovy]
@@ -480,6 +491,9 @@ Or use multiple `@Modifies` annotations (via `@Repeatable`):
 @Modifies({ this.count })
 void addAndCount(String item) { ... }
 ----
+
+The method's frame is the union of all its `@Modifies` declarations, so an
+empty `@Modifies({})` alongside others adds nothing to the frame.
 
 === Parameter references
 
@@ -525,7 +539,9 @@ The `@Modifies` annotation validates at compile time that:
 === Rules for @Modifies closures
 
 * The closure must contain a single field reference (`this.field`), parameter
-  reference (`param`), or a list of such references.
+  reference (`param`), or a list of such references. An empty closure or an
+  empty list declares that nothing is modified.
+* The closure is required: a bare `@Modifies` is a compile error.
 * Field references use the `this.fieldName` syntax.
 * Parameter references use the bare parameter name.
 * The closure is not executed at runtime — it is only analyzed at compile time.
