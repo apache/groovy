@@ -1347,6 +1347,41 @@ final class InstanceofTest {
     }
 
     @Test
+    void testZeroComponentRecordPattern() {
+        assertScript '''
+            record None() {}
+            record Pair(Object left, Object right) {}
+            class Opt { record Empty() {} }
+            assert new None() instanceof None()
+            assert !('s' instanceof None())
+            assert !(null instanceof None())
+            assert 's' !instanceof None()
+            assert new Opt.Empty() instanceof Opt.Empty()
+            def p = new Pair(new None(), 2)
+            assert p instanceof Pair(None(), var r) && r == 2
+            assert !(new Pair(1, 2) instanceof Pair(None(), var r2))
+        '''
+    }
+
+    @Test
+    void testZeroComponentRecordPatternCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            record None() {}
+            record Pair(Object left, Object right) {}
+            @CompileStatic
+            int m(Object o) {
+                if (o instanceof None()) return 0
+                if (o instanceof Pair(None(), var r)) return r.hashCode()
+                return -1
+            }
+            assert m(new None()) == 0
+            assert m(new Pair(new None(), 7)) == 7
+            assert m('s') == -1
+        '''
+    }
+
+    @Test
     void testNotInstanceofRecordPattern() {
         assertScript '''
             record Point(int x, int y) {}

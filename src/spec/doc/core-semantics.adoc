@@ -604,7 +604,8 @@ include::../test/semantics/SwitchPatternsTest.groovy[tags=type_patterns,indent=0
 A record pattern `case T(p1, p2, ...) ->` deconstructs a value of record type
 `T` positionally. Each component position takes a nested pattern: a type
 pattern, a `var`/`def` binding, another record pattern, or `_`, which
-discards the component. The value may be a native or emulated Groovy record,
+discards the component. A record without components is matched by empty
+parentheses after its name, such as `case None()`. The value may be a native or emulated Groovy record,
 a Java record, or any class providing a `toList()` method. A pattern whose
 component count differs from the record's never matches, and is a compile
 error under `@TypeChecked` / `@CompileStatic`. There, a `var`/`def` component
@@ -662,9 +663,12 @@ contains a binding form (`var x`, `def x`, `Type x`, `_`, a rest binding).
 Any other list or map label keeps its `isCase` meaning, so `case [1, 2, 3]`
 still tests containment and `case [a: 1]` still looks up the value. A guard
 is allowed on pattern labels only. Likewise a call-shaped label such as
-`case foo(bar)` keeps calling `foo`; only a capitalised name with
-pattern-shaped arguments, such as `case Point(var x, _)`, is a record
-pattern.
+`case foo(bar)` or `case foo()` keeps calling `foo`; only a capitalised name
+with pattern-shaped arguments, such as `case Point(var x, _)`, or with empty
+parentheses, such as `case None()`, is a record pattern. Since pattern labels
+use the arrow form, `case None():` with a colon is still a call. To call a
+method with a capitalised name from an arrow label, quote the name, as in
+`case 'Evens'() ->`, or qualify it, as in `case this.Evens() ->`.
 
 [source,groovy]
 ----

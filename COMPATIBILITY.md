@@ -662,6 +662,22 @@ matches it, so unless the switch has an explicit `case null` arm it throws
 `IllegalStateException` on every target. A switch *statement* still does
 nothing when unmatched.
 
+### Groovy 7 — `case Foo() ->` is a zero-component record pattern (GEP-19)
+
+An arrow-form case label made of a capitalised name and empty parentheses,
+such as `case None() ->` or `case Opt.None() ->`, is now a record pattern that
+matches an instance of the record `None` without components, as in Java
+(JEP 440). It used to call a method named `None` and use the result as an
+`isCase` label. The same applies where such a call sits inside another
+pattern-shaped label, for example `case [Foo(), 2] ->` or `case Some(None()) ->`.
+
+**Who is affected.** Code whose arrow-form case labels call a method with a
+capitalised name and no arguments. It now fails to compile with `unable to
+resolve class`, at the label, unless a class of that name exists. Quote the
+name (`case 'Evens'() ->`) or qualify the call (`case this.Evens() ->`) to keep
+calling the method. Colon-form labels (`case Evens():`), lowercase names
+(`case evens() ->`) and calls with arguments are unchanged.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)

@@ -819,10 +819,13 @@ typePattern
     :   standardType identifier
     ;
 
-// components are mandatory and must be pattern-shaped so that legacy method
-// call labels such as `case foo()` and `case foo(bar)` keep isCase semantics
+// components must be pattern-shaped so that legacy method call labels such as
+// `case foo(bar)` keep isCase semantics; empty parentheses form a zero-component
+// record pattern only after a capitalized name, so `case foo()` is still a call
+// (and `case Foo():` with a colon is rebuilt as one in the AST builder)
 recordPattern
     :   standardType LPAREN NL* recordPatternComponents NL* RPAREN
+    |   { SemanticPredicates.isCapitalizedEmptyCall(_input) }? standardType LPAREN NL* RPAREN
     ;
 
 recordPatternComponents
