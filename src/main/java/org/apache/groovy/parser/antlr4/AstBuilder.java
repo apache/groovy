@@ -1410,6 +1410,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private SwitchExpressionLabel switchExpressionLabel(final SwitchExpressionLabelContext ctx) {
         if (asBoolean(ctx.CASE())) {
             if (asBoolean(ctx.casePattern())) { // GEP-19
+                if (isLegacyCallLabel(ctx)) {
+                    return new SwitchExpressionLabel(ctx.CASE().getSymbol(), Collections.singletonList(this.rebuildCallExpression(ctx.casePattern().recordPattern())), ctx.ac.getType());
+                }
                 if (!isPatternLabel(ctx.casePattern())) {
                     // a plain list or map literal that parsed via the broader listPattern or
                     // mapPattern rule, e.g. `case [1, 2, 3]:` -- it keeps its legacy isCase semantics
@@ -1458,12 +1461,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             pattern.type = this.visitType(typePatternCtx.type());
             pattern.name = this.visitIdentifier(typePatternCtx.identifier());
             appendElementArmItems(pattern, subjectVar, instanceOf, items);
-            label = armInstanceOfX(varX(switchPatternSubjectStack.peek()), instanceOf, new ClassExpression(ClassHelper.getWrapper(pattern.type)));
+            label = armInstanceOfX(varX(switchPatternSubjectStack.peek()), instanceOf, atType(new ClassExpression(ClassHelper.getWrapper(pattern.type)), pattern.type));
             label.putNodeMetaData(PATTERN_HEAD_TYPE, pattern.type);
         } else if (asBoolean(ctx.recordPattern())) {
             PatternNode pattern = this.buildRecordPattern(ctx.recordPattern());
             appendRecordPatternArmItems(pattern, subjectVar, instanceOf, items);
-            label = armInstanceOfX(varX(switchPatternSubjectStack.peek()), instanceOf, new ClassExpression(pattern.type));
+            label = armInstanceOfX(varX(switchPatternSubjectStack.peek()), instanceOf, atType(new ClassExpression(pattern.type), pattern.type));
             label.putNodeMetaData(PATTERN_HEAD_TYPE, pattern.type);
             label.putNodeMetaData(PATTERN_RECORD, pattern.components.size());
             if (pattern.hasNestedComponent()) {
@@ -1556,7 +1559,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static boolean containsCasePattern(final SwitchExpressionContext ctx) {
         return ctx.switchBlockStatementExpressionGroup().stream()
                 .flatMap(e -> e.switchExpressionLabel().stream())
-                .anyMatch(e -> isPatternLabel(e.casePattern()));
+                .anyMatch(e -> isPatternLabel(e.casePattern()) && !isLegacyCallLabel(e));
+    }
+
+    /**
+     * Whether a label of the shape {@code case Foo():} keeps calling {@code Foo()}: a
+     * zero-component record pattern needs the arrow form, as every pattern label does,
+     * so with a colon it is the legacy method call label it was before patterns.
+     */
+    private static boolean isLegacyCallLabel(final SwitchExpressionLabelContext ctx) {
+        CasePatternContext casePattern = ctx.casePattern();
+        return COLON == ctx.ac.getType() && !asBoolean(casePattern.caseGuard())
+                && asBoolean(casePattern.recordPattern()) && !asBoolean(casePattern.recordPattern().recordPatternComponents());
     }
 
     private static boolean isPatternLabel(final CasePatternContext ctx) {
@@ -1611,7 +1625,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     /** Emits the matching steps of a record pattern rooted at {@code source} for a pattern arm (see {@link #createPatternArmLabel}). */
     private void appendRecordPatternArmItems(final PatternNode pattern, final Expression source, final org.codehaus.groovy.syntax.Token instanceOf, final List<Object> items) {
         String recordName = "__$$rp" + switchPatternVariableSeq++;
-        VariableExpression recordVar = varX(recordName, pattern.type);
+        VariableExpression recordVar = atType(varX(recordName, pattern.type), pattern.type);
         items.add(armInstanceOfX(source, instanceOf, recordBindingX(recordVar)));
         String componentsName = "__$$rc" + switchPatternVariableSeq++;
         items.add(declS(localVarX(componentsName, ClassHelper.LIST_TYPE.getPlainNodeReference()),
@@ -1704,16 +1718,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         } else if (element.type != null) {
             ClassNode bindType = ClassHelper.getWrapper(element.type);
             if (element.name == null) {
-                items.add(armInstanceOfX(access, instanceOf, new ClassExpression(bindType)));
+                items.add(armInstanceOfX(access, instanceOf, atType(new ClassExpression(bindType), element.type)));
             } else if (ClassHelper.isPrimitiveType(element.type)) {
                 // the instanceof check needs the wrapper, but the pattern variable is
                 // bound with its declared primitive type, matching the closure-label
                 // lowering and Java record patterns (JEP 440)
                 String wrapperName = "__$$pw" + switchPatternVariableSeq++;
-                items.add(armInstanceOfX(access, instanceOf, declX(varX(wrapperName, bindType), EmptyExpression.INSTANCE)));
-                items.add(declS(localVarX(element.name, element.type), castX(element.type, varX(wrapperName))));
+                items.add(armInstanceOfX(access, instanceOf, declX(atType(varX(wrapperName, bindType), element.type), EmptyExpression.INSTANCE)));
+                items.add(declS(atType(localVarX(element.name, element.type), element.type), castX(element.type, varX(wrapperName))));
             } else {
-                items.add(armInstanceOfX(access, instanceOf, declX(varX(element.name, bindType), EmptyExpression.INSTANCE)));
+                items.add(armInstanceOfX(access, instanceOf, declX(atType(varX(element.name, bindType), element.type), EmptyExpression.INSTANCE)));
             }
         } else { // var/def binding: unconditional, also matches a null value
             items.add(declS(localVarX(element.name, ClassHelper.dynamicType()), access));
@@ -1727,8 +1741,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             throw createParsingFailedException("a record pattern cannot deconstruct a primitive type", ctx);
         }
         pattern.components = new ArrayList<>();
-        for (RecordPatternComponentContext componentCtx : ctx.recordPatternComponents().recordPatternComponent()) {
-            pattern.components.add(this.buildRecordPatternComponent(componentCtx));
+        if (asBoolean(ctx.recordPatternComponents())) { // otherwise a zero-component record pattern
+            for (RecordPatternComponentContext componentCtx : ctx.recordPatternComponents().recordPatternComponent()) {
+                pattern.components.add(this.buildRecordPatternComponent(componentCtx));
+            }
         }
         return pattern;
     }
@@ -1817,6 +1833,25 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             element.constant = (Expression) this.visit(ctx.expression()); // matched by equality
         }
         return element;
+    }
+
+    /** Rebuilds the legacy call {@code a.b.Foo()} from a label that parsed as a zero-component record pattern. */
+    private Expression rebuildCallExpression(final RecordPatternContext ctx) {
+        // the record pattern rule admits only a dotted name before the empty parentheses here
+        String[] names = ctx.type().getText().split("\\.");
+        Expression call;
+        if (names.length == 1) {
+            call = this.createMethodCallExpression(configureAST(new VariableExpression(names[0]), ctx.type()), new ArgumentListExpression());
+        } else {
+            Expression receiver = new VariableExpression(names[0]);
+            for (int i = 1; i < names.length - 1; i += 1) {
+                receiver = new PropertyExpression(receiver, names[i]);
+            }
+            MethodCallExpression mce = new MethodCallExpression(receiver, names[names.length - 1], new ArgumentListExpression());
+            mce.setImplicitThis(false);
+            call = mce;
+        }
+        return configureAST(call, ctx);
     }
 
     /** Rebuilds a legacy list expression from a {@code [...]} literal that parsed via the listPattern rule but is not pattern-shaped. */
@@ -1916,7 +1951,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     private void appendRecordPatternInstanceofConjuncts(final PatternNode pattern, final Expression source, final org.codehaus.groovy.syntax.Token instanceOf, final List<Expression> conjuncts) {
         String recordName = "__$$rp" + switchPatternVariableSeq++;
-        VariableExpression recordVar = varX(recordName, pattern.type);
+        VariableExpression recordVar = atType(varX(recordName, pattern.type), pattern.type);
         conjuncts.add(binX(source, instanceOf, recordBindingX(recordVar)));
         // componentsOrEmpty(...) always yields a List; this conjunct just binds it
         String componentsName = "__$$rc" + switchPatternVariableSeq++;
@@ -1933,8 +1968,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             } else if (component.type != null) {
                 ClassNode bindType = ClassHelper.getWrapper(component.type);
                 Expression rhs = component.name != null
-                        ? declX(varX(component.name, bindType), EmptyExpression.INSTANCE)
-                        : new ClassExpression(bindType);
+                        ? declX(atType(varX(component.name, bindType), component.type), EmptyExpression.INSTANCE)
+                        : atType(new ClassExpression(bindType), component.type);
                 conjuncts.add(binX(componentExpr, instanceOf, rhs));
             } else { // var/def binding: unconditional, also matches a null component
                 // `instanceof` never matches null, so the pattern variable is introduced by a
@@ -1944,6 +1979,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 conjuncts.add(callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "bound", args(assignX(varX(component.name), componentExpr))));
             }
         }
+    }
+
+    /** Gives a node synthesized for a pattern the source position of the pattern's type, so that diagnostics such as an unresolved class point at it. */
+    private static <T extends ASTNode> T atType(final T node, final ClassNode type) {
+        if (type.getLineNumber() > 0) node.setSourcePosition(type);
+        return node;
     }
 
     private static Expression recordBindingX(final VariableExpression recordVar) {

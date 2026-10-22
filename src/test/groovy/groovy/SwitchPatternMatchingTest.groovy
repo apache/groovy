@@ -1677,6 +1677,183 @@ final class SwitchPatternMatchingTest {
         assert err.message.contains('Cannot find matching method java.lang.String#intValue()')
     }
 
+    @Test
+    void testZeroComponentRecordPattern() {
+        assertScript '''
+            record None() {}
+            record Some(Object value) {}
+            record Pair(Object left, Object right) {}
+            def describe(o) {
+                switch (o) {
+                    case None()                  -> 'none'
+                    case Some(None())            -> 'some none'
+                    case Pair(None(), var right) -> "none and $right"
+                    default                      -> 'other'
+                }
+            }
+            assert describe(new None()) == 'none'
+            assert describe(new Some(new None())) == 'some none'
+            assert describe(new Some(1)) == 'other'
+            assert describe(new Pair(new None(), 2)) == 'none and 2'
+            assert describe(null) == 'other'
+        '''
+    }
+
+    @Test
+    void testZeroComponentRecordPatternQualifiedName() {
+        assertScript '''
+            class Opt { record None() {} }
+            def r = switch (new Opt.None()) {
+                case Opt.None() -> 'none'
+                default         -> 'other'
+            }
+            assert r == 'none'
+        '''
+    }
+
+    @Test
+    void testZeroComponentRecordPatternCoversSealedMemberCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            sealed interface Opt permits Some, None {}
+            record Some(String value) implements Opt {}
+            record None() implements Opt {}
+            @CompileStatic
+            int size(Opt o) {
+                switch (o) {
+                    case Some(var v) -> v.length()
+                    case None()      -> 0
+                }
+            }
+            assert size(new Some('abc')) == 3
+            assert size(new None()) == 0
+        '''
+    }
+
+    @Test
+    void testZeroComponentRecordPatternArityTypeChecked() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            record Point(int x) {}
+            @TypeChecked
+            def m(Object o) {
+                switch (o) {
+                    case Point() -> 1
+                    default      -> 0
+                }
+            }
+        '''
+        assert err.message.contains('The record pattern specifies 0 component(s) but Point has 1')
+    }
+
+    @Test
+    void testCapitalizedEmptyCallLabelIsRecordPatternInArrowForm() {
+        def err = shouldFail '''
+            def Evens() { { n -> n % 2 == 0 } }
+            def m(o) {
+                switch (o) {
+                    case Evens() -> 'even'
+                    default      -> 'odd'
+                }
+            }
+        '''
+        assert err.message.contains('unable to resolve class Evens')
+        assert err.message.contains('@ line 5, column 26.')
+    }
+
+    @Test
+    void testQuotedOrQualifiedCallLabelStaysMethodCall() {
+        assertScript '''
+            def Evens() { { n -> n % 2 == 0 } }
+            def Odds() { { n -> n % 2 == 1 } }
+            def quoted(o) {
+                switch (o) {
+                    case 'Evens'() -> 'even'
+                    default        -> 'odd'
+                }
+            }
+            def selected(o, String which) {
+                switch (o) {
+                    case "$which"() -> 'match'
+                    default         -> 'no match'
+                }
+            }
+            def qualified(o) {
+                switch (o) {
+                    case this.Evens() -> 'even'
+                    default           -> 'odd'
+                }
+            }
+            assert quoted(4) == 'even' && quoted(3) == 'odd'
+            assert selected(4, 'Evens') == 'match' && selected(4, 'Odds') == 'no match'
+            assert qualified(4) == 'even'
+        '''
+    }
+
+    @Test
+    void testEmptyCallLabelWithColonStaysMethodCall() {
+        assertScript '''
+            class Opts { static Closure Evens() { { n -> n % 2 == 0 } } }
+            def Evens() { { n -> n % 2 == 0 } }
+            def statement(o) {
+                switch (o) {
+                    case Evens(): return 'even'
+                    default: return 'odd'
+                }
+            }
+            def expression(o) {
+                return switch (o) {
+                    case Evens(): yield 'even'
+                    default: yield 'odd'
+                }
+            }
+            def qualified(o) {
+                return switch (o) {
+                    case Opts.Evens(): yield 'even'
+                    default: yield 'odd'
+                }
+            }
+            assert statement(4) == 'even' && statement(3) == 'odd'
+            assert expression(4) == 'even' && expression(3) == 'odd'
+            assert qualified(4) == 'even'
+        '''
+    }
+
+    @Test
+    void testLowercaseEmptyCallLabelStaysMethodCall() {
+        assertScript '''
+            def evens() { { n -> n % 2 == 0 } }
+            def m(o) {
+                switch (o) {
+                    case evens()   -> 'even'
+                    case [evens()] -> 'unreachable'
+                    default        -> 'odd'
+                }
+            }
+            assert m(4) == 'even'
+            assert m(3) == 'odd'
+        '''
+    }
+
+    @Test
+    void testUnresolvedPatternTypeReportsItsPosition() {
+        ['case Unknown u ->'      : 30,
+         'case Unknown(var x) ->' : 30,
+         'case Unknown() ->'      : 30,
+         'case [Unknown u] ->'    : 31].each { label, column ->
+            def err = shouldFail """
+                def m(o) {
+                    switch (o) {
+                        $label 1
+                        default -> 0
+                    }
+                }
+            """
+            assert err.message.contains('unable to resolve class Unknown')
+            assert err.message.contains("@ line 4, column ${column}.") : label
+        }
+    }
+
     private static List<String> patternSwitchWarnings(String source) {
         def cu = new CompilationUnit()
         cu.addSource('PatternSwitchTestScript.groovy', source)
