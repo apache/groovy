@@ -3647,6 +3647,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             mn = disambiguateMethods(mn, obj, args, call);
                         }
                     }
+                    if (mn.size() == 1 && mn.get(0) instanceof ExtensionMethodNode && chosenReceiver != null
+                            && isSuperExpression(objectExpression)) { // GROOVY-12470: super.m() invokes the superclass method
+                        List<MethodNode> superMethods = new ArrayList<>(findMethodsWithGenerated(chosenReceiver.getType(), name));
+                        superMethods.removeIf(MethodNode::isAbstract);
+                        superMethods = chooseBestMethod(chosenReceiver.getType(),
+                                filterMethodsByVisibility(superMethods, typeCheckingContext.getEnclosingClassNode()), args);
+                        if (superMethods.size() == 1) mn = superMethods;
+                    }
 
                     if (mn.size() == 1) {
                         MethodNode targetMethodCandidate = mn.get(0);
