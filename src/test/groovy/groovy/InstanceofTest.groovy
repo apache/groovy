@@ -1267,4 +1267,45 @@ final class InstanceofTest {
             assert m('s') == -1
         '''
     }
+
+    @Test
+    void testNotInstanceofRecordPattern() {
+        assertScript '''
+            record Point(int x, int y) {}
+            def f(o) {
+                if (o !instanceof Point(int x, int y)) return 'no'
+                x + y
+            }
+            assert f(new Point(1, 2)) == 3
+            assert f('s') == 'no'
+            assert f(null) == 'no'
+            def p = new Point(3, 4)
+            if (p !instanceof Point(var a, _)) {
+                assert false : 'expected match'
+            } else {
+                assert a == 3
+            }
+            assert !(p !instanceof Point(int c, int d)) && c + d == 7
+            assert 's' !instanceof Point(int e, int g)
+        '''
+    }
+
+    @Test
+    void testNotInstanceofNestedRecordPatternCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            record Point(int x, int y) {}
+            record Line(Point start, Point end) {}
+            @CompileStatic
+            int m(Object o) {
+                if (o !instanceof Line(Point(var x1, _), Point p2)) {
+                    return -1
+                }
+                return (x1 as int) + p2.x()
+            }
+            assert m(new Line(new Point(1, 2), new Point(3, 4))) == 4
+            assert m(new Line(new Point(1, 2), null)) == -1
+            assert m('s') == -1
+        '''
+    }
 }
