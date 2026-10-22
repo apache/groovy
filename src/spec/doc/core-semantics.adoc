@@ -1918,6 +1918,27 @@ include::../test/typing/TypeCheckingTest.groovy[tags=instanceof_java_equiv,inden
 However, in Groovy, even if you add `@TypeChecked` (and thus activate type checking) on the `doSomething` method, the
 cast is *not* necessary. The compiler embeds _instanceof_ inference that makes the cast optional.
 
+The same inference applies to a `switch` whose case label is a class: within
+that case, the switch value is known to be an instance of the class.
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=switch_instanceof_inference,indent=0]
+----
+<1> within `case Greeter:`, `o` is a `Greeter`
+<2> consecutive class labels narrow to the union of their types, so only methods
+    common to both may be called
+
+Only a class label narrows the switch value. Constant, collection, range,
+regex and closure labels match by value through `isCase`, and Groovy equality
+crosses types (`1` matches `1L` and `1.0`, `'a'` matches a `Character`), so
+they leave the switch value at its declared type. A narrowing made inside a
+case body, by `instanceof` or by a nested class label, is visible until the
+end of that case. When the case falls through, the narrowing of the switch
+value joins the next class label (giving a union); for any other label it is
+dropped, since that case may also be entered directly. Narrowing of other
+variables never survives a fall-through.
+
 [[section-flow-typing]]
 ===== Flow typing
 
