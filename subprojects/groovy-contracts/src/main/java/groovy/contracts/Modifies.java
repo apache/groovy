@@ -42,12 +42,20 @@ import java.lang.annotation.Target;
  *   void addAndCount(Item item) { ... }
  * </pre>
  * <p>
+ * An empty closure, or an empty list, declares that the method modifies nothing:
+ * <pre>
+ *   &#064;Modifies({})
+ *   int total() { ... }
+ * </pre>
+ * <p>
  * Multiple {@code @Modifies} annotations can also be used (via {@link Repeatable}):
  * <pre>
  *   &#064;Modifies({ this.items })
  *   &#064;Modifies({ this.count })
  *   void addAndCount(Item item) { ... }
  * </pre>
+ * The method's frame is the union of all its {@code @Modifies} declarations,
+ * so an empty {@code @Modifies({})} alongside others adds nothing to the frame.
  * <p>
  * When both {@code @Modifies} and {@link Ensures} are present on a method,
  * the {@code old} variable in the postcondition may only reference fields
