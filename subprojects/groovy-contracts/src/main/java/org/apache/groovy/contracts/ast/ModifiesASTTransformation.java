@@ -49,8 +49,9 @@ import java.util.Set;
  * the annotation closure and stores them as node metadata on the {@link MethodNode}.
  * <p>
  * The metadata key is {@value #MODIFIES_FIELDS_KEY} and the value is a
- * {@code Set<String>} of field/parameter names. Downstream processors
- * (such as {@code @Ensures} validation) can read this metadata.
+ * {@code Set<String>} of field/parameter names. An empty set means the method
+ * modifies nothing; absent metadata means the method has no {@code @Modifies}.
+ * Downstream processors (such as {@code @Ensures} validation) can read this metadata.
  *
  * @since 6.0.0
  * @see Modifies
@@ -81,20 +82,27 @@ public class ModifiesASTTransformation implements ASTTransformation {
             modifiesSet = new LinkedHashSet<>();
         }
 
+        if (annotation.getMember("value") == null) {
+            source.addError(new SyntaxException(
+                    "@Modifies requires a closure listing the modifiable targets; use @Modifies({}) to declare that nothing is modified",
+                    annotation.getLineNumber(), annotation.getColumnNumber()));
+            return;
+        }
+
         extractFromAnnotation(annotation, methodNode, modifiesSet, source);
 
         // Replace the closure with a class reference so the type checker
         // doesn't try to type-check the specification closure
         annotation.setMember("value", new org.codehaus.groovy.ast.expr.ClassExpression(ClassHelper.OBJECT_TYPE));
 
-        if (!modifiesSet.isEmpty()) {
-            methodNode.putNodeMetaData(MODIFIES_FIELDS_KEY, modifiesSet);
-        }
+        // stored even when empty: an empty frame (nothing modified) differs from no @Modifies
+        methodNode.putNodeMetaData(MODIFIES_FIELDS_KEY, modifiesSet);
     }
 
     private static void extractFromAnnotation(AnnotationNode annotation, MethodNode methodNode, Set<String> modifiesSet, SourceUnit source) {
         Expression value = annotation.getMember("value");
         if (!(value instanceof ClosureExpression closureExpr)) return;
+        if (isEmptyClosure(closureExpr)) return;
 
         Expression expr = extractExpression(closureExpr);
         if (expr == null) {
@@ -152,6 +160,11 @@ public class ModifiesASTTransformation implements ASTTransformation {
         source.addError(new SyntaxException(
                 "@Modifies elements must be field references (this.field) or parameter references",
                 expr.getLineNumber(), expr.getColumnNumber()));
+    }
+
+    private static boolean isEmptyClosure(ClosureExpression closureExpression) {
+        Statement code = closureExpression.getCode();
+        return code == null || code.isEmpty();
     }
 
     private static Expression extractExpression(ClosureExpression closureExpression) {

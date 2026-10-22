@@ -253,4 +253,65 @@ class ModifiesTests extends BaseTestClass {
             ''')
         }
     }
+
+    // GROOVY-12477
+    @Test
+    void modifies_with_empty_closure_declares_nothing_modified() {
+        def instance = create_instance_of('''
+            import groovy.contracts.*
+
+            class A {
+                int count = 3
+
+                @Modifies({})
+                @Ensures({ result == count })
+                int total() {
+                    count
+                }
+            }
+        ''')
+        assert instance.total() == 3
+    }
+
+    // GROOVY-12477
+    @Test
+    void modifies_with_empty_closure_and_ensures_old_reference_causes_compile_error() {
+        for (frame in ['{}', '{ [] }']) {
+            def message = shouldFail MultipleCompilationErrorsException, {
+                add_class_to_classpath("""
+                    import groovy.contracts.*
+
+                    class A {
+                        int count = 0
+
+                        @Modifies($frame)
+                        @Ensures({ old -> old.count == count })
+                        void touch() {
+                        }
+                    }
+                """)
+            }
+            assert message.contains("@Ensures references old.count but @Modifies does not declare 'count' as modifiable")
+        }
+    }
+
+    // GROOVY-12477
+    @Test
+    void modifies_without_closure_causes_compile_error() {
+        def message = shouldFail MultipleCompilationErrorsException, {
+            add_class_to_classpath('''
+                import groovy.contracts.*
+
+                class A {
+                    int count = 0
+
+                    @Modifies
+                    void increment() {
+                        count++
+                    }
+                }
+            ''')
+        }
+        assert message.contains('@Modifies requires a closure listing the modifiable targets')
+    }
 }

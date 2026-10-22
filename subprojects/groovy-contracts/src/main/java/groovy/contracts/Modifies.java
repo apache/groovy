@@ -42,6 +42,12 @@ import java.lang.annotation.Target;
  *   void addAndCount(Item item) { ... }
  * </pre>
  * <p>
+ * An empty closure, or an empty list, declares that the method modifies nothing:
+ * <pre>
+ *   &#064;Modifies({})
+ *   int total() { ... }
+ * </pre>
+ * <p>
  * Multiple {@code @Modifies} annotations can also be used (via {@link Repeatable}):
  * <pre>
  *   &#064;Modifies({ this.items })
