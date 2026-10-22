@@ -4684,6 +4684,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             mn = disambiguateMethods(mn, obj, args, call);
                         }
                     }
+                    if (mn.size() == 1 && mn.get(0) instanceof ExtensionMethodNode && chosenReceiver != null
+                            && isSuperExpression(objectExpression)) { // GROOVY-12470: super.m() invokes the superclass method
+                        List<MethodNode> superMethods = new ArrayList<>(findMethodsWithGenerated(chosenReceiver.getType(), name));
+                        superMethods.removeIf(MethodNode::isAbstract);
+                        superMethods = chooseBestMethod(chosenReceiver.getType(),
+                                filterMethodsByVisibility(superMethods, typeCheckingContext.getEnclosingClassNode()), args);
+                        if (superMethods.size() == 1) mn = superMethods;
+                    }
 
 out:                if (mn.size() != 1) {
                         addAmbiguousErrorMessage(mn, name, args, call);
