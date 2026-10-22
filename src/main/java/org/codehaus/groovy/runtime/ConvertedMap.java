@@ -57,7 +57,7 @@ public class ConvertedMap extends ConversionHandler {
 
     @Override
     public String toString() {
-        return DefaultGroovyMethods.toString(getDelegate());
+        return FormatHelper.toString(getDelegate());
     }
 
     @Override
