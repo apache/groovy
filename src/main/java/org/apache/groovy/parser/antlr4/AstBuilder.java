@@ -168,6 +168,8 @@ import java.util.stream.Collectors;
 import static groovy.lang.Tuple.tuple;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_ARM;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_GUARDED;
+import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_RECORD_BINDING;
+import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_RECORD_COMPONENT;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_RECORD_COMPONENT_TYPES;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_HEAD_TYPE;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_LIST;
@@ -1609,7 +1611,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     /** Emits the matching steps of a record pattern rooted at {@code source} for a pattern arm (see {@link #createPatternArmLabel}). */
     private void appendRecordPatternArmItems(final PatternNode pattern, final Expression source, final org.codehaus.groovy.syntax.Token instanceOf, final List<Object> items) {
         String recordName = "__$$rp" + switchPatternVariableSeq++;
-        items.add(armInstanceOfX(source, instanceOf, declX(varX(recordName, pattern.type), EmptyExpression.INSTANCE)));
+        VariableExpression recordVar = varX(recordName, pattern.type);
+        items.add(armInstanceOfX(source, instanceOf, recordBindingX(recordVar)));
         String componentsName = "__$$rc" + switchPatternVariableSeq++;
         items.add(declS(localVarX(componentsName, ClassHelper.LIST_TYPE.getPlainNodeReference()),
                 callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "components", args(varX(recordName)))));
@@ -1617,7 +1620,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         for (int i = 0, n = pattern.components.size(); i < n; i += 1) {
             PatternNode component = pattern.components.get(i);
             if (component.isUncheckedWildcard()) continue;
-            appendElementArmItems(component, callX(varX(componentsName), "get", args(constX(i, true))), instanceOf, items);
+            Expression componentExpr = callX(varX(componentsName), "get", args(constX(i, true)));
+            componentExpr.putNodeMetaData(PATTERN_RECORD_COMPONENT, new Object[]{recordVar, i});
+            appendElementArmItems(component, componentExpr, instanceOf, items);
         }
     }
 
@@ -1911,7 +1916,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     private void appendRecordPatternInstanceofConjuncts(final PatternNode pattern, final Expression source, final org.codehaus.groovy.syntax.Token instanceOf, final List<Expression> conjuncts) {
         String recordName = "__$$rp" + switchPatternVariableSeq++;
-        conjuncts.add(binX(source, instanceOf, declX(varX(recordName, pattern.type), EmptyExpression.INSTANCE)));
+        VariableExpression recordVar = varX(recordName, pattern.type);
+        conjuncts.add(binX(source, instanceOf, recordBindingX(recordVar)));
         // componentsOrEmpty(...) always yields a List; this conjunct just binds it
         String componentsName = "__$$rc" + switchPatternVariableSeq++;
         conjuncts.add(binX(callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "componentsOrEmpty", args(varX(recordName))), instanceOf,
@@ -1921,6 +1927,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             PatternNode component = pattern.components.get(i);
             if (component.isUncheckedWildcard()) continue;
             Expression componentExpr = callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "component", args(varX(componentsName), constX(i, true)));
+            componentExpr.putNodeMetaData(PATTERN_RECORD_COMPONENT, new Object[]{recordVar, i});
             if (component.components != null) { // nested record pattern
                 appendRecordPatternInstanceofConjuncts(component, componentExpr, instanceOf, conjuncts);
             } else if (component.type != null) {
@@ -1937,6 +1944,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 conjuncts.add(callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "bound", args(assignX(varX(component.name), componentExpr))));
             }
         }
+    }
+
+    private static Expression recordBindingX(final VariableExpression recordVar) {
+        Expression binding = declX(recordVar, EmptyExpression.INSTANCE);
+        binding.putNodeMetaData(PATTERN_RECORD_BINDING, Boolean.TRUE);
+        return binding;
     }
 
     /** A parsed pattern (GEP-19): a record or list pattern when {@code components} is non-null, otherwise a binding, literal element or wildcard. */
