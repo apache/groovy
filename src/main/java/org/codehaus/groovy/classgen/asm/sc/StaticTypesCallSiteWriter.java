@@ -42,6 +42,7 @@ import org.codehaus.groovy.classgen.asm.ClosureWriter;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
+import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
@@ -58,6 +59,7 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.getMethod;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
+import static org.apache.groovy.ast.tools.ExpressionUtils.mayHaveSideEffects;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
@@ -170,15 +172,30 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
 
         if (isClassReceiver[0] && !isClassType(receiverType)) {
             Expression theClass = receiver instanceof ClassExpression ? receiver : classX(receiverType); // GROOVY-12473
-
-            if (makeGetPropertyWithGetter(theClass, receiverType, propertyName, safe, implicitThis)) {
-                return;
+            Expression theReceiver = receiver;
+            int receiverSlot = -1;
+            if (theClass != receiver && mayHaveSideEffects(receiver)) {
+                // GROOVY-12479: a static member reached through an expression still evaluates it
+                // (JLS 15.11.1); keep the value for the java.lang.Class property fallback so that
+                // it is evaluated exactly once
+                receiver.visit(controller.getAcg());
+                OperandStack operandStack = controller.getOperandStack();
+                ClassNode receiverValueType = operandStack.getTopOperand();
+                receiverSlot = controller.getCompileStack().defineTemporaryVariable("$classReceiver", receiverValueType, true);
+                theReceiver = new VariableSlotLoader(receiverValueType, receiverSlot, operandStack);
             }
-            if (makeGetField             (theClass, receiverType, propertyName, safe, implicitThis)) {
-                return;
-            }
-            if (makeGetPropertyWithGetter(receiver,   CLASS_Type, propertyName, safe, implicitThis)) {
-                return;
+            try {
+                if (makeGetPropertyWithGetter(theClass, receiverType, propertyName, safe, implicitThis)) {
+                    return;
+                }
+                if (makeGetField             (theClass, receiverType, propertyName, safe, implicitThis)) {
+                    return;
+                }
+                if (makeGetPropertyWithGetter(theReceiver, CLASS_Type, propertyName, safe, implicitThis)) {
+                    return;
+                }
+            } finally {
+                if (receiverSlot >= 0) controller.getCompileStack().removeVar(receiverSlot);
             }
         } else {
             if (receiverType.isArray() && "length".equals(propertyName)) {
@@ -503,6 +520,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             MethodVisitor mv = controller.getMethodVisitor();
             ClassNode resultType = field.getOriginType();
             if (field.isStatic()) {
+                if (!implicitThis && mayHaveSideEffects(receiver)) {
+                    // a static field read through an expression still evaluates it (JLS 15.11.1)
+                    receiver.visit(controller.getAcg());
+                    operandStack.pop();
+                }
                 mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(receiverType), fieldName, BytecodeHelper.getTypeDescription(resultType));
                 operandStack.push(resultType);
             } else {
@@ -805,6 +827,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
 
         super.fallbackAttributeOrPropertySite(expression, objectExpression, name, adapter);
     }
+
 
     private ClassNode getPropertyOwnerType(final Expression receiver, final boolean... isClassReceiver) {
         var inferredType = receiver.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);

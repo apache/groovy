@@ -61,6 +61,7 @@ import java.util.TreeMap;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
+import static org.apache.groovy.ast.tools.ExpressionUtils.mayHaveSideEffects;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
 import static org.codehaus.groovy.ast.ClassHelper.isFunctionalInterface;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
@@ -248,6 +249,10 @@ public class InvocationWriter {
                 mv.visitIntInsn(ALOAD, 0);
                 operandStack.push(enclosingClass);
             }
+        } else if (!implicitThis && mayHaveSideEffects(receiver)) {
+            // a static member reached through an expression still evaluates it (JLS 15.12.4.1)
+            receiver.visit(controller.getAcg());
+            operandStack.pop();
         }
 
         int opcode;
@@ -329,6 +334,7 @@ public class InvocationWriter {
         }
         return false;
     }
+
 
     /**
      * Supplements {@link ExpressionUtils#isThisExpression isThisExpression}
