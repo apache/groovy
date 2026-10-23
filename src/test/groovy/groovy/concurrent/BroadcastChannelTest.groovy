@@ -20,6 +20,11 @@ package groovy.concurrent
 
 import org.junit.jupiter.api.Test
 
+import java.util.concurrent.Callable
+import java.util.concurrent.CyclicBarrier
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+
 import static groovy.test.GroovyAssert.assertScript
 import static org.junit.jupiter.api.Assertions.assertThrows
 
@@ -165,5 +170,34 @@ final class BroadcastChannelTest {
             empty.subscribe()
         }
         assert late.cause.is(only)
+    }
+
+    @Test
+    void subscribeRacingCloseIsEitherRejectedOrClosed() {
+        def pool = Executors.newFixedThreadPool(2)
+        try {
+            2000.times {
+                def broadcast = BroadcastChannel.create()
+                def start = new CyclicBarrier(2)
+                def subscribing = pool.submit({
+                    start.await()
+                    try {
+                        broadcast.subscribe()
+                    } catch (ChannelClosedException ignored) {
+                        null
+                    }
+                } as Callable)
+                def closing = pool.submit({
+                    start.await()
+                    broadcast.close()
+                } as Callable)
+                closing.get(2, TimeUnit.SECONDS)
+                def sub = subscribing.get(2, TimeUnit.SECONDS)
+                // a subscriber added while close ran would never close
+                assert sub == null || sub.closed
+            }
+        } finally {
+            pool.shutdownNow()
+        }
     }
 }

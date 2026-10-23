@@ -79,10 +79,9 @@ the `Awaitable` returned by `async`.
 output, so the same `try` / `catch` sees it at the end of the pipeline.
 Closing one side of a `split` does not fail the other. `merge` closes its
 output when either input fails, after it has forwarded values a relay has
-already taken and values already buffered on the other input. It keeps
-taking from that input while the buffer is non-empty, so a producer that
-refills the buffer delays the failure until a gap appears. It does not
-close that input. A producer still waiting to hand a value over is not
+already taken and values buffered on the other input when the failure is
+seen. Values sent to that input afterwards are not forwarded, so a busy
+producer cannot hold the failure back. It does not close that input. A producer still waiting to hand a value over is not
 released. When both inputs fail, the first failure retained on the output
 wins.
 `BroadcastChannel.close(failure)` returns the same boolean and closes every
