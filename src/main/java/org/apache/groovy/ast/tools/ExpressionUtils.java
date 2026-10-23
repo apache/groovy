@@ -95,6 +95,19 @@ public final class ExpressionUtils {
     }
 
     /**
+     * Checks whether evaluating the supplied expression could be observed.
+     * Conservative: only a class literal and a variable (including {@code this}
+     * and {@code super}) are known to be free of side effects; any other
+     * expression, including a property read, is assumed to have them.
+     *
+     * @param expression the expression to inspect
+     * @return {@code true} unless the expression is a class literal or a variable
+     */
+    public static boolean mayHaveSideEffects(final Expression expression) {
+        return expression != null && !(expression instanceof ClassExpression) && !(expression instanceof VariableExpression);
+    }
+
+    /**
      * Determines if a type matches another type (or array thereof).
      *
      * @param targetType the candidate type
