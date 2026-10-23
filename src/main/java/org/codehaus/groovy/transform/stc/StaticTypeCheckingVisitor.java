@@ -5115,7 +5115,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 PropertyNode property = null;
                 if (pname != null) {
                     property = findProperty(receiver, pname);
-                } else {
+                    if (property != null && property.getGetterName() != null && !name.equals(property.getGetterName())) {
+                        property = null; // explicit getter name, e.g. record component accessor
+                    }
+                }
+                if (property == null) {
                     out: // look for property via getGetterName() for non-canonical case
                     for (ClassNode cn = receiver; cn != null; cn = cn.getSuperClass()) {
                         for (PropertyNode pn : cn.getProperties()) {
