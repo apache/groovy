@@ -700,6 +700,206 @@ final class Jep361SwitchExpressionTest {
         ''', 'does not support `return`'
     }
 
+    //--------------------------------------------------------------------------
+    // A yield that does not end its arm still completes the switch when the
+    // switch is in statement position: its value is the result in return
+    // position, and is discarded otherwise
+
+    @Test
+    void earlyYieldInTrailingSwitchStatement() {
+        assertBoth '''
+            def pick(boolean flag) {
+                switch (1) {
+                    case 1 -> {
+                        if (flag) yield 'first'
+                        yield 'second'
+                    }
+                }
+            }
+            assert pick(true) == 'first'
+            assert pick(false) == 'second'
+        '''
+    }
+
+    @Test
+    void earlyYieldInTrailingSwitchStatementWithPrimitiveReturnType() {
+        assertBoth '''
+            int pick(int n) {
+                switch (n) {
+                    case 1 -> {
+                        if (n > 0) yield 10
+                        yield 20
+                    }
+                    default -> 30
+                }
+            }
+            assert pick(1) == 10
+            assert pick(2) == 30
+        '''
+    }
+
+    @Test
+    void earlyYieldInTrailingSwitchStatementOfClosure() {
+        assertBoth '''
+            def pick = { boolean flag ->
+                switch (1) {
+                    case 1 -> {
+                        if (flag) yield 'first'
+                        yield 'second'
+                    }
+                }
+            }
+            assert pick(true) == 'first'
+            assert pick(false) == 'second'
+        '''
+    }
+
+    @Test
+    void earlyYieldLeavesValueDiscardedSwitchStatement() {
+        assertBoth '''
+            List log = []
+            def run(boolean flag, List log) {
+                switch (1) {
+                    case 1 -> {
+                        if (flag) yield 'first'
+                        log << 'fell through'
+                        yield 'second'
+                    }
+                }
+                log << 'after'
+                'end'
+            }
+            assert run(true, log) == 'end'
+            assert log == ['after']
+            log.clear()
+            assert run(false, log) == 'end'
+            assert log == ['fell through', 'after']
+        '''
+    }
+
+    @Test
+    void earlyYieldInsideLoopOfArm() {
+        assertBoth '''
+            def pick(List<Integer> xs) {
+                switch (1) {
+                    case 1 -> {
+                        for (x in xs) {
+                            if (x > 2) yield "big $x".toString()
+                        }
+                        yield 'none'
+                    }
+                }
+            }
+            assert pick([1, 5, 7]) == 'big 5'
+            assert pick([1]) == 'none'
+
+            List log = []
+            def run(List<Integer> xs, List log) {
+                switch (1) {
+                    case 1 -> {
+                        while (!xs.isEmpty()) {
+                            int x = xs.remove(0)
+                            if (x > 2) yield x
+                            log << x
+                        }
+                        log << 'loop done'
+                        yield 0
+                    }
+                }
+                log << 'after'
+            }
+            run([1, 5, 7], log)
+            assert log == [1, 'after']
+        '''
+    }
+
+    @Test
+    void earlyYieldRunsEnclosingFinallyBlock() {
+        assertBoth '''
+            List log = []
+            def pick(boolean flag, List log) {
+                switch (1) {
+                    case 1 -> {
+                        try {
+                            if (flag) yield 'first'
+                            log << 'body'
+                        } finally {
+                            log << 'finally'
+                        }
+                        yield 'second'
+                    }
+                }
+            }
+            assert pick(true, log) == 'first'
+            assert log == ['finally']
+            log.clear()
+            assert pick(false, log) == 'second'
+            assert log == ['body', 'finally']
+        '''
+    }
+
+    @Test
+    void earlyYieldTargetsItsOwnSwitchWhenSwitchStatementsAreNested() {
+        assertBoth '''
+            def pick(int a, int b) {
+                switch (a) {
+                    case 1 -> {
+                        switch (b) {
+                            case 1 -> {
+                                if (a == b) yield 'inner early'
+                                yield 'inner late'
+                            }
+                        }
+                        if (b == 2) yield 'outer early'
+                        yield 'outer late'
+                    }
+                }
+            }
+            assert pick(1, 1) == 'outer late'
+            assert pick(1, 2) == 'outer early'
+            assert pick(1, 3) == 'outer late'
+        '''
+    }
+
+    @Test
+    void earlyYieldInsideNestedColonSwitchStatementCompletesTheArrowSwitch() {
+        assertBoth '''
+            def pick(int a, int b) {
+                switch (a) {
+                    case 1 -> {
+                        switch (b) {
+                            case 2:
+                                yield 'nested colon'
+                        }
+                        yield 'outer'
+                    }
+                }
+            }
+            assert pick(1, 2) == 'nested colon'
+            assert pick(1, 3) == 'outer'
+
+            List log = []
+            def run(int a, int b, List log) {
+                switch (a) {
+                    case 1 -> {
+                        switch (b) {
+                            case 2:
+                                yield 'nested colon'
+                        }
+                        log << 'fell through'
+                        yield 'outer'
+                    }
+                }
+                log << 'after'
+            }
+            run(1, 2, log)
+            assert log == ['after']
+            log.clear()
+            run(1, 3, log)
+            assert log == ['fell through', 'after']
+        '''
+    }
+
     @Test
     void mixingArrowAndColonLabelsIsError() {
         shouldFailBoth '''
