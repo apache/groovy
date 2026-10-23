@@ -41,6 +41,7 @@ import java.lang.invoke.MethodType;
 
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.syntax.Types.LEFT_SQUARE_BRACKET;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.COMPOUND_ASSIGN_TARGET;
 import static org.objectweb.asm.Opcodes.H_INVOKESTATIC;
 
 /**
@@ -113,6 +114,10 @@ public class IndyBinHelper extends BinaryExpressionHelper {
                 "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
                 BSM, IndyCompoundAssign.packNames(assignName, baseName), 0);
         operandStack.replace(OBJECT_TYPE, 2);
+
+        // The type checker resolved a *Assign method, so the receiver is mutated in
+        // place and there is nothing to store (the LHS may be final or read-only).
+        if (expression.getNodeMetaData(COMPOUND_ASSIGN_TARGET) != null) return;
 
         // Store the returned value back into the LHS and leave it as the expression value.
         operandStack.dup();
