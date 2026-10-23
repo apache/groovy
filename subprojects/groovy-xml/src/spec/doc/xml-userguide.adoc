@@ -773,6 +773,19 @@ include::../test/UserGuideXmlTypedTest.groovy[tags=parseTextAs_nested,indent=0]
 Standard Jackson annotations such as `@JsonProperty` and `@JsonFormat`
 are supported for property name mapping and type conversion.
 
+[NOTE]
+====
+Jackson 3 takes precedence whenever it is on the classpath, even alongside Jackson 2.
+An application that gains Jackson 3 as a transitive dependency, for example through
+Spring Boot 4, therefore moves `parseAs` from Jackson 2 to Jackson 3 without any change
+to Groovy. The annotations in `com.fasterxml.jackson.annotation`, such as `@JsonProperty`
+and `@JsonFormat`, work with both versions. The databind annotations do not: Jackson 3
+reads `@JsonSerialize`, `@JsonDeserialize`, `@JsonNaming`, `@JsonPOJOBuilder` and the
+rest only from `tools.jackson.databind.annotation`, and Jackson 2 only from
+`com.fasterxml.jackson.databind.annotation`. Each silently ignores the other's, so a type
+that relies on them can bind differently once Jackson 3 arrives.
+====
+
 Overloaded variants of `parseAs` accept a `Reader`, `InputStream`,
 `File`, or `Path` in addition to the `String`-based `parseTextAs`.
 
