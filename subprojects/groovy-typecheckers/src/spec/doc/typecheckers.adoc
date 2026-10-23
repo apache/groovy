@@ -1462,13 +1462,17 @@ The checker flags:
 * Calls to methods not known to be pure
 * Calls matching effect categories (logging, metrics, I/O, non-determinism) unless allowed
 * Construction of non-deterministic or I/O types
+* Operators that stand for such calls, when the receiver is a parameter, a field or property,
+  or `this`: `list << x` (`leftShift`), `map[k] = v`, `a[i] += v` and `a[i]++` (`putAt`), and a
+  compound assignment such as `a += v` that resolves to a `*Assign` method (`plusAssign`),
+  including one renamed with `@OperatorRename`. Building up a local value (`def out = []; out << x`)
+  is not reported, and `a += v` without a `*Assign` method only rebinds `a`.
 
 The checker does *not* currently detect:
 
-* Mutation through aliases (`def ref = this.list; ref.clear()`)
+* Mutation through aliases (`def ref = this.list; ref.clear()`, or `def t = param; t << x`)
 * Deep heap mutation (`this.items.get(0).setName("x")`)
 * Mutation via chained property access (`a.b.c = 1`)
-* Mutation through operators (`list << x`, `map[k] = v`)
 
 These limitations are acceptable for an opt-in checker -- the common cases are caught,
 and unverifiable calls produce warnings.

@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.FieldNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
+import org.codehaus.groovy.ast.PropertyNode
 import org.codehaus.groovy.ast.Variable
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.ClassExpression
@@ -431,21 +432,42 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
             @Override
             void visitBinaryExpression(BinaryExpression expression) {
                 super.visitBinaryExpression(expression)
-                if (isAssignment(expression.operation.type)) {
-                    checkFieldWrite(expression.leftExpression, expression)
+                int op = expression.operation.type
+                Expression left = expression.leftExpression
+                if (isAssignment(op)) {
+                    if (isSubscript(left)) {
+                        // a[i] = v and a[i] += v store through a.putAt(i, ...)
+                        checkOperatorCall(((BinaryExpression) left).leftExpression, 'putAt', null, '[]' + expression.operation.text, expression)
+                    } else if (expression.getNodeMetaData(StaticTypesMarker.COMPOUND_ASSIGN_TARGET) instanceof MethodNode) {
+                        // GEP-15: a += v resolved to a *Assign method mutates a in place rather than reassigning it
+                        MethodNode target = expression.getNodeMetaData(StaticTypesMarker.COMPOUND_ASSIGN_TARGET)
+                        checkOperatorCall(left, target.name, target, expression.operation.text, expression)
+                    } else {
+                        checkFieldWrite(left, expression)
+                    }
+                } else if (op == Types.LEFT_SHIFT) {
+                    checkOperatorCall(left, 'leftShift', expression.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET), '<<', expression)
                 }
             }
 
             @Override
             void visitPostfixExpression(PostfixExpression expression) {
                 super.visitPostfixExpression(expression)
-                checkFieldWrite(expression.expression, expression)
+                checkIncrementTarget(expression.expression, expression.operation.text, expression)
             }
 
             @Override
             void visitPrefixExpression(PrefixExpression expression) {
                 super.visitPrefixExpression(expression)
-                checkFieldWrite(expression.expression, expression)
+                checkIncrementTarget(expression.expression, expression.operation.text, expression)
+            }
+
+            private void checkIncrementTarget(Expression target, String operator, Expression context) {
+                if (isSubscript(target)) {
+                    checkOperatorCall(((BinaryExpression) target).leftExpression, 'putAt', null, '[]' + operator, context)
+                } else {
+                    checkFieldWrite(target, context)
+                }
             }
 
             @Override
@@ -457,7 +479,23 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
             @Override
             void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
                 super.visitStaticMethodCallExpression(call)
+                if (isRenamedCompoundAssign(call)) {
+                    // @OperatorRename(plusAssign = 'addInPlace') turns a += v into compoundAssign(a, v, 'addInPlace', ...)
+                    List<Expression> args = ((TupleExpression) call.arguments).expressions
+                    Expression receiver = args[0]
+                    String methodName = args[2].text
+                    ClassNode receiverType = getType(receiver)
+                    List<MethodNode> candidates = receiverType ? receiverType.getMethods(methodName) : []
+                    checkOperatorCall(receiver, methodName, candidates.size() == 1 ? candidates[0] : null, 'compound assignment', call)
+                    return
+                }
                 checkStaticCall(call)
+            }
+
+            private boolean isRenamedCompoundAssign(StaticMethodCallExpression call) {
+                call.ownerType.name == 'org.codehaus.groovy.runtime.ScriptBytecodeAdapter' && call.method == 'compoundAssign'
+                        && call.arguments instanceof TupleExpression && ((TupleExpression) call.arguments).expressions.size() == 4
+                        && ((TupleExpression) call.arguments).expressions[2] instanceof ConstantExpression
             }
 
             @Override
@@ -511,52 +549,11 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                 }
 
                 // Check receiver type for logging/metrics/IO
-                ClassNode receiverType = getType(receiver)
-                if (receiverType) {
-                    String typeName = receiverType.name
-
-                    // Check logging by receiver type
-                    if (LOGGING_TYPE_PREFIXES.any { typeName.startsWith(it) }) {
-                        if (!allowLogging) {
-                            report("@Pure violation: call to '${methodName}()' on logging type (allow with LOGGING)", call)
-                        }
-                        return
-                    }
-
-                    // Check metrics by receiver type
-                    if (METRICS_TYPE_PREFIXES.any { typeName.startsWith(it) }) {
-                        if (!allowMetrics) {
-                            report("@Pure violation: call to '${methodName}()' on metrics type (allow with METRICS)", call)
-                        }
-                        return
-                    }
-
-                    // Check I/O by receiver type (but not PrintStream used for logging)
-                    if (IO_TYPE_PREFIXES.any { typeName.startsWith(it) }) {
-                        if (!allowIO) {
-                            report("@Pure violation: call to '${methodName}()' is an I/O operation (allow with IO)", call)
-                        }
-                        return
-                    }
-
-                    // Check non-deterministic instance methods
-                    Set<String> nonDetMethods = NONDETERMINISTIC_INSTANCE_METHODS[typeName]
-                    if (nonDetMethods && methodName in nonDetMethods) {
-                        if (!allowNondeterminism) {
-                            report("@Pure violation: '${typeName}.${methodName}()' is non-deterministic (allow with NONDETERMINISM)", call)
-                        }
-                        return
-                    }
-
-                    // Immutable receiver — all calls are pure
-                    if (ImmutablePropertyUtils.isBuiltinImmutable(typeName)) return
-                }
+                if (checkReceiverType(getType(receiver), methodName, "call to '${methodName}()'", call)) return
 
                 // Check callee annotations
                 def targetMethod = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET)
-                if (targetMethod instanceof MethodNode) {
-                    if (hasPureAnno(targetMethod) || hasSideEffectFreeAnno(targetMethod) || hasContractPureAnno(targetMethod) || hasMemoizedAnno(targetMethod)) return
-                }
+                if (targetMethod instanceof MethodNode && hasAnyPureAnno(targetMethod)) return
 
                 // Known pure method name
                 if (methodName in KNOWN_PURE_METHODS) return
@@ -576,6 +573,83 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                         report("@Pure warning: call to 'this.${methodName}()' — purity cannot be verified (consider adding @Pure)", call)
                     }
                 }
+            }
+
+            /**
+             * Applies the checks that depend only on the receiver's type: logging, metrics, I/O and
+             * non-deterministic types report (unless allowed), and immutable types are pure.
+             *
+             * @param what how the call is described in a report, e.g. {@code call to 'add()'}
+             * @return whether the receiver type decided the call, so no further checks apply
+             */
+            private boolean checkReceiverType(ClassNode receiverType, String methodName, String what, Expression node) {
+                if (!receiverType) return false
+                String typeName = receiverType.name
+
+                // Check logging by receiver type
+                if (LOGGING_TYPE_PREFIXES.any { typeName.startsWith(it) }) {
+                    if (!allowLogging) {
+                        report("@Pure violation: ${what} on logging type (allow with LOGGING)", node)
+                    }
+                    return true
+                }
+
+                // Check metrics by receiver type
+                if (METRICS_TYPE_PREFIXES.any { typeName.startsWith(it) }) {
+                    if (!allowMetrics) {
+                        report("@Pure violation: ${what} on metrics type (allow with METRICS)", node)
+                    }
+                    return true
+                }
+
+                // Check I/O by receiver type (but not PrintStream used for logging)
+                if (IO_TYPE_PREFIXES.any { typeName.startsWith(it) }) {
+                    if (!allowIO) {
+                        report("@Pure violation: ${what} is an I/O operation (allow with IO)", node)
+                    }
+                    return true
+                }
+
+                // Check non-deterministic instance methods
+                Set<String> nonDetMethods = NONDETERMINISTIC_INSTANCE_METHODS[typeName]
+                if (nonDetMethods && methodName in nonDetMethods) {
+                    if (!allowNondeterminism) {
+                        report("@Pure violation: '${typeName}.${methodName}()' is non-deterministic (allow with NONDETERMINISM)", node)
+                    }
+                    return true
+                }
+
+                // Immutable receiver — all calls are pure
+                ImmutablePropertyUtils.isBuiltinImmutable(typeName)
+            }
+
+            // ---- mutating operator check ----
+
+            /**
+             * Checks an operator that stands for a method call on {@code receiver}, such as
+             * {@code a << b} ({@code leftShift}), {@code a[i] = v} ({@code putAt}) or a GEP-15
+             * {@code a += v} resolved to {@code plusAssign}, as that call. Only receivers outside
+             * the method's own state are checked; building up a local value is left alone.
+             */
+            private void checkOperatorCall(Expression receiver, String methodName, Object targetMethod, String operator, Expression node) {
+                if (!isNonLocalReceiver(receiver)) return
+                if (checkReceiverType(getType(receiver), methodName, "'${operator}' (${methodName}())", node)) return
+                if (targetMethod instanceof MethodNode && hasAnyPureAnno(targetMethod)) return
+                String receiverName = resolveReceiverName(receiver) ?: receiver.text
+                report("@Pure warning: '${operator}' on '${receiverName}' calls ${methodName}() — purity cannot be verified", node)
+            }
+
+            /**
+             * Whether mutating {@code receiver} changes state the method does not own: a caller's
+             * argument, a field or property, {@code this}, or a variable captured by a checked closure.
+             */
+            private boolean isNonLocalReceiver(Expression receiver) {
+                if (receiver instanceof PropertyExpression) return true
+                if (!(receiver instanceof VariableExpression)) return false
+                if (receiver.isThisExpression()) return true
+                Variable v = findTargetVariable(receiver)
+                if (v instanceof Parameter || v instanceof FieldNode || v instanceof PropertyNode) return true
+                root != null && !rootLocals.contains(v)
             }
 
             // ---- static method call check ----
@@ -637,6 +711,10 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
             }
 
             // ---- helpers ----
+
+            private static boolean isSubscript(Expression expr) {
+                expr instanceof BinaryExpression && expr.operation.type == Types.LEFT_SQUARE_BRACKET
+            }
 
             private boolean isInvocation(Expression receiver, String methodName) {
                 if (methodName == 'call' || methodName == 'doCall') return true
