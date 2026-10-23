@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
 import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Predicate
 
 import static org.junit.jupiter.api.Assertions.assertThrows
@@ -717,6 +718,51 @@ final class AsyncChannelFailureTest {
         } finally {
             right.close()
             merged.close()
+        }
+    }
+
+    @Test
+    void mergeDoesNotLetABusySiblingHoldTheFailureBack() {
+        def left = AsyncChannel.create(1)
+        def right = AsyncChannel.create(4)
+        def failure = new IllegalStateException('left')
+        assert left.close(failure)
+        def feeding = new AtomicBoolean(true)
+        // keeps the right buffer full for as long as the test runs
+        def feeder = Thread.start {
+            int i = 0
+            while (feeding.get()) {
+                try {
+                    await right.send(i++)
+                } catch (ChannelClosedException ignored) {
+                    break
+                }
+            }
+        }
+        long deadline = System.currentTimeMillis() + 2000
+        while (right.bufferedSize < 4 && System.currentTimeMillis() < deadline) {
+            Thread.sleep(1)
+        }
+        assert right.bufferedSize == 4
+        def merged = left.merge(right)
+        int seen = 0
+        def consumption = async {
+            for await (ignored in merged) {
+                seen++
+                Thread.sleep(1) // slower than the feeder
+            }
+        }
+        try {
+            def error = assertThrows(IllegalStateException) {
+                await consumption.orTimeoutMillis(2000)
+            }
+            assert error.is(failure)
+            assert seen < 50
+        } finally {
+            feeding.set(false)
+            right.close()
+            merged.close()
+            feeder.join(2000)
         }
     }
 

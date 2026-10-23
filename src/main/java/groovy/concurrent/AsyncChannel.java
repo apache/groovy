@@ -364,10 +364,11 @@ public interface AsyncChannel<T> extends Iterable<T> {
     // directly rather than the Iterable iterator to avoid blocking
     // iterator issues on JDK 17 (no virtual threads). A failure from the
     // source, or thrown by the callback, is retained on the output. A normal
-    // close is not. merge forwards a value a relay has already taken, then
-    // retains a failure without waiting for the other input to end. An output
-    // the consumer has already closed stops that send and is not treated as
-    // a failure of the source.
+    // close is not. merge forwards a value a relay has already taken and the
+    // values buffered on the other input, then retains a failure without
+    // waiting for the other input to end. An output the consumer has
+    // already closed stops that send and is not treated as a failure of
+    // the source.
 
     /**
      * Returns a new channel that passes only elements matching the predicate.
@@ -410,13 +411,13 @@ public interface AsyncChannel<T> extends Iterable<T> {
      * <p>
      * The output closes when both inputs have closed normally. A failure
      * from either input closes the output with that failure once every value
-     * a relay has already taken, and every value already buffered on the
-     * other input, has been forwarded. The relay keeps taking from that
-     * input while its buffer is non-empty, so a producer that refills the
-     * buffer delays the failure until a gap appears. The other input is not
-     * closed. A producer still waiting to hand a value over is not released.
-     * When both inputs fail, the first failure retained on the output wins.
-     * A later normal close does not replace it.
+     * a relay has already taken, and every value buffered on the other input
+     * when the failure is seen, has been forwarded. Values sent to the other
+     * input after that are not forwarded, so a busy producer cannot hold the
+     * failure back. The other input is not closed. A producer still waiting
+     * to hand a value over is not released. When both inputs fail, the first
+     * failure retained on the output wins. A later normal close does not
+     * replace it.
      *
      * @param other the channel to merge with
      * @return a new merged channel
@@ -447,13 +448,18 @@ public interface AsyncChannel<T> extends Iterable<T> {
                                   AtomicInteger openInputs, MergeRelay self, MergeRelay sibling) {
         AsyncSupport.getExecutor().execute(() -> {
             Throwable failure = null;
+            int remaining = -1; // values still to forward once the sibling has failed
             try {
                 while (true) {
-                    // An empty input must not be received once the sibling has
-                    // failed: that receive would remove a later value and then
-                    // find the output closed. Buffered values are already the
-                    // sender's and are forwarded.
-                    if (self.isStopping() && in.getBufferedSize() == 0) break;
+                    // Once the sibling has failed, only the values buffered at
+                    // that point are forwarded: they are already the sender's.
+                    // A later value would let a busy producer hold the failure
+                    // back, and receiving from an empty input would remove a
+                    // value only to find the output closed.
+                    if (self.isStopping()) {
+                        if (remaining < 0) remaining = in.getBufferedSize();
+                        if (remaining-- == 0) break;
+                    }
                     Awaitable<? extends T> pending = in.receive();
                     self.publish(pending);
                     // A sender can commit between isDone() and cancel().
