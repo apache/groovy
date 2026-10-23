@@ -248,6 +248,10 @@ public class InvocationWriter {
                 mv.visitIntInsn(ALOAD, 0);
                 operandStack.push(enclosingClass);
             }
+        } else if (!implicitThis && mayHaveSideEffects(receiver)) {
+            // a static member reached through an expression still evaluates it (JLS 15.12.4.1)
+            receiver.visit(controller.getAcg());
+            operandStack.pop();
         }
 
         int opcode;
@@ -328,6 +332,14 @@ public class InvocationWriter {
             return !pexp.getObjectExpression().getType().isInterface();
         }
         return false;
+    }
+
+    /**
+     * Whether evaluating a receiver could be observed: a class literal or a
+     * variable (including {@code this} and {@code super}) cannot.
+     */
+    private static boolean mayHaveSideEffects(final Expression receiver) {
+        return receiver != null && !(receiver instanceof ClassExpression) && !(receiver instanceof VariableExpression);
     }
 
     /**

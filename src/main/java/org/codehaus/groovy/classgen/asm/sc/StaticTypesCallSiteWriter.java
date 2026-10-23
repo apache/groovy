@@ -490,6 +490,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             MethodVisitor mv = controller.getMethodVisitor();
             ClassNode resultType = field.getOriginType();
             if (field.isStatic()) {
+                if (!implicitThis && mayHaveSideEffects(receiver)) {
+                    // a static field read through an expression still evaluates it (JLS 15.11.1)
+                    receiver.visit(controller.getAcg());
+                    operandStack.pop();
+                }
                 mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(receiverType), fieldName, BytecodeHelper.getTypeDescription(resultType));
                 operandStack.push(resultType);
             } else {
@@ -791,6 +796,14 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         }
 
         super.fallbackAttributeOrPropertySite(expression, objectExpression, name, adapter);
+    }
+
+    /**
+     * Whether evaluating a receiver could be observed: a class literal or a
+     * variable (including {@code this} and {@code super}) cannot.
+     */
+    private static boolean mayHaveSideEffects(final Expression receiver) {
+        return receiver != null && !(receiver instanceof ClassExpression) && !(receiver instanceof VariableExpression);
     }
 
     private ClassNode getPropertyOwnerType(final Expression receiver, final boolean... isClassReceiver) {
