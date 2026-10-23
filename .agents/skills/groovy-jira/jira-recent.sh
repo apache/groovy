@@ -38,7 +38,9 @@
 #   - merged PR but issue still open (candidates for resolving)
 #   - open PR
 #   - no open PR (closed-unmerged PRs, if any, are still shown)
-# followed by open PRs updated in the window that name none of the listed issues.
+# followed by open PRs updated in the window that name none of the listed issues
+# (either no issue key at all, or a key whose issue is resolved or not updated
+# in the window).
 #
 # ASF JIRA is anonymous-readable; `gh` must be authenticated for GitHub.
 set -euo pipefail
@@ -86,6 +88,6 @@ jq -r --argjson days "${DAYS}" --slurpfile prs "${TMP}/prs.json" '
     section("No open PR"; [$rows[] | select((.open or .merged) | not)]),
     ([$p[] | select(.state == "OPEN" and .updatedAt[0:10] >= $since
                     and all(.keys[]; . as $k | $listed | index($k) | not))] as $orphans
-     | "== Open PRs updated in window naming no listed issue (\($orphans | length))",
+     | "== Open PRs updated in window naming no listed issue (no key, or key resolved/not updated in window) (\($orphans | length))",
        ($orphans[] | ["#\(.number)", .updatedAt[0:10], .title] | @tsv))
 ' "${TMP}/issues.json"
