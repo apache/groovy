@@ -84,6 +84,7 @@ import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
+import static org.apache.groovy.ast.tools.ExpressionUtils.mayHaveSideEffects;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -217,6 +218,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         return thisExpr;
     }
 
+
     /**
      * Attempts to make a direct method call on a bridge method, if it exists.
      */
@@ -278,6 +280,11 @@ public class StaticInvocationWriter extends InvocationWriter {
 
             List<Expression> argumentList = new ArrayList<>();
             if (emn.isStaticExtension()) {
+                if (!implicitThis && mayHaveSideEffects(receiver)) {
+                    // a static member reached through an expression still evaluates it (JLS 15.12.4.1)
+                    receiver.visit(controller.getAcg());
+                    controller.getOperandStack().pop();
+                }
                 argumentList.add(nullX());
             } else if (!isThisOrSuper(receiver) || !controller.isInGeneratedFunction()) {
                 argumentList.add(receiver);
@@ -330,7 +337,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                 theReceiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, declaringClass);
             }
             MethodNode theTarget = target;
-            if (theReceiver != null && !isSuperExpression(receiver) && !isClassWithSuper(receiver)
+            if (theReceiver != null && !target.isStatic() && !isSuperExpression(receiver) && !isClassWithSuper(receiver)
                     && currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) == null) {
                 // call CHECKCAST in order to avoid calls to castToType (aka dynamic behaviour)
                 ClassNode storedType = storedTypeIfWiderThanInferred(theReceiver, receiverType);
