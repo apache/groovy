@@ -99,6 +99,10 @@ unquoted value is a `String`, including the YAML 1.1 words `yes`, `no`, `on` and
 capitalised forms such as `True`, `FALSE` and `Null`, `~`, and numbers written as `0x1F`,
 `017` or `1_000`. Groovy 6 and earlier read these as booleans, `null` or integers.
 
+The typed API reads `.inf`, `-.inf` and `.nan` as `Double` infinities and NaN. The untyped
+API converts through JSON, which has no such numbers, so it returns them as the strings
+`'Infinity'`, `'-Infinity'` and `'NaN'`. Groovy 6 rejects all three.
+
 A non-empty `String` is true in Groovy, so a document that writes `enabled: off` now
 yields `'off'` and tests as true, without any error. Write `true` and `false` for
 booleans. The typed `parseAs`/`parseTextAs` API fails instead: it rejects `off` for a

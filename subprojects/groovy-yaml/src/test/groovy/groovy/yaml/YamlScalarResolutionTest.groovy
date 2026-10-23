@@ -74,6 +74,19 @@ class YamlScalarResolutionTest {
     }
 
     @Test
+    void testNonFiniteNumbers() {
+        assert new YamlSlurper().parseTextAs(Map, 'a: .inf\nb: -.inf\nc: .nan\n') ==
+                [a: Double.POSITIVE_INFINITY, b: Double.NEGATIVE_INFINITY, c: Double.NaN]
+        // the untyped API converts through JSON, which has no non-finite numbers
+        assert value('.inf') == 'Infinity'
+        assert value('-.inf') == '-Infinity'
+        assert value('.nan') == 'NaN'
+        ['.Inf', '.NaN'].each {
+            assert value(it) == it
+        }
+    }
+
+    @Test
     void testQuotedScalarsAreStrings() {
         assert value('"true"') == 'true'
         assert value("'12'") == '12'
