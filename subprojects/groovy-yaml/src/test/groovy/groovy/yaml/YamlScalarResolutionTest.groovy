@@ -23,9 +23,9 @@ import org.junit.jupiter.api.Test
 import static groovy.test.GroovyAssert.shouldFail
 
 /**
- * Unquoted scalars resolve by the YAML 1.2 JSON schema, as Jackson 3 resolves them:
+ * Unquoted scalars resolve by the JSON schema, as Jackson 3 resolves them:
  * only lowercase {@code true}, {@code false} and {@code null} and plain decimal numbers
- * take a type, and YAML 1.1 forms such as {@code off}, {@code ~} and {@code 0x1F} stay strings.
+ * take a type, and forms such as {@code off}, {@code ~} and {@code 0x1F} stay strings.
  */
 class YamlScalarResolutionTest {
 
