@@ -84,6 +84,11 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
         for (ConstructorNode cn : sNode.getDeclaredConstructors()) {
             addConstructorUnlessAlreadyExisting(cNode, cn, copyConstructorAnnotations, copyParameterAnnotations);
         }
+        if (cNode.isScript() && !sNode.getDeclaredConstructors().isEmpty() && sNode.getDeclaredConstructor(Parameter.EMPTY_ARRAY) == null) {
+            // the script's generated constructors call super(), or super() then setBinding(context) when the base
+            // has no (Binding) constructor, and the base has no no-arg constructor; keep only the inherited ones
+            cNode.getDeclaredConstructors().removeIf(ctor -> !ctor.firstStatementIsSpecialConstructorCall());
+        }
     }
 
     private void addConstructorUnlessAlreadyExisting(final ClassNode classNode, final ConstructorNode ctorNode, final boolean copyConstructorAnnotations, final boolean copyParameterAnnotations) {
