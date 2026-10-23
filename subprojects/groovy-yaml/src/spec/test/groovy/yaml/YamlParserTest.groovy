@@ -227,6 +227,25 @@ matrix:
         assert cyclic.a.self.is(cyclic.a)
     }
 
+    @Test
+    void testSnakeYamlRecipeForYaml11Typing() {
+        // tag::yaml11_snakeyaml[]
+        def yaml = new Yaml(new SafeConstructor(new LoaderOptions()))
+
+        def loaded = yaml.load('''\
+            enabled: off
+            verbose: yes
+            limit: 0x1F
+            proxy: ~
+            '''.stripIndent())
+
+        assert loaded == [enabled: false, verbose: true, limit: 31, proxy: null]
+        // end::yaml11_snakeyaml[]
+
+        // YamlSlurper reads the same values as strings
+        assert new YamlSlurper().parseText('enabled: off\nproxy: ~') == [enabled: 'off', proxy: '~']
+    }
+
     // tag::typed_class[]
     static class ServerConfig {
         String host
