@@ -1,0 +1,85 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+plugins {
+    id 'org.apache.groovy-library'
+}
+
+// OpenJFX publishes one jar per platform; the classifier-less artifact is an empty stub.
+// Resolve the classifier for the machine running the build.
+def javafxClassifier = {
+    String os = System.getProperty('os.name').toLowerCase(Locale.ROOT)
+    String arch = System.getProperty('os.arch').toLowerCase(Locale.ROOT)
+    boolean aarch64 = arch == 'aarch64' || arch == 'arm64'
+    if (os.contains('mac')) return aarch64 ? 'mac-aarch64' : 'mac'
+    if (os.contains('win')) return 'win'
+    return aarch64 ? 'linux-aarch64' : 'linux'
+}()
+
+// The OpenJFX poms select their own transitive classifiers through OS-activated
+// Maven profiles, which Gradle does not evaluate, so each module is declared
+// explicitly and non-transitively.
+def javafxModules = ['javafx-base', 'javafx-graphics', 'javafx-controls']
+
+dependencies {
+    api project(':')  // SceneGraphBuilder extends FactoryBuilderSupport
+
+    // JavaFX is GPL-2.0 with the Classpath Exception and is never bundled with Groovy:
+    // compile against it here, let users supply it at runtime (see the groovyfx docs).
+    javafxModules.each { module ->
+        compileOnlyApi("org.openjfx:$module:${versions.javafx}:$javafxClassifier") {
+            transitive = false
+        }
+        testImplementation("org.openjfx:$module:${versions.javafx}:$javafxClassifier") {
+            transitive = false
+        }
+    }
+    // headless glass platform so the toolkit tests run without a display; test-only.
+    // Its 21.x builds are compiled for Java 21, so the tests that start the toolkit
+    // are enabled for Java 21 and later only; the property, binding and transform
+    // tests need no toolkit and run everywhere.
+    testImplementation("org.testfx:openjfx-monocle:${versions.openjfxMonocle}") {
+        transitive = false
+    }
+
+    testImplementation projects.groovyTest
+    testImplementation testFixtures(project(':'))
+}
+
+tasks.withType(Test).configureEach {
+    systemProperty 'glass.platform', 'Monocle'
+    systemProperty 'monocle.platform', 'Headless'
+    systemProperty 'prism.order', 'sw'
+    systemProperty 'java.awt.headless', 'true'
+}
+
+groovyLibrary {
+    optionalModule()
+    withoutBinaryCompatibilityChecks()
+    moduleDescriptor {
+        extensionClasses = 'org.apache.groovy.groovyfx.extensions.FXExtensions'
+    }
+}
+
+// The reachability-metadata generator registered by moduleDescriptor reflects
+// over FXExtensions, whose signatures mention JavaFX types, so the compile-only
+// JavaFX jars have to be on its classpath although they are not part of the
+// module's runtime.
+tasks.named('nativeImageMetadata', JavaExec) {
+    classpath += configurations.compileClasspath
+}
