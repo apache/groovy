@@ -2042,7 +2042,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             if (fieldNode.hasInitialExpression() && initialValue != null) {
                 throw createParsingFailedException("The split property definition named '" + fieldName + "' must not have an initial value for both the field and the property", ctx);
             }
-            if (!fieldNode.getType().equals(variableType)) {
+            if (!isSameSplitPropertyType(fieldNode.getType(), variableType)) {
                 throw createParsingFailedException("The split property definition named '" + fieldName + "' must not have different types for the field and the property", ctx);
             }
             classNode.getFields().remove(fieldNode);
@@ -2084,6 +2084,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return propertyNode;
     }
 
+    /**
+     * Types are not yet resolved, so {@code Object} is still a bare name here;
+     * {@code def}, {@code var} and {@code val} declare {@code Object} and match it.
+     */
+    private static boolean isSameSplitPropertyType(final ClassNode one, final ClassNode two) {
+        return one.equals(two) || (isObjectOrDynamic(one) && isObjectOrDynamic(two));
+    }
+
+    private static boolean isObjectOrDynamic(final ClassNode type) {
+        return ClassHelper.isDynamicTyped(type) || ClassHelper.isObjectType(type) || "Object".equals(type.getName());
+    }
+
     private void declareField(final VariableDeclarationContext ctx, final ModifierManager modifierManager, final ClassNode variableType, final ClassNode classNode, final int i, final VariableExpression variableExpression, final String fieldName, final int modifiers, final Expression initialValue) {
         FieldNode fieldNode;
         PropertyNode propertyNode = classNode.getProperty(fieldName);
@@ -2092,7 +2104,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             if (propertyNode.hasInitialExpression() && initialValue != null) {
                 throw createParsingFailedException("The split property definition named '" + fieldName + "' must not have an initial value for both the field and the property", ctx);
             }
-            if (!propertyNode.getType().equals(variableType)) {
+            if (!isSameSplitPropertyType(propertyNode.getType(), variableType)) {
                 throw createParsingFailedException("The split property definition named '" + fieldName + "' must not have different types for the field and the property", ctx);
             }
             classNode.getFields().remove(propertyNode.getField());

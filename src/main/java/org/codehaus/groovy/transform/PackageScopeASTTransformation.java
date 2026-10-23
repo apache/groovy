@@ -142,7 +142,7 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
         PropertyNode foundProp = null;
         String fName = fNode.getName();
         for (PropertyNode pNode : pList) {
-            if (pNode.getName().equals(fName) && pNode.getAnnotations(MY_TYPE) != null) {
+            if (pNode.getField() == fNode) { // the annotated declaration
                 foundProp = pNode;
                 break;
             }
@@ -159,14 +159,20 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
                 }
             }
             if (foundProp != null) {
-                cNode.removeField(fName);
-                cNode.addField(fNode);
+                if (!foundProp.getType().equals(fNode.getType())) {
+                    addError("The split property definition named '" + fName + "' must not have different types for the field and the property", fNode);
+                }
                 if (foundProp.hasInitialExpression()) {
                     if (fNode.hasInitialExpression()) {
                         addError("The split property definition named '" + fName + "' must not have an initial value for both the field and the property", fNode);
                     }
                     fNode.setInitialValueExpression(foundProp.getInitialExpression());
                 }
+                // each declaration created its own field and removeField drops only the indexed one,
+                // so remove every field of that name and keep fNode as the only one
+                cNode.removeField(fName);
+                cNode.getFields().removeIf(field -> field.getName().equals(fName));
+                cNode.addField(fNode);
                 foundProp.setField(fNode);
             }
         }
