@@ -214,6 +214,16 @@ public abstract class AbstractLexer extends Lexer implements SyntaxErrorReportab
     }
 
     /**
+     * Report an unclosed {@code /.../} at the opener (javac:
+     * {@code unclosed string literal}), not at EOF after the scan.
+     *
+     * @param errorIgnored when {@code true}, keep tokenising (IDE highlighting)
+     */
+    void requireUnclosedString(final boolean errorIgnored) {
+        requireAtTokenStart(errorIgnored, "Unclosed string literal");
+    }
+
+    /**
      * Invalid octal ({@code 08}, {@code 09}, {@code 08L}) reports at the
      * token start. Using the start index rather than a running digit count keeps
      * the caret correct for a later invalid octal in the same file, and for a
@@ -226,9 +236,9 @@ public abstract class AbstractLexer extends Lexer implements SyntaxErrorReportab
     }
 
     /**
-     * {@link SyntaxErrorReportable#require} positions relative to the current
-     * lexer cursor. After scanning to EOF that cursor is past the comment, so
-     * the offset is token-start minus current (line and column).
+     * {@link SyntaxErrorReportable#require} is relative to the current lexer
+     * cursor. The offset is token-start minus that cursor, so the caret stays
+     * on the opener after a scan to EOF and on an invalid octal's first digit.
      */
     private void requireAtTokenStart(final boolean errorIgnored, final String msg) {
         require(errorIgnored, msg,

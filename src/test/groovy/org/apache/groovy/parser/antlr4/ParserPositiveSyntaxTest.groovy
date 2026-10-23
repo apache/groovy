@@ -40240,6 +40240,29 @@ final class ParserPositiveSyntaxTest {
             |</Module>'''.stripMargin())
     }
 
+    @Test
+    void 'division after a value keyword still parses'() {
+        // GROOVY-12425: `String.class / 2` at end of file is division, including
+        // the two-slash form that used to be lexed as a regex. `in` and `return`
+        // still introduce a slashy.
+        String division = TestUtils.dumpAst('def n = String.class / 2')
+        assert division.contains('token="/"')
+        String twoSlash = TestUtils.dumpAst('def n = String.class /2/ 3')
+        assert twoSlash.contains('token="/"')
+        assert !twoSlash.contains('value="/2/"')
+        parseModule('def n = a.return / 2')
+        parseModule('def n = a.<T>return / 2')
+        parseModule("def n = 'ab' in /a./")
+        parseModule('def in = \'ab\'\nassert in in /a/')
+        parseModule('for (in in /ab/) { }')
+        parseModule('return /ab/')
+        parseModule('assert /ab/')
+        parseModule('if (false) 1 else /ab/')
+        parseModule('do /ab/\nwhile (false)')
+        parseModule('def in = 4\ndef n = in / 2')
+        parseModule('def name = 1\ndef n = /hello $name/')
+    }
+
     @Disabled
     @Test
     void 'groovy core - Unicode'() {

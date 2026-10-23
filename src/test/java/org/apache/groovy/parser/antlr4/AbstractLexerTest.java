@@ -25,18 +25,22 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
 import static org.apache.groovy.parser.antlr4.GroovyLexer.CapitalizedIdentifier;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.DIV;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.FloatingPointLiteral;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.StringLiteral;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.GStringBegin;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.GStringEnd;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.GStringPathPart;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.Identifier;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.IntegerLiteral;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.NL;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -148,8 +152,117 @@ final class AbstractLexerTest {
                 Arguments.of("\"C:\\Users\\me\"", "Illegal escape character: '\\U'", 1, 4),
                 Arguments.of("\"C:\\Users", "Illegal escape character: '\\U'", 1, 4),
                 Arguments.of("/* comment", "Unclosed comment", 1, 1),
-                Arguments.of("    /* comment", "Unclosed comment", 1, 5)
+                Arguments.of("    /* comment", "Unclosed comment", 1, 5),
+                Arguments.of("/hello", "Unclosed string literal", 1, 1),
+                Arguments.of("    /hello", "Unclosed string literal", 1, 5),
+                Arguments.of("/hello\nworld", "Unclosed string literal", 1, 1),
+                Arguments.of("/", "Unclosed string literal", 1, 1)
         );
+    }
+
+    @Test
+    void closedSlashyAndDivisionStayDistinct() {
+        List<Token> slashy = defaultChannel("/ab/");
+        assertEquals(StringLiteral, slashy.get(0).getType());
+        assertEquals("/ab/", slashy.get(0).getText());
+
+        List<Token> division = defaultChannel("a / b");
+        assertEquals(Identifier, division.get(0).getType());
+        assertEquals(DIV, division.get(1).getType());
+        assertEquals(Identifier, division.get(2).getType());
+
+        List<Token> dollar = defaultChannel("$/ab/$");
+        assertEquals(StringLiteral, dollar.get(0).getType());
+        assertEquals("$/ab/$", dollar.get(0).getText());
+    }
+
+    @Test
+    void errorIgnoredUnclosedSlashyTokenizesWithoutThrowing() {
+        GroovyLangLexer lexer = new GroovyLangLexer(CharStreams.fromString("s = /hello"));
+        lexer.setErrorIgnored(true);
+        List<Token> tokens = assertDoesNotThrow(() -> collect(lexer));
+        assertEquals(Token.EOF, tokens.get(tokens.size() - 1).getType());
+        assertTrue(tokens.stream().anyMatch(t -> t.getType() == StringLiteral && "/hello".equals(t.getText())),
+                tokens.toString());
+    }
+
+    @Test
+    void closedSlashyAfterNewlineIsStillAString() {
+        List<Token> tokens = defaultChannel("9\n/3/");
+        assertEquals(IntegerLiteral, tokens.get(0).getType());
+        assertEquals(StringLiteral, tokens.get(2).getType());
+        assertEquals("/3/", tokens.get(2).getText());
+    }
+
+    @Test
+    void lineCommentIsNotAnEmptySlashy() {
+        // Bare // is length 2, the same length as an empty slashy. StringLiteral
+        // is the earlier rule, so it would win that tie.
+        List<Token> tokens = defaultChannel("s = //\n1");
+        assertTrue(tokens.stream().anyMatch(t -> t.getType() == NL && "//".equals(t.getText())),
+                tokens.toString());
+        assertTrue(tokens.stream().noneMatch(t -> t.getType() == StringLiteral || t.getType() == DIV),
+                tokens.toString());
+        assertEquals(IntegerLiteral, tokens.get(tokens.size() - 1).getType());
+    }
+
+    @Test
+    void divisionAcrossLinesIsNotAnUnclosedSlashy() {
+        List<Token> tokens = defaultChannel("9\n/\n3");
+        assertEquals(IntegerLiteral, tokens.get(0).getType());
+        assertEquals(DIV, tokens.get(2).getType());
+        assertEquals(IntegerLiteral, tokens.get(4).getType());
+    }
+
+    @Test
+    void leadingNewlineWithoutAnOperandIsAnUnclosedSlashy() {
+        // No real token yet. A leading newline is not a division operand.
+        // lexer() stays outside the lambda so the assertion names one call.
+        GroovyLangLexer leadingNewline = lexer("\n/");
+        GroovySyntaxError err = assertThrows(GroovySyntaxError.class, () -> drain(leadingNewline));
+        assertEquals("Unclosed string literal", err.getMessage());
+        assertEquals(2, err.getLine());
+        assertEquals(1, err.getColumn());
+    }
+
+    @Test
+    void reusedLexerForgetsThePreviousDivisionOperand() {
+        // setInputStream rewinds through Lexer.reset(). Draining emits EOF
+        // (-1); a partial lex leaves the operand. Neither may decide the next input.
+        GroovyLangLexer drained = lexer("9");
+        drain(drained);
+        drained.setInputStream(CharStreams.fromString("\n/"));
+        GroovySyntaxError afterNewline = assertThrows(GroovySyntaxError.class, () -> drain(drained));
+        assertEquals("Unclosed string literal", afterNewline.getMessage());
+        assertEquals(2, afterNewline.getLine());
+        assertEquals(1, afterNewline.getColumn());
+
+        GroovyLangLexer partial = lexer("9");
+        assertEquals(IntegerLiteral, partial.nextToken().getType());
+        partial.setInputStream(CharStreams.fromString("/hello"));
+        GroovySyntaxError freshSlash = assertThrows(GroovySyntaxError.class, () -> drain(partial));
+        assertEquals("Unclosed string literal", freshSlash.getMessage());
+        assertEquals(1, freshSlash.getLine());
+        assertEquals(1, freshSlash.getColumn());
+    }
+
+    @Test
+    void divisionOperandRejectsANegativeTokenType() throws Exception {
+        // Callers only pass lastTokenType, which is never negative. EOF is -1,
+        // and BitSet.get rejects that, so the guard has to answer false itself.
+        Method method = GroovyLexer.class.getDeclaredMethod("isDivisionOperand", int.class);
+        method.setAccessible(true);
+        assertFalse((Boolean) method.invoke(null, Token.EOF));
+    }
+
+    @Test
+    void dollarThenDivisionIsNotAString() {
+        // `$` is an identifier. `$/2` is division, not an unclosed dollar-slashy string.
+        List<Token> tokens = defaultChannel("($/2)");
+        assertEquals(Identifier, tokens.get(1).getType());
+        assertEquals("$", tokens.get(1).getText());
+        assertEquals(DIV, tokens.get(2).getType());
+        assertEquals(IntegerLiteral, tokens.get(3).getType());
     }
 
     @Test
@@ -484,6 +597,23 @@ final class AbstractLexerTest {
     }
 
     @Test
+    void gstringPathRollsBackANonNameCharacter() {
+        // RollBackOne stays that type when the next character is not a closer,
+        // and emit() rewinds it so the GString mode can lex it.
+        List<Token> tokens = defaultChannel("\"$foo.bar+1\"");
+        assertTrue(tokens.stream().anyMatch(t -> t.getType() == GStringEnd), texts(tokens).toString());
+        assertTrue(String.join("", texts(tokens)).contains("+"), texts(tokens).toString());
+    }
+
+    @Test
+    void blockCommentIsNotASlashy() {
+        List<Token> tokens = defaultChannel("/*c*/");
+        assertTrue(tokens.stream().noneMatch(t ->
+                t.getType() == StringLiteral || t.getType() == DIV || t.getType() == GStringBegin),
+                texts(tokens).toString());
+    }
+
+    @Test
     void gstringPathStillUsesDotFragmentReplacement() {
         List<Token> tokens = defaultChannel("\"$foo.bar\"");
         List<Integer> types = new ArrayList<>();
@@ -493,6 +623,154 @@ final class AbstractLexerTest {
         assertTrue(types.contains(GStringBegin), types.toString());
         assertTrue(types.contains(GStringPathPart), types.toString());
         assertTrue(types.contains(GStringEnd), types.toString());
+    }
+
+    // GROOVY-12425: a keyword that ends a value is a division operand.
+    // return /a/ stays a string; obj.class / 2 and obj.return / 2 divide.
+    @Test
+    void keywordValueBeforeSlashIsDivision() {
+        assertNoSlashy("a.class / 2");
+        assertNoSlashy("a.class /2/ b");
+        assertNoSlashy("a.class /hello $x/");
+        assertNoSlashy("super / 2");
+        assertNoSlashy("int / 2");
+        assertNoSlashy("var / 2");
+        assertNoSlashy("new / 2");
+        assertNoSlashy("Foo::new / 2");
+        assertNoSlashy("a.trait / 2");
+        assertNoSlashy("a.class\n/\n2");
+    }
+
+    @Test
+    void statementIntroducerKeepsAClosedSlashy() {
+        assertSlashy("return /ab/");
+        assertSlashy("assert /ab/");
+        assertSlashy("throw /ab/");
+        assertSlashy("case /ab/");
+        assertSlashy("yield /ab/");
+        assertSlashy("await /ab/");
+        assertSlashy("defer /ab/");
+        assertSlashy("else /ab/");
+        assertSlashy("do /ab/");
+        assertSlashy("return /2/");
+    }
+
+    @Test
+    void memberNameIntroducerIsDivision() {
+        assertNoSlashy("a.return / 2");
+        assertNoSlashy("a.return /2/ b");
+        assertNoSlashy("a\n.return / 2");
+        assertNoSlashy("a./*c*/return / 2");
+        assertNoSlashy("a?.return / 2");
+        assertNoSlashy("a*.return / 2");
+        assertNoSlashy("a??.return / 2");
+        assertNoSlashy("a.&return / 2");
+        assertNoSlashy("A::return / 2");
+        assertNoSlashy("a.@return / 2");
+        assertNoSlashy("a.<T>return / 2");
+        assertNoSlashy("a.<b.c>return / 2");
+        assertNoSlashy("a.<Map<String, Integer>>return / 2");
+        assertNoSlashy("a.<>return / 2");
+        assertNoSlashy("a.<? extends T>return / 2");
+        assertNoSlashy("a.<@Ann(x > 1) T>return / 2");
+        assertNoSlashy("a.<@Ann(x >> 1) T>return / 2");
+        assertNoSlashy("a.<@Ann(x < 1) T>return / 2");
+        assertNoSlashy("a.<@Ann(x[0] > 1) T>return / 2");
+        assertNoSlashy("a.<@Ann(x{0} > 1) T>return / 2");
+        assertNoSlashy("a.<@Ann((x > 1)) T>return / 2");
+        assertNoSlashy("a.return\n/\n2");
+        // A closed slashy may still start the next line.
+        assertSlashy("a.return\n/ab/");
+        assertSlashy("@Deprecated\nreturn /ab/");
+    }
+
+    @Test
+    void infixInKeepsSlashyAndNameInDivides() {
+        assertSlashy("x in /ab/");
+        assertSlashy("x\nin /ab/");
+        assertSlashy("a.class in /ab/");
+        assertSlashy("(x) in /ab/");
+        assertSlashy("in in /ab/");
+        assertSlashy("a.in in /ab/");
+        assertSlashy("a.<T>in in /ab/");
+        assertSlashy("a.yield in /ab/");
+        assertNoSlashy("in / 2");
+        assertNoSlashy("a.in / 2");
+        assertNoSlashy("return in / 2");
+        assertNoSlashy("in /2/ b");
+        assertNoSlashy("in\n/\n2");
+        // yield/await/defer are not values, so the following in is a name.
+        assertNoSlashy("yield in /ab/");
+        assertNoSlashy("await in /ab/");
+        assertNoSlashy("defer in /ab/");
+    }
+
+    @Test
+    void unclosedSlashyAfterReturnStaysAStringDiagnostic() {
+        GroovyLangLexer opened = lexer("return /hello");
+        GroovySyntaxError err = assertThrows(GroovySyntaxError.class, () -> drain(opened));
+        assertEquals("Unclosed string literal", err.getMessage());
+        assertEquals(1, err.getLine());
+        assertEquals(8, err.getColumn());
+    }
+
+    @Test
+    void assignAfterDotDoesNotForbidSlashy() {
+        // '=' after a dot is not a value, so it does not forbid a slashy.
+        assertSlashy("a. = /ab/");
+    }
+
+    @Test
+    void reusedLexerForgetsAPendingMemberSelector() {
+        GroovyLangLexer pending = lexer("a.");
+        drain(pending);
+        pending.setInputStream(CharStreams.fromString("return /ab/"));
+        assertSlashy(pending);
+
+        GroovyLangLexer operand = lexer("a.class");
+        drain(operand);
+        operand.setInputStream(CharStreams.fromString("/hello"));
+        GroovySyntaxError err = assertThrows(GroovySyntaxError.class, () -> drain(operand));
+        assertEquals("Unclosed string literal", err.getMessage());
+        assertEquals(1, err.getLine());
+        assertEquals(1, err.getColumn());
+    }
+
+    @Test
+    void closedSlashyGStringStillTokenizes() {
+        List<Token> tokens = defaultChannel("/hello $name/");
+        assertTrue(tokens.stream().anyMatch(t -> t.getType() == GStringBegin), texts(tokens).toString());
+        assertTrue(tokens.stream().anyMatch(t -> t.getType() == GStringEnd), texts(tokens).toString());
+        assertTrue(tokens.stream().noneMatch(t -> t.getType() == StringLiteral), texts(tokens).toString());
+    }
+
+    @Test
+    void unclosedSlashyGStringReachesEofInTheGStringModes() {
+        // No "Unclosed string literal": the opener is GStringBegin and the
+        // name is an identifier. The parser then reports end of input.
+        List<Token> tokens = defaultChannel("/hello $name");
+        assertEquals(GStringBegin, tokens.get(0).getType());
+        assertEquals("/hello $", tokens.get(0).getText());
+        assertTrue(tokens.stream().anyMatch(t -> t.getType() == Identifier && "name".equals(t.getText())),
+                texts(tokens).toString());
+        assertTrue(tokens.stream().noneMatch(t -> t.getType() == StringLiteral), texts(tokens).toString());
+    }
+
+    private static void assertSlashy(final String src) {
+        assertSlashy(new GroovyLangLexer(CharStreams.fromString(src)));
+    }
+
+    private static void assertSlashy(final GroovyLangLexer lexer) {
+        List<Token> tokens = defaultChannel(lexer);
+        assertTrue(tokens.stream().anyMatch(t -> t.getType() == StringLiteral), texts(tokens).toString());
+        assertFalse(tokens.stream().anyMatch(t -> t.getType() == DIV), texts(tokens).toString());
+    }
+
+    private static void assertNoSlashy(final String src) {
+        List<Token> tokens = defaultChannel(src);
+        assertTrue(tokens.stream().anyMatch(t -> t.getType() == DIV), texts(tokens).toString());
+        assertFalse(tokens.stream().anyMatch(t ->
+                t.getType() == StringLiteral || t.getType() == GStringBegin), texts(tokens).toString());
     }
 
     private static GroovyLangLexer displayLexer() {
