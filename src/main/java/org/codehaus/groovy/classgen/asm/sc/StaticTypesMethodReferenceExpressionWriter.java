@@ -54,6 +54,7 @@ import java.util.function.ToIntFunction;
 
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.joining;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
@@ -72,6 +73,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.allPar
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filterMethodsByVisibility;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignableTo;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.resolveClassNodeGenerics;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -183,6 +185,12 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         if (ClassHelper.isPrimitiveType(targetType)) { // GROOVY-11353
             targetType = ClassHelper.getWrapper(targetType);
+        } else if (!classExpression && isThisExpression(typeOrTargetRef) && isClassClassNodeWrappingConcreteType(targetType)) {
+            // "this" in a static context is the class itself: this::name is resolved like Type::name
+            targetType = targetType.getGenericsTypes()[0].getType();
+            typeOrTargetRef = classX(targetType);
+            typeOrTargetRef.setSourcePosition(methodReferenceExpression.getExpression());
+            classExpression = true;
         }
 
         return new MethodReferenceTarget(typeOrTargetRef, targetType, classExpression, false);
