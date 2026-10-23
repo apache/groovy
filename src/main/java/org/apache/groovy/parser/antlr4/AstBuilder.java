@@ -115,6 +115,7 @@ import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.LoopingStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
@@ -1242,14 +1243,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     /**
-     * Desugars a statement-position switch expression to a switch statement:
-     * unwrap {@code yield} (value is discarded) and insert {@code break} after
-     * each arrow arm that would otherwise fall through.
+     * Desugars a statement-position switch expression to a switch statement
+     * and inserts {@code break} after each arrow arm that would otherwise fall
+     * through. A {@code yield} that ends its arm is unwrapped, so its value is
+     * what the arm leaves behind (the implicit return picks it up). An earlier
+     * {@code yield} must still leave the switch, so it becomes a block that
+     * evaluates the value and breaks out; the {@code break} is marked with its
+     * switch so that {@code ReturnAdder} can make the block a {@code return}
+     * when the switch is in return position.
      */
     private SwitchStatement switchExpressionAsStatement(final SwitchExpression expression) {
+        ArmYields yields = new ArmYields("yield#" + (++yieldLabelCount));
         List<CaseStatement> cases = new ArrayList<>(expression.getCaseStatements().size());
         for (CaseStatement caseStatement : expression.getCaseStatements()) {
-            Statement code = armCodeAsStatement(caseStatement.getCode());
+            Statement code = armCodeAsStatement(caseStatement.getCode(), true, false, yields);
             if (caseStatement.isArrow() && !code.isEmpty() && mayCompleteNormally(code)) {
                 code = appendBreak(code);
             }
@@ -1258,44 +1265,92 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             copy.setSourcePosition(caseStatement);
             cases.add(copy);
         }
-        Statement dflt = armCodeAsStatement(expression.getDefaultStatement());
+        Statement dflt = armCodeAsStatement(expression.getDefaultStatement(), true, false, yields);
         SwitchStatement statement = new SwitchStatement(
                 expression.getExpression(),
                 cases,
                 dflt != null ? dflt : EmptyStatement.INSTANCE);
         statement.setSourcePosition(expression);
+        if (yields.labelled) {
+            statement.addStatementLabel(yields.label);
+        }
+        for (BreakStatement exit : yields.exits) {
+            exit.putNodeMetaData(YieldStatement.class, statement);
+        }
         return statement;
     }
 
-    private Statement armCodeAsStatement(final Statement code) {
+    /**
+     * Lowers the {@code yield} statements of one arm.
+     *
+     * @param tail     whether {@code code} ends its arm
+     * @param labelled whether a plain {@code break} would leave a nested loop
+     *                 or switch rather than the arm's own switch
+     */
+    private Statement armCodeAsStatement(final Statement code, final boolean tail, final boolean labelled, final ArmYields yields) {
         if (code == null || code.isEmpty()) {
             return code;
         }
         if (code instanceof YieldStatement ys) {
             ExpressionStatement es = new ExpressionStatement(ys.getExpression());
             es.setSourcePosition(ys);
-            return es;
+            if (tail) {
+                return es;
+            }
+            yields.labelled |= labelled;
+            BreakStatement exit = new BreakStatement(labelled ? yields.label : null);
+            exit.setSourcePosition(ys);
+            yields.exits.add(exit);
+            BlockStatement block = block(es, exit);
+            block.setSourcePosition(ys);
+            return block;
         }
         if (code instanceof BlockStatement block) {
-            block.getStatements().replaceAll(this::armCodeAsStatement);
+            List<Statement> statements = block.getStatements();
+            for (int i = 0, n = statements.size(); i < n; i += 1) {
+                statements.set(i, armCodeAsStatement(statements.get(i), tail && i == n - 1, labelled, yields));
+            }
             return block;
         }
         if (code instanceof IfStatement iff) {
-            iff.setIfBlock(armCodeAsStatement(iff.getIfBlock()));
-            iff.setElseBlock(armCodeAsStatement(iff.getElseBlock()));
+            iff.setIfBlock(armCodeAsStatement(iff.getIfBlock(), tail, labelled, yields));
+            iff.setElseBlock(armCodeAsStatement(iff.getElseBlock(), tail, labelled, yields));
             return iff;
         }
         if (code instanceof TryCatchStatement tcs) {
-            tcs.setTryStatement(armCodeAsStatement(tcs.getTryStatement()));
-            tcs.setFinallyStatement(armCodeAsStatement(tcs.getFinallyStatement()));
-            tcs.getCatchStatements().forEach(cs -> cs.setCode(armCodeAsStatement(cs.getCode())));
+            tcs.setTryStatement(armCodeAsStatement(tcs.getTryStatement(), tail, labelled, yields));
+            tcs.setFinallyStatement(armCodeAsStatement(tcs.getFinallyStatement(), false, labelled, yields));
+            tcs.getCatchStatements().forEach(cs -> cs.setCode(armCodeAsStatement(cs.getCode(), tail, labelled, yields)));
             return tcs;
         }
         if (code instanceof SynchronizedStatement ss) {
-            ss.setCode(armCodeAsStatement(ss.getCode()));
+            ss.setCode(armCodeAsStatement(ss.getCode(), tail, labelled, yields));
+            return ss;
+        }
+        if (code instanceof LoopingStatement loop) {
+            loop.setLoopBlock(armCodeAsStatement(loop.getLoopBlock(), false, true, yields));
+            return code;
+        }
+        if (code instanceof SwitchStatement ss) {
+            ss.getCaseStatements().forEach(cs -> cs.setCode(armCodeAsStatement(cs.getCode(), false, true, yields)));
+            ss.setDefaultStatement(armCodeAsStatement(ss.getDefaultStatement(), false, true, yields));
             return ss;
         }
         return code;
+    }
+
+    /**
+     * The early {@code yield}s of one statement-position switch, and the label
+     * they break to when a plain {@code break} would not reach it.
+     */
+    private static final class ArmYields {
+        final String label;
+        final List<BreakStatement> exits = new ArrayList<>();
+        boolean labelled;
+
+        ArmYields(final String label) {
+            this.label = label;
+        }
     }
 
     private static Statement appendBreak(final Statement code) {
@@ -5673,6 +5728,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private Tuple2<GroovyParserRuleContext, Exception> numberFormatError;
 
     private int visitingClosureCount;
+    private int yieldLabelCount;
     private int visitingAssertStatementCount;
     private int visitingArrayInitializerCount;
 
