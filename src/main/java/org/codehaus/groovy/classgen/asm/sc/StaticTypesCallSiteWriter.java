@@ -168,7 +168,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         boolean[] isClassReceiver = new boolean[1];
         ClassNode receiverType = getPropertyOwnerType(receiver, isClassReceiver);
 
-        if (isClassReceiver[0]) {
+        if (isClassReceiver[0] && !isClassType(receiverType)) {
             Expression theClass = receiver instanceof ClassExpression ? receiver : classX(receiverType); // GROOVY-12473
 
             if (makeGetPropertyWithGetter(theClass, receiverType, propertyName, safe, implicitThis)) {
