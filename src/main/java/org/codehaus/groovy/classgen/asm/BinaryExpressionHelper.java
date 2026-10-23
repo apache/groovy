@@ -125,6 +125,7 @@ import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_EQUAL;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED_EQUAL;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.COMPOUND_ASSIGN_TARGET;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
@@ -1133,6 +1134,10 @@ public class BinaryExpressionHelper {
         );
         helperCall.setSourcePosition(expression);
         helperCall.visit(controller.getAcg());
+
+        // The type checker resolved a *Assign method, so the receiver is mutated in
+        // place and there is nothing to store (the LHS may be final or read-only).
+        if (expression.getNodeMetaData(COMPOUND_ASSIGN_TARGET) != null) return;
 
         controller.getOperandStack().dup();
         controller.getCompileStack().pushLHS(true);

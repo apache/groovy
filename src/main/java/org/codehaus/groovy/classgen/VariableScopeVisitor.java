@@ -854,7 +854,10 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             super.visitBinaryExpression(expression);
         }
 
-        if (Types.isAssignment(op)) {
+        // a compound assignment may resolve to a *Assign method that mutates the
+        // receiver in place; that is only known after type checking, so Verifier
+        // reports it if the parameter really is reassigned
+        if (op == Types.ASSIGN) {
             checkFinalFieldAccess(expression.getLeftExpression());
         }
     }
