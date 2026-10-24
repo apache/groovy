@@ -2688,13 +2688,13 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 if (expression instanceof MapExpression) {
                     MapExpression argList = (MapExpression) expression;
                     checkGroovyConstructorMap(call, receiver, argList);
-                    Parameter[] params = expressions.size() == 1
-                            ? new Parameter[]{new Parameter(MAP_TYPE, "map")}
-                            : new Parameter[]{new Parameter(receiver.redirect().getOuterClass(), "$p$"), new Parameter(MAP_TYPE, "map")};
-                    node = new ConstructorNode(Opcodes.ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
-                    node.setDeclaringClass(receiver);
-                    node.setSynthetic(true);
-                }
+                } // else entries are known only at runtime
+                Parameter[] params = expressions.size() == 1
+                        ? new Parameter[]{new Parameter(MAP_TYPE, "map")}
+                        : new Parameter[]{new Parameter(receiver.redirect().getOuterClass(), "$p$"), new Parameter(MAP_TYPE, "map")};
+                node = new ConstructorNode(Opcodes.ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
+                node.setDeclaringClass(receiver);
+                node.setSynthetic(true);
             }
         }
         return node;
