@@ -2598,6 +2598,62 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // GROOVY-12481
+    void testThisMethodReferenceInStaticContext() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static int foo() { 42 }
+                static int bar(int i) { i + 1 }
+                static Supplier<Integer> s
+                static {
+                    s = this::foo
+                }
+                static test() {
+                    Supplier<Integer> s = this::foo
+                    assert s.get() == 42
+                    Function<Integer, Integer> f = this::bar
+                    assert f.apply(41) == 42
+                    assert C.s.get() == 42
+                    Supplier<String> n = this::getSimpleName // method of java.lang.Class
+                    assert n.get() == 'C'
+                    def c = { -> Supplier<Integer> r = this::foo; r.get() }
+                    assert c() == 42
+                }
+            }
+            C.test()
+        '''
+    }
+
+    @Test // GROOVY-12481
+    void testThisMethodReferenceToInstanceMethodInStaticContext() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                int inst() { 42 }
+                static test() {
+                    Function<C, Integer> f = this::inst // like C::inst
+                    assert f.apply(new C()) == 42
+                }
+            }
+            C.test()
+        '''
+    }
+
+    @Test // GROOVY-12481
+    void testThisMethodReferenceToInstanceMethodInStaticContextNeedsReceiver() {
+        def err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                int inst() { 42 }
+                static test() {
+                    Supplier<Integer> s = this::inst
+                }
+            }
+        '''
+        assert err.message.contains("Failed to find method 'inst()' for the type: C")
+    }
+
     @Nested
     class NativeMethodReferenceBytecodeTest extends AbstractBytecodeTestCase {
         @Test
