@@ -572,6 +572,92 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12454
+    void testMapStyleConstructorWithNonLiteralMap() {
+        assertScript '''
+            class C {
+                String name
+                int age
+            }
+            def <T> T id(T value) { value }
+            Map map(Map value) { value }
+
+            def c = new C(id([name: 'fred', age: 25]))
+            assert c.name == 'fred' && c.age == 25
+
+            c = new C(map([name: 'barney', age: 30]))
+            assert c.name == 'barney' && c.age == 30
+
+            Map m = [name: 'wilma']
+            c = new C(m)
+            assert c.name == 'wilma' && c.age == 0
+
+            LinkedHashMap lhm = [age: 35]
+            c = new C(lhm)
+            assert c.name == null && c.age == 35
+
+            int count = 0
+            c = new C(map([name: 'betty']).tap { count += 1 })
+            assert c.name == 'betty' && count == 1
+        '''
+    }
+
+    // GROOVY-12454
+    void testMapStyleConstructorWithNonLiteralMapAndBadKey() {
+        assertScript '''
+            class C {
+                String name
+                final int age = 1
+            }
+
+            Map m = [name: 'fred', nope: 1]
+            try {
+                new C(m)
+                assert false
+            } catch (MissingPropertyException e) {
+                assert e.property == 'nope'
+            }
+
+            m = [age: 25]
+            try {
+                new C(m)
+                assert false
+            } catch (ReadOnlyPropertyException e) {
+                assert e.message.contains('age')
+            }
+
+            m = null
+            try {
+                new C(m)
+                assert false
+            } catch (GroovyRuntimeException e) {
+                assert e.message == 'Could not find matching constructor for: C(null)'
+            }
+        '''
+    }
+
+    // GROOVY-12454
+    void testMapStyleInnerClassConstructorWithNonLiteralMap() {
+        assertScript '''
+            class A {
+                class B {
+                    def p
+                }
+                B test(Map m) {
+                    new B(m)
+                }
+            }
+
+            assert new A().test(p: 'x').getP() == 'x'
+            try {
+                new A().test(null)
+                assert false
+            } catch (GroovyRuntimeException e) {
+                assert e.message == 'Could not find matching constructor for: A$B(A, null)'
+            }
+        '''
+    }
+
     // GROOVY-9422
     void testInnerClassConstructorCallWithinClosure() {
         assertScript '''
