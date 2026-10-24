@@ -5532,11 +5532,22 @@ trying: for (ClassNode[] signature : signatures) {
                 addError("Incorrect number of parameters. Expected 1 but found " + paramCount, expression);
             }
         }
+        Object selectableKey = extractTemporaryTypeInfoKey(selectable);
+        typeCheckingContext.pushTemporaryTypeInfo(); // GROOVY-12428: narrowing within the case body
         super.visitCaseStatement(statement);
+        List<ClassNode> bodyTypes = typeCheckingContext.temporaryIfBranchTypeInformation.pop().get(selectableKey);
         if (!maybeFallsThrough(statement.getCode())) {
             typeCheckingContext.temporaryIfBranchTypeInformation
-                .peek().remove(extractTemporaryTypeInfoKey(selectable));
+                .peek().remove(selectableKey);
             restoreTypeBeforeConditional(); // isolate assignment branch
+        } else if (bodyTypes != null) {
+            // the next case may be entered directly, so only the selector's narrowing
+            // is kept, for the next label to join; that of other variables is dropped
+            List<ClassNode> tti = typeCheckingContext.peekTemporaryTypeInfo(selectableKey);
+            for (ClassNode type : bodyTypes) {
+                tti.removeIf(type::isDerivedFrom);
+                tti.add(type);
+            }
         }
     }
 
