@@ -808,6 +808,11 @@ public class CompilationUnit extends ProcessingUnit {
 
     protected ClassVisitor createClassVisitor() {
         return new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES) {
+            {
+                // ASM 9.11 bounds the memory and operations spent computing stack map frames per method;
+                // its defaults suit javac output but large Groovy methods routinely exceed them (GROOVY-12465)
+                setComputeLimits(Integer.MAX_VALUE, Long.MAX_VALUE);
+            }
             private ClassNode getClassNode(String name) {
                 // try classes under compilation
                 CompileUnit cu = getAST();
