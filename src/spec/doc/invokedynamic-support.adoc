@@ -337,6 +337,15 @@ added by hand, or the call fails with `MissingMethodException` in the image. The
 a method pointer such as `Integer::sum` passed as a functional interface, and the JDK's
 `Gatherer` factories take up to four such closures at once.
 
+Statically compiled code can do without most of those proxies. When it is compiled with the
+incubating `-Dgroovy.target.closure.sam=true` option, a closure literal passed, assigned, returned
+or cast to a functional interface is converted by a small class the compiler generates, which
+implements the interface and behaves as the proxy would, apart from being a different class. Such a
+conversion needs no proxy entry, and while every argument already has the type the closure declares
+for it, the call reaches the closure without reflection either. Conversions to a trait or an
+abstract class, of a closure written in a trait, of a closure chosen by a conditional or Elvis
+expression, and of a closure that `groovy.target.closure.pack` packs still happen at run time.
+
 A recording made with the agent contains Groovy's own needs alongside the application's, and it
 is tempting to drop everything in a Groovy package to leave only the application's share. Do not
 filter by package name: keep an entry unless the metadata the Groovy jars ship covers that type

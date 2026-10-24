@@ -234,8 +234,22 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         // runtime proxy. Markers are only added when they are true marker
         // interfaces (no abstract methods we'd be obliged to implement).
         addIntersectionMarkers(closureClass, expression);
+        if (SystemUtil.getBooleanSafe(CompilerConfiguration.CLOSURE_SAM_CONVERSION)) {
+            SamAdapterFactory.prepare(controller, closureClass, doCallMethod, expression);
+        }
         closureClass.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
         return closureClass;
+    }
+
+    /**
+     * A closure class that can be adapted to a functional interface (see {@code SamAdapterFactory}) is
+     * typed as itself, so that converting an instance to that interface wraps it in the adapter instead of
+     * going through a run-time cast or {@code asType}.
+     */
+    @Override
+    protected ClassNode getClosureInstanceType(final ClassNode closureClass) {
+        return closureClass.getNodeMetaData(StaticCompilationMetadataKeys.FUNCTIONAL_INTERFACE_ADAPTER) != null
+                ? closureClass : super.getClosureInstanceType(closureClass);
     }
 
     @SuppressWarnings("unchecked")

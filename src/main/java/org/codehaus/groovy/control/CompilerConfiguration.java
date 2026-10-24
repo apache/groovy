@@ -110,6 +110,16 @@ public class CompilerConfiguration {
     @Incubating
     public static final String LAMBDA_HOISTING = "groovy.target.lambda.hoist";
 
+    /**
+     * System-property name for the incubating option that converts a {@code @CompileStatic} closure literal
+     * to the functional interface it is passed, assigned, returned or cast to with a class generated at
+     * compile time, instead of a {@code java.lang.reflect.Proxy} created at run time. The generated class
+     * behaves as the proxy does.
+     * Incubating: this switch may change or be removed until the feature graduates.
+     */
+    @Incubating
+    public static final String CLOSURE_SAM_CONVERSION = "groovy.target.closure.sam";
+
     /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. */
     @Deprecated public static final String JDK4 = "1.4";
     /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5. */
