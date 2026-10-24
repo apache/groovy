@@ -2040,7 +2040,9 @@ switchExpressionLabel ::=
 
 While this production is active, R19 allows `yield expression`.
 `return` / `break` / `continue` inside a switch expression are
-conversion errors.
+conversion errors. They are accepted when the arrow `switch` is in
+statement position (its value is unused), where they are ordinary
+control transfer as in Java.
 
 Which production matches is a matter of *context and labels*.
 `switchStatement` (under `conditionalStatement`) admits only

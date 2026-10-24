@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -35,6 +36,7 @@ import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
+import org.codehaus.groovy.ast.stmt.YieldStatement;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -156,6 +158,7 @@ public class ReturnAdder {
         }
 
         if (statement instanceof SwitchStatement switchStatement) {
+            addReturnsForEarlyYields(switchStatement);
             Statement defaultStatement = switchStatement.getDefaultStatement();
             List<CaseStatement> caseStatements = switchStatement.getCaseStatements();
             for (Iterator<CaseStatement> it = caseStatements.iterator(); it.hasNext(); ) {
@@ -215,6 +218,35 @@ public class ReturnAdder {
         BlockStatement blockStatement = new BlockStatement(statements, new VariableScope(scope));
         blockStatement.setSourcePosition(statement);
         return blockStatement;
+    }
+
+    /**
+     * The parser lowers a {@code yield} that does not end its arm of a
+     * statement-position switch to a block that evaluates the value and breaks
+     * out, the {@code break} marked with the switch it leaves. With the switch
+     * in return position, that value is the result, so the block returns it
+     * instead.
+     */
+    private void addReturnsForEarlyYields(final SwitchStatement switchStatement) {
+        switchStatement.visit(new CodeVisitorSupport() {
+            @Override
+            public void visitBlockStatement(final BlockStatement block) {
+                List<Statement> statements = block.getStatements();
+                if (statements.size() == 2
+                        && statements.get(0) instanceof ExpressionStatement es
+                        && statements.get(1).getNodeMetaData(YieldStatement.class) == switchStatement) {
+                    ReturnStatement returnStatement = new ReturnStatement(es.getExpression());
+                    returnStatement.setSourcePosition(es);
+                    listener.returnStatementAdded(returnStatement);
+                    if (doAdd) {
+                        statements.clear();
+                        block.addStatement(returnStatement);
+                    }
+                } else {
+                    super.visitBlockStatement(block);
+                }
+            }
+        });
     }
 
     private Statement adjustSwitchCaseCode(final Statement statement, final ClassNode rtype, final VariableScope scope, final boolean lastCase) {
