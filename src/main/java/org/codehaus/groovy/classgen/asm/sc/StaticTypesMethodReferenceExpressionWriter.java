@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -49,6 +50,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.ToIntFunction;
 
@@ -69,6 +71,7 @@ import static org.codehaus.groovy.classgen.asm.BytecodeHelper.getClassInternalNa
 import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterfaceMetadataKey.METHOD_REFERENCE_DESERIALIZE_METHOD_NAME;
 import static org.codehaus.groovy.runtime.ArrayGroovyMethods.last;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.allParametersAndArgumentsMatch;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filterMethodsByVisibility;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
@@ -460,20 +463,54 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         ArgumentListExpression ctorArgs = new ArgumentListExpression(parametersWithExactType);
 
         Expression returnValue;
+        boolean staticCompile = false;
         if (returnType.isArray()) {
             returnValue = new ArrayExpression(
                     returnType.getComponentType(),
                     null, ctorArgs.getExpressions());
         } else {
             returnValue = ctorX(returnType, ctorArgs);
+            ConstructorNode ctor = findConstructorReferenceTarget(returnType, parametersWithExactType);
+            if (ctor != null) {
+                returnValue.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, ctor);
+                staticCompile = true;
+            }
         }
 
         MethodNode delegateMethod = addSyntheticMethod(methodName, returnType, returnValue, parametersWithExactType, ClassNode.EMPTY_ARRAY);
-        // TODO: if StaticTypesMarker.DIRECT_METHOD_CALL_TARGET or
-        // OptimizingStatementWriter.StatementMeta.class metadatas
-        // can bet set for the ctorX above, then this can be TRUE:
-        delegateMethod.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.FALSE);
+        // without a target constructor, the constructor is selected at run time
+        delegateMethod.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, staticCompile);
         return delegateMethod;
+    }
+
+    /**
+     * Selects the constructor of {@code type} that accepts the parameter types
+     * of the functional interface, the way the constructor of a constructor call
+     * expression is selected.
+     *
+     * @return the constructor, or {@code null} if no single constructor matches
+     *         or the matching constructor cannot be called directly
+     */
+    private ConstructorNode findConstructorReferenceTarget(final ClassNode type, final Parameter[] samParameters) {
+        if (type.isInterface() || type.isAbstract() || type.isEnum()) return null;
+
+        ClassNode[] argumentTypes = Arrays.stream(samParameters).map(Parameter::getType).toArray(ClassNode[]::new);
+        List<MethodNode> ctors = chooseBestMethod(type, new ArrayList<>(type.getDeclaredConstructors()), argumentTypes);
+        if (ctors.size() == 1 && ctors.get(0) instanceof ConstructorNode ctor && isDirectlyAccessible(ctor)) {
+            return ctor;
+        }
+        return null;
+    }
+
+    /**
+     * Determines if the bytecode of the current class can call the constructor.
+     */
+    private boolean isDirectlyAccessible(final ConstructorNode ctor) {
+        ClassNode declaringClass = ctor.getDeclaringClass(), accessingClass = controller.getClassNode();
+        if (ctor.isProtected()) { // only super(...) can call a protected constructor of another package
+            return Objects.equals(declaringClass.getPackageName(), accessingClass.getPackageName());
+        }
+        return AsmClassGenerator.isMemberDirectlyAccessible(ctor.getModifiers(), declaringClass, accessingClass);
     }
 
     private MethodNode addSyntheticMethod(final String methodName, final ClassNode returnType, final Expression returnValue, final Parameter[] parameters, final ClassNode[] exceptions) {

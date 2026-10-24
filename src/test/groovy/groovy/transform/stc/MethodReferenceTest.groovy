@@ -19,6 +19,7 @@
 package groovy.transform.stc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.codehaus.groovy.classgen.asm.InstructionSequence
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -1144,6 +1145,218 @@ final class MethodReferenceTest {
             test()
         '''
         assert err.message =~ /Cannot call java.lang.Integer\[\]#<init>\(int\) with arguments /
+    }
+
+    @Test // class::new
+    void testFunctionCN10() {
+        assertScript shell, '''
+            class Over {
+                final String how
+                Over(String s) { how = 'String' }
+                Over(Integer i) { how = 'Integer' }
+                Over(long l) { how = 'long' }
+                Over(int i, long j) { how = 'int,long' }
+            }
+
+            @CompileStatic
+            void test() {
+                Function<String, Over> s = Over::new
+                assert s.apply('x').how == 'String'
+                Function<Integer, Over> i = Over::new
+                assert i.apply(1).how == 'Integer'
+                IntFunction<Over> p = Over::new // like new Over(int)
+                assert p.apply(1).how == 'Integer'
+                LongFunction<Over> l = Over::new
+                assert l.apply(1L).how == 'long'
+                BiFunction<Integer, Integer, Over> b = Over::new
+                assert b.apply(1, 2).how == 'int,long'
+            }
+
+            test()
+        '''
+    }
+
+    @Test // class::new
+    void testFunctionCN11() {
+        assertScript shell, '''
+            class Var {
+                final List<String> values
+                Var(String... values) { this.values = values.toList() }
+            }
+
+            @CompileStatic
+            void test() {
+                Supplier<Var> none = Var::new
+                assert none.get().values == []
+                Function<String, Var> one = Var::new
+                assert one.apply('a').values == ['a']
+                BiFunction<String, String, Var> two = Var::new
+                assert two.apply('a', 'b').values == ['a', 'b']
+                Function<String[], Var> array = Var::new
+                assert array.apply(['a', 'b', 'c'] as String[]).values == ['a', 'b', 'c']
+            }
+
+            test()
+        '''
+    }
+
+    @Test // class::new
+    void testFunctionCN12() {
+        assertScript shell, '''
+            class Pair<A, B> {
+                final A a
+                final B b
+                Pair(A a, B b) { this.a = a; this.b = b }
+            }
+
+            @CompileStatic
+            void test() {
+                BiFunction<String, Integer, Pair<String, Integer>> f = Pair::new
+                Pair<String, Integer> pair = f.apply('x', 1)
+                assert pair.a == 'x' && pair.b == 1
+
+                Function<Integer, List<String>> g = ArrayList::new // ArrayList(int)
+                assert g.apply(10).isEmpty()
+                Function<Collection<String>, List<String>> h = ArrayList::new // ArrayList(Collection)
+                assert h.apply(['y']) == ['y']
+            }
+
+            test()
+        '''
+    }
+
+    @Test // class::new
+    void testFunctionCN13() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                private final String value
+                private C(String value) { this.value = value }
+
+                static class Box {
+                    private final String value
+                    private Box(String value) { this.value = value }
+                    static Function<String, C> outer() { C::new }
+                }
+
+                static Function<String, Box> inner() { Box::new }
+                static Function<String, Box> inClosure() {
+                    def make = { -> Function<String, Box> f = Box::new; f }
+                    make()
+                }
+                static Function<String, Box> inLambda() {
+                    Supplier<Function<String, Box>> make = () -> { Function<String, Box> f = Box::new; f }
+                    make.get()
+                }
+            }
+
+            assert C.inner().apply('i').value == 'i'
+            assert C.Box.outer().apply('o').value == 'o'
+            assert C.inClosure().apply('c').value == 'c'
+            assert C.inLambda().apply('l').value == 'l'
+        '''
+    }
+
+    @Test // class::new
+    void testFunctionCN14() {
+        assertScript shell, '''
+            class Outer {
+                class Inner {
+                    final Outer outer
+                    Inner() { outer = Outer.this }
+                }
+            }
+
+            @CompileStatic
+            void test() {
+                Function<Outer, Outer.Inner> f = Outer.Inner::new
+                def outer = new Outer()
+                assert f.apply(outer).outer.is(outer)
+            }
+
+            test()
+        '''
+    }
+
+    @Test // class::new
+    void testFunctionCN15() {
+        assertScript shell, '''
+            class Dflt {
+                final String value
+                Dflt(String a, String b = 'b') { value = a + b }
+            }
+
+            @CompileStatic
+            void test() {
+                Function<String, Dflt> f = Dflt::new
+                assert f.apply('a').value == 'ab'
+                BiFunction<String, String, Dflt> g = Dflt::new
+                assert g.apply('a', 'c').value == 'ac'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-10971
+    @Test // class::new
+    void testFunctionCN16() {
+        assertScript shell, '''
+            class Foo {
+                final String value
+                Foo(String s) { value = s }
+            }
+
+            @CompileStatic
+            void test() {
+                Function<Object, Foo> f = Foo::new // no Foo(Object); selected at run time
+                assert f.apply('x').value == 'x'
+            }
+
+            test()
+        '''
+    }
+
+    @Test // class::new
+    void testFunctionCN17() {
+        assertScript shell, '''package p
+            class A {
+                final String value
+                protected A(String value) { this.value = value }
+            }
+
+            true
+        '''
+        assertScript shell, '''
+            @CompileStatic
+            class C extends p.A {
+                C() { super('C') }
+                static Function<String, p.A> create() {
+                    p.A::new // protected constructor of another package
+                }
+            }
+
+            assert C.create().apply('x').value == 'x'
+        '''
+    }
+
+    @Test // class::new
+    void testFunctionCN18() {
+        assertScript shell, '''
+            class X {
+                final String how
+                X(CharSequence cs) { how = 'CharSequence' }
+                X(String s) { how = 'String' }
+            }
+
+            @CompileStatic
+            void test() {
+                Function<CharSequence, X> f = X::new // selected by parameter type of Function#apply, as in Java
+                assert f.apply('x').how == 'CharSequence'
+            }
+
+            test()
+        '''
     }
 
     @Test // arrayClass::new
@@ -2698,15 +2911,16 @@ final class MethodReferenceTest {
                 }
             '''
 
-            def helperBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'ctorRef$create$0', script)
+            def helperBytecode = compileStaticMethodBytecode('ctorRef$create$0', script)
             assert helperBytecode.hasSequence([
                 'private final static synthetic ctorRef$create$0(Ljava/lang/String;)LC$Box;',
-                'LDC LC$Box;.class',
-                'INVOKEDYNAMIC init(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/Object;',
-                '"<init>"',
-                'INVOKEDYNAMIC cast(Ljava/lang/Object;)LC$Box;',
+                'NEW C$Box',
+                'DUP',
+                'ALOAD 0',
+                'INVOKESPECIAL C$Box.<init> (Ljava/lang/String;)V',
                 'ARETURN'
             ])
+            assertNoDynamicConstructorCall(helperBytecode)
 
             def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
             assertUsesInvokeDynamicFactory(
@@ -2715,6 +2929,176 @@ final class MethodReferenceTest {
                 'java/lang/invoke/LambdaMetafactory.metafactory',
                 'C.ctorRef$create$0(Ljava/lang/String;)LC$Box;'
             )
+        }
+
+        @Test
+        void testConstructorReferenceCallsNoArgConstructorDirectly() {
+            def helperBytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
+                class Made {
+                    Made() { }
+                }
+                @CompileStatic
+                class C {
+                    static Supplier<Made> create() {
+                        Made::new
+                    }
+                }
+            ''')
+
+            assert helperBytecode.hasStrictSequence([
+                'NEW Made',
+                'DUP',
+                'INVOKESPECIAL Made.<init> ()V',
+                'ARETURN'
+            ])
+            assertNoDynamicConstructorCall(helperBytecode)
+        }
+
+        @Test
+        void testConstructorReferenceSelectsConstructorBySamParameterTypes() {
+            def script = '''
+                class Over {
+                    Over(String s) { }
+                    Over(Integer i) { }
+                    Over(long l) { }
+                    Over(int i, long j) { }
+                }
+                @CompileStatic
+                class C {
+                    static Function<String, Over> string() {
+                        Over::new
+                    }
+                    static Function<Integer, Over> integer() {
+                        Over::new
+                    }
+                    static LongFunction<Over> primitive() {
+                        Over::new
+                    }
+                    static BiFunction<Integer, Integer, Over> unboxAndWiden() {
+                        Over::new
+                    }
+                }
+            '''
+
+            def string = compileStaticMethodBytecode('ctorRef$string$0', script)
+            assert string.hasSequence(['ALOAD 0', 'INVOKESPECIAL Over.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(string)
+
+            def integer = compileStaticMethodBytecode('ctorRef$integer$1', script)
+            assert integer.hasSequence(['ALOAD 0', 'INVOKESPECIAL Over.<init> (Ljava/lang/Integer;)V'])
+            assertNoDynamicConstructorCall(integer)
+
+            def primitive = compileStaticMethodBytecode('ctorRef$primitive$2', script)
+            assert primitive.hasSequence(['LLOAD 0', 'INVOKESPECIAL Over.<init> (J)V'])
+            assertNoDynamicConstructorCall(primitive)
+
+            def unboxAndWiden = compileStaticMethodBytecode('ctorRef$unboxAndWiden$3', script)
+            assert unboxAndWiden.hasSequence(['ALOAD 0', 'ALOAD 1', 'INVOKESPECIAL Over.<init> (IJ)V'])
+            assertNoDynamicConstructorCall(unboxAndWiden)
+        }
+
+        @Test
+        void testVariadicConstructorReferenceCallsConstructorDirectly() {
+            def script = '''
+                class Var {
+                    Var(String... values) { }
+                }
+                @CompileStatic
+                class C {
+                    static Supplier<Var> none() {
+                        Var::new
+                    }
+                    static Function<String, Var> one() {
+                        Var::new
+                    }
+                    static BiFunction<String, String, Var> two() {
+                        Var::new
+                    }
+                    static Function<String[], Var> array() {
+                        Var::new
+                    }
+                }
+            '''
+
+            ['none', 'one', 'two'].eachWithIndex { name, i ->
+                def bytecode = compileStaticMethodBytecode("ctorRef\$${name}\$${i}", script)
+                assert bytecode.hasSequence(['NEW Var', 'ANEWARRAY java/lang/String', 'INVOKESPECIAL Var.<init> ([Ljava/lang/String;)V'])
+                assertNoDynamicConstructorCall(bytecode)
+            }
+
+            def array = compileStaticMethodBytecode('ctorRef$array$3', script)
+            assert array.hasSequence(['NEW Var', 'ALOAD 0', 'INVOKESPECIAL Var.<init> ([Ljava/lang/String;)V'])
+            assert !array.hasSequence(['ANEWARRAY'])
+            assertNoDynamicConstructorCall(array)
+        }
+
+        @Test
+        void testGenericClassConstructorReferenceCallsConstructorDirectly() {
+            def bytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
+                class Gen<T> {
+                    Gen(T value) { }
+                }
+                @CompileStatic
+                class C {
+                    static Function<String, Gen<String>> create() {
+                        Gen::new
+                    }
+                }
+            ''')
+
+            assert bytecode.hasSequence(['NEW Gen', 'ALOAD 0', 'INVOKESPECIAL Gen.<init> (Ljava/lang/Object;)V'])
+            assertNoDynamicConstructorCall(bytecode)
+        }
+
+        @Test
+        void testPrivateConstructorOfNestmateIsCalledDirectly() {
+            def bytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
+                @CompileStatic
+                class C {
+                    static class Box {
+                        private Box(String value) { }
+                    }
+                    static Function<String, Box> create() {
+                        Box::new
+                    }
+                }
+            ''')
+
+            assert bytecode.hasSequence(['NEW C$Box', 'ALOAD 0', 'INVOKESPECIAL C$Box.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(bytecode)
+        }
+
+        // GROOVY-10971: no constructor accepts the parameter type of the functional interface
+        @Test
+        void testConstructorReferenceWithoutMatchingConstructorSelectsConstructorAtRuntime() {
+            def bytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
+                class Foo {
+                    Foo(String s) { }
+                }
+                @CompileStatic
+                class C {
+                    static Function<Object, Foo> create() {
+                        Foo::new
+                    }
+                }
+            ''')
+
+            assert bytecode.hasSequence(['INVOKEDYNAMIC init(Ljava/lang/Class;Ljava/lang/Object;)Ljava/lang/Object;'])
+        }
+
+        @Test
+        void testProtectedConstructorOfAnotherPackageIsSelectedAtRuntime() {
+            def bytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
+                @CompileStatic
+                class C extends ObjectInputStream {
+                    C() { super() }
+                    static Supplier<ObjectInputStream> create() {
+                        ObjectInputStream::new // protected ObjectInputStream()
+                    }
+                }
+            ''')
+
+            assert bytecode.hasSequence(['INVOKEDYNAMIC init(Ljava/lang/Class;)Ljava/lang/Object;'])
         }
 
         @Test
@@ -2803,8 +3187,20 @@ final class MethodReferenceTest {
             assert !bytecode.hasSequence(['INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.getMethodPointer'])
         }
 
+        private static void assertNoDynamicConstructorCall(final bytecode) {
+            assert !bytecode.hasSequence(['INVOKEDYNAMIC init('])
+            assert !bytecode.hasSequence(['INVOKEDYNAMIC cast('])
+        }
+
         private compileStaticBytecode(final Map options = [:], final String script) {
             compile(options, COMMON_IMPORTS + script)
+        }
+
+        private InstructionSequence compileStaticMethodBytecode(final String method, final String script) {
+            List<String> instructions = compileStaticBytecode(classNamePattern: 'C', method: method, script).instructions
+            int begin = instructions.indexOf('--BEGIN--'), end = instructions.indexOf('--END--')
+            assert begin >= 0 && end > begin : "method $method not found"
+            new InstructionSequence(instructions: instructions[(begin + 1)..<end])
         }
 
         private static final String COMMON_IMPORTS = '''\
