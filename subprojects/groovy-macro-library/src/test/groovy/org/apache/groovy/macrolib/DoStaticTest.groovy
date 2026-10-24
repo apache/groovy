@@ -264,6 +264,89 @@ final class DoStaticTest {
         """
     }
 
+    // GROOVY-12486
+    @Test
+    void boundParameterIsTypedFromBindInput_secondTypeArgument() {
+        assertScript """
+            import java.util.function.Function
+
+            class Result<E, A> {
+                final A value
+                Result(A value) { this.value = value }
+                static <E, A> Result<E, A> ok(A value) { new Result<E, A>(value) }
+                def <B> Result<E, B> flatMap(Function<? super A, ? extends Result<E, B>> f) { f.apply(value) }
+                def <B> Result<E, B> map(Function<? super A, ? extends B> f) { ok(f.apply(value)) }
+            }
+
+            $CS
+            class C {
+                static int run() {
+                    def r = DO(x in Result.<String, Integer>ok(1),
+                               y in Result.<String, Integer>ok(x + 1)) {
+                        int n = x + y
+                        Result.<String, Integer>ok(n)
+                    }
+                    r.value
+                }
+            }
+            assert C.run() == 3
+        """
+    }
+
+    // GROOVY-12486
+    @Test
+    void boundParameterIsTypedFromBindInput_monadicMiddleOfThree() {
+        assertScript """
+            import groovy.transform.Monadic
+            import java.util.function.Function
+
+            @Monadic(bind = 'chain', map = 'transform')
+            class Tri<E, A, X> {
+                final A value
+                Tri(A value) { this.value = value }
+                def <B> Tri<E, B, X> chain(Function<? super A, Tri<E, B, X>> f) { f.apply(value) }
+                def <B> Tri<E, B, X> transform(Function<? super A, B> f) { new Tri<E, B, X>(f.apply(value)) }
+            }
+
+            $CS
+            class C {
+                static int run() {
+                    def r = DO(x in new Tri<String, Integer, Date>(2)) { new Tri<String, Integer, Date>(x * 10) }
+                    r.value
+                }
+            }
+            assert C.run() == 20
+        """
+    }
+
+    // GROOVY-12486
+    @Test
+    void boundParameterIsTypedFromBindInput_inheritedBind() {
+        assertScript """
+            import java.util.function.Function
+
+            abstract class Res<E, A> {
+                abstract A get()
+                def <B> Res<E, B> flatMap(Function<? super A, ? extends Res<E, B>> f) { f.apply(get()) }
+                def <B> Res<E, B> map(Function<? super A, ? extends B> f) { new Ok<Object, B, Object>(f.apply(get())) as Res<E, B> }
+            }
+            class Ok<T, A, U> extends Res<String, A> {
+                final A value
+                Ok(A value) { this.value = value }
+                A get() { value }
+            }
+
+            $CS
+            class C {
+                static int run() {
+                    def r = DO(x in new Ok<Date, Integer, Date>(4)) { new Ok<Date, Integer, Date>(x + 1) }
+                    r.get()
+                }
+            }
+            assert C.run() == 5
+        """
+    }
+
     private static void assertCompileError(String script, String expectedMessage) {
         try {
             new GroovyShell().parse(script)
