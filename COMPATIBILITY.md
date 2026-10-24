@@ -596,6 +596,48 @@ such as a `StringBuilder`, now throws `ClassCastException` where a
 `String`-only method is called on it. Variables declared `String`, `def` or
 `var`, and dynamic code, behave as before.
 
+### Groovy 7 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
+
+For a dynamic property write or read, the runtime checks whether the receiver
+overrides the `setProperty` or `getProperty` that `GroovyObject` provides. An
+override receives the access. For the `GroovyObject` default, the runtime calls
+the metaclass itself and tells it which class is making the access. Since Groovy 5
+(GROOVY-8283), the check treated any interface default method as `GroovyObject`'s
+own. So when a class took `setProperty` or `getProperty` from a default method of
+another interface, such as one extending `GroovyObject`, `obj.x = v` writes and
+computed-name reads (`obj."$name"`) went around that method to the metaclass.
+`obj.setProperty(...)` calls and `obj.x` reads did reach it. Now only
+`GroovyObject`'s own default is set aside, so such a method receives every write
+and read. That matches a method the class declares, and Groovy 4, which compiled
+interface default methods as traits.
+
+**Who is affected.** Classes that implement an interface supplying a default
+`setProperty` or `getProperty`. The method now also receives the writes and
+computed-name reads that used to bypass it. Like any override, it receives the
+access without knowing which class made it, so the access is resolved for the
+receiver's own class. For example, a superclass that writes its own private field
+on an instance of a subclass, `other.secret = v`, now fails with
+`MissingPropertyException`, as the read `other.secret` already did. Use direct
+field access (`other.@secret = v`) where that is intended. An `@Internal` default
+`getProperty` of another interface now answers computed-name reads, while `obj.x`
+reads still go around it, as in Groovy 4.
+
+**Classes reflection cannot read.** Whether a class overrides these methods is now
+decided once per class and cached. Reflection may be unable to read a class's
+public methods: in a GraalVM native image without reflection metadata for the
+class, or on the JVM when a public method names a type missing at run time. Such a
+class now counts as overriding, so the access reaches the object's own
+`setProperty` or `getProperty`. Before, the access threw, or a read went around a
+real override to the metaclass. If the class has the `GroovyObject` default, the
+access is resolved for the receiver's own class.
+
+**What is unchanged.** Classes that use `GroovyObject`'s own defaults, and classes
+that declare `setProperty` or `getProperty` or inherit it from a superclass or a
+trait. Also unchanged: a `setProperty` or `getProperty` contributed through
+`ExpandoMetaClass`, a per-instance metaclass or a mixin, because the metaclass is
+still consulted on each access. `GroovyObjectOverrides`, which holds the check, is
+internal, so `japicmp` does not report this change.
+
 ### Groovy 7 — Groovy Console smart highlighter and the language host
 
 `SmartDocumentFilter.getLatestTokenList()` now returns delimiter spans
