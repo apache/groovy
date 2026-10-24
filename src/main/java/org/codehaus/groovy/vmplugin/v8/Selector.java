@@ -32,7 +32,6 @@ import groovy.lang.MetaMethod;
 import groovy.lang.MetaProperty;
 import groovy.lang.MissingMethodException;
 import groovy.lang.ProxyMetaClass;
-import groovy.transform.Internal;
 import org.apache.groovy.internal.metaclass.GroovyObjectOverrides;
 import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.codehaus.groovy.GroovyBugError;
@@ -408,13 +407,12 @@ public abstract class Selector {
         public void chooseMeta(MetaClassImpl mci) {
             var receiver = getCorrectedReceiver();
             if (receiver instanceof GroovyObject) {
-                try {
-                    var propertyAccessMethod = receiver.getClass().getMethod("getProperty", String.class);
-                    if (!propertyAccessMethod.isSynthetic() && !isMarkedInternal(propertyAccessMethod)) {
-                        handle = MethodHandles.insertArguments(GROOVY_OBJECT_GET_PROPERTY, 1, name);
-                        return;
-                    }
-                } catch (ReflectiveOperationException ignore) {
+                // a getProperty that is neither the interface default nor generated answers
+                // every read; a class that cannot be inspected counts as having one, so that
+                // the read reaches its getProperty rather than going around it to the metaclass
+                if (GroovyObjectOverrides.hasCustomGetProperty(receiver.getClass())) {
+                    handle = MethodHandles.insertArguments(GROOVY_OBJECT_GET_PROPERTY, 1, name);
+                    return;
                 }
             } else if (receiver instanceof Class) {
                 handle = MOP_GET;
@@ -456,10 +454,6 @@ public abstract class Selector {
             } else {
                 handle = META_PROPERTY_GETTER.bindTo(mp);
             }
-        }
-
-        private boolean isMarkedInternal(Method reflectionMethod) {
-            return reflectionMethod.getAnnotation(Internal.class) != null;
         }
 
         /**

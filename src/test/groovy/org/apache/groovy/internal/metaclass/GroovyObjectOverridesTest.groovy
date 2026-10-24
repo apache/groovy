@@ -19,10 +19,13 @@
 package org.apache.groovy.internal.metaclass
 
 import groovy.transform.CompileStatic
+import groovy.transform.Internal
 import org.junit.jupiter.api.Test
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes
 
+import static org.apache.groovy.internal.metaclass.GroovyObjectOverrides.hasCustomGetProperty
+import static org.apache.groovy.internal.metaclass.GroovyObjectOverrides.overridesGetProperty
 import static org.apache.groovy.internal.metaclass.GroovyObjectOverrides.overridesSetProperty
 import static org.junit.jupiter.api.Assertions.assertFalse
 import static org.junit.jupiter.api.Assertions.assertThrows
@@ -49,10 +52,34 @@ final class GroovyObjectOverridesTest {
     static class JavaStyle extends GroovyObjectSupport {
     }
 
+    static class Reading {
+        Object getProperty(String name) { name }
+    }
+
+    static class InheritsReading extends Reading {
+    }
+
+    static class RedeclaresReading extends Reading {
+        @Override
+        Object getProperty(String name) { name }
+    }
+
+    static class InheritsJavaReading extends Expando {
+    }
+
+    static class MarkedInternal {
+        @Internal
+        Object getProperty(String name) { name }
+    }
+
     @Test
     void interfaceDefaultIsNotAnOverride() {
         assertFalse(overridesSetProperty(Plain))
         assertFalse(overridesSetProperty(JavaStyle))
+        for (type in [Plain, JavaStyle]) {
+            assertFalse(overridesGetProperty(type), type.name)
+            assertFalse(hasCustomGetProperty(type), type.name)
+        }
     }
 
     @Test
@@ -71,12 +98,66 @@ final class GroovyObjectOverridesTest {
         assertTrue(overridesSetProperty(RedeclaresOverride))
     }
 
+    @Test
+    void declaredGetPropertyIsAnOverride() {
+        for (type in [Reading, Script, Expando, ConfigObject, Closure, Binding]) {
+            assertTrue(overridesGetProperty(type), type.name)
+            assertTrue(hasCustomGetProperty(type), type.name)
+        }
+    }
+
+    @Test
+    void inheritedGetPropertyIsAnOverride() {
+        for (type in [InheritsReading, InheritsJavaReading]) {
+            assertTrue(overridesGetProperty(type), type.name)
+            assertTrue(hasCustomGetProperty(type), type.name)
+        }
+    }
+
+    @Test
+    void redeclaredGetPropertyIsAnOverride() {
+        assertTrue(overridesGetProperty(RedeclaresReading))
+        assertTrue(hasCustomGetProperty(RedeclaresReading))
+    }
+
+    /**
+     * The two read criteria differ on purpose: a {@code getProperty} that is synthetic or
+     * marked {@code @Internal} is taken for a generated one, like the interface default
+     * (which carries {@code @Internal} for this reason), by property-read call sites, but
+     * not by {@code ScriptBytecodeAdapter.getProperty}.
+     */
+    @Test
+    @CompileStatic
+    void generatedGetPropertyIsAnOverrideButNotCustom() {
+        String name = 'org.apache.groovy.internal.metaclass.SyntheticGetProperty'
+        def writer = new ClassWriter(0)
+        writer.visit(Opcodes.V17, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, name.replace('.', '/'), null,
+                'java/lang/Object', ['groovy/lang/GroovyObject'] as String[])
+        writer.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT | Opcodes.ACC_SYNTHETIC, 'getProperty',
+                '(Ljava/lang/String;)Ljava/lang/Object;', null, null).visitEnd()
+        writer.visitEnd()
+        byte[] bytes = writer.toByteArray()
+        def loader = new ClassLoader(getClass().classLoader) {
+            @Override
+            protected Class<?> findClass(String className) {
+                className == name ? defineClass(className, bytes, 0, bytes.length) : super.findClass(className)
+            }
+        }
+        Class<?> synthetic = loader.loadClass(name)
+        assertTrue(synthetic.getMethod('getProperty', String).isSynthetic())
+
+        for (type in [MarkedInternal, synthetic]) {
+            assertTrue(overridesGetProperty(type), type.name)
+            assertFalse(hasCustomGetProperty(type), type.name)
+        }
+    }
+
     /**
      * A class whose public methods reflection cannot read: in a native image, one without
      * reflection metadata; here, one whose public method names a type absent at run time.
-     * Its {@code setProperty} is the interface default, but that cannot be established, so
-     * it is reported as an override: a write then goes to the object's own
-     * {@code setProperty}, whichever implementation that is.
+     * Its {@code setProperty} and {@code getProperty} are the interface defaults, but that
+     * cannot be established, so it is reported as overriding both: a write or a read then
+     * goes to the object's own method, whichever implementation that is.
      * <p>
      * Statically compiled: a dynamic call on the class would build its metaclass first,
      * which fails the same way.
@@ -99,7 +180,10 @@ final class GroovyObjectOverridesTest {
         }
         Class<?> unreadable = loader.loadClass(name)
         assertThrows(NoClassDefFoundError) { unreadable.getMethod('setProperty', String, Object) }
+        assertThrows(NoClassDefFoundError) { unreadable.getMethod('getProperty', String) }
 
         assertTrue(overridesSetProperty(unreadable))
+        assertTrue(overridesGetProperty(unreadable))
+        assertTrue(hasCustomGetProperty(unreadable))
     }
 }

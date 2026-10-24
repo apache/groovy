@@ -21,14 +21,17 @@ package org.apache.groovy.internal.metaclass;
 import groovy.lang.GroovyObject;
 import groovy.transform.Internal;
 
+import java.lang.reflect.Method;
+
 /**
- * Whether a class overrides the {@code setProperty} that {@link GroovyObject} provides,
- * which decides how the runtime dispatches a dynamic property write to its instances.
+ * Whether a class overrides the {@code setProperty} or {@code getProperty} that
+ * {@link GroovyObject} provides, which decides how the runtime dispatches a dynamic
+ * property write or read to its instances.
  * <p>
  * An override, declared by the class or inherited from a superclass, receives every
- * write. The interface default only hands the write to the metaclass, so the runtime
- * calls the metaclass itself instead and tells it which class is making the write;
- * that is what lets, say, a superclass write its own private field on an instance of
+ * access. The interface defaults only hand the access to the metaclass, so the runtime
+ * calls the metaclass itself instead and tells it which class is making the access;
+ * that is what lets, say, a superclass reach its own private field on an instance of
  * a subclass.
  * <p>
  * Not user API.
@@ -47,6 +50,29 @@ public final class GroovyObjectOverrides {
                 // metadata, MissingReflectionRegistrationError, a LinkageError), and a public
                 // method naming a type absent at run time throws NoClassDefFoundError
                 return Boolean.TRUE;
+            }
+        }
+    };
+
+    private static final ClassValue<Boolean> GET_PROPERTY = new ClassValue<>() {
+        @Override
+        protected Boolean computeValue(final Class<?> type) {
+            try {
+                return !type.getMethod("getProperty", String.class).isDefault();
+            } catch (NoSuchMethodException | LinkageError ignore) {
+                return Boolean.TRUE; // as for setProperty
+            }
+        }
+    };
+
+    private static final ClassValue<Boolean> CUSTOM_GET_PROPERTY = new ClassValue<>() {
+        @Override
+        protected Boolean computeValue(final Class<?> type) {
+            try {
+                Method method = type.getMethod("getProperty", String.class);
+                return !method.isSynthetic() && method.getAnnotation(Internal.class) == null;
+            } catch (NoSuchMethodException | LinkageError ignore) {
+                return Boolean.TRUE; // as for setProperty
             }
         }
     };
@@ -71,5 +97,38 @@ public final class GroovyObjectOverrides {
      */
     public static boolean overridesSetProperty(final Class<?> type) {
         return SET_PROPERTY.get(type);
+    }
+
+    /**
+     * Tells whether instances of the given class take {@code getProperty(String)} from
+     * anywhere but the {@link GroovyObject} interface default: the criterion of
+     * {@code ScriptBytecodeAdapter.getProperty}. Computed once per class, and {@code true}
+     * when reflection cannot read the public methods of the class, for the reasons given
+     * for {@link #overridesSetProperty(Class)}.
+     *
+     * @param type a class that implements {@link GroovyObject}
+     * @return {@code true} if a read should be passed to the object's own
+     *         {@code getProperty} rather than to its metaclass
+     * @see #hasCustomGetProperty(Class)
+     */
+    public static boolean overridesGetProperty(final Class<?> type) {
+        return GET_PROPERTY.get(type);
+    }
+
+    /**
+     * Tells whether instances of the given class take {@code getProperty(String)} from an
+     * implementation that is neither synthetic nor marked {@link Internal}: the criterion
+     * of the invokedynamic property-read call sites. Unlike
+     * {@link #overridesGetProperty(Class)}, it treats such an implementation as generated,
+     * like the interface default, which carries {@code @Internal} for this reason.
+     * Computed once per class, and {@code true} when reflection cannot read the public
+     * methods of the class, for the reasons given for {@link #overridesSetProperty(Class)}.
+     *
+     * @param type a class that implements {@link GroovyObject}
+     * @return {@code true} if a read should be passed to the object's own
+     *         {@code getProperty} rather than to its metaclass
+     */
+    public static boolean hasCustomGetProperty(final Class<?> type) {
+        return CUSTOM_GET_PROPERTY.get(type);
     }
 }

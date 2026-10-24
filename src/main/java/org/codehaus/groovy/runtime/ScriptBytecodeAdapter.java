@@ -480,7 +480,9 @@ public class ScriptBytecodeAdapter {
 
     public static Object getProperty(Class senderClass, Object receiver, String messageName) throws Throwable {
         try {
-            if (receiver instanceof GroovyObject groovyObject && (senderClass == null || !receiver.getClass().getMethod("getProperty", String.class).isDefault())) {
+            // as in setProperty: a class that cannot be inspected counts as overriding, so the
+            // read reaches its own getProperty (see GroovyObjectOverrides)
+            if (receiver instanceof GroovyObject groovyObject && (senderClass == null || GroovyObjectOverrides.overridesGetProperty(receiver.getClass()))) {
                 // TODO: instead of checking for no getProperty specialization, pass senderClass in ThreadLocal or something
                 return groovyObject.getProperty(messageName);
             } else {
