@@ -71,11 +71,27 @@ class XmlParserTypedTest {
     }
 
     @Test
+    void testParseAsNodeFromReader() {
+        def xml = '<server><host>localhost</host><port>8080</port><debug>false</debug></server>'
+        def config = new XmlParser().parseAs(Node, new StringReader(xml))
+        assert config instanceof Node
+        assert config.children().size() == 3
+    }
+
+    @Test
     void testParseAsFromReader() {
         def xml = '<server><host>localhost</host><port>8080</port><debug>false</debug></server>'
         def config = new XmlParser().parseAs(ServerConfig, new StringReader(xml))
         assert config.host == 'localhost'
         assert config.port == 8080
+    }
+
+    @Test
+    void testParseAsNodeFromInputStream() {
+        def xml = '<server><host>localhost</host><port>8080</port><debug>false</debug></server>'
+        def config = new XmlParser().parseAs(Node, new ByteArrayInputStream(xml.bytes))
+        assert config instanceof Node
+        assert config.children().size() == 3
     }
 
     @Test
@@ -87,6 +103,17 @@ class XmlParserTypedTest {
     }
 
     @Test
+    void testParseAsNodeFromFile() {
+        def xml = '<server><host>localhost</host><port>8080</port><debug>false</debug></server>'
+        def file = File.createTempFile('xmltest', '.xml')
+        file.deleteOnExit()
+        file.text = xml
+        def config = new XmlParser().parseAs(Node, file)
+        assert config instanceof Node
+        assert config.children().size() == 3
+    }
+
+    @Test
     void testParseAsFromFile() {
         def xml = '<server><host>localhost</host><port>8080</port><debug>false</debug></server>'
         def file = File.createTempFile('xmltest', '.xml')
@@ -95,6 +122,17 @@ class XmlParserTypedTest {
         def config = new XmlParser().parseAs(ServerConfig, file)
         assert config.host == 'localhost'
         assert config.port == 8080
+    }
+
+    @Test
+    void testParseAsNodeFromPath() {
+        def xml = '<server><host>localhost</host><port>8080</port><debug>false</debug></server>'
+        def file = File.createTempFile('xmltest', '.xml')
+        file.deleteOnExit()
+        file.text = xml
+        def config = new XmlParser().parseAs(Node, file.toPath())
+        assert config instanceof Node
+        assert config.children().size() == 3
     }
 
     @Test
@@ -114,6 +152,23 @@ class XmlParserTypedTest {
         assert config.host == 'localhost'
         assert config.port == 8080
         assert config.debug == true
+    }
+
+    @Test
+    void testParseTextAsNode() {
+        def config = new XmlParser().parseTextAs(Node, '<server host="localhost" port="8080" debug="true"/>')
+        assert config instanceof Node
+        assert config.attribute('host') == 'localhost'
+        assert config.attribute('port') == '8080'
+        assert config.attribute('debug') == 'true'
+    }
+
+    @Test
+    void testNodeAsNode() {
+        def node = new XmlParser().parseText('<server><host>localhost</host><port>8080</port></server>')
+        def coercedNode = node as Node
+        assert coercedNode instanceof Node
+        assert coercedNode.children().size() == 2
     }
 
     @Test
