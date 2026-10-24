@@ -33,6 +33,7 @@ import groovy.lang.MetaProperty;
 import groovy.lang.MissingMethodException;
 import groovy.lang.ProxyMetaClass;
 import groovy.transform.Internal;
+import org.apache.groovy.internal.metaclass.GroovyObjectOverrides;
 import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
@@ -548,8 +549,10 @@ public abstract class Selector {
             // case (its behavior is the metaclass path this selector mirrors).
             // Two complementary probes: reflection sees compiled overrides
             // (including inherited ones), the metaclass sees mixin/expando
-            // contributions that reflection cannot.
-            if (receiver instanceof GroovyObject && hasOverriddenSetProperty(receiver.getClass())) return;
+            // contributions that reflection cannot. The reflection probe is the
+            // one ScriptBytecodeAdapter#setProperty makes; a class it cannot
+            // inspect counts as overriding, which keeps the adapter path.
+            if (receiver instanceof GroovyObject && GroovyObjectOverrides.overridesSetProperty(receiver.getClass())) return;
             MetaMethod customSetProperty = mci.pickMethod("setProperty", SET_PROPERTY_PARAMS);
             if (customSetProperty != null
                     && customSetProperty.getDeclaringClass().getTheClass() != GroovyObject.class) {
@@ -578,19 +581,6 @@ public abstract class Selector {
                 setFieldWriteHandle(cf, value);
             }
             // otherwise (no meta property, listeners, expando, propertyMissing, ...): adapter path
-        }
-
-        /**
-         * Mirrors the receiver test of {@code ScriptBytecodeAdapter#setProperty}:
-         * a {@code GroovyObject} whose {@code setProperty} is a real compiled
-         * override (not the interface default) intercepts all writes.
-         */
-        private static boolean hasOverriddenSetProperty(Class<?> receiverClass) {
-            try {
-                return !receiverClass.getMethod("setProperty", String.class, Object.class).isDefault();
-            } catch (ReflectiveOperationException ignore) {
-                return true; // cannot decide: stay on the adapter path
-            }
         }
 
         private boolean acceptsDirectly(MetaMethod setter, Object value) {

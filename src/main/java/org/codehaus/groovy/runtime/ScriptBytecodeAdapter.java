@@ -30,6 +30,7 @@ import groovy.lang.MissingPropertyException;
 import groovy.lang.NumberRange;
 import groovy.lang.ObjectRange;
 import groovy.lang.Tuple;
+import org.apache.groovy.internal.metaclass.GroovyObjectOverrides;
 import org.apache.groovy.lang.annotation.GroovyABI;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
@@ -511,7 +512,11 @@ public class ScriptBytecodeAdapter {
 
     public static void setProperty(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
         try {
-            if (receiver instanceof GroovyObject groovyObject && (senderClass == null || !receiver.getClass().getMethod("setProperty", String.class, Object.class).isDefault())) {
+            // an override of setProperty receives the write; for the interface default, which
+            // would pass it on without the sender, the metaclass is called here instead. A class
+            // that cannot be inspected counts as overriding, so its own setProperty is reached
+            // either way, at the cost of the sender if that is the default (see GroovyObjectOverrides)
+            if (receiver instanceof GroovyObject groovyObject && (senderClass == null || GroovyObjectOverrides.overridesSetProperty(receiver.getClass()))) {
                 groovyObject.setProperty(messageName, messageArgument);
             } else {
                 MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
@@ -586,7 +591,9 @@ public class ScriptBytecodeAdapter {
     public static void setGroovyObjectProperty(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
         Class<?> receiverClass = receiver.getClass();
         try {
-            if (senderClass == null || !receiverClass.getMethod("setProperty", String.class, Object.class).isDefault()) {
+            // as in setProperty; when a class that cannot be inspected has the default after
+            // all, the retry below still finds a property only a superclass sender can see
+            if (senderClass == null || GroovyObjectOverrides.overridesSetProperty(receiverClass)) {
                 receiver.setProperty(messageName, messageArgument);
                 return;
             }
