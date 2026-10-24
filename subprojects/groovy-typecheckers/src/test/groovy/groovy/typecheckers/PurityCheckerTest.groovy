@@ -590,4 +590,126 @@ final class PurityCheckerTest {
             assert new A().compute(5) == 11
         '''
     }
+
+    // === Mutating operators (GROOVY-12464) ===
+
+    private static final String OPERATOR_TYPES = '''
+        import groovy.transform.OperatorRename
+        import groovy.transform.Pure
+
+        class Acc {
+            int total
+            void plusAssign(int v) { total += v }
+            void leftShiftAssign(int v) { total += v }
+            void addInPlace(int v) { total += v }
+        }
+        class PureAcc {
+            @Pure void plusAssign(int v) { }
+            @Pure PureAcc leftShift(int v) { this }
+        }
+        class Plain {
+            int total
+            Plain plus(int v) { new Plain(total: total + v) }
+        }
+        class Holder {
+            List<Integer> list = []
+        }
+    '''
+
+    @Test
+    void mutating_operators_on_non_local_receivers_rejected() {
+        [
+            '@Pure static int f(List<Integer> s, int v) { s << v; v }'                 : "'<<' on 's' calls leftShift()",
+            '@Pure static int f(StringBuilder sb, String v) { sb << v; 0 }'            : "'<<' on 'sb' calls leftShift()",
+            '@Pure static int f(List<Integer> s, int v) { s[0] = v; v }'               : "'[]=' on 's' calls putAt()",
+            '@Pure static int f(Map<String, Integer> m, int v) { m["k"] = v; v }'      : "'[]=' on 'm' calls putAt()",
+            '@Pure static int f(int[] arr, int v) { arr[0] = v; v }'                   : "'[]=' on 'arr' calls putAt()",
+            '@Pure static int f(List<Integer> s) { s[0]++; 0 }'                        : "'[]++' on 's' calls putAt()",
+            '@Pure static int f(List<Integer> s) { --s[0]; 0 }'                        : "'[]--' on 's' calls putAt()",
+            '@Pure static int f(List<Integer> s, int v) { s[0] += v; v }'              : "'[]+=' on 's' calls putAt()",
+            'class P { static List<Integer> items = []; @Pure static int f(int v) { items << v; v } }' : "'<<' on 'items' calls leftShift()",
+            'class P { List<Integer> list = []; @Pure int f(int v) { this.list << v; v } }'            : "'<<' on 'list' calls leftShift()",
+            '@Pure static int f(Holder h, int v) { h.list << v; v }'                   : "'<<' on 'h.list' calls leftShift()",
+        ].each { body, expected ->
+            def err = shouldFail strictShell, OPERATOR_TYPES + body
+            assert err.message.contains('@Pure warning')
+            assert err.message.contains(expected)
+        }
+    }
+
+    @Test
+    void compound_assignment_resolved_to_assign_method_rejected() {
+        [
+            '@Pure static int f(Acc a, int v) { a += v; v }'                           : "'+=' on 'a' calls plusAssign()",
+            '@Pure static int f(Acc a, int v) { a <<= v; v }'                          : "'<<=' on 'a' calls leftShiftAssign()",
+            'class P { Acc acc = new Acc(); @Pure int f(int v) { acc += v; v } }'      : "'+=' on 'acc' calls plusAssign()",
+            '@Pure @OperatorRename(plusAssign = "addInPlace") static int f(Acc a, int v) { a += v; v }' : "'compound assignment' on 'a' calls addInPlace()",
+        ].each { body, expected ->
+            def err = shouldFail strictShell, OPERATOR_TYPES + body
+            assert err.message.contains('@Pure warning')
+            assert err.message.contains(expected)
+        }
+    }
+
+    @Test
+    void mutating_operators_named_forms_and_field_reassignment_still_rejected() {
+        [
+            '@Pure static int f(List<Integer> s, int v) { s.add(v); v }'               : "call to 's.add()'",
+            '@Pure static int f(Acc a, int v) { a.plusAssign(v); v }'                  : "call to 'a.plusAssign()'",
+            '@Pure static int f(Map<String, Integer> m, int v) { m.k = v; v }'         : "property assignment to 'm.k'",
+            'class P { static List<Integer> items = []; @Pure static int f(int v) { items += v; v } }' : "field assignment to 'items'",
+        ].each { body, expected ->
+            def err = shouldFail strictShell, OPERATOR_TYPES + body
+            assert err.message.contains(expected)
+        }
+    }
+
+    @Test
+    void operators_that_do_not_mutate_a_non_local_receiver_pass() {
+        assertScript strictShell, OPERATOR_TYPES + '''
+            class P {
+                // no *Assign method for List or Plain: rebinds the parameter, the caller's object is unchanged
+                @Pure static int rebindList(List<Integer> s, int v) { s += v; s.size() }
+                @Pure static int rebindPlain(Plain a, int v) { a += v; a.total }
+                @Pure static BigDecimal sum(BigDecimal a, BigDecimal b) { a + b }
+                @Pure static int shift(int x) { x << 2 }
+                // the callee is @Pure
+                @Pure static int pureOperators(PureAcc a, int v) { a += v; a << v; v }
+                // building up a value the method owns
+                @Pure static int localList(int v) { List<Integer> s = []; s << v; s[0] = v; s[0]++; s.size() }
+                @Pure static int localAcc(int v) { Acc a = new Acc(); a += v; a.total }
+                @Pure static String localBuilder(String v) { def sb = new StringBuilder(); sb << v; sb.toString() }
+            }
+            def caller = [1]
+            assert P.rebindList(caller, 2) == 2
+            assert caller == [1]
+            assert P.rebindPlain(new Plain(total: 1), 2) == 3
+            assert P.sum(1.5G, 2.5G) == 4.0G
+            assert P.shift(1) == 4
+            assert P.pureOperators(new PureAcc(), 1) == 1
+            assert P.localList(3) == 1
+            assert P.localAcc(3) == 3
+            assert P.localBuilder('x') == 'x'
+        '''
+    }
+
+    @Test
+    void mutating_operators_follow_the_allowed_effects() {
+        def err = shouldFail strictShell, '''
+            import groovy.transform.Pure
+            class A {
+                @Pure static int write(Writer w) { w << 'x'; 0 }
+            }
+        '''
+        assert err.message.contains("'<<' (leftShift()) is an I/O operation (allow with IO)")
+        assertScript ioShell, '''
+            import groovy.transform.Pure
+            class A {
+                @Pure static int write(Writer w) { w << 'x'; 0 }
+            }
+            def w = new StringWriter()
+            assert A.write(w) == 0
+            assert w.toString() == 'x'
+        '''
+    }
 }
