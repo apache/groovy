@@ -80,6 +80,15 @@ def pool4 = Pool.virtual()  // Virtual-thread-per-task (JDK 21+)
 ideal for CPU-bound parallel work. `Pool.io()` and `Pool.virtual()`
 create virtual thread pools for I/O-bound tasks.
 
+A callback that blocks (a barrier, a lock, or I/O) holds the worker
+running it. If that worker still has sibling tasks queued, the callback
+runs inside `ForkJoinPool.managedBlock`. `Pool.fixed` and `Pool.cpu`
+set `minimumRunnable` to the parallelism level, so compensation replaces
+that worker instead of only shrinking the active count. A pool of size
+`n` can then run `n` concurrent blockers. Fewer threads than concurrent
+blockers can still stall; prefer `Pool.io()` or `Pool.virtual()` when
+the work is mostly waiting.
+
 === ParallelScope
 
 `ParallelScope.withPool` binds a pool for the duration of a block.

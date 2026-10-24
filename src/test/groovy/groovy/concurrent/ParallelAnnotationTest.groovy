@@ -127,15 +127,12 @@ final class ParallelAnnotationTest {
         // time out — eliminating the split-heuristic flakiness of simply
         // counting thread names over a small data set.
         //
-        // Use ParallelScope.withPool(parties) rather than the common pool:
-        // CyclicBarrier.await is unmanaged blocking, so a contended
-        // ForkJoinPool.commonPool() (other tests / background FJP work)
-        // can leave only one free worker. That worker hits the barrier and
-        // never runs the second party → TimeoutException wrapped as
-        // UndeclaredThrowableException through the SAM Consumer proxy.
-        // A dedicated pool of size == parties isolates the check and works
-        // even on single-core hosts (two worker threads time-share; blocking
-        // on the barrier frees the core for the other party).
+        // Use ParallelScope.withPool(parties) rather than the common pool.
+        // CyclicBarrier.await does not participate in ForkJoinPool compensation
+        // by itself; eachParallel does that when the worker still has a queued
+        // sibling. Repeat so later rounds run against workers parked by the
+        // first round. A pool of size == parties is enough, including on
+        // single-core hosts (the blocked worker yields the core).
         assertScript '''
             import groovy.transform.Parallel
             import groovy.concurrent.ParallelScope
@@ -146,18 +143,19 @@ final class ParallelAnnotationTest {
             int parties = 2
             ParallelScope.withPool(parties) { scope ->
                 def threadNames = new CopyOnWriteArraySet()
-                def barrier = new CyclicBarrier(parties)
+                20.times {
+                    def barrier = new CyclicBarrier(parties)
 
-                // Real product shape: `@Parallel for (i in 1..n)` on IntRange.
-                // Pool isolation (above) is what makes the barrier rendezvous safe;
-                // RandomAccess on IntRange improves parallelStream split quality.
-                @Parallel
-                for (item in 1..parties) {
-                    threadNames << Thread.currentThread().name
-                    barrier.await(5, TimeUnit.SECONDS)
+                    // Real product shape: `@Parallel for (i in 1..n)` on IntRange.
+                    @Parallel
+                    for (item in 1..parties) {
+                        threadNames << Thread.currentThread().name
+                        barrier.await(5, TimeUnit.SECONDS)
+                    }
                 }
 
-                assert threadNames.size() == parties
+                // A spare worker is allowed: managedBlock may replace a blocked one.
+                assert threadNames.size() >= parties
             }
         '''
     }
