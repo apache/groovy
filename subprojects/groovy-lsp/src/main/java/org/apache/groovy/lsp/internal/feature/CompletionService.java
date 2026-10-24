@@ -22,16 +22,18 @@ import groovy.lang.groovydoc.Groovydoc;
 import org.apache.groovy.lsp.internal.compile.AstQuery;
 import org.apache.groovy.lsp.internal.compile.CompilationSnapshot;
 import org.apache.groovy.lsp.internal.compile.CompiledDocument;
+import org.apache.groovy.lsp.internal.compile.CompilerSettings;
 import org.apache.groovy.lsp.internal.compile.ImportSupport;
 import org.apache.groovy.lsp.internal.compile.TypeIndex;
 import org.apache.groovy.lsp.internal.position.PositionEncoding;
 import org.apache.groovy.lsp.internal.position.Positions;
 import org.apache.groovy.lsp.internal.util.GroovyKeywords;
+import org.apache.groovy.lsp.internal.util.ReflectionParameterNames;
 import org.apache.groovy.lsp.internal.workspace.TextDocument;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
@@ -41,9 +43,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionList;
@@ -53,17 +53,19 @@ import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
+import static org.objectweb.asm.Opcodes.ACC_VARARGS;
+
+import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Keyword, snippet, member, workspace-type and GDK completions.
@@ -72,7 +74,13 @@ import java.util.stream.Collectors;
 public final class CompletionService {
 
     static final int MAX_ITEMS = 80;
-    private static final List<String> GDK_NAMES = gdkMethodNames();
+    /**
+     * Member completion of a resolved receiver is a finite set: the type's
+     * own members plus the extension methods that apply to it. The smaller
+     * cap is for open searches, such as the whole GDK catalog.
+     */
+    static final int MAX_MEMBER_ITEMS = 1024;
+    private static final String OBJECT_NAME = "Object";
 
     /**
      * Completes at {@code position} in {@code document}.
@@ -85,12 +93,47 @@ public final class CompletionService {
      */
     public CompletionList complete(final TextDocument document, final CompilationSnapshot snapshot,
                                    final Position position, final PositionEncoding encoding) {
+        return complete(document, snapshot, position, encoding, null, null);
+    }
+
+    /**
+     * Completes at {@code position}. {@code parentLoader} and {@code hostConfiguration}
+     * are used only when the buffer did not parse and the caret is a member
+     * access: the broken line is rewritten so the declarations before it can
+     * still be typed.
+     *
+     * @param parentLoader compile parent loader, or {@code null}
+     * @param hostConfiguration console or groovysh configuration, or {@code null}
+     * @return a completion list (incomplete when truncated)
+     */
+    public CompletionList complete(final TextDocument document, final CompilationSnapshot snapshot,
+                                   final Position position, final PositionEncoding encoding,
+                                   final ClassLoader parentLoader, final CompilerConfiguration hostConfiguration) {
+        return complete(document, snapshot, position, encoding, parentLoader, hostConfiguration, null);
+    }
+
+    /**
+     * Completes at {@code position}. {@code settings} controls the repair
+     * compile used when the buffer did not parse. {@code null} uses
+     * {@link CompilerSettings#defaults()}, which does not run {@code @Grab}
+     * or {@code @ASTTest}.
+     *
+     * @param settings session settings, or {@code null}
+     * @return a completion list (incomplete when truncated)
+     */
+    public CompletionList complete(final TextDocument document, final CompilationSnapshot snapshot,
+                                   final Position position, final PositionEncoding encoding,
+                                   final ClassLoader parentLoader, final CompilerConfiguration hostConfiguration,
+                                   final CompilerSettings settings) {
         List<CompletionItem> items = new ArrayList<>();
         String prefix = prefixAt(document, position, encoding);
         boolean memberAccess = isMemberAccess(document, position, encoding);
 
         CompiledDocument compiled = snapshot == null ? null : snapshot.get(document);
         ModuleNode module = compiled == null ? null : compiled.getModule();
+        if (module == null && memberAccess && compiled != null) {
+            module = MemberRepair.repairedModule(document, position, parentLoader, hostConfiguration, settings);
+        }
 
         if (!memberAccess) {
             addMatching(items, GroovyKeywords.KEYWORDS, prefix, CompletionItemKind.Keyword);
@@ -100,12 +143,20 @@ public final class CompletionService {
         if (module != null) {
             addFromAst(items, document, compiled, snapshot, position, encoding, module);
         } else if (memberAccess && prefix.length() >= 2) {
-            addGdk(items, prefix);
+            ExtensionCatalog.addExtensionMethods(items, prefix, null, false);
         }
 
-        boolean incomplete = items.size() > MAX_ITEMS;
+        if (memberAccess) {
+            items.sort(Comparator.comparing(CompletionItem::getSortText, Comparator.nullsLast(Comparator.naturalOrder())));
+        }
+        // A resolved receiver already listed only its own members and the
+        // extension methods that apply to it. Cutting that list at the open
+        // search cap drops extension methods, which then reappear once a
+        // longer prefix makes the Java members few enough to fit.
+        int limit = memberAccess && module != null ? MAX_MEMBER_ITEMS : MAX_ITEMS;
+        boolean incomplete = items.size() > limit;
         if (incomplete) {
-            items = new ArrayList<>(items.subList(0, MAX_ITEMS));
+            items = new ArrayList<>(items.subList(0, limit));
         }
         return new CompletionList(incomplete, items);
     }
@@ -170,7 +221,7 @@ public final class CompletionService {
         return idx > 0 && line.codePointBefore(idx) == '.';
     }
 
-    private static int caretOffset(final String line, final int groovyColumn) {
+    static int caretOffset(final String line, final int groovyColumn) {
         int col = Math.max(groovyColumn - 1, 0);
         int cpCount = line.codePointCount(0, line.length());
         if (col > cpCount) {
@@ -179,14 +230,14 @@ public final class CompletionService {
         return line.offsetByCodePoints(0, col);
     }
 
-    private static int skipWhitespaceBack(final String line, int idx) {
+    static int skipWhitespaceBack(final String line, int idx) {
         while (idx > 0 && Character.isWhitespace(line.codePointBefore(idx))) {
             idx -= Character.charCount(line.codePointBefore(idx));
         }
         return idx;
     }
 
-    private static int skipIdentifierBack(final String line, int idx) {
+    static int skipIdentifierBack(final String line, int idx) {
         while (idx > 0) {
             int cp = line.codePointBefore(idx);
             if (!Character.isJavaIdentifierPart(cp) && cp != '$') {
@@ -211,6 +262,7 @@ public final class CompletionService {
             CompletionItem item = new CompletionItem(method.getName());
             item.setKind(CompletionItemKind.Method);
             item.setDetail("override " + signature(method));
+            attachParts(item, typeName(method.getReturnType()), parameterList(method));
             item.setSortText("0" + method.getName());
             item.setInsertText(CodeActionService.overrideSnippet(method));
             item.setInsertTextFormat(InsertTextFormat.Snippet);
@@ -271,19 +323,6 @@ public final class CompletionService {
         }
     }
 
-    private static ClassNode receiverOf(final ASTNode node) {
-        if (node instanceof PropertyExpression property) {
-            return property.getObjectExpression().getType();
-        }
-        if (node instanceof VariableExpression variable) {
-            return variable.getType();
-        }
-        if (node instanceof ClassNode classNode) {
-            return classNode;
-        }
-        return null;
-    }
-
     private static void addLocals(final List<CompletionItem> items, final ModuleNode module, final int line,
                                   final int column, final String prefix) {
         MethodNode enclosing = AstQuery.enclosingMethod(module, line, column);
@@ -296,7 +335,7 @@ public final class CompletionService {
             }
             CompletionItem item = new CompletionItem(parameter.getName());
             item.setKind(CompletionItemKind.Variable);
-            item.setDetail(parameter.getType().getNameWithoutPackage());
+            item.setDetail(typeName(parameter.getType()));
             item.setSortText("0" + parameter.getName());
             items.add(item);
         }
@@ -333,7 +372,7 @@ public final class CompletionService {
             }
             CompletionItem item = new CompletionItem(field.getName());
             item.setKind(CompletionItemKind.Field);
-            item.setDetail(field.getType() == null ? null : field.getType().getNameWithoutPackage());
+            item.setDetail(typeName(field.getType()));
             item.setSortText("2" + field.getName());
             items.add(item);
         }
@@ -348,26 +387,6 @@ public final class CompletionService {
         }
     }
 
-    private static void addGdk(final List<CompletionItem> items, final String prefix) {
-        for (String name : GDK_NAMES) {
-            if (!prefixMatches(name, prefix)) {
-                continue;
-            }
-            CompletionItem item = new CompletionItem(name);
-            item.setKind(CompletionItemKind.Method);
-            item.setDetail("GDK");
-            item.setSortText("4" + name);
-            items.add(item);
-        }
-    }
-
-    private static List<String> gdkMethodNames() {
-        return List.copyOf(Arrays.stream(DefaultGroovyMethods.class.getMethods())
-                .filter(method -> Modifier.isStatic(method.getModifiers()) && Modifier.isPublic(method.getModifiers())
-                        && method.getParameterCount() > 0)
-                .map(Method::getName)
-                .collect(Collectors.toCollection(LinkedHashSet::new)));
-    }
 
     private static void addSnippets(final List<CompletionItem> items, final String prefix) {
         addSnippet(items, prefix, "class", "class ${1:Name} {\n    $0\n}\n", CompletionItemKind.Snippet);
@@ -412,31 +431,183 @@ public final class CompletionService {
     }
 
     private static String signature(final MethodNode method) {
+        return typeName(method.getReturnType()) + " " + method.getName() + "(" + parameterList(method) + ")";
+    }
+
+    private static String parameterList(final MethodNode method) {
+        Parameter[] parameters = parametersOf(method);
+        String[] names = displayedNames(method, parameters);
+        boolean varargs = (method.getModifiers() & ACC_VARARGS) != 0;
         StringBuilder builder = new StringBuilder();
-        ClassNode type = method.getReturnType() == null ? ClassHelper.OBJECT_TYPE : method.getReturnType();
-        builder.append(type.getNameWithoutPackage()).append(' ').append(method.getName()).append('(');
-        Parameter[] parameters = method.getParameters();
-        for (int i = 0; i < parameters.length; i++) {
+        for (int i = 0; i < names.length; i++) {
             if (i > 0) {
                 builder.append(", ");
             }
-            builder.append(parameters[i].getType().getNameWithoutPackage()).append(' ').append(parameters[i].getName());
+            String rendered = typeName(parameters[i].getType());
+            if (varargs && i == names.length - 1 && rendered.endsWith("[]")) {
+                rendered = rendered.substring(0, rendered.length() - 2) + "...";
+            }
+            builder.append(rendered).append(' ').append(names[i]);
         }
-        builder.append(')');
         return builder.toString();
     }
 
-    private static String methodSnippet(final MethodNode method) {
-        Parameter[] parameters = method.getParameters();
-        if (parameters.length == 0) {
-            return method.getName() + "()";
+    /** Records the parameter list and return type on {@code item}. */
+    static void attachParts(final CompletionItem item, final String returns, final String parameters) {
+        Map<String, String> data = new LinkedHashMap<>();
+        data.put("r", returns == null ? "" : returns);
+        data.put("p", parameters == null ? "" : parameters);
+        item.setData(data);
+    }
+
+    /**
+     * Parameter names as the caller should see them. The compiler records
+     * {@code argN} unless the class was built with {@code -parameters}.
+     * JDK and Groovy class files still keep the source names in
+     * {@code LocalVariableTable}; those are read here, not in {@code Java8},
+     * so completion can show them without pinning class loaders in the runtime.
+     */
+    private static Parameter[] parametersOf(final MethodNode method) {
+        if (method == null) {
+            return Parameter.EMPTY_ARRAY;
         }
-        StringBuilder builder = new StringBuilder(method.getName()).append('(');
+        Parameter[] parameters = method.getParameters();
+        return parameters == null ? Parameter.EMPTY_ARRAY : parameters;
+    }
+
+    /**
+     * Names for {@code parameters}. The returned array has the same length,
+     * so callers index it with that array and not with a second
+     * {@code getParameters()} call.
+     */
+    private static String[] displayedNames(final MethodNode method, final Parameter[] parameters) {
+        String[] names = new String[parameters.length];
+        boolean synthetic = false;
         for (int i = 0; i < parameters.length; i++) {
+            names[i] = parameters[i].getName();
+            synthetic |= syntheticName(names[i]);
+        }
+        if (!synthetic) {
+            return names;
+        }
+        String[] reflected = reflectedParameterNames(method, parameters);
+        int shared = Math.min(names.length, reflected.length);
+        for (int i = 0; i < shared; i++) {
+            if (syntheticName(names[i]) && !syntheticName(reflected[i])) {
+                names[i] = reflected[i];
+            }
+        }
+        return names;
+    }
+
+    private static boolean syntheticName(final String name) {
+        return name == null || name.isEmpty() || SYNTHETIC_PARAMETER.matcher(name).matches();
+    }
+
+    private static final Pattern SYNTHETIC_PARAMETER = Pattern.compile("arg\\d+");
+
+    private static final String[] NO_NAMES = new String[0];
+
+    private static String[] reflectedParameterNames(final MethodNode method, final Parameter[] parameters) {
+        Class<?> owner = method == null ? null : ExtensionCatalog.typeClass(method.getDeclaringClass());
+        if (owner == null || parameters.length == 0) {
+            return NO_NAMES;
+        }
+        Class<?>[] types = new Class<?>[parameters.length];
+        for (int i = 0; i < parameters.length; i++) {
+            Class<?> type = ExtensionCatalog.typeClass(parameters[i].getType());
+            if (type == null) {
+                return NO_NAMES;
+            }
+            types[i] = type;
+        }
+        try {
+            Executable executable = method instanceof ConstructorNode
+                    ? owner.getDeclaredConstructor(types)
+                    : findDeclaredMethod(owner, method.getName(), types);
+            return executable == null ? NO_NAMES : ReflectionParameterNames.names(executable);
+        } catch (NoSuchMethodException | SecurityException ignored) {
+            return NO_NAMES;
+        }
+    }
+
+    private static Method findDeclaredMethod(final Class<?> owner, final String name, final Class<?>[] types)
+            throws NoSuchMethodException {
+        try {
+            return owner.getDeclaredMethod(name, types);
+        } catch (NoSuchMethodException ignored) {
+            return owner.getMethod(name, types);
+        }
+    }
+
+    /**
+     * Source-style type name. Array class nodes keep the JVM descriptor as
+     * their internal name ({@code [C}, {@code [Ljava.lang.String;});
+     * {@link ClassNode#getNameWithoutPackage()} then yields {@code [C} or
+     * {@code String;}.
+     */
+    static String typeName(final ClassNode type) {
+        if (type == null) {
+            return OBJECT_NAME;
+        }
+        if (type.isArray()) {
+            return typeName(type.getComponentType()) + "[]";
+        }
+        String name = type.getName();
+        if (name != null && !name.isEmpty() && name.charAt(0) == '[') {
+            return descriptorToName(name);
+        }
+        return unqualified(name);
+    }
+
+    private static String descriptorToName(final String name) {
+        int dims = 0;
+        int i = 0;
+        while (i < name.length() && name.charAt(i) == '[') {
+            dims++;
+            i++;
+        }
+        if (dims == 0 || i >= name.length()) {
+            return unqualified(name);
+        }
+        String base = switch (name.charAt(i)) {
+            case 'B' -> "byte";
+            case 'C' -> "char";
+            case 'D' -> "double";
+            case 'F' -> "float";
+            case 'I' -> "int";
+            case 'J' -> "long";
+            case 'S' -> "short";
+            case 'Z' -> "boolean";
+            case 'L' -> {
+                int end = name.indexOf(';', i);
+                String binary = end < 0 ? name.substring(i + 1) : name.substring(i + 1, end);
+                yield unqualified(binary);
+            }
+            default -> name;
+        };
+        return base + "[]".repeat(dims);
+    }
+
+    private static String unqualified(final String name) {
+        if (name == null || name.isEmpty()) {
+            return OBJECT_NAME;
+        }
+        int dot = name.lastIndexOf('.');
+        int slash = name.lastIndexOf('/');
+        int cut = Math.max(dot, slash);
+        String simple = cut >= 0 ? name.substring(cut + 1) : name;
+        return simple.replace('$', '.');
+    }
+
+    private static String methodSnippet(final MethodNode method) {
+        String[] names = displayedNames(method, parametersOf(method));
+        StringBuilder builder = new StringBuilder(method.getName()).append('(');
+        for (int i = 0; i < names.length; i++) {
             if (i > 0) {
                 builder.append(", ");
             }
-            builder.append("${").append(i + 1).append(':').append(parameters[i].getName()).append('}');
+            builder.append("${").append(i + 1).append(':').append(names[i]).append('}');
         }
         return builder.append(')').toString();
     }
@@ -448,12 +619,14 @@ public final class CompletionService {
         String prefix = prefixAt(document, position, encoding);
         boolean memberAccess = isMemberAccess(document, position, encoding);
         int[] groovy = document.toGroovy(position, encoding);
-        ASTNode node = AstQuery.nodeAt(module, document, position, encoding);
-        ClassNode receiver = receiverOf(node);
         if (memberAccess) {
-            addMembers(items, receiver == null ? ClassHelper.OBJECT_TYPE : receiver, prefix);
-            if (prefix.length() >= 2) {
-                addGdk(items, prefix);
+            ReceiverInference.Receiver receiverType = ReceiverInference.resolveReceiver(document, compiled.getSourceUnit(), module, position, encoding);
+            ReceiverInference.addVisibleMembers(items, receiverType.type, prefix, receiverType.staticAccess);
+            // A reflectable receiver contributes its own extension methods at
+            // once. An unresolved receiver still waits for two characters,
+            // because the only list available then is the whole catalog.
+            if (ExtensionCatalog.typeClass(receiverType.type) != null || prefix.length() >= 2) {
+                ExtensionCatalog.addExtensionMethods(items, prefix, receiverType.type, receiverType.staticAccess);
             }
             return;
         }
@@ -466,6 +639,11 @@ public final class CompletionService {
         addWorkspaceTypes(items, compiled, snapshot, prefix, encoding);
     }
 
+
+    static boolean usable(final ClassNode type) {
+        return SymbolIdentity.isResolvedType(type);
+    }
+
     private static CompletionItemKind typeKind(final TypeIndex.TypeHit hit) {
         if (hit.iface()) {
             return CompletionItemKind.Interface;
@@ -476,21 +654,31 @@ public final class CompletionService {
         return CompletionItemKind.Class;
     }
 
-    private static void addMethod(final List<CompletionItem> items, final Set<String> seen, final MethodNode method,
+    static void addMethod(final List<CompletionItem> items, final Set<String> seen, final MethodNode method,
                                   final String prefix) {
         if (method.isSynthetic() || !seen.add(method.getName() + "/" + method.getParameters().length)
                 || !prefixMatches(method.getName(), prefix)) {
             return;
         }
         CompletionItem item = new CompletionItem(method.getName());
-        item.setKind(method.isStatic() ? CompletionItemKind.Function : CompletionItemKind.Method);
-        item.setDetail(signature(method));
+        // IntelliJ has no Function kind. Static methods are methods.
+        item.setKind(CompletionItemKind.Method);
+        String returns = typeName(method.getReturnType());
+        String parameters = parameterList(method);
+        item.setDetail(returns + " " + method.getName() + "(" + parameters + ")");
         item.setSortText("2" + method.getName());
         item.setInsertText(methodSnippet(method));
         item.setInsertTextFormat(InsertTextFormat.Snippet);
         String owner = method.getDeclaringClass() == null ? "" : method.getDeclaringClass().getName();
         String descriptor = method.getTypeDescriptor() == null ? "" : method.getTypeDescriptor();
-        item.setData(Map.of("k", "m", "n", method.getName(), "o", owner, "d", descriptor));
+        Map<String, String> data = new LinkedHashMap<>();
+        data.put("k", "m");
+        data.put("n", method.getName());
+        data.put("o", owner);
+        data.put("d", descriptor);
+        data.put("r", returns);
+        data.put("p", parameters);
+        item.setData(data);
         items.add(item);
     }
 

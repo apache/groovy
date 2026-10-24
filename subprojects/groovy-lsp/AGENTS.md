@@ -34,11 +34,34 @@ New Groovy-specific behaviour that is not protocol adaptation belongs
 in one `feature/*` type (not a shared grab bag), `compile/*`, or the
 in-process `engine/*` facade, not a public SPI. Call and override
 resolution lives in `MethodBinding`, shared by navigation, hover,
-completion and rename. In-process callers use `GroovyLanguageEngine`
-(`open(Path)` or a caller-chosen buffer URI; queries take that URI)
-and JDK result records.
-The engine does not reserve buffer names. Hosts (console, groovysh)
-take a `compileOnly` dependency and load the engine with `Class.forName`.
+completion and rename. `GroovyLanguageEngine` remains an internal
+facade that returns JDK records. Groovy Console and groovysh do not
+use it. They share `GroovyLanguageClient`, which calls
+`GroovyLanguageServer` the way a remote editor does (`initialize` without a workspace root,
+`textDocument/*`, `workspace/didChangeConfiguration`,
+`workspace/executeCommand`). Those calls stay in-process. They are not
+JSON-serialized on each keystroke. Hosts do not import
+`org.apache.groovy.lsp.internal`.
+A highlighter sets `groovy.compile` to `false` and paints
+`textDocument/semanticTokens`. String modifiers `slashy` and
+`singleQuoted` are append-only. A string without them is double-quoted.
+The `$` that ends a GString begin or part is omitted from the string
+token. `groovy.imports`, `groovy.starImports`, and
+`groovy.scriptBaseClass` are client settings. `groovy.parentLoader`
+accepts a `ClassLoader` in the same JVM. A remote client sends
+`groovy.classpath` instead. `groovy.scriptNames` returns script-level
+names. `groovy.compile` compiles immediately. Hosts resend
+configuration only when it changed, so an unchanged buffer reuses the
+snapshot.
+Brace matching uses the append-only `delimiter` semantic-token type
+from that same request, so the console does not import `GroovyLexer`.
+groovysh keeps nanorc.
+The server does not reserve buffer names. Console and groovysh each take
+an `implementation` dependency on groovy-lsp. groovysh does not depend
+on groovy-console. LSP4J is an `api` dependency of groovy-lsp so those
+hosts can compile against the protocol types. They do not re-export
+groovy-lsp. `/console` and `/inspect --gui` load `groovy.console.ui`
+by name when that jar is already on the classpath.
 Configuration is `workspace/didChangeConfiguration` and
 `workspace/configuration` under the `groovy` section (see
 `lsp-userguide.adoc`). Do not add OSGi, extra JSON-RPC methods, or a

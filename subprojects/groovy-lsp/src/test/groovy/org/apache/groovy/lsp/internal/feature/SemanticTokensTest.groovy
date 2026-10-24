@@ -64,4 +64,80 @@ final class SemanticTokensTest {
         int at = text.indexOf('; def') + 2
         assert spans.any { it.line() == 0 && it.character() == at && it.length() == 3 && it.type() == keyword }
     }
+
+    @Test
+    void lexicalTokenSpansStayLenientAndPaintIdentifiersAsVariable() {
+        assert SemanticTokensService.lexicalTokenSpans(null, UTF16).isEmpty()
+        assert SemanticTokensService.lexicalTokenSpans('', UTF16).isEmpty()
+        def incomplete = SemanticTokensService.lexicalTokenSpans('def x =', UTF16)
+        int keyword = SemanticTokensService.TOKEN_TYPES.indexOf('keyword')
+        int variable = SemanticTokensService.TOKEN_TYPES.indexOf('variable')
+        assert incomplete.any { it.type() == keyword }
+        assert incomplete.any { it.type() == variable }
+        def brokenNumeric = SemanticTokensService.lexicalTokenSpans('1_', UTF16)
+        assert brokenNumeric.any { it.length() > 0 }
+        def mixed = SemanticTokensService.lexicalTokenSpans('def n = 1 // c\ndef s = "x"\ndef t = /z/\n!in\n@Foo x, y;\n', UTF16)
+        int string = SemanticTokensService.TOKEN_TYPES.indexOf('string')
+        int number = SemanticTokensService.TOKEN_TYPES.indexOf('number')
+        int comment = SemanticTokensService.TOKEN_TYPES.indexOf('comment')
+        int decorator = SemanticTokensService.TOKEN_TYPES.indexOf('decorator')
+        int operator = SemanticTokensService.TOKEN_TYPES.indexOf('operator')
+        assert mixed.any { it.type() == string }
+        assert mixed.any { it.type() == number }
+        assert mixed.any { it.type() == comment }
+        assert mixed.any { it.type() == decorator }
+        assert mixed.any { it.type() == operator }
+        def block = SemanticTokensService.lexicalTokenSpans('/* a\nb */\n', UTF16)
+        assert block.any { it.type() == comment }
+        assert SemanticTokensService.lexicalTokenSpans('def x', null, UTF16).isEmpty()
+        assert SemanticTokensService.TOKEN_TYPES.indexOf('operator') == 12
+        assert SemanticTokensService.TOKEN_TYPES.indexOf('decorator') == 13
+        def compiled = new CompiledDocument(URI.create('file:///C.groovy'), 1, 'class C {}\n',
+                null, null, null)
+        // no AST: C is a lexical variable. With a module, declaration overlay wins.
+        def bare = new SemanticTokensService().tokenSpans(compiled, UTF16)
+        assert bare.any { it.type() == variable }
+    }
+
+    @Test
+    void stringModifiersFollowTheOpeningDelimiterAndSkipTheGStringDollar() {
+        int string = SemanticTokensService.TOKEN_TYPES.indexOf('string')
+        assert SemanticTokensService.TOKEN_TYPES.indexOf('delimiter') == 14
+        def brackets = SemanticTokensService.lexicalTokenSpans('def c = { x[0] }\n', UTF16)
+        int delimiter = 14
+        assert brackets.findAll { it.type() == delimiter }.size() == 4
+        def safe = SemanticTokensService.lexicalTokenSpans('def x = a?[0]\n', UTF16)
+        assert safe.any { it.type() == delimiter && it.length() == 2 }
+        def quoted = SemanticTokensService.lexicalTokenSpans("def s = '{'\n", UTF16)
+        assert quoted.every { it.type() != delimiter }
+        assert SemanticTokensService.TOKEN_MODIFIERS.indexOf('slashy') == 3
+        assert SemanticTokensService.TOKEN_MODIFIERS.indexOf('singleQuoted') == 4
+
+        def single = stringSpans("def s = 'ab'\n", string)
+        assert single.every { it.modifiers() == 16 }
+        def quotes = stringSpans('def s = "ab"\n', string)
+        assert quotes.every { it.modifiers() == 0 }
+        def slashy = stringSpans('def s = /ab/\n', string)
+        assert slashy.every { it.modifiers() == 8 }
+        def dollarSlashy = stringSpans('def s = $/ab/$\n', string)
+        assert dollarSlashy.every { it.modifiers() == 8 }
+
+        def gstring = '"${x}${y}"'
+        def parts = stringSpans(gstring, string)
+        int secondDollar = gstring.lastIndexOf('$')
+        assert parts.every { it.length() > 0 && it.modifiers() == 0 }
+        assert !parts.any { it.line() == 0 && it.character() <= secondDollar && secondDollar < it.character() + it.length() }
+
+        def text = 'def n = 1\n'
+        def service = new SemanticTokensService()
+        def overlay = new CompiledDocument(URI.create('file:///N.groovy'), 1, text, null, null, null)
+        assert service.semanticTokens(text, overlay, UTF16).data
+        assert service.semanticTokens('def n = 2\n', overlay, UTF16).data
+        assert service.semanticTokens(text, null, UTF16).data
+        assert service.semanticTokens(null, overlay, UTF16).data.isEmpty()
+    }
+
+    private static List stringSpans(String text, int string) {
+        SemanticTokensService.lexicalTokenSpans(text, UTF16).findAll { it.type() == string }
+    }
 }

@@ -21,13 +21,17 @@ package org.apache.groovy.lsp.internal.engine;
 import org.apache.groovy.lsp.internal.LanguageServerContext;
 import org.apache.groovy.lsp.internal.compile.CompiledDocument;
 import org.apache.groovy.lsp.internal.compile.CompilerSettings;
+import org.apache.groovy.lsp.internal.compile.ScriptNames;
 import org.apache.groovy.lsp.internal.diagnostic.DiagnosticConverter;
 import org.apache.groovy.lsp.internal.feature.LanguageFeatures;
 import org.apache.groovy.lsp.internal.feature.SemanticTokensService;
 import org.apache.groovy.lsp.internal.position.PositionEncoding;
 import org.apache.groovy.lsp.internal.position.Positions;
+import org.apache.groovy.lsp.internal.util.GroovyKeywords;
+import org.apache.groovy.lsp.internal.util.GroovySourceTokens;
 import org.apache.groovy.lsp.internal.util.Uris;
 import org.apache.groovy.lsp.internal.workspace.TextDocument;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.Diagnostic;
@@ -55,6 +59,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * In-process facade over the same compile snapshot the LSP handlers use.
@@ -64,11 +70,25 @@ import java.util.Objects;
  * A non-{@code file:} URI keeps the compiler from treating the buffer as
  * a path. The engine does not scan workspace folders and does not reserve
  * buffer names.
+ * <p>
+ * Query methods that take the buffer text replace it first. The same text
+ * keeps the document version, so the snapshot can be reused.
+ * {@link #setHostConfiguration} drops that cache on every call. Hosts
+ * invoke it when the configuration is replaced or edited, not before
+ * every query. {@link #lexicalTokens(String)} is the live highlighter:
+ * no compile, safe on the Swing EDT. {@link #tokens(URI)} needs a
+ * compiled snapshot.
  */
 public final class GroovyLanguageEngine implements AutoCloseable {
 
     private static final int SNIPPET_CONTEXT_LINES = 3;
     private static final String LANGUAGE_GROOVY = "groovy";
+    private static final Pattern SNIPPET_PLACEHOLDER = Pattern.compile("\\$\\{\\d+:([^}]*)}");
+    private static final Pattern SNIPPET_TABSTOP = Pattern.compile("\\$\\d+");
+    /**
+     * Semantic-token legend names. Same list the protocol advertises.
+     */
+    public static final List<String> TOKEN_TYPES = List.copyOf(SemanticTokensService.TOKEN_TYPES);
 
     private final LanguageServerContext context;
     private final LanguageFeatures features;
@@ -100,7 +120,7 @@ public final class GroovyLanguageEngine implements AutoCloseable {
     /**
      * @return the session this engine drives
      */
-    public LanguageServerContext context() {
+    LanguageServerContext context() {
         return context;
     }
 
@@ -150,21 +170,25 @@ public final class GroovyLanguageEngine implements AutoCloseable {
     }
 
     /**
-     * Replaces buffer text without compiling. The next query compiles when
-     * the open version does not match the snapshot; {@link #compileNow()}
-     * and {@link #scheduleCompile(long)} remain available for callers that
-     * debounce.
+     * Replaces buffer text without compiling. The same text keeps the
+     * current version, so the next query can reuse the snapshot.
+     * {@link #compileNow()} and {@link #scheduleCompile(long)} remain
+     * available for callers that debounce.
      *
      * @param uri buffer identity
-     * @param text source text
+     * @param text source text, or {@code null} for empty
      */
     public void updateBuffer(final URI uri, final String text) {
         URI normalized = requireUri(uri);
         TextDocument existing = context.getDocuments().get(normalized);
+        String next = text == null ? "" : text;
+        if (existing != null && next.equals(existing.getText())) {
+            return;
+        }
         int version = existing == null ? 1 : existing.getVersion() + 1;
-        String language = existing == null || existing.getLanguageId() == null ? LANGUAGE_GROOVY : existing.getLanguageId();
-        context.getDocuments().open(new TextDocumentItem(normalized.toString(), language, version,
-                text == null ? "" : text));
+        String language = existing == null || existing.getLanguageId() == null || existing.getLanguageId().isEmpty()
+                ? LANGUAGE_GROOVY : existing.getLanguageId();
+        context.getDocuments().open(new TextDocumentItem(normalized.toString(), language, version, next));
     }
 
     /**
@@ -197,12 +221,27 @@ public final class GroovyLanguageEngine implements AutoCloseable {
     }
 
     /**
-     * Parent loader for the next compile.
+     * Parent loader for the next compile. A different loader drops the
+     * cached compile. An in-place {@code URLClassLoader#addURL} stays
+     * visible because the fingerprint includes that loader's URLs.
      *
      * @param parentLoader loader, or {@code null} for the session default
      */
     public void setParentLoader(final ClassLoader parentLoader) {
         context.setParentLoader(parentLoader);
+    }
+
+    /**
+     * Compiler configuration from Console or groovysh. Import customizers
+     * and AST transforms are copied into the tooling compile. Every call
+     * drops the cached compile, including a repeat with the same instance,
+     * so an in-place customizer edit is visible on the next query. Do not
+     * call this before every query.
+     *
+     * @param configuration host configuration, or {@code null}
+     */
+    public void setHostConfiguration(final CompilerConfiguration configuration) {
+        context.setHostConfiguration(configuration);
     }
 
     /**
@@ -215,9 +254,9 @@ public final class GroovyLanguageEngine implements AutoCloseable {
     }
 
     /**
-     * Stores an opaque extra setting so the compile fingerprint changes
-     * after a parent loader is mutated in place. Loader identity alone
-     * does not see those mutations.
+     * Stores an opaque extra setting that participates in the compile
+     * fingerprint. In-place {@code addURL} is already visible through
+     * the loader URL list.
      *
      * @param key setting name
      * @param value setting value, or {@code null} to remove
@@ -255,6 +294,47 @@ public final class GroovyLanguageEngine implements AutoCloseable {
     }
 
     /**
+     * Replaces the buffer text, then returns diagnostics.
+     *
+     * @param uri buffer identity
+     * @param text source text
+     * @return diagnostics, never {@code null}
+     */
+    public List<Hit> diagnostics(final URI uri, final String text) {
+        updateBuffer(uri, text);
+        return diagnostics(uri);
+    }
+
+    /**
+     * Script-level names the compiler already introduced in an open buffer.
+     * See {@link ScriptNames}. REPL hosts use this so binding declarations
+     * are not duplicated.
+     *
+     * @param uri buffer identity
+     * @return names, never {@code null}
+     */
+    public Set<String> declaredNames(final URI uri) {
+        TextDocument document = documentAt(uri);
+        CompiledDocument compiled = context.getSnapshot().get(document);
+        if (compiled == null || compiled.getModule() == null) {
+            return Set.of();
+        }
+        return ScriptNames.of(compiled.getModule());
+    }
+
+    /**
+     * Replaces the buffer text, then returns script-level names.
+     *
+     * @param uri buffer identity
+     * @param text source text
+     * @return names, never {@code null}
+     */
+    public Set<String> declaredNames(final URI uri, final String text) {
+        updateBuffer(uri, text);
+        return declaredNames(uri);
+    }
+
+    /**
      * Hover markdown for an open buffer.
      *
      * @param uri buffer identity
@@ -266,6 +346,20 @@ public final class GroovyLanguageEngine implements AutoCloseable {
         TextDocument document = documentAt(uri);
         return features.hovers().markdown(document, context.getSnapshot(),
                 new Position(line, character), encoding());
+    }
+
+    /**
+     * Replaces the buffer text, then returns hover markdown.
+     *
+     * @param uri buffer identity
+     * @param text source text
+     * @param line 0-based line
+     * @param character 0-based character
+     * @return markdown, never {@code null}
+     */
+    public String describe(final URI uri, final String text, final int line, final int character) {
+        updateBuffer(uri, text);
+        return describe(uri, line, character);
     }
 
     /**
@@ -355,8 +449,7 @@ public final class GroovyLanguageEngine implements AutoCloseable {
         TextDocument document = documentAt(uri);
         WorkspaceEdit edit = features.rename().rename(document, context.getSnapshot(),
                 new Position(line, character), newName, encoding());
-        Map<String, List<TextEdit>> changes = edit == null || edit.getChanges() == null
-                ? Map.of() : edit.getChanges();
+        Map<String, List<TextEdit>> changes = edit.getChanges();
         List<Change> result = new ArrayList<>();
         int count = 0;
         for (Map.Entry<String, List<TextEdit>> entry : changes.entrySet()) {
@@ -383,18 +476,78 @@ public final class GroovyLanguageEngine implements AutoCloseable {
     public List<Candidate> complete(final URI uri, final int line, final int character) {
         TextDocument document = documentAt(uri);
         CompletionList list = features.completions().complete(document, context.getSnapshot(),
-                new Position(line, character), encoding());
-        if (list == null || list.getItems() == null) {
-            return List.of();
-        }
-        return list.getItems().stream()
+                new Position(line, character), encoding(), context.getParentLoader(), context.getHostConfiguration(),
+                context.getSettings());
+        List<CompletionItem> items = list.getItems();
+        return items.stream()
                 .filter(Objects::nonNull)
                 .map(GroovyLanguageEngine::toCandidate)
                 .toList();
     }
 
     /**
+     * Replaces the buffer text, then returns completions.
+     *
+     * @param uri buffer identity
+     * @param text source text
+     * @param line 0-based line
+     * @param character 0-based character
+     * @return candidates, never {@code null}
+     */
+    public List<Candidate> complete(final URI uri, final String text, final int line, final int character) {
+        updateBuffer(uri, text);
+        return complete(uri, line, character);
+    }
+
+    /**
+     * Lenient lexical semantic tokens. No session and no compile, so a live
+     * highlighter can call this on the EDT. Incomplete input still tokenizes.
+     * Identifiers are {@code variable} until {@link #tokens(URI)} overlays
+     * declaration and use-site kinds.
+     *
+     * @param text source text
+     * @return tokens, never {@code null}
+     */
+    public static List<Token> lexicalTokens(final String text) {
+        return lexicalTokens(text, lexerTokens(text));
+    }
+
+    /**
+     * Lenient lexer walk behind {@link #lexicalTokens(String)}. Hosts that
+     * also need raw tokens (brace matching, string delimiters) call this
+     * once and pass the list to {@link #lexicalTokens(String, List)}.
+     *
+     * @param text source text
+     * @return ANTLR tokens, never {@code null}
+     */
+    public static List<org.antlr.v4.runtime.Token> lexerTokens(final String text) {
+        return GroovySourceTokens.tokenizeLenient(text);
+    }
+
+    /**
+     * Sorted lexer keywords plus primitive type names, {@code true},
+     * {@code false} and {@code null}.
+     *
+     * @return keywords, never {@code null}
+     */
+    public static List<String> keywords() {
+        return GroovyKeywords.KEYWORDS;
+    }
+
+    /**
+     * Lenient lexical semantic tokens from an already-tokenized walk.
+     *
+     * @param text source text
+     * @param lexerTokens ANTLR tokens, possibly {@code null}
+     * @return tokens, never {@code null}
+     */
+    public static List<Token> lexicalTokens(final String text, final List<org.antlr.v4.runtime.Token> lexerTokens) {
+        return toEngineTokens(SemanticTokensService.lexicalTokenSpans(text, lexerTokens, PositionEncoding.UTF16));
+    }
+
+    /**
      * Semantic tokens as absolute spans (not LSP delta encoding).
+     * Needs a compiled snapshot; do not call this on the Swing EDT.
      *
      * @param uri buffer identity
      * @return tokens, never {@code null}
@@ -402,11 +555,17 @@ public final class GroovyLanguageEngine implements AutoCloseable {
     public List<Token> tokens(final URI uri) {
         TextDocument document = documentAt(uri);
         CompiledDocument compiled = context.getSnapshot().get(document);
-        List<Token> tokens = new ArrayList<>();
-        for (SemanticTokensService.TokenSpan span : features.semanticTokens().tokenSpans(compiled, encoding())) {
+        if (compiled == null || compiled.getModule() == null) {
+            return List.of();
+        }
+        return toEngineTokens(features.semanticTokens().tokenSpans(compiled, encoding()));
+    }
+
+    private static List<Token> toEngineTokens(final List<SemanticTokensService.TokenSpan> spans) {
+        List<Token> tokens = new ArrayList<>(spans.size());
+        for (SemanticTokensService.TokenSpan span : spans) {
             int type = span.type();
-            String typeName = type >= 0 && type < SemanticTokensService.TOKEN_TYPES.size()
-                    ? SemanticTokensService.TOKEN_TYPES.get(type) : "";
+            String typeName = TOKEN_TYPES.get(type);
             tokens.add(new Token(span.line(), span.character(), span.length(), typeName, span.modifiers()));
         }
         return tokens;
@@ -433,6 +592,20 @@ public final class GroovyLanguageEngine implements AutoCloseable {
         int activeSignature = help.getActiveSignature() == null ? 0 : help.getActiveSignature();
         int activeParameter = help.getActiveParameter() == null ? 0 : help.getActiveParameter();
         return new SignatureSet(activeSignature, activeParameter, List.copyOf(signatures));
+    }
+
+    /**
+     * Replaces the buffer text, then returns signatures.
+     *
+     * @param uri buffer identity
+     * @param text source text
+     * @param line 0-based line
+     * @param character 0-based character
+     * @return signatures, never {@code null}
+     */
+    public SignatureSet signatures(final URI uri, final String text, final int line, final int character) {
+        updateBuffer(uri, text);
+        return signatures(uri, line, character);
     }
 
     /**
@@ -480,10 +653,11 @@ public final class GroovyLanguageEngine implements AutoCloseable {
     }
 
     private void ensureFresh(final TextDocument document) {
-        CompiledDocument compiled = context.getSnapshot().get(document);
-        if (compiled == null || compiled.getVersion() != document.getVersion()) {
-            context.recompile();
-        }
+        Objects.requireNonNull(document);
+        // recompile() no-ops when the fingerprint matches the cached key.
+        // updateBuffer keeps that key when the text is unchanged.
+        // setHostConfiguration drops it.
+        context.recompile();
     }
 
     private static URI requireUri(final URI uri) {
@@ -491,6 +665,132 @@ public final class GroovyLanguageEngine implements AutoCloseable {
             throw new IllegalArgumentException("uri");
         }
         return Uris.normalize(uri);
+    }
+
+    /**
+     * Maps a UTF-16 document offset to a 0-based line and character.
+     * CR, LF, and CRLF are line breaks.
+     *
+     * @param text document text
+     * @param offset UTF-16 offset
+     * @return {@code {line, character}}
+     */
+    public static int[] positionOf(final String text, final int offset) {
+        return TextDocument.positionOf(text, offset);
+    }
+
+    /**
+     * Maps a 0-based line and character to a UTF-16 document offset.
+     * The character is clamped to the requested line. CR, LF, and CRLF
+     * are line breaks.
+     *
+     * @param text document text
+     * @param line 0-based line
+     * @param character 0-based character
+     * @return offset in {@code text}
+     */
+    public static int offsetOf(final String text, final int line, final int character) {
+        return TextDocument.offsetOf(text, new Position(Math.max(line, 0), Math.max(character, 0)),
+                PositionEncoding.UTF16);
+    }
+
+    /**
+     * Strips LSP snippet placeholders from completion insert text.
+     *
+     * @param insert snippet or plain insert text
+     * @return flattened text, never {@code null}
+     */
+    public static String flattenSnippet(final String insert) {
+        if (insert == null || insert.isEmpty()) {
+            return "";
+        }
+        return SNIPPET_TABSTOP.matcher(SNIPPET_PLACEHOLDER.matcher(insert).replaceAll("$1")).replaceAll("");
+    }
+
+    /**
+     * {@link #flattenSnippet(String)} truncated at the first newline.
+     * Line-oriented hosts (groovysh) use this.
+     *
+     * @param insert snippet or plain insert text
+     * @return one line, never {@code null}
+     */
+    public static String flattenSnippetLine(final String insert) {
+        String flattened = flattenSnippet(insert);
+        int nl = flattened.indexOf('\n');
+        return nl < 0 ? flattened : flattened.substring(0, nl);
+    }
+
+    /**
+     * Maps a diagnostic range onto UTF-16 offsets. A zero-width or inverted
+     * range becomes one character so a highlighter has something to paint.
+     * A range at EOF paints the last character of a non-empty document.
+     *
+     * @param text document text
+     * @param startLine 0-based start line
+     * @param startCharacter 0-based start character
+     * @param endLine 0-based end line
+     * @param endCharacter 0-based end character
+     * @return {@code {startOffset, endOffset}}
+     */
+    public static int[] spanOf(final String text, final int startLine, final int startCharacter,
+                               final int endLine, final int endCharacter) {
+        return spanOf(text, startLine, startCharacter, endLine, endCharacter, true);
+    }
+
+    /**
+     * @param paintLastAtEof when {@code true}, a zero-width range at the end
+     *                       of a non-empty document paints the last character.
+     *                       When {@code false}, that range is dropped.
+     * @return {@code {startOffset, endOffset}}
+     */
+    public static int[] spanOf(final String text, final int startLine, final int startCharacter,
+                               final int endLine, final int endCharacter, final boolean paintLastAtEof) {
+        int start = offsetOf(text, startLine, startCharacter);
+        int end = offsetOf(text, endLine, endCharacter);
+        int length = text == null ? 0 : text.length();
+        if (end <= start) {
+            if (start >= length) {
+                if (paintLastAtEof && length > 0) {
+                    start = length - 1;
+                    end = length;
+                } else {
+                    return new int[] {length, length};
+                }
+            } else {
+                end = Math.min(start + 1, length);
+            }
+        }
+        return new int[] {start, end};
+    }
+
+    /**
+     * @param text document text
+     * @param hit diagnostic
+     * @return {@code {startOffset, endOffset}}
+     */
+    public static int[] spanOf(final String text, final Hit hit) {
+        if (hit == null) {
+            return new int[] {0, 0};
+        }
+        return spanOf(text, hit.startLine(), hit.startCharacter(), hit.endLine(), hit.endCharacter());
+    }
+
+    /**
+     * Maps a semantic token onto UTF-16 offsets. Tokens are single-line
+     * (multiline comments and strings are already split).
+     *
+     * @param text document text
+     * @param token semantic token
+     * @return {@code {startOffset, endOffset}}
+     */
+    public static int[] spanOf(final String text, final Token token) {
+        if (token == null) {
+            return new int[] {0, 0};
+        }
+        int start = offsetOf(text, token.line(), token.character());
+        int length = text == null ? 0 : text.length();
+        int end = Math.min(start + Math.max(token.length(), 0), length);
+        return new int[] {start, end};
     }
 
     private PositionEncoding encoding() {
@@ -520,7 +820,7 @@ public final class GroovyLanguageEngine implements AutoCloseable {
         String insert = item.getInsertText() == null ? item.getLabel() : item.getInsertText();
         return new Candidate(item.getLabel() == null ? "" : item.getLabel(), kind,
                 item.getDetail() == null ? "" : item.getDetail(),
-                insert == null ? "" : insert,
+                flattenSnippet(insert),
                 markupOrString(item.getDocumentation()));
     }
 
