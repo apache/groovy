@@ -316,9 +316,13 @@ public abstract class TraitComposer {
                 }
             }
         }
-        cNode.addObjectInitializerStatements(stmt(
-                callX(classX(helperClassNode), Traits.INIT_METHOD, varX("this"))
-        ));
+        MethodCallExpression initCall = callX(
+                classX(helperClassNode),
+                Traits.INIT_METHOD,
+                varX("this"));
+        // call the helper's $init$(TraitType) directly instead of through its meta class
+        initCall.setMethodTarget(helperClassNode.getDeclaredMethod(Traits.INIT_METHOD, new Parameter[]{new Parameter(trait, Traits.THIS_OBJECT)}));
+        cNode.addObjectInitializerStatements(stmt(initCall));
     }
 
     private static void createForwarderMethod(
