@@ -34,7 +34,7 @@ public interface GroovyObject {
      * @param args the arguments to use for the method call
      * @return the result of invoking the method
      */
-    @Internal // marked as internal just for backward compatibility, e.g. AbstractCallSite.createGroovyObjectGetPropertySite will check `isMarkedInternal`
+    @Internal // marked as internal just for backward compatibility
     default Object invokeMethod(String name, Object args) {
         return getMetaClass().invokeMethod(this, name, args);
     }
@@ -45,7 +45,7 @@ public interface GroovyObject {
      * @param propertyName the name of the property of interest
      * @return the given property
      */
-    @Internal // marked as internal just for backward compatibility, e.g. AbstractCallSite.createGroovyObjectGetPropertySite will check `isMarkedInternal`
+    @Internal // marked as internal just for backward compatibility, e.g. GroovyObjectOverrides.hasCustomGetProperty checks for it
     default Object getProperty(String propertyName) {
         return getMetaClass().getProperty(this, propertyName);
     }
@@ -56,7 +56,7 @@ public interface GroovyObject {
      * @param propertyName the name of the property of interest
      * @param newValue     the new value for the property
      */
-    @Internal // marked as internal just for backward compatibility, e.g. AbstractCallSite.createGroovyObjectGetPropertySite will check `isMarkedInternal`
+    @Internal // marked as internal just for backward compatibility
     default void setProperty(String propertyName, Object newValue) {
         getMetaClass().setProperty(this, propertyName, newValue);
     }

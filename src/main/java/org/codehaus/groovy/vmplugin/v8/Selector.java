@@ -32,7 +32,7 @@ import groovy.lang.MetaMethod;
 import groovy.lang.MetaProperty;
 import groovy.lang.MissingMethodException;
 import groovy.lang.ProxyMetaClass;
-import groovy.transform.Internal;
+import org.apache.groovy.internal.metaclass.GroovyObjectOverrides;
 import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
@@ -420,13 +420,15 @@ public abstract class Selector {
         public void chooseMeta(MetaClassImpl mci) {
             var receiver = getCorrectedReceiver();
             if (receiver instanceof GroovyObject) {
-                try {
-                    var propertyAccessMethod = receiver.getClass().getMethod("getProperty", String.class);
-                    if (!propertyAccessMethod.isSynthetic() && !isMarkedInternal(propertyAccessMethod)) {
-                        handle = MethodHandles.insertArguments(GROOVY_OBJECT_GET_PROPERTY, 1, name);
-                        return;
-                    }
-                } catch (ReflectiveOperationException ignore) {
+                // hasCustomGetProperty, the criterion of the classic call sites too, not the
+                // overridesGetProperty of ScriptBytecodeAdapter.getProperty; the two differ on
+                // purpose (see GroovyObjectOverrides). A getProperty that is neither the GroovyObject
+                // default nor synthetic or @Internal answers every read; a class that cannot be
+                // inspected counts as having one, so that the read reaches its getProperty
+                // rather than going around it to the metaclass
+                if (GroovyObjectOverrides.hasCustomGetProperty(receiver.getClass())) {
+                    handle = MethodHandles.insertArguments(GROOVY_OBJECT_GET_PROPERTY, 1, name);
+                    return;
                 }
             } else if (receiver instanceof Class) {
                 handle = MOP_GET;
@@ -468,10 +470,6 @@ public abstract class Selector {
             } else {
                 handle = META_PROPERTY_GETTER.bindTo(mp);
             }
-        }
-
-        private boolean isMarkedInternal(Method reflectionMethod) {
-            return reflectionMethod.getAnnotation(Internal.class) != null;
         }
 
         /**
@@ -546,23 +544,29 @@ public abstract class Selector {
         @Override
         public void chooseMeta(MetaClassImpl mci) {
             if (method != null || mci == null) return;
-            // ExpandoMetaClass (also produced by Class.mixin) overrides
-            // setProperty itself; only a plain MetaClassImpl resolution is
-            // safe to mirror here — mirroring the GET selector, which also
-            // keeps EMC off its fast metaclass path
+            // ExpandoMetaClass (also produced by Class.mixin and by changing
+            // the metaClass of a single object) overrides setProperty itself;
+            // only a plain MetaClassImpl resolution is safe to mirror here —
+            // mirroring the GET selector, which also keeps EMC off its fast
+            // metaclass path. This check, not the metaclass probe below, is
+            // what keeps a setProperty from an expando closure or a mixin
+            // receiving writes: for a class with a mixed-in setProperty,
+            // pickMethod returns the GroovyObject default.
             if (mci.getClass() != MetaClassImpl.class) return;
             Object receiver = getCorrectedReceiver();
             if (receiver instanceof Class || receiver instanceof Map) return;
             if (GroovyCategorySupport.hasCategoryInCurrentThread()) return; // categories can contribute setters
 
-            // a setProperty(String,Object) contributed by the class itself, a
-            // mixin, or an expando closure intercepts every write; only the
-            // GroovyObject interface default is the benign non-intercepting
-            // case (its behavior is the metaclass path this selector mirrors).
-            // Two complementary probes: reflection sees compiled overrides
-            // (including inherited ones), the metaclass sees mixin/expando
-            // contributions that reflection cannot.
-            if (receiver instanceof GroovyObject && hasOverriddenSetProperty(receiver.getClass())) return;
+            // a setProperty(String,Object) of the class's own, whether declared,
+            // inherited or a default method of another interface, intercepts
+            // every write; only the GroovyObject default is the benign
+            // non-intercepting case (its behavior is the metaclass path this
+            // selector mirrors). Reflection sees all of those: it is the probe
+            // ScriptBytecodeAdapter#setProperty makes, and a class it cannot
+            // inspect counts as overriding, which keeps the adapter path. The
+            // metaclass probe also turns away any other setProperty the
+            // metaclass picks.
+            if (receiver instanceof GroovyObject && GroovyObjectOverrides.overridesSetProperty(receiver.getClass())) return;
             MetaMethod customSetProperty = mci.pickMethod("setProperty", SET_PROPERTY_PARAMS);
             if (customSetProperty != null
                     && customSetProperty.getDeclaringClass().getTheClass() != GroovyObject.class) {
@@ -591,19 +595,6 @@ public abstract class Selector {
                 setFieldWriteHandle(cf, value);
             }
             // otherwise (no meta property, listeners, expando, propertyMissing, ...): adapter path
-        }
-
-        /**
-         * Mirrors the receiver test of {@code ScriptBytecodeAdapter#setProperty}:
-         * a {@code GroovyObject} whose {@code setProperty} is a real compiled
-         * override (not the interface default) intercepts all writes.
-         */
-        private static boolean hasOverriddenSetProperty(Class<?> receiverClass) {
-            try {
-                return !receiverClass.getMethod("setProperty", String.class, Object.class).isDefault();
-            } catch (ReflectiveOperationException ignore) {
-                return true; // cannot decide: stay on the adapter path
-            }
         }
 
         private boolean acceptsDirectly(MetaMethod setter, Object value) {
