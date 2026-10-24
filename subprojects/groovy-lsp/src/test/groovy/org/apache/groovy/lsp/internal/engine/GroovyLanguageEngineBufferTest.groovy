@@ -269,4 +269,26 @@ final class GroovyLanguageEngineBufferTest {
         assert renamed.changeCount() >= 1
         assert renamed.changes().every { it.newText() == 'Renamed' }
     }
+
+    @Test
+    void keywordsDefaultImportsAndOpenStateComeFromTheCompiler() {
+        engine = new GroovyLanguageEngine()
+        assert !engine.isOpen(null)
+        assert !engine.isOpen(BUFFER)
+        engine.openBuffer(BUFFER, 'groovy', 'class Sample {}')
+        assert engine.isOpen(BUFFER)
+        engine.closeBuffer(BUFFER)
+        assert !engine.isOpen(BUFFER)
+        def keywords = GroovyLanguageEngine.keywords()
+        assert keywords.contains('class')
+        assert keywords.contains('def')
+        assert keywords.contains('true')
+        assert keywords.contains('null')
+        assert keywords.contains('boolean')
+        assert GroovyLanguageEngine.keywords().is(keywords)
+        def imports = GroovyLanguageEngine.defaultImports()
+        assert imports.contains('java.lang.')
+        assert imports.contains('groovy.lang.')
+        assert imports.every { it.endsWith('.') }
+    }
 }

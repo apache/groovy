@@ -26,8 +26,10 @@ import org.apache.groovy.lsp.internal.feature.LanguageFeatures;
 import org.apache.groovy.lsp.internal.feature.SemanticTokensService;
 import org.apache.groovy.lsp.internal.position.PositionEncoding;
 import org.apache.groovy.lsp.internal.position.Positions;
+import org.apache.groovy.lsp.internal.util.GroovyKeywords;
 import org.apache.groovy.lsp.internal.util.Uris;
 import org.apache.groovy.lsp.internal.workspace.TextDocument;
+import org.codehaus.groovy.control.ResolveVisitor;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.Diagnostic;
@@ -51,6 +53,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -446,6 +449,40 @@ public final class GroovyLanguageEngine implements AutoCloseable {
     public List<Change> format(final URI uri, final int tabSize, final boolean insertSpaces) {
         TextDocument document = documentAt(uri);
         return toChanges(uri, features.formatting().format(document, null, tabSize, insertSpaces, encoding()));
+    }
+
+    /**
+     * Whether a buffer is open. Does not compile.
+     *
+     * @param uri buffer identity
+     * @return {@code true} when {@code uri} is in the document store
+     */
+    public boolean isOpen(final URI uri) {
+        if (uri == null) {
+            return false;
+        }
+        return context.getDocuments().get(uri) != null;
+    }
+
+    /**
+     * Lexer keywords, primitive type names, {@code true}, {@code false} and
+     * {@code null}, from {@link GroovyKeywords}. Not a handwritten table.
+     *
+     * @return immutable keyword list, never {@code null}
+     */
+    public static List<String> keywords() {
+        return GroovyKeywords.KEYWORDS;
+    }
+
+    /**
+     * Default import prefixes from {@link ResolveVisitor#DEFAULT_IMPORTS}.
+     * Each entry is a package prefix with a trailing dot, not an
+     * {@code import} statement.
+     *
+     * @return immutable prefixes, never {@code null}
+     */
+    public static List<String> defaultImports() {
+        return List.copyOf(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
     }
 
     /**
