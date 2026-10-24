@@ -19,6 +19,7 @@
 package groovy.operator
 
 import groovy.test.GroovyTestCase
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 /**
  * GEP-15: tests for dedicated compound-assignment operator overloads
@@ -317,5 +318,207 @@ final class CompoundAssignmentTest extends GroovyTestCase {
             }
             exercise()
         '''
+    }
+
+    // GROOVY-12466
+    void testFinalParameterWithPlusAssign() {
+        for (mode in ['CompileStatic', 'TypeChecked']) {
+            assertScript """
+                import groovy.transform.${mode}
+
+                @${mode}
+                class Counter {
+                    int n = 0
+                    void plusAssign(int x) { n += x }
+                    void leftShiftAssign(int x) { n += 10 * x }
+                }
+
+                @${mode}
+                Counter exercise(final Counter c) {
+                    c += 5
+                    c <<= 2
+                    c
+                }
+                def arg = new Counter()
+                assert exercise(arg).is(arg)
+                assert arg.n == 25
+            """
+        }
+    }
+
+    // GROOVY-12466
+    void testFinalFieldInsideItsClassWithPlusAssign() {
+        for (mode in ['CompileStatic', 'TypeChecked']) {
+            assertScript """
+                import groovy.transform.${mode}
+
+                @${mode}
+                class Counter {
+                    int n = 0
+                    void plusAssign(int x) { n += x }
+                    void leftShiftAssign(int x) { n += 10 * x }
+                }
+
+                @${mode}
+                class Holder {
+                    final Counter c = new Counter()
+                    static final Counter S = new Counter()
+
+                    int viaName() { c += 1; c <<= 1; c.n }
+                    int viaThis() { this.c += 2; this.c <<= 2; c.n }
+                    static int viaStatic() { S += 3; S <<= 3; S.n }
+                }
+
+                def h = new Holder()
+                assert h.viaName() == 11
+                assert h.viaThis() == 33
+                assert Holder.viaStatic() == 33
+            """
+        }
+    }
+
+    // GROOVY-12466
+    void testFinalTargetsWithRenamedAssignMethod() {
+        for (mode in ['CompileStatic', 'TypeChecked']) {
+            assertScript """
+                import groovy.transform.${mode}
+                import groovy.transform.OperatorRename
+
+                class Bag {
+                    int total = 0
+                    void addInPlace(int n) { total += n }
+                }
+
+                class Holder {
+                    final Bag bag = new Bag()
+
+                    @${mode} @OperatorRename(plusAssign='addInPlace')
+                    int viaField() { bag += 1; this.bag += 2; bag.total }
+                }
+
+                @${mode} @OperatorRename(plusAssign='addInPlace')
+                int viaParam(final Bag b) { b += 3; b.total }
+
+                assert new Holder().viaField() == 3
+                assert viaParam(new Bag()) == 3
+            """
+        }
+    }
+
+    // GROOVY-12466
+    void testTypeCheckedFinalFieldFromOutsideWithPlusAssign() {
+        assertScript '''
+            import groovy.transform.TypeChecked
+
+            @TypeChecked
+            class Counter {
+                int n = 0
+                void plusAssign(int x) { n += x }
+            }
+
+            class Holder {
+                final Counter c = new Counter()
+            }
+
+            @TypeChecked
+            int exercise() {
+                def h = new Holder()
+                h.c += 5
+                h.c.n
+            }
+            assert exercise() == 5
+        '''
+    }
+
+    // GROOVY-12466
+    void testTypeCheckedPropertyCompoundAssignSkipsSetter() {
+        assertScript '''
+            import groovy.transform.TypeChecked
+
+            class Counter {
+                int n = 0
+                void plusAssign(int x) { n += x }
+            }
+
+            class Holder {
+                int setterCalls = 0
+                Counter c = new Counter()
+                void setC(Counter value) { setterCalls++; c = value }
+            }
+
+            @TypeChecked
+            void exercise() {
+                def h = new Holder()
+                h.c += 5
+                assert h.c.n == 5
+                assert h.setterCalls == 0
+            }
+            exercise()
+        '''
+    }
+
+    // GROOVY-12466
+    void testFinalTargetsStillRefusedWithoutAssignMethod() {
+        def types = '''
+            class Counter {
+                int n = 0
+                void plusAssign(int x) { n += x }
+            }
+            class PlusOnly {
+                int n = 0
+                PlusOnly plus(int x) { new PlusOnly(n: n + x) }
+            }
+        '''
+        // dynamic code cannot know that plusAssign will respond
+        def err = shouldFail(MultipleCompilationErrorsException, types + '''
+            void exercise(final Counter c) { c += 1 }
+        ''')
+        assert err.contains('The parameter [c] is declared final but is reassigned')
+        err = shouldFail(MultipleCompilationErrorsException, types + '''
+            class Holder { final Counter c = new Counter(); void exercise() { c += 1 } }
+        ''')
+        assert err.contains("cannot modify final field 'c' outside of constructor")
+
+        for (mode in ['CompileStatic', 'TypeChecked']) {
+            // no *Assign method, so += reassigns
+            err = shouldFail(MultipleCompilationErrorsException, types + """
+                @groovy.transform.${mode}
+                void exercise(final PlusOnly p) { p += 1 }
+            """)
+            assert err.contains('The parameter [p] is declared final but is reassigned')
+            err = shouldFail(MultipleCompilationErrorsException, types + """
+                @groovy.transform.${mode}
+                class Holder { final PlusOnly p = new PlusOnly(); void exercise() { p += 1 } }
+            """)
+            assert err.contains('Cannot set read-only property: p')
+
+            // plain assignment is always a reassignment
+            err = shouldFail(MultipleCompilationErrorsException, types + """
+                @groovy.transform.${mode}
+                void exercise(final Counter c) { c = new Counter() }
+            """)
+            assert err.contains("Cannot assign a value to final variable 'c'")
+            err = shouldFail(MultipleCompilationErrorsException, types + """
+                @groovy.transform.${mode}
+                class Holder { final Counter c = new Counter(); void exercise() { this.c = new Counter() } }
+            """)
+            assert err.contains('Cannot set read-only property: c')
+        }
+    }
+
+    // GROOVY-12466
+    void testFinalFieldAssignmentInConstructorStillAllowed() {
+        for (mode in ['CompileStatic', 'TypeChecked', 'AutoFinal']) {
+            assertScript """
+                class Counter { int n = 0 }
+
+                @groovy.transform.${mode}
+                class Holder {
+                    final Counter c
+                    Holder() { c = new Counter() }
+                }
+                assert new Holder().c != null
+            """
+        }
     }
 }
