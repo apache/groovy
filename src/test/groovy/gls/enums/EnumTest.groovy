@@ -19,6 +19,7 @@
 package gls.enums
 
 import gls.CompilableTestSupport
+import groovy.transform.CompileStatic
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -1002,28 +1003,157 @@ final class EnumTest extends CompilableTestSupport {
     // meta class
     @Test
     void testEmptyArgumentListKeepsConstantCreationOpenToMetaClassInterception() {
-        def interceptedInits = { Class enumClass ->
-            def seen = []
-            def mc = new DelegatingMetaClass(enumClass) {
-                Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
-                    if (methodName == '$INIT') seen << arguments.toList()
-                    super.invokeStaticMethod(object, methodName, arguments)
-                }
-            }
-            mc.initialize()
-            GroovySystem.metaClassRegistry.setMetaClass(enumClass, mc)
-            try {
-                // first active use: <clinit> runs now, after the meta class is in place
-                assert enumClass.getMethod('values').invoke(null)*.name() == ['ONE', 'TWO']
-            } finally {
-                GroovySystem.metaClassRegistry.removeMetaClass(enumClass)
-            }
-            seen
-        }
         def loader = new GroovyClassLoader(getClass().classLoader)
         assert interceptedInits(loader.parseClass('enum OptedOut { ONE(), TWO }')) == [['ONE', 0], ['TWO', 1]]
         assert interceptedInits(loader.parseClass('enum Direct { ONE, TWO }')).isEmpty()
     }
+
+    // constants whose arguments are all literals are created beyond the reach of the meta
+    // class as well; an argument that is not a literal keeps the $INIT path open to it
+    @Test
+    void testNonLiteralArgumentKeepsConstantCreationOpenToMetaClassInterception() {
+        def loader = new GroovyClassLoader(getClass().classLoader)
+        def optedOut = loader.parseClass('''
+            enum OptedOutArgs {
+                ONE('one'.toUpperCase()), TWO('two')
+                OptedOutArgs(String s) { }
+            }
+        ''')
+        def direct = loader.parseClass('''
+            enum DirectArgs {
+                ONE('one'), TWO('two')
+                DirectArgs(String s) { }
+            }
+        ''')
+        assert interceptedInits(optedOut) == [['ONE', 0, 'ONE'], ['TWO', 1, 'two']]
+        assert interceptedInits(direct).isEmpty()
+    }
+
+    private static List interceptedInits(Class enumClass) {
+        def seen = []
+        def mc = new DelegatingMetaClass(enumClass) {
+            Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
+                if (methodName == '$INIT') seen << arguments.toList()
+                super.invokeStaticMethod(object, methodName, arguments)
+            }
+        }
+        mc.initialize()
+        GroovySystem.metaClassRegistry.setMetaClass(enumClass, mc)
+        try {
+            // first active use: <clinit> runs now, after the meta class is in place
+            assert enumClass.getMethod('values').invoke(null)*.name() == ['ONE', 'TWO']
+        } finally {
+            GroovySystem.metaClassRegistry.removeMetaClass(enumClass)
+        }
+        seen
+    }
+
+    // constants whose arguments are literals that the only constructor able to take them
+    // accepts as they are get a direct constructor call too
+    @Test
+    void testConstantsWithLiteralArguments() {
+        assert AccessModifier.values()*.name() == ['PRIVATE', 'PROTECTED', 'PUBLIC']
+        assert AccessModifier.values()*.ordinal() == [0, 1, 2]
+        assert AccessModifier.values()*.keyword == ['private', 'protected', 'public']
+        assert AccessModifier.valueOf('PROTECTED') == AccessModifier.PROTECTED
+        assert AccessModifier.PROTECTED.declaringClass == AccessModifier
+        assert AccessModifier.MIN_VALUE == AccessModifier.PRIVATE
+        assert AccessModifier.MAX_VALUE == AccessModifier.PUBLIC
+        assert AccessModifier.PRIVATE.next() == AccessModifier.PROTECTED
+        assert EnumSet.allOf(AccessModifier).size() == 3
+    }
+
+    @Test
+    void testConstantsWithLiteralArgumentsInASwitch() {
+        def scope = { AccessModifier modifier ->
+            switch (modifier) {
+                case AccessModifier.PRIVATE: return 'class'
+                case AccessModifier.PROTECTED: return 'subclasses'
+                default: return 'everyone'
+            }
+        }
+        assert AccessModifier.values().collect(scope) == ['class', 'subclasses', 'everyone']
+    }
+
+    @Test
+    void testConstantsWithLiteralArgumentsOfEveryKind() {
+        def values = LiteralArgs.ONE.values
+        assert values == ['s', 1, true, 2L, 1.5f, 2.5d, 3.5, 4G, -5, null, String, 6, 'x']
+        assert values.collect { it?.getClass() } == [String, Integer, Boolean, Long, Float, Double,
+                                                     BigDecimal, BigInteger, Integer, null, Class, Integer, String]
+    }
+
+    @Test
+    void testConstantsWithLiteralArgumentsReadStaticFieldsInTheConstructor() {
+        assert Registered.values()*.key == ['key-one', 'key-two']
+        assert Registered.created == 2
+        // the static initializers of an enum run after its constants have been created
+        assert Registered.last == 'initial'
+    }
+
+    @Test
+    void testConstantsWithAndWithoutLiteralArguments() {
+        assert Sized.values()*.size == [1, 10]
+    }
+
+    @Test
+    void testConstantsWithLiteralArgumentsPickTheConstructorByArity() {
+        assert ArityPicked.values()*.description == ['one', 'two:2']
+    }
+
+    @Test
+    void testCompileStaticConstantsWithLiteralArguments() {
+        assert StaticKeyword.values()*.keyword == ['static', 'final']
+        assert StaticKeyword.valueOf('FINAL').ordinal() == 1
+    }
+}
+
+enum AccessModifier {
+    PRIVATE('private'), PROTECTED('protected'), PUBLIC('public')
+    final String keyword
+    AccessModifier(String keyword) { this.keyword = keyword }
+}
+
+enum LiteralArgs {
+    ONE('s', 1, true, 2L, 1.5f, 2.5d, 3.5, 4G, -5, null, String, 6, 'x')
+    final List values
+    LiteralArgs(String s, int i, boolean b, long l, float f, double d, BigDecimal bd, BigInteger bi,
+                int negative, Integer nothing, Class c, Number n, CharSequence cs) {
+        values = [s, i, b, l, f, d, bd, bi, negative, nothing, c, n, cs]
+    }
+}
+
+enum Registered {
+    ONE('one'), TWO('two')
+    static final String PREFIX = 'key-'
+    static int created
+    static String last = 'initial'
+    final String key
+    Registered(String name) {
+        key = PREFIX + name
+        Registered.created++
+        Registered.last = name
+    }
+}
+
+enum Sized {
+    SMALL, LARGE(10)
+    final int size
+    Sized(int size = 1) { this.size = size }
+}
+
+enum ArityPicked {
+    ONE('one'), TWO('two', 2)
+    final String description
+    ArityPicked(String name) { description = name }
+    ArityPicked(String name, int count) { description = name + ':' + count }
+}
+
+@CompileStatic
+enum StaticKeyword {
+    STATIC('static'), FINAL('final')
+    final String keyword
+    StaticKeyword(String keyword) { this.keyword = keyword }
 }
 
 enum Weekday {

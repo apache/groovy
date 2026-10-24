@@ -264,7 +264,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
 
         // static init
         List<FieldNode> fields = enumClass.getFields();
-        boolean directInit = canInitDirectly(enumClass, fields);
+        EnumConstantInit.Constants directInit = canInitDirectly(enumClass, fields) ? new EnumConstantInit.Constants(enumClass) : null;
         List<Expression> arrayInit = new ArrayList<>();
         List<Statement> block = new ArrayList<>();
         int index = -1;
@@ -322,7 +322,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             }
             arrayInit.add(fieldX(field));
             Expression init = callX(enumType, "$INIT", args);
-            if (directInit) init = new EnumConstantInit(enumClass, field.getName(), index, init);
+            if (directInit != null) init = directInit.add(field.getName(), index, args.getExpressions().size() > 2, init);
             block.add(assignS(fieldX(field), init));
         }
 
@@ -345,14 +345,16 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
      * Determines whether the constants of the given enum can be initialized with a direct
      * constructor call rather than with a call to the synthetic {@code $INIT} helper.
      * <p>
-     * This is only the case when every constant is a plain identifier and so supplies no
-     * arguments of its own; the constructor arguments are then known to be exactly the
-     * compiler-supplied name and ordinal.  Constants declared with arguments, with named
-     * arguments or with a class body keep the {@code $INIT} path, as do enums whose own
-     * constructor cannot accept just the name and the ordinal.  An explicit empty
-     * argument list, e.g. {@code ONE()}, also keeps the {@code $INIT} path without
-     * otherwise changing the meaning of the enum, which serves as the opt-out for the
-     * rare code that intercepts constant creation through a meta class registered
+     * This is only attempted when every constant is either a plain identifier, which
+     * supplies no arguments of its own, or declared with positional arguments.  Whether
+     * the constructor that the meta class would select for a constant, and the arguments
+     * it would receive, are known at compile time is decided once the constructors and the
+     * arguments are final (see {@link EnumConstantInit}).  Constants declared with named
+     * arguments or with a class body keep the {@code $INIT} path, as do enums with a plain
+     * constant whose own constructor cannot accept just the name and the ordinal.  An
+     * explicit empty argument list, e.g. {@code ONE()}, also keeps the {@code $INIT} path
+     * without otherwise changing the meaning of the enum, which serves as the opt-out for
+     * the rare code that intercepts constant creation through a meta class registered
      * before the enum initializes (see {@link EnumConstantInit}).
      *
      * @param enumClass the enum being completed
@@ -362,10 +364,15 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
     private static boolean canInitDirectly(final ClassNode enumClass, final List<FieldNode> fields) {
         // an abstract enum or one that is extended has constants with a body, i.e. subclasses
         if (isAnonymousInnerClass(enumClass) || enumClass.isAbstract() || !isNotExtended(enumClass)) return false;
-        // GROOVY-10811: a declared constructor must be callable with no user-supplied argument
-        if (!enumClass.getDeclaredConstructors().isEmpty() && !hasNoArgConstructor(enumClass)) return false;
         for (FieldNode field : fields) {
-            if (field.isEnum() && field.getInitialExpression() != null) return false;
+            if (!field.isEnum()) continue;
+            if (field.getInitialExpression() == null) {
+                // GROOVY-10811: a declared constructor must be callable with no user-supplied argument
+                if (!enumClass.getDeclaredConstructors().isEmpty() && !hasNoArgConstructor(enumClass)) return false;
+            } else {
+                List<Expression> arguments = ((ListExpression) field.getInitialExpression()).getExpressions();
+                if (arguments.isEmpty() || arguments.stream().anyMatch(MapEntryExpression.class::isInstance)) return false;
+            }
         }
         return true;
     }
