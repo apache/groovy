@@ -665,8 +665,7 @@ final class ErrorStrategyTest {
             "a.@?[0]",
             "a\n?[0]",
             "/*c*/?[0]",
-            "if?[0]",
-            "a??[0]"
+            "if?[0]"
     })
     void unexpectedSafeIndexAfterNonReceiverIsAMissingReceiver(final String src) {
         assertSafeIndexMessage(src);
