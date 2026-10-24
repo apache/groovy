@@ -3359,7 +3359,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 final ClassNode[] argumentTypes = getArgumentTypes(argumentList);
 
                 MethodNode ctor;
-                if (looksLikeNamedArgConstructor(receiver, argumentTypes)
+                // GROOVY-12484: a public constructor of an inaccessible type is still out of reach
+                if (!call.isSpecialCall() && !hasAccessToClass(typeCheckingContext.getEnclosingClassNode(), receiver)) {
+                    addStaticTypeError("Cannot access constructor of class: " + prettyPrintTypeName(receiver)
+                            + " from class: " + prettyPrintTypeName(typeCheckingContext.getEnclosingClassNode()), call);
+                    visitMethodCallArguments(receiver, argumentList, true, null);
+                    checkForbiddenSpreadArgument(argumentList);
+                    ctor = null;
+                } else if (looksLikeNamedArgConstructor(receiver, argumentTypes)
                         && findMethod(receiver, "<init>", argumentTypes).isEmpty()
                         && findMethod(receiver, "<init>", init(argumentTypes)).size() == 1) {
                     ctor = typeCheckMapConstructor(call, receiver, arguments);
@@ -4848,6 +4855,13 @@ out:                if (mn.size() != 1) {
                         ClassNode declaringClass = targetMethod.getDeclaringClass();
                         if (chosenReceiver == null) {
                             chosenReceiver = Receiver.make(declaringClass.getPlainNodeReference());
+                        }
+                        // GROOVY-12484: the qualifying type must be accessible (JLS 6.6.1); the method's
+                        // own modifiers do not help when the class reference itself cannot be resolved
+                        if (objectExpression instanceof ClassExpression && !isClassType(chosenReceiver.getType())
+                                && !hasAccessToClass(typeCheckingContext.getEnclosingClassNode(), chosenReceiver.getType())) {
+                            addStaticTypeError("Cannot access method: " + name + " of class: " + prettyPrintTypeName(chosenReceiver.getType())
+                                    + " from class: " + prettyPrintTypeName(typeCheckingContext.getEnclosingClassNode()), call.getMethod());
                         }
                         if (!targetMethod.isStatic() && !(isClassType(declaringClass) || isObjectType(declaringClass)) // GROOVY-10939: Class or Object
                                 && !chosenReceiver.isObject() && !Boolean.TRUE.equals(call.getNodeMetaData(DYNAMIC_RESOLUTION))) {
