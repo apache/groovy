@@ -30,6 +30,7 @@ import groovy.lang.MissingPropertyException;
 import groovy.lang.NumberRange;
 import groovy.lang.ObjectRange;
 import groovy.lang.Tuple;
+import org.apache.groovy.internal.metaclass.GroovyObjectOverrides;
 import org.apache.groovy.lang.annotation.GroovyABI;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
@@ -479,7 +480,11 @@ public class ScriptBytecodeAdapter {
 
     public static Object getProperty(Class senderClass, Object receiver, String messageName) throws Throwable {
         try {
-            if (receiver instanceof GroovyObject groovyObject && (senderClass == null || !receiver.getClass().getMethod("getProperty", String.class).isDefault())) {
+            // overridesGetProperty, not the hasCustomGetProperty of the property-read call sites:
+            // a synthetic or @Internal getProperty receives the read here, and the two criteria
+            // differ on purpose (see GroovyObjectOverrides). As in setProperty, a class that
+            // cannot be inspected counts as overriding, so the read reaches its own getProperty
+            if (receiver instanceof GroovyObject groovyObject && (senderClass == null || GroovyObjectOverrides.overridesGetProperty(receiver.getClass()))) {
                 // TODO: instead of checking for no getProperty specialization, pass senderClass in ThreadLocal or something
                 return groovyObject.getProperty(messageName);
             } else {
@@ -511,7 +516,13 @@ public class ScriptBytecodeAdapter {
 
     public static void setProperty(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
         try {
-            if (receiver instanceof GroovyObject groovyObject && (senderClass == null || !receiver.getClass().getMethod("setProperty", String.class, Object.class).isDefault())) {
+            // an override of setProperty receives the write; for the GroovyObject default, which
+            // would pass it on without the sender, the metaclass is called here instead (with no
+            // sender there is nothing to pass on, so the object's setProperty takes it). A class
+            // that cannot be inspected counts as overriding, so its own setProperty is reached
+            // either way, at the cost of the sender if that is the GroovyObject default (see
+            // GroovyObjectOverrides)
+            if (receiver instanceof GroovyObject groovyObject && (senderClass == null || GroovyObjectOverrides.overridesSetProperty(receiver.getClass()))) {
                 groovyObject.setProperty(messageName, messageArgument);
             } else {
                 MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
@@ -586,7 +597,10 @@ public class ScriptBytecodeAdapter {
     public static void setGroovyObjectProperty(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
         Class<?> receiverClass = receiver.getClass();
         try {
-            if (senderClass == null || !receiverClass.getMethod("setProperty", String.class, Object.class).isDefault()) {
+            // as in setProperty; when a class that cannot be inspected has the GroovyObject
+            // default after all, the retry below still finds a property only a superclass sender
+            // can see
+            if (senderClass == null || GroovyObjectOverrides.overridesSetProperty(receiverClass)) {
                 receiver.setProperty(messageName, messageArgument);
                 return;
             }
