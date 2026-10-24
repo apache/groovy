@@ -220,6 +220,14 @@ public class StaticInvocationWriter extends InvocationWriter {
     }
 
     /**
+     * Whether evaluating a receiver could be observed: a class literal or a
+     * variable (including {@code this} and {@code super}) cannot.
+     */
+    private static boolean mayHaveSideEffects(final Expression receiver) {
+        return receiver != null && !(receiver instanceof ClassExpression) && !(receiver instanceof VariableExpression);
+    }
+
+    /**
      * Attempts to make a direct method call on a bridge method, if it exists.
      */
     @Deprecated
@@ -280,6 +288,11 @@ public class StaticInvocationWriter extends InvocationWriter {
 
             List<Expression> argumentList = new ArrayList<>();
             if (emn.isStaticExtension()) {
+                if (!implicitThis && mayHaveSideEffects(receiver)) {
+                    // a static member reached through an expression still evaluates it (JLS 15.12.4.1)
+                    receiver.visit(controller.getAcg());
+                    controller.getOperandStack().pop();
+                }
                 argumentList.add(nullX());
             } else if (!isThisOrSuper(receiver) || !controller.isInGeneratedFunction()) {
                 argumentList.add(receiver);
@@ -331,7 +344,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                 if (!(theReceiver instanceof VariableExpression)) isThisImplicit = false;
                 theReceiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, declaringClass);
             }
-            if (theReceiver != null && !isSuperExpression(receiver) && !isClassWithSuper(receiver)
+            if (theReceiver != null && !target.isStatic() && !isSuperExpression(receiver) && !isClassWithSuper(receiver)
                     && currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) == null) {
                 // call CHECKCAST in order to avoid calls to castToType (aka dynamic behaviour)
                 theReceiver = new CheckcastReceiverExpression(theReceiver, target);
