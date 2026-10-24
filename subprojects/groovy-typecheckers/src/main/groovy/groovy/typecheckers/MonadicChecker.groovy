@@ -24,12 +24,15 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.GenericsType
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.expr.ClosureExpression
+import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
 import org.codehaus.groovy.transform.stc.StaticTypesMarker
 
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE
 import static org.codehaus.groovy.ast.ClassHelper.make
+import static org.codehaus.groovy.ast.tools.GenericsUtils.extractPlaceholders
+import static org.codehaus.groovy.ast.tools.GenericsUtils.findParameterizedType
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafeWithGenerics
 import static org.objectweb.asm.Opcodes.ACC_BRIDGE
 
@@ -267,9 +270,68 @@ class MonadicChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL 
         cn.annotations?.any { it.classNode?.nameWithoutPackage == 'Monadic' } ?: false
     }
 
+    /**
+     * The type a generator variable is bound to: the input type of the carrier's
+     * bind function, resolved against the carrier's type arguments, so that
+     * {@code Either<L, R>} binds {@code R}. When the bind parameter does not name
+     * its input, as with a {@code Closure} or a raw function type, the first type
+     * argument is used, then {@code Object}.
+     */
     private ClassNode elementType(ClassNode carrier) {
         def gts = carrier?.genericsTypes
-        (gts && gts.length > 0 && gts[0].type) ? gts[0].type : OBJECT_TYPE
+        if (!gts) return OBJECT_TYPE
+        ClassNode bare = carrier.redirect() ?: carrier
+        MethodNode bind = singleArgMethod(bare, bindName(bare))
+        ClassNode input = bind == null ? null : boundInputType(carrier, bind)
+        input ?: gts[0].type ?: OBJECT_TYPE
+    }
+
+    /** The bind method name, chosen in the same order as participation. */
+    private String bindName(ClassNode bare) {
+        for (e in MonadicCarrierRegistry.entries()) {
+            if (assignableTo(bare, make(e.carrier()))) return e.bind()
+        }
+        for (e in MonadicCarrierRegistry.namedEntries()) {
+            if (assignableTo(bare, make(e.carrierName()))) return e.bind()
+        }
+        if (hasSingleArgMethod(bare, 'flatMap')) return 'flatMap'
+        def member = classWithMonadic(bare)?.annotations
+                ?.find { it.classNode?.nameWithoutPackage == 'Monadic' }?.getMember('bind')
+        String declared = member instanceof ConstantExpression ? member.value as String : null
+        declared ?: 'flatMap'
+    }
+
+    private static MethodNode singleArgMethod(ClassNode cn, String name) {
+        for (ClassNode c = cn; c != null && c != OBJECT_TYPE; c = c.superClass) {
+            MethodNode found = c.getMethods(name)?.find { isSingleArgUserMethod(it) }
+            if (found != null) return found
+            for (ClassNode i : c.interfaces ?: ClassNode.EMPTY_ARRAY) {
+                found = singleArgMethod(i, name)
+                if (found != null) return found
+            }
+        }
+        null
+    }
+
+    /**
+     * The first type argument of the bind method's function parameter
+     * ({@code A} of {@code Function<? super A, ...>}), with a class type
+     * parameter replaced by the receiver's actual type argument.
+     */
+    private static ClassNode boundInputType(ClassNode carrier, MethodNode bind) {
+        ClassNode fn = bind.parameters[0].type
+        if (fn.name == 'groovy.lang.Closure') return null // Closure<V> names its result, not its input
+        def fgts = fn.genericsTypes
+        if (!fgts) return null
+        GenericsType first = fgts[0]
+        ClassNode input = first.isWildcard() ? (first.lowerBound ?: first.upperBounds?.find()) : first.type
+        if (input == null || !input.isGenericsPlaceHolder()) return input
+        ClassNode declaring = bind.declaringClass
+        ClassNode owner = declaring.redirect() == carrier.redirect() ? carrier : findParameterizedType(declaring, carrier)
+        if (owner == null) return null
+        GenericsType actual = extractPlaceholders(owner).get(new GenericsType.GenericsTypeName(input.unresolvedName))
+        if (actual == null || actual.isPlaceholder()) return null
+        actual.isWildcard() ? actual.upperBounds?.find() : actual.type
     }
 
     private ClassNode closureReturnType(ClosureExpression closure) {
