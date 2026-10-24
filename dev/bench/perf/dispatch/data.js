@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792747558686,
+  "lastUpdate": 1792825594017,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -5741,6 +5741,58 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/apache/groovy/commit/fa53afab4ff811b7ed93560300cd626d0374842e"
         },
         "date": 1792747557969,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4006,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 437,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 849,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1515,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "98c2f9f106d2ee368278ca33d105e540bf23baf0",
+          "message": "GROOVY-12461: @GrabConfig(systemProperties) sets JVM system properties at runtime even when Grape is disabled",
+          "timestamp": "2026-10-21T01:13:43Z",
+          "url": "https://github.com/apache/groovy/commit/98c2f9f106d2ee368278ca33d105e540bf23baf0"
+        },
+        "date": 1792825593153,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
