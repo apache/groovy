@@ -151,4 +151,56 @@ final class SetPropertyDispatchTest {
             }
         '''
     }
+
+    /**
+     * A {@code setProperty} that a class takes from a default method of another interface,
+     * such as one extending {@code GroovyObject}, receives every write, as one the class
+     * declares does: only the {@code GroovyObject} default hands the write to the metaclass.
+     */
+    // GROOVY-12489
+    @ParameterizedTest(name = 'indy={0}')
+    @ValueSource(booleans = [true, false])
+    void defaultSetPropertyOfAnotherInterfaceReceivesEveryWrite(boolean indy) {
+        shell(indy).evaluate '''
+            class Writes {
+                static List<String> log = []
+            }
+            interface Recording extends GroovyObject {
+                default void setProperty(String property, Object value) { Writes.log << "$property=$value".toString() }
+            }
+            interface ExtendsRecording extends Recording {
+            }
+            abstract class Base {
+                def name
+                void writeThis(String property, Object value) { this."$property" = value }
+                def nameField() { this.@name }
+            }
+            class Recorder extends Base implements Recording {
+            }
+            class InheritsRecorder extends Recorder {
+            }
+            class ThroughSubInterface extends Base implements ExtendsRecording {
+            }
+
+            def writeAll(Base typed, Object untyped) {
+                typed.name = 'static'
+                untyped.name = 'untyped'
+                typed."${'na' + 'me'}" = 'dynamic'
+                untyped."${'na' + 'me'}" = 'untyped dynamic'
+                typed.writeThis('name', 'this')
+                writeChecked(typed)
+            }
+            @groovy.transform.TypeChecked
+            def writeChecked(Base base) { base.name = 'checked' }
+
+            for (type in [Recorder, InheritsRecorder, ThroughSubInterface]) {
+                assert type.getMethod('setProperty', String, Object).declaringClass == Recording
+                def recorder = type.newInstance()
+                Writes.log.clear()
+                writeAll(recorder, recorder)
+                assert Writes.log == ['static', 'untyped', 'dynamic', 'untyped dynamic', 'this', 'checked'].collect { "name=$it".toString() }
+                assert recorder.nameField() == null
+            }
+        '''
+    }
 }

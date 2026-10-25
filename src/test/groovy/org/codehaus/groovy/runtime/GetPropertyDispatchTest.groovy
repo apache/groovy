@@ -156,4 +156,44 @@ final class GetPropertyDispatchTest {
             }
         '''
     }
+
+    /**
+     * A {@code getProperty} that a class takes from a default method of another interface,
+     * such as one extending {@code GroovyObject}, answers every read, as one the class
+     * declares does: only the {@code GroovyObject} default hands the read to the metaclass.
+     */
+    // GROOVY-12489
+    @ParameterizedTest(name = 'indy={0}')
+    @ValueSource(booleans = [true, false])
+    void defaultGetPropertyOfAnotherInterfaceAnswersEveryRead(boolean indy) {
+        shell(indy).evaluate '''
+            interface Answering extends GroovyObject {
+                default Object getProperty(String property) { 'own:' + property }
+            }
+            interface ExtendsAnswering extends Answering {
+            }
+            abstract class Base {
+                def name = 'field'
+                Object readThis(String property) { this."$property" }
+            }
+            class Answerer extends Base implements Answering {
+            }
+            class InheritsAnswerer extends Answerer {
+            }
+            class ThroughSubInterface extends Base implements ExtendsAnswering {
+            }
+
+            def readAll(Base typed, Object untyped) {
+                [typed.name, untyped.name, typed."${'na' + 'me'}", untyped."${'na' + 'me'}", typed.readThis('name'), readChecked(typed)]
+            }
+            @groovy.transform.TypeChecked
+            def readChecked(Base base) { base.name }
+
+            for (type in [Answerer, InheritsAnswerer, ThroughSubInterface]) {
+                assert type.getMethod('getProperty', String).declaringClass == Answering
+                def answerer = type.newInstance()
+                assert readAll(answerer, answerer) == ['own:name'] * 6
+            }
+        '''
+    }
 }

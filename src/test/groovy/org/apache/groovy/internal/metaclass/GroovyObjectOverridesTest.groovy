@@ -29,7 +29,6 @@ import static org.apache.groovy.internal.metaclass.GroovyObjectOverrides.overrid
 import static org.apache.groovy.internal.metaclass.GroovyObjectOverrides.overridesSetProperty
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertFalse
-import static org.junit.jupiter.api.Assertions.assertNotEquals
 import static org.junit.jupiter.api.Assertions.assertNotNull
 import static org.junit.jupiter.api.Assertions.assertThrows
 import static org.junit.jupiter.api.Assertions.assertTrue
@@ -119,24 +118,21 @@ final class GroovyObjectOverridesTest {
     }
 
     /**
-     * A default method of another interface counts as the {@code GroovyObject} default for
-     * {@code overridesSetProperty} and {@code overridesGetProperty}, which only ask whether
-     * the method is a default, but as custom for {@code hasCustomGetProperty}, unless it is
-     * marked {@code @Internal} too.
+     * A default method of another interface is an override, like a declared method: only
+     * {@code GroovyObject}'s own default hands the access to the metaclass.
      */
     // GROOVY-12489
     @Test
-    void defaultOfAnotherInterfaceIsCustomButNotAnOverride() {
-        for (type in [TakesDefaults, TakesInternalDefault]) {
-            def method = type.getMethod('getProperty', String)
-            assertTrue(method.isDefault(), type.name)
-            assertNotEquals(GroovyObject, method.declaringClass, type.name)
-            assertFalse(overridesGetProperty(type), type.name)
+    void defaultOfAnotherInterfaceIsAnOverride() {
+        for (type in [TakesDefaults]) {
+            for (method in [type.getMethod('getProperty', String), type.getMethod('setProperty', String, Object)]) {
+                assertTrue(method.isDefault(), method.toString())
+                assertEquals(DefaultsElsewhere, method.declaringClass, method.toString())
+            }
+            assertTrue(overridesSetProperty(type), type.name)
+            assertTrue(overridesGetProperty(type), type.name)
+            assertTrue(hasCustomGetProperty(type), type.name)
         }
-        assertEquals(DefaultsElsewhere, TakesDefaults.getMethod('setProperty', String, Object).declaringClass)
-        assertFalse(overridesSetProperty(TakesDefaults))
-        assertTrue(hasCustomGetProperty(TakesDefaults))
-        assertFalse(hasCustomGetProperty(TakesInternalDefault))
     }
 
     @Test
@@ -179,9 +175,10 @@ final class GroovyObjectOverridesTest {
 
     /**
      * The two read criteria differ on purpose: a {@code getProperty} that is synthetic or
-     * marked {@code @Internal}, whether declared or inherited, is taken for a generated one,
-     * like the interface default (which carries {@code @Internal} for this reason), by
-     * property-read call sites, but not by {@code ScriptBytecodeAdapter.getProperty}.
+     * marked {@code @Internal}, whether declared, inherited, or a default method of another
+     * interface, is taken for a generated one, like the {@code GroovyObject} default (which
+     * carries {@code @Internal} for this reason), by property-read call sites, but not by
+     * {@code ScriptBytecodeAdapter.getProperty}.
      */
     @Test
     @CompileStatic
@@ -212,7 +209,9 @@ final class GroovyObjectOverridesTest {
         assertTrue(synthetic.getMethod('getProperty', String).isSynthetic())
         assertTrue(inheritsSynthetic.getMethod('getProperty', String).isSynthetic())
 
-        for (type in [MarkedInternal, InheritsMarkedInternal, synthetic, inheritsSynthetic]) {
+        assertTrue(TakesInternalDefault.getMethod('getProperty', String).isDefault())
+
+        for (type in [MarkedInternal, InheritsMarkedInternal, TakesInternalDefault, synthetic, inheritsSynthetic]) {
             assertTrue(overridesGetProperty(type), type.name)
             assertFalse(hasCustomGetProperty(type), type.name)
         }
