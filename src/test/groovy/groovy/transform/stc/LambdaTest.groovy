@@ -3839,4 +3839,21 @@ final class LambdaTest {
             assert results == ['hello', 'world']
         '''
     }
+
+    // GROOVY-12492
+    @Test
+    void testOwnerOfClosureInLambda() {
+        assertScript shell, '''
+            class X {
+                def owner1() { Supplier<Object> s = () -> { def c = { owner }; c() }; s.get() }
+                def delegate1() { Supplier<Object> s = () -> { def c = { delegate }; c() }; s.get() }
+                static staticOwner() { Supplier<Object> s = () -> { def c = { owner }; c() }; s.get() }
+            }
+
+            // the owner of a closure created in a lambda is the lambda, not its class
+            assert new X().owner1() instanceof Closure
+            assert new X().delegate1() instanceof Closure
+            assert X.staticOwner() instanceof Closure
+        '''
+    }
 }

@@ -459,4 +459,39 @@ final class TraitWithClosureOrLambda {
             assert new C().bases() == 'base base'
         '''
     }
+
+    // GROOVY-12492
+    @Test
+    void testClosureInTraitLambda() {
+        String script = '''
+            import java.util.function.Supplier
+            trait T {
+                String name = 'n'
+                String helper() { 'h-' + name }
+                static String staticHelper() { 'sh' }
+                Supplier<List> field = () -> { def c = { [thisObject, owner] }; c() }
+                List objects() { Supplier<List> s = () -> { def c = { [thisObject, owner, delegate] }; c() }; s.get() }
+                def ownerAlone() { Supplier<Object> s = () -> { def c = { owner }; c() }; s.get() }
+                String calls() { Supplier<String> s = () -> { def c = { helper() + ' ' + name }; c() }; s.get() }
+                def inClosure() { def outer = { Supplier<Object> s = () -> { def c = { thisObject }; c() }; s.get() }; outer() }
+                def inLambda() { Supplier<Object> s = () -> { Supplier<Object> t = () -> { def c = { thisObject }; c() }; t.get() }; s.get() }
+                static List staticObjects() { Supplier<List> s = () -> { def c = { [thisObject, staticHelper()] }; c() }; s.get() }
+            }
+            class C implements T {
+            }
+
+            def c = new C()
+            // a closure in a lambda gets the instance the trait is applied to as its this object, and the lambda as its owner
+            def (thisObject, owner, delegate) = c.objects()
+            assert thisObject.is(c) && owner instanceof Closure && delegate.is(owner)
+            assert c.ownerAlone() instanceof Closure
+            assert c.field.get()[0].is(c)
+            assert c.calls() == 'h-n n'
+            assert c.inClosure().is(c)
+            assert c.inLambda().is(c)
+            assert C.staticObjects() == [C, 'sh']
+        '''
+        assertScript shell, script
+        assertScript script.replace('trait T', '@groovy.transform.TypeChecked trait T')
+    }
 }

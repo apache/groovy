@@ -49,6 +49,7 @@ import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
+import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.ArrayList;
@@ -242,7 +243,12 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         mv.visitTypeInsn(NEW, lambdaClassInternalName);
         mv.visitInsn(DUP);
 
-        if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall() || !generatedLambda.accessingInstanceMembers) {
+        Parameter self = generatedLambda.accessingInstanceMembers ? getTraitSelf() : null;
+        if (self != null && containsClosure(generatedLambda.lambdaMethod.getCode())) {
+            // a closure in the lambda that uses its this object or owner takes the this object from the lambda:
+            // the instance (or class) the trait is applied to, as for a closure written directly in the method
+            new VariableExpression(self).visit(controller.getAcg());
+        } else if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall() || !generatedLambda.accessingInstanceMembers) {
             classX(controller.getThisType()).visit(controller.getAcg());
         } else {
             loadThis();
@@ -440,6 +446,23 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
     @Override
     protected ClassNode createClosureClass(final ClosureExpression expression, final int modifiers) {
         return staticTypesClosureWriter.createClosureClass(expression, modifiers);
+    }
+
+    /**
+     * Returns the {@code $self} or {@code $static$self} parameter of the trait helper method being written, or
+     * {@code null} outside one.
+     */
+    private Parameter getTraitSelf() {
+        MethodNode method = controller.getMethodNode();
+        if (method == null || method.getParameters().length == 0 || !Traits.isTrait(controller.getClassNode().getOuterClass())) {
+            return null;
+        }
+        Parameter self = method.getParameters()[0];
+        return Traits.THIS_OBJECT.equals(self.getName()) || Traits.STATIC_THIS_OBJECT.equals(self.getName()) ? self : null;
+    }
+
+    private static boolean containsClosure(final Statement code) {
+        return code != null && AstQuery.from(code).descendants(ClosureExpression.class).where((ClosureExpression c) -> !(c instanceof LambdaExpression)).any();
     }
 
     private static boolean containsNestedFunction(final Statement code) {

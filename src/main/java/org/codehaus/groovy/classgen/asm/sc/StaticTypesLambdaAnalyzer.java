@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.FieldNode;
@@ -26,15 +27,21 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
+import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -333,6 +340,8 @@ class StaticTypesLambdaAnalyzer {
 
         private final OuterStaticMemberResolver resolver;
         private boolean accessingInstanceMembers;
+        /** The closures, not lambdas, the visitor is in, innermost last. */
+        private final Deque<ClosureExpression> closures = new ArrayDeque<>();
 
         private InstanceMemberAccessFinder(final OuterStaticMemberResolver resolver) {
             this.resolver = resolver;
@@ -342,6 +351,10 @@ class StaticTypesLambdaAnalyzer {
         public void visitVariableExpression(final VariableExpression expression) {
             if (accessingInstanceMembers) return;
             if (expression.isThisExpression() || expression.isSuperExpression() || "thisObject".equals(expression.getName())) {
+                accessingInstanceMembers = true;
+                return;
+            }
+            if (isOwnerOfClosure(expression)) { // the owner of a closure created in the lambda is the lambda instance
                 accessingInstanceMembers = true;
                 return;
             }
@@ -395,6 +408,28 @@ class StaticTypesLambdaAnalyzer {
             }
 
             super.visitMethodCallExpression(expression);
+        }
+
+        @Override
+        public void visitClosureExpression(final ClosureExpression expression) {
+            if (expression instanceof LambdaExpression) {
+                super.visitClosureExpression(expression);
+                return;
+            }
+            closures.addLast(expression);
+            super.visitClosureExpression(expression);
+            closures.removeLast();
+        }
+
+        /**
+         * Whether the expression reads {@code owner} of a closure written in the lambda, or its {@code delegate}
+         * where the type checker found no other delegate type than the owner's.
+         */
+        private boolean isOwnerOfClosure(final VariableExpression expression) {
+            if (closures.isEmpty() || !(expression.getAccessedVariable() instanceof DynamicVariable)) return false;
+            String name = expression.getName();
+            return "owner".equals(name) || ("delegate".equals(name)
+                    && ClassHelper.CLOSURE_TYPE.equals(expression.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE)));
         }
 
         private boolean isAccessingInstanceMembers() {

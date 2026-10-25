@@ -7122,13 +7122,13 @@ trying: for (ClassNode[] signature : signatures) {
     /**
      * Returns the type of the this object of the enclosing closure, which is also its owner when it is not
      * nested in another closure. In an instance method or instance initializer of a trait, the trait
-     * transformation rehydrates each closure written there to the {@code $self} parameter, so it is the type
-     * of the instance the trait is applied to, unless a lambda, which is not rehydrated, encloses the closure.
+     * transformation rehydrates each closure written there to the {@code $self} parameter, and a closure in a
+     * lambda gets the this object of the lambda, which is {@code $self} too, so it is the type of the instance
+     * the trait is applied to.
      */
     private ClassNode makeThisObject() {
         MethodNode method = typeCheckingContext.getEnclosingMethod();
-        if (method != null && method.getParameters().length > 0 && Traits.isTrait(method.getDeclaringClass().getOuterClass())
-                && typeCheckingContext.getEnclosingClosureStack().stream().noneMatch(c -> c.getClosureExpression() instanceof LambdaExpression)) {
+        if (method != null && method.getParameters().length > 0 && Traits.isTrait(method.getDeclaringClass().getOuterClass())) {
             Parameter self = method.getParameters()[0];
             if (Traits.THIS_OBJECT.equals(self.getName()) && Traits.isTrait(self.getType())) {
                 return makeSelf(self.getType());
