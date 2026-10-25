@@ -19,14 +19,11 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
-import org.codehaus.groovy.classgen.asm.InstructionSequence
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.jupiter.api.Test
-
-import java.security.CodeSource
 
 /**
  * Unit tests for static compilation: protected and package-private members of
@@ -518,7 +515,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
                 }
             ''')
 
-            def bytecode = methodSequence(new File(dir, 'p/C.class').bytes, 'test')
+            def bytecode = extractMethodSequence(new File(dir, 'p/C.class').bytes, 'test')
             assert bytecode.hasSequence(['INVOKESPECIAL p/A.<init> (Ljava/lang/Integer;)V'])
             assert bytecode.hasSequence(['INVOKEVIRTUAL p/M.pm ()Ljava/lang/String;'])
             assert bytecode.hasSequence(['INVOKEVIRTUAL p/M.qm ()Ljava/lang/String;'])
@@ -528,8 +525,8 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
             assert bytecode.hasSequence(['GETSTATIC p/F.spf : Ljava/lang/String;'])
             assert !bytecode.hasSequence(['ScriptBytecodeAdapter.invoke'])
             assert !bytecode.hasSequence(['InvokerHelper.getProperty'])
-            assert methodSequence(new File(dir, 'p/C.class').bytes, 'ctorRef$ctorRef$0').hasSequence(['NEW p/A', 'DUP', 'ALOAD 0', 'INVOKESPECIAL p/A.<init> (Ljava/lang/Integer;)V'])
-            assert methodSequence(new File(dir, 'p/C.class').bytes, 'methodRef').hasSequence(['// handle kind 0x5 : INVOKEVIRTUAL', 'p/M.pm()Ljava/lang/String;'])
+            assert extractMethodSequence(new File(dir, 'p/C.class').bytes, 'ctorRef$ctorRef$0').hasSequence(['NEW p/A', 'DUP', 'ALOAD 0', 'INVOKESPECIAL p/A.<init> (Ljava/lang/Integer;)V'])
+            assert extractMethodSequence(new File(dir, 'p/C.class').bytes, 'methodRef').hasSequence(['// handle kind 0x5 : INVOKEVIRTUAL', 'p/M.pm()Ljava/lang/String;'])
 
             // one class loader for all the class files, as javac expects
             def loader = new URLClassLoader([dir.toURI().toURL()] as URL[], this.class.classLoader)
@@ -601,7 +598,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
             unit.addSources(j, g)
             unit.compile()
 
-            def bytecode = methodSequence(new File(dir, 'p/G.class').bytes, 'test')
+            def bytecode = extractMethodSequence(new File(dir, 'p/G.class').bytes, 'test')
             assert bytecode.hasSequence(['NEW p/J', 'DUP', 'INVOKESPECIAL p/J.<init> ()V'])
             assert bytecode.hasSequence(['INVOKEVIRTUAL p/J.pm ()Ljava/lang/String;'])
             assert bytecode.hasSequence(['INVOKEVIRTUAL p/J.qm ()Ljava/lang/String;'])
@@ -626,31 +623,5 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         def unit = new CompilationUnit(config, null, new GroovyClassLoader(StaticCompileRuntimePackageTest.classLoader, config))
         sources.each { name, text -> unit.addSource(name, text) }
         unit.compile(Phases.OUTPUT)
-    }
-
-    /**
-     * Compiles {@code script} against the classes of {@code library}, which are
-     * compiled before, by another parse of the same GroovyClassLoader.
-     */
-    private InstructionSequence compileAgainstLibrary(final String library, final String className, final String method, final String script) {
-        CompilationUnit unit = null
-        def loader = new GroovyClassLoader() {
-            @Override
-            protected CompilationUnit createCompilationUnit(final CompilerConfiguration config, final CodeSource source) {
-                unit = super.createCompilationUnit(config, source)
-            }
-        }
-        loader.parseClass(library)
-        loader.parseClass(script)
-        def generated = unit.classes.find { it.name == className }
-        assert generated != null : "class $className not found"
-        methodSequence(generated.bytes, method)
-    }
-
-    private InstructionSequence methodSequence(final byte[] bytes, final String method) {
-        List<String> instructions = extractSequence(bytes, [method: method]).instructions
-        int begin = instructions.indexOf('--BEGIN--'), end = instructions.indexOf('--END--')
-        assert begin >= 0 && end > begin : "method $method not found"
-        new InstructionSequence(instructions: instructions[(begin + 1)..<end])
     }
 }
