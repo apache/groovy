@@ -2591,10 +2591,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * Determines if the given type itself may be referenced from the accessor
      * (JLS 6.6.1): a member of an inaccessible type is out of reach no matter
      * what the member's own modifiers say, because resolving any reference to
-     * the type fails first. A nested type is accessible when its enclosing
-     * type is and its own modifiers admit the accessor.
+     * the type fails first. Every type of a nest is accessible from every
+     * other type of the same nest. Otherwise a nested type is accessible when
+     * its enclosing type is and its own modifiers admit the accessor.
      */
     private static boolean hasAccessToClass(final ClassNode accessor, final ClassNode type) {
+        if (inSameNest(accessor, type)) return true;
         ClassNode outer = type.getOuterClass();
         if (outer != null && !hasAccessToClass(accessor, outer)) {
             return false;
