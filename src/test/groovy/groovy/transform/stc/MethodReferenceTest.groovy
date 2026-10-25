@@ -1475,6 +1475,31 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12488
+    @Test
+    void testMethodReferencesInStaticAndDefaultMethodsOfInterface() {
+        assertScript shell, '''
+            class Foo {
+                final String value
+                Foo(String value) { this.value = value }
+            }
+
+            @CompileStatic
+            interface I {
+                static Function<String, Foo> make() { Foo::new }
+                default Function<String, Foo> create() { Foo::new }
+                static Supplier<List> list() { Arrays::asList }
+                default String join(String... parts) { parts.join(',') }
+                default BiFunction<String, String, String> joiner() { this::join }
+            }
+
+            assert I.make().apply('s').value == 's'
+            assert new I() {}.create().apply('d').value == 'd'
+            assert I.list().get() == []
+            assert new I() {}.joiner().apply('a', 'b') == 'a,b'
+        '''
+    }
+
     @Test // arrayClass::new
     void testIntFunctionCN() {
         assertScript shell, '''
@@ -2928,7 +2953,7 @@ final class MethodReferenceTest {
     }
 
     @Test // GROOVY-12536
-    void testMethodReferencesInStaticAndDefaultMethodsOfInterface() {
+    void testMethodReferencesInStaticAndDefaultMethodsOfInterface2() {
         assertScript shell, '''
             import java.lang.reflect.Modifier
 
