@@ -110,4 +110,33 @@ final class Groovy12568 {
             [new B().test(), new C().test()]
         ''') == ['pm', 'pm']
     }
+
+    // GROOVY-12570
+    @ParameterizedTest(name = 'indy={0}')
+    @ValueSource(booleans = [true, false])
+    void testSuperCallOfPackagePrivateMethodOfClassOfAnotherClassLoaderWithMethodOfSameName(final boolean indy) {
+        def shell = shell(indy)
+        shell.evaluate '''package p
+            class M {
+                @groovy.transform.PackageScope String pm() { 'M' }
+            }
+            true
+        '''
+        assert shell.evaluate('''package p
+            class B extends M { // same package name as M, but another class loader
+                String pm() { 'B>' + super.pm() }
+                def test() {
+                    [super.pm(), pm()]
+                }
+            }
+            @groovy.transform.CompileStatic
+            class C extends M {
+                String pm() { 'C>' + super.pm() }
+                def test() {
+                    [super.pm(), pm()]
+                }
+            }
+            new B().test() + new C().test()
+        ''') == ['M', 'B>M', 'M', 'C>M']
+    }
 }
