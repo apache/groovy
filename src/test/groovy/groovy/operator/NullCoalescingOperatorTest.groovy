@@ -83,6 +83,33 @@ final class NullCoalescingOperatorTest {
 
     @ParameterizedTest
     @ValueSource(strings = ['', '@groovy.transform.CompileStatic'])
+    void testPrimitiveTargetNeverAssigned(String mode) {
+        assertScript """
+            class Counter {
+                int count = 0
+                int calls = 0
+                $mode
+                void reset() {
+                    count ??= ++calls
+                }
+            }
+            $mode
+            void test() {
+                int calls = 0
+                int local = 0
+                local ??= ++calls
+                assert local == 0 && calls == 0
+
+                def counter = new Counter()
+                counter.reset()
+                assert counter.count == 0 && counter.calls == 0
+            }
+            test()
+        """
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ['', '@groovy.transform.CompileStatic'])
     void testComposesWithSafeChain(String mode) {
         assertScript """
             $mode

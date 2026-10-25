@@ -235,6 +235,39 @@ final class OperatorsTest {
         // end::conditional_op_elvis[]
     }
 
+    @Test
+    void testNullCoalescingOperators() {
+        // tag::null_coalescing[]
+        def config = [retries: 0, name: '', timeout: null]
+        assert (config.retries ?: 3) == 3                   // <1>
+        assert (config.retries ?? 3) == 0                   // <2>
+        assert (config.name ?? 'default') == ''
+        assert (config.timeout ?? 30) == 30                 // <3>
+        // end::null_coalescing[]
+
+        // tag::null_coalescing_precedence[]
+        def a = null, b = 0, c = 3
+        assert (a ?? b ?? c) == 0                           // <1>
+        assert (a ?: b ?? c) == 0                           // <2>
+        assert (0 ?? 1 ? 'yes' : 'no') == 0                 // <3>
+        assert ((0 ?? 1) ? 'yes' : 'no') == 'no'
+        // end::null_coalescing_precedence[]
+
+        // tag::null_coalescing_assign[]
+        def settings = [verbose: false, level: null]
+        settings.verbose ??= true                           // <1>
+        settings.level ??= 'INFO'                           // <2>
+        assert settings == [verbose: false, level: 'INFO']
+        // end::null_coalescing_assign[]
+
+        // tag::null_coalescing_primitive[]
+        int count = 0
+        int calls = 0
+        count ??= ++calls                                   // <1>
+        assert count == 0 && calls == 0
+        // end::null_coalescing_primitive[]
+    }
+
     private record Person(long id, String name) {
         static Person find(Closure<?> c) { null }
     }
