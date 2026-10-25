@@ -82,6 +82,9 @@ final class GroovyObjectOverridesTest {
         default void setProperty(String name, Object value) { }
     }
 
+    interface ExtendsDefaultsElsewhere extends DefaultsElsewhere {
+    }
+
     interface InternalDefaultElsewhere extends GroovyObject {
         @Internal
         default Object getProperty(String name) { name }
@@ -90,14 +93,25 @@ final class GroovyObjectOverridesTest {
     static class TakesDefaults implements DefaultsElsewhere {
     }
 
+    static class InheritsTakesDefaults extends TakesDefaults {
+    }
+
+    static class TakesThroughSubInterface implements ExtendsDefaultsElsewhere {
+    }
+
     static class TakesInternalDefault implements InternalDefaultElsewhere {
+    }
+
+    static class Intercepting implements GroovyInterceptable {
     }
 
     @Test
     void interfaceDefaultIsNotAnOverride() {
-        assertFalse(overridesSetProperty(Plain))
-        assertFalse(overridesSetProperty(JavaStyle))
-        for (type in [Plain, JavaStyle]) {
+        // GroovyInterceptable extends GroovyObject without redeclaring its defaults
+        assertEquals(GroovyObject, Intercepting.getMethod('setProperty', String, Object).declaringClass)
+        assertEquals(GroovyObject, Intercepting.getMethod('getProperty', String).declaringClass)
+        for (type in [Plain, JavaStyle, Intercepting]) {
+            assertFalse(overridesSetProperty(type), type.name)
             assertFalse(overridesGetProperty(type), type.name)
             assertFalse(hasCustomGetProperty(type), type.name)
         }
@@ -124,7 +138,7 @@ final class GroovyObjectOverridesTest {
     // GROOVY-12489
     @Test
     void defaultOfAnotherInterfaceIsAnOverride() {
-        for (type in [TakesDefaults]) {
+        for (type in [TakesDefaults, InheritsTakesDefaults, TakesThroughSubInterface]) {
             for (method in [type.getMethod('getProperty', String), type.getMethod('setProperty', String, Object)]) {
                 assertTrue(method.isDefault(), method.toString())
                 assertEquals(DefaultsElsewhere, method.declaringClass, method.toString())
