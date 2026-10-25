@@ -1529,6 +1529,86 @@ final class MethodReferenceTest {
     }
 
     // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN26() {
+        assertScript shell, '''
+            class Lib {
+                final String value
+                Lib(String a, String b = 'b') { value = a + b }
+            }
+
+            true
+        '''
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static List<String> test() {
+                    Function<String, Dflt> one = Dflt::new // the constructor generated for the default argument
+                    Supplier<All> none = All::new
+                    Function<String, Pkg> pkg = Pkg::new
+                    Function<String, Lib> lib = Lib::new // compiled by the parse before
+                    [one.apply('a').value, none.get().value, pkg.apply('p').value, lib.apply('l').value]
+                }
+            }
+            class Dflt { // declared after C
+                final String value
+                Dflt(String a, String b = 'b') { value = a + b }
+            }
+            class All {
+                final String value
+                All(String a = 'a', String b = 'b') { value = a + b }
+            }
+            class Pkg {
+                final String value
+                @PackageScope Pkg(String a, Integer i = 1) { value = a + i }
+            }
+
+            assert C.test() == ['ab', 'ab', 'p1', 'lb']
+        '''
+    }
+
+    // GROOVY-11385, GROOVY-12488
+    @Test // class::new
+    void testFunctionCN27() {
+        assertScript shell, '''package p
+            abstract class A {
+                final String value
+                protected A(String value) { this.value = value }
+            }
+            class B {
+                final String value
+                protected B(String value) { this.value = value }
+            }
+
+            true
+        '''
+        def err = shouldFail shell, '''
+            @CompileStatic
+            def test() {
+                def a = new p.A('x') {
+                    Function<String, p.A> make() { p.A::new }
+                }
+                a.make()
+            }
+
+            test()
+        '''
+        assert err.message =~ /Cannot instantiate the type p.A/
+
+        assertScript shell, '''
+            @CompileStatic
+            String test() {
+                def b = new p.B('x') {
+                    Function<String, p.B> make() { p.B::new } // protected constructor of another package
+                }
+                b.make().apply('y').value
+            }
+
+            assert test() == 'y'
+        '''
+    }
+
+    // GROOVY-12488
     @Test
     void testMethodReferencesInStaticAndDefaultMethodsOfInterface() {
         assertScript shell, '''
@@ -3507,6 +3587,123 @@ final class MethodReferenceTest {
             } finally {
                 dir.deleteDir()
             }
+        }
+
+        // GROOVY-12488
+        @Test
+        void testConstructorReferenceCallsConstructorGeneratedForDefaultArgumentsDirectly() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    static Function<String, Dflt> one() {
+                        Dflt::new
+                    }
+                    static Supplier<All> none() {
+                        All::new
+                    }
+                    static Function<String, Pkg> pkg() {
+                        Pkg::new
+                    }
+                }
+                class Dflt { // declared after C: every class of the compilation is verified before any is generated
+                    Dflt(String a, String b = 'b') { }
+                }
+                class All {
+                    All(String a = 'a', String b = 'b') { }
+                }
+                class Pkg {
+                    @groovy.transform.PackageScope Pkg(String a, Integer i = 1) { }
+                }
+            '''
+
+            def one = compileStaticMethodBytecode('ctorRef$one$0', script)
+            assert one.hasStrictSequence(['NEW Dflt', 'DUP', 'ALOAD 0', 'INVOKESPECIAL Dflt.<init> (Ljava/lang/String;)V', 'ARETURN'])
+            assertNoDynamicConstructorCall(one)
+
+            def none = compileStaticMethodBytecode('ctorRef$none$1', script)
+            assert none.hasStrictSequence(['NEW All', 'DUP', 'INVOKESPECIAL All.<init> ()V', 'ARETURN'])
+            assertNoDynamicConstructorCall(none)
+
+            def pkg = compileStaticMethodBytecode('ctorRef$pkg$2', script)
+            assert pkg.hasStrictSequence(['NEW Pkg', 'DUP', 'ALOAD 0', 'INVOKESPECIAL Pkg.<init> (Ljava/lang/String;)V', 'ARETURN'])
+            assertNoDynamicConstructorCall(pkg)
+        }
+
+        // GROOVY-12488
+        @Test
+        void testConstructorReferenceToConstructorGeneratedForDefaultArgumentsOfClassCompiledBefore() {
+            def library = '''package p
+                class D {
+                    D(String a, String b = 'b') { }
+                    @groovy.transform.PackageScope D(Integer i, Integer j = 1) { }
+                }
+            '''
+            def script = '''package p
+                import java.util.function.Function
+                @groovy.transform.CompileStatic
+                class C {
+                    static Function<String, D> pub() {
+                        D::new
+                    }
+                    static Function<Integer, D> pkg() {
+                        D::new
+                    }
+                }
+            '''
+
+            def pub = compileStaticMethodBytecodeAgainstLibrary(library, 'p.C', 'ctorRef$pub$0', script)
+            assert pub.hasSequence(['NEW p/D', 'ALOAD 0', 'INVOKESPECIAL p/D.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(pub)
+
+            def pkg = compileStaticMethodBytecodeAgainstLibrary(library, 'p.C', 'ctorRef$pkg$1', script)
+            assert pkg.hasSequence(['INVOKEDYNAMIC init('])
+            assert !pkg.hasSequence(['INVOKESPECIAL p/D.<init>'])
+        }
+
+        // GROOVY-12488
+        @Test
+        void testEnumConstructorReferenceSelectsConstructorAtRuntime() {
+            def bytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
+                interface Make {
+                    E make(String name, int ordinal, String s)
+                }
+                @CompileStatic
+                enum E {
+                    A('a')
+                    E(String s) { }
+                    static Make create() {
+                        E::new // matches the private constructor E(String,int,String) that Groovy generates
+                    }
+                }
+            ''', 'E')
+
+            assert bytecode.hasSequence(['INVOKEDYNAMIC init(Ljava/lang/Class;Ljava/lang/String;ILjava/lang/String;)Ljava/lang/Object;'])
+            assert !bytecode.hasSequence(['INVOKESPECIAL E.<init>'])
+        }
+
+        // GROOVY-12488
+        @Test
+        void testProtectedConstructorOfAnotherPackageIsSelectedAtRuntimeFromAnonymousSubclass() {
+            def bytecode = compileStaticMethodBytecodeAgainstLibrary('''package p
+                class B {
+                    protected B(String value) { }
+                }
+            ''', 'C$1', 'ctorRef$make$0', '''
+                import java.util.function.Function
+                @groovy.transform.CompileStatic
+                class C {
+                    static Object create() {
+                        new p.B('x') {
+                            Function<String, p.B> make() {
+                                p.B::new
+                            }
+                        }
+                    }
+                }
+            ''')
+
+            assert bytecode.hasSequence(['INVOKEDYNAMIC init('])
+            assert !bytecode.hasSequence(['INVOKESPECIAL p/B.<init>'])
         }
 
         @Test
