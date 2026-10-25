@@ -49,8 +49,29 @@ final class TraitInitBytecodeTest extends AbstractBytecodeTestCase {
     @interface CompileModesTest { }
 
     private List<String> constructorsOf(final String className, final String source) {
-        compile(method: '<init>', classNamePattern: className, source)
-        sequence.instructions
+        instructionsOf('<init>', className, source)
+    }
+
+    private List<String> instructionsOf(final String methodName, final String className, final String source) {
+        compile(method: methodName, classNamePattern: className, source)
+        selectedMethods(sequence)
+    }
+
+    // the trace holds the whole class; keep only the methods it marks as selected
+    private static List<String> selectedMethods(final InstructionSequence sequence) {
+        List<String> selected = []
+        boolean inside = false
+        for (String line : sequence.instructions) {
+            if (line == '--BEGIN--') {
+                inside = true
+            } else if (line == '--END--') {
+                inside = false
+            } else if (inside) {
+                selected << line
+            }
+        }
+        assert selected
+        selected
     }
 
     private static void assertDirectInitCalls(final List<String> code, final String... traitNames) {
@@ -58,6 +79,11 @@ final class TraitInitBytecodeTest extends AbstractBytecodeTestCase {
         assert initCalls == traitNames.collect { 'INVOKESTATIC ' + it + '$Trait$Helper.$init$ (L' + it + ';)V' }
         // the name is a constant only for invokeMethodN or as the bootstrap argument of an invokedynamic call
         assert !code.any { it.contains('"$init$"') }
+    }
+
+    private static void assertDirectFieldInitCalls(final List<String> code, final String... calls) {
+        assert code.findAll { it =~ /\.\$(static\$)?init\$\w+ \(/ } == calls as List
+        assert !code.any { it =~ /"\$(static\$)?init\$\w+"/ }
     }
 
     @CompileModesTest
@@ -105,6 +131,45 @@ final class TraitInitBytecodeTest extends AbstractBytecodeTestCase {
         assertDirectInitCalls(code, 'C', 'B', 'A')
     }
 
+    // GROOVY-12491
+    @CompileModesTest
+    void testFieldInitializersOfTraitAreCalledDirectly(final String mode) {
+        def source = """
+            trait Greeting {
+                final String name = 'greeter'
+                static final String KIND = 'kind'
+                final String unset
+            }
+            trait Holder<T> {
+                final T first = null
+                final List<T> items = []
+            }
+            $mode
+            class Greeter implements Greeting, Holder<String> {
+            }
+        """
+        def code = constructorsOf('Greeter', source)
+        assertDirectFieldInitCalls(code,
+                'INVOKESTATIC Holder$Trait$Helper.$init$Holder__first (LHolder;)Ljava/lang/Object;',
+                'INVOKESTATIC Holder$Trait$Helper.$init$Holder__items (LHolder;)Ljava/util/List;',
+                'INVOKESTATIC Greeting$Trait$Helper.$init$Greeting__name (LGreeting;)Ljava/lang/String;')
+        assertDirectInitCalls(code, 'Holder', 'Greeting')
+
+        code = instructionsOf('<clinit>', 'Greeter', source)
+        assertDirectFieldInitCalls(code,
+                'INVOKESTATIC Greeting$Trait$Helper.$static$init$Greeting__KIND (Ljava/lang/Class;)Ljava/lang/String;')
+
+        assertScript source + '''
+            def greeter = new Greeter()
+            assert greeter.name == 'greeter'
+            assert Greeter.KIND == 'kind'
+            assert greeter.unset == null
+            assert greeter.first == null
+            assert greeter.items == []
+            assert !greeter.items.is(new Greeter().items)
+        '''
+    }
+
     @CompileModesTest
     void testInitializerOfGenericTraitIsCalledDirectly(final String mode) {
         def code = constructorsOf 'Strings', """
@@ -146,6 +211,8 @@ final class TraitInitBytecodeTest extends AbstractBytecodeTestCase {
                 trait Greeting {
                     String greeting = 'hello'
                     private int count = 2
+                    final String name = 'greeter'
+                    static final String KIND = 'kind'
                     String greet() { greeting * count }
                 }
             ''')
@@ -163,11 +230,19 @@ final class TraitInitBytecodeTest extends AbstractBytecodeTestCase {
             assert unit.classes*.name == ['Greeter'] // the trait and its helper come from class files
 
             def greeterClass = unit.classes.find { it.name == 'Greeter' }
-            assertDirectInitCalls(extractSequence(greeterClass.bytes, [method: '<init>']).instructions, 'Greeting')
+            def code = selectedMethods(extractSequence(greeterClass.bytes, [method: '<init>']))
+            assertDirectFieldInitCalls(code,
+                    'INVOKESTATIC Greeting$Trait$Helper.$init$Greeting__name (LGreeting;)Ljava/lang/String;')
+            assertDirectInitCalls(code, 'Greeting')
+            assertDirectFieldInitCalls(selectedMethods(extractSequence(greeterClass.bytes, [method: '<clinit>'])),
+                    'INVOKESTATIC Greeting$Trait$Helper.$static$init$Greeting__KIND (Ljava/lang/Class;)Ljava/lang/String;')
 
-            def greeter = loader.defineClass('Greeter', greeterClass.bytes).getDeclaredConstructor().newInstance()
+            def greeterType = loader.defineClass('Greeter', greeterClass.bytes)
+            def greeter = greeterType.getDeclaredConstructor().newInstance()
             assert greeter.greeting == 'hello'
             assert greeter.greet() == 'hellohello'
+            assert greeter.name == 'greeter'
+            assert greeterType.KIND == 'kind'
         } finally {
             traitDir.deleteDir()
         }

@@ -35,7 +35,6 @@ import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
@@ -267,10 +266,17 @@ public abstract class TraitComposer {
                             // getInitialExpression above will be null if not in same source unit
                             // so instead set within (static) initializer
                             if (fieldNode.isFinal()) {
-                                String baseName = fieldNode.isStatic() ? Traits.STATIC_INIT_METHOD : Traits.INIT_METHOD;
-                                StaticMethodCallExpression mce = callX(helperClassNode, baseName + fieldNode.getName(), args(varX("this")));
-                                if (helperClassNode.hasPossibleStaticMethod(mce.getMethod(), mce.getArguments())) {
-                                    Statement stmt = stmt(assignX(varX(fieldNode.getName(), fieldNode.getType()), mce));
+                                // a final field with an initial value has its own initializer in the helper,
+                                // which takes the trait, or the trait's class for a static field
+                                String fieldInitName = (fieldNode.isStatic() ? Traits.STATIC_INIT_METHOD : Traits.INIT_METHOD) + fieldNode.getName();
+                                ClassNode selfType = fieldNode.isStatic() ? ClassHelper.CLASS_Type : trait;
+                                MethodNode fieldInitMethod = helperClassNode.getDeclaredMethod(fieldInitName, new Parameter[]{new Parameter(selfType, "self")});
+                                if (fieldInitMethod != null) {
+                                    MethodCallExpression fieldInitCall = callX(classX(helperClassNode), fieldInitName, varX("this"));
+                                    // call it directly instead of through the meta class of the helper
+                                    fieldInitCall.setImplicitThis(false);
+                                    fieldInitCall.setMethodTarget(fieldInitMethod);
+                                    Statement stmt = stmt(assignX(varX(fieldNode.getName(), fieldNode.getType()), fieldInitCall));
                                     if (isStatic == 0) {
                                         cNode.addObjectInitializerStatements(stmt);
                                     } else {
