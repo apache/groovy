@@ -52,6 +52,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.ast.Variable;
+import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
@@ -2542,7 +2543,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
         if (pexp.isImplicitThis() && isThisExpression(objectExpression)) {
             Iterator<ClassNode> iter = enclosingTypes.iterator(); // first enclosing is "this" type
-            boolean staticOnly = Modifier.isStatic(iter.next().getModifiers()) || typeCheckingContext.isInStaticContext;
+            boolean staticOnly = hasNoEnclosingInstance(iter.next()) || typeCheckingContext.isInStaticContext;
             while (iter.hasNext()) {
                 ClassNode outer = iter.next();
                 // GROOVY-7994, GROOVY-11198: try "this.propertyName" as "Outer.propertyName" or "Outer.this.propertyName"
@@ -2551,7 +2552,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     pexp.copyNodeMetaData(pe);
                     return true;
                 }
-                staticOnly = staticOnly || Modifier.isStatic(outer.getModifiers());
+                staticOnly = staticOnly || hasNoEnclosingInstance(outer);
             }
         }
 
@@ -6562,9 +6563,9 @@ trying: for (ClassNode[] signature : signatures) {
                 }
             }
             if (typeCheckingContext.getEnclosingClassNodes().contains(receiver)) {
-                boolean staticOnly = Modifier.isStatic(receiver.getModifiers());
+                boolean staticOnly = hasNoEnclosingInstance(receiver);
                 for (ClassNode outer = receiver; (outer = outer.getOuterClass()) != null;
-                        staticOnly = staticOnly || Modifier.isStatic(outer.getModifiers())) {
+                        staticOnly = staticOnly || hasNoEnclosingInstance(outer)) {
                     methods.addAll(allowStaticAccessToMember(removeInheritedPrivateMethods(findMethodsWithGenerated(outer, name), outer, null, true), staticOnly));
                 }
             }
@@ -6674,6 +6675,20 @@ trying: for (ClassNode[] signature : signatures) {
             if (!(target instanceof DynamicVariable)) return target.getOriginType();
         }
         return null;
+    }
+
+    /**
+     * Determines if the given class has no instance of its outer class to use: a
+     * static nested class, or an anonymous class created in a static context, such
+     * as a static method, a static initializer or a closure inside one of them.
+     */
+    private static boolean hasNoEnclosingInstance(final ClassNode type) {
+        if (Modifier.isStatic(type.getModifiers())) return true;
+        if (type.redirect() instanceof InnerClassNode inner && inner.isAnonymous()) {
+            VariableScope scope = inner.getVariableScope(); // see VariableScopeVisitor
+            return scope != null && scope.getParent() != null && scope.getParent().isInStaticContext();
+        }
+        return false;
     }
 
     private PropertyNode findProperty(final ClassNode receiver, final String name) {

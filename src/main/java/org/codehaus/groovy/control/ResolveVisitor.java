@@ -1235,11 +1235,27 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 addError("The class '" + type.getName() + "' needs to be an outer class of '" +
                         currentClass.getName() + "' when using '.this' or '.super'.", expression);
             }
+            // every class between this one and the outer class needs an enclosing instance
+            for (ClassNode cn = currentClass; iterType != null && !cn.equals(type); cn = cn.getOuterClass()) {
+                if (Modifier.isStatic(cn.getModifiers()) || isAnonymousInStaticContext(cn)) {
+                    addError("The usage of 'Class.this' and 'Class.super' is not allowed in '" + cn.getName() +
+                            "', which has no enclosing instance of '" + cn.getOuterClass().getName() + "'.", expression);
+                    return;
+                }
+            }
             if (!Modifier.isStatic(currentClass.getModifiers())) return;
             if (currentScope != null && !currentScope.isInStaticContext()) return;
             addError("The usage of 'Class.this' and 'Class.super' within static nested class '" +
                     currentClass.getName() + "' is not allowed in a static context.", expression);
         }
+    }
+
+    private static boolean isAnonymousInStaticContext(final ClassNode type) {
+        if (type instanceof InnerClassNode inner && inner.isAnonymous()) {
+            VariableScope scope = inner.getVariableScope(); // see VariableScopeVisitor
+            return scope != null && scope.getParent() != null && scope.getParent().isInStaticContext();
+        }
+        return false;
     }
 
     private boolean isSuperCallToDefaultMethod(PropertyExpression expression) {
