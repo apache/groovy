@@ -96,6 +96,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
+import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
@@ -3023,7 +3024,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (collectionExpression instanceof ClosureListExpression closureList) {
             // for (int i=0; i<...; i++) style loop
             if (closureList.getExpressions().size() > 1) addInstanceOfGuards(closureList.getExpression(1)); // the condition
+            typeCheckingContext.pushTemporaryTypeInfo(); // the condition narrows in the loop only
             super.visitForLoop(forLoop);
+            popTemporaryTypeInfoKeepingAssignments();
         } else {
             visitStatement(forLoop);
             collectionExpression.visit(this);
@@ -3128,7 +3131,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         loop.getLoopBlock().visit(new VariableExpressionTypeMemoizer(startTypes));
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
 
+        typeCheckingContext.pushTemporaryTypeInfo(); // the condition narrows in the loop only
         super.visitWhileLoop(loop);
+        popTemporaryTypeInfoKeepingAssignments();
 
         if (isSecondPassNeededForControlStructure(startTypes, oldTracker)) { // GROOVY-11474
             visitWhileLoop(loop);
@@ -3287,6 +3292,22 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     public void visitExpressionStatement(final ExpressionStatement statement) {
         typeCheckingContext.pushTemporaryTypeInfo();
         super.visitExpressionStatement(statement);
+        popTemporaryTypeInfoKeepingAssignments();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void visitDoWhileLoop(final DoWhileStatement loop) {
+        typeCheckingContext.pushTemporaryTypeInfo(); // the condition does not narrow after the loop
+        super.visitDoWhileLoop(loop);
+        popTemporaryTypeInfoKeepingAssignments();
+    }
+
+    /**
+     * Discards the innermost temporary type information but keeps, in the enclosing one, which of its variables
+     * were assigned, as an assignment cancels what an instanceof check told about a variable.
+     */
+    private void popTemporaryTypeInfoKeepingAssignments() {
         Map<?,List<ClassNode>> tti = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
         if (!tti.isEmpty() && !typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
             tti.forEach((key, tempTypes) -> {

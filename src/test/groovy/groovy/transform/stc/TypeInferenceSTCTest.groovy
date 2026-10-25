@@ -734,6 +734,28 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Object#length()'
     }
 
+    // GROOVY-12492: the condition of a loop narrows in the loop only
+    @Test
+    void testInstanceOf32() {
+        assertScript '''
+            def whileLoop(x) { int n = 0; while (x instanceof String && n == 0) { n = x.length() }; n }
+            def forLoop(x) { for (int i = 0; x instanceof String; i += 1) return x.length(); -1 }
+            def doWhileLoop(x) { int n = 0; do { n += 1 } while (x instanceof String && x.length() > n); n }
+
+            assert whileLoop('abc') == 3 && whileLoop(42) == 0
+            assert forLoop('abc') == 3 && forLoop(42) == -1
+            assert doWhileLoop('abc') == 3 && doWhileLoop(42) == 1
+        '''
+
+        for (loop in ['while (x instanceof String) { break }', 'for (; x instanceof String; ) { break }',
+                      'do { } while (x instanceof String)', 'while (x instanceof String && x.length() > 1) { break }']) {
+            shouldFailWithMessages """
+                def test(x) { $loop; x.length() }
+            """,
+            'Cannot find matching method java.lang.Object#length()'
+        }
+    }
+
     // GROOVY-5226
     @Test
     void testNestedInstanceOf1() {
