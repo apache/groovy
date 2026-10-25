@@ -1640,7 +1640,8 @@ final class MethodReferenceTest {
             assert thread.daemon
             assert new I() {}.className().get() == 'java.lang.String'
 
-            def helpers = I.declaredMethods.findAll { it.synthetic }
+            // a coverage agent adds its own synthetic $jacocoInit
+            def helpers = I.declaredMethods.findAll { it.synthetic && !it.name.startsWith('$') }
             assert helpers*.name.collect { it.substring(0, it.indexOf('$')) }.toSet() == ['ctorRef', 'adapt', 'dgsm', 'class', 'gstring'] as Set
             assert helpers.every { java.lang.reflect.Modifier.isPrivate(it.modifiers) && !java.lang.reflect.Modifier.isFinal(it.modifiers) }
         '''
