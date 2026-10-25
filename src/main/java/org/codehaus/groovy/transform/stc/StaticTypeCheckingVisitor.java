@@ -2262,6 +2262,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (propertyName == null) return false;
 
         Expression objectExpression = pexp.getObjectExpression();
+        // a private member of the declared type is reachable when flow typing narrows the variable
+        ClassNode declaredType = getDeclaredType(objectExpression);
         if (objectExpression instanceof ConstructorCallExpression) {
             ClassNode rawType = getType(objectExpression).getPlainNodeReference();
             inferDiamondType((ConstructorCallExpression) objectExpression, rawType);
@@ -2344,7 +2346,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             for (MethodNode method : findMethodsWithGenerated(wrapTypeIfNecessary(receiverType), setterName)) {
                 if (method.getParameters().length == 1 && (!staticOnly || method.isStatic()) && (!publicOnly || method.isPublic())
                         // GROOVY-11319:
-                        && isAccessibleAccessor(method, receiverType)) {
+                        && isAccessibleAccessor(method, receiverType, declaredType)) {
                     setters.add(method);
                 }
             }
@@ -2370,7 +2372,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 if (!handledTypes.add(current)) continue;
 
                 FieldNode field = current.getDeclaredField(propertyName);
-                if (field != null && !(pexp instanceof AttributeExpression) && !current.equals(receiverType)
+                if (field != null && !(pexp instanceof AttributeExpression) && !current.equals(receiverType) && !current.equals(declaredType)
                         && isInheritedPrivateMember(field.getModifiers(), field.getDeclaringClass())) {
                     field = null; // JLS 8.2: find the outer class's field, if any, as Outer.this.name
                 }
@@ -2419,7 +2421,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
                 if (getter != null && ((publicOnly && (!getter.isPublic() || propertyName.equals("class") || propertyName.equals("empty")))
                         // GROOVY-11319:
-                        || !isAccessibleAccessor(getter, receiverType))) {
+                        || !isAccessibleAccessor(getter, receiverType, declaredType))) {
                     getter = null;
                 }
 
@@ -2578,12 +2580,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * Determines if a getter or setter may be used through property syntax. A
      * private accessor is reachable from every class of its nest (JLS 6.6.1),
      * but only through its own class, because private members are not
-     * inherited (JLS 8.2).
+     * inherited (JLS 8.2). Its own class may also be the declared type of a
+     * variable whose inferred type is a subclass.
      */
-    private boolean isAccessibleAccessor(final MethodNode accessor, final ClassNode receiverType) {
+    private boolean isAccessibleAccessor(final MethodNode accessor, final ClassNode receiverType, final ClassNode declaredType) {
         ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
         ClassNode declaringClass = accessor.getDeclaringClass();
-        if (!declaringClass.equals(receiverType) && isInheritedPrivateMember(accessor.getModifiers(), declaringClass)) {
+        if (!declaringClass.equals(receiverType) && !declaringClass.equals(declaredType)
+                && isInheritedPrivateMember(accessor.getModifiers(), declaringClass)) {
             return false;
         }
         return hasAccessToMember(enclosingClass, declaringClass, accessor.getModifiers())
@@ -2761,7 +2765,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             return false;
         }
         boolean superField = isSuperExpression(expression.getObjectExpression());
-        boolean exactReceiver = (!superField && receiver.equals(field.getDeclaringClass()) && !field.getDeclaringClass().isAbstract()); // GROOVY-7300, GROOVY-11358
+        boolean exactReceiver = (!superField && !field.getDeclaringClass().isAbstract() // GROOVY-7300, GROOVY-11358
+                && (receiver.equals(field.getDeclaringClass()) || field.getDeclaringClass().equals(getDeclaredType(expression.getObjectExpression()))));
         if (exactReceiver && delegationData == null
                 && typeCheckingContext.getEnclosingClosure() == null
                 && !(expression instanceof AttributeExpression)

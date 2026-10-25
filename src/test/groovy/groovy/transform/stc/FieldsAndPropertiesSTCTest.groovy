@@ -2292,6 +2292,61 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    /**
+     * Uses a private field and a private getter through a variable declared with
+     * their class, which flow typing narrows to a subclass. Run by the static
+     * compilation test; @TypeChecked accesses these properties dynamically, and
+     * the meta-class of a subclass offers no private field of its superclass, so
+     * here they are only compiled.
+     */
+    protected static final String PRIVATE_FIELD_THROUGH_DECLARED_TYPE = '''
+        import java.util.function.Supplier
+
+        class Outer {
+            static class Box {
+                private String f = 'f'
+                private String getX() { 'x' }
+            }
+            static class Sub extends Box {
+            }
+            static class Other {
+                static String read() { Box b = new Sub(); b.f + b.@f + b.x }
+                static String write() { Box b = new Sub(); b.f = 'w'; b.f += '!'; b.@f }
+                static String attribute() { Box b = new Sub(); b.@f = 'a'; b.@f }
+                static String viaClosure() { Box b = new Sub(); def c = { -> b.f }; c() }
+                static String viaLambda() { Box b = new Sub(); Supplier<String> s = () -> b.f; s.get() }
+                static String narrowed(Box b) { if (b instanceof Sub) { return b.f + b.x }; null }
+            }
+            static String read() { Box b = new Sub(); b.f + b.x }
+        }
+        def sub = new Outer.Sub()
+    '''
+
+    // GROOVY-12513
+    @Test
+    void testPrivateFieldThroughDeclaredTypeOfNarrowedVariable() {
+        assertScript PRIVATE_FIELD_THROUGH_DECLARED_TYPE
+    }
+
+    // GROOVY-12513: a private field is not inherited, so a receiver whose type is
+    // only the subclass still has no such property
+    @Test
+    void testPrivateFieldThroughSubclassTypedReceiver() {
+        for (code in ['def b = new Sub(); b.f', 'new Sub().f', 'Object o = new Sub(); if (o instanceof Sub) o.f']) {
+            shouldFailWithMessages """
+                class Outer {
+                    static class Box {
+                        private String f = 'f'
+                    }
+                    static class Sub extends Box {
+                    }
+                    static test() { $code }
+                }
+            """,
+            'No such property: f for class: Outer$Sub'
+        }
+    }
+
     // GROOVY-12314: package-private and protected fields that Java access rules
     // reject are not admitted via property syntax either; resolution falls
     // through to accessors, extensions and map/list handling. When nothing else
