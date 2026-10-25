@@ -180,6 +180,24 @@ public class StaticInvocationWriter extends InvocationWriter {
         finnishConstructorCall(cn, ownerDescriptor, controller.getOperandStack().getStackLength() - before);
     }
 
+    /**
+     * Determines if the bytecode of the accessing class can call the constructor
+     * with {@code NEW} and {@code INVOKESPECIAL}.
+     * <p>
+     * A protected or package-private constructor needs the same run-time package
+     * (see {@link AsmClassGenerator#isInSameRuntimePackage}). Outside its package,
+     * a protected constructor can only be called by {@code super(...)} or an
+     * anonymous inner class.
+     */
+    static boolean isDirectlyAccessible(final ConstructorNode ctor, final ClassNode accessingClass) {
+        if (ctor.isPublic()) return true;
+        ClassNode declaringClass = ctor.getDeclaringClass();
+        if (ctor.isPrivate()) { // nestmates can call a private constructor
+            return AsmClassGenerator.isMemberDirectlyAccessible(ctor.getModifiers(), declaringClass, accessingClass);
+        }
+        return AsmClassGenerator.isInSameRuntimePackage(declaringClass, accessingClass);
+    }
+
     /** {@inheritDoc} */
     @Override
     public void writeSpecialConstructorCall(final ConstructorCallExpression call) {
