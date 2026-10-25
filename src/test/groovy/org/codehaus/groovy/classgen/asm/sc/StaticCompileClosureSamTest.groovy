@@ -438,6 +438,83 @@ final class StaticCompileClosureSamTest extends AbstractBytecodeTestCase {
         shouldFail(ClassCastException) { (Closure) f }
     }
 
+    private static final String MAKE = '''
+        import java.util.function.Function
+        @groovy.transform.CompileStatic
+        class C {
+            static Function<String, String> make() { Function<String, String> f = { String s -> s + '!' }; f }
+        }
+        C
+    '''
+
+    // GROOVY-12492
+    @Test
+    void equalsAndHashCodeAreThoseOfObject() {
+        // the proxy compares and hashes the closure it wraps, so two proxies of one closure are equal
+        def proxy = eval(MAKE, false).make()
+        def closure = Proxy.getInvocationHandler(proxy).delegate
+        def other = closure as Function
+        assert proxy.equals(other) && other.equals(proxy)
+        assert proxy.hashCode() == closure.hashCode()
+
+        // the adapter is equal only to itself, whatever it wraps, and its hash code is its own
+        def adapter = eval(MAKE).make()
+        closure = adapter.closure
+        def twin = adapter.getClass().getConstructor(closure.getClass()).newInstance(closure)
+        assert adapter.equals(adapter)
+        assert !adapter.equals(twin) && !twin.equals(adapter)
+        assert !adapter.equals(closure as Function) && !(closure as Function).equals(adapter)
+        assert adapter.hashCode() == System.identityHashCode(adapter)
+        assert twin.hashCode() == System.identityHashCode(twin)
+    }
+
+    // GROOVY-12492
+    @Test
+    void metaClassInterceptingDoCallIsNotConsultedByTheDirectCall() {
+        for (enabled in [false, true]) {
+            def c = eval(MAKE, enabled)
+            def closureClass = c.classLoader.loadClass('C$_make_closure1')
+            closureClass.metaClass.doCall = { String s -> 'intercepted ' + s }
+            try {
+                def f = c.make()
+                def x = 'b'
+                // a String argument is passed to doCall directly by the adapter, through the metaclass by the proxy
+                assert f.apply('a') == (enabled ? 'a!' : 'intercepted a')
+                // a GString argument goes through Closure.call and the metaclass in both
+                assert f.apply("${x}") == 'intercepted b'
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(closureClass)
+            }
+        }
+    }
+
+    // GROOVY-12492
+    @Test
+    void literalOfASubInterfaceUsedAsItsSuperInterface() {
+        String script = '''
+            import java.util.function.Function
+            interface Shout extends Function<String, String> { }
+            @groovy.transform.CompileStatic
+            class C {
+                static Function raw() { Function raw = (Shout) { String s -> s.toUpperCase() }; raw }
+                static Function<String, String> coerced() { Function<String, String> f = { String s -> s + '?' } as Shout; f }
+                static Object passed() { take((Shout) { String s -> s + '!' }) }
+                static Object take(Function f) { f }
+                static Object call(Function f, Object argument) { f.apply(argument) } // the erased method, as from Java
+            }
+            C
+        '''
+        for (enabled in [false, true]) {
+            def c = eval(script, enabled)
+            def shout = c.classLoader.loadClass('Shout')
+            def values = [c.raw(), c.coerced(), c.passed()]
+            def x = 'a'
+            assert values.collect { c.call(it, 'a') } == ['A', 'a?', 'a!']
+            assert values.collect { c.call(it, "${x}") } == ['A', 'a?', 'a!'] // a GString is converted for apply(String)
+            assert values.every { shout.isInstance(it) && isProxy(it) == !enabled }
+        }
+    }
+
     @Test
     void methodNamesOfClosureAreNoObstacle() {
         def c = eval '''
