@@ -314,10 +314,8 @@ public class BinaryExpressionTransformer {
         Expression leftExpression = bin.getLeftExpression(), rightExpression = bin.getRightExpression();
         ClassNode leftType = findType(leftExpression), rightType = findType(rightExpression);
 
-        // same-type primitive compare
-        if (leftType.equals(rightType)
-                && ClassHelper.isPrimitiveType(leftType)
-                || ClassHelper.isPrimitiveType(rightType)) {
+        // same-type primitive compare; operands of different types are compared as dynamic Groovy does
+        if (ClassHelper.isPrimitiveType(leftType) && leftType.equals(rightType)) {
             ClassNode wrapperType = ClassHelper.getWrapper(leftType);
             Expression leftAndRight = args(
                 staticCompilationTransformer.transform(leftExpression),
