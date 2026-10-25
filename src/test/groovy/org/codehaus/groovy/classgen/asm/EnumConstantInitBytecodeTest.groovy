@@ -178,6 +178,7 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         assert !code.any { it.contains('$INIT') }
     }
 
+    // GROOVY-12490
     @Test
     void testConstantsWithArgumentsCallConstructorDirectly() {
         def code = staticInitializerOf '''
@@ -191,6 +192,7 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         assertDirectConstructorCall(code, 'TWO', 'ICONST_1', ['ICONST_2'], '(Ljava/lang/String;II)V')
     }
 
+    // GROOVY-12490
     @Test
     void testConstantsWithStringArgumentsCallConstructorDirectly() {
         def code = staticInitializerOf '''
@@ -204,6 +206,7 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         assertDirectConstructorCall(code, 'TWO', 'ICONST_1', ['LDC "two"'], '(Ljava/lang/String;ILjava/lang/String;)V')
     }
 
+    // GROOVY-12490
     @Test
     void testCompileStaticConstantsWithArgumentsCallConstructorDirectly() {
         def code = staticInitializerOf '''
@@ -219,6 +222,7 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
 
     // every kind of literal, each passed to a parameter that the runtime hands it to
     // unchanged: of its own type, of its primitive type, or of a type it extends or implements
+    // GROOVY-12490
     @Test
     void testLiteralArgumentsCallConstructorDirectly() {
         def code = staticInitializerOf '''
@@ -254,6 +258,7 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
     }
 
     // the number of arguments picks the constructor when no other one can take as many
+    // GROOVY-12490
     @Test
     void testConstructorsOfDifferentArityCallConstructorDirectly() {
         def code = staticInitializerOf '''
@@ -267,6 +272,7 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         assertDirectConstructorCall(code, 'TWO', 'ICONST_1', ['LDC "two"', 'ICONST_2'], '(Ljava/lang/String;ILjava/lang/String;I)V')
     }
 
+    // GROOVY-12490
     @Test
     void testOverloadedConstructorsOfTheSameArityUseInitHelper() {
         def code = staticInitializerOf '''
@@ -279,6 +285,7 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         assertInitHelperCall(code)
     }
 
+    // GROOVY-12490
     @Test
     void testNullArgumentWithOverloadedConstructorsUsesInitHelper() {
         def code = staticInitializerOf '''
@@ -291,6 +298,7 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         assertInitHelperCall(code)
     }
 
+    // GROOVY-12490
     @Test
     void testVarargsConstructorUsesInitHelper() {
         def code = staticInitializerOf '''
@@ -303,6 +311,7 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
     }
 
     // the runtime would weigh the varargs constructor against the one of matching arity
+    // GROOVY-12490
     @Test
     void testVarargsConstructorBesideMatchingConstructorUsesInitHelper() {
         def code = staticInitializerOf '''
@@ -315,6 +324,7 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         assertInitHelperCall(code)
     }
 
+    // GROOVY-12490
     @Test
     void testGStringArgumentUsesInitHelper() {
         def code = staticInitializerOf '''
@@ -326,9 +336,54 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         assertInitHelperCall(code)
     }
 
+    // unlike a boolean literal, a null passes to a Boolean parameter unchanged
+    // GROOVY-12490
+    @Test
+    void testNullArgumentForABooleanParameterCallsConstructorDirectly() {
+        def code = staticInitializerOf '''
+            enum E {
+                ONE(null)
+                E(Boolean flag) { }
+            }
+        '''
+        assertDirectConstructorCall(code, 'ONE', 'ICONST_0', ['ACONST_NULL'], '(Ljava/lang/String;ILjava/lang/Boolean;)V')
+    }
+
+    // a varargs constructor that needs more arguments than the constant supplies is not
+    // weighed by the runtime
+    // GROOVY-12490
+    @Test
+    void testVarargsConstructorThatNeedsMoreArgumentsCallsConstructorDirectly() {
+        def code = staticInitializerOf '''
+            enum E {
+                ONE('one')
+                E(String s) { }
+                E(String s, int i, String... more) { }
+            }
+        '''
+        assertDirectConstructorCall(code, 'ONE', 'ICONST_0', ['LDC "one"'], '(Ljava/lang/String;ILjava/lang/String;)V')
+    }
+
+    // the parameter of a generic constructor is of the bound of its type parameter
+    // GROOVY-12490
+    @Test
+    void testGenericConstructorCallsConstructorDirectly() {
+        def code = staticInitializerOf '''
+            enum E {
+                ONE(1)
+                <T extends Number> E(T n) { }
+            }
+        '''
+        assertDirectConstructorCall(code, 'ONE', 'ICONST_0', [
+            'ICONST_1',
+            'INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;'
+        ], '(Ljava/lang/String;ILjava/lang/Number;)V')
+    }
+
     // the runtime converts each of these arguments on the way to the constructor (a
     // Boolean parameter goes through asBoolean), or rejects it: a null passed to a
     // primitive, a class literal passed to a String
+    // GROOVY-12490
     @Test
     void testArgumentsThatTheRuntimeDoesNotPassUnchangedUseInitHelper() {
         [
@@ -350,6 +405,7 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         }
     }
 
+    // GROOVY-12490
     @Test
     void testNonLiteralArgumentUsesInitHelper() {
         def code = staticInitializerOf '''
@@ -362,6 +418,7 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
     }
 
     // a constant that does not qualify keeps the other constants of the enum on $INIT too
+    // GROOVY-12490
     @Test
     void testMixOfQualifyingAndOtherConstantsUsesInitHelper() {
         def code = staticInitializerOf '''
@@ -373,6 +430,7 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         assertInitHelperCall(code)
     }
 
+    // GROOVY-12490
     @Test
     void testConstantsWithArgumentsAndABodyUseInitHelper() {
         def code = staticInitializerOf '''
@@ -387,6 +445,7 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
 
     // the explicit empty argument list keeps its meaning as the opt-out next to constants
     // that have arguments of their own
+    // GROOVY-12490
     @Test
     void testEmptyArgumentListBesideConstantsWithArgumentsUsesInitHelper() {
         def code = staticInitializerOf '''
@@ -432,6 +491,7 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         assertInitHelperCall(code)
     }
 
+    // GROOVY-12490
     @Test
     void testMixOfConstantsWithAndWithoutArgumentsCallConstructorDirectly() {
         def code = staticInitializerOf '''
@@ -477,6 +537,7 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
     }
 
     // likewise for constants whose arguments do not qualify for the direct call
+    // GROOVY-12490
     @Test
     void testIneligibleArgumentsKeepStaticInitHelperCall() {
         def code = staticInitializerOf '''

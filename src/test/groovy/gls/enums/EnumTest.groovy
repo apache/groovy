@@ -1010,6 +1010,7 @@ final class EnumTest extends CompilableTestSupport {
 
     // constants whose arguments are all literals are created beyond the reach of the meta
     // class as well; an argument that is not a literal keeps the $INIT path open to it
+    // GROOVY-12490
     @Test
     void testNonLiteralArgumentKeepsConstantCreationOpenToMetaClassInterception() {
         def loader = new GroovyClassLoader(getClass().classLoader)
@@ -1050,6 +1051,7 @@ final class EnumTest extends CompilableTestSupport {
 
     // constants whose arguments are literals that the only constructor able to take them
     // accepts as they are get a direct constructor call too
+    // GROOVY-12490
     @Test
     void testConstantsWithLiteralArguments() {
         assert AccessModifier.values()*.name() == ['PRIVATE', 'PROTECTED', 'PUBLIC']
@@ -1063,6 +1065,7 @@ final class EnumTest extends CompilableTestSupport {
         assert EnumSet.allOf(AccessModifier).size() == 3
     }
 
+    // GROOVY-12490
     @Test
     void testConstantsWithLiteralArgumentsInASwitch() {
         def scope = { AccessModifier modifier ->
@@ -1075,6 +1078,7 @@ final class EnumTest extends CompilableTestSupport {
         assert AccessModifier.values().collect(scope) == ['class', 'subclasses', 'everyone']
     }
 
+    // GROOVY-12490
     @Test
     void testConstantsWithLiteralArgumentsOfEveryKind() {
         def values = LiteralArgs.ONE.values
@@ -1083,6 +1087,7 @@ final class EnumTest extends CompilableTestSupport {
                                                      BigDecimal, BigInteger, Integer, null, Class, Integer, String]
     }
 
+    // GROOVY-12490
     @Test
     void testConstantsWithLiteralArgumentsReadStaticFieldsInTheConstructor() {
         assert Registered.values()*.key == ['key-one', 'key-two']
@@ -1091,20 +1096,64 @@ final class EnumTest extends CompilableTestSupport {
         assert Registered.last == 'initial'
     }
 
+    // GROOVY-12490
     @Test
     void testConstantsWithAndWithoutLiteralArguments() {
         assert Sized.values()*.size == [1, 10]
     }
 
+    // GROOVY-12490
     @Test
     void testConstantsWithLiteralArgumentsPickTheConstructorByArity() {
         assert ArityPicked.values()*.description == ['one', 'two:2']
     }
 
+    // GROOVY-12490
     @Test
     void testCompileStaticConstantsWithLiteralArguments() {
         assert StaticKeyword.values()*.keyword == ['static', 'final']
         assert StaticKeyword.valueOf('FINAL').ordinal() == 1
+    }
+
+    // GROOVY-12490
+    @Test
+    void testNullArgumentForABooleanParameter() {
+        assertScript '''
+            enum E {
+                ONE(null)
+                final Boolean flag
+                E(Boolean flag) { this.flag = flag }
+            }
+            assert E.ONE.flag == null
+        '''
+    }
+
+    // GROOVY-12490
+    @Test
+    void testLiteralArgumentBesideAVarargsConstructorThatNeedsMoreArguments() {
+        assertScript '''
+            enum E {
+                ONE('one')
+                final String s
+                E(String s) { this.s = s }
+                E(String s, int i, String... more) { this.s = 'varargs' }
+            }
+            assert E.ONE.s == 'one'
+        '''
+    }
+
+    // GROOVY-12490
+    @Test
+    void testLiteralArgumentsForAGenericConstructor() {
+        assertScript '''
+            enum E {
+                ONE(1), TWO(2.5)
+                final Number n
+                <T extends Number> E(T n) { this.n = n }
+            }
+            assert E.values()*.n == [1, 2.5]
+            assert E.values()*.n*.getClass() == [Integer, BigDecimal]
+        '''
     }
 
     // a transform may give a constant arguments of its own; they reach the constructor
