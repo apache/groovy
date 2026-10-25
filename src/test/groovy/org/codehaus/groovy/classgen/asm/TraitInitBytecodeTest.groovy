@@ -19,12 +19,19 @@
 package org.codehaus.groovy.classgen.asm
 
 import groovy.transform.AnnotationCollector
+import org.codehaus.groovy.GroovyBugError
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.MethodVisitor
+
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Checks how the constructor of a class that implements a trait runs the instance
@@ -161,6 +168,47 @@ final class TraitInitBytecodeTest extends AbstractBytecodeTestCase {
             def greeter = loader.defineClass('Greeter', greeterClass.bytes).getDeclaredConstructor().newInstance()
             assert greeter.greeting == 'hello'
             assert greeter.greet() == 'hellohello'
+        } finally {
+            traitDir.deleteDir()
+        }
+    }
+
+    // GROOVY-12491
+    @CompileModesTest
+    void testPrecompiledTraitHelperWithoutInitializerIsRejected(final String mode) {
+        File traitDir = File.createTempDir()
+        try {
+            def traitUnit = new CompilationUnit(new CompilerConfiguration(targetDirectory: traitDir))
+            traitUnit.addSource('Greeting.groovy', '''
+                trait Greeting {
+                    String greeting = 'hello'
+                }
+            ''')
+            traitUnit.compile()
+
+            // remove $init$ from the helper, so that the lookup of the call target finds nothing
+            File helperFile = new File(traitDir, 'Greeting$Trait$Helper.class')
+            def writer = new ClassWriter(0)
+            new ClassReader(helperFile.bytes).accept(new ClassVisitor(CompilerConfiguration.ASM_API_VERSION, writer) {
+                @Override
+                MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+                    name == '$init$' ? null : super.visitMethod(access, name, desc, signature, exceptions)
+                }
+            }, 0)
+            helperFile.bytes = writer.toByteArray()
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            loader.addClasspath(traitDir.absolutePath)
+            def unit = new CompilationUnit(new CompilerConfiguration(), null, loader)
+            unit.addSource('Greeter.groovy', """
+                $mode
+                class Greeter implements Greeting {
+                }
+            """)
+            def err = shouldFail(GroovyBugError) {
+                unit.compile(Phases.CLASS_GENERATION)
+            }
+            assert err.message.contains('Trait helper Greeting$Trait$Helper does not declare $init$(Greeting)')
         } finally {
             traitDir.deleteDir()
         }

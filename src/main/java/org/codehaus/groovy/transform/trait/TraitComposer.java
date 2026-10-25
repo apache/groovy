@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform.trait;
 
 import org.apache.groovy.ast.tools.MethodNodeUtils;
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -316,12 +317,18 @@ public abstract class TraitComposer {
                 }
             }
         }
+        // TraitASTTransformation generates $init$(TraitType) for every trait, so a helper without it is a bug
+        MethodNode initMethod = helperClassNode.getDeclaredMethod(Traits.INIT_METHOD, new Parameter[]{new Parameter(trait, Traits.THIS_OBJECT)});
+        if (initMethod == null) {
+            throw new GroovyBugError("Trait helper " + helperClassNode.getName() + " does not declare "
+                    + Traits.INIT_METHOD + "(" + trait.getName() + ")");
+        }
         MethodCallExpression initCall = callX(
                 classX(helperClassNode),
                 Traits.INIT_METHOD,
                 varX("this"));
         // call the helper's $init$(TraitType) directly instead of through its meta class
-        initCall.setMethodTarget(helperClassNode.getDeclaredMethod(Traits.INIT_METHOD, new Parameter[]{new Parameter(trait, Traits.THIS_OBJECT)}));
+        initCall.setMethodTarget(initMethod);
         cNode.addObjectInitializerStatements(stmt(initCall));
     }
 
