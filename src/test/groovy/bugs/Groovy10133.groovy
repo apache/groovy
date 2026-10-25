@@ -19,6 +19,8 @@
 package bugs
 
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -267,5 +269,53 @@ final class Groovy10133 {
             }
         '''
         assert err.message =~ /No such property: x for class: C/
+    }
+
+    // GROOVY-12520: "super.x" in a class that overrides isX()
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testGetterVersusIsser9(String mode) {
+        assertScript """
+            class C {
+                boolean isX() { true }
+                boolean getX() { false }
+            }
+            $mode
+            class D extends C {
+                boolean isX() { false }
+                boolean test() { super.x }
+            }
+            $mode
+            class E extends C {
+                boolean x
+                boolean test() { super.x }
+            }
+            assert new D().test()
+            assert new E().test()
+        """
+    }
+
+    // GROOVY-12520
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked'])
+    void testGetterVersusIsser10(String mode) {
+        assertScript """
+            class C {
+                boolean isX() { true }
+                boolean getX() { false }
+            }
+            $mode
+            class D extends C {
+                boolean isX() { false }
+                boolean test() { { -> super.x }() }
+            }
+            $mode
+            class E extends C {
+                boolean x
+                boolean test() { { -> super.x }() }
+            }
+            assert new D().test()
+            assert new E().test()
+        """
     }
 }
