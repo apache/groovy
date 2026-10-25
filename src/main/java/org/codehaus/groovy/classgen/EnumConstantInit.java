@@ -101,10 +101,13 @@ import static org.objectweb.asm.Opcodes.NEW;
  * One consequence of the direct call is deliberate.  Where the {@code $INIT} call
  * dispatches through the meta class of the enum — which selects the constructor — the
  * direct call does not, so a meta class registered before the enum initializes no longer
- * sees the constants being created.  Declaring a constant with an explicit empty argument
- * list, e.g. {@code ONE()}, supplies the same name and ordinal through the {@code $INIT}
- * path and so restores this behaviour for that enum; where every constant has arguments,
- * an argument that is not a literal does the same.
+ * sees the constants being created.  That holds for an enum whose constants all have
+ * literal arguments as much as for one whose constants have none.  Declaring a constant
+ * with an explicit empty argument list, e.g. {@code ONE()}, supplies the same name and
+ * ordinal through the {@code $INIT} path and so restores this behaviour for that enum.
+ * Where every constant has arguments, that form is not available: one argument that is
+ * not a literal, such as {@code 'one'.toString()} in place of {@code 'one'}, restores it
+ * for the whole enum.
  */
 final class EnumConstantInit extends BytecodeExpression {
 
@@ -148,6 +151,13 @@ final class EnumConstantInit extends BytecodeExpression {
      * initializer as it is.  The class generator calls this before it writes the enum, so
      * the calls are judged as the transforms, the type checker and the static compiler left
      * them.  Only an enum whose constants were recorded by {@link EnumVisitor} is considered.
+     * <p>
+     * A transform that rewrites the {@code $INIT} calls therefore decides which way the
+     * constants are created, and so whether the enum needs constructor reflection: adding a
+     * literal argument to the call of every constant can move the enum onto the direct
+     * calls, while replacing one call, or adding an argument that is not a literal, keeps
+     * it on the calls as the transforms left them.  Anything that reads the static
+     * initializer before the class generator starts sees the {@code $INIT} calls.
      */
     static void substitute(final ClassNode enumClass) {
         List<ExpressionStatement> assignments = enumClass.getNodeMetaData(CONSTANT_ASSIGNMENTS);
