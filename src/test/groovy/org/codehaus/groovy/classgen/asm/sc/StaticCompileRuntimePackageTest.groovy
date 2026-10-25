@@ -49,6 +49,22 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         true
     '''
 
+    private static final String MEMBERS = '''package p
+        class M {
+            @groovy.transform.PackageScope String pm() { 'pm' }
+            protected String qm() { 'qm' }
+            @groovy.transform.PackageScope static String spm() { 'spm' }
+            protected static String sqm() { 'sqm' }
+            @groovy.transform.PackageScope int count(int i) { i + 1 }
+            protected String getQp() { 'qp' }
+            @groovy.transform.PackageScope String getPp() { 'pp' }
+            private String hidden = 'h'
+            protected void setQs(String s) { hidden = 'qs:' + s }
+            String getHidden() { hidden }
+        }
+        true
+    '''
+
     // GROOVY-12568
     @Test
     void testProtectedAndPackagePrivateConstructorOfClassOfAnotherClassLoader() {
@@ -146,6 +162,99 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         ''')
         assert bytecode.hasSequence(['NEW p/B', 'DUP', 'LDC "x"', 'INVOKESPECIAL p/B.<init> (Ljava/lang/String;)V'])
         assert !bytecode.hasSequence(['ScriptBytecodeAdapter.invokeNew'])
+    }
+
+    // GROOVY-12568
+    @Test
+    void testProtectedAndPackagePrivateMethodsOfClassOfAnotherClassLoader() {
+        shell.evaluate MEMBERS
+        assert shell.evaluate('''package p
+            @groovy.transform.CompileStatic
+            class C { // same package name as M, but another class loader
+                static List test(M m) {
+                    int n = m.count(1)
+                    [m.pm(), m.qm(), M.spm(), M.sqm(), n, m?.pm(), [m]*.qm(), m.qp, m.pp, { -> m.pm() }(), m.with { it.qm() }]
+                }
+                static String setter(M m) {
+                    m.qs = 'v'
+                    m.hidden
+                }
+            }
+            C.test(new M()) << C.setter(new M())
+        ''') == ['pm', 'qm', 'spm', 'sqm', 2, 'pm', ['qm'], 'qp', 'pp', 'pm', 'qm', 'qs:v']
+    }
+
+    // GROOVY-12568
+    @Test
+    void testInheritedProtectedAndPackagePrivateMethodsOfClassOfAnotherClassLoader() {
+        shell.evaluate MEMBERS
+        assert shell.evaluate('''package p
+            @groovy.transform.CompileStatic
+            class B extends M {
+                List test() {
+                    [pm(), qm(), spm(), sqm(), this.pm(), super.qm(), qp, pp, { -> pm() + qm() }()]
+                }
+                static List statics() {
+                    [spm(), sqm()]
+                }
+            }
+            new B().test() + B.statics()
+        ''') == ['pm', 'qm', 'spm', 'sqm', 'pm', 'qm', 'qp', 'pp', 'pmqm', 'spm', 'sqm']
+    }
+
+    // GROOVY-12568
+    @Test
+    void testProtectedAndPackagePrivateMethodsOfSameCompilationUnitAreCalledDirectly() {
+        def bytecode = compile(method: 'test', classNamePattern: 'p.C', MEMBERS + '''
+            @groovy.transform.CompileStatic
+            class C {
+                static List test(M m) {
+                    [m.pm(), m.qm(), M.spm()]
+                }
+            }
+        ''')
+        assert bytecode.hasSequence(['INVOKEVIRTUAL p/M.pm ()Ljava/lang/String;'])
+        assert bytecode.hasSequence(['INVOKEVIRTUAL p/M.qm ()Ljava/lang/String;'])
+        assert bytecode.hasSequence(['INVOKESTATIC p/M.spm ()Ljava/lang/String;'])
+        assert !bytecode.hasSequence(['ScriptBytecodeAdapter.invokeMethod'])
+    }
+
+    // GROOVY-12568
+    @Test
+    void testProtectedAndPackagePrivateMethodsOfClassOfAnotherCompilationUnitAreSelectedAtRuntime() {
+        def bytecode = compileAgainstLibrary(MEMBERS, 'p.C', 'test', '''package p
+            @groovy.transform.CompileStatic
+            class C {
+                static List test(M m) {
+                    [m.pm(), m.qm(), M.spm(), m.hidden]
+                }
+            }
+        ''')
+        assert bytecode.hasSequence(['LDC "pm"', 'CHECKCAST java/lang/String', 'INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.invokeMethod0'])
+        assert bytecode.hasSequence(['LDC "qm"', 'CHECKCAST java/lang/String', 'INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.invokeMethod0'])
+        assert bytecode.hasSequence(['LDC "spm"', 'CHECKCAST java/lang/String', 'INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.invokeMethod0'])
+        assert bytecode.hasSequence(['INVOKEVIRTUAL p/M.getHidden ()Ljava/lang/String;']) // public
+        assert !bytecode.hasSequence(['INVOKEVIRTUAL p/M.pm'])
+        assert !bytecode.hasSequence(['INVOKEVIRTUAL p/M.qm'])
+        assert !bytecode.hasSequence(['INVOKESTATIC p/M.spm'])
+    }
+
+    // GROOVY-12568
+    @Test
+    void testProtectedMethodsOfSuperclassOfAnotherCompilationUnitAreCalledDirectly() {
+        def bytecode = compileAgainstLibrary(MEMBERS, 'p.B', 'test', '''package p
+            @groovy.transform.CompileStatic
+            class B extends M {
+                List test(B b) {
+                    [qm(), this.qm(), super.qm(), b.qm(), sqm(), pm()]
+                }
+            }
+        ''')
+        assert bytecode.hasSequence(['ALOAD 0', 'INVOKEVIRTUAL p/B.qm ()Ljava/lang/String;'])
+        assert bytecode.hasSequence(['ALOAD 0', 'INVOKESPECIAL p/M.qm ()Ljava/lang/String;'])
+        assert bytecode.hasSequence(['ALOAD 1', 'INVOKEVIRTUAL p/B.qm ()Ljava/lang/String;'])
+        assert bytecode.hasSequence(['INVOKESTATIC p/M.sqm ()Ljava/lang/String;'])
+        assert bytecode.hasSequence(['LDC "pm"', 'CHECKCAST java/lang/String', 'INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.invokeMethodOnCurrent0'])
     }
 
     /**
