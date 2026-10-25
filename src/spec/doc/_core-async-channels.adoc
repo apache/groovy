@@ -457,6 +457,11 @@ and the per-subscriber buffer is drained, the subscriber receives
 through the same single-threaded delivery path as `onNext` /
 `onComplete`, preserving §1.3 signal serialization; subscribers do
 not see those signals racing on the caller's thread.
+
+A subscriber that arrives after the broadcast has closed has nothing
+to drain. It receives `onComplete` straight after `onSubscribe`, or
+`onError` with the failure passed to `close(failure)`. `for await` over
+it ends without values, or throws that failure.
 ====
 
 [[async-channels-csp]]
