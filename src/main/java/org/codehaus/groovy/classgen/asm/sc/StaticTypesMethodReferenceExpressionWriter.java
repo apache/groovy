@@ -55,7 +55,6 @@ import java.util.function.ToIntFunction;
 
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.joining;
-import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
@@ -500,25 +499,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         // in a closure or lambda, visibility is checked for the enclosing class, as the type checker does
         List<MethodNode> visible = filterMethodsByVisibility(new ArrayList<>(type.getDeclaredConstructors()), controller.getThisType());
         List<MethodNode> ctors = chooseBestMethod(type, visible, argumentTypes);
-        if (ctors.size() == 1 && ctors.get(0) instanceof ConstructorNode ctor && isDirectlyAccessible(ctor)) {
+        if (ctors.size() == 1 && ctors.get(0) instanceof ConstructorNode ctor
+                && StaticInvocationWriter.isDirectlyAccessible(ctor, controller.getClassNode())) {
             return ctor;
         }
         return null;
-    }
-
-    /**
-     * Determines if the bytecode of the current class can call the constructor.
-     */
-    private boolean isDirectlyAccessible(final ConstructorNode ctor) {
-        if (ctor.isPublic()) return true;
-        ClassNode declaringClass = ctor.getDeclaringClass(), accessingClass = controller.getClassNode();
-        if (ctor.isPrivate()) { // nestmates can call a private constructor
-            return AsmClassGenerator.isMemberDirectlyAccessible(ctor.getModifiers(), declaringClass, accessingClass);
-        }
-        // a protected or package-private constructor needs the same run-time package, i.e. the same package
-        // name and class loader; a class of another compilation unit may come from another class loader
-        // (only super(...) can call a protected constructor of another package)
-        return declaringClass.isPrimaryClassNode() && samePackageName(declaringClass, accessingClass);
     }
 
     private MethodNode addSyntheticMethod(final String methodName, final ClassNode returnType, final Expression returnValue, final Parameter[] parameters, final ClassNode[] exceptions) {

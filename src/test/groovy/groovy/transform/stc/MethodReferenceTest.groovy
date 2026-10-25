@@ -21,12 +21,14 @@ package groovy.transform.stc
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 import org.codehaus.groovy.classgen.asm.InstructionSequence
 import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
+import java.security.CodeSource
 import java.util.regex.Pattern
 
 import static groovy.test.GroovyAssert.assertScript
@@ -3425,6 +3427,46 @@ final class MethodReferenceTest {
             assert !pkg.hasSequence(['INVOKESPECIAL p/A.<init>'])
         }
 
+        // GROOVY-12488
+        @Test
+        void testProtectedAndPackagePrivateConstructorsOfClassCompiledBeforeToClassFilesAreCalledDirectly() {
+            def dir = File.createTempDir()
+            try {
+                compileToDirectory(dir, 'A.groovy': '''package p
+                    class A {
+                        final String value
+                        protected A(String s) { value = 'prot:' + s }
+                        @groovy.transform.PackageScope A(Integer i) { value = 'pkg:' + i }
+                    }
+                ''')
+                compileToDirectory(dir, 'C.groovy': '''package p
+                    import java.util.function.Function
+                    @groovy.transform.CompileStatic
+                    class C { // compiled by another compilation unit, to class files like groovyc
+                        static Function<String, A> prot() {
+                            A::new
+                        }
+                        static Function<Integer, A> pkg() {
+                            A::new
+                        }
+                    }
+                ''')
+
+                byte[] bytes = new File(dir, 'p/C.class').bytes
+                def prot = selectMethod('ctorRef$prot$0', extractSequence(bytes, [method: 'ctorRef$prot$0']))
+                assert prot.hasSequence(['NEW p/A', 'DUP', 'ALOAD 0', 'INVOKESPECIAL p/A.<init> (Ljava/lang/String;)V'])
+                def pkg = selectMethod('ctorRef$pkg$1', extractSequence(bytes, [method: 'ctorRef$pkg$1']))
+                assert pkg.hasSequence(['NEW p/A', 'DUP', 'ALOAD 0', 'INVOKESPECIAL p/A.<init> (Ljava/lang/Integer;)V'])
+
+                // one class loader for all the class files, as javac expects
+                def c = new URLClassLoader([dir.toURI().toURL()] as URL[], this.class.classLoader).loadClass('p.C')
+                assert c.prot().apply('x').value == 'prot:x'
+                assert c.pkg().apply(1).value == 'pkg:1'
+            } finally {
+                dir.deleteDir()
+            }
+        }
+
         @Test
         void testArrayConstructorReferenceUsesSyntheticArrayFactoryMethod() {
             def script = '''
@@ -3526,17 +3568,33 @@ final class MethodReferenceTest {
 
         /**
          * Compiles {@code script} against the classes of {@code library}, which
-         * are compiled before, by another compilation unit and class loader.
+         * are compiled before, by another parse of the same GroovyClassLoader,
+         * which defines them with another class loader.
          */
         private InstructionSequence compileStaticMethodBytecodeAgainstLibrary(final String library, final String className, final String method, final String script) {
-            def loader = new GroovyClassLoader()
+            CompilationUnit unit = null
+            def loader = new GroovyClassLoader() {
+                @Override
+                protected CompilationUnit createCompilationUnit(final CompilerConfiguration config, final CodeSource source) {
+                    unit = super.createCompilationUnit(config, source)
+                }
+            }
             loader.parseClass(library)
-            def unit = new CompilationUnit(null, null, loader)
-            unit.addSource('script', script)
-            unit.compile(Phases.CLASS_GENERATION)
+            loader.parseClass(script)
             def generated = unit.classes.find { it.name == className }
             assert generated != null : "class $className not found"
             selectMethod(method, extractSequence(generated.bytes, [method: method]))
+        }
+
+        /**
+         * Compiles the sources to class files in {@code dir}, against the class
+         * files already there, as groovyc does.
+         */
+        private static void compileToDirectory(final Map<String, String> sources, final File dir) {
+            def config = new CompilerConfiguration(targetDirectory: dir, classpathList: [dir.path])
+            def unit = new CompilationUnit(config, null, new GroovyClassLoader(MethodReferenceTest.classLoader, config))
+            sources.each { name, text -> unit.addSource(name, text) }
+            unit.compile(Phases.OUTPUT)
         }
 
         private static InstructionSequence selectMethod(final String method, final InstructionSequence sequence) {
