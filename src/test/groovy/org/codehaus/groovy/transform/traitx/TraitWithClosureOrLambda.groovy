@@ -473,6 +473,7 @@ final class TraitWithClosureOrLambda {
                 List objects() { Supplier<List> s = () -> { def c = { [thisObject, owner, delegate] }; c() }; s.get() }
                 def ownerAlone() { Supplier<Object> s = () -> { def c = { owner }; c() }; s.get() }
                 String calls() { Supplier<String> s = () -> { def c = { helper() + ' ' + name }; c() }; s.get() }
+                String lambdaCalls() { Supplier<String> s = () -> helper(); s.get() }
                 def inClosure() { def outer = { Supplier<Object> s = () -> { def c = { thisObject }; c() }; s.get() }; outer() }
                 def inLambda() { Supplier<Object> s = () -> { Supplier<Object> t = () -> { def c = { thisObject }; c() }; t.get() }; s.get() }
                 static List staticObjects() { Supplier<List> s = () -> { def c = { [thisObject, staticHelper()] }; c() }; s.get() }
@@ -487,6 +488,7 @@ final class TraitWithClosureOrLambda {
             assert c.ownerAlone() instanceof Closure
             assert c.field.get()[0].is(c)
             assert c.calls() == 'h-n n'
+            assert c.lambdaCalls() == 'h-n'
             assert c.inClosure().is(c)
             assert c.inLambda().is(c)
             assert C.staticObjects() == [C, 'sh']

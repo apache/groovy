@@ -244,9 +244,9 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         mv.visitInsn(DUP);
 
         Parameter self = generatedLambda.accessingInstanceMembers ? getTraitSelf() : null;
-        if (self != null && containsClosure(generatedLambda.lambdaMethod.getCode())) {
-            // a closure in the lambda that uses its this object or owner takes the this object from the lambda:
-            // the instance (or class) the trait is applied to, as for a closure written directly in the method
+        if (self != null) {
+            // the lambda, and a closure in it, use this object for an implicit this: the instance (or class) the
+            // trait is applied to, as a closure written directly in the method is rehydrated to
             new VariableExpression(self).visit(controller.getAcg());
         } else if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall() || !generatedLambda.accessingInstanceMembers) {
             classX(controller.getThisType()).visit(controller.getAcg());
@@ -459,10 +459,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         }
         Parameter self = method.getParameters()[0];
         return Traits.THIS_OBJECT.equals(self.getName()) || Traits.STATIC_THIS_OBJECT.equals(self.getName()) ? self : null;
-    }
-
-    private static boolean containsClosure(final Statement code) {
-        return code != null && AstQuery.from(code).descendants(ClosureExpression.class).where((ClosureExpression c) -> !(c instanceof LambdaExpression)).any();
     }
 
     private static boolean containsNestedFunction(final Statement code) {
