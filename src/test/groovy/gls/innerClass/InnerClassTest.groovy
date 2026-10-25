@@ -2727,6 +2727,55 @@ final class InnerClassTest {
         '''
     }
 
+    // GROOVY-12514: 'Type.this' within a nested class Type is 'this'
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testQualifiedThisOfCurrentNestedClass(String mode) {
+        assertScript """
+            import java.util.function.Supplier
+
+            $mode
+            class Top {
+                String id = 't'
+                static class N {
+                    String id = 'n'
+                    String pm() { 'pm' }
+                    String test() {
+                        Supplier<String> s = () -> N.this.id
+                        N.this.id + N.this.pm() + { -> N.this.id }() + s.get()
+                    }
+                    String write() { N.this.id = 'w'; id }
+                }
+                class I {
+                    String id = 'i'
+                    String test() { I.this.id + { -> I.this.id }() + Top.this.id }
+                }
+                enum E {
+                    A
+                    String test() { E.this.name() }
+                }
+            }
+            def top = new Top()
+            assert new Top.N().test() == 'npmnn'
+            assert new Top.N().write() == 'w'
+            assert new Top.I(top).test() == 'iit'
+            assert Top.E.A.test() == 'A'
+        """
+    }
+
+    // GROOVY-12514
+    @Test
+    void testQualifiedThisOfCurrentNestedClassInStaticContext() {
+        def err = shouldFail CompilationFailedException, '''
+            class Top {
+                static class N {
+                    static m() { N.this }
+                }
+            }
+        '''
+        assert err.message.contains("within static nested class 'Top" + '$' + "N' is not allowed in a static context.")
+    }
+
     // GROOVY-12512: 'Outer.this' needs an enclosing instance at every level
     @Test
     void testOuterThisWithoutEnclosingInstance() {

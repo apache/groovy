@@ -2276,7 +2276,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 ClassNode outer = getType(objectExpression).getGenericsTypes()[0].getType();
 
                 ClassNode found = null;
+                if (outer.equals(typeCheckingContext.getEnclosingClassNode()) && !typeCheckingContext.isInStaticContext) {
+                    found = outer; // "Type.this" within Type is "this"
+                }
                 for (ClassNode enclosingType : enclosingTypes) {
+                    if (found != null) break;
                     if (!enclosingType.isStaticClass() && outer.equals(enclosingType.getOuterClass())) {
                         found = enclosingType;
                         break;
