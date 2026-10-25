@@ -47,6 +47,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.DynamicVariable;
+import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
@@ -3171,6 +3172,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 if (!handledTypes.add(current)) continue;
 
                 FieldNode field = current.getDeclaredField(propertyName);
+                if (field != null && !(pexp instanceof AttributeExpression) && !current.equals(receiverType)
+                        && isInheritedPrivateMember(field.getModifiers(), field.getDeclaringClass())
+                        // GROOVY-12600, GROOVY-12610, GROOVY-12626: static compilation uses the field directly from any class of its nest
+                        && !isStaticDispatchScope() && isDynamicallyUnreachableThroughSubclass(field, receiverType, pexp, !readMode)
+                        // GROOVY-12533: in a class nested in the declaring class, this.name is the field of the enclosing instance, or of this instance without one
+                        && !(isThisExpression(objectExpression) && isNestedIn(typeCheckingContext.getEnclosingClassNode(), field.getDeclaringClass()))) {
+                    field = null; // JLS 8.2: find the outer class's field, if any, as Outer.this.name
+                }
                 if (field == null) {
                     if (current.getSuperClass() != null)
                         queue.addFirst(current.getSuperClass());
@@ -3362,7 +3371,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
         if (pexp.isImplicitThis() && isThisExpression(objectExpression)) {
             Iterator<ClassNode> iter = enclosingTypes.iterator(); // first enclosing is "this" type
-            boolean staticOnly = hasNoEnclosingInstance(iter.next()) || typeCheckingContext.isInStaticContext;
+            ClassNode thisType = iter.next(); // an enum constant body has no enclosing instance either
+            boolean staticOnly = hasNoEnclosingInstance(thisType) || thisType.redirect() instanceof EnumConstantClassNode || typeCheckingContext.isInStaticContext;
             while (iter.hasNext()) {
                 ClassNode outer = iter.next();
                 // GROOVY-7994, GROOVY-11198: try "this.propertyName" as "Outer.propertyName" or "Outer.this.propertyName"
@@ -3394,8 +3404,33 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      */
     private boolean isAccessibleAccessor(final MethodNode accessor, final ClassNode receiverType) {
         ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
-        return hasAccessToMember(enclosingClass, accessor.getDeclaringClass(), accessor.getModifiers())
-            || (accessor.isPrivate() && accessor.getDeclaringClass().equals(receiverType) && inSameNest(accessor.getDeclaringClass(), enclosingClass));
+        ClassNode declaringClass = accessor.getDeclaringClass();
+        if (!declaringClass.equals(receiverType) && isInheritedPrivateMember(accessor.getModifiers(), declaringClass)) {
+            return false;
+        }
+        return hasAccessToMember(enclosingClass, declaringClass, accessor.getModifiers())
+            || (accessor.isPrivate() && inSameNest(declaringClass, enclosingClass));
+    }
+
+    /**
+     * Determines if a private field or accessor of the given class, found on a
+     * subclass, is out of reach because private members are not inherited
+     * (JLS 8.2). The declaring class itself may still use it, as in dynamic
+     * Groovy. A nested subclass then finds the outer class's member through its
+     * enclosing instance, if it has one.
+     */
+    private boolean isInheritedPrivateMember(final int modifiers, final ClassNode declaringClass) {
+        return Modifier.isPrivate(modifiers) && !declaringClass.equals(typeCheckingContext.getEnclosingClassNode());
+    }
+
+    /**
+     * Determines if {@code type} is nested, at any depth, in {@code outer}.
+     */
+    private static boolean isNestedIn(final ClassNode type, final ClassNode outer) {
+        for (ClassNode cn = type.getOuterClass(); cn != null; cn = cn.getOuterClass()) {
+            if (cn.equals(outer)) return true;
+        }
+        return false;
     }
 
     private static boolean hasAccessToMember(final ClassNode accessor, final ClassNode receiver, final int modifiers) {

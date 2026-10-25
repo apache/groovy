@@ -2565,6 +2565,73 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'No such property: f for class: Outer$Sub'
     }
 
+    // GROOVY-12511: a nested class that extends its outer class does not inherit the
+    // outer class's private fields and accessors, so an unqualified name refers to the
+    // enclosing instance, as in javac and dynamic Groovy; this.@name is its own field
+    @Test
+    void testPrivateFieldOfEnclosingClassFromNestedSubclass() {
+        assertScript '''
+            class Box {
+                private String f = 'outer'
+                private static String sf = 'static'
+                private String getP() { 'p:' + f }
+                class Sub extends Box {
+                    Sub() { this.@f = 'own' }
+                    String read() { f }
+                    String viaClosure() { def c = { -> f }; c() }
+                    String property() { p }
+                    String statics() { sf + Box.sf }
+                    String write() { f = 'w'; [this.@f, f].join(',') }
+                }
+                String anonymous() {
+                    new Box() {
+                        { this.@f = 'own' }
+                        String toString() { f + ',' + this.@f }
+                    }.toString()
+                }
+            }
+            def box = new Box()
+            def sub = new Box.Sub(box)
+            assert sub.read() == 'outer'
+            assert sub.viaClosure() == 'outer'
+            assert sub.property() == 'p:outer'
+            assert sub.statics() == 'staticstatic'
+            assert box.anonymous() == 'outer,own'
+            assert sub.write() == 'own,w'
+            assert box.@f == 'w'
+        '''
+    }
+
+    // GROOVY-12511: without an enclosing instance there is no private accessor to use;
+    // dynamic Groovy throws MissingPropertyException. A private field of the outer
+    // class is the field of this instance there (GROOVY-12533).
+    @Test
+    void testPrivateFieldOfSuperclassFromNestedSubclassWithoutEnclosingInstance() {
+        [
+            'class Shape { private String getP() { "p" }; static class Circle extends Shape { def d() { p } } }' : 'p for class: Shape$Circle',
+            'enum E { A { def d() { p } }; private String getP() { "p" } }'                                        : 'p for class: E$1',
+        ].each { code, message ->
+            shouldFailWithMessages code, "No such property: $message"
+        }
+
+        assertScript '''
+            class Shape {
+                private String nm = 'shape'
+                private static String sf = 'static'
+                static class Circle extends Shape {
+                    String d() { this.@nm + sf }
+                }
+            }
+            enum E {
+                A { String d() { sf } }
+                private static String sf = 'enum'
+                String d() { 'base' }
+            }
+            assert new Shape.Circle().d() == 'shapestatic'
+            assert E.A.d() == 'enum'
+        '''
+    }
+
     // GROOVY-12314: package-private and protected fields that Java access rules
     // reject are not admitted via property syntax either; resolution falls
     // through to accessors, extensions and map/list handling. When nothing else
