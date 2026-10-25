@@ -18,6 +18,8 @@
  */
 package bugs
 
+import groovy.junit6.plugin.ForkedJvm
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.reflection.GroovyClassValue
 import org.junit.jupiter.api.Test
 import org.objectweb.asm.ClassWriter
@@ -346,6 +348,59 @@ final class Groovy12142 {
         assert new StringBuilder('a').append('b').toString() == 'ab' // metaclass re-created on demand
     }
 
+    /**
+     * Linking a call site converts method handles to the call site type, and on JDK 17 a
+     * handle keeps its last conversion strongly. A handle the JDK shares (the identity handle
+     * for {@code Object} that a cast converted, the argument collector of
+     * {@code catchException}) or one in a static field of the runtime then kept the class
+     * loader of a discarded script reachable.
+     */
+    // GROOVY-12579
+    @Test
+    @ForkedJvm(jvmArgs = ['-Xmx256m'])
+    @CompileStatic // no call made by this test may replace a conversion under test
+    void testDynamicCallsKeepNoDiscardedScriptLoaderReachable() {
+        assertLoaderCollected(runInDiscardedLoader('''
+            interface Shape { String name() }
+            class Holder implements Shape {
+                String label = 'h'
+                Holder next
+                String name() { label }
+                Holder self(Holder other) { other ?: this }
+            }
+            def held = new Holder()
+            Holder holder = held              // a cast
+            Shape shape = held                // a cast to an interface
+            holder.next = holder.self(null)   // a typed receiver and a null argument
+            Holder next = holder.next
+            def label = next?.next?.label     // null-safe calls
+            try { holder.self(42) } catch (MissingMethodException expected) { }
+            [shape.name(), label].toString()
+        '''), 'dynamic calls must not keep the class loader of a discarded script reachable')
+    }
+
+    @CompileStatic
+    private static WeakReference<ClassLoader> runInDiscardedLoader(String source) {
+        def loader = new GroovyClassLoader(Groovy12142.classLoader)
+        Script script = (Script) loader.parseClass(source).getDeclaredConstructor().newInstance()
+        assertEquals('[h, h]', script.run())
+        script = null
+        loader.close()
+        new WeakReference<ClassLoader>(loader)
+    }
+
+    @CompileStatic
+    private static void assertLoaderCollected(WeakReference<ClassLoader> loaderRef, String message) {
+        boolean collected = false
+        for (int i = 0; i < 200 && !collected; i++) {
+            System.gc()
+            if (i % 50 == 10) forceSoftReferenceClearing()
+            collected = loaderRef.get() == null
+            if (!collected) Thread.sleep(10)
+        }
+        assertTrue(collected, message)
+    }
+
     @Test
     void testScaffoldControl_classCollectsWithNoAssociationAtAll() {
         def clsRef = loadThrowawayClass(null)
@@ -360,6 +415,7 @@ final class Groovy12142 {
     }
 
     /** Allocates until OutOfMemoryError so the JVM clears soft references first. */
+    @CompileStatic
     private static void forceSoftReferenceClearing() {
         try {
             def hog = []
