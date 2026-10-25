@@ -383,12 +383,12 @@ public class StaticInvocationWriter extends InvocationWriter {
             receiverType = receiverType.getGenericsTypes()[0].getType(); // GROOVY-11694
         }
 
-        if (!target.isPublic() && !target.isPrivate() && !declaringClass.isPrimaryClassNode()
-                && samePackageName(declaringClass, enclosingClass)
+        if (!target.isPublic() && !target.isPrivate() && samePackageName(declaringClass, enclosingClass)
+                && !AsmClassGenerator.isInSameRuntimePackage(declaringClass, enclosingClass)
                 && !(target.isProtected() && enclosingClass.isDerivedFrom(declaringClass)
                         && (target.isStatic() || isSuperExpression(receiver) || isSubtype(enclosingClass, receiverType)))) {
-            // a protected or package-private method of a class of another compilation unit may be in another run-time
-            // package, which is the package name and the class loader: select the method at run time
+            // a protected or package-private method of a class of another run-time package, which is the package
+            // name and the class loader, is selected at run time (except for the subclass rule of a protected method)
             return false;
         }
 

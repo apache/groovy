@@ -1309,17 +1309,14 @@ public class AsmClassGenerator extends ClassGenerator {
      * (via {@code GETFIELD}, {@code GETSTATIC}, etc. bytecode instructions).
      * <p>
      * A protected or package-private field of a class with the same package
-     * name is accessible only within the same run-time package, which is the
-     * package name and the class loader. GroovyClassLoader defines all the
-     * classes of a compilation unit with one class loader, but a class of
-     * another compilation unit may come from another class loader, so its
-     * field is directly accessible only through the subclass rule for a
-     * protected field.
+     * name is accessible only within the same run-time package; see
+     * {@link #isInSameRuntimePackage}. Otherwise it is directly accessible
+     * only through the subclass rule for a protected field.
      */
     public static boolean isFieldDirectlyAccessible(final FieldNode field, final ClassNode accessingClass) {
         if (field == null || !isMemberDirectlyAccessible(field.getModifiers(), field.getDeclaringClass(), accessingClass)) return false;
         ClassNode declaringClass = field.getDeclaringClass();
-        return field.isPublic() || field.isPrivate() || declaringClass.isPrimaryClassNode()
+        return field.isPublic() || field.isPrivate() || isInSameRuntimePackage(declaringClass, accessingClass)
             || (field.isProtected() && accessingClass.isDerivedFrom(declaringClass));
     }
 

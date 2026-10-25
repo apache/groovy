@@ -276,7 +276,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             if (methodRefMethod.isStatic() && !referenceTarget.targetIsArgument()) {
                 referenceTarget = referenceTarget.asClassTarget(methodRefMethod.getDeclaringClass());
             }
-        } else if (mayBeInAnotherRuntimePackage(methodRefMethod)) {
+        } else if (isInAnotherRuntimePackage(methodRefMethod)) {
             if (!referenceTarget.classExpression() && !methodRefMethod.isStatic()) {
                 referenceTarget = referenceTarget.markTargetAsArgument();
             }
@@ -291,15 +291,14 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
     /**
      * Determines if the method is a protected or package-private method of a
-     * class with the same package name but of another compilation unit. Such a
-     * class may come from another class loader, so it may be in another
-     * run-time package, and the JVM would then refuse a method handle for the
-     * method in the current class.
+     * class with the same package name but of another run-time package (see
+     * {@link AsmClassGenerator#isInSameRuntimePackage}). The JVM refuses a
+     * method handle for such a method in the current class.
      */
-    private boolean mayBeInAnotherRuntimePackage(final MethodNode mn) {
-        ClassNode declaringClass = mn.getDeclaringClass();
-        return !mn.isPublic() && !mn.isPrivate() && !declaringClass.isPrimaryClassNode()
-            && samePackageName(declaringClass, controller.getClassNode());
+    private boolean isInAnotherRuntimePackage(final MethodNode mn) {
+        ClassNode declaringClass = mn.getDeclaringClass(), classNode = controller.getClassNode();
+        return !mn.isPublic() && !mn.isPrivate() && samePackageName(declaringClass, classNode)
+            && !AsmClassGenerator.isInSameRuntimePackage(declaringClass, classNode);
     }
 
     /**

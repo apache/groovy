@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.Collections;
@@ -34,7 +35,6 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
-import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
@@ -154,10 +154,8 @@ public class MopWriter {
             // super$ method for non-private isThis=false
             // --> results in XOR
             if (isThis ^ mn.isPrivate()) continue;
-            // a super$ method cannot call a package-private method of another run-time package; the class of
-            // another compilation unit may come from another class loader even with the same package name
-            if (!isThis && mn.isPackageScope() && !(mn.getDeclaringClass().isPrimaryClassNode()
-                    && samePackageName(mn.getDeclaringClass(), controller.getClassNode()))) continue;
+            // a super$ method cannot call a package-private method of another run-time package
+            if (!isThis && mn.isPackageScope() && !AsmClassGenerator.isInSameRuntimePackage(mn.getDeclaringClass(), controller.getClassNode())) continue;
 
             String methodName = mn.getName();
             Parameter[] parameters = mn.getParameters();

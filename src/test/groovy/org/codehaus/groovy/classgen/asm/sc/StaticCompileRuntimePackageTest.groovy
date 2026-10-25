@@ -23,7 +23,10 @@ import org.codehaus.groovy.classgen.asm.InstructionSequence
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.Phases
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.jupiter.api.Test
+
+import java.security.CodeSource
 
 /**
  * Unit tests for static compilation: protected and package-private members of
@@ -31,9 +34,10 @@ import org.junit.jupiter.api.Test
  * <p>
  * The JVM allows such access only within the same run-time package, which is
  * the package name and the class loader. GroovyClassLoader defines the classes
- * of each compilation unit with its own class loader, so a class of an earlier
- * parse of the same GroovyShell, or a precompiled class used by a script, is
- * in another run-time package.
+ * of each compilation in memory with a class loader of their own, so a class of
+ * an earlier parse of the same GroovyShell, or a precompiled class used by a
+ * script, is in another run-time package. Class files are expected to be loaded
+ * by one class loader, as javac expects.
  */
 final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
 
@@ -474,20 +478,159 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         ''') == ['pkg:1', 'pm', 'spm', 'qp', 'pm', 'w', 'spf', 'DYNAMIC']
     }
 
+    // GROOVY-12568
+    @Test
+    void testProtectedAndPackagePrivateMembersOfClassCompiledBeforeToClassFilesAreAccessedDirectly() {
+        def dir = File.createTempDir()
+        try {
+            compileToDirectory(dir, 'Library.groovy': LIBRARY + MEMBERS.replace('package p', '') + FIELDS.replace('package p', ''))
+            compileToDirectory(dir, 'C.groovy': '''package p
+                @groovy.transform.CompileStatic
+                class C { // compiled by another compilation unit, to class files like groovyc
+                    static List test(M m, F f) {
+                        f.@pf = 'w'
+                        [new A(1).value, m.pm(), m.qm(), M.spm(), f.pf, F.spf]
+                    }
+                    static java.util.function.Function<Integer, A> ctorRef() {
+                        A::new
+                    }
+                    static java.util.function.Supplier<String> methodRef(M m) {
+                        m::pm
+                    }
+                }
+            ''')
+
+            def bytecode = methodSequence(new File(dir, 'p/C.class').bytes, 'test')
+            assert bytecode.hasSequence(['INVOKESPECIAL p/A.<init> (Ljava/lang/Integer;)V'])
+            assert bytecode.hasSequence(['INVOKEVIRTUAL p/M.pm ()Ljava/lang/String;'])
+            assert bytecode.hasSequence(['INVOKEVIRTUAL p/M.qm ()Ljava/lang/String;'])
+            assert bytecode.hasSequence(['INVOKESTATIC p/M.spm ()Ljava/lang/String;'])
+            assert bytecode.hasSequence(['PUTFIELD p/F.pf : Ljava/lang/String;'])
+            assert bytecode.hasSequence(['GETFIELD p/F.pf : Ljava/lang/String;'])
+            assert bytecode.hasSequence(['GETSTATIC p/F.spf : Ljava/lang/String;'])
+            assert !bytecode.hasSequence(['ScriptBytecodeAdapter.invoke'])
+            assert !bytecode.hasSequence(['InvokerHelper.getProperty'])
+            assert methodSequence(new File(dir, 'p/C.class').bytes, 'ctorRef$ctorRef$0').hasSequence(['NEW p/A', 'DUP', 'ALOAD 0', 'INVOKESPECIAL p/A.<init> (Ljava/lang/Integer;)V'])
+            assert methodSequence(new File(dir, 'p/C.class').bytes, 'methodRef').hasSequence(['// handle kind 0x5 : INVOKEVIRTUAL', 'p/M.pm()Ljava/lang/String;'])
+
+            // one class loader for all the class files, as javac expects
+            def loader = new URLClassLoader([dir.toURI().toURL()] as URL[], this.class.classLoader)
+            def m = loader.loadClass('p.M').getDeclaredConstructor().newInstance()
+            def f = loader.loadClass('p.F').getDeclaredConstructor().newInstance()
+            def c = loader.loadClass('p.C')
+            assert c.test(m, f) == ['pkg:1', 'pm', 'qm', 'spm', 'w', 'spf']
+            assert c.ctorRef().apply(2).value == 'pkg:2'
+            assert c.methodRef(m).get() == 'pm'
+        } finally {
+            dir.deleteDir()
+        }
+    }
+
+    // GROOVY-12568
+    @Test
+    void testFullAndIncrementalCompilationToClassFilesGiveTheSameBytecode() {
+        def caller = '''package p
+            @groovy.transform.CompileStatic
+            class C {
+                static List test(M m, F f) {
+                    java.util.function.Supplier<String> ref = m::pm
+                    [new A(1).value, m.pm(), M.spm(), f.pf, F.spf, ref.get()]
+                }
+            }
+        '''
+        def library = LIBRARY + MEMBERS.replace('package p', '') + FIELDS.replace('package p', '')
+        def full = File.createTempDir(), incremental = File.createTempDir()
+        try {
+            compileToDirectory(full, 'Library.groovy': library, 'C.groovy': caller)
+            compileToDirectory(incremental, 'Library.groovy': library)
+            compileToDirectory(incremental, 'C.groovy': caller) // C is recompiled alone
+
+            assert new File(incremental, 'p/C.class').bytes == new File(full, 'p/C.class').bytes
+        } finally {
+            full.deleteDir()
+            incremental.deleteDir()
+        }
+    }
+
+    // GROOVY-12568
+    @Test
+    void testPackagePrivateMembersOfJavaClassOfJointCompilationAreAccessedDirectly() {
+        def dir = File.createTempDir(), src = File.createTempDir()
+        try {
+            new File(src, 'p').mkdirs()
+            def j = new File(src, 'p/J.java')
+            j.text = '''package p;
+                public class J {
+                    String pf = "pf";
+                    J() { }
+                    String pm() { return "pm"; }
+                    protected String qm() { return "qm"; }
+                    static String spm() { return "spm"; }
+                }
+            '''
+            def g = new File(src, 'p/G.groovy')
+            g.text = '''package p
+                @groovy.transform.CompileStatic
+                class G {
+                    static List test() {
+                        J j = new J()
+                        [j.pm(), j.qm(), J.spm(), j.pf]
+                    }
+                }
+            '''
+            def config = new CompilerConfiguration(targetDirectory: dir, jointCompilationOptions: [memStub: true])
+            def unit = new JavaAwareCompilationUnit(config, new GroovyClassLoader(this.class.classLoader))
+            unit.addSources(j, g)
+            unit.compile()
+
+            def bytecode = methodSequence(new File(dir, 'p/G.class').bytes, 'test')
+            assert bytecode.hasSequence(['NEW p/J', 'DUP', 'INVOKESPECIAL p/J.<init> ()V'])
+            assert bytecode.hasSequence(['INVOKEVIRTUAL p/J.pm ()Ljava/lang/String;'])
+            assert bytecode.hasSequence(['INVOKEVIRTUAL p/J.qm ()Ljava/lang/String;'])
+            assert bytecode.hasSequence(['INVOKESTATIC p/J.spm ()Ljava/lang/String;'])
+            assert bytecode.hasSequence(['GETFIELD p/J.pf : Ljava/lang/String;'])
+            assert !bytecode.hasSequence(['ScriptBytecodeAdapter.invoke'])
+
+            def loader = new URLClassLoader([dir.toURI().toURL()] as URL[], this.class.classLoader)
+            assert loader.loadClass('p.G').test() == ['pm', 'qm', 'spm', 'pf']
+        } finally {
+            dir.deleteDir()
+            src.deleteDir()
+        }
+    }
+
+    /**
+     * Compiles the sources to class files in {@code dir}, against the class
+     * files already there, as groovyc does.
+     */
+    private static void compileToDirectory(final Map<String, String> sources, final File dir) {
+        def config = new CompilerConfiguration(targetDirectory: dir, classpathList: [dir.path])
+        def unit = new CompilationUnit(config, null, new GroovyClassLoader(StaticCompileRuntimePackageTest.classLoader, config))
+        sources.each { name, text -> unit.addSource(name, text) }
+        unit.compile(Phases.OUTPUT)
+    }
+
     /**
      * Compiles {@code script} against the classes of {@code library}, which are
-     * compiled before, by another compilation unit and class loader.
+     * compiled before, by another parse of the same GroovyClassLoader.
      */
     private InstructionSequence compileAgainstLibrary(final String library, final String className, final String method, final String script) {
-        def loader = new GroovyClassLoader()
+        CompilationUnit unit = null
+        def loader = new GroovyClassLoader() {
+            @Override
+            protected CompilationUnit createCompilationUnit(final CompilerConfiguration config, final CodeSource source) {
+                unit = super.createCompilationUnit(config, source)
+            }
+        }
         loader.parseClass(library)
-        def unit = new CompilationUnit(null, null, loader)
-        unit.addSource('script', script)
-        unit.compile(Phases.CLASS_GENERATION)
+        loader.parseClass(script)
         def generated = unit.classes.find { it.name == className }
         assert generated != null : "class $className not found"
-        def sequence = extractSequence(generated.bytes, [method: method])
-        List<String> instructions = sequence.instructions
+        methodSequence(generated.bytes, method)
+    }
+
+    private InstructionSequence methodSequence(final byte[] bytes, final String method) {
+        List<String> instructions = extractSequence(bytes, [method: method]).instructions
         int begin = instructions.indexOf('--BEGIN--'), end = instructions.indexOf('--END--')
         assert begin >= 0 && end > begin : "method $method not found"
         new InstructionSequence(instructions: instructions[(begin + 1)..<end])

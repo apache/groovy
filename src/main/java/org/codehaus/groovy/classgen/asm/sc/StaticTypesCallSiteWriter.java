@@ -234,7 +234,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             }
         }
 
-        if (isFieldOfAnotherCompilationUnit(receiverType, propertyName)) {
+        if (isFieldOfAnotherRuntimePackage(receiverType, propertyName)) {
             makeDynamicGetProperty(receiver, propertyName, safe);
             return;
         }
@@ -246,15 +246,15 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
 
     /**
      * Determines if the property is a protected or package-private field of a
-     * class with the same package name but of another compilation unit, which
-     * may be in another run-time package. Such a field is read through the
-     * meta-class when the current class cannot access it directly.
+     * class with the same package name but of another run-time package (see
+     * {@link AsmClassGenerator#isInSameRuntimePackage}). Such a field is read
+     * through the meta-class when the current class cannot access it directly.
      */
-    private boolean isFieldOfAnotherCompilationUnit(final ClassNode receiverType, final String propertyName) {
+    private boolean isFieldOfAnotherRuntimePackage(final ClassNode receiverType, final String propertyName) {
         FieldNode field = getField(receiverType, propertyName);
         return field != null && !field.isPublic() && !field.isPrivate()
-            && !field.getDeclaringClass().isPrimaryClassNode()
-            && samePackageName(field.getDeclaringClass(), controller.getClassNode());
+            && samePackageName(field.getDeclaringClass(), controller.getClassNode())
+            && !AsmClassGenerator.isInSameRuntimePackage(field.getDeclaringClass(), controller.getClassNode());
     }
 
     private void makeDynamicGetProperty(final Expression receiver, final String propertyName, final boolean safe) {
@@ -424,7 +424,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             return;
         }
 
-        if (isFieldOfAnotherCompilationUnit(receiverType, propertyName)) {
+        if (isFieldOfAnotherRuntimePackage(receiverType, propertyName)) {
             makeDynamicGetProperty(receiver, propertyName, safe);
             return;
         }
@@ -560,8 +560,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                 ClassNode currentClass = controller.getClassNode();
                 ClassNode castType = field.getOwner();
                 if (field.isProtected() && !currentClass.equals(field.getOwner())
-                        // a class of another compilation unit may come from another class loader
-                        && !(samePackageName(currentClass, field.getOwner()) && field.getOwner().isPrimaryClassNode())) {
+                        && !AsmClassGenerator.isInSameRuntimePackage(field.getOwner(), currentClass)) {
                     if (receiverType.isDerivedFrom(currentClass)) castType = currentClass;
                     else return false;
                 }
@@ -888,8 +887,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         if (fn == null) return false;
         ClassNode currentClass = controller.getClassNode();
         if (!fn.isStatic() && fn.isProtected() && !currentClass.equals(fn.getOwner())
-                // a class of another compilation unit may come from another class loader
-                && !(samePackageName(currentClass, fn.getOwner()) && fn.getOwner().isPrimaryClassNode())
+                && !AsmClassGenerator.isInSameRuntimePackage(fn.getOwner(), currentClass)
                 && !receiverType.isDerivedFrom(currentClass)) {
             return false; // JVMS 4.10.1.8: in another run-time package, the receiver must be of the current class
         }
