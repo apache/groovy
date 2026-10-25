@@ -411,15 +411,21 @@ Three supported measures release the class loader; any one suffices:
   receivers (string coercions, ranges, safe navigation, map property access) up to roughly
   1.4 times slower. Measure with your own workload if dispatch performance matters.
 * Clean up explicitly when the application is discarded (for example from
-  `ServletContextListener#contextDestroyed`):
+  `ServletContextListener#contextDestroyed`), as the last thing that copy of Groovy runs. Write
+  the cleanup in Java or in statically compiled Groovy: a dynamic call made after the first
+  removal, including one made by the cleanup loop itself, can associate a class again.
 +
 [source,groovy]
 ----
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.reflection.ClassInfo
 
-for (ClassInfo ci : ClassInfo.getAllClassInfo()) {
-    Class<?> c = ci.theClass
-    if (c != null) ClassInfo.remove(c)
+@CompileStatic
+static void releaseGroovy() {
+    for (ClassInfo ci : ClassInfo.getAllClassInfo()) {
+        Class<?> c = ci.getTheClass()
+        if (c != null) ClassInfo.remove(c)
+    }
 }
 ----
 

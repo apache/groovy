@@ -420,40 +420,64 @@ final class Groovy12142 {
     @Test
     @ForkedJvm(jvmArgs = ['-Xmx256m'])
     void testDocumentedSweepReleasesAnIsolatedRuntime() {
-        def loaderRef = runIsolatedRuntimeAndSweep()
-        boolean collected = false
-        for (int i = 0; i < 200 && !collected; i++) {
-            System.gc()
-            if (i % 50 == 10) forceSoftReferenceClearing()
-            collected = loaderRef.get() == null
-            if (!collected) Thread.sleep(10)
-        }
-        assertTrue(collected, 'the documented sweep must release the class loader of a discarded runtime')
+        assertLoaderCollected(runIsolatedRuntimeAndSweep(null))
+    }
+
+    /**
+     * The sweep as the integration guide writes it in Groovy. It is statically compiled: a
+     * dynamic call made after the first removal can associate a class with that runtime again.
+     */
+    // GROOVY-12580
+    @Test
+    @ForkedJvm(jvmArgs = ['-Xmx256m'])
+    void testDocumentedGroovySweepReleasesAnIsolatedRuntime() {
+        assertLoaderCollected(runIsolatedRuntimeAndSweep('''
+            import groovy.transform.CompileStatic
+            import org.codehaus.groovy.reflection.ClassInfo
+
+            @CompileStatic
+            static void releaseGroovy() {
+                for (ClassInfo ci : ClassInfo.getAllClassInfo()) {
+                    Class<?> c = ci.getTheClass()
+                    if (c != null) ClassInfo.remove(c)
+                }
+            }
+
+            releaseGroovy()
+        '''))
+    }
+
+    private static void assertLoaderCollected(WeakReference<ClassLoader> loaderRef) {
+        assertLoaderCollected(loaderRef, 'the documented sweep must release the class loader of a discarded runtime')
     }
 
     /**
      * Runs a script in a Groovy runtime of its own class loader, then the documented sweep on
-     * that runtime. Statically compiled and reflective, so this runtime links no call site to
-     * that one, and no dynamic code of that runtime runs after the sweep.
+     * that runtime: the given script, run by that runtime, or else reflective calls from here.
+     * Statically compiled, so this runtime links no call site to that one.
      */
     @CompileStatic
-    private static WeakReference<ClassLoader> runIsolatedRuntimeAndSweep() {
+    private static WeakReference<ClassLoader> runIsolatedRuntimeAndSweep(String groovySweep) {
         URL[] urls = System.getProperty('java.class.path').split(File.pathSeparator).collect { String entry ->
             new File(entry).toURI().toURL()
         } as URL[]
         def loader = new URLClassLoader(urls, ClassLoader.getPlatformClassLoader())
         Class<?> shellClass = loader.loadClass('groovy.lang.GroovyShell')
         Object shell = shellClass.getConstructor().newInstance()
-        Object result = shellClass.getMethod('evaluate', String)
-                .invoke(shell, "def sb = new StringBuilder(); sb << 'x'; [1, 2, 3].collect { it * 2 }.sum() + sb.size()")
+        def evaluate = shellClass.getMethod('evaluate', String)
+        Object result = evaluate.invoke(shell, "def sb = new StringBuilder(); sb << 'x'; [1, 2, 3].collect { it * 2 }.sum() + sb.size()")
         assertEquals(13, result)
 
-        Class<?> infoClass = loader.loadClass(ClassInfo.name)
-        def theClass = infoClass.getMethod('getTheClass')
-        def remove = infoClass.getMethod('remove', Class)
-        for (Object info : (Collection<?>) infoClass.getMethod('getAllClassInfo').invoke(null)) {
-            Object c = theClass.invoke(info)
-            if (c != null) remove.invoke(null, c)
+        if (groovySweep != null) {
+            evaluate.invoke(shell, groovySweep)
+        } else {
+            Class<?> infoClass = loader.loadClass(ClassInfo.name)
+            def theClass = infoClass.getMethod('getTheClass')
+            def remove = infoClass.getMethod('remove', Class)
+            for (Object info : (Collection<?>) infoClass.getMethod('getAllClassInfo').invoke(null)) {
+                Object c = theClass.invoke(info)
+                if (c != null) remove.invoke(null, c)
+            }
         }
         loader.close()
         new WeakReference<ClassLoader>(loader)
