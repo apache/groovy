@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 import org.codehaus.groovy.classgen.asm.InstructionSequence
 import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
 
@@ -61,6 +62,17 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
             private String hidden = 'h'
             protected void setQs(String s) { hidden = 'qs:' + s }
             String getHidden() { hidden }
+        }
+        true
+    '''
+
+    private static final String FIELDS = '''package p
+        class F {
+            @groovy.transform.PackageScope String pf = 'pf'
+            protected String qf = 'qf'
+            @groovy.transform.PackageScope static String spf = 'spf'
+            protected static String sqf = 'sqf'
+            @groovy.transform.PackageScope int n = 1
         }
         true
     '''
@@ -319,6 +331,147 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         String method = bytecode.instructions.find { it.startsWith('p/C.access$M$pm$') }.with { it.substring(4, it.indexOf('(')) }
         def access = compileAgainstLibrary(MEMBERS, 'p.C', method, script)
         assert access.hasSequence(['LDC "pm"', 'CHECKCAST java/lang/String', 'INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.invokeMethod0'])
+    }
+
+    // GROOVY-12568
+    @Test
+    void testProtectedAndPackagePrivateFieldsOfClassOfAnotherClassLoader() {
+        shell.evaluate FIELDS
+        assert shell.evaluate('''package p
+            @groovy.transform.CompileStatic
+            class C { // same package name as F, but another class loader
+                static List read(F f) {
+                    [f.pf, f.qf, F.spf, F.sqf, f.@pf, f.@qf, f?.pf, [f]*.pf, { -> f.pf }(), f.with { it.qf }]
+                }
+                static List write(F f) {
+                    f.pf = 'w'
+                    f.qf = 'x'
+                    F.spf = 'y'
+                    f.@n = 5
+                    f.n += 2
+                    f.n++
+                    int m = ++f.n
+                    [f.pf, f.qf, F.spf, f.n, m]
+                }
+            }
+            C.read(new F()) + C.write(new F())
+        ''') == ['pf', 'qf', 'spf', 'sqf', 'pf', 'qf', 'pf', ['pf'], 'pf', 'qf', 'w', 'x', 'y', 9, 9]
+    }
+
+    // GROOVY-12568
+    @Test
+    void testInheritedProtectedAndPackagePrivateFieldsOfClassOfAnotherClassLoader() {
+        shell.evaluate FIELDS
+        assert shell.evaluate('''package p
+            @groovy.transform.CompileStatic
+            class B extends F {
+                List read(F other) {
+                    [pf, qf, this.pf, this.qf, super.pf, this.@pf, super.@pf, spf, sqf, { -> pf + qf }(), other.qf, other.pf]
+                }
+                List write(F other) {
+                    pf = 'a'
+                    this.@qf = 'b'
+                    other.qf = 'c'
+                    other.pf = 'd'
+                    [pf, qf, other.qf, other.pf]
+                }
+            }
+            class D extends F { // dynamic
+                List read() {
+                    [super.pf, super.@pf, this.@pf]
+                }
+                List write() {
+                    super.pf = 'e'
+                    def x = pf
+                    this.@pf = 'f'
+                    [x, pf]
+                }
+            }
+            new B().read(new F()) + new B().write(new F()) + new D().read() + new D().write()
+        ''') == ['pf', 'qf', 'pf', 'qf', 'pf', 'pf', 'pf', 'spf', 'sqf', 'pfqf', 'qf', 'pf', 'a', 'b', 'c', 'd', 'pf', 'pf', 'pf', 'e', 'f']
+    }
+
+    // GROOVY-12568
+    @Test
+    void testProtectedAndPackagePrivateFieldsOfSameCompilationUnitAreAccessedDirectly() {
+        def bytecode = compile(method: 'test', classNamePattern: 'p.C', FIELDS + '''
+            @groovy.transform.CompileStatic
+            class C {
+                static List test(F f) {
+                    f.@pf = 'w'
+                    [f.pf, f.qf, F.spf]
+                }
+            }
+        ''')
+        assert bytecode.hasSequence(['PUTFIELD p/F.pf : Ljava/lang/String;'])
+        assert bytecode.hasSequence(['GETFIELD p/F.pf : Ljava/lang/String;'])
+        assert bytecode.hasSequence(['GETFIELD p/F.qf : Ljava/lang/String;'])
+        assert bytecode.hasSequence(['GETSTATIC p/F.spf : Ljava/lang/String;'])
+        assert !bytecode.hasSequence(['INVOKESTATIC org/codehaus/groovy/runtime/InvokerHelper.getProperty'])
+    }
+
+    // GROOVY-12568
+    @Test
+    void testProtectedAndPackagePrivateFieldsOfClassOfAnotherCompilationUnitAreAccessedAtRuntime() {
+        def bytecode = compileAgainstLibrary(FIELDS, 'p.C', 'test', '''package p
+            @groovy.transform.CompileStatic
+            class C {
+                static List test(F f) {
+                    f.@pf = 'w'
+                    [f.pf, f.qf, F.spf]
+                }
+            }
+        ''')
+        assert bytecode.hasSequence(['LDC "pf"', 'INVOKESTATIC org/codehaus/groovy/runtime/InvokerHelper.getProperty'])
+        assert bytecode.hasSequence(['LDC "qf"', 'INVOKESTATIC org/codehaus/groovy/runtime/InvokerHelper.getProperty'])
+        assert bytecode.hasSequence(['LDC "spf"', 'INVOKESTATIC org/codehaus/groovy/runtime/InvokerHelper.getProperty'])
+        assert bytecode.hasSequence(['LDC "pf"', 'CHECKCAST java/lang/String', 'INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.setGroovyObjectField'])
+        assert !bytecode.hasSequence(['GETFIELD p/F'])
+        assert !bytecode.hasSequence(['PUTFIELD p/F'])
+        assert !bytecode.hasSequence(['GETSTATIC p/F'])
+    }
+
+    // GROOVY-12568
+    @Test
+    void testProtectedFieldOfSuperclassOfAnotherCompilationUnitIsAccessedDirectly() {
+        def bytecode = compileAgainstLibrary(FIELDS, 'p.B', 'test', '''package p
+            @groovy.transform.CompileStatic
+            class B extends F {
+                List test() {
+                    this.@qf = 'x'
+                    [qf, sqf, pf]
+                }
+            }
+        ''')
+        assert bytecode.hasSequence(['PUTFIELD p/F.qf : Ljava/lang/String;'])
+        assert bytecode.hasSequence(['GETFIELD p/F.qf : Ljava/lang/String;'])
+        assert bytecode.hasSequence(['GETSTATIC p/B.sqf : Ljava/lang/String;'])
+        assert bytecode.hasSequence(['LDC "pf"', 'INVOKESTATIC org/codehaus/groovy/runtime/InvokerHelper.getProperty'])
+    }
+
+    // GROOVY-12568
+    @Test
+    void testMembersOfClassOfAnotherClassLoaderWithoutInvokeDynamic() {
+        def config = new CompilerConfiguration()
+        config.optimizationOptions[CompilerConfiguration.INVOKEDYNAMIC] = false
+        def shell = new GroovyShell(this.class.classLoader, new Binding(), config)
+        shell.evaluate LIBRARY
+        shell.evaluate MEMBERS
+        shell.evaluate FIELDS
+        assert shell.evaluate('''package p
+            @groovy.transform.CompileStatic
+            class C {
+                static List test(M m, F f) {
+                    java.util.function.Supplier<String> ref = m::pm
+                    f.pf = 'w'
+                    [new A(1).value, m.pm(), M.spm(), m.qp, ref.get(), f.pf, F.spf, dynamic()]
+                }
+                static Object dynamic() {
+                    'dynamic'.toUpperCase().with { it }
+                }
+            }
+            C.test(new M(), new F())
+        ''') == ['pkg:1', 'pm', 'spm', 'qp', 'pm', 'w', 'spf', 'DYNAMIC']
     }
 
     /**

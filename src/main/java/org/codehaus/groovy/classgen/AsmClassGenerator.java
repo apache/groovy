@@ -159,7 +159,6 @@ import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.isVargs;
@@ -1308,9 +1307,20 @@ public class AsmClassGenerator extends ClassGenerator {
     /**
      * Determines if the given field can be directly accessed by the given class
      * (via {@code GETFIELD}, {@code GETSTATIC}, etc. bytecode instructions).
+     * <p>
+     * A protected or package-private field of a class with the same package
+     * name is accessible only within the same run-time package, which is the
+     * package name and the class loader. GroovyClassLoader defines all the
+     * classes of a compilation unit with one class loader, but a class of
+     * another compilation unit may come from another class loader, so its
+     * field is directly accessible only through the subclass rule for a
+     * protected field.
      */
     public static boolean isFieldDirectlyAccessible(final FieldNode field, final ClassNode accessingClass) {
-        return field != null && isMemberDirectlyAccessible(field.getModifiers(), field.getDeclaringClass(), accessingClass);
+        if (field == null || !isMemberDirectlyAccessible(field.getModifiers(), field.getDeclaringClass(), accessingClass)) return false;
+        ClassNode declaringClass = field.getDeclaringClass();
+        return field.isPublic() || field.isPrivate() || declaringClass.isPrimaryClassNode()
+            || (field.isProtected() && accessingClass.isDerivedFrom(declaringClass));
     }
 
     /**
@@ -1519,7 +1529,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 } else {
                     fieldNode = classNode.getSuperClass().getDeclaredField(name);
                     // GROOVY-4497, GROOVY-11764: do not visit super class field if it is private or package-private
-                    if (fieldNode != null && (fieldNode.isPrivate() || !(fieldNode.isPublic() || fieldNode.isProtected() || inSamePackage(classNode, classNode.getSuperClass())))) {
+                    if (fieldNode != null && (fieldNode.isPrivate() || !(fieldNode.isPublic() || fieldNode.isProtected() || isFieldDirectlyAccessible(fieldNode, classNode)))) {
                         fieldNode = null;
                     }
                 }
