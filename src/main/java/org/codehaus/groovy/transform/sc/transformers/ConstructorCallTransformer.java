@@ -185,9 +185,9 @@ public class ConstructorCallTransformer {
             int tmpObj = compileStack.defineTemporaryVariable("tmpObj", ctorType, false);
             boolean outer = innerClassCall && ctorType.getOuterClass() != null;
             Parameter[] params = outer ? new Parameter[]{new Parameter(ctorType.getOuterClass(), "$p$")} : Parameter.EMPTY_ARRAY;
-            ConstructorNode ctor = ctorType.isPrimaryClassNode() ? null : ctorType.getDeclaredConstructor(params);
+            ConstructorNode ctor = ctorType.getDeclaredConstructor(params);
             if (ctor != null && !ctor.isPublic()) {
-                // the invocation writer checks if the constructor of a class of another compilation unit can be called directly
+                // the invocation writer checks if the current class can call the constructor directly
                 ConstructorCallExpression newObject = outer ? ctorX(ctorType, args(varX("this"))) : ctorX(ctorType);
                 newObject.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, ctor);
                 newObject.setSourcePosition(originalCall);

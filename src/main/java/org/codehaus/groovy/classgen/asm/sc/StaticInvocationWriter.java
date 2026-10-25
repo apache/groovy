@@ -153,9 +153,17 @@ public class StaticInvocationWriter extends InvocationWriter {
         }
         ClassNode declaringClass = cn.getDeclaringClass();
         ClassNode enclosingClass = controller.getClassNode();
-        if (!cn.isPrivate() && !isDirectlyAccessible(cn, enclosingClass) && samePackageName(declaringClass, enclosingClass)) {
-            writeDynamicConstructorCall(call, declaringClass);
-            return;
+        if (!cn.isPrivate() && !isDirectlyAccessible(cn, enclosingClass)) {
+            if (samePackageName(declaringClass, enclosingClass)) {
+                writeDynamicConstructorCall(call, declaringClass);
+                return;
+            }
+            // JLS 6.6.2.2: outside its package, only super(...) or an anonymous inner class can call a protected constructor
+            controller.getSourceUnit().addError(new SyntaxException(
+                    "Cannot call " + (cn.isProtected() ? "protected" : "package-private") + " constructor for "
+                            + declaringClass.toString(false) + " from class " + enclosingClass.toString(false),
+                    call
+            ));
         }
         List<Expression> argList = call.getArguments() instanceof TupleExpression
                 ? ((TupleExpression) call.getArguments()).getExpressions() : List.of(call.getArguments());
