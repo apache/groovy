@@ -268,4 +268,54 @@ final class Groovy10133 {
         '''
         assert err =~ /No such property: x for class: C/
     }
+
+    // GROOVY-12520: "super.x" in a class that overrides isX()
+    @Test
+    void testGetterVersusIsser9() {
+        for (mode in ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            assertScript """
+                class C {
+                    boolean isX() { true }
+                    boolean getX() { false }
+                }
+                $mode
+                class D extends C {
+                    boolean isX() { false }
+                    boolean test() { super.x }
+                }
+                $mode
+                class E extends C {
+                    boolean x
+                    boolean test() { super.x }
+                }
+                assert new D().test()
+                assert new E().test()
+            """
+        }
+    }
+
+    // GROOVY-12520
+    @Test
+    void testGetterVersusIsser10() {
+        for (mode in ['', '@groovy.transform.TypeChecked']) {
+            assertScript """
+                class C {
+                    boolean isX() { true }
+                    boolean getX() { false }
+                }
+                $mode
+                class D extends C {
+                    boolean isX() { false }
+                    boolean test() { { -> super.x }() }
+                }
+                $mode
+                class E extends C {
+                    boolean x
+                    boolean test() { { -> super.x }() }
+                }
+                assert new D().test()
+                assert new E().test()
+            """
+        }
+    }
 }
