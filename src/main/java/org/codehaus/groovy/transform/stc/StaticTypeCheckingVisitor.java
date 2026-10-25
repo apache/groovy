@@ -1433,6 +1433,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             for (MethodNode setter : setterInfo.setters) {
                 if (setter == methodTarget) {
                     leftExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, methodTarget);
+                    if (!methodTarget.isStatic()) checkSuperCallFromClosure(leftExpression, methodTarget);
                     leftExpression.removeNodeMetaData(INFERRED_TYPE); // clear assumption
                     storeType(leftExpression, setterType.apply(methodTarget));
                     break;
@@ -2812,6 +2813,16 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         accessMethod.setSynthetic(true);
 
         expression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, accessMethod); // GROOVY-11029
+        if (!property.isStatic()) {
+            checkSuperCallFromClosure(expression, accessMethod);
+            if (lhsOfAssignment && isCompoundAssignment(typeCheckingContext.getEnclosingBinaryExpression())) {
+                // "super.name += value" or "super.name++" reads the property, too
+                MethodNode getter = new MethodNode(property.getGetterNameOrDefault(), Opcodes.ACC_PUBLIC, propertyType, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+                getter.setDeclaringClass(property.getDeclaringClass());
+                getter.setSynthetic(true);
+                checkSuperCallFromClosure(expression, getter);
+            }
+        }
         extension.onMethodSelection(expression, accessMethod);
         return true;
     }

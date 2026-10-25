@@ -64,6 +64,9 @@ class PropertyExpressionTransformer {
             mce.setSpreadSafe(pe.isSpreadSafe());
             mce.setSafe(pe.isSafe());
             mce.copyNodeMetaData(pe);
+            if (!dmct.isStatic() && pe.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED) != null) {
+                return scTransformer.transform(mce); // call the getter through the super$ helper
+            }
             return mce;
         }
 

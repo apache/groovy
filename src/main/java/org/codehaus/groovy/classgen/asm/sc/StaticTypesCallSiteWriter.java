@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.ast.Variable;
+import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -41,6 +42,7 @@ import org.codehaus.groovy.classgen.asm.CallSiteWriter;
 import org.codehaus.groovy.classgen.asm.ClosureWriter;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
+import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -58,6 +60,7 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getMethod;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.mayHaveSideEffects;
 import static org.apache.groovy.util.BeanUtils.capitalize;
@@ -70,6 +73,7 @@ import static org.codehaus.groovy.ast.ClassHelper.MAP_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Number_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
@@ -782,6 +786,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
 
+        if (name != null && !(expression instanceof AttributeExpression) && !expression.isSpreadSafe()
+                && makeSuperPropertySite(expression, objectExpression, name, compileStack.isLHS())) {
+            return;
+        }
+
         if (name != null && compileStack.isLHS()) {
             boolean[] isClassReceiver = new boolean[1];
             ClassNode receiverType = getPropertyOwnerType(objectExpression, isClassReceiver);
@@ -828,6 +837,84 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         super.fallbackAttributeOrPropertySite(expression, objectExpression, name, adapter);
     }
 
+    /**
+     * Reads or writes "super.name", as the operand of "++" or "--" or the target
+     * of a compound assignment, through the accessor of the superclass. Within a
+     * closure or lambda, the accessor is called through the super$ helper the
+     * type checker asked the enclosing class for.
+     */
+    private boolean makeSuperPropertySite(final PropertyExpression expression, final Expression objectExpression, final String name, final boolean lhs) {
+        ClassNode helperType = expression.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);
+        MethodNode target;
+        Expression receiver;
+        if (helperType != null) {
+            MethodNode accessor = findSuperPropertyAccessor(helperType.getSuperClass(), name, lhs);
+            List<MethodNode> helpers = helperType.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);
+            if (accessor == null || helpers == null || helpers.stream().noneMatch(mn -> isSameSuperMopMethod(mn, accessor))) {
+                return false;
+            }
+            target = StaticCompilationMopWriter.getSuperMopMethod(helperType, accessor);
+            receiver = varX("this");
+        } else if (isSuperExpression(objectExpression) && !controller.isInGeneratedFunction()) {
+            target = findSuperPropertyAccessor(controller.getClassNode().getSuperClass(), name, lhs);
+            if (target == null) {
+                return false;
+            }
+            receiver = objectExpression;
+        } else {
+            return false;
+        }
+
+        CompileStack compileStack = controller.getCompileStack();
+        OperandStack operandStack = controller.getOperandStack();
+        MethodCallExpression call;
+        int value = 0;
+        if (lhs) { // the value to store is on the operand stack
+            ClassNode valueType = operandStack.getTopOperand();
+            value = compileStack.defineTemporaryVariable("$value", valueType, true);
+            call = callX(receiver, target.getName(), args(new VariableSlotLoader(valueType, value, operandStack)));
+        } else {
+            call = callX(receiver, target.getName());
+        }
+        call.setImplicitThis(helperType != null);
+        call.setMethodTarget(target);
+        call.setSourcePosition(expression);
+        compileStack.pushLHS(false);
+        call.visit(controller.getAcg());
+        compileStack.popLHS();
+        if (lhs) {
+            operandStack.pop();
+            compileStack.removeVar(value);
+        }
+        return true;
+    }
+
+    private static MethodNode findSuperPropertyAccessor(final ClassNode superType, final String name, final boolean setter) {
+        String suffix = capitalize(name);
+        MethodNode accessor;
+        if (setter) {
+            accessor = superType.getSetterMethod("set" + suffix, false);
+        } else {
+            accessor = superType.getGetterMethod("is" + suffix);
+            if (accessor == null) accessor = superType.getGetterMethod("get" + suffix);
+        }
+        // the accessors of a property of a class being compiled are generated later
+        for (ClassNode cn = superType; accessor == null && cn != null; cn = cn.getSuperClass()) {
+            PropertyNode pn = cn.getProperty(name);
+            if (pn != null && !(setter && pn.isFinal())) {
+                accessor = setter
+                    ? new MethodNode(pn.getSetterNameOrDefault(), ACC_PUBLIC, VOID_TYPE, new Parameter[]{new Parameter(pn.getOriginType(), "value")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE)
+                    : new MethodNode(pn.getGetterNameOrDefault(), ACC_PUBLIC, pn.getOriginType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                accessor.setDeclaringClass(cn);
+            }
+        }
+        return accessor == null || accessor.isStatic() ? null : accessor;
+    }
+
+    private static boolean isSameSuperMopMethod(final MethodNode one, final MethodNode two) {
+        return MopWriter.getMopMethodName(one, false).equals(MopWriter.getMopMethodName(two, false))
+            && BytecodeHelper.getMethodDescriptor(one.getReturnType(), one.getParameters()).equals(BytecodeHelper.getMethodDescriptor(two.getReturnType(), two.getParameters()));
+    }
 
     private ClassNode getPropertyOwnerType(final Expression receiver, final boolean... isClassReceiver) {
         var inferredType = receiver.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
