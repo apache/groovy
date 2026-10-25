@@ -157,4 +157,39 @@ final class ClosureDelegationTest {
             assert array.contains('c')
         '''
     }
+
+    // GROOVY-12578
+    @Test
+    void testClosureMethodWhenNeitherDelegateNorOwnerHasIt() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+
+            class C {
+                Closure<Integer> withCount() { { -> int n = 0; with { n++ }; n } }
+                Closure<Integer> tapCount() { { -> int n = 0; tap { n++ }; n } }
+                Closure<Object> hash() { { -> hashCode() } }
+            }
+            @CompileStatic
+            class D {
+                static Object call(Closure<?> closure) { closure() }
+            }
+
+            for (String name : ['withCount', 'tapCount']) {
+                Closure<Integer> noOwner = new C()."$name"().rehydrate(null, null, null)
+                noOwner.resolveStrategy = Closure.OWNER_ONLY
+                assert noOwner() == 1
+                assert D.call(noOwner) == 1
+
+                Closure<Integer> noDelegate = new C()."$name"()
+                noDelegate.resolveStrategy = Closure.DELEGATE_ONLY
+                noDelegate.delegate = null
+                assert noDelegate() == 1
+            }
+
+            Closure<Object> hash = new C().hash().rehydrate(null, null, null)
+            hash.resolveStrategy = Closure.OWNER_ONLY
+            assert hash() == hash.hashCode()
+            assert hash.metaClass.invokeMethod(C, hash, 'hashCode', [] as Object[], false, false) == hash.hashCode()
+        '''
+    }
 }
