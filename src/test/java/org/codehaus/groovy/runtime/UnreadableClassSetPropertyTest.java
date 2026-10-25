@@ -18,8 +18,13 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.Binding;
 import groovy.lang.GroovyObject;
+import groovy.lang.GroovyShell;
+import groovy.lang.GroovySystem;
+import groovy.lang.MetaClass;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -35,8 +40,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * absent at run time. A class with a {@code setProperty} of its own needs no reflection
  * to receive a write, so the property-write entry points must still deliver it.
  * <p>
- * Written in Java so that nothing but those entry points touches the object: a Groovy
- * call or cast would consult the metaclass, which such a class cannot have.
+ * Written in Java so that nothing but the writes under test touches the object: a Groovy
+ * cast or call would consult its metaclass, which, not being built from its own class,
+ * knows nothing about it.
  */
 final class UnreadableClassSetPropertyTest {
 
@@ -44,34 +50,68 @@ final class UnreadableClassSetPropertyTest {
     private static final String INTERNAL_NAME = NAME.replace('.', '/');
 
     @Test
-    void ownSetPropertyReceivesWrites() throws Throwable {
+    void ownSetPropertyReceivesWrites() throws Exception {
         List<Object> writes = new ArrayList<>();
-        GroovyObject target = (GroovyObject) unreadableRecorderClass().getConstructor(List.class).newInstance(writes);
+        GroovyObject target = newUnreadableRecorder(writes);
 
-        ScriptBytecodeAdapter.setProperty("one", UnreadableClassSetPropertyTest.class, target, "name");
-        ScriptBytecodeAdapter.setGroovyObjectProperty("two", UnreadableClassSetPropertyTest.class, target, "name");
+        write(() -> ScriptBytecodeAdapter.setProperty("one", UnreadableClassSetPropertyTest.class, target, "name"));
+        write(() -> ScriptBytecodeAdapter.setGroovyObjectProperty("two", UnreadableClassSetPropertyTest.class, target, "name"));
 
         assertEquals(List.of("one", "two"), writes);
     }
 
+    // GROOVY-12489
+    @Test
+    void writeThroughPropertyCallSiteReachesOwnSetProperty() throws Exception {
+        List<Object> writes = new ArrayList<>();
+        Binding binding = new Binding();
+        binding.setVariable("target", newUnreadableRecorder(writes));
+
+        write(() -> new GroovyShell(binding).evaluate("target.name = 'three'"));
+
+        assertEquals(List.of("three"), writes);
+    }
+
+    /**
+     * Performs a write, turning a failure into an assertion error that names only the class
+     * of what was thrown: the message of a {@code MissingPropertyException} about this class
+     * needs the class's own metaclass, so reporting it would fail and hide the failure.
+     */
+    private static void write(Executable write) {
+        try {
+            write.execute();
+        } catch (Throwable t) {
+            throw new AssertionError("the write threw " + t.getClass().getName());
+        }
+    }
+
     /**
      * A {@code GroovyObject} that adds every value written through its own {@code setProperty}
-     * to the list it is constructed with. It has no metaclass, and its public method
+     * to the given list. Its metaclass is the one of {@code Object}, and its public method
      * {@code take(no.such.Type)} makes reflection over its public methods fail with a
      * {@code NoClassDefFoundError}.
      */
+    private static GroovyObject newUnreadableRecorder(List<Object> writes) throws ReflectiveOperationException {
+        MetaClass metaClass = GroovySystem.getMetaClassRegistry().getMetaClass(Object.class);
+        return (GroovyObject) unreadableRecorderClass().getConstructor(MetaClass.class, List.class).newInstance(metaClass, writes);
+    }
+
     private static Class<?> unreadableRecorderClass() throws ClassNotFoundException {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         writer.visit(Opcodes.V17, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, INTERNAL_NAME, null, "java/lang/Object",
                 new String[]{"groovy/lang/GroovyObject"});
+        writer.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL, "metaClass", "Lgroovy/lang/MetaClass;", null, null).visitEnd();
         writer.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL, "writes", "Ljava/util/List;", null, null).visitEnd();
 
-        MethodVisitor mv = writer.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(Ljava/util/List;)V", null, null);
+        MethodVisitor mv = writer.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(Lgroovy/lang/MetaClass;Ljava/util/List;)V", null, null);
         mv.visitCode();
         mv.visitVarInsn(Opcodes.ALOAD, 0);
         mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
         mv.visitVarInsn(Opcodes.ALOAD, 0);
         mv.visitVarInsn(Opcodes.ALOAD, 1);
+        mv.visitFieldInsn(Opcodes.PUTFIELD, INTERNAL_NAME, "metaClass", "Lgroovy/lang/MetaClass;");
+        mv.visitVarInsn(Opcodes.ALOAD, 0);
+        mv.visitVarInsn(Opcodes.ALOAD, 2);
         mv.visitFieldInsn(Opcodes.PUTFIELD, INTERNAL_NAME, "writes", "Ljava/util/List;");
         mv.visitInsn(Opcodes.RETURN);
         mv.visitMaxs(0, 0);
@@ -79,10 +119,9 @@ final class UnreadableClassSetPropertyTest {
 
         mv = writer.visitMethod(Opcodes.ACC_PUBLIC, "getMetaClass", "()Lgroovy/lang/MetaClass;", null, null);
         mv.visitCode();
-        mv.visitTypeInsn(Opcodes.NEW, "java/lang/UnsupportedOperationException");
-        mv.visitInsn(Opcodes.DUP);
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/UnsupportedOperationException", "<init>", "()V", false);
-        mv.visitInsn(Opcodes.ATHROW);
+        mv.visitVarInsn(Opcodes.ALOAD, 0);
+        mv.visitFieldInsn(Opcodes.GETFIELD, INTERNAL_NAME, "metaClass", "Lgroovy/lang/MetaClass;");
+        mv.visitInsn(Opcodes.ARETURN);
         mv.visitMaxs(0, 0);
         mv.visitEnd();
 
