@@ -381,7 +381,6 @@ These conversions still happen at run time, as without the option:
   binds, since javac gives it a default method, a bridge, for the erased method;
 * with `as`, to an interface that has no single abstract method, such as one that inherits the same
   method with two signatures, or redeclares an inherited method with a narrower return type;
-* of a closure written in a trait;
 * of a closure chosen by a conditional or Elvis expression;
 * of a closure that destructures its argument, such as `{ a, b -> }` for a `Consumer<List<String>>`;
 * of a closure given as a default parameter value, as an argument of an enum constant or of the

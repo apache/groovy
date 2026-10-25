@@ -670,4 +670,54 @@ final class StaticCompileClosureSamTest extends AbstractBytecodeTestCase {
             else System.clearProperty(CompilerConfiguration.CLOSURE_PACKING)
         }
     }
+
+    private static final String TRAIT = '''
+        import java.util.function.Function
+        import java.util.function.IntUnaryOperator
+        import java.util.function.Supplier
+        @groovy.transform.CompileStatic
+        trait T {
+            String name = 't'
+            Function<String, String> field = { String s -> s + '-field' }
+            Function<String, String> assigned() { Function<String, String> f = { String s -> s + '-' + name }; f }
+            Supplier<Object> self() { Supplier<Object> s = { this }; s }
+            Supplier<String> callsTraitMethod() { Supplier<String> s = { helper() }; s }
+            String helper() { 'helper-' + name }
+            Function<String, String> passed() { pass { String s -> s.toUpperCase() } }
+            Function<String, String> pass(Function<String, String> f) { f }
+            Function<String, String> cast() { (Function<String, String>) { String s -> s + '-cast' } }
+            Function<String, String> coerced() { { String s -> s + '-as' } as Function<String, String> }
+            Supplier<Function<String, String>> nested() { Supplier<Function<String, String>> o = { -> Function<String, String> i = { String s -> s + '-nested' }; i }; o }
+            static IntUnaryOperator increment() { IntUnaryOperator op = { int i -> i + 1 }; op }
+        }
+        @groovy.transform.CompileStatic
+        class C implements T { }
+    '''
+
+    // GROOVY-12492
+    @Test
+    void closuresWrittenInATraitGetTheirAdapter() {
+        withSam(true) {
+            // a closure written in a trait method is rehydrated to the implementing instance, and the copy is adapted
+            compile(classNamePattern: 'T\\$Trait\\$Helper', method: 'assigned', TRAIT)
+            assert sequence.hasStrictSequence([
+                'INVOKEVIRTUAL groovy/lang/Closure.rehydrate',
+                'CHECKCAST T$Trait$Helper$_assigned_closure',
+                'NEW T$Trait$Helper$_assigned_closure2$SamAdapter',
+                'DUP_X1',
+                'SWAP',
+                'INVOKESPECIAL T$Trait$Helper$_assigned_closure2$SamAdapter.<init>'
+            ])
+        }
+        for (enabled in [false, true]) {
+            def c = eval(TRAIT + '\nnew C()', enabled)
+            def functions = [c.field, c.assigned(), c.passed(), c.cast(), c.coerced(), c.nested().get()]
+            assert functions*.apply('a') == ['a-field', 'a-t', 'A', 'a-cast', 'a-as', 'a-nested']
+            assert c.self().get().is(c)
+            assert c.callsTraitMethod().get() == 'helper-t'
+            assert c.getClass().increment().applyAsInt(1) == 2
+            def values = functions + [c.self(), c.callsTraitMethod(), c.nested(), c.getClass().increment()]
+            assert values.every { !(it instanceof Closure) && isProxy(it) == !enabled } // each literal gets the adapter
+        }
+    }
 }
