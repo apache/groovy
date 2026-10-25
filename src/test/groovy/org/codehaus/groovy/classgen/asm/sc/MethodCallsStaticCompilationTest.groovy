@@ -59,6 +59,37 @@ final class MethodCallsStaticCompilationTest extends MethodCallsSTCTest implemen
         assert astTrees['Foo$Bar$Baz'][1].contains('INVOKEVIRTUAL Foo.d ()I')
     }
 
+    // GROOVY-12509
+    @Override @Test
+    void testCallToPrivateMethodOfSiblingClass() {
+        super.testCallToPrivateMethodOfSiblingClass()
+        String other = astTrees['Outer$Other'][1]
+        assert other.contains('INVOKESTATIC Outer$Box.sm ()Ljava/lang/String;')
+        assert other.contains('INVOKEVIRTUAL Outer$Box.im ()Ljava/lang/String;')
+        assert !other.contains('ScriptBytecodeAdapter.invoke')
+    }
+
+    // GROOVY-12509: dynamic Groovy and @TypeChecked reject a class that mixes
+    // private and public methods of one name, so these overloads exist only here
+    @Test
+    void testPrivateOverloadOfSiblingClassIsPreferred() {
+        assertScript '''
+            class Outer {
+                static class Box {
+                    private String m(int i) { 'm(int)' }
+                    String m(Object o) { 'm(Object)' }
+                    private static String sm(String s) { 'sm(String)' }
+                    static String sm(Object o) { 'sm(Object)' }
+                }
+                static class Other {
+                    static String test() { new Box().m(1) + Box.sm('x') }
+                    static String viaDelegate() { new Box().with { m(1) } }
+                }
+            }
+            assert Outer.Other.test() == 'm(int)sm(String)'
+            assert Outer.Other.viaDelegate() == 'm(int)'
+        '''
+    }
     // GROOVY-12510
     @Override @Test
     void testCallToPrivateMethodOfSuperclassThroughReceiverOfItsType() {
@@ -72,6 +103,10 @@ final class MethodCallsStaticCompilationTest extends MethodCallsSTCTest implemen
             assert Outer.coerced() == 'im:sub'
             assert Outer.narrowed(sub) == 'im:sub'
             assert Outer.closure() == 'im:sub'
+            assert sub.viaSuper() == 'im:sub'
+            assert sub.viaCast() == 'im:sub'
+            assert Outer.Other.param(sub) == 'im:sub'
+            assert Outer.Other.local() == 'im:sub'
         '''
     }
 
