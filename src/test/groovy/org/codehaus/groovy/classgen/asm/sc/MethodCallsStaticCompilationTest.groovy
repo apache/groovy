@@ -58,4 +58,41 @@ final class MethodCallsStaticCompilationTest extends MethodCallsSTCTest implemen
         '''
         assert astTrees['Foo$Bar$Baz'][1].contains('INVOKEVIRTUAL Foo.d ()I')
     }
+
+    // GROOVY-12510
+    @Override @Test
+    void testCallToPrivateMethodOfSuperclassThroughReceiverOfItsType() {
+        assertScript PRIVATE_METHOD_THROUGH_DECLARING_TYPE + '''
+            def nested = new Outer.Box.Nested()
+            assert nested.viaSuper() == 'im:nested'
+            assert nested.viaCast() == 'im:nested'
+            assert Outer.param(sub) == 'im:sub'
+            assert Outer.local() == 'im:sub'
+            assert Outer.result() == 'im:sub'
+            assert Outer.coerced() == 'im:sub'
+            assert Outer.narrowed(sub) == 'im:sub'
+            assert Outer.closure() == 'im:sub'
+        '''
+    }
+
+    // GROOVY-12510: dynamic Groovy and @TypeChecked reject a class that mixes private
+    // and public methods of one name. Through the subclass only the public method is
+    // a member; through a variable declared with the superclass type both are
+    @Test
+    void testPrivateOverloadOfSuperclassThroughSubclassOrDeclaredType() {
+        assertScript '''
+            class Outer {
+                static class Box {
+                    private String m(String s) { 'm(String)' }
+                    String m(Object o) { 'm(Object)' }
+                }
+                static class Sub extends Box {
+                }
+                static String viaSubclass() { new Sub().m('x') }
+                static String viaDeclaredType() { Box b = new Sub(); b.m('x') }
+            }
+            assert Outer.viaSubclass() == 'm(Object)'
+            assert Outer.viaDeclaredType() == 'm(String)'
+        '''
+    }
 }
