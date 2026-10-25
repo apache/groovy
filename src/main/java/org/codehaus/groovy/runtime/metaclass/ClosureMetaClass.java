@@ -345,7 +345,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             }
         }
 
-        if (cmm != null) cmm.doMethodInvoke(closure, theArguments);
+        if (cmm != null) return cmm.doMethodInvoke(closure, theArguments);
 
         throw new MissingMethodException(methodName, theClass, theArguments, false);
     }
