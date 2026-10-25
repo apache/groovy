@@ -22,8 +22,10 @@ import org.apache.groovy.parser.antlr4.Antlr4ParserPlugin
 import org.codehaus.groovy.GroovyBugError
 import org.codehaus.groovy.ast.CodeVisitorSupport
 import org.codehaus.groovy.ast.ModuleNode
+import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.ListExpression
+import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 import org.codehaus.groovy.classgen.BytecodeExpression
 import org.codehaus.groovy.control.CompilationUnit
@@ -549,6 +551,83 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
             """
             assertInitHelperCall(code)
         }
+    }
+
+    // a class literal is a Class on the operand stack already, so it goes to the constructor
+    // as it is loaded, a primitive one included
+    // GROOVY-12490
+    @Test
+    void testClassLiteralArgumentsCallConstructorDirectly() {
+        def code = staticInitializerOf '''
+            enum E {
+                ONE(String.class), TWO(Integer), THREE(int)
+                E(Class c) { }
+            }
+        '''
+        assertDirectConstructorCall(code, 'ONE', 'ICONST_0', ['LDC Ljava/lang/String;.class'], '(Ljava/lang/String;ILjava/lang/Class;)V')
+        assertDirectConstructorCall(code, 'TWO', 'ICONST_1', ['LDC Ljava/lang/Integer;.class'], '(Ljava/lang/String;ILjava/lang/Class;)V')
+        assertDirectConstructorCall(code, 'THREE', 'ICONST_2', ['GETSTATIC java/lang/Integer.TYPE : Ljava/lang/Class;'], '(Ljava/lang/String;ILjava/lang/Class;)V')
+    }
+
+    // the parser makes no char constant, but a transform can: the runtime passes it to a char
+    // or Character parameter as it is, but would not widen it to an int one
+    // GROOVY-12490
+    @Test
+    void testCharacterConstantArguments() {
+        def character = "new ConstantExpression(Character.valueOf((char) 'c'))"
+        def forChar = staticInitializerOf addingToPlainConstants(character) + '''
+            enum E {
+                ONE, TWO
+                E(char c = (char) 'a') { }
+            }
+        '''
+        assertDirectConstructorCall(forChar, 'ONE', 'ICONST_0', ['BIPUSH 99'], '(Ljava/lang/String;IC)V')
+        def forCharacter = staticInitializerOf addingToPlainConstants(character) + '''
+            enum E {
+                ONE, TWO
+                E(Character c = null) { }
+            }
+        '''
+        assertDirectConstructorCall(forCharacter, 'ONE', 'ICONST_0', [
+            'BIPUSH 99',
+            'INVOKESTATIC java/lang/Character.valueOf (C)Ljava/lang/Character;'
+        ], '(Ljava/lang/String;ILjava/lang/Character;)V')
+        def forInt = staticInitializerOf addingToPlainConstants(character) + '''
+            enum E {
+                ONE, TWO
+                E(int i = 0) { }
+            }
+        '''
+        assertInitHelperCall(forInt)
+    }
+
+    // the static compiler turns each $INIT call into a method call on the class, which the
+    // class generator replaces just the same
+    // GROOVY-12490
+    @Test
+    void testInitCallsInTheFormOfTheStaticCompilerCallConstructorDirectly() {
+        def unit = new CompilationUnit()
+        unit.addSource('script', '''
+            @groovy.transform.CompileStatic
+            enum E {
+                ONE('one'), TWO
+                E(String s = 'none') { }
+            }
+        ''')
+        List<Expression> inits = []
+        unit.addFirstPhaseOperation({ source, context, classNode ->
+            if (classNode.name == 'E') {
+                inits = classNode.getDeclaredMethod('<clinit>').code.statements[0..1]*.expression*.rightExpression
+            }
+        } as CompilationUnit.IPrimaryClassNodeOperation, Phases.CLASS_GENERATION)
+        unit.compile(Phases.CLASS_GENERATION)
+
+        assert inits.every { it instanceof MethodCallExpression && it.objectExpression instanceof ClassExpression }
+        assert inits*.methodAsString == ['$INIT', '$INIT']
+        sequence = extractSequence(unit.classes.find { it.name == 'E' }.bytes, [method: '<clinit>'])
+        def code = bodyOf('static <clinit>()V')
+        assertDirectConstructorCall(code, 'ONE', 'ICONST_0', ['LDC "one"'], '(Ljava/lang/String;ILjava/lang/String;)V')
+        assertDirectConstructorCall(code, 'TWO', 'ICONST_1', [], '(Ljava/lang/String;I)V')
     }
 
     // GROOVY-12490

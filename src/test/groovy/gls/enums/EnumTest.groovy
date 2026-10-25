@@ -1253,6 +1253,42 @@ final class EnumTest extends CompilableTestSupport {
         '''
     }
 
+    // the parser makes no char constant, but a transform can: it reaches a char or Character
+    // parameter as it is, while for an int parameter $INIT finds no constructor
+    // GROOVY-12490
+    @Test
+    void testCharacterConstantArgumentsAddedByATransform() {
+        def character = "new ConstantExpression(Character.valueOf((char) 'c'))"
+        assertScript addingToPlainConstants(character) + '''
+            enum ForChar {
+                ONE, TWO
+                final char c
+                ForChar(char c = (char) 'a') { this.c = c }
+            }
+            assert ForChar.values()*.c == ['c' as char] * 2
+        '''
+        assertScript addingToPlainConstants(character) + '''
+            enum ForCharacter {
+                ONE, TWO
+                final Character c
+                ForCharacter(Character c = null) { this.c = c }
+            }
+            assert ForCharacter.values()*.c == ['c' as char] * 2
+        '''
+        assertScript addingToPlainConstants(character) + '''
+            enum ForInt {
+                ONE, TWO
+                ForInt(int i = 0) { }
+            }
+            try {
+                ForInt.values()
+                assert false
+            } catch (ExceptionInInitializerError e) {
+                assert e.cause.message.startsWith('Could not find matching constructor for: ForInt(String, Integer, Character)')
+            }
+        '''
+    }
+
     // GROOVY-12490
     @Test
     void testInitCallReplacedByATransform() {
