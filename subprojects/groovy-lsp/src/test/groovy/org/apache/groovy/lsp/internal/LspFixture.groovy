@@ -47,6 +47,7 @@ import org.eclipse.lsp4j.services.LanguageClient
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * In-process language server plus a collecting client, used by feature tests.
@@ -55,11 +56,12 @@ class LspFixture implements LanguageClient {
 
     final GroovyLanguageServer server
     final Map<String, List<Diagnostic>> diagnostics = new ConcurrentHashMap<>()
-    final List<PublishDiagnosticsParams> publishedParams = Collections.synchronizedList(new ArrayList<>())
-    final List<MessageParams> messages = []
-    final List<ApplyWorkspaceEditParams> appliedEdits = []
-    final List<WorkDoneProgressCreateParams> progressCreates = []
-    final List<ProgressParams> progressNotifications = []
+    // the server's compile thread records into these while a test iterates them
+    final List<PublishDiagnosticsParams> publishedParams = new CopyOnWriteArrayList<>()
+    final List<MessageParams> messages = new CopyOnWriteArrayList<>()
+    final List<ApplyWorkspaceEditParams> appliedEdits = new CopyOnWriteArrayList<>()
+    final List<WorkDoneProgressCreateParams> progressCreates = new CopyOnWriteArrayList<>()
+    final List<ProgressParams> progressNotifications = new CopyOnWriteArrayList<>()
     boolean failProgress
     boolean failConfiguration
     boolean configurationReturnsNullFuture
