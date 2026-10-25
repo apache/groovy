@@ -34,6 +34,8 @@ final class Groovy12451 {
         assertScript '''
             import groovy.transform.CompileStatic
 
+            import static groovy.test.GroovyAssert.isAtLeastJdk
+
             @CompileStatic
             record S8(boolean done) {
                 boolean isDone() { done }
@@ -45,7 +47,9 @@ final class Groovy12451 {
             }
 
             assert M8.check()
-            assert S8.recordComponents*.accessor*.name == ['done']
+            if (isAtLeastJdk('16.0')) { // native record
+                assert S8.recordComponents*.accessor*.name == ['done']
+            }
         '''
     }
 
