@@ -2339,7 +2339,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             for (MethodNode method : findMethodsWithGenerated(wrapTypeIfNecessary(receiverType), setterName)) {
                 if (method.getParameters().length == 1 && (!staticOnly || method.isStatic()) && (!publicOnly || method.isPublic())
                         // GROOVY-11319:
-                        && hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), method.getDeclaringClass(), method.getModifiers())) {
+                        && isAccessibleAccessor(method, receiverType)) {
                     setters.add(method);
                 }
             }
@@ -2410,7 +2410,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
                 if (getter != null && ((publicOnly && (!getter.isPublic() || propertyName.equals("class") || propertyName.equals("empty")))
                         // GROOVY-11319:
-                        || !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), getter.getDeclaringClass(), getter.getModifiers()))) {
+                        || !isAccessibleAccessor(getter, receiverType))) {
                     getter = null;
                 }
 
@@ -2562,6 +2562,18 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         MethodNode getter = classNode.getGetterMethod(getterName, searchSupers);
         if (getter != null && (getter.getModifiers() & Opcodes.ACC_BRIDGE) != 0) getter = null; // GROOVY-11341
         return getter;
+    }
+
+    /**
+     * Determines if a getter or setter may be used through property syntax. A
+     * private accessor is reachable from every class of its nest (JLS 6.6.1),
+     * but only through its own class, because private members are not
+     * inherited (JLS 8.2).
+     */
+    private boolean isAccessibleAccessor(final MethodNode accessor, final ClassNode receiverType) {
+        ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
+        return hasAccessToMember(enclosingClass, accessor.getDeclaringClass(), accessor.getModifiers())
+            || (accessor.isPrivate() && accessor.getDeclaringClass().equals(receiverType) && inSameNest(accessor.getDeclaringClass(), enclosingClass));
     }
 
     private static boolean hasAccessToMember(final ClassNode accessor, final ClassNode receiver, final int modifiers) {

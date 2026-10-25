@@ -2044,6 +2044,131 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12509
+    @Test
+    void testPrivateAccessorOfNestMateViaPropertySyntax() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Outer {
+                static class Box {
+                    List log = []
+                    private String getX() { 'gx' }
+                    private boolean isB() { true }
+                    private void setY(String s) { log << 'sy' + s }
+                    private static String getZ() { 'gz' }
+                }
+                static class Other {
+                    static String read() { new Box().x + new Box().b + Box.z }
+                    static List write() { def box = new Box(); box.y = '1'; box.log }
+                    static List mapConstructor() { new Box(y: '2').log }
+                    static String viaClosure() {
+                        def c = { -> new Box().x + Box.z }
+                        c()
+                    }
+                    static String viaLambda() {
+                        Supplier<String> s = () -> new Box().x
+                        s.get()
+                    }
+                    static String viaAnonymousClass() {
+                        new Object() {
+                            String get() { new Box().x }
+                        }.get()
+                    }
+                    static String viaDelegate() {
+                        new Box().with { x + b }
+                    }
+                }
+                static String read() { new Box().x + Box.z }
+                static List write() { def box = new Box(); box.y = '3'; box.log }
+            }
+            assert Outer.Other.read() == 'gxtruegz'
+            assert Outer.Other.write() == ['sy1']
+            assert Outer.Other.mapConstructor() == ['sy2']
+            assert Outer.Other.viaClosure() == 'gxgz'
+            assert Outer.Other.viaLambda() == 'gx'
+            assert Outer.Other.viaAnonymousClass() == 'gx'
+            assert Outer.Other.viaDelegate() == 'gxtrue'
+            assert Outer.read() == 'gxgz'
+            assert Outer.write() == ['sy3']
+        '''
+    }
+
+    // GROOVY-12509: dynamic Groovy also calls the accessors here, not the field
+    @Test
+    void testPrivateAccessorOfNestMateVersusPrivateField() {
+        assertScript '''
+            class Outer {
+                static class Box {
+                    private String w = 'field'
+                    private String getW() { 'getter' }
+                    private void setW(String s) { w = 'setter:' + s }
+                }
+                static class Other {
+                    static String read() { new Box().w }
+                    static String write() { def box = new Box(); box.w = 'v'; box.@w }
+                }
+                static String read() { new Box().w }
+                static String write() { def box = new Box(); box.w = 'v'; box.@w }
+            }
+            assert Outer.Other.read() == 'getter'
+            assert Outer.Other.write() == 'setter:v'
+            assert Outer.read() == 'getter'
+            assert Outer.write() == 'setter:v'
+        '''
+    }
+
+    // GROOVY-12509: private members are not inherited (JLS 8.2)
+    @Test
+    void testPrivateAccessorOrFieldOfNestMateSuperclassViaSubclass() {
+        for (expr in ['new Sub().x', 'new Sub().y = "1"', 'new Sub().f']) {
+            def name = expr.substring(10, 11)
+            shouldFailWithMessages """
+                class Outer {
+                    static class Box {
+                        private String f = 'f'
+                        private String getX() { 'gx' }
+                        private void setY(String s) { }
+                    }
+                    static class Sub extends Box {
+                    }
+                    static class Other {
+                        static test() { $expr }
+                    }
+                    static test() { $expr }
+                }
+            """,
+            "No such property: $name for class: Outer\$Sub", // sibling
+            "No such property: $name for class: Outer\$Sub"  // outer class
+        }
+
+        shouldFailWithMessages '''
+            class Outer {
+                static class Box {
+                    private static String getZ() { 'gz' }
+                }
+                static class Sub extends Box {
+                }
+                static class Other {
+                    static test() { Sub.z }
+                }
+            }
+        ''',
+        'No such property: z for Class or static property for class: Outer$Sub'
+
+        shouldFailWithMessages '''
+            class Outer {
+                static class Box {
+                    private String f = 'f'
+                }
+                static class Sub extends Box {
+                    def test() { f }
+                }
+            }
+        ''',
+        'No such property: f for class: Outer$Sub'
+    }
+
     // GROOVY-12314: package-private and protected fields that Java access rules
     // reject are not admitted via property syntax either; resolution falls
     // through to accessors, extensions and map/list handling. When nothing else
