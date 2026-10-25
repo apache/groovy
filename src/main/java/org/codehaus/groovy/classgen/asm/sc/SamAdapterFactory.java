@@ -98,7 +98,9 @@ import static org.objectweb.asm.Opcodes.SWAP;
  * The adapter is a final class nested in the closure class that implements the interface and
  * {@link Serializable} and wraps an instance of the closure class. Like the proxy, it is neither a
  * {@code Closure} nor a {@code GroovyObject}, its {@code toString} is the closure's, and its implementation
- * of the interface method calls the closure as the proxy does (see {@link AdapterMethod}).
+ * of the interface method calls the closure as the proxy does (see {@link AdapterMethod}), except that a
+ * direct call of {@code doCall} does not go through a metaclass that intercepts {@code doCall}. Its
+ * {@code equals} and {@code hashCode} are those of {@code Object}, and its serialized form names the adapter.
  */
 final class SamAdapterFactory implements Function<ClassNode, ClassNode> {
 
@@ -292,7 +294,9 @@ final class SamAdapterFactory implements Function<ClassNode, ClassNode> {
      * method does not declare in an {@link UndeclaredThrowableException}.
      * Where {@code call(Object...)} would hand every argument to {@code doCall} unchanged, which is when each
      * is an instance of the parameter type, or {@code null} for a reference type, and no parameter is an array,
-     * it calls {@code doCall} directly instead: no reflection, and the same result.
+     * it calls {@code doCall} directly instead, without reflection. That gives the same result unless a
+     * metaclass intercepts {@code doCall} on the closure class: {@code call(Object...)} dispatches through the
+     * metaclass, the direct call does not.
      */
     private static final class AdapterMethod extends BytecodeInstruction {
 

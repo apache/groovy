@@ -348,7 +348,8 @@ apart:
 * its `equals` and `hashCode` are those of `Object`, where the proxy's compare and hash the closure;
 * when it calls `doCall` directly, as described below, a metaclass that intercepts `doCall` on the
   closure class is not consulted;
-* its serialized form names the adapter class;
+* its serialized form names the adapter class, whose name and members may change while the option
+  incubates, so a value serialized with one version may not deserialize with another;
 * dynamic code can read the closure from its private field `closure`: `f.closure` returns the
   closure, where the proxy throws `MissingPropertyException`;
 * when the interface binds the type arguments of a super-interface, as
