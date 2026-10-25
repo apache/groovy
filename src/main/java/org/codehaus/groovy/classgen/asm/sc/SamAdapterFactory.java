@@ -255,6 +255,9 @@ final class SamAdapterFactory implements Function<ClassNode, ClassNode> {
                     public void visit(final MethodVisitor mv) {
                         mv.visitVarInsn(ALOAD, 0);
                         mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                        mv.visitVarInsn(ALOAD, 1); // the compiler passes a new closure, but a reflective caller may not
+                        mv.visitMethodInsn(INVOKESTATIC, "java/util/Objects", "requireNonNull", "(Ljava/lang/Object;)Ljava/lang/Object;", false);
+                        mv.visitInsn(POP);
                         mv.visitVarInsn(ALOAD, 0);
                         mv.visitVarInsn(ALOAD, 1);
                         mv.visitFieldInsn(PUTFIELD, BytecodeHelper.getClassInternalName(adapter), closure.getName(), BytecodeHelper.getTypeDescription(closureType));

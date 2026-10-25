@@ -25,6 +25,7 @@ import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.junit.jupiter.api.Test
 
+import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Proxy
 import java.lang.reflect.UndeclaredThrowableException
 import java.util.function.Function
@@ -118,6 +119,16 @@ final class StaticCompileClosureSamTest extends AbstractBytecodeTestCase {
             assert !(op instanceof GroovyObject)
             assert op.toString() ==~ 'C\\$_\\w+_closure\\d+@\\p{XDigit}+' // the closure's
         }
+    }
+
+    // GROOVY-12492
+    @Test
+    void adapterRejectsANullClosure() {
+        def op = eval(FORMS + '\nC').variable()
+        def constructor = op.getClass().getConstructor(op.closure.getClass()) // public, so reflection can call it
+        assert constructor.newInstance(op.closure).applyAsInt(7, 3) == 10
+        def e = shouldFail(InvocationTargetException) { constructor.newInstance([null] as Object[]) }
+        assert e.cause instanceof NullPointerException // when the adapter is created, not when it is called
     }
 
     @Test
