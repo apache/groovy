@@ -24,8 +24,9 @@ import org.junit.jupiter.params.provider.ValueSource
 
 /**
  * Dynamic property reads from a {@link GroovyObject}: a class with a {@code getProperty}
- * of its own answers every read, and a class with the interface default has the read
- * resolved by its metaclass on behalf of the class that makes it.
+ * of its own (declared, inherited, or from another interface's default method) answers
+ * every read, and a class with the {@code GroovyObject} default has the read resolved by
+ * its metaclass on behalf of the class that makes it.
  */
 final class GetPropertyDispatchTest {
 
@@ -83,16 +84,17 @@ final class GetPropertyDispatchTest {
             assert Base.readName(sub) == 'hidden'
             assert Base.readDynamicName(sub, 'secret') == 'hidden'
             assert sub.readThis('secret') == 'hidden'
-            // the interface default, which has no sender to pass on, cannot see the field
+            // the GroovyObject default, which has no sender to pass on, cannot see the field
             groovy.test.GroovyAssert.shouldFail(MissingPropertyException) { sub.getProperty('secret') }
         '''
     }
 
     /**
      * Property-read call sites take a {@code getProperty} marked {@code @Internal} (or a
-     * synthetic one) for a generated implementation, as they take the interface default,
-     * and leave the read to the metaclass; {@code ScriptBytecodeAdapter.getProperty}, which
-     * reads a property whose name is computed, counts any implementation but the default.
+     * synthetic one) for a generated implementation, as they take the {@code GroovyObject}
+     * default, and leave the read to the metaclass; {@code ScriptBytecodeAdapter.getProperty},
+     * which reads a property whose name is computed, counts any implementation but the
+     * {@code GroovyObject} default.
      */
     @ParameterizedTest(name = 'indy={0}')
     @ValueSource(booleans = [true, false])
@@ -112,8 +114,8 @@ final class GetPropertyDispatchTest {
 
     /**
      * A {@code getProperty} that an expando closure or a mixin gives a class whose compiled
-     * {@code getProperty} is the interface default is known to its metaclass only, not to
-     * the per-class reflection answers, and still answers every read, including reads
+     * {@code getProperty} is the {@code GroovyObject} default is known to its metaclass only,
+     * not to the per-class reflection answers, and still answers every read, including reads
      * through sites already linked to the class's getter.
      */
     // GROOVY-12489

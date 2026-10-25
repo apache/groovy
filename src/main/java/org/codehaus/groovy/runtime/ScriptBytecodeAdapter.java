@@ -516,11 +516,12 @@ public class ScriptBytecodeAdapter {
 
     public static void setProperty(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
         try {
-            // an override of setProperty receives the write; for the interface default, which
+            // an override of setProperty receives the write; for the GroovyObject default, which
             // would pass it on without the sender, the metaclass is called here instead (with no
             // sender there is nothing to pass on, so the object's setProperty takes it). A class
             // that cannot be inspected counts as overriding, so its own setProperty is reached
-            // either way, at the cost of the sender if that is the default (see GroovyObjectOverrides)
+            // either way, at the cost of the sender if that is the GroovyObject default (see
+            // GroovyObjectOverrides)
             if (receiver instanceof GroovyObject groovyObject && (senderClass == null || GroovyObjectOverrides.overridesSetProperty(receiver.getClass()))) {
                 groovyObject.setProperty(messageName, messageArgument);
             } else {
@@ -596,8 +597,9 @@ public class ScriptBytecodeAdapter {
     public static void setGroovyObjectProperty(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
         Class<?> receiverClass = receiver.getClass();
         try {
-            // as in setProperty; when a class that cannot be inspected has the default after
-            // all, the retry below still finds a property only a superclass sender can see
+            // as in setProperty; when a class that cannot be inspected has the GroovyObject
+            // default after all, the retry below still finds a property only a superclass sender
+            // can see
             if (senderClass == null || GroovyObjectOverrides.overridesSetProperty(receiverClass)) {
                 receiver.setProperty(messageName, messageArgument);
                 return;

@@ -409,7 +409,7 @@ public abstract class Selector {
             if (receiver instanceof GroovyObject) {
                 // hasCustomGetProperty, the criterion of the classic call sites too, not the
                 // overridesGetProperty of ScriptBytecodeAdapter.getProperty; the two differ on
-                // purpose (see GroovyObjectOverrides). A getProperty that is neither the interface
+                // purpose (see GroovyObjectOverrides). A getProperty that is neither the GroovyObject
                 // default nor synthetic or @Internal answers every read; a class that cannot be
                 // inspected counts as having one, so that the read reaches its getProperty
                 // rather than going around it to the metaclass
@@ -544,14 +544,15 @@ public abstract class Selector {
             if (receiver instanceof Class || receiver instanceof Map) return;
             if (GroovyCategorySupport.hasCategoryInCurrentThread()) return; // categories can contribute setters
 
-            // a setProperty(String,Object) of the class's own intercepts every
-            // write; only the GroovyObject interface default is the benign
+            // a setProperty(String,Object) of the class's own, whether declared,
+            // inherited or a default method of another interface, intercepts
+            // every write; only the GroovyObject default is the benign
             // non-intercepting case (its behavior is the metaclass path this
-            // selector mirrors). Reflection sees compiled overrides, including
-            // inherited ones: it is the probe ScriptBytecodeAdapter#setProperty
-            // makes, and a class it cannot inspect counts as overriding, which
-            // keeps the adapter path. The metaclass probe also turns away any
-            // other setProperty the metaclass picks.
+            // selector mirrors). Reflection sees all of those: it is the probe
+            // ScriptBytecodeAdapter#setProperty makes, and a class it cannot
+            // inspect counts as overriding, which keeps the adapter path. The
+            // metaclass probe also turns away any other setProperty the
+            // metaclass picks.
             if (receiver instanceof GroovyObject && GroovyObjectOverrides.overridesSetProperty(receiver.getClass())) return;
             MetaMethod customSetProperty = mci.pickMethod("setProperty", SET_PROPERTY_PARAMS);
             if (customSetProperty != null

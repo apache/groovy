@@ -24,8 +24,9 @@ import org.junit.jupiter.params.provider.ValueSource
 
 /**
  * Dynamic property writes to a {@link GroovyObject}: a class with a {@code setProperty}
- * of its own receives every write, and a class with the interface default has the write
- * resolved by its metaclass on behalf of the class that makes it.
+ * of its own (declared, inherited, or from another interface's default method) receives
+ * every write, and a class with the {@code GroovyObject} default has the write resolved by
+ * its metaclass on behalf of the class that makes it.
  */
 final class SetPropertyDispatchTest {
 
@@ -86,15 +87,15 @@ final class SetPropertyDispatchTest {
             assert sub.readSecret() == 'b'
             sub.writeThis('secret', 'c')
             assert sub.readSecret() == 'c'
-            // the interface default, which has no sender to pass on, cannot see the field
+            // the GroovyObject default, which has no sender to pass on, cannot see the field
             groovy.test.GroovyAssert.shouldFail(MissingPropertyException) { sub.setProperty('secret', 'd') }
         '''
     }
 
     /**
      * A {@code setProperty} that an expando closure or a mixin gives a class whose compiled
-     * {@code setProperty} is the interface default is known to its metaclass only, not to
-     * the per-class reflection answer, and still receives every write, including writes
+     * {@code setProperty} is the {@code GroovyObject} default is known to its metaclass only,
+     * not to the per-class reflection answer, and still receives every write, including writes
      * through sites already linked to the class's setter.
      */
     // GROOVY-12489

@@ -106,7 +106,7 @@ final class GroovyObjectOverridesTest {
     }
 
     @Test
-    void interfaceDefaultIsNotAnOverride() {
+    void groovyObjectDefaultIsNotAnOverride() {
         // GroovyInterceptable extends GroovyObject without redeclaring its defaults
         assertEquals(GroovyObject, Intercepting.getMethod('setProperty', String, Object).declaringClass)
         assertEquals(GroovyObject, Intercepting.getMethod('getProperty', String).declaringClass)
@@ -118,13 +118,13 @@ final class GroovyObjectOverridesTest {
     }
 
     /**
-     * The interface default is not synthetic, so {@code hasCustomGetProperty} tells it from
-     * a custom {@code getProperty} only by its {@code @Internal}, which it must find at run
-     * time.
+     * The {@code GroovyObject} default is not synthetic, so {@code hasCustomGetProperty}
+     * tells it from a custom {@code getProperty} only by its {@code @Internal}, which it must
+     * find at run time.
      */
     // GROOVY-12489
     @Test
-    void interfaceDefaultGetPropertyCarriesInternalAtRunTime() {
+    void groovyObjectDefaultGetPropertyCarriesInternalAtRunTime() {
         def method = GroovyObject.getMethod('getProperty', String)
         assertTrue(method.isDefault())
         assertFalse(method.isSynthetic())
@@ -234,9 +234,9 @@ final class GroovyObjectOverridesTest {
     /**
      * A class whose public methods reflection cannot read: in a native image, one without
      * reflection metadata; here, one whose public method names a type absent at run time.
-     * Its {@code setProperty} and {@code getProperty} are the interface defaults, but that
-     * cannot be established, so it is reported as overriding both: a write or a read then
-     * goes to the object's own method, whichever implementation that is.
+     * Its {@code setProperty} and {@code getProperty} are the {@code GroovyObject} defaults,
+     * but that cannot be established, so it is reported as overriding both: a write or a read
+     * then goes to the object's own method, whichever implementation that is.
      * <p>
      * Statically compiled: a dynamic call on the class would build its metaclass first,
      * which fails the same way.

@@ -368,7 +368,7 @@ public class AbstractCallSite implements CallSite {
         // hasCustomGetProperty, the criterion of the invokedynamic sites, not the
         // overridesGetProperty of ScriptBytecodeAdapter.getProperty; the two differ on purpose
         // (see GroovyObjectOverrides). A getProperty that is synthetic or marked @Internal, as
-        // the interface default is, leaves the read to the metaclass. A class that cannot be
+        // the GroovyObject default is, leaves the read to the metaclass. A class that cannot be
         // inspected counts as having its own, as on the invokedynamic sites, so it is not given
         // a metaclass site that would skip a real override: the object's getProperty answers,
         // as it did when the earlier lookup threw NoSuchMethodException
