@@ -1458,4 +1458,50 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             assert new C().m() == 0
         '''
     }
+
+    // GROOVY-12516: one super$ method per super method, however many closures call it
+    @Test
+    void testSuperCallsFromSeveralClosures() {
+        assertScript '''
+            import java.util.function.Function
+            import java.util.function.Supplier
+
+            class Base {
+                String m() { 'm' }
+                String m(String s) { 'm:' + s }
+                String n() { 'n' }
+            }
+            class Sub extends Base {
+                String m() { 'sub' }
+                String m(String s) { 'sub:' + s }
+                String n() { 'sub' }
+                List<String> closures() {
+                    def a = { -> super.m() }
+                    def b = { -> super.m() }
+                    [a(), b()]
+                }
+                List<String> lambdas() {
+                    Supplier<String> a = () -> super.m()
+                    Supplier<String> b = () -> super.m()
+                    [a.get(), b.get()]
+                }
+                List<String> mixed() {
+                    def a = { -> super.m() + super.n() }
+                    Supplier<String> b = () -> super.m() + super.n()
+                    Function<String, String> c = s -> super.m(s)
+                    def d = { String s -> super.m(s) }
+                    [a(), b.get(), c.apply('x'), d('y')]
+                }
+                List<String> nested() {
+                    def a = { -> { -> super.m() }() + { -> super.m('z') }() }
+                    [a(), { -> super.m() }()]
+                }
+            }
+            def sub = new Sub()
+            assert sub.closures() == ['m', 'm']
+            assert sub.lambdas() == ['m', 'm']
+            assert sub.mixed() == ['mn', 'mn', 'm:x', 'm:y']
+            assert sub.nested() == ['mm:z', 'm']
+        '''
+    }
 }
