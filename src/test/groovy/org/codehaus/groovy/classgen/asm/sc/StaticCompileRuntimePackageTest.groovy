@@ -257,6 +257,70 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         assert bytecode.hasSequence(['LDC "pm"', 'CHECKCAST java/lang/String', 'INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.invokeMethodOnCurrent0'])
     }
 
+    // GROOVY-12568
+    @Test
+    void testMethodReferencesToProtectedAndPackagePrivateMethodsOfClassOfAnotherClassLoader() {
+        shell.evaluate MEMBERS
+        assert shell.evaluate('''package p
+            import java.util.function.*
+
+            @groovy.transform.CompileStatic
+            class C { // same package name as M, but another class loader
+                static List test(M m) {
+                    Supplier<String> bound = m::pm
+                    Function<M, String> unbound = M::qm
+                    Supplier<String> stat = M::spm
+                    IntUnaryOperator prim = m::count
+                    BiFunction<M, Integer, Integer> unboundPrim = M::count
+                    [bound.get(), unbound.apply(m), stat.get(), prim.applyAsInt(1), unboundPrim.apply(m, 2)]
+                }
+            }
+            @groovy.transform.CompileStatic
+            class B extends M {
+                List test() {
+                    Supplier<String> pkg = this::pm, prot = this::qm, stat = M::sqm
+                    [pkg.get(), prot.get(), stat.get()]
+                }
+            }
+            C.test(new M()) + new B().test()
+        ''') == ['pm', 'qm', 'spm', 2, 3, 'pm', 'qm', 'sqm']
+    }
+
+    // GROOVY-12568
+    @Test
+    void testMethodReferenceToPackagePrivateMethodOfSameCompilationUnitIsDirect() {
+        def bytecode = compile(method: 'test', classNamePattern: 'p.C', MEMBERS + '''
+            @groovy.transform.CompileStatic
+            class C {
+                static java.util.function.Supplier<String> test(M m) {
+                    m::pm
+                }
+            }
+        ''')
+        assert bytecode.hasSequence(['// handle kind 0x5 : INVOKEVIRTUAL', 'p/M.pm()Ljava/lang/String;'])
+        assert !bytecode.hasSequence(['p/C.access$M$pm$'])
+    }
+
+    // GROOVY-12568
+    @Test
+    void testMethodReferenceToPackagePrivateMethodOfClassOfAnotherCompilationUnitIsSelectedAtRuntime() {
+        def script = '''package p
+            @groovy.transform.CompileStatic
+            class C {
+                static java.util.function.Supplier<String> test(M m) {
+                    m::pm
+                }
+            }
+        '''
+        def bytecode = compileAgainstLibrary(MEMBERS, 'p.C', 'test', script)
+        assert bytecode.hasSequence(['// handle kind 0x6 : INVOKESTATIC', 'p/C.access$M$pm$'])
+        assert !bytecode.hasSequence(['p/M.pm()Ljava/lang/String;'])
+
+        String method = bytecode.instructions.find { it.startsWith('p/C.access$M$pm$') }.with { it.substring(4, it.indexOf('(')) }
+        def access = compileAgainstLibrary(MEMBERS, 'p.C', method, script)
+        assert access.hasSequence(['LDC "pm"', 'CHECKCAST java/lang/String', 'INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.invokeMethod0'])
+    }
+
     /**
      * Compiles {@code script} against the classes of {@code library}, which are
      * compiled before, by another compilation unit and class loader.

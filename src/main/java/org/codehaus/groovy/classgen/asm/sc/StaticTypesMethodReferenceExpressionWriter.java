@@ -55,6 +55,7 @@ import java.util.function.ToIntFunction;
 
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.joining;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
@@ -273,9 +274,66 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             if (methodRefMethod.isStatic() && !referenceTarget.targetIsArgument()) {
                 referenceTarget = referenceTarget.asClassTarget(methodRefMethod.getDeclaringClass());
             }
+        } else if (mayBeInAnotherRuntimePackage(methodRefMethod)) {
+            if (!referenceTarget.classExpression() && !methodRefMethod.isStatic()) {
+                referenceTarget = referenceTarget.markTargetAsArgument();
+            }
+            methodRefMethod = addSyntheticMethodForRuntimeSelection(methodRefMethod, referenceTarget.type());
+            if (!referenceTarget.targetIsArgument()) {
+                referenceTarget = referenceTarget.asClassTarget(methodRefMethod.getDeclaringClass());
+            }
         }
 
         return resolvedMethodReference.with(referenceTarget, methodRefMethod);
+    }
+
+    /**
+     * Determines if the method is a protected or package-private method of a
+     * class with the same package name but of another compilation unit. Such a
+     * class may come from another class loader, so it may be in another
+     * run-time package, and the JVM would then refuse a method handle for the
+     * method in the current class.
+     */
+    private boolean mayBeInAnotherRuntimePackage(final MethodNode mn) {
+        ClassNode declaringClass = mn.getDeclaringClass();
+        return !mn.isPublic() && !mn.isPrivate() && !declaringClass.isPrimaryClassNode()
+            && samePackageName(declaringClass, controller.getClassNode());
+    }
+
+    /**
+     * Creates a method of the current class that calls the method of the
+     * reference. The invocation writer calls it directly if the current class
+     * can, or else selects it at run time.
+     */
+    private MethodNode addSyntheticMethodForRuntimeSelection(final MethodNode mn, final ClassNode targetType) {
+        List<Parameter> parameters = new ArrayList<>();
+        Expression receiver;
+        if (mn.isStatic()) {
+            receiver = classX(mn.getDeclaringClass());
+        } else {
+            Parameter target = new Parameter(targetType.isDerivedFrom(mn.getDeclaringClass()) ? targetType : mn.getDeclaringClass(), "target");
+            parameters.add(target);
+            receiver = varX(target);
+        }
+        List<Expression> arguments = new ArrayList<>();
+        Parameter[] mnParameters = mn.getParameters();
+        for (int i = 0; i < mnParameters.length; i += 1) {
+            Parameter parameter = new Parameter(mnParameters[i].getType(), "p" + i);
+            parameters.add(parameter);
+            arguments.add(varX(parameter));
+        }
+
+        MethodCallExpression methodCall = callX(receiver, mn.getName(), new ArgumentListExpression(arguments));
+        methodCall.setImplicitThis(false);
+        methodCall.setMethodTarget(mn);
+        methodCall.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, mn);
+
+        String methodName = createSyntheticMethodName("access", mn.getDeclaringClass(), mn.getName());
+
+        MethodNode delegateMethod = addSyntheticMethod(methodName, mn.getReturnType(), methodCall, parameters.toArray(Parameter[]::new), mn.getExceptions());
+        delegateMethod.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
+        delegateMethod.setGenericsTypes(mn.getGenericsTypes());
+        return delegateMethod;
     }
 
     private boolean needsVariadicAdapter(final FunctionalInterfaceContext functionalInterface,
