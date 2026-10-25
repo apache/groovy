@@ -647,6 +647,68 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12511: a nested class that extends its outer class does not inherit the
+    // outer class's private method, so an unqualified call refers to the enclosing
+    // instance, as in javac and dynamic Groovy
+    @Test
+    void testCallToPrivateMethodOfEnclosingClassUsesEnclosingInstance() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Box {
+                String id = 'outer'
+                private String im() { 'im:' + id }
+                class Sub extends Box {
+                    Sub() { id = 'sub' }
+                    String implicit() { im() }
+                    String explicit() { this.im() }
+                    String viaClosure() { def c = { -> im() }; c() }
+                    String viaLambda() { Supplier<String> s = () -> im(); s.get() }
+                    String explicitInClosure() { def c = { -> this.im() }; c() }
+                    class In {
+                        String deeper() { im() }
+                    }
+                }
+                List<String> anonymous() {
+                    new Box() {
+                        { id = 'anon' }
+                        List<String> test() { [im(), this.im(), { -> im() }()] }
+                    }.test()
+                }
+                String anonymousInClosure() {
+                    def c = { -> new Box() { { id = 'anon' }; String test() { im() } }.test() }
+                    c()
+                }
+            }
+            def box = new Box()
+            def sub = new Box.Sub(box)
+            assert [sub.implicit(), sub.explicit(), sub.viaClosure(), sub.viaLambda(), sub.explicitInClosure()] == ['im:outer'] * 5
+            assert new Box.Sub.In(sub).deeper() == 'im:outer'
+            assert box.anonymous() == ['im:outer'] * 3
+            assert box.anonymousInClosure() == 'im:outer'
+        '''
+    }
+
+    // GROOVY-12511: this.m() in an inner class may name a method of the enclosing
+    // class, as in dynamic Groovy
+    @Test
+    void testCallToMethodOfEnclosingClassThroughThis() {
+        assertScript '''
+            class Box {
+                String id = 'outer'
+                String om() { 'om:' + id }
+                private String im() { 'im:' + id }
+                class In {
+                    String test() { this.om() + ',' + this.im() }
+                    String viaClosure() { def c = { -> this.om() + ',' + this.im() }; c() }
+                }
+            }
+            def inner = new Box.In(new Box())
+            assert inner.test() == 'om:outer,im:outer'
+            assert inner.viaClosure() == 'om:outer,im:outer'
+        '''
+    }
+
     // GROOVY-12509
     @Test
     void testCallToPrivateMethodOfSiblingClass() {
