@@ -23,7 +23,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaProperty;
-import groovy.transform.Internal;
+import org.apache.groovy.internal.metaclass.GroovyObjectOverrides;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.ClassInfo;
@@ -34,8 +34,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
-
-import java.lang.reflect.Method;
 
 /**
  * Base class for all classic (non-{@code invokedynamic}) call sites.
@@ -367,22 +365,16 @@ public class AbstractCallSite implements CallSite {
 
     protected final CallSite createGroovyObjectGetPropertySite(final Object receiver) {
         Class<?> aClass = receiver.getClass();
-        try {
-            final Method method = aClass.getMethod("getProperty", String.class);
-            if (method != null && (method.isSynthetic() || isMarkedInternal(method)) && ((GroovyObject) receiver).getMetaClass() instanceof MetaClassImpl)
-                return createPogoMetaClassGetPropertySite((GroovyObject) receiver);
-        } catch (NoSuchMethodException e) {
-            // fall threw
-        }
+        // the criterion of the invokedynamic sites: a getProperty that is synthetic or marked
+        // @Internal, as the interface default is, leaves the read to the metaclass; a class
+        // that cannot be inspected counts as having its own (see GroovyObjectOverrides)
+        if (!GroovyObjectOverrides.hasCustomGetProperty(aClass) && ((GroovyObject) receiver).getMetaClass() instanceof MetaClassImpl)
+            return createPogoMetaClassGetPropertySite((GroovyObject) receiver);
         if (receiver instanceof Class) {
             return createClassMetaClassGetPropertySite((Class<?>) receiver);
         } else {
             return createPogoGetPropertySite(aClass);
         }
-    }
-
-    private boolean isMarkedInternal(final Method method) {
-        return method.getAnnotation(Internal.class) != null;
     }
 
     @Override
