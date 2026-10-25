@@ -51,12 +51,12 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.ToIntFunction;
 
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.joining;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
@@ -520,11 +520,15 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
      * Determines if the bytecode of the current class can call the constructor.
      */
     private boolean isDirectlyAccessible(final ConstructorNode ctor) {
+        if (ctor.isPublic()) return true;
         ClassNode declaringClass = ctor.getDeclaringClass(), accessingClass = controller.getClassNode();
-        if (ctor.isProtected()) { // only super(...) can call a protected constructor of another package
-            return Objects.equals(declaringClass.getPackageName(), accessingClass.getPackageName());
+        if (ctor.isPrivate()) { // nestmates can call a private constructor
+            return AsmClassGenerator.isMemberDirectlyAccessible(ctor.getModifiers(), declaringClass, accessingClass);
         }
-        return AsmClassGenerator.isMemberDirectlyAccessible(ctor.getModifiers(), declaringClass, accessingClass);
+        // a protected or package-private constructor needs the same run-time package, i.e. the same package
+        // name and class loader; a class of another compilation unit may come from another class loader
+        // (only super(...) can call a protected constructor of another package)
+        return declaringClass.isPrimaryClassNode() && samePackageName(declaringClass, accessingClass);
     }
 
     private MethodNode addSyntheticMethod(final String methodName, final ClassNode returnType, final Expression returnValue, final Parameter[] parameters, final ClassNode[] exceptions) {
