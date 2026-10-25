@@ -2476,6 +2476,8 @@ final class ParserPositiveSyntaxTest {
             |a??[0]
             |a??.b ?? c
             |a ??= b
+            |a ?: b ?? c
+            |a ?? b ?: c
             |'''.stripMargin(), '''\
             |<Module line="-1" column="-1" lastLine="-1" lastColumn="-1">
             |  <BlockStatement line="-1" column="-1" lastLine="-1" lastColumn="-1">
@@ -2516,6 +2518,24 @@ final class ParserPositiveSyntaxTest {
             |        <VariableExpression line="5" column="1" lastLine="5" lastColumn="2" name="a"/>
             |        <VariableExpression line="5" column="7" lastLine="5" lastColumn="8" name="b"/>
             |      </BinaryExpression>
+            |    </ExpressionStatement>
+            |    <ExpressionStatement line="6" column="1" lastLine="6" lastColumn="12">
+            |      <ElvisOperatorExpression line="6" column="1" lastLine="6" lastColumn="12">
+            |        <VariableExpression line="6" column="1" lastLine="6" lastColumn="2" name="a"/>
+            |        <ElvisOperatorExpression line="6" column="6" lastLine="6" lastColumn="12" nullCoalescing="true">
+            |          <VariableExpression line="6" column="6" lastLine="6" lastColumn="7" name="b"/>
+            |          <VariableExpression line="6" column="11" lastLine="6" lastColumn="12" name="c"/>
+            |        </ElvisOperatorExpression>
+            |      </ElvisOperatorExpression>
+            |    </ExpressionStatement>
+            |    <ExpressionStatement line="7" column="1" lastLine="7" lastColumn="12">
+            |      <ElvisOperatorExpression line="7" column="1" lastLine="7" lastColumn="12" nullCoalescing="true">
+            |        <VariableExpression line="7" column="1" lastLine="7" lastColumn="2" name="a"/>
+            |        <ElvisOperatorExpression line="7" column="6" lastLine="7" lastColumn="12">
+            |          <VariableExpression line="7" column="6" lastLine="7" lastColumn="7" name="b"/>
+            |          <VariableExpression line="7" column="11" lastLine="7" lastColumn="12" name="c"/>
+            |        </ElvisOperatorExpression>
+            |      </ElvisOperatorExpression>
             |    </ExpressionStatement>
             |  </BlockStatement>
             |</Module>

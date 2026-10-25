@@ -27,7 +27,7 @@ import static groovy.test.GroovyAssert.assertScript
 final class NullCoalescingOperatorTest {
 
     @ParameterizedTest
-    @ValueSource(strings = ['', '@groovy.transform.CompileStatic'])
+    @ValueSource(strings = ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
     void testNullOnlyFallback(String mode) {
         assertScript """
             $mode
@@ -45,7 +45,7 @@ final class NullCoalescingOperatorTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ['', '@groovy.transform.CompileStatic'])
+    @ValueSource(strings = ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
     void testLeftEvaluatedOnceRightOnlyWhenNull(String mode) {
         assertScript """
             $mode
@@ -67,7 +67,7 @@ final class NullCoalescingOperatorTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ['', '@groovy.transform.CompileStatic'])
+    @ValueSource(strings = ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
     void testPrimitiveLeftNeverFallsBack(String mode) {
         assertScript """
             $mode
@@ -82,7 +82,7 @@ final class NullCoalescingOperatorTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ['', '@groovy.transform.CompileStatic'])
+    @ValueSource(strings = ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
     void testPrimitiveTargetNeverAssigned(String mode) {
         assertScript """
             class Counter {
@@ -109,7 +109,7 @@ final class NullCoalescingOperatorTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ['', '@groovy.transform.CompileStatic'])
+    @ValueSource(strings = ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
     void testComposesWithSafeChain(String mode) {
         assertScript """
             $mode
@@ -126,7 +126,7 @@ final class NullCoalescingOperatorTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ['', '@groovy.transform.CompileStatic'])
+    @ValueSource(strings = ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
     void testInferredType(String mode) {
         assertScript """
             $mode
@@ -143,7 +143,7 @@ final class NullCoalescingOperatorTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ['', '@groovy.transform.CompileStatic'])
+    @ValueSource(strings = ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
     void testAssignOnlyWhenNull(String mode) {
         assertScript """
             $mode
@@ -172,7 +172,7 @@ final class NullCoalescingOperatorTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ['', '@groovy.transform.CompileStatic'])
+    @ValueSource(strings = ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
     void testAssignEvaluatesOperandsOnce(String mode) {
         assertScript """
             $mode
@@ -190,6 +190,33 @@ final class NullCoalescingOperatorTest {
                 assert (receiver()[index(1)] ??= value()) == 9
                 assert order == ['receiver', 'index', 'value']
                 assert data == [0, 9, 30]
+            }
+            test()
+        """
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testAssignToPropertyCallsAccessorsOnce(String mode) {
+        assertScript """
+            class Bean {
+                private String value
+                int gets = 0, sets = 0
+                String getValue() { gets++; value }
+                void setValue(String value) { sets++; this.value = value }
+            }
+            $mode
+            void test() {
+                Bean bean = new Bean()
+                bean.value ??= 'set'
+                assert [bean.gets, bean.sets] == [1, 1]
+                assert bean.value == 'set'
+
+                // as for ?=, the setter runs whether or not the fallback is used
+                bean.value = ''
+                bean.value ??= 'again'
+                assert [bean.gets, bean.sets] == [3, 3]
+                assert bean.value == ''
             }
             test()
         """
