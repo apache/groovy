@@ -4884,6 +4884,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             if (genericsTypes != null && genericsTypes.length == 1
                                     && genericsTypes[0].getLowerBound() == null) {
                                 type = genericsTypes[0].getType();
+                                ClassNode[] upperBounds = genericsTypes[0].getUpperBounds();
+                                if (genericsTypes[0].isWildcard() && upperBounds != null) {
+                                    // Closure<? extends A & B> is the type of a closure that returns an intersection type
+                                    type = upperBounds.length == 1 ? upperBounds[0] : newIntersectionTypeClassNode(Arrays.asList(upperBounds));
+                                }
                             } else {
                                 type = OBJECT_TYPE;
                             }
