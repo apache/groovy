@@ -124,7 +124,7 @@ final class AsyncAwaitSpecTest {
 
         // tag::fastest_server[]
         // Race two servers — use whichever responds first
-        def primary  = async { Thread.sleep(200); 'primary-response' }
+        def primary  = async { Thread.sleep(5000); 'primary-response' }
         def fallback = async { 'fallback-response' }
 
         def response = await Awaitable.any(primary, fallback)
