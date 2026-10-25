@@ -5069,6 +5069,7 @@ out:                if (mn.size() != 1) {
     }
 
     private void checkSuperCallFromClosure(final Expression call, final MethodNode target) {
+        if (target.isStatic()) return; // no helper: invokestatic works from any class
         if (isSuperExpression(getObjectExpression(call)) && typeCheckingContext.getEnclosingClosure() != null) {
             ClassNode current = typeCheckingContext.getEnclosingClassNode();
             current.getNodeMetaData(SUPER_MOP_METHOD_REQUIRED, x -> new LinkedList<>()).add(target);
