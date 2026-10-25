@@ -178,6 +178,7 @@ public abstract class TraitComposer {
                 Traits.STATIC_INIT_METHOD, Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC, ClassHelper.VOID_TYPE,
                 new Parameter[] {new Parameter(ClassHelper.CLASS_Type,"clazz")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
         staticInitMethod.setDeclaringClass(helperClassNode);
+        staticInitCall.setImplicitThis(false);
         staticInitCall.setMethodTarget(staticInitMethod);
         cNode.addStaticInitializerStatements(Collections.singletonList(stmt(staticInitCall)), false);
         if (fieldHelperClassNode != null && !cNode.declaresInterface(fieldHelperClassNode)) {
@@ -328,6 +329,7 @@ public abstract class TraitComposer {
                 Traits.INIT_METHOD,
                 varX("this"));
         // call the helper's $init$(TraitType) directly instead of through its meta class
+        initCall.setImplicitThis(false);
         initCall.setMethodTarget(initMethod);
         cNode.addObjectInitializerStatements(stmt(initCall));
     }
