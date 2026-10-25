@@ -104,15 +104,16 @@ final class SamAdapterFactory implements Function<ClassNode, ClassNode> {
 
     /**
      * Lets the closure class be adapted to the functional interface the type checker found its literal
-     * converted to. A trait, which the run-time conversion handles differently, an interface with a default
-     * method the adapter's method would override, and an interface whose method the adapter cannot name
-     * keep the run-time conversion.
+     * converted to. A trait, which the run-time conversion handles differently, a sealed interface, which
+     * only the classes it permits may implement, an interface with a default method the adapter's method
+     * would override, and an interface whose method the adapter cannot name keep the run-time conversion.
      */
     static void prepare(final WriterController controller, final ClassNode closureClass, final MethodNode doCall, final ClosureExpression expression) {
         if (expression instanceof LambdaExpression) return; // a lambda only gets a closure class when it has no functional target
         if (!(expression.getNodeMetaData(PARAMETER_TYPE) instanceof ClassNode target)) return;
         ClassNode type = target.getPlainNodeReference();
         if (!type.isInterface() || closureClass.implementsInterface(type)) return; // a closure already is a Runnable and a Callable
+        if (type.isSealed()) return; // the adapter is not a permitted subclass
         MethodNode sam = ClassHelper.findSAM(type);
         if (sam == null) return;
         int arity = sam.getParameters().length;

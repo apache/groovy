@@ -459,6 +459,33 @@ final class StaticCompileClosureSamTest extends AbstractBytecodeTestCase {
         assert isProxy(c.overloaded()) // a default method of that name could be overridden
     }
 
+    // GROOVY-12492
+    @Test
+    void sealedInterfacesKeepTheirConversion() {
+        def c = eval '''
+            import groovy.transform.CompileStatic
+            import java.util.function.IntUnaryOperator
+            import org.codehaus.groovy.classgen.asm.sc.ClosureSamShape
+            @CompileStatic
+            sealed interface Shape permits Square { double area() }
+            @CompileStatic
+            final class Square implements Shape { double area() { 4d } }
+            @CompileStatic
+            class C {
+                static Shape groovyShape() { Shape s = { -> 1d }; s }
+                static ClosureSamShape javaShape() { ClosureSamShape s = { -> 2d }; s }
+                static IntUnaryOperator other() { IntUnaryOperator op = { int i -> i + 1 }; op }
+            }
+            C
+        '''
+        // the adapter would not be a permitted subclass, so the program compiles as without the option,
+        // and the conversion fails at run time as it does there: a proxy cannot implement a sealed interface
+        assert shouldFail(IllegalArgumentException) { c.groovyShape() }.message == 'Shape is a sealed interface'
+        assert shouldFail(IllegalArgumentException) { c.javaShape() }.message == ClosureSamShape.name + ' is a sealed interface'
+        assert c.other().applyAsInt(1) == 2
+        assert !isProxy(c.other())
+    }
+
     @Test
     void closuresNotConvertedToAnInterfaceAreUnchanged() {
         def c = eval '''
