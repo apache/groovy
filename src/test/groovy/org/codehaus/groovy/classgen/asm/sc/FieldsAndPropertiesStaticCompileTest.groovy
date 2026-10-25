@@ -841,4 +841,55 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             assert new C(['foo1', 'foo2']).fooNames.size() == 2
         '''
     }
+
+    // GROOVY-12518: the setter selected for the value, among overloads
+    @Test
+    void testSuperPropertyIncrementAndCompoundAssignmentWithOverloadedSetters() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Base {
+                List log = []
+                String x = 'x'
+                int n = 1
+                String y
+                void setX(int i) { log << 'x:int:' + i }
+                void setX(String s) { log << 'x:string:' + s; this.@x = s }
+                void setN(String s) { log << 'n:string:' + s }
+                void setN(int i) { log << 'n:int:' + i; this.@n = i }
+                void setY(int i) { log << 'y:int:' + i }
+                void setY(String s) { log << 'y:string:' + s; this.@y = s }
+            }
+            class Sub extends Base {
+                String x = 'sub'
+                int n = 100
+                List test() {
+                    super.x += 'a'
+                    super.n++
+                    ++super.n
+                    super.n += 10
+                    super.y ?= 'v'
+                    def c = { -> super.x += 'b'; super.n++ }
+                    c()
+                    Supplier<Integer> lambda = () -> super.n++
+                    lambda.get()
+                    log + [super.x, super.n, x, n]
+                }
+            }
+            class Outer extends Base {
+                String x = 'outer'
+                class Inner {
+                    List test() {
+                        Outer.super.x += 'c'
+                        Outer.super.n++
+                        def c = { -> Outer.super.n += 2 }
+                        c()
+                        log + [Outer.super.x, Outer.super.n, x, n]
+                    }
+                }
+            }
+            assert new Sub().test() == ['x:string:xa', 'n:int:2', 'n:int:3', 'n:int:13', 'y:string:v', 'x:string:xab', 'n:int:14', 'n:int:15', 'xab', 15, 'sub', 100]
+            assert new Outer.Inner(new Outer()).test() == ['x:string:xc', 'n:int:2', 'n:int:4', 'xc', 4, 'outer', 4]
+        '''
+    }
 }

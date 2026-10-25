@@ -48,6 +48,7 @@ import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
+import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -73,7 +74,6 @@ import static org.codehaus.groovy.ast.ClassHelper.MAP_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Number_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
@@ -848,7 +848,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         MethodNode target;
         Expression receiver;
         if (helperType != null) {
-            MethodNode accessor = findSuperPropertyAccessor(helperType.getSuperClass(), name, lhs);
+            MethodNode accessor = findSuperPropertyAccessor(expression, helperType.getSuperClass(), name, lhs);
             List<MethodNode> helpers = helperType.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);
             if (accessor == null || helpers == null || helpers.stream().noneMatch(mn -> isSameSuperMopMethod(mn, accessor))) {
                 return false;
@@ -856,7 +856,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             target = StaticCompilationMopWriter.getSuperMopMethod(helperType, accessor);
             receiver = varX("this");
         } else if (isSuperExpression(objectExpression) && !controller.isInGeneratedFunction()) {
-            target = findSuperPropertyAccessor(controller.getClassNode().getSuperClass(), name, lhs);
+            target = findSuperPropertyAccessor(expression, controller.getClassNode().getSuperClass(), name, lhs);
             if (target == null) {
                 return false;
             }
@@ -889,24 +889,15 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         return true;
     }
 
-    private static MethodNode findSuperPropertyAccessor(final ClassNode superType, final String name, final boolean setter) {
-        String suffix = capitalize(name);
+    private static MethodNode findSuperPropertyAccessor(final PropertyExpression expression, final ClassNode superType, final String name, final boolean setter) {
         MethodNode accessor;
-        if (setter) {
-            accessor = superType.getSetterMethod("set" + suffix, false);
+        if (setter) { // the setter the type checker selected for the value (and requested the super$ helper for)
+            accessor = expression.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+            if (accessor != null && (accessor.getParameters().length != 1 || accessor instanceof ExtensionMethodNode)) accessor = null;
         } else {
+            String suffix = capitalize(name);
             accessor = superType.getGetterMethod("is" + suffix);
             if (accessor == null) accessor = superType.getGetterMethod("get" + suffix);
-        }
-        // the accessors of a property of a class being compiled are generated later
-        for (ClassNode cn = superType; accessor == null && cn != null; cn = cn.getSuperClass()) {
-            PropertyNode pn = cn.getProperty(name);
-            if (pn != null && !(setter && pn.isFinal())) {
-                accessor = setter
-                    ? new MethodNode(pn.getSetterNameOrDefault(), ACC_PUBLIC, VOID_TYPE, new Parameter[]{new Parameter(pn.getOriginType(), "value")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE)
-                    : new MethodNode(pn.getGetterNameOrDefault(), ACC_PUBLIC, pn.getOriginType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
-                accessor.setDeclaringClass(cn);
-            }
         }
         return accessor == null || accessor.isStatic() ? null : accessor;
     }
