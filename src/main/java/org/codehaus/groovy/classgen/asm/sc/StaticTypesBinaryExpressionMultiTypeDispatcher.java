@@ -170,7 +170,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         Expression leftExpression = expression.getLeftExpression();
         if (leftExpression instanceof PropertyExpression pexp
                 && !(leftExpression instanceof AttributeExpression)
-                // "super.name op= value" in a closure reads and writes through super$ helpers
+                // "super.name op= value" in a closure or "Outer.super.name op= value" reads and writes through super$ helpers
                 && pexp.getNodeMetaData(SUPER_MOP_METHOD_REQUIRED) == null) {
 
             BinaryExpression expressionWithoutAssignment = binX(

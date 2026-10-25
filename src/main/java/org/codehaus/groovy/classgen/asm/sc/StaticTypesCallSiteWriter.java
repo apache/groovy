@@ -840,8 +840,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
     /**
      * Reads or writes "super.name", as the operand of "++" or "--" or the target
      * of a compound assignment, through the accessor of the superclass. Within a
-     * closure or lambda, the accessor is called through the super$ helper the
-     * type checker asked the enclosing class for.
+     * closure or lambda, and for "Outer.super.name", the accessor is called through
+     * the super$ helper the type checker asked the enclosing class for.
      */
     private boolean makeSuperPropertySite(final PropertyExpression expression, final Expression objectExpression, final String name, final boolean lhs) {
         ClassNode helperType = expression.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);

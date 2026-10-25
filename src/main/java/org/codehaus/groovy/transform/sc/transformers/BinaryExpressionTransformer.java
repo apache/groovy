@@ -201,7 +201,7 @@ public class BinaryExpressionTransformer {
             Expression right = staticCompilationTransformer.transform(bin.getRightExpression());
             ClassNode superType = bin.getLeftExpression().getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);
             if (superType != null && left instanceof PropertyExpression pe) {
-                // transform "super.x = val" in a closure into "def tmp = val; this.super$n$setX(tmp); tmp"
+                // transform "super.x = val" in a closure or "Outer.super.x = val" into "def tmp = val; this.super$n$setX(tmp); tmp"
                 return transformAssignmentToSetterCall(
                         varX("this"),
                         StaticCompilationMopWriter.getSuperMopMethod(superType, directMCT),

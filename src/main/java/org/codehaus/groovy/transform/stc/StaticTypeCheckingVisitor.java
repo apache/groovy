@@ -2299,6 +2299,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     storeType(pexp, accessingType);
                     return true;
                 }
+                // "Outer.super" in a class nested in Outer: the superclass of the enclosing instance
+                if (!accessingType.isInterface() && enclosingType.getOuterClasses().contains(accessingType)
+                        && !typeCheckingContext.isInStaticContext && accessingType.getUnresolvedSuperClass() != null) {
+                    storeType(pexp, accessingType.getUnresolvedSuperClass());
+                    return true;
+                }
                 return false;
             }
         }
@@ -5338,8 +5344,15 @@ out:                if (mn.size() != 1) {
     }
 
     private void checkSuperCallFromClosure(final Expression call, final MethodNode target) {
-        if (isSuperExpression(getObjectExpression(call)) && typeCheckingContext.getEnclosingClosure() != null) {
-            ClassNode current = typeCheckingContext.getEnclosingClassNode();
+        Expression objectExpression = getObjectExpression(call);
+        ClassNode current = null;
+        if (objectExpression instanceof PropertyExpression pe && pe.getObjectExpression() instanceof ClassExpression
+                && "super".equals(pe.getPropertyAsString()) && !pe.getObjectExpression().getType().isInterface()) {
+            current = pe.getObjectExpression().getType().redirect(); // "Outer.super.name()": call through Outer's super$ helper
+        } else if (isSuperExpression(objectExpression) && typeCheckingContext.getEnclosingClosure() != null) {
+            current = typeCheckingContext.getEnclosingClassNode();
+        }
+        if (current != null) {
             current.getNodeMetaData(SUPER_MOP_METHOD_REQUIRED, x -> new LinkedList<>()).add(target);
             call.putNodeMetaData(SUPER_MOP_METHOD_REQUIRED, current);
         }

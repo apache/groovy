@@ -2828,6 +2828,84 @@ final class InnerClassTest {
         assert err.message.contains("within static nested class 'Top" + '$' + "N' is not allowed in a static context.")
     }
 
+    // GROOVY-12517: 'Outer.super' within a class nested in Outer is the superclass of the enclosing instance
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testQualifiedSuperOfOuterClass(String mode) {
+        assertScript """
+            import java.util.function.Supplier
+
+            class Base {
+                String q = 'q:base'
+                boolean f = true
+                int n = 1
+                String m() { 'm:base' }
+                String m(String s) { 'm:base:' + s }
+                String getP() { 'p:base' }
+                String s = 's:base'
+                void setS(String value) { s = 'set:' + value }
+            }
+            $mode
+            class Outer extends Base {
+                String q = 'q:outer'
+                boolean f = false
+                int n = 100
+                String m() { 'm:outer' }
+                String m(String s) { 'm:outer:' + s }
+                String getP() { 'p:outer' }
+                void setS(String value) { }
+                class In {
+                    List read() {
+                        Supplier<String> lambda = () -> Outer.super.m()
+                        [Outer.super.m(), Outer.super.m('x'), Outer.super.p, Outer.super.q, Outer.super.f,
+                         { -> Outer.super.m() + Outer.super.q }(), lambda.get()]
+                    }
+                    List write() {
+                        Outer.super.q = 'w'
+                        Outer.super.s = 'v'
+                        def c = { -> Outer.super.n += 5 }
+                        [Outer.super.n++, c(), Outer.super.q, Outer.super.s, Outer.super.n]
+                    }
+                    class Deep {
+                        String read() { Outer.super.m() + Outer.super.q }
+                    }
+                }
+                List anonymous() {
+                    new Object() {
+                        List read() { [Outer.super.m(), Outer.super.p, { -> Outer.super.q }()] }
+                    }.read()
+                }
+            }
+            def outer = new Outer()
+            def inner = new Outer.In(outer)
+            assert inner.read() == ['m:base', 'm:base:x', 'p:base', 'q:base', true, 'm:baseq:base', 'm:base']
+            assert new Outer.In.Deep(inner).read() == 'm:baseq:base'
+            assert outer.anonymous() == ['m:base', 'p:base', 'q:base']
+            assert inner.write() == [1, 7, 'w', 'set:v', 7]
+            assert [outer.q, outer.f, outer.n] == ['q:outer', false, 100]
+        """
+    }
+
+    // GROOVY-12517
+    @Test
+    void testQualifiedSuperOfOuterClassWithoutEnclosingInstance() {
+        [
+            'static class N { def m() { Outer.super.m() } }'                         : 'Outer$N',
+            'static m() { new Object() { String toString() { Outer.super.m() } } }' : 'Outer$1',
+        ].each { code, where ->
+            for (mode in ['', '@groovy.transform.CompileStatic']) {
+                def err = shouldFail CompilationFailedException, """
+                    class Base { String m() { 'm' } }
+                    $mode
+                    class Outer extends Base {
+                        $code
+                    }
+                """
+                assert err.message.contains("The usage of 'Class.this' and 'Class.super' is not allowed in '$where', which has no enclosing instance of 'Outer'.")
+            }
+        }
+    }
+
     // GROOVY-12512: 'Outer.this' needs an enclosing instance at every level
     @Test
     void testOuterThisWithoutEnclosingInstance() {

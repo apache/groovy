@@ -1355,6 +1355,16 @@ public class AsmClassGenerator extends ClassGenerator {
         );
     }
 
+    /**
+     * Determines if an expression is "super" or "Outer.super" for a class: a
+     * property of it is a property of the superclass of the instance.
+     */
+    private static boolean isSuperOrOuterSuper(final Expression expression) {
+        return isSuperExpression(expression) || (expression instanceof PropertyExpression pexp
+                && pexp.getObjectExpression() instanceof ClassExpression && !pexp.getObjectExpression().getType().isInterface()
+                && "super".equals(pexp.getPropertyAsString()));
+    }
+
     private void visitAttributeOrProperty(final PropertyExpression pexp, final MethodCallerMultiAdapter adapter) {
         ClassNode classNode = controller.getClassNode();
         String propertyName = pexp.getPropertyAsString();
@@ -1498,9 +1508,9 @@ public class AsmClassGenerator extends ClassGenerator {
         if (!visited) {
             MethodCallerMultiAdapter adapter;
             if (controller.getCompileStack().isLHS()) {
-                adapter = isSuperExpression(objectExpression) ? setPropertyOnSuper : isGroovyObject(expression) ? setGroovyObjectProperty : setProperty;
+                adapter = isSuperOrOuterSuper(objectExpression) ? setPropertyOnSuper : isGroovyObject(expression) ? setGroovyObjectProperty : setProperty;
             } else {
-                adapter = isSuperExpression(objectExpression) ? getPropertyOnSuper : isGroovyObject(expression) ? getGroovyObjectProperty : getProperty;
+                adapter = isSuperOrOuterSuper(objectExpression) ? getPropertyOnSuper : isGroovyObject(expression) ? getGroovyObjectProperty : getProperty;
             }
             visitAttributeOrProperty(expression, adapter);
         }
