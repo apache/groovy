@@ -41,7 +41,7 @@ dependencies {
     }
     testRuntimeOnly projects.groovyGrapeIvy
     testRuntimeOnly projects.groovyAnt // for JavadocAssertionTests
-    testRuntimeOnly 'com.google.code.gson:gson:2.14.0' // json-unit requires a backend: gson, jackson2 or jackson3
+    testRuntimeOnly 'com.google.code.gson:gson:2.15.0' // json-unit requires a backend: gson, jackson2 or jackson3
 }
 
 plugins.withId('eclipse') {
