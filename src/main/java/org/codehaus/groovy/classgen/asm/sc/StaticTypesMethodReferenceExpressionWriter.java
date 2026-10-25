@@ -55,7 +55,9 @@ import java.util.function.ToIntFunction;
 
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.joining;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
@@ -435,11 +437,29 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             addFatalError(error, methodReference);
         } else if (methodNode.isVoidMethod() && !ClassHelper.isPrimitiveVoid(samReturnType)) {
             addFatalError("Invalid return type: void is not convertible to " + samReturnType.getText(), methodReference);
-        } else if (!AsmClassGenerator.isMemberDirectlyAccessible(methodNode.getModifiers(), methodNode.getDeclaringClass(), controller.getClassNode())) {
+        } else if (!AsmClassGenerator.isMemberDirectlyAccessible(methodNode.getModifiers(), methodNode.getDeclaringClass(), controller.getClassNode())
+                || isProtectedMethodOfAnotherPackageWithReceiverOfAnotherClass(methodReference.getExpression(), targetType, methodNode, samParameters)) {
             addFatalError("Cannot access method: " + methodName + " of class: " + methodNode.getDeclaringClass().getText(), methodReference); // GROOVY-11365
         } else if (samParameters.length > 0 && isTypeReferringInstanceMethod(methodReference.getExpression(), methodNode) && !isAssignableTo(samParameters[0].getType(), targetType)) {
             throw new RuntimeParserException("Invalid receiver type: " + samParameters[0].getType().getText() + " is not compatible with " + targetType.getText(), methodReference.getExpression());
         }
+    }
+
+    /**
+     * Determines if the method is a protected instance method of another package
+     * and the receiver of the reference is not of the current class. Outside its
+     * package, a protected instance method can be called only through a receiver
+     * of the subclass (JVMS 4.10.1.8), so the JVM rejects such a reference.
+     */
+    private boolean isProtectedMethodOfAnotherPackageWithReceiverOfAnotherClass(final Expression target, final ClassNode targetType, final MethodNode mn, final Parameter[] samParameters) {
+        if (!mn.isProtected() || mn.isStatic() || samePackageName(mn.getDeclaringClass(), controller.getClassNode()) || isSuperExpression(target)) {
+            return false;
+        }
+        ClassNode receiverType = targetType;
+        if (target instanceof ClassExpression && samParameters.length > 0) {
+            receiverType = samParameters[0].getType(); // type::instanceMethod
+        }
+        return !isSubtype(controller.getClassNode(), receiverType);
     }
 
     private MethodNode addSyntheticMethodForDGSM(final MethodNode mn) {

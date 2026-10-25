@@ -886,9 +886,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
 
         FieldNode fn = AsmClassGenerator.getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(controller.getClassNode(), receiverType, name, false);
         if (fn == null) return false;
-        if (!fn.isStatic() && fn.isProtected() && !fn.getOwner().isPrimaryClassNode()
-                && samePackageName(controller.getClassNode(), fn.getOwner()) && !receiverType.isDerivedFrom(controller.getClassNode())) {
-            return false; // JVMS 4.10.1.8: the class may be in another run-time package, so the receiver must be of the current class
+        ClassNode currentClass = controller.getClassNode();
+        if (!fn.isStatic() && fn.isProtected() && !currentClass.equals(fn.getOwner())
+                // a class of another compilation unit may come from another class loader
+                && !(samePackageName(currentClass, fn.getOwner()) && fn.getOwner().isPrimaryClassNode())
+                && !receiverType.isDerivedFrom(currentClass)) {
+            return false; // JVMS 4.10.1.8: in another run-time package, the receiver must be of the current class
         }
 
         OperandStack os = controller.getOperandStack();
