@@ -3042,6 +3042,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     arguments = new Object[]{newValue};
                     field = f;
                 }
+            } else if (useSuper && !isStatic && mp instanceof MultipleSetterProperty) {
+                // GROOVY-12521: choose among the setters of the super class
+                invokeMethod(sender, object, MetaProperty.getSetterName(mp.getName()), new Object[]{newValue}, true, fromInsideClass);
+                return;
             } else {
                 field = mp;
             }
