@@ -531,24 +531,27 @@ public abstract class Selector {
         @Override
         public void chooseMeta(MetaClassImpl mci) {
             if (method != null || mci == null) return;
-            // ExpandoMetaClass (also produced by Class.mixin) overrides
-            // setProperty itself; only a plain MetaClassImpl resolution is
-            // safe to mirror here — mirroring the GET selector, which also
-            // keeps EMC off its fast metaclass path
+            // ExpandoMetaClass (also produced by Class.mixin and by changing
+            // the metaClass of a single object) overrides setProperty itself;
+            // only a plain MetaClassImpl resolution is safe to mirror here —
+            // mirroring the GET selector, which also keeps EMC off its fast
+            // metaclass path. This check, not the metaclass probe below, is
+            // what keeps a setProperty from an expando closure or a mixin
+            // receiving writes: for a class with a mixed-in setProperty,
+            // pickMethod returns the GroovyObject default.
             if (mci.getClass() != MetaClassImpl.class) return;
             Object receiver = getCorrectedReceiver();
             if (receiver instanceof Class || receiver instanceof Map) return;
             if (GroovyCategorySupport.hasCategoryInCurrentThread()) return; // categories can contribute setters
 
-            // a setProperty(String,Object) contributed by the class itself, a
-            // mixin, or an expando closure intercepts every write; only the
-            // GroovyObject interface default is the benign non-intercepting
-            // case (its behavior is the metaclass path this selector mirrors).
-            // Two complementary probes: reflection sees compiled overrides
-            // (including inherited ones), the metaclass sees mixin/expando
-            // contributions that reflection cannot. The reflection probe is the
-            // one ScriptBytecodeAdapter#setProperty makes; a class it cannot
-            // inspect counts as overriding, which keeps the adapter path.
+            // a setProperty(String,Object) of the class's own intercepts every
+            // write; only the GroovyObject interface default is the benign
+            // non-intercepting case (its behavior is the metaclass path this
+            // selector mirrors). Reflection sees compiled overrides, including
+            // inherited ones: it is the probe ScriptBytecodeAdapter#setProperty
+            // makes, and a class it cannot inspect counts as overriding, which
+            // keeps the adapter path. The metaclass probe also turns away any
+            // other setProperty the metaclass picks.
             if (receiver instanceof GroovyObject && GroovyObjectOverrides.overridesSetProperty(receiver.getClass())) return;
             MetaMethod customSetProperty = mci.pickMethod("setProperty", SET_PROPERTY_PARAMS);
             if (customSetProperty != null
