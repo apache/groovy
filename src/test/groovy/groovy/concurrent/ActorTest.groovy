@@ -1349,23 +1349,30 @@ final class ActorTest {
             import groovy.concurrent.ActorContext
             import groovy.concurrent.ReactorHandler
             import java.time.Duration
+            import java.util.concurrent.CountDownLatch
+            import java.util.concurrent.TimeUnit
             import java.util.concurrent.atomic.AtomicInteger
 
             def ticks = new AtomicInteger()
+            def threeTicks = new CountDownLatch(3)
             def actor = Actor.reactor({ ActorContext ctx, msg ->
                 if (msg == 'arm') {
                     ctx.scheduleAtFixedRate('tick', Duration.ofMillis(40), Duration.ofMillis(40))
                     return msg
                 }
-                if (msg == 'tick') ticks.incrementAndGet()
+                if (msg == 'tick') {
+                    ticks.incrementAndGet()
+                    threeTicks.countDown()
+                }
                 msg
             } as ReactorHandler)
 
             actor.send('arm')
-            Thread.sleep(300)
+            // a schedule that fired once would leave the latch waiting
+            def fired = threeTicks.await(5, TimeUnit.SECONDS)
             def n = ticks.get()
             actor.stop()
-            assert n >= 3, "expected at least 3 ticks in 300ms (got $n)"
+            assert fired, "expected at least 3 ticks (got $n)"
         '''
     }
 
