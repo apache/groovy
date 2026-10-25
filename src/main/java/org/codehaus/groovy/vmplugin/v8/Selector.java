@@ -1335,14 +1335,17 @@ public abstract class Selector {
                 // Where asType caches strongly (JDK 17), catchException is applied with the
                 // reference types erased: it converts the JDK's shared argument-array collector to
                 // the type of its target, and a type of some class loader cached there would keep
-                // that loader reachable after it was discarded.
+                // that loader reachable after it was discarded. The handle is made fixed arity
+                // first, as catchException makes it, so that erasing its trailing array type
+                // does not turn the conversion into collecting arguments.
                 MethodType type = handle.type();
                 MethodType guarded = STRONG_AS_TYPE_CACHE ? type.erase() : type;
                 Class<?> returnType = guarded.returnType();
                 MethodHandle unwrap = returnType != Object.class
                         ? UNWRAP_EXCEPTION.asType(MethodType.methodType(returnType, GroovyRuntimeException.class))
                         : UNWRAP_EXCEPTION;
-                handle = MethodHandles.catchException(handle.asType(guarded), GroovyRuntimeException.class, unwrap).asType(type);
+                MethodHandle target = handle.asFixedArity().asType(guarded);
+                handle = MethodHandles.catchException(target, GroovyRuntimeException.class, unwrap).asType(type);
             }
             if (LOG_ENABLED) LOG.info("added GroovyRuntimeException unwrapper");
         }
