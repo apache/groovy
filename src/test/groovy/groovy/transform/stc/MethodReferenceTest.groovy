@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
-import java.security.CodeSource
 import java.util.regex.Pattern
 
 import static groovy.test.GroovyAssert.assertScript
@@ -3451,7 +3450,7 @@ final class MethodReferenceTest {
             assert bytecode.hasSequence(['NEW Foo', 'ALOAD 0', 'INVOKESPECIAL Foo.<init> (Ljava/lang/Object;)V'])
             assertNoDynamicConstructorCall(bytecode)
 
-            bytecode = compileStaticMethodBytecodeAgainstLibrary('''package p
+            bytecode = compileAgainstLibrary('''package p
                 class A {
                     @groovy.transform.PackageScope A(String s) { }
                     A(Object o) { }
@@ -3554,11 +3553,11 @@ final class MethodReferenceTest {
                 }
             '''
 
-            def prot = compileStaticMethodBytecodeAgainstLibrary(library, 'p.C', 'ctorRef$prot$0', script)
+            def prot = compileAgainstLibrary(library, 'p.C', 'ctorRef$prot$0', script)
             assert prot.hasSequence(['INVOKEDYNAMIC init('])
             assert !prot.hasSequence(['INVOKESPECIAL p/A.<init>'])
 
-            def pkg = compileStaticMethodBytecodeAgainstLibrary(library, 'p.C', 'ctorRef$pkg$1', script)
+            def pkg = compileAgainstLibrary(library, 'p.C', 'ctorRef$pkg$1', script)
             assert pkg.hasSequence(['INVOKEDYNAMIC init('])
             assert !pkg.hasSequence(['INVOKESPECIAL p/A.<init>'])
         }
@@ -3589,9 +3588,9 @@ final class MethodReferenceTest {
                 ''')
 
                 byte[] bytes = new File(dir, 'p/C.class').bytes
-                def prot = selectMethod('ctorRef$prot$0', extractSequence(bytes, [method: 'ctorRef$prot$0']))
+                def prot = extractMethodSequence(bytes, 'ctorRef$prot$0')
                 assert prot.hasSequence(['NEW p/A', 'DUP', 'ALOAD 0', 'INVOKESPECIAL p/A.<init> (Ljava/lang/String;)V'])
-                def pkg = selectMethod('ctorRef$pkg$1', extractSequence(bytes, [method: 'ctorRef$pkg$1']))
+                def pkg = extractMethodSequence(bytes, 'ctorRef$pkg$1')
                 assert pkg.hasSequence(['NEW p/A', 'DUP', 'ALOAD 0', 'INVOKESPECIAL p/A.<init> (Ljava/lang/Integer;)V'])
 
                 // one class loader for all the class files, as javac expects
@@ -3665,11 +3664,11 @@ final class MethodReferenceTest {
                 }
             '''
 
-            def pub = compileStaticMethodBytecodeAgainstLibrary(library, 'p.C', 'ctorRef$pub$0', script)
+            def pub = compileAgainstLibrary(library, 'p.C', 'ctorRef$pub$0', script)
             assert pub.hasSequence(['NEW p/D', 'ALOAD 0', 'INVOKESPECIAL p/D.<init> (Ljava/lang/String;)V'])
             assertNoDynamicConstructorCall(pub)
 
-            def pkg = compileStaticMethodBytecodeAgainstLibrary(library, 'p.C', 'ctorRef$pkg$1', script)
+            def pkg = compileAgainstLibrary(library, 'p.C', 'ctorRef$pkg$1', script)
             assert pkg.hasSequence(['INVOKEDYNAMIC init('])
             assert !pkg.hasSequence(['INVOKESPECIAL p/D.<init>'])
         }
@@ -3698,7 +3697,7 @@ final class MethodReferenceTest {
         // GROOVY-12488
         @Test
         void testProtectedConstructorOfAnotherPackageIsSelectedAtRuntimeFromAnonymousSubclass() {
-            def bytecode = compileStaticMethodBytecodeAgainstLibrary('''package p
+            def bytecode = compileAgainstLibrary('''package p
                 class B {
                     protected B(String value) { }
                 }
@@ -3869,26 +3868,6 @@ final class MethodReferenceTest {
         }
 
         /**
-         * Compiles {@code script} against the classes of {@code library}, which
-         * are compiled before, by another parse of the same GroovyClassLoader,
-         * which defines them with another class loader.
-         */
-        private InstructionSequence compileStaticMethodBytecodeAgainstLibrary(final String library, final String className, final String method, final String script) {
-            CompilationUnit unit = null
-            def loader = new GroovyClassLoader() {
-                @Override
-                protected CompilationUnit createCompilationUnit(final CompilerConfiguration config, final CodeSource source) {
-                    unit = super.createCompilationUnit(config, source)
-                }
-            }
-            loader.parseClass(library)
-            loader.parseClass(script)
-            def generated = unit.classes.find { it.name == className }
-            assert generated != null : "class $className not found"
-            selectMethod(method, extractSequence(generated.bytes, [method: method]))
-        }
-
-        /**
          * Compiles the sources to class files in {@code dir}, against the class
          * files already there, as groovyc does.
          */
@@ -3897,13 +3876,6 @@ final class MethodReferenceTest {
             def unit = new CompilationUnit(config, null, new GroovyClassLoader(MethodReferenceTest.classLoader, config))
             sources.each { name, text -> unit.addSource(name, text) }
             unit.compile(Phases.OUTPUT)
-        }
-
-        private static InstructionSequence selectMethod(final String method, final InstructionSequence sequence) {
-            List<String> instructions = sequence.instructions
-            int begin = instructions.indexOf('--BEGIN--'), end = instructions.indexOf('--END--')
-            assert begin >= 0 && end > begin : "method $method not found"
-            new InstructionSequence(instructions: instructions[(begin + 1)..<end])
         }
 
         private static final String COMMON_IMPORTS = '''\
