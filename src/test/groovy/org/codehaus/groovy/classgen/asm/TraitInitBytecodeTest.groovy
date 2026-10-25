@@ -77,13 +77,20 @@ final class TraitInitBytecodeTest extends AbstractBytecodeTestCase {
     private static void assertDirectInitCalls(final List<String> code, final String... traitNames) {
         def initCalls = code.findAll { it.contains('.$init$ (') }
         assert initCalls == traitNames.collect { 'INVOKESTATIC ' + it + '$Trait$Helper.$init$ (L' + it + ';)V' }
-        // the name is a constant only for invokeMethodN or as the bootstrap argument of an invokedynamic call
-        assert !code.any { it.contains('"$init$"') }
+        assertNoDynamicInitCalls(code)
     }
 
     private static void assertDirectFieldInitCalls(final List<String> code, final String... calls) {
         assert code.findAll { it =~ /\.\$(static\$)?init\$\w+ \(/ } == calls as List
-        assert !code.any { it =~ /"\$(static\$)?init\$\w+"/ }
+        assertNoDynamicInitCalls(code)
+    }
+
+    // the name of an initializer is a constant only if the call is dispatched through the meta class:
+    // an argument of invokeMethodN, or a bootstrap argument of an invokedynamic call
+    private static void assertNoDynamicInitCalls(final List<String> code) {
+        assert !code.any { it =~ /"\$(static\$)?init\$\w*"/ }
+        def indyCalls = code.join('\n').findAll(/(?s)INVOKEDYNAMIC .*?\n\]/)
+        assert !indyCalls.any { it.contains('$init$') }
     }
 
     @CompileModesTest
@@ -167,6 +174,124 @@ final class TraitInitBytecodeTest extends AbstractBytecodeTestCase {
             assert greeter.first == null
             assert greeter.items == []
             assert !greeter.items.is(new Greeter().items)
+        '''
+    }
+
+    // GROOVY-12491
+    @CompileModesTest
+    void testInitializersFollowTheOrderOfTheImplementsClause(final String mode) {
+        def code = constructorsOf 'Impl', """
+            trait A {
+                String a = 'a'
+            }
+            trait B extends A {
+                String b = 'b'
+            }
+            trait C {
+                String c = 'c'
+            }
+            $mode
+            class Impl implements C, B {
+            }
+        """
+        assertDirectInitCalls(code, 'B', 'A', 'C')
+    }
+
+    // GROOVY-12491
+    @CompileModesTest
+    void testSubclassCallsTheInitializersOfTheTraitsItDeclares(final String mode) {
+        def source = """
+            trait A {
+                String a = 'a'
+            }
+            trait B extends A {
+                String b = 'b'
+            }
+            trait C {
+                String c = 'c'
+            }
+            $mode
+            class Base implements A {
+            }
+            $mode
+            class Sub extends Base implements C {
+            }
+            $mode
+            class Sub2 extends Base implements B {
+            }
+        """
+        assertDirectInitCalls(constructorsOf('Base', source), 'A')
+        assertDirectInitCalls(constructorsOf('Sub', source), 'C')
+        // through B, Sub2 declares A again, so it gets its own copy of the state of A
+        assertDirectInitCalls(constructorsOf('Sub2', source), 'B', 'A')
+    }
+
+    // GROOVY-12491
+    @CompileModesTest
+    void testInitializerIsCalledDirectlyFromAnonymousClass(final String mode) {
+        def source = """
+            trait Greeting {
+                String greeting = 'hello'
+                final String name = 'greeter'
+            }
+            $mode
+            class Greeter {
+                static Greeting anonymous() {
+                    new Greeting() {}
+                }
+                Greeting inClosure() {
+                    Closure<Greeting> make = { -> new Greeting() {} }
+                    make()
+                }
+            }
+        """
+        for (anonymous in ['Greeter\\$1', 'Greeter\\$2']) {
+            def code = constructorsOf(anonymous, source)
+            assertDirectFieldInitCalls(code,
+                    'INVOKESTATIC Greeting$Trait$Helper.$init$Greeting__name (LGreeting;)Ljava/lang/String;')
+            assertDirectInitCalls(code, 'Greeting')
+        }
+
+        assertScript source + '''
+            def greetings = [Greeter.anonymous(), new Greeter().inClosure()]
+            assert greetings*.greeting == ['hello', 'hello']
+            assert greetings*.name == ['greeter', 'greeter']
+        '''
+    }
+
+    // GROOVY-12491
+    @CompileModesTest
+    void testStaticallyCompiledTraitIsInitializedDirectly(final String mode) {
+        def source = """
+            @groovy.transform.CompileStatic
+            trait Greeting {
+                String greeting = 'hello'
+                final String name = 'greeter'
+                static final String KIND = 'kind'
+                private int count = 2;
+                { greeting += '!' }
+                String greet() { "\$greeting \$name x\$count" }
+            }
+            $mode
+            class Greeter implements Greeting {
+            }
+        """
+        def code = constructorsOf('Greeter', source)
+        assertDirectFieldInitCalls(code,
+                'INVOKESTATIC Greeting$Trait$Helper.$init$Greeting__name (LGreeting;)Ljava/lang/String;')
+        assertDirectInitCalls(code, 'Greeting')
+        assertDirectFieldInitCalls(instructionsOf('<clinit>', 'Greeter', source),
+                'INVOKESTATIC Greeting$Trait$Helper.$static$init$Greeting__KIND (Ljava/lang/Class;)Ljava/lang/String;')
+
+        // the helper of a statically compiled trait sets the fields through the field helper interface
+        def init = instructionsOf('$init$', 'Greeting\\$Trait\\$Helper', source)
+        assert init.any { it.startsWith('INVOKEINTERFACE Greeting$Trait$FieldHelper.Greeting__greeting$set ') }
+        assert !init.any { it.startsWith('INVOKEDYNAMIC invoke') || it.contains('ScriptBytecodeAdapter.invoke') }
+
+        assertScript source + '''
+            def greeter = new Greeter()
+            assert greeter.greet() == 'hello! greeter x2'
+            assert Greeter.KIND == 'kind'
         '''
     }
 
@@ -352,6 +477,53 @@ final class TraitInitBytecodeTest extends AbstractBytecodeTestCase {
             def impl = new Impl()
             assert Log.events == ['own', 'block', 'C.cf', 'C.c', 'B.b', 'A.a', 'ctor']
             assert [impl.a, impl.b, impl.c, impl.cf, impl.own] == ['A.a', 'B.b', 'C.c', 'C.cf', 'own']
+        """
+    }
+
+    // GROOVY-12491
+    @CompileModesTest
+    void testInitializationOrderWithSwappedTraitsAndSuperclass(final String mode) {
+        assertScript """
+            class Log {
+                static List<String> events = []
+                static String log(String event) { events << event; event }
+            }
+            trait A {
+                String a = Log.log('A.a')
+            }
+            trait B extends A {
+                String b = Log.log('B.b')
+            }
+            trait C {
+                String c = Log.log('C.c')
+                final String cf = Log.log('C.cf')
+            }
+            $mode
+            class Swapped implements C, B {
+                String own = Log.log('own');
+                { Log.log('block') }
+                Swapped() { Log.log('ctor') }
+            }
+            $mode
+            class Base implements A {
+                String base = Log.log('base')
+                Base() { Log.log('Base()') }
+            }
+            $mode
+            class Sub extends Base implements C {
+                String own = Log.log('own')
+                Sub() { Log.log('Sub()') }
+            }
+            $mode
+            class Sub2 extends Base implements B {
+                Sub2() { Log.log('Sub2()') }
+            }
+
+            def eventsOf = { Class type -> Log.events.clear(); type.newInstance(); Log.events }
+            assert eventsOf(Swapped) == ['own', 'block', 'B.b', 'A.a', 'C.cf', 'C.c', 'ctor']
+            assert eventsOf(Sub) == ['base', 'A.a', 'Base()', 'own', 'C.cf', 'C.c', 'Sub()']
+            // Sub2 declares A again through B, so A's initializer also runs for the copy of its state in Sub2
+            assert eventsOf(Sub2) == ['base', 'A.a', 'Base()', 'B.b', 'A.a', 'Sub2()']
         """
     }
 
