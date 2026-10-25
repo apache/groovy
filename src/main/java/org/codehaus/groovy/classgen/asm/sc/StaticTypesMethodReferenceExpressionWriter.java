@@ -473,10 +473,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         Expression returnValue;
         boolean staticCompile = false;
-        if (returnType.isArray()) {
+        if (returnType.isArray()) { // like new T[n]
             returnValue = new ArrayExpression(
                     returnType.getComponentType(),
                     null, ctorArgs.getExpressions());
+            staticCompile = true;
         } else {
             returnValue = ctorX(returnType, ctorArgs);
             ConstructorNode ctor = findConstructorReferenceTarget(returnType, parametersWithExactType);

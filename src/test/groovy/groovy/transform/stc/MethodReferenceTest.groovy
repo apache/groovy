@@ -1567,6 +1567,48 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12488
+    @Test // arrayClass::new
+    void testArrayConstructorReferencesWithEachSizeType() {
+        assertScript shell, '''
+            interface ShortFunction<T> { T apply(short s) }
+            interface ByteFunction<T> { T apply(byte b) }
+
+            @CompileStatic
+            void test() {
+                IntFunction<String[]> i = String[]::new
+                Function<Integer, String[]> boxed = String[]::new
+                Function<Short, String[]> s = String[]::new
+                Function<Byte, String[]> b = String[]::new
+                ShortFunction<long[]> ps = long[]::new
+                ByteFunction<Object[]> pb = Object[]::new
+                IntFunction<int[][]> m = int[][]::new
+                IntFunction<List<String>[]> g = List[]::new
+
+                assert i.apply(1) == new String[1]
+                assert boxed.apply(2) == new String[2]
+                assert s.apply((short) 3) == new String[3]
+                assert b.apply((byte) 4) == new String[4]
+                assert ps.apply((short) 2) == new long[] { 0L, 0L }
+                assert pb.apply((byte) 1).getClass() == Object[]
+                int[][] matrix = m.apply(3)
+                assert matrix.length == 3 && matrix[0] == null
+                assert g.apply(1).getClass() == List[]
+
+                def inClosure = { -> IntFunction<String[]> f = String[]::new; f }
+                Supplier<IntFunction<String[]>> inLambda = () -> { IntFunction<String[]> f = String[]::new; f }
+                assert inClosure().apply(1).length == 1
+                assert inLambda.get().apply(2).length == 2
+
+                try { i.apply(-1); assert false } catch (NegativeArraySizeException expected) { }
+                try { boxed.apply(null); assert false } catch (NullPointerException expected) { }
+                try { s.apply(null); assert false } catch (org.codehaus.groovy.runtime.typehandling.GroovyCastException expected) { }
+            }
+
+            test()
+        '''
+    }
+
     @Test // class::new
     void testSerializableConstructorReference() {
         assertScript shell, '''
@@ -3524,6 +3566,55 @@ final class MethodReferenceTest {
                 'java/lang/invoke/LambdaMetafactory.metafactory',
                 'C.ctorRef$create$0(I)[Ljava/lang/String;'
             )
+        }
+
+        // GROOVY-12488
+        @Test
+        void testArrayConstructorReferenceCreatesArrayLikeStaticallyCompiledNewArray() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    static IntFunction<String[]> ints() {
+                        String[]::new
+                    }
+                    static Function<Integer, String[]> boxed() {
+                        String[]::new
+                    }
+                    static Function<Short, String[]> shorts() {
+                        String[]::new
+                    }
+                    static IntFunction<long[]> primitive() {
+                        long[]::new
+                    }
+                    static IntFunction<int[][]> matrix() {
+                        int[][]::new
+                    }
+                    static String[] newArray(Short s) {
+                        new String[s]
+                    }
+                }
+            '''
+
+            def ints = compileStaticMethodBytecode('ctorRef$ints$0', script)
+            assert ints.hasStrictSequence(['ILOAD 0', 'ANEWARRAY java/lang/String', 'ARETURN'])
+
+            def boxed = compileStaticMethodBytecode('ctorRef$boxed$1', script)
+            assert boxed.hasStrictSequence(['ALOAD 0', 'INVOKEVIRTUAL java/lang/Integer.intValue ()I', 'ANEWARRAY java/lang/String', 'ARETURN'])
+
+            def shortSize = ['ALOAD 0', 'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.intUnbox (Ljava/lang/Object;)I', 'ANEWARRAY java/lang/String', 'ARETURN']
+            def shorts = compileStaticMethodBytecode('ctorRef$shorts$2', script)
+            assert shorts.hasStrictSequence(shortSize)
+            assert compileStaticMethodBytecode('newArray', script).hasStrictSequence(shortSize)
+
+            def primitive = compileStaticMethodBytecode('ctorRef$primitive$3', script)
+            assert primitive.hasStrictSequence(['ILOAD 0', 'NEWARRAY T_LONG', 'ARETURN'])
+
+            def matrix = compileStaticMethodBytecode('ctorRef$matrix$4', script)
+            assert matrix.hasStrictSequence(['ILOAD 0', 'MULTIANEWARRAY [[I 1', 'ARETURN'])
+
+            for (bytecode in [ints, boxed, shorts, primitive, matrix]) {
+                assert !bytecode.hasSequence(['INVOKEDYNAMIC'])
+            }
         }
 
         @Test
