@@ -1136,6 +1136,38 @@ final class EnumTest extends CompilableTestSupport {
         '''
     }
 
+    // $INIT casts true and false for a Boolean parameter with asBoolean, which a category
+    // active while the enum initializes changes; null, and true or false for a boolean
+    // parameter, pass as they are, so those constants are created directly
+    // GROOVY-12490
+    @Test
+    void testBooleanArgumentsUnderACategoryThatOverridesAsBoolean() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Negation {
+                static boolean asBoolean(Boolean b) { !b.booleanValue() }
+            }
+            enum Wrapper {
+                ONE(true), TWO(false), THREE(null)
+                final Boolean flag
+                Wrapper(Boolean flag) { this.flag = flag }
+            }
+            enum Nothing {
+                ONE(null)
+                final Boolean flag
+                Nothing(Boolean flag) { this.flag = flag }
+            }
+            enum Primitive {
+                ONE(true), TWO(false)
+                final boolean flag
+                Primitive(boolean flag) { this.flag = flag }
+            }
+            // each enum initializes on its first use, inside the category
+            def flags = use(Negation) { [Wrapper, Nothing, Primitive].collect { it.values()*.flag } }
+            assert flags == [[false, true, null], [null], [true, false]]
+        '''
+    }
+
     // GROOVY-12490
     @Test
     void testLiteralArgumentBesideAVarargsConstructorThatNeedsMoreArguments() {

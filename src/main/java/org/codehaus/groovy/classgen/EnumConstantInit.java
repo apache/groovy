@@ -79,8 +79,9 @@ import static org.objectweb.asm.Opcodes.NEW;
  * {@code null}, which is weighed as the array.  The cast that {@code $INIT} applies to
  * each argument before the call returns the argument itself, or for a primitive parameter
  * the value of the wrapper, so the direct call receives exactly what {@code $INIT} would
- * pass.  The cast to {@code Boolean} is excluded because it goes through
- * {@code asBoolean}.</li>
+ * pass.  A {@code Boolean} parameter takes no literal but {@code null}, as the cast to
+ * {@code Boolean} calls {@code asBoolean} on any other value, which a category or a meta
+ * class may change.</li>
  * </ul>
  * Anything else, such as a GString for a String parameter, an argument the meta class
  * would convert (an {@code int} literal for a {@code long} parameter), overloaded
@@ -252,7 +253,11 @@ final class EnumConstantInit extends BytecodeExpression {
 
     /**
      * Tells whether the argument is a literal that the meta class accepts for a parameter
-     * of the given type and that the cast before the call leaves as it is.
+     * of the given type and that the cast before the call leaves as it is.  The cast to
+     * {@code Boolean} with invokedynamic returns {@code null} as it is, but calls
+     * {@code asBoolean} through the meta class on any other value, so {@code null} is the
+     * only literal it is certain to leave alone; a {@code boolean} parameter unboxes a
+     * {@code Boolean} without calling it.
      */
     private static boolean isPassedUnchanged(final Expression argument, final ClassNode parameterType) {
         ClassNode type = parameterType.redirect();

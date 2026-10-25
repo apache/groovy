@@ -446,6 +446,55 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         assertDirectConstructorCall(code, 'ONE', 'ICONST_0', ['ACONST_NULL'], '(Ljava/lang/String;ILjava/lang/Boolean;)V')
     }
 
+    // the runtime casts true and false for a Boolean parameter with asBoolean, but passes
+    // null as it is, and unboxes true and false for a boolean parameter without asBoolean;
+    // Boolean.TRUE is not a literal
+    // GROOVY-12490
+    @Test
+    void testBooleanArgumentsFollowTheCastOfTheRuntime() {
+        def wrapper = staticInitializerOf '''
+            enum E {
+                ONE(true), TWO(false)
+                E(Boolean flag) { }
+            }
+        '''
+        assertInitHelperCall(wrapper)
+
+        def nothing = staticInitializerOf '''
+            enum E {
+                ONE(null), TWO(null)
+                E(Boolean flag) { }
+            }
+        '''
+        assertDirectConstructorCall(nothing, 'ONE', 'ICONST_0', ['ACONST_NULL'], '(Ljava/lang/String;ILjava/lang/Boolean;)V')
+        assertDirectConstructorCall(nothing, 'TWO', 'ICONST_1', ['ACONST_NULL'], '(Ljava/lang/String;ILjava/lang/Boolean;)V')
+
+        def primitive = staticInitializerOf '''
+            enum E {
+                ONE(true), TWO(false)
+                E(boolean flag) { }
+            }
+        '''
+        assertDirectConstructorCall(primitive, 'ONE', 'ICONST_0', ['ICONST_1'], '(Ljava/lang/String;IZ)V')
+        assertDirectConstructorCall(primitive, 'TWO', 'ICONST_1', ['ICONST_0'], '(Ljava/lang/String;IZ)V')
+
+        def nullForPrimitive = staticInitializerOf '''
+            enum E {
+                ONE(null)
+                E(boolean flag) { }
+            }
+        '''
+        assertInitHelperCall(nullForPrimitive)
+
+        def property = staticInitializerOf '''
+            enum E {
+                ONE(Boolean.TRUE)
+                E(boolean flag) { }
+            }
+        '''
+        assertInitHelperCall(property)
+    }
+
     // a varargs constructor that needs more arguments than the constant supplies is not
     // weighed by the runtime
     // GROOVY-12490
