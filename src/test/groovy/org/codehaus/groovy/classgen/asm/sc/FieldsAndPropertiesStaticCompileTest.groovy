@@ -1253,4 +1253,15 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         assert inner.contains('GETFIELD Base.x')
         assert inner.contains('PUTFIELD Base.x')
     }
+
+    // GROOVY-12509
+    @Override @Test
+    void testPrivateAccessorOfNestMateViaPropertySyntax() {
+        super.testPrivateAccessorOfNestMateViaPropertySyntax()
+        String other = astTrees['Outer$Other'][1]
+        assert other.contains('INVOKEVIRTUAL Outer$Box.getX ()Ljava/lang/String;')
+        assert other.contains('INVOKEVIRTUAL Outer$Box.isB ()Z')
+        assert other.contains('INVOKEVIRTUAL Outer$Box.setY (Ljava/lang/String;)V')
+        assert other.contains('INVOKESTATIC Outer$Box.getZ ()Ljava/lang/String;')
+    }
 }
