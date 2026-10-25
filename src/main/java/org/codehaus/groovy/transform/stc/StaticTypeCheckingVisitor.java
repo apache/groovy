@@ -4231,14 +4231,21 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
         int nExpressions = expressions.size();
         int nthParameter = parameters.length - 1;
+        int nSelf = nExpressions - arguments.getExpressions().size(); // receiver of an extension method
         for (int i = 0; i < nExpressions; i += 1) {
             Expression expression = expressions.get(i);
             if (visitFunctors == (expression instanceof ClosureExpression || expression instanceof MethodPointerExpression)) {
                 if (visitFunctors && nthParameter != -1) { // GROOVY-10636: vargs call
-                    Parameter target = parameters[Math.min(i, nthParameter)];
+                    Parameter declared = parameters[Math.min(i, nthParameter)], target = declared;
                     ClassNode targetType = target.getType();
                     if (targetType.isArray() && i >= nthParameter)
                         targetType = targetType.getComponentType();
+                    ClassNode functionalType = (i < nSelf ? null : getFunctionalTypeArgument(receiver, selectedMethod, arguments, i - nSelf, targetType));
+                    if (functionalType != null) { // a type parameter the call binds to a functional interface
+                        targetType = functionalType;
+                        if (declared.getAnnotations(CLOSUREPARAMS_CLASSNODE).isEmpty())
+                            target = new Parameter(functionalType, declared.getName());
+                    }
                     boolean coerceToMethod = isSAMType(targetType);
                     if (coerceToMethod) { // resolve the target parameter's type
                         Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(receiver, selectedMethod, arguments);
@@ -4246,7 +4253,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         expression.putNodeMetaData(PARAMETER_TYPE, targetType);
                     }
                     if (expression instanceof ClosureExpression) {
-                        checkClosureWithDelegatesTo(receiver, selectedMethod, args(expressions), parameters, expression, target);
+                        checkClosureWithDelegatesTo(receiver, selectedMethod, args(expressions), parameters, expression, declared);
                         if (i > 0 || !(selectedMethod instanceof ExtensionMethodNode)) {
                             inferClosureParameterTypes(receiver, arguments, (ClosureExpression) expression, target, selectedMethod);
                         }
@@ -4269,11 +4276,59 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
                 expression.visit(this);
                 expression.removeNodeMetaData(DELEGATION_METADATA);
+            } else if (visitFunctors && nthParameter != -1 && i >= nSelf
+                    && implementsInterfaceOrIsSubclassOf(getType(expression), CLOSURE_TYPE)) {
+                // a closure value, such as a variable or a conditional expression, is converted like a literal
+                ClassNode targetType = parameters[Math.min(i, nthParameter)].getType();
+                if (targetType.isArray() && i >= nthParameter)
+                    targetType = targetType.getComponentType();
+                ClassNode functionalType = getFunctionalTypeArgument(receiver, selectedMethod, arguments, i - nSelf, targetType);
+                if (functionalType != null) expression.putNodeMetaData(PARAMETER_TYPE, functionalType);
             }
             if (i == 0 && parameters.length > 0 && expression instanceof MapExpression) {
                 checkNamedParamsAnnotation(parameters[0], (MapExpression) expression);
             }
         }
+    }
+
+    /**
+     * Returns the functional interface a call binds a parameter declared with a type parameter to, such as
+     * {@code Supplier<String>} for the parameter of {@code add(E)} called on a {@code List<Supplier<String>>},
+     * or for the second {@code T} of {@code <T extends Function<String, String>> m(T a, T b)} called with a
+     * subinterface of {@code Function} as the first argument. A closure argument for the parameter is converted
+     * to that interface. Neither the argument itself nor any other closure passed for a parameter that is not a
+     * functional interface is a witness for the type parameter: each is converted to what the others give.
+     *
+     * @return the interface, or {@code null} if the parameter is not declared with a type parameter or the call
+     *         does not bind it to a functional interface
+     */
+    private ClassNode getFunctionalTypeArgument(final ClassNode receiver, final MethodNode method, final ArgumentListExpression arguments, final int index, final ClassNode parameterType) {
+        if (!parameterType.isGenericsPlaceHolder()) return null;
+
+        ClassNode type = applyGenericsContext(extractPlaceHoldersVisibleToDeclaration(receiver, method, arguments), parameterType);
+        if (type.isGenericsPlaceHolder()) { // a type parameter of the method
+            List<Expression> witnesses = new ArrayList<>(arguments.getExpressions());
+            Parameter[] parameters = method.getParameters();
+            for (int i = 0, n = witnesses.size(), last = parameters.length - 1; i < n; i += 1) {
+                if (i == index) {
+                    witnesses.set(i, nullX());
+                } else if (last >= 0 && implementsInterfaceOrIsSubclassOf(getType(witnesses.get(i)), CLOSURE_TYPE)) {
+                    ClassNode pType = parameters[Math.min(i, last)].getType();
+                    if (pType.isArray() && i >= last) pType = pType.getComponentType();
+                    if (!isSAMType(pType)) witnesses.set(i, nullX());
+                }
+            }
+            GenericsType[] typeArguments = null;
+            if (typeCheckingContext.getEnclosingMethodCall() instanceof MethodCallExpression call && call.getArguments() == arguments) {
+                typeArguments = call.getGenericsTypes();
+            }
+            type = inferGenericsOfCall(receiver, method, args(witnesses), typeArguments, parameterType);
+        }
+        if (type == null || type.isGenericsPlaceHolder() || !isSAMType(type)
+                || !implementsInterfaceOrIsSubclassOf(type, parameterType.redirect())) {
+            return null;
+        }
+        return type;
     }
 
     private static LambdaExpression constructLambdaExpressionForMethodReference(final ClassNode functionalInterface, final MethodReferenceExpression methodReference) {
@@ -4452,7 +4507,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         Map<GenericsTypeName, GenericsType> gc = new HashMap<>();
                         extractGenericsConnections(gc, wrapTypeIfNecessary(getType(argument)), pType);
                         // GROOVY-10436: extract generics connections from closure parameter declaration(s)
-                        if (argument == expression || (argument instanceof ClosureExpression && isSAMType(pType))) {
+                        if ((argument == expression || argument instanceof ClosureExpression) && isSAMType(pType)) {
                             Parameter[] q = getParametersSafe((ClosureExpression) argument);
                             ClassNode[] r = extractTypesFromParameters(q); // maybe typed
                             ClassNode[] s = GenericsUtils.parameterizeSAM(pType).getV1();
@@ -6433,6 +6488,12 @@ trying: for (ClassNode[] signature : signatures) {
             storeTargetMethod(expr, method);
             typeCheckMethodsWithGenericsOrFail(left, new ClassNode[]{right}, method, expr);
 
+            Parameter[] parameters = (method instanceof ExtensionMethodNode emn ? emn.getExtensionMethodNode() : method).getParameters();
+            if (parameters.length > 0 && implementsInterfaceOrIsSubclassOf(right, CLOSURE_TYPE)) { // a closure operand is converted like an argument
+                ClassNode functionalType = getFunctionalTypeArgument(left, method, args(rightExpression), 0, parameters[parameters.length - 1].getType());
+                if (functionalType != null) rightExpression.putNodeMetaData(PARAMETER_TYPE, functionalType);
+            }
+
             if (isAssignment(op)) return left;
             if (!"compareTo".equals(operationName))
                 return inferReturnTypeGenerics(left, method, args(rightExpression));
@@ -7302,6 +7363,20 @@ trying: for (ClassNode[] signature : signatures) {
             return inferReturnTypeGenerics(receiver, extension, args, explicitTypeHints);
         }
 
+        return inferGenericsOfCall(receiver, method, arguments, explicitTypeHints, returnType);
+    }
+
+    /**
+     * Resolves the type parameters in a type of the method's signature, its return type or a parameter type,
+     * from the receiver, the type arguments and the arguments of a call.
+     */
+    private ClassNode inferGenericsOfCall(final ClassNode receiver, final MethodNode method, final Expression arguments, final GenericsType[] explicitTypeHints, ClassNode type) {
+        if (method instanceof ExtensionMethodNode) {
+            ArgumentListExpression args = getExtensionArguments(receiver, method, arguments);
+            MethodNode extension = ((ExtensionMethodNode) method).getExtensionMethodNode();
+            return inferGenericsOfCall(receiver, extension, args, explicitTypeHints, type);
+        }
+
         Map<GenericsTypeName, GenericsType> context = method.isStatic() || method.isConstructor()
                                             ? null : extractPlaceHoldersVisibleToDeclaration(receiver, method, arguments);
         GenericsType[] methodGenericTypes = method.isConstructor() ? method.getDeclaringClass().getGenericsTypes() : applyGenericsContext(context, method.getGenericsTypes());
@@ -7315,25 +7390,25 @@ trying: for (ClassNode[] signature : signatures) {
                 new Parameter(applyGenericsContext(context, param.getType()), param.getName())
             ).toArray(Parameter[]::new), arguments, explicitTypeHints), resolvedPlaceholders);
 
-            returnType = applyGenericsContext(resolvedPlaceholders, returnType);
+            type = applyGenericsContext(resolvedPlaceholders, type);
         }
 
         // 2) resolve type parameters of method's enclosing context
 
         if (context != null) {
-            returnType = applyGenericsContext(context, returnType);
+            type = applyGenericsContext(context, type);
 
             if (receiver.getGenericsTypes() == null && receiver.redirect().getGenericsTypes() != null
-                    && !receiver.isGenericsPlaceHolder() && GenericsUtils.hasUnresolvedGenerics(returnType)) {
-                returnType = returnType.getPlainNodeReference(); // GROOVY-10049: not "Stream<E>" for raw type
+                    && !receiver.isGenericsPlaceHolder() && GenericsUtils.hasUnresolvedGenerics(type)) {
+                type = type.getPlainNodeReference(); // GROOVY-10049: not "Stream<E>" for raw type
             }
         }
 
         // 3) resolve bounds of type parameters from calling context
 
-        returnType = applyGenericsContext(extractGenericsParameterMapOfThis(typeCheckingContext), returnType);
+        type = applyGenericsContext(extractGenericsParameterMapOfThis(typeCheckingContext), type);
 
-        return returnType;
+        return type;
     }
 
     /**

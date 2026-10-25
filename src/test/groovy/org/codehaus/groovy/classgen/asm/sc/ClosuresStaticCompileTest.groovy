@@ -144,4 +144,57 @@ final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticC
             test(new Pogo())
         '''
     }
+
+    // GROOVY-10979
+    @Test
+    void testClosurePassedForATypeParameterIsConvertedToTheInterfaceTheCallBindsItTo() {
+        assertScript '''
+            import java.util.concurrent.atomic.AtomicReference
+            import java.util.function.Function
+            import java.util.function.Supplier
+            interface Shout extends Function<String, String> { }
+            class C {
+                static <T extends Function<String, String>> T second(T a, T b) { b }
+                static <T> void addAll(List<T> list, T... items) { list.addAll(items) }
+                static <T> T id(T t) { t }
+                static List<Supplier<String>> suppliers(boolean flag) {
+                    List<Supplier<String>> list = []
+                    list.add { 'add' }
+                    list.add(0) { 'insert' }
+                    list.set(0) { 'set' }
+                    list << { 'shift' }
+                    addAll(list, { 'vararg' }, { 'varargs' })
+                    Closure<String> variable = { 'variable' }
+                    list.add(variable)
+                    list.add(flag ? { 'then' } : { 'else' })
+                    list.add(new AtomicReference<Supplier<String>>({ 'constructor' }).get())
+                    list.add(C.<Supplier<String>>id { 'type argument' })
+                    list
+                }
+                static Map<String, Function<String, String>> functions() {
+                    Map<String, Function<String, String>> map = [:]
+                    map.put('put') { String s -> s + '!' }
+                    map.putIfAbsent('implicit') { it.toUpperCase() }
+                    map.put('lambda', (String s) -> s + '?')
+                    map.put('reference', String::toUpperCase)
+                    map
+                }
+                static Shout shout() {
+                    Shout shout = { String s -> s + '!' }
+                    second(shout, { String s -> s + '?' }) // T is Shout
+                }
+            }
+
+            def suppliers = C.suppliers(true)
+            assert suppliers*.get() == ['set', 'add', 'shift', 'vararg', 'varargs', 'variable', 'then', 'constructor', 'type argument']
+            assert suppliers.every { it instanceof Supplier && !(it instanceof Closure) }
+            assert C.suppliers(false)[6].get() == 'else'
+            def functions = C.functions()
+            assert functions.collectEntries { k, f -> [k, f.apply('ab')] } == [put: 'ab!', implicit: 'AB', lambda: 'ab?', reference: 'AB']
+            assert functions.values().every { !(it instanceof Closure) }
+            def shout = C.shout()
+            assert shout.apply('a') == 'a?'
+            assert shout instanceof Shout
+        '''
+    }
 }
