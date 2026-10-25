@@ -138,6 +138,7 @@ import java.util.EnumMap;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -458,6 +459,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected DefaultTypeCheckingExtension extension;
     /** Mutable state for the current type-checking run. */
     protected TypeCheckingContext typeCheckingContext;
+    /** The instanceof checks whose outcome guards what is evaluated after them; only these narrow types. */
+    private final Set<Expression> instanceOfGuards = Collections.newSetFromMap(new IdentityHashMap<>());
 
     /**
      * Creates a static type-checking visitor for the supplied source and class.
@@ -943,6 +946,31 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     /** {@inheritDoc} */
     @Override
+    public void visitBooleanExpression(final BooleanExpression expression) {
+        addInstanceOfGuards(expression.getExpression()); // the condition of an if, while, assert or conditional expression
+        super.visitBooleanExpression(expression);
+    }
+
+    /**
+     * Records the instanceof checks of a condition or logical expression that guard what is evaluated after
+     * them: those reached through logical operators, {@code &} and {@code !} only. A check that is an operand
+     * of any other operator, an argument or an element, such as {@code x instanceof T} in
+     * {@code foo(x instanceof T, x)}, does not tell anything about the expressions evaluated after it.
+     */
+    private void addInstanceOfGuards(final Expression expression) {
+        Expression expr = stripParentheses(expression);
+        if (expr instanceof BooleanExpression be) { // includes NotExpression
+            addInstanceOfGuards(be.getExpression());
+        } else if (isBinaryOperation(expr, LOGICAL_AND, LOGICAL_OR, BITWISE_AND)) {
+            addInstanceOfGuards(((BinaryExpression) expr).getLeftExpression());
+            addInstanceOfGuards(((BinaryExpression) expr).getRightExpression());
+        } else if (isBinaryOperation(expr, KEYWORD_INSTANCEOF, COMPARE_NOT_INSTANCEOF)) {
+            instanceOfGuards.add(expr);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public void visitNotExpression(final NotExpression expression) {
         typeCheckingContext.pushTemporaryTypeInfo();
         super.visitNotExpression(expression);
@@ -974,6 +1002,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             int op = expression.getOperation().getType();
             Expression leftExpression = expression.getLeftExpression();
             Expression rightExpression = expression.getRightExpression();
+            if (op == LOGICAL_AND || op == LOGICAL_OR) addInstanceOfGuards(expression);
 
             if (isAssignment(op) && op != EQUAL) {
                 // GEP-15: try a dedicated *Assign method on the LHS type before the legacy desugar.
@@ -1036,12 +1065,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
 
             // GROOVY-7971, GROOVY-8965, GROOVY-10096, GROOVY-10702, et al.
-            if (op == LOGICAL_OR) typeCheckingContext.pushTemporaryTypeInfo();
+            if (op == LOGICAL_OR || op == BITWISE_AND) typeCheckingContext.pushTemporaryTypeInfo();
 
             ClassNode lType;
             leftExpression.visit(this);
             var setterInfo = removeSetterInfo(leftExpression);
-            if (setterInfo != null) { assert op != LOGICAL_OR;
+            if (setterInfo != null) { assert op != LOGICAL_OR && op != BITWISE_AND;
                 if (ensureValidSetter(expression, leftExpression, rightExpression, setterInfo)) {
                     return;
                 }
@@ -1053,7 +1082,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 } else {
                     lType = getType(leftExpression);
                 }
-                if (op != LOGICAL_OR) {
+                if (op == BITWISE_AND) { // the right operand is evaluated whatever the left one is
+                    var lhs = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
+                    typeCheckingContext.pushTemporaryTypeInfo();
+                    rightExpression.visit(this);
+                    var rhs = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
+                    lhs.forEach((key, types) -> typeCheckingContext.peekTemporaryTypeInfo(key).addAll(types));
+                    rhs.forEach((key, types) -> typeCheckingContext.peekTemporaryTypeInfo(key).addAll(types));
+                } else if (op != LOGICAL_OR) {
                     rightExpression.visit(this);
                 } else {
                     var lhs = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
@@ -1194,9 +1230,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 } else if (!lType.isInterface() && !rType.isInterface() && !(lType.isDerivedFrom(rType) || rType.isDerivedFrom(lType))) {
                     addError("Incompatible instanceof types: " + prettyPrintTypeName(lType) + " and " + prettyPrintTypeName(rType), expression);
                 }
-                pushInstanceOfTypeInfo(leftExpression, rightExpression);
+                if (instanceOfGuards.contains(expression)) pushInstanceOfTypeInfo(leftExpression, rightExpression);
             } else if (op == COMPARE_NOT_INSTANCEOF) { // GROOVY-6429, GROOVY-8321, GROOVY-8412, GROOVY-8523, GROOVY-9931
-                putNotInstanceOfTypeInfo(extractTemporaryTypeInfoKey(leftExpression), Set.of(rightExpression.getType()));
+                if (instanceOfGuards.contains(expression)) putNotInstanceOfTypeInfo(extractTemporaryTypeInfoKey(leftExpression), Set.of(rightExpression.getType()));
             }
             if (!isEmptyDeclaration) {
                 storeType(expression, resultType);

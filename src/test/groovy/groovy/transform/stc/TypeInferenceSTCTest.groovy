@@ -654,6 +654,42 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Incompatible instanceof types'
     }
 
+    // GROOVY-12492: a check that guards nothing narrows nothing
+    @Test
+    void testInstanceOf30() {
+        assertScript '''
+            String two(Object a, Object b) { "$a,$b" }
+            def concatenation(CharSequence cs) { 'x' + (cs instanceof String) + cs.length() }
+            def argument(CharSequence cs) { two(cs instanceof String, cs.length()) }
+            def element(CharSequence cs) { [cs instanceof String, cs.length()] }
+            def equality(CharSequence cs) { (cs instanceof String) == cs.isEmpty() }
+            def bitwiseAnd(CharSequence cs) { cs instanceof String & cs.length() > 0 }
+            def bitwiseAndCondition(CharSequence cs) { if (cs instanceof String & cs.length() > 0) cs.toUpperCase() else 'no' }
+            def equalityCondition(CharSequence cs) { if ((cs instanceof StringBuilder) == false) cs.reverse() else 'no' }
+            def callCondition(CharSequence cs) { if (Objects.nonNull(cs instanceof StringBuilder)) cs.reverse() else 'no' }
+
+            def sb = new StringBuilder('ab')
+            assert concatenation(sb) == 'xfalse2'
+            assert argument(sb) == 'false,2'
+            assert element(sb) == [false, 2]
+            assert equality(sb)
+            assert !bitwiseAnd(sb)
+            assert bitwiseAndCondition('ab') == 'AB'
+            assert bitwiseAndCondition(sb) == 'no'
+            assert equalityCondition('ab') == 'ba'
+            assert callCondition('ab') == 'ba'
+        '''
+
+        for (expression in ["'' + (cs instanceof String) + cs.toUpperCase()", 'two(cs instanceof String, cs.toUpperCase())',
+                            '[cs instanceof String, cs.toUpperCase()]', 'cs instanceof String & Objects.isNull(cs.toUpperCase())']) {
+            shouldFailWithMessages """
+                def two(Object a, Object b) { }
+                def test(CharSequence cs) { $expression }
+            """,
+            'Cannot find matching method java.lang.CharSequence#toUpperCase()'
+        }
+    }
+
     // GROOVY-5226
     @Test
     void testNestedInstanceOf1() {
