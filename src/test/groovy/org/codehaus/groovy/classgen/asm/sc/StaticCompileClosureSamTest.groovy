@@ -19,7 +19,9 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.junit.jupiter.api.Test
 
@@ -58,6 +60,16 @@ final class StaticCompileClosureSamTest extends AbstractBytecodeTestCase {
         Proxy.isProxyClass(value.getClass())
     }
 
+    /** Compiles the source and returns the names of the adapter classes generated for it. */
+    private static List<String> adapterClassNames(boolean enabled, String source) {
+        withSam(enabled) {
+            def unit = new CompilationUnit()
+            unit.addSource('script', source)
+            unit.compile(Phases.CLASS_GENERATION)
+            unit.classes*.name.findAll { it.endsWith('$SamAdapter') }
+        }
+    }
+
     private static final String FORMS = '''
         import groovy.transform.CompileStatic
         import java.util.function.IntBinaryOperator
@@ -90,6 +102,7 @@ final class StaticCompileClosureSamTest extends AbstractBytecodeTestCase {
                 'INVOKEINTERFACE java/util/stream/IntStream.reduce'
             ])
         }
+        assert adapterClassNames(true, FORMS).size() == 6 // one for each closure
     }
 
     @Test
@@ -114,6 +127,7 @@ final class StaticCompileClosureSamTest extends AbstractBytecodeTestCase {
             assert sequence.hasSequence(['INVOKEDYNAMIC cast(Lgroovy/lang/Closure;)Ljava/util/function/IntBinaryOperator;'])
             assert sequence.hasSequence(['INVOKEDYNAMIC invoke(Lgroovy/lang/Closure;Ljava/lang/Class;)'])
         }
+        assert adapterClassNames(false, FORMS).isEmpty()
         def c = eval(FORMS + '\nC', false)
         assert isProxy(c.variable())
         assert c.variable().applyAsInt(7, 3) == 10
@@ -205,6 +219,9 @@ final class StaticCompileClosureSamTest extends AbstractBytecodeTestCase {
                 static Function<Object, Object> implicitIt() { Function<Object, Object> f = { it }; f }
                 static BiFunction<Integer, Integer, Integer> allArguments() { BiFunction<Integer, Integer, Integer> f = { Integer a, Integer b = 10 -> a + b }; f }
                 static List<String> destructured() { List<String> out = []; [['a', 'b'], ['c', 'd']].forEach { a, b -> out << a + b }; out }
+                static Consumer<List<String>> seen(Consumer<List<String>> c) { c }
+                static Consumer<List<String>> destructuredArgument(List<String> out) { seen { a, b -> out << a + b } }
+                static Consumer<List<String>> destructuredVariable(List<String> out) { Consumer<List<String>> c = { a, b -> out << a + b }; c }
             }
             C
         '''
@@ -215,6 +232,12 @@ final class StaticCompileClosureSamTest extends AbstractBytecodeTestCase {
         for (value in [c.noParameter(), c.implicitIt(), c.allArguments()]) {
             assert !isProxy(value)
         }
+        def out = []
+        c.destructuredArgument(out).accept(['a', 'b'])
+        c.destructuredVariable(out).accept(['c', 'd'])
+        assert out == ['ab', 'cd']
+        assert isProxy(c.destructuredArgument([])) // a closure that destructures its argument converts at run time
+        assert isProxy(c.destructuredVariable([]))
     }
 
     @Test
@@ -320,10 +343,12 @@ final class StaticCompileClosureSamTest extends AbstractBytecodeTestCase {
         '''
         assert ['ccc', 'a', 'bb'].sort(false, c.BY_LENGTH) == ['a', 'bb', 'ccc']
         assert c.newInstance().field.apply('ab') == 'ba'
-        assert c.pick(true).apply('Ab') == 'AB' // a conditional expression still converts at run time
+        assert c.pick(true).apply('Ab') == 'AB'
         assert c.pick(false).apply('Ab') == 'ab'
         assert !isProxy(c.BY_LENGTH)
         assert !isProxy(c.newInstance().field)
+        assert isProxy(c.pick(true)) // a conditional expression still converts at run time
+        assert isProxy(c.pick(false))
     }
 
     @Test
@@ -514,6 +539,101 @@ final class StaticCompileClosureSamTest extends AbstractBytecodeTestCase {
         }
     }
 
+    // GROOVY-12492
+    @Test
+    void defaultValuesAndConstructorArgumentsKeepTheirConversion() {
+        def (c, e) = eval '''
+            import java.util.function.Function
+            @groovy.transform.CompileStatic
+            class Holder {
+                Function<String, String> f
+                Holder() { }
+                Holder(Function<String, String> f) { this.f = f }
+            }
+            @groovy.transform.CompileStatic
+            enum E {
+                PLAIN({ String s -> s + '-plain' }), COERCED({ String s -> s + '-coerced' } as Function<String, String>)
+                final Function<String, String> f
+                E(Function<String, String> f) { this.f = f }
+            }
+            @groovy.transform.CompileStatic
+            class C {
+                static Function<String, String> defaultValue(Function<String, String> f = { String s -> s + '-default' }) { f }
+                static Function<String, String> anonymous() { new Holder({ String s -> s + '-anonymous' }) { }.f }
+                static Function<String, String> named() { new Holder(f: { String s -> s + '-named' }).f }
+            }
+            [C, E]
+        '''
+        assert c.defaultValue().apply('a') == 'a-default'
+        assert e.PLAIN.f.apply('a') == 'a-plain'
+        assert e.COERCED.f.apply('a') == 'a-coerced'
+        assert c.anonymous().apply('a') == 'a-anonymous'
+        assert c.named().apply('a') == 'a-named'
+        assert isProxy(c.defaultValue()) // a default parameter value
+        assert isProxy(e.PLAIN.f) // an argument of an enum constant
+        assert !isProxy(e.COERCED.f) // unless written with as
+        assert isProxy(c.anonymous()) // an argument of the constructor of an anonymous class
+        assert isProxy(c.named()) // a named argument of a constructor
+    }
+
+    // GROOVY-12492
+    @Test
+    void protectedInterfaceFromAnotherPackageKeepsItsConversion() {
+        def c = eval '''
+            import org.codehaus.groovy.classgen.asm.sc.ClosureSamCallbacks
+            @groovy.transform.CompileStatic
+            class C extends ClosureSamCallbacks {
+                Object make() { ClosureSamCallbacks.Callback cb = { String s -> s + '!' }; cb }
+                String result() { ClosureSamCallbacks.Callback cb = { String s -> s + '?' }; cb.f('a') }
+            }
+            C
+        '''
+        def instance = c.newInstance()
+        assert instance.result() == 'a?'
+        assert isProxy(instance.make())
+    }
+
+    // GROOVY-12492
+    @Test
+    void javaInterfaceRedeclaringItsMethodKeepsItsConversion() {
+        def c = eval '''
+            import java.util.function.Function
+            import org.codehaus.groovy.classgen.asm.sc.ClosureSamStringFunction
+            @groovy.transform.CompileStatic
+            class C {
+                static ClosureSamStringFunction shout() { ClosureSamStringFunction f = { String s -> s.toUpperCase() }; f }
+                static Object raw(Function f, Object argument) { f.apply(argument) }
+            }
+            C
+        '''
+        def f = c.shout()
+        assert f.apply('a') == 'A'
+        assert c.raw(f, 'b') == 'B' // through the bridge javac added as a default method, which an adapter would override
+        assert isProxy(f)
+    }
+
+    // GROOVY-12492
+    @Test
+    void interfacesWithoutASingleAbstractMethodKeepTheirConversion() {
+        def c = eval '''
+            interface Mapper<T> { T map(T t) }
+            interface StringMapper { String map(String s) }
+            interface Both extends Mapper<String>, StringMapper { }
+            interface Getter { Object get() }
+            interface StringGetter extends Getter { String get() }
+            @groovy.transform.CompileStatic
+            class C {
+                static Both both() { { String s -> s.toUpperCase() } as Both }
+                static StringGetter covariant() { { -> 'got' } as StringGetter }
+            }
+            C
+        '''
+        assert c.both().map('a') == 'A'
+        assert c.covariant().get() == 'got'
+        assert isProxy(c.both())
+        assert isProxy(c.covariant())
+    }
+
     @Test
     void closuresNotConvertedToAnInterfaceAreUnchanged() {
         def c = eval '''
@@ -540,7 +660,11 @@ final class StaticCompileClosureSamTest extends AbstractBytecodeTestCase {
         try {
             def c = eval(FORMS + '\nC')
             assert c.argument(5) == 10
-            assert [c.variable(), c.returned(), c.coerced(), c.cast(), c.passed()]*.applyAsInt(7, 3) == [10, 21, 4, 1, 10]
+            def ops = [c.variable(), c.returned(), c.coerced(), c.cast(), c.passed()]
+            assert ops*.applyAsInt(7, 3) == [10, 21, 4, 1, 10]
+            // a packed closure has no class of its own to adapt, so it converts at run time; the literal returned
+            // as it is escapes its method, which keeps it from being packed, so it gets its adapter
+            assert ops.collect { isProxy(it) } == [true, false, true, true, true]
         } finally {
             if (previous != null) System.setProperty(CompilerConfiguration.CLOSURE_PACKING, previous)
             else System.clearProperty(CompilerConfiguration.CLOSURE_PACKING)
