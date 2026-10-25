@@ -1327,6 +1327,10 @@ public class AsmClassGenerator extends ClassGenerator {
      * are compiled to class files are expected to be loaded by one class
      * loader with the classes they use from the same package, as javac
      * expects.
+     * <p>
+     * {@code isPrimaryClassNode()} is used here as "defined by the class
+     * loader of the accessing class", since the classes of one compilation are
+     * defined together; it does not stand for "compiled from source".
      *
      * @param declaringClass the class declaring the member
      * @param accessingClass the class attempting access
