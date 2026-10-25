@@ -29,6 +29,9 @@ import groovy.transform.Internal;
 import org.apache.groovy.lang.annotation.GroovyABI;
 import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.apache.groovy.runtime.indy.SwitchPointInvalidator;
+import org.apache.groovy.util.concurrent.ConcurrentReferenceHashMap;
+import org.apache.groovy.util.concurrent.ConcurrentReferenceHashMap.Option;
+import org.apache.groovy.util.concurrent.ConcurrentReferenceHashMap.ReferenceType;
 import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap;
 import org.codehaus.groovy.reflection.GroovyClassValue.ComputeValue;
 import org.codehaus.groovy.reflection.stdclasses.ArrayCachedClass;
@@ -61,6 +64,7 @@ import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -112,16 +116,33 @@ public class ClassInfo implements Finalizable {
     private static final ManagedConcurrentLinkedQueue<ClassInfo> modifiedExpandos =
             new ManagedConcurrentLinkedQueue<ClassInfo>(weakBundle);
 
+    /**
+     * The instances {@link #remove(Class)} detached, by class, both held weakly. While one
+     * is still reachable, its class gets that same instance back when it is used again. The
+     * default Groovy methods and extension methods keep it reachable: they hold the
+     * {@code CachedClass} of their declaring and parameter types, and so its
+     * {@code ClassInfo}. A new instance would lack the methods the registry wrote into the
+     * detached one, and its {@code CachedClass} would not be the one those methods compare
+     * parameter types with by identity.
+     */
+    private static final ConcurrentReferenceHashMap<Class<?>, ClassInfo> detachedClassInfos =
+            new ConcurrentReferenceHashMap<>(ReferenceType.WEAK, ReferenceType.WEAK, EnumSet.of(Option.IDENTITY_COMPARISONS));
+
     private static final GroovyClassValue<ClassInfo> globalClassValue = GroovyClassValueFactory.createGroovyClassValue(new ComputeValue<ClassInfo>(){
         /**
          * Creates a new {@code ClassInfo} for the given class type.
          * Initializes cache and registers the class information in the global set.
+         * A still reachable instance that {@link #remove(Class)} detached is returned instead.
          *
          * @param type the class to create information for
-         * @return the newly created {@code ClassInfo}
+         * @return the {@code ClassInfo} for the class
          */
         @Override
         public ClassInfo computeValue(Class<?> type) {
+            ClassInfo detached = detachedClassInfos.get(type);
+            if (detached != null) {
+                return detached; // alive, so still in the global set
+            }
             ClassInfo ret = new ClassInfo(type);
             globalClassSet.add(ret);
             return ret;
@@ -373,11 +394,25 @@ public class ClassInfo implements Finalizable {
      * is not retained or cached.  Removing the {@code ClassInfo} associated with the Class
      * will make the Class and its ClassLoader eligible for garbage collection sooner that
      * it would otherwise.
+     * <p>
+     * The MetaClasses set for the class and for its instances are dropped. If the
+     * {@code ClassInfo} is still reachable when the class is used again, as it is for a
+     * class that has default Groovy methods or extension methods, the class gets it back
+     * with those methods; otherwise a new one is created.
      *
      * @param cls the Class associated with the ClassInfo to remove
      *            from cache
      */
     public static void remove(Class<?> cls) {
+        ClassInfo info = globalClassValue.get(cls);
+        info.lock();
+        try {
+            info.perInstanceMetaClassMap = null;
+            info.setStrongMetaClass(null); // also drops the weak MetaClass and retires the SwitchPoint generation
+        } finally {
+            info.unlock();
+        }
+        detachedClassInfos.put(cls, info);
         // A hard detach drops the whole association — including any pin the
         // detached instance held there — so undeploy semantics need no
         // store-specific handling.
