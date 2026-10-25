@@ -18,6 +18,16 @@
  */
 package org.codehaus.groovy.classgen.asm
 
+import org.apache.groovy.parser.antlr4.Antlr4ParserPlugin
+import org.codehaus.groovy.ast.ModuleNode
+import org.codehaus.groovy.ast.expr.ListExpression
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.ParserPlugin
+import org.codehaus.groovy.control.ParserPluginFactory
+import org.codehaus.groovy.control.Phases
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.syntax.Reduction
 import org.junit.jupiter.api.Test
 
 /**
@@ -34,6 +44,14 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
 
     private List<String> staticInitializerOf(final String source) {
         compile(method: '<clinit>', classNamePattern: 'E', source)
+        bodyOf('static <clinit>()V')
+    }
+
+    private List<String> staticInitializerOf(final CompilerConfiguration config, final String source) {
+        def unit = new CompilationUnit(config)
+        unit.addSource('script', source)
+        unit.compile(Phases.CLASS_GENERATION)
+        sequence = extractSequence(unit.classes.find { it.name == 'E' }.bytes, [method: '<clinit>'])
         bodyOf('static <clinit>()V')
     }
 
@@ -74,6 +92,31 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
     private static void assertInitHelperCall(final List<String> code) {
         assert code.any { it.contains('$INIT') }
         assert !code.any { it.startsWith('NEW E') }
+    }
+
+    // a parser that leaves the only argument of an enum constant as its initial value, where
+    // the Groovy parser puts it in a list (a list argument stays in its list, as it would be
+    // taken for the arguments)
+    private static CompilerConfiguration unwrappingOnlyArguments() {
+        new CompilerConfiguration(pluginFactory: new ParserPluginFactory() {
+            @Override
+            ParserPlugin createParserPlugin() {
+                new Antlr4ParserPlugin() {
+                    @Override
+                    ModuleNode buildAST(SourceUnit sourceUnit, ClassLoader classLoader, Reduction cst) {
+                        ModuleNode module = super.buildAST(sourceUnit, classLoader, cst)
+                        module.classes*.fields.flatten().each { field ->
+                            def init = field.initialExpression
+                            if (field.enum && init instanceof ListExpression && init.expressions.size() == 1
+                                    && !(init.expressions[0] instanceof ListExpression)) {
+                                field.initialValueExpression = init.expressions[0]
+                            }
+                        }
+                        module
+                    }
+                }
+            }
+        })
     }
 
     // the imports and the annotation of an enum whose $INIT calls an @ASTTest rewrites as a
@@ -646,5 +689,32 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         '''
         assertDirectConstructorCall(code, 'ONE', 'ICONST_0', ['LDC "one"'], '(Ljava/lang/String;ILjava/lang/String;)V')
         assertDirectConstructorCall(code, 'TWO', 'ICONST_1', [], '(Ljava/lang/String;I)V')
+    }
+
+    // a parser plugin may leave the only argument of a constant as its initial value instead
+    // of in a list
+    // GROOVY-12490
+    @Test
+    void testOnlyArgumentOutsideAListCallsConstructorDirectly() {
+        def code = staticInitializerOf(unwrappingOnlyArguments(), '''
+            enum E {
+                ONE('one'), TWO('two')
+                E(String s) { }
+            }
+        ''')
+        assertDirectConstructorCall(code, 'ONE', 'ICONST_0', ['LDC "one"'], '(Ljava/lang/String;ILjava/lang/String;)V')
+        assertDirectConstructorCall(code, 'TWO', 'ICONST_1', ['LDC "two"'], '(Ljava/lang/String;ILjava/lang/String;)V')
+    }
+
+    // GROOVY-12490
+    @Test
+    void testOnlyArgumentOutsideAListThatIsNotALiteralUsesInitHelper() {
+        def code = staticInitializerOf(unwrappingOnlyArguments(), '''
+            enum E {
+                ONE('one'.toUpperCase()), TWO('two')
+                E(String s) { }
+            }
+        ''')
+        assertInitHelperCall(code)
     }
 }

@@ -287,7 +287,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                     addError(field, "The constructor " + enumClass.getNameWithoutPackage() + "() is undefined.");
                 }
             } else {
-                var initList = (ListExpression) field.getInitialExpression();
+                ListExpression initList = getConstantArguments(field);
                 List<MapEntryExpression> savedMapEntries = new ArrayList<>();
                 for (Expression exp : initList.getExpressions()) {
                     if (exp instanceof MapEntryExpression) {
@@ -373,11 +373,24 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                 // GROOVY-10811: a declared constructor must be callable with no user-supplied argument
                 if (!enumClass.getDeclaredConstructors().isEmpty() && !hasNoArgConstructor(enumClass)) return false;
             } else {
-                List<Expression> arguments = ((ListExpression) field.getInitialExpression()).getExpressions();
+                List<Expression> arguments = getConstantArguments(field).getExpressions();
                 if (arguments.isEmpty() || arguments.stream().anyMatch(MapEntryExpression.class::isInstance)) return false;
             }
         }
         return true;
+    }
+
+    /**
+     * Returns the arguments of the given enum constant, which has an initial value.  The
+     * parser leaves them in a list; any other expression, such as one that another parser
+     * plugin leaves there, is the only argument, as for {@code EnumHelper.addEnumConstant}.
+     */
+    private static ListExpression getConstantArguments(final FieldNode field) {
+        Expression init = field.getInitialExpression();
+        if (init instanceof ListExpression list) return list;
+        var list = new ListExpression();
+        list.addExpression(init);
+        return list;
     }
 
     private void addError(final AnnotatedNode an, final String msg) {

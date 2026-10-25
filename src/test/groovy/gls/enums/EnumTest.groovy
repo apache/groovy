@@ -20,6 +20,14 @@ package gls.enums
 
 import gls.CompilableTestSupport
 import groovy.transform.CompileStatic
+import org.apache.groovy.parser.antlr4.Antlr4ParserPlugin
+import org.codehaus.groovy.ast.ModuleNode
+import org.codehaus.groovy.ast.expr.ListExpression
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.ParserPlugin
+import org.codehaus.groovy.control.ParserPluginFactory
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.syntax.Reduction
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -1213,6 +1221,62 @@ final class EnumTest extends CompilableTestSupport {
             assert Made.values()*.s == ['made', 'two']
             assert Made.values()*.ordinal() == [0, 1]
         '''
+    }
+
+    // a parser plugin may leave the only argument of a constant as its initial value instead
+    // of in a list
+    // GROOVY-12490
+    @Test
+    void testOnlyArgumentOutsideAList() {
+        def shell = new GroovyShell(unwrappingOnlyArguments())
+        assert shell.evaluate('''
+            enum Direct {
+                ONE('one'), TWO('two')
+                final String s
+                Direct(String s) { this.s = s }
+            }
+            Direct.values()*.s
+        ''') == ['one', 'two']
+        assert shell.evaluate('''
+            enum NotALiteral {
+                ONE('one'.toUpperCase()), TWO('two')
+                final String s
+                NotALiteral(String s) { this.s = s }
+            }
+            NotALiteral.values()*.s
+        ''') == ['ONE', 'two']
+        assert shell.evaluate('''
+            enum WithBody {
+                ONE { String describe() { 'body' } }, TWO
+                String describe() { 'plain' }
+            }
+            WithBody.values()*.describe()
+        ''') == ['body', 'plain']
+    }
+
+    // a parser that leaves the only argument of an enum constant as its initial value, where
+    // the Groovy parser puts it in a list (a list argument stays in its list, as it would be
+    // taken for the arguments)
+    private static CompilerConfiguration unwrappingOnlyArguments() {
+        new CompilerConfiguration(pluginFactory: new ParserPluginFactory() {
+            @Override
+            ParserPlugin createParserPlugin() {
+                new Antlr4ParserPlugin() {
+                    @Override
+                    ModuleNode buildAST(SourceUnit sourceUnit, ClassLoader classLoader, Reduction cst) {
+                        ModuleNode module = super.buildAST(sourceUnit, classLoader, cst)
+                        module.classes*.fields.flatten().each { field ->
+                            def init = field.initialExpression
+                            if (field.enum && init instanceof ListExpression && init.expressions.size() == 1
+                                    && !(init.expressions[0] instanceof ListExpression)) {
+                                field.initialValueExpression = init.expressions[0]
+                            }
+                        }
+                        module
+                    }
+                }
+            }
+        })
     }
 
     // the imports and the annotation of an enum whose $INIT calls an @ASTTest rewrites as a
