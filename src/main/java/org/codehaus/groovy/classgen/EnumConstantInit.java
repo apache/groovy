@@ -116,7 +116,7 @@ final class EnumConstantInit extends BytecodeExpression {
     /**
      * The node metadata key of the statements that assign the constants of an enum.
      */
-    private static final Object CONSTANT_ASSIGNMENTS = new Object();
+    private static final String CONSTANT_ASSIGNMENTS = "org.codehaus.groovy.classgen.EnumConstantInit.constantAssignments";
 
     private final ClassNode enumClass;
     private final String name;
