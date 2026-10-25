@@ -494,4 +494,47 @@ final class TraitWithClosureOrLambda {
         assertScript shell, script
         assertScript script.replace('trait T', '@groovy.transform.TypeChecked trait T')
     }
+
+    // GROOVY-12492
+    @Test
+    void testExplicitThisMethodCallInTraitClosure() {
+        String script = '''
+            import java.util.function.Supplier
+            class Base {
+                String base() { 'base' }
+            }
+            @groovy.transform.SelfType(Base)
+            trait T {
+                String name = 'n'
+                String helper(String s = '') { 'h' + s + name }
+                abstract String impl()
+                Closure field = { this.helper('-field-') }
+                String noArgument() { def c = { this.helper() }; c() }
+                String argument() { def c = { this.helper('-') }; c() }
+                String implemented() { def c = { this.impl() + this.base() }; c() }
+                String objectMethods() { def c = { this.toString() + ' ' + this.getClass().simpleName }; c() }
+                String nested() { def c = { def inner = { this.helper('-nested-') }; inner() }; c() }
+                String inLambda() { Supplier<String> s = () -> this.helper('-lambda-'); s.get() }
+                static String staticMethod() { def c = { this.getSimpleName() }; c() }
+            }
+            class C extends Base implements T {
+                String impl() { 'impl ' }
+                String toString() { 'C!' }
+            }
+
+            def c = new C()
+            // this in a trait closure is the instance the trait is applied to, also as the receiver of a call
+            assert c.field() == 'h-field-n'
+            assert c.noArgument() == 'hn'
+            assert c.argument() == 'h-n'
+            assert c.implemented() == 'impl base'
+            assert c.objectMethods() == 'C! C'
+            assert c.nested() == 'h-nested-n'
+            assert c.inLambda() == 'h-lambda-n'
+            assert C.staticMethod() == 'C'
+        '''
+        assertScript shell, script
+        assertScript script.replace('trait T', '@groovy.transform.TypeChecked trait T')
+        assertScript script
+    }
 }
