@@ -407,9 +407,12 @@ public abstract class Selector {
         public void chooseMeta(MetaClassImpl mci) {
             var receiver = getCorrectedReceiver();
             if (receiver instanceof GroovyObject) {
-                // a getProperty that is neither the interface default nor generated answers
-                // every read; a class that cannot be inspected counts as having one, so that
-                // the read reaches its getProperty rather than going around it to the metaclass
+                // hasCustomGetProperty, the criterion of the classic call sites too, not the
+                // overridesGetProperty of ScriptBytecodeAdapter.getProperty; the two differ on
+                // purpose (see GroovyObjectOverrides). A getProperty that is neither the interface
+                // default nor synthetic or @Internal answers every read; a class that cannot be
+                // inspected counts as having one, so that the read reaches its getProperty
+                // rather than going around it to the metaclass
                 if (GroovyObjectOverrides.hasCustomGetProperty(receiver.getClass())) {
                     handle = MethodHandles.insertArguments(GROOVY_OBJECT_GET_PROPERTY, 1, name);
                     return;

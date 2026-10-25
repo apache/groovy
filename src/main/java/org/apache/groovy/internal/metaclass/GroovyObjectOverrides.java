@@ -42,6 +42,22 @@ import java.util.function.Predicate;
  * default as custom, since it sets aside only implementations that are synthetic or
  * marked {@link Internal}.
  * <p>
+ * Reads have two criteria, which differ on purpose. {@code ScriptBytecodeAdapter.getProperty}
+ * uses {@link #overridesGetProperty(Class)}; the property-read call sites, invokedynamic and
+ * classic, use {@link #hasCustomGetProperty(Class)}. They disagree in two cases: a
+ * {@code getProperty} that is synthetic or marked {@code @Internal} but not an interface
+ * default, which the adapter passes the read to and the call sites go around to the
+ * metaclass; and a default method of another interface that is neither, which the call
+ * sites pass the read to and the adapter goes around. Each path keeps the criterion it had
+ * before this class existed, and giving one path the other's criterion would change which
+ * implementation answers such a read.
+ * <p>
+ * Writes have one criterion, {@link #overridesSetProperty(Class)}, which
+ * {@code ScriptBytecodeAdapter.setProperty} and {@code setGroovyObjectProperty} and the
+ * invokedynamic property-write sites share. No write path sets aside a synthetic or
+ * {@code @Internal} {@code setProperty}, and classic compilation has no property-write call
+ * sites: its writes go through {@code ScriptBytecodeAdapter}.
+ * <p>
  * Not user API.
  */
 @Internal
@@ -128,7 +144,9 @@ public final class GroovyObjectOverrides {
      * counts a default method inherited from another interface as custom, unless that
      * method too is synthetic or marked {@code @Internal}.
      * Computed once per class, and {@code true} when reflection cannot read the public
-     * methods of the class, for the reasons given for {@link #overridesSetProperty(Class)}.
+     * methods of the class, for the reasons given for {@link #overridesSetProperty(Class)}:
+     * the invokedynamic and classic call sites alike then pass the read to the object's own
+     * {@code getProperty} rather than to a metaclass path that would skip a real override.
      *
      * @param type a class that implements {@link GroovyObject}
      * @return {@code true} if a read should be passed to the object's own

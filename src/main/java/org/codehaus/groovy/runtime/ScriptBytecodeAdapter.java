@@ -480,8 +480,10 @@ public class ScriptBytecodeAdapter {
 
     public static Object getProperty(Class senderClass, Object receiver, String messageName) throws Throwable {
         try {
-            // as in setProperty: a class that cannot be inspected counts as overriding, so the
-            // read reaches its own getProperty (see GroovyObjectOverrides)
+            // overridesGetProperty, not the hasCustomGetProperty of the property-read call sites:
+            // a synthetic or @Internal getProperty receives the read here, and the two criteria
+            // differ on purpose (see GroovyObjectOverrides). As in setProperty, a class that
+            // cannot be inspected counts as overriding, so the read reaches its own getProperty
             if (receiver instanceof GroovyObject groovyObject && (senderClass == null || GroovyObjectOverrides.overridesGetProperty(receiver.getClass()))) {
                 // TODO: instead of checking for no getProperty specialization, pass senderClass in ThreadLocal or something
                 return groovyObject.getProperty(messageName);
@@ -515,7 +517,8 @@ public class ScriptBytecodeAdapter {
     public static void setProperty(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
         try {
             // an override of setProperty receives the write; for the interface default, which
-            // would pass it on without the sender, the metaclass is called here instead. A class
+            // would pass it on without the sender, the metaclass is called here instead (with no
+            // sender there is nothing to pass on, so the object's setProperty takes it). A class
             // that cannot be inspected counts as overriding, so its own setProperty is reached
             // either way, at the cost of the sender if that is the default (see GroovyObjectOverrides)
             if (receiver instanceof GroovyObject groovyObject && (senderClass == null || GroovyObjectOverrides.overridesSetProperty(receiver.getClass()))) {

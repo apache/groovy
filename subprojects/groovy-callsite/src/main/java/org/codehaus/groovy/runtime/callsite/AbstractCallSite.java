@@ -365,9 +365,13 @@ public class AbstractCallSite implements CallSite {
 
     protected final CallSite createGroovyObjectGetPropertySite(final Object receiver) {
         Class<?> aClass = receiver.getClass();
-        // the criterion of the invokedynamic sites: a getProperty that is synthetic or marked
-        // @Internal, as the interface default is, leaves the read to the metaclass; a class
-        // that cannot be inspected counts as having its own (see GroovyObjectOverrides)
+        // hasCustomGetProperty, the criterion of the invokedynamic sites, not the
+        // overridesGetProperty of ScriptBytecodeAdapter.getProperty; the two differ on purpose
+        // (see GroovyObjectOverrides). A getProperty that is synthetic or marked @Internal, as
+        // the interface default is, leaves the read to the metaclass. A class that cannot be
+        // inspected counts as having its own, as on the invokedynamic sites, so it is not given
+        // a metaclass site that would skip a real override: the object's getProperty answers,
+        // as it did when the earlier lookup threw NoSuchMethodException
         if (!GroovyObjectOverrides.hasCustomGetProperty(aClass) && ((GroovyObject) receiver).getMetaClass() instanceof MetaClassImpl)
             return createPogoMetaClassGetPropertySite((GroovyObject) receiver);
         if (receiver instanceof Class) {
