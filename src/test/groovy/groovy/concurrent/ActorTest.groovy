@@ -44,14 +44,16 @@ final class ActorTest {
         assertScript '''
             import groovy.concurrent.Actor
             import java.util.concurrent.CopyOnWriteArrayList
+            import java.util.concurrent.CountDownLatch
+            import java.util.concurrent.TimeUnit
 
             def log = new CopyOnWriteArrayList()
-            def logger = Actor.reactor { msg -> log << msg; null }
+            def processed = new CountDownLatch(2)
+            def logger = Actor.reactor { msg -> log << msg; processed.countDown(); null }
 
             logger.send('hello')
             logger.send('world')
-            // Give time to process
-            Thread.sleep(100)
+            assert processed.await(5, TimeUnit.SECONDS)
             assert 'hello' in log
             assert 'world' in log
             logger.stop()

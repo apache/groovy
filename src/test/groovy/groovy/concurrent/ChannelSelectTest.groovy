@@ -51,16 +51,21 @@ final class ChannelSelectTest {
         assertScript '''
             import groovy.concurrent.AsyncChannel
             import groovy.concurrent.ChannelSelect
+            import java.util.concurrent.CountDownLatch
 
             def fast = AsyncChannel.create(10)
             def slow = AsyncChannel.create(10)
 
             def sel = ChannelSelect.from(slow, fast)
 
+            // slow sends only after select() has returned, so fast arrives
+            // first however the two tasks are scheduled
+            def proceed = new CountDownLatch(1)
             async { fast.send('fast-wins') }
-            async { Thread.sleep(200); slow.send('slow') }
+            async { proceed.await(); slow.send('slow') }
 
             def result = await sel.select()
+            proceed.countDown()
             assert result.value == 'fast-wins'
             assert result.index == 1
         '''
