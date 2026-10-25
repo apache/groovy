@@ -453,9 +453,20 @@ final class SamAdapterFactory implements Function<ClassNode, ClassNode> {
         /**
          * Converts the value on the stack to the return type as the proxy does, with {@code castToType}, and
          * returns it. The call is left out where it would return the value unchanged, and for a primitive type
-         * other than {@code double}, where it amounts to the unboxing that follows it.
+         * other than {@code double}, where it amounts to the unboxing that follows it. A primitive value is
+         * first boxed, and nothing from a {@code void} method replaced by {@code null}, as
+         * {@code call(Object...)} returns them; the {@code doCall} of a generated closure returns a reference
+         * type, so this only guards against one that does not.
          */
-        private void writeReturn(final MethodVisitor mv, final ClassNode valueType) {
+        private void writeReturn(final MethodVisitor mv, final ClassNode type) {
+            ClassNode valueType = type;
+            if (ClassHelper.isPrimitiveVoid(valueType)) {
+                mv.visitInsn(ACONST_NULL);
+                valueType = ClassHelper.OBJECT_TYPE;
+            } else if (ClassHelper.isPrimitiveType(valueType)) {
+                valueType = ClassHelper.getWrapper(valueType);
+                BytecodeHelper.doCastToWrappedType(mv, type, valueType);
+            }
             if (ClassHelper.isPrimitiveVoid(returnType)) {
                 mv.visitInsn(POP);
                 mv.visitInsn(RETURN);
