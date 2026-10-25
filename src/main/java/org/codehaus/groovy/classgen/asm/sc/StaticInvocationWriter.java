@@ -57,6 +57,7 @@ import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
 import org.codehaus.groovy.classgen.asm.WriterController;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
@@ -81,6 +82,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.formatTypeName;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
@@ -114,6 +116,8 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
  * Invocation writer for statically compiled code paths.
  */
 public class StaticInvocationWriter extends InvocationWriter {
+
+    private static final MethodCallerMultiAdapter invokeNew = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeNew", true, true);
 
     private final AtomicInteger labelCounter = new AtomicInteger();
 
@@ -149,6 +153,10 @@ public class StaticInvocationWriter extends InvocationWriter {
         }
         ClassNode declaringClass = cn.getDeclaringClass();
         ClassNode enclosingClass = controller.getClassNode();
+        if (!cn.isPrivate() && !isDirectlyAccessible(cn, enclosingClass) && samePackageName(declaringClass, enclosingClass)) {
+            writeDynamicConstructorCall(call, declaringClass);
+            return;
+        }
         List<Expression> argList = call.getArguments() instanceof TupleExpression
                 ? ((TupleExpression) call.getArguments()).getExpressions() : List.of(call.getArguments());
         if (!AsmClassGenerator.isMemberDirectlyAccessible(cn.getModifiers(), declaringClass, enclosingClass)) {
@@ -196,6 +204,18 @@ public class StaticInvocationWriter extends InvocationWriter {
             return AsmClassGenerator.isMemberDirectlyAccessible(ctor.getModifiers(), declaringClass, accessingClass);
         }
         return AsmClassGenerator.isInSameRuntimePackage(declaringClass, accessingClass);
+    }
+
+    /**
+     * Creates the object through the meta-class, which selects the constructor
+     * at run time, for a constructor that the current class cannot call directly.
+     */
+    private void writeDynamicConstructorCall(final ConstructorCallExpression call, final ClassNode type) {
+        Expression arguments = call.getArguments();
+        makeUncachedCall(call, classX(controller.getClassNode()), classX(type), null, arguments,
+                invokeNew, false, false, false, AsmClassGenerator.containsSpreadExpression(arguments));
+        BytecodeHelper.doCast(controller.getMethodVisitor(), type);
+        controller.getOperandStack().replace(type);
     }
 
     /** {@inheritDoc} */
