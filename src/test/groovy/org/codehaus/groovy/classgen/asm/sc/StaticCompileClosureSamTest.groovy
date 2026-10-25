@@ -24,6 +24,8 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.parallel.ResourceLock
+import org.junit.jupiter.api.parallel.Resources
 
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Proxy
@@ -36,8 +38,10 @@ import static groovy.test.GroovyAssert.shouldFail
  * Tests for the incubating {@code groovy.target.closure.sam} option: a statically compiled closure literal
  * converted to a functional interface (passed to a SAM parameter, assigned to or returned as a SAM type,
  * cast or coerced with {@code as}) is wrapped in a class generated at compile time instead of a runtime
- * proxy, with the same behavior. The property is read per closure, so it is toggled per compilation here.
+ * proxy, which behaves as the proxy does apart from the differences the invokedynamic guide lists. The
+ * property is read per closure, so it is toggled per compilation here, with the system properties locked.
  */
+@ResourceLock(Resources.SYSTEM_PROPERTIES)
 final class StaticCompileClosureSamTest extends AbstractBytecodeTestCase {
 
     private static final String PROP = CompilerConfiguration.CLOSURE_SAM_CONVERSION
