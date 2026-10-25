@@ -109,4 +109,51 @@ final class GetPropertyDispatchTest {
             assert marked."${'x'}" == 'own:x'
         '''
     }
+
+    /**
+     * A {@code getProperty} that an expando closure or a mixin gives a class whose compiled
+     * {@code getProperty} is the interface default is known to its metaclass only, not to
+     * the per-class reflection answers, and still answers every read, including reads
+     * through sites already linked to the class's getter.
+     */
+    // GROOVY-12489
+    @ParameterizedTest(name = 'indy={0}')
+    @ValueSource(booleans = [true, false])
+    void expandoOrMixinGetPropertyAnswersEveryRead(boolean indy) {
+        shell(indy).evaluate '''
+            class Plain {
+                def name = 'field'
+                Object readThis(String property) { this."$property" }
+            }
+            class GetPropertyMixin {
+                Object getProperty(String property) { 'mixin:' + property }
+            }
+
+            def readAll(Plain typed, Object untyped) {
+                [typed.name, untyped.name, typed."${'na' + 'me'}", untyped."${'na' + 'me'}", typed.readThis('name'), readChecked(typed)]
+            }
+            @groovy.transform.TypeChecked
+            def readChecked(Plain plain) { plain.name }
+
+            // link the sites to the class's own getter first
+            def plain = new Plain()
+            assert readAll(plain, plain) == ['field'] * 6
+            try {
+                Plain.metaClass.getProperty = { String property -> 'expando:' + property }
+                def expanded = new Plain()
+                assert readAll(expanded, expanded) == ['expando:name'] * 6
+                GroovySystem.metaClassRegistry.removeMetaClass(Plain)
+
+                def single = new Plain()
+                single.metaClass.getProperty = { String property -> 'instance:' + property }
+                assert readAll(single, single) == ['instance:name'] * 6
+
+                Plain.mixin(GetPropertyMixin)
+                def mixed = new Plain()
+                assert readAll(mixed, mixed) == ['mixin:name'] * 6
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(Plain)
+            }
+        '''
+    }
 }

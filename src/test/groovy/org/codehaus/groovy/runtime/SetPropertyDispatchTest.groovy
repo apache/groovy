@@ -90,4 +90,65 @@ final class SetPropertyDispatchTest {
             groovy.test.GroovyAssert.shouldFail(MissingPropertyException) { sub.setProperty('secret', 'd') }
         '''
     }
+
+    /**
+     * A {@code setProperty} that an expando closure or a mixin gives a class whose compiled
+     * {@code setProperty} is the interface default is known to its metaclass only, not to
+     * the per-class reflection answer, and still receives every write, including writes
+     * through sites already linked to the class's setter.
+     */
+    // GROOVY-12489
+    @ParameterizedTest(name = 'indy={0}')
+    @ValueSource(booleans = [true, false])
+    void expandoOrMixinSetPropertyReceivesEveryWrite(boolean indy) {
+        shell(indy).evaluate '''
+            class Plain {
+                def name
+                void writeThis(String property, Object value) { this."$property" = value }
+            }
+            class Writes {
+                static List<String> log = []
+            }
+            class SetPropertyMixin {
+                void setProperty(String property, Object value) { Writes.log << "mixin:$property=$value".toString() }
+            }
+
+            def writeAll(Plain typed, Object untyped) {
+                typed.name = 'static'
+                untyped.name = 'untyped'
+                typed."${'na' + 'me'}" = 'dynamic'
+                untyped."${'na' + 'me'}" = 'untyped dynamic'
+                typed.writeThis('name', 'this')
+                writeChecked(typed)
+            }
+            @groovy.transform.TypeChecked
+            def writeChecked(Plain plain) { plain.name = 'checked' }
+
+            def check(Plain plain, String prefix) {
+                Writes.log.clear()
+                writeAll(plain, plain)
+                assert Writes.log == ['static', 'untyped', 'dynamic', 'untyped dynamic', 'this', 'checked'].collect { "${prefix}name=$it".toString() }
+                assert plain.@name == null
+            }
+
+            // link the sites to the class's own setter first
+            def plain = new Plain()
+            writeAll(plain, plain)
+            assert plain.name == 'checked'
+            try {
+                Plain.metaClass.setProperty = { String property, value -> Writes.log << "expando:$property=$value".toString() }
+                check(new Plain(), 'expando:')
+                GroovySystem.metaClassRegistry.removeMetaClass(Plain)
+
+                def single = new Plain()
+                single.metaClass.setProperty = { String property, value -> Writes.log << "instance:$property=$value".toString() }
+                check(single, 'instance:')
+
+                Plain.mixin(SetPropertyMixin)
+                check(new Plain(), 'mixin:')
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(Plain)
+            }
+        '''
+    }
 }
