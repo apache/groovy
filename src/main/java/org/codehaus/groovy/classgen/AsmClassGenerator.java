@@ -357,6 +357,7 @@ public class AsmClassGenerator extends ClassGenerator {
      */
     @Override
     public void visitClass(final ClassNode classNode) {
+        if (classNode.isEnum()) EnumConstantInit.substitute(classNode); // before any visitor reads the static initializer
         referencedClasses.clear();
 
         WriterControllerFactory factory = classNode.getNodeMetaData(WriterControllerFactory.class);

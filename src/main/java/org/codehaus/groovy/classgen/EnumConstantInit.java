@@ -24,18 +24,21 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.ExpressionTransformer;
-import org.codehaus.groovy.ast.expr.MethodCall;
+import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.OperandStack;
+import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
@@ -79,121 +82,132 @@ import static org.objectweb.asm.Opcodes.NEW;
  * {@code $INIT} call.  The constants of an enum are created alike, so one constant that
  * does not qualify keeps every constant of the enum on the {@code $INIT} path.
  * <p>
- * Only the bytecode generator sees the direct call: every other visitor is given the
- * {@code $INIT} call and every {@link ExpressionTransformer} rewrites it in place, so the
- * call that is emitted if the expected constructor turns out not to be present once all
- * transforms have run is the one that would have been emitted without this expression.
- * The arguments of a constant are those of the {@code $INIT} call as the transforms left
- * it, and they are loaded by the bytecode generator just as they would be for that call.
+ * The static initializer of the enum keeps its {@code $INIT} calls until the class
+ * generator starts on the enum, so transforms, the type checker and the static compiler
+ * see them, and may rewrite them, as before.  Only then are they replaced (see
+ * {@link #substitute(ClassNode)}), judged as all of these left them: the arguments of a
+ * call are the ones passed to the constructor, and they are loaded by the class generator
+ * just as they would be for that call.  A constant whose call is no longer a call of
+ * {@code $INIT} with its name and ordinal keeps every constant of the enum on the calls
+ * as they are.
  * <p>
- * Two consequences of the direct call are deliberate.  A transform that rewrites the
- * wrapped call into something other than the creation of the constant only takes effect
- * when the {@code $INIT} call is emitted (for a constant with arguments, it keeps the enum
- * on that path).  And where the {@code $INIT} call dispatches through the meta class of
- * the enum — which selects the constructor — the direct call does not, so a meta class
- * registered before the enum initializes no longer sees the constants being created.
- * Declaring a constant with an explicit empty argument list, e.g. {@code ONE()}, supplies
- * the same name and ordinal through the {@code $INIT} path and so restores both
- * behaviours for that enum; where every constant has arguments, an argument that is not
- * a literal does the same.
+ * One consequence of the direct call is deliberate.  Where the {@code $INIT} call
+ * dispatches through the meta class of the enum — which selects the constructor — the
+ * direct call does not, so a meta class registered before the enum initializes no longer
+ * sees the constants being created.  Declaring a constant with an explicit empty argument
+ * list, e.g. {@code ONE()}, supplies the same name and ordinal through the {@code $INIT}
+ * path and so restores this behaviour for that enum; where every constant has arguments,
+ * an argument that is not a literal does the same.
  */
 final class EnumConstantInit extends BytecodeExpression {
 
     private static final Parameter[] NAME_AND_ORDINAL = params(param(ClassHelper.STRING_TYPE, "name"), param(int_TYPE, "ordinal"));
 
-    private final Constants constants;
+    /**
+     * The node metadata key of the statements that assign the constants of an enum.
+     */
+    private static final Object CONSTANT_ASSIGNMENTS = new Object();
+
     private final ClassNode enumClass;
     private final String name;
     private final int ordinal;
-    private final boolean hasArguments;
+    private final ConstructorNode constructor;
+    private final List<Expression> arguments;
     private final Expression initCall;
     private AsmClassGenerator acg;
 
-    private EnumConstantInit(final Constants constants, final String name, final int ordinal, final boolean hasArguments, final Expression initCall) {
-        super(constants.enumClass.getPlainNodeReference());
-        this.constants = constants;
-        this.enumClass = constants.enumClass;
+    private EnumConstantInit(final ClassNode enumClass, final String name, final int ordinal,
+                             final ConstructorNode constructor, final List<Expression> arguments, final Expression initCall) {
+        super(enumClass.getPlainNodeReference());
+        this.enumClass = enumClass;
         this.name = name;
         this.ordinal = ordinal;
-        this.hasArguments = hasArguments;
+        this.constructor = constructor;
+        this.arguments = arguments;
         this.initCall = initCall;
-    }
-
-    @Override
-    public String getText() {
-        return initCall.getText();
+        setSourcePosition(initCall);
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * Metadata that this expression does not hold itself is looked up on the wrapped
-     * {@code $INIT} call, so what the type checker recorded for that call can be read
-     * from the expression that stands in for it.
+     * Records the statements of the static initializer of the given enum that assign its
+     * constants, in the order of their ordinals, for {@link #substitute(ClassNode)}.
      */
-    @Override
-    public <T> T getNodeMetaData(final Object key) {
-        T value = super.getNodeMetaData(key);
-        return value != null ? value : initCall.getNodeMetaData(key);
+    static void record(final ClassNode enumClass, final List<ExpressionStatement> assignments) {
+        enumClass.putNodeMetaData(CONSTANT_ASSIGNMENTS, assignments);
     }
 
-    @Override
-    public void visit(final GroovyCodeVisitor visitor) {
-        if (visitor instanceof AsmClassGenerator && constants.areCreatedDirectly() && selectConstructor() != null) {
-            acg = (AsmClassGenerator) visitor;
-            try {
-                super.visit(visitor); // i.e. visitBytecodeExpression(this)
-            } finally {
-                acg = null;
-            }
+    /**
+     * Replaces the {@code $INIT} call of each constant of the given enum with a direct
+     * constructor call if every constant qualifies, and otherwise leaves the static
+     * initializer as it is.  The class generator calls this before it writes the enum, so
+     * the calls are judged as the transforms, the type checker and the static compiler left
+     * them.  Only an enum whose constants were recorded by {@link EnumVisitor} is considered.
+     */
+    static void substitute(final ClassNode enumClass) {
+        List<ExpressionStatement> assignments = enumClass.getNodeMetaData(CONSTANT_ASSIGNMENTS);
+        if (assignments == null) return;
+        enumClass.removeNodeMetaData(CONSTANT_ASSIGNMENTS);
+
+        int n = assignments.size();
+        List<EnumConstantInit> inits = new ArrayList<>(n);
+        for (int ordinal = 0; ordinal < n; ordinal += 1) {
+            EnumConstantInit init = directInit(enumClass, ordinal, assignments.get(ordinal).getExpression());
+            if (init == null) return; // the constants of an enum are created alike
+            inits.add(init);
+        }
+        for (int ordinal = 0; ordinal < n; ordinal += 1) {
+            ((BinaryExpression) assignments.get(ordinal).getExpression()).setRightExpression(inits.get(ordinal));
+        }
+    }
+
+    /**
+     * Returns the direct constructor call for the constant with the given ordinal, or
+     * {@code null} if its assignment is no longer {@code CONSTANT = $INIT(name, ordinal, ...)}
+     * or the meta class could select another constructor or convert an argument.
+     */
+    private static EnumConstantInit directInit(final ClassNode enumClass, final int ordinal, final Expression expression) {
+        if (!(expression instanceof BinaryExpression assignment) || assignment.getOperation().getType() != Types.ASSIGN
+                || !(assignment.getLeftExpression() instanceof FieldExpression field)) return null;
+        Expression initCall = assignment.getRightExpression();
+        TupleExpression tuple = initArguments(enumClass, initCall);
+        if (tuple == null) return null;
+        String name = field.getFieldName();
+        List<Expression> expressions = tuple.getExpressions();
+        if (expressions.size() < 2 || !isConstant(expressions.get(0), name) || !isConstant(expressions.get(1), ordinal)) return null;
+        List<Expression> arguments = expressions.subList(2, expressions.size());
+        ConstructorNode constructor = selectConstructor(enumClass, arguments);
+        if (constructor == null) return null;
+        return new EnumConstantInit(enumClass, name, ordinal, constructor, arguments, initCall);
+    }
+
+    /**
+     * Returns the arguments of the given expression if it calls the {@code $INIT} helper of
+     * the given enum, in the form {@link EnumVisitor} gives it or in the form the static
+     * compilation transformer turns it into, or {@code null} otherwise.
+     */
+    private static TupleExpression initArguments(final ClassNode enumClass, final Expression expression) {
+        Expression arguments;
+        if (expression instanceof StaticMethodCallExpression call
+                && "$INIT".equals(call.getMethod()) && enumClass.equals(call.getOwnerType())) {
+            arguments = call.getArguments();
+        } else if (expression instanceof MethodCallExpression call
+                && "$INIT".equals(call.getMethodAsString()) && !call.isSpreadSafe()
+                && call.getObjectExpression() instanceof ClassExpression owner && enumClass.equals(owner.getType())) {
+            arguments = call.getArguments();
         } else {
-            initCall.visit(visitor);
+            return null;
         }
-    }
-
-    @Override
-    public Expression transformExpression(final ExpressionTransformer transformer) {
-        EnumConstantInit result = new EnumConstantInit(constants, name, ordinal, hasArguments, transformer.transform(initCall));
-        result.setSourcePosition(this);
-        result.copyNodeMetaData(this);
-        constants.inits.set(ordinal, result);
-        return result;
-    }
-
-    @Override
-    public void visit(final MethodVisitor mv) {
-        Parameter[] parameters = selectConstructor().getParameters();
-        List<Expression> arguments = arguments();
-        String owner = BytecodeHelper.getClassInternalName(enumClass);
-        mv.visitTypeInsn(NEW, owner);
-        mv.visitInsn(DUP);
-        mv.visitLdcInsn(name);
-        BytecodeHelper.pushConstant(mv, ordinal);
-        if (!arguments.isEmpty()) {
-            OperandStack operandStack = acg.getController().getOperandStack();
-            for (int i = 0, n = arguments.size(); i < n; i += 1) {
-                arguments.get(i).visit(acg);
-                ClassNode type = parameters[i + 2].getType();
-                if (ClassHelper.isPrimitiveType(type)) {
-                    operandStack.doGroovyCast(type); // unbox a wrapper literal
-                } else {
-                    operandStack.box();
-                }
-            }
-            operandStack.remove(arguments.size());
-        }
-        mv.visitMethodInsn(INVOKESPECIAL, owner, "<init>", BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, parameters), false);
+        return arguments instanceof TupleExpression tuple ? tuple : null;
     }
 
     /**
-     * Returns the constructor the meta class is certain to select for this constant from
-     * arguments it passes on unchanged, or {@code null} if that cannot be shown.
+     * Returns the constructor the meta class is certain to select for a constant with the
+     * given arguments, which follow its name and ordinal, and to which it passes them on
+     * unchanged, or {@code null} if that cannot be shown.
      */
-    private ConstructorNode selectConstructor() {
-        if (!hasArguments) return enumClass.getDeclaredConstructor(NAME_AND_ORDINAL);
+    private static ConstructorNode selectConstructor(final ClassNode enumClass, final List<Expression> arguments) {
+        if (arguments.isEmpty()) return enumClass.getDeclaredConstructor(NAME_AND_ORDINAL);
 
-        List<Expression> arguments = arguments();
-        if (arguments == null) return null;
         int nArguments = arguments.size() + 2; // the name and the ordinal come first
         ConstructorNode match = null;
         for (ConstructorNode ctor : enumClass.getDeclaredConstructors()) {
@@ -215,22 +229,6 @@ final class EnumConstantInit extends BytecodeExpression {
             if (!isPassedUnchanged(arguments.get(i), parameters[i + 2].getType())) return null;
         }
         return match;
-    }
-
-    /**
-     * Returns the arguments that follow the name and the ordinal in the {@code $INIT} call,
-     * or {@code null} if a transform has made the wrapped expression something else.
-     */
-    private List<Expression> arguments() {
-        if (!hasArguments) return Collections.emptyList();
-        if (initCall instanceof MethodCall call && "$INIT".equals(call.getMethodAsString())
-                && call.getArguments() instanceof TupleExpression tuple) {
-            List<Expression> expressions = tuple.getExpressions();
-            if (expressions.size() > 2 && isConstant(expressions.get(0), name) && isConstant(expressions.get(1), ordinal)) {
-                return expressions.subList(2, expressions.size());
-            }
-        }
-        return null;
     }
 
     private static boolean isConstant(final Expression expression, final Object value) {
@@ -258,36 +256,46 @@ final class EnumConstantInit extends BytecodeExpression {
         return !ClassHelper.isWrapperBoolean(type) && ClassNodeUtils.isCompatibleWith(valueType, type);
     }
 
-    /**
-     * The constants of one enum.  They are created alike, either all with a direct
-     * constructor call or all through {@code $INIT}, so the choice is made once for the
-     * enum, from its constants as the transforms left them.
-     */
-    static final class Constants {
+    @Override
+    public String getText() {
+        return initCall.getText();
+    }
 
-        private final ClassNode enumClass;
-        private final List<EnumConstantInit> inits = new ArrayList<>();
-        private Boolean direct;
-
-        Constants(final ClassNode enumClass) {
-            this.enumClass = enumClass;
-        }
-
-        /**
-         * Wraps the {@code $INIT} call of the next constant, which must be the constant
-         * with the given ordinal.
-         */
-        Expression add(final String name, final int ordinal, final boolean hasArguments, final Expression initCall) {
-            EnumConstantInit init = new EnumConstantInit(this, name, ordinal, hasArguments, initCall);
-            inits.add(init);
-            return init;
-        }
-
-        private boolean areCreatedDirectly() {
-            if (direct == null) {
-                direct = inits.stream().allMatch(init -> init.selectConstructor() != null);
+    @Override
+    public void visit(final GroovyCodeVisitor visitor) {
+        if (visitor instanceof AsmClassGenerator generator) {
+            acg = generator;
+            try {
+                super.visit(visitor); // i.e. visitBytecodeExpression(this)
+            } finally {
+                acg = null;
             }
-            return direct;
+        } else {
+            super.visit(visitor);
         }
+    }
+
+    @Override
+    public void visit(final MethodVisitor mv) {
+        Parameter[] parameters = constructor.getParameters();
+        String owner = BytecodeHelper.getClassInternalName(enumClass);
+        mv.visitTypeInsn(NEW, owner);
+        mv.visitInsn(DUP);
+        mv.visitLdcInsn(name);
+        BytecodeHelper.pushConstant(mv, ordinal);
+        if (!arguments.isEmpty()) {
+            OperandStack operandStack = acg.getController().getOperandStack();
+            for (int i = 0, n = arguments.size(); i < n; i += 1) {
+                arguments.get(i).visit(acg);
+                ClassNode type = parameters[i + 2].getType();
+                if (ClassHelper.isPrimitiveType(type)) {
+                    operandStack.doGroovyCast(type); // unbox a wrapper literal
+                } else {
+                    operandStack.box();
+                }
+            }
+            operandStack.remove(arguments.size());
+        }
+        mv.visitMethodInsn(INVOKESPECIAL, owner, "<init>", BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, parameters), false);
     }
 }

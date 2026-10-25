@@ -53,6 +53,7 @@ import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.arrayX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -264,7 +265,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
 
         // static init
         List<FieldNode> fields = enumClass.getFields();
-        EnumConstantInit.Constants directInit = canInitDirectly(enumClass, fields) ? new EnumConstantInit.Constants(enumClass) : null;
+        List<ExpressionStatement> directInit = canInitDirectly(enumClass, fields) ? new ArrayList<>() : null;
         List<Expression> arrayInit = new ArrayList<>();
         List<Statement> block = new ArrayList<>();
         int index = -1;
@@ -321,10 +322,11 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                 field.setInitialValueExpression(null);
             }
             arrayInit.add(fieldX(field));
-            Expression init = callX(enumType, "$INIT", args);
-            if (directInit != null) init = directInit.add(field.getName(), index, args.getExpressions().size() > 2, init);
-            block.add(assignS(fieldX(field), init));
+            var init = new ExpressionStatement(assignX(fieldX(field), callX(enumType, "$INIT", args)));
+            if (directInit != null) directInit.add(init);
+            block.add(init);
         }
+        if (directInit != null) EnumConstantInit.record(enumClass, directInit);
 
         if (!isAIC) {
             if (tempMin != null) {
@@ -348,14 +350,15 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
      * This is only attempted when every constant is either a plain identifier, which
      * supplies no arguments of its own, or declared with positional arguments.  Whether
      * the constructor that the meta class would select for a constant, and the arguments
-     * it would receive, are known at compile time is decided once the constructors and the
-     * arguments are final (see {@link EnumConstantInit}).  Constants declared with named
-     * arguments or with a class body keep the {@code $INIT} path, as do enums with a plain
-     * constant whose own constructor cannot accept just the name and the ordinal.  An
-     * explicit empty argument list, e.g. {@code ONE()}, also keeps the {@code $INIT} path
-     * without otherwise changing the meaning of the enum, which serves as the opt-out for
-     * the rare code that intercepts constant creation through a meta class registered
-     * before the enum initializes (see {@link EnumConstantInit}).
+     * it would receive, are known at compile time is decided when the class generator
+     * starts on the enum, from the {@code $INIT} calls as the transforms left them (see
+     * {@link EnumConstantInit}).  Constants declared with named arguments or with a class
+     * body keep the {@code $INIT} path, as do enums with a plain constant whose own
+     * constructor cannot accept just the name and the ordinal.  An explicit empty argument
+     * list, e.g. {@code ONE()}, also keeps the {@code $INIT} path without otherwise
+     * changing the meaning of the enum, which serves as the opt-out for the rare code that
+     * intercepts constant creation through a meta class registered before the enum
+     * initializes (see {@link EnumConstantInit}).
      *
      * @param enumClass the enum being completed
      * @param fields    the fields of {@code enumClass}, before any initial value is cleared

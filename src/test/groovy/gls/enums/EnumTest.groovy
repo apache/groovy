@@ -1106,6 +1106,93 @@ final class EnumTest extends CompilableTestSupport {
         assert StaticKeyword.values()*.keyword == ['static', 'final']
         assert StaticKeyword.valueOf('FINAL').ordinal() == 1
     }
+
+    // a transform may give a constant arguments of its own; they reach the constructor
+    // whether or not the constant is created directly
+    // GROOVY-12490
+    @Test
+    void testArgumentsAddedByATransformToPlainConstants() {
+        assertScript addingToPlainConstants("new ConstantExpression('added')") + '''
+            enum Mixed {
+                ONE, TWO('two')
+                final String s
+                Mixed(String s = 'none') { this.s = s }
+            }
+            assert Mixed.values()*.s == ['added', 'two']
+        '''
+        assertScript addingToPlainConstants("new ConstantExpression('added')") + '''
+            enum Plain {
+                ONE, TWO
+                final String s
+                Plain(String s = 'none') { this.s = s }
+            }
+            assert Plain.values()*.s == ['added', 'added']
+        '''
+        assertScript addingToPlainConstants(
+            "new MethodCallExpression(new ConstantExpression('added'), 'toUpperCase', ArgumentListExpression.EMPTY_ARGUMENTS)") + '''
+            enum NotALiteral {
+                ONE, TWO('two')
+                final String s
+                NotALiteral(String s = 'none') { this.s = s }
+            }
+            assert NotALiteral.values()*.s == ['ADDED', 'two']
+        '''
+    }
+
+    // GROOVY-12490
+    @Test
+    void testInitCallReplacedByATransform() {
+        assertScript '''
+            import groovy.transform.ASTTest
+            import org.codehaus.groovy.ast.expr.ArgumentListExpression
+            import org.codehaus.groovy.ast.expr.ConstantExpression
+            import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
+
+            import static org.codehaus.groovy.control.CompilePhase.CANONICALIZATION
+
+            @ASTTest(phase = CANONICALIZATION, value = {
+                def assignment = node.getDeclaredMethod('<clinit>').code.statements[0].expression
+                assignment.rightExpression = new StaticMethodCallExpression(node, 'make',
+                    new ArgumentListExpression(new ConstantExpression('ONE'), new ConstantExpression(0)))
+            })
+            enum Made {
+                ONE, TWO('two')
+                final String s
+                Made(String s = 'none') { this.s = s }
+                static Made make(String name, int ordinal) { $INIT(name, ordinal, 'made') }
+            }
+            assert Made.values()*.s == ['made', 'two']
+            assert Made.values()*.ordinal() == [0, 1]
+        '''
+    }
+
+    // the imports and the annotation of an enum whose $INIT calls an @ASTTest rewrites as a
+    // transform would: the given argument is added to each call that passes only the name
+    // and the ordinal, i.e. to the call of each constant without arguments of its own
+    private static String addingToPlainConstants(final String argument) {
+        """
+            import groovy.transform.ASTTest
+            import org.codehaus.groovy.ast.ClassCodeVisitorSupport
+            import org.codehaus.groovy.ast.expr.ArgumentListExpression
+            import org.codehaus.groovy.ast.expr.ConstantExpression
+            import org.codehaus.groovy.ast.expr.MethodCallExpression
+            import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
+            import org.codehaus.groovy.control.SourceUnit
+
+            import static org.codehaus.groovy.control.CompilePhase.CANONICALIZATION
+
+            @ASTTest(phase = CANONICALIZATION, value = {
+                new ClassCodeVisitorSupport() {
+                    protected SourceUnit getSourceUnit() { null }
+                    void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
+                        if (call.method == '\$INIT' && call.arguments.expressions.size() == 2) {
+                            call.arguments.addExpression($argument)
+                        }
+                    }
+                }.visitMethod(node.getDeclaredMethod('<clinit>'))
+            })
+        """
+    }
 }
 
 enum AccessModifier {

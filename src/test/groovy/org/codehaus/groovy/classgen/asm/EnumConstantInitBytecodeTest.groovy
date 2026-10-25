@@ -76,6 +76,34 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         assert !code.any { it.startsWith('NEW E') }
     }
 
+    // the imports and the annotation of an enum whose $INIT calls an @ASTTest rewrites as a
+    // transform would: the given argument is added to each call that passes only the name
+    // and the ordinal, i.e. to the call of each constant without arguments of its own
+    private static String addingToPlainConstants(final String argument) {
+        """
+            import groovy.transform.ASTTest
+            import org.codehaus.groovy.ast.ClassCodeVisitorSupport
+            import org.codehaus.groovy.ast.expr.ArgumentListExpression
+            import org.codehaus.groovy.ast.expr.ConstantExpression
+            import org.codehaus.groovy.ast.expr.MethodCallExpression
+            import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
+            import org.codehaus.groovy.control.SourceUnit
+
+            import static org.codehaus.groovy.control.CompilePhase.CANONICALIZATION
+
+            @ASTTest(phase = CANONICALIZATION, value = {
+                new ClassCodeVisitorSupport() {
+                    protected SourceUnit getSourceUnit() { null }
+                    void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
+                        if (call.method == '\$INIT' && call.arguments.expressions.size() == 2) {
+                            call.arguments.addExpression($argument)
+                        }
+                    }
+                }.visitMethod(node.getDeclaredMethod('<clinit>'))
+            })
+        """
+    }
+
     @Test
     void testConstantsWithoutArgumentsCallConstructorDirectly() {
         def code = staticInitializerOf '''
@@ -462,5 +490,100 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         assertInitHelperCall(code)
         assert code.any { it.contains('INVOKESTATIC E.$INIT ([Ljava/lang/Object;)LE;') }
         assert !code.any { it.contains('ScriptBytecodeAdapter') }
+    }
+
+    // a transform may give a constant arguments of its own: the constructor is selected for
+    // the arguments the transforms leave
+    // GROOVY-12490
+    @Test
+    void testArgumentAddedByATransformToAPlainConstantCallsConstructorDirectly() {
+        def code = staticInitializerOf addingToPlainConstants("new ConstantExpression('added')") + '''
+            enum E {
+                ONE, TWO('two')
+                E(String s = 'none') { }
+            }
+        '''
+        assertDirectConstructorCall(code, 'ONE', 'ICONST_0', ['LDC "added"'], '(Ljava/lang/String;ILjava/lang/String;)V')
+        assertDirectConstructorCall(code, 'TWO', 'ICONST_1', ['LDC "two"'], '(Ljava/lang/String;ILjava/lang/String;)V')
+    }
+
+    // likewise for an enum whose constants have no arguments of their own
+    // GROOVY-12490
+    @Test
+    void testArgumentAddedByATransformToEveryConstantCallsConstructorDirectly() {
+        def code = staticInitializerOf addingToPlainConstants("new ConstantExpression('added')") + '''
+            enum E {
+                ONE, TWO
+                E(String s = 'none') { }
+            }
+        '''
+        assertDirectConstructorCall(code, 'ONE', 'ICONST_0', ['LDC "added"'], '(Ljava/lang/String;ILjava/lang/String;)V')
+        assertDirectConstructorCall(code, 'TWO', 'ICONST_1', ['LDC "added"'], '(Ljava/lang/String;ILjava/lang/String;)V')
+    }
+
+    // GROOVY-12490
+    @Test
+    void testArgumentAddedByATransformThatIsNotALiteralUsesInitHelper() {
+        def code = staticInitializerOf addingToPlainConstants(
+            "new MethodCallExpression(new ConstantExpression('added'), 'toUpperCase', ArgumentListExpression.EMPTY_ARGUMENTS)") + '''
+            enum E {
+                ONE, TWO('two')
+                E(String s = 'none') { }
+            }
+        '''
+        assertInitHelperCall(code)
+    }
+
+    // a constant whose $INIT call a transform replaces keeps every constant of the enum on
+    // the calls the transforms leave
+    // GROOVY-12490
+    @Test
+    void testInitCallReplacedByATransformKeepsTheEnumOnTheEmittedCalls() {
+        def code = staticInitializerOf '''
+            import groovy.transform.ASTTest
+            import org.codehaus.groovy.ast.expr.ArgumentListExpression
+            import org.codehaus.groovy.ast.expr.ConstantExpression
+            import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
+
+            import static org.codehaus.groovy.control.CompilePhase.CANONICALIZATION
+
+            @ASTTest(phase = CANONICALIZATION, value = {
+                def assignment = node.getDeclaredMethod('<clinit>').code.statements[0].expression
+                assignment.rightExpression = new StaticMethodCallExpression(node, 'make',
+                    new ArgumentListExpression(new ConstantExpression('ONE'), new ConstantExpression(0)))
+            })
+            enum E {
+                ONE, TWO('two')
+                E(String s = 'none') { }
+                static E make(String name, int ordinal) { $INIT(name, ordinal, 'made') }
+            }
+        '''
+        assertInitHelperCall(code)
+        assert code.any { it.contains('"make"') }
+    }
+
+    // the transforms, which all run before the class generator, see the $INIT calls of
+    // constants that are then created directly
+    // GROOVY-12490
+    @Test
+    void testTransformsSeeTheInitCallsOfConstantsThatAreCreatedDirectly() {
+        def code = staticInitializerOf '''
+            import groovy.transform.ASTTest
+            import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
+
+            import static org.codehaus.groovy.control.CompilePhase.INSTRUCTION_SELECTION
+
+            @ASTTest(phase = INSTRUCTION_SELECTION, value = {
+                def inits = node.getDeclaredMethod('<clinit>').code.statements[0..1]*.expression*.rightExpression
+                assert inits.every { it instanceof StaticMethodCallExpression && it.method == '$INIT' }
+                assert inits*.arguments*.expressions*.value == [['ONE', 0, 'one'], ['TWO', 1]]
+            })
+            enum E {
+                ONE('one'), TWO
+                E(String s = 'none') { }
+            }
+        '''
+        assertDirectConstructorCall(code, 'ONE', 'ICONST_0', ['LDC "one"'], '(Ljava/lang/String;ILjava/lang/String;)V')
+        assertDirectConstructorCall(code, 'TWO', 'ICONST_1', [], '(Ljava/lang/String;I)V')
     }
 }
