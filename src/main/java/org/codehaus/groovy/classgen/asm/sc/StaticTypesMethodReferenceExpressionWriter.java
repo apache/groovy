@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeInstruction;
@@ -105,7 +106,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     @Override
     public void writeMethodReferenceExpression(final MethodReferenceExpression methodReferenceExpression) {
         FunctionalInterfaceContext functionalInterface = resolveFunctionalInterfaceContext(methodReferenceExpression);
-        if (functionalInterface == null) {
+        if (functionalInterface == null || involvesClassItCannotName(methodReferenceExpression, functionalInterface)) {
             // generate the default bytecode -- most likely a method closure
             super.writeMethodReferenceExpression(methodReferenceExpression);
             return;
@@ -139,6 +140,48 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         );
 
         updateOperandStack(functionalInterface.functionalType(), invocation.capturing());
+    }
+
+    /**
+     * Determines if a method handle for the reference would have to name a
+     * class that the current class cannot name: a class that is not public, of
+     * another run-time package (see {@link AsmClassGenerator#isClassDirectlyAccessible}).
+     * The JVM resolves every class of a method handle or method type with an
+     * access check, so such a reference is written as a method closure, which
+     * dynamic code uses too.
+     */
+    private boolean involvesClassItCannotName(final MethodReferenceExpression methodReference, final FunctionalInterfaceContext functionalInterface) {
+        ClassNode classNode = controller.getClassNode();
+        Expression target = methodReference.getExpression();
+        ClassNode targetType = target instanceof ClassExpression ? target.getType() : inferredType(target);
+        if (targetType != null && !AsmClassGenerator.isClassDirectlyAccessible(targetType, classNode)) return true;
+        for (Parameter parameter : functionalInterface.parametersWithExactType()) {
+            if (!AsmClassGenerator.isClassDirectlyAccessible(parameter.getType(), classNode)) return true;
+        }
+        ClassNode returnType = resolveClassNodeGenerics(extractPlaceholders(functionalInterface.functionalType()), null, functionalInterface.abstractMethod().getReturnType());
+        if (!AsmClassGenerator.isClassDirectlyAccessible(returnType, classNode)) return true;
+        if (targetType != null && !isConstructorReference(methodReference.getMethodName().getText())) {
+            for (MethodNode mn : targetType.getMethods(methodReference.getMethodName().getText())) {
+                if (!AsmClassGenerator.isClassDirectlyAccessible(mn.getDeclaringClass(), classNode)
+                        || !AsmClassGenerator.isClassDirectlyAccessible(mn.getReturnType(), classNode)
+                        || Arrays.stream(mn.getParameters()).anyMatch(p -> !AsmClassGenerator.isClassDirectlyAccessible(p.getType(), classNode))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static ClassNode inferredType(final Expression expression) {
+        Object type = expression.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        if (type == null && expression instanceof VariableExpression variable
+                && variable.getAccessedVariable() instanceof ASTNode accessed && accessed != expression) {
+            type = accessed.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        }
+        if (type == null && expression instanceof VariableExpression variable && variable.getAccessedVariable() != null) {
+            type = variable.getAccessedVariable().getOriginType();
+        }
+        return type instanceof ClassNode cn ? cn : null;
     }
 
     private FunctionalInterfaceContext resolveFunctionalInterfaceContext(final MethodReferenceExpression methodReferenceExpression) {

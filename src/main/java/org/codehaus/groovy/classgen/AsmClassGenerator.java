@@ -1314,7 +1314,8 @@ public class AsmClassGenerator extends ClassGenerator {
      * only through the subclass rule for a protected field.
      */
     public static boolean isFieldDirectlyAccessible(final FieldNode field, final ClassNode accessingClass) {
-        if (field == null || !isMemberDirectlyAccessible(field.getModifiers(), field.getDeclaringClass(), accessingClass)) return false;
+        if (field == null || !isMemberDirectlyAccessible(field.getModifiers(), field.getDeclaringClass(), accessingClass)
+                || !isClassDirectlyAccessible(field.getDeclaringClass(), accessingClass)) return false;
         ClassNode declaringClass = field.getDeclaringClass();
         return field.isPublic() || field.isPrivate() || isInSameRuntimePackage(declaringClass, accessingClass)
             || (field.isProtected() && accessingClass.isDerivedFrom(declaringClass));
@@ -1353,6 +1354,40 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         // see GroovyClassLoader: the classes of this compilation are defined by an InnerLoader of their own
         return unit == null || !Boolean.TRUE.equals(unit.getNodeMetaData(GroovyClassLoader.InnerLoader.class));
+    }
+
+    /**
+     * Determines if the bytecode of the accessing class can name the class, for
+     * example in {@code NEW}, {@code CHECKCAST} or as the owner of a member. The
+     * JVM allows that for a class that is not public only within its run-time
+     * package; see {@link #isInSameRuntimePackage}. This returns {@code false}
+     * only for a class that is not public, with the same package name as the
+     * accessing class, but known to be in another run-time package.
+     *
+     * @param type the class to name (an array names its component type)
+     * @param accessingClass the class whose bytecode names it
+     */
+    public static boolean isClassDirectlyAccessible(final ClassNode type, final ClassNode accessingClass) {
+        ClassNode cn = type;
+        while (cn.isArray()) cn = cn.getComponentType();
+        if (ClassHelper.isPrimitiveType(cn) || cn.isGenericsPlaceHolder()) return true;
+        cn = cn.redirect();
+        // a protected nested class is public in its class file
+        if ((cn.getModifiers() & (ACC_PUBLIC | ACC_PROTECTED)) != 0) return true;
+        return !Objects.equals(cn.getPackageName(), accessingClass.getPackageName()) || isInSameRuntimePackage(cn, accessingClass);
+    }
+
+    /**
+     * Returns the nearest superclass of the type that the accessing class can
+     * name, or {@code Object}.
+     *
+     * @see #isClassDirectlyAccessible
+     */
+    public static ClassNode getDirectlyAccessibleSuperClass(final ClassNode type, final ClassNode accessingClass) {
+        for (ClassNode sc = type.getSuperClass(); sc != null; sc = sc.getSuperClass()) {
+            if (isClassDirectlyAccessible(sc, accessingClass)) return sc;
+        }
+        return ClassHelper.OBJECT_TYPE;
     }
 
     /**

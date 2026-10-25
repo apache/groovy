@@ -18,8 +18,14 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodPointerExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
@@ -58,6 +64,12 @@ public class MethodPointerExpressionWriter {
         operandStack.box();
 
         var type = operandStack.getTopOperand();
+        // GROOVY-12569: statically compiled code types a value of a class it cannot name (not public, of another
+        // run-time package) as an accessible superclass; its class is loaded by name, so retain the class itself
+        var inferredType = getInferredType(pointerOrReference.getExpression());
+        if (inferredType != null && !AsmClassGenerator.isClassDirectlyAccessible(inferredType, controller.getClassNode())) {
+            type = inferredType;
+        }
         if (!isClassType(type) && !isObjectType(type)) {
             // GROOVY-5051, GROOVY-10568: retain static type
             controller.getAcg().loadWrapper(varX("", type));
@@ -67,5 +79,14 @@ public class MethodPointerExpressionWriter {
         // delegate to ScriptBytecodeAdapter#getMethodPointer
         getMethodPointer.call(controller.getMethodVisitor());
         operandStack.replace(CLOSURE_TYPE, 2);
+    }
+
+    private static ClassNode getInferredType(final Expression expression) {
+        Object type = expression.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        if (type == null && expression instanceof VariableExpression variable
+                && variable.getAccessedVariable() instanceof ASTNode target && target != expression) {
+            type = target.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        }
+        return type instanceof ClassNode cn ? cn : null;
     }
 }

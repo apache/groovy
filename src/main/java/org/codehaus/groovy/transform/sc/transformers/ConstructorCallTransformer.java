@@ -49,6 +49,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLUTION;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.ATHROW;
@@ -103,6 +104,12 @@ public class ConstructorCallTransformer {
                         if (constructorNode == node) {
                             return staticCompilationTransformer.superTransform(expr);
                         }
+                    }
+                    if (!AsmClassGenerator.isClassDirectlyAccessible(declaringClass, staticCompilationTransformer.getClassNode())) {
+                        // the bytecode cannot name the class: the meta-class creates the object and sets the properties
+                        Expression call = staticCompilationTransformer.superTransform(expr);
+                        call.putNodeMetaData(DYNAMIC_RESOLUTION, Boolean.TRUE);
+                        return call;
                     }
                     // replace call to <init>(Map) or <init>(this, Map)
                     // with a call to <init>() or <init>(this) + appropriate setters

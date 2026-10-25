@@ -25,6 +25,8 @@ import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.shouldFail
+
 /**
  * Unit tests for static compilation: protected and package-private members of
  * a class with the same package name, compiled by another compilation and so
@@ -78,6 +80,49 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         }
         true
     '''
+
+    private static final String HIDDEN = '''package p
+        class Base { String base() { 'base' } }
+        @groovy.transform.PackageScope class Hidden extends Base implements Runnable {
+            static String SF = 'sf'
+            static String sm(String s) { 'sm:' + s }
+            String name = 'n'
+            public String pubField = 'pf'
+            boolean ran
+            String own() { 'own' }
+            void run() { ran = true }
+        }
+        true
+    '''
+
+    /**
+     * Uses the package-private class {@code Hidden} in the ways that dynamic
+     * code supports from another class loader: none of them names the class.
+     */
+    private static String usesOfHidden(final String className, final String annotation) {
+        """package p
+            $annotation
+            class $className {
+                static List test() {
+                    def h = new Hidden()
+                    h.run()
+                    Runnable r = new Hidden()
+                    r.run()
+                    h.name = 'm'
+                    Hidden.SF = 'w'
+                    java.util.function.Supplier<String> ref = h::own
+                    def ptr = h.&own
+                    def list = [h, new Hidden(name: 'x')]
+                    [h.getClass().name, Hidden.sm('a'), Hidden.SF, h.ran, h.own(), h.base(), h.name, h.pubField,
+                     arg(r), ref.get(), ptr(), list*.name, list.name, (h ?: new Hidden()).own()]
+                }
+                static String arg(Runnable r) { r.getClass().simpleName }
+            }
+            ${className}.test()
+        """
+    }
+
+    private static final List USES_OF_HIDDEN = ['p.Hidden', 'sm:a', 'w', true, 'own', 'base', 'm', 'pf', 'Hidden', 'own', 'own', ['m', 'x'], ['m', 'x'], 'own']
 
     // GROOVY-12568
     @Test
@@ -493,6 +538,9 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
             }
             C.test(new M(), new F())
         ''') == ['pkg:1', 'pm', 'spm', 'qp', 'pm', 'w', 'spf', 'DYNAMIC']
+
+        shell.evaluate HIDDEN
+        assert shell.evaluate(usesOfHidden('S', '@groovy.transform.CompileStatic')) == USES_OF_HIDDEN
     }
 
     // GROOVY-12568
@@ -613,6 +661,96 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         } finally {
             dir.deleteDir()
             src.deleteDir()
+        }
+    }
+
+    // GROOVY-12569
+    @Test
+    void testMapStyleConstructionOfPackagePrivateClassOfAnotherClassLoader() {
+        shell.evaluate HIDDEN
+        ['D': '', 'S': '@groovy.transform.CompileStatic'].each { name, annotation ->
+            assert shell.evaluate("""package p
+                $annotation
+                class $name {
+                    static List test(Map map) {
+                        [new Hidden(name: 'x').name, new Hidden(map).name]
+                    }
+                }
+                ${name}.test(name: 'y')
+            """) == ['x', 'y']
+        }
+    }
+
+    // GROOVY-12569
+    @Test
+    void testPackagePrivateClassOfAnotherClassLoaderIsUsedAsInDynamicCode() {
+        shell.evaluate HIDDEN
+        assert shell.evaluate(usesOfHidden('D', '')) == USES_OF_HIDDEN
+        assert shell.evaluate(usesOfHidden('S', '@groovy.transform.CompileStatic')) == USES_OF_HIDDEN
+    }
+
+    // GROOVY-12569
+    @Test
+    void testPackagePrivateClassOfLibraryIsUsedByScriptAsInDynamicCode() {
+        def unit = new CompilationUnit()
+        unit.addSource('Library.groovy', HIDDEN)
+        unit.compile(Phases.CLASS_GENERATION)
+        def libraryLoader = new GroovyClassLoader()
+        unit.classes.each { libraryLoader.defineClass(it.name, it.bytes) }
+
+        def shell = new GroovyShell(libraryLoader)
+        assert shell.evaluate(usesOfHidden('D', '')) == USES_OF_HIDDEN
+        assert shell.evaluate(usesOfHidden('S', '@groovy.transform.CompileStatic')) == USES_OF_HIDDEN
+    }
+
+    // GROOVY-12569
+    @Test
+    void testUsesThatNamePackagePrivateClassOfAnotherClassLoaderFailAsInDynamicCode() {
+        shell.evaluate HIDDEN
+        ['', '@groovy.transform.CompileStatic'].each { annotation ->
+            ['Hidden h = new Hidden()', 'Object o = new Hidden(); ((Hidden) o).own()', 'Object o = new Hidden(); o instanceof Hidden'].each { code ->
+                def err = shouldFail(IllegalAccessError) {
+                    shell.evaluate("package p\n$annotation def f() { $code }\nf()")
+                }
+                assert err.message.contains('failed to access class p.Hidden') // JVMS 5.4.4
+            }
+        }
+    }
+
+    // GROOVY-12569
+    @Test
+    void testPackagePrivateClassOfAnotherClassLoaderIsNotNamedInBytecode() {
+        def bytecode = compileAgainstLibrary(HIDDEN, 'p.C', 'test', usesOfHidden('C', '@groovy.transform.CompileStatic'))
+        for (instruction in ['NEW', 'CHECKCAST', 'INSTANCEOF', 'INVOKEVIRTUAL', 'INVOKESTATIC', 'INVOKESPECIAL', 'INVOKEINTERFACE', 'GETFIELD', 'PUTFIELD', 'GETSTATIC', 'PUTSTATIC']) {
+            assert !bytecode.hasSequence([instruction + ' p/Hidden'])
+        }
+        assert bytecode.hasSequence(['INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.invokeNew0'])
+        assert bytecode.hasSequence(['INVOKEINTERFACE java/lang/Runnable.run ()V'])
+        assert bytecode.hasSequence(['INVOKEVIRTUAL p/Base.base ()Ljava/lang/String;'])
+    }
+
+    // GROOVY-12569
+    @Test
+    void testPackagePrivateClassOfClassFilesOrSameCompilationUnitIsNamedInBytecode() {
+        def script = usesOfHidden('C', '@groovy.transform.CompileStatic')
+        def sameUnit = compile(method: 'test', classNamePattern: 'p.C', HIDDEN + script.replace('package p', ''))
+        assert sameUnit.hasSequence(['NEW p/Hidden', 'DUP', 'INVOKESPECIAL p/Hidden.<init> ()V'])
+        assert sameUnit.hasSequence(['INVOKESTATIC p/Hidden.sm (Ljava/lang/String;)Ljava/lang/String;'])
+        assert sameUnit.hasSequence(['INVOKEVIRTUAL p/Hidden.own ()Ljava/lang/String;'])
+
+        def dir = File.createTempDir()
+        try {
+            compileToDirectory(dir, 'Library.groovy': HIDDEN)
+            compileToDirectory(dir, 'C.groovy': script.substring(0, script.lastIndexOf('C.test()')))
+            def classFiles = extractMethodSequence(new File(dir, 'p/C.class').bytes, 'test')
+            assert classFiles.hasSequence(['NEW p/Hidden', 'DUP', 'INVOKESPECIAL p/Hidden.<init> ()V'])
+            assert classFiles.hasSequence(['INVOKESTATIC p/Hidden.sm (Ljava/lang/String;)Ljava/lang/String;'])
+            assert classFiles.hasSequence(['INVOKEVIRTUAL p/Hidden.own ()Ljava/lang/String;'])
+
+            def loader = new URLClassLoader([dir.toURI().toURL()] as URL[], this.class.classLoader)
+            assert loader.loadClass('p.C').test() == USES_OF_HIDDEN
+        } finally {
+            dir.deleteDir()
         }
     }
 
