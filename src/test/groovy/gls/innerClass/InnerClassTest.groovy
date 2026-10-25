@@ -2776,6 +2776,58 @@ final class InnerClassTest {
         assert err.message.contains("within static nested class 'Top" + '$' + "N' is not allowed in a static context.")
     }
 
+    // GROOVY-12514: 'Type.super' within a nested class Type is 'super'
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testQualifiedSuperOfCurrentNestedClass(String mode) {
+        assertScript """
+            import java.util.function.Supplier
+
+            class Base {
+                String q = 'q:base'
+                String m() { 'm:base' }
+                String getP() { 'p:base' }
+            }
+            $mode
+            class Top {
+                static class N extends Base {
+                    String q = 'q:n'
+                    String m() { 'm:n' }
+                    String getP() { 'p:n' }
+                    List<String> test() {
+                        Supplier<String> s = () -> N.super.m()
+                        [N.super.m(), N.super.p, N.super.q, { -> N.super.m() }(), s.get()]
+                    }
+                }
+                class I extends Base {
+                    String m() { 'm:i' }
+                    List<String> test() { [I.super.m(), { -> I.super.m() }()] }
+                }
+                enum E {
+                    A
+                    String toString() { 'e' }
+                    String test() { E.super.toString() }
+                }
+            }
+            assert new Top.N().test() == ['m:base', 'p:base', 'q:base', 'm:base', 'm:base']
+            assert new Top.I(new Top()).test() == ['m:base', 'm:base']
+            assert Top.E.A.test() == 'A'
+        """
+    }
+
+    // GROOVY-12514
+    @Test
+    void testQualifiedSuperOfCurrentNestedClassInStaticContext() {
+        def err = shouldFail CompilationFailedException, '''
+            class Top {
+                static class N {
+                    static m() { N.super.toString() }
+                }
+            }
+        '''
+        assert err.message.contains("within static nested class 'Top" + '$' + "N' is not allowed in a static context.")
+    }
+
     // GROOVY-12512: 'Outer.this' needs an enclosing instance at every level
     @Test
     void testOuterThisWithoutEnclosingInstance() {

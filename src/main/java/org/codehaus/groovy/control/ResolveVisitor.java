@@ -1192,6 +1192,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
 
         checkThisAndSuperAsPropertyAccess(xe);
+        if (isSuperOfCurrentNestedClass(xe)) { // "Type.super" within nested class Type is "super"
+            VariableExpression superExpression = new VariableExpression("super");
+            superExpression.setSourcePosition(xe);
+            return superExpression;
+        }
         return isTopLevelProperty ? correctClassClassChain(xe) : xe;
     }
 
@@ -1249,6 +1254,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             addError("The usage of 'Class.this' and 'Class.super' within static nested class '" +
                     currentClass.getName() + "' is not allowed in a static context.", expression);
         }
+    }
+
+    private boolean isSuperOfCurrentNestedClass(final PropertyExpression expression) {
+        return currentClass instanceof InnerClassNode && !currentClass.isInterface() && !Traits.isTrait(currentClass)
+            && !expression.isImplicitThis() && "super".equals(expression.getPropertyAsString())
+            && expression.getObjectExpression() instanceof ClassExpression
+            && expression.getObjectExpression().getType().equals(currentClass)
+            && (currentScope == null || !currentScope.isInStaticContext());
     }
 
     private boolean isSuperCallToDefaultMethod(PropertyExpression expression) {
