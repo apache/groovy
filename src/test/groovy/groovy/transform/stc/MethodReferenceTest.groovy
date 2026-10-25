@@ -1151,6 +1151,7 @@ final class MethodReferenceTest {
         assert err.message =~ /Cannot call java.lang.Integer\[\]#<init>\(int\) with arguments /
     }
 
+    // GROOVY-12488
     @Test // class::new
     void testFunctionCN10() {
         assertScript shell, '''
@@ -1180,6 +1181,7 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12488
     @Test // class::new
     void testFunctionCN11() {
         assertScript shell, '''
@@ -1204,6 +1206,7 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12488
     @Test // class::new
     void testFunctionCN12() {
         assertScript shell, '''
@@ -1229,6 +1232,7 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12488
     @Test // class::new
     void testFunctionCN13() {
         assertScript shell, '''
@@ -1261,6 +1265,7 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12488
     @Test // class::new
     void testFunctionCN14() {
         assertScript shell, '''
@@ -1282,6 +1287,7 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12488
     @Test // class::new
     void testFunctionCN15() {
         assertScript shell, '''
@@ -1302,7 +1308,7 @@ final class MethodReferenceTest {
         '''
     }
 
-    // GROOVY-10971
+    // GROOVY-10971, GROOVY-12488
     @Test // class::new
     void testFunctionCN16() {
         assertScript shell, '''
@@ -1321,6 +1327,7 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12488
     @Test // class::new
     void testFunctionCN17() {
         assertScript shell, '''package p
@@ -1344,6 +1351,7 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12488
     @Test // class::new
     void testFunctionCN18() {
         assertScript shell, '''
@@ -1472,6 +1480,31 @@ final class MethodReferenceTest {
 
             assert C.prot().apply('x').value == 'prot:x'
             assert C.pkg().apply(1).value == 'pkg:1'
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN24() {
+        assertScript shell, '''
+            class Foo {
+                final String how
+                Foo(String s) { how = 'real:' + s }
+            }
+
+            @CompileStatic
+            String test() {
+                Function<String, Foo> f = Foo::new // calls the constructor directly, like new Foo(s)
+                f.apply('x').how
+            }
+
+            Foo.metaClass.constructor = { String s -> Foo.getDeclaredConstructor(String).newInstance('emc-' + s) }
+            try {
+                assert new Foo('x').how == 'real:emc-x'
+                assert test() == 'real:x'
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(Foo)
+            }
         '''
     }
 
@@ -3072,6 +3105,7 @@ final class MethodReferenceTest {
             )
         }
 
+        // GROOVY-12488
         @Test
         void testConstructorReferenceCallsNoArgConstructorDirectly() {
             def helperBytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
@@ -3095,6 +3129,7 @@ final class MethodReferenceTest {
             assertNoDynamicConstructorCall(helperBytecode)
         }
 
+        // GROOVY-12488
         @Test
         void testConstructorReferenceSelectsConstructorBySamParameterTypes() {
             def script = '''
@@ -3138,6 +3173,7 @@ final class MethodReferenceTest {
             assertNoDynamicConstructorCall(unboxAndWiden)
         }
 
+        // GROOVY-12488
         @Test
         void testVariadicConstructorReferenceCallsConstructorDirectly() {
             def script = '''
@@ -3173,6 +3209,7 @@ final class MethodReferenceTest {
             assertNoDynamicConstructorCall(array)
         }
 
+        // GROOVY-12488
         @Test
         void testGenericClassConstructorReferenceCallsConstructorDirectly() {
             def bytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
@@ -3191,6 +3228,7 @@ final class MethodReferenceTest {
             assertNoDynamicConstructorCall(bytecode)
         }
 
+        // GROOVY-12488
         @Test
         void testPrivateConstructorOfNestmateIsCalledDirectly() {
             def bytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
@@ -3276,7 +3314,7 @@ final class MethodReferenceTest {
             assertNoDynamicConstructorCall(bytecode)
         }
 
-        // GROOVY-10971: no constructor accepts the parameter type of the functional interface
+        // GROOVY-10971, GROOVY-12488: no constructor accepts the parameter type of the functional interface
         @Test
         void testConstructorReferenceWithoutMatchingConstructorSelectsConstructorAtRuntime() {
             def bytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
@@ -3294,6 +3332,7 @@ final class MethodReferenceTest {
             assert bytecode.hasSequence(['INVOKEDYNAMIC init(Ljava/lang/Class;Ljava/lang/Object;)Ljava/lang/Object;'])
         }
 
+        // GROOVY-12488
         @Test
         void testProtectedConstructorOfAnotherPackageIsSelectedAtRuntime() {
             def bytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
