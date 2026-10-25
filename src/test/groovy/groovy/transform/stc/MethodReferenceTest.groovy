@@ -1624,12 +1624,26 @@ final class MethodReferenceTest {
                 static Supplier<List> list() { Arrays::asList }
                 default String join(String... parts) { parts.join(',') }
                 default BiFunction<String, String, String> joiner() { this::join }
+                static IntFunction<String[]> array() { String[]::new }
+                default IntFunction<int[][]> matrix() { int[][]::new }
+                static Function<Closure, Thread> daemon() { Thread::startDaemon } // static extension method
+                default Supplier<String> className() { String::getName } // method of Class
             }
 
             assert I.make().apply('s').value == 's'
             assert new I() {}.create().apply('d').value == 'd'
             assert I.list().get() == []
             assert new I() {}.joiner().apply('a', 'b') == 'a,b'
+            assert I.array().apply(2).length == 2
+            assert new I() {}.matrix().apply(3).length == 3
+            Thread thread = I.daemon().apply { -> }
+            thread.join()
+            assert thread.daemon
+            assert new I() {}.className().get() == 'java.lang.String'
+
+            def helpers = I.declaredMethods.findAll { it.synthetic }
+            assert helpers*.name.collect { it.substring(0, it.indexOf('$')) }.toSet() == ['ctorRef', 'adapt', 'dgsm', 'class'] as Set
+            assert helpers.every { java.lang.reflect.Modifier.isPrivate(it.modifiers) && !java.lang.reflect.Modifier.isFinal(it.modifiers) }
         '''
     }
 
