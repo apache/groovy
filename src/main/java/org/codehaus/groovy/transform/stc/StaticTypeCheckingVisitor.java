@@ -155,6 +155,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -331,6 +332,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isBool
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isCompareToBoolean;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isGStringOrGStringStringLUB;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isInheritedPrivateMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isOperationInGroup;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isParameterizedWithGStringOrGStringString;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isParameterizedWithString;
@@ -450,6 +452,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected DefaultTypeCheckingExtension extension;
     /** Mutable state for the current type-checking run. */
     protected TypeCheckingContext typeCheckingContext;
+    /** Declared type of the variable whose method {@link #findMethod} is looking up, if any. */
+    private ClassNode declaredReceiverType;
 
     /**
      * Creates a static type-checking visitor for the supplied source and class.
@@ -3500,7 +3504,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             for (Receiver<String> currentReceiver : receivers) {
                 receiverType = wrapTypeIfNecessary(currentReceiver.getType());
 
-                candidates = findMethodsWithGenerated(receiverType, nameText);
+                candidates = removeInheritedPrivateMethods(findMethodsWithGenerated(receiverType, nameText), receiverType, getDeclaredType(expression.getExpression()), false);
                 // GROOVY-10741: check for reference to a property node's method
                 MethodNode generated = findPropertyMethod(receiverType, nameText);
                 if (generated != null && candidates.stream().noneMatch(m -> m.getName().equals(generated.getName()))) {
@@ -4678,7 +4682,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
                     MethodNode first = null;
                     for (Receiver<String> currentReceiver : receivers) {
-                        mn = findMethod(currentReceiver.getType().getPlainNodeReference(), name, args);
+                        declaredReceiverType = getDeclaredType(objectExpression);
+                        try {
+                            mn = findMethod(currentReceiver.getType().getPlainNodeReference(), name, args);
+                        } finally {
+                            declaredReceiverType = null;
+                        }
                         if (!mn.isEmpty()) {
                             first = mn.get(0); // capture for error reporting
                             chosenReceiver = currentReceiver;
@@ -6527,7 +6536,7 @@ trying: for (ClassNode[] signature : signatures) {
                 }
             }
         } else {
-            methods = findMethodsWithGenerated(receiver, name);
+            methods = removeInheritedPrivateMethods(findMethodsWithGenerated(receiver, name), receiver, declaredReceiverType, true);
             if ("call".equals(name) && receiver.isInterface()) {
                 MethodNode sam = findSAM(receiver);
                 if (sam != null && !"call".equals(sam.getName())) {
@@ -6542,7 +6551,7 @@ trying: for (ClassNode[] signature : signatures) {
                 boolean staticOnly = Modifier.isStatic(receiver.getModifiers());
                 for (ClassNode outer = receiver; (outer = outer.getOuterClass()) != null;
                         staticOnly = staticOnly || Modifier.isStatic(outer.getModifiers())) {
-                    methods.addAll(allowStaticAccessToMember(findMethodsWithGenerated(outer, name), staticOnly));
+                    methods.addAll(allowStaticAccessToMember(removeInheritedPrivateMethods(findMethodsWithGenerated(outer, name), outer, null, true), staticOnly));
                 }
             }
             if (args == null || args.length == 0) {
@@ -6620,6 +6629,37 @@ trying: for (ClassNode[] signature : signatures) {
         }
 
         return EMPTY_METHODNODE_LIST;
+    }
+
+    /**
+     * Removes the private methods that {@code type} only inherits from a superclass
+     * (JLS 8.2). A method declared by {@code declaredType} is kept: that is the
+     * declared type of a variable whose inferred type is the narrower type. For a
+     * call, two cases that dynamic Groovy runs are kept as well: a private static
+     * method, and a private method called from its declaring class. For a method
+     * reference or pointer they are not, because dynamic Groovy fails on those.
+     */
+    private List<MethodNode> removeInheritedPrivateMethods(final List<MethodNode> methods, final ClassNode type, final ClassNode declaredType, final boolean call) {
+        ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
+        Predicate<MethodNode> inherited = method -> isInheritedPrivateMethod(method, type)
+                && !method.getDeclaringClass().equals(declaredType)
+                && !(call && (method.isStatic() || method.getDeclaringClass().equals(enclosingClass)));
+        if (methods.stream().noneMatch(inherited)) return methods;
+
+        List<MethodNode> result = new ArrayList<>(methods);
+        result.removeIf(inherited);
+        return result;
+    }
+
+    /**
+     * Returns the declared type of a variable, which flow typing may have narrowed.
+     */
+    private static ClassNode getDeclaredType(final Expression expression) {
+        if (expression instanceof VariableExpression variable && !variable.isThisExpression() && !variable.isSuperExpression()) {
+            Variable target = findTargetVariable(variable);
+            if (!(target instanceof DynamicVariable)) return target.getOriginType();
+        }
+        return null;
     }
 
     private PropertyNode findProperty(final ClassNode receiver, final String name) {

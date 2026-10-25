@@ -2147,6 +2147,66 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12510: a private method is not inherited (JLS 8.2); javac rejects these
+    // references and dynamic Groovy throws MissingMethodException, even in the class
+    // that declares the method
+    @ParameterizedTest
+    @ValueSource(strings=['TypeChecked','CompileStatic'])
+    void testPrivateMethodOfSuperclassReferenceThroughSubclass(String mode) {
+        def refs = [
+            'Function<Sub, String> f = Sub::im'  : 'im',
+            'Supplier<String> f = new Sub()::im' : 'im',
+            'Supplier<String> f = Sub::sm'       : 'sm',
+            'def f = new Sub().&im'              : 'im',
+            'def f = Sub.&sm'                    : 'sm',
+        ]
+        refs.each { ref, name ->
+            for (where in ['Outer', 'Box']) {
+                def err = shouldFail shell, """
+                    @$mode
+                    class Outer {
+                        static class Box {
+                            private String im() { 'im' }
+                            private static String sm() { 'sm' }
+                            ${where == 'Box' ? "static test() { $ref }" : ''}
+                        }
+                        static class Sub extends Box {
+                        }
+                        ${where == 'Outer' ? "static test() { $ref }" : ''}
+                    }
+                """
+                if (mode == 'TypeChecked' || ref.contains('.&')) {
+                    assert err.message.contains("Cannot find matching method Outer\$Sub#${name}.")
+                } else {
+                    assert err.message =~ /Failed to find (class )?method '${name}\(.*\)'.* for the type: Outer[$]Sub/
+                }
+            }
+        }
+    }
+
+    // GROOVY-12510
+    @ParameterizedTest
+    @ValueSource(strings=['@CompileDynamic','@TypeChecked','@CompileStatic'])
+    void testPrivateMethodOfSuperclassReferenceThroughItsType(String tag) {
+        assertScript shell, """
+            $tag
+            class Outer {
+                static class Box {
+                    private String im() { 'im' }
+                }
+                static class Sub extends Box {
+                }
+                static String test() {
+                    Function<Box, String> f = Box::im
+                    Box b = new Sub()
+                    Supplier<String> g = b::im
+                    f.apply(new Sub()) + g.get()
+                }
+            }
+            assert Outer.test() == 'imim'
+        """
+    }
+
     // GROOVY-11365
     @Test
     void testInnerClassProtectedMethodReference() {

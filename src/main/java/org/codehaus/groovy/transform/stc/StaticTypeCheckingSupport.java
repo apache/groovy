@@ -2342,6 +2342,22 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
+     * Determines if a method is a private method that a receiver of the given type
+     * would only inherit from a superclass. Private members are not inherited
+     * (JLS 8.2), so such a method is not a member of the receiver type, and dynamic
+     * Groovy does not find it there either.
+     *
+     * @param method the candidate method
+     * @param receiverType the type that the method is looked up on
+     * @return {@code true} if the method is private and declared by another class
+     * @since 7.0.0
+     */
+    public static boolean isInheritedPrivateMethod(final MethodNode method, final ClassNode receiverType) {
+        return method.isPrivate() && !(method instanceof ExtensionMethodNode)
+                && !method.getDeclaringClass().equals(receiverType);
+    }
+
+    /**
      * @return true if the class node is either a GString or the LUB of String and GString.
      */
     public static boolean isGStringOrGStringStringLUB(final ClassNode node) {
