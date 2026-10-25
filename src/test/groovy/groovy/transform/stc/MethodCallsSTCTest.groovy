@@ -1933,6 +1933,31 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    // GROOVY-12577
+    @Test
+    void testCallClassMethodFromStaticContext() {
+        assertScript '''
+            class E {
+                static class N {
+                    static String n() { getSimpleName() + ':' + toString() }
+                }
+                static String sf = toString()
+                static String sb
+                static {
+                    sb = getSimpleName() + ':' + getName()
+                }
+                static String sm() {
+                    toString() + ':' + getSimpleName() + ':' + isInstance(new E())
+                }
+            }
+
+            assert E.N.n() == 'N:class E$N'
+            assert E.sf == 'class E'
+            assert E.sb == 'E:E'
+            assert E.sm() == 'class E:E:true'
+        '''
+    }
+
     // GROOVY-10341
     @Test
     void testCallAbstractSuperMethod() {
