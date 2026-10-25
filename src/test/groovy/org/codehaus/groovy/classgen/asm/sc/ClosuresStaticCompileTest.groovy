@@ -39,6 +39,39 @@ final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticC
         '''
     }
 
+    // GROOVY-12576
+    @Test
+    void testObjectMethodsInClosureWithoutThisObject() {
+        assertScript '''
+            class C {
+                String toString() { 'C' }
+                List<Closure> closures() {
+                    [{ -> toString() }, { -> hashCode() }, { -> equals(this) }, { -> getClass() }]
+                }
+            }
+
+            C c = new C()
+            List<Closure> closures = c.closures()
+            for (Closure copy : [closures[0].dehydrate(), closures[0].rehydrate(null, c, null)]) {
+                assert copy() == copy.toString()
+            }
+            for (Closure copy : [closures[1].dehydrate(), closures[1].rehydrate(null, c, null)]) {
+                assert copy() == copy.hashCode()
+            }
+            for (Closure copy : [closures[2].dehydrate(), closures[2].rehydrate(null, c, null)]) {
+                assert copy() == false
+            }
+            for (Closure copy : [closures[3].dehydrate(), closures[3].rehydrate(null, c, null)]) {
+                assert copy() == copy.getClass()
+            }
+
+            assert closures[0]() == 'C'
+            assert closures[1]() == c.hashCode()
+            assert closures[2]() == true
+            assert closures[3]() == C
+        '''
+    }
+
     // GROOVY-5811
     @Test
     void testClosureExceptionUnwrap() {
