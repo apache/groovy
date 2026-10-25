@@ -30,7 +30,8 @@ import java.security.CodeSource
 
 /**
  * Unit tests for static compilation: protected and package-private members of
- * a class with the same package name, compiled by another compilation unit.
+ * a class with the same package name, compiled by another compilation and so
+ * maybe defined by another class loader.
  * <p>
  * The JVM allows such access only within the same run-time package, which is
  * the package name and the class loader. GroovyClassLoader defines the classes
@@ -148,7 +149,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
 
     // GROOVY-12568
     @Test
-    void testProtectedAndPackagePrivateConstructorsOfClassOfAnotherCompilationUnitAreSelectedAtRuntime() {
+    void testProtectedAndPackagePrivateConstructorsOfClassOfAnotherClassLoaderAreSelectedAtRuntime() {
         def bytecode = compileAgainstLibrary(LIBRARY, 'p.C', 'make', '''package p
             @groovy.transform.CompileStatic
             class C {
@@ -163,7 +164,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
 
     // GROOVY-12568
     @Test
-    void testPublicConstructorOfClassOfAnotherCompilationUnitIsCalledDirectly() {
+    void testPublicConstructorOfClassOfAnotherClassLoaderIsCalledDirectly() {
         def bytecode = compileAgainstLibrary('''package p
             class B {
                 B(String s) { }
@@ -237,7 +238,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
 
     // GROOVY-12568
     @Test
-    void testProtectedAndPackagePrivateMethodsOfClassOfAnotherCompilationUnitAreSelectedAtRuntime() {
+    void testProtectedAndPackagePrivateMethodsOfClassOfAnotherClassLoaderAreSelectedAtRuntime() {
         def bytecode = compileAgainstLibrary(MEMBERS, 'p.C', 'test', '''package p
             @groovy.transform.CompileStatic
             class C {
@@ -257,7 +258,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
 
     // GROOVY-12568
     @Test
-    void testProtectedMethodsOfSuperclassOfAnotherCompilationUnitAreCalledDirectly() {
+    void testProtectedMethodsOfSuperclassOfAnotherClassLoaderAreCalledDirectly() {
         def bytecode = compileAgainstLibrary(MEMBERS, 'p.B', 'test', '''package p
             @groovy.transform.CompileStatic
             class B extends M {
@@ -319,7 +320,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
 
     // GROOVY-12568
     @Test
-    void testMethodReferenceToPackagePrivateMethodOfClassOfAnotherCompilationUnitIsSelectedAtRuntime() {
+    void testMethodReferenceToPackagePrivateMethodOfClassOfAnotherClassLoaderIsSelectedAtRuntime() {
         def script = '''package p
             @groovy.transform.CompileStatic
             class C {
@@ -416,7 +417,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
 
     // GROOVY-12568
     @Test
-    void testProtectedAndPackagePrivateFieldsOfClassOfAnotherCompilationUnitAreAccessedAtRuntime() {
+    void testProtectedAndPackagePrivateFieldsOfClassOfAnotherClassLoaderAreAccessedAtRuntime() {
         def bytecode = compileAgainstLibrary(FIELDS, 'p.C', 'test', '''package p
             @groovy.transform.CompileStatic
             class C {
@@ -437,7 +438,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
 
     // GROOVY-12568
     @Test
-    void testProtectedFieldOfSuperclassOfAnotherCompilationUnitIsAccessedDirectly() {
+    void testProtectedFieldOfSuperclassOfAnotherClassLoaderIsAccessedDirectly() {
         def bytecode = compileAgainstLibrary(FIELDS, 'p.B', 'test', '''package p
             @groovy.transform.CompileStatic
             class B extends F {
