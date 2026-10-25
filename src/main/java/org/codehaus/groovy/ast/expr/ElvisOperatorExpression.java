@@ -29,6 +29,11 @@ import org.codehaus.groovy.syntax.Types;
  * def booleanPart = truePart as boolean
  * booleanPart? truePart : y
  * </pre>
+ * It also represents the null-coalescing expression x ?? y (since 7.0.0), which
+ * tests x against {@code null} instead of its Groovy Truth, so falsy non-null
+ * values such as {@code 0}, {@code false} or {@code ''} are kept
+ * (see {@link #isNullCoalescing()}).
+ * <p>
  * Even if x is no atomic expression, x will be evaluated only once. Example:
  * <pre class="language-groovy groovyTestCase">
  * class Foo {
@@ -40,9 +45,8 @@ import org.codehaus.groovy.syntax.Types;
  * assert foo.index == 1
  * assert result == 1
  * </pre>
- * The null-coalescing form x ?? y tests x against {@code null} instead of
- * using Groovy Truth, so falsy non-null values such as {@code 0}, {@code false}
- * or {@code ''} are kept (see {@link #isNullCoalescing()}).
+ * The boolean expression (x as boolean, or x != null) and the true expression
+ * share the node x: code generation evaluates x once and never both of them.
  *
  * @since 1.5
  */
@@ -78,6 +82,11 @@ public class ElvisOperatorExpression extends TernaryExpression {
      */
     public boolean isNullCoalescing() {
         return nullCoalescing;
+    }
+
+    @Override
+    public String getText() {
+        return getTrueExpression().getText() + (nullCoalescing ? " ?? " : " ?: ") + getFalseExpression().getText();
     }
 
     private static BooleanExpression notNullExpression(final Expression base) {

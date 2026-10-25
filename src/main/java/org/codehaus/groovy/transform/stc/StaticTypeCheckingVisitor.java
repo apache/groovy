@@ -1394,7 +1394,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         // for "x op= y", find type as if it was "x = x op y"
         if (isCompoundAssignment(expression)) {
             Token op = ((BinaryExpression) expression).getOperation();
-            if (op.getType() == ELVIS_EQUAL || op.getType() == NULL_COALESCE_EQUAL) { // GROOVY-10419: "x ?= y"
+            if (op.getType() == ELVIS_EQUAL || op.getType() == NULL_COALESCE_EQUAL) { // GROOVY-10419: "x ?= y" and "x ??= y"
                 valueExpression = new ElvisOperatorExpression(leftExpression, rightExpression, op.getType() == NULL_COALESCE_EQUAL);
             } else {
                 op = Token.newSymbol(TokenUtil.removeAssignment(op.getType()), op.getStartLine(), op.getStartColumn());
