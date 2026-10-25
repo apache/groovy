@@ -305,6 +305,23 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
 
     // GROOVY-12568
     @Test
+    void testMethodReferencesOfInterfaceToPackagePrivateMethodsOfClassOfAnotherClassLoader() {
+        shell.evaluate MEMBERS
+        assert shell.evaluate('''package p
+            import java.util.function.*
+
+            @groovy.transform.CompileStatic
+            interface I { // same package name as M, but another class loader
+                static Supplier<String> stat() { M::spm }
+                default Function<M, String> unbound() { M::pm }
+            }
+            assert I.declaredMethods.findAll { it.name.startsWith('access$') }.size() == 2
+            [I.stat().get(), new I() {}.unbound().apply(new M())]
+        ''') == ['spm', 'pm']
+    }
+
+    // GROOVY-12568
+    @Test
     void testMethodReferenceToPackagePrivateMethodOfSameCompilationUnitIsDirect() {
         def bytecode = compile(method: 'test', classNamePattern: 'p.C', MEMBERS + '''
             @groovy.transform.CompileStatic
