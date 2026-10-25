@@ -764,7 +764,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                     // falls through
                   case "thisObject":
-                    vexp.putNodeMetaData(INFERRED_TYPE, makeThis());
+                    vexp.putNodeMetaData(INFERRED_TYPE, makeThisObject());
                     return;
                   case "parameterTypes":
                     vexp.putNodeMetaData(INFERRED_TYPE, CLASS_Type.getPlainNodeReference().makeArray());
@@ -5068,7 +5068,7 @@ out:                if (mn.size() != 1) {
                                 }
                                 // falls through
                               case "getThisObject":
-                                returnType = makeThis();
+                                returnType = makeThisObject();
                             }
                         } else if (returnType.isGenericsPlaceHolder() || isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
                             ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), targetMethod, callArguments, call.getGenericsTypes());
@@ -7117,6 +7117,24 @@ trying: for (ClassNode[] signature : signatures) {
 
     private ClassNode makeThis() {
         return makeType(typeCheckingContext.getEnclosingClassNode(), typeCheckingContext.isInStaticContext);
+    }
+
+    /**
+     * Returns the type of the this object of the enclosing closure, which is also its owner when it is not
+     * nested in another closure. In an instance method or instance initializer of a trait, the trait
+     * transformation rehydrates each closure written there to the {@code $self} parameter, so it is the type
+     * of the instance the trait is applied to, unless a lambda, which is not rehydrated, encloses the closure.
+     */
+    private ClassNode makeThisObject() {
+        MethodNode method = typeCheckingContext.getEnclosingMethod();
+        if (method != null && method.getParameters().length > 0 && Traits.isTrait(method.getDeclaringClass().getOuterClass())
+                && typeCheckingContext.getEnclosingClosureStack().stream().noneMatch(c -> c.getClosureExpression() instanceof LambdaExpression)) {
+            Parameter self = method.getParameters()[0];
+            if (Traits.THIS_OBJECT.equals(self.getName()) && Traits.isTrait(self.getType())) {
+                return makeSelf(self.getType());
+            }
+        }
+        return makeThis();
     }
 
     /**

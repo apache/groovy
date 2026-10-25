@@ -411,4 +411,52 @@ final class TraitWithClosureOrLambda {
             assert C.one() == 'good bad ugly'
         '''
     }
+
+    // GROOVY-12492
+    @Test
+    void testOwnerAndThisObjectOfTraitClosure() {
+        String script = '''
+            trait T {
+                String name() { 't' }
+                Closure field = { owner }
+                def ownerProperty() { def c = { owner }; c() }
+                def thisObjectProperty() { def c = { thisObject }; c() }
+                def delegateProperty() { def c = { delegate }; c() }
+                def ownerGetter() { def c = { getOwner() }; c() }
+                def thisObjectGetter() { def c = { getThisObject() }; c() }
+                def nested() { def c = { def inner = { thisObject }; inner() }; c() }
+                def nestedOwner() { def c = { def inner = { owner }; inner() }; c() }
+                String ownerMethod() { def c = { owner.name() }; c() }
+                static staticOwner() { def c = { owner }; c() }
+            }
+            class C implements T {
+                String name() { 'c' }
+            }
+
+            def c = new C()
+            // a closure written in a trait method is rehydrated to the instance the trait is applied to
+            [c.ownerProperty(), c.thisObjectProperty(), c.delegateProperty(), c.ownerGetter(), c.thisObjectGetter(), c.nested(), c.field()].each {
+                assert it.is(c)
+            }
+            assert c.nestedOwner() instanceof Closure
+            assert c.ownerMethod() == 'c'
+            assert C.staticOwner() == C
+        '''
+        assertScript shell, script
+        assertScript script.replace('trait T', '@groovy.transform.TypeChecked trait T')
+
+        assertScript shell, '''
+            class Base {
+                String base() { 'base' }
+            }
+            @groovy.transform.SelfType(Base)
+            trait T {
+                String bases() { def c = { owner.base() + ' ' + thisObject.base() }; c() }
+            }
+            class C extends Base implements T {
+            }
+
+            assert new C().bases() == 'base base'
+        '''
+    }
 }
