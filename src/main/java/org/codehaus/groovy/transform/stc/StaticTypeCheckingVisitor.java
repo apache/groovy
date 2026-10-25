@@ -224,6 +224,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.ast.ClassHelper.isSAMType;
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperByte;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperCharacter;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperDouble;
@@ -273,7 +274,9 @@ import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
 import static org.codehaus.groovy.syntax.Types.BITWISE_OR;
 import static org.codehaus.groovy.syntax.Types.BITWISE_XOR;
 import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
+import static org.codehaus.groovy.syntax.Types.COMPARE_IDENTICAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL;
+import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_IDENTICAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_IN;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_INSTANCEOF;
 import static org.codehaus.groovy.syntax.Types.COMPARE_TO;
@@ -953,9 +956,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     /**
      * Records the instanceof checks of a condition or logical expression that guard what is evaluated after
-     * them: those reached through logical operators, {@code &} and {@code !} only. A check that is an operand
-     * of any other operator, an argument or an element, such as {@code x instanceof T} in
-     * {@code foo(x instanceof T, x)}, does not tell anything about the expressions evaluated after it.
+     * them: those reached through logical operators, {@code &} and {@code !}, a comparison with a boolean
+     * literal, a cast to {@code boolean} and the value of an assignment only. A check that is an operand of any
+     * other operator, an argument or an element, such as {@code x instanceof T} in {@code foo(x instanceof T, x)},
+     * does not tell anything about the expressions evaluated after it.
      */
     private void addInstanceOfGuards(final Expression expression) {
         Expression expr = stripParentheses(expression);
@@ -966,7 +970,57 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             addInstanceOfGuards(((BinaryExpression) expr).getRightExpression());
         } else if (isBinaryOperation(expr, KEYWORD_INSTANCEOF, COMPARE_NOT_INSTANCEOF)) {
             instanceOfGuards.add(expr);
+        } else if (expr instanceof BinaryExpression be && getBooleanLiteralComparand(be) != null) {
+            instanceOfGuards.add(be); // "c == true" narrows like "c", "c == false" like "!c"
+            addInstanceOfGuards(getBooleanLiteralComparand(be));
+        } else if (isBinaryOperation(expr, ASSIGN)) { // "b = c" has the value of "c"
+            addInstanceOfGuards(((BinaryExpression) expr).getRightExpression());
+        } else if (expr instanceof CastExpression ce && (isPrimitiveBoolean(ce.getType()) || isWrapperBoolean(ce.getType()))) {
+            addInstanceOfGuards(ce.getExpression());
         }
+    }
+
+    /**
+     * Returns the operand that the expression compares with a boolean literal using {@code ==}, {@code !=},
+     * {@code ===} or {@code !==}, the literal on either side, or {@code null} for any other expression.
+     */
+    private static Expression getBooleanLiteralComparand(final BinaryExpression expression) {
+        if (isBinaryOperation(expression, COMPARE_EQUAL, COMPARE_NOT_EQUAL, COMPARE_IDENTICAL, COMPARE_NOT_IDENTICAL)) {
+            if (isBooleanLiteral(expression.getRightExpression())) return expression.getLeftExpression();
+            if (isBooleanLiteral(expression.getLeftExpression())) return expression.getRightExpression();
+        }
+        return null;
+    }
+
+    /**
+     * Tells if the expression compares an operand with a boolean literal so that it is true exactly when the
+     * operand is false: {@code c == false}, {@code c != true}, {@code false == c} and so on.
+     */
+    private static boolean isNegatingComparison(final BinaryExpression expression) {
+        if (getBooleanLiteralComparand(expression) == null) return false;
+        Expression literal = isBooleanLiteral(expression.getRightExpression()) ? expression.getRightExpression() : expression.getLeftExpression();
+        boolean equality = isBinaryOperation(expression, COMPARE_EQUAL, COMPARE_IDENTICAL);
+        return equality != (Boolean) ((ConstantExpression) literal).getValue();
+    }
+
+    private static boolean isBooleanLiteral(final Expression expression) {
+        return expression instanceof ConstantExpression constant && constant.getValue() instanceof Boolean;
+    }
+
+    /** Strips parentheses and comparisons that do not negate their operand: {@code c == true} is {@code c}. */
+    private static Expression stripTrueComparisons(final Expression expression) {
+        Expression expr = stripParentheses(expression);
+        while (expr instanceof BinaryExpression be && getBooleanLiteralComparand(be) != null && !isNegatingComparison(be)) {
+            expr = stripParentheses(getBooleanLiteralComparand(be));
+        }
+        return expr;
+    }
+
+    /** Returns {@code c} for {@code !c}, {@code c == false} or {@code c != true}, and {@code null} otherwise. */
+    private static Expression getNegatedOperand(final Expression expression) {
+        if (expression instanceof NotExpression not) return not.getExpression();
+        if (expression instanceof BinaryExpression be && isNegatingComparison(be)) return getBooleanLiteralComparand(be);
+        return null;
     }
 
     /** {@inheritDoc} */
@@ -974,12 +1028,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public void visitNotExpression(final NotExpression expression) {
         typeCheckingContext.pushTemporaryTypeInfo();
         super.visitNotExpression(expression);
-        var tti = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
+        negateTemporaryTypeInfo(typeCheckingContext.temporaryIfBranchTypeInformation.pop(), expression.getExpression());
+    }
+
+    /**
+     * Records in the enclosing scope what the negation of the given operand tells, from what the operand told
+     * in its own scope.
+     */
+    private void negateTemporaryTypeInfo(final Map<Object, List<ClassNode>> tti, final Expression expression) {
         // GROOVY-12000: a negative ("!instanceof") entry may only be re-flipped into a positive
         // smart-cast when the operand is itself a single negated check, or an "||" whose operands
         // pin their negatives down; "!(L && R)" only guarantees "!L || !R", so drop them there
-        Expression operand = stripParentheses(expression.getExpression());
-        if (!(operand instanceof NotExpression) && !isBinaryOperation(operand, COMPARE_NOT_INSTANCEOF, LOGICAL_OR)) {
+        Expression operand = stripTrueComparisons(expression);
+        if (getNegatedOperand(operand) == null && !isBinaryOperation(operand, COMPARE_NOT_INSTANCEOF, LOGICAL_OR)) {
             List<ClassNode> types = new ArrayList<>();
             Object key = negatedInstanceOfConjunctionKey(operand, types);
             if (key != null) { // !(x !instanceof A && x !instanceof B) is (x instanceof A || x instanceof B)
@@ -1065,12 +1126,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
 
             // GROOVY-7971, GROOVY-8965, GROOVY-10096, GROOVY-10702, et al.
-            if (op == LOGICAL_OR || op == BITWISE_AND) typeCheckingContext.pushTemporaryTypeInfo();
+            boolean negation = instanceOfGuards.contains(expression) && isNegatingComparison(expression);
+            if (op == LOGICAL_OR || op == BITWISE_AND || negation) typeCheckingContext.pushTemporaryTypeInfo();
 
             ClassNode lType;
             leftExpression.visit(this);
             var setterInfo = removeSetterInfo(leftExpression);
-            if (setterInfo != null) { assert op != LOGICAL_OR && op != BITWISE_AND;
+            if (setterInfo != null) { assert op != LOGICAL_OR && op != BITWISE_AND && !negation;
                 if (ensureValidSetter(expression, leftExpression, rightExpression, setterInfo)) {
                     return;
                 }
@@ -1091,6 +1153,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     rhs.forEach((key, types) -> typeCheckingContext.peekTemporaryTypeInfo(key).addAll(types));
                 } else if (op != LOGICAL_OR) {
                     rightExpression.visit(this);
+                    if (negation) { // "c == false" tells what "!c" does
+                        negateTemporaryTypeInfo(typeCheckingContext.temporaryIfBranchTypeInformation.pop(), getBooleanLiteralComparand(expression));
+                    }
                 } else {
                     var lhs = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
                     typeCheckingContext.pushTemporaryTypeInfo();
@@ -2955,8 +3020,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         // visit body
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
         Expression collectionExpression = forLoop.getCollectionExpression();
-        if (collectionExpression instanceof ClosureListExpression) {
+        if (collectionExpression instanceof ClosureListExpression closureList) {
             // for (int i=0; i<...; i++) style loop
+            if (closureList.getExpressions().size() > 1) addInstanceOfGuards(closureList.getExpression(1)); // the condition
             super.visitForLoop(forLoop);
         } else {
             visitStatement(forLoop);
@@ -8098,6 +8164,9 @@ out:    for (ClassNode type : todo) {
         if (expr instanceof BooleanExpression be) {
             return canInvertNarrowingForElseBranch(be.getExpression());
         }
+        if (expr instanceof BinaryExpression be && getBooleanLiteralComparand(be) != null) { // "c == false" is "!c"
+            return isNegatingComparison(be) || canInvertNarrowingForElseBranch(getBooleanLiteralComparand(be));
+        }
         if (expr instanceof BinaryExpression be) {
             switch (be.getOperation().getType()) {
               case LOGICAL_AND:
@@ -8148,9 +8217,9 @@ out:    for (ClassNode type : todo) {
      * checks: {@code !(!(x instanceof A) && !(x instanceof B))} narrows {@code x} to {@code A | B}.
      */
     private Object negatedInstanceOfConjunctionKey(final Expression expression, final List<ClassNode> types) {
-        Expression expr = stripParentheses(expression);
-        if (expr instanceof NotExpression ne) {
-            expr = stripParentheses(ne.getExpression());
+        Expression expr = stripTrueComparisons(expression), negated = getNegatedOperand(expr);
+        if (negated != null) {
+            expr = stripTrueComparisons(negated);
             if (!isBinaryOperation(expr, KEYWORD_INSTANCEOF)) return null;
         } else if (isBinaryOperation(expr, LOGICAL_AND, BITWISE_AND)) {
             Object left = negatedInstanceOfConjunctionKey(((BinaryExpression) expr).getLeftExpression(), types);
