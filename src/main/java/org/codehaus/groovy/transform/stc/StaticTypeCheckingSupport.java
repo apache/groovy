@@ -77,6 +77,7 @@ import java.util.regex.Matcher;
 import java.util.stream.BaseStream;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
@@ -2274,7 +2275,11 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
-     * Filter methods according to visibility
+     * Filter methods according to visibility. A private method or constructor is
+     * visible from every class of its nest, that is the top-level class that
+     * encloses its declaring class and every class nested in it, as in Java
+     * (JLS 6.6.1). The rules for protected and package-private members are
+     * unchanged.
      *
      * @param methodNodeList method nodes to filter
      * @param enclosingClassNode the enclosing class
@@ -2323,7 +2328,8 @@ public abstract class StaticTypeCheckingSupport {
                 }
             }
 
-            if (methodNode.isPrivate() && !enclosingClassNode.equals(declaringClass)) {
+            if (methodNode.isPrivate() && !enclosingClassNode.equals(declaringClass)
+                    && !getNestHost(enclosingClassNode).equals(getNestHost(declaringClass))) {
                 continue;
             }
             if (methodNode.isProtected()
