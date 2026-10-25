@@ -1150,6 +1150,31 @@ final class EnumTest extends CompilableTestSupport {
         '''
     }
 
+    // the runtime prefers the constructor of matching arity to a varargs one, unless the last
+    // argument is null and the varargs constructor has the same arity
+    // GROOVY-12490
+    @Test
+    void testLiteralArgumentsBesideAVarargsConstructor() {
+        assertScript '''
+            enum E {
+                ONE('one'), TWO('two')
+                final String s
+                E(String s) { this.s = s }
+                E(Object... values) { this.s = 'varargs' }
+            }
+            assert E.values()*.s == ['one', 'two']
+        '''
+        assertScript '''
+            enum E {
+                ONE('one', 1), TWO('two', null)
+                final String s
+                E(String s, Integer i) { this.s = s + ':' + i }
+                E(String s, Object... more) { this.s = s + ':varargs:' + more }
+            }
+            assert E.values()*.s == ['one:1', 'two:varargs:[null]']
+        '''
+    }
+
     // GROOVY-12490
     @Test
     void testLiteralArgumentsForAGenericConstructor() {

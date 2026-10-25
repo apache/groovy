@@ -68,15 +68,19 @@ import static org.objectweb.asm.Opcodes.NEW;
  * and for</li>
  * <li>a constant whose arguments are all literals (constants such as {@code 'a'},
  * {@code 1} or {@code true}, {@code null}, and class literals), when exactly one
- * constructor, not a synthetic one, can take that many arguments, none can take them as
- * varargs, and each parameter is of the type of its literal, of the primitive type of a
- * wrapper literal, or of a type other than {@code Boolean} that the literal extends or
- * implements ({@code null} goes to any parameter that is not primitive).  The meta class
- * then accepts that constructor and no other, as it does not list synthetic constructors;
- * and the cast that {@code $INIT} applies to each argument before the call returns the
- * argument itself, or for a primitive parameter the value of the wrapper, so the direct
- * call receives exactly what {@code $INIT} would pass.  The cast to {@code Boolean} is
- * excluded because it goes through {@code asBoolean}.</li>
+ * constructor that is neither synthetic nor varargs has that many parameters, each of
+ * them is of the type of its literal, of the primitive type of a wrapper literal, or of a
+ * type other than {@code Boolean} that the literal extends or implements ({@code null}
+ * goes to any parameter that is not primitive), and no varargs constructor has that many
+ * parameters if the last argument is {@code null}.  The meta class then selects that
+ * constructor: it does not list synthetic constructors, and the penalty it adds to the
+ * distance of a varargs constructor outweighs the distance of the constructor of matching
+ * arity, unless the varargs constructor has that arity and the last argument is
+ * {@code null}, which is weighed as the array.  The cast that {@code $INIT} applies to
+ * each argument before the call returns the argument itself, or for a primitive parameter
+ * the value of the wrapper, so the direct call receives exactly what {@code $INIT} would
+ * pass.  The cast to {@code Boolean} is excluded because it goes through
+ * {@code asBoolean}.</li>
  * </ul>
  * Anything else, such as a GString for a String parameter, an argument the meta class
  * would convert (an {@code int} literal for a {@code long} parameter), overloaded
@@ -210,12 +214,18 @@ final class EnumConstantInit extends BytecodeExpression {
         if (arguments.isEmpty()) return enumClass.getDeclaredConstructor(NAME_AND_ORDINAL);
 
         int nArguments = arguments.size() + 2; // the name and the ordinal come first
+        boolean lastIsNull = isNull(arguments.get(arguments.size() - 1));
         ConstructorNode match = null;
         for (ConstructorNode ctor : enumClass.getDeclaredConstructors()) {
             Parameter[] parameters = ctor.getParameters();
             int nParameters = parameters.length;
-            if (nParameters > 0 && parameters[nParameters - 1].getType().isArray() && nArguments >= nParameters - 1) {
-                return null; // the meta class would weigh a varargs call
+            if (nParameters > 0 && parameters[nParameters - 1].getType().isArray()) {
+                // the meta class may call a varargs constructor with the arguments, but adds a
+                // penalty to its distance that outweighs the distance of the constructor of
+                // matching arity, unless it has the arity of the call and the last argument
+                // is null, which is weighed as the array
+                if (nParameters == nArguments && lastIsNull) return null;
+                continue;
             }
             if (nParameters == nArguments) {
                 if (match != null) return null; // more than one candidate
@@ -230,6 +240,10 @@ final class EnumConstantInit extends BytecodeExpression {
             if (!isPassedUnchanged(arguments.get(i), parameters[i + 2].getType())) return null;
         }
         return match;
+    }
+
+    private static boolean isNull(final Expression expression) {
+        return expression instanceof ConstantExpression constant && constant.isNullExpression();
     }
 
     private static boolean isConstant(final Expression expression, final Object value) {

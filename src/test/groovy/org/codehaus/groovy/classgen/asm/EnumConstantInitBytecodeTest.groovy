@@ -377,15 +377,45 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         assertInitHelperCall(code)
     }
 
-    // the runtime would weigh the varargs constructor against the one of matching arity
+    // the runtime prefers the constructor of matching arity to a varargs one
     // GROOVY-12490
     @Test
-    void testVarargsConstructorBesideMatchingConstructorUsesInitHelper() {
+    void testVarargsConstructorBesideMatchingConstructorCallsConstructorDirectly() {
         def code = staticInitializerOf '''
             enum E {
                 ONE('a')
                 E(String name) { }
                 E(String name, String... more) { }
+            }
+        '''
+        assertDirectConstructorCall(code, 'ONE', 'ICONST_0', ['LDC "a"'], '(Ljava/lang/String;ILjava/lang/String;)V')
+    }
+
+    // likewise beside a varargs constructor that could take the arguments of every constant
+    // GROOVY-12490
+    @Test
+    void testVarargsConstructorForAnyArgumentsBesideMatchingConstructorCallsConstructorDirectly() {
+        def code = staticInitializerOf '''
+            enum E {
+                ONE('a'), TWO('b')
+                E(String name) { }
+                E(Object... values) { }
+            }
+        '''
+        assertDirectConstructorCall(code, 'ONE', 'ICONST_0', ['LDC "a"'], '(Ljava/lang/String;ILjava/lang/String;)V')
+        assertDirectConstructorCall(code, 'TWO', 'ICONST_1', ['LDC "b"'], '(Ljava/lang/String;ILjava/lang/String;)V')
+    }
+
+    // the runtime weighs a null last argument as the array of a varargs constructor of the
+    // same arity, without a penalty
+    // GROOVY-12490
+    @Test
+    void testNullLastArgumentForAVarargsConstructorOfTheSameArityUsesInitHelper() {
+        def code = staticInitializerOf '''
+            enum E {
+                ONE('a', null)
+                E(String name, Integer count) { }
+                E(String name, Object... more) { }
             }
         '''
         assertInitHelperCall(code)
