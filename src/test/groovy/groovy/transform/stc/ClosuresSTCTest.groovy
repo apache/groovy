@@ -1444,6 +1444,58 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12576
+    @Test
+    void testClosureObjectMethodPrecedence() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class D {
+                String toString() { 'D' }
+            }
+            class C {
+                String toString() { 'C' }
+                static String withD(@DelegatesTo(value=D, strategy=Closure.DELEGATE_FIRST) Closure<String> c) {
+                    c.delegate = new D()
+                    c.resolveStrategy = Closure.DELEGATE_FIRST
+                    c()
+                }
+                List<String> log = []
+                String f = new StringBuilder().with { append('f'); toString() }
+                static String sf = new StringBuilder().with { append('sf'); toString() }
+                C() {
+                    log << new StringBuilder().with { append('ctor'); toString() }
+                }
+                List<Object> m() {
+                    StringBuilder sb = new StringBuilder('sb')
+                    Supplier<String> s = () -> toString()
+                    [
+                        sb.with { toString() },
+                        sb.with { hashCode() == sb.hashCode() },
+                        sb.with { equals(sb) },
+                        sb.with { getClass() },
+                        sb.identity { toString() },
+                        new StringBuilder('t').tap { append(toString()) }.toString(),
+                        withD { toString() },
+                        { -> toString() }(),
+                        { -> getClass() }(),
+                        s.get()
+                    ]
+                }
+                static List<Object> sm() {
+                    [new StringBuilder('sm').with { toString() }, { -> toString() }(), { -> getClass() }()]
+                }
+            }
+
+            def c = new C()
+            assert c.log == ['ctor']
+            assert c.f == 'f'
+            assert C.sf == 'sf'
+            assert c.m() == ['sb', true, true, StringBuilder, 'sb', 'tt', 'D', 'C', C, 'C']
+            assert C.sm() == ['sm', 'class C', Class]
+        '''
+    }
+
     // GROOVY-9604
     @Test
     void testClosureResolveStrategy() {

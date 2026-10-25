@@ -337,7 +337,9 @@ public class StaticInvocationWriter extends InvocationWriter {
             boolean isThisImplicit = implicitThis;
             Expression theReceiver = receiver;
             if (implicitThis && isThisExpression(receiver)
-                    && !isSubtype(declaringClass, enclosingClass)) {
+                    && (!isSubtype(declaringClass, enclosingClass)
+                        // a method of Object called in a closure or lambda is not called on it
+                        || (ClassHelper.isObjectType(declaringClass) && controller.isInGeneratedFunction()))) {
                 if (target.isStatic()) {
                     theReceiver = classX(declaringClass);
                 } else if (!controller.isInGeneratedFunction()) {
