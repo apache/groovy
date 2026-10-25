@@ -339,12 +339,55 @@ a method pointer such as `Integer::sum` passed as a functional interface, and th
 
 Statically compiled code can do without most of those proxies. When it is compiled with the
 incubating `-Dgroovy.target.closure.sam=true` option, a closure literal passed, assigned, returned
-or cast to a functional interface is converted by a small class the compiler generates, which
-implements the interface and behaves as the proxy would, apart from being a different class. Such a
-conversion needs no proxy entry, and while every argument already has the type the closure declares
-for it, the call reaches the closure without reflection either. Conversions to a trait or an
-abstract class, of a closure written in a trait, of a closure chosen by a conditional or Elvis
-expression, and of a closure that `groovy.target.closure.pack` packs still happen at run time.
+or cast to a functional interface is converted by a small class the compiler generates, the
+adapter, which implements the interface, wraps the closure and calls it as the proxy does. Such a
+conversion needs no proxy entry. The adapter is not the proxy, though, and code can tell them
+apart:
+
+* `Proxy.isProxyClass` is false for it, and class names in stack traces and messages differ;
+* its `equals` and `hashCode` are those of `Object`, where the proxy's compare and hash the closure;
+* when it calls `doCall` directly, as described below, a metaclass that intercepts `doCall` on the
+  closure class is not consulted;
+* its serialized form names the adapter class;
+* dynamic code can read the closure from its private field `closure`: `f.closure` returns the
+  closure, where the proxy throws `MissingPropertyException`;
+* when the interface binds the type arguments of a super-interface, as
+  `interface Shout extends Function<String, String> {}` does, reflection finds a public
+  `apply(String)` on the adapter besides `apply(Object)`, the only method of the proxy;
+* it is a synthetic member class of the closure class.
+
+The adapter calls the `doCall` method of the closure directly when the closure declares as many
+parameters as the interface method has and every argument already is an instance of the type of its
+parameter, or `null` for a reference type. Otherwise it calls `Closure.call`, as the proxy does,
+which finds `doCall` reflectively, so in a native image the `doCall` methods of the closure class
+must be registered for reflection. That is always the case when a parameter of the closure is an
+array or varargs, and when the interface method has a primitive parameter that the closure declares
+with a type other than that primitive, its wrapper or a supertype of the wrapper, such as an `int`
+the closure takes as a `long`. For an argument that reaches the closure only after a conversion,
+such as a `GString` that dynamic code or a raw `Function` passes for a parameter declared `String`,
+it depends on the value, so a test passing only `String` values does not show the need.
+
+These conversions still happen at run time, as without the option:
+
+* to a trait or an abstract class;
+* to a sealed interface, which a proxy cannot implement either, so the conversion fails as it does
+  without the option;
+* to an interface that is not public, unless it is in the package of the closure and Groovy
+  compiles it with the closure, so that the same class loader defines both: a `protected` interface
+  nested in a class of another package, or a package-private Java interface, even one compiled
+  jointly, keeps the run-time conversion;
+* to an interface with a default method of the same name and number of parameters as its abstract
+  method, which includes a Java interface that redeclares the method it inherits with the types it
+  binds, since javac gives it a default method, a bridge, for the erased method;
+* with `as`, to an interface that has no single abstract method, such as one that inherits the same
+  method with two signatures, or redeclares an inherited method with a narrower return type;
+* of a closure written in a trait;
+* of a closure chosen by a conditional or Elvis expression;
+* of a closure that destructures its argument, such as `{ a, b -> }` for a `Consumer<List<String>>`;
+* of a closure given as a default parameter value, as an argument of an enum constant or of the
+  constructor of an anonymous class, or as a named constructor argument;
+* of a closure that `groovy.target.closure.pack` packs;
+* of a closure whose value is converted to another interface than the one the type checker found.
 
 A recording made with the agent contains Groovy's own needs alongside the application's, and it
 is tempting to drop everything in a Groovy package to leave only the application's share. Do not

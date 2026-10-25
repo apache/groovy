@@ -114,7 +114,8 @@ public class CompilerConfiguration {
      * System-property name for the incubating option that converts a {@code @CompileStatic} closure literal
      * to the functional interface it is passed, assigned, returned or cast to with a class generated at
      * compile time, instead of a {@code java.lang.reflect.Proxy} created at run time. The generated class
-     * behaves as the proxy does.
+     * behaves as the proxy does, apart from the differences the invokedynamic chapter of the Groovy
+     * documentation lists, along with the conversions that still happen at run time.
      * Incubating: this switch may change or be removed until the feature graduates.
      */
     @Incubating
