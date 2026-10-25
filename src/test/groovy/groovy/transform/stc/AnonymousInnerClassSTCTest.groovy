@@ -374,4 +374,62 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
             assert result == 'String:x|String:x'
         '''
     }
+
+    // GROOVY-12512: an anonymous class created in a static context has no
+    // enclosing instance; javac reports a non-static method referenced from a
+    // static context, and dynamic Groovy throws MissingMethodException
+    @Test
+    void testCallToInstanceMethodOfEnclosingClassInStaticContext() {
+        [
+            'static m() { new Runnable() { void run() { pm() } }.run() }'                     : 'Box$1#pm()',
+            'static m() { new Runnable() { void run() { im() } }.run() }'                     : 'Box$1#im()',
+            'static m() { new Runnable() { void run() { def c = { -> pm() }; c() } }.run() }' : 'Box$1#pm()',
+            'static m() { def c = { -> new Runnable() { void run() { pm() } } }; c() }'       : 'Box$1#pm()',
+            'static { new Runnable() { void run() { pm() } }.run() }'                         : 'Box$1#pm()',
+            'static Runnable r = new Runnable() { void run() { pm() } }'                      : 'Box$1#pm()',
+            'static m() { new Runnable() { void run() { new Runnable() { void run() { pm() } }.run() } }.run() }' : 'Box$1$1#pm()',
+            'static class N { String pn() { "pn" }; static m() { new Runnable() { void run() { pn() } }.run() } }' : 'Box$N$1#pn()',
+        ].each { code, method ->
+            shouldFailWithMessages """
+                class Box {
+                    String pm() { 'pm' }
+                    private String im() { 'im' }
+                    $code
+                }
+            """,
+            "Cannot find matching method $method"
+        }
+    }
+
+    // GROOVY-12512
+    @Test
+    void testCallToMethodOfEnclosingClassFromAnonymousClass() {
+        assertScript '''
+            class Box {
+                String id = 'box'
+                String pm() { 'pm:' + id }
+                static String sp() { 'sp' }
+                static String inStaticContext() {
+                    new Object() {
+                        String own() { 'own' }
+                        String toString() { own() + sp() + { -> sp() }() }
+                    }.toString()
+                }
+                static String subclassInStaticContext() {
+                    new Box() {
+                        { id = 'anon' }
+                        String toString() { pm() }
+                    }.toString()
+                }
+                String inInstanceContext() {
+                    new Object() {
+                        String toString() { pm() + new Object() { String toString() { pm() } }.toString() }
+                    }.toString()
+                }
+            }
+            assert Box.inStaticContext() == 'ownspsp'
+            assert Box.subclassInStaticContext() == 'pm:anon'
+            assert new Box().inInstanceContext() == 'pm:boxpm:box'
+        '''
+    }
 }
