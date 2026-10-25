@@ -522,9 +522,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     }
 
     private MethodNode addSyntheticMethod(final String methodName, final ClassNode returnType, final Expression returnValue, final Parameter[] parameters, final ClassNode[] exceptions) {
-        return controller.getClassNode().addSyntheticMethod(
+        ClassNode classNode = controller.getClassNode();
+        return classNode.addSyntheticMethod(
             methodName,
-            Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+            // the JVM rejects a private method of an interface that is final
+            Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | (classNode.isInterface() ? 0 : Opcodes.ACC_FINAL),
             returnType,
             parameters,
             exceptions,
