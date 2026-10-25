@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen;
 
 import org.apache.groovy.ast.tools.ClassNodeUtils;
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -35,6 +36,7 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.OperandStack;
+import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.MethodVisitor;
 
@@ -114,7 +116,6 @@ final class EnumConstantInit extends BytecodeExpression {
     private final ConstructorNode constructor;
     private final List<Expression> arguments;
     private final Expression initCall;
-    private AsmClassGenerator acg;
 
     private EnumConstantInit(final ClassNode enumClass, final String name, final int ordinal,
                              final ConstructorNode constructor, final List<Expression> arguments, final Expression initCall) {
@@ -261,22 +262,35 @@ final class EnumConstantInit extends BytecodeExpression {
         return initCall.getText();
     }
 
+    /**
+     * Writes the constructor call when the visitor is the class generator, which loads the
+     * arguments; any other visitor visits the {@code $INIT} call that this expression replaces.
+     */
     @Override
     public void visit(final GroovyCodeVisitor visitor) {
         if (visitor instanceof AsmClassGenerator generator) {
-            acg = generator;
-            try {
-                super.visit(visitor); // i.e. visitBytecodeExpression(this)
-            } finally {
-                acg = null;
-            }
+            WriterController controller = generator.getController();
+            write(controller.getMethodVisitor(), generator);
+            controller.getOperandStack().push(getType());
         } else {
-            super.visit(visitor);
+            initCall.visit(visitor);
         }
     }
 
+    /**
+     * Writes the constructor call of a constant without arguments of its own.  The arguments
+     * of any other constant can only be loaded by the class generator, through
+     * {@link #visit(GroovyCodeVisitor)}.
+     */
     @Override
     public void visit(final MethodVisitor mv) {
+        if (!arguments.isEmpty()) {
+            throw new GroovyBugError("The arguments of enum constant " + name + " are loaded by the class generator");
+        }
+        write(mv, null);
+    }
+
+    private void write(final MethodVisitor mv, final AsmClassGenerator generator) {
         Parameter[] parameters = constructor.getParameters();
         String owner = BytecodeHelper.getClassInternalName(enumClass);
         mv.visitTypeInsn(NEW, owner);
@@ -284,9 +298,9 @@ final class EnumConstantInit extends BytecodeExpression {
         mv.visitLdcInsn(name);
         BytecodeHelper.pushConstant(mv, ordinal);
         if (!arguments.isEmpty()) {
-            OperandStack operandStack = acg.getController().getOperandStack();
+            OperandStack operandStack = generator.getController().getOperandStack();
             for (int i = 0, n = arguments.size(); i < n; i += 1) {
-                arguments.get(i).visit(acg);
+                arguments.get(i).visit(generator);
                 ClassNode type = parameters[i + 2].getType();
                 if (ClassHelper.isPrimitiveType(type)) {
                     operandStack.doGroovyCast(type); // unbox a wrapper literal

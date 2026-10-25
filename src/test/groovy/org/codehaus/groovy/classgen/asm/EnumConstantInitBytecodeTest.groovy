@@ -19,8 +19,13 @@
 package org.codehaus.groovy.classgen.asm
 
 import org.apache.groovy.parser.antlr4.Antlr4ParserPlugin
+import org.codehaus.groovy.GroovyBugError
+import org.codehaus.groovy.ast.CodeVisitorSupport
 import org.codehaus.groovy.ast.ModuleNode
+import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.ListExpression
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
+import org.codehaus.groovy.classgen.BytecodeExpression
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ParserPlugin
@@ -29,6 +34,15 @@ import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.syntax.Reduction
 import org.junit.jupiter.api.Test
+import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.tree.MethodNode
+
+import static groovy.test.GroovyAssert.shouldFail
+import static org.objectweb.asm.Opcodes.DUP
+import static org.objectweb.asm.Opcodes.ICONST_1
+import static org.objectweb.asm.Opcodes.INVOKESPECIAL
+import static org.objectweb.asm.Opcodes.LDC
+import static org.objectweb.asm.Opcodes.NEW
 
 /**
  * Checks how the static initializer of an enum creates its constants.
@@ -53,6 +67,16 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         unit.compile(Phases.CLASS_GENERATION)
         sequence = extractSequence(unit.classes.find { it.name == 'E' }.bytes, [method: '<clinit>'])
         bodyOf('static <clinit>()V')
+    }
+
+    // the expressions that the static initializer of the enum assigns to the given number of
+    // constants, as the class generator leaves them
+    private static List<Expression> constantInitsAfterClassGeneration(final String source, final int count) {
+        def unit = new CompilationUnit()
+        unit.addSource('script', source)
+        unit.compile(Phases.CLASS_GENERATION)
+        def statements = unit.AST.classes.find { it.name == 'E' }.getDeclaredMethod('<clinit>').code.statements
+        statements[0..<count]*.expression*.rightExpression
     }
 
     private List<String> bodyOf(final String header) {
@@ -716,5 +740,51 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
             }
         ''')
         assertInitHelperCall(code)
+    }
+
+    // a visitor other than the class generator, such as one that walks the AST after class
+    // generation, visits the $INIT calls that the direct constructor calls replace
+    // GROOVY-12490
+    @Test
+    void testOtherVisitorsSeeTheInitCallsThatTheDirectCallsReplace() {
+        def inits = constantInitsAfterClassGeneration('''
+            enum E {
+                ONE('one'), TWO
+                E(String s = 'none') { }
+            }
+        ''', 2)
+        assert inits.every { it instanceof BytecodeExpression }
+
+        def calls = []
+        def visitor = new CodeVisitorSupport() {
+            @Override
+            void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
+                calls << [call.method, *call.arguments.expressions*.value]
+            }
+        }
+        inits*.visit(visitor)
+        assert calls == [['$INIT', 'ONE', 0, 'one'], ['$INIT', 'TWO', 1]]
+    }
+
+    // the arguments of a constant are loaded by the class generator, which passes itself to the
+    // expression it visits; a method visitor alone can only write a constant without arguments
+    // GROOVY-12490
+    @Test
+    void testOnlyTheClassGeneratorWritesTheArgumentsOfAConstant() {
+        def inits = constantInitsAfterClassGeneration('''
+            enum E {
+                ONE('one'), TWO
+                E(String s = 'none') { }
+            }
+        ''', 2)
+
+        def method = new MethodNode()
+        inits[1].visit((MethodVisitor) method)
+        assert method.instructions*.opcode == [NEW, DUP, LDC, ICONST_1, INVOKESPECIAL]
+
+        def error = shouldFail(GroovyBugError) {
+            inits[0].visit((MethodVisitor) new MethodNode())
+        }
+        assert error.message.contains('ONE')
     }
 }
