@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.MultipleAssignmentMetadata;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
@@ -34,6 +35,7 @@ import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.RangeExpression;
+import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.tools.WideningCategories;
@@ -122,6 +124,7 @@ public class BinaryExpressionTransformer {
         switch (bin.getOperation().getType()) {
           case Types.ASSIGN:
             optimizeArrayCollectionAssignment(bin); // GROOVY-10029
+            convertClosureAssignedToFunctionalType(bin);
             Expression expr = transformAssignmentToSetterCall(bin);
             if (expr != null) return expr;
             if (leftExpression instanceof TupleExpression
@@ -191,6 +194,39 @@ public class BinaryExpressionTransformer {
             ((MethodCallExpression) rightExpression).setSafe(true);
             bin.setRightExpression(rightExpression);
         }
+    }
+
+    /**
+     * Converts a closure value assigned to a subscript or a property whose type is a functional interface, such
+     * as {@code map[key] = { ... }} for a {@code Map<String, Function<String, String>>}, to that interface, as an
+     * assignment to a variable does: the {@code putAt} method or setter that stores the value may declare its
+     * parameter with a type parameter, whose erasure does not name the interface.
+     */
+    private void convertClosureAssignedToFunctionalType(final BinaryExpression bin) {
+        Expression leftExpression = bin.getLeftExpression(), rightExpression = bin.getRightExpression();
+        if (leftExpression instanceof PropertyExpression || (leftExpression instanceof BinaryExpression subscript
+                && subscript.getOperation().getType() == Types.LEFT_SQUARE_BRACKET)) {
+            ClassNode leftType = findType(leftExpression);
+            if (ClassHelper.isSAMType(leftType) && !ClassHelper.CLOSURE_TYPE.implementsInterface(leftType)
+                    && isClosureValue(rightExpression)) {
+                CastExpression cast = new CastExpression(leftType, rightExpression);
+                cast.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, leftType);
+                cast.setSourcePosition(rightExpression);
+                bin.setRightExpression(cast);
+            }
+        }
+    }
+
+    /**
+     * Tells if the expression may evaluate to a closure: one of type {@code Closure}, or a conditional or Elvis
+     * expression with such a branch, which the type checker types as the target of the assignment.
+     */
+    private boolean isClosureValue(final Expression expression) {
+        if (expression instanceof TernaryExpression ternary) {
+            return isClosureValue(ternary.getTrueExpression()) || isClosureValue(ternary.getFalseExpression());
+        }
+        ClassNode type = findType(expression);
+        return type.equals(ClassHelper.CLOSURE_TYPE) || type.isDerivedFrom(ClassHelper.CLOSURE_TYPE);
     }
 
     private Expression transformAssignmentToSetterCall(final BinaryExpression bin) {

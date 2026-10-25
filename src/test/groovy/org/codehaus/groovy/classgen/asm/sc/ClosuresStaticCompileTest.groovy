@@ -144,4 +144,43 @@ final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticC
             test(new Pogo())
         '''
     }
+
+    // GROOVY-12561
+    @Test
+    void testClosureAssignedToASubscriptOrPropertyIsConvertedToItsInterface() {
+        assertScript '''
+            import java.util.function.Function
+            import java.util.function.Supplier
+            class Holder<T> { T value }
+            class Box<T> { public T content }
+            class C {
+                static Map<String, Function<String, String>> functions(boolean flag) {
+                    Map<String, Function<String, String>> map = [:]
+                    map['subscript'] = { String s -> s + '!' }
+                    map?['safe'] = { String s -> s + '?' }
+                    map.property = { String s -> s.toUpperCase() }
+                    map['conditional'] = flag ? { String s -> s.reverse() } : { String s -> s }
+                    map
+                }
+                static List<Supplier<String>> suppliers() {
+                    List<Supplier<String>> list = [null]
+                    def value = (list[0] = { 'element' })
+                    def holder = new Holder<Supplier<String>>()
+                    holder.value = { 'property' }
+                    def box = new Box<Supplier<String>>()
+                    box.@content = { 'field' }
+                    def named = new Holder<Supplier<String>>(value: { 'named' })
+                    [list[0], value, holder.value, box.content, named.value]
+                }
+            }
+
+            def functions = C.functions(true)
+            assert functions.collectEntries { k, f -> [k, f.apply('ab')] } == [subscript: 'ab!', safe: 'ab?', property: 'AB', conditional: 'ba']
+            assert functions.values().every { it instanceof Function && !(it instanceof Closure) }
+            def (element, value, property, field, named) = C.suppliers()
+            assert [element, value, property, field, named]*.get() == ['element', 'element', 'property', 'field', 'named']
+            assert [element, value, property, field, named].every { it instanceof Supplier && !(it instanceof Closure) }
+            assert value.is(element) // the value of the assignment is the converted closure
+        '''
+    }
 }
