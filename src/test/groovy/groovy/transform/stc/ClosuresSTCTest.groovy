@@ -1458,4 +1458,38 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             assert new C().m() == 0
         '''
     }
+
+    // GROOVY-12492
+    @Test
+    void testCallOfClosureReturningIntersectionType() {
+        assertScript '''
+            interface A { String a() }
+            interface B { String b() }
+            class AB implements A, B { String a() { 'a' }; String b() { 'b' } }
+            class Base { String base() { 'base' } }
+            @groovy.transform.SelfType(Base)
+            trait T {
+                Closure field = { def inner = { this }; inner() }
+                def nestedThis() { def outer = { def inner = { this }; inner() }; outer() }
+            }
+            class C extends Base implements T {
+                def lub(boolean flag) { def outer = { def inner = { flag ? 1 : 'x' }; inner() }; outer() }
+                static staticLub(boolean flag) { def outer = { def inner = { flag ? 1 : 'x' }; inner.call() }; outer() }
+                def both(Object o) {
+                    if (o instanceof A && o instanceof B) {
+                        def outer = { def inner = { o }; inner() }
+                        return outer().a() + outer().b()
+                    }
+                }
+            }
+
+            // the result of calling a closure whose return type is an intersection type has that type
+            def c = new C()
+            assert c.lub(true) == 1 && c.lub(false) == 'x'
+            assert C.staticLub(true) == 1
+            assert c.both(new AB()) == 'ab'
+            assert c.nestedThis().is(c)
+            assert c.field().is(c)
+        '''
+    }
 }
