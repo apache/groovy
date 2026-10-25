@@ -123,6 +123,11 @@ public abstract class Traits {
 
     /**
      * Name of the synthetic instance initialization method.
+     * <p>
+     * Since GROOVY-12491, implementing classes call it, like {@link #STATIC_INIT_METHOD} and the
+     * initializers of final trait fields, with a direct {@code invokestatic}, so a method added to
+     * the meta class of the helper does not replace it. The classes that {@code withTraits} and
+     * {@code as} generate at run time are composed the same way, so this holds for them too.
      */
     static final String INIT_METHOD = "$init$";
 

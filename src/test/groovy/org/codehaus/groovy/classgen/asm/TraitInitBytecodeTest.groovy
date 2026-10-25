@@ -355,15 +355,21 @@ final class TraitInitBytecodeTest extends AbstractBytecodeTestCase {
         """
     }
 
-    // a method added to the meta class of the helper only replaces $init$ for a call that is dispatched
-    // through that meta class; this also reaches the classes generated for withTraits and as at runtime
+    // a method added to the meta class of the helper only replaces $init$, or the initializer of a final
+    // field, for a call that is dispatched through that meta class; this also reaches the classes generated
+    // for withTraits and as at runtime
     @Test
     void testTraitInitializerIsNotDispatchedThroughMetaClass() {
         assertScript '''
             trait Greeting {
                 String greeting = 'hello'
+                final String name = 'greeter'
+                static final String KIND = 'kind'
             }
             class Greeter implements Greeting {
+            }
+            @groovy.transform.TypeChecked
+            class CheckedGreeter implements Greeting {
             }
             @groovy.transform.CompileStatic
             class StaticGreeter implements Greeting {
@@ -372,10 +378,14 @@ final class TraitInitBytecodeTest extends AbstractBytecodeTestCase {
             def dispatched = []
             Class helper = Greeting.classLoader.loadClass('Greeting$Trait$Helper')
             helper.metaClass.static.'$init$' = { Greeting self -> dispatched << self }
+            helper.metaClass.static.'$init$Greeting__name' = { Greeting self -> dispatched << self; 'replaced' }
+            helper.metaClass.static.'$static$init$Greeting__KIND' = { Class self -> dispatched << self; 'replaced' }
 
-            def greetings = [new Greeter(), new StaticGreeter(), new Object().withTraits(Greeting), new Object() as Greeting]
+            def greetings = [new Greeter(), new CheckedGreeter(), new StaticGreeter(), new Object().withTraits(Greeting), new Object() as Greeting]
             assert dispatched.isEmpty()
-            assert greetings*.greeting == ['hello'] * 4
+            assert greetings*.greeting == ['hello'] * 5
+            assert greetings*.name == ['greeter'] * 5
+            assert [Greeter, CheckedGreeter, StaticGreeter]*.KIND == ['kind'] * 3
         '''
     }
 
