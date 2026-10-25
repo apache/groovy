@@ -183,6 +183,11 @@ public class StaticInvocationWriter extends InvocationWriter {
      * (see {@link AsmClassGenerator#isInSameRuntimePackage}). Outside its package,
      * a protected constructor can only be called by {@code super(...)} or an
      * anonymous inner class.
+     * <p>
+     * Unlike {@link AsmClassGenerator#isMemberDirectlyAccessible}, there is no
+     * subclass rule: the verifier rejects {@code NEW} and {@code INVOKESPECIAL}
+     * of a protected constructor of another package in a subclass too, so a
+     * constructor reference to it creates the object through the meta-class.
      */
     static boolean isDirectlyAccessible(final ConstructorNode ctor, final ClassNode accessingClass) {
         if (ctor.isPublic()) return true;

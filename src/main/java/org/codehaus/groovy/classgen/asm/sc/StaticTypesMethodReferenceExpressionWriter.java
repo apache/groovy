@@ -488,12 +488,18 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
      * of the functional interface, among the constructors visible from the
      * enclosing class, as the type checker selects the constructor of a
      * constructor call.
+     * <p>
+     * A returned constructor is called directly, like the constructor of a
+     * statically compiled {@code new}, so the meta-class does not see the call:
+     * a constructor added or overridden through the meta-class, for example
+     * with {@code ExpandoMetaClass}, is not used.
      *
      * @return the constructor, or {@code null} if no single constructor matches
      *         or the matching constructor cannot be called directly
      */
     private ConstructorNode findConstructorReferenceTarget(final ClassNode type, final Parameter[] samParameters) {
-        // the type checker rejects these, unless a type checking extension suppresses the error
+        // the type checker rejects an abstract class or interface, unless a type checking extension suppresses the error;
+        // an enum, which Java code cannot instantiate at all, is left to the meta-class
         if (type.isInterface() || type.isAbstract() || type.isEnum()) return null;
 
         ClassNode[] argumentTypes = Arrays.stream(samParameters).map(Parameter::getType).toArray(ClassNode[]::new);
@@ -511,7 +517,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         ClassNode classNode = controller.getClassNode();
         return classNode.addSyntheticMethod(
             methodName,
-            // the JVM rejects a private method of an interface that is final
+            // the JVM rejects ACC_FINAL on any method of an interface (JVMS 4.6), so no helper method is final there
             Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | (classNode.isInterface() ? 0 : Opcodes.ACC_FINAL),
             returnType,
             parameters,
