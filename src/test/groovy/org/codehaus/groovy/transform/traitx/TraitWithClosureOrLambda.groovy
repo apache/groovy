@@ -539,4 +539,39 @@ final class TraitWithClosureOrLambda {
         assertScript script.replace('trait T', '@groovy.transform.TypeChecked trait T')
         assertScript script
     }
+
+    // GROOVY-12492
+    @Test
+    void testStaticClosureFieldCalledAsMethod() {
+        String script = '''
+            import java.util.function.Supplier
+            trait T {
+                static Closure<String> f = { 'f' }
+                static Closure<String> g = { String s -> s * 2 }
+                static Closure<String> field = { f() + '!' }
+                Closure<String> instanceField = { f() + '?' }
+                static String staticMethod() { f() + g('x') }
+                static String explicitThis() { this.f() }
+                String instanceMethod() { f() + g('y') }
+                static String inClosure() { def c = { def inner = { f() }; inner() }; c() }
+                String inInstanceClosure() { def c = { f() }; c() }
+                static String inLambda() { Supplier<String> s = () -> f(); s.get() }
+            }
+            class C implements T {
+            }
+
+            // a static closure field of a trait is the field of the class the trait is applied to
+            assert C.staticMethod() == 'fxx'
+            assert C.explicitThis() == 'f'
+            assert new C().instanceMethod() == 'fyy'
+            assert C.inClosure() == 'f'
+            assert new C().inInstanceClosure() == 'f'
+            assert C.inLambda() == 'f'
+            assert C.field() == 'f!'
+            assert new C().instanceField() == 'f?'
+        '''
+        assertScript shell, script
+        assertScript script.replace('trait T', '@groovy.transform.TypeChecked trait T')
+        assertScript script
+    }
 }

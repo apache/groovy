@@ -4980,6 +4980,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         if (existsProperty(property, true)
                                 && getType(property).equals(CLOSURE_TYPE)) {
                             chosenReceiver = Receiver.make(getType(property));
+                            if (isStaticPropertyOfTraitSelf(property)) {
+                                // the static accessor of the trait would read the property of the trait, not of the
+                                // class the trait is applied to, which $self or $static$self is at run time
+                                property.putNodeMetaData(DYNAMIC_RESOLUTION, CLOSURE_TYPE);
+                            }
                             call.putNodeMetaData("callable property", property);
                             List<Expression> list = argumentList.getExpressions();
                             int nArgs = list.stream().noneMatch(e -> e instanceof SpreadExpression) ? list.size() : -1;
@@ -7100,6 +7105,37 @@ trying: for (ClassNode[] signature : signatures) {
             }
         }
         return null;
+    }
+
+    /**
+     * Whether the property is a static property of a trait read in a method of its helper, through the
+     * {@code $self} or {@code $static$self} parameter, or through the implicit this of a closure or lambda,
+     * which is that parameter too. The trait reads such a property with a static accessor.
+     */
+    private boolean isStaticPropertyOfTraitSelf(final PropertyExpression property) {
+        if (!(property.getObjectExpression() instanceof VariableExpression receiver)) return false;
+        Variable self = receiver.getAccessedVariable();
+        if (receiver.isThisExpression() && property.isImplicitThis() && typeCheckingContext.getEnclosingClosure() != null) {
+            MethodNode method = typeCheckingContext.getEnclosingMethod(); // a closure or lambda in a trait method
+            if (method == null || method.getParameters().length == 0) return false;
+            self = method.getParameters()[0];
+        }
+        if (!(self instanceof Parameter)) return false;
+        ClassNode trait = null;
+        if (Traits.THIS_OBJECT.equals(self.getName())) {
+            trait = self.getType();
+        } else if (Traits.STATIC_THIS_OBJECT.equals(self.getName()) && isClassClassNodeWrappingConcreteType(self.getType())) {
+            trait = self.getType().getGenericsTypes()[0].getType();
+        }
+        if (trait == null || !Traits.isTrait(trait)) return false;
+        String name = capitalize(property.getPropertyAsString());
+        for (ClassNode t : Traits.findTraits(trait)) {
+            for (String getter : List.of("get" + name, "is" + name)) {
+                MethodNode method = t.getDeclaredMethod(getter, Parameter.EMPTY_ARRAY);
+                if (method != null && method.isStatic()) return true;
+            }
+        }
+        return false;
     }
 
     private static ClassNode makeSelf(final ClassNode trait) {
