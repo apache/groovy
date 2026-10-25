@@ -28,11 +28,18 @@ import java.lang.reflect.Method;
  * {@link GroovyObject} provides, which decides how the runtime dispatches a dynamic
  * property write or read to its instances.
  * <p>
- * An override, declared by the class or inherited from a superclass, receives every
- * access. The interface defaults only hand the access to the metaclass, so the runtime
- * calls the metaclass itself instead and tells it which class is making the access;
- * that is what lets, say, a superclass reach its own private field on an instance of
- * a subclass.
+ * An override receives every access. The interface defaults only hand the access to the
+ * metaclass, so the runtime calls the metaclass itself instead and tells it which class
+ * is making the access; that is what lets, say, a superclass reach its own private field
+ * on an instance of a subclass.
+ * <p>
+ * For {@link #overridesSetProperty(Class)} and {@link #overridesGetProperty(Class)}, an
+ * override is any implementation that is not an interface default method, whether the
+ * class declares it or inherits it from a superclass. A default method inherited from
+ * another interface, such as one extending {@code GroovyObject}, counts as the
+ * {@code GroovyObject} default there. {@link #hasCustomGetProperty(Class)} counts such a
+ * default as custom, since it sets aside only implementations that are synthetic or
+ * marked {@link Internal}.
  * <p>
  * Not user API.
  */
@@ -82,7 +89,9 @@ public final class GroovyObjectOverrides {
 
     /**
      * Tells whether instances of the given class take {@code setProperty(String, Object)}
-     * from anywhere but the {@link GroovyObject} interface default. Computed once per class.
+     * from an implementation that is not an interface default method; a default inherited
+     * from another interface counts as the {@link GroovyObject} default. Computed once per
+     * class.
      * <p>
      * When reflection cannot read the public methods of the class, the answer is
      * {@code true}. A caller then invokes {@link GroovyObject#setProperty(String, Object)},
@@ -100,8 +109,9 @@ public final class GroovyObjectOverrides {
     }
 
     /**
-     * Tells whether instances of the given class take {@code getProperty(String)} from
-     * anywhere but the {@link GroovyObject} interface default: the criterion of
+     * Tells whether instances of the given class take {@code getProperty(String)} from an
+     * implementation that is not an interface default method; a default inherited from
+     * another interface counts as the {@link GroovyObject} default. This is the criterion of
      * {@code ScriptBytecodeAdapter.getProperty}. Computed once per class, and {@code true}
      * when reflection cannot read the public methods of the class, for the reasons given
      * for {@link #overridesSetProperty(Class)}.
@@ -118,9 +128,11 @@ public final class GroovyObjectOverrides {
     /**
      * Tells whether instances of the given class take {@code getProperty(String)} from an
      * implementation that is neither synthetic nor marked {@link Internal}: the criterion
-     * of the invokedynamic property-read call sites. Unlike
+     * of the property-read call sites, invokedynamic and classic. Unlike
      * {@link #overridesGetProperty(Class)}, it treats such an implementation as generated,
-     * like the interface default, which carries {@code @Internal} for this reason.
+     * like the interface default, which carries {@code @Internal} for this reason; and it
+     * counts a default method inherited from another interface as custom, unless that
+     * method too is synthetic or marked {@code @Internal}.
      * Computed once per class, and {@code true} when reflection cannot read the public
      * methods of the class, for the reasons given for {@link #overridesSetProperty(Class)}.
      *

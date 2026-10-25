@@ -35,10 +35,15 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Reflection over a class can fail although the class itself works: in a native image
- * without reflection metadata for it, or, as here, when a public method names a type
- * absent at run time. A class with a {@code setProperty} of its own needs no reflection
- * to receive a write, so the property-write entry points must still deliver it.
+ * Reflection over a class can fail although the class itself works, as in a native image
+ * without reflection metadata for it. A class with a {@code setProperty} of its own needs
+ * no reflection to receive a write, so the property-write entry points must still deliver
+ * it.
+ * <p>
+ * The class written to here is built by hand to stand in for that case on the JVM: a
+ * public method naming a type absent at run time makes reflection over its public methods
+ * fail. A class compiled by Groovy with such a method cannot even be constructed on the
+ * JVM, because building its metaclass needs the same reflection.
  * <p>
  * Written in Java so that nothing but the writes under test touches the object: a Groovy
  * cast or call would consult its metaclass, which, not being built from its own class,
