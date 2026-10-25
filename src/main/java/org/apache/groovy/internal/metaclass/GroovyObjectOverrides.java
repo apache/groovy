@@ -22,6 +22,7 @@ import groovy.lang.GroovyObject;
 import groovy.transform.Internal;
 
 import java.lang.reflect.Method;
+import java.util.function.Predicate;
 
 /**
  * Whether a class overrides the {@code setProperty} or {@code getProperty} that
@@ -46,45 +47,38 @@ import java.lang.reflect.Method;
 @Internal
 public final class GroovyObjectOverrides {
 
-    private static final ClassValue<Boolean> SET_PROPERTY = new ClassValue<>() {
-        @Override
-        protected Boolean computeValue(final Class<?> type) {
-            try {
-                return !type.getMethod("setProperty", String.class, Object.class).isDefault();
-            } catch (NoSuchMethodException | LinkageError ignore) {
-                // the public methods cannot be read: a native image without reflection
-                // metadata for the class throws NoSuchMethodException (or, built with exact
-                // metadata, MissingReflectionRegistrationError, a LinkageError), and a public
-                // method naming a type absent at run time throws NoClassDefFoundError
-                return Boolean.TRUE;
-            }
-        }
-    };
+    private static final ClassValue<Boolean> SET_PROPERTY =
+            answer("setProperty", new Class<?>[]{String.class, Object.class}, method -> !method.isDefault());
 
-    private static final ClassValue<Boolean> GET_PROPERTY = new ClassValue<>() {
-        @Override
-        protected Boolean computeValue(final Class<?> type) {
-            try {
-                return !type.getMethod("getProperty", String.class).isDefault();
-            } catch (NoSuchMethodException | LinkageError ignore) {
-                return Boolean.TRUE; // as for setProperty
-            }
-        }
-    };
+    private static final ClassValue<Boolean> GET_PROPERTY =
+            answer("getProperty", new Class<?>[]{String.class}, method -> !method.isDefault());
 
-    private static final ClassValue<Boolean> CUSTOM_GET_PROPERTY = new ClassValue<>() {
-        @Override
-        protected Boolean computeValue(final Class<?> type) {
-            try {
-                Method method = type.getMethod("getProperty", String.class);
-                return !method.isSynthetic() && method.getAnnotation(Internal.class) == null;
-            } catch (NoSuchMethodException | LinkageError ignore) {
-                return Boolean.TRUE; // as for setProperty
-            }
-        }
-    };
+    private static final ClassValue<Boolean> CUSTOM_GET_PROPERTY =
+            answer("getProperty", new Class<?>[]{String.class},
+                    method -> !method.isSynthetic() && method.getAnnotation(Internal.class) == null);
 
     private GroovyObjectOverrides() {
+    }
+
+    /**
+     * Caches, per class, whether the public method with the given signature passes the
+     * given test, and {@code true} when that method cannot be read.
+     */
+    private static ClassValue<Boolean> answer(final String name, final Class<?>[] parameterTypes, final Predicate<Method> test) {
+        return new ClassValue<>() {
+            @Override
+            protected Boolean computeValue(final Class<?> type) {
+                try {
+                    return test.test(type.getMethod(name, parameterTypes));
+                } catch (NoSuchMethodException | LinkageError ignore) {
+                    // the public methods cannot be read: a native image without reflection
+                    // metadata for the class throws NoSuchMethodException (or, built with exact
+                    // metadata, MissingReflectionRegistrationError, a LinkageError), and a public
+                    // method naming a type absent at run time throws NoClassDefFoundError
+                    return Boolean.TRUE;
+                }
+            }
+        };
     }
 
     /**
