@@ -20,10 +20,14 @@ package groovy.transform.stc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 import org.codehaus.groovy.classgen.asm.InstructionSequence
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+
+import java.util.regex.Pattern
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -1353,6 +1357,73 @@ final class MethodReferenceTest {
             void test() {
                 Function<CharSequence, X> f = X::new // selected by parameter type of Function#apply, as in Java
                 assert f.apply('x').how == 'CharSequence'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN19() {
+        assertScript shell, '''
+            class Foo {
+                final String how
+                private Foo(String s) { how = 'private String' }
+                Foo(Object o) { how = 'public Object' }
+            }
+
+            @CompileStatic
+            void test() {
+                Function<String, Foo> f = Foo::new // like new Foo(s): Foo(String) is not visible
+                assert f.apply('x').how == 'public Object'
+                assert new Foo('x').how == 'public Object'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN20() {
+        assertScript shell, '''package p
+            class A {
+                final String how
+                @PackageScope A(String s) { how = 'package-private String' }
+                A(Object o) { how = 'public Object' }
+            }
+
+            true
+        '''
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                Function<String, p.A> f = p.A::new // like new p.A(s): A(String) is not visible
+                assert f.apply('x').how == 'public Object'
+                assert new p.A('x').how == 'public Object'
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN21() {
+        assertScript shell, '''
+            class IL {
+                final String how
+                IL(Object o) { how = 'Object' }
+                IL(long l) { how = 'long' }
+            }
+
+            @CompileStatic
+            void test() {
+                Function<Integer, IL> f = IL::new // like new IL(i) for Integer i
+                assert f.apply(1).how == 'Object'
+                Integer i = 1
+                assert new IL(i).how == 'Object'
             }
 
             test()
@@ -3068,6 +3139,73 @@ final class MethodReferenceTest {
             assertNoDynamicConstructorCall(bytecode)
         }
 
+        // GROOVY-12488
+        @Test
+        void testPrivateConstructorOfNestedClassIsCalledDirectlyFromClosureOrLambda() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    static class Box {
+                        private Box(String value) { }
+                    }
+                    static Function<String, Box> inClosure() {
+                        def make = { -> Function<String, Box> f = Box::new; f }
+                        make()
+                    }
+                    static Function<String, Box> inLambda() {
+                        Supplier<Function<String, Box>> make = () -> { Function<String, Box> f = Box::new; f }
+                        make.get()
+                    }
+                }
+            '''
+
+            def closure = compileStaticMethodBytecode('ctorRef$doCall$0', script, 'C$_inClosure_closure1')
+            assert closure.hasSequence(['NEW C$Box', 'ALOAD 0', 'INVOKESPECIAL C$Box.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(closure)
+
+            def lambda = compileStaticMethodBytecode('ctorRef$doCall$1', script, 'C$_inLambda_lambda2')
+            assert lambda.hasSequence(['NEW C$Box', 'ALOAD 0', 'INVOKESPECIAL C$Box.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(lambda)
+        }
+
+        // GROOVY-12488
+        @Test
+        void testConstructorReferenceSelectsConstructorVisibleFromEnclosingClass() {
+            def bytecode = compileStaticMethodBytecode('ctorRef$create$0', '''
+                class Foo {
+                    private Foo(String s) { }
+                    Foo(Object o) { }
+                }
+                @CompileStatic
+                class C {
+                    static Function<String, Foo> create() {
+                        Foo::new
+                    }
+                }
+            ''')
+
+            assert bytecode.hasSequence(['NEW Foo', 'ALOAD 0', 'INVOKESPECIAL Foo.<init> (Ljava/lang/Object;)V'])
+            assertNoDynamicConstructorCall(bytecode)
+
+            bytecode = compileStaticMethodBytecodeAgainstLibrary('''package p
+                class A {
+                    @groovy.transform.PackageScope A(String s) { }
+                    A(Object o) { }
+                }
+            ''', 'C', 'ctorRef$create$0', '''
+                import java.util.function.Function
+                @groovy.transform.CompileStatic
+                class C {
+                    static Function<String, p.A> create() {
+                        p.A::new
+                    }
+                }
+            ''')
+
+            assert bytecode.hasSequence(['NEW p/A', 'ALOAD 0', 'INVOKESPECIAL p/A.<init> (Ljava/lang/Object;)V'])
+            assertNoDynamicConstructorCall(bytecode)
+        }
+
         // GROOVY-10971: no constructor accepts the parameter type of the functional interface
         @Test
         void testConstructorReferenceWithoutMatchingConstructorSelectsConstructorAtRuntime() {
@@ -3196,8 +3334,27 @@ final class MethodReferenceTest {
             compile(options, COMMON_IMPORTS + script)
         }
 
-        private InstructionSequence compileStaticMethodBytecode(final String method, final String script) {
-            List<String> instructions = compileStaticBytecode(classNamePattern: 'C', method: method, script).instructions
+        private InstructionSequence compileStaticMethodBytecode(final String method, final String script, final String className = 'C') {
+            selectMethod(method, compileStaticBytecode(classNamePattern: Pattern.quote(className), method: method, script))
+        }
+
+        /**
+         * Compiles {@code script} against the classes of {@code library}, which
+         * are compiled before, by another compilation unit and class loader.
+         */
+        private InstructionSequence compileStaticMethodBytecodeAgainstLibrary(final String library, final String className, final String method, final String script) {
+            def loader = new GroovyClassLoader()
+            loader.parseClass(library)
+            def unit = new CompilationUnit(null, null, loader)
+            unit.addSource('script', script)
+            unit.compile(Phases.CLASS_GENERATION)
+            def generated = unit.classes.find { it.name == className }
+            assert generated != null : "class $className not found"
+            selectMethod(method, extractSequence(generated.bytes, [method: method]))
+        }
+
+        private static InstructionSequence selectMethod(final String method, final InstructionSequence sequence) {
+            List<String> instructions = sequence.instructions
             int begin = instructions.indexOf('--BEGIN--'), end = instructions.indexOf('--END--')
             assert begin >= 0 && end > begin : "method $method not found"
             new InstructionSequence(instructions: instructions[(begin + 1)..<end])

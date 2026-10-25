@@ -485,17 +485,21 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
     /**
      * Selects the constructor of {@code type} that accepts the parameter types
-     * of the functional interface, the way the constructor of a constructor call
-     * expression is selected.
+     * of the functional interface, among the constructors visible from the
+     * enclosing class, as the type checker selects the constructor of a
+     * constructor call.
      *
      * @return the constructor, or {@code null} if no single constructor matches
      *         or the matching constructor cannot be called directly
      */
     private ConstructorNode findConstructorReferenceTarget(final ClassNode type, final Parameter[] samParameters) {
+        // the type checker rejects these, unless a type checking extension suppresses the error
         if (type.isInterface() || type.isAbstract() || type.isEnum()) return null;
 
         ClassNode[] argumentTypes = Arrays.stream(samParameters).map(Parameter::getType).toArray(ClassNode[]::new);
-        List<MethodNode> ctors = chooseBestMethod(type, new ArrayList<>(type.getDeclaredConstructors()), argumentTypes);
+        // in a closure or lambda, visibility is checked for the enclosing class, as the type checker does
+        List<MethodNode> visible = filterMethodsByVisibility(new ArrayList<>(type.getDeclaredConstructors()), controller.getThisType());
+        List<MethodNode> ctors = chooseBestMethod(type, visible, argumentTypes);
         if (ctors.size() == 1 && ctors.get(0) instanceof ConstructorNode ctor && isDirectlyAccessible(ctor)) {
             return ctor;
         }
