@@ -376,9 +376,10 @@ These conversions still happen at run time, as without the option:
   compiles it with the closure, so that the same class loader defines both: a `protected` interface
   nested in a class of another package, or a package-private Java interface, even one compiled
   jointly, keeps the run-time conversion;
-* to an interface with a default method of the same name and number of parameters as its abstract
-  method, which includes a Java interface that redeclares the method it inherits with the types it
-  binds, since javac gives it a default method, a bridge, for the erased method;
+* to an interface with a default method that the method of the adapter would override, such as a
+  Java interface that redeclares the method it inherits with the types it binds, since javac gives
+  it a default method, a bridge, for the erased method; a default method that only overloads the
+  abstract method is inherited by the adapter, as by the proxy;
 * with `as`, to an interface that has no single abstract method, such as one that inherits the same
   method with two signatures, or redeclares an inherited method with a narrower return type;
 * of a closure chosen by a conditional or Elvis expression;

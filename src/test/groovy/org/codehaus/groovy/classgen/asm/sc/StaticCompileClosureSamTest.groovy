@@ -455,17 +455,14 @@ final class StaticCompileClosureSamTest extends AbstractBytecodeTestCase {
     void typesWithoutAnAdapterKeepTheirConversion() {
         def c = eval '''
             import java.util.concurrent.Callable
-            import java.util.function.Function
             abstract class Task { abstract String run(String s) }
             trait Named { abstract String name(String s) }
-            interface Overloaded extends Function<String, String> { default String apply(Integer i) { 'int' } }
             @groovy.transform.CompileStatic
             class C {
                 static Runnable runnable(List<String> out) { Runnable r = { out << 'ran' }; r }
                 static Callable<String> callable() { Callable<String> c = { 'called' }; c }
                 static Task task() { Task t = { String s -> s * 2 }; t }
                 static Named named() { Named n = { String s -> s + '!' }; n }
-                static Overloaded overloaded() { Overloaded o = { String s -> s + '?' }; o }
             }
             C
         '''
@@ -475,13 +472,42 @@ final class StaticCompileClosureSamTest extends AbstractBytecodeTestCase {
         assert c.callable().call() == 'called'
         assert c.task().run('ab') == 'abab'
         assert c.named().name('x') == 'x!'
-        assert c.overloaded().apply('x') == 'x?'
-        assert c.overloaded().apply(1) == 'int'
         assert c.runnable([]) instanceof Closure // a closure already is a Runnable and a Callable
         assert c.callable() instanceof Closure
         assert !(c.task() instanceof Closure)
         assert !(c.named() instanceof Closure)
-        assert isProxy(c.overloaded()) // a default method of that name could be overridden
+    }
+
+    // GROOVY-12492
+    @Test
+    void defaultMethodsOverloadingTheInterfaceMethodAreInherited() {
+        String script = '''
+            import java.util.function.Function
+            interface Overloaded extends Function<String, String> { default String apply(Integer i) { 'int' } }
+            interface Greeter { String greet(String s); default String greet(Integer i) { 'int' } }
+            interface Named { default String apply(Integer i) { 'named' } }
+            interface NamedFunction extends Function<String, String>, Named { }
+            @groovy.transform.CompileStatic
+            class C {
+                static Overloaded overloaded() { Overloaded o = { String s -> s + '?' }; o }
+                static Greeter greeter() { Greeter g = { String s -> 'hi ' + s }; g }
+                static NamedFunction namedFunction() { NamedFunction f = { String s -> s + '!' }; f }
+                static String both(Overloaded o) { o.apply('x') + o.apply(1) }
+            }
+            C
+        '''
+        for (enabled in [false, true]) {
+            def c = eval(script, enabled)
+            def x = 'x'
+            def overloaded = c.overloaded()
+            assert [overloaded.apply('a'), overloaded.apply(1), overloaded.apply("${x}"), overloaded.apply(null)] == ['a?', 'int', 'x?', 'null?']
+            assert ((Function) overloaded).apply('b') == 'b?'
+            assert c.both(overloaded) == 'x?int'
+            assert [c.greeter().greet('a'), c.greeter().greet(1), c.greeter().greet(null)] == ['hi a', 'int', 'hi null']
+            assert [c.namedFunction().apply('a'), c.namedFunction().apply(1)] == ['a!', 'named']
+            // a default method that only overloads the interface method is not overridden, so the adapter can be used
+            assert [overloaded, c.greeter(), c.namedFunction()].every { isProxy(it) == !enabled }
+        }
     }
 
     // GROOVY-12492

@@ -116,14 +116,18 @@ final class SamAdapterFactory implements Function<ClassNode, ClassNode> {
         if (type.isSealed()) return; // the adapter is not a permitted subclass
         MethodNode sam = ClassHelper.findSAM(type);
         if (sam == null) return;
-        int arity = sam.getParameters().length;
         for (ClassNode face : type.getAllInterfaces()) {
             if (Traits.isTrait(face)) return;
-            for (MethodNode method : face.getDeclaredMethods(sam.getName())) {
-                if (method.isDefault() && method.getParameters().length == arity) return;
-            }
         }
         List<MethodNode> methods = adapterMethods(type, sam);
+        List<String> descriptors = methods.stream().map(BytecodeHelper::getMethodDescriptor).toList();
+        for (ClassNode face : type.getAllInterfaces()) {
+            for (MethodNode method : face.getDeclaredMethods(sam.getName())) {
+                // a default method with the descriptor of an adapter method, such as the bridge javac adds to an interface that
+                // redeclares the method it inherits, would be overridden; an overload with another descriptor is inherited
+                if (method.isDefault() && descriptors.contains(BytecodeHelper.getMethodDescriptor(erasure(method, 0)))) return;
+            }
+        }
         for (MethodNode method : methods) {
             if (!isAccessible(method, type, closureClass)) return;
         }
@@ -146,8 +150,7 @@ final class SamAdapterFactory implements Function<ClassNode, ClassNode> {
         for (ClassNode face : type.getAllInterfaces()) {
             for (MethodNode declared : face.getDeclaredMethods(sam.getName())) {
                 if (!declared.isAbstract() || declared.getParameters().length != signature.getV1().length) continue;
-                ClassNode[] parameterTypes = Arrays.stream(declared.getParameters()).map(Parameter::getType).toArray(ClassNode[]::new);
-                MethodNode bridge = adapterMethod(declared, parameterTypes, declared.getReturnType(), ACC_PUBLIC | ACC_SYNTHETIC | ACC_BRIDGE);
+                MethodNode bridge = erasure(declared, ACC_PUBLIC | ACC_SYNTHETIC | ACC_BRIDGE);
                 String descriptor = BytecodeHelper.getMethodDescriptor(bridge);
                 if (!descriptors.contains(descriptor)) {
                     descriptors.add(descriptor);
@@ -156,6 +159,12 @@ final class SamAdapterFactory implements Function<ClassNode, ClassNode> {
             }
         }
         return methods;
+    }
+
+    /** The method with its parameter, return and exception types erased, as the adapter would declare it. */
+    private static MethodNode erasure(final MethodNode method, final int modifiers) {
+        ClassNode[] parameterTypes = Arrays.stream(method.getParameters()).map(Parameter::getType).toArray(ClassNode[]::new);
+        return adapterMethod(method, parameterTypes, method.getReturnType(), modifiers);
     }
 
     private static MethodNode adapterMethod(final MethodNode declared, final ClassNode[] parameterTypes, final ClassNode returnType, final int modifiers) {
