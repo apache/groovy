@@ -27,7 +27,10 @@ import org.objectweb.asm.Opcodes
 import static org.apache.groovy.internal.metaclass.GroovyObjectOverrides.hasCustomGetProperty
 import static org.apache.groovy.internal.metaclass.GroovyObjectOverrides.overridesGetProperty
 import static org.apache.groovy.internal.metaclass.GroovyObjectOverrides.overridesSetProperty
+import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertNotEquals
+import static org.junit.jupiter.api.Assertions.assertNotNull
 import static org.junit.jupiter.api.Assertions.assertThrows
 import static org.junit.jupiter.api.Assertions.assertTrue
 
@@ -72,6 +75,25 @@ final class GroovyObjectOverridesTest {
         Object getProperty(String name) { name }
     }
 
+    static class InheritsMarkedInternal extends MarkedInternal {
+    }
+
+    interface DefaultsElsewhere extends GroovyObject {
+        default Object getProperty(String name) { name }
+        default void setProperty(String name, Object value) { }
+    }
+
+    interface InternalDefaultElsewhere extends GroovyObject {
+        @Internal
+        default Object getProperty(String name) { name }
+    }
+
+    static class TakesDefaults implements DefaultsElsewhere {
+    }
+
+    static class TakesInternalDefault implements InternalDefaultElsewhere {
+    }
+
     @Test
     void interfaceDefaultIsNotAnOverride() {
         assertFalse(overridesSetProperty(Plain))
@@ -80,6 +102,41 @@ final class GroovyObjectOverridesTest {
             assertFalse(overridesGetProperty(type), type.name)
             assertFalse(hasCustomGetProperty(type), type.name)
         }
+    }
+
+    /**
+     * The interface default is not synthetic, so {@code hasCustomGetProperty} tells it from
+     * a custom {@code getProperty} only by its {@code @Internal}, which it must find at run
+     * time.
+     */
+    // GROOVY-12489
+    @Test
+    void interfaceDefaultGetPropertyCarriesInternalAtRunTime() {
+        def method = GroovyObject.getMethod('getProperty', String)
+        assertTrue(method.isDefault())
+        assertFalse(method.isSynthetic())
+        assertNotNull(method.getAnnotation(Internal))
+    }
+
+    /**
+     * A default method of another interface counts as the {@code GroovyObject} default for
+     * {@code overridesSetProperty} and {@code overridesGetProperty}, which only ask whether
+     * the method is a default, but as custom for {@code hasCustomGetProperty}, unless it is
+     * marked {@code @Internal} too.
+     */
+    // GROOVY-12489
+    @Test
+    void defaultOfAnotherInterfaceIsCustomButNotAnOverride() {
+        for (type in [TakesDefaults, TakesInternalDefault]) {
+            def method = type.getMethod('getProperty', String)
+            assertTrue(method.isDefault(), type.name)
+            assertNotEquals(GroovyObject, method.declaringClass, type.name)
+            assertFalse(overridesGetProperty(type), type.name)
+        }
+        assertEquals(DefaultsElsewhere, TakesDefaults.getMethod('setProperty', String, Object).declaringClass)
+        assertFalse(overridesSetProperty(TakesDefaults))
+        assertTrue(hasCustomGetProperty(TakesDefaults))
+        assertFalse(hasCustomGetProperty(TakesInternalDefault))
     }
 
     @Test
@@ -122,9 +179,9 @@ final class GroovyObjectOverridesTest {
 
     /**
      * The two read criteria differ on purpose: a {@code getProperty} that is synthetic or
-     * marked {@code @Internal} is taken for a generated one, like the interface default
-     * (which carries {@code @Internal} for this reason), by property-read call sites, but
-     * not by {@code ScriptBytecodeAdapter.getProperty}.
+     * marked {@code @Internal}, whether declared or inherited, is taken for a generated one,
+     * like the interface default (which carries {@code @Internal} for this reason), by
+     * property-read call sites, but not by {@code ScriptBytecodeAdapter.getProperty}.
      */
     @Test
     @CompileStatic
@@ -137,16 +194,25 @@ final class GroovyObjectOverridesTest {
                 '(Ljava/lang/String;)Ljava/lang/Object;', null, null).visitEnd()
         writer.visitEnd()
         byte[] bytes = writer.toByteArray()
+        String subName = 'org.apache.groovy.internal.metaclass.InheritsSyntheticGetProperty'
+        def subWriter = new ClassWriter(0)
+        subWriter.visit(Opcodes.V17, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, subName.replace('.', '/'), null,
+                name.replace('.', '/'), null)
+        subWriter.visitEnd()
+        byte[] subBytes = subWriter.toByteArray()
         def loader = new ClassLoader(getClass().classLoader) {
             @Override
             protected Class<?> findClass(String className) {
-                className == name ? defineClass(className, bytes, 0, bytes.length) : super.findClass(className)
+                byte[] found = className == name ? bytes : className == subName ? subBytes : null
+                found != null ? defineClass(className, found, 0, found.length) : super.findClass(className)
             }
         }
         Class<?> synthetic = loader.loadClass(name)
+        Class<?> inheritsSynthetic = loader.loadClass(subName)
         assertTrue(synthetic.getMethod('getProperty', String).isSynthetic())
+        assertTrue(inheritsSynthetic.getMethod('getProperty', String).isSynthetic())
 
-        for (type in [MarkedInternal, synthetic]) {
+        for (type in [MarkedInternal, InheritsMarkedInternal, synthetic, inheritsSynthetic]) {
             assertTrue(overridesGetProperty(type), type.name)
             assertFalse(hasCustomGetProperty(type), type.name)
         }
