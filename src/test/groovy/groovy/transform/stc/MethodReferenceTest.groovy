@@ -1509,6 +1509,24 @@ final class MethodReferenceTest {
     }
 
     // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN25() {
+        assertScript shell, '''
+            class A {
+                String name
+            }
+
+            @CompileStatic
+            List<String> test(Map map) {
+                Function<Map, A> f = A::new // map-style construction, like new A(map)
+                [f.apply(map).name, new A(map).name]
+            }
+
+            assert test([name: 'x']) == ['x', 'x']
+        '''
+    }
+
+    // GROOVY-12488
     @Test
     void testMethodReferencesInStaticAndDefaultMethodsOfInterface() {
         assertScript shell, '''
