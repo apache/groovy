@@ -2044,6 +2044,57 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12509: a regression in 6.0.0, from GROOVY-12310
+    @Test
+    void testFieldOfPrivateNestedTypeOfNestMate() {
+        assertScript '''
+            class Outer {
+                static class A {
+                    private static class Hidden {
+                        public static int x = 1
+                        public int y = 2
+                        private static int p = 3
+                    }
+                    private static class H1 {
+                        private static class H2 {
+                            public static int z = 4
+                        }
+                    }
+                    private enum E { ONE }
+                }
+                static class B {
+                    static List read() { [A.Hidden.x, new A.Hidden().y, A.Hidden.p, A.Hidden.@x, A.H1.H2.z, A.E.ONE.name()] }
+                    static int write() { A.Hidden.x = 5; A.Hidden.x }
+                    static List viaClosure() {
+                        def c = { -> [A.Hidden.x, A.E.ONE.name()] }
+                        c()
+                    }
+                }
+                static List read() { [A.Hidden.x, new A.Hidden().y, A.H1.H2.z, A.E.ONE.name()] }
+            }
+            assert Outer.B.read() == [1, 2, 3, 1, 4, 'ONE']
+            assert Outer.B.viaClosure() == [1, 'ONE']
+            assert Outer.read() == [1, 2, 4, 'ONE']
+            assert Outer.B.write() == 5
+        '''
+    }
+
+    // GROOVY-12509
+    @Test
+    void testFieldOfPrivateNestedTypeOfAnotherNest() {
+        shouldFailWithMessages '''
+            class P {
+                private static class Hidden {
+                    public static int x = 1
+                }
+            }
+            class Q {
+                static test() { P.Hidden.x }
+            }
+        ''',
+        'Cannot access field: x of class: P$Hidden from class: Q'
+    }
+
     // GROOVY-12314: package-private and protected fields that Java access rules
     // reject are not admitted via property syntax either; resolution falls
     // through to accessors, extensions and map/list handling. When nothing else
