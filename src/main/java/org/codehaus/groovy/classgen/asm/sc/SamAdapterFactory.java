@@ -170,6 +170,12 @@ final class SamAdapterFactory implements Function<ClassNode, ClassNode> {
         return new MethodNode(declared.getName(), modifiers, erasure(returnType), parameters, exceptions, null);
     }
 
+    /**
+     * Whether the adapter can name the interface and the types of the method. A type that is not public must
+     * be in the package of the closure class and compiled with it: a class loader other than the closure's
+     * may have defined a type loaded from elsewhere, and a package of the same name in another class loader
+     * is another run-time package.
+     */
     private static boolean isAccessible(final MethodNode method, final ClassNode type, final ClassNode from) {
         List<ClassNode> types = new ArrayList<>(List.of(type, method.getReturnType()));
         types.addAll(Arrays.asList(method.getExceptions()));
@@ -178,7 +184,7 @@ final class SamAdapterFactory implements Function<ClassNode, ClassNode> {
             ClassNode c = t;
             while (c.isArray()) c = c.getComponentType();
             if (!ClassHelper.isPrimitiveType(c) && !Modifier.isPublic(c.getModifiers())
-                    && !Objects.equals(c.getPackageName(), from.getPackageName())) return false;
+                    && (!c.isPrimaryClassNode() || !Objects.equals(c.getPackageName(), from.getPackageName()))) return false;
         }
         return true;
     }

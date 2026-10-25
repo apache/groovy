@@ -486,6 +486,34 @@ final class StaticCompileClosureSamTest extends AbstractBytecodeTestCase {
         assert !isProxy(c.other())
     }
 
+    // GROOVY-12492
+    @Test
+    void nonPublicInterfaceFromAnotherClassLoaderKeepsItsConversion() {
+        for (enabled in [false, true]) {
+            withSam(enabled) {
+                def parent = new GroovyClassLoader()
+                parent.parseClass '''
+                    package p
+                    @groovy.transform.PackageScope
+                    interface Callback { String f(String s) }
+                '''
+                // a class loader other than the interface's defines C, so C is in another run-time package
+                def c = new GroovyClassLoader(parent).parseClass '''
+                    package p
+                    @groovy.transform.CompileStatic
+                    class C {
+                        static String other() { 'other' }
+                        static Object make() { Callback f = { String s -> s + '!' }; f }
+                    }
+                '''
+                // with the option too, C is defined, where an adapter implementing Callback could not be,
+                // and only the conversion fails
+                assert c.other() == 'other'
+                shouldFail(IllegalAccessError) { c.make() }
+            }
+        }
+    }
+
     @Test
     void closuresNotConvertedToAnInterfaceAreUnchanged() {
         def c = eval '''
