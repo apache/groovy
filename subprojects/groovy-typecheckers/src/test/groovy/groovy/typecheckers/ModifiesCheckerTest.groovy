@@ -563,4 +563,97 @@ final class ModifiesCheckerTest {
             assert a.count == 1
         '''
     }
+
+    // GROOVY-12477
+    @Test
+    void assignment_with_empty_frame_fails() {
+        for (frame in ['{}', '{ [] }']) {
+            def err = shouldFail shell, """
+                import groovy.contracts.*
+
+                class A {
+                    int count = 0
+
+                    @Modifies($frame)
+                    void broken() {
+                        count = 5
+                    }
+                }
+            """
+            assert err.message.contains("@Modifies violation: assignment to 'count'")
+        }
+    }
+
+    // GROOVY-12477
+    @Test
+    void read_only_body_with_empty_frame_passes() {
+        assertScript shell, '''
+            import groovy.contracts.*
+
+            class A {
+                int count = 2
+
+                @Modifies({})
+                int twice() {
+                    int local = count
+                    local * 2
+                }
+            }
+            assert new A().twice() == 4
+        '''
+    }
+
+    // GROOVY-12477
+    @Test
+    void callee_with_empty_frame_is_safe() {
+        assertScript shell, '''
+            import groovy.contracts.*
+
+            class A {
+                int count = 0
+
+                @Modifies({ this.count })
+                void increment() {
+                    count = next()
+                }
+
+                @Modifies({})
+                int next() { count + 1 }
+            }
+            def a = new A()
+            a.increment()
+            assert a.count == 1
+        '''
+    }
+
+    // GROOVY-12477
+    @Test
+    void empty_frame_combined_with_non_empty_frame() {
+        for (frames in ['@Modifies({}) @Modifies({ this.x })', '@Modifies({ this.x }) @Modifies({})']) {
+            assertScript shell, """
+                import groovy.contracts.*
+
+                class A {
+                    int x, y
+
+                    $frames
+                    void writeX() { x = 1 }
+                }
+                def a = new A()
+                a.writeX()
+                assert a.x == 1
+            """
+            def err = shouldFail shell, """
+                import groovy.contracts.*
+
+                class A {
+                    int x, y
+
+                    $frames
+                    void writeY() { y = 1 }
+                }
+            """
+            assert err.message.contains("@Modifies violation: assignment to 'y'")
+        }
+    }
 }

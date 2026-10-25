@@ -77,6 +77,7 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.buildWildcardType;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.isStaticallyCompiled;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.COMPOUND_ASSIGN_TARGET;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -753,7 +754,10 @@ out:        for (ClassNode sc : superTypes) {
         super.visitBinaryExpression(expression);
 
         if (Types.isAssignment(expression.getOperation().getType())) {
-            checkFinalFieldAccess(expression.getLeftExpression());
+            // a compound assignment resolved to a *Assign method mutates the field's value in place
+            if (expression.getNodeMetaData(COMPOUND_ASSIGN_TARGET) == null) {
+                checkFinalFieldAccess(expression.getLeftExpression());
+            }
             checkSuperOrThisOnLHS(expression.getLeftExpression());
         }
     }

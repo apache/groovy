@@ -19,7 +19,12 @@
 package org.codehaus.groovy.ast
 
 import org.codehaus.groovy.ast.builder.AstBuilder
+import org.codehaus.groovy.classgen.GeneratorContext
+import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.control.customizers.CompilationCustomizer
 import org.junit.jupiter.api.Test
 import org.objectweb.asm.Opcodes
 
@@ -119,5 +124,26 @@ final class MethodNodeTest {
         // the no-arg constructor used by subclasses must likewise expose an empty array
         assert new MethodNode().exceptions != null
         assert new MethodNode().exceptions.length == 0
+    }
+
+    @Test // GROOVY-12426
+    void testTypeDescriptorRecomputedAfterResolution() {
+        def config = new CompilerConfiguration()
+        config.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.CONVERSION) {
+            @Override
+            void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
+                classNode.methods*.typeDescriptor // cache descriptors of unresolved types
+            }
+        })
+        def cu = new CompilationUnit(config)
+        cu.addSource('Script.groovy', '''
+            class Outer { static class Inner { } }
+            interface I { Outer.Inner make(Map m) }
+            class Impl implements I { Outer.Inner make(Map m) { null } }
+        ''')
+        cu.compile(CompilePhase.SEMANTIC_ANALYSIS.phaseNumber)
+
+        MethodNode mn = cu.AST.classes.find { it.name == 'I' }.methods[0]
+        assert mn.typeDescriptor == 'make(java.util.Map):Outer$Inner'
     }
 }

@@ -22,6 +22,8 @@ import org.apache.groovy.contracts.ClassInvariantViolation
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.shouldFail
+
 class SimpleClassInvariantTests extends BaseTestClass {
 
     def source1 = '''
@@ -370,6 +372,30 @@ class Rocket {
         c.set(5)
         shouldFail(ClassInvariantViolation) {
             c.set(-3)
+        }
+    }
+
+    @Test
+    void invariant_checked_on_trailing_implicit_return_after_early_return() {
+        // GROOVY-12463: same gap as for postconditions: the trailing value skipped the invariant
+        def source = '''
+        import groovy.contracts.*
+
+        @Invariant({ count >= 0 })
+        class A {
+            int count = 0
+            int dec(boolean early) {
+                if (early) return count
+                count -= 5
+                count
+            }
+        }
+        '''
+
+        def a = create_instance_of(source)
+        assert a.dec(true) == 0
+        shouldFail(ClassInvariantViolation) {
+            a.dec(false)
         }
     }
 }

@@ -261,6 +261,32 @@ final class AsyncAwaitSpecTest {
     }
 
     @Test
+    void testChannelFailureReachesForAwait() {
+        assertScript '''
+        import groovy.concurrent.AsyncChannel
+
+        // tag::channel_failure[]
+        def channel = AsyncChannel.produce(2) {
+            for (int i = 1; i <= 3; i++) {
+                if (i == 3) throw new IllegalStateException('sensor failed')
+                it.send(i * i)
+            }
+        }
+        def seen = []
+        try {
+            for await (value in channel) {
+                seen << value
+            }
+            assert false : 'for await should throw the producer failure'
+        } catch (IllegalStateException e) {
+            assert e.message == 'sensor failed'
+        }
+        assert seen == [1, 4]
+        // end::channel_failure[]
+        '''
+    }
+
+    @Test
     void testCspProcessNetwork() {
         assertScript '''
         import groovy.concurrent.AsyncChannel

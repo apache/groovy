@@ -30,14 +30,16 @@ import java.io.Serial;
  *       or during the send attempt.  Pending senders that were waiting for buffer
  *       space when the channel closed also receive this exception.</li>
  *   <li>{@link AsyncChannel#receive() receive()} — the channel was closed and all
- *       buffered values have been drained.  Note that values buffered before
- *       closure are still delivered normally; only once the buffer is exhausted
- *       does this exception appear.</li>
+ *       buffered values have been drained. Values buffered before closure are
+ *       still delivered. A failure passed to {@link AsyncChannel#close(Throwable)}
+ *       is this exception's {@linkplain Throwable#getCause() cause}, not a
+ *       different exception type. A hand-written loop must read that cause.</li>
  * </ul>
  * <p>
- * When used with {@code for await}, the loop infrastructure translates
- * {@code ChannelClosedException} into a clean end-of-stream signal (i.e.,
- * the loop exits normally rather than propagating the exception):
+ * When used with {@code for await}, a plain {@code for}, {@code each},
+ * {@code collect} or {@code toList}, a close with no cause ends iteration.
+ * A close that carries a cause throws that cause after the values already
+ * sent. The code that reads the channel writes the {@code try}/{@code catch}:
  * <pre>
  * def ch = AsyncChannel.create()
  * // ... producer sends values, then calls ch.close()
@@ -46,6 +48,8 @@ import java.io.Serial;
  * }
  * // loop exits cleanly after the channel is closed and drained
  * </pre>
+ * A Java enhanced {@code for} calls {@code Iterator.hasNext()}, which may
+ * throw a checked exception that {@code Iterator} does not declare.
  *
  * @see AsyncChannel#send(Object)
  * @see AsyncChannel#receive()

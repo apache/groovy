@@ -140,7 +140,7 @@ These are the recurring mistakes when AI tooling reaches for JIRA:
 
 ## Helper scripts
 
-Two vetted helpers ship in this skill's directory so the agent does
+Three vetted helpers ship in this skill's directory so the agent does
 not re-derive the ASF JIRA REST calls on every run — per the
 [Helper mechanisms and token economy](../../../AGENTS.md#helper-mechanisms-and-token-economy)
 policy (the JIRA REST v2 API is stable and these change rarely; the
@@ -157,8 +157,14 @@ equivalent if you need to adapt it):
   [out-dir]` → `issue.json` + a rendered `description.md`
   (fields, description, every comment), and lists attachment URLs
   for manual download.
+- [`jira-recent.sh`](jira-recent.sh) — `jira-recent.sh [days]` →
+  unresolved issues updated in the last `days` (default 30), each
+  linked to the GitHub PRs whose title names its key, grouped as
+  merged-PR-but-still-open / open PR / no open PR, plus open PRs in
+  the window naming none of the listed issues. Needs an
+  authenticated `gh` in addition to `curl` and `jq`.
 
-Both are read-only and anonymous (no auth, no mutation) — they do
+All are read-only (no mutation, and anonymous against JIRA) — they do
 not change the read-only / hand-back posture this skill enforces.
 Prefer them over an ad-hoc `curl`; fall back to the inline command
 only if a script is unavailable or the query needs a field they

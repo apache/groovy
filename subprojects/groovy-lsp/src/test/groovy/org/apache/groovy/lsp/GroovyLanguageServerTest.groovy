@@ -60,9 +60,11 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import org.apache.groovy.lsp.internal.compile.CompilationSnapshot
 import org.apache.groovy.lsp.internal.feature.LanguageFeatures
 import org.apache.groovy.lsp.internal.position.PositionEncoding
@@ -256,6 +258,52 @@ final class GroovyLanguageServerTest {
                 new WorkspaceFoldersChangeEvent([], [added])))
         fixture.server.context.recompile()
         assert fixture.diagnostics[brokenUri] == []
+    }
+
+    @Test
+    void recompileWaitsForConcurrentPublisherToClearRemovedUris() {
+        def testThread = Thread.currentThread()
+        def armed = new AtomicBoolean()
+        def entered = new CountDownLatch(1)
+        def release = new CountDownLatch(1)
+        fixture = new LspFixture() {
+            @Override
+            void publishDiagnostics(PublishDiagnosticsParams params) {
+                // hold the background compile's clear of Broken.groovy until the test
+                // thread is blocked waiting to publish, or has finished its own recompile
+                if (params.uri.endsWith('Broken.groovy') && !params.diagnostics
+                        && Thread.currentThread() != testThread && armed.compareAndSet(true, false)) {
+                    entered.countDown()
+                    while (testThread.state != Thread.State.BLOCKED && !release.await(10, TimeUnit.MILLISECONDS)) {
+                        // keep holding
+                    }
+                }
+                super.publishDiagnostics(params)
+            }
+        }
+        def folder = Files.createTempDirectory('groovy-lsp-drop')
+        def broken = folder.resolve('Broken.groovy')
+        Files.writeString(broken, 'class Broken {')
+        def added = new WorkspaceFolder(folder.toUri().toString(), 'tmp')
+        fixture.server.workspaceService.didChangeWorkspaceFolders(new DidChangeWorkspaceFoldersParams(
+                new WorkspaceFoldersChangeEvent([added], [])))
+        fixture.server.context.recompile()
+        def brokenUri = fixture.publishedParams*.uri.find { it.endsWith('Broken.groovy') }
+        assert fixture.diagnostics[brokenUri]
+
+        Files.delete(broken)
+        armed.set(true)
+        fixture.server.workspaceService.didChangeWorkspaceFolders(new DidChangeWorkspaceFoldersParams(
+                new WorkspaceFoldersChangeEvent([], [added])))
+        // the background compile has claimed the clear of Broken.groovy and is holding it
+        assert entered.await(10, TimeUnit.SECONDS)
+        try {
+            fixture.server.context.recompile()
+            assert fixture.diagnostics[brokenUri] == []
+        } finally {
+            release.countDown()
+            Files.deleteIfExists(folder)
+        }
     }
 
     @Test

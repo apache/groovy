@@ -357,6 +357,44 @@ An appropriate `grab(...)` call will be added to the static initializer
 of the class of the containing class (or script class in the case of an
 annotated script element).
 
+[[Grape-CompilingWithoutEngine]]
+==== Compiling without a Grape engine
+
+If the compiled code never refers to the grabbed classes directly, the
+grabs only supply runtime functionality, and no Grape engine is needed
+during compilation. Without an engine, the grab done by the compiler
+does nothing, but the `grab(...)` call is still added to the static
+initializer. When the compiled class is later run with `groovy-grape-ivy`
+or `groovy-grape-maven` on the classpath, that call creates the engine
+and resolves the dependencies.
+
+[source,groovy]
+-----------------------------------------------------------------------
+@Grab('com.h2database:h2:2.4.240')
+@GrabConfig(systemClassLoader=true)
+import java.sql.DriverManager
+
+def conn = DriverManager.getConnection('jdbc:h2:mem:test')
+-----------------------------------------------------------------------
+
+This mode has some caveats:
+
+* The grabbed classes can only be used dynamically, for example through
+`Class.forName`, a `ServiceLoader`, `DriverManager` or dynamic method calls.
+A static reference, such as an import or a declared type, fails to
+compile because the class can't be resolved.
+* The compiler logs a "Grapes disabled" warning when it finds no engine.
+Compiling with `-Dgroovy.grape.enable=false` avoids the warning and
+produces the same class.
+* The grab needs a Groovy class loader to add the jars to, so run the
+class with the `groovy` command (or from another `GroovyClassLoader`).
+Run with plain `java`, the grab fails with "No suitable ClassLoader found for grab".
+* Grabs with `initClass=false` are not added to the static initializer,
+so they are never resolved in this mode.
+* Any `@GrabConfig` system properties are set at runtime before the grab,
+so properties read when the engine is created, such as `grape.root`,
+`grape.config` or `groovy.grape.impl`, are seen by that engine.
+
 [[Grape-MultipleGrapeAnnotations]]
 === Multiple Grape Annotations
 

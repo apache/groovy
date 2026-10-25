@@ -70,6 +70,8 @@ public final class LanguageServerContext {
     private final WorkspaceScanner scanner = new WorkspaceScanner();
     private final DiagnosticConverter diagnostics = new DiagnosticConverter();
     private final Object compileLock = new Object();
+    /** Serializes publishing so notifications reach the client in snapshot order. */
+    private final Object publishLock = new Object();
 
     private final AtomicReference<LanguageClient> client = new AtomicReference<>();
     private final AtomicReference<ClientCapabilities> clientCapabilities = new AtomicReference<>();
@@ -178,32 +180,40 @@ public final class LanguageServerContext {
     /**
      * Publishes diagnostics for every compiled document and clears
      * diagnostics for URIs that dropped out of the snapshot.
+     * <p>
+     * Concurrent callers are serialized, from reading the snapshot to the last
+     * notification, so a caller returns only once the diagnostics of the
+     * current snapshot have been sent, whichever caller sent them, and an
+     * older snapshot's diagnostics never arrive after a newer one's.
+     * Lock order: {@code publishLock}, then this; never taken while holding this.
      */
     public void publishDiagnostics() {
         LanguageClient languageClient = client.get();
         if (languageClient == null) {
             return;
         }
-        List<CompiledDocument> documents;
-        Set<URI> dropped;
-        synchronized (this) {
-            documents = List.copyOf(snapshot.get().documents());
-            Set<URI> currentUris = new LinkedHashSet<>();
-            for (CompiledDocument document : documents) {
-                if (document.getUri() != null) {
-                    currentUris.add(document.getUri());
+        synchronized (publishLock) {
+            List<CompiledDocument> documents;
+            Set<URI> dropped;
+            synchronized (this) {
+                documents = List.copyOf(snapshot.get().documents());
+                Set<URI> currentUris = new LinkedHashSet<>();
+                for (CompiledDocument document : documents) {
+                    if (document.getUri() != null) {
+                        currentUris.add(document.getUri());
+                    }
                 }
+                dropped = new LinkedHashSet<>(publishedDiagnosticUris);
+                dropped.removeAll(currentUris);
+                publishedDiagnosticUris.clear();
+                publishedDiagnosticUris.addAll(currentUris);
             }
-            dropped = new LinkedHashSet<>(publishedDiagnosticUris);
-            dropped.removeAll(currentUris);
-            publishedDiagnosticUris.clear();
-            publishedDiagnosticUris.addAll(currentUris);
-        }
-        for (URI uri : dropped) {
-            languageClient.publishDiagnostics(new PublishDiagnosticsParams(uri.toString(), List.of()));
-        }
-        for (CompiledDocument document : documents) {
-            languageClient.publishDiagnostics(paramsFor(document));
+            for (URI uri : dropped) {
+                languageClient.publishDiagnostics(new PublishDiagnosticsParams(uri.toString(), List.of()));
+            }
+            for (CompiledDocument document : documents) {
+                languageClient.publishDiagnostics(paramsFor(document));
+            }
         }
     }
 

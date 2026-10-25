@@ -265,9 +265,36 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |List<Integer list2 = new ArrayList<Integer>()
             |'''.stripMargin(), '''\
-            |Missing '>' @ line 1, column 1.
+            |Missing '>' @ line 1, column 14.
             |   List<Integer list2 = new ArrayList<Integer>()
-            |   ^
+            |                ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'unclosed nested type argument'() {
+        expectParseError '''\
+            |List<List<Integer> list2 = new ArrayList<>()
+            |'''.stripMargin(), '''\
+            |Missing '>' @ line 1, column 20.
+            |   List<List<Integer> list2 = new ArrayList<>()
+            |                      ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'unclosed type argument with extra space before the identifier'() {
+        // Two spaces so `name` is not the column after Integer.
+        expectParseError '''\
+            |List<Integer  name
+            |'''.stripMargin(), '''\
+            |Missing '>' @ line 1, column 15.
+            |   List<Integer  name
+            |                 ^
             |
             |1 error
             |'''.stripMargin()
@@ -3260,6 +3287,111 @@ final class ParserNegativeSyntaxTest {
     }
 
     @Test
+    void 'unclosed quote at the start of the file'() {
+        // No surrounding tokens: the caret is the quote itself, not omitted.
+        expectParseError "'abc", '''\
+            |Unclosed string literal @ line 1, column 1.
+            |   'abc
+            |   ^
+            |
+            |1 error
+            |'''.stripMargin()
+        expectParseError '"abc', '''\
+            |Unclosed string literal @ line 1, column 1.
+            |   "abc
+            |   ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'unclosed slashy string'() {
+        expectParseError 's = /hello', '''\
+            |Unclosed string literal @ line 1, column 5.
+            |   s = /hello
+            |       ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'unclosed slashy string on a later line'() {
+        expectParseError '''\
+            |def n = 1
+            |s = /hello
+            |world
+            |'''.stripMargin(), '''\
+            |Unclosed string literal @ line 2, column 5.
+            |   s = /hello
+            |       ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'unclosed slashy string after a line break'() {
+        // The newline is not a division operand. The caret is the '/' on line 2.
+        expectParseError '''\
+            |s =
+            |/hello
+            |'''.stripMargin(), '''\
+            |Unclosed string literal @ line 2, column 1.
+            |   /hello
+            |   ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'unclosed slashy at end of file after equals'() {
+        expectParseError 's = /', '''\
+            |Unclosed string literal @ line 1, column 5.
+            |   s = /
+            |       ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'unclosed slashy after return'() {
+        // GROOVY-12425: `return` introduces an expression, so a missing closer
+        // stays an unclosed string. A member name `return` divides.
+        expectParseError 'return /hello', '''\
+            |Unclosed string literal @ line 1, column 8.
+            |   return /hello
+            |          ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'unclosed slashy gstring keeps the gstring diagnostic'() {
+        // GROOVY-12425: `/hello $name` is SlashyGStringBegin, not the plain
+        // EOF alternative. The caret sits at end of input, not on the `/`,
+        // and the wording is not "Unclosed string literal".
+        expectParseError 's = /hello $name', '''\
+            |Unexpected end of input @ line 1, column 17.
+            |   s = /hello $name
+            |                   ^
+            |
+            |1 error
+            |'''.stripMargin()
+        expectParseError '/hello $name', '''\
+            |Unexpected end of input @ line 1, column 13.
+            |   /hello $name
+            |               ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
     void 'unclosed double-quoted string'() {
         expectParseError '''\
             |println "Hello
@@ -3423,7 +3555,15 @@ final class ParserNegativeSyntaxTest {
 
     @Test
     void 'generic type missing closing angle'() {
-        expectContains 'def list1 = new ArrayList<Integer()', "Missing '>'"
+        expectParseError '''\
+            |def list1 = new ArrayList<Integer()
+            |'''.stripMargin(), '''\
+            |Missing '>' @ line 1, column 34.
+            |   def list1 = new ArrayList<Integer()
+            |                                    ^
+            |
+            |1 error
+            |'''.stripMargin()
     }
 
     @Test
@@ -3707,14 +3847,14 @@ final class ParserNegativeSyntaxTest {
 
     @Test
     void 'unclosed type argument as a comparison plus command argument'() {
-        // Spaces make `<` a comparison; `name` is then a command argument.
+        // Spaces make `<` a comparison; `name` is then the argument list.
         // AstBuilder rewrites that shape to javac's `'>' expected`.
         expectParseError '''\
             |List < Integer name
             |'''.stripMargin(), '''\
-            |Missing '>' @ line 1, column 1.
+            |Missing '>' @ line 1, column 16.
             |   List < Integer name
-            |   ^
+            |                  ^
             |
             |1 error
             |'''.stripMargin()
@@ -3725,9 +3865,35 @@ final class ParserNegativeSyntaxTest {
         expectParseError '''\
             |List<String> < Integer name
             |'''.stripMargin(), '''\
-            |Missing '>' @ line 1, column 1.
+            |Missing '>' @ line 1, column 24.
             |   List<String> < Integer name
-            |   ^
+            |                          ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'unclosed type argument with a comma-separated argument list'() {
+        expectParseError '''\
+            |List < Integer 1, 2
+            |'''.stripMargin(), '''\
+            |Missing '>' @ line 1, column 16.
+            |   List < Integer 1, 2
+            |                  ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'unclosed type argument with an argument list then a command argument'() {
+        expectParseError '''\
+            |List < Integer name foo
+            |'''.stripMargin(), '''\
+            |Missing '>' @ line 1, column 16.
+            |   List < Integer name foo
+            |                  ^
             |
             |1 error
             |'''.stripMargin()
@@ -3738,5 +3904,19 @@ final class ParserNegativeSyntaxTest {
         expectContains 'list < Integer name', "Unexpected input: 'list < Integer'"
         expectContains 'Integer < list name', "Unexpected input: 'Integer < list'"
         expectContains 'foo() < Integer name', "Unexpected input: 'foo() < Integer'"
+    }
+
+    @Test
+    void 'comparison command that is not an unclosed type argument'() {
+        // Only `<` between two type names is rewritten. `>` stays Unexpected input.
+        expectParseError '''\
+            |List > Integer name
+            |'''.stripMargin(), '''\
+            |Unexpected input: 'List > Integer' @ line 1, column 1.
+            |   List > Integer name
+            |   ^
+            |
+            |1 error
+            |'''.stripMargin()
     }
 }

@@ -31,6 +31,7 @@ import groovy.console.ui.text.SmartDocumentFilter
 import groovy.swing.SwingBuilder
 import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
+import groovy.transform.PackageScope
 import groovy.transform.ThreadInterrupt
 import groovy.transform.TupleConstructor
 import groovy.ui.GroovyMain
@@ -59,7 +60,10 @@ import org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation
 import org.codehaus.groovy.vmplugin.VMPluginFactory
 
 import javax.swing.Action
+import javax.swing.ActionMap
 import javax.swing.Icon
+import javax.swing.InputMap
+import javax.swing.JComponent
 import javax.swing.JDialog
 import javax.swing.JFileChooser
 import javax.swing.JFrame
@@ -68,6 +72,7 @@ import javax.swing.JOptionPane
 import javax.swing.JScrollPane
 import javax.swing.JSplitPane
 import javax.swing.JTextPane
+import javax.swing.KeyStroke
 import javax.swing.RootPaneContainer
 import javax.swing.SwingUtilities
 import javax.swing.Timer
@@ -77,6 +82,7 @@ import javax.swing.event.DocumentListener
 import javax.swing.event.HyperlinkEvent
 import javax.swing.event.HyperlinkListener
 import javax.swing.filechooser.FileFilter
+import javax.swing.plaf.UIResource
 import javax.swing.text.AttributeSet
 import javax.swing.text.DefaultStyledDocument
 import javax.swing.text.Document
@@ -115,6 +121,17 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     /** Prefix used for generated script names inside the console. */
     static final String DEFAULT_SCRIPT_NAME_START = 'ConsoleScript'
+
+    /**
+     * Href carried by every source link. Keyboard activation resolves
+     * {@code new URL(documentBase, href)} and drops the click when that fails.
+     * The output document has no base, so this has to be absolute. The caret
+     * position is the link element's {@link #LINK_POSITION} attribute.
+     */
+    private static final String SOURCE_LINK_HREF = 'file:///groovy-console-pos'
+
+    /** Attribute key for the {@code SourcePosition} stored on a source link. */
+    private static final String LINK_POSITION = 'groovy.console.link.position'
     private static final boolean DEBUG_GRAPE = Boolean.getBoolean('groovy.grape.debug')
 
     /** User preferences backing console settings. */
@@ -711,11 +728,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                 def length = fileNameAndLineNumber.length()
                 def index = line.indexOf(fileNameAndLineNumber)
 
-                def style = hyperlinkStyle
-                def hrefAttr = new SimpleAttributeSet()
-                // don't pass a GString as it won't be coerced to String as addAttribute takes an Object
-                hrefAttr.addAttribute(HTML.Attribute.HREF, 'file://' + fileNameAndLineNumber)
-                style.addAttribute(HTML.Tag.A, hrefAttr)
+                int lineNumber = fileNameAndLineNumber.substring(fileNameAndLineNumber.lastIndexOf(':') + 1) as int
+                def style = linkAttributes(lineNumber, 0)
 
                 insertString(doc, initialLength, line[0..<index], stacktraceStyle)
                 insertString(doc, initialLength + index, line[index..<(index + length)], style)
@@ -973,7 +987,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         }
 
         // let FlatLaf update all Swing component UI delegates
-        FlatLaf.updateUI()
+        updateUIPreservingKeyBindings(Window.windows as List<Container>) { FlatLaf.updateUI() }
 
         // rebuild SVG icon rasters so accent-coloured and foreground-tracking icons pick up the new theme
         Icons.refreshAll()
@@ -1200,14 +1214,11 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             collector.errors.each { error ->
                 if (error instanceof SyntaxErrorMessage) {
                     SyntaxException se = error.cause
-                    int errorLine = se.line
                     String message = se.originalMessage
 
                     def doc = outputArea.styledDocument
-                    Style style = createLinkStyle(errorLine)
-
                     insertString(doc, doc.length, message + ' at ', stacktraceStyle)
-                    insertString(doc, doc.length, "line: ${se.line}, column: ${se.startColumn}\n\n", style)
+                    appendErrorLocation(doc, se.line, se.startColumn)
                 } else if (error instanceof Throwable) {
                     reportException(error)
                 } else if (error instanceof ExceptionMessage) {
@@ -1230,12 +1241,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                     def range = p.location.get().begin.range
                     if (range.isPresent()) {
                         def position = range.get().begin
-                        def errorLine = position.line
-                        def errorCol = position.column
-                        Style style = createLinkStyle(errorLine)
-
-                        insertString(doc, doc.length, " at ", stacktraceStyle)
-                        insertString(doc, doc.length, "line: ${errorLine}, column: ${errorCol}\n\n", style)
+                        insertString(doc, doc.length, ' at ', stacktraceStyle)
+                        appendErrorLocation(doc, position.line, position.column)
                     }
                 }
 
@@ -1257,14 +1264,44 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         }
     }
 
-    private Style createLinkStyle(int errorLine) {
-        String scriptFileName = scriptFile?.name ?: DEFAULT_SCRIPT_NAME_START
-        def style = hyperlinkStyle
+    /**
+     * Writes {@code line: N, column: M} as one source link, then a blank line.
+     * Both numbers are printed as reported. A column below 1 means the column
+     * is unknown; activating the link still places the caret on the first
+     * character of that line.
+     */
+    private void appendErrorLocation(Document doc, int line, int column) {
+        insertString(doc, doc.length, "line: ${line}, column: ${column}", linkAttributes(line, column))
+        insertString(doc, doc.length, '\n\n', stacktraceStyle)
+    }
+
+    /**
+     * A fresh attribute set per link. HTML run elements do not inherit a
+     * parent style, so the underline and color are copied onto the set.
+     * The position is its own value, so later links cannot retarget earlier ones.
+     */
+    private AttributeSet linkAttributes(int line, int column) {
+        def attrs = new SimpleAttributeSet()
+        attrs.addAttributes(hyperlinkStyle)
         def hrefAttr = new SimpleAttributeSet()
-        // don't pass a GString as it won't be coerced to String as addAttribute takes an Object
-        hrefAttr.addAttribute(HTML.Attribute.HREF, 'file://' + scriptFileName + ':' + errorLine)
-        style.addAttribute(HTML.Tag.A, hrefAttr)
-        return style
+        hrefAttr.addAttribute(HTML.Attribute.HREF, SOURCE_LINK_HREF)
+        attrs.addAttribute(HTML.Tag.A, hrefAttr)
+        attrs.addAttribute(LINK_POSITION, new SourcePosition(line, column))
+        attrs
+    }
+
+    /**
+     * Caret target stored on an output source link.
+     * Line is 1-based. A column below 1 is the first character of that line.
+     */
+    private static final class SourcePosition {
+        final int line
+        final int column
+
+        SourcePosition(int line, int column) {
+            this.line = line
+            this.column = column
+        }
     }
 
     private calcPreferredSize(a, b, c) {
@@ -1410,6 +1447,45 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         viewer.borderColor = null  // null = no box outline around each label (TreeViewer default)
         viewer.highlightedBoxColor = dark ? new Color(80, 120, 80) : new Color(200, 255, 200)
         viewer.background = dark ? new Color(43, 43, 43) : Color.WHITE
+    }
+
+    /**
+     * Runs a UI-delegate refresh, then restores the key bindings registered directly on the
+     * components under {@code roots}. From JDK 27, uninstalling a UI delegate clears the
+     * component's own ActionMap and InputMaps instead of only detaching the UI-installed parents,
+     * so a runtime theme switch would otherwise leave keys such as Enter and Backspace in the
+     * editor bound to actions that no longer exist.
+     */
+    @PackageScope
+    static void updateUIPreservingKeyBindings(List<Container> roots, Runnable updateUI) {
+        List<Runnable> restorers = []
+        roots.each { saveKeyBindings(it, restorers) }
+        updateUI.run()
+        restorers*.run()
+    }
+
+    private static final List<Integer> INPUT_MAP_CONDITIONS = [
+            JComponent.WHEN_FOCUSED, JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, JComponent.WHEN_IN_FOCUSED_WINDOW]
+
+    private static void saveKeyBindings(Container container, List<Runnable> restorers) {
+        if (container instanceof JComponent) {
+            JComponent comp = (JComponent) container
+            ActionMap actionMap = comp.actionMap
+            if (!(actionMap instanceof UIResource) && actionMap.keys()) {
+                Map<Object, Action> actions = actionMap.keys().collectEntries { [it, actionMap.get(it)] }
+                restorers << { actions.each { k, v -> comp.actionMap.put(k, v) } } as Runnable
+            }
+            INPUT_MAP_CONDITIONS.each { int condition ->
+                InputMap inputMap = comp.getInputMap(condition)
+                if (!(inputMap instanceof UIResource) && inputMap.keys()) {
+                    Map<KeyStroke, Object> bindings = inputMap.keys().collectEntries { [it, inputMap.get(it)] }
+                    restorers << { bindings.each { k, v -> comp.getInputMap(condition).put(k, v) } } as Runnable
+                }
+            }
+        }
+        for (Component child : container.components) {
+            if (child instanceof Container) saveKeyBindings((Container) child, restorers)
+        }
     }
 
     private static TreeViewer findTreeViewer(Container container) {
@@ -2308,39 +2384,84 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         inputEditor.redoAction.actionPerformed(evt)
     }
 
-    /** Highlights the source line referenced by an activated output hyperlink. */
+    /**
+     * Moves the editor caret to the source position on an activated output link.
+     * The position is the link element's attribute. The href is not interpreted:
+     * mouse and keyboard activation both supply the character element, while a
+     * raw href cannot carry a column and still be a legal URL.
+     */
     void hyperlinkUpdate(HyperlinkEvent e) {
-        if (e.eventType == HyperlinkEvent.EventType.ACTIVATED) {
-            // URL of the form: file://myscript.groovy:32
-            String url = e.getURL()
-            int lineNumber = url[(url.lastIndexOf(':') + 1)..-1].toInteger()
-
-            def editor = inputEditor.textEditor
-            def text = editor.text
-
-            int newlineBefore = 0
-            int newlineAfter = 0
-            int currentLineNumber = 1
-
-            // let's find the previous and next newline surrounding the offending line
-            int i = 0
-            for (ch in text) {
-                if (ch == '\n') {
-                    currentLineNumber++
-                }
-                if (currentLineNumber == lineNumber) {
-                    newlineBefore = i
-                    def nextNewline = text.indexOf('\n', i + 1)
-                    newlineAfter = nextNewline > -1 ? nextNewline : text.length()
-                    break
-                }
-                i++
-            }
-
-            // highlight / select the whole line
-            editor.setCaretPosition(newlineBefore)
-            editor.moveCaretPosition(newlineAfter)
+        if (e.eventType != HyperlinkEvent.EventType.ACTIVATED) {
+            return
         }
+        def position = sourcePosition(e.sourceElement)
+        if (position == null) {
+            position = sourcePositionBefore(e.sourceElement)
+        }
+        if (position == null) {
+            return
+        }
+        revealSourcePosition(position)
+    }
+
+    private static SourcePosition sourcePosition(Element element) {
+        def raw = element?.attributes?.getAttribute(LINK_POSITION)
+        raw instanceof SourcePosition ? raw : null
+    }
+
+    /**
+     * Keyboard activation treats a link's exclusive end offset as inside the
+     * link, then resolves the character element at that offset. That element
+     * is the following run, so the position is on the run before it.
+     */
+    private static SourcePosition sourcePositionBefore(Element element) {
+        if (element == null || element.startOffset == 0) {
+            return null
+        }
+        sourcePosition(element.document.getCharacterElement(element.startOffset - 1))
+    }
+
+    /**
+     * Puts the caret on a 1-based line and column, counting characters the
+     * same way the status bar does. Nothing is selected. A column below 1
+     * lands on the first character of the line, and a column past the end
+     * of the line stays on that line.
+     */
+    private void revealSourcePosition(SourcePosition position) {
+        // ConsoleView assigns this from inputEditor.textEditor. The caret
+        // listener that updates the status bar is registered on this field.
+        def editor = inputArea
+        if (editor == null || position.line < 1) {
+            return
+        }
+        Element root = editor.document.defaultRootElement
+        int lineCount = root.elementCount
+        int startIndex = Math.min(position.line, lineCount) - 1
+        // setCaretPosition collapses any existing selection onto this offset.
+        editor.caretPosition = offsetOnLine(root.getElement(startIndex), position.column)
+        // mousePressed focuses the output pane. Focus the editor after that
+        // event so the caret is visible.
+        def focusEditor = { editor.requestFocusInWindow() }
+        SwingUtilities.invokeLater(focusEditor)
+    }
+
+    /** Last caret offset that still belongs to this line, before its line break. */
+    private static int lineContentEnd(Element lineElement) {
+        Math.max(lineElement.startOffset, lineElement.endOffset - 1)
+    }
+
+    /** Maps a 1-based column onto a line, clamped so it cannot spill onto the next line. */
+    private static int offsetOnLine(Element lineElement, int column) {
+        int start = lineElement.startOffset
+        int end = lineContentEnd(lineElement)
+        if (column < 1) {
+            return start
+        }
+        long offset = (long) start + column - 1L
+        if (offset > end) {
+            return end
+        }
+        (int) offset
     }
 
     /** No-op component listener implementation. */

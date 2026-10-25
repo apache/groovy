@@ -48,6 +48,7 @@ import java.util.StringTokenizer;
 
 import static org.apache.groovy.util.SystemUtil.getBooleanSafe;
 import static org.apache.groovy.util.SystemUtil.getIntegerSafe;
+import static org.apache.groovy.util.SystemUtil.getLongSafe;
 import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
 import static org.codehaus.groovy.runtime.StringGroovyMethods.isAtLeast;
 
@@ -157,6 +158,8 @@ public class CompilerConfiguration {
     public static final String JDK26 = "26";
     /** This (<code>"27"</code>) is the value for targetBytecode to compile for a JDK 27. */
     public static final String JDK27 = "27";
+    /** This (<code>"28"</code>) is the value for targetBytecode to compile for a JDK 28. */
+    public static final String JDK28 = "28";
 
     /**
      * JDK version to bytecode version mapping.
@@ -172,7 +175,8 @@ public class CompilerConfiguration {
             JDK24, Opcodes.V24,
             JDK25, Opcodes.V25,
             JDK26, Opcodes.V26,
-            JDK27, Opcodes.V27
+            JDK27, Opcodes.V27,
+            JDK28, Opcodes.V28
     );
 
     public static final String DEFAULT_TARGET_BYTECODE = defaultTargetBytecode();
@@ -394,6 +398,16 @@ public class CompilerConfiguration {
         public void setLogClassgenStackTraceMaxDepth(int logClassgenStackTraceMaxDepth) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public void setFrameComputationMaxBytes(final int maxBytes) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setFrameComputationMaxOperations(final long maxOperations) {
+            throw new UnsupportedOperationException();
+        }
     };
 
     /**
@@ -500,6 +514,16 @@ public class CompilerConfiguration {
     private int logClassgenStackTraceMaxDepth;
 
     /**
+     * The maximum number of bytes ASM may allocate computing the stack map frames of one method.
+     */
+    private int frameComputationMaxBytes;
+
+    /**
+     * The maximum number of operations ASM may perform computing the stack map frames of one method.
+     */
+    private long frameComputationMaxOperations;
+
+    /**
      * Options for joint compilation (null by default == no joint compilation).
      */
     private Map<String, Object> jointCompilationOptions;
@@ -566,6 +590,8 @@ public class CompilerConfiguration {
      *   <tr><td><code>groovy.parameters</code></td><td>{@link #getParameters()}</td></tr>
      *   <tr><td><code>groovy.preview.features</code></td><td>{@link #isPreviewFeatures}</td></tr>
      *   <tr><td><code>groovy.default.scriptExtension</code></td><td>{@link #getDefaultScriptExtension}</td></tr>
+     *   <tr><td><code>groovy.frame.computation.max.bytes</code></td><td>{@link #getFrameComputationMaxBytes}</td></tr>
+     *   <tr><td><code>groovy.frame.computation.max.operations</code></td><td>{@link #getFrameComputationMaxOperations}</td></tr>
      * </table>
      * </blockquote>
      *
@@ -598,6 +624,10 @@ public class CompilerConfiguration {
         previewFeatures = getBooleanSafe("groovy.preview.features");
         logClassgen = getBooleanSafe("groovy.log.classgen");
         logClassgenStackTraceMaxDepth = getIntegerSafe("groovy.log.classgen.stacktrace.max.depth", 0);
+        frameComputationMaxBytes = getIntegerSafe("groovy.frame.computation.max.bytes", Integer.MAX_VALUE);
+        if (frameComputationMaxBytes < 1) frameComputationMaxBytes = Integer.MAX_VALUE;
+        frameComputationMaxOperations = getLongSafe("groovy.frame.computation.max.operations", Long.MAX_VALUE);
+        if (frameComputationMaxOperations < 1) frameComputationMaxOperations = Long.MAX_VALUE;
         sourceEncoding = getSystemPropertySafe("groovy.source.encoding",
                 getSystemPropertySafe("file.encoding", DEFAULT_SOURCE_ENCODING));
         setTargetDirectorySafe(getSystemPropertySafe("groovy.target.directory"));
@@ -678,6 +708,8 @@ public class CompilerConfiguration {
         setPreviewFeatures(configuration.isPreviewFeatures());
         setLogClassgen(configuration.isLogClassgen());
         setLogClassgenStackTraceMaxDepth(configuration.getLogClassgenStackTraceMaxDepth());
+        setFrameComputationMaxBytes(configuration.getFrameComputationMaxBytes());
+        setFrameComputationMaxOperations(configuration.getFrameComputationMaxOperations());
         setDefaultScriptExtension(configuration.getDefaultScriptExtension());
         setSourceEncoding(configuration.getSourceEncoding());
         setPluginFactory(configuration.getPluginFactory());
@@ -743,6 +775,8 @@ public class CompilerConfiguration {
      *   <tr><td><code>groovy.recompile.minimumInterval</code></td><td>{@link #getMinimumRecompilationInterval}</td></tr>
      *   <tr><td><code>groovy.disabled.global.ast.transformations</code></td><td>{@link #getDisabledGlobalASTTransformations}</td></tr>
      *   <tr><td><code>groovy.forin.per.iteration.capture</code></td><td>{@link #isForInPerIterationCaptureEnabled}</td></tr>
+     *   <tr><td><code>groovy.frame.computation.max.bytes</code></td><td>{@link #getFrameComputationMaxBytes}</td></tr>
+     *   <tr><td><code>groovy.frame.computation.max.operations</code></td><td>{@link #getFrameComputationMaxOperations}</td></tr>
      * </table>
      * </blockquote>
      *
@@ -955,6 +989,16 @@ public class CompilerConfiguration {
             } catch (Exception ignored) {
             }
             setLogClassgenStackTraceMaxDepth(Math.max(logClassgenStackTraceMaxDepth, 0));
+        }
+
+        try {
+            text = configuration.getProperty("groovy.frame.computation.max.bytes");
+            if (text != null) setFrameComputationMaxBytes(Integer.parseInt(text));
+
+            text = configuration.getProperty("groovy.frame.computation.max.operations");
+            if (text != null) setFrameComputationMaxOperations(Long.parseLong(text));
+        } catch (IllegalArgumentException e) {
+            throw new ConfigurationException(e);
         }
 
         text = configuration.getProperty("groovy.classpath");
@@ -1436,6 +1480,61 @@ public class CompilerConfiguration {
      */
     public void setLogClassgenStackTraceMaxDepth(int logClassgenStackTraceMaxDepth) {
         this.logClassgenStackTraceMaxDepth = logClassgenStackTraceMaxDepth;
+    }
+
+    /**
+     * Returns the maximum number of bytes that may be allocated while computing
+     * the maximum stack size, maximum locals and stack map frames of a method.
+     * The default, {@link Integer#MAX_VALUE}, imposes no practical limit.
+     *
+     * @return the per-method frame computation memory limit in bytes
+     * @since 7.0.0
+     */
+    public int getFrameComputationMaxBytes() {
+        return frameComputationMaxBytes;
+    }
+
+    /**
+     * Sets the maximum number of bytes that may be allocated while computing
+     * the maximum stack size, maximum locals and stack map frames of a method.
+     * A method exceeding the limit fails compilation. Lowering it bounds the
+     * resources one method of untrusted source can consume.
+     *
+     * @param maxBytes the per-method frame computation memory limit in bytes
+     * @throws IllegalArgumentException if {@code maxBytes} is less than 1
+     * @since 7.0.0
+     */
+    public void setFrameComputationMaxBytes(final int maxBytes) {
+        if (maxBytes < 1) throw new IllegalArgumentException("frame computation max bytes must be positive: " + maxBytes);
+        this.frameComputationMaxBytes = maxBytes;
+    }
+
+    /**
+     * Returns the maximum number of operations that may be performed while computing
+     * the maximum stack size, maximum locals and stack map frames of a method.
+     * The default, {@link Long#MAX_VALUE}, imposes no practical limit.
+     *
+     * @return the per-method frame computation operation limit
+     * @since 7.0.0
+     */
+    public long getFrameComputationMaxOperations() {
+        return frameComputationMaxOperations;
+    }
+
+    /**
+     * Sets the maximum number of operations that may be performed while computing
+     * the maximum stack size, maximum locals and stack map frames of a method.
+     * The operation count is deterministic and roughly proportional to computation
+     * time. A method exceeding the limit fails compilation. Lowering it bounds the
+     * resources one method of untrusted source can consume.
+     *
+     * @param maxOperations the per-method frame computation operation limit
+     * @throws IllegalArgumentException if {@code maxOperations} is less than 1
+     * @since 7.0.0
+     */
+    public void setFrameComputationMaxOperations(final long maxOperations) {
+        if (maxOperations < 1) throw new IllegalArgumentException("frame computation max operations must be positive: " + maxOperations);
+        this.frameComputationMaxOperations = maxOperations;
     }
 
     /**

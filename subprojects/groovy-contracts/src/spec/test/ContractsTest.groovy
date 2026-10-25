@@ -359,6 +359,49 @@ class ContractsTest extends GroovyTestCase {
         '''
     }
 
+    void testSpecUnfilled() {
+        assertScript """
+        // tag::spec_unfilled_example[]
+        import groovy.contracts.Ensures
+        import groovy.contracts.Requires
+        import groovy.contracts.Spec
+        import java.time.LocalDate
+
+        class Dates {
+            @Spec('''
+                Parse an ISO-8601 calendar date (yyyy-MM-dd).
+                Reject dates that do not exist, such as 2026-02-31.
+            ''')
+            @Requires({ text != null })
+            @Ensures({ result.monthValue in 1..12 })
+            static LocalDate parse(String text) { }
+        }
+
+        try {
+            Dates.parse('2026-02-28')
+            assert false
+        } catch (UnsupportedOperationException e) {
+            assert e.message == 'unfilled @Spec: Dates.parse'
+        }
+        // end::spec_unfilled_example[]
+        """
+    }
+
+    void testSpecFilled() {
+        assertScript '''
+        // tag::spec_filled_example[]
+        import groovy.contracts.Spec
+
+        int total = 0
+        @Spec('Add the numbers from 1 to 3 to total.')
+        for (int i = 1; i <= 3; i++) {
+            total += i
+        }
+        assert total == 6
+        // end::spec_filled_example[]
+        '''
+    }
+
     private static void runScript(String scriptText) {
         new GroovyShell().run(scriptText, 'ScriptSnippet', [] as String[])
     }

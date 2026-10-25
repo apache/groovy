@@ -42,5 +42,12 @@
  *       strictly-decreasing, well-founded variant) for a loop (per iteration) or a
  *       recursive method (per recursive re-entry)</li>
  * </ul>
+ * <p>
+ * Incubating in 7.0.0:
+ * </p>
+ * <ul>
+ *   <li>{@link Spec @Spec} &ndash; a prose specification for a method, loop or
+ *       local variable declaration; an unfilled hole throws when reached</li>
+ * </ul>
  */
 package groovy.contracts;

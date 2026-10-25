@@ -91,33 +91,27 @@ public final class AssertStatementCreationUtility {
     /**
      * Gets a list of {@link ReturnStatement} instances from the given {@link MethodNode}.
      *
-     * @param method the {@link MethodNode} that holds the given <tt>lastStatement</tt>
-     * @return a {@link ReturnStatement} or <tt>null</tt>
+     * @param method the {@link MethodNode} to inspect
+     * @return the method's return statements, after implicit returns have been made explicit;
+     *         empty if the method cannot complete normally
      */
     public static List<ReturnStatement> getReturnStatements(MethodNode method) {
-
+        // GROOVY-12129: delegate implicit-return conversion to the compiler's own ReturnAdder.
+        // The value-producing trailing statement may be a plain expression statement, but also
+        // an if/else whose branches are expressions, a switch, or a try/catch (e.g. after
+        // method-level @Decreases wrapping); converting only the first case bound `result` to
+        // a synthesized default — and the synthesized `return <default>` changed what the
+        // woven method returned. ReturnAdder performs exactly the conversion the compiler
+        // would apply later anyway (including a default-value return for an empty body,
+        // preserving GROOVY-12082 semantics), so weaving at its returns cannot change what
+        // the method computes. Void methods are left untouched by ReturnAdder.
+        // GROOVY-12463: the conversion must run even when the method already contains explicit
+        // returns: an early `return` does not make the trailing value explicit, and skipping the
+        // conversion left that path unchecked. ReturnAdder leaves existing returns unchanged.
+        new ReturnAdder().visitMethod(method);
         final ReturnStatementVisitor returnStatementVisitor = new ReturnStatementVisitor();
         returnStatementVisitor.visitMethod(method);
-
-        final List<ReturnStatement> returnStatements = returnStatementVisitor.getReturnStatements();
-
-        if (returnStatements.isEmpty()) {
-            // GROOVY-12129: delegate implicit-return conversion to the compiler's own ReturnAdder.
-            // The value-producing trailing statement may be a plain expression statement, but also
-            // an if/else whose branches are expressions, a switch, or a try/catch (e.g. after
-            // method-level @Decreases wrapping); converting only the first case bound `result` to
-            // a synthesized default — and the synthesized `return <default>` changed what the
-            // woven method returned. ReturnAdder performs exactly the conversion the compiler
-            // would apply later anyway (including a default-value return for an empty body,
-            // preserving GROOVY-12082 semantics), so weaving at its returns cannot change what
-            // the method computes. Void methods are left untouched by ReturnAdder.
-            new ReturnAdder().visitMethod(method);
-            final ReturnStatementVisitor implicitReturnVisitor = new ReturnStatementVisitor();
-            implicitReturnVisitor.visitMethod(method);
-            returnStatements.addAll(implicitReturnVisitor.getReturnStatements());
-        }
-
-        return returnStatements;
+        return returnStatementVisitor.getReturnStatements();
     }
 
     /**

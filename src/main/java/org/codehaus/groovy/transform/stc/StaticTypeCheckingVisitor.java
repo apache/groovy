@@ -126,6 +126,7 @@ import org.codehaus.groovy.syntax.TokenUtil;
 import org.codehaus.groovy.transform.RecordTypeASTTransformation;
 import org.codehaus.groovy.transform.SealedASTTransformation;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
+import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
@@ -1639,6 +1640,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         for (int i = 0, n = tupleExpressions.size(); i < n; i += 1) {
             Expression tupleExpression = tupleExpressions.get(i);
             ClassNode valueType = getType(valueExpressions.get(i));
+            // GROOVY-12455: assign a property through its setter, not its getter
+            Boolean setterError = ensureValidSetterForMultipleAssignmentTarget(tupleExpression, valueType);
+            if (setterError != null) {
+                if (setterError) return false;
+                continue;
+            }
             ClassNode targetType = getType(tupleExpression);
             if (!isAssignableTo(valueType, targetType)) {
                 addStaticTypeError("Cannot assign value of type " + prettyPrintType(valueType) + " to variable of type " + prettyPrintType(targetType), rightExpression);
@@ -1654,6 +1661,43 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
 
         return true;
+    }
+
+    /**
+     * A multiple-assignment target was visited as part of the tuple, so a property reached
+     * through its accessors was resolved for reading (it carries the getter). Resolve it
+     * again as the target of an assignment of the given value type, as for a single assignment,
+     * so that it records the setter.
+     *
+     * @return {@code null} if the target still needs the usual assignment checks, otherwise whether an error was reported
+     */
+    private Boolean ensureValidSetterForMultipleAssignmentTarget(final Expression target, final ClassNode valueType) {
+        MethodNode getter = target.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (!(target instanceof VariableExpression) || getter == null || getter.getParameters().length != 0) {
+            return null;
+        }
+        int errorCount = typeCheckingContext.getErrorCollector().getErrorCount();
+        Expression value = varX("%", valueType);
+        BinaryExpression assignment = assignX(target, value, target);
+        typeCheckingContext.pushEnclosingBinaryExpression(assignment);
+        try {
+            target.visit(this); // a property node target checks its setter here
+        } finally {
+            typeCheckingContext.popEnclosingBinaryExpression();
+        }
+        SetterInfo setterInfo = removeSetterInfo(target);
+        if (setterInfo != null) {
+            return ensureValidSetter(assignment, target, value, setterInfo);
+        }
+        if (typeCheckingContext.getErrorCollector().getErrorCount() > errorCount || addedReadOnlyPropertyError(target)) {
+            return true;
+        }
+        MethodNode setter = target.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (setter == null || setter.getParameters().length != 1) {
+            addStaticTypeError("Cannot set read-only property: " + ((VariableExpression) target).getName(), target);
+            return true;
+        }
+        return null; // the setter of a property node: check the value type as for a field
     }
 
     /**
@@ -2326,7 +2370,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
                 // skip property/accessor checks for "x.@field"
                 if (pexp instanceof AttributeExpression) {
-                    if (field != null && storeField(field, pexp, receiverType, visitor, receiver.getData(), !readMode)) {
+                    if (field != null && storeField(field, pexp, receiver, visitor, !readMode)) {
                         return true;
                     }
                     continue;
@@ -2338,7 +2382,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     field = null;
                 }
                 // skip property/accessor checks for "field", "this.field", "this.with { field }", etc. within the declaring class of the field
-                else if (field != null && enclosingTypes.contains(current) && storeField(field, pexp, receiverType, visitor, receiver.getData(), !readMode)) {
+                else if (field != null && enclosingTypes.contains(current) && storeField(field, pexp, receiver, visitor, !readMode)) {
                     return true;
                 }
                 // GROOVY-8283: accessible field shadows getter of super class; GROOVY-11381: inaccessible field stops the loop, so search supers for getter
@@ -2376,11 +2420,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         if (getter != null) {
                             ClassNode returnType = inferReturnTypeGenerics(receiverType, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
                             storeInferredTypeForPropertyExpression(pexp, returnType);
+                            storeReceiverData(pexp, receiver);
                             storeTargetMethod(pexp, getter);
-                            String delegationData = receiver.getData();
-                            if (delegationData != null) {
-                                pexp.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
-                            }
                             return true;
                         }
                     } else {
@@ -2397,10 +2438,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             if (enclosingBinaryExpression != null) {
                                 putSetterInfo(enclosingBinaryExpression.getLeftExpression(), new SetterInfo(receiverType, setterName, setters));
                             }
-                            String delegationData = receiver.getData();
-                            if (delegationData != null) {
-                                pexp.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
-                            }
+                            storeReceiverData(pexp, receiver);
                             pexp.removeNodeMetaData(READONLY_PROPERTY);
                             return true;
                         } else if (getter != null && setters.isEmpty() && (field == null || field.isFinal()
@@ -2410,9 +2448,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     }
                 }
 
-                if (property != null && storeProperty(property, pexp, receiverType, visitor, receiver.getData(), !readMode)) return true;
+                if (property != null && storeProperty(property, pexp, receiver, visitor, !readMode)) return true;
 
-                if (field != null && storeField(field, pexp, receiverType, visitor, receiver.getData(), !readMode)) return true;
+                if (field != null && storeField(field, pexp, receiver, visitor, !readMode)) return true;
 
                 foundGetterOrSetter = (foundGetterOrSetter || getter != null || !setters.isEmpty());
             }
@@ -2492,9 +2530,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     node.setDeclaringClass(receiverType);
                     visitor.visitProperty(node);
                 }
+                storeReceiverData(pexp, receiver);
                 storeType(pexp, propertyType);
-                String delegationData = receiver.getData();
-                if (delegationData != null) pexp.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
                 return true;
             }
         }
@@ -2693,49 +2730,47 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 || hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), field.getDeclaringClass(), field.getModifiers());
     }
 
-    private boolean storeField(final FieldNode field, final PropertyExpression expressionToStoreOn, final ClassNode receiver, final ClassCodeVisitorSupport visitor, final String delegationData, final boolean lhsOfAssignment) {
-        boolean accessible = isFieldAccessible(field, receiver, expressionToStoreOn, delegationData);
+    private boolean storeField(final FieldNode field, final PropertyExpression expression, final Receiver<String> receiver, final ClassCodeVisitorSupport visitor, final boolean lhsOfAssignment) {
+        boolean accessible = isFieldAccessible(field, receiver.getType(), expression, receiver.getData());
         if (!accessible) {
-            if (expressionToStoreOn instanceof AttributeExpression) {
-                addStaticTypeError("Cannot access field: " + field.getName() + " of class: " + prettyPrintTypeName(field.getDeclaringClass()), expressionToStoreOn.getProperty());
-            } else { // GROOVY-12314: fall through to accessor, extension or map/list resolution
+            if (expression instanceof AttributeExpression) {
+                addStaticTypeError("Cannot access field: " + field.getName() + " of class: " + prettyPrintTypeName(field.getDeclaringClass()), expression.getProperty());
+            } else {
+                // GROOVY-12314: fall through to accessor, extension or map/list resolution
                 // remember a rejected package-private or protected field declared by the
                 // receiver's own class: if nothing else resolves the property, the error
                 // reports the access violation rather than a missing property. A private
                 // field stays hidden (GROOVY-12290), and an inaccessible inherited field is
                 // not a member of the subclass (JLS 8.2; GROOVY-9093, GROOVY-9293).
-                if (!field.isPrivate() && receiver.equals(field.getDeclaringClass())) {
-                    expressionToStoreOn.putNodeMetaData("inaccessible field", field);
+                if (!field.isPrivate() && receiver.getType().equals(field.getDeclaringClass())) {
+                    expression.putNodeMetaData("inaccessible field", field);
                 }
                 return false;
             }
         }
 
         if (visitor != null) visitor.visitField(field);
-        checkOrMarkPrivateAccess(expressionToStoreOn, field, lhsOfAssignment);
-        storeWithResolve(field.getOriginType(), receiver, field.getDeclaringClass(), field.isStatic(), expressionToStoreOn);
-        if (delegationData != null) {
-            expressionToStoreOn.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
-        }
+        checkOrMarkPrivateAccess(expression, field, lhsOfAssignment);
+        storeReceiverData(expression, receiver); // sets IMPLICIT_RECIEVER and PROPERTY_OWNER
+        storeWithResolve(field.getOriginType(), receiver.getType(), field.getDeclaringClass(), field.isStatic(), expression);
         if (field.isFinal()) {
             MethodNode enclosing = typeCheckingContext.getEnclosingMethod();
             if (enclosing == null || !enclosing.getName().endsWith("init>"))
-                expressionToStoreOn.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE); // GROOVY-5450
+                expression.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE); // GROOVY-5450
         } else if (accessible) {
-            expressionToStoreOn.removeNodeMetaData(READONLY_PROPERTY); // GROOVY-9127
+            expression.removeNodeMetaData(READONLY_PROPERTY); // GROOVY-9127
         }
         return true;
     }
 
-    private boolean storeProperty(final PropertyNode property, final PropertyExpression expression, final ClassNode receiver, final ClassCodeVisitorSupport visitor, final String delegationData, final boolean lhsOfAssignment) {
+    private boolean storeProperty(final PropertyNode property, final PropertyExpression expression, final Receiver<String> receiver, final ClassCodeVisitorSupport visitor, final boolean lhsOfAssignment) {
         if (visitor != null) visitor.visitProperty(property);
 
         ClassNode propertyType = property.getOriginType();
-        storeWithResolve(propertyType, receiver, property.getDeclaringClass(), property.isStatic(), expression);
+        storeWithResolve(propertyType, receiver.getType(), property.getDeclaringClass(), property.isStatic(), expression);
 
-        if (delegationData != null) {
-            expression.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
-        }
+        storeReceiverData(expression, receiver);
+
         if (property.isFinal()) {
             expression.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE);
         } else {
@@ -2784,6 +2819,26 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             storeType(pexp, extension.buildListType(type));
         } else {
             storeType(pexp, type);
+        }
+    }
+
+    /**
+     * Updates expression if delegation metadata is present for delegate, owner,
+     * or any other implicit-receiver scenario.
+     *
+     * @param exp a method call or property access expression
+     * @param receiver the receiver type and delegation metadata
+     */
+    private void storeReceiverData(final Expression exp, final Receiver<?> receiver) {
+        var delegationData = receiver.getData();
+        if (delegationData != null) {
+            exp.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
+            Expression objectExpression = getObjectExpression(exp);
+            if (objectExpression != null && receiver.getType().redirect().getGenericsTypes() != null) {
+                // when the receiver class is parameterized, the declaring class of a field, method or property
+                // is not enough to propagate type arguments to the static compiler -- so save type information
+                objectExpression.putNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER, receiver.getType());
+            }
         }
     }
 
@@ -3311,13 +3366,13 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 Expression expression = expressions.get(expressions.size() - 1);
                 if (expression instanceof MapExpression argList) {
                     checkGroovyConstructorMap(call, receiver, argList);
-                    Parameter[] params = expressions.size() == 1
-                            ? new Parameter[]{new Parameter(MAP_TYPE, "map")}
-                            : new Parameter[]{new Parameter(receiver.redirect().getOuterClass(), "$p$"), new Parameter(MAP_TYPE, "map")};
-                    node = new ConstructorNode(Opcodes.ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
-                    node.setDeclaringClass(receiver);
-                    node.setSynthetic(true);
-                }
+                } // else entries are known only at runtime
+                Parameter[] params = expressions.size() == 1
+                        ? new Parameter[]{new Parameter(MAP_TYPE, "map")}
+                        : new Parameter[]{new Parameter(receiver.redirect().getOuterClass(), "$p$"), new Parameter(MAP_TYPE, "map")};
+                node = new ConstructorNode(Opcodes.ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
+                node.setDeclaringClass(receiver);
+                node.setSynthetic(true);
             }
         }
         return node;
@@ -3758,6 +3813,24 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * Adds {@link TypeChecked.TypeCheckingInfo} metadata for an inferred method return type.
      */
     protected void addTypeCheckingInfoAnnotation(final MethodNode node) {
+        addTypeCheckingInfoAnnotation(node, CURRENT_SIGNATURE_PROTOCOL_VERSION, getTransformLoader());
+    }
+
+    /**
+     * Writes {@code TypeCheckingInfo} using protocol {@code version}. A version
+     * this compiler does not implement leaves {@code node} unchanged and does
+     * not call {@link SignatureCodec#encode}.
+     */
+    void addTypeCheckingInfoAnnotation(final MethodNode node, final int version, final ClassLoader loader) {
+        addTypeCheckingInfoAnnotation(node, SignatureCodecFactory.getCodec(version, loader));
+    }
+
+    /**
+     * Writes {@code TypeCheckingInfo} with the supplied codec. A {@code null}
+     * codec, or an {@code encode} result of {@code null}, leaves {@code node}
+     * unchanged.
+     */
+    void addTypeCheckingInfoAnnotation(final MethodNode node, final SignatureCodec codec) {
         // TypeChecked$TypeCheckingInfo cannot be applied on constructors
         if (node.isConstructor()) return;
 
@@ -3765,11 +3838,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         // annotation to the method node
         ClassNode rtype = getInferredReturnType(node);
         if (rtype != null && node.getAnnotations(TYPECHECKING_INFO_NODE).isEmpty()) {
-            AnnotationNode anno = new AnnotationNode(TYPECHECKING_INFO_NODE);
-            anno.setMember("version", CURRENT_SIGNATURE_PROTOCOL);
-            SignatureCodec codec = SignatureCodecFactory.getCodec(CURRENT_SIGNATURE_PROTOCOL_VERSION, getTransformLoader());
+            if (codec == null) return;
             String genericsSignature = codec.encode(rtype);
             if (genericsSignature != null) {
+                AnnotationNode anno = new AnnotationNode(TYPECHECKING_INFO_NODE);
+                anno.setMember("version", CURRENT_SIGNATURE_PROTOCOL);
                 ConstantExpression signature = new ConstantExpression(genericsSignature);
                 signature.setType(STRING_TYPE);
                 anno.setMember("inferredType", signature);
@@ -4684,6 +4757,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             mn = disambiguateMethods(mn, obj, args, call);
                         }
                     }
+                    if (mn.size() == 1 && mn.get(0) instanceof ExtensionMethodNode && chosenReceiver != null
+                            && isSuperExpression(objectExpression)) { // GROOVY-12470: super.m() invokes the superclass method
+                        List<MethodNode> superMethods = new ArrayList<>(findMethodsWithGenerated(chosenReceiver.getType(), name));
+                        superMethods.removeIf(MethodNode::isAbstract);
+                        superMethods = chooseBestMethod(chosenReceiver.getType(),
+                                filterMethodsByVisibility(superMethods, typeCheckingContext.getEnclosingClassNode()), args);
+                        if (superMethods.size() == 1) mn = superMethods;
+                    }
 
 out:                if (mn.size() != 1) {
                         addAmbiguousErrorMessage(mn, name, args, call);
@@ -4749,18 +4830,16 @@ out:                if (mn.size() != 1) {
                         resolvePlaceholdersFromImplicitTypeHints(args, argumentList, parameters);
 
                         if (typeCheckMethodsWithGenericsOrFail(chosenReceiver.getType(), args, targetMethod, call)) {
-                            String data = chosenReceiver.getData();
-                            if (data != null) {
-                                // the method which has been chosen is supposed to be a call on delegate or owner
-                                // so we store the information so that the static compiler may reuse it
-                                call.putNodeMetaData(IMPLICIT_RECEIVER, data);
-                            }
+                            // the chosen method is supposed to be a call on delegate, owner, or thisObject
+                            // so store the delegation information for the static compiler
+                            storeReceiverData(call, chosenReceiver);
+
                             receiver = chosenReceiver.getType();
                             if (mergeType || call.getNodeMetaData(INFERRED_TYPE) == null)
                                 storeType(call, adjustWithTraits(targetMethod, receiver, args, returnType));
 
-                            if (objectExpression instanceof VariableExpression && ((VariableExpression) objectExpression).isClosureSharedVariable()) {
-                                // if the object expression is a closure shared variable, we will have to perform a second pass
+                            if (objectExpression instanceof VariableExpression variable && variable.isClosureSharedVariable()) {
+                                // if the object expression is a closure shared variable we will have to perform a second pass
                                 typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(call, args));
                             }
                         } else {
@@ -7903,13 +7982,41 @@ out:    for (ClassNode type : todo) {
      */
     public static class SignatureCodecFactory {
         /**
-         * Returns the codec implementation for the requested signature version.
+         * Returns the codec implementation for the requested signature version,
+         * or {@code null} when this compiler does not implement {@code version}.
+         *
+         * @param version the {@code TypeCheckingInfo.version} member
+         * @param classLoader loader used by version 1 to resolve class names
+         * @return the codec, or {@code null} for an unknown, negative, or
+         *         experimental version
          */
         public static SignatureCodec getCodec(final int version, final ClassLoader classLoader) {
             return switch (version) {
                 case 1 -> new SignatureCodecVersion1(classLoader);
                 default -> null;
             };
+        }
+
+        /**
+         * Decodes an inferred return type, or returns {@code declared} when
+         * {@code version} has no codec. {@code null} from {@link #getCodec}
+         * means there is no inferred signature. The caller uses the method's
+         * declared return type. This method does not read {@code signature}
+         * in that case.
+         *
+         * @param version the {@code TypeCheckingInfo.version} member
+         * @param signature the annotation's {@code inferredType} string
+         * @param loader class loader passed to the codec
+         * @param declared the method's declared return type
+         * @return the decoded inferred type, or {@code declared}
+         */
+        static ClassNode inferredReturnOrDeclared(final int version, final String signature,
+                final ClassLoader loader, final ClassNode declared) {
+            SignatureCodec codec = getCodec(version, loader);
+            if (codec == null) {
+                return declared;
+            }
+            return codec.decode(signature);
         }
     }
 

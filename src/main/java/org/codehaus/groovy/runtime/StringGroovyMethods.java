@@ -2194,7 +2194,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String minus(final CharSequence self, final Object target) {
         String s = self.toString();
-        String text = DefaultGroovyMethods.toString(target);
+        String text = FormatHelper.toString(target);
         int index = s.indexOf(text);
         if (index == -1) return s;
         int end = index + text.length();
@@ -2489,7 +2489,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @GroovyABI(since = "3.0.0")
     public static String plus(final CharSequence left, final Object right) {
-        return left + DefaultGroovyMethods.toString(right);
+        return left + FormatHelper.toString(right);
     }
 
     /**
@@ -2502,7 +2502,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String plus(final Number left, final String right) {
-        return DefaultGroovyMethods.toString(left) + right;
+        return FormatHelper.toString(left) + right;
     }
 
     /**

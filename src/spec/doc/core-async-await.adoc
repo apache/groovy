@@ -210,6 +210,12 @@ If a deferred action returns an `Awaitable` or `Future`, the result is awaited
 before the next deferred action runs, ensuring orderly cleanup of asynchronous
 resources.
 
+`defer { channel.close() }` closes the channel when the task ends, including
+when the task throws, so `for await` does not wait forever. That close has
+no cause, so the loop ends normally. The task's exception stays on the
+`Awaitable` from `async`. To make `for await` throw it, catch the failure
+and call `channel.close(failure)`. See <<async-channel-failure>>.
+
 [[async-structured]]
 == Structured Concurrency
 
@@ -528,6 +534,9 @@ type, e.g. `AtomicInteger` for a shared counter, or thread-safe types from
 
 | `AsyncChannel.create(n)`
 | Create a buffered (or unbuffered) channel for inter-task communication.
+
+| `channel.close(failure)`
+| Close a channel with a failure. `for await` throws that failure; the reader writes `try` / `catch`.
 
 | `ChannelSelect.after(ms)`
 | Timer offer: a `ChannelSelect` branch that re-arms each round and commits with the `Instant` it fired.

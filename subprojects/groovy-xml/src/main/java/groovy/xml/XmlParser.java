@@ -369,8 +369,7 @@ public class XmlParser implements ContentHandler {
      */
     public <T> T parseAs(Class<T> type, Reader reader) {
         try {
-            Node root = parse(reader);
-            return JacksonHelper.convertMapToType(root.toMap(), type);
+            return asType(parse(reader), type);
         } catch (IOException | SAXException e) {
             throw new XmlRuntimeException(e);
         }
@@ -389,8 +388,7 @@ public class XmlParser implements ContentHandler {
      */
     public <T> T parseAs(Class<T> type, InputStream stream) {
         try {
-            Node root = parse(stream);
-            return JacksonHelper.convertMapToType(root.toMap(), type);
+            return asType(parse(stream), type);
         } catch (IOException | SAXException e) {
             throw new XmlRuntimeException(e);
         }
@@ -410,8 +408,7 @@ public class XmlParser implements ContentHandler {
      */
     public <T> T parseAs(Class<T> type, File file) throws IOException {
         try {
-            Node root = parse(file);
-            return JacksonHelper.convertMapToType(root.toMap(), type);
+            return asType(parse(file), type);
         } catch (SAXException e) {
             throw new XmlRuntimeException(e);
         }
@@ -431,11 +428,18 @@ public class XmlParser implements ContentHandler {
      */
     public <T> T parseAs(Class<T> type, Path path) throws IOException {
         try {
-            Node root = parse(path);
-            return JacksonHelper.convertMapToType(root.toMap(), type);
+            return asType(parse(path), type);
         } catch (SAXException e) {
             throw new XmlRuntimeException(e);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T asType(Node node, Class<T> type) {
+        if (type.isInstance(node)) {
+            return (T) node;
+        }
+        return JacksonHelper.convertMapToType(node.toMap(), type);
     }
 
     /**
