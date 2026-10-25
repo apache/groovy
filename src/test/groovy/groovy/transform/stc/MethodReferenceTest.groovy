@@ -1430,6 +1430,51 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN22() {
+        assertScript shell, '''package p
+            class A {
+                final String value
+                protected A(String value) { this.value = 'prot:' + value }
+                @PackageScope A(Integer i) { this.value = 'pkg:' + i }
+            }
+
+            @CompileStatic
+            class C {
+                static Function<String, A> prot() { A::new }
+                static Function<Integer, A> pkg() { A::new }
+            }
+
+            assert C.prot().apply('x').value == 'prot:x'
+            assert C.pkg().apply(1).value == 'pkg:1'
+        '''
+    }
+
+    // GROOVY-12488
+    @Test // class::new
+    void testFunctionCN23() {
+        assertScript shell, '''package p
+            class A {
+                final String value
+                protected A(String value) { this.value = 'prot:' + value }
+                @PackageScope A(Integer i) { this.value = 'pkg:' + i }
+            }
+
+            true
+        '''
+        assertScript shell, '''package p
+            @CompileStatic
+            class C { // same package name as A, but another class loader
+                static Function<String, A> prot() { A::new }
+                static Function<Integer, A> pkg() { A::new }
+            }
+
+            assert C.prot().apply('x').value == 'prot:x'
+            assert C.pkg().apply(1).value == 'pkg:1'
+        '''
+    }
+
     @Test // arrayClass::new
     void testIntFunctionCN() {
         assertScript shell, '''
@@ -3237,6 +3282,65 @@ final class MethodReferenceTest {
             ''')
 
             assert bytecode.hasSequence(['INVOKEDYNAMIC init(Ljava/lang/Class;)Ljava/lang/Object;'])
+        }
+
+        // GROOVY-12488
+        @Test
+        void testProtectedAndPackagePrivateConstructorsOfSamePackageAreCalledDirectly() {
+            def script = '''
+                class A {
+                    protected A(String s) { }
+                    @groovy.transform.PackageScope A(Integer i) { }
+                }
+                @CompileStatic
+                class C {
+                    static Function<String, A> prot() {
+                        A::new
+                    }
+                    static Function<Integer, A> pkg() {
+                        A::new
+                    }
+                }
+            '''
+
+            def prot = compileStaticMethodBytecode('ctorRef$prot$0', script)
+            assert prot.hasSequence(['NEW A', 'ALOAD 0', 'INVOKESPECIAL A.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(prot)
+
+            def pkg = compileStaticMethodBytecode('ctorRef$pkg$1', script)
+            assert pkg.hasSequence(['NEW A', 'ALOAD 0', 'INVOKESPECIAL A.<init> (Ljava/lang/Integer;)V'])
+            assertNoDynamicConstructorCall(pkg)
+        }
+
+        // GROOVY-12488
+        @Test
+        void testProtectedAndPackagePrivateConstructorsOfClassCompiledBeforeAreSelectedAtRuntime() {
+            def library = '''package p
+                class A {
+                    protected A(String s) { }
+                    @groovy.transform.PackageScope A(Integer i) { }
+                }
+            '''
+            def script = '''package p
+                import java.util.function.Function
+                @groovy.transform.CompileStatic
+                class C {
+                    static Function<String, A> prot() {
+                        A::new
+                    }
+                    static Function<Integer, A> pkg() {
+                        A::new
+                    }
+                }
+            '''
+
+            def prot = compileStaticMethodBytecodeAgainstLibrary(library, 'p.C', 'ctorRef$prot$0', script)
+            assert prot.hasSequence(['INVOKEDYNAMIC init('])
+            assert !prot.hasSequence(['INVOKESPECIAL p/A.<init>'])
+
+            def pkg = compileStaticMethodBytecodeAgainstLibrary(library, 'p.C', 'ctorRef$pkg$1', script)
+            assert pkg.hasSequence(['INVOKEDYNAMIC init('])
+            assert !pkg.hasSequence(['INVOKESPECIAL p/A.<init>'])
         }
 
         @Test
