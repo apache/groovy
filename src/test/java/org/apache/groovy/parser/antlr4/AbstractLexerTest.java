@@ -777,6 +777,10 @@ final class AbstractLexerTest {
         return new GroovyLangLexer(CharStreams.fromString("x"));
     }
 
+    private static GroovyLangLexer lexer(final String src) {
+        return new GroovyLangLexer(CharStreams.fromString(src));
+    }
+
     private static void drain(GroovyLangLexer lexer) {
         collect(lexer);
     }
