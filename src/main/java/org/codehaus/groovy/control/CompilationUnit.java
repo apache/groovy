@@ -74,6 +74,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.DYNAMIC_OUTER_NODE_CALLBACK;
 
@@ -730,9 +731,11 @@ public class CompilationUnit extends ProcessingUnit {
 
         while (throughPhase >= phase && phase <= Phases.ALL) {
             if (phase == Phases.CONVERSION) {
-                (sources.size() > 1 && Boolean.TRUE.equals(configuration.getOptimizationOptions().get(CompilerConfiguration.PARALLEL_PARSE))
-                        ? sources.values().parallelStream() : sources.values().stream()
-                ).forEach(SourceUnit::buildAST);
+                if (sources.size() > 1 && Boolean.TRUE.equals(configuration.getOptimizationOptions().get(CompilerConfiguration.PARALLEL_PARSE))) {
+                    buildASTsInParallel();
+                } else {
+                    sources.values().forEach(SourceUnit::buildAST);
+                }
             }
             try {
                 processPhaseOperations(phase);
@@ -757,6 +760,27 @@ public class CompilationUnit extends ProcessingUnit {
         }
 
         getErrorCollector().failIfErrors();
+    }
+
+    /**
+     * Builds the AST of every source in parallel. A source that fails does not
+     * stop the others: the failure is rethrown only once every source has been
+     * parsed, so the shared error collector is complete and no longer changing
+     * when the caller sees the exception.
+     */
+    private void buildASTsInParallel() throws CompilationFailedException {
+        AtomicReference<CompilationFailedException> failure = new AtomicReference<>();
+        sources.values().parallelStream().forEach(source -> {
+            try {
+                source.buildAST();
+            } catch (CompilationFailedException e) {
+                failure.compareAndSet(null, e);
+            }
+        });
+        if (failure.get() != null) {
+            getErrorCollector().failIfErrors();
+            throw failure.get();
+        }
     }
 
     private void processPhaseOperations(final int phase) {

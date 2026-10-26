@@ -37,6 +37,12 @@ import java.util.List;
  * A base class for collecting messages and errors during processing.
  * Each CompilationUnit should have an ErrorCollector, and the SourceUnits
  * should share their ErrorCollector with the CompilationUnit.
+ * <p>
+ * Messages may be recorded from several threads, as happens when the sources
+ * of a unit are parsed in parallel, so recording and the indexed accessors
+ * are synchronized. The lists returned by {@link #getErrors()} and
+ * {@link #getWarnings()} are the live lists and should be read once
+ * processing has finished.
  */
 public class ErrorCollector implements Serializable {
 
@@ -69,7 +75,7 @@ public class ErrorCollector implements Serializable {
      *
      * @param that the collector whose contents should be appended
      */
-    public void addCollectorContents(final ErrorCollector that) {
+    public synchronized void addCollectorContents(final ErrorCollector that) {
         if (that.errors != null) {
             if (this.errors == null) {
                 this.errors = that.errors;
@@ -111,7 +117,7 @@ public class ErrorCollector implements Serializable {
      * Adds an error to the message set, but does not cause a failure. The message is not required to have a source
      * line and column specified, but it is best practice to try and include that information.
      */
-    public void addErrorAndContinue(final Message message) {
+    public synchronized void addErrorAndContinue(final Message message) {
         if (errors == null) {
             errors = new LinkedList<>();
         }
@@ -126,7 +132,7 @@ public class ErrorCollector implements Serializable {
      * A {@link CompilerConfiguration#getTolerance() tolerance} of zero or less means unlimited:
      * every error is collected and the threshold never triggers a failure (GROOVY-12306).
      */
-    public void addError(final Message message) throws CompilationFailedException {
+    public synchronized void addError(final Message message) throws CompilationFailedException {
         addErrorAndContinue(message);
 
         int tolerance = configuration.getTolerance();
@@ -196,7 +202,7 @@ public class ErrorCollector implements Serializable {
     /**
      * Adds a warning to the message set.
      */
-    public void addWarning(final WarningMessage message) {
+    public synchronized void addWarning(final WarningMessage message) {
         if (message.isRelevant(configuration.getWarningLevel())) {
             if (warnings == null) {
                 warnings = new LinkedList<>();
@@ -233,14 +239,14 @@ public class ErrorCollector implements Serializable {
     /**
      * Returns the number of errors.
      */
-    public int getErrorCount() {
+    public synchronized int getErrorCount() {
         return (hasErrors() ? errors.size() : 0);
     }
 
     /**
      * Returns the specified error message, or null.
      */
-    public Message getError(final int index) {
+    public synchronized Message getError(final int index) {
         if (index < getErrorCount()) {
             return errors.get(index);
         }
@@ -264,14 +270,14 @@ public class ErrorCollector implements Serializable {
     /**
      * Returns the number of warnings.
      */
-    public int getWarningCount() {
+    public synchronized int getWarningCount() {
         return (hasWarnings() ? warnings.size() : 0);
     }
 
     /**
      * Returns the specified warning message, or null.
      */
-    public WarningMessage getWarning(final int index) {
+    public synchronized WarningMessage getWarning(final int index) {
         if (index < getWarningCount()) {
             return warnings.get(index);
         }
@@ -297,7 +303,7 @@ public class ErrorCollector implements Serializable {
     /**
      * Returns the last error reported.
      */
-    public Message getLastError() {
+    public synchronized Message getLastError() {
         return errors.getLast();
     }
 
