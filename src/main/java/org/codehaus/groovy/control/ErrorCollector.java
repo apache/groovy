@@ -40,9 +40,13 @@ import java.util.List;
  * <p>
  * Messages may be recorded from several threads, as happens when the sources
  * of a unit are parsed in parallel, so recording and the indexed accessors
- * are synchronized. The lists returned by {@link #getErrors()} and
- * {@link #getWarnings()} are the live lists and should be read once
- * processing has finished.
+ * are synchronized on the collector itself. The lists returned by
+ * {@link #getErrors()} and {@link #getWarnings()} are the live lists and
+ * should be read once processing has finished.
+ * <p>
+ * A subclass that reads or modifies {@link #errors} or {@link #warnings}
+ * directly must hold the collector's monitor while doing so, either by
+ * synchronizing on {@code this} or by going through the synchronized methods.
  */
 public class ErrorCollector implements Serializable {
 
@@ -132,11 +136,14 @@ public class ErrorCollector implements Serializable {
      * A {@link CompilerConfiguration#getTolerance() tolerance} of zero or less means unlimited:
      * every error is collected and the threshold never triggers a failure (GROOVY-12306).
      */
-    public synchronized void addError(final Message message) throws CompilationFailedException {
-        addErrorAndContinue(message);
-
+    public void addError(final Message message) throws CompilationFailedException {
         int tolerance = configuration.getTolerance();
-        if (tolerance > 0 && errors != null && errors.size() >= tolerance) {
+        boolean exceeded;
+        synchronized (this) {
+            addErrorAndContinue(message);
+            exceeded = tolerance > 0 && errors != null && errors.size() >= tolerance;
+        }
+        if (exceeded) {
             failIfErrors();
         }
     }
