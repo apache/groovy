@@ -347,6 +347,129 @@ final class DoStaticTest {
         """
     }
 
+    // GROOVY-12486
+    @Test
+    void boundParameterIsTypedFromBindInput_interfaceDefaultBind() {
+        assertScript """
+            import java.util.function.Function
+
+            interface M<E, A> {
+                A get()
+                default <B> M<E, B> flatMap(Function<? super A, ? extends M<E, B>> f) { f.apply(get()) }
+                default <B> M<E, B> map(Function<? super A, ? extends B> f) { (M<E, B>) new Ok<Object, B>(f.apply(get())) }
+            }
+            class Ok<U, T> implements M<String, T> {
+                final T value
+                Ok(T value) { this.value = value }
+                T get() { value }
+            }
+
+            $CS
+            class C {
+                static int run() {
+                    def r = DO(x in new Ok<Date, Integer>(6)) { int n = x; new Ok<Date, Integer>(n + 1) }
+                    r.get()
+                }
+            }
+            assert C.run() == 7
+        """
+    }
+
+    // GROOVY-12486
+    @Test
+    void boundParameterIsTypedFromBindInput_wildcardReceiver() {
+        assertScript """
+            import java.util.function.Function
+
+            class Result<E, A> {
+                final A value
+                Result(A value) { this.value = value }
+                def <B> Result<E, B> flatMap(Function<? super A, ? extends Result<E, B>> f) { f.apply(value) }
+                def <B> Result<E, B> map(Function<? super A, ? extends B> f) { new Result<E, B>(f.apply(value)) }
+            }
+
+            $CS
+            class C {
+                static int run() {
+                    Result<String, ? extends Integer> src = new Result<String, Integer>(4)
+                    def r = DO(x in src) { int n = x; new Result<String, Integer>(n * 2) }
+                    r.value
+                }
+            }
+            assert C.run() == 8
+        """
+    }
+
+    // GROOVY-12486
+    @Test
+    void boundParameterIsTypedFromBindInput_nameKeyedCarrier() {
+        assertScript """
+            package fj.data
+
+            import fj.F
+
+            class Validation<E, T> {
+                final T value
+                Validation(T value) { this.value = value }
+                def <A> Validation<E, A> bind(F<T, Validation<E, A>> f) { f.f(value) }
+                def <A> Validation<E, A> map(F<T, A> f) { new Validation<E, A>(f.f(value)) }
+            }
+
+            $CS
+            class C {
+                static int run() {
+                    def r = DO(x in new Validation<String, Integer>(5)) { int n = x; new Validation<String, Integer>(n + 1) }
+                    r.value
+                }
+            }
+            assert C.run() == 6
+        """
+    }
+
+    // GROOVY-12486
+    @Test
+    void boundParameterFallsBackToFirstTypeArgument_closureBind() {
+        assertScript """
+            class Box<A, M> {
+                A value
+                Box flatMap(Closure c) { (Box) c(value) }
+                Box map(Closure c) { new Box(value: c(value)) }
+            }
+
+            $CS
+            class C {
+                static Object run() {
+                    def r = DO(x in new Box<Integer, String>(value: 7)) { int n = x; new Box<Integer, String>(value: n + 1) }
+                    r.value
+                }
+            }
+            assert C.run() == 8
+        """
+    }
+
+    // GROOVY-12486
+    @Test
+    void boundParameterFallsBackToFirstTypeArgument_rawFunctionBind() {
+        assertScript """
+            import java.util.function.Function
+
+            class P<A, M> {
+                A value
+                P flatMap(Function f) { (P) f.apply(value) }
+                P map(Function f) { new P(value: f.apply(value)) }
+            }
+
+            $CS
+            class C {
+                static Object run() {
+                    def r = DO(x in new P<Integer, String>(value: 8)) { int n = x; new P<Integer, String>(value: n + 1) }
+                    r.value
+                }
+            }
+            assert C.run() == 9
+        """
+    }
+
     private static void assertCompileError(String script, String expectedMessage) {
         try {
             new GroovyShell().parse(script)
