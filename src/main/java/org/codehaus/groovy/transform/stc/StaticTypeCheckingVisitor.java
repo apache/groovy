@@ -3174,7 +3174,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 if (!handledTypes.add(current)) continue;
 
                 FieldNode field = current.getDeclaredField(propertyName);
-                if (field != null && !(pexp instanceof AttributeExpression) && !current.equals(receiverType) && !current.equals(declaredType)
+                if (field != null && !field.isStatic() && !(pexp instanceof AttributeExpression) && !current.equals(receiverType) && !current.equals(declaredType)
                         && isInheritedPrivateMember(field.getModifiers(), field.getDeclaringClass())
                         // GROOVY-12600, GROOVY-12610, GROOVY-12626: static compilation uses the field directly from any class of its nest
                         && !isStaticDispatchScope() && isDynamicallyUnreachableThroughSubclass(field, receiverType, pexp, !readMode)
