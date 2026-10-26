@@ -283,13 +283,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     // abs
 
     /**
-     * Gets the absolute value.
+     * Gets the absolute value as an int.
      * <p>
-     * Note: This method is NOT called if number is a BigInteger or BigDecimal,
-     *       because those classes implement a method with a better exact match.
+     * Values outside the int range, and fractional values, are truncated.
+     * Dynamic Groovy usually selects a more specific method for {@code Long},
+     * {@code Float}, {@code Double}, {@code BigInteger} and {@code BigDecimal},
+     * but statically compiled code calls this method whenever the receiver's
+     * declared type is {@code Number}. In that case, declare the receiver with
+     * its concrete type, or use {@link NumberMath#abs(Number)}, which keeps the
+     * number's precision. Groovy 6.0.1 returns {@code Number} from this method.
      *
      * @param number a Number
-     * @return the absolute value of that Number
+     * @return the absolute value of that Number, truncated to an int
      * @since 1.0
      */
     public static int abs(Number number) {
