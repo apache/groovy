@@ -300,7 +300,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Gets the absolute value.
      * The result keeps the precision of the supplied number, following
-     * the same type rules as Groovy's arithmetic operators.
+     * the same type rules as Groovy's arithmetic operators. As with
+     * {@link Math#abs(long)} and {@link Math#abs(int)}, the absolute value of
+     * {@code Long.MIN_VALUE} or {@code Integer.MIN_VALUE} overflows and the
+     * same negative value is returned.
      * <pre class="groovyTestCase">
      * Number n = -2.5
      * assert n.abs() == 2.5
