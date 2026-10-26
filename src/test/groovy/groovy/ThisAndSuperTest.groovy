@@ -512,6 +512,26 @@ final class ThisAndSuperTest {
         """
     }
 
+    // GROOVY-12519: an extension method, which is static too, needs no super$ helper in a closure or lambda
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testSuperDotExtensionMethodInClosure(String mode) {
+        assertScript """
+            import java.util.function.Supplier
+
+            $mode
+            class Numbers extends ArrayList<Integer> {
+                Numbers() { super([1, 2, 3]) }
+                List test() {
+                    def c = { -> super.first() }
+                    Supplier<Integer> lambda = () -> super.last()
+                    [c(), lambda.get()]
+                }
+            }
+            assert new Numbers().test() == [1, 3]
+        """
+    }
+
     // GROOVY-12519: a private static method of the superclass stays out of reach
     @Test
     void testSuperDotPrivateStaticMethod() {
