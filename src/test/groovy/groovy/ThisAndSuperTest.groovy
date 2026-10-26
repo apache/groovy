@@ -20,6 +20,8 @@ package groovy
 
 import groovy.test.NotYetImplemented
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -442,6 +444,62 @@ final class ThisAndSuperTest {
             }
             test()
         '''
+    }
+
+    // GROOVY-12522: an extension method of the superclass, or of an interface of it, that the class overrides
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testSuperDotExtensionMethodTheClassOverrides(String mode) {
+        assertScript """
+            $mode
+            class Numbers extends ArrayList<Integer> {
+                Numbers() { super([1, 2, 3]) }
+                Integer first() { -1 }
+                Map getProperties() { [:] }
+                List test() {
+                    [super.first(), first(), super.properties.containsKey('class'), properties]
+                }
+            }
+            $mode
+            class Text extends File {
+                Text(File file) { super(file.path) }
+                String getText() { 'own' }
+                void setText(String s) { throw new UnsupportedOperationException(s) }
+                List test() {
+                    super.setText('a')
+                    def one = super.getText()
+                    super.text = 'b'
+                    def two = super.text
+                    super.text += 'c'
+                    [one, two, super.text, text]
+                }
+            }
+            assert new Numbers().test() == [1, -1, true, [:]]
+            def file = File.createTempFile('text', '.txt')
+            try {
+                assert new Text(file).test() == ['a', 'b', 'bc', 'own']
+            } finally {
+                file.delete()
+            }
+        """
+    }
+
+    // GROOVY-12522: in a closure; @CompileStatic calls a super method from a closure through a super$ helper
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked'])
+    void testSuperDotExtensionMethodTheClassOverridesInClosure(String mode) {
+        assertScript """
+            $mode
+            class Numbers extends ArrayList<Integer> {
+                Numbers() { super([1, 2, 3]) }
+                Integer first() { -1 }
+                List test() {
+                    def c = { -> super.first() }
+                    [c(), first()]
+                }
+            }
+            assert new Numbers().test() == [1, -1]
+        """
     }
 
     // GROOVY-9851

@@ -565,6 +565,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
              */
             boolean useThis;
 
+            /**
+             * Extension methods of the superclass by name, per class of the hierarchy.
+             */
+            Map<Class<?>, Map<String, List<MetaMethod>>> superExtensionMethods;
+
             /** {@inheritDoc} */
             @Override
             public void methodNameAction(final Class<?> c, final MetaMethodIndex.Cache e) {
@@ -577,7 +582,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         if (matchedMethod >= 0) {
                             methods.set(i, mopMethods[matchedMethod]);
                         } else if (!useThis && notSuperUseful(method, c)) {
-                            methods.remove(i--); // not fit for super usage
+                            MetaMethod hidden = getHiddenExtensionMethod(method, c);
+                            if (hidden != null) {
+                                methods.set(i, hidden);
+                            } else {
+                                methods.remove(i--); // not fit for super usage
+                            }
                         }
                     }
                     if (!useThis) {
@@ -592,7 +602,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         if (useThis) e.methods = mopMethods[matchedMethod];
                         else e.methodsForSuper = mopMethods[matchedMethod];
                     } else if (!useThis && notSuperUseful(method, c)) {
-                        e.methodsForSuper = null; // not fit for super usage
+                        e.methodsForSuper = getHiddenExtensionMethod(method, c); // null: not fit for super usage
                     }
                 }
             }
@@ -633,6 +643,46 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     }
                 }
                 return -1;
+            }
+
+            /**
+             * Finds the extension method of a superclass, or of an interface it
+             * implements, that a method of class {@code c} overrides: "super.name()"
+             * within {@code c} calls it, as there is no super$ helper for it.
+             */
+            private MetaMethod getHiddenExtensionMethod(final MetaMethod method, final Class<?> c) {
+                if (method.isStatic() || isBridge(method) || method.getDeclaringClass().getTheClass() != c || c.getSuperclass() == null) return null;
+                if (superExtensionMethods == null) superExtensionMethods = new HashMap<>();
+                List<MetaMethod> candidates = superExtensionMethods.computeIfAbsent(c, this::getExtensionMethodsOfSuperclass).get(method.getName());
+                MetaMethod hidden = null;
+                if (candidates != null) {
+                    for (MetaMethod m : candidates) {
+                        if (MetaMethod.equal(m.getParameterTypes(), method.getParameterTypes())
+                                && (hidden == null || hidden.getDeclaringClass().getTheClass().isAssignableFrom(m.getDeclaringClass().getTheClass()))) {
+                            hidden = m; // the one for the most specific type
+                        }
+                    }
+                }
+                return hidden;
+            }
+
+            private Map<String, List<MetaMethod>> getExtensionMethodsOfSuperclass(final Class<?> c) {
+                CachedClass superClass = ReflectionCache.getCachedClass(c.getSuperclass());
+                List<CachedClass> types = new ArrayList<>();
+                for (CachedClass sc = superClass; sc != null; sc = sc.getCachedSuperClass()) {
+                    types.add(sc);
+                }
+                types.addAll(superClass.getInterfaces());
+
+                Map<String, List<MetaMethod>> methodsByName = new HashMap<>();
+                for (CachedClass type : types) {
+                    for (MetaMethod m : type.getNewMetaMethods()) {
+                        if (isDGM(m) && !m.isStatic()) {
+                            methodsByName.computeIfAbsent(m.getName(), name -> new ArrayList<>()).add(m);
+                        }
+                    }
+                }
+                return methodsByName;
             }
 
             private boolean notSuperUseful(final MetaMethod method, final Class<?> c) {
