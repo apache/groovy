@@ -273,8 +273,9 @@ class MonadicChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL 
     /**
      * The type a generator variable is bound to: the input type of the carrier's
      * bind function, resolved against the carrier's type arguments, so that
-     * {@code Either<L, R>} binds {@code R}. Falls back to the last type argument,
-     * then {@code Object}, when the bind method's input cannot be determined.
+     * {@code Either<L, R>} binds {@code R}. When the bind parameter does not name
+     * its input, as with a {@code Closure} or a raw function type, the first type
+     * argument is used, then {@code Object}.
      */
     private ClassNode elementType(ClassNode carrier) {
         def gts = carrier?.genericsTypes
@@ -282,7 +283,7 @@ class MonadicChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL 
         ClassNode bare = carrier.redirect() ?: carrier
         MethodNode bind = singleArgMethod(bare, bindName(bare))
         ClassNode input = bind == null ? null : boundInputType(carrier, bind)
-        input ?: gts[-1].type ?: OBJECT_TYPE
+        input ?: gts[0].type ?: OBJECT_TYPE
     }
 
     /** The bind method name, chosen in the same order as participation. */
