@@ -66,6 +66,7 @@ import static org.codehaus.groovy.runtime.ArrayGroovyMethods.last;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.allParametersAndArgumentsMatch;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filterMethodsByVisibility;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignableTo;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.resolveClassNodeGenerics;
 
@@ -177,6 +178,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             } else {
                 typeOrTargetRef.visit(controller.getAcg());
                 controller.getOperandStack().box(); // GROOVY-11353
+                if (!implementsInterfaceOrIsSubclassOf(controller.getOperandStack().getTopOperand(), typeOrTargetRefType)) {
+                    // the receiver may be held as a wider type than the one inferred for it
+                    controller.getMethodVisitor().visitTypeInsn(Opcodes.CHECKCAST, BytecodeHelper.getClassInternalName(typeOrTargetRefType));
+                    controller.getOperandStack().replace(typeOrTargetRefType);
+                }
             }
         }
 
