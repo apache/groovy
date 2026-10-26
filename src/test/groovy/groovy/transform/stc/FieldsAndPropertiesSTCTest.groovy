@@ -2292,6 +2292,27 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12511: a private static field of the superclass stays reachable through
+    // the subclass, as in dynamic Groovy and like a private static method
+    @Test
+    void testPrivateStaticFieldOfSuperclassThroughNestedSubclass() {
+        assertScript '''
+            class Outer {
+                private static String sf = 'static'
+                static class Sub extends Outer {
+                    String read() { Sub.sf + new Sub().sf }
+                    static String write() { Sub.sf = 'w'; Outer.sf }
+                }
+                static class Other {
+                    static String read() { Sub.sf }
+                }
+            }
+            assert new Outer.Sub().read() == 'staticstatic'
+            assert Outer.Other.read() == 'static'
+            assert Outer.Sub.write() == 'w'
+        '''
+    }
+
     /**
      * Uses a private field and a private getter through a variable declared with
      * their class, which flow typing narrows to a subclass. Run by the static

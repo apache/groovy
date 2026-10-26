@@ -2372,7 +2372,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 if (!handledTypes.add(current)) continue;
 
                 FieldNode field = current.getDeclaredField(propertyName);
-                if (field != null && !(pexp instanceof AttributeExpression) && !current.equals(receiverType) && !current.equals(declaredType)
+                if (field != null && !field.isStatic() && !(pexp instanceof AttributeExpression) && !current.equals(receiverType) && !current.equals(declaredType)
                         && isInheritedPrivateMember(field.getModifiers(), field.getDeclaringClass())) {
                     field = null; // JLS 8.2: find the outer class's field, if any, as Outer.this.name
                 }
