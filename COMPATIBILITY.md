@@ -574,6 +574,28 @@ still link and still get the old truncating result. `japicmp` sees no change.
 A `Float` reached through a `Number` receiver now yields a `Double`, as `Float`
 arithmetic does; through a `Float` receiver it still yields a `Float`.
 
+### Groovy 6.0.1 — statically compiled variables declared wider than their initializer's generic type keep the value (GROOVY-12469)
+
+Under `@CompileStatic`, a local variable declared with a type wider than the
+one inferred for its initializer from generics — `CharSequence cs = list.get(0)`
+with `list` a `List<String>` — was converted to the inferred type where it was
+declared. Because generic types are not checked at runtime, the element need
+not be of that type: a `GString` added by dynamic code became a `String`, and
+a `StringBuilder` became its text. The variable now holds the value unchanged,
+as it does in dynamic Groovy and in Java. Calls to methods of the declared type
+are made through that type, as javac does. A `GString` is converted to a
+`String` where a method that only `String` has is called on it, both through
+such a variable and on a generic result used directly —
+`list.get(0).toUpperCase()`, which used to throw `ClassCastException`.
+
+**Who is affected (source).** Code that relied on the conversion at the
+declaration: for a `GString` element, `cs.equals('ab')` and
+`cs instanceof String` are now false (`cs == 'ab'` is still true), and a lazy
+`GString` is no longer fixed at the declaration. Any other non-`String` element,
+such as a `StringBuilder`, now throws `ClassCastException` where a
+`String`-only method is called on it. Variables declared `String`, `def` or
+`var`, and dynamic code, behave as before.
+
 ### Groovy 7 — Groovy Console smart highlighter and the language host
 
 `SmartDocumentFilter.getLatestTokenList()` now returns delimiter spans

@@ -21,6 +21,7 @@ package bugs
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Under static compilation, a local variable declared with an explicit type
@@ -123,5 +124,68 @@ final class Groovy12469 {
             assert len == 3
             assert cs instanceof StringBuilder
         '''
+    }
+
+    @Test
+    void testMembersOfDeclaredTypeDoNotNeedNarrowerType() {
+        assertScript '''
+            import java.util.function.Supplier
+            import groovy.transform.CompileStatic
+
+            @CompileStatic
+            def foo(List<String> list) {
+                CharSequence cs = list.get(0)
+                Object o = list.get(0)
+                Supplier<Integer> length = cs::length
+                [cs.length(), cs.charAt(0), cs.subSequence(0, 1).toString(), cs.chars().count(), cs.empty,
+                 cs.toString(), o.toString(), length.get()]
+            }
+
+            def name = 'ab'
+            List<String> polluted = ["$name"] // GString elements, as built by dynamic code
+            assert foo(polluted) == [2, (char) 'a', 'a', 2L, false, 'ab', 'ab', 2]
+            assert foo(['ab']) == [2, (char) 'a', 'a', 2L, false, 'ab', 'ab', 2]
+        '''
+    }
+
+    @Test
+    void testGStringConvertedWhereOnlyStringWillDo() {
+        assertScript '''
+            import java.util.function.Supplier
+            import groovy.transform.CompileStatic
+
+            @CompileStatic
+            def foo(List<String> list) {
+                CharSequence cs = list.get(0)
+                Comparable c = list.get(0)
+                Supplier<String> upper = cs::toUpperCase
+                [cs.toUpperCase(), cs.bytes.length, c.compareTo('ab'), upper.get(), list.get(0).toUpperCase(),
+                 list.get(0)?.toUpperCase(), list.collect { it.toUpperCase() }[0], cs]
+            }
+
+            def name = 'ab'
+            List<String> polluted = ["$name"] // GString elements, as built by dynamic code
+            def result = foo(polluted)
+            assert result[0..-2] == ['AB', 2, 0, 'AB', 'AB', 'AB', 'AB']
+            assert result[-1] instanceof GString // the variable still holds the GString
+            assert foo(['ab'])[0..-2] == ['AB', 2, 0, 'AB', 'AB', 'AB', 'AB']
+        '''
+    }
+
+    @Test
+    void testMemberOfNarrowerTypeStillCastsAtPointOfUse() {
+        def err = shouldFail ClassCastException, '''
+            import groovy.transform.CompileStatic
+
+            @CompileStatic
+            def foo(List<String> list) {
+                CharSequence cs = list.get(0)
+                cs.toUpperCase()
+            }
+
+            assert foo(['ab']) == 'AB'
+            foo([new StringBuilder('ab')])
+        '''
+        assert err.message.contains('StringBuilder')
     }
 }
