@@ -892,4 +892,50 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             assert new Outer.Inner(new Outer()).test() == ['x:string:xc', 'n:int:2', 'n:int:4', 'xc', 4, 'outer', 4]
         '''
     }
+
+    // GROOVY-12518: extension methods as the accessors
+    @Test
+    void testSuperPropertyIncrementAndCompoundAssignmentThroughExtensionMethods() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Text extends File {
+                Text(File file) { super(file.path) }
+                String getText() { 'own' }
+                void setText(String s) { throw new UnsupportedOperationException(s) }
+                String test() {
+                    super.text = 'a'
+                    super.text += 'b'
+                    super.text++
+                    def c = { -> super.text += 'c' }
+                    c()
+                    Supplier<String> lambda = () -> super.text += 'd'
+                    lambda.get()
+                    new File(path).getText('UTF-8')
+                }
+                class Inner {
+                    String test() {
+                        Text.super.text += 'e'
+                        def c = { -> Text.super.text += 'f' }
+                        c()
+                        new File(Text.this.path).getText('UTF-8')
+                    }
+                }
+            }
+            def file = File.createTempFile('text', '.txt')
+            try {
+                def text = new Text(file)
+                assert text.test() == 'accd'
+                assert new Text.Inner(text).test() == 'accdef'
+                assert text.text == 'own'
+            } finally {
+                file.delete()
+            }
+        '''
+        astTrees.each { name, ast ->
+            assert !ast[1].contains('PropertyOnSuper') : name
+        }
+        assert astTrees['Text'][1].contains('INVOKESTATIC org/codehaus/groovy/runtime/ResourceGroovyMethods.getText (Ljava/io/File;)Ljava/lang/String;')
+        assert astTrees['Text'][1].contains('INVOKESTATIC org/codehaus/groovy/runtime/ResourceGroovyMethods.setText (Ljava/io/File;Ljava/lang/String;)V')
+    }
 }
