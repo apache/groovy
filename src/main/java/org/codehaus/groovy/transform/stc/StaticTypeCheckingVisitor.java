@@ -2754,8 +2754,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * syntax to a field of a foreign nest that Java rules would reject — a
      * direct field access that static compilation cannot honour (no access
      * bridge exists). The deliberate dynamic escape hatches remain: attribute
-     * access (.@), and closure bodies (GROOVY-9195) — including delegate-resolved
-     * access — whose property dispatch stays dynamic-capable under static compilation.
+     * access (.@), except to a private field of a superclass through a receiver
+     * whose type is a subclass (JLS 8.2), which dynamic Groovy rejects too, and
+     * closure bodies (GROOVY-9195) — including delegate-resolved access — whose
+     * property dispatch stays dynamic-capable under static compilation.
      */
     private boolean isFieldAccessible(final FieldNode field, final ClassNode receiver, final PropertyExpression expression, final String delegationData) {
         // GROOVY-12310: when the qualifying type itself is out of reach (e.g. a public
@@ -2765,6 +2767,16 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             return false;
         }
         boolean superField = isSuperExpression(expression.getObjectExpression());
+        // JLS 8.2: a private instance field is not a member of a subclass, and the meta-class
+        // of a subclass offers no private field of its superclass, so "sub.@name" fails at run
+        // time; "this.@name" and "super.@name" use the field directly, as in dynamic Groovy
+        if (expression instanceof AttributeExpression && !field.isStatic() && !superField
+                && !isThisExpression(expression.getObjectExpression())
+                && !field.getDeclaringClass().equals(receiver)
+                && !field.getDeclaringClass().equals(getDeclaredType(expression.getObjectExpression()))
+                && isInheritedPrivateMember(field.getModifiers(), field.getDeclaringClass())) {
+            return false;
+        }
         boolean exactReceiver = (!superField && !field.getDeclaringClass().isAbstract() // GROOVY-7300, GROOVY-11358
                 && (receiver.equals(field.getDeclaringClass()) || field.getDeclaringClass().equals(getDeclaredType(expression.getObjectExpression()))));
         if (exactReceiver && delegationData == null

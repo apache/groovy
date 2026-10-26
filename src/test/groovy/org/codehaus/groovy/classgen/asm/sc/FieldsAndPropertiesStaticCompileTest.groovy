@@ -863,6 +863,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             assert Outer.Other.viaClosure() == 'f'
             assert Outer.Other.viaLambda() == 'f'
             assert Outer.Other.narrowed(sub) == 'fx'
+            assert Outer.Other.cast() == 'f'
             assert Outer.read() == 'fx'
         '''
     }

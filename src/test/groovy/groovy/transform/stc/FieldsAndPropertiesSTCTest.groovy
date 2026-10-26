@@ -2337,6 +2337,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 static String viaClosure() { Box b = new Sub(); def c = { -> b.f }; c() }
                 static String viaLambda() { Box b = new Sub(); Supplier<String> s = () -> b.f; s.get() }
                 static String narrowed(Box b) { if (b instanceof Sub) { return b.f + b.x }; null }
+                static String cast() { Sub s = new Sub(); ((Box) s).@f }
             }
             static String read() { Box b = new Sub(); b.f + b.x }
         }
@@ -2366,6 +2367,61 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             """,
             'No such property: f for class: Outer$Sub'
         }
+    }
+
+    // GROOVY-12523: a private field is not inherited, and the meta-class of a subclass
+    // offers no private field of its superclass, so "sub.@f" is rejected, as javac does
+    @Test
+    void testPrivateFieldOfSuperclassThroughSubclassTypedReceiverViaAttribute() {
+        for (code in [
+            'class Outer { private String f; static class Sub extends Outer { def t(Sub sub) { sub.@f } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t(Sub sub) { sub.@f = "w" } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t(Sub sub) { sub.@f += "!" } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t(Sub sub) { def c = { -> sub.@f }; c() } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t(Sub sub) { java.util.function.Supplier<String> s = () -> sub.@f; s.get() } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t() { new Sub().@f } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t() { def d = new Sub(); d.@f } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t(Object o) { if (o instanceof Sub) o.@f } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t(Sub sub) { sub.with { it.@f } } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t(Sub2 s) { s.@f } }; static class Sub2 extends Sub { } }',
+            'class Outer { private String f; static class Sub extends Outer { }; static class Other { static t(Sub sub) { sub.@f } } }',
+            'class Outer { private String f; static class Sub extends Outer { }; static class Other { static t(Sub sub) { sub.@f = "w" } } }',
+            'class Outer { private String f; class Sub extends Outer { def t(Sub sub) { sub.@f } } }',
+        ]) {
+            shouldFailWithMessages code, 'Cannot access field: f of class: Outer'
+        }
+    }
+
+    // GROOVY-12523: "this.@f" and "super.@f" use the field directly, as dynamic Groovy
+    // does, and so does the declaring class itself
+    @Test
+    void testPrivateFieldOfSuperclassViaThisOrSuperAttribute() {
+        assertScript '''
+            class Outer {
+                private String f = 'outer'
+                String read(Sub sub) { sub.@f }
+                String write(Sub sub) { sub.@f = 'w'; sub.@f }
+                static class Sub extends Outer {
+                    String own() { this.@f = 'own'; this.@f }
+                    String viaSuper() { super.@f }
+                }
+                static class Sub2 extends Sub {
+                    String viaSuper2() { super.@f = 's2'; super.@f }
+                }
+            }
+            enum E {
+                A { String d() { this.@g } }
+                private String g = 'g'
+                abstract String d()
+            }
+            def sub = new Outer.Sub()
+            assert new Outer().read(sub) == 'outer'
+            assert new Outer().write(sub) == 'w'
+            assert sub.own() == 'own'
+            assert sub.viaSuper() == 'own'
+            assert new Outer.Sub2().viaSuper2() == 's2'
+            assert E.A.d() == 'g'
+        '''
     }
 
     // GROOVY-12314: package-private and protected fields that Java access rules
