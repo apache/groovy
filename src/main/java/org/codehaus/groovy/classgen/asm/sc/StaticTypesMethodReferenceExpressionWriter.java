@@ -178,10 +178,21 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             } else {
                 typeOrTargetRef.visit(controller.getAcg());
                 controller.getOperandStack().box(); // GROOVY-11353
-                if (!implementsInterfaceOrIsSubclassOf(controller.getOperandStack().getTopOperand(), typeOrTargetRefType)) {
+                ClassNode heldType = controller.getOperandStack().getTopOperand();
+                if (!implementsInterfaceOrIsSubclassOf(heldType, typeOrTargetRefType)) {
                     // the receiver may be held as a wider type than the one inferred for it
-                    controller.getMethodVisitor().visitTypeInsn(Opcodes.CHECKCAST, BytecodeHelper.getClassInternalName(typeOrTargetRefType));
-                    controller.getOperandStack().replace(typeOrTargetRefType);
+                    MethodNode heldTypeMethod = StaticInvocationWriter.findSameMethodOf(heldType, methodRefMethod);
+                    if (heldTypeMethod != null) { // bind to the held type, as javac does
+                        methodRefMethod = heldTypeMethod;
+                        typeOrTargetRefType = heldType;
+                    } else {
+                        if (ClassHelper.isStringType(typeOrTargetRefType) && StaticInvocationWriter.mayHoldGString(typeOrTargetRef, heldType)) {
+                            StaticInvocationWriter.castToStringConvertingGString(controller.getMethodVisitor());
+                        } else {
+                            controller.getMethodVisitor().visitTypeInsn(Opcodes.CHECKCAST, BytecodeHelper.getClassInternalName(typeOrTargetRefType));
+                        }
+                        controller.getOperandStack().replace(typeOrTargetRefType);
+                    }
                 }
             }
         }

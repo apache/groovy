@@ -411,6 +411,33 @@ class SyntaxTest extends CompilableTestSupport {
         '''
     }
 
+    void testGStringInListOfStrings() {
+        assertScript '''
+        // tag::gstring_in_string_list[]
+        import groovy.transform.CompileStatic
+
+        @CompileStatic
+        CharSequence check(List<String> languages) {
+            String name = languages[0]                      // <2>
+            assert name instanceof String
+            assert languages[0].toUpperCase() == 'GROOVY'   // <3>
+
+            CharSequence text = languages[0]                // <4>
+            assert text.length() == 6
+            assert text.toUpperCase() == 'GROOVY'
+            assert text == 'Groovy'                         // <5>
+            assert !text.equals('Groovy')
+            text
+        }
+
+        def lang = 'Groovy'
+        List<String> languages = ["$lang"]                  // <1>
+        assert languages[0] instanceof GString
+        assert check(languages) instanceof GString
+        // end::gstring_in_string_list[]
+        '''
+    }
+
     void testStringGStringHashCode() {
         // tag::gstring_hashcode_1[]
         assert "one: ${1}".hashCode() != "one: 1".hashCode()

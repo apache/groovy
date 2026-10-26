@@ -518,6 +518,23 @@ include::../test/SyntaxTest.groovy[tags=java_gstring_interop_1,indent=0]
 <4> The signature of the `takeString()` method explicitly says its sole parameter is a String
 <5> We also verify that the parameter is indeed a String and not a GString.
 
+==== GStrings in collections of Strings
+
+Generic types are not checked at runtime, so when dynamic code adds a GString to a collection
+declared to hold Strings, such as a `List<String>`, the element remains a GString.
+Groovy converts it where a String is required when the element is read back,
+with the same results in dynamic and statically compiled code:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=gstring_in_string_list,indent=0]
+----
+<1> The list is filled by dynamic code, so its element is a GString
+<2> Assigning the element to a `String` variable converts it, as passing it to a `String` parameter would
+<3> Calling a method that only `String` has also works on the GString
+<4> A variable of a wider type, such as `CharSequence` or `Object`, keeps the GString, and that type's methods work as usual
+<5> `==` compares the text, whereas `equals` behaves as in Java, so a GString is never equal to a String
+
 ==== GString and String hashCodes
 
 Although interpolated strings can be used in lieu of plain Java strings,
