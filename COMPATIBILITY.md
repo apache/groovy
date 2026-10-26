@@ -548,6 +548,32 @@ so `japicmp` sees nothing — this is a behavioural change only.
 Groovy 6 is the major version for the change. On 3.0.x/4.0.x/5.0.x/5.1.x the
 coercion still initializes the class.
 
+### Groovy 6.0.1 — `abs()` on a `Number` receiver keeps the number's precision (GROOVY-12471)
+
+`DefaultGroovyMethods.abs(Number)` used to return `int`, truncating any
+`Long`, `BigInteger`, `BigDecimal` or floating-point value whose static type
+was `Number`. Dynamic dispatch rarely hit it, because the `Long`, `Float` and
+`Double` overloads and the `BigInteger`/`BigDecimal` instance methods were
+selected first, but `@CompileStatic` code with a `Number`-typed receiver —
+`(item - value).abs()` — always did. The method now returns `Number`, computed
+with the same type rules as Groovy's arithmetic operators. New `int abs(Integer)`,
+`int abs(Short)` and `int abs(Byte)` overloads keep the integral receivers on
+`int`.
+
+**Who is affected (source).** Java code that assigns the result directly to a
+primitive — `int x = DefaultGroovyMethods.abs(n)` — no longer compiles, and
+`@CompileStatic` code doing the same through a `Number`-typed receiver —
+`int x = n.abs()` — is now a type-checking error. Both were truncating; use
+`.intValue()` or a cast where the narrowing is intended. Receivers typed
+`Integer`, `Short`, `Byte`, `Long`, `Float` or `Double`, and all dynamic code,
+compile and behave as before.
+
+**Who is not affected (binary).** The old `int abs(Number)` descriptor is kept
+as a synthetic bridge method, so classes compiled against earlier releases
+still link and still get the old truncating result. `japicmp` sees no change.
+A `Float` reached through a `Number` receiver now yields a `Double`, as `Float`
+arithmetic does; through a `Float` receiver it still yields a `Float`.
+
 ### Groovy 7 — Groovy Console smart highlighter and the language host
 
 `SmartDocumentFilter.getLatestTokenList()` now returns delimiter spans
