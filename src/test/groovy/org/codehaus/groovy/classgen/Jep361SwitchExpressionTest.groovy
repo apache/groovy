@@ -590,6 +590,116 @@ final class Jep361SwitchExpressionTest {
         '''
     }
 
+    //--------------------------------------------------------------------------
+    // Control transfer out of an arrow arm in statement position (JEP 361:
+    // "the arrow only decides fall-through"; return/break/continue are legal
+    // in a switch statement whatever its label form)
+
+    @Test
+    void returnFromArrowArmOfSwitchStatement() {
+        assertBoth '''
+            def m(int n) {
+                switch (n) {
+                    case 1 -> return 'one'
+                    case 2 -> { return 'two' }
+                }
+                return 'many'
+            }
+            assert m(1) == 'one'
+            assert m(2) == 'two'
+            assert m(3) == 'many'
+        '''
+    }
+
+    @Test
+    void returnFromArrowArmOfTrailingSwitchStatement() {
+        // the switch is the last statement, so its other arms still supply the implicit return
+        assertBoth '''
+            def m(int n) {
+                switch (n) {
+                    case 1  -> return 'one'
+                    default -> 'other'
+                }
+            }
+            assert m(1) == 'one'
+            assert m(2) == 'other'
+        '''
+    }
+
+    @Test
+    void breakFromArrowArmLeavesTheSwitchStatement() {
+        assertBoth '''
+            def out = []
+            for (i in 1..3) {
+                switch (i) {
+                    case 2  -> { if (i > 0) break; out << 'unreached' }
+                    default -> out << i
+                }
+                out << 'after'
+            }
+            assert out == [1, 'after', 'after', 3, 'after']
+        '''
+    }
+
+    @Test
+    void continueFromArrowArmContinuesTheEnclosingLoop() {
+        assertBoth '''
+            def out = []
+            for (i in 1..3) {
+                switch (i) {
+                    case 2  -> continue
+                    default -> out << i
+                }
+                out << 'after'
+            }
+            assert out == [1, 'after', 3, 'after']
+        '''
+    }
+
+    @Test
+    void labeledBreakFromArrowArmLeavesTheEnclosingLoop() {
+        assertBoth '''
+            def out = []
+            outer:
+            for (i in 1..3) {
+                switch (i) {
+                    case 2  -> break outer
+                    default -> out << i
+                }
+            }
+            assert out == [1]
+        '''
+    }
+
+    @Test
+    void returnFromSwitchExpressionNestedInStatementArmIsStillError() {
+        shouldFailBoth '''
+            def m(int n) {
+                switch (n) {
+                    case 1 -> {
+                        def r = switch (n) { case 1 -> return 'x'; default -> 'y' }
+                    }
+                }
+            }
+        ''', 'does not support `return`'
+    }
+
+    @Test
+    void returnFromStatementSwitchInsideExpressionArmIsStillError() {
+        // the inner switch is a statement, but returning would still leave the outer expression
+        shouldFailBoth '''
+            def m(int a, int b) {
+                def r = switch (a) {
+                    case 1 -> {
+                        switch (b) { case 2 -> return 5 }
+                        yield 1
+                    }
+                    default -> 0
+                }
+            }
+        ''', 'does not support `return`'
+    }
+
     @Test
     void mixingArrowAndColonLabelsIsError() {
         shouldFailBoth '''

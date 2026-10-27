@@ -42,6 +42,7 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.Identifier;
 import static org.apache.groovy.parser.antlr4.GroovyParser.LBRACK;
 import static org.apache.groovy.parser.antlr4.GroovyParser.LPAREN;
 import static org.apache.groovy.parser.antlr4.GroovyParser.LT;
+import static org.apache.groovy.parser.antlr4.GroovyParser.NL;
 import static org.apache.groovy.parser.antlr4.GroovyParser.PostfixExprAltContext;
 import static org.apache.groovy.parser.antlr4.GroovyParser.RPAREN;
 import static org.apache.groovy.parser.antlr4.GroovyParser.StringLiteral;
@@ -159,6 +160,26 @@ public class SemanticPredicates {
     public static boolean isIdentifierAssign(TokenStream ts) {
         int t1 = ts.LT(1).getType();
         return t1 >= 0 && ELEMENT_VALUE_PAIR_NAME_TYPES.get(t1) && ASSIGN == ts.LT(2).getType();
+    }
+
+    /**
+     * Whether the next tokens are a possibly qualified name whose last part is
+     * capitalized, followed by empty parentheses, such as {@code None()} or
+     * {@code Opt.None()}: the shape of a zero-component record pattern (GEP-19).
+     */
+    public static boolean isCapitalizedEmptyCall(TokenStream ts) {
+        int i = 1;
+        int last;
+        while (true) {
+            last = ts.LT(i).getType();
+            if (last != Identifier && last != CapitalizedIdentifier) return false;
+            if (ts.LT(i + 1).getType() != DOT) break;
+            i += 2;
+        }
+        if (last != CapitalizedIdentifier || ts.LT(i + 1).getType() != LPAREN) return false;
+        i += 2;
+        while (ts.LT(i).getType() == NL) i += 1;
+        return ts.LT(i).getType() == RPAREN;
     }
 
     /**
