@@ -110,7 +110,8 @@ public interface Pool extends Executor, AutoCloseable {
      * <p>
      * If virtual threads are available, returns a virtual thread pool
      * (the ideal choice for I/O) and parallel collection methods run on
-     * it. Otherwise returns {@link #fixed(int)} sized to
+     * it. Otherwise, including when the virtual-thread factory exists
+     * but cannot create an executor, returns {@link #fixed(int)} sized to
      * {@link ConcurrentConfig#getDefaultParallelism()}, which has that
      * pool's parallelism cap.
      *

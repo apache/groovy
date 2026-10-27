@@ -52,6 +52,39 @@ final class PoolTest {
     }
 
     @Test
+    void testIoPoolFollowsVirtualThreadSupport() {
+        assertScript '''
+            import groovy.concurrent.ConcurrentConfig
+            import groovy.concurrent.Pool
+
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def virtual = Pool.virtual()
+            def io = Pool.io()
+            try {
+                def virtualThreads = virtual.usesVirtualThreads()
+                if (Runtime.version().feature() >= 21) {
+                    assert virtualThreads
+                }
+                if (virtualThreads) {
+                    assert io.usesVirtualThreads()
+                    assert io.poolSize == Integer.MAX_VALUE
+                    shouldFail(UnsupportedOperationException) {
+                        io.asForkJoinPool()
+                    }
+                } else {
+                    assert !io.usesVirtualThreads()
+                    assert io.poolSize == ConcurrentConfig.defaultParallelism
+                    assert io.asForkJoinPool().parallelism == io.poolSize
+                }
+            } finally {
+                virtual.close()
+                io.close()
+            }
+        '''
+    }
+
+    @Test
     void testPoolExecutesWork() {
         assertScript '''
             import groovy.concurrent.Pool
