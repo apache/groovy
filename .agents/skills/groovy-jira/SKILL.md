@@ -161,8 +161,12 @@ equivalent if you need to adapt it):
   unresolved issues updated in the last `days` (default 30), each
   linked to the GitHub PRs whose title names its key, grouped as
   merged-PR-but-still-open / open PR / no open PR, plus open PRs in
-  the window naming none of the listed issues. Needs an
-  authenticated `gh` in addition to `curl` and `jq`.
+  the window naming none of the listed issues. The merged group also
+  shows each issue's affects versions and which of `GROOVY_4_0_X`,
+  `GROOVY_5_1_X`, `GROOVY_6_0_X` and `master` mention its key (read
+  from the local remote-tracking refs, so `git fetch` first). Needs an
+  authenticated `gh` and a clone of the repo in addition to `curl`
+  and `jq`.
 - [`pr-shortlist.sh`](pr-shortlist.sh) — `pr-shortlist.sh
   [max-size]` → open GitHub PRs grouped by how close they are to
   merging: approved / approved-but-pushed-since / small and waiting
