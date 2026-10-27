@@ -163,6 +163,13 @@ equivalent if you need to adapt it):
   merged-PR-but-still-open / open PR / no open PR, plus open PRs in
   the window naming none of the listed issues. Needs an
   authenticated `gh` in addition to `curl` and `jq`.
+- [`pr-shortlist.sh`](pr-shortlist.sh) — `pr-shortlist.sh
+  [max-size]` → open GitHub PRs grouped by how close they are to
+  merging: approved / approved-but-pushed-since / small and waiting
+  for a reviewer (yours vs. others') / open discussion / CI failing
+  or pending / larger than `max-size` lines (default 600); drafts and
+  conflicting PRs are only counted. Use it to pick which PRs to
+  progress next. Needs an authenticated `gh` and `jq` (no JIRA call).
 
 All are read-only (no mutation, and anonymous against JIRA) — they do
 not change the read-only / hand-back posture this skill enforces.
