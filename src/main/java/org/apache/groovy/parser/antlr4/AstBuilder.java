@@ -39,6 +39,16 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.groovy.ast.tools.TypeUseUtils;
+import org.apache.groovy.ast.pattern.MatchPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.BindingPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.ConstantPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.ListPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.MapPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.RecordPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.RestPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.TypePattern;
+import org.apache.groovy.ast.pattern.MatchPattern.WildcardPattern;
+import org.apache.groovy.ast.pattern.PatternLowering;
 import org.apache.groovy.parser.antlr4.internal.DescriptiveErrorStrategy;
 import org.apache.groovy.parser.antlr4.util.StringUtils;
 import org.apache.groovy.util.Maps;
@@ -92,6 +102,7 @@ import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.NamedArgumentListExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -174,8 +185,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.declX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mayCompleteNormally;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.yieldS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.yieldS;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveType;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
@@ -963,7 +974,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public BreakStatement visitBreakStatement(final BreakStatementContext ctx) {
-        if (switchExpressionRuleContextStack.peek() instanceof SwitchExpressionContext) {
+        if (isEnclosingSwitchExpression()) {
             throw createParsingFailedException("switch expression does not support `break`", ctx);
         }
 
@@ -1014,7 +1025,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public ContinueStatement visitContinueStatement(final ContinueStatementContext ctx) {
-        if (switchExpressionRuleContextStack.peek() instanceof SwitchExpressionContext) {
+        if (isEnclosingSwitchExpression()) {
             throw createParsingFailedException("switch expression does not support `continue`", ctx);
         }
 
@@ -1034,6 +1045,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
      * Builds a {@link SwitchExpression} as specified by JEP 361.
      * Arrow arms that are a single expression become {@link YieldStatement}s;
      * colon arms use explicit {@code yield}.
+     * <p>
+     * A pattern label (GEP-19) is a {@link PatternExpression}; its matching
+     * code is derived later by {@link PatternLowering}.
      */
     @Override
     public SwitchExpression visitSwitchExpression(final SwitchExpressionContext ctx) {
@@ -1076,12 +1090,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 }
             }
 
-            return configureAST(
+            SwitchExpression switchExpression = configureAST(
                     new SwitchExpression(
                             this.visitExpressionInPar(ctx.expressionInPar()),
                             caseStatements,
                             defaultStatement != null ? defaultStatement : EmptyStatement.INSTANCE),
                     ctx);
+            return switchExpression;
         } finally {
             switchExpressionRuleContextStack.pop();
         }
@@ -1151,9 +1166,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             case CASE -> {
                 List<Expression> values = label.values();
                 for (int i = 0, n = values.size(); i < n; i++) {
-                    CaseStatement caseStatement = new CaseStatement(
-                            values.get(i),
-                            lastLabel && i == n - 1 ? arm : EmptyStatement.INSTANCE);
+                    Expression value = values.get(i);
+                    Statement code = lastLabel && i == n - 1 ? arm : EmptyStatement.INSTANCE;
+                    CaseStatement caseStatement = new CaseStatement(value, code);
                     caseStatement.setArrow(label.isArrow());
                     cases.add(configureAST(caseStatement, firstKeyword));
                 }
@@ -1193,6 +1208,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private boolean isEnclosingSwitchUsedAsStatement() {
         ParserRuleContext ctx = switchExpressionRuleContextStack.peek();
         return ctx instanceof SwitchExpressionContext seCtx && isSwitchUsedAsStatement(seCtx);
+    }
+
+    /**
+     * Whether the innermost breakable construct is a switch that produces a
+     * value, which {@code break} and {@code continue} cannot leave (JEP 361).
+     * In statement position both target the switch or an enclosing loop, as
+     * in Java.
+     */
+    private boolean isEnclosingSwitchExpression() {
+        ParserRuleContext ctx = switchExpressionRuleContextStack.peek();
+        return ctx instanceof SwitchExpressionContext seCtx && !isSwitchUsedAsStatement(seCtx);
     }
 
     private static boolean switchArmsIncomplete(final List<Statement> statementList) {
@@ -1245,6 +1271,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             CaseStatement copy = new CaseStatement(caseStatement.getExpression(), code);
             copy.setArrow(caseStatement.isArrow());
             copy.setSourcePosition(caseStatement);
+            copy.copyStatementLabels(caseStatement);
             cases.add(copy);
         }
         Statement dflt = armCodeAsStatement(expression.getDefaultStatement());
@@ -1296,16 +1323,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     /**
-     * True when a switch-expression frame is more recent than any closure or
-     * lambda frame. {@code return} in that region would leave the enclosing
-     * method rather than complete the expression (JEP 361).
+     * True when a switch frame that produces a value is more recent than any
+     * closure or lambda frame. {@code return} in that region would leave the
+     * enclosing method rather than complete the expression (JEP 361). A switch
+     * in statement position produces no value, so {@code return} from one of
+     * its arms is an ordinary return, as in Java, and the scan continues
+     * outward past it.
      */
     private boolean isInsideSwitchExpression() {
         for (var ctx : switchExpressionRuleContextStack) {
-            if (ctx instanceof SwitchExpressionContext) {
-                return true;
-            }
-            if (ctx instanceof ClosureContext || ctx instanceof StandardLambdaExpressionContext) {
+            if (ctx instanceof SwitchExpressionContext seCtx) {
+                if (!isSwitchUsedAsStatement(seCtx)) {
+                    return true;
+                }
+            } else if (ctx instanceof ClosureContext || ctx instanceof StandardLambdaExpressionContext) {
                 return false;
             }
         }
@@ -1330,12 +1361,265 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     private SwitchExpressionLabel switchExpressionLabel(final SwitchExpressionLabelContext ctx) {
         if (asBoolean(ctx.CASE())) {
+            if (asBoolean(ctx.casePattern())) { // GEP-19
+                if (isLegacyCallLabel(ctx)) {
+                    return new SwitchExpressionLabel(ctx.CASE().getSymbol(), Collections.singletonList(this.rebuildCallExpression(ctx.casePattern().recordPattern())), ctx.ac.getType());
+                }
+                if (!isPatternLabel(ctx.casePattern())) {
+                    // a plain list or map literal that parsed via the broader listPattern or
+                    // mapPattern rule, e.g. `case [1, 2, 3]:` -- it keeps its legacy isCase semantics
+                    if (asBoolean(ctx.casePattern().caseGuard())) {
+                        throw createParsingFailedException("`when` guards are only supported on pattern labels; a list or map pattern needs a binding form", ctx.casePattern().caseGuard());
+                    }
+                    Expression legacyLabel = asBoolean(ctx.casePattern().listPattern())
+                            ? this.rebuildListExpression(ctx.casePattern().listPattern())
+                            : this.rebuildMapExpression(ctx.casePattern().mapPattern());
+                    return new SwitchExpressionLabel(ctx.CASE().getSymbol(), Collections.singletonList(legacyLabel), ctx.ac.getType());
+                }
+                if (ARROW != ctx.ac.getType()) {
+                    throw createParsingFailedException("`case` with a pattern label supports only the arrow form (`->`)", ctx.casePattern());
+                }
+                return new SwitchExpressionLabel(ctx.CASE().getSymbol(), Collections.singletonList(this.visitCasePattern(ctx.casePattern())), ctx.ac.getType());
+            }
             return new SwitchExpressionLabel(ctx.CASE().getSymbol(), this.visitExpressionList(ctx.expressionList()), ctx.ac.getType());
         }
         if (asBoolean(ctx.DEFAULT())) {
             return new SwitchExpressionLabel(ctx.DEFAULT().getSymbol(), Collections.singletonList(EmptyExpression.INSTANCE), ctx.ac.getType());
         }
         throw createParsingFailedException("Unsupported switch expression label: " + ctx.getText(), ctx);
+    }
+
+    /**
+     * Builds the label of a pattern arm (GEP-19): a {@link PatternExpression}
+     * holding the pattern and its {@code when} guard.
+     */
+    @Override
+    public Expression visitCasePattern(final CasePatternContext ctx) {
+        Expression guard = asBoolean(ctx.caseGuard()) ? (Expression) this.visit(ctx.caseGuard().expression()) : null;
+        MatchPattern pattern;
+        if (asBoolean(ctx.typePattern())) {
+            TypePatternContext typePatternCtx = ctx.typePattern();
+            pattern = new TypePattern(this.visitType(typePatternCtx.type()), bindingName(this.visitIdentifier(typePatternCtx.identifier())));
+        } else if (asBoolean(ctx.recordPattern())) {
+            pattern = this.buildRecordPattern(ctx.recordPattern());
+        } else if (asBoolean(ctx.listPattern())) {
+            pattern = this.buildListPattern(ctx.listPattern());
+        } else {
+            pattern = this.buildMapPattern(ctx.mapPattern());
+        }
+        return configureAST(new PatternExpression(pattern, guard), ctx);
+    }
+
+    /**
+     * Whether a label of the shape {@code case Foo():} keeps calling {@code Foo()}: a
+     * zero-component record pattern needs the arrow form, as every pattern label does,
+     * so with a colon it is the legacy method call label it was before patterns.
+     */
+    private static boolean isLegacyCallLabel(final SwitchExpressionLabelContext ctx) {
+        CasePatternContext casePattern = ctx.casePattern();
+        return COLON == ctx.ac.getType() && !asBoolean(casePattern.caseGuard())
+                && asBoolean(casePattern.recordPattern()) && !asBoolean(casePattern.recordPattern().recordPatternComponents());
+    }
+
+    private static boolean isPatternLabel(final CasePatternContext ctx) {
+        if (!asBoolean(ctx)) return false;
+        // a `[...]` label parses via the broader listPattern/mapPattern rules; only a
+        // pattern-shaped literal is treated as a pattern (see isPatternShapedList)
+        if (asBoolean(ctx.listPattern())) return isPatternShapedList(ctx.listPattern());
+        if (asBoolean(ctx.mapPattern())) return isPatternShapedMap(ctx.mapPattern());
+        return true;
+    }
+
+    /**
+     * Whether a {@code [...]} literal is a list pattern (GEP-19) rather than a legacy
+     * {@code isCase} label: it is a pattern if and only if it is empty, or some element
+     * is a binding form (a rest binding, a {@code var}/{@code def} binding or a type
+     * pattern) or a nested pattern (a record pattern or a pattern-shaped list or map
+     * literal).
+     */
+    private static boolean isPatternShapedList(final ListPatternContext ctx) {
+        if (!asBoolean(ctx.listPatternElements())) return true; // `[]` is the empty list pattern
+        for (ListPatternElementContext elementCtx : ctx.listPatternElements().listPatternElement()) {
+            if (isPatternShapedElement(elementCtx)) return true;
+        }
+        return false;
+    }
+
+    private static boolean isPatternShapedElement(final ListPatternElementContext ctx) {
+        return asBoolean(ctx.listPatternRest())
+                || asBoolean(ctx.recordPattern())
+                || asBoolean(ctx.typePattern())
+                || null != ctx.DEF() || null != ctx.VAR()
+                || (asBoolean(ctx.listPattern()) && isPatternShapedList(ctx.listPattern()))
+                || (asBoolean(ctx.mapPattern()) && isPatternShapedMap(ctx.mapPattern()));
+    }
+
+    /**
+     * Whether a {@code [k: v, ...]} literal is a map pattern (GEP-19) rather than a
+     * legacy {@code isCase} label: it is a pattern if and only if it is empty
+     * ({@code [:]}), or it has a rest binding, or some entry value is a binding form
+     * or a nested pattern.
+     */
+    private static boolean isPatternShapedMap(final MapPatternContext ctx) {
+        if (ctx.mapPatternEntry().isEmpty()) return true; // `[:]` is the empty map pattern
+        for (MapPatternEntryContext entryCtx : ctx.mapPatternEntry()) {
+            if (asBoolean(entryCtx.ELLIPSIS()) || isPatternShapedElement(entryCtx.listPatternElement())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Rebuilds the legacy call {@code a.b.Foo()} from a label that parsed as a zero-component record pattern. */
+    private Expression rebuildCallExpression(final RecordPatternContext ctx) {
+        // the record pattern rule admits only a dotted name before the empty parentheses here
+        String[] names = ctx.type().getText().split("\\.");
+        Expression call;
+        if (names.length == 1) {
+            call = this.createMethodCallExpression(configureAST(new VariableExpression(names[0]), ctx.type()), new ArgumentListExpression());
+        } else {
+            Expression receiver = new VariableExpression(names[0]);
+            for (int i = 1; i < names.length - 1; i += 1) {
+                receiver = new PropertyExpression(receiver, names[i]);
+            }
+            MethodCallExpression mce = new MethodCallExpression(receiver, names[names.length - 1], new ArgumentListExpression());
+            mce.setImplicitThis(false);
+            call = mce;
+        }
+        return configureAST(call, ctx);
+    }
+
+    /** Rebuilds a legacy list expression from a {@code [...]} literal that parsed via the listPattern rule but is not pattern-shaped. */
+    private Expression rebuildListExpression(final ListPatternContext ctx) {
+        List<Expression> expressions = new ArrayList<>();
+        if (asBoolean(ctx.listPatternElements())) {
+            for (ListPatternElementContext elementCtx : ctx.listPatternElements().listPatternElement()) {
+                expressions.add(this.rebuildElementExpression(elementCtx));
+            }
+        }
+        return configureAST(new ListExpression(expressions), ctx);
+    }
+
+    /** Rebuilds a legacy map expression from a {@code [k: v, ...]} literal that parsed via the mapPattern rule but is not pattern-shaped. */
+    private Expression rebuildMapExpression(final MapPatternContext ctx) {
+        List<MapEntryExpression> entries = new ArrayList<>();
+        for (MapPatternEntryContext entryCtx : ctx.mapPatternEntry()) {
+            Expression keyExpr = this.visitMapEntryLabel(entryCtx.mapEntryLabel());
+            Expression valueExpr = this.rebuildElementExpression(entryCtx.listPatternElement());
+            entries.add(configureAST(new MapEntryExpression(keyExpr, valueExpr), entryCtx));
+        }
+        return configureAST(new MapExpression(entries), ctx);
+    }
+
+    private Expression rebuildElementExpression(final ListPatternElementContext ctx) {
+        if (asBoolean(ctx.listPattern())) return this.rebuildListExpression(ctx.listPattern());
+        if (asBoolean(ctx.mapPattern())) return this.rebuildMapExpression(ctx.mapPattern());
+        return (Expression) this.visit(ctx.expression());
+    }
+
+    /** {@code _} binds nothing. */
+    private static String bindingName(final String name) {
+        return "_".equals(name) ? null : name;
+    }
+
+    private RecordPattern buildRecordPattern(final RecordPatternContext ctx) {
+        ClassNode type = this.visitType(ctx.type());
+        if (ClassHelper.isPrimitiveType(type)) {
+            throw createParsingFailedException("a record pattern cannot deconstruct a primitive type", ctx);
+        }
+        List<MatchPattern> components = new ArrayList<>();
+        if (asBoolean(ctx.recordPatternComponents())) { // otherwise a zero-component record pattern
+            for (RecordPatternComponentContext componentCtx : ctx.recordPatternComponents().recordPatternComponent()) {
+                components.add(this.buildRecordPatternComponent(componentCtx));
+            }
+        }
+        return new RecordPattern(type, components);
+    }
+
+    private MatchPattern buildRecordPatternComponent(final RecordPatternComponentContext ctx) {
+        if (asBoolean(ctx.recordPattern())) {
+            return this.buildRecordPattern(ctx.recordPattern());
+        }
+        if (asBoolean(ctx.typePattern())) {
+            return new TypePattern(this.visitType(ctx.typePattern().type()), bindingName(this.visitIdentifier(ctx.typePattern().identifier())));
+        }
+        String name = this.visitIdentifier(ctx.identifier());
+        if (null == ctx.DEF() && null == ctx.VAR() && !"_".equals(name)) {
+            throw createParsingFailedException("record pattern component must be a type pattern, a var/def binding, a nested record pattern or `_`", ctx);
+        }
+        return "_".equals(name) ? new WildcardPattern() : new BindingPattern(name);
+    }
+
+    private ListPattern buildListPattern(final ListPatternContext ctx) {
+        List<MatchPattern> elements = new ArrayList<>();
+        if (asBoolean(ctx.listPatternElements())) {
+            boolean restSeen = false;
+            for (ListPatternElementContext elementCtx : ctx.listPatternElements().listPatternElement()) {
+                MatchPattern element = this.buildListPatternElement(elementCtx);
+                if (element instanceof RestPattern) {
+                    if (restSeen) {
+                        throw createParsingFailedException("a list pattern supports at most one rest binding", elementCtx);
+                    }
+                    restSeen = true;
+                }
+                elements.add(element);
+            }
+        }
+        return new ListPattern(elements);
+    }
+
+    private MatchPattern buildListPatternElement(final ListPatternElementContext ctx) {
+        if (asBoolean(ctx.listPatternRest())) {
+            ListPatternRestContext restCtx = ctx.listPatternRest();
+            return new RestPattern(
+                    asBoolean(restCtx.type()) ? this.visitType(restCtx.type()) : null,
+                    asBoolean(restCtx.identifier()) ? bindingName(this.visitIdentifier(restCtx.identifier())) : null);
+        }
+        if (asBoolean(ctx.recordPattern())) {
+            return this.buildRecordPattern(ctx.recordPattern());
+        }
+        if (asBoolean(ctx.listPattern())) { // a plain list literal element is matched by equality
+            return isPatternShapedList(ctx.listPattern())
+                    ? this.buildListPattern(ctx.listPattern())
+                    : new ConstantPattern(this.rebuildListExpression(ctx.listPattern()));
+        }
+        if (asBoolean(ctx.mapPattern())) { // a plain map literal element is matched by equality
+            return isPatternShapedMap(ctx.mapPattern())
+                    ? this.buildMapPattern(ctx.mapPattern())
+                    : new ConstantPattern(this.rebuildMapExpression(ctx.mapPattern()));
+        }
+        if (asBoolean(ctx.typePattern())) {
+            return new TypePattern(this.visitType(ctx.typePattern().type()), bindingName(this.visitIdentifier(ctx.typePattern().identifier())));
+        }
+        if (null != ctx.DEF() || null != ctx.VAR()) {
+            String name = bindingName(this.visitIdentifier(ctx.identifier()));
+            return name == null ? new WildcardPattern() : new BindingPattern(name);
+        }
+        return new ConstantPattern((Expression) this.visit(ctx.expression())); // matched by equality
+    }
+
+    private MapPattern buildMapPattern(final MapPatternContext ctx) {
+        List<MapPattern.Entry> entries = new ArrayList<>();
+        RestPattern rest = null;
+        for (MapPatternEntryContext entryCtx : ctx.mapPatternEntry()) {
+            if (asBoolean(entryCtx.ELLIPSIS())) {
+                if (rest != null) {
+                    throw createParsingFailedException("a map pattern supports at most one rest binding", entryCtx);
+                }
+                rest = new RestPattern(null, asBoolean(entryCtx.identifier()) ? bindingName(this.visitIdentifier(entryCtx.identifier())) : null);
+            } else {
+                Expression keyExpr = this.visitMapEntryLabel(entryCtx.mapEntryLabel());
+                if (!(keyExpr instanceof ConstantExpression)) {
+                    throw createParsingFailedException("map pattern keys must be constants", entryCtx.mapEntryLabel());
+                }
+                MatchPattern value = this.buildListPatternElement(entryCtx.listPatternElement());
+                if (value instanceof RestPattern) {
+                    throw createParsingFailedException("a rest binding is not supported as a map pattern value", entryCtx.listPatternElement());
+                }
+                entries.add(new MapPattern.Entry(((ConstantExpression) keyExpr).getValue(), value));
+            }
+        }
+        return new MapPattern(entries, rest);
     }
 
     // } statement -------------------------------------------------------------
@@ -3793,6 +4077,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
           case INSTANCEOF:
             ctx.matchingType().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
+            if (asBoolean(ctx.matchingType().recordPattern())) { // GEP-19
+                return configureAST(
+                        PatternExpression.instanceOf(
+                                (Expression) this.visit(ctx.left),
+                                this.buildRecordPattern(ctx.matchingType().recordPattern())),
+                        ctx);
+            }
             return configureAST(
                     new BinaryExpression(
                             (Expression) this.visit(ctx.left),
@@ -3806,6 +4097,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             NotInstanceofTypeContext nit = ctx.notInstanceofType();
             if (nit.matchingType() != null) {
                 nit.matchingType().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
+                if (asBoolean(nit.matchingType().recordPattern())) { // GEP-19: negation of the instanceof form
+                    PatternExpression match = PatternExpression.instanceOf(
+                            (Expression) this.visit(ctx.left),
+                            this.buildRecordPattern(nit.matchingType().recordPattern()));
+                    return configureAST(new NotExpression(configureAST(match, ctx)), ctx);
+                }
                 return configureAST(
                         new BinaryExpression(
                                 (Expression) this.visit(ctx.left),
@@ -5667,6 +5964,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private final Deque<ClassNode> classNodeStack = new ArrayDeque<>();
     private final Deque<List<InnerClassNode>> anonymousInnerClassesDefinedInMethodStack = new ArrayDeque<>();
     private final Deque<GroovyParserRuleContext> switchExpressionRuleContextStack = new ArrayDeque<>();
+
+    /** Name of the synthetic variable holding the selector of the enclosing pattern switch ("" for a switch without pattern labels). */
     /** one entry per enclosing closure/lambda: TRUE if it is the closure of an {@code async} expression */
     private final Deque<Boolean> asyncClosureStack = new ArrayDeque<>();
     /** set just before visiting the closure/lambda of an {@code async} expression; consumed by the closure/lambda visit */

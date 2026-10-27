@@ -47,6 +47,7 @@ import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -85,6 +86,7 @@ import java.util.function.Supplier;
 import static java.lang.reflect.Modifier.isStatic;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
+import static org.apache.groovy.ast.tools.SwitchPatternUtils.getSubjectVariable;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mayCompleteNormally;
 import static org.codehaus.groovy.transform.trait.Traits.isTrait;
@@ -731,6 +733,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitSwitch(final SwitchStatement statement) {
         pushState();
+        declareSubjectVariable(statement);
         super.visitSwitch(statement);
         popState();
     }
@@ -741,8 +744,21 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitSwitchExpression(final SwitchExpression expression) {
         pushState();
+        declareSubjectVariable(expression);
         super.visitSwitchExpression(expression);
         popState();
+    }
+
+    /**
+     * Declares the synthetic subject variable of a pattern switch (GEP-19) so
+     * that the pattern tests and bindings in its arms resolve to it.
+     */
+    private void declareSubjectVariable(final ASTNode switchNode) {
+        Parameter subject = getSubjectVariable(switchNode);
+        if (subject != null) {
+            subject.setInStaticContext(currentScope.isInStaticContext());
+            declare(subject, switchNode);
+        }
     }
 
     /**
@@ -1277,6 +1293,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             Expression expr = expression;
             while (expr instanceof BooleanExpression && !(expr instanceof NotExpression)) {
                 expr = ((BooleanExpression) expr).getExpression();
+            }
+            if (expr instanceof PatternExpression pattern && pattern.getLowered() != null) {
+                return analyse(pattern.getLowered()); // GEP-19: the bindings of the lowered match
             }
             if (expr instanceof NotExpression not) {
                 return analyse(not.getExpression()).negated();

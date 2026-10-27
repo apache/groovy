@@ -44,6 +44,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -525,6 +526,24 @@ public interface GroovyCodeVisitor {
             caseStatement.visit(this);
         }
         visit(expression.getDefaultStatement());
+    }
+
+    /**
+     * Visits a pattern match (GEP-19). The default implementation visits the
+     * code the compiler derived from the pattern, once it has been lowered, and
+     * otherwise the matched value and the guard, so existing visitors keep
+     * traversing without a source change.
+     *
+     * @param expression the {@link PatternExpression} to process
+     * @since 7.0.0
+     */
+    default void visitPatternExpression(PatternExpression expression) {
+        if (expression.getLowered() != null) {
+            visit(expression.getLowered());
+        } else {
+            visit(expression.getSource());
+            visit(expression.getGuard());
+        }
     }
 
     /**

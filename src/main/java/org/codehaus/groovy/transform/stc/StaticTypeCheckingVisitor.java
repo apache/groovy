@@ -29,6 +29,11 @@ import groovy.transform.TypeCheckingMode;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.ClosureSignatureConflictResolver;
 import groovy.transform.stc.ClosureSignatureHint;
+import org.apache.groovy.ast.pattern.MatchPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.BindingPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.ListPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.MapPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.RecordPattern;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -80,6 +85,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -155,6 +161,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -166,6 +173,8 @@ import static org.apache.groovy.ast.tools.SwitchExpressionUtils.isIntegralType;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.isOptimizedIntSwitch;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.stringConstant;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.unwrapEnumType;
+import static org.apache.groovy.ast.tools.SwitchPatternUtils.getSubjectVariable;
+import static org.apache.groovy.ast.tools.SwitchPatternUtils.isPatternArm;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.apache.groovy.util.BeanUtils.decapitalize;
 import static org.codehaus.groovy.ast.ClassHelper.AUTOCLOSEABLE_TYPE;
@@ -450,6 +459,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected DefaultTypeCheckingExtension extension;
     /** Mutable state for the current type-checking run. */
     protected TypeCheckingContext typeCheckingContext;
+    /** GEP-19: the record component bindings of the pattern being checked, or {@code null}. */
+    private PatternBindingTypes patternBindingTypes;
+    /** GEP-19: the subject variable of the pattern arm being checked, whose tests are checked with the arm. */
+    private Parameter patternSubject;
 
     /**
      * Creates a static type-checking visitor for the supplied source and class.
@@ -1047,6 +1060,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 if (op != LOGICAL_OR) {
                     rightExpression.visit(this);
+                    if (op == EQUAL) typePatternBinding(expression, leftExpression, rightExpression); // GEP-19
                 } else {
                     var lhs = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
                     typeCheckingContext.pushTemporaryTypeInfo();
@@ -1173,7 +1187,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else if (op == KEYWORD_INSTANCEOF) {
                 rType = rightExpression.getType();
                 if (lType instanceof WideningCategories.LowestUpperBoundClassNode) lType = lType.getUnresolvedSuperClass();
-                if (lType instanceof UnionTypeClassNode union) {
+                if (patternSubject != null && leftExpression instanceof VariableExpression subjectVar
+                        && subjectVar.getAccessedVariable() == patternSubject) {
+                    // GEP-19: a pattern test against the switch subject is checked by checkPatternSwitchLabels
+                } else if (lType instanceof UnionTypeClassNode union) {
                     boolean compatible = rType.isInterface();
                     for (int i = 0; !compatible && i < union.getDelegates().length; i += 1) {
                         ClassNode delegate = union.getDelegates()[i];
@@ -5199,9 +5216,20 @@ trying: for (ClassNode[] signature : signatures) {
             // resolved where a switch expression resolves its own labels, outside
             // the tracking block, so that the two positions see the same types
             typeCheckSwitchIsCase(statement.getExpression(), statement.getCaseStatements(), false);
+            PatternCoverage coverage = checkPatternSwitchLabels(statement.getExpression(), statement.getCaseStatements());
+            // JEP 441: a switch statement has to be exhaustive only when it uses a
+            // pattern label. Constant and class-literal labels never demand a
+            // default, so every switch statement written before patterns existed
+            // keeps compiling; a class literal can still help satisfy the check
+            // once a pattern has triggered it.
+            if (statement.getCaseStatements().stream().anyMatch(cs -> isPatternArm(cs))) {
+                checkSwitchExhaustiveness(statement, statement.getExpression(), statement.getCaseStatements(),
+                        statement.getDefaultStatement(), coverage, "statement");
+            }
         } finally {
             typeCheckingContext.popTemporaryTypeInfo();
             typeCheckingContext.popEnclosingSwitchStatement();
+            forgetSubjectVariable(statement);
         }
     }
 
@@ -5240,10 +5268,13 @@ trying: for (ClassNode[] signature : signatures) {
 
             typeCheckSwitchIsCase(expression.getExpression(), expression.getCaseStatements(), true);
             checkSwitchDuplicateLabels(expression.getExpression(), expression.getCaseStatements());
-            checkSwitchExpressionExhaustiveness(expression);
+            PatternCoverage coverage = checkPatternSwitchLabels(expression.getExpression(), expression.getCaseStatements());
+            checkSwitchExhaustiveness(expression, expression.getExpression(), expression.getCaseStatements(),
+                    expression.getDefaultStatement(), coverage, "expression");
         } finally {
             typeCheckingContext.popTemporaryTypeInfo();
             typeCheckingContext.popEnclosingSwitchExpression();
+            forgetSubjectVariable(expression);
         }
     }
 
@@ -5274,7 +5305,7 @@ trying: for (ClassNode[] signature : signatures) {
         }
         for (CaseStatement caseStatement : caseStatements) {
             Expression caseValue = caseStatement.getExpression();
-            if (isNullConstant(caseValue)) {
+            if (isNullConstant(caseValue) || isPatternArm(caseStatement)) { // GEP-19: a pattern arm's label is a boolean test
                 continue;
             }
             ClassNode caseType = getType(caseValue);
@@ -5320,6 +5351,7 @@ trying: for (ClassNode[] signature : signatures) {
         ClassNode enumType = unwrapEnumType(getType(selector));
         Set<Object> seen = new HashSet<>();
         for (CaseStatement caseStatement : caseStatements) {
+            if (isPatternArm(caseStatement)) continue;
             Expression label = caseStatement.getExpression();
             Object key = null;
             if (enumType != null && enumType.isEnum()) {
@@ -5345,6 +5377,7 @@ trying: for (ClassNode[] signature : signatures) {
         typeCheckingContext.pushTemporaryTypeInfo();
         Expression conditionExpression = expression.getExpression();
         conditionExpression.putNodeMetaData(TYPE, getType(conditionExpression));
+        rememberSubjectVariable(expression, conditionExpression);
     }
 
     /**
@@ -5374,19 +5407,29 @@ trying: for (ClassNode[] signature : signatures) {
         return typeCheckingContext.getEnclosingSwitchSelector();
     }
 
-    private void checkSwitchExpressionExhaustiveness(final SwitchExpression expression) {
-        if (expression.getDefaultStatement() != null && !expression.getDefaultStatement().isEmpty()) {
+    /**
+     * Reports a switch that does not cover every input, for an expression, which
+     * must always be exhaustive, and for a statement that carries a pattern label,
+     * which must be exhaustive under JEP 441 (GEP-19). A {@code default}, a
+     * complete set of enum constants, an unconditional pattern, or type tests
+     * covering a sealed hierarchy all satisfy it.
+     */
+    private void checkSwitchExhaustiveness(final ASTNode node, final Expression selector,
+            final List<CaseStatement> caseStatements, final Statement defaultStatement,
+            final PatternCoverage coverage, final String kind) {
+        if (defaultStatement != null && !defaultStatement.isEmpty()) {
             return;
         }
-        Expression selector = expression.getExpression();
         ClassNode selectorType = getType(selector);
-        if (selectorType != null && selectorType.isEnum() && coversAllEnumConstants(expression, selectorType)) {
-            return;
+        boolean exhaustive = selectorType != null && selectorType.isEnum() && coversAllEnumConstants(caseStatements, selectorType);
+        // GEP-19: an unconditional pattern, or type tests covering a sealed hierarchy, are exhaustive
+        exhaustive = exhaustive || coverage.unconditional() || coversAllPermittedSubclasses(selectorType, coverage.typeTests());
+        if (!exhaustive) {
+            addError("the switch " + kind + " does not cover all possible input values", node);
+        } else if (node instanceof SwitchExpression) {
+            // lets the writer tell an added constant or subtype from an ordinary unmatched value
+            node.putNodeMetaData(StaticTypesMarker.SWITCH_EXHAUSTIVE, Boolean.TRUE);
         }
-        if (coversAllPermittedSubclasses(expression, selectorType)) {
-            return;
-        }
-        addError("the switch expression does not cover all possible input values", expression);
     }
 
     /**
@@ -5430,7 +5473,15 @@ trying: for (ClassNode[] signature : signatures) {
         return null;
     }
 
-    private boolean coversAllPermittedSubclasses(final SwitchExpression expression, final ClassNode selectorType) {
+    /**
+     * True when the type tests of a switch cover every member of the closed
+     * native sealed hierarchy rooted at {@code selectorType}. The tests are the
+     * class-literal labels and, under GEP-19, the unguarded type patterns. A
+     * concrete sealed class needs a test for itself; a permitted subtype that is
+     * an abstract sealed class or a sealed interface may instead be covered by
+     * tests for its own permitted subtypes.
+     */
+    private boolean coversAllPermittedSubclasses(final ClassNode selectorType, final List<ClassNode> typeTests) {
         if (!nativeSealedClosed(selectorType)) {
             return false;
         }
@@ -5439,25 +5490,235 @@ trying: for (ClassNode[] signature : signatures) {
         if (permitted == null || permitted.isEmpty()) {
             return false;
         }
-        Set<ClassNode> remaining = new LinkedHashSet<>(permitted);
-        if (!sealedType.isInterface() && !sealedType.isAbstract()) {
-            remaining.add(sealedType);
+        if (!sealedType.isInterface() && !sealedType.isAbstract() && !coveredByTypeTest(sealedType, sealedType, typeTests)) {
+            return false;
         }
-        for (CaseStatement caseStatement : expression.getCaseStatements()) {
-            Expression caseExpr = caseStatement.getExpression();
-            if (caseExpr instanceof ClassExpression classExpression) {
-                ClassNode caseType = classExpression.getType().redirect();
-                // A type case is a member of the sealed hierarchy. Unrelated
-                // labels (including a mis-resolved Object) stay ordinary isCase.
-                if (caseType.equals(sealedType) || implementsInterfaceOrIsSubclassOf(caseType, sealedType)) {
-                    remaining.removeIf(p -> implementsInterfaceOrIsSubclassOf(p.redirect(), caseType));
+        for (ClassNode permittedType : permitted) {
+            ClassNode member = permittedType.redirect();
+            if (!coveredByTypeTest(member, sealedType, typeTests) && !coversAllPermittedSubclasses(member, typeTests)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Whether one of the type tests covers {@code member}. A type test counts
+     * only when it names a member of the sealed hierarchy; unrelated labels
+     * (including a mis-resolved Object) stay ordinary isCase.
+     */
+    private static boolean coveredByTypeTest(final ClassNode member, final ClassNode sealedType, final List<ClassNode> typeTests) {
+        for (ClassNode typeTest : typeTests) {
+            ClassNode testType = typeTest.redirect();
+            if (testType.equals(sealedType) || implementsInterfaceOrIsSubclassOf(testType, sealedType)) {
+                if (member.equals(testType) || implementsInterfaceOrIsSubclassOf(member, testType)) {
+                    return true;
                 }
             }
         }
-        return remaining.isEmpty();
+        return false;
     }
 
-    private boolean coversAllEnumConstants(final SwitchExpression expression, final ClassNode enumType) {
+    /**
+     * The statically known coverage of a switch's labels (GEP-19): the type
+     * tests that are unconditional (a type pattern without guard or a class
+     * literal label), and whether an unguarded type pattern covers the selector
+     * type. A class literal label is an ordinary {@code isCase} test and never
+     * makes a switch exhaustive on its own, though it still counts toward the
+     * coverage of a sealed hierarchy.
+     */
+    private record PatternCoverage(List<ClassNode> typeTests, boolean unconditional) {
+    }
+
+    /**
+     * Checks the pattern arms of a switch (GEP-19): an error for a pattern that
+     * cannot match the selector's static type or a record pattern whose arity
+     * differs from the record's, and a warning for a pattern dominated by a
+     * preceding label. Returns the coverage used for exhaustiveness.
+     */
+    private PatternCoverage checkPatternSwitchLabels(final Expression selector, final List<CaseStatement> caseStatements) {
+        List<ClassNode> typeTests = new ArrayList<>();
+        boolean unconditional = false;
+        ClassNode selectorType = wrapTypeIfNecessary(getType(selector));
+        for (CaseStatement caseStatement : caseStatements) {
+            Expression label = caseStatement.getExpression();
+            MatchPattern pattern = label instanceof PatternExpression patternLabel ? patternLabel.getPattern() : null;
+            boolean guarded = label instanceof PatternExpression patternLabel && patternLabel.hasGuard();
+            ClassNode typeTest = pattern != null ? pattern.headType() : null;
+            if (typeTest == null && label instanceof ClassExpression) {
+                typeTest = label.getType(); // a class literal label has type-test semantics
+            }
+            if (typeTest == null) {
+                if (pattern instanceof ListPattern listPattern) {
+                    if (!selectorType.isArray() && provablyDisjoint(selectorType, ITERABLE_TYPE)) {
+                        // a list pattern destructures List, array and Iterable values only
+                        addStaticTypeError("The list pattern is incompatible with the switch subject type " + prettyPrintTypeName(selectorType), label);
+                    } else if (!guarded && listPattern.isUnconditionalFor(selectorType)) {
+                        if (!selectorType.isArray()) typeTests.add(ITERABLE_TYPE);
+                        unconditional = true;
+                    }
+                }
+                if (pattern instanceof MapPattern && provablyDisjoint(selectorType, MAP_TYPE)) {
+                    // a map pattern destructures Map values only
+                    addStaticTypeError("The map pattern is incompatible with the switch subject type " + prettyPrintTypeName(selectorType), label);
+                }
+                continue;
+            }
+            ClassNode wrappedTest = wrapTypeIfNecessary(typeTest);
+            if (pattern != null && provablyDisjoint(selectorType, wrappedTest)) {
+                addStaticTypeError("The case pattern type " + prettyPrintTypeName(typeTest) + " is incompatible with the switch subject type " + prettyPrintTypeName(selectorType), label);
+                continue;
+            }
+            if (pattern instanceof RecordPattern recordPattern && recordPattern.isRecord()) {
+                int componentCount = typeTest.getRecordComponents().size();
+                if (componentCount != recordPattern.components().size()) {
+                    addStaticTypeError("The record pattern specifies " + recordPattern.components().size() + " component(s) but " + prettyPrintTypeName(typeTest) + " has " + componentCount, label);
+                }
+            }
+            // a pattern that can fail for a value of its head type (a record pattern
+            // with a nested or nullable component, or deconstructed through toList())
+            // does not count toward coverage
+            if (pattern != null && !pattern.isTotal()) guarded = true;
+            for (ClassNode prior : typeTests) {
+                if (implementsInterfaceOrIsSubclassOf(wrappedTest, prior)) {
+                    addPatternSwitchWarning("The case pattern is dominated by a preceding case label and will never match", label);
+                    break;
+                }
+            }
+            if (!guarded) {
+                typeTests.add(wrappedTest);
+                if (pattern != null && pattern.isUnconditionalFor(selectorType)) unconditional = true;
+            }
+        }
+        return new PatternCoverage(typeTests, unconditional);
+    }
+
+
+    /**
+     * The type of a record pattern's record: {@code recordType}, with the type
+     * arguments of a raw generic record inferred from the static type of the
+     * value it deconstructs (JEP 440), so that {@code Box(var s)} against a
+     * {@code Box<String>} binds {@code s} as a {@code String}.
+     */
+    private static ClassNode inferRecordPatternType(final ClassNode sourceType, final ClassNode recordType) {
+        GenericsType[] typeParameters = recordType.redirect().getGenericsTypes();
+        if (typeParameters == null || recordType.getGenericsTypes() != null || sourceType == null || !sourceType.isUsingGenerics()) {
+            return recordType; // not generic, or explicitly parameterized
+        }
+        ClassNode genericPatternType = GenericsUtils.makeClassSafeWithGenerics(recordType.redirect(), typeParameters);
+        // the source type in terms of the pattern's type parameters; a record is final, so the
+        // pattern type is the source type or one of its subtypes, such as a sealed member
+        ClassNode sourceAsSeenByPattern = GenericsUtils.findParameterizedType(sourceType.redirect(), genericPatternType);
+        if (sourceAsSeenByPattern == null) return recordType;
+        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
+        extractGenericsConnections(connections, sourceType, sourceAsSeenByPattern);
+        if (connections.isEmpty()) return recordType;
+        return applyGenericsContext(connections, genericPatternType);
+    }
+
+    /**
+     * The static type of component {@code index} of {@code recordType}: the
+     * record component type with the record's type arguments applied, or
+     * {@code null} when the type declares no such record component.
+     */
+    private static ClassNode getRecordPatternComponentType(final ClassNode recordType, final int index) {
+        List<RecordComponentNode> components = recordType.redirect().getRecordComponents();
+        if (index >= components.size()) return null;
+        ClassNode componentType = components.get(index).getType();
+        if (recordType.getGenericsTypes() != null) {
+            componentType = applyGenericsContext(GenericsUtils.extractPlaceholders(recordType), componentType);
+        }
+        if (GenericsUtils.hasUnresolvedGenerics(componentType)) {
+            componentType = componentType.getPlainNodeReference(); // an uninferred type parameter erases to its bound
+        }
+        return wrapTypeIfNecessary(componentType);
+    }
+
+    /**
+     * The types of the {@code var}/{@code def} record component bindings of one
+     * pattern (GEP-19), by name, computed from the pattern and the static type of
+     * the matched value when first needed, which is after that value is visited.
+     *
+     * @param byDeclaration whether a binding is introduced by its declaration
+     *                      (the matching steps of a switch arm) or by an
+     *                      assignment within the match ({@code instanceof})
+     */
+    private record PatternBindingTypes(MatchPattern pattern, Supplier<ClassNode> sourceType, boolean byDeclaration, Map<String, ClassNode> types) {
+        PatternBindingTypes(final MatchPattern pattern, final Supplier<ClassNode> sourceType, final boolean byDeclaration) {
+            this(pattern, sourceType, byDeclaration, new HashMap<>());
+        }
+
+        ClassNode typeOf(final String name) {
+            if (types.isEmpty()) collect(pattern, sourceType.get());
+            return types.get(name);
+        }
+
+        private void collect(final MatchPattern pattern, final ClassNode source) {
+            if (pattern instanceof RecordPattern record) {
+                ClassNode recordType = inferRecordPatternType(source, record.type());
+                for (int i = 0, n = record.components().size(); i < n; i += 1) {
+                    MatchPattern component = record.components().get(i);
+                    ClassNode componentType = getRecordPatternComponentType(recordType, i);
+                    if (component instanceof BindingPattern binding) {
+                        if (componentType != null) types.put(binding.name(), componentType);
+                    } else {
+                        collect(component, componentType != null ? componentType : OBJECT_TYPE);
+                    }
+                }
+            } else if (pattern instanceof ListPattern list) {
+                for (MatchPattern element : list.elements()) collect(element, OBJECT_TYPE);
+            } else if (pattern instanceof MapPattern map) {
+                for (MapPattern.Entry entry : map.entries()) collect(entry.value(), OBJECT_TYPE);
+            }
+        }
+    }
+
+    /**
+     * Types the value assigned to a record component binding (GEP-19) as the
+     * record component, when the assignment is the one the lowered pattern makes.
+     */
+    private void typePatternBinding(final BinaryExpression assignment, final Expression target, final Expression value) {
+        if (patternBindingTypes != null && target instanceof VariableExpression variable
+                && (assignment instanceof DeclarationExpression) == patternBindingTypes.byDeclaration()) {
+            ClassNode type = patternBindingTypes.typeOf(variable.getName());
+            if (type != null) storeType(value, type);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void visitPatternExpression(final PatternExpression expression) {
+        if (!expression.isInstanceOf() || expression.getLowered() == null) {
+            super.visitPatternExpression(expression);
+            return;
+        }
+        PatternBindingTypes enclosingBindings = patternBindingTypes;
+        patternBindingTypes = new PatternBindingTypes(expression.getPattern(), () -> getType(expression.getSource()), false);
+        try {
+            super.visitPatternExpression(expression);
+        } finally {
+            patternBindingTypes = enclosingBindings;
+        }
+    }
+
+    private void addPatternSwitchWarning(final String text, final ASTNode node) {
+        Token token = new Token(0, "", node.getLineNumber(), node.getColumnNumber()); // ASTNode to CSTNode
+        typeCheckingContext.getErrorCollector().addWarning(new WarningMessage(WarningMessage.LIKELY_ERRORS, text, token, getSourceUnit()));
+    }
+
+    private static boolean provablyDisjoint(final ClassNode subjectType, final ClassNode patternType) {
+        if (isObjectType(subjectType)
+                || subjectType.isArray() || patternType.isArray()
+                || implementsInterfaceOrIsSubclassOf(patternType, subjectType)
+                || implementsInterfaceOrIsSubclassOf(subjectType, patternType)) {
+            return false;
+        }
+        if (subjectType.isInterface()) return Modifier.isFinal(patternType.getModifiers());
+        if (patternType.isInterface()) return Modifier.isFinal(subjectType.getModifiers());
+        return true; // unrelated classes
+    }
+
+    private boolean coversAllEnumConstants(final List<CaseStatement> caseStatements, final ClassNode enumType) {
         Set<String> remaining = new LinkedHashSet<>();
         for (FieldNode field : enumType.redirect().getFields()) {
             if (field.isEnum()) {
@@ -5475,7 +5736,7 @@ trying: for (ClassNode[] signature : signatures) {
         if (remaining.isEmpty()) {
             return false;
         }
-        for (CaseStatement caseStatement : expression.getCaseStatements()) {
+        for (CaseStatement caseStatement : caseStatements) {
             Expression caseExpr = caseStatement.getExpression();
             if (caseExpr instanceof VariableExpression variable) {
                 remaining.remove(variable.getName());
@@ -5495,6 +5756,25 @@ trying: for (ClassNode[] signature : signatures) {
         typeCheckingContext.pushTemporaryTypeInfo();
         Expression conditionExpression = statement.getExpression();
         conditionExpression.putNodeMetaData(TYPE, getType(conditionExpression));
+        rememberSubjectVariable(statement, conditionExpression);
+    }
+
+    /**
+     * Types the subject variable of a pattern switch (GEP-19) as the selector
+     * type, the way a for-loop variable is typed.
+     */
+    private void rememberSubjectVariable(final ASTNode switchNode, final Expression selector) {
+        Parameter subject = getSubjectVariable(switchNode);
+        if (subject != null) {
+            typeCheckingContext.controlStructureVariables.put(subject, wrapTypeIfNecessary(selector.getNodeMetaData(TYPE)));
+        }
+    }
+
+    private void forgetSubjectVariable(final ASTNode switchNode) {
+        Parameter subject = getSubjectVariable(switchNode);
+        if (subject != null) {
+            typeCheckingContext.controlStructureVariables.remove(subject);
+        }
     }
 
     /** {@inheritDoc} */
@@ -5510,6 +5790,22 @@ trying: for (ClassNode[] signature : signatures) {
     /** {@inheritDoc} */
     @Override
     public void visitCaseStatement(final CaseStatement statement) {
+        PatternBindingTypes enclosingBindings = patternBindingTypes;
+        Parameter enclosingSubject = patternSubject;
+        if (statement.getExpression() instanceof PatternExpression label && label.getLowered() != null) {
+            Parameter subject = label.getSubject(); // GEP-19: the arm's bindings are typed from the selector type
+            patternBindingTypes = new PatternBindingTypes(label.getPattern(), () -> typeCheckingContext.controlStructureVariables.get(subject), true);
+            patternSubject = subject;
+        }
+        try {
+            visitCaseStatementWithinPatternScope(statement);
+        } finally {
+            patternBindingTypes = enclosingBindings;
+            patternSubject = enclosingSubject;
+        }
+    }
+
+    private void visitCaseStatementWithinPatternScope(final CaseStatement statement) {
         Expression selectable = selectableOfEnclosingSwitch();
         if (selectable == null) {
             super.visitCaseStatement(statement);
@@ -5536,6 +5832,10 @@ trying: for (ClassNode[] signature : signatures) {
         if (!maybeFallsThrough(statement.getCode())) {
             typeCheckingContext.temporaryIfBranchTypeInformation
                 .peek().remove(extractTemporaryTypeInfoKey(selectable));
+            if (statement.getExpression() instanceof PatternExpression label && label.getSubject() != null) {
+                // GEP-19: the pattern arm narrowed the subject variable
+                typeCheckingContext.temporaryIfBranchTypeInformation.peek().remove(label.getSubject());
+            }
             restoreTypeBeforeConditional(); // isolate assignment branch
         }
     }
