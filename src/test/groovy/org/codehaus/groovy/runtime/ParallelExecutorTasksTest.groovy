@@ -258,20 +258,46 @@ final class ParallelExecutorTasksTest {
 
         // The tail throws only after it has started, and the head waits until
         // that task has finished recording the error. The earlier match still wins.
+        // A cached fallback pool keeps the worker after the task returns, so
+        // completion is observed from the executor. Virtual threads still end
+        // with the task, and that death is checked after the task has finished.
         def tailInside = new CountDownLatch(1)
         def releaseTail = new CountDownLatch(1)
         def tailThread = new AtomicReference<Thread>()
-        def result = ParallelExecutorTasks.findFirst(pool, ['yes', 'boom']) { item ->
+        def tailLeftCallback = new AtomicBoolean()
+        def tailRecorded = new CountDownLatch(1)
+        def observed = executorPool(new Executor() {
+            @Override
+            void execute(Runnable command) {
+                pool.execute {
+                    try {
+                        command.run()
+                    } finally {
+                        if (tailLeftCallback.get()) {
+                            tailRecorded.countDown()
+                        }
+                    }
+                }
+            }
+        })
+        def result = ParallelExecutorTasks.findFirst(observed, ['yes', 'boom']) { item ->
             if (item == 'boom') {
                 tailThread.set(Thread.currentThread())
-                tailInside.countDown()
-                assert releaseTail.await(5, TimeUnit.SECONDS)
-                throw new IllegalStateException('boom')
+                try {
+                    tailInside.countDown()
+                    assert releaseTail.await(5, TimeUnit.SECONDS)
+                    throw new IllegalStateException('boom')
+                } finally {
+                    tailLeftCallback.set(true)
+                }
             }
             assert tailInside.await(5, TimeUnit.SECONDS)
             releaseTail.countDown()
-            tailThread.get().join(5_000)
-            assert !tailThread.get().isAlive()
+            assert tailRecorded.await(5, TimeUnit.SECONDS)
+            if (pool.usesVirtualThreads()) {
+                tailThread.get().join(5_000)
+                assert !tailThread.get().isAlive()
+            }
             return true
         }
         assert result == 'yes'
