@@ -24,8 +24,11 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.runtime.BytecodeInterface8;
 import org.objectweb.asm.MethodVisitor;
 
+import static org.codehaus.groovy.syntax.Types.COMPARE_GREATER_THAN;
+import static org.codehaus.groovy.syntax.Types.COMPARE_GREATER_THAN_EQUAL;
 import static org.objectweb.asm.Opcodes.DADD;
 import static org.objectweb.asm.Opcodes.DCMPG;
+import static org.objectweb.asm.Opcodes.DCMPL;
 import static org.objectweb.asm.Opcodes.DCONST_1;
 import static org.objectweb.asm.Opcodes.DDIV;
 import static org.objectweb.asm.Opcodes.DMUL;
@@ -74,6 +77,18 @@ public class BinaryDoubleExpressionHelper extends BinaryLongExpressionHelper {
     @Override
     protected int getCompareCode() {
         return DCMPG;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * DCMPL yields -1 and DCMPG yields 1 for a NaN operand, so DCMPL is used for
+     * {@code >} and {@code >=} and DCMPG otherwise; either way the
+     * comparison is false, as in Java (JLS 15.20.1).
+     */
+    @Override
+    protected int getCompareCode(final int type) {
+        return type == COMPARE_GREATER_THAN || type == COMPARE_GREATER_THAN_EQUAL ? DCMPL : DCMPG;
     }
 
     /**
