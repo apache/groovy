@@ -641,6 +641,31 @@ Callers of `SignatureCodecVersion1.decode` that expected a union node now
 receive the shared supertype. The compiler has not written
 `@TypeCheckingInfo` inferred-return annotations since GROOVY-6401 (2013).
 
+### Groovy 7 — `>` and `>=` with a primitive NaN operand are false (GROOVY-12538)
+
+When both operands of a comparison are primitive `double` or `float` values,
+the compiler compares them with a JVM instruction. It used the variant that
+treats NaN as greater than every value for all four ordered operators, so
+`NaN > x` and `NaN >= x` were `true` while `NaN < x` and `NaN <= x` were
+`false`. All four are now `false`, as in Java (JLS 15.20.1), and as Groovy
+already gave when both operands are `Double` objects. This applies to
+variables, fields and parameters declared `double` or `float`, in dynamic code
+as well as under `@TypeChecked` and `@CompileStatic`, and to `Double.NaN` and
+`Float.NaN` under `@CompileStatic`, where they are primitive.
+
+**Who is affected.** Code that relied on a NaN comparing greater, for example
+`if (reading > limit)` treating a NaN reading as over the limit. Use
+`Double.isNaN` where NaN needs handling of its own.
+
+**What is unchanged.** Comparisons that go through Groovy's number comparison
+rather than a primitive instruction: operands of different types such as
+`Double` against `Integer` or `BigDecimal`, where NaN is still greater than
+every value as in `Double.compareTo` (GROOVY-3309); `==` on `Double` objects,
+which still treats NaN as equal to NaN as `Double.equals` does; and `<=>`,
+which follows `Double.compare` for primitives and objects alike. Classes
+compiled by an earlier release keep the old comparison until they are
+recompiled.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
