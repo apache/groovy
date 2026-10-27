@@ -35,8 +35,8 @@ import java.util.function.Supplier;
  * Default implementation of {@link Pool}.
  * <p>
  * Sized pools ({@link #fixed(int)}, {@link #cpu()}) use {@link ForkJoinPool}
- * for work-stealing and parallel stream isolation. I/O pools
- * ({@link #virtual()}, {@link #io()}) use virtual threads on JDK 21+.
+ * for work-stealing and parallel stream isolation. {@link #virtual()} and
+ * {@link #io()} use virtual threads when that executor can be created.
  *
  * @see Pool
  * @since 6.0.0
@@ -51,10 +51,15 @@ public final class DefaultPool implements Pool {
     static {
         MethodHandle mh = null;
         try {
-            mh = MethodHandles.lookup().findStatic(
+            MethodHandle factory = MethodHandles.lookup().findStatic(
                     Executors.class, "newVirtualThreadPerTaskExecutor",
                     NEW_VT_EXECUTOR_TYPE)
                     .asType(NEW_VT_EXECUTOR_TYPE);
+            // JDK 19 and 20 expose this method but throw unless preview
+            // features are enabled. A successful lookup is not enough.
+            ExecutorService probe = (ExecutorService) factory.invokeExact();
+            probe.shutdown();
+            mh = factory;
         } catch (Throwable ignored) { }
         NEW_VT_EXECUTOR = mh;
     }
@@ -77,7 +82,7 @@ public final class DefaultPool implements Pool {
 
     /**
      * Creates a virtual-thread-per-task pool, or a cached daemon pool
-     * as fallback on JDK &lt; 21.
+     * when virtual threads cannot be created.
      */
     public static Pool virtual() {
         if (NEW_VT_EXECUTOR != null) {
@@ -121,8 +126,9 @@ public final class DefaultPool implements Pool {
     }
 
     /**
-     * Creates a pool for I/O-bound work. Uses virtual threads if available,
-     * otherwise a fixed pool sized by {@link ConcurrentConfig#getDefaultParallelism()}.
+     * Creates a pool for I/O-bound work. Uses virtual threads when that
+     * executor can be created, otherwise a fixed pool sized by
+     * {@link ConcurrentConfig#getDefaultParallelism()}.
      */
     public static Pool io() {
         if (NEW_VT_EXECUTOR != null) {
