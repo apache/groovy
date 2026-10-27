@@ -47,6 +47,7 @@ import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -1292,6 +1293,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             Expression expr = expression;
             while (expr instanceof BooleanExpression && !(expr instanceof NotExpression)) {
                 expr = ((BooleanExpression) expr).getExpression();
+            }
+            if (expr instanceof PatternExpression pattern && pattern.getLowered() != null) {
+                return analyse(pattern.getLowered()); // GEP-19: the bindings of the lowered match
             }
             if (expr instanceof NotExpression not) {
                 return analyse(not.getExpression()).negated();

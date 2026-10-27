@@ -360,7 +360,6 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         result.setSpreadSafe(mce.isSpreadSafe());
         result.setSafe(mce.isSafe());
         result.setSourcePosition(mce);
-        result.copyNodeMetaData(mce);
         return result;
     }
 

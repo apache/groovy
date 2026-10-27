@@ -29,6 +29,11 @@ import groovy.transform.TypeCheckingMode;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.ClosureSignatureConflictResolver;
 import groovy.transform.stc.ClosureSignatureHint;
+import org.apache.groovy.ast.pattern.MatchPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.BindingPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.ListPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.MapPattern;
+import org.apache.groovy.ast.pattern.MatchPattern.RecordPattern;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -80,6 +85,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -155,6 +161,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -166,16 +173,6 @@ import static org.apache.groovy.ast.tools.SwitchExpressionUtils.isIntegralType;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.isOptimizedIntSwitch;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.stringConstant;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.unwrapEnumType;
-import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_GUARDED;
-import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_HEAD_TYPE;
-import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_LIST;
-import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_MAP;
-import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_RECORD;
-import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_RECORD_BINDING;
-import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_RECORD_COMPONENT;
-import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_RECORD_COMPONENT_TYPES;
-import static org.apache.groovy.ast.tools.SwitchPatternUtils.PATTERN_TEST;
-import static org.apache.groovy.ast.tools.SwitchPatternUtils.SUBJECT_VARIABLE;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.getSubjectVariable;
 import static org.apache.groovy.ast.tools.SwitchPatternUtils.isPatternArm;
 import static org.apache.groovy.util.BeanUtils.capitalize;
@@ -462,6 +459,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected DefaultTypeCheckingExtension extension;
     /** Mutable state for the current type-checking run. */
     protected TypeCheckingContext typeCheckingContext;
+    /** GEP-19: the record component bindings of the pattern being checked, or {@code null}. */
+    private PatternBindingTypes patternBindingTypes;
+    /** GEP-19: the subject variable of the pattern arm being checked, whose tests are checked with the arm. */
+    private Parameter patternSubject;
 
     /**
      * Creates a static type-checking visitor for the supplied source and class.
@@ -1059,6 +1060,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 if (op != LOGICAL_OR) {
                     rightExpression.visit(this);
+                    if (op == EQUAL) typePatternBinding(expression, leftExpression, rightExpression); // GEP-19
                 } else {
                     var lhs = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
                     typeCheckingContext.pushTemporaryTypeInfo();
@@ -1185,7 +1187,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else if (op == KEYWORD_INSTANCEOF) {
                 rType = rightExpression.getType();
                 if (lType instanceof WideningCategories.LowestUpperBoundClassNode) lType = lType.getUnresolvedSuperClass();
-                if (expression.getNodeMetaData(PATTERN_TEST) != null) {
+                if (patternSubject != null && leftExpression instanceof VariableExpression subjectVar
+                        && subjectVar.getAccessedVariable() == patternSubject) {
                     // GEP-19: a pattern test against the switch subject is checked by checkPatternSwitchLabels
                 } else if (lType instanceof UnionTypeClassNode union) {
                     boolean compatible = rType.isInterface();
@@ -1199,14 +1202,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 } else if (!lType.isInterface() && !rType.isInterface() && !(lType.isDerivedFrom(rType) || rType.isDerivedFrom(lType))) {
                     addError("Incompatible instanceof types: " + prettyPrintTypeName(lType) + " and " + prettyPrintTypeName(rType), expression);
-                }
-                if (rightExpression.getNodeMetaData(PATTERN_RECORD_BINDING) != null) { // GEP-19
-                    ClassNode sourceType = lType;
-                    if (leftExpression instanceof VariableExpression ve && ve.getAccessedVariable() instanceof Parameter p
-                            && typeCheckingContext.controlStructureVariables.get(p) != null) {
-                        sourceType = typeCheckingContext.controlStructureVariables.get(p); // the selector type, not the arm's narrowing
-                    }
-                    inferRecordPatternTypeArguments(sourceType, (DeclarationExpression) rightExpression);
                 }
                 pushInstanceOfTypeInfo(leftExpression, rightExpression);
             } else if (op == COMPARE_NOT_INSTANCEOF) { // GROOVY-6429, GROOVY-8321, GROOVY-8412, GROOVY-8523, GROOVY-9931
@@ -4878,12 +4873,6 @@ out:                if (mn.size() != 1) {
                 }
             }
 
-            Object[] recordComponent = call.getNodeMetaData(PATTERN_RECORD_COMPONENT);
-            if (recordComponent != null) { // GEP-19: the access of a record pattern component
-                ClassNode componentType = getRecordPatternComponentType((VariableExpression) recordComponent[0], (Integer) recordComponent[1]);
-                if (componentType != null) storeType(call, componentType);
-            }
-
             // type-checking extension may have changed or cleared target method
             MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
             if (!functorsVisited) {
@@ -5553,53 +5542,43 @@ trying: for (ClassNode[] signature : signatures) {
         ClassNode selectorType = wrapTypeIfNecessary(getType(selector));
         for (CaseStatement caseStatement : caseStatements) {
             Expression label = caseStatement.getExpression();
-            boolean patternArm = isPatternArm(caseStatement);
-            ClassNode patternType = patternArm ? caseStatement.getNodeMetaData(PATTERN_HEAD_TYPE) : null;
-            ClassNode typeTest = patternType;
+            MatchPattern pattern = label instanceof PatternExpression patternLabel ? patternLabel.getPattern() : null;
+            boolean guarded = label instanceof PatternExpression patternLabel && patternLabel.hasGuard();
+            ClassNode typeTest = pattern != null ? pattern.headType() : null;
             if (typeTest == null && label instanceof ClassExpression) {
                 typeTest = label.getType(); // a class literal label has type-test semantics
             }
-            boolean guarded = Boolean.TRUE.equals(caseStatement.getNodeMetaData(PATTERN_GUARDED));
             if (typeTest == null) {
-                if (Boolean.TRUE.equals(caseStatement.getNodeMetaData(PATTERN_LIST))) {
+                if (pattern instanceof ListPattern listPattern) {
                     if (!selectorType.isArray() && provablyDisjoint(selectorType, ITERABLE_TYPE)) {
                         // a list pattern destructures List, array and Iterable values only
                         addStaticTypeError("The list pattern is incompatible with the switch subject type " + prettyPrintTypeName(selectorType), label);
-                    } else if (!guarded && (selectorType.isArray() || implementsInterfaceOrIsSubclassOf(selectorType, ITERABLE_TYPE))) {
-                        // `[...]` or `[var... rest]` matches every list, array or Iterable,
-                        // so it is unconditional for a selector statically known to be one
+                    } else if (!guarded && listPattern.isUnconditionalFor(selectorType)) {
                         if (!selectorType.isArray()) typeTests.add(ITERABLE_TYPE);
                         unconditional = true;
                     }
                 }
-                if (Boolean.TRUE.equals(caseStatement.getNodeMetaData(PATTERN_MAP))
-                        && provablyDisjoint(selectorType, MAP_TYPE)) {
+                if (pattern instanceof MapPattern && provablyDisjoint(selectorType, MAP_TYPE)) {
                     // a map pattern destructures Map values only
                     addStaticTypeError("The map pattern is incompatible with the switch subject type " + prettyPrintTypeName(selectorType), label);
                 }
                 continue;
             }
             ClassNode wrappedTest = wrapTypeIfNecessary(typeTest);
-            if (patternType != null && provablyDisjoint(selectorType, wrappedTest)) {
+            if (pattern != null && provablyDisjoint(selectorType, wrappedTest)) {
                 addStaticTypeError("The case pattern type " + prettyPrintTypeName(typeTest) + " is incompatible with the switch subject type " + prettyPrintTypeName(selectorType), label);
                 continue;
             }
-            Integer recordPatternArity = caseStatement.getNodeMetaData(PATTERN_RECORD);
-            if (recordPatternArity != null) {
-                int componentCount = patternType.getRecordComponents().size();
-                // isRecord() covers zero-component (native) records; a positive component
-                // count covers emulated records; other deconstructables (toList) are unchecked
-                boolean record = patternType.isRecord() || componentCount > 0;
-                if (record && componentCount != recordPatternArity) {
-                    addStaticTypeError("The record pattern specifies " + recordPatternArity + " component(s) but " + prettyPrintTypeName(patternType) + " has " + componentCount, label);
-                }
-                // a record pattern counts toward coverage only for a record, whose arity is
-                // known here (a toList() deconstruction can still disagree at run time), and
-                // only when each component pattern matches every value the record can hold
-                if (!record || !recordPatternIsTotal(patternType, caseStatement.getNodeMetaData(PATTERN_RECORD_COMPONENT_TYPES))) {
-                    guarded = true;
+            if (pattern instanceof RecordPattern recordPattern && recordPattern.isRecord()) {
+                int componentCount = typeTest.getRecordComponents().size();
+                if (componentCount != recordPattern.components().size()) {
+                    addStaticTypeError("The record pattern specifies " + recordPattern.components().size() + " component(s) but " + prettyPrintTypeName(typeTest) + " has " + componentCount, label);
                 }
             }
+            // a pattern that can fail for a value of its head type (a record pattern
+            // with a nested or nullable component, or deconstructed through toList())
+            // does not count toward coverage
+            if (pattern != null && !pattern.isTotal()) guarded = true;
             for (ClassNode prior : typeTests) {
                 if (implementsInterfaceOrIsSubclassOf(wrappedTest, prior)) {
                     addPatternSwitchWarning("The case pattern is dominated by a preceding case label and will never match", label);
@@ -5608,72 +5587,41 @@ trying: for (ClassNode[] signature : signatures) {
             }
             if (!guarded) {
                 typeTests.add(wrappedTest);
-                if (patternType != null && implementsInterfaceOrIsSubclassOf(selectorType, wrappedTest)) unconditional = true;
+                if (pattern != null && pattern.isUnconditionalFor(selectorType)) unconditional = true;
             }
         }
         return new PatternCoverage(typeTests, unconditional);
     }
 
-    /**
-     * Whether the component patterns of a record pattern match every instance of
-     * the record (GEP-19). A {@code var}/{@code def} binding or {@code _} (a null
-     * entry) always does, and a typed component does when the record component
-     * is a primitive of that type, which can never be {@code null}. A typed
-     * component on a reference-typed record component does not match a
-     * {@code null} component, so it can fail; nor can a nested pattern be total,
-     * which is why the parser attaches no component types for one.
-     *
-     * @param componentPatternTypes the component pattern types, or null when the pattern has a nested component
-     */
-    private static boolean recordPatternIsTotal(final ClassNode recordType, final List<ClassNode> componentPatternTypes) {
-        if (componentPatternTypes == null) {
-            return false;
-        }
-        List<RecordComponentNode> components = recordType.getRecordComponents();
-        if (components.size() != componentPatternTypes.size()) {
-            return false;
-        }
-        for (int i = 0, n = components.size(); i < n; i += 1) {
-            ClassNode patternComponentType = componentPatternTypes.get(i);
-            if (patternComponentType == null) continue;
-            ClassNode declaredType = components.get(i).getType();
-            if (!isPrimitiveType(declaredType) || !getWrapper(declaredType).equals(getWrapper(patternComponentType))) {
-                return false;
-            }
-        }
-        return true;
-    }
 
     /**
-     * Infers the type arguments of a raw generic record pattern type from the
-     * static type of the value it deconstructs (JEP 440), so that {@code Box(var s)}
-     * against a {@code Box<String>} binds {@code s} as a {@code String}.
+     * The type of a record pattern's record: {@code recordType}, with the type
+     * arguments of a raw generic record inferred from the static type of the
+     * value it deconstructs (JEP 440), so that {@code Box(var s)} against a
+     * {@code Box<String>} binds {@code s} as a {@code String}.
      */
-    private void inferRecordPatternTypeArguments(final ClassNode sourceType, final DeclarationExpression binding) {
-        VariableExpression recordVar = binding.getVariableExpression();
-        ClassNode patternType = recordVar.getOriginType();
-        GenericsType[] typeParameters = patternType.redirect().getGenericsTypes();
-        if (typeParameters == null || patternType.getGenericsTypes() != null || sourceType == null || !sourceType.isUsingGenerics()) {
-            return; // not generic, or explicitly parameterized
+    private static ClassNode inferRecordPatternType(final ClassNode sourceType, final ClassNode recordType) {
+        GenericsType[] typeParameters = recordType.redirect().getGenericsTypes();
+        if (typeParameters == null || recordType.getGenericsTypes() != null || sourceType == null || !sourceType.isUsingGenerics()) {
+            return recordType; // not generic, or explicitly parameterized
         }
-        ClassNode genericPatternType = GenericsUtils.makeClassSafeWithGenerics(patternType.redirect(), typeParameters);
+        ClassNode genericPatternType = GenericsUtils.makeClassSafeWithGenerics(recordType.redirect(), typeParameters);
         // the source type in terms of the pattern's type parameters; a record is final, so the
         // pattern type is the source type or one of its subtypes, such as a sealed member
         ClassNode sourceAsSeenByPattern = GenericsUtils.findParameterizedType(sourceType.redirect(), genericPatternType);
-        if (sourceAsSeenByPattern == null) return;
+        if (sourceAsSeenByPattern == null) return recordType;
         Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
         extractGenericsConnections(connections, sourceType, sourceAsSeenByPattern);
-        if (connections.isEmpty()) return;
-        storeType(recordVar, applyGenericsContext(connections, genericPatternType));
+        if (connections.isEmpty()) return recordType;
+        return applyGenericsContext(connections, genericPatternType);
     }
 
     /**
-     * The static type of a record pattern component (GEP-19): the record
-     * component type with the record's type arguments applied, or
-     * {@code null} when the deconstructed type declares no record components.
+     * The static type of component {@code index} of {@code recordType}: the
+     * record component type with the record's type arguments applied, or
+     * {@code null} when the type declares no such record component.
      */
-    private ClassNode getRecordPatternComponentType(final VariableExpression recordVar, final int index) {
-        ClassNode recordType = getType(recordVar);
+    private static ClassNode getRecordPatternComponentType(final ClassNode recordType, final int index) {
         List<RecordComponentNode> components = recordType.redirect().getRecordComponents();
         if (index >= components.size()) return null;
         ClassNode componentType = components.get(index).getType();
@@ -5684,6 +5632,73 @@ trying: for (ClassNode[] signature : signatures) {
             componentType = componentType.getPlainNodeReference(); // an uninferred type parameter erases to its bound
         }
         return wrapTypeIfNecessary(componentType);
+    }
+
+    /**
+     * The types of the {@code var}/{@code def} record component bindings of one
+     * pattern (GEP-19), by name, computed from the pattern and the static type of
+     * the matched value when first needed, which is after that value is visited.
+     *
+     * @param byDeclaration whether a binding is introduced by its declaration
+     *                      (the matching steps of a switch arm) or by an
+     *                      assignment within the match ({@code instanceof})
+     */
+    private record PatternBindingTypes(MatchPattern pattern, Supplier<ClassNode> sourceType, boolean byDeclaration, Map<String, ClassNode> types) {
+        PatternBindingTypes(final MatchPattern pattern, final Supplier<ClassNode> sourceType, final boolean byDeclaration) {
+            this(pattern, sourceType, byDeclaration, new HashMap<>());
+        }
+
+        ClassNode typeOf(final String name) {
+            if (types.isEmpty()) collect(pattern, sourceType.get());
+            return types.get(name);
+        }
+
+        private void collect(final MatchPattern pattern, final ClassNode source) {
+            if (pattern instanceof RecordPattern record) {
+                ClassNode recordType = inferRecordPatternType(source, record.type());
+                for (int i = 0, n = record.components().size(); i < n; i += 1) {
+                    MatchPattern component = record.components().get(i);
+                    ClassNode componentType = getRecordPatternComponentType(recordType, i);
+                    if (component instanceof BindingPattern binding) {
+                        if (componentType != null) types.put(binding.name(), componentType);
+                    } else {
+                        collect(component, componentType != null ? componentType : OBJECT_TYPE);
+                    }
+                }
+            } else if (pattern instanceof ListPattern list) {
+                for (MatchPattern element : list.elements()) collect(element, OBJECT_TYPE);
+            } else if (pattern instanceof MapPattern map) {
+                for (MapPattern.Entry entry : map.entries()) collect(entry.value(), OBJECT_TYPE);
+            }
+        }
+    }
+
+    /**
+     * Types the value assigned to a record component binding (GEP-19) as the
+     * record component, when the assignment is the one the lowered pattern makes.
+     */
+    private void typePatternBinding(final BinaryExpression assignment, final Expression target, final Expression value) {
+        if (patternBindingTypes != null && target instanceof VariableExpression variable
+                && (assignment instanceof DeclarationExpression) == patternBindingTypes.byDeclaration()) {
+            ClassNode type = patternBindingTypes.typeOf(variable.getName());
+            if (type != null) storeType(value, type);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void visitPatternExpression(final PatternExpression expression) {
+        if (!expression.isInstanceOf() || expression.getLowered() == null) {
+            super.visitPatternExpression(expression);
+            return;
+        }
+        PatternBindingTypes enclosingBindings = patternBindingTypes;
+        patternBindingTypes = new PatternBindingTypes(expression.getPattern(), () -> getType(expression.getSource()), false);
+        try {
+            super.visitPatternExpression(expression);
+        } finally {
+            patternBindingTypes = enclosingBindings;
+        }
     }
 
     private void addPatternSwitchWarning(final String text, final ASTNode node) {
@@ -5746,14 +5761,12 @@ trying: for (ClassNode[] signature : signatures) {
 
     /**
      * Types the subject variable of a pattern switch (GEP-19) as the selector
-     * type, the way a for-loop variable is typed, and notes it on the selector
-     * so that {@link #visitCaseStatement} can drop its narrowing after each arm.
+     * type, the way a for-loop variable is typed.
      */
     private void rememberSubjectVariable(final ASTNode switchNode, final Expression selector) {
         Parameter subject = getSubjectVariable(switchNode);
         if (subject != null) {
             typeCheckingContext.controlStructureVariables.put(subject, wrapTypeIfNecessary(selector.getNodeMetaData(TYPE)));
-            selector.putNodeMetaData(SUBJECT_VARIABLE, subject);
         }
     }
 
@@ -5777,6 +5790,22 @@ trying: for (ClassNode[] signature : signatures) {
     /** {@inheritDoc} */
     @Override
     public void visitCaseStatement(final CaseStatement statement) {
+        PatternBindingTypes enclosingBindings = patternBindingTypes;
+        Parameter enclosingSubject = patternSubject;
+        if (statement.getExpression() instanceof PatternExpression label && label.getLowered() != null) {
+            Parameter subject = label.getSubject(); // GEP-19: the arm's bindings are typed from the selector type
+            patternBindingTypes = new PatternBindingTypes(label.getPattern(), () -> typeCheckingContext.controlStructureVariables.get(subject), true);
+            patternSubject = subject;
+        }
+        try {
+            visitCaseStatementWithinPatternScope(statement);
+        } finally {
+            patternBindingTypes = enclosingBindings;
+            patternSubject = enclosingSubject;
+        }
+    }
+
+    private void visitCaseStatementWithinPatternScope(final CaseStatement statement) {
         Expression selectable = selectableOfEnclosingSwitch();
         if (selectable == null) {
             super.visitCaseStatement(statement);
@@ -5803,9 +5832,9 @@ trying: for (ClassNode[] signature : signatures) {
         if (!maybeFallsThrough(statement.getCode())) {
             typeCheckingContext.temporaryIfBranchTypeInformation
                 .peek().remove(extractTemporaryTypeInfoKey(selectable));
-            Parameter subject = selectable.getNodeMetaData(SUBJECT_VARIABLE);
-            if (subject != null) { // GEP-19: the pattern arm narrowed the subject variable
-                typeCheckingContext.temporaryIfBranchTypeInformation.peek().remove(subject);
+            if (statement.getExpression() instanceof PatternExpression label && label.getSubject() != null) {
+                // GEP-19: the pattern arm narrowed the subject variable
+                typeCheckingContext.temporaryIfBranchTypeInformation.peek().remove(label.getSubject());
             }
             restoreTypeBeforeConditional(); // isolate assignment branch
         }

@@ -21,6 +21,7 @@ package org.codehaus.groovy.control;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
 import groovy.transform.CompilationUnitAware;
+import org.apache.groovy.ast.pattern.PatternLowering;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -201,6 +202,9 @@ public class CompilationUnit extends ProcessingUnit {
             GroovyClassVisitor visitor = new PlaceholderVisitor(this, source);
             visitor.visitClass(classNode);
         }, Phases.CONVERSION);
+
+        // GEP-19: derive the matching code of every pattern before anything resolves or scopes it
+        addPhaseOperation(PatternLowering::lower, Phases.SEMANTIC_ANALYSIS);
 
         addPhaseOperation(source -> {
             try {
