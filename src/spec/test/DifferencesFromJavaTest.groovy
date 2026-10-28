@@ -52,23 +52,46 @@ assertEquals(1, result);
 
     @Test
     void testArrayCreation() {
-        shouldFail {
-            assertScript '''
-                // tag::arraycreate_fail[]
-                int[] array = {1, 2, 3};             // Java array initializer shorthand syntax
-                int[] array2 = new int[] {4, 5, 6};  // Java array initializer long syntax
-                // end::arraycreate_fail[]
-            '''
-        }
         assertScript '''
             // tag::arraycreate_success[]
             int[] array = [1, 2, 3]
             // end::arraycreate_success[]
             assert array instanceof int[]
+            assert array.length == 3
+        '''
+    }
+
+    @Test
+    void testArrayCreation2() {
+        shouldFail '''
+            // tag::arraycreate_fail[]
+            int scalar = 0
+            int array1[] = [1]
+            int array2[][] = [[2],[3]]
+            // end::arraycreate_fail[]
+          //assert scalar instanceof int
+            assert array1 instanceof int[]
+            assert array2 instanceof int[][]
+        '''
+    }
+
+    @Test
+    void testArrayCreation3() {
+        assertScript '''
             // tag::arraycreate3_success[]
-            def array2 = new int[] {1, 2, 3} // Groovy 3.0+ supports the Java-style array initialization long syntax
+            def array = new int[] {1, 2, 3} // Groovy 3+ supports the Java array initializer verbose syntax
+            int[] array2 = {1, 2, 3}        // Groovy 7+ supports the Java array initializer terse syntax
+            int[][] array3 = {{},{1},{2,3}}
             // end::arraycreate3_success[]
+            assert array instanceof int[]
+            assert array.length == 3
             assert array2 instanceof int[]
+            assert array2.length == 3
+            assert array3 instanceof int[][]
+            assert array3.length == 3
+            assert array3[0].length == 0
+            assert array3[1].length == 1
+            assert array3[2].length == 2
         '''
     }
 
