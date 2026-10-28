@@ -74,6 +74,42 @@ final class PositionConfigureUtilsTest {
     }
 
     @Test
+    void endPositionWithLoneCarriageReturnMatchesNewline() {
+        def (lastLine, lastColumn) = PositionConfigureUtils.endPosition(token('a\rb', 5, 2))
+        assert lastLine == 6
+        assert lastColumn == 2
+    }
+
+    @Test
+    void endPositionWithCrlfMatchesNewline() {
+        def crlf = PositionConfigureUtils.endPosition(token('a\r\nb', 5, 2))
+        def lf = PositionConfigureUtils.endPosition(token('a\nb', 5, 2))
+        assert crlf == lf
+    }
+
+    @Test
+    void endPositionWithTwoLoneCarriageReturns() {
+        def (lastLine, lastColumn) = PositionConfigureUtils.endPosition(token('a\r\rb', 1, 0))
+        assert lastLine == 3
+        assert lastColumn == 2
+    }
+
+    @Test
+    void endPositionWithCrlfThenLoneCarriageReturn() {
+        def (lastLine, lastColumn) = PositionConfigureUtils.endPosition(token('a\r\nb\rc', 1, 0))
+        assert lastLine == 3
+        assert lastColumn == 2
+    }
+
+    @Test
+    void endPositionWithLoneCarriageReturnCountsSupplementaryCharacterOnce() {
+        def (lastLine, lastColumn) = PositionConfigureUtils.endPosition(token('a\r🥤', 1, 0))
+        assert lastLine == 2
+        // the break plus one code point, not the emoji's two UTF-16 units
+        assert lastColumn == 2
+    }
+
+    @Test
     void configureASTWithNullTokenTextUsesStartColumn() {
         CommonToken token = new CommonToken(Token.EOF)
         token.setLine(3)

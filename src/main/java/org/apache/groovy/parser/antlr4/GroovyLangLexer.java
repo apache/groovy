@@ -140,7 +140,26 @@ public class GroovyLangLexer extends GroovyLexer {
         return "Illegal string body character after dollar sign: " + getCharErrorDisplay(c);
     }
 
+    /**
+     * Line and column tracking for the Groovy lexer.
+     * <p>
+     * The ATN simulator's per-character {@code consume} is package-private and
+     * final, and the DFA loop calls it directly, so a {@code consume(CharStream)}
+     * override never sees normal tokens. That method advances the line only on
+     * {@code \n}. A bare {@code \r} is also a line ending ({@code \r\n} is one),
+     * which is what {@code LineTerminator} lexes and what {@code BufferedReader}
+     * reports to the editor. After each token, if this file contains a bare CR,
+     * the end position is recomputed from the token text. Files with no bare CR
+     * pay for one scan and then take the unchanged simulator path.
+     * <p>
+     * One lexer owns this simulator and is not matched from two threads.
+     */
     private static class PositionAdjustingLexerATNSimulator extends LexerATNSimulator {
+        /** Stream already scanned for a bare CR, or {@code null} if not yet. */
+        private CharStream scannedInput;
+        /** {@code true} when {@link #scannedInput} contains a CR not followed by LF. */
+        private boolean bareCr;
+
         public PositionAdjustingLexerATNSimulator(Lexer recog, ATN atn) {
             super(recog, atn);
         }
@@ -150,6 +169,129 @@ public class GroovyLangLexer extends GroovyLexer {
             this.line = line;
             this.charPositionInLine = charPositionInLine;
             this.consume(input);
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>
+         * Used by rollback and by predicate speculation. The DFA loop does not
+         * call this overload. A bare CR ends the line; a CR before LF does not,
+         * because the following LF does.
+         */
+        @Override
+        public void consume(CharStream input) {
+            int cur = input.LA(1);
+            if (cur == '\r' && input.LA(2) != '\n') {
+                line++;
+                charPositionInLine = 0;
+                input.consume();
+                return;
+            }
+            super.consume(input);
+        }
+
+        @Override
+        public int match(CharStream input, int mode) {
+            if (!fileHasBareCr(input)) {
+                return super.match(input, mode);
+            }
+            int startLine = line;
+            int startColumn = charPositionInLine;
+            int startIndex = input.index();
+            int type = super.match(input, mode);
+            correctBareCr(input, startIndex, startLine, startColumn);
+            return type;
+        }
+
+        /**
+         * One forward scan per stream. The result is reused for every later
+         * token of that same stream. {@link CharStream#consume()} moves the
+         * index only; it does not touch {@link #line}.
+         */
+        private boolean fileHasBareCr(CharStream input) {
+            if (input == scannedInput) {
+                return bareCr;
+            }
+            int index = input.index();
+            boolean found = false;
+            try {
+                input.seek(0);
+                while (true) {
+                    int c = input.LA(1);
+                    if (c == Token.EOF) {
+                        break;
+                    }
+                    if (c == '\r' && input.LA(2) != '\n') {
+                        found = true;
+                        break;
+                    }
+                    input.consume();
+                }
+            } finally {
+                input.seek(index);
+            }
+            scannedInput = input;
+            bareCr = found;
+            return found;
+        }
+
+        /**
+         * Recompute the simulator position for a token that contains a bare CR.
+         * A CR at the end of the token whose next character is LF is the first
+         * half of a CRLF owned by the following token (GString {@code more}
+         * fragments match one character at a time) and must not add a line.
+         * The position is applied only when a bare CR was actually present, so
+         * a token made entirely of LF or CRLF keeps the simulator's own count.
+         */
+        private void correctBareCr(CharStream input, int startIndex, int startLine, int startColumn) {
+            int end = input.index();
+            if (end <= startIndex) {
+                return;
+            }
+            int correctedLine = startLine;
+            int correctedColumn = startColumn;
+            boolean bare = false;
+            try {
+                for (int i = startIndex; i < end; ) {
+                    input.seek(i);
+                    int c = input.LA(1);
+                    if (c == '\n') {
+                        correctedLine++;
+                        correctedColumn = 0;
+                        i++;
+                    } else if (c == '\r') {
+                        if (i + 1 < end) {
+                            input.seek(i + 1);
+                            if (input.LA(1) == '\n') {
+                                correctedLine++;
+                                correctedColumn = 0;
+                                i += 2;
+                                continue;
+                            }
+                        } else {
+                            input.seek(end);
+                            if (input.LA(1) == '\n') {
+                                correctedColumn++;
+                                i++;
+                                continue;
+                            }
+                        }
+                        bare = true;
+                        correctedLine++;
+                        correctedColumn = 0;
+                        i++;
+                    } else {
+                        correctedColumn++;
+                        i++;
+                    }
+                }
+            } finally {
+                input.seek(end);
+            }
+            if (bare) {
+                line = correctedLine;
+                charPositionInLine = correctedColumn;
+            }
         }
     }
 }

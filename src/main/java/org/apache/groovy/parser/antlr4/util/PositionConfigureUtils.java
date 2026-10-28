@@ -62,6 +62,28 @@ public class PositionConfigureUtils {
             return tuple(token.getLine(), token.getCharPositionInLine() + 1);
         }
         int stopTextLength = stopText.length();
+        // A bare CR is a line ending, same as LF. CRLF stays one break. Tokens
+        // with no CR keep the LF-only count below, which is the common path.
+        if (stopText.indexOf('\r') >= 0) {
+            int breaks = 0;
+            int anchor = -1;
+            for (int i = 0; i < stopTextLength; i++) {
+                char c = stopText.charAt(i);
+                if (c == '\n') {
+                    breaks++;
+                    anchor = i;
+                } else if (c == '\r') {
+                    breaks++;
+                    if (i + 1 < stopTextLength && stopText.charAt(i + 1) == '\n') {
+                        anchor = i + 1; // column base is the LF, as in the LF-only path
+                        i++;
+                    } else {
+                        anchor = i;
+                    }
+                }
+            }
+            return tuple(token.getLine() + breaks, stopText.codePointCount(anchor, stopTextLength));
+        }
         int newLineCnt = (int) StringUtils.countChar(stopText, '\n');
 
         if (0 == newLineCnt) {
