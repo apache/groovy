@@ -102,6 +102,22 @@ final class PositionConfigureUtilsTest {
     }
 
     @Test
+    void endPositionWithLoneLineFeedInsideCarriageReturnToken() {
+        // The CR gate is open, and the LF is not the second half of a CRLF,
+        // so it is its own line break.
+        def (lastLine, lastColumn) = PositionConfigureUtils.endPosition(token('a\nb\rc', 1, 0))
+        assert lastLine == 3
+        assert lastColumn == 2
+    }
+
+    @Test
+    void endPositionWithCrlfThenLoneLineFeed() {
+        def (lastLine, lastColumn) = PositionConfigureUtils.endPosition(token('a\r\n\nb', 1, 0))
+        assert lastLine == 3
+        assert lastColumn == 2
+    }
+
+    @Test
     void endPositionWithLoneCarriageReturnCountsSupplementaryCharacterOnce() {
         def (lastLine, lastColumn) = PositionConfigureUtils.endPosition(token('a\r🥤', 1, 0))
         assert lastLine == 2

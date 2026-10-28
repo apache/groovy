@@ -19,6 +19,8 @@
 package org.apache.groovy.parser.antlr4
 
 import groovy.lang.GroovyShell
+import org.antlr.v4.runtime.CharStreams
+import org.antlr.v4.runtime.Token
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.ast.expr.DeclarationExpression
@@ -135,6 +137,59 @@ final class Groovy12435 {
             assert frame != null
             assert frame.lineNumber == 2
         }
+    }
+
+    @Test
+    void tripleQuotedStringMixesCrlfLoneLineFeedAndBareCarriageReturn() {
+        // One token, so correction walks a CRLF, a lone LF, and a bare CR.
+        ModuleNode module = module("def s = '''a\r\nb\nc\rd'''")
+        def literal = declaration(module, 0).rightExpression
+        assert [literal.lineNumber, literal.columnNumber, literal.lastLineNumber, literal.lastColumnNumber] == [1, 9, 4, 5]
+    }
+
+    @Test
+    void gstringMoreFragmentSplitsCarriageReturnFromFollowingLineFeed() {
+        // After ${1} each character is its own match. The CR's match ends
+        // with LF still outside the token, and a later bare CR forces correction.
+        ModuleNode module = module('def s = """x${1}\r\nb\rc"""\nnext = 1')
+        def gstring = declaration(module, 0).rightExpression
+        assert [gstring.lineNumber, gstring.lastLineNumber] == [1, 3]
+        assert positionsOf(module) == [[1, 1], [4, 1]]
+    }
+
+    @Test
+    void consumeBareCarriageReturnOutsideDfaLoopEndsTheLine() {
+        // consume(CharStream) is the rollback and speculative-predicate entry.
+        // The DFA loop does not call it. A bare CR ends the line; CR before LF does not.
+        def bare = CharStreams.fromString('\rx')
+        def bareLexer = new GroovyLangLexer(bare)
+        bareLexer.interpreter.consume(bare)
+        assert [bareLexer.interpreter.line, bareLexer.interpreter.charPositionInLine] == [2, 0]
+        assert bare.LA(1) == 'x'.codePointAt(0)
+
+        def paired = CharStreams.fromString('\r\n')
+        def pairedLexer = new GroovyLangLexer(paired)
+        pairedLexer.interpreter.consume(paired)
+        assert [pairedLexer.interpreter.line, pairedLexer.interpreter.charPositionInLine] == [1, 1]
+        assert paired.LA(1) == '\n'.codePointAt(0)
+
+        def plain = CharStreams.fromString('ab')
+        def plainLexer = new GroovyLangLexer(plain)
+        plainLexer.interpreter.consume(plain)
+        assert [plainLexer.interpreter.line, plainLexer.interpreter.charPositionInLine] == [1, 1]
+        assert plain.LA(1) == 'b'.codePointAt(0)
+    }
+
+    @Test
+    void emptyMatchOnBareCarriageReturnFileDoesNotMoveTheInput() {
+        def lexer = new GroovyLangLexer(CharStreams.fromString('a\rb'))
+        while (lexer.nextToken().type != Token.EOF) {
+        }
+        def input = lexer.inputStream
+        assert input.LA(1) == Token.EOF
+        int atEnd = input.index()
+        assert lexer.interpreter.match(input, 0) == Token.EOF
+        assert input.index() == atEnd
     }
 
     @Test
