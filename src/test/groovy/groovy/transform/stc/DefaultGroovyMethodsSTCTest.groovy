@@ -221,6 +221,53 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12534
+    @Test
+    void testListDeclaredFieldAndUnarySetter() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class C {
+                void check(bugs.Groovy12534Support list) {
+                    list.add('x')
+
+                    // a field declared on the list is the list's own property
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        def expr = node.rightExpression
+                        assert !expr.spreadSafe
+                    })
+                    def tag = list.tag
+                    assert tag == 't'
+
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        def expr = node.rightExpression
+                        assert expr.leftExpression instanceof org.codehaus.groovy.ast.expr.PropertyExpression
+                        assert !expr.leftExpression.spreadSafe
+                    })
+                    def updatedTag = (list.tag = 'u')
+                    assert updatedTag == 'u'
+                    assert list.tag == 'u'
+
+                    // a one-argument setter declared on the list writes the list, not each element
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        def expr = node.rightExpression
+                        assert !expr.spreadSafe
+                        def target = expr.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                        assert target != null
+                        assert target.name == 'getMark'
+                    })
+                    def mark = list.mark
+                    assert mark == 'm'
+
+                    list.mark = 'renamed'
+                    assert list.mark == 'renamed'
+                    assert list == ['x']
+                    assert list.size() == 1
+                }
+            }
+            new C().check(new bugs.Groovy12534Support())
+        '''
+    }
+
     // GROOVY-5584
     @Test
     void testEachOnMap() {
