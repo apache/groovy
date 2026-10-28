@@ -389,6 +389,7 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
             'static Runnable r = new Runnable() { void run() { pm() } }'                      : 'Box$1#pm()',
             'static m() { new Runnable() { void run() { new Runnable() { void run() { pm() } }.run() } }.run() }' : 'Box$1$1#pm()',
             'static class N { String pn() { "pn" }; static m() { new Runnable() { void run() { pn() } }.run() } }' : 'Box$N$1#pn()',
+            'Box(Runnable r) {}; Box() { this(new Runnable() { void run() { pm() } }) }'      : 'Box$1#pm()',
         ].each { code, method ->
             shouldFailWithMessages """
                 class Box {
@@ -399,6 +400,30 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
             """,
             "Cannot find matching method $method"
         }
+    }
+
+    // GROOVY-12512: an anonymous class in an argument of this(...) or super(...)
+    // can use the parameters and static members, but not the instance being built
+    @Test
+    void testAnonymousClassInSpecialConstructorCall() {
+        assertScript '''
+            class Base {
+                Runnable r
+                Base(Runnable r) { this.r = r }
+            }
+            class Box extends Base {
+                static String twice(String s) { s * 2 }
+                String out
+                Box(Runnable r) { super(r) }
+                Box(String s) {
+                    this(new Runnable() {
+                        String own = 'own'
+                        void run() { assert own + twice(s) + { -> s }() == 'ownppp' }
+                    })
+                }
+            }
+            new Box('p').r.run()
+        '''
     }
 
     // GROOVY-12512

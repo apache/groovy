@@ -52,7 +52,6 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.ast.Variable;
-import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
@@ -160,6 +159,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoEnclosingInstance;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.enumConstantName;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.intConstant;
@@ -6625,20 +6625,6 @@ trying: for (ClassNode[] signature : signatures) {
         }
 
         return EMPTY_METHODNODE_LIST;
-    }
-
-    /**
-     * Determines if the given class has no instance of its outer class to use: a
-     * static nested class, or an anonymous class created in a static context, such
-     * as a static method, a static initializer or a closure inside one of them.
-     */
-    private static boolean hasNoEnclosingInstance(final ClassNode type) {
-        if (Modifier.isStatic(type.getModifiers())) return true;
-        if (type.redirect() instanceof InnerClassNode inner && inner.isAnonymous()) {
-            VariableScope scope = inner.getVariableScope(); // see VariableScopeVisitor
-            return scope != null && scope.getParent() != null && scope.getParent().isInStaticContext();
-        }
-        return false;
     }
 
     private PropertyNode findProperty(final ClassNode receiver, final String name) {
