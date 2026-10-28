@@ -429,4 +429,30 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
                 'MAXLOCALS = 2'
         ])
     }
+
+    // GROOVY-12540
+    @Test
+    void testTypeAnnotationsForPrimitiveLocalVariables() {
+        def bytecode = compile(classNamePattern: 'Foo', method: 'bar', imports + '''
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno1 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno2 { }
+
+            class Foo {
+                def bar() {
+                    @TypeAnno0 int i = 0
+                    @TypeAnno1 long l = 0
+                    @TypeAnno2 double d = 0
+                }
+            }
+        ''')
+        assert bytecode.hasSequence([
+                'LOCALVARIABLE i I',
+                'LOCALVARIABLE l J',
+                'LOCALVARIABLE d D',
+                'LOCALVARIABLE @LTypeAnno0;() : LOCAL_VARIABLE, null',
+                'LOCALVARIABLE @LTypeAnno1;() : LOCAL_VARIABLE, null',
+                'LOCALVARIABLE @LTypeAnno2;() : LOCAL_VARIABLE, null'
+        ])
+    }
 }
