@@ -254,8 +254,8 @@ public class BinaryExpressionTransformer {
     }
 
     private MethodNode findExtensionPropertyGetter(final ExtensionMethodNode setter, final String propertyName) {
+        // SourceUnit always installs a class loader, so the lookup can use it directly.
         ClassLoader loader = staticCompilationTransformer.getSourceUnit().getClassLoader();
-        if (loader == null) return null;
 
         ClassNode receiverType = setter.getDeclaringClass();
         Set<MethodNode> methods = new LinkedHashSet<>();
@@ -296,6 +296,8 @@ public class BinaryExpressionTransformer {
             elvis.setSourcePosition(bin);
             return staticCompilationTransformer.transform(elvis);
         }
+        // Every assignment operator that reaches here has a non-assignment form.
+        // An unmapped token would rebuild the assignment and recurse, so stop.
         int bare = TokenUtil.removeAssignment(op);
         if (bare == op) return null;
 

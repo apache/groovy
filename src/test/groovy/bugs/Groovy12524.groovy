@@ -320,6 +320,19 @@ final class Groovy12524 {
     }
 
     @Test
+    void testSubscriptCompoundAssignStillUpdatesTheElement() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            String test(List<String> list) {
+                String result = list[0] += '!'
+                assert list[0] == 'a!'
+                result
+            }
+            assert test(['a']) == 'a!'
+        '''
+    }
+
+    @Test
     void testPrimitiveExtensionSetterWithoutGetterIsRejected() {
         shouldFail '''
             @groovy.transform.CompileStatic
