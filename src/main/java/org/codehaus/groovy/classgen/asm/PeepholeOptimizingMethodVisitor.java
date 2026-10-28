@@ -321,8 +321,14 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
      */
     public static boolean printTraceBytecode(final MethodVisitor visitor, final PrintWriter out) {
         MethodVisitor current = visitor;
-        while (current instanceof PeepholeOptimizingMethodVisitor peephole) {
-            current = peephole.mv;
+        while (true) {
+            if (current instanceof PeepholeOptimizingMethodVisitor peephole) {
+                current = peephole.mv;
+            } else if (current instanceof ConditionalJumpFoldingMethodVisitor folding) {
+                current = folding.delegate();
+            } else {
+                break;
+            }
         }
         if (current instanceof TraceMethodVisitor tmv) {
             tmv.p.print(out);
