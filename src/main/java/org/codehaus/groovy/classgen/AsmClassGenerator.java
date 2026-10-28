@@ -110,6 +110,7 @@ import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter;
 import org.codehaus.groovy.classgen.asm.PeepholeOptimizingMethodVisitor;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
+import org.codehaus.groovy.control.PlaceholderVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.IntersectionCastSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -1713,7 +1714,11 @@ public class AsmClassGenerator extends ClassGenerator {
             pexp.copyNodeMetaData(expression);
             pexp.visit(this);
         } else {
-            BytecodeVariable variable = compileStack.getVariable(expression.getName(), /*throwIfMissing*/false);
+            String variableName = expression.getName();
+            if (expression.getAccessedVariable() instanceof Parameter param && PlaceholderVisitor.isPlaceholder(param)) {
+                variableName = PlaceholderVisitor.bytecodeName(param);
+            }
+            BytecodeVariable variable = compileStack.getVariable(variableName, /*throwIfMissing*/false);
             if (variable != null) {
                 controller.getOperandStack().loadOrStoreVariable(variable, expression.isUseReferenceDirectly());
             } else {

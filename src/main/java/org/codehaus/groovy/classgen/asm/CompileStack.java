@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.control.PlaceholderVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.TypePath;
@@ -901,7 +902,8 @@ public class CompileStack {
         makeLocalVariablesOffset(params,isInStaticContext);
 
         for (Parameter param : params) {
-            String name = param.getName();
+            // unnamed parameters keep their slots but must not hide a real "_"
+            String name = PlaceholderVisitor.bytecodeName(param);
             BytecodeVariable answer;
             ClassNode type = param.getType();
             if (param.isClosureSharedVariable()) {

@@ -50,6 +50,7 @@ import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.classgen.VariableScopeVisitor.InstanceofFlowBindings;
+import org.codehaus.groovy.control.PlaceholderVisitor;
 import org.codehaus.groovy.runtime.MultipleAssignmentSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Token;
@@ -570,6 +571,9 @@ public class BinaryExpressionHelper {
         ClassNode lhsType = controller.getTypeChooser().resolveType(leftExpression, controller.getClassNode());
 
         if (directAssignment && rightExpression instanceof EmptyExpression) {
+            if (PlaceholderVisitor.isPlaceholder(leftExpression)) {
+                return; // unnamed declaration declares nothing
+            }
             BytecodeVariable v = compileStack.defineVariable((Variable) leftExpression, lhsType, false);
             if (returnRightValue) operandStack.loadOrStoreVariable(v, false);
             return;
@@ -630,6 +634,13 @@ public class BinaryExpressionHelper {
             } finally {
                 // Drop RHS pattern locals before defining the LHS in the outer state
                 compileStack.pop();
+            }
+
+            if (PlaceholderVisitor.isPlaceholder(leftExpression)) {
+                // static compilation splits a multi-assign into single declarations;
+                // an unnamed slot must not define or overwrite "_"
+                if (!returnRightValue) operandStack.pop();
+                return;
             }
 
             // store value
@@ -829,6 +840,11 @@ public class BinaryExpressionHelper {
                 } else {
                     ternaryX(hasNext, next, nullX()).visit(acg);
                 }
+                if (PlaceholderVisitor.isPlaceholder(e)) {
+                    // unnamed slot: drop the value instead of binding "_"
+                    operandStack.pop();
+                    continue;
+                }
                 if (defineVariable) {
                     Variable v = (Variable) e;
                     operandStack.doGroovyCast(v);
@@ -861,6 +877,10 @@ public class BinaryExpressionHelper {
                 call.setImplicitThis(false);
                 call.visit(acg);
 
+                if (PlaceholderVisitor.isPlaceholder(e)) {
+                    operandStack.pop();
+                    continue;
+                }
                 if (defineVariable) {
                     Variable v = (Variable) e;
                     operandStack.doGroovyCast(v);
@@ -891,6 +911,10 @@ public class BinaryExpressionHelper {
     private void assignOneMultiAssignSlot(final Expression e, final boolean defineVariable,
                                           final OperandStack operandStack, final CompileStack compileStack,
                                           final AsmClassGenerator acg) {
+        if (PlaceholderVisitor.isPlaceholder(e)) {
+            operandStack.pop();
+            return;
+        }
         if (defineVariable) {
             Variable v = (Variable) e;
             operandStack.doGroovyCast(v);

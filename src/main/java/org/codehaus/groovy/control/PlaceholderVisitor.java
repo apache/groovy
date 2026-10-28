@@ -30,10 +30,16 @@ import java.util.stream.StreamSupport;
 
 /**
  * Marks repeated underscore placeholders used in tuple and closure parameters.
+ * <p>
+ * A repeated {@code _} is unnamed: it occupies a tuple slot or parameter
+ * position but does not declare a variable of that name. Parameter placeholders
+ * are given a distinct bytecode name so they cannot hide a real {@code _}.
  */
 public class PlaceholderVisitor extends ClassCodeVisitorSupport {
     private static final String PLACEHOLDER = "Underscore_Placeholder";
+    private static final String SLOT = "Underscore_Placeholder_Slot";
     private SourceUnit source;
+    private int nextSlot;
 
     /**
      * Creates a visitor for placeholder analysis.
@@ -94,6 +100,9 @@ public class PlaceholderVisitor extends ClassCodeVisitorSupport {
                 for (Parameter param : expression.getParameters()) {
                     if ("_".equals(param.getName())) {
                         markAsPlaceholder(param);
+                        if (param.getNodeMetaData(SLOT) == null) {
+                            param.setNodeMetaData(SLOT, nextSlot++);
+                        }
                     }
                 }
             }
@@ -113,5 +122,23 @@ public class PlaceholderVisitor extends ClassCodeVisitorSupport {
      */
     public static boolean isPlaceholder(ASTNode node) {
         return Boolean.TRUE.equals(node.getNodeMetaData(PLACEHOLDER));
+    }
+
+    /**
+     * Bytecode name of a parameter. Unnamed parameters use a slot-specific
+     * name so a real variable called {@code _} is not hidden.
+     *
+     * @param parameter the parameter to name
+     * @return the name to use in the local-variable map
+     */
+    public static String bytecodeName(final Parameter parameter) {
+        if (!isPlaceholder(parameter)) {
+            return parameter.getName();
+        }
+        Object slot = parameter.getNodeMetaData(SLOT);
+        if (slot == null) {
+            slot = System.identityHashCode(parameter);
+        }
+        return "$_unnamed_" + slot;
     }
 }
