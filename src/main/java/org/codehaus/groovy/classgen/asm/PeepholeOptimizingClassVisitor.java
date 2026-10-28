@@ -72,6 +72,7 @@ public final class PeepholeOptimizingClassVisitor extends ClassVisitor {
      */
     @Override
     public MethodVisitor visitMethod(final int access, final String name, final String descriptor, final String signature, final String[] exceptions) {
-        return PeepholeOptimizingMethodVisitor.wrap(super.visitMethod(access, name, descriptor, signature, exceptions));
+        // GROOVY-12542: fold materialized booleans that are only branched on
+        return PeepholeOptimizingMethodVisitor.wrap(ConditionalJumpFoldingMethodVisitor.wrap(super.visitMethod(access, name, descriptor, signature, exceptions)));
     }
 }
