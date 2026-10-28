@@ -293,6 +293,122 @@ final class Groovy12063 {
         '''
     }
 
+    @Test
+    void testAssignmentToEnclosingNameWritesMapEntry() {
+        assertBoth '''
+            class Holder {
+                static String label = 'original'
+                static final String VALUE = 'expected'
+                static Map map = new HashMap() {
+                    {
+                        label = VALUE
+                        def local = 'temp'
+                        local = label
+                        put('plus', VALUE + '!')
+                        put('local', local)
+                    }
+                }
+            }
+            assert Holder.label == 'original'
+            assert Holder.map.label == 'expected'
+            assert Holder.map.plus == 'expected!'
+            assert Holder.map.local == 'original'
+        '''
+    }
+
+    @Test
+    void testInitializerReadsEnclosingGetter() {
+        assertBoth '''
+            class Holder {
+                static String getVALUE() { 'from-getter' }
+                String getValue() { 'from-instance-getter' }
+                static Map map = new HashMap() {
+                    {
+                        put('k', VALUE)
+                    }
+                }
+                Map instance = new HashMap() {
+                    {
+                        put('k', value)
+                    }
+                }
+            }
+            assert Holder.map.k == 'from-getter'
+            assert new Holder().instance.k == 'from-instance-getter'
+        '''
+    }
+
+    @Test
+    void testInitializerReadsInheritedPropertyNotField() {
+        assertBoth '''
+            class Base {
+                String name = 'from-base'
+            }
+            class Holder extends Base {
+                @Override String getName() { 'from-override' }
+                Map map = new HashMap() {
+                    {
+                        put('k', name)
+                    }
+                }
+            }
+            assert new Holder().map.k == 'from-override'
+        '''
+    }
+
+    @Test
+    void testSuperFieldOfAnonymousClassIsNotEnclosing() {
+        assertBoth '''
+            class Base {
+                String inside = 'from-super'
+            }
+            class Holder {
+                Object box = new Base() {
+                    String captured
+                    {
+                        captured = inside
+                    }
+                }
+            }
+            assert new Holder().box.captured == 'from-super'
+        '''
+    }
+
+    @Test
+    void testInterfaceConstantOnOuterClass() {
+        assertBoth '''
+            interface Api {
+                String NAME = 'from-interface'
+            }
+            class Holder implements Api {
+                static Map map = new HashMap() {
+                    {
+                        put('k', NAME)
+                    }
+                }
+            }
+            assert Holder.map.k == 'from-interface'
+        '''
+    }
+
+    @Test
+    void testInterfaceConstantOnAnonymousClassItself() {
+        assertBoth '''
+            interface Tag {
+                String TAG = 'from-tag'
+            }
+            class Holder {
+                Object box = new Tag() {
+                    String captured
+                    {
+                        captured = TAG
+                    }
+                }
+            }
+            assert new Holder().box.captured == 'from-tag'
+        '''
+    }
+
     // Self-property precedence (GROOVY-10985) still applies to method bodies.
     @Test
     void testMapMethodBodyStillPrefersSelfProperty() {
