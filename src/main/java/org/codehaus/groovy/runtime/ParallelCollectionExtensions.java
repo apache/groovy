@@ -20,6 +20,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.concurrent.ParallelScope;
 import groovy.concurrent.Pool;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -65,17 +66,25 @@ import java.util.stream.Stream;
  * {@link Pool#fixed(int)}. CPU-bound work should stay on {@link Pool#fixed(int)}
  * or {@link Pool#cpu()}.
  * <p>
- * A nested operation stays on the same pool. A fork-join leaf does not
- * inherit the binding of the task that submitted the stream, so each
- * callback rebinds the pool on the worker that runs it. On a bounded
- * executor that does not create extra threads, the nested operation runs
- * on the worker already executing the outer callback. That worker would
- * otherwise wait for a task queued behind it. {@link Pool#virtual()} still
- * submits one task per element.
+ * A nested operation stays on the same pool. A worker created for a pool
+ * carries that pool, and {@link Pool#current()} reports it when the thread
+ * has no explicit binding, so a callback does not rebind the pool on each
+ * element. On a bounded executor that does not create extra threads, the
+ * nested operation runs on the worker already executing the outer callback.
+ * That worker would otherwise wait for a task queued behind it.
+ * {@link Pool#virtual()} still submits one task per element.
+ * <p>
+ * On the executor path, a short-circuit ({@code findParallel},
+ * {@code findAnyParallel}, {@code anyParallel}, {@code everyParallel}) or a
+ * sibling failure interrupts callbacks that are still running. Interrupting
+ * a thread blocked on an interruptible channel closes that channel. A
+ * fork-join pool does not interrupt a running callback.
  * <p>
  * A matching null element, a null reduction, and a null group key are
  * preserved on a fork-join pool and on an executor pool. An empty
- * search or reduction returns {@code null}.
+ * search or reduction returns {@code null}. {@code maxParallel} skips null
+ * elements, matching sequential {@code max(Comparator)}. {@code minParallel}
+ * passes nulls to the comparator, matching sequential {@code min(Comparator)}.
  * <p>
  * Inspired by GPars' {@code GParsPoolUtil} category methods.
  *
@@ -106,7 +115,7 @@ public class ParallelCollectionExtensions {
     public static <T> void eachParallel(Collection<T> self, Consumer<T> action) {
         require(self, action);
         withPool((pool, fjp) -> {
-            fjp.submit(() -> self.parallelStream().forEach(inPool(pool, action))).join();
+            fjp.submit(() -> self.parallelStream().forEach(action)).join();
             return null;
         }, pool -> {
             ParallelExecutorTasks.forEach(pool, self, action);
@@ -122,7 +131,7 @@ public class ParallelCollectionExtensions {
     public static <T, R> List<R> collectParallel(Collection<T> self, Function<T, R> transform) {
         require(self, transform);
         return withPool(
-                (pool, fjp) -> fjp.submit(() -> self.parallelStream().map(inPool(pool, transform)).collect(toListCollector())).join(),
+                (pool, fjp) -> fjp.submit(() -> self.parallelStream().map(transform).collect(toListCollector())).join(),
                 pool -> ParallelExecutorTasks.map(pool, self, transform)
         );
     }
@@ -135,7 +144,7 @@ public class ParallelCollectionExtensions {
     public static <T> List<T> findAllParallel(Collection<T> self, Predicate<T> filter) {
         require(self, filter);
         return withPool(
-                (pool, fjp) -> fjp.submit(() -> self.parallelStream().filter(inPool(pool, filter)).collect(toListCollector())).join(),
+                (pool, fjp) -> fjp.submit(() -> self.parallelStream().filter(filter).collect(toListCollector())).join(),
                 pool -> ParallelExecutorTasks.filter(pool, self, filter)
         );
     }
@@ -150,7 +159,7 @@ public class ParallelCollectionExtensions {
     public static <T> T findParallel(Collection<T> self, Predicate<T> filter) {
         require(self, filter);
         return withPool(
-                (pool, fjp) -> findMatch(fjp, pool, self, filter, true),
+                (pool, fjp) -> findMatch(fjp, self, filter, true),
                 pool -> ParallelExecutorTasks.findFirst(pool, self, filter)
         );
     }
@@ -163,7 +172,7 @@ public class ParallelCollectionExtensions {
     public static <T> T findAnyParallel(Collection<T> self, Predicate<T> filter) {
         require(self, filter);
         return withPool(
-                (pool, fjp) -> findMatch(fjp, pool, self, filter, false),
+                (pool, fjp) -> findMatch(fjp, self, filter, false),
                 pool -> ParallelExecutorTasks.findAny(pool, self, filter)
         );
     }
@@ -176,7 +185,7 @@ public class ParallelCollectionExtensions {
     public static <T> boolean anyParallel(Collection<T> self, Predicate<T> predicate) {
         require(self, predicate);
         return withPool(
-                (pool, fjp) -> fjp.submit(() -> self.parallelStream().anyMatch(inPool(pool, predicate))).join(),
+                (pool, fjp) -> fjp.submit(() -> self.parallelStream().anyMatch(predicate)).join(),
                 pool -> ParallelExecutorTasks.anyMatch(pool, self, predicate)
         );
     }
@@ -187,7 +196,7 @@ public class ParallelCollectionExtensions {
     public static <T> boolean everyParallel(Collection<T> self, Predicate<T> predicate) {
         require(self, predicate);
         return withPool(
-                (pool, fjp) -> fjp.submit(() -> self.parallelStream().allMatch(inPool(pool, predicate))).join(),
+                (pool, fjp) -> fjp.submit(() -> self.parallelStream().allMatch(predicate)).join(),
                 pool -> ParallelExecutorTasks.allMatch(pool, self, predicate)
         );
     }
@@ -198,7 +207,7 @@ public class ParallelCollectionExtensions {
     public static <T> long countParallel(Collection<T> self, Predicate<T> predicate) {
         require(self, predicate);
         return withPool(
-                (pool, fjp) -> fjp.submit(() -> self.parallelStream().filter(inPool(pool, predicate)).count()).join(),
+                (pool, fjp) -> fjp.submit(() -> self.parallelStream().filter(predicate).count()).join(),
                 pool -> ParallelExecutorTasks.count(pool, self, predicate)
         );
     }
@@ -211,11 +220,15 @@ public class ParallelCollectionExtensions {
      * order is returned. An empty collection returns {@code null}.
      * A one-element collection returns that element, including {@code null},
      * without calling the comparator.
+     * <p>
+     * Null elements are passed to the comparator, matching sequential
+     * {@code min(Comparator)}. {@link #maxParallel} skips nulls instead,
+     * matching sequential {@code max(Comparator)}.
      */
     public static <T> T minParallel(Collection<T> self, Comparator<T> comparator) {
         require(self, comparator);
         return withPool(
-                (pool, fjp) -> fold(fjp, pool, self, (left, right) -> ParallelExecutorTasks.pick(comparator, left, right, true)),
+                (pool, fjp) -> fold(fjp, self, (left, right) -> ParallelExecutorTasks.pick(comparator, left, right, true)),
                 pool -> ParallelExecutorTasks.min(pool, self, comparator)
         );
     }
@@ -226,11 +239,16 @@ public class ParallelCollectionExtensions {
      * order is returned. An empty collection returns {@code null}.
      * A one-element collection returns that element, including {@code null},
      * without calling the comparator.
+     * <p>
+     * Null elements are skipped, matching sequential {@code max(Comparator)}.
+     * A collection of only nulls returns {@code null} and does not call the
+     * comparator. {@link #minParallel} passes nulls through, matching
+     * sequential {@code min(Comparator)}.
      */
     public static <T> T maxParallel(Collection<T> self, Comparator<T> comparator) {
         require(self, comparator);
         return withPool(
-                (pool, fjp) -> fold(fjp, pool, self, (left, right) -> ParallelExecutorTasks.pick(comparator, left, right, false)),
+                (pool, fjp) -> fold(fjp, self, (left, right) -> ParallelExecutorTasks.pick(comparator, left, right, false)),
                 pool -> ParallelExecutorTasks.max(pool, self, comparator)
         );
     }
@@ -245,15 +263,15 @@ public class ParallelCollectionExtensions {
     public static <T> T sumParallel(Collection<T> self, BinaryOperator<T> accumulator) {
         require(self, accumulator);
         return withPool(
-                (pool, fjp) -> fold(fjp, pool, self, accumulator),
+                (pool, fjp) -> fold(fjp, self, accumulator),
                 pool -> ParallelExecutorTasks.reduce(pool, self, accumulator)
         );
     }
 
     /**
      * Groups elements by the classifier function in parallel.
-     * A {@code null} key is kept. Within each group, elements stay in
-     * encounter order.
+     * A {@code null} key is kept. Keys follow first-seen order, and within
+     * each group elements stay in encounter order.
      */
     public static <T, K> Map<K, List<T>> groupByParallel(Collection<T> self,
                                                           Function<T, K> classifier) {
@@ -261,9 +279,8 @@ public class ParallelCollectionExtensions {
         return withPool((pool, fjp) -> {
             List<T> list = ParallelExecutorTasks.randomAccess(self);
             Object[] keys = new Object[list.size()];
-            Function<T, K> bound = inPool(pool, classifier);
             fjp.submit(() -> IntStream.range(0, list.size()).parallel()
-                    .forEach(index -> keys[index] = bound.apply(list.get(index)))).join();
+                    .forEach(index -> keys[index] = classifier.apply(list.get(index)))).join();
             return ParallelExecutorTasks.groupInOrder(list, keys);
         }, pool -> ParallelExecutorTasks.groupBy(pool, self, classifier));
     }
@@ -279,10 +296,9 @@ public class ParallelCollectionExtensions {
         require(self, action);
         List<T> list = self instanceof List ? (List<T>) self : new ArrayList<>(self);
         withPool((pool, fjp) -> {
-            BiConsumer<T, Integer> bound = inPool(pool, action);
             fjp.submit(() ->
                     IntStream.range(0, list.size()).parallel()
-                            .forEach(i -> bound.accept(list.get(i), i))).join();
+                            .forEach(i -> action.accept(list.get(i), i))).join();
             return null;
         }, pool -> {
             ParallelExecutorTasks.forEachIndexed(pool, list, action);
@@ -299,12 +315,9 @@ public class ParallelCollectionExtensions {
                                                       Function<T, ? extends Collection<R>> transform) {
         require(self, transform);
         return withPool(
-                (pool, fjp) -> {
-                    Function<T, ? extends Collection<R>> bound = inPool(pool, transform);
-                    return fjp.submit(() -> self.parallelStream()
-                            .flatMap(element -> bound.apply(element).stream())
-                            .collect(toListCollector())).join();
-                },
+                (pool, fjp) -> fjp.submit(() -> self.parallelStream()
+                        .flatMap(element -> transform.apply(element).stream())
+                        .collect(toListCollector())).join(),
                 pool -> ParallelExecutorTasks.flatMap(pool, self, transform)
         );
     }
@@ -320,7 +333,7 @@ public class ParallelCollectionExtensions {
         return withPool(
                 (pool, fjp) -> fjp.submit(() -> {
                     Map<Boolean, List<T>> parts = self.parallelStream()
-                            .collect(Collectors.partitioningBy(inPool(pool, predicate)));
+                            .collect(Collectors.partitioningBy(predicate));
                     return List.of(parts.get(true), parts.get(false));
                 }).join(),
                 pool -> ParallelExecutorTasks.partition(pool, self, predicate)
@@ -343,7 +356,7 @@ public class ParallelCollectionExtensions {
     public static <T> T injectParallel(Collection<T> self, T seed, BinaryOperator<T> accumulator) {
         require(self, accumulator);
         return withPool(
-                (pool, fjp) -> fjp.submit(() -> self.parallelStream().reduce(seed, inPool(pool, accumulator))).join(),
+                (pool, fjp) -> fjp.submit(() -> self.parallelStream().reduce(seed, accumulator)).join(),
                 pool -> ParallelExecutorTasks.inject(pool, self, seed, accumulator)
         );
     }
@@ -352,16 +365,19 @@ public class ParallelCollectionExtensions {
      * Filters elements using Groovy's {@code isCase} pattern matching
      * in parallel. Supports the same filter types as Groovy's {@code grep}:
      * Class, regex Pattern, Range, Collection, Closure, etc.
-     * Encounter order is preserved.
+     * Encounter order is preserved. A null filter is allowed and matches
+     * the same elements as sequential {@code grep(null)}. An element is kept
+     * when {@code isCase} is Groovy-true, not only when it returns
+     * {@code Boolean.TRUE}.
      *
-     * @param filter the pattern to match against (uses {@code isCase})
+     * @param filter the pattern to match against (uses {@code isCase}); may be null
      */
     public static <T> List<T> grepParallel(Collection<T> self, Object filter) {
-        require(self, filter);
-        Predicate<T> matches = element ->
-                InvokerHelper.invokeMethod(filter, "isCase", element) != Boolean.FALSE;
+        Objects.requireNonNull(self, "self must not be null");
+        Predicate<T> matches = element -> DefaultTypeTransformation.castToBoolean(
+                InvokerHelper.invokeMethod(filter, "isCase", element));
         return withPool(
-                (pool, fjp) -> fjp.submit(() -> self.parallelStream().filter(inPool(pool, matches)).collect(toListCollector())).join(),
+                (pool, fjp) -> fjp.submit(() -> self.parallelStream().filter(matches).collect(toListCollector())).join(),
                 pool -> ParallelExecutorTasks.filter(pool, self, matches)
         );
     }
@@ -392,52 +408,6 @@ public class ParallelCollectionExtensions {
     }
 
     /**
-     * Rebinds {@code pool} on the worker that invokes the callback.
-     * A stolen stream leaf does not inherit the submitter's binding.
-     * The common pool ({@code pool == null}) keeps the original callback.
-     */
-    private static <T> Consumer<T> inPool(Pool pool, Consumer<T> action) {
-        if (pool == null) {
-            return action;
-        }
-        return element -> Pool.withCurrent(pool, () -> {
-            action.accept(element);
-            return null;
-        });
-    }
-
-    private static <T> Predicate<T> inPool(Pool pool, Predicate<T> predicate) {
-        if (pool == null) {
-            return predicate;
-        }
-        return element -> Pool.withCurrent(pool, () -> predicate.test(element));
-    }
-
-    private static <T, R> Function<T, R> inPool(Pool pool, Function<T, R> function) {
-        if (pool == null) {
-            return function;
-        }
-        return element -> Pool.withCurrent(pool, () -> function.apply(element));
-    }
-
-    private static <T> BinaryOperator<T> inPool(Pool pool, BinaryOperator<T> operator) {
-        if (pool == null) {
-            return operator;
-        }
-        return (left, right) -> Pool.withCurrent(pool, () -> operator.apply(left, right));
-    }
-
-    private static <T, U> BiConsumer<T, U> inPool(Pool pool, BiConsumer<T, U> action) {
-        if (pool == null) {
-            return action;
-        }
-        return (left, right) -> Pool.withCurrent(pool, () -> {
-            action.accept(left, right);
-            return null;
-        });
-    }
-
-    /**
      * The pool's fork-join pool, or {@code null} when the pool is an
      * ordinary executor. Only {@link UnsupportedOperationException}
      * from {@link Pool#asForkJoinPool()} selects the executor path; every
@@ -456,11 +426,10 @@ public class ParallelCollectionExtensions {
      * The box keeps a matching null distinct from an empty result until
      * the caller unwraps it. Both are {@code null} to the caller.
      */
-    private static <T> T findMatch(ForkJoinPool fjp, Pool pool, Collection<T> self,
+    private static <T> T findMatch(ForkJoinPool fjp, Collection<T> self,
                                    Predicate<T> filter, boolean earliest) {
-        Predicate<T> bound = inPool(pool, filter);
         return fjp.submit(() -> {
-            Stream<Hit<T>> matches = self.parallelStream().filter(bound).map(Hit::new);
+            Stream<Hit<T>> matches = self.parallelStream().filter(filter).map(Hit::new);
             Hit<T> found = (earliest ? matches.findFirst() : matches.findAny()).orElse(null);
             return found == null ? null : found.value;
         }).join();
@@ -471,12 +440,11 @@ public class ParallelCollectionExtensions {
      * it wraps the result in {@code Optional.of}. The first element of a
      * partition is stored without calling the operator.
      */
-    private static <T> T fold(ForkJoinPool fjp, Pool pool, Collection<T> self, BinaryOperator<T> operator) {
-        BinaryOperator<T> bound = inPool(pool, operator);
+    private static <T> T fold(ForkJoinPool fjp, Collection<T> self, BinaryOperator<T> operator) {
         return fjp.submit(() -> self.parallelStream().collect(
                 Fold<T>::new,
-                (fold, element) -> fold.absorb(element, bound),
-                (left, right) -> left.combine(right, bound)
+                (fold, element) -> fold.absorb(element, operator),
+                (left, right) -> left.combine(right, operator)
         ).finish()).join();
     }
 

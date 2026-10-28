@@ -125,6 +125,36 @@ final class PoolTest {
     }
 
     @Test
+    void testWorkerThreadCarriesItsPool() {
+        assertScript '''
+            import groovy.concurrent.Pool
+            import java.util.concurrent.CountDownLatch
+            import java.util.concurrent.TimeUnit
+
+            def check = { Pool pool ->
+                def seen = new java.util.concurrent.atomic.AtomicReference()
+                def latch = new CountDownLatch(1)
+                pool.execute {
+                    seen.set(Pool.current())
+                    latch.countDown()
+                }
+                assert latch.await(5, TimeUnit.SECONDS)
+                assert seen.get().is(pool)
+            }
+
+            def fixed = Pool.fixed(1)
+            def virtual = Pool.virtual()
+            try {
+                check(fixed)
+                check(virtual)
+            } finally {
+                fixed.close()
+                virtual.close()
+            }
+        '''
+    }
+
+    @Test
     void testPoolCurrentWithCurrentBinding() {
         assertScript '''
             import groovy.concurrent.Pool

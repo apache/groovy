@@ -150,6 +150,7 @@ final class ParallelCollectionTest {
         '''
     }
 
+    // GROOVY-12457
     @Test
     void testNestedParallelStaysOnTheForkJoinPool() {
         assertScript '''
@@ -163,12 +164,29 @@ final class ParallelCollectionTest {
             try {
                 Pool.withCurrent(pool) {
                     (1..32).toList().eachParallel {
+                        assert Pool.current().is(pool)
                         (1..4).toList().eachParallel {
                             def thread = Thread.currentThread()
                             assert thread instanceof ForkJoinWorkerThread
                             assert thread.pool.is(expected)
+                            assert Pool.current().is(pool)
                             workers.add(thread)
                         }
+                    }
+                    def other = Pool.fixed(2)
+                    try {
+                        def switched = new java.util.concurrent.atomic.AtomicReference()
+                        [1].collectParallel {
+                            Pool.withCurrent(other) {
+                                [2].collectParallel {
+                                    switched.set(Pool.current())
+                                    2
+                                }
+                            }
+                        }
+                        assert switched.get().is(other)
+                    } finally {
+                        other.close()
                     }
                 }
                 assert !workers.isEmpty()
@@ -513,6 +531,40 @@ final class ParallelCollectionTest {
                     def grouped = [1, 2, 3, 4].groupByParallel { it % 2 == 0 ? 'e' : null }
                     assert grouped[null] == [1, 3]
                     assert grouped.e == [2, 4]
+                    assert grouped.keySet().toList() == [null, 'e']
+                    def byValue = [3, 1, 2, 3, 1].groupByParallel { it }
+                    assert byValue.keySet().toList() == [3, 1, 2]
+                    assert byValue[3] == [3, 3]
+
+                    def nullCalls = new AtomicInteger()
+                    def counting = { a, b ->
+                        nullCalls.incrementAndGet()
+                        0
+                    }
+                    int width = Runtime.runtime.availableProcessors() * 3
+                    def nulls = (0..<width).collect { null }
+                    assert nulls.maxParallel(counting) == null
+                    assert nullCalls.get() == 0
+                    assert [null, null].minParallel(counting) == null
+                    assert nullCalls.get() > 0
+                    def strict = { a, b ->
+                        if (a == null || b == null) {
+                            throw new AssertionError('max must not compare null')
+                        }
+                        a <=> b
+                    }
+                    def mixed = (0..<width).collect { it % 2 == 0 ? null : it }
+                    assert mixed.maxParallel(strict) == mixed.findAll { it != null }.max()
+                    assert [null, 1].maxParallel(Comparator.naturalOrder()) == 1
+                    assert [1, null, 2].grepParallel(null) == [null]
+                    def odds = new Object() {
+                        def isCase(value) { ((Number) value) % 2 }
+                    }
+                    def nothing = new Object() {
+                        def isCase(value) { null }
+                    }
+                    assert [1, 2, 3, 4].grepParallel(odds) == [1, 3]
+                    assert [1, 2, 3].grepParallel(nothing) == []
                     def wide = (1..64).toList()
                     def byParity = wide.groupByParallel { it % 2 }
                     assert byParity[0] == wide.findAll { it % 2 == 0 }
@@ -690,10 +742,13 @@ final class ParallelCollectionTest {
             }
             assert callback.message == 'callback must not be null'
 
-            def filter = shouldFail(NullPointerException) {
-                ParallelCollectionExtensions.grepParallel([1], null)
+            def missingSelf = shouldFail(NullPointerException) {
+                ParallelCollectionExtensions.grepParallel(null, Integer)
             }
-            assert filter.message == 'callback must not be null'
+            assert missingSelf.message == 'self must not be null'
+
+            assert [1, null, 2].grepParallel(null) == [null]
+            assert [1, null, 2].grep(null) == [null]
         '''
     }
 

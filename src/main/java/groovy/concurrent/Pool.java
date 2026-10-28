@@ -122,12 +122,16 @@ public interface Pool extends Executor, AutoCloseable {
     }
 
     /**
-     * Returns the pool bound to the current scope, or {@code null}.
+     * Returns the pool bound to the current scope, the pool carried by the
+     * current worker thread, or {@code null}.
      * <p>
      * Set by {@link ParallelScope#withPool} using the runtime's scoped
-     * binding support.
+     * binding support. An explicit {@link #withCurrent} binding wins,
+     * including a binding of {@code null}. Otherwise a worker created for
+     * a pool reports that pool. A common-pool thread does not.
      *
-     * @return the current pool, or {@code null} if none is bound
+     * @return the current pool, or {@code null} if none is bound and this
+     *         thread does not carry one
      * @since 6.0.0
      */
     static Pool current() {
