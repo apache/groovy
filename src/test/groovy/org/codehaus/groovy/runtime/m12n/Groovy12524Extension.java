@@ -23,6 +23,23 @@ package org.codehaus.groovy.runtime.m12n;
  */
 public class Groovy12524Extension {
 
+    /**
+     * A receiver with a real {@code getLabel}/{@code getTag} so compound assignment
+     * resolves the write to an extension setter and the read to the instance getter.
+     * State stays on the instance.
+     */
+    public static class Holder {
+        public String value = "";
+
+        public String getLabel() {
+            return value;
+        }
+
+        public String getTag() {
+            return value;
+        }
+    }
+
     public static int getGroovy12524(int[] self) {
         return self[0];
     }
@@ -37,5 +54,40 @@ public class Groovy12524Extension {
 
     public static void setGroovy12524On(boolean[] self, boolean value) {
         self[0] = value;
+    }
+
+    /** Zero-arg instance getter used when the read is not already an extension call. */
+    public static String getLabel(Holder self) {
+        return self.value;
+    }
+
+    /** Same name, extra argument: not a property getter. */
+    public static String getLabel(Holder self, String ignored) {
+        return self.value;
+    }
+
+    /** Same bean name as {@link #getLabel(Holder)} but not a boolean {@code is} getter. */
+    public static String isLabel(Holder self) {
+        return self.value;
+    }
+
+    public static void setLabel(Holder self, String label) {
+        self.value = label;
+    }
+
+    public static String getTag(Holder self) {
+        return self.value;
+    }
+
+    public static boolean isTag(Holder self) {
+        return self.value != null && !self.value.isEmpty();
+    }
+
+    public static void setTag(Holder self, String tag) {
+        self.value = tag;
+    }
+
+    /** Primitive receiver, setter only: the property read has no extension getter. */
+    public static void setGroovy12524Raw(int self, int value) {
     }
 }
