@@ -495,7 +495,7 @@ public class CompileStack {
                     mv.visitLocalVariable(v.getName(), type, null, startLabels[i], endLabels[i], v.getIndex());
                 }
                 // JSR 308: local variable type annotations
-                ClassNode t = v.getType();
+                ClassNode t = v.getDeclaredType(); // GROOVY-12541
                 String typePath = ""; // ?
                 do {
                     for (AnnotationNode a : t.getTypeAnnotations()) {
@@ -1032,6 +1032,7 @@ public class CompileStack {
         OperandStack operandStack = controller.getOperandStack();
 
         BytecodeVariable answer = defineVar(name, variableType, v.isClosureSharedVariable(), v.isClosureSharedVariable());
+        answer.setDeclaredType(v.getOriginType()); // GROOVY-12541: variableType may be inferred, so lack type annotations
         BytecodeVariable before = stackVariables.put(name, answer);
         Label startLabel = new Label();
         answer.setStartLabel(startLabel);
