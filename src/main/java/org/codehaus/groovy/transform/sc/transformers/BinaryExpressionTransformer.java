@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.MultipleAssignmentMetadata;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
+import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -41,10 +42,12 @@ import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.sc.StaticPropertyAccessHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.TokenUtil;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.TemporaryVariableExpression;
+import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
@@ -53,19 +56,25 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
+import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.elvisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
 
 /**
  * Rewrites binary expressions into forms that generate better static-compilation bytecode.
@@ -96,6 +105,11 @@ public class BinaryExpressionTransformer {
      * @return the optimized expression, or the regular transformed expression when no optimization applies
      */
     public Expression transformBinaryExpression(final BinaryExpression bin) {
+        Expression extensionCompound = transformExtensionPropertyCompoundAssignment(bin);
+        if (extensionCompound != null) {
+            return extensionCompound;
+        }
+
         Expression leftExpression = bin.getLeftExpression();
         Expression rightExpression = bin.getRightExpression();
 
@@ -156,6 +170,155 @@ public class BinaryExpressionTransformer {
         }
 
         return staticCompilationTransformer.superTransform(bin);
+    }
+
+    /**
+     * GROOVY-12524: {@code file.text += 'b'} is a property whose accessors are
+     * extension methods. Plain reads and writes already target those methods;
+     * compound assignment must do the same instead of a dynamic property site.
+     * The receiver is evaluated once for the read and again for the write, which
+     * is the same order dynamic Groovy and {@code @TypeChecked} use.
+     */
+    private Expression transformExtensionPropertyCompoundAssignment(final BinaryExpression bin) {
+        if (bin.getNodeMetaData(StaticTypesMarker.COMPOUND_ASSIGN_TARGET) != null) return null;
+
+        int op = bin.getOperation().getType();
+        if (!Types.isAssignment(op) || op == Types.EQUAL) return null;
+
+        Expression left = bin.getLeftExpression();
+        if (left instanceof AttributeExpression || !(left instanceof PropertyExpression || left instanceof VariableExpression)) return null;
+        if (left instanceof PropertyExpression && ((PropertyExpression) left).isSpreadSafe()) return null;
+
+        MethodNode setter = left.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (!(setter instanceof ExtensionMethodNode) || setter.getParameters().length != 1) return null;
+
+        MethodNode getter = extensionPropertyGetter(left, (ExtensionMethodNode) setter);
+        if (getter == null) return null;
+
+        boolean implicitThis;
+        boolean safe;
+        Expression receiver;
+        if (left instanceof PropertyExpression) {
+            PropertyExpression property = (PropertyExpression) left;
+            receiver = property.getObjectExpression();
+            implicitThis = property.isImplicitThis();
+            safe = property.isSafe();
+        } else {
+            receiver = implicitPropertyReceiver((VariableExpression) left);
+            implicitThis = true;
+            safe = false;
+        }
+
+        receiver = staticCompilationTransformer.transform(receiver);
+        ClassNode readType = getter.getReturnType();
+        MethodCallExpression getterCall = callX(receiver, getter.getName());
+        getterCall.setImplicitThis(implicitThis);
+        getterCall.setMethodTarget(getter);
+        getterCall.setSafe(safe);
+        getterCall.setSourcePosition(left);
+        getterCall.putNodeMetaData(INFERRED_TYPE, readType);
+
+        Expression rhs = staticCompilationTransformer.transform(bin.getRightExpression());
+        Expression value = compoundValue(bin, op, getterCall, rhs);
+        if (value == null) return null;
+
+        Expression name = left instanceof PropertyExpression ? ((PropertyExpression) left).getProperty() : left;
+        return transformAssignmentToSetterCall(receiver, setter, value, implicitThis, safe, name, bin);
+    }
+
+    private static VariableExpression implicitPropertyReceiver(final VariableExpression property) {
+        Object implicit = property.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
+        String receiverName = "this";
+        if (implicit instanceof String && !implicit.equals(property.getName())) {
+            receiverName = "owner".equals(implicit) || "delegate".equals(implicit) ? (String) implicit : "this";
+        }
+        VariableExpression receiver = varX(receiverName);
+        ClassNode owner = property.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
+        if (owner != null) {
+            receiver.putNodeMetaData(INFERRED_TYPE, owner);
+            if (implicit != null) receiver.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, implicit);
+        }
+        return receiver;
+    }
+
+    private MethodNode extensionPropertyGetter(final Expression left, final ExtensionMethodNode setter) {
+        Object stored = left.getNodeMetaData(StaticCompilationMetadataKeys.EXTENSION_PROPERTY_GETTER);
+        if (stored instanceof ExtensionMethodNode && ((MethodNode) stored).getParameters().length == 0) {
+            return (MethodNode) stored;
+        }
+        String propertyName = left instanceof PropertyExpression
+                ? ((PropertyExpression) left).getPropertyAsString()
+                : ((VariableExpression) left).getName();
+        if (propertyName == null) return null;
+        return findExtensionPropertyGetter(setter, propertyName);
+    }
+
+    private MethodNode findExtensionPropertyGetter(final ExtensionMethodNode setter, final String propertyName) {
+        ClassLoader loader = staticCompilationTransformer.getSourceUnit().getClassLoader();
+        if (loader == null) return null;
+
+        ClassNode receiverType = setter.getDeclaringClass();
+        Set<MethodNode> methods = new LinkedHashSet<>();
+        collectExtensionGetters(methods, loader, receiverType, propertyName, setter.isStaticExtension());
+        if (ClassHelper.isPrimitiveType(receiverType)) {
+            collectExtensionGetters(methods, loader, ClassHelper.getWrapper(receiverType), propertyName, setter.isStaticExtension());
+        }
+        List<MethodNode> best = StaticTypeCheckingSupport.chooseBestMethod(receiverType, methods, ClassNode.EMPTY_ARRAY);
+        if (best.size() == 1) {
+            return best.get(0);
+        }
+        return null;
+    }
+
+    private static void collectExtensionGetters(final Set<MethodNode> methods, final ClassLoader loader, final ClassNode receiverType, final String propertyName, final boolean staticExtension) {
+        String suffix = capitalize(propertyName);
+        addZeroArgExtensions(methods, StaticTypeCheckingSupport.findDGMMethodsForClassNode(loader, receiverType, "get" + suffix), staticExtension);
+        for (MethodNode method : StaticTypeCheckingSupport.findDGMMethodsForClassNode(loader, receiverType, "is" + suffix)) {
+            if (ClassHelper.isPrimitiveBoolean(method.getReturnType())) {
+                addZeroArgExtensions(methods, Collections.singleton(method), staticExtension);
+            }
+        }
+    }
+
+    private static void addZeroArgExtensions(final Set<MethodNode> into, final Iterable<MethodNode> found, final boolean staticExtension) {
+        for (MethodNode method : found) {
+            if (method instanceof ExtensionMethodNode
+                    && method.getParameters().length == 0
+                    && ((ExtensionMethodNode) method).isStaticExtension() == staticExtension) {
+                into.add(method);
+            }
+        }
+    }
+
+    private Expression compoundValue(final BinaryExpression bin, final int op, final MethodCallExpression getterCall, final Expression rhs) {
+        if (op == Types.ELVIS_EQUAL) {
+            Expression elvis = elvisX(getterCall, rhs);
+            elvis.setSourcePosition(bin);
+            return staticCompilationTransformer.transform(elvis);
+        }
+        int bare = TokenUtil.removeAssignment(op);
+        if (bare == op) return null;
+
+        Object[] target = bin.getNodeMetaData(StaticCompilationMetadataKeys.BINARY_EXP_TARGET);
+        if (target != null) {
+            MethodCallExpression opCall = callX(getterCall, (String) target[1], args(rhs));
+            opCall.setImplicitThis(false);
+            opCall.setMethodTarget((MethodNode) target[0]);
+            opCall.setSourcePosition(bin);
+            ClassNode resultType = bin.getNodeMetaData(INFERRED_TYPE);
+            if (resultType != null) {
+                opCall.setType(resultType);
+                opCall.putNodeMetaData(INFERRED_TYPE, resultType);
+            }
+            return opCall;
+        }
+
+        BinaryExpression operation = binX(
+                getterCall,
+                Token.newSymbol(bare, bin.getOperation().getStartLine(), bin.getOperation().getStartColumn()),
+                rhs);
+        operation.setSourcePosition(bin);
+        return staticCompilationTransformer.transform(operation);
     }
 
     private Expression transformCharacterInitialization(final BinaryExpression bin, final Character rhs) {

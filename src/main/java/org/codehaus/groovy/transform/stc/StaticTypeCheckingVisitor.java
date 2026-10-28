@@ -984,6 +984,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     };
                     Expression lhsRead = readSideCloner.transform(leftExpression);
                     lhsRead.visit(this);
+                    rememberExtensionPropertyGetter(leftExpression, lhsRead);
                     ClassNode lhsType = getType(lhsRead);
                     if (!isPrimitiveType(lhsType)) {
                         rightExpression.visit(this);
@@ -1016,11 +1017,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 };
                 // GROOVY-10628, GROOVY-11563: for "x op= y", find type as if it was "x = x op y"
-                rightExpression = (op == ELVIS_EQUAL ? elvisX(cloneMaker.transform(leftExpression), rightExpression) :
-                        binX(cloneMaker.transform(leftExpression), Token.newSymbol(TokenUtil.removeAssignment(op), expression.getOperation().getStartLine(), expression.getOperation().getStartColumn()), rightExpression));
+                Expression readClone = cloneMaker.transform(leftExpression);
+                rightExpression = (op == ELVIS_EQUAL ? elvisX(readClone, rightExpression) :
+                        binX(readClone, Token.newSymbol(TokenUtil.removeAssignment(op), expression.getOperation().getStartLine(), expression.getOperation().getStartColumn()), rightExpression));
                 rightExpression.setSourcePosition(expression);
 
                 visitBinaryExpression(assignX(leftExpression, rightExpression, expression));
+                // GROOVY-12524: the write of leftExpression records the setter; keep the getter too
+                rememberExtensionPropertyGetter(leftExpression, readClone);
                 expression.copyNodeMetaData(rightExpression);
                 return;
             }
@@ -1459,6 +1463,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (!CLOSURE_TYPE.equals(type)) return false;
         GenericsType[] gts = type.getGenericsTypes();
         return gts != null && gts.length == 1;
+    }
+
+    // GROOVY-12524: the write records the setter; keep the extension getter for static compilation
+    private static void rememberExtensionPropertyGetter(final Expression target, final Expression read) {
+        MethodNode getter = read.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (getter instanceof ExtensionMethodNode && getter.getParameters().length == 0) {
+            target.putNodeMetaData(StaticCompilationMetadataKeys.EXTENSION_PROPERTY_GETTER, getter);
+        }
     }
 
     private static boolean isCompoundAssignment(final Expression exp) {
