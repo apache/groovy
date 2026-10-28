@@ -1401,4 +1401,201 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             assert new C().test(new Box())
         '''
     }
+
+    // GROOVY-12525
+    @Test
+    void testExplicitGetterNameOnSuperIsVisibleWhenSubclassDeclaresTheOtherAccessor() {
+        assertScript '''
+            @ASTTest(phase=CANONICALIZATION, value={
+                node.getProperty('other').setGetterName('getOther')
+                node.getProperty('value').setGetterName('isFlag')
+            })
+            class Base {
+                String other
+                String value
+            }
+            class Sub extends Base {
+                boolean flag = true
+                boolean getFlag() { flag }
+            }
+            def s = new Sub()
+            s.setValue('from-base')
+            assert s.isFlag()
+        '''
+    }
+
+    // GROOVY-12525
+    @Test
+    void testExplicitGetterNameMissOnSuperDoesNotInventIsAccessor() {
+        shouldFailWithMessages '''
+            @ASTTest(phase=CANONICALIZATION, value={
+                node.getProperty('other').setGetterName('getOther')
+            })
+            class Base {
+                String other
+            }
+            class Sub extends Base {
+                boolean flag = true
+                boolean getFlag() { flag }
+            }
+            class C {
+                boolean test(Sub s) { s.isFlag() }
+            }
+            new C().test(new Sub())
+        ''',
+        'Cannot find matching method Sub#isFlag()'
+    }
+
+    // GROOVY-12525
+    @Test
+    void testFinalSuperGetterBlocksGeneratedIsAccessor() {
+        shouldFailWithMessages '''
+            import org.codehaus.groovy.transform.stc.acc.AccessorBases.PublicFinal
+            class Sub extends PublicFinal {
+                boolean flag = true
+            }
+            class C {
+                boolean test(Sub s) { s.isFlag() }
+            }
+            new C().test(new Sub())
+        ''',
+        'Cannot find matching method Sub#isFlag()'
+
+        assertScript '''
+            import org.codehaus.groovy.transform.stc.acc.AccessorBases.PublicFinal
+            class Sub extends PublicFinal {
+                boolean flag = false
+            }
+            assert new Sub().getFlag()
+        '''
+    }
+
+    // GROOVY-12525
+    @Test
+    void testNonFinalSuperGetterStillAllowsGeneratedIsAccessor() {
+        assertScript '''
+            import org.codehaus.groovy.transform.stc.acc.AccessorBases.PublicOpen
+            class Sub extends PublicOpen {
+                boolean flag = false
+            }
+            assert !new Sub().getFlag()
+            assert !new Sub().isFlag()
+        '''
+    }
+
+    // GROOVY-12525
+    @Test
+    void testPrivateFinalSuperGetterDoesNotBlockGeneratedAccessors() {
+        assertScript '''
+            import org.codehaus.groovy.transform.stc.acc.AccessorBases.PrivateFinal
+            class Sub extends PrivateFinal {
+                boolean flag = true
+            }
+            assert new Sub().isFlag()
+        '''
+    }
+
+    // GROOVY-12525
+    @Test
+    void testPackageFinalGetterInSamePackageBlocksGeneratedIsAccessor() {
+        shouldFailWithMessages '''
+            package org.codehaus.groovy.transform.stc.acc
+            import org.codehaus.groovy.transform.stc.acc.AccessorBases.PackageFinal
+            class Sub extends PackageFinal {
+                boolean flag = true
+            }
+            class C {
+                boolean test(Sub s) { s.isFlag() }
+            }
+            new C().test(new Sub())
+        ''',
+        'Sub#isFlag()'
+
+        assertScript '''
+            package org.codehaus.groovy.transform.stc.acc
+            import org.codehaus.groovy.transform.stc.acc.AccessorBases.PackageFinal
+            class Sub extends PackageFinal {
+                boolean flag = false
+            }
+            assert new Sub().getFlag()
+        '''
+    }
+
+    // GROOVY-12525
+    @Test
+    void testPackageFinalGetterInOtherPackageIsNotAVisibleFinalOverride() {
+        // The accessor decision treats a package-private final getter in another
+        // package as replaceable. Generating the override is then rejected.
+        shouldFailWithMessages '''
+            package groovy.transform.stc.accother
+            import org.codehaus.groovy.transform.stc.acc.AccessorBases.PackageFinal
+            class Sub extends PackageFinal {
+                boolean flag = true
+            }
+            class C {
+                boolean test(Sub s) { s.isFlag() }
+            }
+            new C().test(new Sub())
+        ''',
+        'You are not allowed to override the final method getFlag()'
+    }
+
+    // GROOVY-12525
+    @Test
+    void testPrivatePropertyDoesNotInventAccessor() {
+        shouldFailWithMessages '''
+            @ASTTest(phase=CANONICALIZATION, value={
+                def prop = node.getProperty('secret')
+                prop.setModifiers(prop.getModifiers() | 2) // ACC_PRIVATE
+            })
+            class Box {
+                boolean secret = true
+            }
+            class C {
+                boolean test(Box b) { b.isSecret() }
+            }
+            new C().test(new Box())
+        ''',
+        'Cannot find matching method Box#isSecret()'
+    }
+
+    // GROOVY-12525
+    @Test
+    void testPropertyWithNoDeclaringClassIsNotGivenAnAccessor() {
+        shouldFailWithMessages '''
+            @ASTTest(phase=CANONICALIZATION, value={
+                node.getProperty('flag').setDeclaringClass(null)
+            })
+            class Box {
+                boolean flag = true
+            }
+            class C {
+                boolean test(Box b) { b.isFlag() }
+            }
+            new C().test(new Box())
+        ''',
+        'Cannot find matching method Box#isFlag()'
+    }
+
+    // GROOVY-12525
+    @Test
+    void testSuperPropertyWithNoDeclaringClassDoesNotSupplyAccessor() {
+        shouldFailWithMessages '''
+            class Base {
+                boolean flag = true
+            }
+            @ASTTest(phase=CANONICALIZATION, value={
+                node.getSuperClass().getProperty('flag').setDeclaringClass(null)
+            })
+            class Sub extends Base {
+                boolean flag = false
+                boolean getFlag() { flag }
+            }
+            class C {
+                boolean test(Sub s) { s.isFlag() }
+            }
+            new C().test(new Sub())
+        ''',
+        'Cannot find matching method Sub#isFlag()'
+    }
 }
