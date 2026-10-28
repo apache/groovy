@@ -278,6 +278,55 @@ final class Groovy12441 {
     }
 
     @Test
+    void testSharedThisAcrossExpressionFormsUnderCompileStatic() {
+        assertEquals('C:C:C:C:C:C:C:C:C:C:n', eval('''
+            @groovy.transform.CompileStatic
+            class C {
+                String name = 'n'
+                String tag() { 'C' }
+                String run() {
+                    String viaIf = 'x'
+                    if (this.tag()) viaIf = this.tag()
+                    String viaTernary = this ? this.tag() : 'z'
+                    String viaElvis = this.tag() ?: 'z'
+                    String viaCast = (String) this.tag()
+                    String viaGString = "${this.tag()}"
+                    List viaList = [this.tag()]
+                    Map viaMap = [k: this.tag()]
+                    assert this.tag() == 'C' : this.tag()
+                    int n = 0
+                    while (n < 1) { n = n + 1; this.tag() }
+                    String viaFor = ''
+                    for (String s in [this.tag()]) viaFor = s
+                    String viaSwitch = switch (this.tag()) {
+                        case 'C' -> this.tag()
+                        default -> 'z'
+                    }
+                    def pointer = this.&tag
+                    return [viaIf, viaTernary, viaElvis, viaCast, viaGString, viaList[0], viaMap.k, viaFor, viaSwitch, pointer(), this.name].join(':')
+                }
+            }
+            new C().run()
+        '''))
+    }
+
+    @Test
+    void testSharedThisMethodReferenceUnderCompileStatic() {
+        assertEquals('C', eval('''
+            @groovy.transform.CompileStatic
+            class C {
+                String tag() { 'C' }
+                String run() {
+                    java.util.function.Supplier<String> supplier = this::tag
+                    def inner = { -> supplier.get() }
+                    inner.call()
+                }
+            }
+            new C().run()
+        '''))
+    }
+
+    @Test
     void testSequentialCompilationsDoNotShareThisType() {
         assertEquals('A', eval('''
             @groovy.transform.CompileStatic
