@@ -307,6 +307,56 @@ final class GroovyLanguageServerTest {
         }
     }
 
+    /**
+     * {@code *.uri} walks the list with an iterator. A publish that lands
+     * mid-iteration must not throw {@code ConcurrentModificationException}.
+     * The iterator is held inside the first element's getter so the append
+     * is ordered, not timed.
+     */
+    @Test
+    void publishedParamsSpreadSurvivesAppendDuringIteration() {
+        fixture = new LspFixture()
+        def entered = new CountDownLatch(1)
+        def release = new CountDownLatch(1)
+        def hold = new AtomicBoolean(true)
+        def first = new PublishDiagnosticsParams('file:///A.groovy', []) {
+            @Override
+            String getUri() {
+                if (hold.compareAndSet(true, false)) {
+                    entered.countDown()
+                    assert release.await(10, TimeUnit.SECONDS)
+                }
+                return super.getUri()
+            }
+        }
+        fixture.publishedParams.add(first)
+        fixture.publishedParams.add(new PublishDiagnosticsParams('file:///B.groovy', []))
+        def failure = new AtomicReference<Throwable>()
+        def seen = new AtomicReference<List>()
+        def reader = Thread.start {
+            try {
+                seen.set(fixture.publishedParams*.uri)
+            } catch (Throwable thrown) {
+                failure.set(thrown)
+            }
+        }
+        try {
+            assert entered.await(10, TimeUnit.SECONDS)
+            fixture.publishDiagnostics(new PublishDiagnosticsParams('file:///C.groovy', []))
+        } finally {
+            release.countDown()
+            reader.join(10_000)
+        }
+        assert !reader.alive
+        def thrown = failure.get()
+        if (thrown != null) {
+            throw thrown
+        }
+        def uris = seen.get()
+        assert uris.any { it.endsWith('A.groovy') }
+        assert uris.any { it.endsWith('B.groovy') }
+    }
+
     @Test
     void publishDiagnosticsSkipsANullSnapshot() {
         fixture = new LspFixture()

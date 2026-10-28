@@ -47,6 +47,7 @@ import org.eclipse.lsp4j.services.LanguageClient
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * In-process language server plus a collecting client, used by feature tests.
@@ -55,7 +56,12 @@ class LspFixture implements LanguageClient {
 
     final GroovyLanguageServer server
     final Map<String, List<Diagnostic>> diagnostics = new ConcurrentHashMap<>()
-    final List<PublishDiagnosticsParams> publishedParams = Collections.synchronizedList(new ArrayList<>())
+    // didChange* schedules recompile on groovy-lsp-compile. cancel(false) does
+    // not stop that task once it has started, so it can append here after the
+    // test thread's recompile() returns. Spread (*.uri) and findAll iterate.
+    // synchronizedList does not cover iteration and throws
+    // ConcurrentModificationException; a copy-on-write list iterates a snapshot.
+    final List<PublishDiagnosticsParams> publishedParams = new CopyOnWriteArrayList<>()
     final List<MessageParams> messages = []
     final List<ApplyWorkspaceEditParams> appliedEdits = []
     final List<WorkDoneProgressCreateParams> progressCreates = []
