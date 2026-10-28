@@ -734,6 +734,21 @@ final class Groovy12315 {
     }
 
     @Test
+    void testSpreadOnSingleReceiver() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Foo {
+                final bar = 'ab'
+            }
+            @groovy.transform.CompileStatic
+            class Baz {
+                static def n(Foo f) { f*.bar }
+            }
+            assert Baz.n(new Foo()) == ['ab']
+        '''
+    }
+
+    @Test
     void testAnonymousClassReadsUnreadyForeignField() {
         def err = shouldFail '''
             class Other {
