@@ -1175,7 +1175,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
 
                 storeType(leftExpression, resultType);
-                if (op == EQUAL) recordFinalFieldAssignment(leftExpression, resultType);
+                // Only plain '=' reaches here; compound assignments return above.
+                recordFinalFieldAssignment(leftExpression, resultType);
 
                 // propagate closure parameter information
                 if (leftExpression instanceof VariableExpression
@@ -3062,7 +3063,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             collectFinalFieldFlowBlockers(cn, statement, false, blocked, blockAll);
         }
         for (MethodNode method : cn.getMethods()) {
-            if (method.isConstructor() || method.isStaticConstructor()) continue;
+            // getMethods() does not include constructors; <clinit> is scanned above.
+            if (method.isStaticConstructor()) continue;
             collectFinalFieldFlowBlockers(cn, method.getCode(), true, blocked, blockAll);
         }
         if (blockAll[0]) {
