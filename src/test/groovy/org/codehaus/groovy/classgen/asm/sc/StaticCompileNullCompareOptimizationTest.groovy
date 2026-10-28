@@ -123,13 +123,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         assert bytecode.hasSequence([
             'ILOAD 1',
             'IFNE L1',
-            'ICONST_1',
-            'GOTO L2',
             'L1',
-            'ICONST_0',
-            'L2',
-            'IFEQ L3',
-            'L3',
             'RETURN'
         ])
     }
@@ -186,13 +180,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         assert bytecode.hasSequence([
             'ILOAD 1',
             'IFEQ L1',
-            'ICONST_1',
-            'GOTO L2',
             'L1',
-            'ICONST_0',
-            'L2',
-            'IFEQ L3',
-            'L3',
             'RETURN'
         ])
     }
