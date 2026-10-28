@@ -22,6 +22,7 @@ import groovy.lang.MissingPropertyException;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import groovy.transform.Internal;
+import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -85,8 +86,11 @@ import java.util.function.Supplier;
 import static java.lang.reflect.Modifier.isStatic;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mayCompleteNormally;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 
 /**
@@ -987,6 +991,23 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         for (Statement initStatement : innerClass.getObjectInitializerStatements()) {
             initStatement.visit(this);
         }
+        // GROOVY-12063: barewords in an AIC initializer are otherwise a dynamic
+        // property read on this. Map/List receivers answer that read themselves,
+        // so an enclosing field is never consulted. Rewrite resolved enclosing
+        // members while this visitor still knows the lexical target.
+        EnclosingMemberRewriter rewriter = new EnclosingMemberRewriter(innerClass);
+        for (FieldNode field : innerClass.getFields()) {
+            Expression initExpression = field.getInitialExpression();
+            if (initExpression != null) {
+                Expression rewritten = rewriter.transform(initExpression);
+                if (rewritten != initExpression) {
+                    field.setInitialValueExpression(rewritten);
+                }
+            }
+        }
+        for (Statement initStatement : innerClass.getObjectInitializerStatements()) {
+            initStatement.visit(rewriter);
+        }
         markClosureSharedVariables();
         popState();
     }
@@ -1073,6 +1094,100 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         if (variable != null) {
             expression.setAccessedVariable(variable);
             checkVariableContextAccess(variable, expression);
+        }
+    }
+
+    /**
+     * Rewrites bareword reads of an enclosing field or property inside an
+     * anonymous inner class initializer to an explicit access on that
+     * enclosing class. Writes are left alone so a {@code Map} or {@code List}
+     * subclass can still store through its own property protocol.
+     */
+    private final class EnclosingMemberRewriter extends ClassCodeExpressionTransformer {
+        private final InnerClassNode innerClass;
+
+        private EnclosingMemberRewriter(final InnerClassNode innerClass) {
+            this.innerClass = innerClass;
+        }
+
+        @Override
+        protected SourceUnit getSourceUnit() {
+            return source;
+        }
+
+        @Override
+        public Expression transform(final Expression expr) {
+            if (expr instanceof VariableExpression ve) {
+                Expression access = enclosingMemberAccess(ve);
+                if (access != null) return access;
+            } else if (expr instanceof BinaryExpression be
+                    && Types.isAssignment(be.getOperation().getType())
+                    && be.getLeftExpression() instanceof VariableExpression left
+                    && enclosingMemberAccess(left) != null) {
+                // LHS bareword stays a property write on this
+                be.setRightExpression(transform(be.getRightExpression()));
+                return be;
+            } else if (expr instanceof ClosureExpression) {
+                expr.visit(this);
+                return expr;
+            }
+            return super.transform(expr);
+        }
+
+        /**
+         * @return an explicit enclosing access, or null when {@code ve} is not
+         *         a read of an enclosing field or property
+         */
+        private Expression enclosingMemberAccess(final VariableExpression ve) {
+            Variable variable = ve.getAccessedVariable();
+            ClassNode declaring = null;
+            boolean isStatic = false;
+            FieldNode directField = null;
+            if (variable instanceof FieldNode field) {
+                declaring = field.getDeclaringClass();
+                isStatic = field.isStatic();
+                if (!field.isSynthetic()) directField = field;
+            } else if (variable instanceof PropertyNode property) {
+                declaring = property.getDeclaringClass();
+                isStatic = property.isStatic();
+                FieldNode field = property.getField();
+                if (field != null && !field.isSynthetic()) directField = field;
+            }
+            if (declaring == null || !isEnclosingMember(declaring)) return null;
+
+            if (isStatic && directField != null) {
+                // GETSTATIC — no enclosing instance and no MOP lookup
+                Expression access = fieldX(directField);
+                access.setSourcePosition(ve);
+                return access;
+            }
+
+            ClassNode owner = enclosingOwner(declaring);
+            Expression receiver = isStatic ? classX(owner) : propX(classX(owner), "this");
+            receiver.setSourcePosition(ve);
+            PropertyExpression access = propX(receiver, ve.getName());
+            setSourcePosition(access, ve);
+            return access;
+        }
+
+        private boolean isEnclosingMember(final ClassNode declaring) {
+            // A member of the AIC or of one of its super types is not enclosing.
+            if (innerClass.equals(declaring) || innerClass.isDerivedFrom(declaring)) return false;
+            if (declaring.isInterface() && innerClass.implementsInterface(declaring)) return false;
+            for (ClassNode outer = innerClass.getOuterClass(); outer != null; outer = outer.getOuterClass()) {
+                if (outer.equals(declaring) || outer.isDerivedFrom(declaring)) return true;
+                if (declaring.isInterface() && outer.implementsInterface(declaring)) return true;
+            }
+            return false;
+        }
+
+        /** Innermost enclosing class from which {@code declaring} is visible. */
+        private ClassNode enclosingOwner(final ClassNode declaring) {
+            for (ClassNode outer = innerClass.getOuterClass(); outer != null; outer = outer.getOuterClass()) {
+                if (outer.equals(declaring) || outer.isDerivedFrom(declaring)) return outer;
+                if (declaring.isInterface() && outer.implementsInterface(declaring)) return outer;
+            }
+            return declaring;
         }
     }
 
