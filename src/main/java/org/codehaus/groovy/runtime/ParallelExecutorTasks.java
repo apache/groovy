@@ -23,7 +23,7 @@ import groovy.concurrent.Pool;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.RandomAccess;
@@ -52,7 +52,9 @@ import java.util.function.Predicate;
  * One task is submitted per element: a blocking callback does not need a
  * spare fork-join worker, and a fixed fork-join pool is left at its cap.
  * Short-circuit operations complete as soon as the result is known and
- * interrupt tasks that are already running.
+ * interrupt tasks that are already running. Interrupting a thread blocked
+ * on an InterruptibleChannel closes that channel. A fork-join pool does
+ * not interrupt a running callback.
  * <p>
  * A nested call on the same bounded pool runs on the worker that is
  * already executing the outer task. Waiting for a task queued on that
@@ -139,9 +141,9 @@ final class ParallelExecutorTasks {
         return groupInOrder(list, keys);
     }
 
-    /** Inserts in index order so each group keeps encounter order, including a null key. */
+    /** Inserts in index order. Key order is first-seen, including a null key. */
     static <T, K> Map<K, List<T>> groupInOrder(List<T> elements, Object[] keys) {
-        Map<K, List<T>> grouped = new HashMap<>();
+        Map<K, List<T>> grouped = new LinkedHashMap<>();
         for (int i = 0; i < elements.size(); i++) {
             @SuppressWarnings("unchecked")
             K key = (K) keys[i];
@@ -304,8 +306,20 @@ final class ParallelExecutorTasks {
         });
     }
 
-    /** {@code compare == 0} keeps {@code left}, so an encounter-order fold returns the earliest tie. */
+    /**
+     * {@code compare == 0} keeps {@code left}, so an encounter-order fold returns the earliest tie.
+     * A maximum skips nulls and does not call the comparator for them, matching sequential
+     * {@code max(Comparator)}. A minimum passes nulls through, matching sequential {@code min(Comparator)}.
+     */
     static <T> T pick(Comparator<? super T> comparator, T left, T right, boolean min) {
+        if (!min) {
+            if (left == null) {
+                return right;
+            }
+            if (right == null) {
+                return left;
+            }
+        }
         int order = comparator.compare(left, right);
         if (order == 0) {
             return left;
@@ -546,10 +560,17 @@ final class ParallelExecutorTasks {
                     return;
                 }
                 try {
-                    Pool.withCurrent(pool, () -> {
+                    // Workers created for this pool already carry it. Binding
+                    // again on every element is the cost a light map cannot pay.
+                    // A foreign executor has no carrier, so bind for that task.
+                    if (Pool.current() == pool) {
                         body.accept(index);
-                        return null;
-                    });
+                    } else {
+                        Pool.withCurrent(pool, () -> {
+                            body.accept(index);
+                            return null;
+                        });
+                    }
                 } finally {
                     end(index, callerThread);
                 }

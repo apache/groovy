@@ -117,6 +117,11 @@ final class ParallelExecutorTasksTest {
         def grouped = ParallelExecutorTasks.groupBy(pool, [1, 2, 3, 4]) { it % 2 == 0 ? 'e' : null }
         assert grouped[null] == [1, 3]
         assert grouped.e == [2, 4]
+        assert grouped.keySet().toList() == [null, 'e']
+        def byValue = ParallelExecutorTasks.groupBy(pool, [3, 1, 2, 3, 1]) { it }
+        assert byValue.keySet().toList() == [3, 1, 2]
+        assert byValue[3] == [3, 3]
+        assert byValue[1] == [1, 1]
         assert ParallelExecutorTasks.groupBy(pool, []) { it }.isEmpty()
     }
 
@@ -146,6 +151,34 @@ final class ParallelExecutorTasksTest {
         def ties = (0..<n).collect { new String('same') }
         assert ParallelExecutorTasks.min(pool, ties) { a, b -> a <=> b }.is(ties[0])
         assert ParallelExecutorTasks.max(pool, ties) { a, b -> a <=> b }.is(ties[0])
+
+        def calls = new AtomicInteger()
+        def counting = { a, b ->
+            calls.incrementAndGet()
+            0
+        }
+        def nulls = (0..<n).collect { null }
+        assert ParallelExecutorTasks.max(pool, nulls, counting) == null
+        assert calls.get() == 0
+        assert ParallelExecutorTasks.min(pool, [null, null], counting) == null
+        assert calls.get() > 0
+
+        def strict = { a, b ->
+            if (a == null || b == null) {
+                throw new AssertionError('max must not compare null')
+            }
+            a <=> b
+        }
+        def mixed = (0..<n).collect { it % 2 == 0 ? null : it }
+        assert ParallelExecutorTasks.max(pool, mixed, strict) == mixed.findAll { it != null }.max()
+        def nullsFirst = { a, b ->
+            if (a == null && b == null) return 0
+            if (a == null) return -1
+            if (b == null) return 1
+            a <=> b
+        }
+        assert ParallelExecutorTasks.min(pool, [null, 'b', null], nullsFirst) == null
+        assert ParallelExecutorTasks.max(pool, [null, 1], Comparator.naturalOrder()) == 1
     }
 
     @Test

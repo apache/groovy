@@ -184,7 +184,14 @@ final class NativeImageMetadataTest {
     void asyncRuntimeLookupsAreRegisteredByName() {
         def executors = reflection().findAll { it.type == 'java.util.concurrent.Executors' }
         assert executors*.condition*.typeReached as Set == ['org.apache.groovy.runtime.async.AsyncExecutors', 'org.apache.groovy.runtime.async.DefaultPool'] as Set
-        executors.each { assert it.methods == [[name: 'newVirtualThreadPerTaskExecutor', parameterTypes: []]] }
+        def byOwner = executors.groupBy { it.condition.typeReached }
+        assert byOwner['org.apache.groovy.runtime.async.AsyncExecutors'][0].methods == [[name: 'newVirtualThreadPerTaskExecutor', parameterTypes: []]]
+        assert byOwner['org.apache.groovy.runtime.async.DefaultPool'][0].methods*.name as Set ==
+                ['newVirtualThreadPerTaskExecutor', 'newThreadPerTaskExecutor'] as Set
+        def thread = reflection().find { it.type == 'java.lang.Thread' && it.condition.typeReached == 'org.apache.groovy.runtime.async.DefaultPool' }
+        assert thread.methods*.name == ['ofVirtual']
+        assert reflection().find { it.type == 'java.lang.Thread$Builder$OfVirtual' }.methods*.name == ['name']
+        assert reflection().find { it.type == 'java.lang.Thread$Builder' }.methods*.name == ['factory']
         def scoped = reflection().find { it.type == 'java.lang.ScopedValue' }
         assert scoped.condition.typeReached == 'org.apache.groovy.runtime.async.ScopedLocal'
         assert scoped.methods*.name as Set == ['newInstance', 'get', 'isBound', 'where'] as Set
@@ -300,7 +307,10 @@ final class NativeImageMetadataTest {
         def entries = (new JsonSlurper().parseText(NativeImageMetadataGenerator.generateForModule('groovy-concurrent-java', [], [])) as Map).reflection as List<Map>
         def executors = entries.findAll { it.type == 'java.util.concurrent.Executors' }
         assert executors*.condition*.typeReached as Set == ['org.apache.groovy.runtime.async.AsyncExecutors', 'org.apache.groovy.runtime.async.DefaultPool'] as Set
-        assert executors.every { it.methods*.name == ['newVirtualThreadPerTaskExecutor'] }
+        def byOwner = executors.groupBy { it.condition.typeReached }
+        assert byOwner['org.apache.groovy.runtime.async.AsyncExecutors'][0].methods*.name == ['newVirtualThreadPerTaskExecutor']
+        assert byOwner['org.apache.groovy.runtime.async.DefaultPool'][0].methods*.name as Set ==
+                ['newVirtualThreadPerTaskExecutor', 'newThreadPerTaskExecutor'] as Set
         def scopedValue = entries.find { it.type == 'java.lang.ScopedValue' }
         assert scopedValue.condition.typeReached == 'org.apache.groovy.runtime.async.ScopedLocal'
         assert scopedValue.methods*.name as Set == ['newInstance', 'get', 'isBound', 'where'] as Set
