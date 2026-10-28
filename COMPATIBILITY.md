@@ -894,6 +894,202 @@ changes no longer apply to those calls.
 static initializer blocks, field initializers, constructors, and classes that
 are not statically compiled. There are no API changes.
 
+### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
+
+Under `@CompileStatic`, a constructor reference such as `X::new` created the
+object through the meta-class, which selected the constructor at run time from
+the types of the arguments. The constructor is now selected at compile time,
+among the constructors visible from the enclosing class, for the parameter
+types of the functional interface, as for `new X(args)` in the same class and
+as in Java, and it is called directly.
+
+**Who is affected.** Statically compiled constructor references whose result
+depended on that run-time selection:
+
+- The overload is chosen by the static parameter types of the functional
+  interface. `Function<CharSequence, X> f = X::new` calls `X(CharSequence)` even
+  when it is given a `String`. With `IL(Object)` and `IL(long)`,
+  `Function<Integer, IL>` calls `IL(Object)`, where it called `IL(long)`; with
+  `IL2(int)` and `IL2(Integer)`, `IntFunction<IL2>` calls `IL2(int)`, where it
+  called `IL2(Integer)`.
+- An `Object[]` given to `Function<Object, VO>` for `VO(Object...)` is passed as
+  one element, where its elements were passed.
+- `null` given to `Function<Integer, PI>` for `PI(int)` throws
+  `NullPointerException`, where it threw `GroovyRuntimeException`.
+- A constructor the enclosing class cannot call no longer wins over one it can.
+  With `private Foo(String)` and `public Foo(Object)`, `Function<String, Foo>`
+  in another class calls `Foo(Object)`, as `new Foo(s)` does.
+- A constructor added or overridden through the meta-class, for example with
+  `ExpandoMetaClass`, is not used, as for a statically compiled `new`.
+
+**What is unchanged.** The constructor is still selected at run time when no
+single constructor matches the parameter types (GROOVY-10971), for an enum, for
+a protected constructor of another package, and for a protected or
+package-private constructor of a class that a `GroovyClassLoader` defined in
+another compilation, such as a class of an earlier `GroovyShell` parse. Dynamic
+and `@TypeChecked` code select the constructor at run time as before.
+
+### Groovy 6.0.1 — statically compiled code in a `GroovyShell` reports what the JVM refuses across class loaders (GROOVY-12568)
+
+The JVM allows access to a protected or package-private member only within
+the same run-time package, which is the package name and the class loader. A
+`GroovyClassLoader` defines each compilation in memory with a class loader of
+its own, so a class of an earlier `GroovyShell` parse, or a precompiled class
+used by a script, is in another run-time package even when the package name is
+the same. Statically compiled code that calls such a constructor or method, or
+reads or writes such a field, compiled and then failed with
+`IllegalAccessError` when it ran.
+
+With the new option `CompilerConfiguration.RUNTIME_PACKAGE_CHECK`, such an
+access is a compile error, reported when the class is generated:
+
+```
+Cannot call package-private method pm of p.M from class p.C: M is defined by
+another class loader, so the JVM refuses this access. Use @CompileDynamic to
+reach it through the meta-class
+```
+
+**Who is affected.** `@CompileStatic` code compiled by a `GroovyShell`,
+including scripts run with the `groovy` command: a shell turns the option on
+for the class loader it creates, unless the configuration sets it. Such code that used to fail at run time now fails
+to compile, and so does such code on a path that never ran. Mark the method or
+class `@CompileDynamic`, or make the member public. A protected member that a
+subclass reaches through `this`, `super` or a receiver of the subclass type is
+not reported, as the JVM allows it.
+
+**What is unchanged.** Code compiled to class files (groovyc, Gradle, Maven,
+Ant, joint compilation), dynamic and `@TypeChecked` code, members of classes
+of the same compilation, and constructor references, which already go through
+the meta-class (GROOVY-12488). A `GroovyClassLoader` that a shell did not
+create, as used by `parseClass` or JSR-223, has the option off. The bytecode
+is the same as before.
+
+**Opting out.** Set `RUNTIME_PACKAGE_CHECK` to `false` in the configuration's
+optimization options, or the system property
+`groovy.runtime.package.check=false`, to keep the failure at run time.
+`CompilerConfiguration.RUNTIME_PACKAGE_CHECK` is a new `@Incubating` constant;
+`japicmp` sees only the addition.
+
+### Groovy 6.0.1 — `@CompileStatic` property and spread results on collections match dynamic Groovy (GROOVY-12534, GROOVY-12649)
+
+Under `@CompileStatic`, property and spread results on a `List`, `Set` or
+other `Iterable` type that declares a property, or gets one from an
+extension method, now match dynamic Groovy and `@TypeChecked`
+(GROOVY-12534, [PR #3058](https://github.com/apache/groovy/pull/3058);
+GROOVY-12649). A property the collection itself defines is read from the
+collection; an explicit spread (`people*.name`) reads it from each
+element, and a spread assignment (`people*.name = 'x'`) writes it to each
+element. The previous `@CompileStatic` results were wrong, and code that
+relied on them gets different results once recompiled with 6.0.1; the new
+results are correct.
+
+### Groovy 6.0.1 — `@IndexedProperty` adds no indexed setter to a record (GROOVY-12730)
+
+An `@IndexedProperty` component of a record, or property of a `@RecordType` or
+`@RecordBase` class, gets only the indexed getter `getX(int)`, as an
+`@Immutable` class's property already did. Earlier versions also generated the
+indexed setter `setX(int, V)`, although a record has no other setters. A record is
+only shallowly immutable, so its list or array can still be changed through
+the value the accessor returns.
+
+**Who is affected.** Code that calls `setX(int, V)` on such a record no longer
+compiles under static compilation or Java, and fails with a
+`MissingMethodException` in dynamic Groovy. `japicmp` reports the method as
+removed from the affected classes.
+
+### Groovy 6.0.1 — a method reference selects a functional-interface overload it can be called as at run time (GROOVY-12758)
+
+When overloads take functional interfaces whose abstract methods have
+different numbers of parameters, such as `Function` and `BinaryOperator`,
+`Function` and `Supplier`, or `Consumer` and `Runnable`, run-time method
+selection now first drops the candidates whose interface method a method
+reference or method pointer cannot be called with, as Java does. This applies
+to dynamic code; under `@TypeChecked` and `@CompileStatic` such calls are
+still rejected as ambiguous. When no candidate fits, all are kept and
+selection proceeds as before.
+
+Before, such calls failed:
+
+- `red(numbers, Integer::sum)` with `red(Collection, BinaryOperator)` and
+  `red(Collection, Function)` was ambiguous: `Ambiguous method overloading`.
+- A method reference passed where `Runnable` or `Callable` competed with an
+  interface that takes arguments, such as `Consumer`, matched `Runnable` or
+  `Callable`, because `Closure` implements them, and failed when run, as no
+  method of its name takes no arguments.
+
+**Who is affected.** Only calls that were ambiguous, or that chose an
+overload whose call then failed. A method reference whose methods accept both
+arities, such as `Integer::valueOf`, is still ambiguous, and a dehydrated
+method closure is selected for as before. Closures and lambdas are chosen for
+as before.
+
+**Who is not affected (binary).** There is no change to public API apart
+from two static helpers on the internal `MetaClassHelper`, and the serial
+form of `MethodClosure` is unchanged. A dynamic selection that depends on
+which method a reference names, rather than on argument classes alone, is
+not cached; this arises only for calls that were ambiguous or chose the
+wrong overload before.
+
+### Groovy 6.0.1 — a closure method call skips a null owner or delegate (GROOVY-12667)
+
+A closure's owner or delegate can be null: after `dehydrate()`, after
+`rehydrate` with a null argument, or after `delegate = null`. A method call in
+the closure body that resolves through the owner and delegate now skips a null
+one instead of calling on null:
+
+- **The other candidate answers.** With `OWNER_FIRST` (the default) and a null
+  owner, the delegate's method is used; with `DELEGATE_FIRST` and a null
+  delegate, the owner's. Earlier versions threw `NullPointerException` (from
+  Groovy 4 on; Groovy 3 skipped the null).
+- **With no candidate, the error is a missing method.** When both are null, or
+  the one target of `OWNER_ONLY` or `DELEGATE_ONLY` is null, a method of the
+  closure itself (`toString()`, `with`, `tap` and the like) runs on the
+  closure, and any other method throws `MissingMethodException`, where
+  `NullPointerException` was thrown before. In Groovy 6.0.0, `toString()` and
+  `with` instead ran against `null`, as such methods are first tried on the
+  delegate and owner (GROOVY-11858).
+
+The rules are the same whether the closure dispatches through its own
+metaclass or, once it has an `ExpandoMetaClass` (after
+`ExpandoMetaClass.enableGlobally()` or after adding to a closure's metaclass),
+through `MetaClassImpl`. A method call compiled against the owner is
+unchanged. Property access is unchanged: with a null owner or delegate it can
+still throw `NullPointerException` (Groovy 7 skips the null there too,
+GROOVY-12671).
+
+**Who is affected.** Code that catches `NullPointerException` around a method
+call in a closure with a null owner or delegate, and code that relied on
+`toString()` or `with` receiving `null` there. Nothing that ran without an
+exception before behaves differently, apart from those methods of the
+closure. No public API changes, so `japicmp` does not report this.
+
+### Groovy 6.0.1 — async constructs rethrow a checked exception as itself (GROOVY-12763)
+
+In 6.0.0, `await` rethrew a checked exception from an async task unchanged,
+but other async constructs wrapped it: a scope's child task failure and a
+`defer` action in `RuntimeException`, a `withScope` body and a generator body
+in `UndeclaredThrowableException`, and a `Flow.Publisher` error consumed with
+`for await` in `RuntimeException`. All of them now rethrow the original
+exception, as `await` does, and a timed `withScope` uses it as the cause of
+its `TimeoutException`. Async/await is incubating.
+
+**Who is affected.** Code that catches `RuntimeException` or
+`UndeclaredThrowableException` around these constructs and reads
+`getCause()` to find a checked exception. Catch the checked exception
+directly instead. Java callers of `AsyncScope.close()` and `withScope`,
+which declare no checked exceptions, catch `Exception` and test its type.
+
+An `UndeclaredThrowableException` around a checked exception that a
+`withScope` or generator body throws is removed too, because it cannot be
+told apart from the layer closure conversion adds. Such a wrapper most
+often comes from a `java.lang.reflect.Proxy`, such as a Spring AOP proxy or
+an RPC stub, called in the body.
+
+**What is unchanged.** Unchecked exceptions and errors, which were never
+wrapped, and the exception `await` rethrows. Exceptions suppressed by a
+wrapper that `await` or a scope removes now move to the exception
+rethrown. There are no API signature changes in `groovy.concurrent`.
+
 ### Groovy 7 — Groovy Console smart highlighter and the language host
 
 `SmartDocumentFilter.getLatestTokenList()` now returns delimiter spans
@@ -926,6 +1122,39 @@ prints one warning. `noSyntaxCheck` set in
 `@ASTTest` stays a no-op when `groovy.asttest.enable` is `false`. A
 per-thread override used by in-process tooling can only force that
 no-op. It cannot evaluate the closure against that property.
+
+### Groovy 7 — Java-style array initialization and promotion of scalar to array (GROOVY-8561, GROOVY-11492)
+
+The Java array initializer syntax uses curly braces, which Groovy has used for
+code blocks (closures, lambdas, methods) until the Parrot Parser introduced in
+Groovy 3 added basic support for `new Type[]{...}` array expressions. This did
+not support multi-dimension init without verbose value expressions, like this:
+```groovy
+def array = new int[][] { new int[] {1}, new int[] {2,3} }
+```
+As of Groovy 5, this can be done more succinctly:
+```groovy
+def array = new int[][] { {1}, {2,3} } // GROOVY-8551
+```
+
+Groovy 6 took this one step further, supporting array literals for annotation
+attribute values (GROOVY-11485, GROOVY-11866). The next gap to close for Java
+is to support the terse syntax for field, variable or parameter declarations.
+```groovy
+int[][] array = { {1}, {2,3} } // GROOVY-11492
+```
+
+The one conflict that cannot be avoided has to do with Groovy's auto-promotion
+from a scalar to an array.
+```groovy
+int[] a = 1 // array with single integer (1)
+String[] b = 'B'
+Closure[] c = {} // GROOVY-8561
+```
+The array `c` in this example was a single-closure array due to promotion. For
+Groovy 7+, this indicates a zero-length array, as in all other array cases. If
+your code uses such auto-promotion behavior, you could add the outer braces or
+brackets. Or write a non-ambiguous closure literal with an arrow.
 
 ### Groovy 7 — `SignatureCodec` version 1 no longer round-trips a union node
 
@@ -1145,82 +1374,6 @@ To keep a narrowing, convert explicitly, as in
 type, such as `Supplier<Long>`, still requires the returned value's type to be
 compatible, so `Supplier<Long> s = () -> 1` remains an error (GROOVY-11414).
 
-### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
-
-Under `@CompileStatic`, a constructor reference such as `X::new` created the
-object through the meta-class, which selected the constructor at run time from
-the types of the arguments. The constructor is now selected at compile time,
-among the constructors visible from the enclosing class, for the parameter
-types of the functional interface, as for `new X(args)` in the same class and
-as in Java, and it is called directly.
-
-**Who is affected.** Statically compiled constructor references whose result
-depended on that run-time selection:
-
-- The overload is chosen by the static parameter types of the functional
-  interface. `Function<CharSequence, X> f = X::new` calls `X(CharSequence)` even
-  when it is given a `String`. With `IL(Object)` and `IL(long)`,
-  `Function<Integer, IL>` calls `IL(Object)`, where it called `IL(long)`; with
-  `IL2(int)` and `IL2(Integer)`, `IntFunction<IL2>` calls `IL2(int)`, where it
-  called `IL2(Integer)`.
-- An `Object[]` given to `Function<Object, VO>` for `VO(Object...)` is passed as
-  one element, where its elements were passed.
-- `null` given to `Function<Integer, PI>` for `PI(int)` throws
-  `NullPointerException`, where it threw `GroovyRuntimeException`.
-- A constructor the enclosing class cannot call no longer wins over one it can.
-  With `private Foo(String)` and `public Foo(Object)`, `Function<String, Foo>`
-  in another class calls `Foo(Object)`, as `new Foo(s)` does.
-- A constructor added or overridden through the meta-class, for example with
-  `ExpandoMetaClass`, is not used, as for a statically compiled `new`.
-
-**What is unchanged.** The constructor is still selected at run time when no
-single constructor matches the parameter types (GROOVY-10971), for an enum, for
-a protected constructor of another package, and for a protected or
-package-private constructor of a class that a `GroovyClassLoader` defined in
-another compilation, such as a class of an earlier `GroovyShell` parse. Dynamic
-and `@TypeChecked` code select the constructor at run time as before.
-
-### Groovy 6.0.1 — statically compiled code in a `GroovyShell` reports what the JVM refuses across class loaders (GROOVY-12568)
-
-The JVM allows access to a protected or package-private member only within
-the same run-time package, which is the package name and the class loader. A
-`GroovyClassLoader` defines each compilation in memory with a class loader of
-its own, so a class of an earlier `GroovyShell` parse, or a precompiled class
-used by a script, is in another run-time package even when the package name is
-the same. Statically compiled code that calls such a constructor or method, or
-reads or writes such a field, compiled and then failed with
-`IllegalAccessError` when it ran.
-
-With the new option `CompilerConfiguration.RUNTIME_PACKAGE_CHECK`, such an
-access is a compile error, reported when the class is generated:
-
-```
-Cannot call package-private method pm of p.M from class p.C: M is defined by
-another class loader, so the JVM refuses this access. Use @CompileDynamic to
-reach it through the meta-class
-```
-
-**Who is affected.** `@CompileStatic` code compiled by a `GroovyShell`,
-including scripts run with the `groovy` command: a shell turns the option on
-for the class loader it creates, unless the configuration sets it. Such code that used to fail at run time now fails
-to compile, and so does such code on a path that never ran. Mark the method or
-class `@CompileDynamic`, or make the member public. A protected member that a
-subclass reaches through `this`, `super` or a receiver of the subclass type is
-not reported, as the JVM allows it.
-
-**What is unchanged.** Code compiled to class files (groovyc, Gradle, Maven,
-Ant, joint compilation), dynamic and `@TypeChecked` code, members of classes
-of the same compilation, and constructor references, which already go through
-the meta-class (GROOVY-12488). A `GroovyClassLoader` that a shell did not
-create, as used by `parseClass` or JSR-223, has the option off. The bytecode
-is the same as before.
-
-**Opting out.** Set `RUNTIME_PACKAGE_CHECK` to `false` in the configuration's
-optimization options, or the system property
-`groovy.runtime.package.check=false`, to keep the failure at run time.
-`CompilerConfiguration.RUNTIME_PACKAGE_CHECK` is a new `@Incubating` constant;
-`japicmp` sees only the addition.
-
 ### Groovy 7 — a final `def` field is read with the type of its value (GROOVY-12315)
 
 Within the class that declares it, a read of a final field declared without a
@@ -1296,19 +1449,6 @@ rest of `com.fasterxml.jackson.annotation` work as before, because Jackson 3
 still uses that jar. YAML aliases, merge keys, tags, complex keys and
 multi-document streams behave as in Groovy 6. `JsonSlurper` and `XmlParser`
 keep their own nesting-depth caps of 1000.
-
-### Groovy 6.0.1 — `@CompileStatic` property and spread results on collections match dynamic Groovy (GROOVY-12534, GROOVY-12649)
-
-Under `@CompileStatic`, property and spread results on a `List`, `Set` or
-other `Iterable` type that declares a property, or gets one from an
-extension method, now match dynamic Groovy and `@TypeChecked`
-(GROOVY-12534, [PR #3058](https://github.com/apache/groovy/pull/3058);
-GROOVY-12649). A property the collection itself defines is read from the
-collection; an explicit spread (`people*.name`) reads it from each
-element, and a spread assignment (`people*.name = 'x'`) writes it to each
-element. The previous `@CompileStatic` results were wrong, and code that
-relied on them gets different results once recompiled with 6.0.1; the new
-results are correct.
 
 ### Groovy 7 — `==` on a `Number` that is not `Comparable` compares numerically (GROOVY-12699)
 
@@ -1407,53 +1547,6 @@ value is `getSource()`, the type and variable are on the `TypePattern`, and
 the negated form is a `NotExpression` around it. `e instanceof T` without a
 binding is a `BinaryExpression` as before.
 
-### Groovy 6.0.1 — `@IndexedProperty` adds no indexed setter to a record (GROOVY-12730)
-
-An `@IndexedProperty` component of a record, or property of a `@RecordType` or
-`@RecordBase` class, gets only the indexed getter `getX(int)`, as an
-`@Immutable` class's property already did. Earlier versions also generated the
-indexed setter `setX(int, V)`, although a record has no other setters. A record is
-only shallowly immutable, so its list or array can still be changed through
-the value the accessor returns.
-
-**Who is affected.** Code that calls `setX(int, V)` on such a record no longer
-compiles under static compilation or Java, and fails with a
-`MissingMethodException` in dynamic Groovy. `japicmp` reports the method as
-removed from the affected classes.
-
-### Groovy 6.0.1 — a method reference selects a functional-interface overload it can be called as at run time (GROOVY-12758)
-
-When overloads take functional interfaces whose abstract methods have
-different numbers of parameters, such as `Function` and `BinaryOperator`,
-`Function` and `Supplier`, or `Consumer` and `Runnable`, run-time method
-selection now first drops the candidates whose interface method a method
-reference or method pointer cannot be called with, as Java does. This applies
-to dynamic code; under `@TypeChecked` and `@CompileStatic` such calls are
-still rejected as ambiguous. When no candidate fits, all are kept and
-selection proceeds as before.
-
-Before, such calls failed:
-
-- `red(numbers, Integer::sum)` with `red(Collection, BinaryOperator)` and
-  `red(Collection, Function)` was ambiguous: `Ambiguous method overloading`.
-- A method reference passed where `Runnable` or `Callable` competed with an
-  interface that takes arguments, such as `Consumer`, matched `Runnable` or
-  `Callable`, because `Closure` implements them, and failed when run, as no
-  method of its name takes no arguments.
-
-**Who is affected.** Only calls that were ambiguous, or that chose an
-overload whose call then failed. A method reference whose methods accept both
-arities, such as `Integer::valueOf`, is still ambiguous, and a dehydrated
-method closure is selected for as before. Closures and lambdas are chosen for
-as before.
-
-**Who is not affected (binary).** There is no change to public API apart
-from two static helpers on the internal `MetaClassHelper`, and the serial
-form of `MethodClosure` is unchanged. A dynamic selection that depends on
-which method a reference names, rather than on argument classes alone, is
-not cached; this arises only for calls that were ambiguous or chose the
-wrong overload before.
-
 ### Groovy 7 — a functional argument selects a functional-interface overload it can be called as (GROOVY-11010, GROOVY-12759)
 
 When overloads take functional interfaces whose abstract methods have
@@ -1533,39 +1626,6 @@ is still rejected.
 `groovy.classtag.preemption.disable` (or
 `CompilerConfiguration.setClassTagPreemptionDisabled`) keeps the previous
 behaviour.
-
-### Groovy 6.0.1 — a closure method call skips a null owner or delegate (GROOVY-12667)
-
-A closure's owner or delegate can be null: after `dehydrate()`, after
-`rehydrate` with a null argument, or after `delegate = null`. A method call in
-the closure body that resolves through the owner and delegate now skips a null
-one instead of calling on null:
-
-- **The other candidate answers.** With `OWNER_FIRST` (the default) and a null
-  owner, the delegate's method is used; with `DELEGATE_FIRST` and a null
-  delegate, the owner's. Earlier versions threw `NullPointerException` (from
-  Groovy 4 on; Groovy 3 skipped the null).
-- **With no candidate, the error is a missing method.** When both are null, or
-  the one target of `OWNER_ONLY` or `DELEGATE_ONLY` is null, a method of the
-  closure itself (`toString()`, `with`, `tap` and the like) runs on the
-  closure, and any other method throws `MissingMethodException`, where
-  `NullPointerException` was thrown before. In Groovy 6.0.0, `toString()` and
-  `with` instead ran against `null`, as such methods are first tried on the
-  delegate and owner (GROOVY-11858).
-
-The rules are the same whether the closure dispatches through its own
-metaclass or, once it has an `ExpandoMetaClass` (after
-`ExpandoMetaClass.enableGlobally()` or after adding to a closure's metaclass),
-through `MetaClassImpl`. A method call compiled against the owner is
-unchanged. Property access is unchanged: with a null owner or delegate it can
-still throw `NullPointerException` (Groovy 7 skips the null there too,
-GROOVY-12671).
-
-**Who is affected.** Code that catches `NullPointerException` around a method
-call in a closure with a null owner or delegate, and code that relied on
-`toString()` or `with` receiving `null` there. Nothing that ran without an
-exception before behaves differently, apart from those methods of the
-closure. No public API changes, so `japicmp` does not report this.
 
 ### Groovy 7 — a closure skips a null owner or delegate for a property (GROOVY-12671)
 
@@ -1682,33 +1742,6 @@ time, is unaffected.
 
 **Who is not affected (binary).** Existing call sites are compiled against
 the unchanged existing overloads.
-
-### Groovy 6.0.1 — async constructs rethrow a checked exception as itself (GROOVY-12763)
-
-In 6.0.0, `await` rethrew a checked exception from an async task unchanged,
-but other async constructs wrapped it: a scope's child task failure and a
-`defer` action in `RuntimeException`, a `withScope` body and a generator body
-in `UndeclaredThrowableException`, and a `Flow.Publisher` error consumed with
-`for await` in `RuntimeException`. All of them now rethrow the original
-exception, as `await` does, and a timed `withScope` uses it as the cause of
-its `TimeoutException`. Async/await is incubating.
-
-**Who is affected.** Code that catches `RuntimeException` or
-`UndeclaredThrowableException` around these constructs and reads
-`getCause()` to find a checked exception. Catch the checked exception
-directly instead. Java callers of `AsyncScope.close()` and `withScope`,
-which declare no checked exceptions, catch `Exception` and test its type.
-
-An `UndeclaredThrowableException` around a checked exception that a
-`withScope` or generator body throws is removed too, because it cannot be
-told apart from the layer closure conversion adds. Such a wrapper most
-often comes from a `java.lang.reflect.Proxy`, such as a Spring AOP proxy or
-an RPC stub, called in the body.
-
-**What is unchanged.** Unchecked exceptions and errors, which were never
-wrapped, and the exception `await` rethrows. Exceptions suppressed by a
-wrapper that `await` or a scope removes now move to the exception
-rethrown. There are no API signature changes in `groovy.concurrent`.
 
 ## The binary-compatibility check
 
