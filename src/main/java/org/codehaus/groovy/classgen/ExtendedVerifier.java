@@ -37,6 +37,7 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.AnnotationConstantsVisitor;
@@ -178,10 +179,11 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
     @Override
     public void visitDeclarationExpression(final DeclarationExpression expression) {
         visitAnnotations(expression, LOCAL_VARIABLE_TARGET);
+        // GROOVY-12540: use the declared (origin) type: getType() may be a shared, boxed ClassHelper node for a primitive local
         if (expression.isMultipleAssignmentDeclaration()) {
-            expression.getTupleExpression().forEach(e -> visitTypeAnnotations(e.getType()));
+            expression.getTupleExpression().forEach(e -> visitTypeAnnotations(((VariableExpression) e).getOriginType()));
         } else {
-            ClassNode type = expression.getLeftExpression().getType();
+            ClassNode type = expression.getVariableExpression().getOriginType();
             visitTypeAnnotations(type);
             extractTypeUseAnnotations(expression.getAnnotations(), type, LOCAL_VARIABLE_TARGET);
         }
