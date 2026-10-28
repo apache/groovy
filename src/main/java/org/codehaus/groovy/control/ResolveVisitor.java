@@ -84,6 +84,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static groovy.lang.Tuple.tuple;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoEnclosingInstance;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
 import static org.apache.groovy.ast.tools.TypeUseUtils.isParameterizedTypeUsage;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
@@ -1239,7 +1240,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
             // every class between this one and the outer class needs an enclosing instance
             for (ClassNode cn = currentClass; iterType != null && !cn.equals(type); cn = cn.getOuterClass()) {
-                if (Modifier.isStatic(cn.getModifiers()) || isAnonymousInStaticContext(cn)) {
+                if (hasNoEnclosingInstance(cn)) {
                     addError("The usage of 'Class.this' and 'Class.super' is not allowed in '" + cn.getName() +
                             "', which has no enclosing instance of '" + cn.getOuterClass().getName() + "'.", expression);
                     return;
@@ -1250,14 +1251,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             addError("The usage of 'Class.this' and 'Class.super' within static nested class '" +
                     currentClass.getName() + "' is not allowed in a static context.", expression);
         }
-    }
-
-    private static boolean isAnonymousInStaticContext(final ClassNode type) {
-        if (type instanceof InnerClassNode inner && inner.isAnonymous()) {
-            VariableScope scope = inner.getVariableScope(); // see VariableScopeVisitor
-            return scope != null && scope.getParent() != null && scope.getParent().isInStaticContext();
-        }
-        return false;
     }
 
     private boolean isSuperCallToDefaultMethod(PropertyExpression expression) {

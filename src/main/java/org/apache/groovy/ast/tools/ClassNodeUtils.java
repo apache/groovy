@@ -24,9 +24,11 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
@@ -441,6 +443,26 @@ public class ClassNodeUtils {
      */
     public static boolean isInnerClass(final ClassNode cNode) {
         return cNode.getOuterClass() != null && !Modifier.isStatic(cNode.getModifiers());
+    }
+
+    /**
+     * Determines if the given ClassNode has no instance of its outer class to use:
+     * a static nested class, or an anonymous class created in a static context, such
+     * as a static method, a static initializer, an argument of {@code this(...)} or
+     * {@code super(...)}, or a closure inside one of them.
+     *
+     * @param cNode the ClassNode of interest
+     * @return true if the given node has no enclosing instance, else false
+     *
+     * @since 6.0.1
+     */
+    public static boolean hasNoEnclosingInstance(final ClassNode cNode) {
+        if (Modifier.isStatic(cNode.getModifiers())) return true;
+        if (cNode.redirect() instanceof InnerClassNode inner && inner.isAnonymous()) {
+            VariableScope scope = inner.getVariableScope(); // see VariableScopeVisitor
+            return scope != null && scope.getParent() != null && scope.getParent().isInStaticContext();
+        }
+        return false;
     }
 
     /**
