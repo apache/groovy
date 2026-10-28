@@ -170,6 +170,74 @@ final class Groovy12533 {
     }
 
     @Test
+    void testClosureReadsAndWritesPrivateStaticSuperField() {
+        assertScript '''
+            class Outer {
+                private static String f = 'outer'
+                static class Sub extends Outer {
+                    def direct() { [this.@f, super.@f] }
+                    def viaClosure() { [{ -> this.@f }(), { -> super.@f }()] }
+                    def write(String value) {
+                        def setter = { -> this.@f = value }
+                        setter.call()
+                        def getter = { -> super.@f }
+                        getter.call()
+                    }
+                }
+            }
+            def sub = new Outer.Sub()
+            assert sub.direct() == ['outer', 'outer']
+            assert sub.viaClosure() == ['outer', 'outer']
+            assert sub.write('updated') == 'updated'
+            assert new Outer.Sub().viaClosure() == ['updated', 'updated']
+        '''
+    }
+
+    @Test
+    void testCompileStaticClosureReadsAndWritesPrivateStaticSuperField() {
+        assertScript '''
+            class Outer {
+                private static String f = 'outer'
+                @groovy.transform.CompileStatic
+                static class Sub extends Outer {
+                    def direct() { [this.@f, super.@f] }
+                    def viaClosure() { [{ -> this.@f }(), { -> super.@f }()] }
+                    def write(String value) {
+                        def setter = { -> this.@f = value }
+                        setter.call()
+                        def getter = { -> super.@f }
+                        getter.call()
+                    }
+                }
+            }
+            def sub = new Outer.Sub()
+            assert sub.direct() == ['outer', 'outer']
+            assert sub.viaClosure() == ['outer', 'outer']
+            assert sub.write('updated') == 'updated'
+            assert new Outer.Sub().viaClosure() == ['updated', 'updated']
+        '''
+    }
+
+    @Test
+    void testCompileStaticGrandchildClosureReadsPrivateField() {
+        assertScript '''
+            class Outer {
+                private String f = 'outer'
+                static class Mid extends Outer {
+                    @groovy.transform.CompileStatic
+                    static class Sub extends Mid {
+                        def direct() { this.@f }
+                        def viaClosure() { { -> this.@f }() }
+                    }
+                }
+            }
+            def sub = new Outer.Mid.Sub()
+            assert sub.direct() == 'outer'
+            assert sub.viaClosure() == 'outer'
+        '''
+    }
+
+    @Test
     void testNonNestedSubclassClosureCannotReadPrivateSuperField() {
         def err = shouldFail MissingFieldException, '''
             class A {
