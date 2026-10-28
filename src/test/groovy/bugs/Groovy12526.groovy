@@ -159,6 +159,109 @@ final class Groovy12526 {
     }
 
     @Test
+    void testAnonymousClassOfAClassCannotQualifyAnInterfaceSuper() {
+        def body = '''
+            interface I {
+                default String m() { 'I' }
+            }
+            class C {
+                String n() {
+                    new Object() {
+                        String call() { I.super.m() }
+                    }.call()
+                }
+            }
+        '''
+        assertRejectedInEveryMode(body, "'I' is not a direct superinterface")
+    }
+
+    @Test
+    void testAnonymousImplementationCannotCallADifferentInterface() {
+        def body = '''
+            interface J {
+                default String m() { 'J' }
+            }
+            interface I {
+                default String m() { 'I' }
+            }
+            class C {
+                String n() {
+                    new I() {
+                        @Override String m() { J.super.m() }
+                    }.m()
+                }
+            }
+        '''
+        assertRejectedInEveryMode(body, "'J' is not a direct superinterface")
+    }
+
+    @Test
+    void testQualifiedThisIsNotTheInterfaceSuperCheck() {
+        def err = shouldFail '''
+            class A {
+                def foo() { A.this.class }
+            }
+        '''
+        assert err.message.contains('only allowed in nested/inner classes') : err.message
+        assert !err.message.contains(NOT_DIRECT) : err.message
+    }
+
+    @Test
+    void testSuperOnAValueIsNotAQualifiedInterfaceSuper() {
+        def err = shouldFail '''
+            class C {
+                def m(Object o) { o.super }
+            }
+            new C().m(new Object())
+        '''
+        assert err.message.contains('No such property: super') : err.message
+        assert !err.message.contains(NOT_DIRECT) : err.message
+    }
+
+    @Test
+    void testTraitSuperOnTheDeclaringTraitStillWorks() {
+        assertScript '''
+            trait T {
+                String m() { 'T' }
+                String n() { T.super.m() }
+            }
+            class C implements T {}
+            assert new C().n() == 'T'
+        '''
+    }
+
+    @Test
+    void testEnclosingClassSuperIsOutsideTheInterfaceCheck() {
+        def err = shouldFail '''
+            @groovy.transform.CompileStatic
+            class C {
+                String value() { 'C' }
+                static class D extends C {
+                    @Override String value() { 'D' }
+                    class B {
+                        String m() { D.super.value() }
+                    }
+                }
+            }
+        '''
+        assert err.message.contains('No such property: super') : err.message
+        assert !err.message.contains(NOT_DIRECT) : err.message
+    }
+
+    @Test
+    void testInterfaceMarkedAsTraitSkipsTheDirectSuperinterfaceCheck() {
+        def err = shouldFail '''
+            @groovy.transform.Trait
+            interface T {
+                default String m() { 'T' }
+                default String n() { T.super.m() }
+            }
+        '''
+        assert err.message.contains('@Trait not allowed for interfaces') : err.message
+        assert !err.message.contains(NOT_DIRECT) : err.message
+    }
+
+    @Test
     void testImplementingInnerClassMayCallEnclosingInterfaceSuper() {
         def body = '''
             interface Outer {
