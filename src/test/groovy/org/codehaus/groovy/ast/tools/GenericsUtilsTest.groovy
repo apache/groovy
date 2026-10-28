@@ -637,6 +637,69 @@ final class GenericsUtilsTest {
                 'java.util.List<java.lang.String>'
     }
 
+    // GROOVY-11521
+    @Test
+    void testCorrectToGenericsSpecRecurseStopsSelfReferentialWildcard() {
+        ClassNode result = correctListOfSelfReferentialWildcard(false)
+        assert result.toString(false) == 'java.util.List<? extends Foo<T>>'
+        assert result.genericsTypes[0].wildcard
+        assert result.genericsTypes[0].lowerBound == null
+        assert result.genericsTypes[0].upperBounds[0].name == 'Foo'
+        assert result.genericsTypes[0].upperBounds[0].genericsTypes[0].placeholder
+        assert result.genericsTypes[0].upperBounds[0].genericsTypes[0].name == 'T'
+
+        ClassNode lower = correctListOfSelfReferentialWildcard(true)
+        assert lower.toString(false) == 'java.util.List<? super Foo<T>>'
+        assert lower.genericsTypes[0].wildcard
+        assert lower.genericsTypes[0].upperBounds == null
+        assert lower.genericsTypes[0].lowerBound.name == 'Foo'
+        assert lower.genericsTypes[0].lowerBound.genericsTypes[0].placeholder
+    }
+
+    // GROOVY-11521
+    @Test
+    void testCorrectToGenericsSpecRecurseStillSubstitutesOtherPlaceholdersInWildcardBound() {
+        ClassNode t = placeholder('T')
+        ClassNode u = placeholder('U')
+        ClassNode fooOfU = ClassHelper.makeWithoutCaching('Foo').getPlainNodeReference()
+        fooOfU.genericsTypes = [new GenericsType(u)] as GenericsType[]
+        ClassNode carrier = wildcardCarrier(fooOfU, null)
+
+        ClassNode listOfT = ClassHelper.LIST_TYPE.getPlainNodeReference()
+        listOfT.genericsTypes = [new GenericsType(t)] as GenericsType[]
+
+        ClassNode result = GenericsUtils.correctToGenericsSpecRecurse([T: carrier, U: ClassHelper.STRING_TYPE], listOfT)
+        assert result.toString(false) == 'java.util.List<? extends Foo<java.lang.String>>'
+        assert result.genericsTypes[0].wildcard
+        assert result.genericsTypes[0].upperBounds[0].genericsTypes[0].type == ClassHelper.STRING_TYPE
+    }
+
+    private static ClassNode correctListOfSelfReferentialWildcard(boolean lowerBound) {
+        ClassNode t = placeholder('T')
+        ClassNode fooOfT = ClassHelper.makeWithoutCaching('Foo').getPlainNodeReference()
+        fooOfT.genericsTypes = [new GenericsType(t)] as GenericsType[]
+        ClassNode carrier = lowerBound ? wildcardCarrier(null, fooOfT) : wildcardCarrier(fooOfT, null)
+
+        ClassNode listOfT = ClassHelper.LIST_TYPE.getPlainNodeReference()
+        listOfT.genericsTypes = [new GenericsType(t)] as GenericsType[]
+        return GenericsUtils.correctToGenericsSpecRecurse([T: carrier], listOfT)
+    }
+
+    private static ClassNode placeholder(String name) {
+        ClassNode placeholder = ClassHelper.makeWithoutCaching(name)
+        placeholder.genericsPlaceHolder = true
+        return placeholder
+    }
+
+    private static ClassNode wildcardCarrier(ClassNode upper, ClassNode lower) {
+        ClassNode qmark = ClassHelper.makeWithoutCaching('?')
+        GenericsType wildcard = new GenericsType(qmark, upper == null ? null : [upper] as ClassNode[], lower)
+        wildcard.wildcard = true
+        ClassNode carrier = ClassHelper.makeWithoutCaching(Object, false)
+        carrier.genericsTypes = [wildcard] as GenericsType[]
+        return carrier
+    }
+
     private static ClassNode fieldType(List<ClassNode> classNodes, String owner, String name) {
         ClassNode cn = findClassNode(owner, classNodes).getDeclaredField(name).type
         assert cn != null
