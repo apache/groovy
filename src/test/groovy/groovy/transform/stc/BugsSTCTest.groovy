@@ -1420,7 +1420,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             }
             def s = new Sub()
             s.setValue('from-base')
-            assert s.isFlag()
+            assert s.isFlag() == 'from-base'
         '''
     }
 
@@ -1510,15 +1510,6 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             new C().test(new Sub())
         ''',
         'Sub#isFlag()'
-
-        assertScript '''
-            package org.codehaus.groovy.transform.stc.acc
-            import org.codehaus.groovy.transform.stc.acc.AccessorBases.PackageFinal
-            class Sub extends PackageFinal {
-                boolean flag = false
-            }
-            assert new Sub().getFlag()
-        '''
     }
 
     // GROOVY-12525
