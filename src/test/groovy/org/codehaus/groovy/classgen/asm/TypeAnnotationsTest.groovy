@@ -430,6 +430,33 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    // GROOVY-12541
+    @Test
+    void testTypeAnnotationsForLocalVariablesCompileStatic() {
+        def bytecode = compile(classNamePattern: 'Foo', method: 'bar', imports + '''
+            @Retention(RUNTIME) @Target([LOCAL_VARIABLE, TYPE_USE]) @interface TypeAnno0 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno1 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno2 { }
+
+            @groovy.transform.CompileStatic
+            class Foo {
+                def bar() {
+                    for (@TypeAnno0 Integer i = 0; i < 3; i++) { }
+                    @TypeAnno1 Integer n = 0
+                    @TypeAnno2 String s = ''
+                }
+            }
+        ''')
+        assert bytecode.hasSequence([
+                'LOCALVARIABLE i Ljava/lang/Integer;',
+                'LOCALVARIABLE n Ljava/lang/Integer;',
+                'LOCALVARIABLE s Ljava/lang/String;',
+                'LOCALVARIABLE @LTypeAnno0;() : LOCAL_VARIABLE, null',
+                'LOCALVARIABLE @LTypeAnno1;() : LOCAL_VARIABLE, null',
+                'LOCALVARIABLE @LTypeAnno2;() : LOCAL_VARIABLE, null'
+        ])
+    }
+
     // GROOVY-12540
     @Test
     void testTypeAnnotationsForPrimitiveLocalVariables() {
@@ -451,6 +478,33 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
                 'LOCALVARIABLE l J',
                 'LOCALVARIABLE d D',
                 'LOCALVARIABLE @LTypeAnno0;() : LOCAL_VARIABLE, null',
+                'LOCALVARIABLE @LTypeAnno1;() : LOCAL_VARIABLE, null',
+                'LOCALVARIABLE @LTypeAnno2;() : LOCAL_VARIABLE, null'
+        ])
+    }
+
+    // GROOVY-12540, GROOVY-12541
+    @Test
+    void testTypeAnnotationsForPrimitiveLocalVariablesCompileStatic() {
+        def bytecode = compile(classNamePattern: 'Foo', method: 'bar', imports + '''
+            @Retention(RUNTIME) @Target([LOCAL_VARIABLE, TYPE_USE]) @interface Parallel { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno1 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno2 { }
+
+            @groovy.transform.CompileStatic
+            class Foo {
+                def bar(int[] a) {
+                    for (@Parallel int i = 0; i < a.length; i++) { a[i] *= 2 }
+                    @TypeAnno1 long l = 0
+                    @TypeAnno2 double d = 0
+                }
+            }
+        ''')
+        assert bytecode.hasSequence([
+                'LOCALVARIABLE i I',
+                'LOCALVARIABLE l J',
+                'LOCALVARIABLE d D',
+                'LOCALVARIABLE @LParallel;() : LOCAL_VARIABLE, null',
                 'LOCALVARIABLE @LTypeAnno1;() : LOCAL_VARIABLE, null',
                 'LOCALVARIABLE @LTypeAnno2;() : LOCAL_VARIABLE, null'
         ])
