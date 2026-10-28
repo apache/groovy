@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.transform.sc.transformers;
 
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -102,14 +101,15 @@ class PropertyExpressionTransformer {
     /**
      * True when {@code this} is a subclass of the field's declaring class, so the
      * field belongs to this instance rather than to an enclosing instance.
+     * Closure classes are not materialized until class generation, which is after
+     * this transform, so {@code this} here is already the enclosing user class.
      */
     private boolean fieldIsOnThisInstance(final FieldNode field) {
-        ClassNode thisType = scTransformer.getTransformClass();
-        while (thisType != null && ClassHelper.isGeneratedFunction(thisType)) {
-            thisType = thisType.getOuterClass();
-        }
-        if (thisType == null) return false;
         ClassNode declaringClass = field.getDeclaringClass();
-        return !thisType.equals(declaringClass) && thisType.isDerivedFrom(declaringClass);
+        ClassNode type = scTransformer.getTransformClass().getSuperClass();
+        while (type != null && !type.equals(declaringClass)) {
+            type = type.getSuperClass();
+        }
+        return type != null;
     }
 }
