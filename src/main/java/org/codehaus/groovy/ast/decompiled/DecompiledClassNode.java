@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.decompiled;
 
+import groovy.transform.Internal;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -79,6 +80,19 @@ public class DecompiledClassNode extends ClassNode {
     @Override
     public Class getTypeClass() {
         return resolver.resolveJvmClass(getName());
+    }
+
+    /**
+     * Resolves a class in the same way as the types referenced from this class's bytecode:
+     * classes of the current compilation unit first, then the class path, where a class
+     * file is read rather than loaded.
+     *
+     * @param className the fully qualified class name
+     * @return the resolved class node, or {@code null} if the class cannot be found
+     */
+    @Internal
+    public ClassNode resolveClassNullable(final String className) {
+        return resolver.resolveClassNullable(className);
     }
 
     public boolean isParameterized() {

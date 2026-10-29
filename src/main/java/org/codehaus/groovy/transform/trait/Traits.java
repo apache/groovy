@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
@@ -142,8 +143,18 @@ public abstract class Traits {
                     staticFieldHelperClassNode = icn;
                 }
             } while (innerClasses.hasNext());
+        } else if (trait.redirect() instanceof DecompiledClassNode) { // GROOVY-10932: precompiled trait read from bytecode
+            DecompiledClassNode decompiled = (DecompiledClassNode) trait.redirect();
+            helperClassNode = decompiled.resolveClassNullable(Traits.helperClassName(trait));
+            if (helperClassNode == null) {
+                throw new GroovyBugError("Couldn't find trait helper classes on compile classpath!");
+            }
+            fieldHelperClassNode = decompiled.resolveClassNullable(Traits.fieldHelperClassName(trait));
+            if (fieldHelperClassNode != null) {
+                staticFieldHelperClassNode = decompiled.resolveClassNullable(Traits.staticFieldHelperClassName(trait));
+            }
         } else if (!trait.isPrimaryClassNode()) { // GROOVY-11743
-            // precompiled trait
+            // precompiled trait loaded as a class
             try {
                 String helperClassName = Traits.helperClassName(trait);
                 ClassLoader classLoader = trait.getTypeClass().getClassLoader();
