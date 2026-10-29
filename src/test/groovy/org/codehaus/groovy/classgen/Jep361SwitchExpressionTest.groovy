@@ -19,13 +19,22 @@
 package org.codehaus.groovy.classgen
 
 import groovy.transform.CompileStatic
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.CodeVisitorSupport
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.YieldStatement
+import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import org.codehaus.groovy.control.customizers.CompilationCustomizer
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt
 
 /**
  * JEP 361 (https://openjdk.org/jeps/361) conformance for first-class switch
@@ -898,6 +907,74 @@ final class Jep361SwitchExpressionTest {
             run(1, 3, log)
             assert log == ['fell through', 'after']
         '''
+    }
+
+    @Test
+    void earlyYieldInSwitchExpressionPositions() {
+        // a switch whose value is used is an expression, so this does not go through the statement lowering
+        assertBoth '''
+            def viaReturn(int n, boolean flag) {
+                return switch (n) {
+                    case 1 -> { if (flag) yield 'early'; yield 'late' }
+                    default -> 'other'
+                }
+            }
+            def viaAssignment(int n, boolean flag) {
+                def result = switch (n) {
+                    case 1 -> { if (flag) yield 'early'; yield 'late' }
+                    default -> 'other'
+                }
+                result
+            }
+            def viaArgument(int n, boolean flag) {
+                String.valueOf(switch (n) {
+                    case 1 -> { if (flag) yield 'early'; yield 'late' }
+                    default -> 'other'
+                })
+            }
+            assert [viaReturn(1, true), viaReturn(1, false), viaReturn(2, true)] == ['early', 'late', 'other']
+            assert [viaAssignment(1, true), viaAssignment(1, false), viaAssignment(2, true)] == ['early', 'late', 'other']
+            assert [viaArgument(1, true), viaArgument(1, false), viaArgument(2, true)] == ['early', 'late', 'other']
+        '''
+    }
+
+    @Test
+    void earlyYieldInReturnPositionKeepsStatementsAddedBeforeIt() {
+        def script = '''
+            def pick(boolean flag) {
+                switch (1) {
+                    case 1 -> {
+                        if (flag) yield 'first'
+                        yield 'second'
+                    }
+                }
+            }
+            assert pick(true) == 'first'
+            assert pick(false) == 'second'
+        '''
+        [new CompilerConfiguration(), staticConfig()].each { config ->
+            config.addCompilationCustomizers(prependToEarlyYields())
+            new GroovyShell(config).evaluate(script)
+        }
+    }
+
+    // stands in for a transform that adds a statement to the start of each lowered early yield
+    private static CompilationCustomizer prependToEarlyYields() {
+        new CompilationCustomizer(CompilePhase.CANONICALIZATION) {
+            @Override
+            void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
+                def visitor = new CodeVisitorSupport() {
+                    @Override
+                    void visitBlockStatement(BlockStatement block) {
+                        if (block.statements && block.statements[-1].getNodeMetaData(YieldStatement) != null) {
+                            block.statements.add(0, stmt(constX('added by a transform')))
+                        }
+                        super.visitBlockStatement(block)
+                    }
+                }
+                classNode.methods.each { it.code?.visit(visitor) }
+            }
+        }
     }
 
     @Test
