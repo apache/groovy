@@ -459,6 +459,30 @@ public final class IndyInvalidation {
     }
 
     /**
+     * Returns the class-domain SwitchPoint of the class {@code mc} belongs to
+     * when that is not the class whose domain {@link #classSwitchPointFor(Object)}
+     * uses for {@code receiver}, as for a proxy or mock subclass whose
+     * metaclass is the one of the type it stands in for; {@code null}
+     * otherwise. A change to that metaclass retires its own class's domain,
+     * not the receiver class's, so a site selected through it is guarded by
+     * both.
+     *
+     * @param receiver the call receiver (may be {@code null})
+     * @param mc       the MetaClass the selection read (may be {@code null})
+     * @return the SwitchPoint of the metaclass's class, or {@code null}
+     */
+    public static SwitchPoint foreignMetaClassSwitchPointFor(final Object receiver, final MetaClass mc) {
+        if (mc == null) {
+            return null;
+        }
+        Class<?> owner = mc.getTheClass();
+        if (owner == null || owner == switchPointClassFor(receiver)) {
+            return null;
+        }
+        return classSwitchPointFor(owner);
+    }
+
+    /**
      * Retires the class domain of {@code mc}'s class (if a generation was
      * allocated). Does not bump counters (local domain retire; width policy is
      * separate).
