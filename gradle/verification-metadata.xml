@@ -137,6 +137,7 @@
             <trusting group="org.codehaus.woodstox"/>
             <trusting group="^com[.]fasterxml($|([.].*))" regex="true"/>
             <trusting group="^com[.]fasterxml[.]jackson($|([.].*))" regex="true"/>
+            <trusting group="^tools[.]jackson($|([.].*))" regex="true"/>
          </trusted-key>
          <trusted-key id="29BEA2A645F2D6CED7FB12E02B172E3E156466E8" group="^org[.]apache[.]maven($|([.].*))" regex="true"/>
          <trusted-key id="2B1042677FD8190C7B9FC0DC2161D72E7DCD4258">
@@ -156,7 +157,10 @@
             <trusting group="xml-apis"/>
          </trusted-key>
          <trusted-key id="2E3A1AFFE42B5F53AF19F780BCF4173966770193" group="org.jetbrains"/>
-         <trusted-key id="2FC53E6B1F681184F4CCD637F5C81DE10A0B8ECC" group="org.yaml" name="snakeyaml"/>
+         <trusted-key id="2FC53E6B1F681184F4CCD637F5C81DE10A0B8ECC">
+            <trusting group="org.snakeyaml" name="snakeyaml-engine"/>
+            <trusting group="org.yaml" name="snakeyaml"/>
+         </trusted-key>
          <trusted-key id="32118CF76C9EC5D918E54967CA80D1F0EB6CA4BA">
             <trusting group="org.apache.maven.shared"/>
             <trusting group="org.codehaus.plexus"/>

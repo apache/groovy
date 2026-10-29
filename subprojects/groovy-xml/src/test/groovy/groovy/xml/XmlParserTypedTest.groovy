@@ -18,7 +18,11 @@
  */
 package groovy.xml
 
+import groovy.transform.CompileStatic
 import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.fail
 
 class XmlParserTypedTest {
 
@@ -155,6 +159,29 @@ class XmlParserTypedTest {
     }
 
     @Test
+    void testParseTextAsRejectsUnknownElement() {
+        // Jackson 3 ignores unknown properties by default; typed parsing keeps Jackson 2's behaviour.
+        // A dynamic call site unwraps the XmlRuntimeException to the Jackson exception it carries.
+        def e = shouldFail {
+            new XmlParser().parseTextAs(ServerConfig, '<server><host>localhost</host><colour>red</colour></server>')
+        }
+        assert e.message.contains('colour')
+    }
+
+    @Test
+    @CompileStatic
+    void testParseTextAsRejectsUnknownElementWithXmlRuntimeException() {
+        // called directly: a closure, like a dynamic call site, would unwrap the exception
+        try {
+            new XmlParser().parseTextAs(ServerConfig, '<server><host>localhost</host><colour>red</colour></server>')
+            fail('an unknown element should fail the conversion')
+        } catch (XmlRuntimeException e) {
+            assert e.message.contains(ServerConfig.name)
+            assert e.cause.message.contains('colour')
+        }
+    }
+
+    @Test
     void testParseTextAsNode() {
         def config = new XmlParser().parseTextAs(Node, '<server host="localhost" port="8080" debug="true"/>')
         assert config instanceof Node
@@ -198,5 +225,24 @@ class XmlParserTypedTest {
         assert config.host == 'localhost'
         assert config.port == 8080
         assert config.debug == true
+    }
+
+    @Test
+    void testRunsAgainstTheExpectedJackson() {
+        // jackson2Test runs this class with only Jackson 2 present, so typed parsing takes the fallback
+        boolean jackson2Only = Boolean.getBoolean('groovy.xml.test.jackson2Only')
+        assert isPresent('tools.jackson.databind.json.JsonMapper') == !jackson2Only
+        if (jackson2Only) {
+            assert isPresent('com.fasterxml.jackson.databind.ObjectMapper')
+        }
+    }
+
+    private static boolean isPresent(String className) {
+        try {
+            Class.forName(className, false, XmlParserTypedTest.classLoader)
+            true
+        } catch (ClassNotFoundException ignore) {
+            false
+        }
     }
 }

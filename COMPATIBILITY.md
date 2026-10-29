@@ -762,6 +762,57 @@ which follows `Double.compare` for primitives and objects alike. Classes
 compiled by an earlier release keep the old comparison until they are
 recompiled.
 
+### Groovy 7 — groovy-yaml, groovy-toml and groovy-csv use Jackson 3 (GROOVY-12433)
+
+The YAML, TOML and CSV modules now read and write with Jackson 3
+(`tools.jackson`) instead of Jackson 2 (`com.fasterxml.jackson`). None of them
+exposes a Jackson type, so calling code compiles unchanged and `japicmp` does
+not report this. The behaviour changes below are what users have to check.
+
+**Unquoted YAML values resolve by the JSON schema.** Jackson 3's YAML parser
+fixes its scalar resolver, and it cannot be configured. Only lowercase `true`,
+`false` and `null` and plain decimal numbers take a type. That is stricter than
+the YAML 1.2 core schema most parsers use, as well as the YAML 1.1 rules.
+`yes`/`no`/`on`/`off`, `True`/`FALSE`, `Null`/`NULL`, `~` and
+`0x1F`/`017`/`1_000` now arrive as strings, where Groovy 6 read them as
+booleans, `null` or integers. A non-empty string is truthy, so `enabled: off`
+read with `YamlSlurper.parseText` now tests as true, without any error.
+`parseAs` and `parseTextAs` instead reject such a value for a `boolean`
+property. `.inf`, `-.inf` and `.nan`, which Groovy 6 rejected, now parse: as
+`Double` values through the typed API, and as the strings `'Infinity'`,
+`'-Infinity'` and `'NaN'` through the untyped one. Quote values whose type
+matters, or load documents that rely on the older typing with SnakeYAML
+directly, as the YAML guide shows.
+
+**Jackson 2 databind annotations are ignored.** `@JsonSerialize`,
+`@JsonDeserialize`, `@JsonNaming`, `@JsonPOJOBuilder` and the other
+annotations in `com.fasterxml.jackson.databind.annotation` have no effect on
+YAML, TOML and CSV typed parsing and writing, and nothing reports it. Use the
+versions in `tools.jackson.databind.annotation`.
+
+**Typed XML parsing follows the classpath.** `XmlParser.parseAs` and
+`parseTextAs` use Jackson 3 whenever it is present, even alongside Jackson 2,
+and fall back to Jackson 2 otherwise. An application that gains Jackson 3
+transitively, for example through Spring Boot 4, moves typed XML parsing to
+Jackson 3, and the databind annotations it honours change with it.
+
+**Jackson 2 and SnakeYAML no longer arrive transitively.** groovy-yaml,
+groovy-toml and groovy-csv no longer put
+`com.fasterxml.jackson.core:jackson-databind` on the runtime classpath, and
+groovy-yaml no longer brings `org.yaml:snakeyaml`. Code that used either
+directly must declare it.
+
+**Parser limits follow Jackson 3's defaults.** YAML and TOML input nested
+deeper than 500 levels now fails, where Jackson 2 allowed 1000. A TOML string
+may be up to 100,000,000 characters, where Jackson 2 allowed 20,000,000. A YAML
+document is still limited to 3,145,728 code points, as in Groovy 6.
+
+**What is unchanged.** `@JsonProperty`, `@JsonFormat`, `@JsonCreator` and the
+rest of `com.fasterxml.jackson.annotation` work as before, because Jackson 3
+still uses that jar. YAML aliases, merge keys, tags, complex keys and
+multi-document streams behave as in Groovy 6. `JsonSlurper` and `XmlParser`
+keep their own nesting-depth caps of 1000.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)

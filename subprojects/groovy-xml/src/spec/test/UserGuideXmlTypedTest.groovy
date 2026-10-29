@@ -183,8 +183,8 @@ class UserGuideXmlTypedTest {
         // If you need full Jackson XML support (e.g. @JacksonXmlText,
         // @JacksonXmlElementWrapper), use jackson-dataformat-xml directly:
         //
-        // @Grab('com.fasterxml.jackson.dataformat:jackson-dataformat-xml')
-        // import com.fasterxml.jackson.dataformat.xml.XmlMapper
+        // @Grab('tools.jackson.dataformat:jackson-dataformat-xml')
+        // import tools.jackson.dataformat.xml.XmlMapper
         //
         // def config = new XmlMapper().readValue(xmlString, ServerConfig)
         //

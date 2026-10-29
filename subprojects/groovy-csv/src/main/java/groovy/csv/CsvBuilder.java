@@ -18,10 +18,11 @@
  */
 package groovy.csv;
 
-import com.fasterxml.jackson.dataformat.csv.CsvMapper;
-import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import groovy.lang.Writable;
 import org.apache.groovy.lang.annotation.Incubating;
+import tools.jackson.core.JacksonException;
+import tools.jackson.dataformat.csv.CsvMapper;
+import tools.jackson.dataformat.csv.CsvSchema;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -98,7 +99,7 @@ public class CsvBuilder implements Writable {
         CsvSchema schema = schemaBuilder.build().withHeader();
         try {
             return csvMapper.writer(schema).writeValueAsString(data);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new CsvRuntimeException(e);
         }
     }
@@ -123,7 +124,7 @@ public class CsvBuilder implements Writable {
         CsvSchema schema = csvMapper.schemaFor(type).withHeader();
         try {
             return csvMapper.writer(schema).writeValueAsString(data);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new CsvRuntimeException(e);
         }
     }
@@ -149,7 +150,7 @@ public class CsvBuilder implements Writable {
         CsvSchema schema = schemaBuilder.build().withHeader();
         try {
             this.content = mapper.writer(schema).writeValueAsString(data);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new CsvRuntimeException(e);
         }
         return this;
