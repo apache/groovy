@@ -21,6 +21,7 @@ package bugs
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 final class Groovy11492 {
 
@@ -119,6 +120,61 @@ final class Groovy11492 {
             assert a.length == 1 && a[0] == 1
             assert b.length == 1 && b[0] == '2'
             assert c.length == 1 && c[0].call(3) == 3
+        '''
+    }
+
+    @Test
+    void testArrayEdgeCases() {
+        assertScript '''
+            String[] a = {}
+            assert a instanceof String[] && a.length == 0
+            // was array with closure object coerced to string
+        '''
+        shouldFail '''
+            String[] a = { it } // no such property 'it'
+            // was array with closure object coerced to string
+        '''
+        assertScript '''
+            String[] a = { ['one','two'] }
+            assert a instanceof String[] && a.length == 1 && a[0] == '[one, two]'
+            // was array with closure object coerced to string
+        '''
+        assertScript '''
+            Boolean[] a = { false }
+            assert a instanceof Boolean[] && a.length == 1 && a[0] == false
+            // was array with closure object coerced to boolean value: true
+        '''
+        assertScript '''
+            Closure[] a = {}
+            assert a instanceof Closure[] && a.length == 0
+            // was an array with closure object
+        '''
+        assertScript '''
+            Object[] a = {}
+            assert a instanceof Object[] && a.length == 0
+            // was an array with closure object
+        '''
+        shouldFail '''
+            Closure[] a = { 1 } // Cannot cast object '1' with class 'Integer' to class 'Closure'
+            // was an array with closure object
+        '''
+        shouldFail '''
+            Closure[] a = { it } // no such property 'it'
+            // was an array with closure object
+        '''
+        shouldFail '''
+            Closure[] a = { println('x') }
+            assert a instanceof Closure[] && a.length == 1 && a[0].call()
+            // was an array with closure object
+        '''
+        shouldFail '''
+            Runnable[] a = { println('x') }
+            assert a instanceof Runnable[] && a.length == 1 && a[0].call()
+            // was an array with runnable object
+        '''
+        shouldFail '''
+            Runnable[] a = { println 'x' } // Command chain expression cannot be used in array initializer
+            // was an array with runnable object
         '''
     }
 }
