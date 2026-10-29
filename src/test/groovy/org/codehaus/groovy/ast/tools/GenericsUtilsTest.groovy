@@ -674,6 +674,182 @@ final class GenericsUtilsTest {
         assert result.genericsTypes[0].upperBounds[0].genericsTypes[0].type == ClassHelper.STRING_TYPE
     }
 
+    // GROOVY-11521
+    @Test
+    void testCorrectToGenericsSpecRecurseUsesBoundWhenPlaceholderIsTheType() {
+        // A placeholder used as a type denotes the carried bound. The wildcard
+        // is restored only when that placeholder is a type argument.
+        ClassNode upper = GenericsUtils.correctToGenericsSpecRecurse(
+                [T: wildcardCarrier(ClassHelper.Number_TYPE, null)], placeholder('T'))
+        assert upper.toString(false) == 'java.lang.Number'
+        assert !upper.usingGenerics
+
+        ClassNode lower = GenericsUtils.correctToGenericsSpecRecurse(
+                [T: wildcardCarrier(null, ClassHelper.Number_TYPE)], placeholder('T'))
+        assert lower.toString(false) == '?'
+
+        ClassNode plain = GenericsUtils.correctToGenericsSpecRecurse(
+                [T: ClassHelper.STRING_TYPE], placeholder('T'))
+        assert plain.toString(false) == 'java.lang.String'
+
+        // An empty upper-bound array is not "? extends X".
+        ClassNode qmark = ClassHelper.makeWithoutCaching('?')
+        GenericsType emptyUpper = new GenericsType(qmark, ClassNode.EMPTY_ARRAY, ClassHelper.STRING_TYPE)
+        emptyUpper.wildcard = true
+        ClassNode carrier = ClassHelper.makeWithoutCaching(Object, false)
+        carrier.genericsTypes = [emptyUpper] as GenericsType[]
+        ClassNode cleared = GenericsUtils.correctToGenericsSpecRecurse([T: carrier], placeholder('T'))
+        assert cleared.toString(false) == '?'
+    }
+
+    // GROOVY-11521
+    @Test
+    void testCorrectToGenericsSpecRecurseIgnoresSpecValuesThatAreNotWildcardCarriers() {
+        ClassNode listOfT = listOf(new GenericsType(placeholder('T')))
+
+        ClassNode object = GenericsUtils.correctToGenericsSpecRecurse([T: ClassHelper.OBJECT_TYPE], listOfT)
+        assert object.toString(false) == 'java.util.List<java.lang.Object>'
+
+        ClassNode twoArguments = ClassHelper.makeWithoutCaching(Object, false)
+        twoArguments.genericsTypes = [
+                new GenericsType(ClassHelper.STRING_TYPE),
+                new GenericsType(ClassHelper.Number_TYPE)
+        ] as GenericsType[]
+        ClassNode multiple = GenericsUtils.correctToGenericsSpecRecurse([T: twoArguments], listOfT)
+        assert !multiple.genericsTypes[0].wildcard
+        assert multiple.genericsTypes[0].type.is(twoArguments)
+
+        ClassNode oneArgument = ClassHelper.makeWithoutCaching(Object, false)
+        oneArgument.genericsTypes = [new GenericsType(ClassHelper.STRING_TYPE)] as GenericsType[]
+        ClassNode concrete = GenericsUtils.correctToGenericsSpecRecurse([T: oneArgument], listOfT)
+        assert !concrete.genericsTypes[0].wildcard
+        assert concrete.genericsTypes[0].type.is(oneArgument)
+        assert !concrete.genericsTypes[0].type.genericsTypes[0].wildcard
+
+        ClassNode named = ClassHelper.makeWithoutCaching('NotWildcard')
+        ClassNode namedCarrier = ClassHelper.makeWithoutCaching(Object, false)
+        GenericsType namedWildcard = new GenericsType(named, [ClassHelper.Number_TYPE] as ClassNode[], null)
+        namedWildcard.wildcard = true
+        namedCarrier.genericsTypes = [namedWildcard] as GenericsType[]
+        ClassNode rejected = GenericsUtils.correctToGenericsSpecRecurse([T: namedCarrier], listOfT)
+        assert !rejected.genericsTypes[0].wildcard
+        assert rejected.genericsTypes[0].type.is(namedCarrier)
+
+        GenericsType clearedType = wildcardType(ClassHelper.Number_TYPE, null)
+        def typeField = GenericsType.getDeclaredField('type')
+        typeField.accessible = true
+        typeField.set(clearedType, null)
+        ClassNode nullTypeCarrier = ClassHelper.makeWithoutCaching(Object, false)
+        nullTypeCarrier.genericsTypes = [clearedType] as GenericsType[]
+        ClassNode nullType = GenericsUtils.correctToGenericsSpecRecurse([T: nullTypeCarrier], listOfT)
+        assert !nullType.genericsTypes[0].wildcard
+        assert nullType.genericsTypes[0].type.is(nullTypeCarrier)
+
+        assertThrows(NullPointerException) {
+            GenericsUtils.correctToGenericsSpecRecurse([T: null], listOfT)
+        }
+    }
+
+    // GROOVY-11521
+    @Test
+    void testExtractSuperClassGenericsKeepsDeclaredBoundWhenNotPreservingWildcards() {
+        def classNodes = compile '''
+            class Holder {
+                ArrayList<? extends Number> ext
+                ArrayList<? super Integer> sup
+                ArrayList<String> concrete
+            }
+        '''
+        Map ext = [:]
+        GenericsUtils.extractSuperClassGenerics(fieldType(classNodes, 'Holder', 'ext'), ClassHelper.LIST_TYPE, ext)
+        assert ext['E'].toString(false) == 'java.lang.Number'
+
+        ClassNode supField = fieldType(classNodes, 'Holder', 'sup')
+        assert supField.genericsTypes[0].wildcard
+        assert supField.genericsTypes[0].upperBounds == null
+        assert supField.genericsTypes[0].lowerBound.name == 'java.lang.Integer'
+        Map sup = [:]
+        GenericsUtils.extractSuperClassGenerics(supField, ClassHelper.LIST_TYPE, sup)
+        assert sup['E'].toString(false) == 'java.lang.Object'
+
+        Map concrete = [:]
+        GenericsUtils.extractSuperClassGenerics(fieldType(classNodes, 'Holder', 'concrete'), ClassHelper.LIST_TYPE, concrete)
+        assert concrete['E'].toString(false) == 'java.lang.String'
+    }
+
+    // GROOVY-11521
+    @Test
+    void testDirectComparisonCoversEachWildcardShape() {
+        ClassNode box = typeWith('Box', new GenericsType(placeholder('T')))
+
+        ClassNode extendsNumber = withArguments(box, wildcardType(ClassHelper.Number_TYPE, null))
+        ClassNode preserved = GenericsUtils.parameterizeType(extendsNumber, box)
+        assert preserved.toString(false) == 'Box<? extends java.lang.Number>'
+        assert preserved.genericsTypes[0].wildcard
+        assert preserved.genericsTypes[0].upperBounds[0].name == 'java.lang.Number'
+
+        // preserveWildcards is false on the public extract entry point
+        Map erased = [:]
+        GenericsUtils.extractSuperClassGenerics(extendsNumber, box, erased)
+        assert erased['T'].toString(false) == '?'
+
+        ClassNode unbounded = withArguments(box, wildcardType(null, null))
+        ClassNode asUnbounded = GenericsUtils.parameterizeType(unbounded, box)
+        assert asUnbounded.toString(false) == 'Box<?>'
+        assert !asUnbounded.genericsTypes[0].wildcard
+
+        ClassNode string = withArguments(box, new GenericsType(ClassHelper.STRING_TYPE))
+        assert GenericsUtils.parameterizeType(string, box).toString(false) == 'Box<java.lang.String>'
+    }
+
+    // GROOVY-11521
+    @Test
+    void testExtractSuperClassGenericsAlignsWildcardDeclarationBounds() {
+        ClassNode e = placeholder('E')
+        ClassNode listOfE = withArguments(ClassHelper.LIST_TYPE, new GenericsType(e))
+        ClassNode listOfString = withArguments(ClassHelper.LIST_TYPE, new GenericsType(ClassHelper.STRING_TYPE))
+
+        ClassNode declared = typeWith('Wild', wildcardType(listOfE, null))
+        ClassNode usage = withArguments(declared, wildcardType(listOfString, null))
+        Map spec = [:]
+        GenericsUtils.extractSuperClassGenerics(usage, declared, spec)
+        assert spec['E'].name == 'java.lang.String'
+
+        ClassNode declaredSuper = typeWith('SuperWild', wildcardType(null, listOfE))
+        ClassNode usageSuper = withArguments(declaredSuper, wildcardType(null, listOfString))
+        Map lower = [:]
+        GenericsUtils.extractSuperClassGenerics(usageSuper, declaredSuper, lower)
+        assert lower['E'].name == 'java.lang.String'
+    }
+
+    // GROOVY-11521
+    @Test
+    void testExtractSuperClassGenericsAlignsConcreteArgumentToWildcardDeclaration() {
+        ClassNode e = placeholder('E')
+        ClassNode listOfE = withArguments(ClassHelper.LIST_TYPE, new GenericsType(e))
+        ClassNode listOfString = withArguments(ClassHelper.LIST_TYPE, new GenericsType(ClassHelper.STRING_TYPE))
+
+        ClassNode declared = typeWith('Bound', wildcardType(listOfE, null))
+        ClassNode usage = withArguments(declared, new GenericsType(listOfString))
+        Map spec = [:]
+        GenericsUtils.extractSuperClassGenerics(usage, declared, spec)
+        assert spec['E'].name == 'java.lang.String'
+    }
+
+    // GROOVY-11521
+    @Test
+    void testExtractSuperClassGenericsAlignsNestedConcreteTypeArguments() {
+        ClassNode e = placeholder('E')
+        ClassNode listOfE = withArguments(ClassHelper.LIST_TYPE, new GenericsType(e))
+        ClassNode listOfString = withArguments(ClassHelper.LIST_TYPE, new GenericsType(ClassHelper.STRING_TYPE))
+
+        ClassNode declared = typeWith('Nest', new GenericsType(listOfE))
+        ClassNode usage = withArguments(declared, new GenericsType(listOfString))
+        Map spec = [:]
+        GenericsUtils.extractSuperClassGenerics(usage, declared, spec)
+        assert spec['E'].name == 'java.lang.String'
+    }
+
     private static ClassNode correctListOfSelfReferentialWildcard(boolean lowerBound) {
         ClassNode t = placeholder('T')
         ClassNode fooOfT = ClassHelper.makeWithoutCaching('Foo').getPlainNodeReference()
@@ -691,13 +867,33 @@ final class GenericsUtilsTest {
         return placeholder
     }
 
-    private static ClassNode wildcardCarrier(ClassNode upper, ClassNode lower) {
+    private static GenericsType wildcardType(ClassNode upper, ClassNode lower) {
         ClassNode qmark = ClassHelper.makeWithoutCaching('?')
         GenericsType wildcard = new GenericsType(qmark, upper == null ? null : [upper] as ClassNode[], lower)
         wildcard.wildcard = true
+        return wildcard
+    }
+
+    private static ClassNode wildcardCarrier(ClassNode upper, ClassNode lower) {
         ClassNode carrier = ClassHelper.makeWithoutCaching(Object, false)
-        carrier.genericsTypes = [wildcard] as GenericsType[]
+        carrier.genericsTypes = [wildcardType(upper, lower)] as GenericsType[]
         return carrier
+    }
+
+    private static ClassNode listOf(GenericsType argument) {
+        return withArguments(ClassHelper.LIST_TYPE, argument)
+    }
+
+    private static ClassNode typeWith(String name, GenericsType... arguments) {
+        ClassNode type = ClassHelper.makeWithoutCaching(name)
+        type.genericsTypes = arguments
+        return type
+    }
+
+    private static ClassNode withArguments(ClassNode base, GenericsType... arguments) {
+        ClassNode type = base.getPlainNodeReference()
+        type.genericsTypes = arguments
+        return type
     }
 
     private static ClassNode fieldType(List<ClassNode> classNodes, String owner, String name) {

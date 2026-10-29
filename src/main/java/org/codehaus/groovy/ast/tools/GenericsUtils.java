@@ -854,7 +854,8 @@ public class GenericsUtils {
                                 cn = gt.getUpperBounds() != null ? gt.getUpperBounds()[0] : gt.getType().redirect();
                             } else {
                                 GenericsType gt = ta[i];
-                                if (preserveWildcards && gt.isWildcard() && !isUnboundedWildcard(gt)) {
+                                // Unbounded wildcards took the branch above, so a wildcard here is bounded.
+                                if (preserveWildcards && gt.isWildcard()) {
                                     cn = wildcardCarrier(gt); // GROOVY-11521
                                 } else {
                                     cn = gt.isWildcard() && gt.getUpperBounds() != null ? gt.getUpperBounds()[0] : gt.getType();
