@@ -898,6 +898,7 @@ expression
     |   <assoc=right> con=expression NL*
         (   QUESTION NL* tb=expression NL* COLON NL*
         |   ELVIS NL*
+        |   NULL_COALESCE NL*   // null-coalescing:  x ?? y  ===  x != null ? x : y (x evaluated once)
         )
         fb=expression                                                                       #conditionalExprAlt
 
@@ -919,6 +920,7 @@ expression
                            |   MOD_ASSIGN
                            |   POWER_ASSIGN
                            |   ELVIS_ASSIGN
+                           |   NULL_COALESCE_ASSIGN
                            ) NL*
                      right=enhancedStatementExpression                                      #assignmentExprAlt
     ;

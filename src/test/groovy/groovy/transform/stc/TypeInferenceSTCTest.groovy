@@ -2035,6 +2035,243 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12428
+    @Test
+    void testSwitchCaseAnalysis4() {
+        assertScript '''
+            void check(String type, Object value) {
+                switch (type) {
+                  case 'text':
+                    assert value instanceof String
+                    break
+                  case 'integer':
+                    assert value instanceof Integer
+                    break
+                  case 'boolean':
+                    assert value instanceof Boolean
+                    break
+                }
+            }
+            check('integer', 42)
+        '''
+
+        assertScript '''
+            int check(String type, Object value) {
+                switch (type) {
+                    case 'text' -> { assert value instanceof String; 1 }
+                    case 'integer' -> { assert value instanceof Integer; 2 }
+                    default -> 0
+                }
+            }
+            assert check('integer', 42) == 2
+        '''
+
+        shouldFailWithMessages '''
+            void check(String type, Object value) {
+                switch (type) {
+                  case 'text':
+                    assert value instanceof String
+                    break
+                  case 'integer':
+                    value.toUpperCase()
+                    break
+                }
+            }
+        ''',
+        'Cannot find matching method java.lang.Object#toUpperCase()'
+
+        shouldFailWithMessages '''
+            def check(String type, Object value) {
+                def result = switch (type) {
+                    case 'text' -> { assert value instanceof String; yield 1 }
+                    case 'integer' -> value.toUpperCase()
+                    default -> 0
+                }
+                result
+            }
+        ''',
+        'Cannot find matching method java.lang.Object#toUpperCase()'
+
+        shouldFailWithMessages '''
+            void check(String type, Object value) {
+                switch (type) {
+                  case 'text':
+                    assert value instanceof String
+                    break
+                  default:
+                    value.toUpperCase()
+                }
+            }
+        ''',
+        'Cannot find matching method java.lang.Object#toUpperCase()'
+
+        shouldFailWithMessages '''
+            void check(String type, Object value) {
+                switch (type) {
+                  case 'text':
+                    if (!(value instanceof String)) return
+                    break
+                  case 'integer':
+                    value.toUpperCase()
+                    break
+                }
+            }
+        ''',
+        'Cannot find matching method java.lang.Object#toUpperCase()'
+
+        // 'integer' may be entered directly, so the narrowing cannot fall through
+        shouldFailWithMessages '''
+            void check(String type, Object value) {
+                switch (type) {
+                  case 'text':
+                    assert value instanceof String
+                  case 'integer':
+                    value.toUpperCase()
+                    break
+                }
+            }
+        ''',
+        'Cannot find matching method java.lang.Object#toUpperCase()'
+
+        // a narrowing from before the switch is still visible in every case
+        assertScript '''
+            int check(String type, Object value) {
+                if (!(value instanceof CharSequence)) return -1
+                switch (type) {
+                  case 'text':
+                    assert value instanceof String
+                    break
+                  case 'other':
+                    return value.length()
+                }
+                0
+            }
+            assert check('other', new StringBuilder('abc')) == 3
+        '''
+    }
+
+    // GROOVY-12428: the selector's narrowing joins the next label's on fall-through
+    @Test
+    void testSwitchCaseAnalysis5() {
+        shouldFailWithMessages '''
+            void check(Object x) {
+                switch (x) {
+                  case 'a':
+                    assert x instanceof String
+                  case Integer:
+                    x.intValue()
+                    break
+                }
+            }
+        ''',
+        'Cannot find matching method (java.lang.String | java.lang.Integer)#intValue()'
+
+        // a constant label may be entered directly, and it does not refine the selector
+        shouldFailWithMessages '''
+            void check(Object x) {
+                switch (x) {
+                  case 'a':
+                    assert x instanceof String
+                  case 1:
+                    x.toUpperCase()
+                    break
+                }
+            }
+        ''',
+        'Cannot find matching method java.lang.Object#toUpperCase()'
+
+        shouldFailWithMessages '''
+            void check(Object x) {
+                switch (x) {
+                  case String:
+                    println x
+                  case 1:
+                    x.toUpperCase()
+                    break
+                }
+            }
+        ''',
+        'Cannot find matching method java.lang.Object#toUpperCase()'
+
+        // default may be entered directly, so it joins the declared type (GROOVY-8411)
+        shouldFailWithMessages '''
+            void check(Object x) {
+                switch (x) {
+                  case 'a':
+                    assert x instanceof String
+                  default:
+                    x.toUpperCase()
+                }
+            }
+        ''',
+        'Cannot find matching method (java.lang.String | java.lang.Object)#toUpperCase()'
+
+        // no common supertype declares peek(), so this needs the union of both labels
+        assertScript '''
+            def check(Object component) {
+                switch (component) {
+                  case ArrayDeque:
+                  case Stack:
+                    return component.peek()
+                }
+            }
+            assert check(new ArrayDeque([1, 2])) == 1
+            assert check(new Stack().tap { push 3 }) == 3
+        '''
+
+        assertScript '''
+            def check(Object component) {
+                switch (component) {
+                  case ArrayDeque:
+                    component.addFirst(0)
+                  case Stack:
+                    return component.peek()
+                }
+            }
+            assert check(new ArrayDeque([1, 2])) == 0
+            assert check(new Stack().tap { push 3 }) == 3
+        '''
+    }
+
+    // GROOVY-12428: a case whose every path exits does not fall through
+    @Test
+    void testSwitchCaseAnalysis6() {
+        assertScript '''
+            def check(Object x, boolean flag) {
+                def result
+                switch (x) {
+                  case 'a':
+                    assert x instanceof String
+                    if (flag) { result = x.toUpperCase(); break } else { result = x.toLowerCase(); break }
+                  case Integer:
+                    result = x.intValue()
+                }
+                result
+            }
+            assert check('a', true) == 'A'
+            assert check('a', false) == 'a'
+            assert check(1, false) == 1
+            assert check(2.5, true) == null
+        '''
+
+        assertScript '''
+            def check(Object x) {
+                def result
+                switch (x) {
+                  case 'a':
+                    assert x instanceof String
+                    try { result = x.toUpperCase() } finally { break }
+                  case Integer:
+                    result = x.intValue()
+                }
+                result
+            }
+            assert check('a') == 'A'
+            assert check(1) == 1
+            assert check(2.5) == null
+        '''
+    }
+
     // GROOVY-12355
     @Test
     void testDivisionInference() {

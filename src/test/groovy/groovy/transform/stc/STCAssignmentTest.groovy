@@ -1275,6 +1275,74 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.io.Serializable to variable of type java.lang.Number'
     }
 
+    // GROOVY-12442
+    @Test
+    void testNullCoalescingAssignmentAndSetter1() {
+        assertScript '''
+            class C {
+                def p
+                void setP(p) {
+                    this.p = p
+                }
+            }
+            def c = new C()
+            c.p ??= 'x'
+            assert c.p == 'x'
+            c.with {
+                p ??= 'y'
+            }
+            assert c.p == 'x'
+        '''
+    }
+
+    // GROOVY-12442
+    @Test
+    void testNullCoalescingAssignmentAndSetter2() {
+        assertScript '''
+            class C {
+                String getFoo() {
+                }
+                void setFoo(String foo) {
+                }
+            }
+            new C().foo ??= 'bar'
+        '''
+    }
+
+    // GROOVY-12442
+    @Test
+    void testNullCoalescingAssignmentKeepsFalsyValue() {
+        assertScript '''
+            class C {
+                Integer n = 0
+                int i = 0
+                String s = ''
+            }
+            def c = new C()
+            c.n ??= 1
+            c.i ??= 1
+            c.s ??= 'x'
+            assert c.n == 0 && c.i == 0 && c.s == ''
+            c.n = null
+            c.s = null
+            assert (c.n ??= 1) == 1
+            assert (c.s ??= 'x') == 'x'
+            assert c.n == 1 && c.s == 'x'
+        '''
+    }
+
+    // GROOVY-12442
+    @Test
+    void testNullCoalescingAssignmentMismatched() {
+        shouldFailWithMessages '''
+            class C {
+                Number foo
+            }
+            new C().foo ??= 'bar'
+        ''',
+        'Cannot assign value of type java.io.Serializable to variable of type java.lang.Number'
+    }
+
     @Test
     void testMultipleAssignment1() {
         assertScript '''

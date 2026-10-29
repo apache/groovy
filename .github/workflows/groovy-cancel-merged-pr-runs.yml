@@ -1,0 +1,80 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Merging a pull request does not stop the runs still queued or in progress
+# for its head commit, yet their result can no longer change anything: the
+# push the merge makes to master or a GROOVY_* branch runs the full build and
+# tests on the merged code anyway. This workflow cancels, on every such push,
+# the unfinished pull_request runs of each pull request the pushed commit
+# merged that were created before the merge. A run is kept while an open pull
+# request has the same head commit, since it reports for that one too.
+#
+# Merges are found from the push rather than from the pull request being
+# closed because a pull_request run from a fork gets a read-only token that
+# cannot cancel runs, and pull_request_target is avoided on purpose. The
+# unfinished runs are listed once per sweep, not per pull request, to spare
+# the GITHUB_TOKEN rate limit. Pull requests closed without merging are not
+# handled; their runs finish as before.
+
+name: Cancel merged PR runs
+
+on:
+  push:
+    branches:
+      - master
+      - GROOVY_*
+
+permissions:
+  actions: write          # gh run cancel
+  contents: read          # commits/{sha}/pulls
+  pull-requests: read     # open pull requests and merged pull requests
+
+jobs:
+  cancel:
+    if: github.repository == 'apache/groovy'   # forks spend their own runner time
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    steps:
+      - name: "🛑 Cancel the runs of pull requests merged by this push"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          # Head repository, head commit and merge time of each pull request
+          # the pushed commit merged.
+          gh api "repos/$REPO/commits/$SHA/pulls" \
+            --jq '.[] | select(.merged_at != null) | [.head.repo.full_name, .head.sha, .merged_at] | @tsv' > merged.tsv
+          if [[ ! -s merged.tsv ]]; then
+            echo "The pushed commit merged no pull request."
+            exit 0
+          fi
+          # Head commits of the open pull requests, whose runs are still needed.
+          gh api --paginate "repos/$REPO/pulls?state=open&per_page=100" --jq '.[].head.sha' > open.txt
+          # Every pull_request run not finished yet; pending is a run waiting
+          # for its concurrency group.
+          for status in queued pending in_progress; do
+            gh api --paginate "repos/$REPO/actions/runs?event=pull_request&status=$status&per_page=100" \
+              --jq '.workflow_runs[] | [.id, .head_repository.full_name, .head_sha, .created_at] | @tsv'
+          done > runs.tsv
+          awk -F '\t' '
+            FILENAME == "open.txt" { open[$1] = 1; next }
+            FILENAME == "merged.tsv" { if (!($2 in open)) before[$1 FS $2] = $3; next }
+            ($2 FS $3) in before && $4 < before[$2 FS $3] { print $1 }
+          ' open.txt merged.tsv runs.tsv | sort -u | while read -r id; do
+            # A run that finished after it was listed cannot be cancelled,
+            # which is the outcome wanted anyway.
+            gh run cancel "$id" -R "$REPO" || echo "::warning title=Run not cancelled::Could not cancel run $id"
+          done

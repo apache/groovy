@@ -574,6 +574,70 @@ still link and still get the old truncating result. `japicmp` sees no change.
 A `Float` reached through a `Number` receiver now yields a `Double`, as `Float`
 arithmetic does; through a `Float` receiver it still yields a `Float`.
 
+### Groovy 6.0.1 — statically compiled variables declared wider than their initializer's generic type keep the value (GROOVY-12469)
+
+Under `@CompileStatic`, a local variable declared with a type wider than the
+one inferred for its initializer from generics — `CharSequence cs = list.get(0)`
+with `list` a `List<String>` — was converted to the inferred type where it was
+declared. Because generic types are not checked at runtime, the element need
+not be of that type: a `GString` added by dynamic code became a `String`, and
+a `StringBuilder` became its text. The variable now holds the value unchanged,
+as it does in dynamic Groovy and in Java. Calls to methods of the declared type
+are made through that type, as javac does. A `GString` is converted to a
+`String` where a method that only `String` has is called on it, both through
+such a variable and on a generic result used directly —
+`list.get(0).toUpperCase()`, which used to throw `ClassCastException`.
+
+**Who is affected (source).** Code that relied on the conversion at the
+declaration: for a `GString` element, `cs.equals('ab')` and
+`cs instanceof String` are now false (`cs == 'ab'` is still true), and a lazy
+`GString` is no longer fixed at the declaration. Any other non-`String` element,
+such as a `StringBuilder`, now throws `ClassCastException` where a
+`String`-only method is called on it. Variables declared `String`, `def` or
+`var`, and dynamic code, behave as before.
+
+### Groovy 7 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
+
+For a dynamic property write or read, the runtime checks whether the receiver
+overrides the `setProperty` or `getProperty` that `GroovyObject` provides. An
+override receives the access. For the `GroovyObject` default, the runtime calls
+the metaclass itself and tells it which class is making the access. Since Groovy 5
+(GROOVY-8283), the check treated any interface default method as `GroovyObject`'s
+own. So when a class took `setProperty` or `getProperty` from a default method of
+another interface, such as one extending `GroovyObject`, `obj.x = v` writes and
+computed-name reads (`obj."$name"`) went around that method to the metaclass.
+`obj.setProperty(...)` calls and `obj.x` reads did reach it. Now only
+`GroovyObject`'s own default is set aside, so such a method receives every write
+and read. That matches a method the class declares, and Groovy 4, which compiled
+interface default methods as traits.
+
+**Who is affected.** Classes that implement an interface supplying a default
+`setProperty` or `getProperty`. The method now also receives the writes and
+computed-name reads that used to bypass it. Like any override, it receives the
+access without knowing which class made it, so the access is resolved for the
+receiver's own class. For example, a superclass that writes its own private field
+on an instance of a subclass, `other.secret = v`, now fails with
+`MissingPropertyException`, as the read `other.secret` already did. Use direct
+field access (`other.@secret = v`) where that is intended. An `@Internal` default
+`getProperty` of another interface now answers computed-name reads, while `obj.x`
+reads still go around it, as in Groovy 4.
+
+**Classes reflection cannot read.** Whether a class overrides these methods is now
+decided once per class and cached. Reflection may be unable to read a class's
+public methods: in a GraalVM native image without reflection metadata for the
+class, or on the JVM when a public method names a type missing at run time. Such a
+class now counts as overriding, so the access reaches the object's own
+`setProperty` or `getProperty`. Before, the access threw, or a read went around a
+real override to the metaclass. If the class has the `GroovyObject` default, the
+access is resolved for the receiver's own class.
+
+**What is unchanged.** Classes that use `GroovyObject`'s own defaults, and classes
+that declare `setProperty` or `getProperty` or inherit it from a superclass or a
+trait. Also unchanged: a `setProperty` or `getProperty` contributed through
+`ExpandoMetaClass`, a per-instance metaclass or a mixin, because the metaclass is
+still consulted on each access. `GroovyObjectOverrides`, which holds the check, is
+internal, so `japicmp` does not report this change.
+
 ### Groovy 7 — Groovy Console smart highlighter and the language host
 
 `SmartDocumentFilter.getLatestTokenList()` now returns delimiter spans
@@ -616,8 +680,64 @@ carry the `UnionTypeClassNode` tag are consumed and then widened the same way.
 
 The method descriptors are unchanged, so `japicmp` does not report this.
 Callers of `SignatureCodecVersion1.decode` that expected a union node now
-receive the shared supertype. The compiler has not written
-`@TypeCheckingInfo` inferred-return annotations since GROOVY-6401 (2013).
+receive the shared supertype. Between GROOVY-6401 (2013) and GROOVY-12472 the
+compiler wrote no `@TypeCheckingInfo` inferred-return annotations.
+
+### Groovy 7 — inferred return types of methods with a sole implementation (GROOVY-12472)
+
+A call to a method declared with `def` now has the type the method's body
+returns, rather than `Object`, when no other body can run for the call: a
+`final` method or a method of a `final` class, and a `private` or `static`
+method when the call is statically compiled (or, for a `static` method, names
+its class). The type is inferred within the class being checked and read from
+the class file for a precompiled class. Reading such a getter as a property
+(`label` for `def getLabel()`) gets the same type. Overridable methods keep
+their declared return type, as since GROOVY-6401.
+
+- **More programs compile.** Code that called such a method and relied on the
+  result had to cast or declare; it now type checks as written.
+- **Statically compiled overload selection can change.** An argument whose type
+  was `Object` now has the inferred type, so `pick(name())` with `pick(Object)`
+  and `pick(String)` overloads selects `pick(String)` where it used to select
+  `pick(Object)`. Type checked (dynamically dispatched) code already selected by
+  the runtime type and is unaffected.
+- **Class files carry `@TypeChecked.TypeCheckingInfo` again**, on each such
+  method that is not `private` and is type checked (`@TypeChecked` or
+  `@CompileStatic`); a dynamically compiled method records nothing, so its
+  callers keep its declared return type. It is a runtime-retained annotation, so
+  code that lists a method's annotations by reflection sees it.
+- **The inferred type is part of the method's contract for statically compiled
+  callers.** A caller compiled against one version of a class relies on the
+  result having the type recorded there; if a later version of the method
+  returns a value of another type, the caller can fail at runtime. Declare the return type of a
+  method whose result type may change between versions.
+
+The method descriptors are unchanged, so `japicmp` does not report this.
+
+### Groovy 7 — `>` and `>=` with a primitive NaN operand are false (GROOVY-12538)
+
+When both operands of a comparison are primitive `double` or `float` values,
+the compiler compares them with a JVM instruction. It used the variant that
+treats NaN as greater than every value for all four ordered operators, so
+`NaN > x` and `NaN >= x` were `true` while `NaN < x` and `NaN <= x` were
+`false`. All four are now `false`, as in Java (JLS 15.20.1), and as Groovy
+already gave when both operands are `Double` objects. This applies to
+variables, fields and parameters declared `double` or `float`, in dynamic code
+as well as under `@TypeChecked` and `@CompileStatic`, and to `Double.NaN` and
+`Float.NaN` under `@CompileStatic`, where they are primitive.
+
+**Who is affected.** Code that relied on a NaN comparing greater, for example
+`if (reading > limit)` treating a NaN reading as over the limit. Use
+`Double.isNaN` where NaN needs handling of its own.
+
+**What is unchanged.** Comparisons that go through Groovy's number comparison
+rather than a primitive instruction: operands of different types such as
+`Double` against `Integer` or `BigDecimal`, where NaN is still greater than
+every value as in `Double.compareTo` (GROOVY-3309); `==` on `Double` objects,
+which still treats NaN as equal to NaN as `Double.equals` does; and `<=>`,
+which follows `Double.compare` for primitives and objects alike. Classes
+compiled by an earlier release keep the old comparison until they are
+recompiled.
 
 ## The binary-compatibility check
 

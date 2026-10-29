@@ -20,6 +20,7 @@ package groovy.operator
 
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.assertScript
 import static org.junit.jupiter.api.Assertions.fail
 
 
@@ -133,5 +134,43 @@ class DoubleOperationsTest {
         x = Math.sin(7);
         assert x instanceof Double;
         assert x == Math.sin(7.0D);
+    }
+
+    // GROOVY-12538: a NaN operand makes every ordered comparison false, as in Java (JLS 15.20.1)
+    @Test
+    void testNaNComparisonsOnPrimitiveDouble() {
+        checkNaNComparisons('double', 'Double.NaN', '0.0d')
+    }
+
+    @Test
+    void testNaNComparisonsOnPrimitiveFloat() {
+        checkNaNComparisons('float', 'Float.NaN', '0.0f')
+    }
+
+    private static void checkNaNComparisons(String type, String nan, String zero) {
+        for (mode in ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            assertScript """
+                $mode
+                void test() {
+                    $type n = $nan, z = $zero, one = 1
+
+                    boolean gt = n > z, ge = n >= z, lt = n < z, le = n <= z
+                    assert !gt && !ge && !lt && !le
+                    gt = z > n; ge = z >= n; lt = z < n; le = z <= n
+                    assert !gt && !ge && !lt && !le
+                    boolean eq = n == n, ne = n != n
+                    assert !eq && ne
+
+                    boolean taken = false
+                    if (n > z || n >= z) taken = true
+                    assert !taken
+                    assert (n > z ? 'yes' : 'no') == 'no'
+
+                    assert one > z && one >= z && one >= one && !(one > one)
+                    assert z < one && z <= one && one <= one && !(one < one)
+                }
+                test()
+            """
+        }
     }
 }

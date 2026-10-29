@@ -766,6 +766,17 @@ public class GeneralUtils {
         return new ElvisOperatorExpression(base, otherwise);
     }
     /**
+     * Creates a null-coalescing operator expression.
+     *
+     * @param base the base expression
+     * @param otherwise the fallback expression, used when {@code base} is null
+     * @return the resulting ElvisOperatorExpression, with {@code isNullCoalescing()} true
+     * @since 7.0.0
+     */
+    public static ElvisOperatorExpression nullCoalesceX(final Expression base, final Expression otherwise) {
+        return new ElvisOperatorExpression(base, otherwise, true);
+    }
+    /**
      * Creates a map entry expression.
      *
      * @param key the key expression
