@@ -454,6 +454,13 @@ public class GroovyClassLoader extends URLClassLoader {
      * Records that the classes of the compilation unit are defined by an
      * {@link InnerLoader} of their own, so that the compiler does not assume
      * that a class of another compilation unit is in the same run-time package.
+     * <p>
+     * Every compilation of {@code parseClass} is marked, whatever its
+     * {@link ClassCollector} does with the classes. A subclass whose collector
+     * defines them with this class loader itself, rather than with an
+     * {@code InnerLoader}, therefore reaches the non-public members of classes
+     * of its other compilations through the meta-class where a direct access
+     * would also work; that is slower, but not wrong.
      */
     private static void markDefinedInMemory(final CompilationUnit unit) {
         unit.getAST().putNodeMetaData(InnerLoader.class, Boolean.TRUE);
