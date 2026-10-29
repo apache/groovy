@@ -739,6 +739,39 @@ which follows `Double.compare` for primitives and objects alike. Classes
 compiled by an earlier release keep the old comparison until they are
 recompiled.
 
+### Groovy 7 — Java-style array initialization and promotion of scalar to array (GROOVY-8561, GROOVY-11492)
+
+The Java array initializer syntax uses curly braces, which Groovy has used for
+code blocks (closures, lambdas, methods) until the Parrot Parser introduced in
+Groovy 3 added basic support for `new Type[]{...}` array expressions. This did
+not support multi-dimension init without verbose value expressions, like this:
+```groovy
+def array = new int[][] { new int[] {1}, new int[] {2,3} }
+```
+As of Groovy 5, this can be done more succinctly:
+```groovy
+def array = new int[][] { {1}, {2,3} } // GROOVY-8551
+```
+
+Groovy 6 took this one step further, supporting array literals for annotation
+attribute values (GROOVY-11485, GROOVY-11866). The next gap to close for Java
+is to support the terse syntax for field, variable or parameter declarations.
+```groovy
+int[][] array = { {1}, {2,3} } // GROOVY-11492
+```
+
+The one conflict that cannot be avoided has to do with Groovy's auto-promotion
+from a scalar to an array.
+```groovy
+int[] a = 1 // array with single integer (1)
+String[] b = 'B'
+Closure[] c = {} // GROOVY-8561
+```
+The array `c` in this example was a single-closure array due to promotion. For
+Groovy 7+, this indicates a zero-length array, as in all other array cases. If
+your code uses such auto-promotion behavior, you could add the outer braces or
+brackets. Or write a non-ambiguous closure literal with an arrow.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)

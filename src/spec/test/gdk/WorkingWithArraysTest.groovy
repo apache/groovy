@@ -40,6 +40,9 @@ final class WorkingWithArraysTest {
         def evens = new int[]{2, 4, 6}           // alt syntax 2
         assert evens instanceof int[]
 
+        int[] zeroes = {0, 0, 0}                 // alt syntax 3
+        assert zeroes instanceof int[]
+
         // empty array examples
         Number[] emptyNums = []
         assert emptyNums instanceof Number[] && emptyNums.size() == 0
@@ -49,6 +52,9 @@ final class WorkingWithArraysTest {
 
         def emptyStrings = new String[]{}        // alternative syntax 2
         assert emptyStrings instanceof String[] && emptyStrings.size() == 0
+
+        Number[] emptyNumbers = {}               // alternative syntax 3
+        assert emptyNumbers instanceof Number[] && emptyNumbers.size() == 0
 
         // multi-dimension examples
         int[][] manyInts = [ [1,2], [3,4] ]
@@ -60,6 +66,12 @@ final class WorkingWithArraysTest {
         assert manyStrings[0].size() == 2 && manyStrings[1].size() == 2
         assert manyStrings[0][0] == 'one'
         assert manyStrings[-1][-1] == 'four'
+
+        Object[][] manyThings = { {1,'2'}, {3,{'4'}} }
+        assert manyThings instanceof Object[][] && manyThings.size() == 2
+        assert manyThings[0].size() == 2 && manyThings[1].size() == 2
+        assert manyThings[0][0] instanceof Integer i && i == 1
+        assert manyThings[1][1] instanceof Closure c && c() == '4'
         // end::array_literals[]
     }
 

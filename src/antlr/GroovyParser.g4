@@ -315,12 +315,12 @@ fieldDeclaration
     :   variableDeclaration[1]
     ;
 
-variableDeclarators
-    :   variableDeclarator (COMMA NL* variableDeclarator)*
+variableDeclarators[boolean arrayType]
+    :   variableDeclarator[$arrayType] (COMMA NL* variableDeclarator[$arrayType])*
     ;
 
-variableDeclarator
-    :   variableDeclaratorId (NL* ASSIGN NL* variableInitializer)?
+variableDeclarator[boolean arrayType]
+    :   variableDeclaratorId (NL* ASSIGN NL* ({$arrayType}? arrayInitializer | variableInitializer))?
     ;
 
 variableDeclaratorId
@@ -408,7 +408,11 @@ thisFormalParameter
     ;
 
 formalParameter
-    :   variableModifiersOpt type? ELLIPSIS? variableDeclaratorId (NL* ASSIGN NL* expression)?
+    :   variableModifiersOpt type? (
+            { $type.ctx!=null && !($type.ctx).dim0().isEmpty() }?
+            variableDeclaratorId NL* ASSIGN NL* arrayInitializer
+        |   ELLIPSIS? variableDeclaratorId (NL* ASSIGN NL* expression)?
+        )
     ;
 
 methodBody
@@ -582,11 +586,11 @@ localVariableDeclaration
  */
 variableDeclaration[int t]
     :   modifiers NL*
-        (   type? variableDeclarators
+        (   type? variableDeclarators[($type.ctx)!=null && !($type.ctx).dim0().isEmpty()]
         |   typeNamePairs NL* ASSIGN NL* variableInitializer
         )
     |
-        type variableDeclarators
+        type variableDeclarators[!($type.ctx).dim0().isEmpty()]
     ;
 
 typeNamePairs
