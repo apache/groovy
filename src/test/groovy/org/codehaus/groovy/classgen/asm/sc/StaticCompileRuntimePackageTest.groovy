@@ -119,9 +119,11 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         assert shell.evaluate('''package p
             @groovy.transform.CompileStatic
             A make() { new A(name: 'n') }
-            def a = make()
-            a.value + ':' + a.name
-        ''') == 'none:n'
+            @groovy.transform.CompileStatic
+            A make(Map map) { new A(map) } // a map that is not a literal
+            def a = make(), b = make(name: 'm')
+            [a.value + ':' + a.name, b.value + ':' + b.name]
+        ''') == ['none:n', 'none:m']
     }
 
     // GROOVY-12568
