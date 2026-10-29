@@ -20,9 +20,9 @@ package groovy.operator
 
 import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.assertScript
-
 import java.util.regex.Pattern
+
+import static groovy.test.GroovyAssert.assertScript
 
 final class TernaryOperatorsTest {
 
@@ -179,6 +179,21 @@ final class TernaryOperatorsTest {
 
             Class<?> chosen = a ? b ? First : Second : c ? Third : Fourth
             assert chosen == Third
+
+            // Elvis operands
+            chosen = (a ? First : Second) ?: (c ? Third : Fourth)
+            assert chosen == Second
+            chosen = a ? (First ?: Second) : (Third ?: Fourth)
+            assert chosen == Third
+
+            // a class literal versus an instance of the class it names
+            Marker marker = new Fourth()
+            Object either = b ? (c ? First : Second) : marker
+            assert either == First
+
+            // array class literals
+            chosen = a ? (b ? String[] : Integer[]) : (b ? Long[] : Short[])
+            assert chosen == Long[]
         '''
     }
 }
