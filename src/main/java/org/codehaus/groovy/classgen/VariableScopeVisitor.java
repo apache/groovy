@@ -65,7 +65,6 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
-import org.codehaus.groovy.control.PlaceholderVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
 
@@ -190,9 +189,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     private void declare(final Variable variable, final ASTNode context) {
-        if (PlaceholderVisitor.isPlaceholder((ASTNode) variable)) {
-            return;
-        }
         visitTypeReference(variable.getOriginType());
         final String variableName = variable.getName();
 
@@ -216,7 +212,11 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         };
 
         if (currentScope.getDeclaredVariable(variableName) != null) {
-            addError(msgSupplier.get(), context);
+            if (rebinds(variable, context)) {
+                currentScope.putDeclaredVariable(variable);
+            } else {
+                addError(msgSupplier.get(), context);
+            }
             return;
         }
 
@@ -226,7 +226,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             // to declare a variable of the same name as a class member
             if (scope.getClassScope() != null && !isAnonymous(scope.getClassScope())) break;
 
-            if (scope.getDeclaredVariable(variableName) != null) {
+            if (scope.getDeclaredVariable(variableName) != null && !rebinds(variable, context)) {
                 // variable already declared
                 addError(msgSupplier.get(), context);
                 break;
@@ -234,6 +234,11 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         }
         // declare the variable even if there was an error to allow more checks
         currentScope.putDeclaredVariable(variable);
+    }
+
+    // "_" may be declared again, replacing the earlier "_"; method parameters excepted
+    private static boolean rebinds(final Variable variable, final ASTNode context) {
+        return "_".equals(variable.getName()) && !(context instanceof MethodNode);
     }
 
     private Variable findClassMember(final ClassNode node, final String name) {
