@@ -596,6 +596,29 @@ such as a `StringBuilder`, now throws `ClassCastException` where a
 `String`-only method is called on it. Variables declared `String`, `def` or
 `var`, and dynamic code, behave as before.
 
+### Groovy 6.0.1 — `super.x = v` calls a setter of the superclass when it has several (GROOVY-12521)
+
+When a superclass declared more than one `setX` method — `setX(int)` and
+`setX(String)` — `super.x = v` in dynamic Groovy and under `@TypeChecked` used
+ordinary dispatch on the receiver. A `setX` that the class itself overrides or
+declares, including one generated for a redeclared `x` property, was called
+instead of the superclass's. An overriding setter that delegated with
+`super.x = v` therefore called itself until a `StackOverflowError`. The write
+now chooses among the superclass's `setX` methods by the type of `v`, as
+`super.setX(v)` and `@CompileStatic` do, and as `super.x = v` already did when
+the superclass had a single setter. `super.x++` and `super.x += v` write the
+same way.
+
+**Who is affected.** Classes whose superclass overloads a property's setter,
+that override one of those setters or redeclare the property, and that write
+the property through `super`. Such a write now runs the superclass's setter,
+not the class's own; use `this.x = v` where the class's own setter is wanted.
+In the same case, a `setX` added through the class's `ExpandoMetaClass` or
+through a category no longer receives `super.x = v`, which now resolves as it
+does for a single setter. `@CompileStatic` code, reads of `super.x`, writes
+through `this` or another reference, and superclasses with a single setter
+behave as before. There are no API changes.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
