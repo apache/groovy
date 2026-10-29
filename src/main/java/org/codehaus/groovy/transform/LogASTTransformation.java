@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
@@ -225,7 +226,7 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
                     return null;
                 }
                 if (!variableExpression.getName().equals(logFieldName)
-                        || !(variableExpression.getAccessedVariable() instanceof DynamicVariable)) {
+                        || !refersToLogField(variableExpression.getAccessedVariable())) {
                     return null;
                 }
                 String methodName = mce.getMethodAsString();
@@ -256,6 +257,17 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
                 if (simpleArguments) return null;
 
                 return loggingStrategy.wrapLoggingMethodCall(receiver, methodName, mce);
+            }
+
+            /**
+             * The log field is added by this transformation, so a reference to it is still unbound, unless a superclass
+             * read from bytecode has a private field of the same name, which the reference may have been bound to
+             * instead. Such a field is not accessible here, so the reference is to this class's log field all the same.
+             */
+            private boolean refersToLogField(final Variable variable) {
+                if (variable instanceof DynamicVariable) return true;
+                return variable instanceof FieldNode && ((FieldNode) variable).isPrivate()
+                        && !((FieldNode) variable).getOwner().equals(classNode);
             }
 
             private boolean usesSimpleMethodArgumentsOnly(final MethodCallExpression mce) {
