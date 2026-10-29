@@ -25,24 +25,20 @@ import com.github.javaparser.ast.CompilationUnit
 import com.github.javaparser.ast.body.TypeDeclaration
 import groovy.cli.internal.CliBuilderInternal
 import groovy.cli.internal.OptionAccessor
+import groovy.console.ui.language.CompletionChord
+import groovy.console.ui.language.ConsoleLanguageHost
 import groovy.console.ui.text.FindReplaceUtility
 import groovy.console.ui.text.GroovyFilter
 import groovy.console.ui.text.SmartDocumentFilter
 import groovy.swing.SwingBuilder
 import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
+import groovy.transform.Internal
 import groovy.transform.PackageScope
 import groovy.transform.ThreadInterrupt
 import groovy.transform.TupleConstructor
 import groovy.ui.GroovyMain
-import org.antlr.v4.gui.TreeViewer
-import org.antlr.v4.gui.Trees
-import org.antlr.v4.runtime.CharStreams
-import org.antlr.v4.runtime.CommonTokenStream
-import org.apache.groovy.antlr.LexerFrame
 import org.apache.groovy.io.StringBuilderWriter
-import org.apache.groovy.parser.antlr4.GroovyLangLexer
-import org.apache.groovy.parser.antlr4.GroovyLangParser
 import org.apache.groovy.util.JavaShell
 import org.apache.groovy.util.SystemUtil
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -70,6 +66,9 @@ import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JOptionPane
 import javax.swing.JScrollPane
+import javax.swing.JTextArea
+import javax.swing.JTree
+import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.JSplitPane
 import javax.swing.JTextPane
 import javax.swing.KeyStroke
@@ -99,6 +98,8 @@ import java.awt.Container
 import java.awt.Dimension
 import java.awt.EventQueue
 import java.awt.Font
+import java.awt.Frame
+import java.awt.HeadlessException
 import java.awt.Toolkit
 import java.awt.Window
 import java.awt.event.ActionEvent
@@ -106,7 +107,6 @@ import java.awt.event.ComponentEvent
 import java.awt.event.ComponentListener
 import java.awt.event.FocusEvent
 import java.awt.event.FocusListener
-import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.awt.event.WindowFocusListener
 import java.util.logging.Logger
@@ -132,7 +132,12 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     /** Attribute key for the {@code SourcePosition} stored on a source link. */
     private static final String LINK_POSITION = 'groovy.console.link.position'
+    /** Preference key for the completion key stroke. Default is {@code alt SLASH}. */
+    static final String COMPLETION_SHORTCUT = 'completionShortcut'
+    /** Default completion key stroke, understood by {@link KeyStroke#getKeyStroke(String)}. */
+    static final String DEFAULT_COMPLETION_SHORTCUT = 'alt SLASH'
     private static final boolean DEBUG_GRAPE = Boolean.getBoolean('groovy.grape.debug')
+    private static final System.Logger LOGGER = System.getLogger(Console.class.name)
 
     /** User preferences backing console settings. */
     static prefs = Preferences.userNodeForPackage(Console)
@@ -147,6 +152,15 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     /** Whether the smart syntax highlighter is enabled by default. */
     static boolean smartHighlighter = prefs.getBoolean('smartHighlighter',
             Boolean.valueOf(SystemUtil.getSystemPropertySafe('groovy.console.enable.smart.highlighter', 'true')))
+
+    /**
+     * Whether the editor attaches the in-process language host.
+     * When this is off, diagnostics, completion and the background compile
+     * stay off and the console behaves as it did before that host existed.
+     */
+    static boolean compilerAssistance = prefs.getBoolean('compilerAssistance', true)
+    /** Set while menu checks are being aligned, so that update does not re-enter. */
+    private static boolean applyingCompilerAssistance
 
     /** Whether full stack traces are shown for execution failures. */
     boolean fullStackTraces = prefs.getBoolean('fullStackTraces',
@@ -311,6 +325,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     CompilerConfiguration config
     /** Shell used to compile and run scripts. */
     GroovyShell shell
+    /** In-process language host for diagnostics and completions. */
+    private ConsoleLanguageHost languageHost
     /** Counter used for generated script names. */
     int scriptNameCounter = 0
     /** Interceptor that captures stdout. */
@@ -524,6 +540,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt))
         }
         shell = new GroovyShell(parent, binding, config)
+        languageHost?.bind(shell.classLoader, config)
     }
 
     /** Default Swing delegates used to build the console frame and menu bar. */
@@ -596,7 +613,73 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         }
         installInterceptor()
         updateTitle()
+        installLanguageHost()
         swing.doLater inputArea.&requestFocus
+    }
+
+    /**
+     * Attaches the in-process language host to the editor and publishes
+     * the console compiler configuration. Skipped when
+     * {@link #compilerAssistance} is off, and any host already attached
+     * is closed. A missing language-services jar surfaces as
+     * {@link LinkageError} while the host is constructed. The console
+     * stays open, the host stays unset, and this window's Compiler
+     * Assistance menu item is disabled. The saved preference is left
+     * unchanged.
+     */
+    @CompileStatic
+    private void installLanguageHost() {
+        installLanguageHost {
+            ConsoleLanguageHost.attach(inputArea, shell.classLoader, config)
+        }
+    }
+
+    /**
+     * @param open builds the host for this editor. A thrown
+     *             {@link LinkageError} is the missing-jar path described
+     *             on {@link #installLanguageHost()}
+     */
+    @Internal
+    @CompileStatic
+    @PackageScope
+    void installLanguageHost(Closure<ConsoleLanguageHost> open) {
+        ConsoleLanguageHost previous = languageHost
+        languageHost = null
+        previous?.close()
+        if (!compilerAssistance) {
+            return
+        }
+        try {
+            languageHost = (ConsoleLanguageHost) open.call()
+        } catch (LinkageError error) {
+            languageHost = null
+            reportMissingLanguageServices(error)
+        }
+    }
+
+    /**
+     * Logs the missing-jar warning and disables this window's Compiler Assistance item.
+     * The saved preference is left unchanged so a later launch can try again.
+     */
+    private void reportMissingLanguageServices(LinkageError error) {
+        LOGGER.log(System.Logger.Level.WARNING,
+                'Groovy language services are unavailable ({0}); Compiler Assistance is off.',
+                error.class.simpleName)
+        def builder = swing
+        if (builder == null) {
+            return
+        }
+        def action
+        try {
+            action = builder.compilerAssistanceAction
+        } catch (MissingPropertyException ignored) {
+            return
+        }
+        if (!(action instanceof Action)) {
+            return
+        }
+        action.putValue(Action.SELECTED_KEY, Boolean.FALSE)
+        action.enabled = false
     }
 
     /**
@@ -968,7 +1051,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             }
         }
 
-        // update SmartDocumentFilter styles (ANTLR token-based highlighting)
+        // update SmartDocumentFilter styles (groovy-lsp semantic tokens)
         SmartDocumentFilter.updateStyles()
 
         // force re-parse to apply new colors to existing text — suppress
@@ -1021,6 +1104,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         if (threadInterrupt) {
             config.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt))
         }
+        languageHost?.bind(shell.classLoader, config)
     }
 
     /** Updates cached selection bounds and the row/column display. */
@@ -1081,6 +1165,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         if (askToInterruptScript()) {
             def exit = askToSaveFile()
             if (exit) {
+                languageHost?.close()
+                languageHost = null
+                inputEditor?.closeHighlighter()
                 if (frame instanceof Window) {
                     frame.hide()
                     frame.dispose()
@@ -1089,8 +1176,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                 FindReplaceUtility.dispose()
                 consoleControllers.remove(this)
                 if (!consoleControllers) {
-                    systemOutInterceptor.stop()
-                    systemErrorInterceptor.stop()
+                    systemOutInterceptor?.stop()
+                    systemErrorInterceptor?.stop()
                 }
             }
             return exit
@@ -1128,6 +1215,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         nativeFullScreenForMac(swing.consoleFrame)
         swing.consoleFrame.pack()
         swing.consoleFrame.show()
+        consoleController.installLanguageHost()
         swing.doLater swing.inputArea.&requestFocus
     }
 
@@ -1160,6 +1248,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                     setDirty(false)
                     inputArea.caretPosition = 0
                 }
+                languageHost?.refresh()
             } finally {
                 swing.edt { inputArea.editable = true }
                 // GROOVY-3684: focus away and then back to inputArea ensures caret blinks
@@ -1410,43 +1499,78 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     /** Opens the CST viewer for the current editor contents. */
     void inspectCst(EventObject evt = null) {
-        String text = this.inputEditor.textEditor.text
-        def charStream = CharStreams.fromReader(new StringReader(text))
-        def lexer = new GroovyLangLexer(charStream)
-        def tokens = new CommonTokenStream(lexer)
-        def parser = new GroovyLangParser(tokens)
-        def tree = parser.compilationUnit()
-        // Trees.inspect spawns its own dialog on the EDT; we wait off-EDT then
-        // hop back on to theme it — ANTLR's TreeViewer defaults to black text
-        // on white/transparent boxes, which ignores the app theme otherwise.
-        def future = Trees.inspect(tree, parser)
-        Thread.start {
-            def dialog = future.get()
-            SwingUtilities.invokeLater { themeCstDialog(dialog) }
+        try {
+            def text = inputArea?.text ?: ''
+            def tree = languageHost != null
+                    ? languageHost.cst(text)
+                    : ConsoleLanguageHost.cstOf(text, shell?.classLoader, config)
+            showStructure('CST', tree)
+        } catch (LinkageError error) {
+            showText('CST', "Groovy language services are unavailable (${error.class.simpleName}).")
         }
     }
 
-    private void themeCstDialog(JDialog dialog) {
-        TreeViewer viewer = findTreeViewer(dialog)
-        if (!viewer) return
-        applyCstColors(viewer)
-        // track theme switches so an already-open CST dialog keeps pace
-        def listener = { SwingUtilities.invokeLater { applyCstColors(viewer); viewer.repaint() } } as Runnable
-        ThemeManager.addThemeChangeListener(listener)
-        dialog.addWindowListener(new WindowAdapter() {
-            @Override void windowClosed(WindowEvent e) {
-                ThemeManager.removeThemeChangeListener(listener)
-            }
-        })
+    /** Opens the lexer token inspector for the current editor contents. */
+    void inspectTokens(EventObject evt = null) {
+        try {
+            def text = inputArea?.text ?: ''
+            def rows = languageHost != null
+                    ? languageHost.tokens(text)
+                    : ConsoleLanguageHost.tokensOf(text, shell?.classLoader, config)
+            def lines = (rows ?: []).collect { "${it.line}:${it.character} ${it.name} ${it.text}" }
+            showText('Token Stream', lines.join('\n'))
+        } catch (LinkageError error) {
+            showText('Token Stream', "Groovy language services are unavailable (${error.class.simpleName}).")
+        }
     }
 
-    private static void applyCstColors(TreeViewer viewer) {
+    private void showStructure(String title, Map root) {
+        def modelRoot = structureNode(root)
+        def tree = new JTree(modelRoot)
+        showComponent(title, new JScrollPane(tree))
+    }
+
+    private static DefaultMutableTreeNode structureNode(Map node) {
+        def label = node?.name ?: ''
+        if (node?.text) {
+            label = label + ' ' + node.text
+        }
+        def treeNode = new DefaultMutableTreeNode(label)
+        (node?.children ?: []).each { child ->
+            if (child instanceof Map) {
+                treeNode.add(structureNode(child))
+            }
+        }
+        treeNode
+    }
+
+    private void showText(String title, String body) {
+        def area = new JTextArea(body ?: '')
+        area.editable = false
+        area.font = new Font('Monospaced', Font.PLAIN, 12)
+        showComponent(title, new JScrollPane(area))
+    }
+
+    private void showComponent(String title, Component content) {
         boolean dark = ThemeManager.isDark()
-        viewer.textColor = dark ? new Color(210, 210, 210) : Color.BLACK
-        viewer.boxColor = dark ? new Color(50, 55, 65) : Color.WHITE
-        viewer.borderColor = null  // null = no box outline around each label (TreeViewer default)
-        viewer.highlightedBoxColor = dark ? new Color(80, 120, 80) : new Color(200, 255, 200)
-        viewer.background = dark ? new Color(43, 43, 43) : Color.WHITE
+        content.background = dark ? new Color(43, 43, 43) : Color.WHITE
+        content.foreground = dark ? new Color(210, 210, 210) : Color.BLACK
+        try {
+            Frame owner = frame instanceof Frame ? (Frame) frame : null
+            def dialog = JDialog.getConstructor(Frame, String, boolean.class).newInstance(owner, title, false)
+            dialog.contentPane.add(content)
+            dialog.setSize(640, 480)
+            dialog.visible = true
+        } catch (Exception ex) {
+            // Constructor.newInstance wraps HeadlessException.
+            def cursor = ex
+            while (cursor != null && !(cursor instanceof HeadlessException)) {
+                cursor = cursor.cause
+            }
+            if (cursor == null) {
+                throw ex
+            }
+        }
     }
 
     /**
@@ -1486,24 +1610,6 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         for (Component child : container.components) {
             if (child instanceof Container) saveKeyBindings((Container) child, restorers)
         }
-    }
-
-    private static TreeViewer findTreeViewer(Container container) {
-        for (Component comp : container.components) {
-            if (comp instanceof TreeViewer) return (TreeViewer) comp
-            if (comp instanceof Container) {
-                TreeViewer found = findTreeViewer((Container) comp)
-                if (found) return found
-            }
-        }
-        null
-    }
-
-    /** Opens the lexer token inspector for the current editor contents. */
-    void inspectTokens(EventObject evt = null) {
-        def content = inputArea.getText()
-        def lf = new LexerFrame(new StringReader(content))
-        lf.visible = true
     }
 
     /**
@@ -1789,6 +1895,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             fc.selectedFiles?.each { file ->
                 shell.getClassLoader().addURL(file.toURL())
             }
+            languageHost?.bind(shell.classLoader, config)
         }
     }
 
@@ -1801,6 +1908,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             currentClasspathDir = fc.currentDirectory
             Preferences.userNodeForPackage(Console).put('currentClasspathDir', currentClasspathDir.path)
             shell.getClassLoader().addURL(fc.selectedFile.toURL())
+            languageHost?.bind(shell.classLoader, config)
         }
     }
 
@@ -2279,6 +2387,72 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         inputEditor.enableHighLighter(evt.source.selected ? SmartDocumentFilter : GroovyFilter)
         inputEditor.textEditor.setText(inputEditor.textEditor.getText()) // enable the highlighter immediately
         prefs.putBoolean('smartHighlighter', evt.source.selected)
+    }
+
+    /**
+     * Turns the in-process language host on or off for every open console.
+     * The preference is one value shared by those windows, and each open
+     * window's menu check is updated to match. Off skips diagnostics,
+     * completion and the background compile. Inspect CST and Inspect Tokens
+     * still read the buffer. A missing language-services jar leaves the
+     * host unset and disables that window's menu item.
+     */
+    void compilerAssistance(EventObject evt = null) {
+        if (applyingCompilerAssistance) {
+            return
+        }
+        boolean enabled = evt?.source?.selected as boolean
+        compilerAssistance = enabled
+        prefs.putBoolean('compilerAssistance', enabled)
+        applyingCompilerAssistance = true
+        try {
+            // Snapshot first: installing a host must not observe a list replaced
+            // by a console that is opening or closing on another event.
+            List<Console> open = new ArrayList<>(consoleControllers)
+            for (Console console : open) {
+                syncCompilerAssistanceMenu(console, enabled)
+                if (console.inputArea != null) {
+                    console.installLanguageHost()
+                }
+            }
+        } finally {
+            applyingCompilerAssistance = false
+        }
+    }
+
+    /** The checkbox follows {@link Action#SELECTED_KEY} and does not run the action again. */
+    private static void syncCompilerAssistanceMenu(Console console, boolean enabled) {
+        def action = console?.swing?.compilerAssistanceAction
+        if (!(action instanceof Action)) {
+            return
+        }
+        boolean selected = Boolean.TRUE.equals(action.getValue(Action.SELECTED_KEY))
+        if (selected == enabled) {
+            return
+        }
+        action.putValue(Action.SELECTED_KEY, enabled)
+    }
+
+    /**
+     * Stores a completion key stroke such as {@code alt SLASH} or {@code ctrl SPACE}.
+     * An empty or unrecognised value is declined.
+     */
+    void completionShortcut(EventObject evt = null) {
+        String current = prefs.get(COMPLETION_SHORTCUT, DEFAULT_COMPLETION_SHORTCUT)
+        Component parent = frame instanceof Component ? (Component) frame : null
+        def entered = JOptionPane.showInputDialog(parent,
+                'Key stroke, for example "alt SLASH" or "ctrl SPACE".\n' +
+                        'Alt+/ already accepts the Shift a layout needs to type /.', current)
+        if (entered == null) {
+            return
+        }
+        String spec = entered.toString().trim()
+        if (CompletionChord.parse(spec) == null) {
+            JOptionPane.showMessageDialog(parent, "Could not understand '${spec}'.",
+                    'Completion Shortcut', JOptionPane.WARNING_MESSAGE)
+            return
+        }
+        prefs.put(COMPLETION_SHORTCUT, spec)
     }
 
     /** Updates the main window title to reflect the current script and dirty state. */

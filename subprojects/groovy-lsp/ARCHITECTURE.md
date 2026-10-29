@@ -189,9 +189,37 @@ call. Wrong edits are worse for an agent than a refused rename.
   workspace folders, so constructing it never compiles a checkout root.
   Completions, semantic tokens and signature help are URI queries on an
   open buffer. Semantic tokens on that path are absolute spans; the
-  protocol delta-encoding stays in `SemanticTokensService.encode`. `setParentLoader`, `setClasspath` and `putExtra` supply
-  the parent `ClassLoader`, the compile classpath, and an opaque
-  fingerprint input after that loader changes in place. Workspace symbol
+  protocol delta-encoding stays in `SemanticTokensService.encode`.
+  Groovy Console and groovysh dogfood this server the way a remote editor
+  does. Both use `GroovyLanguageClient` in this package. It constructs
+  `GroovyLanguageServer`, connects itself as the `LanguageClient`,
+  and calls `initialize` (no workspace root), `textDocument/didOpen`,
+  full-text `didChange`, `completion`, `hover`, `signatureHelp`,
+  `semanticTokens/full`, `didChangeConfiguration`, and
+  `workspace/executeCommand`. The calls are direct. They are not written
+  out as JSON on each keystroke, and a highlight request does not compile:
+  the highlighter sets `groovy.compile` to `false`, so `didChange` stays
+  lexical. A compiled overlay is used for semantic tokens only when its
+  text is the current buffer. String modifiers `slashy` and `singleQuoted`
+  are append-only (a string without them is double-quoted, and a GString
+  part keeps the modifier of the token that opened the literal). The `$`
+  that ends a GString begin or part is left out of the string token.
+  `groovy.imports` and `groovy.starImports` are comma-separated names.
+  An empty value adds no import customizer. `groovy.scriptBaseClass` sets
+  the script base class. `groovy.parentLoader` takes a `ClassLoader` for
+  an in-process client. A remote client uses `groovy.classpath`.
+  `groovy.scriptNames` returns script-level names. `groovy.compile`
+  compiles immediately and publishes diagnostics. Hosts send configuration
+  again only when the loader identity, classpath, or compiler configuration
+  changed. `didChange` keeps the document version when the text is
+  unchanged, so the next compile reuses the snapshot. In-place `addURL`
+  is still visible because the fingerprint includes that loader's URLs.
+  Brace matching uses the `delimiter` semantic-token type from the same
+  full-token request, including `?[`. The console does not lex the buffer
+  itself. groovysh keeps nanorc. The engine facade
+  still exposes `lexicalTokens`, `setParentLoader`, `setHostConfiguration`,
+  and `updateBuffer` for tests. `setHostConfiguration` drops the cached
+  compile on every call, including a repeat of the same instance. Workspace symbol
   search accepts CamelHumps (`ASF` → `AbstractServerFactory`) as well
   as a case-insensitive substring. Hover Groovydoc is Markdown
   (`{@code}`, `{@link}`, `@param`).
@@ -215,9 +243,15 @@ call. Wrong edits are worse for an agent than a refused rename.
   supports it. References skip files that do not contain the
   identifier as a word.
 - **Compile cache.** A fingerprint of open buffers, extra-file mtimes,
-  settings and parent-loader identity skips a full recompile when
-  nothing changed. In-place `addURL` on the same loader still needs
-  `putExtra`. Compile
+  settings, parent-loader identity and URLs, host
+  `CompilerConfiguration` identity, script base class, and each
+  compilation customizer's class and identity skips a full recompile
+  when nothing changed. Editing a customizer in place does not change
+  that key. `updateBuffer` does not bump the document version
+  when the text is unchanged, so that key can match.
+  `setHostConfiguration` drops the cached key even for the same
+  instance, which is how an in-place customizer edit is compiled.
+  Compile
   runs off the session lock so document sync is not blocked; a
   generation counter drops superseded compiles. When the client omits
   classpath and source paths, `WorkspaceLayout` uses `src/main/groovy`
@@ -245,7 +279,11 @@ call. Wrong edits are worse for an agent than a refused rename.
 - **Semantic tokens.** The advertised legend is append-only. The
   service collects absolute spans. `encode` delta-encodes them for
   the protocol. Lexer tokens (`GroovySourceTokens`) fill `keyword` /
-  `string` / `number` / `comment` even when the AST is missing.
+  `string` / `number` / `comment` / `variable` even when the AST is
+  missing. Identifiers are `variable` until a declaration or use-site
+  overlay replaces the same span (`dedupeSameSpan` keeps
+  `declaration`). Live highlighters call `lexicalTokenSpans` (lenient);
+  compiled `tokenSpans` still uses a fail-closed `tokenize`.
   Declarations and use-site method/property names overlay from the
   module. Multiline comments and triple-quoted strings are split per
   line (`multilineTokenSupport` is not advertised).
@@ -280,8 +318,18 @@ process working directory — that would compile the whole checkout.
 JSON-RPC round-trips are not required to prove feature logic.
 `GroovyLanguageEngine` tests use `openBuffer` with a caller-chosen
 non-file URI (or a temp file) and never add workspace folders. Console and
-groovysh adapters live in those subprojects (`compileOnly` plus
-`Class.forName`) so groovy-all does not grow an LSP4J dependency.
+groovysh take an `implementation` dependency on groovy-lsp and construct
+their adapters directly. Hosts call `diagnostics(uri, text)` and the
+matching query-with-text overloads rather than `updateBuffer` plus a
+second call. Snippet flattening and UTF-16 span math live on the
+engine (`flattenSnippet`, `spanOf`). Result records are JDK types.
+The console and groovysh hosts import the LSP4J types they pass
+through (`CompletionItem`, `Diagnostic`, `SignatureInformation`) and
+do not import `org.apache.groovy.lsp.internal`. Feature services still use LSP4J
+types internally, so the engine jar still needs LSP4J at runtime;
+splitting a protocol-free engine module is a later cut. The compile
+fingerprint includes `URLClassLoader` URLs so in-place `addURL`
+(`/grab`, console classpath) does not need a host-side stamp.
 
 ## Related
 

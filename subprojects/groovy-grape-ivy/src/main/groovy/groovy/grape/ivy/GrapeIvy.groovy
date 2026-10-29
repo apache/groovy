@@ -332,6 +332,10 @@ class GrapeIvy implements GrapeEngine {
      */
     ClassLoader chooseClassLoader(Map args) {
         ClassLoader loader = (ClassLoader) args.classLoader
+        // a loader defined below a GroovyClassLoader (e.g. by a host) grabs into that ancestor
+        while (loader && !isValidTargetClassLoader(loader)) {
+            loader = loader.getParent()
+        }
         if (!isValidTargetClassLoader(loader)) {
             int calleeDepth = (int) (args.calleeDepth ?: 1)
             Class caller = args.refObject?.getClass() ?: ReflectionUtils.getCallingClass(calleeDepth)

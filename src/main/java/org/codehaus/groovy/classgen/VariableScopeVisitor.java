@@ -854,7 +854,10 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             super.visitBinaryExpression(expression);
         }
 
-        if (Types.isAssignment(op)) {
+        // a compound assignment may resolve to a *Assign method that mutates the
+        // receiver in place; that is only known after type checking, so Verifier
+        // reports it if the parameter really is reassigned
+        if (op == Types.ASSIGN) {
             checkFinalFieldAccess(expression.getLeftExpression());
         }
     }
@@ -952,6 +955,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
         if (!expression.isUsingAnonymousInnerClass()) return;
 
+        // GROOVY-12512: an argument of this(...) or super(...) has no instance to enclose
+        boolean noEnclosingInstance = inSpecialConstructorCall;
+        if (noEnclosingInstance) {
+            pushState(true);
+            inSpecialConstructorCall = false;
+        }
         pushState();
         InnerClassNode innerClass = (InnerClassNode) expression.getType();
         innerClass.setVariableScope(currentScope);
@@ -986,6 +995,10 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         }
         markClosureSharedVariables();
         popState();
+        if (noEnclosingInstance) {
+            popState();
+            inSpecialConstructorCall = oldInSpecialCtorFlag;
+        }
     }
 
     /**

@@ -20,6 +20,8 @@ package org.apache.groovy.lsp.internal.compile;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
+import org.codehaus.groovy.control.customizers.CompilationCustomizer;
+import org.codehaus.groovy.control.customizers.ImportCustomizer;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -33,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-
+import java.util.function.Consumer;
 
 /**
  * Compilation options for the language server. Grape and {@code @ASTTest}
@@ -241,7 +243,28 @@ public record CompilerSettings(List<String> classpath, List<String> sourcePaths,
      * @return the configuration
      */
     public CompilerConfiguration toConfiguration() {
+        return toConfiguration(null);
+    }
+
+    /**
+     * Builds a tooling configuration, copying semantic customizers from
+     * {@code host} when present (imports, AST transforms, script base class).
+     * Grape and {@code @ASTTest} still follow these settings.
+     *
+     * @param host console or groovysh configuration, or {@code null}
+     * @return the configuration
+     */
+    public CompilerConfiguration toConfiguration(final CompilerConfiguration host) {
         CompilerConfiguration configuration = new CompilerConfiguration();
+        if (host != null) {
+            if (host.getScriptBaseClass() != null) {
+                configuration.setScriptBaseClass(host.getScriptBaseClass());
+            }
+            List<CompilationCustomizer> customizers = host.getCompilationCustomizers();
+            if (!customizers.isEmpty()) {
+                configuration.addCompilationCustomizers(customizers.toArray(CompilationCustomizer[]::new));
+            }
+        }
         configuration.setTolerance(0);
         configuration.setTargetBytecode(CompilerConfiguration.JDK17);
         if (!classpath.isEmpty()) {
@@ -259,7 +282,86 @@ public record CompilerSettings(List<String> classpath, List<String> sourcePaths,
         }
         configuration.setDisabledGlobalASTTransformations(disabled);
         configuration.getOptimizationOptions().put(CompilerConfiguration.GROOVYDOC, Boolean.TRUE);
+        applyClientImports(configuration, extra);
         return configuration;
+    }
+
+    /**
+     * {@code groovy.imports}, {@code groovy.starImports}, {@code groovy.staticImports},
+     * {@code groovy.staticStars} and {@code groovy.aliases} are comma-separated.
+     * An alias entry is {@code alias=class}. A static import is {@code Class.member}
+     * or {@code alias=Class.member}. An empty value adds nothing. Each compile
+     * builds a fresh configuration, so a missing key does not keep the previous list.
+     */
+    private static void applyClientImports(final CompilerConfiguration configuration,
+                                           final Map<String, String> extra) {
+        if (extra == null || extra.isEmpty()) {
+            return;
+        }
+        String imports = extra.get("imports");
+        String stars = extra.get("starImports");
+        String staticImports = extra.get("staticImports");
+        String staticStars = extra.get("staticStars");
+        String aliases = extra.get("aliases");
+        String base = extra.get("scriptBaseClass");
+        if (base != null && !base.isEmpty()) {
+            configuration.setScriptBaseClass(base);
+        }
+        if (isBlank(imports) && isBlank(stars) && isBlank(staticImports) && isBlank(staticStars) && isBlank(aliases)) {
+            return;
+        }
+        ImportCustomizer customizer = new ImportCustomizer();
+        addCsv(imports, customizer::addImports);
+        addCsv(stars, name -> customizer.addStarImports(stripTrailingDot(name)));
+        addCsv(aliases, entry -> addAlias(customizer, entry));
+        addCsv(staticImports, entry -> addStatic(customizer, entry));
+        addCsv(staticStars, customizer::addStaticStars);
+        configuration.addCompilationCustomizers(customizer);
+    }
+
+    private static boolean isBlank(final String value) {
+        return value == null || value.isEmpty();
+    }
+
+    private static String stripTrailingDot(final String name) {
+        return name.endsWith(".") ? name.substring(0, name.length() - 1) : name;
+    }
+
+    private static void addAlias(final ImportCustomizer customizer, final String entry) {
+        int eq = entry.indexOf('=');
+        if (eq <= 0 || eq == entry.length() - 1) {
+            return;
+        }
+        customizer.addImport(entry.substring(0, eq), entry.substring(eq + 1));
+    }
+
+    private static void addStatic(final ImportCustomizer customizer, final String entry) {
+        int eq = entry.indexOf('=');
+        String body = eq < 0 ? entry : entry.substring(eq + 1);
+        String alias = eq < 0 ? null : entry.substring(0, eq);
+        int dot = body.lastIndexOf('.');
+        if (dot <= 0 || dot == body.length() - 1) {
+            return;
+        }
+        String type = body.substring(0, dot);
+        String member = body.substring(dot + 1);
+        if (alias == null || alias.isEmpty()) {
+            customizer.addStaticImport(type, member);
+        } else {
+            customizer.addStaticImport(alias, type, member);
+        }
+    }
+
+    private static void addCsv(final String csv, final Consumer<String> add) {
+        if (csv == null) {
+            return;
+        }
+        for (String name : csv.split(",")) {
+            String trimmed = name.trim();
+            if (!trimmed.isEmpty()) {
+                add.accept(trimmed);
+            }
+        }
     }
 
     /**

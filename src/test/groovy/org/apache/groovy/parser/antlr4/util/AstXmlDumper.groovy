@@ -368,6 +368,7 @@ final class AstXmlDumper {
                 }
                 break
             case 'ElvisOperatorExpression':
+                if (e.nullCoalescing) attrs.nullCoalescing = true
                 elem(n, attrs) {
                     dumpExpression(e.trueExpression)
                     dumpExpression(e.falseExpression)

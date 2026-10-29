@@ -576,7 +576,7 @@ public abstract class StaticTypeCheckingSupport {
      * GEP-15: returns the dedicated compound-assignment method name for a compound-assign
      * operator token (e.g. {@code PLUS_EQUAL} -> {@code "plusAssign"}), or {@code null} if
      * the token is not one of the twelve operators in scope. {@code INTDIV_EQUAL},
-     * {@code MOD_EQUAL}, {@code ELVIS_EQUAL}, {@code LOGICAL_OR_EQUAL} and
+     * {@code MOD_EQUAL}, {@code ELVIS_EQUAL}, {@code NULL_COALESCE_EQUAL}, {@code LOGICAL_OR_EQUAL} and
      * {@code LOGICAL_AND_EQUAL} are intentionally excluded.
      *
      * @since 6.0.0

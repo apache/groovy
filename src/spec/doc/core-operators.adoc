@@ -371,6 +371,55 @@ he.with {
 assert he.toString() == 'Element(Helium, 2)'
 --------------------------------------
 
+=== Null-coalescing operator
+
+The null-coalescing operator `??` also supplies a default value, but only when the left-hand
+operand is `null`. Unlike the Elvis operator, it ignores <<{core-semantics}#the-groovy-truth,Groovy truth>>,
+so values such as `0`, `false` or an empty string or collection are kept:
+
+[source,groovy]
+----
+include::../test/OperatorsTest.groovy[tags=null_coalescing,indent=0]
+----
+<1> the Elvis operator replaces `0`, which is `false`-ish
+<2> the null-coalescing operator keeps `0`, which is not `null`
+<3> only a `null` value is replaced
+
+The left-hand operand is evaluated once, and the right-hand operand only when the left-hand one is `null`.
+A left-hand operand of a primitive type is never `null`, so the right-hand operand is not evaluated at all.
+
+`??` has the same precedence as the ternary and Elvis operators and, like them, is right-associative:
+
+[source,groovy]
+----
+include::../test/OperatorsTest.groovy[tags=null_coalescing_precedence,indent=0]
+----
+<1> `a ?? (b ?? c)`: the first non-`null` value is used
+<2> `a ?: (b ?? c)`
+<3> `0 ?? (1 ? 'yes' : 'no')`: add parentheses to test the result of `??` with the ternary operator
+
+Some other languages give `??` a higher precedence than the ternary operator, so parentheses make the intent
+clear when the two are combined.
+
+=== Null-coalescing assignment operator
+
+The null-coalescing assignment operator `??=` assigns the right-hand value only when the target is `null`:
+
+[source,groovy]
+----
+include::../test/OperatorsTest.groovy[tags=null_coalescing_assign,indent=0]
+----
+<1> `false` is not `null`, so it is kept
+<2> `null` is replaced
+
+As with `??`, a target of a primitive type is never `null`, so the right-hand side is not evaluated:
+
+[source,groovy]
+----
+include::../test/OperatorsTest.groovy[tags=null_coalescing_primitive,indent=0]
+----
+<1> `++calls` is not evaluated
+
 == Object operators
 
 === Safe navigation operator
@@ -962,8 +1011,9 @@ The table below lists all groovy operators in order of precedence.
 | 13.5 | `=\=>` | logical implication
 | 14 | `? :` | ternary conditional
 |    | `?:` | elvis operator
+|    | `??` | null-coalescing operator
 | 15 | `=` {nbsp} `\**=` {nbsp} `*=` {nbsp} `/=` {nbsp} `%=` {nbsp} `+=` {nbsp} `-=` {nbsp} +
-`<\<=` {nbsp} `>>=` {nbsp} `>>>=` {nbsp} `&=` {nbsp} `^=` {nbsp} `\|=` {nbsp} {nbsp} `?=` | various assignments
+`<\<=` {nbsp} `>>=` {nbsp} `>>>=` {nbsp} `&=` {nbsp} `^=` {nbsp} `\|=` {nbsp} {nbsp} `?=` {nbsp} `??=` | various assignments
 |======================
 
 [[Operator-Overloading]]
