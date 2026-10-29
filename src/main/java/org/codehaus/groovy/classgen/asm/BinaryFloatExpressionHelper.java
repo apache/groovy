@@ -24,9 +24,12 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.runtime.BytecodeInterface8;
 import org.objectweb.asm.MethodVisitor;
 
+import static org.codehaus.groovy.syntax.Types.COMPARE_GREATER_THAN;
+import static org.codehaus.groovy.syntax.Types.COMPARE_GREATER_THAN_EQUAL;
 import static org.objectweb.asm.Opcodes.DUP2;
 import static org.objectweb.asm.Opcodes.FADD;
 import static org.objectweb.asm.Opcodes.FCMPG;
+import static org.objectweb.asm.Opcodes.FCMPL;
 import static org.objectweb.asm.Opcodes.FCONST_1;
 import static org.objectweb.asm.Opcodes.FDIV;
 import static org.objectweb.asm.Opcodes.FMUL;
@@ -83,6 +86,18 @@ public class BinaryFloatExpressionHelper extends BinaryExpressionWriter {
     @Override
     protected int getCompareCode() {
         return FCMPG;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * FCMPL yields -1 and FCMPG yields 1 for a NaN operand, so FCMPL is used for
+     * {@code >} and {@code >=} and FCMPG otherwise; either way the
+     * comparison is false, as in Java (JLS 15.20.1).
+     */
+    @Override
+    protected int getCompareCode(final int type) {
+        return type == COMPARE_GREATER_THAN || type == COMPARE_GREATER_THAN_EQUAL ? FCMPL : FCMPG;
     }
 
     /**

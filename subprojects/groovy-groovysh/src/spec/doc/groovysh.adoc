@@ -38,6 +38,45 @@ to https://github.com/jline/jline3[JLine3].
 * ANSI colors (prompt, exception traces, etc).
 * Simple, yet robust, command system with online help, user alias
 support and more.
+* Tab completion and tail-tip descriptions also consult groovy-lsp over
+the current buffer (imports, types, methods, and binding
+variables), using the same language-server messages an editor sends.
+After a dot, Tab lists the methods and properties of that receiver,
+including Groovy extension methods of that type and a name introduced
+by `def` earlier in the session.
+A method is shown as its name immediately followed by the parameter list.
+The return type is right-aligned after that list, in the same gray, with a gap
+so it stays apart from the name and the parameters.
+On a wide terminal the list is a few columns of equal width, each wide enough
+to keep one candidate on a single line. A very long signature is shortened
+with `...` rather than stretching the column.
+Selecting a method inserts the name only.
+Candidates are grouped under a full kind name (`Method`, `Field`,
+`Property`, `Variable`, `Class`, `Interface`, `Enum`, `Keyword`,
+`Snippet`). Static methods are grouped as `Method`.
+A long list is shown directly. Tab does not stop to ask whether
+to display it, and the next key is still delivered to the editor.
+`/grab` remains the way to add Maven artifacts; the next
+completion or tail-tip notices the loader change. Embedder
+`CompilerConfiguration` imports are those
+on the configuration the engine was constructed with, and they apply to
+that session as well as to evaluation. An import typed at the prompt is
+buffer text, so the next completion sees it as part of the script.
+Syntax tail-tips report compiler diagnostics and do not evaluate the
+line. Lines still evaluate through `GroovyEngine`. The language session
+answers questions about the buffer.
+A completion or tail-tip compile that is already running is not started
+again, and one that exceeds two seconds is abandoned so the prompt stays
+responsive.
+Set the Groovy option `noSyntaxCheck` in `groovysh_init.groovy`, or on
+the engine before the shell starts, to skip the language session.
+The init file is read before that session is attached.
+Tab then uses the shell's own completer, and syntax tail-tips stay on
+the previous inspector path. A missing `groovy-lsp` or Gson jar does
+the same and prints one warning, instead of exiting the shell.
+`groovy-groovysh` depends on `groovy-lsp` (and therefore LSP4J and Gson).
+`/console` still needs `groovy-console` on the classpath; that module is
+not pulled in by groovysh itself.
 
 [[GroovyShell-Command-lineOptionsandArguments]]
 === Command-line Options and Arguments

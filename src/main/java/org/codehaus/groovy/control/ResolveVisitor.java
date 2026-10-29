@@ -84,6 +84,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static groovy.lang.Tuple.tuple;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoEnclosingInstance;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
 import static org.apache.groovy.ast.tools.TypeUseUtils.isParameterizedTypeUsage;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
@@ -1234,6 +1235,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (iterType == null) {
                 addError("The class '" + type.getName() + "' needs to be an outer class of '" +
                         currentClass.getName() + "' when using '.this' or '.super'.", expression);
+            }
+            // every class between this one and the outer class needs an enclosing instance
+            for (ClassNode cn = currentClass; iterType != null && !cn.equals(type); cn = cn.getOuterClass()) {
+                if (hasNoEnclosingInstance(cn)) {
+                    addError("The usage of 'Class.this' and 'Class.super' is not allowed in '" + cn.getName() +
+                            "', which has no enclosing instance of '" + cn.getOuterClass().getName() + "'.", expression);
+                    return;
+                }
             }
             if (!Modifier.isStatic(currentClass.getModifiers())) return;
             if (currentScope != null && !currentScope.isInStaticContext()) return;

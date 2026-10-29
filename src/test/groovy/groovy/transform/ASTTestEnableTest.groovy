@@ -19,6 +19,7 @@
 package groovy.transform
 
 import groovy.junit6.plugin.ForkedJvm
+import org.codehaus.groovy.transform.ASTTestTransformation
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -60,5 +61,33 @@ final class ASTTestEnableTest {
     void testExplicitlyEnabledBySystemProperty() {
         def error = shouldFail(SCRIPT_WITH_FAILING_AST_TEST)
         assert error.message.contains('test closure was evaluated')
+    }
+
+    @Test
+    void threadOverrideCanOnlyDisable() {
+        assert System.getProperty('groovy.asttest.enable') == null
+        ASTTestTransformation.setThreadEnabled(Boolean.FALSE)
+        try {
+            assert ASTTestTransformation.currentThreadEnabled() == Boolean.FALSE
+            assertScript SCRIPT_WITH_FAILING_AST_TEST
+        } finally {
+            ASTTestTransformation.setThreadEnabled(null)
+        }
+        assert ASTTestTransformation.currentThreadEnabled() == null
+        def error = shouldFail(SCRIPT_WITH_FAILING_AST_TEST)
+        assert error.message.contains('test closure was evaluated')
+    }
+
+    @Test
+    @ForkedJvm(systemProperties = ['groovy.asttest.enable=false'])
+    void threadOverrideCannotEnableWhenThePropertyIsOff() {
+        assert System.getProperty('groovy.asttest.enable') == 'false'
+        ASTTestTransformation.setThreadEnabled(Boolean.TRUE)
+        try {
+            assert ASTTestTransformation.currentThreadEnabled() == Boolean.TRUE
+            assertScript SCRIPT_WITH_FAILING_AST_TEST
+        } finally {
+            ASTTestTransformation.setThreadEnabled(null)
+        }
     }
 }

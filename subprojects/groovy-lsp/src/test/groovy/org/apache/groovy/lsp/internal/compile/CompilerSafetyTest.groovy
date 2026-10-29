@@ -38,6 +38,7 @@ import org.junit.jupiter.api.parallel.Resources
 
 import org.apache.groovy.lsp.internal.diagnostic.DiagnosticConverter
 import org.apache.groovy.lsp.internal.position.PositionEncoding
+import org.codehaus.groovy.transform.ASTTestTransformation
 import org.apache.groovy.lsp.internal.workspace.TextDocument
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
@@ -377,7 +378,6 @@ final class CompilerSafetyTest {
                 try {
                     ready.countDown()
                     assert start.await(5, TimeUnit.SECONDS)
-                    def expected = Boolean.toString(settings.astTestEnabled)
                     GroovyCompiler.withProcessFlags(settings) {
                         inside.incrementAndGet()
                         started.incrementAndGet()
@@ -386,8 +386,12 @@ final class CompilerSafetyTest {
                             LockSupport.parkNanos(1_000_000L)
                         }
                         maxInside.updateAndGet { Math.max(it, inside.get()) }
-                        assert System.getProperty('groovy.asttest.enable') == expected
-                        assert System.getProperty('groovy.grape.enable') == expected
+                        assert System.getProperty('groovy.asttest.enable') == null
+                        assert System.getProperty('groovy.grape.enable') == null
+                        assert ASTTestTransformation.currentThreadEnabled() == settings.astTestEnabled
+                        def other = new AtomicReference<Boolean>()
+                        Thread.start { other.set(ASTTestTransformation.currentThreadEnabled()) }.join(5_000)
+                        assert other.get() == null
                         inside.decrementAndGet()
                         null
                     }

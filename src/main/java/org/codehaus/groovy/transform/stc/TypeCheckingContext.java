@@ -518,6 +518,67 @@ public class TypeCheckingContext {
     }
 
     /**
+     * Clears the state that describes the position being visited, so that a
+     * method of the enclosing class can be visited as if from its declaration.
+     * The enclosing classes, the visited-method sets, the error bookkeeping and
+     * the second-pass data are kept, as they belong to the class being visited.
+     *
+     * @return an action that restores the cleared state
+     */
+    Runnable detachFromEnclosingScope() {
+        var methods        = new LinkedList<>(enclosingMethods);
+        var methodCalls    = new LinkedList<>(enclosingMethodCalls);
+        var closures       = new LinkedList<>(enclosingClosures);
+        var binaries       = new LinkedList<>(enclosingBinaryExpressions);
+        var statements     = new LinkedList<>(switchStatements);
+        var expressions    = new LinkedList<>(switchExpressions);
+        var yieldTypes     = new LinkedList<>(switchExpressionYieldTypes);
+        var selectors      = new LinkedList<>(switchSelectors);
+        var typeInfo       = temporaryIfBranchTypeInformation;
+        var tracker        = ifElseForWhileAssignmentTracker;
+        var controlVars    = controlStructureVariables;
+        var delegation     = delegationMetadata;
+        var itType         = lastImplicitItType;
+        boolean staticCtx  = isInStaticContext;
+
+        enclosingMethods.clear();
+        enclosingMethodCalls.clear();
+        enclosingClosures.clear();
+        enclosingBinaryExpressions.clear();
+        switchStatements.clear();
+        switchExpressions.clear();
+        switchExpressionYieldTypes.clear();
+        switchSelectors.clear();
+        temporaryIfBranchTypeInformation = new Stack<>();
+        ifElseForWhileAssignmentTracker = null;
+        controlStructureVariables = new HashMap<>();
+        delegationMetadata = null;
+        lastImplicitItType = null;
+
+        return () -> {
+            reset(enclosingMethods, methods);
+            reset(enclosingMethodCalls, methodCalls);
+            reset(enclosingClosures, closures);
+            reset(enclosingBinaryExpressions, binaries);
+            reset(switchStatements, statements);
+            reset(switchExpressions, expressions);
+            reset(switchExpressionYieldTypes, yieldTypes);
+            reset(switchSelectors, selectors);
+            temporaryIfBranchTypeInformation = typeInfo;
+            ifElseForWhileAssignmentTracker = tracker;
+            controlStructureVariables = controlVars;
+            delegationMetadata = delegation;
+            lastImplicitItType = itType;
+            isInStaticContext = staticCtx;
+        };
+    }
+
+    private static <T> void reset(final LinkedList<T> list, final List<T> saved) {
+        list.clear();
+        list.addAll(saved);
+    }
+
+    /**
      * Represents the context of an enclosing closure. An enclosing closure wraps
      * a closure expression and the list of return types found in the closure body.
      */

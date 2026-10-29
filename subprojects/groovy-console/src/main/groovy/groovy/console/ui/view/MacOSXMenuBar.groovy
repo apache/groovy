@@ -185,6 +185,8 @@ menuBar {
         separator()
         menuItem(largerFontAction)
         menuItem(smallerFontAction)
+        checkBoxMenuItem(compilerAssistanceAction, selected: controller.compilerAssistance)
+        menuItem(completionShortcutAction)
         separator()
         checkBoxMenuItem(captureStdOutAction, selected: controller.captureStdOut)
         checkBoxMenuItem(captureStdErrAction, selected: controller.captureStdErr)

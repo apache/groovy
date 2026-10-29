@@ -2726,6 +2726,68 @@ final class InnerClassTest {
             assert a.action.call() == 42
         '''
     }
+
+    // GROOVY-12512: 'Outer.this' needs an enclosing instance at every level
+    @Test
+    void testOuterThisWithoutEnclosingInstance() {
+        [
+            'static m() { new Runnable() { void run() { Box.this.pm() } }.run() }'              : 'Box$1',
+            'static m() { def c = { -> new Runnable() { void run() { Box.this.pm() } } }; c() }' : 'Box$1',
+            'static Runnable r = new Runnable() { void run() { Box.this.pm() } }'               : 'Box$1',
+            'static class N { def m() { Box.this.pm() } }'                                      : 'Box$N',
+            'static class N { class In { def m() { Box.this.pm() } } }'                         : 'Box$N',
+            'Box(Runnable r) {}; Box() { this(new Runnable() { void run() { Box.this.pm() } }) }' : 'Box$1',
+        ].each { code, where ->
+            def err = shouldFail CompilationFailedException, '''
+                class Box {
+                    String pm() { 'pm' }
+                    CODE
+                }
+            '''.replace('CODE', code)
+            assert err.message.contains("The usage of 'Class.this' and 'Class.super' is not allowed in '$where', which has no enclosing instance of 'Box'.")
+        }
+    }
+
+    // GROOVY-12512: an argument of this(...) or super(...) is in a static context
+    @Test
+    void testOuterFieldFromAnonymousClassInSpecialConstructorCall() {
+        def err = shouldFail CompilationFailedException, '''
+            class Box {
+                String id = 'box'
+                Box(Runnable r) {}
+                Box() { this(new Runnable() { void run() { id } }) }
+            }
+        '''
+        assert err.message.contains("Apparent variable 'id' was found in a static scope")
+    }
+
+    // GROOVY-12512
+    @Test
+    void testOuterThisWithEnclosingInstance() {
+        assertScript '''
+            class Box {
+                String pm() { 'pm' }
+                class In {
+                    String m() { Box.this.pm() }
+                }
+                static class N {
+                    String pn() { 'pn' }
+                    class In {
+                        String m() { N.this.pn() }
+                    }
+                }
+                String m() {
+                    new Object() {
+                        String toString() { Box.this.pm() + new Object() { String toString() { Box.this.pm() } }.toString() }
+                    }.toString()
+                }
+            }
+            def box = new Box()
+            assert new Box.In(box).m() == 'pm'
+            assert new Box.N.In(new Box.N()).m() == 'pn'
+            assert box.m() == 'pmpm'
+        '''
+    }
 }
 
 //------------------------------------------------------------------------------

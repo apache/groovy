@@ -20,12 +20,14 @@ package org.apache.groovy.lsp.internal.compile;
 
 import groovy.lang.GroovyClassLoader;
 import org.apache.groovy.lsp.internal.intelligence.StaticTypeCheckingPass;
+import org.codehaus.groovy.ast.ModuleNode;
 import org.apache.groovy.lsp.internal.util.Uris;
 import org.apache.groovy.lsp.internal.workspace.TextDocument;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.transform.ASTTestTransformation;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
 
 import java.io.File;
@@ -52,9 +54,6 @@ import java.util.function.Supplier;
  * AST. Errors are collected rather than aborting the compile.
  */
 public final class GroovyCompiler implements AutoCloseable {
-
-    private static final String ASTTEST_ENABLE = "groovy.asttest.enable";
-    private static final String GRAPE_ENABLE = "groovy.grape.enable";
     private static final Object PROCESS_FLAGS = new Object();
 
     private GroovyClassLoader groovyLoader;
@@ -74,8 +73,21 @@ public final class GroovyCompiler implements AutoCloseable {
      */
     public CompilationSnapshot compile(final Collection<TextDocument> openDocuments, final Collection<Path> extraFiles,
                                        final CompilerSettings settings, final ClassLoader parentLoader) {
+        return compile(openDocuments, extraFiles, settings, parentLoader, null);
+    }
+
+    /**
+     * Compiles with an optional host {@link CompilerConfiguration} so import
+     * and AST customizers from Console or groovysh are visible.
+     *
+     * @param hostConfiguration console or groovysh configuration, or {@code null}
+     * @return an immutable snapshot
+     */
+    public CompilationSnapshot compile(final Collection<TextDocument> openDocuments, final Collection<Path> extraFiles,
+                                       final CompilerSettings settings, final ClassLoader parentLoader,
+                                       final CompilerConfiguration hostConfiguration) {
         synchronized (this) {
-            CompilerConfiguration configuration = settings.toConfiguration();
+            CompilerConfiguration configuration = settings.toConfiguration(hostConfiguration);
             return withProcessFlags(settings, () ->
                     compileUnit(openDocuments, extraFiles, settings, parentLoader, configuration));
         }
@@ -311,10 +323,57 @@ public final class GroovyCompiler implements AutoCloseable {
     }
 
     /**
-     * Sets {@code groovy.asttest.enable} and {@code groovy.grape.enable} for
-     * {@code action}, then restores whatever values were there before.
-     * Every compile shares this JVM lock, so one session cannot restore
-     * flags another session still needs.
+     * Compiles one buffer with the same settings as a workspace compile.
+     * {@code @Grab} is omitted through {@code disabledGlobalASTTransformations}.
+     * {@code @ASTTest} is a local transform, so it follows a per-thread override
+     * rather than the JVM system property.
+     *
+     * @param name source name
+     * @param source buffer text
+     * @param settings compiler settings, or {@code null} for {@link CompilerSettings#defaults()}
+     * @param parentLoader parent loader, or {@code null} for this class's loader
+     * @param host console or groovysh configuration, or {@code null}
+     * @param phase compile phase, a {@code Phases} constant
+     * @return the module, or {@code null} when the buffer produced none
+     */
+    public static ModuleNode compileFragment(final String name, final String source, final CompilerSettings settings,
+                                             final ClassLoader parentLoader, final CompilerConfiguration host,
+                                             final int phase) {
+        CompilerSettings effective = settings == null ? CompilerSettings.defaults() : settings;
+        CompilerConfiguration configuration = effective.toConfiguration(host);
+        configuration.setTolerance(100);
+        ClassLoader parent = parentLoader == null ? GroovyCompiler.class.getClassLoader() : parentLoader;
+        return withProcessFlags(effective, () -> {
+            ModuleNode found = null;
+            try (GroovyClassLoader loader = new GroovyClassLoader(parent, configuration)) {
+                CompilationUnit unit = new CompilationUnit(configuration, null, loader);
+                unit.addSource(name == null ? "fragment.groovy" : name, source == null ? "" : source);
+                try {
+                    unit.compile(phase);
+                } catch (CompilationFailedException ignored) {
+                    // a repair stand-in can still carry the declarations above the caret
+                }
+                var sources = unit.iterator();
+                while (sources.hasNext()) {
+                    SourceUnit src = sources.next();
+                    if (src.getAST() != null) {
+                        found = src.getAST();
+                    }
+                }
+                return found;
+            } catch (IOException ignored) {
+                // close failed; the module already holds the resolved JDK types
+                return found;
+            }
+        });
+    }
+
+    /**
+     * Runs {@code action} with a per-thread {@code @ASTTest} override taken
+     * from {@code settings}. The override can only force the annotation off.
+     * It does not evaluate {@code @ASTTest} when {@code groovy.asttest.enable}
+     * is {@code false}. {@code groovy.grape.enable} is left alone. The lock
+     * serializes tooling compiles so two sessions do not overlap.
      *
      * @param settings compiler settings
      * @param action work that must see those flags
@@ -323,34 +382,13 @@ public final class GroovyCompiler implements AutoCloseable {
      */
     static <T> T withProcessFlags(final CompilerSettings settings, final Supplier<T> action) {
         synchronized (PROCESS_FLAGS) {
-            String previousAstTest = System.getProperty(ASTTEST_ENABLE);
-            String previousGrape = System.getProperty(GRAPE_ENABLE);
+            Boolean previous = ASTTestTransformation.currentThreadEnabled();
             try {
-                applyProcessFlags(settings);
+                ASTTestTransformation.setThreadEnabled(settings != null && settings.isAstTestEnabled());
                 return action.get();
             } finally {
-                restoreProperty(ASTTEST_ENABLE, previousAstTest);
-                restoreProperty(GRAPE_ENABLE, previousGrape);
+                ASTTestTransformation.setThreadEnabled(previous);
             }
-        }
-    }
-
-    /**
-     * {@code @ASTTest} is a local transform; {@code disabledGlobalASTTransformations}
-     * does not turn it off. The documented process flags do.
-     *
-     * @param settings compiler settings
-     */
-    private static void applyProcessFlags(final CompilerSettings settings) {
-        System.setProperty(ASTTEST_ENABLE, Boolean.toString(settings.isAstTestEnabled()));
-        System.setProperty(GRAPE_ENABLE, Boolean.toString(settings.isGrapeEnabled()));
-    }
-
-    private static void restoreProperty(final String key, final String previous) {
-        if (previous == null) {
-            System.clearProperty(key);
-        } else {
-            System.setProperty(key, previous);
         }
     }
 

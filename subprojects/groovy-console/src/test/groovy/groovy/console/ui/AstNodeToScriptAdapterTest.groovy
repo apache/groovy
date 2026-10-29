@@ -1289,6 +1289,18 @@ b $$v"""/$,
         assert !result.contains('c ? c : d')
     }
 
+    // GROOVY-12442
+    @Test
+    void testNullCoalescingOperator() {
+        String script = '''
+            def a = c ?? d
+        '''
+        String result = compileToScript(script)
+
+        assert result.contains('c ?? d')
+        assert !result.contains('!= null')
+    }
+
     // GROOVY-12144
     @Test
     void testAttributeExpression() {
