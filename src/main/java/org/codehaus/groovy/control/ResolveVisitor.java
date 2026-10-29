@@ -980,15 +980,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     /**
-     * Resolves a type via the configured {@link ClassNodeResolver}.
+     * Looks up a class of the default package on the class path for a class of the default package. It takes
+     * precedence over the default imports, as a class of a named package does for a class of the same package and
+     * as a class of the default package that is being compiled does. A miss leaves {@code type} untouched and is
+     * cached by the {@link ClassNodeResolver}, so the later {@link #resolveToOuter} of the same lookup is a no-op.
      *
      * @param type the type to resolve
      * @return {@code true} if the type was resolved
-     */
-    /**
-     * Looks up a class of the default package on the class path for a class of the default package. It takes
-     * precedence over the default imports, as a class of a named package does for a class of the same package and
-     * as a class of the default package that is being compiled does.
      */
     private boolean resolveFromDefaultPackage(final ClassNode type) {
         ModuleNode module = currentClass.getModule();
@@ -999,6 +997,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return resolveToOuter(type);
     }
 
+    /**
+     * Resolves a type via the configured {@link ClassNodeResolver}.
+     *
+     * @param type the type to resolve
+     * @return {@code true} if the type was resolved
+     */
     protected boolean resolveToOuter(final ClassNode type) {
         String name = type.getName();
         if (classNodeResolver == null)
