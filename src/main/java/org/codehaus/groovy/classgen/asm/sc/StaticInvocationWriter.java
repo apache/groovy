@@ -158,7 +158,8 @@ public class StaticInvocationWriter extends InvocationWriter {
                 writeDynamicConstructorCall(call, declaringClass);
                 return;
             }
-            // JLS 6.6.2.2: outside its package, only super(...) or an anonymous inner class can call a protected constructor
+            // JLS 6.6.2.2: outside its package, only super(...) or an anonymous inner class can call a protected constructor;
+            // reported here, while the class is generated, so @TypeChecked code is not checked for it and works dynamically
             controller.getSourceUnit().addError(new SyntaxException(
                     "Cannot call " + (cn.isProtected() ? "protected" : "package-private") + " constructor for "
                             + declaringClass.toString(false) + " from class " + enclosingClass.toString(false),
