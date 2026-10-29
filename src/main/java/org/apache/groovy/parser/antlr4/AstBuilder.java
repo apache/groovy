@@ -1248,9 +1248,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
      * through. A {@code yield} that ends its arm is unwrapped, so its value is
      * what the arm leaves behind (the implicit return picks it up). An earlier
      * {@code yield} must still leave the switch, so it becomes a block that
-     * evaluates the value and breaks out; the {@code break} is marked with its
-     * switch so that {@code ReturnAdder} can make the block a {@code return}
-     * when the switch is in return position.
+     * evaluates the value and breaks out; the block and its {@code break} are
+     * marked with their switch so that {@code ReturnAdder} can make the block
+     * a {@code return} when the switch is in return position.
      */
     private SwitchStatement switchExpressionAsStatement(final SwitchExpression expression) {
         ArmYields yields = new ArmYields("yield#" + (++yieldLabelCount));
@@ -1274,8 +1274,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (yields.labelled) {
             statement.addStatementLabel(yields.label);
         }
-        for (BreakStatement exit : yields.exits) {
-            exit.putNodeMetaData(YieldStatement.class, statement);
+        for (BlockStatement block : yields.blocks) {
+            block.putNodeMetaData(YieldStatement.class, statement);
+            last(block.getStatements()).putNodeMetaData(YieldStatement.class, statement);
         }
         return statement;
     }
@@ -1300,9 +1301,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             yields.labelled |= labelled;
             BreakStatement exit = new BreakStatement(labelled ? yields.label : null);
             exit.setSourcePosition(ys);
-            yields.exits.add(exit);
             BlockStatement block = block(es, exit);
             block.setSourcePosition(ys);
+            yields.blocks.add(block);
             return block;
         }
         if (code instanceof BlockStatement block) {
@@ -1345,7 +1346,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
      */
     private static final class ArmYields {
         final String label;
-        final List<BreakStatement> exits = new ArrayList<>();
+        final List<BlockStatement> blocks = new ArrayList<>();
         boolean labelled;
 
         ArmYields(final String label) {
