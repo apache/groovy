@@ -40,6 +40,12 @@ public class ClassStub extends MemberStub {
     // Used to store the real access modifiers for inner classes
     int innerClassModifiers = -1;
 
+    /**
+     * The INNERCLASS entries of a member class and of its enclosing member classes, outermost
+     * first, as recorded in the class file. {@code null} for a top-level, local or anonymous class.
+     */
+    List<InnerClassStub> innerClassEntries;
+
     public ClassStub(String className, int accessModifiers, String signature, String superName, String[] interfaceNames) {
         this.className = className;
         this.accessModifiers = accessModifiers;
@@ -180,5 +186,44 @@ class RecordComponentStub implements AnnotatedStub, AnnotatedTypeStub {
     @Override
     public List<TypeAnnotationStub> getTypeAnnotations() {
         return typeAnnotations;
+    }
+}
+
+/**
+ * Bytecode stub for an INNERCLASS entry (JVMS 4.7.6) of a member class.
+ */
+final class InnerClassStub {
+    private final String name;
+    private final String outerName;
+    private final String innerName;
+    private final int access;
+
+    /**
+     * @param name the internal name of the member class
+     * @param outerName the internal name of the enclosing class
+     * @param innerName the simple name of the member class
+     * @param access the access flags of the member class
+     */
+    InnerClassStub(String name, String outerName, String innerName, int access) {
+        this.name = name;
+        this.outerName = outerName;
+        this.innerName = innerName;
+        this.access = access;
+    }
+
+    String name() {
+        return name;
+    }
+
+    String outerName() {
+        return outerName;
+    }
+
+    String innerName() {
+        return innerName;
+    }
+
+    int access() {
+        return access;
     }
 }

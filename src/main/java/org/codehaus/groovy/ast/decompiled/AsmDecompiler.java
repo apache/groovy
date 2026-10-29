@@ -107,6 +107,8 @@ public abstract class AsmDecompiler {
     private static class DecompilingVisitor extends ClassVisitor {
 
         private ClassStub result;
+        private String selfName;
+        private Map<String, InnerClassStub> memberClasses;
 
         public DecompilingVisitor() {
             super(ASM_API_VERSION);
@@ -115,6 +117,7 @@ public abstract class AsmDecompiler {
         @Override
         public void visit(final int version, final int access, final String name, final String signature, final String superName, final String[] interfaceNames) {
             result = new ClassStub(fromInternalName(name), access, signature, superName, interfaceNames);
+            selfName = name;
         }
 
         @Override
@@ -141,6 +144,26 @@ public abstract class AsmDecompiler {
             if (fromInternalName(name).equals(result.className)) {
                 result.innerClassModifiers = access;
             }
+            if (outerName != null) {
+                if (memberClasses == null) memberClasses = new HashMap<>();
+                memberClasses.put(name, new InnerClassStub(name, outerName, innerName, access));
+            }
+        }
+
+        /**
+         * Records the INNERCLASS entries of this class and its enclosing classes, outermost
+         * first, so that a class referring to this one can write the same entries.
+         */
+        @Override
+        public void visitEnd() {
+            if (memberClasses == null) return;
+            InnerClassStub entry = memberClasses.get(selfName);
+            while (entry != null) {
+                if (result.innerClassEntries == null) result.innerClassEntries = new ArrayList<>(2);
+                result.innerClassEntries.add(0, entry);
+                entry = memberClasses.get(entry.outerName());
+            }
+            memberClasses = null;
         }
 
         @Override

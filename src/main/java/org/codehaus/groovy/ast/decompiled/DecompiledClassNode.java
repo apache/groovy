@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.MixinNode;
 import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.reflection.ReflectionUtils;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
@@ -93,6 +94,22 @@ public class DecompiledClassNode extends ClassNode {
     @Internal
     public ClassNode resolveClassNullable(final String className) {
         return resolver.resolveClassNullable(className);
+    }
+
+    /**
+     * Writes the INNERCLASS entries (JVMS 4.7.6) recorded in this class's bytecode for itself
+     * and its enclosing classes, outermost first. Nothing is written for a top-level, local or
+     * anonymous class.
+     *
+     * @param cv the visitor of the class that refers to this class
+     */
+    @Internal
+    public void visitInnerClassEntries(final ClassVisitor cv) {
+        if (classData.innerClassEntries != null) {
+            for (InnerClassStub entry : classData.innerClassEntries) {
+                cv.visitInnerClass(entry.name(), entry.outerName(), entry.innerName(), entry.access());
+            }
+        }
     }
 
     public boolean isParameterized() {
