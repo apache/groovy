@@ -209,7 +209,11 @@ jobs:
           name: build-reports-${{ matrix.os }}-${{ matrix.java }}
           path: '**/build/reports/'
 
+  # The non-LTS JDKs run on push only: the LTS matrix gates pull requests,
+  # and a regression specific to one of these JDKs is rare enough to fix
+  # forward on the branch, which spares shared runner time on every PR push.
   additional:
+    if: github.event_name == 'push'
     strategy:
       fail-fast: false
       matrix:

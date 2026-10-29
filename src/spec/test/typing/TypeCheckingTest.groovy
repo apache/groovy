@@ -669,6 +669,34 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
     }
 
     @Test
+    void testSwitchInstanceOfInference() {
+        new GroovyShell().evaluate '''
+            // tag::switch_instanceof_inference[]
+            class Greeter {
+                String greeting() { 'Hello' }
+            }
+
+            @groovy.transform.TypeChecked
+            String describe(Object o) {
+                switch (o) {
+                    case Greeter:
+                        return o.greeting()                 // <1>
+                    case ArrayDeque:
+                    case Stack:
+                        return "top: ${o.peek()}"           // <2>
+                    default:
+                        return o.toString()
+                }
+            }
+
+            assert describe(new Greeter()) == 'Hello'
+            assert describe(new Stack().tap { push 3 }) == 'top: 3'
+            assert describe(42) == '42'
+            // end::switch_instanceof_inference[]
+        '''
+    }
+
+    @Test
     void testFlowTyping() {
         new GroovyShell().evaluate '''
             // tag::flowtyping_basics[]
@@ -855,6 +883,31 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
             }
             // end::method_return_type_matters[]
         ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
+    }
+
+    @Test
+    void testMethodReturnTypeInferenceWithSoleImplementation() {
+        assertScript '''
+            // tag::method_return_type_sole_implementation[]
+            @groovy.transform.TypeChecked
+            class A {
+                final def compute() { 'some string' }       // <1>
+                def computeFully() {
+                    compute().toUpperCase()                 // <2>
+                }
+            }
+            @groovy.transform.CompileStatic
+            class C {
+                private def name() { 'some name' }          // <3>
+                static def twice(int i) { i * 2 }           // <4>
+                def describe() {
+                    name().toUpperCase() + twice(21).intValue()
+                }
+            }
+            // end::method_return_type_sole_implementation[]
+            assert new A().computeFully() == 'SOME STRING'
+            assert new C().describe() == 'SOME NAME42'
+        '''
     }
 
     @Test

@@ -446,6 +446,95 @@ final class ThisAndSuperTest {
         '''
     }
 
+    // GROOVY-12521: a setter of the superclass among overloads, one of which the class overrides
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testSuperDotPropertyWithOverloadedSetters(String mode) {
+        assertScript """
+            class Base {
+                List<String> log = []
+                String getX() { 'x:base' }
+                void setX(int i) { log << 'base:int:' + i }
+                void setX(String s) { log << 'base:string:' + s }
+            }
+            $mode
+            class Sub extends Base {
+                String x = 'x:sub'
+                List<String> test() {
+                    super.x = 'a'
+                    super.x = 1
+                    log + [x]
+                }
+            }
+            $mode
+            class Over extends Base {
+                void setX(String s) { log << 'over:string:' + s }
+                List<String> test() {
+                    super.x = 'b'
+                    super.x = 2
+                    log
+                }
+            }
+            assert new Sub().test() == ['base:string:a', 'base:int:1', 'x:sub']
+            assert new Over().test() == ['base:string:b', 'base:int:2']
+        """
+    }
+
+    // GROOVY-12521
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked'])
+    void testSuperDotPropertyWithOverloadedSettersInClosure(String mode) {
+        assertScript """
+            class Base {
+                List<String> log = []
+                String getX() { 'x:base' }
+                void setX(int i) { log << 'base:int:' + i }
+                void setX(String s) { log << 'base:string:' + s }
+            }
+            $mode
+            class Sub extends Base {
+                String x = 'x:sub'
+                List<String> test() {
+                    def c = { -> super.x = 'c' }
+                    c()
+                    log + [x]
+                }
+            }
+            assert new Sub().test() == ['base:string:c', 'x:sub']
+        """
+    }
+
+    // GROOVY-12521: increments and compound assignments read and write through the superclass
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked'])
+    void testSuperDotPropertyIncrementWithOverloadedSetters(String mode) {
+        assertScript """
+            class Base {
+                List log = []
+                String x = 'x'
+                int n = 1
+                void setX(int i) { log << 'x:int:' + i }
+                void setX(String s) { log << 'x:string:' + s; this.@x = s }
+                void setN(String s) { log << 'n:string:' + s }
+                void setN(int i) { log << 'n:int:' + i; this.@n = i }
+            }
+            $mode
+            class Sub extends Base {
+                String x = 'sub'
+                int n = 100
+                List test() {
+                    super.x += 'a'
+                    super.n++
+                    super.n += 10
+                    def c = { -> super.x += 'b'; super.n++ }
+                    c()
+                    log + [super.x, super.n, x, n]
+                }
+            }
+            assert new Sub().test() == ['x:string:xa', 'n:int:2', 'n:int:12', 'x:string:xab', 'n:int:13', 'xab', 13, 'sub', 100]
+        """
+    }
+
     // GROOVY-12522: an extension method of the superclass, or of an interface of it, that the class overrides
     @ParameterizedTest
     @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])

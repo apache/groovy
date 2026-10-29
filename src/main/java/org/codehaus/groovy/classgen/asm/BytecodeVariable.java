@@ -42,6 +42,7 @@ public class BytecodeVariable {
 
     private final int index;
     private ClassNode type;
+    private ClassNode declaredType;
     private String name;
     private final int prevCurrent;
     private boolean dynamicTyped;
@@ -112,6 +113,28 @@ public class BytecodeVariable {
     public void setType(final ClassNode type) {
         this.type = type;
         dynamicTyped = dynamicTyped || ClassHelper.isDynamicTyped(type);
+    }
+
+    /**
+     * Returns the type as declared in source, which carries any type annotations
+     * (JSR 308). This may differ from {@link #getType()}, e.g. when the slot type
+     * is an inferred or boxed type.
+     *
+     * @return the declared type, or the slot type if no declared type was recorded
+     * @since 6.0.1
+     */
+    public ClassNode getDeclaredType() {
+        return declaredType != null ? declaredType : type;
+    }
+
+    /**
+     * Records the type as declared in source.
+     *
+     * @param declaredType the declared type
+     * @since 6.0.1
+     */
+    public void setDeclaredType(final ClassNode declaredType) {
+        this.declaredType = declaredType;
     }
 
     /**

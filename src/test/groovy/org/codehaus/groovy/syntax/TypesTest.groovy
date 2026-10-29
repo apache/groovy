@@ -78,6 +78,7 @@ class TypesTest {
         assertTrue(Types.isAssignment(Types.MOD_EQUAL))
         assertTrue(Types.isAssignment(Types.POWER_EQUAL))
         assertTrue(Types.isAssignment(Types.ELVIS_EQUAL))
+        assertTrue(Types.isAssignment(Types.NULL_COALESCE_EQUAL))
         assertTrue(Types.isAssignment(Types.LOGICAL_OR_EQUAL))
         assertTrue(Types.isAssignment(Types.LOGICAL_AND_EQUAL))
         assertTrue(Types.isAssignment(Types.LEFT_SHIFT_EQUAL))
@@ -93,6 +94,7 @@ class TypesTest {
     void testOfTypeAssignmentOperator() {
         assertTrue(Types.ofType(Types.EQUAL, Types.ASSIGNMENT_OPERATOR))
         assertTrue(Types.ofType(Types.PLUS_EQUAL, Types.ASSIGNMENT_OPERATOR))
+        assertTrue(Types.ofType(Types.NULL_COALESCE_EQUAL, Types.ASSIGNMENT_OPERATOR))
         assertFalse(Types.ofType(Types.PLUS, Types.ASSIGNMENT_OPERATOR))
     }
 
