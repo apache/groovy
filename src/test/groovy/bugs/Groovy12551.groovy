@@ -97,7 +97,28 @@ final class Groovy12551 {
             '''
         ], ['p/Caller.groovy'])
         def (together, separate) = texts['p.Caller']
-        assert together.contains('LINENUMBER 8')
-        assert separate.contains('LINENUMBER 8')
+        // the setter call is written differently when Ctx is compiled first (the value is kept in
+        // a temporary variable), so compare the line number tables rather than the whole class
+        assert lineNumbers(together) == lineNumbers(separate)
+        assert lineOf(together, 'INVOKEVIRTUAL p/Ctx.setName') == 8
+        assert lineOf(separate, 'INVOKEVIRTUAL p/Ctx.setName') == 8
+    }
+
+    private static List<Integer> lineNumbers(String text) {
+        (text =~ /LINENUMBER (\d+)/).collect { it[1] as int }
+    }
+
+    /** The line number in effect at the first instruction containing {@code instruction}, or -1. */
+    private static int lineOf(String text, String instruction) {
+        int line = -1
+        for (String l : text.readLines()) {
+            def m = l =~ /LINENUMBER (\d+)/
+            if (m.find()) {
+                line = m.group(1) as int
+            } else if (l.contains(instruction)) {
+                return line
+            }
+        }
+        -1
     }
 }
