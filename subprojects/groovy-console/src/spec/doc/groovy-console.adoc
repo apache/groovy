@@ -161,13 +161,64 @@ follows your operating system's dark mode setting.
 image:{reldir_console}/assets/img/gconsole-dark-theme.png[Dark Theme]
 
 * Code is auto indented when you hit return
+* The editor highlights Groovy source from groovy-lsp semantic tokens
+(`textDocument/semanticTokens` on each edit, without compiling). A multiline string
+keeps the color of its opening delimiter (single quote, double quote, or
+slashy). The `$` that opens a GString expression is left uncolored.
+Matching brackets, including `?[`, come from the same semantic tokens, so a bracket inside a string or comment is not paired.
+A regex highlighter remains available from `View -> Smart Highlighter`.
 * You can drag'n'drop a Groovy script over the text area to open a file
 * You can modify the classpath with which the script in the console is
 being run by adding a new JAR or a directory to the classpath from the
 `Script` menu
-* Clicking the line and column of a compilation error, or a stack-trace
+* Error hyperlinking from the output area when a compilation error is
+expected or when an exception is thrown. Clicking the line and column of a compilation error, or a stack-trace
 reference to the script being edited, moves the caret to that position
 without selecting any characters
+* The editor compiles the unsaved buffer in the background and marks
+compiler diagnostics with a thin red wavy underline. A diagnostic that only marks the end of the buffer,
+such as unfinished input (`a.` or `a?.`), does not paint the operator or the
+character before the caret.
+Highlighting restyles only the spans that changed and does not add those
+attribute edits to the undo stack.
+`View -> Compiler Assistance` turns the language host off in every open
+console window. The preference is one shared value. Diagnostics,
+completion and the background compile then stay off. `Script -> Inspect CST`
+and `Script -> Inspect Tokens` still show the buffer.
+`View -> Smart Highlighter` still selects semantic-token or regex colouring.
+If `groovy-lsp` or Gson is not on the classpath, the editor opens with
+the regex highlighter and logs one warning. Compiler Assistance is
+disabled for that window, the language host stays unset, and a second
+warning is logged. The saved preference is left unchanged.
+The completion key stroke defaults to `Alt+/`
+(`Ctrl+Space` is left free for the system input method).
+On a layout where `/` is typed with Shift, such as Swedish Shift+7,
+completion opens when the key event's character is `/`, or when the
+following typed character is `/`. Alt+Shift+/ on a US layout types `?`
+and does not. macOS Swedish Option+Shift+7 types `\`; choose another
+stroke there.
+`View -> Completion Shortcut...` stores another stroke, for example `ctrl SPACE`,
+in the `completionShortcut` preference. The value is a Swing key-stroke
+string (`alt SLASH`, `ctrl SPACE`, `alt shift SLASH`).
+After `.`, `?.`, or `*.`, the list is the methods, fields, and properties
+that receiver can access, including when the statement is not finished yet.
+A method is shown with its parameter types and names, and its return type
+at the right of the row, apart from the name and the parameters.
+The list stays open while you type. Entries narrow to names that start
+with the characters after the list opened. Up and down move the selection,
+and moving the pointer over a row selects it the same way.
+Enter inserts the selected method name only. Parameter names stay in the
+list and are not written into the buffer. Escape closes the list.
+Each entry starts with a colored initial for its kind (`m` method, `f` field,
+`p` property, `v` variable, `c` class, `i` interface, `e` enum, `k` keyword,
+`s` snippet), drawn in its own disc so the mark is not part of the name.
+The list scrolls when there are more entries than fit.
+Accepting an entry inserts the whole name at the caret. The characters
+already typed after the dot are the only prefix that is replaced.
+Adding jars or directories to the classpath is picked up on the next
+background compile. The editor shares the console `CompilerConfiguration`
+(imports and AST customizers) with that compile. Scripts still run through
+`GroovyShell`. The language host answers questions about the buffer.
 
 [[GroovyConsole-EmbeddingtheConsole]]
 == Embedding the Console
@@ -259,7 +310,7 @@ image:{reldir_console}/assets/img/astbrowser_bytecode.png[AST Browser]
 [[GroovyConsole-CSTbrowser]]
 == Advanced debugging: CST browser
 
-Groovy Console can visualize the CST (Concrete Syntax Tree) representing
+Groovy Console can visualize the CST (Concrete Syntax Tree) that groovy-lsp builds for the current buffer, representing
 the initial parsing of the script. This is mainly useful for parsing gurus.
 
 image:{reldir_console}/assets/img/cstbrowser.png[CST Browser]

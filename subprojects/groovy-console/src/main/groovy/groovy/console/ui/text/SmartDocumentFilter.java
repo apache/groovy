@@ -18,19 +18,11 @@
  */
 package groovy.console.ui.text;
 
+import groovy.console.ui.ThemeManager;
 import groovy.lang.Tuple2;
-import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ConsoleErrorListener;
-import org.antlr.v4.runtime.LexerNoViableAltException;
-import org.antlr.v4.runtime.Token;
-import org.apache.groovy.parser.antlr4.GroovyLangLexer;
-import org.apache.groovy.parser.antlr4.GroovySyntaxError;
-import org.apache.groovy.parser.antlr4.util.PositionConfigureUtils;
-import org.apache.groovy.parser.antlr4.util.StringUtils;
-import org.apache.groovy.util.ReversedList;
+import org.apache.groovy.lsp.GroovyLanguageClient;
 
+import javax.swing.event.UndoableEditListener;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
@@ -39,115 +31,62 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import java.awt.Color;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-
-import groovy.console.ui.ThemeManager;
-
-import static org.apache.groovy.parser.antlr4.GroovyLexer.ABSTRACT;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.AS;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.AT;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.CapitalizedIdentifier;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.DOT;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.Identifier;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.ASSERT;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.ASYNC;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.AWAIT;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.BREAK;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.BooleanLiteral;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.BuiltInPrimitiveType;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.CASE;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.CATCH;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.CLASS;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.COMMA;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.CONST;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.CONTINUE;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.DEF;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.DEFAULT;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.DEFER;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.DO;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.ELSE;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.ENUM;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.EOF;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.EXTENDS;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.FINAL;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.FINALLY;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.FOR;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.FloatingPointLiteral;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.GOTO;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.GStringBegin;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.GStringEnd;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.GStringPart;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.IF;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.IMPLEMENTS;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.IMPORT;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.IN;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.INSTANCEOF;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.INTERFACE;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.IntegerLiteral;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.NATIVE;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.NEW;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.NL;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.NON_SEALED;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.NOT_IN;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.NOT_INSTANCEOF;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.NullLiteral;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.PACKAGE;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.PERMITS;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.PRIVATE;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.PROTECTED;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.PUBLIC;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.RECORD;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.RETURN;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.SEALED;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.SEMI;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.STATIC;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.STRICTFP;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.SUPER;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.SWITCH;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.SYNCHRONIZED;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.StringLiteral;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.THIS;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.THREADSAFE;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.THROW;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.THROWS;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.TRAIT;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.TRANSIENT;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.TRY;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.UNEXPECTED_CHAR;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.VAL;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.VAR;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.VOID;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.VOLATILE;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.WHILE;
-import static org.apache.groovy.parser.antlr4.GroovyLexer.YIELD;
-
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * The document filter based on Parrot's lexer is for highlighting the content of text editor
+ * Swing document filter that styles the editor from groovy-lsp semantic
+ * tokens ({@code textDocument/semanticTokens}). The request does not
+ * compile. Keywords, numbers,
+ * comments, {@code @}, and comma or semicolon use the matching theme
+ * style. Other legend names, including identifiers, use the identifier
+ * style. A string takes its colour from the token that opened the
+ * literal (single quote, double quote, or slashy). A line-split span
+ * does not repeat that delimiter. The {@code $} that ends a GString
+ * begin or part is left in the default style. Structural brackets,
+ * including {@code ?[}, are {@code delimiter} tokens on that same
+ * response. {@link #getLatestTokenList()} exposes them for brace
+ * matching. The filter does not lex the buffer itself. A keystroke
+ * shifts spans that sit past the edit, then walks the new tokens once
+ * and restyles only the spans that still differ. A character typed in
+ * the middle of the buffer does not repaint the unchanged tail.
+ * Those attribute edits are not recorded on the undo stack.
+ * {@link #close()} releases the in-process language client.
  *
  * @since 3.0.0
  */
 public class SmartDocumentFilter extends DocumentFilter {
-    /**
-     * Token types rendered with the reserved-word style.
-     */
-    public static final List<Integer> HIGHLIGHTED_TOKEN_TYPE_LIST =
-        Arrays.asList(AS, ASYNC, AWAIT, DEF, DEFER, IN, TRAIT, THREADSAFE,
-            VAL, VAR, BuiltInPrimitiveType, ABSTRACT, ASSERT, BREAK, CASE, CATCH, CLASS, CONST, CONTINUE, DEFAULT, DO,
-            ELSE, ENUM, EXTENDS, FINAL, FINALLY, FOR, IF, GOTO, IMPLEMENTS, IMPORT, INSTANCEOF, INTERFACE,
-            NATIVE, NEW, NON_SEALED, NOT_IN, NOT_INSTANCEOF, PACKAGE, PERMITS, PRIVATE, PROTECTED, PUBLIC,
-            RECORD, RETURN, SEALED, STATIC, STRICTFP, SUPER, SWITCH, SYNCHRONIZED,
-            THIS, THROW, THROWS, TRANSIENT, TRY, VOID, VOLATILE, WHILE, YIELD, NullLiteral, BooleanLiteral);
     private static final String MONOSPACED = "Monospaced";
+    private static final String STYLE_COMMENT = "comment";
+    private static final String STYLE_QUOTES = "quotes";
+    private static final String STYLE_SINGLE_QUOTES = "single_quotes";
+    private static final String STYLE_SLASHY_QUOTES = "slashy_quotes";
+    private static final String STYLE_DIGIT = "digit";
+    private static final String STYLE_ANNOTATION = "annotation";
+    private static final String STYLE_OPERATION = "operation";
+    private static final String STYLE_IDENT = "ident";
+    private static final String STYLE_RESERVED = "reserved_word";
+    private static final List<String> THEME_STYLE_KEYS = List.of(
+            STYLE_COMMENT, STYLE_QUOTES, STYLE_SINGLE_QUOTES, STYLE_SLASHY_QUOTES,
+            STYLE_DIGIT, STYLE_ANNOTATION, STYLE_OPERATION, STYLE_IDENT,
+            STYLE_RESERVED);
+
+    private static final int TYPE_KEYWORD = 8;
+    private static final int TYPE_STRING = 9;
+    private static final int TYPE_NUMBER = 10;
+    private static final int TYPE_COMMENT = 11;
+    private static final int TYPE_OPERATOR = 12;
+    private static final int TYPE_DECORATOR = 13;
+    private static final int TYPE_DELIMITER = 14;
+    private static final int MOD_SLASHY = 8;
+    private static final int MOD_SINGLE = 16;
+
     private final DefaultStyledDocument styledDocument;
     private final StyleContext styleContext;
     private final Style defaultStyle;
+    private final GroovyLanguageClient language;
 
     /**
      * Creates a filter that styles the supplied document.
@@ -162,6 +101,7 @@ public class SmartDocumentFilter extends DocumentFilter {
         StyleConstants.setFontFamily(this.defaultStyle, MONOSPACED);
 
         initStyles();
+        this.language = GroovyLanguageClient.open("groovy-buffer:highlight-" + System.identityHashCode(this), "", false);
     }
 
     /**
@@ -170,11 +110,9 @@ public class SmartDocumentFilter extends DocumentFilter {
     @Override
     public void insertString(DocumentFilter.FilterBypass fb, int offset,
                              String text, AttributeSet attrs) throws BadLocationException {
-        // remove problem meta characters returns
         text = replaceMetaCharacters(text);
-
         fb.insertString(offset, text, attrs);
-        parseDocument();
+        parseDocument(offset, 0, text.length());
     }
 
     /**
@@ -183,9 +121,8 @@ public class SmartDocumentFilter extends DocumentFilter {
     @Override
     public void remove(DocumentFilter.FilterBypass fb, int offset, int length)
             throws BadLocationException {
-
         fb.remove(offset, length);
-        parseDocument();
+        parseDocument(offset, length, 0);
     }
 
     /**
@@ -195,235 +132,295 @@ public class SmartDocumentFilter extends DocumentFilter {
     public void replace(DocumentFilter.FilterBypass fb, int offset,
                         int length, String text, AttributeSet attrs)
             throws BadLocationException {
-
-        // text might be null and indicates no replacement text
-        if (text == null) text = "";
-
-        // remove problem meta characters returns
+        if (text == null) {
+            text = "";
+        }
         text = replaceMetaCharacters(text);
-
         fb.replace(offset, length, text, attrs);
-
-        parseDocument();
+        parseDocument(offset, length, text.length());
     }
 
     private String replaceMetaCharacters(String string) {
-        // just in case remove carriage returns
-        string = string.replace("\r\n", "\n");
-        return string;
+        return string.replace("\r\n", "\n");
     }
 
     private void parseDocument() throws BadLocationException {
-        GroovyLangLexer lexer;
-        try {
-            lexer = createLexer(styledDocument.getText(0, styledDocument.getLength()));
-        } catch (IOException e) {
-            e.printStackTrace();
-            this.latest = false;
-            return;
-        }
-
-        CommonTokenStream tokenStream = new CommonTokenStream(lexer);
-
-        try {
-            tokenStream.fill();
-        } catch (LexerNoViableAltException | GroovySyntaxError e) {
-            // ignore
-            this.latest = false;
-            return;
-        } catch (Exception e) {
-            e.printStackTrace();
-            this.latest = false;
-            return;
-        }
-
-        List<Token> tokenList = tokenStream.getTokens();
-        List<Token> tokenListToRender;
-        try {
-            tokenListToRender = findTokensToRender(tokenList);
-        } finally {
-            this.setRenderRange(null);
-        }
-
-        boolean inAnnotation = false;
-        for (Token token : tokenListToRender) {
-            int tokenType = token.getType();
-
-            if (EOF == tokenType) {
-                continue;
-            }
-
-            int tokenStartIndex = token.getStartIndex();
-            int tokenStopIndex = token.getStopIndex();
-            int tokenLength = tokenStopIndex - tokenStartIndex + 1;
-
-            // color annotation names (identifier/dot tokens after @) with annotation style
-            // handles @ToString, @groovy.transform.CompileStatic, etc.
-            boolean isAnnotationPart = inAnnotation
-                    && (tokenType == Identifier || tokenType == CapitalizedIdentifier || tokenType == DOT);
-            if (tokenType == AT) {
-                inAnnotation = true;
-            } else if (isAnnotationPart) {
-                // stay in annotation for dotted names
-                inAnnotation = (tokenType == DOT);
-            } else {
-                inAnnotation = false;
-            }
-
-            styledDocument.setCharacterAttributes(tokenStartIndex,
-                    tokenLength,
-                    isAnnotationPart ? findStyleByTokenType(AT) : findStyleByTokenType(tokenType),
-                    true);
-
-            if (GStringBegin == tokenType || GStringPart == tokenType) {
-                styledDocument.setCharacterAttributes(
-                        tokenStartIndex + tokenLength - 1,
-                        1,
-                        defaultStyle,
-                        true);
-            }
-        }
-
-        this.latestTokenList = tokenList;
-        this.latest = true;
-    }
-
-    private List<Token> findTokensToRender(List<Token> tokenList) {
-        final Tuple2<Integer, Integer> renderRange = getRenderRange();
-        if (null != renderRange) {
-            long startLine = lineNumber(renderRange.getV1());
-            long stopLine = lineNumber(renderRange.getV2());
-
-            if (startLine < 0 || stopLine < 0) return tokenList; // should never happen
-
-            return tokenList.stream()
-                    .filter(e -> e.getLine() >= startLine && PositionConfigureUtils.endPosition(e).getV1() <= stopLine)
-                    .collect(Collectors.toList());
-        }
-
-        List<Token> tmpLatestTokenList = filterNewlines(this.latestTokenList);
-        int latestTokenListSize = tmpLatestTokenList.size();
-        if (0 == latestTokenListSize) {
-            return tokenList;
-        }
-
-        List<Token> tmpTokenList = filterNewlines(tokenList);
-        int tmpTokenListSize = tmpTokenList.size();
-        if (0 == tmpTokenListSize) {
-            return tokenList;
-        }
-
-        int startTokenIndex = 0;
-        int minSize = Math.min(tmpTokenListSize, latestTokenListSize);
-        for (int i = 0; i < minSize; i++) {
-            Token token = tmpTokenList.get(i);
-            Token latestToken = tmpLatestTokenList.get(i);
-
-            if (token.getType() == latestToken.getType()
-                    && token.getStartIndex() == latestToken.getStartIndex()
-                    && token.getStopIndex() == latestToken.getStopIndex()) {
-                continue;
-            }
-
-            startTokenIndex = i;
-            break;
-        }
-
-        List<Token> newTokenList = new ReversedList<>(tmpTokenList);
-        List<Token> newLatestTokenList = new ReversedList<>(tmpLatestTokenList);
-
-        int stopTokenIndex = tmpTokenListSize;
-
-        Token lastToken = newTokenList.get(0);
-        Token lastLatestToken = newLatestTokenList.get(0);
-
-        for (int i = 0; i < minSize; i++) {
-            Token token = newTokenList.get(i);
-            Token latestToken = newLatestTokenList.get(i);
-
-            if ((token.getType() == latestToken.getType())
-                    && (token.getStartIndex() - lastToken.getStartIndex()) == (latestToken.getStartIndex() - lastLatestToken.getStartIndex())
-                    && ((token.getStopIndex() - lastToken.getStopIndex()) == (latestToken.getStopIndex() - lastLatestToken.getStopIndex()))) {
-                continue;
-            }
-
-            stopTokenIndex = tmpTokenListSize - i;
-            break;
-        }
-
-        if (startTokenIndex == stopTokenIndex) {
-            return tmpTokenListSize != latestTokenListSize ? tokenList : Collections.emptyList();
-        } else if (startTokenIndex < stopTokenIndex) {
-            return tmpTokenList.subList(startTokenIndex, stopTokenIndex);
-        }
-
-        return tokenList; // should never reach here. If unexpected error occurred, it's better to render all tokens
+        parseDocument(0, 0, 0);
     }
 
     /**
-     * Returns line number starting with 1
+     * {@code removed} and {@code inserted} are measured in the document
+     * coordinates from before and after the edit. Spans that overlap the
+     * edit are dropped. Spans that start at or after it move by
+     * {@code inserted - removed}, so a later token keeps its style.
      */
-    private long lineNumber(int position) {
-        long result = -1;
-
-        if (position < 0) return result;
-
-        try {
-            String text = this.styledDocument.getText(0, position + 1);
-            result = StringUtils.countChar(text, '\n') + 1;
-        } catch (BadLocationException e) {
-            e.printStackTrace(System.err);
+    private void parseDocument(int offset, int removed, int inserted) throws BadLocationException {
+        String text = styledDocument.getText(0, styledDocument.getLength());
+        List<Integer> data = language.semanticTokens(text);
+        int[] dirty = dirtyRange(text);
+        UndoableEditListener[] listeners = styledDocument.getUndoableEditListeners();
+        for (UndoableEditListener listener : listeners) {
+            styledDocument.removeUndoableEditListener(listener);
         }
-
-        return result;
+        try {
+            shiftPainted(offset, removed, inserted);
+            this.latestTokenList.set(List.copyOf(paintSemantic(text, data, dirty[0], dirty[1])));
+            this.latest = true;
+        } finally {
+            for (UndoableEditListener listener : listeners) {
+                styledDocument.addUndoableEditListener(listener);
+            }
+            this.setRenderRange(null);
+        }
     }
 
-    private List<Token> filterNewlines(List<Token> tokenList) {
-        return tokenList.stream()
-                .filter(e -> !(NL == e.getType() && e.getText().trim().isEmpty()))
-                .collect(Collectors.toList());
+    private void shiftPainted(int offset, int removed, int inserted) {
+        if (painted.isEmpty() || (removed == 0 && inserted == 0)) {
+            return;
+        }
+        int removedEnd = offset + Math.max(removed, 0);
+        int delta = inserted - removed;
+        List<Painted> shifted = new ArrayList<>(painted.size());
+        for (Painted span : painted) {
+            keepOrClear(shifted, span, offset, removedEnd, delta, inserted);
+        }
+        painted = shifted;
     }
 
-    private Style findStyleByTokenType(int tokenType) {
-        Style style = styleContext.getStyle(String.valueOf(tokenType));
+    private void keepOrClear(List<Painted> shifted, Painted span, int offset, int removedEnd,
+                             int delta, int inserted) {
+        if (span.end <= offset) {
+            shifted.add(span);
+            return;
+        }
+        if (span.start >= removedEnd) {
+            shifted.add(new Painted(span.start + delta, span.end + delta, span.style));
+            return;
+        }
+        int from = span.start < offset ? span.start : offset;
+        int to = span.end > removedEnd ? span.end + delta : offset + Math.max(inserted, 0);
+        if (to > from) {
+            setAttributes(from, to - from, defaultStyle);
+        }
+    }
 
+    private int[] dirtyRange(String text) {
+        int last = text.length() - 1;
+        if (last < 0) {
+            return new int[] {0, -1};
+        }
+        Tuple2<Integer, Integer> range = getRenderRange();
+        if (range == null) {
+            return new int[] {0, last};
+        }
+        int start = range.getV1();
+        int stop = range.getV2();
+        if (start < 0 || stop < 0) {
+            return new int[] {0, last};
+        }
+        int from = Math.max(0, Math.min(start, stop));
+        int to = Math.min(last, Math.max(start, stop));
+        return new int[] {from, to};
+    }
+
+    private List<Delimiter> paintSemantic(String text, List<Integer> data, int dirtyStart, int dirtyStop) {
+        if (data == null) {
+            data = List.of();
+        }
+        List<Delimiter> delimiters = new ArrayList<>();
+        List<Painted> next = new ArrayList<>();
+        boolean full = text.isEmpty() || (dirtyStart <= 0 && dirtyStop >= text.length() - 1);
+        collectSpans(text, data, dirtyStart, dirtyStop, full, delimiters, next);
+        if (full) {
+            paintFull(text, next);
+        } else if (dirtyStart <= dirtyStop) {
+            paintPartial(dirtyStart, dirtyStop, next);
+        }
+        return delimiters;
+    }
+
+    private void collectSpans(String text, List<Integer> data, int dirtyStart, int dirtyStop, boolean full,
+                              List<Delimiter> delimiters, List<Painted> next) {
+        int character = 0;
+        int lineStart = 0;
+        for (int i = 0; i + 4 < data.size(); i += 5) {
+            int[] place = placeToken(text, data, i, lineStart, character);
+            lineStart = place[0];
+            character = place[1];
+            int start = place[2];
+            int end = place[3];
+            if (end <= start) {
+                continue;
+            }
+            int type = data.get(i + 3);
+            if (type == TYPE_DELIMITER) {
+                delimiters.add(new Delimiter(start, end - start, text.substring(start, end)));
+            } else if (full || overlaps(start, end, dirtyStart, dirtyStop)) {
+                next.add(new Painted(start, end, styleFor(type, data.get(i + 4))));
+            }
+        }
+    }
+
+    private static int[] placeToken(String text, List<Integer> data, int index, int lineStart, int character) {
+        int deltaLine = data.get(index);
+        int deltaChar = data.get(index + 1);
+        if (deltaLine == 0) {
+            character += deltaChar;
+        } else {
+            lineStart = advanceLines(text, lineStart, deltaLine);
+            character = deltaChar;
+        }
+        int length = Math.max(data.get(index + 2), 0);
+        int start = Math.min(lineStart + Math.max(character, 0), text.length());
+        int end = Math.min(start + length, text.length());
+        return new int[] {lineStart, character, start, end};
+    }
+
+    private static boolean overlaps(int start, int end, int dirtyStart, int dirtyStop) {
+        return end > dirtyStart && start <= dirtyStop;
+    }
+
+    private void paintFull(String text, List<Painted> next) {
+        // An empty record means this is the first paint, or a theme
+        // switch asked for a full reset. Clear leftover colours first;
+        // applyStyleDiff can only retire spans it still remembers.
+        if (painted.isEmpty() && !text.isEmpty()) {
+            setAttributes(0, text.length(), defaultStyle);
+        }
+        applyStyleDiff(next);
+    }
+
+    private void paintPartial(int dirtyStart, int dirtyStop, List<Painted> next) {
+        setAttributes(dirtyStart, dirtyStop - dirtyStart + 1, defaultStyle);
+        for (Painted span : next) {
+            setAttributes(span.start, span.end - span.start, span.style);
+        }
+        List<Painted> kept = new ArrayList<>();
+        for (Painted old : painted) {
+            if (old.end <= dirtyStart || old.start > dirtyStop) {
+                kept.add(old);
+            }
+        }
+        kept.addAll(next);
+        painted = kept;
+    }
+
+    private static int advanceLines(String text, int from, int lines) {
+        int index = Math.max(from, 0);
+        int seen = 0;
+        while (index < text.length() && seen < lines) {
+            char c = text.charAt(index);
+            if (c == '\n') {
+                seen++;
+            } else if (c == '\r') {
+                if (index + 1 < text.length() && text.charAt(index + 1) == '\n') {
+                    index++;
+                }
+                seen++;
+            }
+            index++;
+        }
+        return index;
+    }
+
+    /**
+     * Both lists are sorted and disjoint. Spans that still match are left
+     * alone. Clears run before paints so a span that was split is not wiped
+     * by the clear of the span it replaced.
+     */
+    private void applyStyleDiff(List<Painted> next) {
+        List<Painted> retire = new ArrayList<>();
+        List<Painted> appear = new ArrayList<>();
+        int i = 0;
+        int j = 0;
+        while (i < painted.size() && j < next.size()) {
+            Painted old = painted.get(i);
+            Painted span = next.get(j);
+            if (sameSpan(old, span)) {
+                i++;
+                j++;
+            } else if (old.start < span.start || (old.start == span.start && old.end <= span.end)) {
+                retire.add(old);
+                i++;
+            } else {
+                appear.add(span);
+                j++;
+            }
+        }
+        while (i < painted.size()) {
+            retire.add(painted.get(i++));
+        }
+        while (j < next.size()) {
+            appear.add(next.get(j++));
+        }
+        for (Painted span : retire) {
+            clear(span);
+        }
+        for (Painted span : appear) {
+            paint(span);
+        }
+        painted = next;
+    }
+
+    private static boolean sameSpan(Painted left, Painted right) {
+        return left.start == right.start && left.end == right.end && left.style == right.style;
+    }
+
+    private void clear(Painted span) {
+        setAttributes(span.start, span.end - span.start, defaultStyle);
+    }
+
+    private void paint(Painted span) {
+        setAttributes(span.start, span.end - span.start, span.style);
+    }
+
+    private void setAttributes(int offset, int length, AttributeSet style) {
+        if (length <= 0 || offset < 0 || offset >= styledDocument.getLength()) {
+            return;
+        }
+        int count = Math.min(length, styledDocument.getLength() - offset);
+        styledDocument.setCharacterAttributes(offset, count, style, true);
+    }
+
+    private Style styleFor(int type, int modifiers) {
+        if (type == TYPE_KEYWORD) {
+            return styleNamed(STYLE_RESERVED);
+        }
+        if (type == TYPE_STRING) {
+            if ((modifiers & MOD_SLASHY) != 0) {
+                return styleNamed(STYLE_SLASHY_QUOTES);
+            }
+            if ((modifiers & MOD_SINGLE) != 0) {
+                return styleNamed(STYLE_SINGLE_QUOTES);
+            }
+            return styleNamed(STYLE_QUOTES);
+        }
+        if (type == TYPE_NUMBER) {
+            return styleNamed(STYLE_DIGIT);
+        }
+        if (type == TYPE_COMMENT) {
+            return styleNamed(STYLE_COMMENT);
+        }
+        if (type == TYPE_DECORATOR) {
+            return styleNamed(STYLE_ANNOTATION);
+        }
+        if (type == TYPE_OPERATOR) {
+            return styleNamed(STYLE_OPERATION);
+        }
+        return styleNamed(STYLE_IDENT);
+    }
+
+    private Style styleNamed(String themeKey) {
+        Style style = styleContext.getStyle(themeKey);
         return null == style ? defaultStyle : style;
     }
 
-    private Style createDefaultStyleByTokenType(int tokenType) {
-        return styleContext.addStyle(String.valueOf(tokenType), defaultStyle);
-    }
-
-    private GroovyLangLexer createLexer(String text) throws IOException {
-        CharStream charStream = CharStreams.fromReader(new StringReader(text));
-        GroovyLangLexer lexer = new GroovyLangLexer(charStream);
-
-        lexer.setErrorIgnored(true);
-        lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);
-
-        return lexer;
-    }
-
     private void initStyles() {
-        // create styles (ensures they exist in the StyleContext)
-        createDefaultStyleByTokenType(NL);
-        for (int t : Arrays.asList(GStringBegin, GStringPart, GStringEnd)) {
-            createDefaultStyleByTokenType(t);
+        for (String key : THEME_STYLE_KEYS) {
+            if (styleContext.getStyle(key) == null) {
+                styleContext.addStyle(key, defaultStyle);
+            }
         }
-        createDefaultStyleByTokenType(StringLiteral);
-        for (int t : Arrays.asList(IntegerLiteral, FloatingPointLiteral)) {
-            createDefaultStyleByTokenType(t);
-        }
-        for (int t : HIGHLIGHTED_TOKEN_TYPE_LIST) {
-            createDefaultStyleByTokenType(t);
-        }
-        for (int t : Arrays.asList(COMMA, SEMI)) {
-            createDefaultStyleByTokenType(t);
-        }
-        createDefaultStyleByTokenType(AT);
-        createDefaultStyleByTokenType(UNEXPECTED_CHAR);
-
-        // apply theme colors
         updateStyles();
     }
 
@@ -435,7 +432,8 @@ public class SmartDocumentFilter extends DocumentFilter {
      * @since 6.0.0
      */
     public void reparseDocument() {
-        this.latestTokenList = Collections.emptyList();
+        this.latestTokenList.set(List.of());
+        this.painted = List.of();
         try {
             parseDocument();
         } catch (BadLocationException e) {
@@ -444,50 +442,42 @@ public class SmartDocumentFilter extends DocumentFilter {
     }
 
     /**
+     * Releases the in-process language client. A second call does nothing.
+     */
+    public void close() {
+        if (closed) {
+            return;
+        }
+        closed = true;
+        language.close();
+    }
+
+    /**
      * Updates all SmartDocumentFilter styles with current theme colors.
      * Attribute values are sourced from ThemeManager so custom .theme files
-     * feed both this (ANTLR-token-driven) path and the regex-driven GroovyFilter
+     * feed both this semantic-token path and the regex-driven GroovyFilter
      * path from one place. Called at init time and on theme switch.
      *
      * @since 6.0.0
      */
     public static void updateStyles() {
         StyleContext sc = StyleContext.getDefaultStyleContext();
-
-        applyThemeStyle(sc.getStyle(String.valueOf(NL)), "comment");
-
-        for (int t : Arrays.asList(GStringBegin, GStringPart, GStringEnd)) {
-            applyThemeStyle(sc.getStyle(String.valueOf(t)), "quotes");
-        }
-        applyThemeStyle(sc.getStyle(String.valueOf(StringLiteral)), "single_quotes");
-
-        for (int t : Arrays.asList(IntegerLiteral, FloatingPointLiteral)) {
-            applyThemeStyle(sc.getStyle(String.valueOf(t)), "digit");
-        }
-
-        for (int t : HIGHLIGHTED_TOKEN_TYPE_LIST) {
-            applyThemeStyle(sc.getStyle(String.valueOf(t)), "reserved_word");
-        }
-
-        // commas and semicolons reuse the "operation" theme key — closest semantic match
-        for (int t : Arrays.asList(COMMA, SEMI)) {
-            applyThemeStyle(sc.getStyle(String.valueOf(t)), "operation");
-        }
-
-        applyThemeStyle(sc.getStyle(String.valueOf(AT)), "annotation");
-
-        // unexpected-char is a lexer-error indicator, not semantic syntax — stay hardcoded
-        Style unexpectedChar = sc.getStyle(String.valueOf(UNEXPECTED_CHAR));
-        if (unexpectedChar != null) {
-            StyleConstants.setForeground(unexpectedChar,
-                    ThemeManager.isDark() ? Color.CYAN : Color.CYAN.darker());
-        }
+        applyThemeStyle(sc.getStyle(STYLE_COMMENT), STYLE_COMMENT);
+        applyThemeStyle(sc.getStyle(STYLE_QUOTES), STYLE_QUOTES);
+        applyThemeStyle(sc.getStyle(STYLE_SINGLE_QUOTES), STYLE_SINGLE_QUOTES);
+        applyThemeStyle(sc.getStyle(STYLE_SLASHY_QUOTES), STYLE_SLASHY_QUOTES);
+        applyThemeStyle(sc.getStyle(STYLE_DIGIT), STYLE_DIGIT);
+        applyThemeStyle(sc.getStyle(STYLE_ANNOTATION), STYLE_ANNOTATION);
+        applyThemeStyle(sc.getStyle(STYLE_OPERATION), STYLE_OPERATION);
+        applyThemeStyle(sc.getStyle(STYLE_IDENT), STYLE_IDENT);
+        applyThemeStyle(sc.getStyle(STYLE_RESERVED), STYLE_RESERVED);
     }
 
     @SuppressWarnings("rawtypes")
-    private static void applyThemeStyle(Style style, String themeKey) {
-        if (style == null) return;
-        // clear managed attributes so the previous theme's values don't linger
+    static void applyThemeStyle(Style style, String themeKey) {
+        if (style == null) {
+            return;
+        }
         style.removeAttribute(StyleConstants.Foreground);
         style.removeAttribute(StyleConstants.Background);
         style.removeAttribute(StyleConstants.Bold);
@@ -495,17 +485,31 @@ public class SmartDocumentFilter extends DocumentFilter {
         style.removeAttribute(StyleConstants.Underline);
         Map attrs = ThemeManager.getStyleAttrs(themeKey);
         Object fg = attrs.get("foreground");
-        if (fg instanceof Color)  StyleConstants.setForeground(style, (Color) fg);
+        if (fg instanceof Color color) {
+            StyleConstants.setForeground(style, color);
+        }
         Object bg = attrs.get("background");
-        if (bg instanceof Color)  StyleConstants.setBackground(style, (Color) bg);
-        if (Boolean.TRUE.equals(attrs.get("bold")))      StyleConstants.setBold(style, true);
-        if (Boolean.TRUE.equals(attrs.get("italic")))    StyleConstants.setItalic(style, true);
-        if (Boolean.TRUE.equals(attrs.get("underline"))) StyleConstants.setUnderline(style, true);
+        if (bg instanceof Color color) {
+            StyleConstants.setBackground(style, color);
+        }
+        if (Boolean.TRUE.equals(attrs.get("bold"))) {
+            StyleConstants.setBold(style, true);
+        }
+        if (Boolean.TRUE.equals(attrs.get("italic"))) {
+            StyleConstants.setItalic(style, true);
+        }
+        if (Boolean.TRUE.equals(attrs.get("underline"))) {
+            StyleConstants.setUnderline(style, true);
+        }
     }
 
     private volatile boolean latest = false;
-    private volatile List<Token> latestTokenList = Collections.emptyList();
+    private volatile boolean closed;
+    /** Replaced as a whole. Callers receive an unmodifiable snapshot. */
+    private final AtomicReference<List<Delimiter>> latestTokenList = new AtomicReference<>(List.of());
     private volatile Tuple2<Integer, Integer> renderRange;
+    /** Spans from the last paint, in the document's current coordinates. */
+    private List<Painted> painted = List.of();
 
     /**
      * Indicates whether the cached token list reflects the current document text.
@@ -517,12 +521,13 @@ public class SmartDocumentFilter extends DocumentFilter {
     }
 
     /**
-     * Returns the tokens produced by the most recent successful parse.
+     * Structural brackets from the most recent semantic-token response.
+     * Brackets inside strings and comments are absent.
      *
-     * @return the latest token list
+     * @return delimiter spans, never {@code null}
      */
-    public List<Token> getLatestTokenList() {
-        return latestTokenList;
+    public List<Delimiter> getLatestTokenList() {
+        return latestTokenList.get();
     }
 
     /**
@@ -541,5 +546,44 @@ public class SmartDocumentFilter extends DocumentFilter {
      */
     public Tuple2<Integer, Integer> getRenderRange() {
         return renderRange;
+    }
+
+    /**
+     * One structural bracket from {@code textDocument/semanticTokens}.
+     */
+    public static final class Delimiter {
+        private final int offset;
+        private final int length;
+        private final String text;
+
+        Delimiter(int offset, int length, String text) {
+            this.offset = offset;
+            this.length = length;
+            this.text = text;
+        }
+
+        public int getOffset() {
+            return offset;
+        }
+
+        public int getLength() {
+            return length;
+        }
+
+        public String getText() {
+            return text;
+        }
+    }
+
+    private static final class Painted {
+        private final int start;
+        private final int end;
+        private final Style style;
+
+        private Painted(int start, int end, Style style) {
+            this.start = start;
+            this.end = end;
+            this.style = style;
+        }
     }
 }

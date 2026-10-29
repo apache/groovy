@@ -20,6 +20,7 @@ package org.codehaus.groovy.transform
 
 import groovy.transform.ASTTest
 import groovy.transform.CompilationUnitAware
+import groovy.transform.Internal
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport
@@ -60,6 +61,50 @@ class ASTTestTransformation implements ASTTransformation, CompilationUnitAware {
     public static final String ENABLE_PROPERTY = 'groovy.asttest.enable'
 
     /**
+     * Per-thread override of {@value #ENABLE_PROPERTY}. In-process tooling
+     * sets this for the compile it is running so the JVM property, which a
+     * host compile on another thread still reads, stays unchanged.
+     * The override can only force the annotation off. It cannot turn the
+     * annotation back on when the JVM property is {@code false}.
+     */
+    private static final ThreadLocal<Boolean> THREAD_ENABLED = new ThreadLocal<>()
+
+    /**
+     * @return the override on this thread, or {@code null} when the system property applies
+     * @since 7.0.0
+     */
+    @Internal
+    static Boolean currentThreadEnabled() {
+        THREAD_ENABLED.get()
+    }
+
+    /**
+     * Sets the per-thread override. {@code null} clears it.
+     * {@code true} does not defeat {@value #ENABLE_PROPERTY}{@code =false}:
+     * the annotation stays a no-op for that JVM.
+     *
+     * @param enabled {@code false} to skip {@code @ASTTest} on this thread, {@code true} to leave the property in charge, {@code null} to clear
+     * @since 7.0.0
+     */
+    @Internal
+    static void setThreadEnabled(Boolean enabled) {
+        if (enabled == null) {
+            THREAD_ENABLED.remove()
+        } else {
+            THREAD_ENABLED.set(enabled)
+        }
+    }
+
+    private static boolean enabled() {
+        boolean property = Boolean.parseBoolean(System.getProperty(ENABLE_PROPERTY, 'true'))
+        Boolean override = THREAD_ENABLED.get()
+        if (override == null) {
+            return property
+        }
+        return override.booleanValue() && property
+    }
+
+    /**
      * Compilation unit that owns the current transformation.
      */
     CompilationUnit compilationUnit
@@ -74,7 +119,7 @@ class ASTTestTransformation implements ASTTransformation, CompilationUnitAware {
      */
     @Override
     void visit(final ASTNode[] nodes, final SourceUnit source) {
-        if (!Boolean.parseBoolean(System.getProperty(ENABLE_PROPERTY, 'true'))) return
+        if (!enabled()) return
 
         AnnotationNode annotationNode = nodes[0]
 

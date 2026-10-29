@@ -2469,6 +2469,80 @@ final class ParserPositiveSyntaxTest {
     }
 
     @Test
+    void 'null-coalescing operator'() {
+        expectAst '''\
+            |a ?? b
+            |a ?? b ?? c
+            |a??[0]
+            |a??.b ?? c
+            |a ??= b
+            |a ?: b ?? c
+            |a ?? b ?: c
+            |'''.stripMargin(), '''\
+            |<Module line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |  <BlockStatement line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |    <ExpressionStatement line="1" column="1" lastLine="1" lastColumn="7">
+            |      <ElvisOperatorExpression line="1" column="1" lastLine="1" lastColumn="7" nullCoalescing="true">
+            |        <VariableExpression line="1" column="1" lastLine="1" lastColumn="2" name="a"/>
+            |        <VariableExpression line="1" column="6" lastLine="1" lastColumn="7" name="b"/>
+            |      </ElvisOperatorExpression>
+            |    </ExpressionStatement>
+            |    <ExpressionStatement line="2" column="1" lastLine="2" lastColumn="12">
+            |      <ElvisOperatorExpression line="2" column="1" lastLine="2" lastColumn="12" nullCoalescing="true">
+            |        <VariableExpression line="2" column="1" lastLine="2" lastColumn="2" name="a"/>
+            |        <ElvisOperatorExpression line="2" column="6" lastLine="2" lastColumn="12" nullCoalescing="true">
+            |          <VariableExpression line="2" column="6" lastLine="2" lastColumn="7" name="b"/>
+            |          <VariableExpression line="2" column="11" lastLine="2" lastColumn="12" name="c"/>
+            |        </ElvisOperatorExpression>
+            |      </ElvisOperatorExpression>
+            |    </ExpressionStatement>
+            |    <ExpressionStatement line="3" column="1" lastLine="3" lastColumn="7">
+            |      <ElvisOperatorExpression line="3" column="1" lastLine="3" lastColumn="7" nullCoalescing="true">
+            |        <VariableExpression line="3" column="1" lastLine="3" lastColumn="2" name="a"/>
+            |        <ListExpression line="3" column="4" lastLine="3" lastColumn="7">
+            |          <ConstantExpression line="3" column="5" lastLine="3" lastColumn="6" value="0"/>
+            |        </ListExpression>
+            |      </ElvisOperatorExpression>
+            |    </ExpressionStatement>
+            |    <ExpressionStatement line="4" column="1" lastLine="4" lastColumn="11">
+            |      <ElvisOperatorExpression line="4" column="1" lastLine="4" lastColumn="11" nullCoalescing="true">
+            |        <PropertyExpression line="4" column="1" lastLine="4" lastColumn="6" safe="true">
+            |          <VariableExpression line="4" column="1" lastLine="4" lastColumn="2" name="a"/>
+            |          <ConstantExpression line="4" column="5" lastLine="4" lastColumn="6" value="b"/>
+            |        </PropertyExpression>
+            |        <VariableExpression line="4" column="10" lastLine="4" lastColumn="11" name="c"/>
+            |      </ElvisOperatorExpression>
+            |    </ExpressionStatement>
+            |    <ExpressionStatement line="5" column="1" lastLine="5" lastColumn="8">
+            |      <BinaryExpression line="5" column="1" lastLine="5" lastColumn="8" token="??=">
+            |        <VariableExpression line="5" column="1" lastLine="5" lastColumn="2" name="a"/>
+            |        <VariableExpression line="5" column="7" lastLine="5" lastColumn="8" name="b"/>
+            |      </BinaryExpression>
+            |    </ExpressionStatement>
+            |    <ExpressionStatement line="6" column="1" lastLine="6" lastColumn="12">
+            |      <ElvisOperatorExpression line="6" column="1" lastLine="6" lastColumn="12">
+            |        <VariableExpression line="6" column="1" lastLine="6" lastColumn="2" name="a"/>
+            |        <ElvisOperatorExpression line="6" column="6" lastLine="6" lastColumn="12" nullCoalescing="true">
+            |          <VariableExpression line="6" column="6" lastLine="6" lastColumn="7" name="b"/>
+            |          <VariableExpression line="6" column="11" lastLine="6" lastColumn="12" name="c"/>
+            |        </ElvisOperatorExpression>
+            |      </ElvisOperatorExpression>
+            |    </ExpressionStatement>
+            |    <ExpressionStatement line="7" column="1" lastLine="7" lastColumn="12">
+            |      <ElvisOperatorExpression line="7" column="1" lastLine="7" lastColumn="12" nullCoalescing="true">
+            |        <VariableExpression line="7" column="1" lastLine="7" lastColumn="2" name="a"/>
+            |        <ElvisOperatorExpression line="7" column="6" lastLine="7" lastColumn="12">
+            |          <VariableExpression line="7" column="6" lastLine="7" lastColumn="7" name="b"/>
+            |          <VariableExpression line="7" column="11" lastLine="7" lastColumn="12" name="c"/>
+            |        </ElvisOperatorExpression>
+            |      </ElvisOperatorExpression>
+            |    </ExpressionStatement>
+            |  </BlockStatement>
+            |</Module>
+            |'''.stripMargin()
+    }
+
+    @Test
     void 'conditional and assignment operators'() {
         expectAst '''\
             |a ? b : c

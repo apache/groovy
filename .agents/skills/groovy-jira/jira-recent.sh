@@ -31,11 +31,17 @@
 # Environment:
 #   GROOVY_REPO   GitHub repo to match PRs against (default: apache/groovy)
 #   PR_LIMIT      number of most recent PRs (any state) to scan (default: 500)
+#   BRANCHES      branches to check for the fix (default: GROOVY_4_0_X GROOVY_5_1_X GROOVY_6_0_X master)
+#   REMOTE        git remote holding those branches (default: the remote whose
+#                 URL names GROOVY_REPO, else origin)
 #
 # A PR is linked to an issue when its title contains the issue key
 # (GROOVY-NNNNN, or the branch-style GroovyNNNNN).
 # Output groups the unresolved issues updated in the last <days> days:
-#   - merged PR but issue still open (candidates for resolving)
+#   - merged PR but issue still open (candidates for resolving), with the
+#     JIRA affects versions and the BRANCHES whose history mentions the key
+#     (so cherry-picked backports count); run from a clone of the repo, and
+#     `git fetch <remote>` first, as only the local remote-tracking refs are read
 #   - open PR
 #   - no open PR (closed-unmerged PRs, if any, are still shown)
 # followed by open PRs updated in the window that name none of the listed issues
@@ -48,8 +54,9 @@ set -euo pipefail
 DAYS="${1:-30}"
 REPO="${GROOVY_REPO:-apache/groovy}"
 PR_LIMIT="${PR_LIMIT:-500}"
+BRANCHES="${BRANCHES:-GROOVY_4_0_X GROOVY_5_1_X GROOVY_6_0_X master}"
 
-for tool in curl jq gh; do
+for tool in curl jq gh git; do
   command -v "${tool}" >/dev/null || { echo "$0: requires ${tool} on PATH" >&2; exit 1; }
 done
 
@@ -59,15 +66,40 @@ trap 'rm -rf "${TMP}"' EXIT
 curl -fsSG 'https://issues.apache.org/jira/rest/api/2/search' \
   --data-urlencode "jql=project = GROOVY AND statusCategory != Done AND updated >= -${DAYS}d ORDER BY key DESC" \
   --data-urlencode 'maxResults=500' \
-  --data-urlencode 'fields=summary,updated' \
+  --data-urlencode 'fields=summary,updated,versions' \
   > "${TMP}/issues.json"
 
 gh pr list --repo "${REPO}" --state all --limit "${PR_LIMIT}" \
   --json number,title,state,updatedAt \
   > "${TMP}/prs.json"
 
-jq -r --argjson days "${DAYS}" --slurpfile prs "${TMP}/prs.json" '
+# "<branch> <key>" for every issue key each branch's commit messages mention.
+REMOTE="${REMOTE:-$(git remote -v | awk -v repo="${REPO}" 'index($2, repo) && $3 == "(fetch)" { print $1; exit }')}"
+REMOTE="${REMOTE:-origin}"
+for branch in ${BRANCHES}; do
+  if git rev-parse --verify -q "refs/remotes/${REMOTE}/${branch}" >/dev/null; then
+    git log --format=%B "${REMOTE}/${branch}" | grep -oE 'GROOVY-[0-9]+' | sort -u | sed "s/^/${branch} /"
+  else
+    echo "$0: no ${REMOTE}/${branch} ref; skipping that branch" >&2
+  fi
+done > "${TMP}/branch-keys.txt"
+
+jq -r --argjson days "${DAYS}" --slurpfile prs "${TMP}/prs.json" \
+  --rawfile branchkeys "${TMP}/branch-keys.txt" --arg branches "${BRANCHES}" --arg remote "${REMOTE}" '
   def prs: map("#\(.number)(\(.state))") | join(" ") | if . == "" then "-" else . end;
+  def section($title; $rows):
+    "== \($title) (\($rows | length))",
+    ($rows[] | [.key, .updated, (.prs | prs), .summary[0:100]] | @tsv),
+    "";
+  def landed($k):
+    [$branches | splits(" +") | select(. != "") as $b
+      | select("\n\($branchkeys)" | contains("\n\($b) \($k)\n")) | $b | sub("^GROOVY_"; "")]
+    | join(",") | if . == "" then "-" else . end;
+  def affects: map(.name) | join(",") | if . == "" then "-" else . end;
+  def merged_section($rows):
+    "== Merged PR, issue still open (\($rows | length)) — affects versions; branches mentioning the key, per local \($remote)/* refs",
+    ($rows[] | [.key, .updated, (.prs | prs), "affects:\(.affects | affects)", "on:\(landed(.key))", .summary[0:100]] | @tsv),
+    "";
   def section($title; $rows):
     "== \($title) (\($rows | length))",
     ($rows[] | [.key, .updated, (.prs | prs), .summary[0:100]] | @tsv),
@@ -76,6 +108,7 @@ jq -r --argjson days "${DAYS}" --slurpfile prs "${TMP}/prs.json" '
   ($prs[0] | map(. + {keys: [.title | ascii_upcase | scan("GROOVY-?[0-9]+") | sub("^GROOVY-?"; "GROOVY-")]})) as $p
   | [.issues[] | .key as $k
       | {key: $k, updated: .fields.updated[0:10], summary: (.fields.summary // ""),
+         affects: (.fields.versions // []),
          prs: [$p[] | select(any(.keys[]; . == $k))]}
       | . + {open: any(.prs[]; .state == "OPEN"), merged: any(.prs[]; .state == "MERGED")}
     ] as $rows
@@ -83,7 +116,7 @@ jq -r --argjson days "${DAYS}" --slurpfile prs "${TMP}/prs.json" '
   | (now - $days * 86400 | strftime("%Y-%m-%d")) as $since
   | "Unresolved GROOVY issues updated since \($since): \($rows | length)",
     "",
-    section("Merged PR, issue still open"; [$rows[] | select(.merged and (.open | not))]),
+    merged_section([$rows[] | select(.merged and (.open | not))]),
     section("Open PR"; [$rows[] | select(.open)]),
     section("No open PR"; [$rows[] | select((.open or .merged) | not)]),
     ([$p[] | select(.state == "OPEN" and .updatedAt[0:10] >= $since

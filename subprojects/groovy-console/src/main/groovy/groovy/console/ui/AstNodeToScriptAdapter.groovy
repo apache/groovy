@@ -1289,11 +1289,12 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
         expression?.falseExpression?.visit this
     }
 
-    /** Renders an Elvis expression. */
+    /** Renders an Elvis or null-coalescing expression. */
     @Override
     void visitShortTernaryExpression(ElvisOperatorExpression expression) {
-        expression?.booleanExpression?.visit this
-        print ' ?: '
+        // the true expression is the operand for both forms; the boolean expression is synthetic
+        expression?.trueExpression?.visit this
+        print(expression?.nullCoalescing ? ' ?? ' : ' ?: ')
         expression?.falseExpression?.visit this
     }
 

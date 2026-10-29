@@ -31,6 +31,8 @@ import org.apache.groovy.lsp.internal.protocol.ClientFeatures;
 import org.apache.groovy.lsp.internal.util.Uris;
 import org.apache.groovy.lsp.internal.workspace.DocumentStore;
 import org.apache.groovy.lsp.internal.workspace.TextDocument;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 
 import org.eclipse.lsp4j.ApplyWorkspaceEditParams;
 import org.eclipse.lsp4j.WorkspaceEdit;
@@ -45,6 +47,8 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
 
 import java.net.URI;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -53,6 +57,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -79,6 +84,7 @@ public final class LanguageServerContext {
     private final AtomicReference<CompilerSettings> settings = new AtomicReference<>(CompilerSettings.defaults());
     private final AtomicReference<CompilationSnapshot> snapshot = new AtomicReference<>(CompilationSnapshot.EMPTY);
     private final AtomicReference<ClassLoader> parentLoader = new AtomicReference<>();
+    private final AtomicReference<CompilerConfiguration> hostConfiguration = new AtomicReference<>();
     private volatile boolean initialized;
     private volatile boolean shutdown;
     private volatile Integer exitCode;
@@ -130,7 +136,7 @@ public final class LanguageServerContext {
                 extra = scanner.scan(folders, effective.getSourcePaths(), effective.getIgnoredDirectories());
                 open = documents.snapshot();
                 loader = compileParentLoader();
-                fingerprint = fingerprint(open, extra, effective, loader);
+                fingerprint = fingerprint(open, extra, effective, loader, hostConfiguration.get());
                 if (fingerprint.equals(compileFingerprint) && snapshot.get() != CompilationSnapshot.EMPTY) {
                     // Another compile already committed this snapshot but may
                     // not have published yet. Fall through to publishDiagnostics.
@@ -146,7 +152,7 @@ public final class LanguageServerContext {
                 beginProgress(token, "Compiling Groovy");
                 CompilationSnapshot compiled;
                 try {
-                    compiled = compiler.compile(open, extra, effective, loader);
+                    compiled = compiler.compile(open, extra, effective, loader, hostConfiguration.get());
                 } finally {
                     endProgress(token);
                 }
@@ -169,6 +175,11 @@ public final class LanguageServerContext {
      */
     public synchronized void scheduleRecompile(final long delayMs) {
         if (shutdown || debounce.isShutdown()) {
+            return;
+        }
+        // A highlighter client sets groovy.compile=false so didChange stays
+        // a lexer-only update and does not start a second compiler.
+        if ("false".equals(settings.get().getExtra().get("compile"))) {
             return;
         }
         if (pendingCompile != null) {
@@ -196,7 +207,11 @@ public final class LanguageServerContext {
             List<CompiledDocument> documents;
             Set<URI> dropped;
             synchronized (this) {
-                documents = List.copyOf(snapshot.get().documents());
+                CompilationSnapshot committed = snapshot.get();
+                if (committed == null) {
+                    return;
+                }
+                documents = List.copyOf(committed.documents());
                 Set<URI> currentUris = new LinkedHashSet<>();
                 for (CompiledDocument document : documents) {
                     if (document.getUri() != null) {
@@ -411,8 +426,9 @@ public final class LanguageServerContext {
 
     /**
      * Parent loader for the next compile. {@code null} uses this class's loader.
-     * The compile fingerprint is cleared only when the loader identity changes,
-     * so setting the same loader again does not force a recompile.
+     * The compile fingerprint is cleared when the loader identity changes.
+     * In-place {@code URLClassLoader#addURL} is visible on the next compile
+     * because the fingerprint includes that loader's URLs.
      *
      * @param parentLoader parent loader, or {@code null}
      */
@@ -428,6 +444,27 @@ public final class LanguageServerContext {
      */
     public synchronized ClassLoader getParentLoader() {
         return parentLoader.get();
+    }
+
+    /**
+     * Compiler configuration from Console or groovysh. {@code null} uses
+     * a fresh tooling configuration. Every call drops the cached compile,
+     * including a repeat with the same instance, so an in-place customizer
+     * edit is visible on the next compile. Callers that query in a loop
+     * invoke this only when the configuration was replaced or edited.
+     *
+     * @param configuration host configuration, or {@code null}
+     */
+    public synchronized void setHostConfiguration(final CompilerConfiguration configuration) {
+        this.hostConfiguration.set(configuration);
+        compileFingerprint = null;
+    }
+
+    /**
+     * @return the host configuration, or {@code null}
+     */
+    public synchronized CompilerConfiguration getHostConfiguration() {
+        return hostConfiguration.get();
     }
 
     private ClassLoader compileParentLoader() {
@@ -507,8 +544,9 @@ public final class LanguageServerContext {
     }
 
     /**
-     * Stable key including the parent loader identity. In-place
-     * {@code addURL} on the same loader still needs {@code extra}.
+     * Stable key including the parent loader identity and, for a
+     * {@link URLClassLoader}, its URL list so in-place {@code addURL} is
+     * visible.
      *
      * @param open open documents
      * @param extra workspace files
@@ -518,6 +556,23 @@ public final class LanguageServerContext {
      */
     public static String fingerprint(final Collection<TextDocument> open, final Collection<Path> extra,
                                      final CompilerSettings settings, final ClassLoader parentLoader) {
+        return fingerprint(open, extra, settings, parentLoader, null);
+    }
+
+    /**
+     * Stable key of the settings, parent-loader identity,
+     * {@code URLClassLoader} URLs, host {@link CompilerConfiguration}
+     * identity, script base class, and each compilation customizer's class
+     * and identity. Editing a customizer in place does not change this key.
+     * {@link #setHostConfiguration} drops the cached compile so that edit
+     * is picked up.
+     *
+     * @param hostConfiguration console or groovysh configuration, or {@code null}
+     * @return a fingerprint
+     */
+    public static String fingerprint(final Collection<TextDocument> open, final Collection<Path> extra,
+                                     final CompilerSettings settings, final ClassLoader parentLoader,
+                                     final CompilerConfiguration hostConfiguration) {
         StringBuilder builder = new StringBuilder();
         builder.append(settings.getClasspath()).append('|')
                 .append(settings.getSourcePaths()).append('|')
@@ -526,27 +581,64 @@ public final class LanguageServerContext {
                 .append(settings.isAstTestEnabled()).append('|')
                 .append(settings.getThroughPhase()).append('|')
                 .append(settings.getExtra()).append('|')
-                .append(System.identityHashCode(parentLoader));
-        if (open != null) {
-            for (TextDocument document : open) {
-                builder.append('\n').append(document.getUri()).append(':')
-                        .append(document.getVersion()).append(':')
-                        .append(document.getText().hashCode());
-            }
-        }
-        if (extra != null) {
-            for (Path path : extra) {
-                long mtime = 0L;
-                long size = 0L;
-                try {
-                    mtime = Files.getLastModifiedTime(path).toMillis();
-                    size = Files.size(path);
-                } catch (Exception ignored) {
-                    // missing files still participate as a zero stamp
-                }
-                builder.append('\n').append(path).append(':').append(mtime).append(':').append(size);
-            }
-        }
+                .append(System.identityHashCode(parentLoader)).append('|');
+        appendHostConfiguration(builder, hostConfiguration);
+        appendLoaderUrls(builder, parentLoader);
+        appendOpenDocuments(builder, open);
+        appendExtraFiles(builder, extra);
         return builder.toString();
+    }
+
+    private static void appendLoaderUrls(final StringBuilder builder, final ClassLoader parentLoader) {
+        if (parentLoader instanceof URLClassLoader urls) {
+            URL[] listed = urls.getURLs();
+            if (listed != null) {
+                for (URL url : listed) {
+                    builder.append('|').append(url == null ? "" : url.toExternalForm());
+                }
+            }
+        }
+    }
+
+    private static void appendOpenDocuments(final StringBuilder builder, final Collection<TextDocument> open) {
+        if (open == null) {
+            return;
+        }
+        for (TextDocument document : open) {
+            builder.append('\n').append(document.getUri()).append(':')
+                    .append(document.getVersion()).append(':')
+                    .append(document.getText().hashCode());
+        }
+    }
+
+    private static void appendExtraFiles(final StringBuilder builder, final Collection<Path> extra) {
+        if (extra == null) {
+            return;
+        }
+        for (Path path : extra) {
+            long mtime = 0L;
+            long size = 0L;
+            try {
+                mtime = Files.getLastModifiedTime(path).toMillis();
+                size = Files.size(path);
+            } catch (Exception ignored) {
+                // missing files still participate as a zero stamp
+            }
+            builder.append('\n').append(path).append(':').append(mtime).append(':').append(size);
+        }
+    }
+
+    private static void appendHostConfiguration(final StringBuilder builder,
+                                                final CompilerConfiguration host) {
+        if (host == null) {
+            builder.append('0');
+            return;
+        }
+        builder.append(System.identityHashCode(host)).append('|')
+                .append(Objects.toString(host.getScriptBaseClass(), ""));
+        for (CompilationCustomizer customizer : host.getCompilationCustomizers()) {
+            builder.append('|').append(customizer.getClass().getName())
+                    .append('@').append(System.identityHashCode(customizer));
+        }
     }
 }

@@ -18,8 +18,6 @@
  */
 package org.apache.groovy.groovysh.jline
 
-import groovy.console.ui.Console
-import groovy.console.ui.ObjectBrowser
 import org.apache.groovy.groovysh.Main
 import org.apache.groovy.groovysh.util.ClassUtils
 import org.jline.builtins.Completers
@@ -994,7 +992,11 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
     void console(CommandInput input) {
         checkArgCount(input, [0, 1])
         if (maybePrintHelp(input, '/console')) return
-        Console c = new Console(engine.sharedData)
+        // Loaded by name so groovysh does not compile against groovy-console.
+        // The command is registered only when that jar is already on the classpath.
+        def c = Class.forName('groovy.console.ui.Console')
+                .getConstructor(Binding)
+                .newInstance(engine.sharedData)
         def poller = new javax.swing.Timer(100, null)
         poller.addActionListener({ e ->
             if (c.inputArea != null) {
@@ -1003,7 +1005,31 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
             }
         } as ActionListener)
         poller.start()
-        c.run()
+        try {
+            c.run()
+        } catch (Throwable failure) {
+            poller.stop()
+            dropFailedConsole(c)
+            throw failure
+        }
+    }
+
+    /** The constructor already registered the console. A failed {@code run} must not leave it there. */
+    private static void dropFailedConsole(Object console) {
+        try {
+            def host = console.getClass().getDeclaredField('languageHost')
+            host.accessible = true
+            host.get(console)?.close()
+        } catch (Throwable ignored) {
+            // The host was never installed, or it is already closed.
+        }
+        try {
+            def controllers = console.getClass().getDeclaredField('consoleControllers')
+            controllers.accessible = true
+            ((List) controllers.get(null)).removeAll { it.is(console) }
+        } catch (Throwable ignored) {
+            // The list is best-effort. The original failure is what the caller sees.
+        }
     }
 
     /**
@@ -1039,7 +1065,16 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                 out = inspector.properties()
                 options[Printer.VALUE_STYLE] = engine.groovyOption(GroovyEngine.NANORC_VALUE, DEFAULT_NANORC_VALUE)
             } else if (consoleUi && (option == '-g' || option == '--gui')) {
-                ObjectBrowser.inspect(obj)
+                try {
+                    Class.forName('groovy.console.ui.ObjectBrowser')
+                            .getMethod('inspect', Object)
+                            .invoke(null, obj)
+                } catch (Exception e) {
+                    saveException(e)
+                }
+                // The browser has no terminal table. Printing the unset
+                // result asks the printer to render null.
+                return null
             } else {
                 throw new IllegalArgumentException('Unknown option: ' + option)
             }

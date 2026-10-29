@@ -27,9 +27,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Live {@link GroovyLexer} walks over a buffer. Used as a fail-closed
- * gate for on-type {@code '}'}', comment-based folds, and lexical
- * semantic tokens (string / number / comment).
+ * Live {@link GroovyLexer} walks over a buffer. Strict walks are a
+ * fail-closed gate for an on-type closing brace, comment-based folds, and
+ * lexical semantic tokens. Lenient walks ({@link #tokenizeLenient})
+ * keep tokenising incomplete input for a host highlighter.
  */
 public final class GroovySourceTokens {
 
@@ -48,7 +49,7 @@ public final class GroovySourceTokens {
             return null;
         }
         try {
-            GroovyLexer lexer = lexer(text);
+            GroovyLexer lexer = lexer(text, false);
             for (Token token = lexer.nextToken(); token.getType() != Token.EOF; token = lexer.nextToken()) {
                 if (token.getStartIndex() <= utf16Offset && utf16Offset <= token.getStopIndex()) {
                     return token;
@@ -82,30 +83,47 @@ public final class GroovySourceTokens {
     }
 
     /**
-     * Full token walk including hidden-channel tokens.
+     * Full token walk including hidden-channel tokens. Lexical errors
+     * abort the walk so on-type formatting can refuse to guess.
      *
      * @param text document text
      * @return tokens, never {@code null}
      */
     public static List<Token> tokenize(final String text) {
+        return tokenize(text, false);
+    }
+
+    /**
+     * Token walk for a live highlighter. Incomplete input still yields
+     * tokens ({@code errorIgnored}).
+     *
+     * @param text document text
+     * @return tokens, never {@code null}
+     */
+    public static List<Token> tokenizeLenient(final String text) {
+        return tokenize(text, true);
+    }
+
+    private static List<Token> tokenize(final String text, final boolean errorIgnored) {
         List<Token> tokens = new ArrayList<>();
         if (text == null || text.isEmpty()) {
             return tokens;
         }
         try {
-            GroovyLexer lexer = lexer(text);
+            GroovyLexer lexer = lexer(text, errorIgnored);
             for (Token token = lexer.nextToken(); token.getType() != Token.EOF; token = lexer.nextToken()) {
                 tokens.add(token);
             }
         } catch (GroovySyntaxError | RuntimeException ignored) {
-            return List.of();
+            return errorIgnored ? tokens : List.of();
         }
         return tokens;
     }
 
-    private static GroovyLexer lexer(final String text) {
+    private static GroovyLexer lexer(final String text, final boolean errorIgnored) {
         GroovyLexer lexer = new GroovyLexer(CharStreams.fromString(text));
         lexer.removeErrorListeners();
+        lexer.setErrorIgnored(errorIgnored);
         return lexer;
     }
 }

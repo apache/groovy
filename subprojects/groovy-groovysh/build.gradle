@@ -28,11 +28,15 @@ repositories {
 
 dependencies {
     implementation project(':')
-    implementation projects.groovyConsole
     implementation projects.groovyTemplates
     implementation projects.groovyXml
     implementation projects.groovyJson
     implementation projects.groovyNio
+    // Direct implementation dependency. LSP4J stays off this module's published API.
+    implementation projects.groovyLsp
+    // /console and /inspect --gui load groovy.console.ui by name when that jar
+    // is present. The shell does not compile against it.
+    testRuntimeOnly projects.groovyConsole
     testImplementation projects.groovyTest
     testImplementation projects.groovyCsv         // for /slurp .csv default coverage
     testImplementation projects.groovyMarkdown    // for /slurp .md default coverage

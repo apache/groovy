@@ -955,6 +955,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
         if (!expression.isUsingAnonymousInnerClass()) return;
 
+        // GROOVY-12512: an argument of this(...) or super(...) has no instance to enclose
+        boolean noEnclosingInstance = inSpecialConstructorCall;
+        if (noEnclosingInstance) {
+            pushState(true);
+            inSpecialConstructorCall = false;
+        }
         pushState();
         InnerClassNode innerClass = (InnerClassNode) expression.getType();
         innerClass.setVariableScope(currentScope);
@@ -989,6 +995,10 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         }
         markClosureSharedVariables();
         popState();
+        if (noEnclosingInstance) {
+            popState();
+            inSpecialConstructorCall = oldInSpecialCtorFlag;
+        }
     }
 
     /**

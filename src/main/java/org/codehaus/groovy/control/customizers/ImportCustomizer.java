@@ -28,10 +28,13 @@ import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.lang.module.ModuleFinder;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -195,6 +198,103 @@ public class ImportCustomizer extends CompilationCustomizer {
             imports.add(new Import(ImportType.moduleImport, moduleName));
         }
         return this;
+    }
+
+    /**
+     * Regular imports, as fully qualified class names. An import whose alias
+     * is not the simple class name is omitted here and reported by {@link #getAliases()}.
+     * Named {@code getImportClassNames} so it does not hide the internal
+     * {@code imports} list that the customization builder reads.
+     *
+     * @return class names, never {@code null}
+     * @since 7.0.0
+     */
+    public List<String> getImportClassNames() {
+        List<String> names = new ArrayList<>();
+        for (Import imp : imports) {
+            if (imp.type == ImportType.regular && imp.classNode != null
+                    && (imp.alias == null || imp.alias.equals(imp.classNode.getNameWithoutPackage()))) {
+                names.add(imp.classNode.getName());
+            }
+        }
+        return names;
+    }
+
+    /**
+     * Star imports, as package names without a trailing dot.
+     *
+     * @return package names, never {@code null}
+     * @since 7.0.0
+     */
+    public List<String> getStarImports() {
+        List<String> names = new ArrayList<>();
+        for (Import imp : imports) {
+            if (imp.type == ImportType.star && imp.star != null) {
+                names.add(stripTrailingDot(imp.star));
+            }
+        }
+        return names;
+    }
+
+    private static String stripTrailingDot(final String name) {
+        return name.endsWith(".") ? name.substring(0, name.length() - 1) : name;
+    }
+
+    /**
+     * Static star imports, as fully qualified class names.
+     *
+     * @return class names, never {@code null}
+     * @since 7.0.0
+     */
+    public List<String> getStaticStarImports() {
+        List<String> names = new ArrayList<>();
+        for (Import imp : imports) {
+            if (imp.type == ImportType.staticStar && imp.classNode != null) {
+                names.add(imp.classNode.getName());
+            }
+        }
+        return names;
+    }
+
+    /**
+     * Aliases for regular imports. The key is the alias and the value is the class name.
+     * An import whose alias is just the simple class name is not included.
+     *
+     * @return aliases, never {@code null}
+     * @since 7.0.0
+     */
+    public Map<String, String> getAliases() {
+        Map<String, String> aliases = new LinkedHashMap<>();
+        for (Import imp : imports) {
+            if (imp.type == ImportType.regular && imp.alias != null && imp.classNode != null
+                    && !imp.alias.equals(imp.classNode.getNameWithoutPackage())) {
+                aliases.put(imp.alias, imp.classNode.getName());
+            }
+        }
+        return aliases;
+    }
+
+    /**
+     * Static imports. Each entry is {@code alias=ClassName.member}. When the
+     * alias is the member name, the alias is omitted and the entry is {@code ClassName.member}.
+     *
+     * @return static imports, never {@code null}
+     * @since 7.0.0
+     */
+    public List<String> getStaticImports() {
+        List<String> names = new ArrayList<>();
+        for (Import imp : imports) {
+            if (imp.type != ImportType.staticImport || imp.classNode == null || imp.field == null) {
+                continue;
+            }
+            String member = imp.classNode.getName() + '.' + imp.field;
+            if (imp.alias != null && !imp.alias.equals(imp.field)) {
+                names.add(imp.alias + '=' + member);
+            } else {
+                names.add(member);
+            }
+        }
+        return names;
     }
 
     //

@@ -410,6 +410,16 @@ smartHighlighterAction = action(
         closure: controller.&smartHighlighter
 )
 
+compilerAssistanceAction = action(
+        name: 'Compiler Assistance',
+        closure: controller.&compilerAssistance
+)
+
+completionShortcutAction = action(
+        name: 'Completion Shortcut...',
+        closure: controller.&completionShortcut
+)
+
 aboutAction = action(
         name: 'About',
         closure: controller.&showAbout,

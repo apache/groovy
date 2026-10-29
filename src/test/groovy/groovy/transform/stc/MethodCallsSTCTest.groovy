@@ -2845,4 +2845,21 @@ import static groovy.test.GroovyAssert.shouldFail
 
     static class Child2 extends ChildWithPublic {
     }
+
+    // GROOVY-12479
+    @Test
+    void testStaticMethodThroughExpressionEvaluatesReceiver() {
+        assertScript '''
+            class K { static String stat() { 's' } }
+            K make(List log) { log << 'make'; new K() }
+            Class<Integer> pick(List log) { log << 'pick'; Integer }
+            Class<System> sys(List log) { log << 'sys'; System }
+
+            List log = []
+            assert make(log).stat() == 's'
+            assert pick(log).valueOf(1) == 1
+            assert sys(log).currentTimeSeconds() > 0
+            assert log == ['make', 'pick', 'sys']
+        '''
+    }
 }

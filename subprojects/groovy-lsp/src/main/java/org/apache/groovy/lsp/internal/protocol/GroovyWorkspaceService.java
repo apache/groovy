@@ -22,8 +22,11 @@ import org.apache.groovy.lsp.internal.LanguageServerContext;
 import org.apache.groovy.lsp.internal.feature.LanguageFeatures;
 import org.apache.groovy.lsp.internal.compile.CompiledDocument;
 import org.apache.groovy.lsp.internal.compile.CompilerSettings;
-import org.apache.groovy.lsp.internal.util.Uris;
+import org.apache.groovy.lsp.internal.compile.ScriptNames;
+import org.apache.groovy.lsp.internal.feature.SyntaxView;
+import org.apache.groovy.lsp.internal.util.GroovyKeywords;
 import org.apache.groovy.lsp.internal.workspace.TextDocument;
+import org.apache.groovy.lsp.internal.util.Uris;
 import org.eclipse.lsp4j.ApplyWorkspaceEditParams;
 import org.eclipse.lsp4j.ConfigurationItem;
 import org.eclipse.lsp4j.ConfigurationParams;
@@ -42,8 +45,10 @@ import org.eclipse.lsp4j.WorkspaceSymbol;
 import org.eclipse.lsp4j.WorkspaceSymbolParams;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -156,18 +161,90 @@ public final class GroovyWorkspaceService implements WorkspaceService {
     }
 
     private CompletableFuture<Object> coreCommand(final String command, final List<Object> args) {
-        if (ORGANIZE_IMPORTS.equals(command) && !args.isEmpty()) {
+        if (commandWith(command, ORGANIZE_IMPORTS, args, 1)) {
             return organizeImports(String.valueOf(args.get(0)));
         }
-        if (SHOW_REFERENCES.equals(command) && args.size() >= 3) {
+        if (commandWith(command, SHOW_REFERENCES, args, 3)) {
             return atCaret(args, (document, position) -> features.navigation().references(
                     document, context.getSnapshot(), position, context.getPositionEncoding(), true));
         }
-        if (GOTO_SUPER_METHOD.equals(command) && args.size() >= 3) {
+        if (commandWith(command, GOTO_SUPER_METHOD, args, 3)) {
             return atCaret(args, (document, position) -> features.navigation().superMethod(
                     document, context.getSnapshot(), position, context.getPositionEncoding()));
         }
+        if ("groovy.compile".equals(command)) {
+            return compileNow();
+        }
+        if ("groovy.parentLoader".equals(command)) {
+            return publishParentLoader(args);
+        }
+        if ("groovy.hostConfiguration".equals(command)) {
+            return publishHostConfiguration(args);
+        }
+        if (commandWith(command, "groovy.scriptNames", args, 1)) {
+            return scriptNames(args);
+        }
+        if ("groovy.keywords".equals(command)) {
+            return CompletableFuture.completedFuture(new ArrayList<>(GroovyKeywords.KEYWORDS));
+        }
+        if (commandWith(command, "groovy.tokens", args, 1)) {
+            return tokenView(args);
+        }
+        if (commandWith(command, "groovy.cst", args, 1)) {
+            return cstView(args);
+        }
         return null;
+    }
+
+    private static boolean commandWith(final String command, final String expected,
+                                       final List<Object> args, final int minArgs) {
+        return expected.equals(command) && args.size() >= minArgs;
+    }
+
+    private CompletableFuture<Object> compileNow() {
+        context.recompile();
+        return CompletableFuture.completedFuture(null);
+    }
+
+    private CompletableFuture<Object> publishParentLoader(final List<Object> args) {
+        Object loader = args.isEmpty() ? null : args.get(0);
+        if (loader == null || loader instanceof ClassLoader) {
+            context.setParentLoader((ClassLoader) loader);
+        }
+        return CompletableFuture.completedFuture(null);
+    }
+
+    private CompletableFuture<Object> publishHostConfiguration(final List<Object> args) {
+        Object configuration = args.isEmpty() ? null : args.get(0);
+        if (configuration == null || configuration instanceof CompilerConfiguration) {
+            context.setHostConfiguration((CompilerConfiguration) configuration);
+        }
+        return CompletableFuture.completedFuture(null);
+    }
+
+    private CompletableFuture<Object> scriptNames(final List<Object> args) {
+        context.recompile();
+        CompiledDocument compiled = context.getSnapshot().get(String.valueOf(args.get(0)));
+        if (compiled == null || compiled.getModule() == null) {
+            return CompletableFuture.completedFuture(List.of());
+        }
+        return CompletableFuture.completedFuture(new ArrayList<>(ScriptNames.of(compiled.getModule())));
+    }
+
+    private CompletableFuture<Object> tokenView(final List<Object> args) {
+        TextDocument document = context.documentFor(String.valueOf(args.get(0)));
+        if (document == null) {
+            return CompletableFuture.completedFuture(List.of());
+        }
+        return CompletableFuture.completedFuture(SyntaxView.tokens(document.getText()));
+    }
+
+    private CompletableFuture<Object> cstView(final List<Object> args) {
+        TextDocument document = context.documentFor(String.valueOf(args.get(0)));
+        if (document == null) {
+            return CompletableFuture.completedFuture(SyntaxView.cst(""));
+        }
+        return CompletableFuture.completedFuture(SyntaxView.cst(document.getText()));
     }
 
     private CompletableFuture<Object> organizeImports(final String uri) {

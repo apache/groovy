@@ -91,11 +91,24 @@ public abstract class BinaryExpressionWriter {
     protected abstract int getCompareCode();
 
     /**
+     * Returns the compare opcode for a comparison operator. The default is
+     * {@link #getCompareCode()}; a floating-point type overrides it so that a
+     * NaN operand makes the comparison false.
+     *
+     * @param type the token type of the comparison operator
+     * @return the ASM compare opcode
+     */
+    protected int getCompareCode(final int type) {
+        return getCompareCode();
+    }
+
+    /**
      * writes some int standard operations for compares
      * @param type the token type
      * @return true if a successful std operator write
      */
     protected boolean writeStdCompare(int type, boolean simulate) {
+        int compareCode = getCompareCode(type);
         type = type-COMPARE_NOT_EQUAL;
         // look if really compare
         if (type<0||type>7) return false;
@@ -105,7 +118,7 @@ public abstract class BinaryExpressionWriter {
             OperandStack operandStack = controller.getOperandStack();
             // operands are on the stack already
             int bytecode = stdCompareCodes[type];
-            mv.visitInsn(getCompareCode());
+            mv.visitInsn(compareCode);
             Label l1 = new Label();
             mv.visitJumpInsn(bytecode,l1);
             mv.visitInsn(ICONST_1);

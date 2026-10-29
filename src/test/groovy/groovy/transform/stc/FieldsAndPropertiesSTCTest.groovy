@@ -3180,4 +3180,29 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
     static class Public extends PackagePrivate {
     }
+
+    // GROOVY-12479
+    @Test
+    void testStaticMemberThroughExpressionEvaluatesReceiver() {
+        assertScript '''
+            class K {
+                static final String CONST = 'c'
+                public static String sf = 'f'
+                static String sp = 'p'
+            }
+            K newK(List log) { log << 'newK'; new K() }
+            Class<Integer> pick(List log) { log << 'pick'; Integer }
+
+            List log = []
+            assert pick(log).MAX_VALUE == Integer.MAX_VALUE
+            assert pick(log).simpleName == 'Integer'
+            assert newK(log).CONST == 'c'
+            assert newK(log).sf == 'f'
+            newK(log).sf = 'g'
+            assert K.sf == 'g'
+            newK(log).sp = 'q'
+            assert K.sp == 'q'
+            assert log == ['pick', 'pick', 'newK', 'newK', 'newK', 'newK']
+        '''
+    }
 }

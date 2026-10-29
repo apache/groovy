@@ -886,6 +886,20 @@ property name and adding a `get` or `set` prefix (or optionally "is" for a boole
 So, `getLength` would be a getter  for a `length` property and `setFirstName` a setter for a `firstName` property.
 `isEmpty` might be the getter method name for a property named `empty`.
 
+A `boolean` property has two getters, `isX()` and `getX()`, while a `Boolean` property only has `getX()`.
+An `isX()` method acts as a getter only when it returns `boolean`.
+When a class has both an `isX()` and a `getX()` method, reading the property calls `isX()`.
+The same rule applies to `super.x`, which calls the superclass's getter, even when the current class overrides it:
+
+[source,groovy]
+----
+include::../test/ClassTest.groovy[tags=boolean_getters,indent=0]
+----
+<1> a `boolean` property has the getters `isLit()` and `getLit()`
+<2> a `Boolean` property only has the getter `getDimmed()`
+<3> reading `ready` calls `isReady()`
+<4> `super.ready` calls the superclass's `isReady()`
+
 [NOTE]
 ====
 Property names starting with a capital letter would have getters/setters with just the prefix added.

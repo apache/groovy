@@ -92,5 +92,7 @@
     <!-- the language-server AstQuery is itself named AstQuery and calls org.codehaus.groovy.ast.query.AstQuery -->
     <suppress id="FullyQualifiedName" files="subprojects[/\\]groovy-lsp[/\\]src[/\\]main[/\\]java[/\\]org[/\\]apache[/\\]groovy[/\\]lsp[/\\]internal[/\\]compile[/\\]AstQuery\.java$"/>
     <suppress id="FullyQualifiedNameInJavadoc" files="subprojects[/\\]groovy-lsp[/\\]src[/\\]main[/\\]java[/\\]org[/\\]apache[/\\]groovy[/\\]lsp[/\\]internal[/\\]compile[/\\]AstQuery\.java$"/>
+    <!-- GroovyLanguageEngine declares its own Token record, so the ANTLR token parameter stays qualified -->
+    <suppress id="FullyQualifiedName" files="subprojects[/\\]groovy-lsp[/\\]src[/\\]main[/\\]java[/\\]org[/\\]apache[/\\]groovy[/\\]lsp[/\\]internal[/\\]engine[/\\]GroovyLanguageEngine\.java$"/>
 
 </suppressions>
