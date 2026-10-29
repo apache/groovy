@@ -318,4 +318,25 @@ final class Groovy10133 {
             assert new E().test()
         """
     }
+
+    // GROOVY-12520
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testGetterVersusIsser11(String mode) {
+        assertScript """
+            class A {
+                boolean isX() { true }
+                boolean getX() { false }
+            }
+            class B extends A {
+                boolean isX() { true }
+            }
+            $mode
+            class D extends B {
+                boolean isX() { false }
+                boolean test() { super.x }
+            }
+            assert new D().test()
+        """
+    }
 }
