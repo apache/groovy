@@ -739,6 +739,21 @@ which follows `Double.compare` for primitives and objects alike. Classes
 compiled by an earlier release keep the old comparison until they are
 recompiled.
 
+### Groovy 7 — `super` reaches a static member the class hides (GROOVY-12519)
+
+When a class declares a static method or property with the same signature as
+one of its superclass, `super.sm()` and `super.sp` within the class now call
+the superclass's member, in dynamic Groovy and under `@TypeChecked`, as javac
+and `@CompileStatic` do. They used to throw `MissingMethodException` or
+`MissingPropertyException`, or call another overload of the superclass with
+`null`. Under `@CompileStatic`, such a call in a closure or lambda, and a call
+of an extension method through `super` there, no longer fails with
+`IncompatibleClassChangeError` or `NoSuchMethodError`.
+
+**Who is affected.** Code that relied on the old failure or on the other
+overload being called. A private static method of the superclass stays out of
+reach.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
