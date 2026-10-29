@@ -2886,6 +2886,40 @@ final class InnerClassTest {
         """
     }
 
+    // GROOVY-12517, GROOVY-12521: 'Outer.super.x = v' chooses among the setters of the superclass
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testQualifiedSuperOfOuterClassWithOverloadedSetters(String mode) {
+        assertScript """
+            class Base {
+                List log = []
+                String x = 'x'
+                int n = 1
+                void setX(int i) { log << 'x:int:' + i }
+                void setX(String s) { log << 'x:string:' + s; this.@x = s }
+                void setN(String s) { log << 'n:string:' + s }
+                void setN(int i) { log << 'n:int:' + i; this.@n = i }
+            }
+            $mode
+            class Outer extends Base {
+                String x = 'outer'
+                int n = 100
+                class In {
+                    List test() {
+                        Outer.super.x = 'a'
+                        Outer.super.x = 1
+                        Outer.super.x += 'b'
+                        Outer.super.n++
+                        def c = { -> Outer.super.n += 10 }
+                        c()
+                        log + [Outer.super.x, Outer.super.n, x, n]
+                    }
+                }
+            }
+            assert new Outer.In(new Outer()).test() == ['x:string:a', 'x:int:1', 'x:string:ab', 'n:int:2', 'n:int:12', 'ab', 12, 'outer', 100]
+        """
+    }
+
     // GROOVY-12517
     @Test
     void testQualifiedSuperOfOuterClassWithoutEnclosingInstance() {
