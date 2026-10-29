@@ -18,7 +18,9 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 
@@ -60,7 +62,22 @@ public class TernaryExpression extends Expression {
      */
     @Override
     public ClassNode getType() {
-        return WideningCategories.lowestUpperBound(getTrueExpression().getType(), getFalseExpression().getType());
+        return WideningCategories.lowestUpperBound(valueType(getTrueExpression()), valueType(getFalseExpression()));
+    }
+
+    /**
+     * A class literal evaluates to a {@code java.lang.Class}, not to an instance of the class it names, so it must not
+     * make an enclosing ternary take the common supertype of the named classes.
+     *
+     * @see org.codehaus.groovy.classgen.asm.StatementMetaTypeChooser#resolveType
+     */
+    private static ClassNode valueType(final Expression expression) {
+        if (expression instanceof ClassExpression) {
+            ClassNode type = ClassHelper.CLASS_Type.getPlainNodeReference();
+            type.setGenericsTypes(new GenericsType[]{new GenericsType(expression.getType())});
+            return type;
+        }
+        return expression.getType();
     }
 
     @Override
