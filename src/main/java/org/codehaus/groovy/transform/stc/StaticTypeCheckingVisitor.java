@@ -6852,7 +6852,9 @@ trying: for (ClassNode[] signature : signatures) {
                             property.getOriginType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                     node.setDeclaringClass(property.getDeclaringClass());
                     node.setSynthetic(true);
-                    methods.add(node);
+                    // first, where a compiled class has its getter, so that it is preferred
+                    // over an interface method the same way
+                    methods.add(0, node);
                 }
             } else if (args.length == 1 && (methods.isEmpty()
                     || methods.stream().allMatch(MethodNode::isAbstract))) { // GROOVY-10922
@@ -6869,7 +6871,9 @@ trying: for (ClassNode[] signature : signatures) {
                                     VOID_TYPE, new Parameter[]{new Parameter(type, name)}, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                             node.setDeclaringClass(property.getDeclaringClass());
                             node.setSynthetic(true);
-                            methods.add(node);
+                            // first, where a compiled class has its setter, so that it is preferred
+                            // over an interface method the same way
+                            methods.add(0, node);
                         }
                     }
                 }
