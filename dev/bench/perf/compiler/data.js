@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793170774486,
+  "lastUpdate": 1793257449982,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -8734,6 +8734,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 373.3466666666666,
             "range": "±22.12",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "d82dc98590867204f7ffbf8fb68b473b68cd6d72",
+          "message": "GROOVY-12428: STC: instanceof narrowing leaks from one switch case into subsequent cases",
+          "timestamp": "2026-10-22T00:03:20Z",
+          "url": "https://github.com/apache/groovy/commit/d82dc98590867204f7ffbf8fb68b473b68cd6d72"
+        },
+        "date": 1793257444275,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 541.47,
+            "range": "±18.63",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 676.8633333333333,
+            "range": "±219.06",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 601.3799999999999,
+            "range": "±152.25",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 475.45666666666665,
+            "range": "±21.6",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 478.40999999999997,
+            "range": "±19.91",
             "unit": "ms",
             "extra": "6.0.0"
           }
