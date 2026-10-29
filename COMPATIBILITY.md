@@ -739,6 +739,29 @@ which follows `Double.compare` for primitives and objects alike. Classes
 compiled by an earlier release keep the old comparison until they are
 recompiled.
 
+### Groovy 7 — enum constants with literal arguments are created without the meta class (GROOVY-12490)
+
+GROOVY-12240 made an enum whose constants have no arguments create them with a
+direct constructor call. An enum whose constants have arguments is now created
+the same way when every argument is a literal (a constant, `null` or a class
+literal) and the compiler can tell which constructor the runtime would select:
+one fixed-arity constructor of that arity, each literal of the parameter's own
+type, the primitive of a wrapper literal, or a type other than `Boolean`
+that it extends or implements. Any other
+enum keeps the synthetic `$INIT` helper, which selects the constructor through
+the meta class.
+
+**Who is affected.** Code that registered a meta class, or an
+`ExpandoMetaClass` constructor, for such an enum before it initialized, to
+observe or replace the creation of its constants. That no longer sees them, as
+it already did not for enums without arguments. Writing one argument as a
+non-literal expression, such as `'one'.toString()` in place of `'one'`, keeps
+the whole enum on `$INIT`.
+
+**What is unchanged.** The constants' values, ordinals and fields, the
+constructor chosen, and enums with named arguments, class bodies, abstract
+methods or overloads the literals cannot tell apart.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
