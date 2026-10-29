@@ -502,6 +502,31 @@ final class ThisAndSuperTest {
         """
     }
 
+    // GROOVY-12522: an extension method of an interface the class itself implements, the superclass being Object;
+    // static type checking rejects an interface method called through unqualified super (GROOVY-8299, GROOVY-10494)
+    @Test
+    void testSuperDotExtensionMethodOfAnInterfaceOfTheClass() {
+        assertScript '''
+            class Numbers implements Iterable<Integer> {
+                Iterator<Integer> iterator() { [1, 2, 3].iterator() }
+                Integer first() { -1 }
+                List test() {
+                    [super.first(), first()]
+                }
+            }
+            class Delegating implements List<Integer> {
+                @Delegate List<Integer> list = [4, 5]
+                Integer first() { -1 }
+                Integer last() { -2 }
+                List test() {
+                    [super.first(), super.last(), first(), last()]
+                }
+            }
+            assert new Numbers().test() == [1, -1]
+            assert new Delegating().test() == [4, 5, -1, -2]
+        '''
+    }
+
     // GROOVY-9851
     @Test
     void testPrivateSuperMethod() {
