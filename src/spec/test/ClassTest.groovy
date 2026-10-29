@@ -365,6 +365,31 @@ final class ClassTest extends GroovyTestCase {
         '''
 
         assertScript '''
+            // tag::boolean_getters[]
+            class Lamp {
+                boolean lit                            // <1>
+                Boolean dimmed                         // <2>
+            }
+            def names = Lamp.declaredMethods*.name
+            assert ['isLit', 'getLit', 'getDimmed'].every { it in names }
+            assert !('isDimmed' in names)
+
+            class Status {
+                boolean isReady() { true }
+                boolean getReady() { false }
+            }
+            assert new Status().ready                  // <3>
+
+            class DetailedStatus extends Status {
+                boolean isReady() { false }
+                boolean superReady() { super.ready }   // <4>
+            }
+            assert !new DetailedStatus().ready
+            assert new DetailedStatus().superReady()
+            // end::boolean_getters[]
+        '''
+
+        assertScript '''
             // tag::annotated_properties[]
             class Animal {
                 int lowerCount = 0
