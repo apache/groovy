@@ -20,6 +20,8 @@ package groovy.operator
 
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.assertScript
+
 import java.util.regex.Pattern
 
 final class TernaryOperatorsTest {
@@ -158,5 +160,25 @@ final class TernaryOperatorsTest {
     @Test // see StatementMetaTypeChooser#resolveType
     void testClassExpressionIsJavaLangClassNotLiteralType() {
         Class dsClass = true ? LinkedHashSet : HashSet
+    }
+
+    @Test
+    void testNestedTernaryOfClassLiteralsIsJavaLangClass() {
+        assertScript '''
+            interface Marker {}
+            class First implements Marker {}
+            class Second implements Marker {}
+            class Third implements Marker {}
+            class Fourth implements Marker {}
+
+            String name(Class<?> type) { type.simpleName }
+
+            boolean a = false, b = true, c = true
+            assert name(a ? b ? First : Second : c ? Third : Fourth) == 'Third'
+            assert name(b ? (a ?: c ? First : Second) : Third) == 'First'
+
+            Class<?> chosen = a ? b ? First : Second : c ? Third : Fourth
+            assert chosen == Third
+        '''
     }
 }
