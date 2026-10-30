@@ -649,11 +649,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
              * reflectively it is the method a super call should reach.
              */
             private MetaMethod superMethodOfAnotherRuntimePackage(final MetaMethod method, final Class<?> c) {
-                if (isDGM(method) || c != method.getDeclaringClass().getTheClass()) return null;
+                if (c != method.getDeclaringClass().getTheClass()) return null;
                 for (Class<?> sc = c.getSuperclass(); sc != null; sc = sc.getSuperclass()) {
                     for (CachedMethod cm : ReflectionCache.getCachedClass(sc).getMethods()) {
                         if (cm.getName().equals(method.getName()) && !cm.isStatic()
                                 && MetaMethod.equal(cm.getParameterTypes(), method.getParameterTypes())) {
+                            // the nearest method decides; if it is not of another run-time package, it hides any deeper one
                             return cm.isPackagePrivate() && sc.getClassLoader() != c.getClassLoader()
                                     && sc.getPackageName().equals(c.getPackageName()) ? cm : null;
                         }

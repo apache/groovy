@@ -19,6 +19,7 @@
 package bugs
 
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
@@ -138,5 +139,117 @@ final class Groovy12568 {
             }
             new B().test() + new C().test()
         ''') == ['M', 'B>M', 'M', 'C>M']
+    }
+
+    // GROOVY-12570
+    @ParameterizedTest(name = 'indy={0}')
+    @ValueSource(booleans = [true, false])
+    void testSuperCallReachesNearestSuperclassMethodOfSameNameAndParameters(final boolean indy) {
+        def shell = shell(indy)
+        shell.evaluate '''package p
+            class A {
+                @groovy.transform.PackageScope String pm() { 'A' }
+            }
+            true
+        '''
+        shell.evaluate '''package p
+            class MidOfOtherLoader extends A { // its pm() does not override A's
+                @groovy.transform.PackageScope String pm() { 'MidOfOtherLoader' }
+            }
+            class PublicMid extends A {
+                String pm() { 'PublicMid' }
+            }
+            class MidWithoutPm extends A {
+            }
+            true
+        '''
+        def mids = ['MidOfOtherLoader', 'PublicMid', 'MidWithoutPm', 'MidOfSameLoader']
+        List<Class> classes = shell.evaluate('''package p
+            class MidOfSameLoader extends A {
+                @groovy.transform.PackageScope String pm() { 'MidOfSameLoader' }
+            }
+        ''' + mids.collect { mid -> """
+            class D$mid extends $mid {
+                String pm() { 'D>' + super.pm() }
+                def test() { [super.pm(), pm()] }
+            }
+            @groovy.transform.CompileStatic
+            class S$mid extends $mid {
+                String pm() { 'S>' + super.pm() }
+                def test() { [super.pm(), pm()] }
+            }
+        """ }.join('') + '''
+            [DMidOfOtherLoader, SMidOfOtherLoader, DPublicMid, SPublicMid, DMidWithoutPm, SMidWithoutPm, DMidOfSameLoader, SMidOfSameLoader]
+        ''')
+        // the nearest method of the superclasses decides, so a deeper A.pm() is not reached
+        def nearest = { Class c -> c.superclass.simpleName == 'MidWithoutPm' ? 'A' : c.superclass.simpleName }
+        assert classes.collect { it.getDeclaredConstructor().newInstance().test() } == classes.collect {
+            [nearest(it), it.simpleName[0] + '>' + nearest(it)]
+        }
+        // the super method of the meta-class: a super$ method of D, if any, or the method of the superclass;
+        // S calls PublicMid.pm() and MidOfSameLoader.pm() directly, so it has no super$ method for them, and
+        // the nearest method hides A.pm() all the same
+        assert classes.collect { c ->
+            def metaClass = (MetaClassImpl) GroovySystem.metaClassRegistry.getMetaClass(c)
+            metaClass.getMethodWithoutCaching(c, 'pm', [] as Class[], true)?.invoke(c.getDeclaredConstructor().newInstance(), [] as Object[])
+        } == classes.collect { c ->
+            c.simpleName in ['SPublicMid', 'SMidOfSameLoader'] ? null : nearest(c)
+        }
+    }
+
+    // GROOVY-12570
+    @ParameterizedTest(name = 'indy={0}')
+    @ValueSource(booleans = [true, false])
+    void testSuperCallOfPackagePrivateMethodOfClassOfAnotherPackage(final boolean indy) {
+        def shell = shell(indy)
+        shell.evaluate '''package q
+            class M {
+                @groovy.transform.PackageScope String pm() { 'M' }
+            }
+            true
+        '''
+        def err = shouldFail(MissingMethodException) {
+            shell.evaluate '''package p
+                class B extends q.M { // another package: M.pm() is not accessible
+                    String pm() { 'B' }
+                    def test() {
+                        super.pm()
+                    }
+                }
+                new B().test()
+            '''
+        }
+        assert err.method == 'pm'
+    }
+
+    // GROOVY-12570
+    @Test
+    void testSuperMethodsOfMetaClassForPackagePrivateMethodsOfClassOfAnotherClassLoader() {
+        def shell = shell(true)
+        shell.evaluate '''package p
+            class M {
+                @groovy.transform.PackageScope String pm() { 'M' }
+                @groovy.transform.PackageScope String pm(String s) { 'M' + s }
+                @groovy.transform.PackageScope String qm() { 'M' }
+            }
+            true
+        '''
+        Class b = shell.evaluate '''package p
+            class B extends M {
+                String pm() { 'B' }
+                String pm(String s) { 'B' + s }
+                String qm() { 'B' }
+            }
+            B
+        '''
+        def metaClass = (MetaClassImpl) GroovySystem.metaClassRegistry.getMetaClass(b)
+        def object = b.getDeclaredConstructor().newInstance()
+        // the method of M, not B: for the overloads of pm and for qm, which has none
+        [pm: [], pm1: [String], qm: []].each { name, types ->
+            MetaMethod method = metaClass.getMethodWithoutCaching(b, name - '1', types as Class[], true)
+            assert method.declaringClass.theClass == b.superclass
+            assert method.invoke(object, types ? ['x'] as Object[] : [] as Object[]) == (types ? 'Mx' : 'M')
+            assert metaClass.getMethodWithoutCaching(b, name - '1', types as Class[], false).declaringClass.theClass == b
+        }
     }
 }
