@@ -1003,6 +1003,59 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12561
+    @Test
+    void testClosureAssignedToACallableOrRunnableSubscriptOrPropertyStaysAClosure() {
+        assertScript '''
+            import java.util.concurrent.Callable
+            class Holder<T> { T value }
+
+            Map<String, Callable<String>> map = [:]
+            map['subscript'] = { 'subscript' }
+            map.property = { 'property' }
+            int n = 0
+            def holder = new Holder<Runnable>()
+            holder.value = { n += 1 }
+            def named = new Holder<Callable<String>>(value: { 'named' })
+
+            // a Closure is a Callable and a Runnable: there is nothing to convert
+            assert [map.subscript, map.property, holder.value, named.value].every { it instanceof Closure }
+            assert [map.subscript, map.property, named.value]*.call() == ['subscript', 'property', 'named']
+            holder.value.run()
+            assert n == 1
+        '''
+    }
+
+    // GROOVY-12561
+    @Test
+    void testValueAssignedToAFunctionalSubscriptOrPropertyIsStoredAsItIsIfNotAClosure() {
+        assertScript '''
+            import java.util.function.Supplier
+            class Holder<T> { T value }
+            class C {
+                static Supplier<String> made
+                static Supplier<String> make() {
+                    made = { 'made' } as Supplier<String>
+                }
+            }
+
+            Supplier<String> supplier = { 'variable' }
+            boolean flag = true
+            Map<String, Supplier<String>> map = [:]
+            map['variable'] = supplier
+            map['method'] = C.make()
+            assert map['method'].is(C.made)
+            map['elvis'] = map['missing'] ?: supplier
+            map['ternary'] = flag ? supplier : C.make()
+            def holder = new Holder<Supplier<String>>()
+            holder.value = map['missing'] ?: C.make()
+
+            assert ['variable', 'elvis', 'ternary'].every { map[it].is(supplier) }
+            assert holder.value.is(C.made)
+            assert map.values()*.get() == ['variable', 'made', 'variable', 'variable']
+        '''
+    }
+
     // GROOVY-6238
     @Test
     void testDirectMethodCallOnClosureExpression() {
