@@ -25,6 +25,8 @@ import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.jupiter.api.Test
 
+import javax.tools.ToolProvider
+
 import static groovy.test.GroovyAssert.shouldFail
 
 /**
@@ -123,6 +125,76 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
     }
 
     private static final List USES_OF_HIDDEN = ['p.Hidden', 'sm:a', 'w', true, 'own', 'base', 'm', 'pf', 'Hidden', 'own', 'own', ['m', 'x'], ['m', 'x'], 'own']
+
+    private static final String SHUT = '''package p
+        class Open {
+            public static String SF = 'sf'
+            public String pf = 'pf'
+            public int n = 1
+            public Shut peer
+            protected String prot() { 'open' }
+            String take(Shut s) { 'open' }
+            String take(Object o) { 'object' }
+            static Shut make() { new Shut2() }
+            static Secret secret() { new Shut2() }
+        }
+        @groovy.transform.PackageScope class Shut extends Open {
+            String prot() { 'shut' }
+            String take(Shut s) { 'shut' }
+            String own() { 'own' }
+        }
+        @groovy.transform.PackageScope class Shut2 extends Shut implements Secret {
+            String hint() { 'hint' }
+        }
+        @groovy.transform.PackageScope class Plain {
+            String toString() { 'plain' }
+        }
+        @groovy.transform.PackageScope interface Secret {
+            String hint()
+        }
+        class Pub extends Shut {
+        }
+        true
+    '''
+
+    /**
+     * Uses the package-private classes of {@code SHUT} through the public
+     * classes {@code Open} and {@code Pub}: a hidden superclass, a hidden class
+     * that extends {@code Object}, a hidden interface, members of a public
+     * class whose signature names a hidden class, and a public class whose
+     * methods are declared by a hidden class.
+     */
+    private static String usesOfShut(final String className, final String annotation) {
+        """package p
+            import java.util.function.BiFunction
+            import java.util.function.Function
+            import java.util.function.Supplier
+            $annotation
+            class $className {
+                static List test() {
+                    def s = new Shut2()
+                    def plain = new Plain()
+                    def secret = Open.secret()
+                    Shut.@SF = 'w'
+                    s.@pf = 'q'
+                    s.@peer = s
+                    def list = [s]
+                    Function<Shut, String> str = Open::toString
+                    Supplier<Shut> made = Open::make
+                    Supplier<Object> made2 = Open::make
+                    BiFunction<Open, Object, String> take = Open::take
+                    Function<Pub, String> own = Pub::own
+                    [s.getClass().name, plain.toString(), secret.hint(), Shut.SF, s.pf, s?.n, s.peer.is(s), s.prot(), s.take(s),
+                     s.take('x'), s.own(), new Pub().own(), Shut.make().own(), list*.@pf, str.apply(s).startsWith('p.Shut2@'),
+                     made.get().getClass().name, made2.get().getClass().name, take.apply(s, 'x'), own.apply(new Pub())]
+                }
+            }
+            ${className}.test()
+        """
+    }
+
+    private static final List USES_OF_SHUT = ['p.Shut2', 'plain', 'hint', 'w', 'q', 1, true, 'shut', 'shut',
+        'object', 'own', 'own', 'own', ['q'], true, 'p.Shut2', 'p.Shut2', 'object', 'own']
 
     // GROOVY-12568
     @Test
@@ -727,6 +799,62 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         assert bytecode.hasSequence(['INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.invokeNew0'])
         assert bytecode.hasSequence(['INVOKEINTERFACE java/lang/Runnable.run ()V'])
         assert bytecode.hasSequence(['INVOKEVIRTUAL p/Base.base ()Ljava/lang/String;'])
+    }
+
+    // GROOVY-12569
+    @Test
+    void testPackagePrivateClassesOfAnotherClassLoaderAreUsedThroughPublicClassesAsInDynamicCode() {
+        shell.evaluate SHUT
+        assert shell.evaluate(usesOfShut('D', '')) == USES_OF_SHUT
+        assert shell.evaluate(usesOfShut('S', '@groovy.transform.CompileStatic')) == USES_OF_SHUT
+    }
+
+    // GROOVY-12569
+    @Test
+    void testPackagePrivateClassesOfAnotherClassLoaderAreNotNamedInBytecodeOfUsesThroughPublicClasses() {
+        def bytecode = compileAgainstLibrary(SHUT, 'p.C', 'test', usesOfShut('C', '@groovy.transform.CompileStatic'))
+        for (instruction in ['NEW', 'CHECKCAST', 'INSTANCEOF', 'INVOKEVIRTUAL', 'INVOKESTATIC', 'INVOKESPECIAL', 'INVOKEINTERFACE', 'GETFIELD', 'PUTFIELD', 'GETSTATIC', 'PUTSTATIC']) {
+            for (type in ['Shut', 'Plain', 'Secret']) {
+                assert !bytecode.hasSequence([instruction + ' p/' + type])
+            }
+        }
+        assert bytecode.hasSequence(['PUTSTATIC p/Open.SF : Ljava/lang/String;'])
+        assert bytecode.hasSequence(['GETSTATIC p/Open.SF : Ljava/lang/String;'])
+        assert bytecode.hasSequence(['PUTFIELD p/Open.pf : Ljava/lang/String;'])
+        assert bytecode.hasSequence(['GETFIELD p/Open.n : I', 'INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;'])
+        assert bytecode.hasSequence(['INVOKEVIRTUAL p/Open.take (Ljava/lang/Object;)Ljava/lang/String;'])
+        assert bytecode.hasSequence(['INVOKESTATIC p/Open.make ()Lp/Shut;'])
+    }
+
+    // GROOVY-12569
+    @Test
+    void testPackagePrivateJavaClassOfAnotherClassLoaderWithInstanceMethodNamedAsStaticMethodOfInterface() {
+        def dir = File.createTempDir()
+        try {
+            def source = new File(dir, 'p/Q.java')
+            source.parentFile.mkdirs()
+            source.text = '''package p;
+                class Q implements java.util.function.Function<Object, String> {
+                    public String apply(Object o) { return "apply"; }
+                    public Q identity() { return this; } // Function.identity() is static, so Q does not inherit it
+                }
+            '''
+            assert ToolProvider.systemJavaCompiler.run(null, null, null, source.path) == 0
+
+            def shell = new GroovyShell(new URLClassLoader([dir.toURI().toURL()] as URL[], this.class.classLoader))
+            ['', '@groovy.transform.CompileStatic'].each { annotation ->
+                assert shell.evaluate("""package p
+                    $annotation
+                    def test() {
+                        def q = new Q()
+                        [q.identity().is(q), q.apply(null)]
+                    }
+                    test()
+                """) == [true, 'apply']
+            }
+        } finally {
+            dir.deleteDir()
+        }
     }
 
     // GROOVY-12569
