@@ -218,4 +218,27 @@ final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticC
             assert list.every { it instanceof Supplier && !(it instanceof Closure) }
         '''
     }
+
+    // GROOVY-10979
+    @Test
+    void testClosurePassedForATypeParameterWithSeveralBounds() {
+        assertScript '''
+            interface SerializableRunnable extends Runnable, Serializable { }
+            class C {
+                static List<Object> seen = []
+                static <T extends Runnable & Serializable> void run(T a, T b) { seen << a << b; a.run(); b.run() }
+                static <T extends Comparable<T>> T max(T a, T b) { a >= b ? a : b }
+            }
+
+            int n = 0
+            C.run({ n += 1 }, { n += 1 }) // Closure is Runnable and Serializable
+            assert C.seen.every { it instanceof Closure }
+            SerializableRunnable task = { n += 1 }
+            C.run(task, { n += 1 }) // T is SerializableRunnable
+            assert C.seen[3] instanceof SerializableRunnable && !(C.seen[3] instanceof Closure)
+            assert n == 4
+            def max = C.max({ 1 }, { 2 }) // a closure becomes a Comparable
+            assert max instanceof Comparable && !(max instanceof Closure)
+        '''
+    }
 }
