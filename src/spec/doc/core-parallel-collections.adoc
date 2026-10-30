@@ -25,9 +25,11 @@
 == Introduction
 
 Groovy adds parallel collection methods directly onto `Collection`,
-enabling data parallelism with familiar Groovy idioms. These methods
-use Java parallel streams under the hood, with pool isolation via
-`ForkJoinPool` to prevent interference with the common pool.
+enabling data parallelism with familiar Groovy idioms. A fork-join
+pool, including the common pool, runs a Java parallel stream on that
+pool. A pool that is not a fork-join pool submits one task per element
+to itself. See <<parallel-pool>> for the parallelism cap and for
+`Pool.virtual()` / `Pool.io()`.
 
 All methods use `java.util.function` types (`Consumer`, `Function`,
 `Predicate`, etc.) and Groovy closures are automatically
@@ -76,9 +78,40 @@ def pool3 = Pool.io()       // Virtual threads on JDK 21+, sized pool otherwise
 def pool4 = Pool.virtual()  // Virtual-thread-per-task (JDK 21+)
 ----
 
-`Pool.cpu()` and `Pool.fixed()` create `ForkJoinPool`-backed pools,
-ideal for CPU-bound parallel work. `Pool.io()` and `Pool.virtual()`
-create virtual thread pools for I/O-bound tasks.
+`Pool.cpu()` and `Pool.fixed(n)` create `ForkJoinPool`-backed pools
+for CPU-bound parallel work. Parallelism is a hard cap of `n` (or the
+processor count): parallel collection methods do not add workers for
+a blocked or CPU-bound callback, and they do not enlarge
+`ForkJoinPool.commonPool()`.
+
+A callback that blocks (a barrier, a lock, or I/O) holds the worker
+running it. On a fork-join pool that can stall the operation when every
+worker blocks while a sibling task is still queued. Size the pool to at
+least one more thread than the number of concurrent blockers
+(`ParallelScope.withPool(blockers + 1)`).
+
+`Pool.virtual()`, and `Pool.io()` on JDK 21 and later, are not
+fork-join pools. Parallel collection methods then submit one task per
+element to that pool, so a blocking callback stays off the common pool
+and does not raise the cap of `Pool.fixed`. On older JDKs `Pool.io()`
+is a fixed fork-join pool of `ConcurrentConfig.defaultParallelism`,
+and the spare-worker rule applies. CPU-bound work should stay on
+`Pool.fixed` or `Pool.cpu()`.
+
+On the executor path, a short-circuit (`findParallel`, `findAnyParallel`,
+`anyParallel`, or `everyParallel`) or a sibling failure interrupts
+callbacks that are still running, and interrupting a thread blocked on
+an `InterruptibleChannel` (for example a `FileChannel`) closes the channel.
+A fork-join pool does not interrupt a running callback.
+
+A nested parallel collection call stays on the current pool. Each worker
+a `Pool` creates carries that pool, and `Pool.current()` uses it when
+the thread has no explicit binding, so a callback does not rebind the
+pool per element. The nested call therefore does not fall through to
+`ForkJoinPool.commonPool()`. On a bounded executor that does not grow,
+the nested call runs on the worker already executing the outer element,
+so that worker does not wait for a task queued behind it.
+`Pool.virtual()` still runs each element as its own task.
 
 === ParallelScope
 
@@ -211,8 +244,22 @@ def youngest = people.minParallel { a, b -> a.age <=> b.age }
 def byDept = employees.groupByParallel { it.department }
 ----
 
-NOTE: `injectParallel` requires an associative accumulator for correct
-parallel results. Non-associative accumulators produce undefined results.
+NOTE: `injectParallel` takes the identity value of an associative
+accumulator, matching `Stream.reduce(identity, accumulator)`. A seed
+that is not an identity, or an accumulator that is not associative,
+does not match a sequential `inject`.
+
+A matching `null` from `findParallel` or `findAnyParallel` returns
+`null`, the same as no match. `minParallel` passes null elements to
+the comparator, matching sequential `min(Comparator)`. `maxParallel`
+skips null elements, matching sequential `max(Comparator)`: a collection
+of only nulls returns `null` without calling the comparator, and
+`[null, 1]` returns `1`. A one-element collection does not call the
+comparator or the `sumParallel` operator. `sumParallel` returns a
+`null` reduction rather than throwing. `groupByParallel` keeps a
+`null` key, keys follow first-seen order, and each group stays in
+encounter order. A fork-join pool and `Pool.virtual()` agree on these
+results.
 
 [[parallel-annotation]]
 == @Parallel for loops
@@ -333,24 +380,28 @@ AsyncScope.withScope { scope ->
 
 [source,groovy]
 ----
-// Anti-pattern — blocking inside parallel collections
+// Anti-pattern — blocking on the common pool or Pool.cpu()/Pool.fixed(n)
 @Parallel
 for (item in 1..100) {
     Thread.sleep(50)    // blocks a ForkJoinPool worker!
     process(item)
 }
-// Only ~8 items run concurrently (pool size), rest queue behind.
-// Total time: ~625ms instead of ~50ms with virtual threads.
+// Only `parallelism` items run at once (about the core count on the
+// common pool). The rest wait in the queue. If every worker blocks,
+// a queued sibling can stall unless the pool has a spare thread.
 ----
 
-The anti-pattern looks parallel but the `ForkJoinPool` has only
-~8 workers. Each `Thread.sleep` ties up a worker, so at most
-~8 items sleep concurrently. The remaining 92 wait in the queue.
+On a fork-join pool the cap is the pool's parallelism. `Pool.fixed(n)`
+stays at `n` threads. The same loop inside
+`ParallelScope.withPool(Pool.virtual())` (JDK 21+) runs each iteration
+as its own task on that pool, so the waits are concurrent and the
+common pool is not involved. Keep CPU-bound loops on `Pool.cpu()` or
+`Pool.fixed(n)`.
 
 NOTE: `await Awaitable.delay(ms)` inside a parallel collection body
-has the same problem — `await` blocks the calling ForkJoinPool
-worker thread while waiting for the delay to complete. Use
-`async`/`await` outside parallel collections for delay-based work.
+on a fork-join pool blocks that worker for the whole delay. Use
+`async`/`await`, or a `Pool.virtual()` / `Pool.io()` scope, for
+delay-based work.
 
 === Use thread-safe collections for shared state
 
