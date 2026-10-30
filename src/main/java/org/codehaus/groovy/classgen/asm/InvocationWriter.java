@@ -165,6 +165,9 @@ public class InvocationWriter {
             sender = controller.getThisType();
             implicitThis = false;
             safe = false;
+        } else if (isOuterSuperExpression(receiver)) {
+            // "Outer.super.name": the member of Outer's superclass, also for an instance of a subclass of Outer
+            sender = ((PropertyExpression) receiver).getObjectExpression().getType();
         } else {
             sender = controller.getClassNode();
         }

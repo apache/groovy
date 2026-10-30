@@ -2969,6 +2969,45 @@ final class InnerClassTest {
         """
     }
 
+    // GROOVY-12517: 'Outer.super' is the superclass of Outer, also for an instance of a subclass of Outer
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testQualifiedSuperOfOuterClassWithInstanceOfSubclass(String mode) {
+        assertScript """
+            class Base {
+                String q = 'q:base'
+                protected String x = 'x:base'
+                String m() { 'm:base' }
+                String getP() { 'p:base' }
+                String base() { q + ',' + x }
+            }
+            $mode
+            class Outer extends Base {
+                String q = 'q:outer'
+                protected String x = 'x:outer'
+                String m() { 'm:outer' }
+                String getP() { 'p:outer' }
+                class In {
+                    List test() {
+                        List read = [Outer.super.q, Outer.super.@x, Outer.super.m(), Outer.super.p, { -> Outer.super.q + Outer.super.m() }()]
+                        Outer.super.q = 'q:w'
+                        Outer.super.@x = 'x:w'
+                        read + [Outer.this.base()]
+                    }
+                }
+            }
+            class Sub extends Outer {
+                String q = 'q:sub'
+                protected String x = 'x:sub'
+                String m() { 'm:sub' }
+                String getP() { 'p:sub' }
+            }
+            def sub = new Sub()
+            assert new Outer.In(sub).test() == ['q:base', 'x:base', 'm:base', 'p:base', 'q:basem:base', 'q:w,x:w']
+            assert [sub.q, sub.@x] == ['q:sub', 'x:sub']
+        """
+    }
+
     // GROOVY-12517
     @Test
     void testQualifiedSuperOfOuterClassWithoutEnclosingInstance() {
