@@ -596,6 +596,62 @@ such as a `StringBuilder`, now throws `ClassCastException` where a
 `String`-only method is called on it. Variables declared `String`, `def` or
 `var`, and dynamic code, behave as before.
 
+### Groovy 6.0.1 — `super.x = v` calls a setter of the superclass when it has several (GROOVY-12521)
+
+When a superclass declared more than one `setX` method — `setX(int)` and
+`setX(String)` — `super.x = v` in dynamic Groovy and under `@TypeChecked` used
+ordinary dispatch on the receiver. A `setX` that the class itself overrides or
+declares, including one generated for a redeclared `x` property, was called
+instead of the superclass's. An overriding setter that delegated with
+`super.x = v` therefore called itself until a `StackOverflowError`. The write
+now chooses among the superclass's `setX` methods by the type of `v`, as
+`super.setX(v)` and `@CompileStatic` do, and as `super.x = v` already did when
+the superclass had a single setter. `super.x++` and `super.x += v` write the
+same way.
+
+**Who is affected.** Classes whose superclass overloads a property's setter,
+that override one of those setters or redeclare the property, and that write
+the property through `super`. Such a write now runs the superclass's setter,
+not the class's own; use `this.x = v` where the class's own setter is wanted.
+In the same case, a `setX` added through the class's `ExpandoMetaClass` or
+through a category no longer receives `super.x = v`, which now resolves as it
+does for a single setter. `@CompileStatic` code, reads of `super.x`, writes
+through `this` or another reference, and superclasses with a single setter
+behave as before. There are no API changes.
+
+### Groovy 6.0.1 — a repeated `_` is an ordinary variable holding the last value (GROOVY-11744)
+
+A variable named `_` may now be declared again in the same or an enclosing
+scope, the later declaration replacing the earlier one, as Java allows for
+its unnamed variables. A `_` repeated in a multi-assignment declaration or in
+a closure or lambda parameter list is therefore simply `_` declared more than
+once: after `def (_, y, _) = [3, 4, 5]` the variable `_` is `5`, and
+`{ _, _ -> _ }` returns its last argument.
+
+This restores the Groovy 5 behaviour in dynamic code. In 6.0.0, reading `_`
+after such a declaration threw `MissingPropertyException`, or found a `_` in
+the script binding. That change was not announced and was most likely
+unintentional: it was a side effect of the `instanceof` pattern variable
+scoping work (GROOVY-12242), which made a variable that is not declared in
+scope always resolve as a property, even when a local of that name exists. A
+closure could not see such a `_` in either version; it now can.
+
+**Who is affected (source).**
+- Code that compiled before behaves as in Groovy 5 and as before, with the
+  exception of the 6.0.0 regression described above.
+- Under `@CompileStatic` and `@TypeChecked`, reading `_` after a repeated
+  `_` used to be the error "The variable [_] is undeclared"; it now has the
+  type of the last declaration.
+- Redeclaring `_` — `def _ = 1` followed by `def _ = 2`, `def (_, y) = …`,
+  `{ _ -> … }` or `catch (Exception _)` — used to be the error "The current
+  scope already contains a variable of the name _", and now compiles. An
+  inner declaration shadows the outer `_` rather than changing it.
+
+Method and constructor parameters, fields and properties named `_`, and
+variables of any other name, are still checked for duplicates. The
+undeclared multi-assignment `(_, y, _) = …` was never affected: it assigns
+the existing `_` (or the binding variable) twice.
+
 ### Groovy 7 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
 
 For a dynamic property write or read, the runtime checks whether the receiver
@@ -738,6 +794,20 @@ which still treats NaN as equal to NaN as `Double.equals` does; and `<=>`,
 which follows `Double.compare` for primitives and objects alike. Classes
 compiled by an earlier release keep the old comparison until they are
 recompiled.
+
+### Groovy 7 — `PlaceholderVisitor` is removed (GROOVY-11744)
+
+`org.codehaus.groovy.control.PlaceholderVisitor` marked a `_` repeated in a
+multi-assignment declaration or a closure or lambda parameter list, so that
+`VariableScopeVisitor` would skip its duplicate check. Since a repeated `_` is
+an ordinary variable that may be declared again (see the Groovy 6.0.1 entry
+above), nothing reads the mark, and the compiler no longer runs the visitor.
+The class was deprecated in Groovy 6.
+
+**Who is affected.** Code that constructs `PlaceholderVisitor`, such as a copy
+of `CompilationUnit` that adds it as a phase operation, or that calls
+`PlaceholderVisitor.isPlaceholder`. Drop the phase operation. Where code needs
+to know whether a variable is `_`, check its name.
 
 ### Groovy 7 — enum constants with literal arguments are created without the meta class (GROOVY-12490)
 
