@@ -1268,4 +1268,137 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         ''',
             '[Static type checking] - unexpected named arg: last'
     }
+
+    // GROOVY-12525
+    @Test
+    void testExplicitGetFlagDoesNotImplyIsFlag() {
+        shouldFailWithMessages '''
+            class Box {
+                boolean flag = true
+                boolean getFlag() { flag } // explicit getFlag(); no isFlag() is generated
+            }
+            class C {
+                boolean test(Box b) { b.isFlag() }
+            }
+            new C().test(new Box())
+        ''',
+        'Cannot find matching method Box#isFlag()'
+    }
+
+    // GROOVY-12525
+    @Test
+    void testExplicitIsFlagDoesNotImplyGetFlag() {
+        shouldFailWithMessages '''
+            class Box {
+                boolean flag = true
+                boolean isFlag() { flag } // explicit isFlag(); no getFlag() is generated
+            }
+            class C {
+                boolean test(Box b) { b.getFlag() }
+            }
+            new C().test(new Box())
+        ''',
+        'Cannot find matching method Box#getFlag()'
+    }
+
+    // GROOVY-12525
+    @Test
+    void testBooleanWrapperPropertyHasNoIsAccessor() {
+        shouldFailWithMessages '''
+            class Box {
+                Boolean flag = Boolean.TRUE // only getFlag() is generated
+            }
+            class C {
+                Boolean test(Box b) { b.isFlag() }
+            }
+            new C().test(new Box())
+        ''',
+        'Cannot find matching method Box#isFlag()'
+    }
+
+    // GROOVY-12525
+    @Test
+    void testNonBooleanPropertyHasNoIsAccessor() {
+        shouldFailWithMessages '''
+            class Box {
+                String name
+            }
+            class C {
+                String test(Box b) { b.isName() }
+            }
+            new C().test(new Box())
+        ''',
+        'Cannot find matching method Box#isName()'
+    }
+
+    // GROOVY-12525
+    @Test
+    void testGeneratedBooleanAccessorsRemainCallable() {
+        assertScript '''
+            class Box {
+                boolean flag = true
+            }
+            def b = new Box()
+            assert b.isFlag()
+            assert b.getFlag()
+            assert b.flag
+        '''
+        assertScript '''
+            class Box {
+                Boolean flag = Boolean.TRUE
+            }
+            def b = new Box()
+            assert b.getFlag()
+            assert b.flag
+        '''
+        assertScript '''
+            class Box {
+                boolean flag = true
+                boolean getFlag() { flag }
+            }
+            def b = new Box()
+            assert b.getFlag()
+            assert b.flag
+        '''
+        assertScript '''
+            class Box {
+                boolean flag = true
+                boolean isFlag() { flag }
+            }
+            def b = new Box()
+            assert b.isFlag()
+            assert b.flag
+        '''
+        assertScript '''
+            class Base {
+                boolean flag = true
+            }
+            class Sub extends Base {
+                boolean flag = false
+                boolean getFlag() { flag }
+            }
+            def s = new Sub()
+            assert s.isFlag() // inherited from Base
+            assert !s.getFlag()
+        '''
+        assertScript '''
+            class Box {
+                static boolean flag = true
+            }
+            assert Box.isFlag()
+            assert Box.getFlag()
+        '''
+        assertScript '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            class Box {
+                boolean flag = true
+            }
+            @CompileStatic
+            class C {
+                boolean test(Box b) { b.isFlag() && b.getFlag() && b.flag }
+            }
+            assert new C().test(new Box())
+        '''
+    }
 }

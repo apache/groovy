@@ -6567,7 +6567,14 @@ trying: for (ClassNode[] signature : signatures) {
                         }
                     }
                 }
-                if (property != null && property.getDeclaringClass().getGetterMethod(name) == null) {
+                // GROOVY-12525: invent only an accessor Verifier will emit. A primitive
+                // boolean property emits both getX and isX unless one is already declared
+                // (then neither is generated) or an explicit getter name is set. Other
+                // properties emit getX only. A superclass that still emits the accessor
+                // keeps the call visible on a subclass that declares the other one.
+                if (property != null && property.getDeclaringClass() != null
+                        && property.getDeclaringClass().getGetterMethod(name) == null
+                        && hierarchyGeneratesAccessor(property, name)) {
                     MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (property.isStatic() ? Opcodes.ACC_STATIC : 0),
                             property.getOriginType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                     node.setDeclaringClass(property.getDeclaringClass());
@@ -6622,6 +6629,67 @@ trying: for (ClassNode[] signature : signatures) {
         }
 
         return EMPTY_METHODNODE_LIST;
+    }
+
+    /**
+     * Whether any property from {@code property}'s declaring class upward will
+     * cause Verifier to emit {@code name}. A more specific property that does
+     * not emit the accessor does not hide an accessor emitted by a superclass.
+     */
+    private static boolean hierarchyGeneratesAccessor(final PropertyNode property, final String name) {
+        ClassNode start = property.getDeclaringClass();
+        if (start == null) return false;
+        for (ClassNode cn = start; cn != null; cn = cn.getSuperClass()) {
+            PropertyNode candidate = (cn == start) ? property : cn.getProperty(property.getName());
+            if (candidate == null) {
+                for (PropertyNode pn : cn.getProperties()) {
+                    if (name.equals(pn.getGetterName())) {
+                        candidate = pn;
+                        break;
+                    }
+                }
+            }
+            if (candidate != null && generatesPropertyGetter(candidate, name)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Mirrors accessor generation in {@code Verifier#visitProperty}: a no-arg
+     * getter is emitted for {@code getX} (or an explicit getter name), and a
+     * primitive {@code boolean} property also emits {@code isX}, unless an
+     * accessor of either name is already declared on the property's class or
+     * a visible final superclass accessor cannot be replaced.
+     */
+    private static boolean generatesPropertyGetter(final PropertyNode property, final String name) {
+        ClassNode owner = property.getDeclaringClass();
+        if (owner == null) return false;
+
+        String explicitName = property.getGetterName();
+        String getterName = explicitName != null ? explicitName : "get" + capitalize(property.getName());
+        boolean primitiveBoolean = explicitName == null && isPrimitiveBoolean(property.getType());
+        String isserName = primitiveBoolean ? "is" + capitalize(property.getName()) : null;
+        if (!name.equals(getterName) && !name.equals(isserName)) return false;
+
+        if (property.getGetterBlock() == null) {
+            if (property.isPrivate()) return false;
+            boolean searchSupers = !property.isStatic();
+            MethodNode getter = owner.getGetterMethod(getterName, searchSupers);
+            if (getter == null && primitiveBoolean) {
+                getter = owner.getGetterMethod(isserName, searchSupers);
+            }
+            if (!needsGeneratedAccessor(owner, getter)) return false;
+        }
+        return true;
+    }
+
+    /** Same replacement rule as {@code Verifier} for an existing property accessor. */
+    private static boolean needsGeneratedAccessor(final ClassNode owner, final MethodNode existing) {
+        if (existing == null) return true;
+        ClassNode declaringClass = existing.getDeclaringClass();
+        if (declaringClass == owner) return false;
+        return declaringClass == null || !(existing.isFinal() && !existing.isPrivate()
+                && (!existing.isPackageScope() || inSamePackage(declaringClass, owner)));
     }
 
     private PropertyNode findProperty(final ClassNode receiver, final String name) {
