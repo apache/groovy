@@ -30,6 +30,18 @@ final class Groovy12552 {
 
     private File dir
 
+    private static final String CALLER = '''package p
+        @groovy.transform.CompileStatic
+        class Caller {
+            def run() {
+                Base b = new Impl()
+                b.name = 'x'
+                b.setName('y')
+                b.getName()
+            }
+        }
+    '''
+
     @BeforeEach
     void setUp() {
         dir = File.createTempDir()
@@ -85,22 +97,43 @@ final class Groovy12552 {
             'p/Named.groovy': 'package p; interface Named { void setName(String name); String getName() }',
             'p/Base.groovy': 'package p; abstract class Base implements Named { String name }',
             'p/Impl.groovy': 'package p; class Impl extends Base {}',
-            'p/Caller.groovy': '''package p
-                @groovy.transform.CompileStatic
-                class Caller {
-                    def run() {
-                        Base b = new Impl()
-                        b.name = 'x'
-                        b.setName('y')
-                        b.getName()
-                    }
-                }
-            '''
+            'p/Caller.groovy': CALLER
         ], ['p/Caller.groovy'])
         for (text in texts['p.Caller']) {
             assert !text.contains('INVOKEINTERFACE p/Named')
             assert text.count('INVOKEVIRTUAL p/Impl.setName') == 2
             assert text.contains('INVOKEVIRTUAL p/Impl.getName')
+        }
+    }
+
+    // accessors a superclass already has are not displaced by the property's own
+    @Test
+    void testConcreteSuperclassAccessors() {
+        def texts = compileBothWays([
+            'p/Named.groovy': 'package p; interface Named { void setName(String name); String getName() }',
+            'p/Super.groovy': 'package p; class Super { String getName() { "super" }; void setName(String name) {} }',
+            'p/Base.groovy': 'package p; abstract class Base extends Super implements Named { String name }',
+            'p/Impl.groovy': 'package p; class Impl extends Base {}',
+            'p/Caller.groovy': CALLER
+        ], ['p/Caller.groovy'])
+        for (text in texts['p.Caller']) {
+            assert !text.contains('INVOKEINTERFACE p/Named')
+            assert text.count('INVOKEVIRTUAL p/Impl.setName (Ljava/lang/String;)V') == 2
+            assert text.contains('INVOKEVIRTUAL p/Impl.getName ()Ljava/lang/String;')
+        }
+    }
+
+    // a subclass override is chosen over the property's own accessor, shown by its narrower return type
+    @Test
+    void testConcreteSubclassAccessors() {
+        def texts = compileBothWays([
+            'p/Base.groovy': 'package p; class Base { Object name }',
+            'p/Impl.groovy': 'package p; class Impl extends Base { String getName() { "impl" }; void setName(String name) {} }',
+            'p/Caller.groovy': CALLER
+        ], ['p/Caller.groovy'])
+        for (text in texts['p.Caller']) {
+            assert text.count('INVOKEVIRTUAL p/Impl.setName (Ljava/lang/String;)V') == 2
+            assert text.contains('INVOKEVIRTUAL p/Impl.getName ()Ljava/lang/String;')
         }
     }
 }
