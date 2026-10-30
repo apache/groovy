@@ -1135,6 +1135,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                 ClassNode originType = getOriginalDeclarationType(leftExpression);
                 typeCheckAssignment(expression, leftExpression, originType, rightExpression, resultType);
+                // GROOVY-12535: property writes into a Map call Map.put(Object, Object). A GString
+                // assigned to a String value is accepted, as "String s = gString" is, but is stored
+                // unchanged. Convert it here so the write keeps compiling and stores a String.
+                if (coerceGStringToStringForMapValue(expression, leftExpression, rightExpression, originType, rType)) {
+                    resultType = originType;
+                }
                 // check for implicit conversion like "String a = 123", "int[] b = [1,2,3]", "List c = [].stream()", etc.
                 if (!implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(resultType), wrapTypeIfNecessary(originType))) {
                     resultType = originType;
@@ -2117,6 +2123,39 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
         if (rightExpression instanceof MapExpression) {
             return !(LinkedHashMap_TYPE.isDerivedFrom(leftType) || LinkedHashMap_TYPE.implementsInterface(leftType));
+        }
+        return false;
+    }
+
+    /**
+     * Wraps a {@code GString} written to a {@code String}-valued map property in a cast to
+     * {@code String}. {@code Map.put} cannot see the value type parameter, so without the cast
+     * the {@code GString} is stored as-is. Direct {@code put} and {@code putAt} are unchanged.
+     *
+     * @return {@code true} when the right-hand side was rewritten
+     */
+    private boolean coerceGStringToStringForMapValue(final BinaryExpression assignment, final Expression leftExpression, final Expression rightExpression, final ClassNode leftType, final ClassNode rightType) {
+        if (!isStringType(leftType) || !isGStringOrGStringStringLUB(rightType) || !isMapValueWrite(leftExpression)) {
+            return false;
+        }
+        CastExpression cast = castX(STRING_TYPE, rightExpression);
+        cast.setSourcePosition(rightExpression);
+        cast.putNodeMetaData(INFERRED_TYPE, STRING_TYPE);
+        assignment.setRightExpression(cast);
+        return true;
+    }
+
+    /**
+     * A property-style write whose receiver is a {@code Map}, including an implicit
+     * property resolved through a map delegate ({@code map.with { key = value }}).
+     */
+    private boolean isMapValueWrite(final Expression lhs) {
+        if (lhs instanceof PropertyExpression pexp) {
+            return isOrImplements(getType(pexp.getObjectExpression()), MAP_TYPE);
+        }
+        if (lhs instanceof VariableExpression vexp && vexp.getAccessedVariable() instanceof DynamicVariable) {
+            Object owner = vexp.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
+            return owner instanceof ClassNode ownerType && isOrImplements(ownerType, MAP_TYPE);
         }
         return false;
     }
