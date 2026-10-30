@@ -40,7 +40,8 @@ public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
     @Override
     public ClassNode resolveType(final Expression exp, final ClassNode current) {
         ClassNode type = resolveInferredType(exp, current);
-        if (!AsmClassGenerator.isClassDirectlyAccessible(type, current) && !isDeclaredAs(exp, type)) {
+        if (type != null && current != null // public: a type checking extension may resolve without a class
+                && !AsmClassGenerator.isClassDirectlyAccessible(type, current) && !isDeclaredAs(exp, type)) {
             // a class that is not public, of another run-time package, cannot be named by the bytecode of the
             // current class, so the value is typed as the nearest superclass that can (like a dynamic value)
             return AsmClassGenerator.getDirectlyAccessibleSuperClass(type, current);
