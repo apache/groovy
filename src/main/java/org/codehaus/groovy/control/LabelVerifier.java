@@ -297,7 +297,8 @@ public class LabelVerifier extends PrePostStatementVisitor {
                 addError("the break statement is only allowed inside loops or switches", breakStatement);
             }
         } else {
-            if (!inLoop && !inIf) { // GROOVY-7463
+            // a lowered yield breaks to the switch it completes, from wherever it is in the arm
+            if (!inLoop && !inIf && breakStatement.getNodeMetaData(YieldStatement.class) == null) { // GROOVY-7463
                 addError("the break statement with named label is only allowed inside control statements", breakStatement);
             }
             if (!availableLabels.contains(label)) {

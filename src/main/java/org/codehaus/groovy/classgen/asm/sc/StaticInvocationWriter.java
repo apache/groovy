@@ -45,6 +45,7 @@ import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
@@ -812,7 +813,9 @@ public class StaticInvocationWriter extends InvocationWriter {
      * that narrowed a variable to {@code String} is.
      */
     static boolean mayHoldGString(final Expression receiver, final ClassNode heldType) {
-        if (!StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(ClassHelper.GSTRING_TYPE, heldType)) return false;
+        // a value held as the common type of several types is only checked against its class part
+        ClassNode checkedType = heldType instanceof WideningCategories.LowestUpperBoundClassNode ? heldType.getUnresolvedSuperClass() : heldType;
+        if (!StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(ClassHelper.GSTRING_TYPE, checkedType)) return false;
         Variable variable = receiver instanceof VariableExpression ve ? ve.getAccessedVariable() : null;
         if (variable instanceof VariableExpression || variable instanceof Parameter) {
             ClassNode variableType = ((ASTNode) variable).getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);

@@ -2913,7 +2913,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         } else if (mp instanceof MultipleSetterProperty msp) {
             if (isGetter) {
                 // GROOVY-10133: do not replace "isPropName()" with "getPropName()" or ...
-                if (msp.getGetter() == null || !msp.getGetter().getName().startsWith("is")) {
+                if (msp.getGetter() == null || !isBooleanGetter(msp.getGetter())) {
                     msp.setGetter(propertyMethod);
                 }
             }
@@ -2921,7 +2921,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         } else if (mp instanceof MetaBeanProperty mbp) {
             if (isGetter) {
                 // GROOVY-10133: do not replace "isPropName()" with "getPropName()" or ...
-                if (mbp.getGetter() == null || !mbp.getGetter().getName().startsWith("is")) {
+                if (mbp.getGetter() == null || !isBooleanGetter(mbp.getGetter())) {
                     mbp.setGetter(propertyMethod);
                 }
                 return mbp;
@@ -2937,6 +2937,18 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         } else {
             throw new GroovyBugError("unknown MetaProperty class used. Class is " + mp.getClass());
         }
+    }
+
+    /**
+     * Checks for an "isPropName()" getter. For super usage the getter of an
+     * overridden method is the MOP method "super$N$isPropName" (GROOVY-12520).
+     */
+    private static boolean isBooleanGetter(final MetaMethod getter) {
+        String name = getter.getName();
+        if (name.startsWith("super$")) {
+            name = name.substring(name.indexOf('$', 6) + 1);
+        }
+        return name.startsWith("is");
     }
 
     private static void createMetaBeanProperty(Map<String, MetaProperty> propertyIndex, String propName, boolean isGetter, MetaMethod propertyMethod) {
@@ -3069,6 +3081,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     arguments = new Object[]{newValue};
                     field = f;
                 }
+            } else if (useSuper && !isStatic && mp instanceof MultipleSetterProperty) {
+                // GROOVY-12521: choose among the setters of the super class
+                invokeMethod(sender, object, MetaProperty.getSetterName(mp.getName()), new Object[]{newValue}, true, fromInsideClass);
+                return;
             } else {
                 field = mp;
             }

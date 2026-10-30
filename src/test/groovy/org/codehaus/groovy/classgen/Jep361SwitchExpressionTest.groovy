@@ -19,13 +19,22 @@
 package org.codehaus.groovy.classgen
 
 import groovy.transform.CompileStatic
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.CodeVisitorSupport
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.YieldStatement
+import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import org.codehaus.groovy.control.customizers.CompilationCustomizer
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt
 
 /**
  * JEP 361 (https://openjdk.org/jeps/361) conformance for first-class switch
@@ -588,6 +597,384 @@ final class Jep361SwitchExpressionTest {
             }
             assert n == 1
         '''
+    }
+
+    //--------------------------------------------------------------------------
+    // Control transfer out of an arrow arm in statement position (JEP 361:
+    // "the arrow only decides fall-through"; return/break/continue are legal
+    // in a switch statement whatever its label form)
+
+    @Test
+    void returnFromArrowArmOfSwitchStatement() {
+        assertBoth '''
+            def m(int n) {
+                switch (n) {
+                    case 1 -> return 'one'
+                    case 2 -> { return 'two' }
+                }
+                return 'many'
+            }
+            assert m(1) == 'one'
+            assert m(2) == 'two'
+            assert m(3) == 'many'
+        '''
+    }
+
+    @Test
+    void returnFromArrowArmOfTrailingSwitchStatement() {
+        // the switch is the last statement, so its other arms still supply the implicit return
+        assertBoth '''
+            def m(int n) {
+                switch (n) {
+                    case 1  -> return 'one'
+                    default -> 'other'
+                }
+            }
+            assert m(1) == 'one'
+            assert m(2) == 'other'
+        '''
+    }
+
+    @Test
+    void breakFromArrowArmLeavesTheSwitchStatement() {
+        assertBoth '''
+            def out = []
+            for (i in 1..3) {
+                switch (i) {
+                    case 2  -> { if (i > 0) break; out << 'unreached' }
+                    default -> out << i
+                }
+                out << 'after'
+            }
+            assert out == [1, 'after', 'after', 3, 'after']
+        '''
+    }
+
+    @Test
+    void continueFromArrowArmContinuesTheEnclosingLoop() {
+        assertBoth '''
+            def out = []
+            for (i in 1..3) {
+                switch (i) {
+                    case 2  -> continue
+                    default -> out << i
+                }
+                out << 'after'
+            }
+            assert out == [1, 'after', 3, 'after']
+        '''
+    }
+
+    @Test
+    void labeledBreakFromArrowArmLeavesTheEnclosingLoop() {
+        assertBoth '''
+            def out = []
+            outer:
+            for (i in 1..3) {
+                switch (i) {
+                    case 2  -> break outer
+                    default -> out << i
+                }
+            }
+            assert out == [1]
+        '''
+    }
+
+    @Test
+    void returnFromSwitchExpressionNestedInStatementArmIsStillError() {
+        shouldFailBoth '''
+            def m(int n) {
+                switch (n) {
+                    case 1 -> {
+                        def r = switch (n) { case 1 -> return 'x'; default -> 'y' }
+                    }
+                }
+            }
+        ''', 'does not support `return`'
+    }
+
+    @Test
+    void returnFromStatementSwitchInsideExpressionArmIsStillError() {
+        // the inner switch is a statement, but returning would still leave the outer expression
+        shouldFailBoth '''
+            def m(int a, int b) {
+                def r = switch (a) {
+                    case 1 -> {
+                        switch (b) { case 2 -> return 5 }
+                        yield 1
+                    }
+                    default -> 0
+                }
+            }
+        ''', 'does not support `return`'
+    }
+
+    //--------------------------------------------------------------------------
+    // A yield that does not end its arm still completes the switch when the
+    // switch is in statement position: its value is the result in return
+    // position, and is discarded otherwise
+
+    @Test
+    void earlyYieldInTrailingSwitchStatement() {
+        assertBoth '''
+            def pick(boolean flag) {
+                switch (1) {
+                    case 1 -> {
+                        if (flag) yield 'first'
+                        yield 'second'
+                    }
+                }
+            }
+            assert pick(true) == 'first'
+            assert pick(false) == 'second'
+        '''
+    }
+
+    @Test
+    void earlyYieldInTrailingSwitchStatementWithPrimitiveReturnType() {
+        assertBoth '''
+            int pick(int n) {
+                switch (n) {
+                    case 1 -> {
+                        if (n > 0) yield 10
+                        yield 20
+                    }
+                    default -> 30
+                }
+            }
+            assert pick(1) == 10
+            assert pick(2) == 30
+        '''
+    }
+
+    @Test
+    void earlyYieldInTrailingSwitchStatementOfClosure() {
+        assertBoth '''
+            def pick = { boolean flag ->
+                switch (1) {
+                    case 1 -> {
+                        if (flag) yield 'first'
+                        yield 'second'
+                    }
+                }
+            }
+            assert pick(true) == 'first'
+            assert pick(false) == 'second'
+        '''
+    }
+
+    @Test
+    void earlyYieldLeavesValueDiscardedSwitchStatement() {
+        assertBoth '''
+            List log = []
+            def run(boolean flag, List log) {
+                switch (1) {
+                    case 1 -> {
+                        if (flag) yield 'first'
+                        log << 'fell through'
+                        yield 'second'
+                    }
+                }
+                log << 'after'
+                'end'
+            }
+            assert run(true, log) == 'end'
+            assert log == ['after']
+            log.clear()
+            assert run(false, log) == 'end'
+            assert log == ['fell through', 'after']
+        '''
+    }
+
+    @Test
+    void earlyYieldInsideLoopOfArm() {
+        assertBoth '''
+            def pick(List<Integer> xs) {
+                switch (1) {
+                    case 1 -> {
+                        for (x in xs) {
+                            if (x > 2) yield "big $x".toString()
+                        }
+                        yield 'none'
+                    }
+                }
+            }
+            assert pick([1, 5, 7]) == 'big 5'
+            assert pick([1]) == 'none'
+
+            List log = []
+            def run(List<Integer> xs, List log) {
+                switch (1) {
+                    case 1 -> {
+                        while (!xs.isEmpty()) {
+                            int x = xs.remove(0)
+                            if (x > 2) yield x
+                            log << x
+                        }
+                        log << 'loop done'
+                        yield 0
+                    }
+                }
+                log << 'after'
+            }
+            run([1, 5, 7], log)
+            assert log == [1, 'after']
+        '''
+    }
+
+    @Test
+    void earlyYieldRunsEnclosingFinallyBlock() {
+        assertBoth '''
+            List log = []
+            def pick(boolean flag, List log) {
+                switch (1) {
+                    case 1 -> {
+                        try {
+                            if (flag) yield 'first'
+                            log << 'body'
+                        } finally {
+                            log << 'finally'
+                        }
+                        yield 'second'
+                    }
+                }
+            }
+            assert pick(true, log) == 'first'
+            assert log == ['finally']
+            log.clear()
+            assert pick(false, log) == 'second'
+            assert log == ['body', 'finally']
+        '''
+    }
+
+    @Test
+    void earlyYieldTargetsItsOwnSwitchWhenSwitchStatementsAreNested() {
+        assertBoth '''
+            def pick(int a, int b) {
+                switch (a) {
+                    case 1 -> {
+                        switch (b) {
+                            case 1 -> {
+                                if (a == b) yield 'inner early'
+                                yield 'inner late'
+                            }
+                        }
+                        if (b == 2) yield 'outer early'
+                        yield 'outer late'
+                    }
+                }
+            }
+            assert pick(1, 1) == 'outer late'
+            assert pick(1, 2) == 'outer early'
+            assert pick(1, 3) == 'outer late'
+        '''
+    }
+
+    @Test
+    void earlyYieldInsideNestedColonSwitchStatementCompletesTheArrowSwitch() {
+        assertBoth '''
+            def pick(int a, int b) {
+                switch (a) {
+                    case 1 -> {
+                        switch (b) {
+                            case 2:
+                                yield 'nested colon'
+                        }
+                        yield 'outer'
+                    }
+                }
+            }
+            assert pick(1, 2) == 'nested colon'
+            assert pick(1, 3) == 'outer'
+
+            List log = []
+            def run(int a, int b, List log) {
+                switch (a) {
+                    case 1 -> {
+                        switch (b) {
+                            case 2:
+                                yield 'nested colon'
+                        }
+                        log << 'fell through'
+                        yield 'outer'
+                    }
+                }
+                log << 'after'
+            }
+            run(1, 2, log)
+            assert log == ['after']
+            log.clear()
+            run(1, 3, log)
+            assert log == ['fell through', 'after']
+        '''
+    }
+
+    @Test
+    void earlyYieldInSwitchExpressionPositions() {
+        // a switch whose value is used is an expression, so this does not go through the statement lowering
+        assertBoth '''
+            def viaReturn(int n, boolean flag) {
+                return switch (n) {
+                    case 1 -> { if (flag) yield 'early'; yield 'late' }
+                    default -> 'other'
+                }
+            }
+            def viaAssignment(int n, boolean flag) {
+                def result = switch (n) {
+                    case 1 -> { if (flag) yield 'early'; yield 'late' }
+                    default -> 'other'
+                }
+                result
+            }
+            def viaArgument(int n, boolean flag) {
+                String.valueOf(switch (n) {
+                    case 1 -> { if (flag) yield 'early'; yield 'late' }
+                    default -> 'other'
+                })
+            }
+            assert [viaReturn(1, true), viaReturn(1, false), viaReturn(2, true)] == ['early', 'late', 'other']
+            assert [viaAssignment(1, true), viaAssignment(1, false), viaAssignment(2, true)] == ['early', 'late', 'other']
+            assert [viaArgument(1, true), viaArgument(1, false), viaArgument(2, true)] == ['early', 'late', 'other']
+        '''
+    }
+
+    @Test
+    void earlyYieldInReturnPositionKeepsStatementsAddedBeforeIt() {
+        def script = '''
+            def pick(boolean flag) {
+                switch (1) {
+                    case 1 -> {
+                        if (flag) yield 'first'
+                        yield 'second'
+                    }
+                }
+            }
+            assert pick(true) == 'first'
+            assert pick(false) == 'second'
+        '''
+        [new CompilerConfiguration(), staticConfig()].each { config ->
+            config.addCompilationCustomizers(prependToEarlyYields())
+            new GroovyShell(config).evaluate(script)
+        }
+    }
+
+    // stands in for a transform that adds a statement to the start of each lowered early yield
+    private static CompilationCustomizer prependToEarlyYields() {
+        new CompilationCustomizer(CompilePhase.CANONICALIZATION) {
+            @Override
+            void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
+                def visitor = new CodeVisitorSupport() {
+                    @Override
+                    void visitBlockStatement(BlockStatement block) {
+                        if (block.statements && block.statements[-1].getNodeMetaData(YieldStatement) != null) {
+                            block.statements.add(0, stmt(constX('added by a transform')))
+                        }
+                        super.visitBlockStatement(block)
+                    }
+                }
+                classNode.methods.each { it.code?.visit(visitor) }
+            }
+        }
     }
 
     @Test
