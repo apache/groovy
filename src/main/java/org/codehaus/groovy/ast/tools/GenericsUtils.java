@@ -506,7 +506,16 @@ public class GenericsUtils {
                     if (genericsSpec.containsKey(placeholderName)) {
                         ClassNode resolved = genericsSpec.get(placeholderName);
                         GenericsType wildcard = preservedWildcard(resolved);
-                        newgTypes[i] = wildcard != null ? reapplyWildcard(genericsSpec, wildcard, exclusions) : new GenericsType(resolved);
+                        if (wildcard != null && !exclusions.contains(placeholderName)) {
+                            // A bound may mention this placeholder (F-bounded or
+                            // self-referential). Record it so that nested correction
+                            // does not reapply the same wildcard.
+                            newgTypes[i] = reapplyWildcard(genericsSpec, wildcard, plus(exclusions, placeholderName));
+                        } else if (wildcard != null) {
+                            newgTypes[i] = new GenericsType(oldgType.getType(), oldgType.getUpperBounds(), oldgType.getLowerBound());
+                        } else {
+                            newgTypes[i] = new GenericsType(resolved);
+                        }
                     } else {
                         newgTypes[i] = erasure(oldgType);
                     }
