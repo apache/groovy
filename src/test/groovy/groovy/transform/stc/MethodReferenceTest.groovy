@@ -2615,8 +2615,7 @@ final class MethodReferenceTest {
                 bytecode,
                 'INVOKEDYNAMIC applyAsInt()Ljava/util/function/ToIntFunction;',
                 'java/lang/invoke/LambdaMetafactory.metafactory',
-                // GROOVY-12536: erased parameter, GString converted before String.length
-                'C.gstring$String$length$1(Ljava/lang/Object;)I'
+                'java/lang/String.length()I'
             )
         }
 
@@ -2657,8 +2656,7 @@ final class MethodReferenceTest {
                 bytecode,
                 'INVOKEDYNAMIC applyAsInt()Ljava/util/function/ToIntFunction;',
                 'java/lang/invoke/LambdaMetafactory.metafactory',
-                // GROOVY-12536: the String argument is erased; the Integer receiver is not captured
-                'C.gstring$Integer$parseInt$1(Ljava/lang/Object;)I'
+                'java/lang/Integer.parseInt(Ljava/lang/String;)I'
             )
             assert !bytecode.hasSequence(['INVOKEDYNAMIC applyAsInt(Ljava/lang/Integer;)Ljava/util/function/ToIntFunction;'])
         }
@@ -2715,8 +2713,7 @@ final class MethodReferenceTest {
                 outerBytecode,
                 'INVOKEDYNAMIC apply()Ljava/util/function/Function;',
                 'java/lang/invoke/LambdaMetafactory.metafactory',
-                // GROOVY-12536: adapter accepts the erased argument and forwards a String
-                'C.gstring$C$ctorRef$create$0$1(Ljava/lang/Object;)LC$Box;'
+                'C.ctorRef$create$0(Ljava/lang/String;)LC$Box;'
             )
         }
 
@@ -2765,8 +2762,7 @@ final class MethodReferenceTest {
                 createBytecode,
                 'INVOKEDYNAMIC apply()LC$SerFunc;',
                 'java/lang/invoke/LambdaMetafactory.altMetafactory',
-                // GROOVY-12536: erased parameter, GString converted before String.trim
-                'C.gstring$String$trim$1(Ljava/lang/Object;)Ljava/lang/String;'
+                'java/lang/String.trim()Ljava/lang/String;'
             )
             assert createBytecode.hasSequence(['CHECKCAST java/io/Serializable'])
 

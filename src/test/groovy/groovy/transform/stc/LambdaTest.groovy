@@ -2613,14 +2613,13 @@ final class LambdaTest {
                 }
             '''
             def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_create_lambda1', method: 'doCall', script)
-            // GROOVY-12536: the parameter is the erasure, so a GString can be converted inside doCall
-            assert lambdaBytecode.hasSequence(['public static doCall(Ljava/lang/Object;)Ljava/lang/Object;'])
+            assert lambdaBytecode.hasSequence(['public static doCall(Ljava/lang/String;)Ljava/lang/Object;'])
 
             def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
             assert outerBytecode.hasSequence([
                 'INVOKEDYNAMIC transform()LTransformer;',
                 'java/lang/invoke/LambdaMetafactory.metafactory',
-                'C$_create_lambda1.doCall(Ljava/lang/Object;)Ljava/lang/Object;'
+                'C$_create_lambda1.doCall(Ljava/lang/String;)Ljava/lang/Object;'
             ])
             assert !outerBytecode.hasSequence(['NEW C$_create_lambda1'])
         }

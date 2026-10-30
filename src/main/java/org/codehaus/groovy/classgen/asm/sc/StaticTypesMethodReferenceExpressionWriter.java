@@ -30,7 +30,6 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
-import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeInstruction;
@@ -55,14 +54,12 @@ import java.util.function.ToIntFunction;
 
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.joining;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInterfacesAndSuperInterfaces;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractPlaceholders;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe0;
@@ -118,16 +115,9 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         ResolvedMethodReference adaptedMethodReference = adaptMethodReference(functionalInterface, resolvedMethodReference);
         ResolvedMethodReference invocationReadyMethodReference = prepareInvocationTarget(methodReferenceExpression, adaptedMethodReference);
         MethodReferenceInvocation invocation = createMethodReferenceInvocation(functionalInterface.functionalType(), invocationReadyMethodReference);
-        Parameter[] instantiatedParameters = functionalInterface.parametersWithExactType();
-        GStringAdaptation gstringAdaptation = adaptGStringParameters(functionalInterface, invocationReadyMethodReference, methodReferenceExpression);
-        if (gstringAdaptation != null) {
-            invocationReadyMethodReference = invocationReadyMethodReference.with(invocationReadyMethodReference.referenceTarget(), gstringAdaptation.method());
-            invocation = new MethodReferenceInvocation(Opcodes.H_INVOKESTATIC, invocation.invokedTypeDescriptor(), invocation.capturing());
-            instantiatedParameters = gstringAdaptation.instantiatedParameters();
-        }
 
         if (functionalInterface.serializable()) {
-            ensureDeserializeLambdaSupport(methodReferenceExpression, functionalInterface, invocationReadyMethodReference, invocation, instantiatedParameters);
+            ensureDeserializeLambdaSupport(methodReferenceExpression, functionalInterface, invocationReadyMethodReference, invocation);
         }
 
         writeFunctionalInterfaceIndy(
@@ -138,7 +128,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             invocation.implMethodKind(),
             invocationReadyMethodReference.implementationMethod().getDeclaringClass(),
             invocationReadyMethodReference.implementationMethod(),
-            instantiatedParameters,
+            functionalInterface.parametersWithExactType(),
             functionalInterface.serializable(),
             functionalInterface.markers()
         );
@@ -614,104 +604,10 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         throw new MultipleCompilationErrorsException(controller.getSourceUnit().getErrorCollector());
     }
 
-    /**
-     * When a method reference is applied to a {@code String} that came from a type variable,
-     * route it through a synthetic method that accepts the erased type and converts a
-     * {@code GString} before the referenced method sees the value.
-     */
-    private GStringAdaptation adaptGStringParameters(final FunctionalInterfaceContext functionalInterface,
-                                                     final ResolvedMethodReference resolved,
-                                                     final MethodReferenceExpression source) {
-        Parameter[] exact = functionalInterface.parametersWithExactType();
-        Parameter[] sam = functionalInterface.abstractMethod().getParameters();
-        MethodNode impl = resolved.implementationMethod();
-        if (exact.length != sam.length || impl == null) return null;
-
-        ClassNode[] erasures = new ClassNode[exact.length];
-        boolean any = false;
-        for (int i = 0, n = exact.length; i < n; i += 1) {
-            ClassNode erased = StaticInvocationWriter.gstringBridgeErasure(exact[i].getType(), sam[i].getType());
-            if (erased != null) {
-                erasures[i] = erased;
-                any = true;
-            }
-        }
-        if (!any) return null;
-
-        boolean capturing = resolved.referenceTarget().isCapturing();
-        boolean virtual = !impl.isStatic();
-        int samCount = exact.length;
-        int implCount = impl.getParameters().length;
-        if (virtual && capturing && implCount != samCount) return null;
-        if (virtual && !capturing && (samCount < 1 || implCount != samCount - 1)) return null;
-        if (!virtual && capturing && implCount != samCount + 1) return null;
-        if (!virtual && !capturing && implCount != samCount) return null;
-
-        Parameter[] samParams = new Parameter[samCount];
-        for (int i = 0; i < samCount; i += 1) {
-            if (erasures[i] != null) {
-                samParams[i] = StaticInvocationWriter.newGStringBridgeParameter("p" + i, erasures[i]);
-            } else {
-                samParams[i] = new Parameter(exact[i].getType(), "p" + i);
-                samParams[i].setOriginType(exact[i].getOriginType());
-            }
-        }
-
-        Parameter self = capturing ? new Parameter(resolved.referenceTarget().type(), "self") : null;
-        Parameter[] adapterParams;
-        Expression receiver;
-        Parameter[] arguments;
-        if (virtual && !capturing) {
-            adapterParams = samParams;
-            receiver = varX(samParams[0]);
-            arguments = Arrays.copyOfRange(samParams, 1, samCount);
-        } else if (virtual) {
-            adapterParams = prependParameter(self, samParams);
-            receiver = varX(self);
-            arguments = samParams;
-        } else if (capturing) {
-            adapterParams = prependParameter(self, samParams);
-            receiver = classX(impl.getDeclaringClass());
-            arguments = adapterParams;
-        } else {
-            adapterParams = samParams;
-            receiver = classX(impl.getDeclaringClass());
-            arguments = samParams;
-        }
-
-        MethodCallExpression call = callX(receiver, impl.getName(), new ArgumentListExpression(arguments));
-        call.setImplicitThis(false);
-        call.setMethodTarget(impl);
-        call.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, impl);
-        call.setSourcePosition(source);
-
-        Statement invocation = impl.isVoidMethod() ? stmt(call) : returnS(call);
-        Statement body = block(StaticInvocationWriter.gstringBridgePrologue(controller, samParams), invocation);
-        ClassNode[] exceptions = impl.getExceptions() == null ? ClassNode.EMPTY_ARRAY : impl.getExceptions();
-        MethodNode adapter = controller.getClassNode().addSyntheticMethod(
-            createSyntheticMethodName("gstring", impl.getDeclaringClass(), impl.getName()),
-            Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
-            impl.getReturnType(),
-            adapterParams,
-            exceptions,
-            body);
-        adapter.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
-        adapter.setSourcePosition(source);
-        return new GStringAdaptation(adapter, samParams);
-    }
-
-    private static Parameter[] prependParameter(final Parameter first, final Parameter[] rest) {
-        Parameter[] all = new Parameter[rest.length + 1];
-        all[0] = first;
-        System.arraycopy(rest, 0, all, 1, rest.length);
-        return all;
-    }
-
     private void ensureDeserializeLambdaSupport(final MethodReferenceExpression methodReferenceExpression,
                                                 final FunctionalInterfaceContext functionalInterface,
                                                 final ResolvedMethodReference resolvedMethodReference,
-                                                final MethodReferenceInvocation invocation,
-                                                final Parameter[] instantiatedParameters) {
+                                                final MethodReferenceInvocation invocation) {
         String helperName = getOrCreateDeserializeLambdaMethodName(methodReferenceExpression);
         Parameter[] parameters = createDeserializeMethodParameters();
         if (controller.getClassNode().hasMethod(helperName, parameters)) {
@@ -724,7 +620,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             helperName,
             functionalInterface.abstractMethod(),
             methodRefMethod,
-            instantiatedParameters,
+            functionalInterface.parametersWithExactType(),
             invocation.implMethodKind(),
             invocation.capturing(),
             referenceTarget.type(),
@@ -734,7 +630,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         addDeserializeDispatcherEntry(controller, parameters,
             createSerializedLambdaFingerprint(functionalInterface.samMethodDescriptor(), controller.getClassNode(), invocation.implMethodKind(),
                 methodRefMethod.getDeclaringClass(), methodRefMethod,
-                instantiatedParameters, functionalInterface.functionalType(),
+                functionalInterface.parametersWithExactType(), functionalInterface.functionalType(),
                 functionalInterface.abstractMethod(), invocation.capturing() ? 1 : 0),
             helperMethod);
     }
@@ -875,12 +771,5 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
      * Bytecode-level invocation details derived from the resolved method reference.
      */
     private record MethodReferenceInvocation(int implMethodKind, String invokedTypeDescriptor, boolean capturing) {
-    }
-
-    /**
-     * Synthetic adapter that accepts an erased {@code String} parameter and the SAM parameters
-     * the metafactory should see.
-     */
-    private record GStringAdaptation(MethodNode method, Parameter[] instantiatedParameters) {
     }
 }

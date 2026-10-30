@@ -893,26 +893,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     Statement statement;
                     List<Statement> statementList = (List<Statement>) r;
                     Tuple2<Token, Expression> tuple = (Tuple2<Token, Expression>) e;
-                    boolean hasBody = asBoolean(ctx.blockStatements());
                     switch (tuple.getV1().getType()) {
                       case CASE:
-                        if (!asBoolean(firstLabelHolder)) {
+                        if (!asBoolean(statementList)) {
                             firstLabelHolder.add(tuple.getV1());
                         }
                         statement = new CaseStatement(
                                 tuple.getV2(),
-                                // the last label carries the body; an empty final case falls through
-                                (statementList.size() == labelCount - 1 && hasBody) ? this.visitBlockStatements(ctx.blockStatements()) : EmptyStatement.INSTANCE
+                                // check whether processing the last label; if yes, block statement should be attached
+                                (statementList.size() == labelCount - 1) ? this.visitBlockStatements(ctx.blockStatements()) : EmptyStatement.INSTANCE
                         );
                         statementList.add(configureAST(statement, firstLabelHolder.get(0)));
                         break;
                       case DEFAULT:
-                        if (hasBody) {
-                            statement = this.visitBlockStatements(ctx.blockStatements());
-                        } else {
-                            // not EmptyStatement.INSTANCE: the default flag is per occurrence
-                            statement = configureAST(new EmptyStatement(), tuple.getV1());
-                        }
+                        statement = this.visitBlockStatements(ctx.blockStatements());
                         statement.putNodeMetaData(IS_SWITCH_DEFAULT, Boolean.TRUE);
                         statement.putNodeMetaData(SWITCH_DEFAULT_KEYWORD, tuple.getV1());
                         statementList.add(statement);

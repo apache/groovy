@@ -701,17 +701,11 @@ resource
     ;
 
 
-/** Matches one or more labels, then their statements.
- *  The statements are required, except when the next token is the
- *  closing brace: a final case or default may have no body. The
- *  predicate keeps that alternative LL(1) and out of the way of a
- *  following label that does have statements.
+/** Matches cases then statements, both of which are mandatory.
+ *  To handle empty cases at the end, we add switchLabel* to statement.
  */
 switchBlockStatementGroup
-    :   switchLabel (NL* switchLabel)* NL*
-        (   blockStatements
-        |   { _input.LT(1).getType() == RBRACE }?
-        )
+    :   switchLabel (NL* switchLabel)* NL* blockStatements
     ;
 
 switchLabel
