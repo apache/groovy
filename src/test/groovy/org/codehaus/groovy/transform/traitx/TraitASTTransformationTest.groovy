@@ -2420,6 +2420,88 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-12587
+    @CompileModesTest
+    void testTraitStaticPropertyThroughThis(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static boolean flag = true
+                static boolean sm() { this.flag }
+                boolean im() { this.flag }
+            }
+            $mode
+            class C implements T {
+            }
+
+            $mode void m() {
+                assert C.sm()
+                assert new C().im()
+            }
+            m()
+        """
+
+        assertScript shell, """
+            $mode
+            trait T {
+                static boolean flag = true
+                static int count = 0
+                static String label = 'x'
+                static void update() {
+                    this.flag = false
+                    this.count += 1
+                    this.label = this.label + 'y'
+                }
+                void instanceUpdate() {
+                    this.count = this.count + 10
+                    this.label += 'z'
+                }
+                static int labelLength() { this.label.length() }
+                int instanceLabelLength() { this.label.size() }
+            }
+            $mode
+            class C implements T {
+            }
+            $mode
+            class D implements T {
+            }
+
+            $mode void m() {
+                C.update()
+                assert !C.flag && C.count == 1 && C.label == 'xy'
+                new C().instanceUpdate()
+                assert C.count == 11 && C.label == 'xyz'
+                assert C.labelLength() == 3 && new C().instanceLabelLength() == 3
+                assert D.flag && D.count == 0 && D.label == 'x'
+                assert D.labelLength() == 1 && new D().instanceLabelLength() == 1
+            }
+            m()
+        """
+
+        assertScript shell, """
+            $mode
+            trait T {
+                private static int count = 1
+                public static int VAL = 2
+                static int sumInClosure() { def c = { -> this.count + this.VAL }; c() }
+                int instanceSumInClosure() { def c = { -> this.count + this.VAL }; c() }
+                static int sumInLambda() { java.util.function.IntSupplier s = () -> this.count + this.VAL; s.getAsInt() }
+                int instanceSumInLambda() { java.util.function.IntSupplier s = () -> this.count + this.VAL; s.getAsInt() }
+            }
+            $mode
+            class C implements T {
+            }
+
+            $mode void m() {
+                assert C.sumInClosure() == 3
+                assert new C().instanceSumInClosure() == 3
+                assert C.sumInLambda() == 3
+                assert new C().instanceSumInLambda() == 3
+            }
+            m()
+        """
+    }
+
     @Test
     void testTraitMethodShouldBeDefaultImplementationUsingReflection() {
         assertScript shell, '''
