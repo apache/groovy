@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.decompiled;
 
+import groovy.transform.Internal;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -28,6 +29,7 @@ import org.codehaus.groovy.ast.MixinNode;
 import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.classgen.Verifier;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
@@ -168,6 +170,22 @@ public class DecompiledClassNode extends ClassNode {
     @Override
     public Class getTypeClass() {
         return resolver.resolveJvmClass(getName());
+    }
+
+    /**
+     * Writes the INNERCLASS entries (JVMS 4.7.6) recorded in this class's bytecode for itself
+     * and its enclosing classes, outermost first. Nothing is written for a top-level, local or
+     * anonymous class.
+     *
+     * @param cv the visitor of the class that refers to this class
+     */
+    @Internal
+    public void visitInnerClassEntries(final ClassVisitor cv) {
+        if (classData.innerClassEntries != null) {
+            for (InnerClassStub entry : classData.innerClassEntries) {
+                cv.visitInnerClass(entry.name(), entry.outerName(), entry.innerName(), entry.access());
+            }
+        }
     }
 
     /**
