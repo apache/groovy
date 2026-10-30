@@ -18,7 +18,9 @@
  */
 package org.codehaus.groovy.classgen;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -35,6 +37,7 @@ import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
+import org.codehaus.groovy.ast.stmt.YieldStatement;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -156,6 +159,7 @@ public class ReturnAdder {
         }
 
         if (statement instanceof SwitchStatement switchStatement) {
+            addReturnsForEarlyYields(switchStatement);
             Statement defaultStatement = switchStatement.getDefaultStatement();
             List<CaseStatement> caseStatements = switchStatement.getCaseStatements();
             for (Iterator<CaseStatement> it = caseStatements.iterator(); it.hasNext(); ) {
@@ -215,6 +219,39 @@ public class ReturnAdder {
         BlockStatement blockStatement = new BlockStatement(statements, new VariableScope(scope));
         blockStatement.setSourcePosition(statement);
         return blockStatement;
+    }
+
+    /**
+     * The parser lowers a {@code yield} that does not end its arm of a
+     * statement-position switch to a block that evaluates the value and breaks
+     * out, the block and its {@code break} marked with the switch they leave.
+     * With the switch in return position, that value is the result, so the
+     * block returns it instead. Only the trailing value and {@code break} are
+     * replaced, so statements a transform has added before them are kept.
+     */
+    private void addReturnsForEarlyYields(final SwitchStatement switchStatement) {
+        switchStatement.visit(new CodeVisitorSupport() {
+            @Override
+            public void visitBlockStatement(final BlockStatement block) {
+                if (block.getNodeMetaData(YieldStatement.class) != switchStatement) {
+                    super.visitBlockStatement(block);
+                    return;
+                }
+                List<Statement> statements = block.getStatements();
+                int n = statements.size();
+                if (n < 2 || !(statements.get(n - 2) instanceof ExpressionStatement es)
+                        || statements.get(n - 1).getNodeMetaData(YieldStatement.class) != switchStatement) {
+                    throw new GroovyBugError("yield lowered for a switch in return position no longer ends with its value and break");
+                }
+                ReturnStatement returnStatement = new ReturnStatement(es.getExpression());
+                returnStatement.setSourcePosition(es);
+                listener.returnStatementAdded(returnStatement);
+                if (doAdd) {
+                    statements.remove(n - 1);
+                    statements.set(n - 2, returnStatement);
+                }
+            }
+        });
     }
 
     private Statement adjustSwitchCaseCode(final Statement statement, final ClassNode rtype, final VariableScope scope, final boolean lastCase) {
