@@ -110,41 +110,6 @@ final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticC
         '''
     }
 
-    @Test
-    void testMethodVersusPropertyOnCompoundAssignmentTarget() {
-        assertScript '''
-            import org.codehaus.groovy.ast.expr.*
-            import org.codehaus.groovy.ast.stmt.*
-
-            class Pogo {
-                String string = ''
-                void setString(String string) {
-                    this.string = string
-                }
-            }
-
-            @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                node = node.code.statements[0].expression
-                assert node instanceof MethodCallExpression
-
-                node = node.arguments.expressions[0].code.statements[0].expression
-                assert node instanceof BinaryExpression
-
-                assert node.leftExpression instanceof PropertyExpression
-                def target = node.leftExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
-
-                assert target != null && target.name == 'setString'
-            })
-            void test(Pogo pogo) {
-                pogo.with {
-                    string += 'x'
-                }
-            }
-
-            test(new Pogo())
-        '''
-    }
-
     // GROOVY-12561
     @Test
     void testClosureAssignedToASubscriptOrPropertyIsConvertedToItsInterface() {
@@ -181,6 +146,41 @@ final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticC
             assert [element, value, property, field, named]*.get() == ['element', 'element', 'property', 'field', 'named']
             assert [element, value, property, field, named].every { it instanceof Supplier && !(it instanceof Closure) }
             assert value.is(element) // the value of the assignment is the converted closure
+        '''
+    }
+
+    @Test
+    void testMethodVersusPropertyOnCompoundAssignmentTarget() {
+        assertScript '''
+            import org.codehaus.groovy.ast.expr.*
+            import org.codehaus.groovy.ast.stmt.*
+
+            class Pogo {
+                String string = ''
+                void setString(String string) {
+                    this.string = string
+                }
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                node = node.code.statements[0].expression
+                assert node instanceof MethodCallExpression
+
+                node = node.arguments.expressions[0].code.statements[0].expression
+                assert node instanceof BinaryExpression
+
+                assert node.leftExpression instanceof PropertyExpression
+                def target = node.leftExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+
+                assert target != null && target.name == 'setString'
+            })
+            void test(Pogo pogo) {
+                pogo.with {
+                    string += 'x'
+                }
+            }
+
+            test(new Pogo())
         '''
     }
 }
