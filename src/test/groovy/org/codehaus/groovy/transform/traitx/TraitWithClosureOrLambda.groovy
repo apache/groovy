@@ -577,6 +577,48 @@ final class TraitWithClosureOrLambda {
 
     // GROOVY-12563
     @Test
+    void testExplicitThisInDynamicTraitClosure() {
+        assertScript '''
+            class Base {
+                String base() { 'base' }
+            }
+            class Other {
+                String m() { 'other' }
+            }
+            @groovy.transform.SelfType(Base)
+            trait T {
+                String name = 'n'
+                String m() { 'T.m ' + name }
+                String over() { 'T.over' }
+                static String sm(String s) { 'T.sm' + s }
+                def out(o) { o }
+                def explicitThis() { def c = { [this.m(), this.over(), this.base(), this.name, this.getClass().simpleName, this.toString()] }; c() }
+                def implicitThis() { def c = { [m(), over(), base(), name] }; c() }
+                def nested() { def c = { def d = { [this.m(), this.over(), this, out(this), this.out(this)] }; d() }; c() }
+                def delegateFirst() { def c = { [this.m(), m()] }; c.resolveStrategy = Closure.DELEGATE_FIRST; c.delegate = new Other(); c() }
+                static staticThis() { def c = { [this.sm('!'), this.getSimpleName(), this, this.toString()] }; c() }
+                static staticNested() { def c = { def d = { [this.sm('?'), this.getSimpleName(), this] }; d() }; c() }
+            }
+            class C extends Base implements T {
+                String over() { 'C.over' }
+                String toString() { 'C!' }
+            }
+
+            def c = new C()
+            // explicit this in a closure of a trait method is the instance or class the trait is applied to, as this alone and an implicit this are
+            assert c.explicitThis() == ['T.m n', 'C.over', 'base', 'n', 'C', 'C!']
+            assert c.implicitThis() == ['T.m n', 'C.over', 'base', 'n']
+            def (m, over, self, out, explicitOut) = c.nested()
+            assert m == 'T.m n' && over == 'C.over' && self.is(c) && out.is(c) && explicitOut.is(c)
+            // the delegate does not take part in an explicit this
+            assert c.delegateFirst() == ['T.m n', 'other']
+            assert C.staticThis() == ['T.sm!', 'C', C, 'class C']
+            assert C.staticNested() == ['T.sm?', 'C', C]
+        '''
+    }
+
+    // GROOVY-12563
+    @Test
     void testStaticBooleanPropertyAndExplicitAccessorsInTraitClosure() {
         String script = '''
             import java.util.function.Supplier
