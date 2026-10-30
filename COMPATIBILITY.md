@@ -652,6 +652,14 @@ variables of any other name, are still checked for duplicates. The
 undeclared multi-assignment `(_, y, _) = …` was never affected: it assigns
 the existing `_` (or the binding variable) twice.
 
+**Who is affected (API).** `org.codehaus.groovy.control.PlaceholderVisitor`,
+which marked a repeated `_` so that the duplicate check would skip it, is
+deprecated for removal in Groovy 7, and the compiler no longer runs it.
+`PlaceholderVisitor.isPlaceholder` therefore returns `false` for code the
+compiler produced, unless the caller runs the visitor itself. A copy of
+`CompilationUnit` that adds the visitor as a phase operation still compiles
+and can drop it.
+
 ### Groovy 7 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
 
 For a dynamic property write or read, the runtime checks whether the receiver

@@ -30,7 +30,14 @@ import java.util.stream.StreamSupport;
 
 /**
  * Marks repeated underscore placeholders used in tuple and closure parameters.
+ * <p>
+ * The compiler no longer runs this visitor or reads its mark: a repeated
+ * {@code _} is an ordinary variable that may be declared again.
+ *
+ * @deprecated since 6.0.1, with no replacement; to recognise a {@code _}
+ * variable, check its name.
  */
+@Deprecated(since = "6.0.1", forRemoval = true)
 public class PlaceholderVisitor extends ClassCodeVisitorSupport {
     private static final String PLACEHOLDER = "Underscore_Placeholder";
     private SourceUnit source;
