@@ -180,7 +180,28 @@ public interface MetaClassRegistry {
                     return true;
                 }
             }
-            return loader.getResource(customName.replace('.', '/') + ".class") != null;
+            return classResourcePresent(loader, customName);
+        }
+
+        /**
+         * True when {@code className} is visible as a class file. A native image
+         * with exact reachability metadata throws if that resource was not
+         * registered; the class may still be loadable, so the caller falls
+         * through to {@code Class.forName}.
+         */
+        private static boolean classResourcePresent(ClassLoader loader, String className) {
+            try {
+                return loader.getResource(className.replace('.', '/') + ".class") != null;
+            } catch (Error error) {
+                if (isMissingResourceRegistration(error)) {
+                    return true;
+                }
+                throw error;
+            }
+        }
+
+        private static boolean isMissingResourceRegistration(Throwable error) {
+            return "com.oracle.svm.core.jdk.resources.MissingResourceRegistrationError".equals(error.getClass().getName());
         }
 
         /**

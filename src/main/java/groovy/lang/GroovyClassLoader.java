@@ -619,6 +619,8 @@ public class GroovyClassLoader extends URLClassLoader {
      * {@link ClassNotFoundException}, so that probe is reported as a different
      * exception the introspector already ignores. Other known misses stay a
      * normal {@link ClassNotFoundException}, without consulting the parent.
+     * A {@code java.lang.$} name is not one of those misses: a parent loader
+     * can define it without exposing a class file here.
      */
     private void throwIfParentWouldOnlyRecordAMiss(final String name, final boolean lookupScriptFiles) throws ClassNotFoundException {
         if (name == null) {
@@ -627,6 +629,11 @@ public class GroovyClassLoader extends URLClassLoader {
         boolean beanCompanion = isBeanCompanionProbe(name);
         boolean innerName = name.indexOf('$') >= 0;
         if (!beanCompanion && !innerName) {
+            return;
+        }
+        // java.lang.$JaCoCo and similar helpers are real parent-defined types.
+        // Generated script and template names are not in this package.
+        if (!beanCompanion && name.startsWith("java.lang.$")) {
             return;
         }
         if (definedByParentGroovyLoader(name) || hasClassResource(name)) {
@@ -649,7 +656,21 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     private boolean hasClassResource(final String name) {
-        return getResource(name.replace('.', '/') + ".class") != null;
+        try {
+            return getResource(name.replace('.', '/') + ".class") != null;
+        } catch (Error error) {
+            // Exact native-image metadata reports an unregistered resource
+            // probe as an error. That is a miss for this check: the class file
+            // is not one this loader can see, so the known-miss path applies.
+            if (isMissingResourceRegistration(error)) {
+                return false;
+            }
+            throw error;
+        }
+    }
+
+    private static boolean isMissingResourceRegistration(final Throwable error) {
+        return "com.oracle.svm.core.jdk.resources.MissingResourceRegistrationError".equals(error.getClass().getName());
     }
 
     private boolean definedByParentGroovyLoader(final String name) {

@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.nio.file.Path
 
+import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertTrue
 
 /**
@@ -83,6 +84,30 @@ final class Groovy8113 {
             }
         }
         assert leaked.isEmpty() : "new parallelLockMap keys (${leaked.size()}):\n${leaked.join('\n')}\nClassInfo still holding:\n${retained.join('\n')}"
+    }
+
+    @Test
+    void parentDefinedJavaLangDollarNameStillLoads() {
+        // GROOVY-8113
+        // Names such as java.lang.$JaCoCo are defined by a parent loader and
+        // are not class files this loader can see. Generated script inner
+        // names are not in that package and are still not delegated.
+        ClassLoader parent = new ClassLoader(Groovy8113.class.classLoader) {
+            @Override
+            protected Class<?> findClass(String name) throws ClassNotFoundException {
+                if ('java.lang.$Marker' == name) {
+                    return MarkerHolder
+                }
+                return super.findClass(name)
+            }
+        }
+        assertEquals('ok', new GroovyShell(parent).evaluate('''
+            this.class.classLoader.loadClass('java.lang.$Marker').getField('VALUE').get(null)
+        '''))
+    }
+
+    static class MarkerHolder {
+        public static final String VALUE = 'ok'
     }
 
     private static final String GENERATED =
