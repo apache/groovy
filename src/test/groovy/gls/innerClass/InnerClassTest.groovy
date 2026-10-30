@@ -1477,6 +1477,127 @@ final class InnerClassTest {
         '''
     }
 
+    // GROOVY-12592: Outer neither overrides toString nor calls super.toString itself
+    @Test
+    void testUsageOfOuterSuperMethodInherited1() {
+        assertScript '''
+            class Root {
+                String toString() { 'root' }
+            }
+            class Outer extends Root {
+                class Inner {
+                    String test() { Outer.super.toString() }
+                }
+            }
+            def outer = new Outer()
+            assert new Outer.Inner(outer).test() == 'root'
+            assert outer.toString() == 'root'
+        '''
+    }
+
+    // GROOVY-12592: method declared by Base and overridden by Root, with and without arguments
+    @Test
+    void testUsageOfOuterSuperMethodInherited2() {
+        assertScript '''
+            class Base {
+                String m() { 'base' }
+                String m(x) { 'base:' + x }
+            }
+            class Root extends Base {
+                String m() { 'root' }
+                String m(x) { 'root:' + x }
+            }
+            class Outer extends Root {
+                class Inner {
+                    String test() { Outer.super.m() }
+                    String test(x) { Outer.super.m(x) }
+                }
+            }
+            def inner = new Outer.Inner(new Outer())
+            assert inner.test() == 'root'
+            assert inner.test(1) == 'root:1'
+        '''
+    }
+
+    // GROOVY-12592: anonymous inner class
+    @Test
+    void testUsageOfOuterSuperMethodInherited3() {
+        assertScript '''
+            class Root {
+                String toString() { 'root' }
+                String m(x) { 'root:' + x }
+            }
+            class Outer extends Root {
+                def test() {
+                    new Object() {
+                        @Override
+                        String toString() { Outer.super.toString() + ',' + Outer.super.m(2) }
+                    }.toString()
+                }
+            }
+            assert new Outer().test() == 'root,root:2'
+        '''
+    }
+
+    // GROOVY-12592: closure in an inner class
+    @Test
+    void testUsageOfOuterSuperMethodInherited4() {
+        assertScript '''
+            class Root {
+                String toString() { 'root' }
+            }
+            class Outer extends Root {
+                class Inner {
+                    String test() {
+                        def c = { -> Outer.super.toString() }
+                        c()
+                    }
+                }
+            }
+            assert new Outer.Inner(new Outer()).test() == 'root'
+        '''
+    }
+
+    // GROOVY-12592: method declared further up, called from an inner class of an inner class
+    @Test
+    void testUsageOfOuterSuperMethodInherited5() {
+        assertScript '''
+            class Root {
+                String toString() { 'root' }
+            }
+            class Middle extends Root {
+            }
+            class Outer extends Middle {
+                class Inner {
+                    class Nested {
+                        String test() { Outer.super.toString() }
+                    }
+                }
+            }
+            def inner = new Outer.Inner(new Outer())
+            assert new Outer.Inner.Nested(inner).test() == 'root'
+        '''
+    }
+
+    // GROOVY-12592: the override of a subclass of Outer is not called either
+    @Test
+    void testUsageOfOuterSuperMethodInherited6() {
+        assertScript '''
+            class Root {
+                String toString() { 'root' }
+            }
+            class Outer extends Root {
+                class Inner {
+                    String test() { Outer.super.toString() }
+                }
+            }
+            class Sub extends Outer {
+                String toString() { 'sub' }
+            }
+            assert new Outer.Inner(new Sub()).test() == 'root'
+        '''
+    }
+
     @Test
     void testUsageOfOuterType() {
         assertScript '''
