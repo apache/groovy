@@ -582,6 +582,12 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
                 'L2',
                 'LINENUMBER 5',
                 'ALOAD 2',
+                'DUP',
+                'INSTANCEOF groovy/lang/GString',
+                'IFEQ L3',
+                'INVOKEVIRTUAL java/lang/Object.toString ()Ljava/lang/String;',
+                'L3',
+                'FRAME',
                 'CHECKCAST java/lang/String',
                 'INVOKEVIRTUAL java/lang/String.toUpperCase ()Ljava/lang/String;',
                 'ARETURN'

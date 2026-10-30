@@ -29,7 +29,6 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.function.Function;
 
 /**
  * Runs each iteration of an annotated {@code for} loop in parallel
@@ -45,9 +44,9 @@ import java.util.function.Function;
  * offer a better debugging experience, as {@code @Parallel} performs
  * internal variable renaming in its generated code.
  * <p>
- * Blocking loop bodies should run inside
- * {@link ParallelScope#withPool(int, Function)
- * ParallelScope.withPool(n)} (or an I/O pool); see
+ * A blocking loop body on a fork-join pool needs one spare worker
+ * ({@code withPool(concurrentBlockers + 1)}). {@link Pool#virtual()}
+ * and {@link Pool#io()} run the loop on that pool instead; see
  * {@link ParallelCollectionExtensions}.
  *
  * @since 6.0.0
