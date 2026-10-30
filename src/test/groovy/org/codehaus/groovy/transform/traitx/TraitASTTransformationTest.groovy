@@ -2420,6 +2420,138 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-12590
+    @CompileModesTest
+    void testTraitStaticAccessorReadAsProperty(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static boolean flag = true
+                static boolean isReady() { flag }
+                static String sm() { ready ? 'yes' : 'no' }
+                static String st() { this.ready ? 'yes' : 'no' }
+                static Closure getG() { { -> flag } }
+                static Object sg() { g.call() }
+            }
+            $mode
+            class C implements T {
+            }
+            $mode
+            class D implements T {
+            }
+
+            $mode void m() {
+                assert C.sm() == 'yes'
+                assert C.st() == 'yes'
+                assert C.sg() == true
+                D.flag = false // each implementing class has its own trait state
+                assert C.sm() == 'yes'
+                assert D.sm() == 'no'
+                assert D.st() == 'no'
+                assert D.sg() == false
+            }
+            m()
+        """
+
+        assertScript shell, """
+            import java.util.function.Supplier
+
+            $mode
+            trait T {
+                static boolean flag = true
+                static boolean isReady() { flag }
+                String getName() { 'name' }
+                String im() { ready ? 'yes' : 'no' }
+                String iname() { name }
+                String ic() { def c = { -> ready ? 'yes' : 'no' }; c() }
+                static String sc() { def c = { -> ready ? 'yes' : 'no' }; c() }
+                static String sl() { Supplier<String> s = () -> ready ? 'yes' : 'no'; s.get() }
+            }
+            $mode
+            class C implements T {
+            }
+            $mode
+            class D implements T {
+            }
+
+            $mode void m() {
+                D.flag = false
+                assert new C().im() == 'yes'
+                assert new D().im() == 'no'
+                assert new C().iname() == 'name'
+                assert new C().ic() == 'yes'
+                assert new D().ic() == 'no'
+                assert C.sc() == 'yes'
+                assert D.sc() == 'no'
+                assert C.sl() == 'yes'
+                assert D.sl() == 'no'
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12590
+    @CompileModesTest
+    void testTraitStaticAccessorWrittenAsProperty(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+                static int set(int n) { cnt = n; count }
+                static int add(int n) { cnt += n; count }
+                static int post() { cnt++; count }
+                static int pre() { ++cnt; count }
+                int iset(int n) { cnt = n; count }
+                int iadd(int n) { cnt += n; count }
+                int ipost() { cnt++; count }
+            }
+            $mode
+            class C implements T {
+            }
+
+            $mode void m() {
+                assert C.set(10) == 10
+                assert C.add(5) == 15
+                assert C.post() == 16
+                assert C.pre() == 17
+                assert new C().iset(20) == 20
+                assert new C().iadd(5) == 25
+                assert new C().ipost() == 26
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12590
+    @CompileModesTest
+    void testSuperTraitStaticAccessorAsProperty(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+            }
+            $mode
+            trait U extends T {
+                static int s() { cnt }
+                int i() { cnt = 5; cnt++; cnt }
+            }
+            $mode
+            class C implements U {
+            }
+
+            $mode void m() {
+                assert C.s() == 1
+                assert new C().i() == 6
+                assert C.s() == 6
+            }
+            m()
+        """
+    }
+
     @Test
     void testTraitMethodShouldBeDefaultImplementationUsingReflection() {
         assertScript shell, '''
