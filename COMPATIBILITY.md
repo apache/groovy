@@ -795,6 +795,20 @@ which follows `Double.compare` for primitives and objects alike. Classes
 compiled by an earlier release keep the old comparison until they are
 recompiled.
 
+### Groovy 7 — `PlaceholderVisitor` is removed (GROOVY-11744)
+
+`org.codehaus.groovy.control.PlaceholderVisitor` marked a `_` repeated in a
+multi-assignment declaration or a closure or lambda parameter list, so that
+`VariableScopeVisitor` would skip its duplicate check. Since a repeated `_` is
+an ordinary variable that may be declared again (see the Groovy 6.0.1 entry
+above), nothing reads the mark, and the compiler no longer runs the visitor.
+The class was deprecated in Groovy 6.
+
+**Who is affected.** Code that constructs `PlaceholderVisitor`, such as a copy
+of `CompilationUnit` that adds it as a phase operation, or that calls
+`PlaceholderVisitor.isPlaceholder`. Drop the phase operation. Where code needs
+to know whether a variable is `_`, check its name.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
