@@ -7154,12 +7154,12 @@ trying: for (ClassNode[] signature : signatures) {
             trait = self.getType().getGenericsTypes()[0].getType();
         }
         if (trait == null || !Traits.isTrait(trait)) return false;
-        String name = capitalize(property.getPropertyAsString());
+        // the getter the trait transformation generates, or an explicit one; the property is a closure, and only a
+        // boolean property is read through an isser
+        String getter = "get" + capitalize(property.getPropertyAsString());
         for (ClassNode t : Traits.findTraits(trait)) {
-            for (String getter : List.of("get" + name, "is" + name)) {
-                MethodNode method = t.getDeclaredMethod(getter, Parameter.EMPTY_ARRAY);
-                if (method != null && method.isStatic()) return true;
-            }
+            MethodNode method = t.getDeclaredMethod(getter, Parameter.EMPTY_ARRAY);
+            if (method != null && method.isStatic()) return true;
         }
         return false;
     }

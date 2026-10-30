@@ -574,4 +574,47 @@ final class TraitWithClosureOrLambda {
         assertScript script.replace('trait T', '@groovy.transform.TypeChecked trait T')
         assertScript script
     }
+
+    // GROOVY-12563
+    @Test
+    void testStaticBooleanPropertyAndExplicitAccessorsInTraitClosure() {
+        String script = '''
+            import java.util.function.Supplier
+            trait S {
+                static Closure<String> s = { 's' }
+            }
+            trait T extends S {
+                static boolean flag
+                static Closure<String> aB = { 'aB' }
+                static boolean isReady() { flag }
+                static Closure<String> getG() { { -> 'g' + flag } }
+                static boolean inClosure() { def c = { flag }; c() }
+                static boolean inNestedClosure() { def c = { def d = { flag }; d() }; c() }
+                static boolean inLambda() { Supplier<Boolean> s = () -> flag; s.get() }
+                static boolean accessors() { def c = { isFlag() && getFlag() && isReady() }; c() }
+                static String callG() { g() }
+                static String callGInClosure() { def c = { g() }; c() }
+                static String callAB() { def c = { aB() }; c() }
+                static String callS() { def c = { s() }; c() }
+                boolean instanceFlag() { def c = { flag }; c() }
+            }
+            class C implements T {
+            }
+            class D implements T {
+            }
+
+            // a static boolean property of a trait, which has an isser, is that of the class the trait is applied to
+            C.flag = true
+            assert C.inClosure() && C.inNestedClosure() && C.inLambda() && C.accessors() && new C().instanceFlag()
+            assert !D.inClosure() && !D.inNestedClosure() && !D.inLambda() && !D.accessors() && !new D().instanceFlag()
+            // a static closure property with an explicit getter only, or declared in a super trait
+            assert C.callG() == 'gtrue' && C.callGInClosure() == 'gtrue' && D.callGInClosure() == 'gfalse'
+            assert C.callAB() == 'aB'
+            C.s = { 'c' }
+            assert C.callS() == 'c' && D.callS() == 's'
+        '''
+        assertScript shell, script
+        assertScript script.replace('trait T', '@groovy.transform.TypeChecked trait T')
+        assertScript script
+    }
 }
