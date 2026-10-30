@@ -433,6 +433,11 @@ public class NativeImageMetadataGenerator {
         for (String user : new String[]{"org.apache.groovy.runtime.async.AsyncExecutors", DefaultPool.class.getName()}) {
             method(user, Executors.class.getName(), "newVirtualThreadPerTaskExecutor");
         }
+        String pool = DefaultPool.class.getName();
+        method(pool, Executors.class.getName(), "newThreadPerTaskExecutor", "java.util.concurrent.ThreadFactory");
+        method(pool, Thread.class.getName(), "ofVirtual");
+        method(pool, "java.lang.Thread$Builder$OfVirtual", "name", String.class.getName(), "long");
+        method(pool, "java.lang.Thread$Builder", "factory");
         String scopedLocal = ScopedLocal.class.getName();
         String scopedValue = "java.lang.ScopedValue"; // JDK 21+, by name: the build may run on JDK 17
         method(scopedLocal, scopedValue, "newInstance");

@@ -2602,17 +2602,43 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * Determines if the given type itself may be referenced from the accessor
      * (JLS 6.6.1): a member of an inaccessible type is out of reach no matter
      * what the member's own modifiers say, because resolving any reference to
-     * the type fails first. Every type of a nest is accessible from every
-     * other type of the same nest. Otherwise a nested type is accessible when
-     * its enclosing type is and its own modifiers admit the accessor.
+     * the type fails first. A member type is accessible when its enclosing
+     * type is and its own modifiers admit the accessor: a private one from
+     * anywhere in the same nest, and a protected one from the same package or
+     * from anywhere in the body of a subclass of the enclosing type (JLS 6.6.2).
+     * <p>
+     * The enclosing type of a precompiled member type is not known. A private
+     * one is never accessible, because a nest lies within one source unit, so
+     * it cannot be the nest of the accessor. A protected one is admitted without
+     * the subclass check, which this method cannot make; its class file marks
+     * it public, so the access cannot fail at run time. A package-private one
+     * is accessible from the same package.
      */
     private static boolean hasAccessToClass(final ClassNode accessor, final ClassNode type) {
-        if (inSameNest(accessor, type)) return true;
+        int modifiers = type.getModifiers();
         ClassNode outer = type.getOuterClass();
-        if (outer != null && !hasAccessToClass(accessor, outer)) {
+        if (outer == null) {
+            return Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)
+                    || (!Modifier.isPrivate(modifiers) && inSamePackage(accessor, type));
+        }
+        if (!hasAccessToClass(accessor, outer)) {
             return false;
         }
-        return hasAccessToMember(accessor, outer != null ? outer : type, type.getModifiers());
+        if (Modifier.isPublic(modifiers)) {
+            return true;
+        }
+        if (Modifier.isPrivate(modifiers)) {
+            return inSameNest(accessor, type);
+        }
+        if (inSamePackage(accessor, outer)) {
+            return true;
+        }
+        if (Modifier.isProtected(modifiers)) {
+            for (ClassNode cn = accessor; cn != null; cn = cn.getOuterClass()) {
+                if (cn.isDerivedFrom(outer)) return true;
+            }
+        }
+        return false;
     }
 
     private ClassNode getTypeForMultiValueExpression(final ClassNode compositeType, final Expression prop) {
