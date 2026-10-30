@@ -50,18 +50,20 @@ jobs:
           check-latest: true
       # Restore-only (never saves): see groovy-rat-check.yml for the reason a
       # job that resolves only part of the build lineage must not save.
-      - name: "🗄 Restore Gradle dependencies (~/.gradle/caches/modules-2 + wrapper)"
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ~/.gradle/caches/modules-2
-            ~/.gradle/wrapper
-          key: gradle-deps-${{ runner.os }}-build-${{ github.base_ref || github.ref_name }}-${{ hashFiles('versions.properties', 'gradle/wrapper/gradle-wrapper.properties', 'settings.gradle', 'build-logic/build.gradle') }}
-          restore-keys: |
-            gradle-deps-${{ runner.os }}-build-${{ github.base_ref || github.ref_name }}-
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
         with:
           cache-disabled: true
+      # On Windows setup-gradle may set GRADLE_USER_HOME=D:\a\.gradle, so
+      # caching ~/.gradle never hits and the save fails path validation.
+      - name: "🗄 Restore Gradle dependencies (GRADLE_USER_HOME modules-2 + wrapper)"
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ${{ env.GRADLE_USER_HOME }}/caches/modules-2
+            ${{ env.GRADLE_USER_HOME }}/wrapper
+          key: gradle-deps-${{ runner.os }}-build-${{ github.base_ref || github.ref_name }}-${{ hashFiles('versions.properties', 'gradle/wrapper/gradle-wrapper.properties', 'settings.gradle', 'build-logic/build.gradle') }}
+          restore-keys: |
+            gradle-deps-${{ runner.os }}-build-${{ github.base_ref || github.ref_name }}-
       - name: Run the lint gate
         # --continue so that both tools report before the job fails
         run: ./gradlew lintGate --continue
