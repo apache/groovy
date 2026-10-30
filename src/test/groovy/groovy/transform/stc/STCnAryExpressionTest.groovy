@@ -185,7 +185,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-12492
+    // GROOVY-12560
     @Test
     void testSpaceshipOperatorWithPrimitiveRightOperand() {
         assertScript '''
