@@ -369,7 +369,8 @@ public class StaticInvocationWriter extends InvocationWriter {
                 if (target.isStatic()) {
                     theReceiver = classX(declaringClass);
                 } else if (!controller.isInGeneratedFunction()) {
-                    theReceiver = propX(classX(declaringClass), "this");
+                    ClassNode outerType = getImplicitReceiverType(enclosingClass, declaringClass);
+                    theReceiver = propX(classX(outerType != null ? outerType : declaringClass), "this");
                 } else {
                     theReceiver = thisObjectExpression(enclosingClass, declaringClass);
                 }
