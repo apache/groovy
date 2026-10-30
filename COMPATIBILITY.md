@@ -809,6 +809,36 @@ of `CompilationUnit` that adds it as a phase operation, or that calls
 `PlaceholderVisitor.isPlaceholder`. Drop the phase operation. Where code needs
 to know whether a variable is `_`, check its name.
 
+### Groovy 7 — `N.super.name` and `Outer.super.name` reach the member of the superclass (GROOVY-12514, GROOVY-12517)
+
+Within a nested class `N`, `N.super` is now `super`. Within a class nested in
+`Outer`, `Outer.super` is the enclosing instance of `Outer` seen as an instance
+of `Outer`'s superclass, as in Java. In dynamic Groovy, a property read or
+write through either — `N.super.p`, `Outer.super.p = v`, `Outer.super.p++` —
+and a field access — `N.super.@f`, `Outer.super.@f = v` — used to reach the
+instance's own member: the one `N` or `Outer` declares, or, for an enclosing
+instance of a subclass of `Outer`, the subclass's. It now reaches the
+superclass's property, accessor or field, as `super.p` and `super.@f` do.
+`Outer.super.m()` already called the superclass's method, except for an
+enclosing instance of a subclass of `Outer`, where it called the method that
+`super.m()` in the subclass would call (`Outer`'s, if `Outer` overrides `m`);
+it now calls the method of `Outer`'s superclass. Under `@TypeChecked` and
+`@CompileStatic`, these property and field forms failed to compile ("No such
+property: super") and now compile with the same meaning.
+
+**Who is affected.** Dynamic code that reads or writes a property or field
+through `N.super` or `Outer.super` where `N` or `Outer`, or the class of the
+enclosing instance, declares or overrides that member. The access now reaches
+the superclass's member; use `this.p`, `N.this.p` or `Outer.this.p` where the
+class's own member is intended. Classes compiled by an earlier release keep
+the old behaviour until they are recompiled.
+
+**What is unchanged.** Unqualified `super`, `Outer.this`, `Iface.super.m()`
+for interface default methods, method calls through `N.super` and through
+`Outer.super` on an instance of `Outer` itself, and members that no class
+below the superclass declares. `ExpressionUtils.isOuterSuperExpression` is
+new; there are no other API changes.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
