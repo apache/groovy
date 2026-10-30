@@ -142,6 +142,7 @@ import java.util.function.Consumer;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isOuterSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
@@ -1360,9 +1361,7 @@ public class AsmClassGenerator extends ClassGenerator {
      * property of it is a property of the superclass of the instance.
      */
     private static boolean isSuperOrOuterSuper(final Expression expression) {
-        return isSuperExpression(expression) || (expression instanceof PropertyExpression pexp
-                && pexp.getObjectExpression() instanceof ClassExpression && !pexp.getObjectExpression().getType().isInterface()
-                && "super".equals(pexp.getPropertyAsString()));
+        return isSuperExpression(expression) || isOuterSuperExpression(expression);
     }
 
     private void visitAttributeOrProperty(final PropertyExpression pexp, final MethodCallerMultiAdapter adapter) {

@@ -62,6 +62,7 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getMethod;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isOuterSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.mayHaveSideEffects;
@@ -911,8 +912,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
     }
 
     private MethodNode findSuperPropertyExtension(final PropertyExpression expression, final Expression objectExpression, final String name, final boolean setter) {
-        if (!isSuperExpression(objectExpression) && !(objectExpression instanceof PropertyExpression pe
-                && pe.getObjectExpression() instanceof ClassExpression && "super".equals(pe.getPropertyAsString()))) {
+        if (!isSuperExpression(objectExpression) && !isOuterSuperExpression(objectExpression)) {
             return null;
         }
         MethodNode accessor;

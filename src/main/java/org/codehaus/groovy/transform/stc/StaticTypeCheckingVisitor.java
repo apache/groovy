@@ -158,6 +158,7 @@ import java.util.stream.IntStream;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoEnclosingInstance;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isOuterSuperExpression;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.enumConstantName;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.intConstant;
@@ -5372,9 +5373,8 @@ out:                if (mn.size() != 1) {
     private void checkSuperCallFromClosure(final Expression call, final MethodNode target) {
         Expression objectExpression = getObjectExpression(call);
         ClassNode current = null;
-        if (objectExpression instanceof PropertyExpression pe && pe.getObjectExpression() instanceof ClassExpression
-                && "super".equals(pe.getPropertyAsString()) && !pe.getObjectExpression().getType().isInterface()) {
-            current = pe.getObjectExpression().getType().redirect(); // "Outer.super.name()": call through Outer's super$ helper
+        if (isOuterSuperExpression(objectExpression)) { // "Outer.super.name()": call through Outer's super$ helper
+            current = ((PropertyExpression) objectExpression).getObjectExpression().getType().redirect();
         } else if (isSuperExpression(objectExpression) && typeCheckingContext.getEnclosingClosure() != null) {
             current = typeCheckingContext.getEnclosingClassNode();
         }
