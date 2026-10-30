@@ -18,7 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.NotYetImplemented
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
@@ -242,23 +241,29 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10096
-    @NotYetImplemented
+    // GROOVY-11769
     void testInstanceOf10() {
-        shouldFailWithMessages '''
-            class Foo {
-                void foo() {
-                }
+        assertScript '''
+            abstract class Foo {
+                abstract boolean isBaz()
             }
             class Bar extends Foo {
-                void bar() {
+                final boolean baz = false
+            }
+            class Baz extends Foo {
+                final boolean baz = true
+            }
+
+            void test(Foo foo) {
+                if (foo instanceof Bar || foo.isBaz()) {
+                    foo.toString()
                 }
             }
-            static Bar baz(Foo foo) {
-                (false || foo instanceof Bar) ? foo : new Bar()
-            }
-        ''',
-        'Cannot return value of type Foo for method returning Bar'
+
+            test(new Bar())
+            test(new Baz())
+            test(new Foo(){ boolean isBaz() { false } })
+        '''
     }
 
     // GROOVY-11007
