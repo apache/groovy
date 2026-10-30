@@ -143,7 +143,15 @@ public interface MetaClassRegistry {
 
         private MetaClass createWithCustomLookup(Class theClass, MetaClassRegistry registry) {
             try {
-                final Class customMetaClass = Class.forName("groovy.runtime.metaclass." + theClass.getName() + "MetaClass");
+                final String customName = "groovy.runtime.metaclass." + theClass.getName() + "MetaClass";
+                // Class.forName records a missing name in every parallel-capable
+                // loader it asks, and the entry is never removed. The lookup can
+                // only succeed for a class already defined by this runtime's
+                // loader or present as a classpath resource.
+                if (!customMetaClassVisible(customName)) {
+                    return createNormalMetaClass(theClass, registry);
+                }
+                final Class customMetaClass = Class.forName(customName);
                 if (DelegatingMetaClass.class.isAssignableFrom(customMetaClass)) {
                     final Constructor customMetaClassConstructor = customMetaClass.getConstructor(MetaClass.class);
                     MetaClass normalMetaClass = createNormalMetaClass(theClass, registry);
@@ -159,6 +167,20 @@ public interface MetaClassRegistry {
             } catch (final Exception e) {
                 throw new GroovyRuntimeException("Could not instantiate custom Metaclass for class: " + theClass.getName() + ". Reason: " + e, e);
             }
+        }
+
+        private static boolean customMetaClassVisible(String customName) {
+            ClassLoader loader = MetaClassRegistry.class.getClassLoader();
+            if (loader == null) {
+                return true;
+            }
+            for (ClassLoader current = loader; current != null; current = current.getParent()) {
+                if (current instanceof GroovyClassLoader
+                        && ((GroovyClassLoader) current).getClassCacheEntry(customName) != null) {
+                    return true;
+                }
+            }
+            return loader.getResource(customName.replace('.', '/') + ".class") != null;
         }
 
         /**

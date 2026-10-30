@@ -70,6 +70,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /*
@@ -97,6 +98,13 @@ public class GroovyClassLoader extends URLClassLoader {
      * This cache contains the loaded classes or PARSING, if the class is currently parsed.
      */
     protected final EvictableCache<String, Class> classCache = new UnlimitedConcurrentCache<>();
+
+    /**
+     * How many cached classes share each binary simple name. Beans
+     * introspection looks up {@code com.sun.beans.infos.<simple>BeanInfo}
+     * by simple name, which is not the cache key of a packaged class.
+     */
+    private final ConcurrentHashMap<String, Integer> definedSimpleNameCounts = new ConcurrentHashMap<>();
 
     /**
      * This cache contains mappings of file name to class. It is used to bypass compilation.
@@ -585,7 +593,9 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #clearCache()
      */
     protected void setClassCacheEntry(final Class cls) {
-        classCache.put(cls.getName(), cls);
+        if (classCache.put(cls.getName(), cls) == null) {
+            noteDefinedSimpleName(cls.getName());
+        }
     }
 
     /**
@@ -597,7 +607,114 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #clearCache()
      */
     protected void removeClassCacheEntry(final String name) {
-        classCache.remove(name);
+        if (classCache.remove(name) != null) {
+            noteRemovedSimpleName(name);
+        }
+    }
+
+    /**
+     * Beans introspection and inner-class resolution ask for companion names
+     * that are not on any classpath. {@code Class.forName} of a beans companion
+     * retries the platform loader when this loader reports
+     * {@link ClassNotFoundException}, so that probe is reported as a different
+     * exception the introspector already ignores. Other known misses stay a
+     * normal {@link ClassNotFoundException}, without consulting the parent.
+     */
+    private void throwIfParentWouldOnlyRecordAMiss(final String name, final boolean lookupScriptFiles) throws ClassNotFoundException {
+        if (name == null) {
+            return;
+        }
+        boolean beanCompanion = isBeanCompanionProbe(name);
+        boolean innerName = name.indexOf('$') >= 0;
+        if (!beanCompanion && !innerName) {
+            return;
+        }
+        if (definedByParentGroovyLoader(name) || hasClassResource(name)) {
+            return;
+        }
+        if (lookupScriptFiles) {
+            try {
+                if (resourceLoader.loadGroovySource(name) != null) {
+                    return;
+                }
+            } catch (MalformedURLException ignored) {
+                // Let the normal load path report the bad source URL.
+                return;
+            }
+        }
+        if (beanCompanion) {
+            throw new IntrospectionProbeMiss(name);
+        }
+        throw new ClassNotFoundException(name);
+    }
+
+    private boolean hasClassResource(final String name) {
+        return getResource(name.replace('.', '/') + ".class") != null;
+    }
+
+    private boolean definedByParentGroovyLoader(final String name) {
+        for (ClassLoader current = getParent(); current != null; current = current.getParent()) {
+            if (current instanceof GroovyClassLoader
+                    && ((GroovyClassLoader) current).getClassCacheEntry(name) != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * True when {@code name} is the BeanInfo or Customizer companion of a
+     * class this loader defined, including the {@code com.sun.beans.infos}
+     * search used by {@code java.beans.Introspector}.
+     */
+    private boolean isBeanCompanionProbe(final String name) {
+        String base = beanCompanionBase(name);
+        return base != null && definesCachedClass(base);
+    }
+
+    private static String beanCompanionBase(final String name) {
+        final String beanInfo = "BeanInfo";
+        final String customizer = "Customizer";
+        String base;
+        if (name.endsWith(beanInfo) && name.length() > beanInfo.length()) {
+            base = name.substring(0, name.length() - beanInfo.length());
+        } else if (name.endsWith(customizer) && name.length() > customizer.length()) {
+            base = name.substring(0, name.length() - customizer.length());
+        } else {
+            return null;
+        }
+        int dot = base.lastIndexOf('.');
+        if (dot > 0) {
+            String pkg = base.substring(0, dot);
+            if ("com.sun.beans.infos".equals(pkg) || "sun.beans.infos".equals(pkg)) {
+                return base.substring(dot + 1);
+            }
+        }
+        return base;
+    }
+
+    private boolean definesCachedClass(final String base) {
+        if (getClassCacheEntry(base) != null) {
+            return true;
+        }
+        if (base.indexOf('.') >= 0) {
+            return false;
+        }
+        Integer count = definedSimpleNameCounts.get(base);
+        return count != null && count > 0;
+    }
+
+    private void noteDefinedSimpleName(final String className) {
+        definedSimpleNameCounts.merge(binarySimpleName(className), 1, Integer::sum);
+    }
+
+    private void noteRemovedSimpleName(final String className) {
+        definedSimpleNameCounts.computeIfPresent(binarySimpleName(className), (key, count) -> count <= 1 ? null : count - 1);
+    }
+
+    private static String binarySimpleName(final String className) {
+        int dot = className.lastIndexOf('.');
+        return dot < 0 ? className : className.substring(dot + 1);
     }
 
     /**
@@ -713,6 +830,14 @@ public class GroovyClassLoader extends URLClassLoader {
 
         // enable recompilation?
         if (!isRecompilable(cls)) return cls;
+
+        // A parallel-capable loader keeps every name passed to loadClass in
+        // its lock map, including names that are not found. Delegating a miss
+        // to a long-lived parent therefore retains one entry per generated
+        // script. Resolve the misses we know cannot succeed without asking.
+        if (cls == null) {
+            throwIfParentWouldOnlyRecordAMiss(name, lookupScriptFiles);
+        }
 
         // try parent loader
         ClassNotFoundException last = null;
@@ -1006,6 +1131,7 @@ public class GroovyClassLoader extends URLClassLoader {
      */
     public void clearCache() {
         sourceCache.clear();
+        definedSimpleNameCounts.clear();
 
         for (var entry : classCache.clearAll().entrySet()) {
             // Another Thread may be using an instance of this class
@@ -1035,6 +1161,19 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     //--------------------------------------------------------------------------
+
+    /**
+     * Signals a beans companion that is not present. Not a
+     * {@link ClassNotFoundException}: the JDK beans finder treats that as a
+     * reason to ask the platform loader, which would retain the name.
+     */
+    private static final class IntrospectionProbeMiss extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        private IntrospectionProbeMiss(final String name) {
+            super(name, null, false, false);
+        }
+    }
 
     /**
      * Loader used while defining classes during a compilation round.
