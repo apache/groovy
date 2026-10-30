@@ -1562,10 +1562,26 @@ public class AsmClassGenerator extends ClassGenerator {
             String name = expression.getPropertyAsString();
             if (name != null) {
                 ClassNode classNode = controller.getClassNode();
-                FieldNode fieldNode = getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(classNode, classNode, name, isSuperExpression(objectExpression));
+                // GROOVY-12533: inside a closure or lambda, this/super is the enclosing
+                // instance. Search that class, but judge accessibility from the closure
+                // (the class that emits the bytecode).
+                boolean generated = controller.isInGeneratedFunction();
+                ClassNode current = generated ? controller.getThisType() : classNode;
+                FieldNode fieldNode = getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(classNode, current, name, isSuperExpression(objectExpression));
                 if (fieldNode != null && (fieldNode.isStatic() || !isStatic(objectExpression))) {
-                    fieldX(fieldNode).visit(this);
-                    visited = true;
+                    // A private field of a superclass is dropped from the subclass meta-class
+                    // index, so the closure's runtime attribute lookup cannot see it. Direct
+                    // access is legal for a nestmate (a nested subclass). Other fields stay on
+                    // the meta-class path.
+                    boolean privateSuperField = generated && fieldNode.isPrivate() && !fieldNode.getDeclaringClass().equals(current);
+                    if (!generated || privateSuperField) {
+                        if (privateSuperField && !fieldNode.isStatic()) {
+                            visitPrivateEnclosingInstanceField(fieldNode);
+                        } else {
+                            fieldX(fieldNode).visit(this);
+                        }
+                        visited = true;
+                    }
                 }
             }
         }
@@ -1585,6 +1601,39 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             controller.getAssertionWriter().record(expression.getProperty());
         }
+    }
+
+    /**
+     * Reads or writes a private instance field of the enclosing class from a
+     * closure or lambda. The receiver is the enclosing instance
+     * ({@code getThisObject()}), not the closure.
+     */
+    private void visitPrivateEnclosingInstanceField(final FieldNode field) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        OperandStack operandStack = controller.getOperandStack();
+        ClassNode owner = field.getOwner();
+        String ownerName = getFieldOwnerName(field);
+        String descriptor = BytecodeHelper.getTypeDescription(field.getType());
+        if (controller.getCompileStack().isLHS()) {
+            operandStack.doGroovyCast(field.getOriginType());
+            loadThisObject();
+            BytecodeHelper.doCast(mv, owner);
+            operandStack.push(owner);
+            operandStack.swap();
+            mv.visitFieldInsn(PUTFIELD, ownerName, field.getName(), descriptor);
+            operandStack.remove(2);
+        } else {
+            loadThisObject();
+            BytecodeHelper.doCast(mv, owner);
+            mv.visitFieldInsn(GETFIELD, ownerName, field.getName(), descriptor);
+            operandStack.push(field.getType());
+        }
+    }
+
+    private void loadThisObject() {
+        MethodVisitor mv = controller.getMethodVisitor();
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getThisObject", "()Ljava/lang/Object;", false);
     }
 
     /**
