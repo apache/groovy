@@ -809,6 +809,23 @@ of `CompilationUnit` that adds it as a phase operation, or that calls
 `PlaceholderVisitor.isPlaceholder`. Drop the phase operation. Where code needs
 to know whether a variable is `_`, check its name.
 
+### Groovy 7 — a late subscriber of `BroadcastChannel.asPublisher()` completes (GROOVY-12571)
+
+A subscriber of `BroadcastChannel.asPublisher()` that arrived after the
+broadcast had closed received `onError(ChannelClosedException)`, and after
+`close(failure)` that exception wrapped the failure. It now ends the way a
+subscriber attached before the close does: `onComplete` after `close()`, and
+`onError` with the failure itself after `close(failure)`. `for await` over
+such a publisher ends at once or throws the failure.
+
+**Who is affected.** Code that caught `ChannelClosedException` from a publisher
+obtained from a closed broadcast. Treat completion as the end of the stream,
+and catch the failure passed to `close(failure)` instead.
+
+**What is unchanged.** `BroadcastChannel.subscribe()` on a closed broadcast
+still throws `ChannelClosedException`, and subscribers attached before the
+close receive the same signals as before.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
