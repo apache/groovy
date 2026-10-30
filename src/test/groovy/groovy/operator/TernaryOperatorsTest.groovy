@@ -22,6 +22,8 @@ import org.junit.jupiter.api.Test
 
 import java.util.regex.Pattern
 
+import static groovy.test.GroovyAssert.assertScript
+
 final class TernaryOperatorsTest {
 
     @Test
@@ -158,5 +160,42 @@ final class TernaryOperatorsTest {
     @Test // see StatementMetaTypeChooser#resolveType
     void testClassExpressionIsJavaLangClassNotLiteralType() {
         Class dsClass = true ? LinkedHashSet : HashSet
+    }
+
+    @Test
+    void testNestedTernaryOfClassLiteralsIsJavaLangClass() {
+        assertScript '''
+            interface Marker {}
+            class First implements Marker {}
+            class Second implements Marker {}
+            class Third implements Marker {}
+            class Fourth implements Marker {}
+
+            String name(Class<?> type) { type.simpleName }
+
+            boolean a = false, b = true, c = true
+            assert name(a ? b ? First : Second : c ? Third : Fourth) == 'Third'
+            assert name(b ? (a ?: c ? First : Second) : Third) == 'First'
+
+            Class<?> chosen = a ? b ? First : Second : c ? Third : Fourth
+            assert chosen == Third
+
+            // Elvis and null-coalescing operands
+            chosen = (a ? First : Second) ?: (c ? Third : Fourth)
+            assert chosen == Second
+            chosen = a ? (First ?: Second) : (Third ?: Fourth)
+            assert chosen == Third
+            chosen = (a ? First : Second) ?? (c ? Third : Fourth)
+            assert chosen == Second
+
+            // a class literal versus an instance of the class it names
+            Marker marker = new Fourth()
+            Object either = b ? (c ? First : Second) : marker
+            assert either == First
+
+            // array class literals
+            chosen = a ? (b ? String[] : Integer[]) : (b ? Long[] : Short[])
+            assert chosen == Long[]
+        '''
     }
 }
