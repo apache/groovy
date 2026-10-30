@@ -756,6 +756,23 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-12562: a method checked from within a condition leaves the checks of the condition in place
+    @Test
+    void testInstanceOf33() {
+        assertScript '''
+            def test(x) { if (check1(x) && x instanceof String) x.length() else -1 }
+            def conditional(x) { check2(x) && x instanceof String ? x.length() : -1 }
+            def closure(x) { def c = { -> check3(x) && x instanceof String ? x.length() : -1 }; c() }
+            private check1(x) { x != null }
+            private check2(x) { x != null }
+            private check3(x) { x != null }
+
+            assert test('abc') == 3 && test(42) == -1
+            assert conditional('abc') == 3 && conditional(42) == -1
+            assert closure('abc') == 3 && closure(42) == -1
+        '''
+    }
+
     // GROOVY-5226
     @Test
     void testNestedInstanceOf1() {
