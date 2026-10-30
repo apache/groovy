@@ -552,7 +552,9 @@ public class StaticInvocationWriter extends InvocationWriter {
         argument.visit(controller.getAcg());
         if (!isNullConstant(argument)) {
             OperandStack operandStack = controller.getOperandStack();
-            ClassNode functionalType = getFunctionalTypeArgument(argument, operandStack.getTopOperand(), parameterType);
+            // the type checker's type: a call of a generic method such as <T> T pick(T a, T b) leaves the erasure
+            ClassNode argumentType = controller.getTypeChooser().resolveType(argument, controller.getClassNode());
+            ClassNode functionalType = getFunctionalTypeArgument(argument, argumentType, parameterType);
             if (functionalType != null) operandStack.doGroovyCast(functionalType);
             operandStack.doGroovyCast(parameterType);
         }
@@ -565,7 +567,7 @@ public class StaticInvocationWriter extends InvocationWriter {
      * type is converted to that type, if at all, and gives {@code null}.
      *
      * @param argument the argument expression
-     * @param argumentType the type of the argument's value
+     * @param argumentType the type the type checker inferred for the argument
      * @param parameterType the declared type of the parameter
      */
     private static ClassNode getFunctionalTypeArgument(final Expression argument, final ClassNode argumentType, final ClassNode parameterType) {

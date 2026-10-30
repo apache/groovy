@@ -197,4 +197,25 @@ final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticC
             assert shout instanceof Shout
         '''
     }
+
+    // GROOVY-10979
+    @Test
+    void testClosureReturnedForATypeParameterIsConvertedToTheInterfaceTheCallBindsItTo() {
+        assertScript '''
+            import java.util.function.Supplier
+            class C {
+                static <T> T pick(T a, T b) { b }
+            }
+
+            List<Supplier<String>> list = []
+            list.add(C.pick({ 'a' }, { 'b' })) // T of pick is Closure, E of add is Supplier
+            list << C.pick({ 'a' }, { 'c' })
+            Collections.addAll(list, C.pick({ 'a' }, { 'd' }), C.pick({ 'a' }, { 'e' }))
+            Map<String, Supplier<String>> map = [:]
+            map.put('k', C.pick({ 'a' }, { 'f' }))
+            list.add(map.k)
+            assert list*.get() == ['b', 'c', 'd', 'e', 'f']
+            assert list.every { it instanceof Supplier && !(it instanceof Closure) }
+        '''
+    }
 }
