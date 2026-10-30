@@ -1910,6 +1910,78 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12589: "super.name" calls the accessor of the superclass, as dynamic Groovy does
+    @Test
+    void testSuperPropertyInClassNestedInSuperclass() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Base {
+                boolean f
+                boolean isF() { true }
+                boolean getF() { false }
+                String name = 'base'
+                String x = 'x'
+                String getX() { x }
+                void setX(String value) { x = value + '!' }
+
+                static class Sub extends Base {
+                    boolean isF() { false }
+                    boolean getF() { true }
+                    String getName() { 'sub' }
+                    String getX() { 'sub' }
+                    void setX(String value) { }
+                    List read() {
+                        Supplier<Boolean> lambda = () -> super.f
+                        [super.f, { -> super.f }(), lambda.get(), { -> { -> super.f }() }(), super.name, { -> super.name }(), super.x, { -> super.x }()]
+                    }
+                    List write() {
+                        def c = { -> super.x = 'c' }
+                        def d = { -> super.x += 'd' }
+                        [c(), super.x, d(), super.x, x]
+                    }
+                    List own() {
+                        [f, this.f, { -> f }(), { -> this.f }(), name, x]
+                    }
+                }
+                class Inner extends Base {
+                    boolean isF() { false }
+                    List read() {
+                        [super.f, { -> super.f }(), f]
+                    }
+                }
+            }
+            def sub = new Base.Sub()
+            assert sub.read() == [true, true, true, true, 'base', 'base', 'x', 'x']
+            assert sub.write() == ['c', 'c!', 'c!d', 'c!d!', 'sub']
+            assert sub.own() == [false, false, false, false, 'sub', 'sub']
+            assert new Base.Inner(new Base()).read() == [true, true, false]
+        '''
+    }
+
+    // GROOVY-12589: for a boolean property, "isName" is the accessor when "getName" is declared, too
+    @Test
+    void testSuperBooleanPropertyWithIsserAndGetter() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Base {
+                boolean f
+                boolean isF() { true }
+                boolean getF() { false }
+            }
+            class Sub extends Base {
+                boolean isF() { false }
+                boolean getF() { true }
+                List read() {
+                    Supplier<Boolean> lambda = () -> super.f
+                    [super.f, { -> super.f }(), lambda.get(), f, this.f, { -> f }(), { -> this.f }()]
+                }
+            }
+            assert new Sub().read() == [true, true, true, false, false, false, false]
+        '''
+    }
+
     @Test
     void testPrivateFieldAccessInClosure1() {
         assertScript '''
