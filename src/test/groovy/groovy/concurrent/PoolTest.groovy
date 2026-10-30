@@ -32,6 +32,7 @@ final class PoolTest {
 
             def pool = Pool.fixed(4)
             assert pool.poolSize == 4
+            assert pool.asForkJoinPool().parallelism == 4
             assert !pool.usesVirtualThreads()
             pool.close()
         '''
@@ -44,8 +45,42 @@ final class PoolTest {
 
             def pool = Pool.cpu()
             assert pool.poolSize == Runtime.runtime.availableProcessors()
+            assert pool.asForkJoinPool().parallelism == pool.poolSize
             assert !pool.usesVirtualThreads()
             pool.close()
+        '''
+    }
+
+    @Test
+    void testIoPoolFollowsVirtualThreadSupport() {
+        assertScript '''
+            import groovy.concurrent.ConcurrentConfig
+            import groovy.concurrent.Pool
+
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def virtual = Pool.virtual()
+            def io = Pool.io()
+            try {
+                def virtualThreads = virtual.usesVirtualThreads()
+                if (Runtime.version().feature() >= 21) {
+                    assert virtualThreads
+                }
+                if (virtualThreads) {
+                    assert io.usesVirtualThreads()
+                    assert io.poolSize == Integer.MAX_VALUE
+                    shouldFail(UnsupportedOperationException) {
+                        io.asForkJoinPool()
+                    }
+                } else {
+                    assert !io.usesVirtualThreads()
+                    assert io.poolSize == ConcurrentConfig.defaultParallelism
+                    assert io.asForkJoinPool().parallelism == io.poolSize
+                }
+            } finally {
+                virtual.close()
+                io.close()
+            }
         '''
     }
 
@@ -86,6 +121,36 @@ final class PoolTest {
             }
             assert result == [10, 20]
             pool.close()
+        '''
+    }
+
+    @Test
+    void testWorkerThreadCarriesItsPool() {
+        assertScript '''
+            import groovy.concurrent.Pool
+            import java.util.concurrent.CountDownLatch
+            import java.util.concurrent.TimeUnit
+
+            def check = { Pool pool ->
+                def seen = new java.util.concurrent.atomic.AtomicReference()
+                def latch = new CountDownLatch(1)
+                pool.execute {
+                    seen.set(Pool.current())
+                    latch.countDown()
+                }
+                assert latch.await(5, TimeUnit.SECONDS)
+                assert seen.get().is(pool)
+            }
+
+            def fixed = Pool.fixed(1)
+            def virtual = Pool.virtual()
+            try {
+                check(fixed)
+                check(virtual)
+            } finally {
+                fixed.close()
+                virtual.close()
+            }
         '''
     }
 

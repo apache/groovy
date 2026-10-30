@@ -173,6 +173,25 @@ final class Groovy12469 {
     }
 
     @Test
+    void testGStringConvertedWhenHeldAsCommonTypeOfSeveralTypes() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+
+            @CompileStatic
+            String foo(List<String> list) {
+                def obj = 1
+                obj = list.get(0)
+                obj.toUpperCase()
+            }
+
+            def name = 'ab'
+            List<String> polluted = ["$name"] // GString elements, as built by dynamic code
+            assert foo(polluted) == 'AB'
+            assert foo(['ab']) == 'AB'
+        '''
+    }
+
+    @Test
     void testMemberOfNarrowerTypeStillCastsAtPointOfUse() {
         def err = shouldFail ClassCastException, '''
             import groovy.transform.CompileStatic
