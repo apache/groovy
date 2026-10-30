@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen;
 
+import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
 import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
@@ -1310,6 +1311,41 @@ public class AsmClassGenerator extends ClassGenerator {
      */
     public static boolean isFieldDirectlyAccessible(final FieldNode field, final ClassNode accessingClass) {
         return field != null && isMemberDirectlyAccessible(field.getModifiers(), field.getDeclaringClass(), accessingClass);
+    }
+
+    /**
+     * Determines if the bytecode of the accessing class can rely on being in
+     * the run-time package of the declaring class, which is the package name
+     * and the class loader. The JVM allows access to a protected or
+     * package-private member only within the same run-time package, apart from
+     * the subclass rule for a protected member.
+     * <p>
+     * A GroovyClassLoader defines the classes of each compilation, like a
+     * {@code GroovyShell} script, in memory with a class loader of their own,
+     * so a class compiled before, by another compilation, is in another
+     * run-time package although its package name is the same. Classes that
+     * are compiled to class files are expected to be loaded by one class
+     * loader with the classes they use from the same package, as javac
+     * expects.
+     * <p>
+     * {@code isPrimaryClassNode()} is used here as "defined by the class
+     * loader of the accessing class", since the classes of one compilation are
+     * defined together; it does not stand for "compiled from source".
+     *
+     * @param declaringClass the class declaring the member
+     * @param accessingClass the class attempting access
+     * @return {@code true} if both classes have the same package name and are
+     *         not known to be defined by different class loaders
+     */
+    public static boolean isInSameRuntimePackage(final ClassNode declaringClass, final ClassNode accessingClass) {
+        if (!Objects.equals(declaringClass.getPackageName(), accessingClass.getPackageName())) return false;
+        if (declaringClass.isPrimaryClassNode()) return true; // compiled and defined with the accessing class
+        CompileUnit unit = null;
+        for (ClassNode cn = accessingClass; unit == null && cn != null; cn = cn.getOuterClass()) {
+            unit = cn.getCompileUnit();
+        }
+        // see GroovyClassLoader: the classes of this compilation are defined by an InnerLoader of their own
+        return unit == null || !Boolean.TRUE.equals(unit.getNodeMetaData(GroovyClassLoader.InnerLoader.class));
     }
 
     /**

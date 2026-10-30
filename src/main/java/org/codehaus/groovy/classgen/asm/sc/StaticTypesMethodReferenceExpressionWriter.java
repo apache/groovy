@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -69,6 +70,7 @@ import static org.codehaus.groovy.classgen.asm.BytecodeHelper.getClassInternalNa
 import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterfaceMetadataKey.METHOD_REFERENCE_DESERIALIZE_METHOD_NAME;
 import static org.codehaus.groovy.runtime.ArrayGroovyMethods.last;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.allParametersAndArgumentsMatch;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filterMethodsByVisibility;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
@@ -460,26 +462,63 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         ArgumentListExpression ctorArgs = new ArgumentListExpression(parametersWithExactType);
 
         Expression returnValue;
-        if (returnType.isArray()) {
+        boolean staticCompile = false;
+        if (returnType.isArray()) { // like new T[n]
             returnValue = new ArrayExpression(
                     returnType.getComponentType(),
                     null, ctorArgs.getExpressions());
+            staticCompile = true;
         } else {
             returnValue = ctorX(returnType, ctorArgs);
+            ConstructorNode ctor = findConstructorReferenceTarget(returnType, parametersWithExactType);
+            if (ctor != null) {
+                returnValue.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, ctor);
+                staticCompile = true;
+            }
         }
 
         MethodNode delegateMethod = addSyntheticMethod(methodName, returnType, returnValue, parametersWithExactType, ClassNode.EMPTY_ARRAY);
-        // TODO: if StaticTypesMarker.DIRECT_METHOD_CALL_TARGET or
-        // OptimizingStatementWriter.StatementMeta.class metadatas
-        // can bet set for the ctorX above, then this can be TRUE:
-        delegateMethod.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.FALSE);
+        // without a target constructor, the constructor is selected at run time
+        delegateMethod.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, staticCompile);
         return delegateMethod;
     }
 
+    /**
+     * Selects the constructor of {@code type} that accepts the parameter types
+     * of the functional interface, among the constructors visible from the
+     * enclosing class, as the type checker selects the constructor of a
+     * constructor call.
+     * <p>
+     * A returned constructor is called directly, like the constructor of a
+     * statically compiled {@code new}, so the meta-class does not see the call:
+     * a constructor added or overridden through the meta-class, for example
+     * with {@code ExpandoMetaClass}, is not used.
+     *
+     * @return the constructor, or {@code null} if no single constructor matches
+     *         or the matching constructor cannot be called directly
+     */
+    private ConstructorNode findConstructorReferenceTarget(final ClassNode type, final Parameter[] samParameters) {
+        // the type checker rejects an abstract class or interface, unless a type checking extension suppresses the error;
+        // an enum, which Java code cannot instantiate at all, is left to the meta-class
+        if (type.isInterface() || type.isAbstract() || type.isEnum()) return null;
+
+        ClassNode[] argumentTypes = Arrays.stream(samParameters).map(Parameter::getType).toArray(ClassNode[]::new);
+        // in a closure or lambda, visibility is checked for the enclosing class, as the type checker does
+        List<MethodNode> visible = filterMethodsByVisibility(new ArrayList<>(type.getDeclaredConstructors()), controller.getThisType());
+        List<MethodNode> ctors = chooseBestMethod(type, visible, argumentTypes);
+        if (ctors.size() == 1 && ctors.get(0) instanceof ConstructorNode ctor
+                && StaticInvocationWriter.isDirectlyAccessible(ctor, controller.getClassNode())) {
+            return ctor;
+        }
+        return null;
+    }
+
     private MethodNode addSyntheticMethod(final String methodName, final ClassNode returnType, final Expression returnValue, final Parameter[] parameters, final ClassNode[] exceptions) {
-        return controller.getClassNode().addSyntheticMethod(
+        ClassNode classNode = controller.getClassNode();
+        return classNode.addSyntheticMethod(
             methodName,
-            Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+            // the JVM rejects ACC_FINAL on any method of an interface (JVMS 4.6), so no helper method is final there
+            Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | (classNode.isInterface() ? 0 : Opcodes.ACC_FINAL),
             returnType,
             parameters,
             exceptions,
