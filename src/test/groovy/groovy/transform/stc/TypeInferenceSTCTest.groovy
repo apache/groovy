@@ -654,7 +654,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Incompatible instanceof types'
     }
 
-    // GROOVY-12492: a check that guards nothing narrows nothing
+    // GROOVY-12562: a check that guards nothing narrows nothing
     @Test
     void testInstanceOf30() {
         assertScript '''
@@ -690,7 +690,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    // GROOVY-12492: a check compared with a boolean literal narrows like the check, or like its negation
+    // GROOVY-12562: a check compared with a boolean literal narrows like the check, or like its negation
     @Test
     void testInstanceOf31() {
         assertScript '''
@@ -734,7 +734,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Object#length()'
     }
 
-    // GROOVY-12492: the condition of a loop narrows in the loop only
+    // GROOVY-12562: the condition of a loop narrows in the loop only
     @Test
     void testInstanceOf32() {
         assertScript '''
