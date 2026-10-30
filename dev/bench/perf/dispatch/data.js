@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793257467593,
+  "lastUpdate": 1793343889298,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -6073,6 +6073,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.groovyRuntime",
             "value": 1517,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194129,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "James Daugherty",
+            "username": "jdaugherty",
+            "email": "jdaugherty@jdresources.net"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "921aac145c29f555787f442991b29287eb5047cd",
+          "message": "GROOVY-12559: Test more ternary shapes with class literal operands\n\nReview of apache/groovy#3087 found that Elvis and null-coalescing operands\nare typed the same way, and that two shapes also fail with classic call\nsites, because the conversion to the common supertype is written inside the\nternary rather than at its use site: `b ? (c ? First : Second) : marker`\nwith a `Marker marker`, and array class literals such as\n`a ? (b ? String[] : Integer[]) : (b ? Long[] : Short[])`, threw a\nGroovyCastException. The test now covers those shapes, and the static import\nmoves below the regular imports.",
+          "timestamp": "2026-10-29T23:30:09Z",
+          "url": "https://github.com/apache/groovy/commit/921aac145c29f555787f442991b29287eb5047cd"
+        },
+        "date": 1793343888349,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4013,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 440,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 853,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1519,
             "unit": "classes"
           },
           {
