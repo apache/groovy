@@ -795,6 +795,14 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                 && makeSuperPropertySite(expression, objectExpression, name, compileStack.isLHS())) {
             return;
         }
+        if (name != null && expression instanceof AttributeExpression && !expression.isSpreadSafe()
+                && isOuterSuperExpression(objectExpression)) { // "Outer.super.@name" is a field of Outer's superclass
+            ClassNode receiverType = getPropertyOwnerType(objectExpression);
+            if (compileStack.isLHS() ? setField(expression, objectExpression, receiverType, name)
+                    : makeGetField(objectExpression, receiverType, name, expression.isSafe(), false)) {
+                return;
+            }
+        }
 
         if (name != null && compileStack.isLHS()) {
             boolean[] isClassReceiver = new boolean[1];

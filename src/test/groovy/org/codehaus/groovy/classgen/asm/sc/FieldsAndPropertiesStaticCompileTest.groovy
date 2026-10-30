@@ -938,4 +938,33 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         assert astTrees['Text'][1].contains('INVOKESTATIC org/codehaus/groovy/runtime/ResourceGroovyMethods.getText (Ljava/io/File;)Ljava/lang/String;')
         assert astTrees['Text'][1].contains('INVOKESTATIC org/codehaus/groovy/runtime/ResourceGroovyMethods.setText (Ljava/io/File;Ljava/lang/String;)V')
     }
+
+    // GROOVY-12517: "Outer.super.@name" reads and writes the field of the superclass directly
+    @Test
+    void testOuterSuperFieldIsAccessedDirectly() {
+        assertScript '''
+            class Base {
+                protected String x = 'x:base'
+            }
+            class Outer extends Base {
+                protected String x = 'x:outer'
+                class Inner {
+                    List test() {
+                        def read = Outer.super.@x
+                        Outer.super.@x = 'w'
+                        [read, Outer.super.@x, Outer.this.@x]
+                    }
+                }
+            }
+            class Sub extends Outer {
+                protected String x = 'x:sub'
+            }
+            assert new Outer.Inner(new Outer()).test() == ['x:base', 'w', 'x:outer']
+            assert new Outer.Inner(new Sub()).test() == ['x:base', 'w', 'x:outer']
+        '''
+        String inner = astTrees['Outer$Inner'][1]
+        assert !inner.contains('FieldOnSuper')
+        assert inner.contains('GETFIELD Base.x')
+        assert inner.contains('PUTFIELD Base.x')
+    }
 }

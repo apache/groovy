@@ -1546,9 +1546,9 @@ public class AsmClassGenerator extends ClassGenerator {
         if (!visited) {
             MethodCallerMultiAdapter adapter;
             if (controller.getCompileStack().isLHS()) {
-                adapter = isSuperExpression(objectExpression) ? setFieldOnSuper : isGroovyObject(expression) ? setGroovyObjectField : setField;
+                adapter = isSuperOrOuterSuper(objectExpression) ? setFieldOnSuper : isGroovyObject(expression) ? setGroovyObjectField : setField;
             } else {
-                adapter = isSuperExpression(objectExpression) ? getFieldOnSuper : isGroovyObject(expression) ? getGroovyObjectField : getField;
+                adapter = isSuperOrOuterSuper(objectExpression) ? getFieldOnSuper : isGroovyObject(expression) ? getGroovyObjectField : getField;
             }
             visitAttributeOrProperty(expression, adapter);
         }

@@ -2920,6 +2920,55 @@ final class InnerClassTest {
         """
     }
 
+    // GROOVY-12517: 'Outer.super.@name' and 'N.super.@name' are fields of the superclass
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testQualifiedSuperField(String mode) {
+        assertScript """
+            import java.util.function.Supplier
+
+            class Base {
+                protected String x = 'x:base'
+                protected int n = 1
+                String base() { x + n }
+            }
+            $mode
+            class Top {
+                static class N extends Base {
+                    protected String x = 'x:n'
+                    protected int n = 10
+                    List test() {
+                        Supplier<String> lambda = () -> N.super.@x
+                        List read = [N.super.@x, { -> N.super.@x }(), lambda.get()]
+                        N.super.@x = 'w'
+                        N.super.@n++
+                        def c = { -> N.super.@n += 5 }
+                        c()
+                        read + [base(), x + n]
+                    }
+                }
+            }
+            $mode
+            class Outer extends Base {
+                protected String x = 'x:outer'
+                protected int n = 100
+                class In {
+                    List test() {
+                        Supplier<String> lambda = () -> Outer.super.@x
+                        List read = [Outer.super.@x, { -> Outer.super.@x }(), lambda.get()]
+                        Outer.super.@x = 'w'
+                        Outer.super.@n++
+                        def c = { -> Outer.super.@n += 5 }
+                        c()
+                        read + [Outer.this.base(), Outer.this.@x + Outer.this.@n]
+                    }
+                }
+            }
+            assert new Top.N().test() == ['x:base', 'x:base', 'x:base', 'w7', 'x:n10']
+            assert new Outer.In(new Outer()).test() == ['x:base', 'x:base', 'x:base', 'w7', 'x:outer100']
+        """
+    }
+
     // GROOVY-12517
     @Test
     void testQualifiedSuperOfOuterClassWithoutEnclosingInstance() {
