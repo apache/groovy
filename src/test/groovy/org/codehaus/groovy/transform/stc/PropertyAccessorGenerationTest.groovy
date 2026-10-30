@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test
 
 import java.lang.reflect.Modifier
 
-import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertNull
 import static org.junit.jupiter.api.Assertions.assertTrue
 
 /**
@@ -44,7 +44,7 @@ final class PropertyAccessorGenerationTest {
 
         def walk = StaticTypeCheckingVisitor.getDeclaredMethod('hierarchyGeneratesAccessor', PropertyNode, String)
         walk.accessible = true
-        assertFalse((Boolean) walk.invoke(null, property, 'isFlag'))
+        assertNull(walk.invoke(null, property, 'isFlag'))
     }
 
     @Test
