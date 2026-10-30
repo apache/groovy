@@ -116,36 +116,19 @@ public class ClassInfo implements Finalizable {
     private static final ManagedConcurrentLinkedQueue<ClassInfo> modifiedExpandos =
             new ManagedConcurrentLinkedQueue<ClassInfo>(weakBundle);
 
-    /**
-     * The instances {@link #remove(Class)} detached, by class, both held weakly. While one
-     * is still reachable, its class gets that same instance back when it is used again. The
-     * default Groovy methods and extension methods keep it reachable: they hold the
-     * {@code CachedClass} of their declaring and parameter types, and so its
-     * {@code ClassInfo}. A new instance would lack the methods the registry wrote into the
-     * detached one, and its {@code CachedClass} would not be the one those methods compare
-     * parameter types with by identity.
-     */
-    private static final ConcurrentReferenceHashMap<Class<?>, ClassInfo> detachedClassInfos =
-            new ConcurrentReferenceHashMap<>(ReferenceType.WEAK, ReferenceType.WEAK, EnumSet.of(Option.IDENTITY_COMPARISONS));
-
     private static final GroovyClassValue<ClassInfo> globalClassValue = GroovyClassValueFactory.createGroovyClassValue(new ComputeValue<ClassInfo>(){
         /**
-         * Creates a new {@code ClassInfo} for the given class type.
-         * Initializes cache and registers the class information in the global set.
-         * A still reachable instance that {@link #remove(Class)} detached is returned instead.
+         * Returns the {@code ClassInfo} for the given class type from the global set,
+         * creating and registering one if the class has none that is still reachable.
+         * An instance that {@link #remove(Class)} detached stays reachable as long as
+         * default Groovy methods or extension methods refer to it.
          *
          * @param type the class to create information for
          * @return the {@code ClassInfo} for the class
          */
         @Override
         public ClassInfo computeValue(Class<?> type) {
-            ClassInfo detached = detachedClassInfos.get(type);
-            if (detached != null) {
-                return detached; // alive, so still in the global set
-            }
-            ClassInfo ret = new ClassInfo(type);
-            globalClassSet.add(ret);
-            return ret;
+            return globalClassSet.getOrCreate(type);
         }
     });
 
@@ -398,21 +381,23 @@ public class ClassInfo implements Finalizable {
      * The MetaClasses set for the class and for its instances are dropped. If the
      * {@code ClassInfo} is still reachable when the class is used again, as it is for a
      * class that has default Groovy methods or extension methods, the class gets it back
-     * with those methods; otherwise a new one is created.
+     * with those methods; otherwise a new one is created. A class that has no
+     * {@code ClassInfo} is left without one.
      *
      * @param cls the Class associated with the ClassInfo to remove
      *            from cache
      */
     public static void remove(Class<?> cls) {
-        ClassInfo info = globalClassValue.get(cls);
-        info.lock();
-        try {
-            info.perInstanceMetaClassMap = null;
-            info.setStrongMetaClass(null); // also drops the weak MetaClass and retires the SwitchPoint generation
-        } finally {
-            info.unlock();
+        ClassInfo info = globalClassSet.get(cls);
+        if (info != null) {
+            info.lock();
+            try {
+                info.perInstanceMetaClassMap = null;
+                info.setStrongMetaClass(null); // also drops the weak MetaClass and retires the SwitchPoint generation
+            } finally {
+                info.unlock();
+            }
         }
-        detachedClassInfos.put(cls, info);
         // A hard detach drops the whole association — including any pin the
         // detached instance held there — so undeploy semantics need no
         // store-specific handling.
@@ -864,9 +849,22 @@ public class ClassInfo implements Finalizable {
         artifactClassLoader.clear();
     }
 
+    /**
+     * Every {@code ClassInfo} still reachable, by class, both held weakly. An instance stays
+     * here after {@link #remove(Class)} detaches it, so its class gets that same instance back
+     * when it is used again while it is still reachable. The default Groovy methods and
+     * extension methods keep it reachable: they hold the {@code CachedClass} of their declaring
+     * and parameter types, and so its {@code ClassInfo}. A new instance would lack the methods
+     * the registry wrote into the detached one, and its {@code CachedClass} would not be the
+     * one those methods compare parameter types with by identity.
+     */
     private static class GlobalClassSet {
 
+        // Gradle's ClassInfoCleaningGroovySystemLoader reads this field and calls its iterator() reflectively
         private final ManagedConcurrentLinkedQueue<ClassInfo> items = new ManagedConcurrentLinkedQueue<ClassInfo>(weakBundle);
+
+        private final ConcurrentReferenceHashMap<Class<?>, ClassInfo> byClass =
+                new ConcurrentReferenceHashMap<>(ReferenceType.WEAK, ReferenceType.WEAK, EnumSet.of(Option.IDENTITY_COMPARISONS));
 
         public int size(){
             return values().size();
@@ -880,8 +878,17 @@ public class ClassInfo implements Finalizable {
             return items.values();
         }
 
-        public void add(ClassInfo value){
-            items.add(value);
+        public ClassInfo get(Class<?> type){
+            return byClass.get(type);
+        }
+
+        public ClassInfo getOrCreate(Class<?> type){
+            ClassInfo info = byClass.get(type);
+            if (info != null) return info;
+            ClassInfo created = new ClassInfo(type);
+            info = byClass.apply(type, (t, existing) -> existing != null ? existing : created);
+            if (info == created) items.add(created); // outside the map's lock: adding may finalize stale references
+            return info;
         }
 
     }

@@ -391,6 +391,26 @@ final class Groovy12142 {
 
     // GROOVY-12580
     @Test
+    @CompileStatic
+    void testRemovingAClassWithoutClassInfoCreatesNone() {
+        assertFalse(hasClassInfo(NeverDispatchedHost))
+        ClassInfo.remove(NeverDispatchedHost)
+        assertFalse(hasClassInfo(NeverDispatchedHost))
+    }
+
+    static class NeverDispatchedHost {
+    }
+
+    @CompileStatic
+    private static boolean hasClassInfo(Class<?> type) {
+        for (ClassInfo ci : ClassInfo.getAllClassInfo()) {
+            if (ci.getTheClass() == type) return true
+        }
+        return false
+    }
+
+    // GROOVY-12580
+    @Test
     @ForkedJvm
     void testDocumentedSweepLeavesTheRuntimeWorking() {
         assertEquals([2, 4, 6], [1, 2, 3].collect { it * 2 })
