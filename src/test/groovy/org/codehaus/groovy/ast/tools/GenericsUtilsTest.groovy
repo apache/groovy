@@ -530,4 +530,116 @@ final class GenericsUtilsTest {
         Map spec = GenericsUtils.inferGenericsSpecFromOverrides(impl, superType, [:])
         assert spec['T'] == ClassHelper.Integer_TYPE
     }
+
+    // GROOVY-11521
+    @Test
+    void testParameterizeTypePreservesExtendsWildcard() {
+        def classNodes = compile '''
+            class Holder {
+                ArrayList<? extends Number> list
+                ArrayList<? extends List<String>> listOfLists
+                HashMap<String, ? extends Number> map
+                ArrayList<String> concrete
+                ArrayList<List<? extends Number>> nested
+            }
+        '''
+        ClassNode list = fieldType(classNodes, 'Holder', 'list')
+        ClassNode asList = GenericsUtils.parameterizeType(list, ClassHelper.LIST_TYPE)
+        assert asList.toString(false) == 'java.util.List<? extends java.lang.Number>'
+        assert asList.redirect() == ClassHelper.LIST_TYPE
+        assert asList.genericsTypes[0].wildcard
+        assert asList.genericsTypes[0].upperBounds[0].name == 'java.lang.Number'
+        assert asList.genericsTypes[0].lowerBound == null
+
+        ClassNode asCollection = GenericsUtils.parameterizeType(list, ClassHelper.COLLECTION_TYPE)
+        assert asCollection.toString(false) == 'java.util.Collection<? extends java.lang.Number>'
+        assert asCollection.genericsTypes[0].wildcard
+
+        ClassNode asIterable = GenericsUtils.parameterizeType(list, ClassHelper.ITERABLE_TYPE)
+        assert asIterable.toString(false) == 'java.lang.Iterable<? extends java.lang.Number>'
+        assert asIterable.genericsTypes[0].wildcard
+
+        // projecting an already-parameterized supertype keeps the wildcard
+        ClassNode again = GenericsUtils.parameterizeType(asList, ClassHelper.COLLECTION_TYPE)
+        assert again.toString(false) == 'java.util.Collection<? extends java.lang.Number>'
+
+        ClassNode listOfLists = fieldType(classNodes, 'Holder', 'listOfLists')
+        assert GenericsUtils.parameterizeType(listOfLists, ClassHelper.LIST_TYPE).toString(false) ==
+                'java.util.List<? extends java.util.List<java.lang.String>>'
+
+        ClassNode map = fieldType(classNodes, 'Holder', 'map')
+        ClassNode asMap = GenericsUtils.parameterizeType(map, ClassHelper.MAP_TYPE)
+        assert asMap.toString(false) == 'java.util.Map<java.lang.String, ? extends java.lang.Number>'
+        assert !asMap.genericsTypes[0].wildcard
+        assert asMap.genericsTypes[0].type.name == 'java.lang.String'
+        assert asMap.genericsTypes[1].wildcard
+        assert asMap.genericsTypes[1].upperBounds[0].name == 'java.lang.Number'
+
+        // a wildcard nested inside a concrete type argument is unchanged
+        ClassNode nested = fieldType(classNodes, 'Holder', 'nested')
+        assert GenericsUtils.parameterizeType(nested, ClassHelper.LIST_TYPE).toString(false) ==
+                'java.util.List<java.util.List<? extends java.lang.Number>>'
+
+        ClassNode concrete = fieldType(classNodes, 'Holder', 'concrete')
+        assert GenericsUtils.parameterizeType(concrete, ClassHelper.LIST_TYPE).toString(false) ==
+                'java.util.List<java.lang.String>'
+    }
+
+    // GROOVY-11521
+    @Test
+    void testParameterizeTypePreservesSuperWildcard() {
+        def classNodes = compile '''
+            class Holder {
+                ArrayList<? super Number> list
+                HashMap<String, ? super Number> map
+            }
+        '''
+        ClassNode list = fieldType(classNodes, 'Holder', 'list')
+        ClassNode asList = GenericsUtils.parameterizeType(list, ClassHelper.LIST_TYPE)
+        assert asList.toString(false) == 'java.util.List<? super java.lang.Number>'
+        assert asList.genericsTypes[0].wildcard
+        assert asList.genericsTypes[0].lowerBound.name == 'java.lang.Number'
+        assert asList.genericsTypes[0].upperBounds == null
+
+        ClassNode asCollection = GenericsUtils.parameterizeType(list, ClassHelper.COLLECTION_TYPE)
+        assert asCollection.toString(false) == 'java.util.Collection<? super java.lang.Number>'
+
+        ClassNode map = fieldType(classNodes, 'Holder', 'map')
+        assert GenericsUtils.parameterizeType(map, ClassHelper.MAP_TYPE).toString(false) ==
+                'java.util.Map<java.lang.String, ? super java.lang.Number>'
+    }
+
+    // GROOVY-11521
+    @Test
+    void testParameterizeTypePropagatesWildcardFromTypeVariable() {
+        def classNodes = compile '''
+            class Box<T> extends ArrayList<T> {}
+            class Mid<E> extends ArrayList<E> {}
+            class Box2<T> extends Mid<T> {}
+            class Use {
+                Box<? extends CharSequence> box
+                Box2<? super Integer> box2
+                Box<String> concrete
+            }
+        '''
+        ClassNode box = fieldType(classNodes, 'Use', 'box')
+        assert GenericsUtils.parameterizeType(box, ClassHelper.LIST_TYPE).toString(false) ==
+                'java.util.List<? extends java.lang.CharSequence>'
+        assert GenericsUtils.parameterizeType(box, ClassHelper.COLLECTION_TYPE).toString(false) ==
+                'java.util.Collection<? extends java.lang.CharSequence>'
+
+        ClassNode box2 = fieldType(classNodes, 'Use', 'box2')
+        assert GenericsUtils.parameterizeType(box2, ClassHelper.LIST_TYPE).toString(false) ==
+                'java.util.List<? super java.lang.Integer>'
+
+        ClassNode concrete = fieldType(classNodes, 'Use', 'concrete')
+        assert GenericsUtils.parameterizeType(concrete, ClassHelper.LIST_TYPE).toString(false) ==
+                'java.util.List<java.lang.String>'
+    }
+
+    private static ClassNode fieldType(List<ClassNode> classNodes, String owner, String name) {
+        ClassNode cn = findClassNode(owner, classNodes).getDeclaredField(name).type
+        assert cn != null
+        return cn
+    }
 }
