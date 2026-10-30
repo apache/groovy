@@ -165,6 +165,24 @@ jobs:
         run: ./gradlew test ${{ matrix.junit-network }} -Pgroovy.grape.bridge-cache=true -Ptarget.java.home="$JAVA_HOME_${{ matrix.java }}_${{ runner.arch }}"
         shell: bash
         timeout-minutes: 60
+      - name: "🛑 Stop Gradle daemon before cache save"
+        if: always()
+        continue-on-error: true
+        run: ./gradlew --stop
+      - name: "🧹 Scrub Gradle cache lock files before save"
+        if: always()
+        shell: bash
+        run: |
+          dir="${GRADLE_USER_HOME:-$HOME/.gradle}/caches"
+          [ -d "$dir" ] || { echo "No $dir — nothing to scrub."; exit 0; }
+          deleted=0
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            echo "lock: $f"
+            rm -f "$f"
+            deleted=$((deleted + 1))
+          done < <(find "$dir" -name '*.lock' 2>/dev/null)
+          echo "Scrubbed $deleted Gradle cache lock file(s) before cache save."
       # Ivy records a transient "not found" (e.g. an HTTP 404 from the CDN/WAF in
       # front of Maven Central) as `...exists=false` inside ivydata-*.properties.
       # If such a marker is saved into the cache it is restored and replayed on
@@ -285,6 +303,24 @@ jobs:
       - name: "🏃Test with Gradle"
         run: ./gradlew test -Pgroovy.grape.bridge-cache=true -Ptarget.java.home="$JAVA_HOME_${{ matrix.java }}_X64"
         timeout-minutes: 60
+      - name: "🛑 Stop Gradle daemon before cache save"
+        if: always()
+        continue-on-error: true
+        run: ./gradlew --stop
+      - name: "🧹 Scrub Gradle cache lock files before save"
+        if: always()
+        shell: bash
+        run: |
+          dir="${GRADLE_USER_HOME:-$HOME/.gradle}/caches"
+          [ -d "$dir" ] || { echo "No $dir — nothing to scrub."; exit 0; }
+          deleted=0
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            echo "lock: $f"
+            rm -f "$f"
+            deleted=$((deleted + 1))
+          done < <(find "$dir" -name '*.lock' 2>/dev/null)
+          echo "Scrubbed $deleted Gradle cache lock file(s) before cache save."
       # See the lts job for rationale: drop only Ivy's transient `exists=false`
       # negative markers just before actions/cache saves, so a one-off resolution
       # miss can't be cached and replayed as a sticky failure on later runs, and
@@ -546,6 +582,24 @@ jobs:
         run: ./gradlew test -Pgroovy.grape.bridge-cache=true -Ptarget.java.home="$EA_JAVA_HOME"
         shell: bash
         timeout-minutes: 60
+      - name: "🛑 Stop Gradle daemon before cache save"
+        if: always()
+        continue-on-error: true
+        run: ./gradlew --stop
+      - name: "🧹 Scrub Gradle cache lock files before save"
+        if: always()
+        shell: bash
+        run: |
+          dir="${GRADLE_USER_HOME:-$HOME/.gradle}/caches"
+          [ -d "$dir" ] || { echo "No $dir — nothing to scrub."; exit 0; }
+          deleted=0
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            echo "lock: $f"
+            rm -f "$f"
+            deleted=$((deleted + 1))
+          done < <(find "$dir" -name '*.lock' 2>/dev/null)
+          echo "Scrubbed $deleted Gradle cache lock file(s) before cache save."
       # See the lts job for rationale: drop only Ivy's transient `exists=false`
       # negative markers just before actions/cache saves, so a one-off resolution
       # miss can't be cached and replayed as a sticky failure on later runs, and

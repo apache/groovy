@@ -83,6 +83,24 @@ jobs:
         run: ./gradlew perf:jmh -PbenchInclude='\.adhoc\.' ${{ matrix.indyFlag }} -PjmhProfilers=gc -PjmhResultFormat=JSON
         timeout-minutes: 90
 
+      - name: "🛑 Stop Gradle daemon before cache save"
+        if: always()
+        continue-on-error: true
+        run: ./gradlew --stop
+      - name: "🧹 Scrub Gradle cache lock files before save"
+        if: always()
+        shell: bash
+        run: |
+          dir="${GRADLE_USER_HOME:-$HOME/.gradle}/caches"
+          [ -d "$dir" ] || { echo "No $dir — nothing to scrub."; exit 0; }
+          deleted=0
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            echo "lock: $f"
+            rm -f "$f"
+            deleted=$((deleted + 1))
+          done < <(find "$dir" -name '*.lock' 2>/dev/null)
+          echo "Scrubbed $deleted Gradle cache lock file(s) before cache save."
       # ---- Throughput series (ops/time; higher = better) ----
       # Dashboards index: https://apache.github.io/groovy/dev/bench/jmh-adhoc/
       # Data is appended to dev/bench/jmh-adhoc/throughput/<mode>/data.js on gh-pages.

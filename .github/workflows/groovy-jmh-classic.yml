@@ -83,6 +83,24 @@ jobs:
       - name: JMH (${{ matrix.suite }} classic)
         run: ./gradlew perf:jmh -PbenchInclude=${{ matrix.pattern }} -Pindy=false -PjmhResultFormat=JSON
         timeout-minutes: 90
+      - name: "🛑 Stop Gradle daemon before cache save"
+        if: always()
+        continue-on-error: true
+        run: ./gradlew --stop
+      - name: "🧹 Scrub Gradle cache lock files before save"
+        if: always()
+        shell: bash
+        run: |
+          dir="${GRADLE_USER_HOME:-$HOME/.gradle}/caches"
+          [ -d "$dir" ] || { echo "No $dir — nothing to scrub."; exit 0; }
+          deleted=0
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            echo "lock: $f"
+            rm -f "$f"
+            deleted=$((deleted + 1))
+          done < <(find "$dir" -name '*.lock' 2>/dev/null)
+          echo "Scrubbed $deleted Gradle cache lock file(s) before cache save."
       - name: Rename JMH result file
         run: |
           mv subprojects/performance/build/results/jmh/results.json \
