@@ -585,7 +585,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 typeCheckingContext.isInStaticContext = false; // AIC body is an instance context
             }
             try {
-                doWithTypeCheckingExtensions(node, super::visitClass);
+                doWithTypeCheckingExtensions(node, classNode -> {
+                    SharedVariableExpressionRewriter.rewriteInitializers(classNode);
+                    super.visitClass(classNode);
+                });
                 node.getInnerClasses().forEachRemaining(this::visitClass);
             } finally {
                 typeCheckingContext.isInStaticContext = oldStatic;
@@ -835,6 +838,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private boolean storeTypeForSuper(final VariableExpression vexp) {
+        // The shared sentinel cannot record a per-use type. Rewriting replaces it
+        // with a fresh node before this visitor runs; this guard is the backstop.
         if (vexp == VariableExpression.SUPER_EXPRESSION) return true;
         if (!vexp.isSuperExpression()) return false;
         storeType(vexp, makeSuper());
@@ -842,6 +847,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private boolean storeTypeForThis(final VariableExpression vexp) {
+        // See storeTypeForSuper: a fresh node is required before a type is stored.
         if (vexp == VariableExpression.THIS_EXPRESSION) return true;
         if (!vexp.isThisExpression()) return false;
         // GROOVY-6904, GROOVY-9422: non-static inner class constructor call sets type
@@ -2890,6 +2896,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         try {
             typeCheckingContext.isInStaticContext = node.isInStaticContext();
             currentProperty = node;
+            SharedVariableExpressionRewriter.rewrite(node);
             visitAnnotations(node);
             visitClassCodeContainer(node.getGetterBlock());
             visitClassCodeContainer(node.getSetterBlock());
@@ -2908,6 +2915,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         try {
             typeCheckingContext.isInStaticContext = node.isInStaticContext();
             currentField = node;
+            SharedVariableExpressionRewriter.rewrite(node);
             visitAnnotations(node);
             visitInitialExpression(node.getInitialExpression(), new FieldExpression(node), node);
         } finally {
@@ -3784,6 +3792,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     /** {@inheritDoc} */
     @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
+        SharedVariableExpressionRewriter.rewrite(node);
         typeCheckingContext.pushEnclosingMethod(node);
         // GROOVY-12166: statement-level instanceof narrowing (return, assert)
         // records into the enclosing temporary-type-info frame; scope it to
