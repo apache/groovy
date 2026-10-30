@@ -1958,6 +1958,30 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    // GROOVY-12577
+    @Test
+    void testCallClassMethodFromClosureInStaticContext() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class E {
+                static String sf = { -> getSimpleName() }()
+                static String sc() {
+                    def c = { -> getSimpleName() + ':' + { -> getName() }() }
+                    c()
+                }
+                static String sl() {
+                    Supplier<String> s = () -> getSimpleName()
+                    s.get()
+                }
+            }
+
+            assert E.sf == 'E'
+            assert E.sc() == 'E:E'
+            assert E.sl() == 'E'
+        '''
+    }
+
     // GROOVY-10341
     @Test
     void testCallAbstractSuperMethod() {
