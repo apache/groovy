@@ -31,7 +31,6 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeInstruction;
@@ -153,7 +152,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     private boolean involvesClassItCannotName(final MethodReferenceExpression methodReference, final FunctionalInterfaceContext functionalInterface) {
         ClassNode classNode = controller.getClassNode();
         Expression target = methodReference.getExpression();
-        ClassNode targetType = target instanceof ClassExpression ? target.getType() : inferredType(target);
+        ClassNode targetType = target instanceof ClassExpression ? target.getType() : target.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         if (targetType != null && !AsmClassGenerator.isClassDirectlyAccessible(targetType, classNode)) return true;
         for (Parameter parameter : functionalInterface.parametersWithExactType()) {
             if (!AsmClassGenerator.isClassDirectlyAccessible(parameter.getType(), classNode)) return true;
@@ -170,18 +169,6 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             }
         }
         return false;
-    }
-
-    private static ClassNode inferredType(final Expression expression) {
-        Object type = expression.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-        if (type == null && expression instanceof VariableExpression variable
-                && variable.getAccessedVariable() instanceof ASTNode accessed && accessed != expression) {
-            type = accessed.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-        }
-        if (type == null && expression instanceof VariableExpression variable && variable.getAccessedVariable() != null) {
-            type = variable.getAccessedVariable().getOriginType();
-        }
-        return type instanceof ClassNode cn ? cn : null;
     }
 
     private FunctionalInterfaceContext resolveFunctionalInterfaceContext(final MethodReferenceExpression methodReferenceExpression) {

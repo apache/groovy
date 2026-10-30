@@ -594,11 +594,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                     if (isPrimitiveType(resultType)) {
                         operandStack.replace(resultType);
                         operandStack.box();
-                        resultType = operandStack.getTopOperand();
+                        valueType = operandStack.getTopOperand();
                     }
                     mv.visitLabel(skip);
                 }
-                operandStack.replace(resultType == field.getOriginType() ? valueType : resultType);
+                operandStack.replace(valueType);
             }
             return true;
         }

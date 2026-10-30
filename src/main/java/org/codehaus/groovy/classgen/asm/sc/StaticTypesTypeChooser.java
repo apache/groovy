@@ -40,7 +40,7 @@ public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
     @Override
     public ClassNode resolveType(final Expression exp, final ClassNode current) {
         ClassNode type = resolveInferredType(exp, current);
-        if (type != null && current != null && !AsmClassGenerator.isClassDirectlyAccessible(type, current) && !isDeclaredAs(exp, type)) {
+        if (!AsmClassGenerator.isClassDirectlyAccessible(type, current) && !isDeclaredAs(exp, type)) {
             // a class that is not public, of another run-time package, cannot be named by the bytecode of the
             // current class, so the value is typed as the nearest superclass that can (like a dynamic value)
             return AsmClassGenerator.getDirectlyAccessibleSuperClass(type, current);
@@ -54,10 +54,8 @@ public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
      */
     private static boolean isDeclaredAs(final Expression exp, final ClassNode type) {
         if (exp instanceof VariableExpression) {
-            ASTNode target = getTarget(exp);
-            if (target instanceof Variable variable) {
-                return !variable.isDynamicTyped() && variable.getOriginType().equals(type);
-            }
+            Variable variable = (Variable) getTarget(exp); // the expression or the variable it accesses
+            return !variable.isDynamicTyped() && variable.getOriginType().equals(type);
         }
         return false;
     }

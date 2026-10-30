@@ -139,10 +139,6 @@ public class StaticInvocationWriter extends InvocationWriter {
     /** {@inheritDoc} */
     @Override
     public void writeInvokeConstructor(final ConstructorCallExpression call) {
-        if (call.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) != null && !call.isUsingAnonymousInnerClass()) {
-            writeDynamicConstructorCall(call, call.getType()); // for example, map-style construction of a class the bytecode cannot name
-            return;
-        }
         MethodNode mn = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
         if (mn == null) {
             super.writeInvokeConstructor(call);
@@ -235,13 +231,8 @@ public class StaticInvocationWriter extends InvocationWriter {
         Expression arguments = call.getArguments();
         makeUncachedCall(call, classX(controller.getClassNode()), classX(type), null, arguments,
                 invokeNew, false, false, false, AsmClassGenerator.containsSpreadExpression(arguments));
-        ClassNode enclosingClass = controller.getClassNode(), resultType = type;
-        if (!AsmClassGenerator.isClassDirectlyAccessible(type, enclosingClass)) {
-            resultType = AsmClassGenerator.getDirectlyAccessibleSuperClass(type, enclosingClass);
-        }
-        if (!ClassHelper.isObjectType(resultType)) {
-            BytecodeHelper.doCast(controller.getMethodVisitor(), resultType);
-        }
+        ClassNode resultType = directlyAccessibleType(type, controller.getClassNode());
+        BytecodeHelper.doCast(controller.getMethodVisitor(), resultType);
         controller.getOperandStack().replace(resultType);
     }
 
@@ -252,7 +243,7 @@ public class StaticInvocationWriter extends InvocationWriter {
      * @see AsmClassGenerator#isClassDirectlyAccessible
      */
     static ClassNode directlyAccessibleType(final ClassNode type, final ClassNode accessingClass) {
-        if (type == null || AsmClassGenerator.isClassDirectlyAccessible(type, accessingClass)) return type;
+        if (AsmClassGenerator.isClassDirectlyAccessible(type, accessingClass)) return type;
         return AsmClassGenerator.getDirectlyAccessibleSuperClass(type, accessingClass);
     }
 
@@ -486,9 +477,10 @@ public class StaticInvocationWriter extends InvocationWriter {
                 if (storedTypeTarget != null) checkcastReceiver.setType(storedType); // no cast to the narrower type
                 theReceiver = checkcastReceiver;
             }
-            boolean written = super.writeDirectMethodCall(theTarget, isThisImplicit, theReceiver, args);
             OperandStack operandStack = controller.getOperandStack();
-            if (written && operandStack.getStackLength() > 0) { // a result typed by a class the bytecode cannot name
+            int depth = operandStack.getStackLength();
+            boolean written = super.writeDirectMethodCall(theTarget, isThisImplicit, theReceiver, args);
+            if (operandStack.getStackLength() > depth) { // the result, unless elided, may be of a class the bytecode cannot name
                 operandStack.replace(directlyAccessibleType(operandStack.getTopOperand(), enclosingClass));
             }
             return written;
