@@ -2361,9 +2361,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 // GROOVY-8299: handle "Iface.super" for interface default methods
                 ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
                 ClassNode accessingType = getType(objectExpression).getGenericsTypes()[0].getType();
-                if (accessingType.isInterface() && enclosingType.implementsInterface(accessingType)) {
-                    storeType(pexp, accessingType);
-                    return true;
+                if (accessingType.isInterface()) {
+                    // Traits keep the "implemented anywhere" check. A plain interface
+                    // qualifier is validated in ResolveVisitor (GROOVY-12526); accepting
+                    // the receiver here avoids "No such property: super".
+                    if (!Traits.isTrait(accessingType) || enclosingType.implementsInterface(accessingType)) {
+                        storeType(pexp, accessingType);
+                        return true;
+                    }
                 }
                 return false;
             }
