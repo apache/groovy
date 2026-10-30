@@ -1414,10 +1414,11 @@ public abstract class Selector {
         }
 
         /**
-         * do the actual call site target set, if the call is supposed to be cached
+         * Marks the end of selection. The selector does not set the call site target itself:
+         * {@link IndyInterface} installs the selected handle once the site is hot enough.
          */
         public void doCallSiteTargetSet() {
-            if (LOG_ENABLED) LOG.info("call site stays uncached");
+            if (LOG_ENABLED) LOG.info("selection done, call site target left to IndyInterface");
         }
 
         /**
