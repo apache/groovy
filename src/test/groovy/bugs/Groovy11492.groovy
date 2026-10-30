@@ -18,6 +18,9 @@
  */
 package bugs
 
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.messages.WarningMessage
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -130,7 +133,7 @@ final class Groovy11492 {
             assert a instanceof String[] && a.length == 0
             // was array with closure object coerced to string
         '''
-        shouldFail '''
+        shouldWarn '''
             String[] a = { it } // no such property 'it'
             // was array with closure object coerced to string
         '''
@@ -154,20 +157,20 @@ final class Groovy11492 {
             assert a instanceof Object[] && a.length == 0
             // was an array with closure object
         '''
-        shouldFail '''
+        shouldWarn '''
             Closure[] a = { 1 } // Cannot cast object '1' with class 'Integer' to class 'Closure'
             // was an array with closure object
         '''
-        shouldFail '''
+        shouldWarn '''
             Closure[] a = { it } // no such property 'it'
             // was an array with closure object
         '''
-        shouldFail '''
+        shouldWarn '''
             Closure[] a = { println('x') }
             assert a instanceof Closure[] && a.length == 1 && a[0].call()
             // was an array with closure object
         '''
-        shouldFail '''
+        shouldWarn '''
             Runnable[] a = { println('x') }
             assert a instanceof Runnable[] && a.length == 1 && a[0].call()
             // was an array with runnable object
@@ -176,5 +179,27 @@ final class Groovy11492 {
             Runnable[] a = { println 'x' } // Command chain expression cannot be used in array initializer
             // was an array with runnable object
         '''
+    }
+
+    private static shouldWarn(String text) {
+        def config = new CompilerConfiguration(targetDirectory: File.createTempDir(), warningLevel: WarningMessage.POSSIBLE_ERRORS)
+        def folder = File.createTempDir()
+
+        try (def loader = new GroovyClassLoader(this.classLoader)) {
+            def file = new File(folder, 'Test.groovy')
+            file.write(text)
+
+            def unit = new CompilationUnit(config, null, loader)
+            unit.addSource(file)
+            unit.compile()
+
+            assert unit.errorCollector.hasWarnings()
+
+            loader.addClasspath(config.targetDirectory.absolutePath)
+            loader.loadClass('Test', true)
+        } finally {
+            config.targetDirectory.deleteDir()
+            folder.deleteDir()
+        }
     }
 }

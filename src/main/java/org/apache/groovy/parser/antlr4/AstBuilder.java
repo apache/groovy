@@ -2481,6 +2481,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             ClassNode elementType = variableType.getComponentType();
             ctx.arrayInitializer().putNodeMetaData("elementType", elementType);
             init = configureAST(new ArrayExpression(elementType, this.visitArrayInitializer(ctx.arrayInitializer())), ctx.arrayInitializer());
+            checkArrayInitEdgeCase(init); // Type[] a = {b} used to be coerced closure with array being implicit
         } else {
             init = this.visitVariableInitializer(ctx.variableInitializer());
         }
@@ -2496,6 +2497,26 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                         token,
                         init),
                 ctx);
+    }
+
+    private void checkArrayInitEdgeCase(final Expression expr) {
+        if (expr instanceof ArrayExpression array && array.hasInitializer()) {
+            ClassNode elementType = array.getElementType();
+
+            ClassNode baseType = elementType;
+            while (baseType.isArray()) baseType = baseType.getComponentType();
+            if (isPrimitiveType(baseType)) {
+                return; // closure coerced to boolean or integer is not likely
+            }
+
+            if (!elementType.isArray()) {
+                if (array.getExpressions().size() == 1 && !(array.getExpression(0) instanceof ClosureExpression)) {
+                    sourceUnit.addWarning("Parsed as array initializer, not closure. If a closure is intended then add arrow to disambiguate.", array);
+                }
+            } else {
+                array.getExpressions().forEach(this::checkArrayInitEdgeCase);
+            }
+        }
     }
 
     @Override
