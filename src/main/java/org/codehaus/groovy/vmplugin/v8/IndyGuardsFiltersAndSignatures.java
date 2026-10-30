@@ -76,9 +76,17 @@ public class IndyGuardsFiltersAndSignatures {
             INTERCEPTABLE_INVOKER,
             BOOLEAN_IDENTITY, CLASS_FOR_NAME, INVOKE_REFLECTIVELY,
             DTT_CAST_TO_TYPE, SAM_CONVERSION,
-            HASHSET_CONSTRUCTOR, ARRAYLIST_CONSTRUCTOR,
             GROOVY_CAST_EXCEPTION,
             EQUALS;
+
+    /**
+     * Constructors of {@link HashSet} and {@link ArrayList} that copy a {@link Collection}.
+     *
+     * @deprecated unused: a cast to a collection type goes through
+     * {@link DefaultTypeTransformation#castToType(Object, Class)}
+     */
+    @Deprecated(since = "6.0.1", forRemoval = true)
+    protected static final MethodHandle HASHSET_CONSTRUCTOR, ARRAYLIST_CONSTRUCTOR;
 
     static {
         try {
