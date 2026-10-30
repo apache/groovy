@@ -412,7 +412,7 @@ final class TraitWithClosureOrLambda {
         '''
     }
 
-    // GROOVY-12492
+    // GROOVY-12563
     @Test
     void testOwnerAndThisObjectOfTraitClosure() {
         String script = '''
@@ -460,7 +460,7 @@ final class TraitWithClosureOrLambda {
         '''
     }
 
-    // GROOVY-12492
+    // GROOVY-12563
     @Test
     void testClosureInTraitLambda() {
         String script = '''
@@ -497,7 +497,7 @@ final class TraitWithClosureOrLambda {
         assertScript script.replace('trait T', '@groovy.transform.TypeChecked trait T')
     }
 
-    // GROOVY-12492
+    // GROOVY-12563
     @Test
     void testExplicitThisMethodCallInTraitClosure() {
         String script = '''
@@ -540,7 +540,7 @@ final class TraitWithClosureOrLambda {
         assertScript script
     }
 
-    // GROOVY-12492
+    // GROOVY-12563
     @Test
     void testStaticClosureFieldCalledAsMethod() {
         String script = '''

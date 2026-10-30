@@ -3840,7 +3840,7 @@ final class LambdaTest {
         '''
     }
 
-    // GROOVY-12492
+    // GROOVY-12563
     @Test
     void testOwnerOfClosureInLambda() {
         assertScript shell, '''
