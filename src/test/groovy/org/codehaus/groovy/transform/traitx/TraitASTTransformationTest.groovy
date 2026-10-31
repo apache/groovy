@@ -4310,4 +4310,70 @@ final class TraitASTTransformationTest {
             assert c.count == 2
         '''
     }
+
+    // GROOVY-12615
+    @CompileModesTest
+    void testNestedCompoundAssignmentOnTraitFields(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                int a = 1, b = 1
+                private int c = 1, d = 1
+                public int e = 1, f = 1
+                def m1() { a += (b += 1); [a, b] }
+                def m2() { c += (d += 1); [c, d] }
+                def m3() { e += (f += 1); [e, f] }
+                def m4() { this.a += (this.b += 1); [a, b] }
+                def m5() { a -= (b *= (c += 2)); [a, b, c] }
+                def m6() { a = (b += 1); [a, b] }
+                def m7() { a += Math.max(b += 1, 0); [a, b] }
+                def m8() { int x = 1; x += (b += 1); [x, b] }
+            }
+            $mode
+            class C implements T {
+            }
+
+            assert new C().m1() == [3, 2]
+            assert new C().m2() == [3, 2]
+            assert new C().m3() == [3, 2]
+            assert new C().m4() == [3, 2]
+            assert new C().m5() == [-2, 3, 3]
+            assert new C().m6() == [2, 2]
+            assert new C().m7() == [3, 2]
+            assert new C().m8() == [3, 2]
+        """
+    }
+
+    // GROOVY-12615
+    @CompileModesTest
+    void testNestedCompoundAssignmentOnStaticTraitFields(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static int a = 1, b = 1
+                private static int c = 1, d = 1
+                static m1() { a += (b += 1); [a, b] }
+                static m2() { c += (d += 1); [c, d] }
+            }
+            $mode
+            class C implements T {
+            }
+
+            assert C.m1() == [3, 2]
+            assert C.m2() == [3, 2]
+        """
+    }
+
+    // GROOVY-12615
+    @Test
+    void testPostfixInRightOperandOfCompoundAssignmentOnTraitFieldRejected() {
+        def err = shouldFail(MultipleCompilationErrorsException) {
+            assertScript shell, '''
+                trait T { int a = 1, b = 1; def m() { a += (b++) } }
+                class C implements T { }
+                new C().m()
+            '''
+        }
+        assert err.message.contains('Postfix expressions on trait fields/properties are not supported in traits')
+    }
 }
