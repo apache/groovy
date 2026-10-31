@@ -35,6 +35,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureListExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -52,8 +53,10 @@ import org.codehaus.groovy.control.CompilationUnit.IPrimaryClassNodeOperation;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
+import org.codehaus.groovy.transform.trait.Traits;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -359,6 +362,21 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         Object dynamic = expression.getNodeMetaData(DYNAMIC_RESOLUTION);
         if (dynamic != null) {
             expression.getObjectExpression().putNodeMetaData(RECEIVER_OF_DYNAMIC_PROPERTY, dynamic);
+        }
+        checkInterfaceSuper(expression);
+    }
+
+    /**
+     * Checks that the interface of {@code Iface.super} is a direct superinterface of the current class:
+     * the {@code invokespecial} instruction cannot call a method of an indirect superinterface.
+     */
+    private void checkInterfaceSuper(final PropertyExpression expression) {
+        if (expression.isImplicitThis() || !"super".equals(expression.getPropertyAsString())
+                || !(expression.getObjectExpression() instanceof ClassExpression)) return;
+        ClassNode type = expression.getObjectExpression().getType();
+        ClassNode current = typeCheckingContext.getEnclosingClassNode();
+        if (type.isInterface() && !Traits.isTrait(type) && !Arrays.asList(current.getInterfaces()).contains(type)) {
+            addStaticTypeError("'" + type.getName() + "' is not a direct superinterface of '" + current.getName() + "'", expression);
         }
     }
 
