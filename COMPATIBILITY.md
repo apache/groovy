@@ -673,6 +673,29 @@ fork-join pool, so blocking callbacks gained nothing from it.
   does. A filter whose `isCase` returns `null`, `0`, an empty string or an
   empty collection no longer keeps every element.
 
+### Groovy 6.0.1 — type checking rejects a call to a property accessor that is not generated (GROOVY-12525)
+
+Static type checking assumed that a property had both an `isX()` and a
+`getX()` accessor, whether or not the class generates them. A call to an
+accessor that does not exist was accepted at compile time and failed at
+run time with `MissingMethodException` under `@TypeChecked`, or
+`NoSuchMethodError` under `@CompileStatic`. Such a call is now a compile
+error, `Cannot find matching method`. The accessors type checking accepts
+are the ones the class generates:
+
+- A `boolean` property generates `isX()` and `getX()`, unless the class
+  declares one of them itself, in which case only that one exists.
+- A `Boolean` property, or a property of any other type, generates only
+  `getX()`.
+
+**Who is affected.** `@TypeChecked` code that calls such a missing accessor
+on a class with `methodMissing`, for example `b.isName()` for a `String`
+property `name`. That call reached `methodMissing` at run time and now no
+longer compiles. Call the accessor the class generates, read the property
+(`b.name`), or mark the method `@TypeChecked(TypeCheckingMode.SKIP)` to keep
+the dynamic call. Other calls to a missing accessor already failed at run
+time, and dynamic code is unchanged.
+
 ### Groovy 7 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
 
 For a dynamic property write or read, the runtime checks whether the receiver
