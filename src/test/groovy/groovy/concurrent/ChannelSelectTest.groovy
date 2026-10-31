@@ -51,16 +51,21 @@ final class ChannelSelectTest {
         assertScript '''
             import groovy.concurrent.AsyncChannel
             import groovy.concurrent.ChannelSelect
+            import java.util.concurrent.CountDownLatch
 
             def fast = AsyncChannel.create(10)
             def slow = AsyncChannel.create(10)
 
             def sel = ChannelSelect.from(slow, fast)
 
+            // slow sends only after select() has returned, so fast arrives
+            // first however the two tasks are scheduled
+            def proceed = new CountDownLatch(1)
             async { fast.send('fast-wins') }
-            async { Thread.sleep(200); slow.send('slow') }
+            async { proceed.await(); slow.send('slow') }
 
             def result = await sel.select()
+            proceed.countDown()
             assert result.value == 'fast-wins'
             assert result.index == 1
         '''
@@ -1185,18 +1190,31 @@ final class ChannelSelectTest {
         assertScript '''
             import groovy.concurrent.AsyncChannel
             import groovy.concurrent.ChannelSelect
+            import java.util.concurrent.CountDownLatch
+            import java.util.concurrent.SynchronousQueue
 
             def work = AsyncChannel.create(16)
-            def deadline = AsyncChannel.after(200)
-            def sel = ChannelSelect.from(work, deadline)
-
+            def running = new CountDownLatch(1)
+            def rounds = new SynchronousQueue()
             async {
-                for (i in 0..<3) { work.send(i); Thread.sleep(10) }
+                running.countDown()
+                for (i in 0..<3) {
+                    rounds.take()   // the select for this value is armed
+                    work.send(i)
+                }
             }
+            // Start the clock once the producer runs, so a slow thread start
+            // cannot use up the deadline. Each value then arrives while a
+            // select is waiting on both branches.
+            running.await()
+            def deadline = AsyncChannel.after(500)
+            def sel = ChannelSelect.from(work, deadline)
 
             def received = []
             while (true) {
-                def result = await sel.select()
+                def pending = sel.select()
+                if (received.size() < 3) rounds.put(received.size())
+                def result = await pending
                 if (result.index == 1) break
                 received << result.value
             }
