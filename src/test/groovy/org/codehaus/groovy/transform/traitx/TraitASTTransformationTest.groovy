@@ -2420,6 +2420,62 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-12597
+    @CompileModesTest
+    void testTraitStaticStateThroughTrait(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                private static boolean flag = true
+                static int count = 1
+                static boolean isReady() { flag }
+                static void setReady(boolean b) { flag = b }
+                static boolean viaClosure() { [1].collect { flag }[0] }
+                private static int peek() { count }
+                static int viaPrivate() { peek() }
+                static String pure() { 'pure' }
+            }
+            $mode
+            class C implements T {
+            }
+            $mode
+            class D extends C {
+            }
+
+            $mode
+            void expectNoState(String field, Closure action) {
+                try {
+                    action.call()
+                    assert false : 'expected MissingFieldException'
+                } catch (MissingFieldException e) {
+                    assert e.field == field
+                    assert e.type == T
+                    assert e.message == 'Cannot access static field ' + field + ' of trait T through the trait itself: ' +
+                        'trait static state belongs to each implementing class, so call the trait static method on an implementing class'
+                }
+            }
+
+            $mode void m() {
+                assert C.isReady() && C.ready && D.isReady()
+                assert C.viaClosure() && C.viaPrivate() == 1 && C.count == 1
+                C.setReady(false)
+                assert !C.isReady()
+
+                expectNoState('flag') { T.isReady() }
+                expectNoState('flag') { T.ready }
+                expectNoState('flag') { T.setReady(true) }
+                expectNoState('flag') { T.viaClosure() }
+                expectNoState('count') { T.viaPrivate() }
+                expectNoState('count') { T.getCount() }
+                expectNoState('count') { T.count }
+                assert T.pure() == 'pure'
+
+                assert !C.isReady()
+            }
+            m()
+        """
+    }
+
     @Test
     void testTraitMethodShouldBeDefaultImplementationUsingReflection() {
         assertScript shell, '''
