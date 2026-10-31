@@ -1489,6 +1489,17 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
     }
 
+    // JLS 5.2: an int constant whose value fits a byte, short or char target
+    private static boolean isNarrowingConstant(final Expression expression, final ClassNode source, final ClassNode target) {
+        if (!isPrimitiveInt(source) || !(expression instanceof ConstantExpression constant)
+                || !(constant.getValue() instanceof Integer value)) return false;
+        int i = value;
+        if (isPrimitiveByte(target)) return i == (byte) i;
+        if (isPrimitiveShort(target)) return i == (short) i;
+        if (isPrimitiveChar(target)) return i == (char) i;
+        return false;
+    }
+
     private static boolean isClosureWithType(final ClassNode type) {
         if (!CLOSURE_TYPE.equals(type)) return false;
         GenericsType[] gts = type.getGenericsTypes();
@@ -3608,6 +3619,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 } else if (statement.isReturningNullOrVoid() ? !isPrimitiveType(inferredReturnType) // GROOVY-7713, GROOVY-8202
                      : GenericsUtils.buildWildcardType(wrapTypeIfNecessary(inferredReturnType)).isCompatibleWith(wrapTypeIfNecessary(type))) {
                     type = inferredReturnType; // GROOVY-8310, GROOVY-10082, GROOVY-10091, GROOVY-10128, GROOVY-10306: allow simple covariance
+                } else if (isNarrowingConstant(expression, type, inferredReturnType)) {
+                    type = inferredReturnType; // GROOVY-12620: allow narrowing of a constant that fits
                 } else if ((statement.isReturningNullOrVoid() || !isPrimitiveVoid(type)) && !extension.handleIncompatibleReturnType(statement, type)) {
                     // GROOVY-10277, GROOVY-11490: incompatible return statement (null for primitive or inconvertible type)
                     String value = (statement.isReturningNullOrVoid() ? "null" : "value of type " + prettyPrintType(type));
