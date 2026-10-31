@@ -22,8 +22,8 @@
 = Groovy Language Server Module
 
 Implements the Language Server Protocol for Apache Groovy.
-Editors and AI tools (and a later groovy-mcp wrapper) share this
-language core; it is not a full IDE.
+Editors and AI tools share this language core; it is not a full IDE.
+`groovy-mcp` wraps the same engine for the Model Context Protocol.
 
 See link:src/spec/doc/lsp-userguide.adoc[lsp-userguide.adoc] for the user guide
 and link:ARCHITECTURE.md[ARCHITECTURE.md] for the contributor map.
