@@ -582,6 +582,27 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    // GROOVY-12621: static compilation writes the field directly
+    @Override @Test
+    void testPrivateFieldOfSuperclassWrittenThroughSuperInInnerSubclass() {
+        assertScript '''
+            class Base {
+                private String z = 'x'
+                class Sub extends Base {
+                    def m1() { super.z = 'y'; super.z }
+                    def m2() { super.z += 'y'; super.z }
+                    def m3() { super.z = 'n'; super.z++; super.z }
+                    def m4() { def c = { -> super.z = 'c' }; c(); super.z }
+                }
+                List test() {
+                    def sub = new Sub()
+                    [sub.m1(), sub.m2(), sub.m3(), sub.m4()]
+                }
+            }
+            assert new Base().test() == ['y', 'yy', 'o', 'c']
+        '''
+    }
+
     @Override @Test
     void testPropertyWithMultipleSetters() {
         // we need to override the test because the AST is going to be changed

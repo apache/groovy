@@ -2146,6 +2146,24 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12621: the runtime does not fall back to the enclosing instance for a write through super
+    @Test
+    void testPrivateFieldOfSuperclassWrittenThroughSuperInInnerSubclass() {
+        shouldFailWithMessages '''
+            class Base {
+                private String z = 'x'
+                class Sub extends Base {
+                    void m1() { super.z = 'y' }
+                    void m2() { super.z += 'y' }
+                    void m3() { super.z++ }
+                    void m4() { def c = { -> super.z = 'y' }; c() }
+                }
+            }
+        ''',
+        'No such property: z for class: Base', 'No such property: z for class: Base',
+        'No such property: z for class: Base', 'No such property: z for class: Base'
+    }
+
     // GROOVY-12509: a regression in 6.0.0, from GROOVY-12310
     @Test
     void testFieldOfPrivateNestedTypeOfNestMate() {
