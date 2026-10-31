@@ -74,6 +74,8 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
 
     private final SourceUnit unit;
 
+    private ClassNode transformClass;
+
     private final StaticTypesTypeChooser typeChooser = new StaticTypesTypeChooser();
     private final StaticTypeCheckingVisitor staticCompilationVisitor;
 
@@ -128,6 +130,15 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
      */
     public ClassNode getClassNode() {
         return staticCompilationVisitor.getTypeCheckingContext().getEnclosingClassNode();
+    }
+
+    /**
+     * Returns the class whose body is currently being rewritten.
+     * Closures are not classes yet at this phase, so a closure body reports
+     * the enclosing class — the receiver of {@code this} inside that closure.
+     */
+    public ClassNode getTransformClass() {
+        return transformClass;
     }
 
     /**
@@ -205,8 +216,19 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
      */
     @Override
     public void visitClass(final ClassNode node) {
+        ClassNode previous = transformClass;
+        transformClass = node;
         super.visitClass(node);
         node.getInnerClasses().forEachRemaining(this::visitClass);
+        transformClass = previous;
+    }
+
+    @Override
+    public void visitMethod(final MethodNode node) {
+        boolean unset = transformClass == null;
+        if (unset) transformClass = node.getDeclaringClass();
+        super.visitMethod(node);
+        if (unset) transformClass = null;
     }
 
     /**

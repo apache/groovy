@@ -45,8 +45,11 @@ import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.classgen.BytecodeInstruction;
+import org.codehaus.groovy.classgen.BytecodeSequence;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.BytecodeVariable;
@@ -97,6 +100,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.erasure;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe0;
 import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
@@ -174,6 +178,29 @@ public class StaticInvocationWriter extends InvocationWriter {
         int before = controller.getOperandStack().getStackLength();
         loadArguments(argList, cn.getParameters());
         finnishConstructorCall(cn, ownerDescriptor, controller.getOperandStack().getStackLength() - before);
+    }
+
+    /**
+     * Determines if the bytecode of the accessing class can call the constructor
+     * with {@code NEW} and {@code INVOKESPECIAL}.
+     * <p>
+     * A protected or package-private constructor needs the same run-time package
+     * (see {@link AsmClassGenerator#isInSameRuntimePackage}). Outside its package,
+     * a protected constructor can only be called by {@code super(...)} or an
+     * anonymous inner class.
+     * <p>
+     * Unlike {@link AsmClassGenerator#isMemberDirectlyAccessible}, there is no
+     * subclass rule: the verifier rejects {@code NEW} and {@code INVOKESPECIAL}
+     * of a protected constructor of another package in a subclass too, so a
+     * constructor reference to it creates the object through the meta-class.
+     */
+    static boolean isDirectlyAccessible(final ConstructorNode ctor, final ClassNode accessingClass) {
+        if (ctor.isPublic()) return true;
+        ClassNode declaringClass = ctor.getDeclaringClass();
+        if (ctor.isPrivate()) { // nestmates can call a private constructor
+            return AsmClassGenerator.isMemberDirectlyAccessible(ctor.getModifiers(), declaringClass, accessingClass);
+        }
+        return AsmClassGenerator.isInSameRuntimePackage(declaringClass, accessingClass);
     }
 
     /** {@inheritDoc} */
@@ -344,7 +371,8 @@ public class StaticInvocationWriter extends InvocationWriter {
                 } else if (controller.isStaticMethod() && !controller.isInGeneratedFunction()) {
                     theReceiver = classX(enclosingClass); // method of the Class object, like getName()
                 } else if (!controller.isInGeneratedFunction()) {
-                    theReceiver = propX(classX(declaringClass), "this");
+                    ClassNode outerType = getImplicitReceiverType(enclosingClass, declaringClass);
+                    theReceiver = propX(classX(outerType != null ? outerType : declaringClass), "this");
                 } else {
                     theReceiver = thisObjectExpression(enclosingClass, declaringClass);
                 }
@@ -776,6 +804,87 @@ public class StaticInvocationWriter extends InvocationWriter {
         mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "toString", "()Ljava/lang/String;", false);
         mv.visitLabel(isString);
         mv.visitTypeInsn(CHECKCAST, "java/lang/String");
+    }
+
+    /**
+     * Marker on a functional-interface parameter whose instantiated type is {@code String}
+     * but whose erased type is wider, so a {@code GString} may arrive at the call.
+     */
+    static final String GSTRING_BRIDGE = StaticInvocationWriter.class.getName() + ".gstringBridge";
+
+    /**
+     * Erased type to use for a parameter instantiated to {@code String} from a type variable,
+     * when a {@code GString} can still be passed through that erasure. {@code LambdaMetafactory}
+     * otherwise check-casts to {@code String} before Groovy can convert the value.
+     * Returns {@code null} when the parameter should keep its instantiated type.
+     */
+    static ClassNode gstringBridgeErasure(final ClassNode exactType, final ClassNode samType) {
+        if (exactType == null || samType == null || !ClassHelper.isStringType(exactType)) return null;
+        ClassNode erased = erasure(samType);
+        if (erased == null || ClassHelper.isStringType(erased)) return null;
+        if (!StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(ClassHelper.GSTRING_TYPE, erased)) return null;
+        return erased;
+    }
+
+    /**
+     * Receives {@code parameter} as {@code erased}. A prologue converts a {@code GString} to {@code String}
+     * before the body uses the value. The origin type is the erasure, so later casts are plain check-casts.
+     */
+    static void markGStringBridge(final Parameter parameter, final ClassNode erased) {
+        parameter.setOriginType(erased);
+        parameter.putNodeMetaData(GSTRING_BRIDGE, Boolean.TRUE);
+        parameter.setType(erased);
+    }
+
+    /**
+     * A new parameter received as {@code erased}, converted from {@code GString} to {@code String} by the prologue.
+     */
+    static Parameter newGStringBridgeParameter(final String name, final ClassNode erased) {
+        Parameter parameter = new Parameter(erased, name);
+        parameter.putNodeMetaData(GSTRING_BRIDGE, Boolean.TRUE);
+        return parameter;
+    }
+
+    /**
+     * Statement that converts each bridged parameter from {@code GString} to {@code String}
+     * in place, so the rest of the method sees a {@code String}. Non-{@code GString} values
+     * are still check-cast to {@code String}.
+     */
+    static Statement gstringBridgePrologue(final WriterController controller, final Parameter[] parameters) {
+        boolean any = false;
+        if (parameters != null) {
+            for (Parameter parameter : parameters) {
+                if (Boolean.TRUE.equals(parameter.getNodeMetaData(GSTRING_BRIDGE))) {
+                    any = true;
+                    break;
+                }
+            }
+        }
+        if (!any) return null;
+        return new BytecodeSequence(new BytecodeInstruction() {
+            @Override
+            public void visit(final MethodVisitor mv) {
+                for (Parameter parameter : parameters) {
+                    if (!Boolean.TRUE.equals(parameter.getNodeMetaData(GSTRING_BRIDGE))) continue;
+                    BytecodeVariable variable = controller.getCompileStack().getVariable(parameter.getName());
+                    convertBridgedParameter(controller, mv, variable);
+                }
+            }
+        });
+    }
+
+    private static void convertBridgedParameter(final WriterController controller, final MethodVisitor mv, final BytecodeVariable variable) {
+        OperandStack operandStack = controller.getOperandStack();
+        if (variable.isHolder()) {
+            mv.visitVarInsn(ALOAD, variable.getIndex());
+            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;", false);
+            operandStack.push(ClassHelper.OBJECT_TYPE);
+        } else {
+            operandStack.load(variable.getType(), variable.getIndex());
+        }
+        castToStringConvertingGString(mv);
+        operandStack.replace(ClassHelper.STRING_TYPE);
+        operandStack.storeVar(variable);
     }
 
     private class CheckcastReceiverExpression extends Expression {
