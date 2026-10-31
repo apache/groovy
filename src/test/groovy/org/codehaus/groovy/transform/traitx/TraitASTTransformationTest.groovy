@@ -4006,6 +4006,117 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-12605
+    @CompileModesTest
+    void testTraitStaticAccessorFromStaticMethod(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static String value
+                static boolean isVr() { true }
+                static String getLabel() { 'label' }
+                static void setName(String name) { value = name }
+            }
+            $mode
+            class C implements T {
+                static test1() {
+                    assert vr
+                    assert label == 'label'
+                    name = 'name'
+                    assert value == 'name'
+                }
+                static test2() {
+                    assert [1].collect { vr && label == 'label' } == [true]
+                }
+                void test3() {
+                    assert vr
+                    assert label == 'label'
+                }
+            }
+            $mode
+            class D extends C {
+                static test4() {
+                    assert vr
+                    assert label == 'label'
+                }
+            }
+
+            C.test1()
+            C.test2()
+            new C().test3()
+            D.test4()
+        """
+    }
+
+    // GROOVY-12605
+    @CompileModesTest
+    void testSuperTraitStaticAccessorFromStaticMethod(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static String label = 'label'
+                static boolean isVr() { true }
+            }
+            $mode
+            trait U extends T {
+            }
+            $mode
+            class C implements U {
+                static test() {
+                    assert vr
+                    assert label == 'label'
+                }
+            }
+
+            C.test()
+        """
+    }
+
+    // GROOVY-12605
+    @CompileModesTest
+    void testPrecompiledTraitStaticAccessorFromStaticMethod(String mode) {
+        def loader = new GroovyClassLoader(this.class.classLoader)
+        loader.parseClass """
+            import groovy.transform.*
+            $mode
+            trait T {
+                static boolean isVr() { true }
+            }
+            $mode
+            trait U extends T {
+            }
+        """
+        assertScript new GroovyShell(loader), """
+            import groovy.transform.*
+            $mode
+            class C implements U {
+                static test() {
+                    assert vr
+                }
+            }
+
+            C.test()
+        """
+    }
+
+    // GROOVY-12605: a private static trait method is not woven into the class
+    @CompileModesTest
+    void testTraitPrivateStaticAccessorFromStaticMethod(String mode) {
+        def err = shouldFail shell, """
+            $mode
+            trait T {
+                private static boolean isVr() { true }
+            }
+            $mode
+            class C implements T {
+                static test() {
+                    vr
+                }
+            }
+        """
+        assert err.message.contains("Apparent variable 'vr' was found in a static scope")
+    }
+
     // GROOVY-9386
     @CompileModesTest
     void testTraitPropertyInitializedByTap(String mode) {

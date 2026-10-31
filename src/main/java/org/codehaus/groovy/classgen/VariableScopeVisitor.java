@@ -275,15 +275,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                         }
                     }
 
-                    FieldNode fn = new FieldNode(name, mn.getModifiers() & 0xF, ClassHelper.dynamicType(), cn, null);
-                    fn.setHasNoRealSourcePosition(true);
-                    fn.setDeclaringClass(cn);
-                    fn.setSynthetic(true);
-
-                    PropertyNode pn = new PropertyNode(fn, fn.getModifiers(), null, null);
-                    pn.putNodeMetaData("access.method", mn);
-                    pn.setDeclaringClass(cn);
-                    return pn;
+                    return createPseudoProperty(name, mn, cn);
                 }
             }
 
@@ -302,12 +294,35 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 if (pn != null) {
                     return pn;
                 }
+                if (isTrait(i)) { // GROOVY-12605: static accessor methods of a trait are woven into the class
+                    for (MethodNode mn : withDefaultArgumentMethods(i.getMethods())) {
+                        if (mn.isStatic() && !mn.isPrivate() && name.equals(getPropertyName(mn))) {
+                            return createPseudoProperty(name, mn, i);
+                        }
+                    }
+                }
 
                 interfacesAndTraits.accept(i.getInterfaces());
+                if (isTrait(i)) { // trait extends trait before TraitASTTransformation moves it to the interfaces
+                    ClassNode sc = i.getUnresolvedSuperClass();
+                    if (isTrait(sc)) interfaces.add(sc.redirect());
+                }
             }
         }
 
         return null;
+    }
+
+    private static PropertyNode createPseudoProperty(final String name, final MethodNode mn, final ClassNode cn) {
+        FieldNode fn = new FieldNode(name, mn.getModifiers() & 0xF, ClassHelper.dynamicType(), cn, null);
+        fn.setHasNoRealSourcePosition(true);
+        fn.setDeclaringClass(cn);
+        fn.setSynthetic(true);
+
+        PropertyNode pn = new PropertyNode(fn, fn.getModifiers(), null, null);
+        pn.putNodeMetaData("access.method", mn);
+        pn.setDeclaringClass(cn);
+        return pn;
     }
 
     private Variable findVariableDeclaration(final String name) {
