@@ -850,11 +850,12 @@ Within the class that declares it, a read of a final field declared without a
 type has the type of the value assigned by its initializer, its initializer
 blocks and its constructors, as a local variable does. The field keeps `Object`
 as its declared type. The flow type applies where the field itself is read: in
-a method, constructor or initializer body of the declaring class, and, for a
-private field or a static property, in a closure or lambda there too. A read
-through the property getter keeps the declared type, because a subclass may
-override the getter: from a closure or lambda in the class, an inner class, a
-subclass or another class. A value of no one type (`Object`, or a bound of
+a method, constructor or initializer body of the declaring class, and in a
+closure or lambda there too for a private field, a static property, or a
+property of a `final` class with a generated getter. Any other read through
+the property getter keeps the declared type, because a subclass may override
+the getter: from a closure or lambda in the class, an inner class, a subclass
+or another class. A value of no one type (`Object`, or a bound of
 several types assigned by different constructors) gives no flow type, nor does
 a field written by a compound assignment, `++`, `--` or a tuple assignment.
 

@@ -3117,16 +3117,19 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     /**
-     * Tells whether a read is of the field itself rather than of the getter of
-     * a property, which a subclass may override: the read is in the declaring
-     * class and, for an instance property, not in a closure or lambda, which
-     * reads the property through its getter.
+     * Tells whether a read gets the value of the field: the read is in the
+     * declaring class and, for an instance property, not in a closure or
+     * lambda, which reads the property through its getter. The getter may be
+     * overridden by a subclass, unless the class is final and the getter is
+     * generated.
      */
     private boolean isDirectFieldRead(final FieldNode field) {
         ClassNode owner = field.getDeclaringClass();
         ClassNode enclosing = typeCheckingContext.getEnclosingClassNode();
         if (owner == null || enclosing == null || enclosing.redirect() != owner.redirect()) return false;
-        return typeCheckingContext.getEnclosingClosure() == null || field.isStatic() || owner.getProperty(field.getName()) == null;
+        if (typeCheckingContext.getEnclosingClosure() == null || field.isStatic()) return true;
+        if (owner.getProperty(field.getName()) == null) return true;
+        return Modifier.isFinal(owner.getModifiers()) && owner.getGetterMethod("get" + capitalize(field.getName()), false) == null;
     }
 
     private static boolean isFinalDynamicField(final FieldNode field) {
