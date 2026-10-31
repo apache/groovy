@@ -55,9 +55,10 @@ are kept stable for compatibility.
 
 Some subprojects with significant local complexity carry their own
 `ARCHITECTURE.md` alongside the source — see
-[`subprojects/groovy-groovysh/ARCHITECTURE.md`](subprojects/groovy-groovysh/ARCHITECTURE.md)
+[`subprojects/groovy-groovysh/ARCHITECTURE.md`](subprojects/groovy-groovysh/ARCHITECTURE.md),
+[`subprojects/groovy-lsp/ARCHITECTURE.md`](subprojects/groovy-lsp/ARCHITECTURE.md),
 and
-[`subprojects/groovy-lsp/ARCHITECTURE.md`](subprojects/groovy-lsp/ARCHITECTURE.md)
+[`subprojects/groovy-mcp/ARCHITECTURE.md`](subprojects/groovy-mcp/ARCHITECTURE.md)
 for the worked examples.
 
 ## Compilation pipeline

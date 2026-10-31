@@ -1218,12 +1218,39 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return currentClass.getUnresolvedSuperClass().equals(trait);
     }
 
+    private static boolean directlyDeclaresInterface(final ClassNode type, final ClassNode candidate) {
+        if (type == null || candidate == null) return false;
+        ClassNode[] interfaces = type.getInterfaces();
+        if (interfaces != null) {
+            for (ClassNode face : interfaces) {
+                if (face.equals(candidate)) return true;
+            }
+        }
+        // "new I() { ... }" still records I as the superclass until InnerClassVisitor
+        // moves an interface superclass onto the interfaces list.
+        if (type instanceof InnerClassNode inner && inner.isAnonymous()) {
+            ClassNode superType = type.getUnresolvedSuperClass(false);
+            return superType != null && superType.isInterface() && superType.equals(candidate);
+        }
+        return false;
+    }
+
     private void checkThisAndSuperAsPropertyAccess(final PropertyExpression expression) {
         if (expression.isImplicitThis()) return;
         String prop = expression.getPropertyAsString();
         if (prop == null || !(prop.equals("this") || prop.equals("super"))) return;
 
         ClassNode type = expression.getObjectExpression().getType();
+        if ("super".equals(prop) && expression.getObjectExpression() instanceof ClassExpression
+                && type.isInterface() && !Traits.isTrait(type)) {
+            // GROOVY-12526: javac accepts Iface.super only for a direct superinterface.
+            // An enclosing interface, the current type, or an indirect superinterface is not enough.
+            // Trait.super is left to SuperCallTraitTransformer.
+            if (!directlyDeclaresInterface(currentClass, type)) {
+                addError("'" + type.getName() + "' is not a direct superinterface of '" + currentClass.getName() + "'", expression);
+            }
+            return;
+        }
         if (expression.getObjectExpression() instanceof ClassExpression && !isSuperCallToDefaultMethod(expression) && !isThisCallToPrivateInterfaceMethod(expression)) {
             if (!(currentClass instanceof InnerClassNode) && !Traits.isTrait(type)) {
                 addError("The usage of 'Class.this' and 'Class.super' is only allowed in nested/inner classes.", expression);
