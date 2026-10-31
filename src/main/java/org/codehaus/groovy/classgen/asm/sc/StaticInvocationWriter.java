@@ -61,6 +61,7 @@ import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
 import org.codehaus.groovy.classgen.asm.WriterController;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
@@ -85,6 +86,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.formatTypeName;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
@@ -120,6 +122,8 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
  */
 public class StaticInvocationWriter extends InvocationWriter {
 
+    private static final MethodCallerMultiAdapter invokeNew = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeNew", true, true);
+
     private final AtomicInteger labelCounter = new AtomicInteger();
 
     /**
@@ -154,6 +158,19 @@ public class StaticInvocationWriter extends InvocationWriter {
         }
         ClassNode declaringClass = cn.getDeclaringClass();
         ClassNode enclosingClass = controller.getClassNode();
+        if (!cn.isPrivate() && !isDirectlyAccessible(cn, enclosingClass)) {
+            if (samePackageName(declaringClass, enclosingClass)) {
+                writeDynamicConstructorCall(call, declaringClass);
+                return;
+            }
+            // JLS 6.6.2.2: outside its package, only super(...) or an anonymous inner class can call a protected constructor;
+            // reported here, while the class is generated, so @TypeChecked code is not checked for it and works dynamically
+            controller.getSourceUnit().addError(new SyntaxException(
+                    "Cannot call " + (cn.isProtected() ? "protected" : "package-private") + " constructor for "
+                            + declaringClass.toString(false) + " from class " + enclosingClass.toString(false),
+                    call
+            ));
+        }
         List<Expression> argList = call.getArguments() instanceof TupleExpression
                 ? ((TupleExpression) call.getArguments()).getExpressions() : List.of(call.getArguments());
         if (!AsmClassGenerator.isMemberDirectlyAccessible(cn.getModifiers(), declaringClass, enclosingClass)) {
@@ -191,8 +208,9 @@ public class StaticInvocationWriter extends InvocationWriter {
      * <p>
      * Unlike {@link AsmClassGenerator#isMemberDirectlyAccessible}, there is no
      * subclass rule: the verifier rejects {@code NEW} and {@code INVOKESPECIAL}
-     * of a protected constructor of another package in a subclass too, so a
-     * constructor reference to it creates the object through the meta-class.
+     * of a protected constructor of another package in a subclass too, so
+     * {@code new} of it is reported and a constructor reference to it creates
+     * the object through the meta-class.
      */
     static boolean isDirectlyAccessible(final ConstructorNode ctor, final ClassNode accessingClass) {
         if (ctor.isPublic()) return true;
@@ -201,6 +219,18 @@ public class StaticInvocationWriter extends InvocationWriter {
             return AsmClassGenerator.isMemberDirectlyAccessible(ctor.getModifiers(), declaringClass, accessingClass);
         }
         return AsmClassGenerator.isInSameRuntimePackage(declaringClass, accessingClass);
+    }
+
+    /**
+     * Creates the object through the meta-class, which selects the constructor
+     * at run time, for a constructor that the current class cannot call directly.
+     */
+    private void writeDynamicConstructorCall(final ConstructorCallExpression call, final ClassNode type) {
+        Expression arguments = call.getArguments();
+        makeUncachedCall(call, classX(controller.getClassNode()), classX(type), null, arguments,
+                invokeNew, false, false, false, AsmClassGenerator.containsSpreadExpression(arguments));
+        BytecodeHelper.doCast(controller.getMethodVisitor(), type);
+        controller.getOperandStack().replace(type);
     }
 
     /** {@inheritDoc} */
@@ -360,8 +390,19 @@ public class StaticInvocationWriter extends InvocationWriter {
             receiverType = receiverType.getGenericsTypes()[0].getType(); // GROOVY-11694
         }
 
+        if (!target.isPublic() && !target.isPrivate() && samePackageName(declaringClass, enclosingClass)
+                && !AsmClassGenerator.isInSameRuntimePackage(declaringClass, enclosingClass)
+                && !(target.isProtected() && enclosingClass.isDerivedFrom(declaringClass)
+                        && (target.isStatic() || isSuperExpression(receiver) || isSubtype(enclosingClass, receiverType)))) {
+            // a protected or package-private method of a class of another run-time package, which is the package
+            // name and the class loader, is selected at run time (except for the subclass rule of a protected method)
+            return false;
+        }
+
         if (AsmClassGenerator.isMemberDirectlyAccessible(target.getModifiers(), declaringClass, enclosingClass)
-                && !(target.isProtected() && !inSamePackage(declaringClass, enclosingClass) && !isSubtype(receiverType, enclosingClass))) { // GROOVY-7325
+                // GROOVY-7325, JVMS 4.10.1.8: outside its package, a protected instance method needs a receiver of the current class
+                && !(target.isProtected() && !target.isStatic() && !inSamePackage(declaringClass, enclosingClass) && receiver != null
+                        && !isSuperExpression(receiver) && !isClassWithSuper(receiver) && !isSubtype(enclosingClass, receiverType))) {
             boolean isThisImplicit = implicitThis;
             Expression theReceiver = receiver;
             if (implicitThis && isThisExpression(receiver)
