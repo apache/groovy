@@ -560,6 +560,28 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    // GROOVY-12621: static compilation accesses the field directly from an enum constant body
+    @Override @Test
+    void testPrivateFieldOfEnumViaConstantBody() {
+        assertScript '''
+            enum E {
+                A {
+                    List m() {
+                        def c = { -> this.z }
+                        java.util.function.Supplier<String> s = () -> this.z
+                        [this.z, super.z, c(), s.get()]
+                    }
+                    String w() { this.z = 'y'; super.z += '!'; this.z }
+                }
+                abstract List m()
+                abstract String w()
+                private String z = 'x'
+            }
+            assert E.A.m() == ['x', 'x', 'x', 'x']
+            assert E.A.w() == 'y!'
+        '''
+    }
+
     @Override @Test
     void testPropertyWithMultipleSetters() {
         // we need to override the test because the AST is going to be changed

@@ -2112,6 +2112,40 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12621: an enum constant body has no enclosing instance to fall back to
+    @Test
+    void testPrivateFieldOfEnumViaConstantBody() {
+        shouldFailWithMessages '''
+            enum E {
+                A {
+                    def m1() { z }
+                    def m2() { this.z }
+                    def m3() { super.z }
+                    void m4() { z = 'y' }
+                    def m5() { def c = { -> z }; c() }
+                    def m6() { java.util.function.Supplier<String> s = () -> this.z; s.get() }
+                }
+                private String z = 'x'
+            }
+        ''',
+        'No such property: z for class: E$1', 'No such property: z for class: E$1',
+        'No such property: z for class: E', 'No such property: z for class: E$1',
+        'No such property: z for class: E$1', 'No such property: z for class: E$1'
+
+        assertScript '''
+            enum E {
+                A {
+                    List m() { [s, p(), z] }
+                }
+                abstract List m()
+                private static String s = 's'
+                private String p() { 'p' }
+                String getZ() { 'z' }
+            }
+            assert E.A.m() == ['s', 'p', 'z']
+        '''
+    }
+
     // GROOVY-12509: a regression in 6.0.0, from GROOVY-12310
     @Test
     void testFieldOfPrivateNestedTypeOfNestMate() {
