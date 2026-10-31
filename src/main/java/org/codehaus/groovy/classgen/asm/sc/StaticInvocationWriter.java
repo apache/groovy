@@ -749,7 +749,8 @@ public class StaticInvocationWriter extends InvocationWriter {
 
                 rewritten.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, origin.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE));
             } else {
-                makeCall(origin, pexp, message, arguments, adapter, safe, spreadSafe, false);
+                // the receiver is no longer this, so a call without a target must not be made on the current object
+                makeCall(origin, pexp, message, arguments, adapter == invokeMethodOnCurrent ? invokeMethod : adapter, safe, spreadSafe, false);
             }
             return true;
         }
