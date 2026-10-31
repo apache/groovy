@@ -22,11 +22,11 @@ import org.apache.groovy.lsp.internal.compile.CompilationSnapshot;
 import org.apache.groovy.lsp.internal.compile.CompiledDocument;
 import org.apache.groovy.lsp.internal.compile.CompilerSettings;
 import org.apache.groovy.lsp.internal.compile.GroovyCompiler;
+import org.apache.groovy.lsp.internal.compile.ImportSupport;
+import org.apache.groovy.lsp.internal.compile.WorkspaceLayout;
 import org.apache.groovy.lsp.internal.compile.WorkspaceScanner;
 import org.apache.groovy.lsp.internal.diagnostic.DiagnosticConverter;
 import org.apache.groovy.lsp.internal.position.PositionEncoding;
-import org.apache.groovy.lsp.internal.compile.ImportSupport;
-import org.apache.groovy.lsp.internal.compile.WorkspaceLayout;
 import org.apache.groovy.lsp.internal.protocol.ClientFeatures;
 import org.apache.groovy.lsp.internal.util.Uris;
 import org.apache.groovy.lsp.internal.workspace.DocumentStore;
@@ -35,7 +35,6 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 
 import org.eclipse.lsp4j.ApplyWorkspaceEditParams;
-import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.ClientCapabilities;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.ProgressParams;
@@ -43,6 +42,7 @@ import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.WorkDoneProgressBegin;
 import org.eclipse.lsp4j.WorkDoneProgressCreateParams;
 import org.eclipse.lsp4j.WorkDoneProgressEnd;
+import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
 
@@ -98,6 +98,7 @@ public final class LanguageServerContext {
     });
     private ScheduledFuture<?> pendingCompile;
     private long compileGeneration;
+    private long compileEpoch;
     private String compileFingerprint;
 
     /**
@@ -109,9 +110,54 @@ public final class LanguageServerContext {
 
     /**
      * Compiles open documents plus workspace sources and publishes diagnostics.
-     * Unchanged inputs reuse the last snapshot.
+     * Unchanged inputs reuse the last snapshot. A debounced compile that has
+     * already started yields to this call and does not publish after it.
      */
     public CompilationSnapshot recompile() {
+        final long epoch;
+        synchronized (this) {
+            if (shutdown) {
+                return snapshot.get();
+            }
+            epoch = claimCompile();
+        }
+        return compileAndPublish(epoch, true);
+    }
+
+    /**
+     * Schedules a recompile after {@code delayMs} of quiet.
+     *
+     * @param delayMs debounce delay
+     */
+    public synchronized void scheduleRecompile(final long delayMs) {
+        if (shutdown || debounce.isShutdown()) {
+            return;
+        }
+        // A highlighter client sets groovy.compile=false so didChange stays
+        // a lexer-only update and does not start a second compiler.
+        if ("false".equals(settings.get().getExtra().get("compile"))) {
+            return;
+        }
+        long epoch = claimCompile();
+        pendingCompile = debounce.schedule(() -> compileAndPublish(epoch, false), delayMs, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Caller holds {@code this}. Cancels a not-yet-started debounce and
+     * advances the epoch so a debounce already waiting on {@code compileLock}
+     * does not publish afterwards.
+     *
+     * @return the epoch this caller owns
+     */
+    private long claimCompile() {
+        if (pendingCompile != null) {
+            pendingCompile.cancel(false);
+            pendingCompile = null;
+        }
+        return ++compileEpoch;
+    }
+
+    private CompilationSnapshot compileAndPublish(final long epoch, final boolean authoritative) {
         synchronized (compileLock) {
             final long generation;
             final CompilerSettings effective;
@@ -121,12 +167,8 @@ public final class LanguageServerContext {
             final String fingerprint;
             final boolean reuse;
             synchronized (this) {
-                if (shutdown) {
+                if (shutdown || (!authoritative && epoch != compileEpoch)) {
                     return snapshot.get();
-                }
-                if (pendingCompile != null) {
-                    pendingCompile.cancel(false);
-                    pendingCompile = null;
                 }
                 List<URI> folders;
                 synchronized (workspaceFolders) {
@@ -163,29 +205,11 @@ public final class LanguageServerContext {
                     }
                 }
             }
+            // Publish before releasing compileLock, so a waiter cannot
+            // observe the snapshot and then race this publication.
+            publishDiagnostics();
         }
-        publishDiagnostics();
         return snapshot.get();
-    }
-
-    /**
-     * Schedules a recompile after {@code delayMs} of quiet.
-     *
-     * @param delayMs debounce delay
-     */
-    public synchronized void scheduleRecompile(final long delayMs) {
-        if (shutdown || debounce.isShutdown()) {
-            return;
-        }
-        // A highlighter client sets groovy.compile=false so didChange stays
-        // a lexer-only update and does not start a second compiler.
-        if ("false".equals(settings.get().getExtra().get("compile"))) {
-            return;
-        }
-        if (pendingCompile != null) {
-            pendingCompile.cancel(false);
-        }
-        pendingCompile = debounce.schedule(this::recompile, delayMs, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -196,7 +220,9 @@ public final class LanguageServerContext {
      * notification, so a caller returns only once the diagnostics of the
      * current snapshot have been sent, whichever caller sent them, and an
      * older snapshot's diagnostics never arrive after a newer one's.
-     * Lock order: {@code publishLock}, then this; never taken while holding this.
+     * {@link #compileAndPublish} calls this while holding {@code compileLock}.
+     * Lock order: {@code compileLock}, then {@code publishLock}, then this.
+     * {@code publishLock} is never taken while holding this.
      */
     public void publishDiagnostics() {
         LanguageClient languageClient = client.get();
