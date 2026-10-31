@@ -38,6 +38,17 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
  */
 class VariableExpressionTransformer {
 
+    private final StaticCompilationTransformer scTransformer;
+
+    /**
+     * Creates a variable-expression transformer backed by the owning static compilation transformer.
+     *
+     * @param scTransformer the shared transformer context
+     */
+    VariableExpressionTransformer(final StaticCompilationTransformer scTransformer) {
+        this.scTransformer = scTransformer;
+    }
+
     /**
      * Rewrites a variable expression when static-compilation metadata identifies a more specific target.
      *
@@ -102,7 +113,7 @@ class VariableExpressionTransformer {
         return pe;
     }
 
-    private static Expression tryTransformPrivateFieldAccess(final VariableExpression ve) {
+    private Expression tryTransformPrivateFieldAccess(final VariableExpression ve) {
         FieldNode field = ve.getNodeMetaData(StaticTypesMarker.PV_FIELDS_ACCESS);
         if (field == null) {
             field = ve.getNodeMetaData(StaticTypesMarker.PV_FIELDS_MUTATION);
@@ -112,12 +123,39 @@ class VariableExpressionTransformer {
         }
 
         // access to a private field from a section of code that normally doesn't have access to it, like a closure block or inner class
-        Expression fieldOwner = field.isStatic() ? classX(field.getDeclaringClass()) : propX(classX(field.getDeclaringClass()), "this");
-        if (!field.isStatic()) fieldOwner.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, field.getDeclaringClass());
+        Expression fieldOwner;
+        ClassNode instanceType = field.isStatic() ? null : findInheritingInstanceType(field);
+        if (field.isStatic()) {
+            fieldOwner = classX(field.getDeclaringClass());
+        } else if (instanceType != null) {
+            // GROOVY-12600: no enclosing instance of the declaring class exists, so use the field inherited by this or an enclosing instance
+            fieldOwner = instanceType.equals(scTransformer.getTransformClass()) ? new VariableExpression("this") : propX(classX(instanceType), "this");
+            fieldOwner.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, instanceType);
+        } else {
+            fieldOwner = propX(classX(field.getDeclaringClass()), "this");
+            fieldOwner.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, field.getDeclaringClass());
+        }
         PropertyExpression pe = attrX(fieldOwner, ve.getName()); // GROOVY-10687, GROOVY-11412: direct access
         pe.putNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE, field.getOriginType());
         pe.getProperty().setSourcePosition(ve);
         return pe;
+    }
+
+    /**
+     * Finds the class of the innermost instance, among {@code this} and the enclosing
+     * instances reachable through {@code this$0} references, that is a subclass of the
+     * field's declaring class, when no enclosing instance of the declaring class itself
+     * is reachable. Returns {@code null} when {@code DeclaringClass.this} exists.
+     */
+    private ClassNode findInheritingInstanceType(final FieldNode field) {
+        ClassNode declaringClass = field.getDeclaringClass();
+        ClassNode subclass = null;
+        for (ClassNode type = scTransformer.getTransformClass(); type != null; type = type.getOuterClass()) {
+            if (type.equals(declaringClass)) return null;
+            if (subclass == null && type.isDerivedFrom(declaringClass)) subclass = type;
+            if (type.getDeclaredField("this$0") == null) break;
+        }
+        return subclass;
     }
 
     private static Expression tryTransformDirectMethodTarget(final VariableExpression ve) {

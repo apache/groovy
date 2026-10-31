@@ -84,7 +84,7 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     private final MethodCallExpressionTransformer methodCallExpressionTransformer = new MethodCallExpressionTransformer(this);
     private final ConstructorCallTransformer constructorCallTransformer = new ConstructorCallTransformer(this);
     private final PropertyExpressionTransformer propertyExpressionTransformer = new PropertyExpressionTransformer(this);
-    private final VariableExpressionTransformer variableExpressionTransformer = new VariableExpressionTransformer();
+    private final VariableExpressionTransformer variableExpressionTransformer = new VariableExpressionTransformer(this);
     private final ClosureExpressionTransformer closureExpressionTransformer = new ClosureExpressionTransformer(this);
     private final BooleanExpressionTransformer booleanExpressionTransformer = new BooleanExpressionTransformer(this);
     private final BinaryExpressionTransformer binaryExpressionTransformer = new BinaryExpressionTransformer(this);
