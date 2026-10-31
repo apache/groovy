@@ -148,7 +148,15 @@ class GinqGroovyMethods {
 
         String astWalkerClassName
         if (CONF_PROVIDER_AUTO_SQL == provider) {
-            astWalkerClassName = PREFERRED_SQL_PROVIDERS.findResult { providers.get(it) }
+            // jooq-sql is registered even when the optional jOOQ classes are absent,
+            // so auto-detection must check that it can actually be loaded
+            ClassLoader loader = GinqGroovyMethods.class.classLoader
+            astWalkerClassName = PREFERRED_SQL_PROVIDERS.findResult { String name ->
+                if ('jooq-sql' == name && !jooqPresent(loader)) {
+                    return null
+                }
+                return providers.get(name)
+            }
         } else {
             astWalkerClassName = providers.get(provider)
         }
@@ -229,7 +237,23 @@ class GinqGroovyMethods {
     private static final String CONF_OPTIMIZE = 'optimize'
     private static final String CONF_PROVIDER_COLLECTION = 'collection'
     private static final String CONF_PROVIDER_AUTO_SQL = 'sql'
+    // jooq-sql is preferred only when jooqPresent; otherwise native-sql is used
     private static final List<String> PREFERRED_SQL_PROVIDERS = ['jooq-sql', 'native-sql']
+
+    /**
+     * Whether jOOQ can be loaded from {@code loader}. Explicit {@code jooq-sql}
+     * stays selectable either way; only {@code provider: 'sql'} consults this.
+     */
+    private static boolean jooqPresent(ClassLoader loader) {
+        try {
+            Class.forName('org.jooq.SQLDialect', false, loader)
+            return true
+        } catch (ClassNotFoundException ignored) {
+            return false
+        } catch (LinkageError ignored) {
+            return false
+        }
+    }
     private static final String DEFAULT_AST_WALKER_CLASS_NAME = GinqAstWalker.class.name
     private static final String TRUE_STR = 'true'
 }

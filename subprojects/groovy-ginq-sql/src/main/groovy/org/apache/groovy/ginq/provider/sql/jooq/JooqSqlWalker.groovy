@@ -25,11 +25,12 @@ import org.apache.groovy.ginq.provider.sql.ir.SqlQueryNode
 import org.apache.groovy.ginq.provider.sql.render.RenderedSql
 import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.control.SourceUnit
+import org.jooq.SQLDialect
 
 /**
  * The {@code jooq-sql} provider: identical to the native provider except the
  * SQL is rendered by jOOQ for the {@code dialect} option's
- * {@link org.jooq.SQLDialect}, giving dialect-aware SQL, function mapping and
+ * {@link SQLDialect}, giving dialect-aware SQL, function mapping and
  * limit/offset rendering. jOOQ is required on the compile classpath only.
  *
  * @since 6.0.0
@@ -50,6 +51,7 @@ class JooqSqlWalker extends GinqSqlWalker {
     @Override
     protected void validateOptions(AbstractGinqExpression expression) {
         // `dialect` is supported by this provider
+        validateMixedMode(expression)
     }
 
     @Override

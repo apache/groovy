@@ -19,9 +19,12 @@
 package org.apache.groovy.ginq.provider.sql
 
 import groovy.sql.Sql
+import org.h2.jdbcx.JdbcDataSource
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+
+import java.sql.DriverManager
 
 /**
  * Runs GINQ queries end-to-end against an in-memory H2 database
@@ -500,7 +503,7 @@ class GinqSqlIntegrationTest {
 
     @Test
     void testDataSourceAsJdbcDataSource() {
-        def dataSource = new org.h2.jdbcx.JdbcDataSource(URL: dbUrl, user: 'sa', password: '')
+        def dataSource = new JdbcDataSource(URL: dbUrl, user: 'sa', password: '')
         def result = GQL(provider: 'native-sql', dataSource: dataSource) {
             from e in 'employees'
             where e.id == 4
@@ -511,7 +514,7 @@ class GinqSqlIntegrationTest {
 
     @Test
     void testDataSourceAsConnection() {
-        def connection = java.sql.DriverManager.getConnection(dbUrl, 'sa', '')
+        def connection = DriverManager.getConnection(dbUrl, 'sa', '')
         try {
             def result = GQL(provider: 'native-sql', dataSource: connection) {
                 from e in 'employees'
@@ -522,5 +525,180 @@ class GinqSqlIntegrationTest {
         } finally {
             connection.close()
         }
+    }
+
+    @Test
+    void testRealDivisionDoesNotTruncate() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.id / 2 > 2
+            orderby e.name
+            select e.name
+        }
+        assert ['Eve', 'Frank'] == result.collect { it.name }
+    }
+
+    @Test
+    void testInListContainingNullMatchesNull() {
+        def onlyNull = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.deptId in [null]
+            select e.name
+        }
+        assert ['Dave'] == onlyNull.collect { it.name }
+
+        def withValue = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.deptId in [1, null]
+            orderby e.name
+            select e.name
+        }
+        assert ['Alice', 'Bob', 'Dave'] == withValue.collect { it.name }
+
+        def excluded = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.deptId !in [1, null]
+            orderby e.name
+            select e.name
+        }
+        assert ['Carol', 'Eve', 'Frank'] == excluded.collect { it.name }
+
+        def notNull = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.deptId !in [null]
+            orderby e.name
+            select e.name
+        }
+        assert ['Alice', 'Bob', 'Carol', 'Eve', 'Frank'] == notNull.collect { it.name }
+    }
+
+    @Test
+    void testEmptyInList() {
+        def none = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.id in []
+            select e.name
+        }
+        assert [] == none.toList()
+        def all = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.id !in []
+            select e.id
+        }
+        assert 6 == all.toList().size()
+    }
+
+    @Test
+    void testContainsNullDoesNotMatchTheWordNull() {
+        def missing = null
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.name.contains(missing) || e.name == 'null'
+            select e.name
+        }
+        assert [] == result.toList()
+    }
+
+    @Test
+    void testSumOfAllNullsIsZero() {
+        db.execute('insert into employees (id, name, salary, deptId, active) values (?, ?, ?, ?, ?)',
+                [7, 'Gina', null, 1, true])
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.name == 'Gina'
+            groupby e.name
+            select sum(e.salary) as total
+        }
+        assert 1 == result.toList().size()
+        assert result.toList()[0].total == 0
+    }
+
+    @Test
+    void testCoalesceMatchesNullTernary() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            orderby e.id
+            select e.id, coalesce(e.deptId, 0) as dept, (e.deptId == null ? 0 : e.deptId) as viaTernary
+        }
+        assert [[1, 1, 1], [2, 1, 1], [3, 2, 2], [4, 0, 0], [5, 2, 2], [6, 3, 3]] ==
+                result.collect { [it.id, it.dept, it.viaTernary] }
+        def onlyNullDept = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where coalesce(e.deptId, -1) == -1
+            select e.name
+        }
+        assert ['Dave'] == onlyNullDept.collect { it.name }
+    }
+
+    @Test
+    void testCountDistinct() {
+        db.execute('insert into employees (id, name, salary, deptId, active) values (?, ?, ?, ?, ?)',
+                [7, 'Grace', 5000, 1, true])
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.deptId != null
+            groupby e.deptId
+            orderby e.deptId
+            select e.deptId, count() as cnt, count(distinct(e.salary)) as kinds
+        }
+        assert [[1, 3, 2], [2, 2, 2], [3, 1, 1]] == result.collect { [it.deptId, it.cnt, it.kinds] }
+
+        def total = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            select count(distinct(e.deptId)) as depts
+        }
+        assert 3 == total.toList()[0].depts
+
+        def into = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.deptId == 1
+            groupby e.deptId into g
+            select g.count(distinct(e -> e.salary)) as viaCall, g.count(e -> distinct(e.salary)) as viaBody
+        }
+        assert [[2, 2]] == into.collect { [it.viaCall, it.viaBody] }
+    }
+
+    @Test
+    void testMathMaxAndMinMatchComparison() {
+        def floor = 4500
+        def cap = 5500
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            orderby e.id
+            select Math.max(e.salary, floor) as hi, (e.salary > floor ? e.salary : floor) as hiTernary,
+                    Math.min(e.salary, cap) as lo, (e.salary < cap ? e.salary : cap) as loTernary
+        }
+        assert [[5000, 5000, 5000, 5000],
+                [4500, 4500, 3000, 3000],
+                [4500, 4500, 4000, 4000],
+                [4500, 4500, 2000, 2000],
+                [5000, 5000, 5000, 5000],
+                [6000, 6000, 5500, 5500]] ==
+                result.collect { [it.hi, it.hiTernary, it.lo, it.loTernary] }
+    }
+
+    @Test
+    void testCastThenDivideAndIndexOf() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.id == 1 || e.id == 5
+            orderby e.id
+            select e.id, cast(e.id, 'DECIMAL') / 2 as half, cast(e.salary, 'VARCHAR') as salaryText,
+                    e.name.indexOf('l') as atL, e.name.indexOf('z') as missing
+        }
+        def rows = result.collect { [it.id, (it.half as BigDecimal), it.salaryText, it.atL, it.missing] }
+        assert [[1, 0.5G, '5000', 1, -1], [5, 2.5G, '5000', -1, -1]] == rows
+    }
+
+    @Test
+    void testFunctionAndRangePushDown() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.salary in 5000..3000 && e.name.toLowerCase().concat('!') == 'alice!'
+            select e.name, e.salary.abs() as absSalary, e.salary.floor() as floorSalary,
+                    e.salary.ceil() as ceilSalary, e.name.length() as nameLength
+        }
+        assert [['Alice', 5000, 5000, 5000, 5]] ==
+                result.collect { [it.name, it.absSalary, it.floorSalary, it.ceilSalary, it.nameLength] }
     }
 }

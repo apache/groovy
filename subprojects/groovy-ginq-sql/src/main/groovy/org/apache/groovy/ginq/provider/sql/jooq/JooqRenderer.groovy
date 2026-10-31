@@ -21,6 +21,7 @@ package org.apache.groovy.ginq.provider.sql.jooq
 import groovy.transform.CompileStatic
 import org.apache.groovy.ginq.provider.sql.ir.SqlBinary
 import org.apache.groovy.ginq.provider.sql.ir.SqlCaseWhen
+import org.apache.groovy.ginq.provider.sql.ir.SqlCast
 import org.apache.groovy.ginq.provider.sql.ir.SqlColumn
 import org.apache.groovy.ginq.provider.sql.ir.SqlCountStar
 import org.apache.groovy.ginq.provider.sql.ir.SqlDerivedTable
@@ -51,6 +52,7 @@ import org.codehaus.groovy.GroovyBugError
 import org.codehaus.groovy.ast.expr.Expression
 import org.jooq.Condition
 import org.jooq.DSLContext
+import org.jooq.DataType
 import org.jooq.Field
 import org.jooq.JoinType
 import org.jooq.Param
@@ -63,6 +65,7 @@ import org.jooq.Table
 import org.jooq.conf.RenderQuotedNames
 import org.jooq.conf.Settings
 import org.jooq.impl.DSL
+import org.jooq.impl.SQLDataType
 
 import java.util.regex.Matcher
 
@@ -200,7 +203,8 @@ class JooqRenderer {
 
     private Table buildTableSource(DSLContext ctx, SqlTableSource tableSource) {
         if (tableSource instanceof SqlTableRef) {
-            return DSL.table(DSL.name(tableSource.tableName)).as(tableSource.alias)
+            String[] parts = tableSource.tableName.split('\\.', -1)
+            return DSL.table(DSL.name(parts)).as(tableSource.alias)
         }
         if (tableSource instanceof SqlDerivedTable) {
             return buildQuery(ctx, tableSource.query).asTable(tableSource.alias)
@@ -272,6 +276,9 @@ class JooqRenderer {
         if (expr instanceof SqlCountStar) {
             return DSL.count()
         }
+        if (expr instanceof SqlCast) {
+            return DSL.cast(buildField(ctx, expr.expr), castDataType(expr.sqlType))
+        }
         if (expr instanceof SqlFunction) {
             return buildFunction(ctx, (SqlFunction) expr)
         }
@@ -287,7 +294,8 @@ class JooqRenderer {
                 case '+': return buildField(ctx, expr.left).add(buildField(ctx, expr.right))
                 case '-': return buildField(ctx, expr.left).sub(buildField(ctx, expr.right))
                 case '*': return buildField(ctx, expr.left).mul(buildField(ctx, expr.right))
-                case '/': return buildField(ctx, expr.left).div(buildField(ctx, expr.right))
+                case '/': return DSL.cast(buildField(ctx, expr.left), SQLDataType.DOUBLE)
+                        .div(DSL.cast(buildField(ctx, expr.right), SQLDataType.DOUBLE))
                 case '||': return DSL.concat(buildField(ctx, expr.left), buildField(ctx, expr.right))
                 default: return DSL.field(buildCondition(ctx, expr))
             }
@@ -312,18 +320,115 @@ class JooqRenderer {
             case 'TRIM': return DSL.trim(fields[0])
             case 'CHAR_LENGTH': return DSL.charLength(fields[0])
             case 'ABS': return DSL.abs(fields[0])
+            case 'FLOOR': return DSL.floor(fields[0])
+            case 'CEILING': return DSL.ceil(fields[0])
+            case 'ROUND': return fields.size() > 1 ? DSL.round(fields[0], fields[1]) : DSL.round(fields[0])
             case 'MOD': return fields[0].mod(fields[1])
             case 'REPLACE': return DSL.replace(fields[0], fields[1], fields[2])
             case 'SUBSTRING': return fields.size() > 2
                     ? DSL.substring(fields[0], fields[1], fields[2])
                     : DSL.substring(fields[0], fields[1])
-            case 'COUNT': return DSL.count(fields[0])
+            case 'POSITION': return searchPosition(fields)
+            case 'COALESCE': return coalesce(fields)
+            case 'COUNT': return function.distinct ? DSL.countDistinct(fields[0]) : DSL.count(fields[0])
+            case 'GREATEST': return extreme(true, fields)
+            case 'LEAST': return extreme(false, fields)
             case 'SUM': return DSL.sum(fields[0])
             case 'AVG': return DSL.avg(fields[0])
             case 'MIN': return DSL.min(fields[0])
             case 'MAX': return DSL.max(fields[0])
             default: return DSL.function(function.name, Object, fields as Field[])
         }
+    }
+
+    private static DataType castDataType(String sqlType) {
+        String name = sqlType
+        Integer length = null
+        Integer precision = null
+        Integer scale = null
+        int open = sqlType.indexOf('(')
+        if (open >= 0) {
+            name = sqlType.substring(0, open)
+            String inner = sqlType.substring(open + 1, sqlType.length() - 1)
+            String[] parts = inner.split(',')
+            if (parts.length == 1) {
+                int n = Integer.parseInt(parts[0])
+                if ('DECIMAL' == name || 'NUMERIC' == name) {
+                    precision = Integer.valueOf(n)
+                } else {
+                    length = Integer.valueOf(n)
+                }
+            } else {
+                precision = Integer.valueOf(Integer.parseInt(parts[0]))
+                scale = Integer.valueOf(Integer.parseInt(parts[1]))
+            }
+        }
+        DataType type
+        switch (name) {
+            case 'BOOLEAN': type = SQLDataType.BOOLEAN; break
+            case 'TINYINT': type = SQLDataType.TINYINT; break
+            case 'SMALLINT': type = SQLDataType.SMALLINT; break
+            case 'INTEGER':
+            case 'INT': type = SQLDataType.INTEGER; break
+            case 'BIGINT': type = SQLDataType.BIGINT; break
+            case 'REAL': type = SQLDataType.REAL; break
+            case 'FLOAT': type = SQLDataType.FLOAT; break
+            case 'DOUBLE':
+            case 'DOUBLE PRECISION': type = SQLDataType.DOUBLE; break
+            case 'DECIMAL': type = SQLDataType.DECIMAL; break
+            case 'NUMERIC': type = SQLDataType.NUMERIC; break
+            case 'CHAR':
+            case 'CHARACTER': type = SQLDataType.CHAR; break
+            case 'VARCHAR':
+            case 'CHARACTER VARYING': type = SQLDataType.VARCHAR; break
+            case 'DATE': type = SQLDataType.DATE; break
+            case 'TIME': type = SQLDataType.TIME; break
+            case 'TIMESTAMP': type = SQLDataType.TIMESTAMP; break
+            case 'CLOB': type = SQLDataType.CLOB; break
+            case 'BLOB': type = SQLDataType.BLOB; break
+            case 'BINARY': type = SQLDataType.BINARY; break
+            case 'VARBINARY': type = SQLDataType.VARBINARY; break
+            default: throw new GroovyBugError("Unsupported SQL cast type: ${sqlType}")
+        }
+        if (length != null) return type.length(length.intValue())
+        if (precision != null && scale != null) return type.precision(precision.intValue(), scale.intValue())
+        if (precision != null) return type.precision(precision.intValue())
+        return type
+    }
+
+    private Field coalesce(List<Field> fields) {
+        if (2 == fields.size()) return DSL.coalesce(fields[0], fields[1])
+        return DSL.coalesce(fields[0], tail(fields))
+    }
+
+    // POSITION(needle IN haystack), MySQL LOCATE(needle, haystack), SQLite INSTR(haystack, needle)
+    private Field searchPosition(List<Field> fields) {
+        Field needle = fields[0]
+        Field haystack = fields[1]
+        SQLDialect family = dialect.family()
+        if (SQLDialect.MYSQL == family) {
+            return DSL.function('locate', Object, [needle, haystack] as Field[])
+        }
+        if (SQLDialect.SQLITE == family) {
+            return DSL.function('instr', Object, [haystack, needle] as Field[])
+        }
+        return DSL.position(haystack, needle)
+    }
+
+    // GREATEST/LEAST, or SQLite's scalar max/min
+    private Field extreme(boolean greatest, List<Field> fields) {
+        if (SQLDialect.SQLITE == dialect.family()) {
+            return DSL.function(greatest ? 'max' : 'min', Object, fields as Field[])
+        }
+        return greatest ? DSL.greatest(fields[0], tail(fields)) : DSL.least(fields[0], tail(fields))
+    }
+
+    private static Field[] tail(List<Field> fields) {
+        Field[] rest = new Field[fields.size() - 1]
+        for (int i = 1; i < fields.size(); i++) {
+            rest[i - 1] = fields.get(i)
+        }
+        return rest
     }
 
     private Param registerParam(SqlParam param) {

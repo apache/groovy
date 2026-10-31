@@ -118,6 +118,66 @@ class JooqSqlIntegrationTest {
     }
 
     @Test
+    void testRealDivisionMatchesNative() {
+        def result = GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+            from e in 'employees'
+            where e.id / 2 > 2
+            orderby e.name
+            select e.name
+        }
+        assert ['Eve', 'Frank'] == result.collect { it.name }
+    }
+
+    @Test
+    void testRoundAndFloorMatchNative() {
+        def result = GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+            from e in 'employees'
+            where e.salary.round(0) == 5000 && e.salary.floor() == e.salary
+            orderby e.name
+            select e.name
+        }
+        assert ['Alice', 'Eve'] == result.collect { it.name }
+    }
+
+    @Test
+    void testCoalesceCountDistinctAndExtremes() {
+        db.execute('insert into employees (id, name, salary, deptId, active) values (?, ?, ?, ?, ?)',
+                [7, 'Grace', 5000, 1, true])
+        def floor = 4500
+        def result = GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+            from e in 'employees'
+            where e.deptId != null
+            groupby e.deptId
+            orderby e.deptId
+            select e.deptId, count(distinct(e.salary)) as kinds
+        }
+        assert [[1, 2], [2, 2], [3, 1]] == result.collect { [it.deptId, it.kinds] }
+
+        def rows = GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+            from e in 'employees'
+            where e.id == 4 || e.id == 6
+            orderby e.id
+            select e.id, coalesce(e.deptId, 0) as dept, (e.deptId == null ? 0 : e.deptId) as viaTernary,
+                    Math.max(e.salary, floor) as hi, Math.min(e.salary, floor) as lo
+        }
+        assert [[4, 0, 0, 4500, 2000], [6, 3, 3, 6000, 4500]] ==
+                rows.collect { [it.id, it.dept, it.viaTernary, it.hi, it.lo] }
+    }
+
+    @Test
+    void testCastThenDivideAndIndexOf() {
+        def result = GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+            from e in 'employees'
+            where e.id == 1 || e.id == 5
+            orderby e.id
+            select e.id, cast(e.id, 'DECIMAL') / 2 as half, cast(e.salary, 'VARCHAR') as salaryText,
+                    e.name.indexOf('l') as atL, e.name.indexOf('z') as missing
+        }
+        def rows = result.collect { [it.id, (it.half as BigDecimal), it.salaryText, it.atL, it.missing] }
+        assert [[1, 0.5G, '5000', 1, -1], [5, 2.5G, '5000', -1, -1]] == rows
+    }
+
+    @Test
     void testDefaultDialect() {
         def result = GQL(provider: 'jooq-sql', dataSource: db) {
             from e in 'employees'
@@ -136,5 +196,23 @@ class JooqSqlIntegrationTest {
             select e.name
         }
         assert ['Carol'] == result.collect { it.name }
+    }
+
+    @Test
+    void testInListContainingNullMatchesNull() {
+        def onlyNull = GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+            from e in 'employees'
+            where e.deptId in [null]
+            select e.name
+        }
+        assert ['Dave'] == onlyNull.collect { it.name }
+
+        def excluded = GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+            from e in 'employees'
+            where e.deptId !in [1, null]
+            orderby e.name
+            select e.name
+        }
+        assert ['Carol', 'Eve', 'Frank'] == excluded.collect { it.name }
     }
 }

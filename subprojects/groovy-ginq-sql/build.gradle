@@ -27,7 +27,7 @@ dependencies {
     compileOnly "org.jooq:jooq:${versions.jooq}" // used by the optional jooq-sql provider
     testImplementation projects.groovyTest
     testImplementation "org.jooq:jooq:${versions.jooq}"
-    testImplementation 'com.h2database:h2:2.4.240'
+    testImplementation "com.h2database:h2:${versions.h2}"
 }
 
 groovyLibrary {
