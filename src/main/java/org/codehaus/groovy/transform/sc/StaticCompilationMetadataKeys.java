@@ -42,6 +42,12 @@ public enum StaticCompilationMetadataKeys {
     COMPONENT_TYPE,
     /** If a receiver is the receiver of a dynamic property (for mixed-mode compilation). */
     RECEIVER_OF_DYNAMIC_PROPERTY,
+    /**
+     * On a generated closure class: a {@code java.util.function.Function<ClassNode, ClassNode>} that gives
+     * the class converting its instances to a type, or {@code null} if there is none. Such a class implements
+     * the type and has a constructor taking the closure.
+     */
+    FUNCTIONAL_INTERFACE_ADAPTER,
     /** Extension getter for the read half of a compound assignment to an extension property. */
     EXTENSION_PROPERTY_GETTER
 }
