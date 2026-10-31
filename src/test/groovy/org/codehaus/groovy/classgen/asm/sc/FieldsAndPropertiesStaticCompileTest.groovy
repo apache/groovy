@@ -841,4 +841,130 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             assert new C(['foo1', 'foo2']).fooNames.size() == 2
         '''
     }
+
+    // GROOVY-12518: the setter selected for the value, among overloads
+    @Test
+    void testSuperPropertyIncrementAndCompoundAssignmentWithOverloadedSetters() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Base {
+                List log = []
+                String x = 'x'
+                int n = 1
+                String y
+                void setX(int i) { log << 'x:int:' + i }
+                void setX(String s) { log << 'x:string:' + s; this.@x = s }
+                void setN(String s) { log << 'n:string:' + s }
+                void setN(int i) { log << 'n:int:' + i; this.@n = i }
+                void setY(int i) { log << 'y:int:' + i }
+                void setY(String s) { log << 'y:string:' + s; this.@y = s }
+            }
+            class Sub extends Base {
+                String x = 'sub'
+                int n = 100
+                List test() {
+                    super.x += 'a'
+                    super.n++
+                    ++super.n
+                    super.n += 10
+                    super.y ?= 'v'
+                    def c = { -> super.x += 'b'; super.n++ }
+                    c()
+                    Supplier<Integer> lambda = () -> super.n++
+                    lambda.get()
+                    log + [super.x, super.n, x, n]
+                }
+            }
+            class Outer extends Base {
+                String x = 'outer'
+                class Inner {
+                    List test() {
+                        Outer.super.x += 'c'
+                        Outer.super.n++
+                        def c = { -> Outer.super.n += 2 }
+                        c()
+                        log + [Outer.super.x, Outer.super.n, x, n]
+                    }
+                }
+            }
+            assert new Sub().test() == ['x:string:xa', 'n:int:2', 'n:int:3', 'n:int:13', 'y:string:v', 'x:string:xab', 'n:int:14', 'n:int:15', 'xab', 15, 'sub', 100]
+            assert new Outer.Inner(new Outer()).test() == ['x:string:xc', 'n:int:2', 'n:int:4', 'xc', 4, 'outer', 4]
+        '''
+    }
+
+    // GROOVY-12518: extension methods as the accessors
+    @Test
+    void testSuperPropertyIncrementAndCompoundAssignmentThroughExtensionMethods() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Text extends File {
+                Text(File file) { super(file.path) }
+                String getText() { 'own' }
+                void setText(String s) { throw new UnsupportedOperationException(s) }
+                String test() {
+                    super.text = 'a'
+                    super.text += 'b'
+                    super.text++
+                    def c = { -> super.text += 'c' }
+                    c()
+                    Supplier<String> lambda = () -> super.text += 'd'
+                    lambda.get()
+                    new File(path).getText('UTF-8')
+                }
+                class Inner {
+                    String test() {
+                        Text.super.text += 'e'
+                        def c = { -> Text.super.text += 'f' }
+                        c()
+                        new File(Text.this.path).getText('UTF-8')
+                    }
+                }
+            }
+            def file = File.createTempFile('text', '.txt')
+            try {
+                def text = new Text(file)
+                assert text.test() == 'accd'
+                assert new Text.Inner(text).test() == 'accdef'
+                assert text.text == 'own'
+            } finally {
+                file.delete()
+            }
+        '''
+        astTrees.each { name, ast ->
+            assert !ast[1].contains('PropertyOnSuper') : name
+        }
+        assert astTrees['Text'][1].contains('INVOKESTATIC org/codehaus/groovy/runtime/ResourceGroovyMethods.getText (Ljava/io/File;)Ljava/lang/String;')
+        assert astTrees['Text'][1].contains('INVOKESTATIC org/codehaus/groovy/runtime/ResourceGroovyMethods.setText (Ljava/io/File;Ljava/lang/String;)V')
+    }
+
+    // GROOVY-12517: "Outer.super.@name" reads and writes the field of the superclass directly
+    @Test
+    void testOuterSuperFieldIsAccessedDirectly() {
+        assertScript '''
+            class Base {
+                protected String x = 'x:base'
+            }
+            class Outer extends Base {
+                protected String x = 'x:outer'
+                class Inner {
+                    List test() {
+                        def read = Outer.super.@x
+                        Outer.super.@x = 'w'
+                        [read, Outer.super.@x, Outer.this.@x]
+                    }
+                }
+            }
+            class Sub extends Outer {
+                protected String x = 'x:sub'
+            }
+            assert new Outer.Inner(new Outer()).test() == ['x:base', 'w', 'x:outer']
+            assert new Outer.Inner(new Sub()).test() == ['x:base', 'w', 'x:outer']
+        '''
+        String inner = astTrees['Outer$Inner'][1]
+        assert !inner.contains('FieldOnSuper')
+        assert inner.contains('GETFIELD Base.x')
+        assert inner.contains('PUTFIELD Base.x')
+    }
 }
