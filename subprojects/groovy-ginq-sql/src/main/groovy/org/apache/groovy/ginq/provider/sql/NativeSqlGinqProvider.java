@@ -38,6 +38,13 @@ public class NativeSqlGinqProvider implements GinqProvider {
      */
     public static final String CONF_MIXED_MODE = "mixedMode";
 
+    /**
+     * Names a built-in native dialect ({@code ansi}, {@code h2}, {@code postgres},
+     * {@code mysql}, {@code mariadb}, {@code sqlite}). Absent means ANSI.
+     * Other databases use the {@code jooq-sql} provider.
+     */
+    public static final String CONF_DIALECT = "dialect";
+
     @Override
     public String getName() {
         return "native-sql";
@@ -50,6 +57,6 @@ public class NativeSqlGinqProvider implements GinqProvider {
 
     @Override
     public List<String> getAdditionalOptionNames() {
-        return List.of(CONF_MIXED_MODE);
+        return List.of(CONF_MIXED_MODE, CONF_DIALECT);
     }
 }

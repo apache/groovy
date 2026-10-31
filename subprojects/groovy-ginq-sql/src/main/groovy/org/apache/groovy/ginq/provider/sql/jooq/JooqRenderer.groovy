@@ -312,6 +312,9 @@ class JooqRenderer {
             case 'TRIM': return DSL.trim(fields[0])
             case 'CHAR_LENGTH': return DSL.charLength(fields[0])
             case 'ABS': return DSL.abs(fields[0])
+            case 'FLOOR': return DSL.floor(fields[0])
+            case 'CEILING': return DSL.ceil(fields[0])
+            case 'ROUND': return fields.size() > 1 ? DSL.round(fields[0], fields[1]) : DSL.round(fields[0])
             case 'MOD': return fields[0].mod(fields[1])
             case 'REPLACE': return DSL.replace(fields[0], fields[1], fields[2])
             case 'SUBSTRING': return fields.size() > 2

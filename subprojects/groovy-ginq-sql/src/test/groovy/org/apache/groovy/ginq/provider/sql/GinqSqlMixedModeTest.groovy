@@ -256,4 +256,49 @@ class GinqSqlMixedModeTest {
         assert err.message.contains('mixed mode cannot split a set operation')
         assert err.message.contains('Method `reverse` cannot be translated to SQL')
     }
+
+    @Test
+    void testHavingKeepsGroupingInMemory() {
+        def result = GQL(provider: 'native-sql', mixedMode: true, dataSource: db) {
+            from e in 'employees'
+            where e.salary > 2000
+            groupby e.deptId into g
+            having g.count() > 1 && 'x'.reverse() == 'x'
+            select g.deptId, g.count()
+        }
+        assert 'SELECT e.* FROM employees e WHERE e.salary > ?' == db.sqlText
+        assert [2000] == db.params
+        assert [[1, 2], [2, 2]] as Set == result.toList().collect { [it[0], it[1]] } as Set
+    }
+
+    @Test
+    void testSecondJoinStaysInMemory() {
+        def bonuses = [[deptId: 1, label: 'dev'], [deptId: 3, label: 'sup']]
+        def result = GQL(provider: 'native-sql', mixedMode: true, dataSource: db) {
+            from e in 'employees'
+            join d in 'departments' on e.deptId == d.id
+            join b in bonuses on e.deptId == b.deptId
+            where e.salary > 4000
+            orderby e.name
+            select e.name as employee, d.name as dept, b.label
+        }
+        // the pushed join is executed through the zip path, not Sql.rows
+        assert [] == db.sqlTexts
+        assert [['Alice', 'Dev', 'dev'], ['Frank', 'Support', 'sup']] ==
+                result.collect { [it.employee, it.dept, it.label] }
+    }
+
+    @Test
+    void testUntranslatableOrderKeepsLimitInMemory() {
+        def result = GQL(provider: 'native-sql', mixedMode: true, dataSource: db) {
+            from e in 'employees'
+            where e.salary > 0
+            orderby e.name.reverse()
+            limit 1
+            select e.name
+        }
+        assert 'SELECT e.* FROM employees e WHERE e.salary > ?' == db.sqlText
+        assert [0] == db.params
+        assert ['Bob'] == result.toList()
+    }
 }

@@ -118,7 +118,8 @@ class GinqSqlErrorTest {
                 select e.name
             }
         '''
-        assert err.message.contains('only list literals and subqueries are supported on the right-hand side of `in`')
+        assert err.message.contains('only list literals, constant ranges and subqueries are supported on the right-hand side of `in`')
+        assert err.message.contains('mixedMode: true')
     }
 
     @Test
@@ -141,7 +142,8 @@ class GinqSqlErrorTest {
                 select e.name, (rowNumber() over (orderby e.salary))
             }
         '''
-        assert err.message.contains('window functions are not yet supported by the native-sql provider')
+        assert err.message.contains('window functions are deferred and are not translated by the native-sql provider')
+        assert err.message.contains('mixedMode: true')
     }
 
     @Test
@@ -232,14 +234,55 @@ class GinqSqlErrorTest {
     }
 
     @Test
-    void testDialectWithNativeProvider() {
+    void testUnknownNativeDialect() {
         def err = shouldFail '''\
-            GQ(provider: 'native-sql', dialect: 'H2', dataSource: db) {
+            GQ(provider: 'native-sql', dialect: 'ORACLE', dataSource: db) {
                 from e in 'employees'
                 select e.name
             }
         '''
-        assert err.message.contains('`dialect` is only supported by the jooq-sql provider')
+        assert err.message.contains('`ORACLE` is not a native SQL dialect')
+        assert err.message.contains('postgres')
+        assert err.message.contains("provider: 'jooq-sql'")
+    }
+
+    @Test
+    void testUnsafeTableNameIsRejected() {
+        def err = shouldFail '''\
+            GQ(provider: 'native-sql', dataSource: db) {
+                from e in 'employees; delete from employees'
+                select e.name
+            }
+        '''
+        assert err.message.contains('table name `employees; delete from employees` must be a simple identifier')
+        assert !err.message.contains('mixedMode')
+    }
+
+    @Test
+    void testVariableRangeIsRejected() {
+        def err = shouldFail '''\
+            def low = 1
+            def high = 3
+            GQ(provider: 'native-sql', dataSource: db) {
+                from e in 'employees'
+                where e.id in low..high
+                select e.id
+            }
+        '''
+        assert err.message.contains('both bounds are compile-time constants')
+        assert err.message.contains('mixedMode: true')
+    }
+
+    @Test
+    void testJooqProviderNamesItself() {
+        def err = shouldFail '''\
+            GQ(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+                from e in 'employees'
+                select e.name.reverse()
+            }
+        '''
+        assert err.message.contains('jooq-sql provider')
+        assert err.message.contains('mixedMode: true')
     }
 
     @Test

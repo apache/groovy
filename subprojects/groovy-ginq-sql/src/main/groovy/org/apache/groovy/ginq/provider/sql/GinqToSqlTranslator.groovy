@@ -75,6 +75,7 @@ import org.codehaus.groovy.ast.expr.ListExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.NotExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
+import org.codehaus.groovy.ast.expr.RangeExpression
 import org.codehaus.groovy.ast.expr.TernaryExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression
@@ -108,24 +109,30 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
 class GinqToSqlTranslator implements SyntaxErrorReportable {
     private final SourceUnit sourceUnit
     private final GinqToSqlTranslator outerScope
+    private final String providerName
     private final List<String> tableAliases = []
     private String groupAlias
     private final Map<String, SqlExpr> groupKeysByName = [:]
     private String aggregateLambdaParam
     private boolean recoverUntranslatable
 
-    GinqToSqlTranslator(SourceUnit sourceUnit, GinqToSqlTranslator outerScope = null) {
+    GinqToSqlTranslator(SourceUnit sourceUnit, String providerName = 'native-sql') {
+        this.sourceUnit = sourceUnit
+        this.outerScope = null
+        this.providerName = providerName
+    }
+
+    private GinqToSqlTranslator(SourceUnit sourceUnit, GinqToSqlTranslator outerScope) {
         this.sourceUnit = sourceUnit
         this.outerScope = outerScope
-        if (outerScope != null) {
-            this.recoverUntranslatable = outerScope.recoverUntranslatable
-        }
+        this.providerName = outerScope.providerName
+        this.recoverUntranslatable = outerScope.recoverUntranslatable
     }
 
     private GinqToSqlTranslator nest(boolean correlated) {
         GinqToSqlTranslator child = correlated
                 ? new GinqToSqlTranslator(sourceUnit, this)
-                : new GinqToSqlTranslator(sourceUnit)
+                : new GinqToSqlTranslator(sourceUnit, providerName)
         child.recoverUntranslatable = recoverUntranslatable
         return child
     }
@@ -142,7 +149,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         if (expression instanceof GinqExpression) {
             return translateQuery(expression, QueryContext.TOP_LEVEL)
         }
-        reject("`${expression.text}` is not supported by the native-sql provider", expression)
+        reject("`${expression.text}` is not supported by the ${providerName} provider", expression)
         return null
     }
 
@@ -226,7 +233,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
 
     private GinqExpression requireGinqExpression(AbstractGinqExpression expression) {
         if (!(expression instanceof GinqExpression)) {
-            error("`${expression.text}` is not supported by the native-sql provider", expression)
+            error("`${expression.text}` is not supported by the ${providerName} provider", expression)
         }
         return (GinqExpression) expression
     }
@@ -280,13 +287,19 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
             return new SqlDerivedTable(query, alias)
         }
         if (dataSourceExpr instanceof AbstractGinqExpression) {
-            reject('set operations are not supported as table sources by the native-sql provider', dataSourceExpr)
+            reject("set operations are not supported as table sources by the ${providerName} provider", dataSourceExpr)
             return null
         }
         if (dataSourceExpr instanceof ConstantExpression && dataSourceExpr.value instanceof String) {
-            return new SqlTableRef((String) dataSourceExpr.value, alias)
+            String tableName = (String) dataSourceExpr.value
+            if (!plainTableName(tableName)) {
+                reject("table name `${tableName}` must be a simple identifier or a schema-qualified name such as `hr.employees`. " +
+                        'A quoting `table()` helper is not supported yet', dataSourceExpr, false)
+                return null
+            }
+            return new SqlTableRef(tableName, alias)
         }
-        reject("table references must be string literals or subqueries with the native-sql provider, e.g. `from ${alias} in 'employees'`", dataSourceExpr)
+        reject("table references must be string literals or subqueries with the ${providerName} provider, e.g. `from ${alias} in 'employees'`", dataSourceExpr)
         return null
     }
 
@@ -371,14 +384,14 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
                         ? orderOptionExpr.methodAsString
                         : orderOptionExpr.text
                 if (orderOption !in ORDER_OPTION_LIST) {
-                    error("Invalid order: ${orderOption}, `asc`/`desc` is expected", orderOptionExpr)
+                    error("`${orderOption}` is not an order direction; use `asc` or `desc`", orderOptionExpr)
                 }
                 asc = 'asc' == orderOption
                 if (orderOptionExpr instanceof MethodCallExpression) {
                     List<Expression> optionArgs = ((TupleExpression) orderOptionExpr.arguments).expressions
                     String nullsOption = 1 == optionArgs.size() ? optionArgs[0].text : null
                     if (nullsOption !in NULLS_OPTION_LIST) {
-                        error('Only `nullslast`/`nullsfirst` is expected', orderOptionExpr.arguments)
+                        error('`asc`/`desc` takes `nullsfirst` or `nullslast`', orderOptionExpr.arguments)
                     }
                     nullsLast = 'nullslast' == nullsOption
                 }
@@ -446,9 +459,11 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
             return new SqlScalarQuery(correlatedSubQuery(expr))
         }
         if (expr instanceof AbstractGinqExpression) {
-            reject("`${expr.text}` cannot be used as an expression with the native-sql provider", expr)
+            reject("`${expr.text}` cannot be used as an expression with the ${providerName} provider", expr)
             return null
         }
+        // NotExpression extends BooleanExpression; the negation has to be kept
+        if (expr instanceof NotExpression) return new SqlUnary('NOT', translateExpr(expr.expression))
         if (expr instanceof BooleanExpression) return translateExpr(expr.expression)
         if (expr instanceof TernaryExpression) return translateTernary(expr)
         if (expr instanceof BinaryExpression) return translateBinary(expr)
@@ -458,13 +473,13 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         if (expr instanceof MethodCallExpression) return translateMethodCall(expr)
         if (expr instanceof ConstantExpression) return new SqlParam(expr)
         if (expr instanceof VariableExpression) return translateVariable(expr)
-        reject("Expression `${expr.text}` cannot be translated to SQL by the native-sql provider", expr)
+        reject("Expression `${expr.text}` cannot be translated to SQL by the ${providerName} provider", expr)
         return null
     }
 
     private SqlExpr translateTernary(TernaryExpression expr) {
         if (expr instanceof ElvisOperatorExpression) {
-            reject('the Elvis operator cannot be translated to SQL by the native-sql provider; ' +
+            reject("the Elvis operator cannot be translated to SQL by the ${providerName} provider; " +
                     'use an explicit ternary with a `== null` check', expr)
             return null
         }
@@ -494,8 +509,11 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
                 if (right instanceof GinqExpression) {
                     return new SqlInQuery(translateExpr(left), correlatedSubQuery(right), '!in' == op)
                 }
+                if (right instanceof RangeExpression) {
+                    return translateRangeMember(left, (RangeExpression) right, '!in' == op, expr)
+                }
                 if (!(right instanceof ListExpression)) {
-                    reject('only list literals and subqueries are supported on the right-hand side of `in` by the native-sql provider', right)
+                    reject("only list literals, constant ranges and subqueries are supported on the right-hand side of `in` by the ${providerName} provider", right)
                     return null
                 }
                 List<SqlExpr> values = ((ListExpression) right).expressions.collect { Expression e -> translateExpr(e) }
@@ -526,7 +544,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
             case '%':
                 return new SqlFunction('MOD', [translateExpr(left), translateExpr(right)])
             default:
-                reject("Operator `${op}` cannot be translated to SQL by the native-sql provider", expr)
+                reject("Operator `${op}` cannot be translated to SQL by the ${providerName} provider", expr)
                 return null
         }
     }
@@ -546,10 +564,14 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
 
     private SqlExpr translateProperty(PropertyExpression expr) {
         if (!(expr.property instanceof ConstantExpression)) {
-            reject("Expression `${expr.text}` cannot be translated to SQL by the native-sql provider", expr)
+            reject("Expression `${expr.text}` cannot be translated to SQL by the ${providerName} provider", expr)
             return null
         }
         String property = expr.propertyAsString
+        if (!simpleIdentifier(property)) {
+            error("column `${property}` must be a simple identifier", expr)
+            return null
+        }
         Expression object = expr.objectExpression
         if (object instanceof VariableExpression) {
             String name = object.text
@@ -583,7 +605,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
             return null
         }
         if ('_rn' == name) {
-            reject('`_rn` is not supported by the native-sql provider', expr)
+            reject("`_rn` is a collection-provider row number and has no equivalent in the ${providerName} provider", expr)
             return null
         }
         SqlExpr keyExpr = groupKeysByName[name]
@@ -597,7 +619,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         String method = call.methodAsString
         List<Expression> args = ((TupleExpression) call.arguments).expressions
         if ('over' == method) {
-            reject('window functions are not yet supported by the native-sql provider', call)
+            reject("window functions are deferred and are not translated by the ${providerName} provider", call)
             return null
         }
         if ('exists' == method && args.empty && call.objectExpression instanceof GinqExpression) {
@@ -622,22 +644,42 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
                     return translateSubstring(call, args)
                 case 'replace':
                     if (2 != args.size()) {
-                        reject('`replace` expects two arguments', call)
+                        reject('`replace` expects two arguments, the search text and its replacement', call)
                         return null
                     }
                     return new SqlFunction('REPLACE',
                             [translateExpr(call.objectExpression), translateExpr(args[0]), translateExpr(args[1])])
+                case 'concat':
+                    if (1 != args.size()) {
+                        reject('`concat` expects one argument', call)
+                        return null
+                    }
+                    return new SqlBinary('||', translateExpr(call.objectExpression), translateExpr(args[0]))
+                case 'isEmpty':
+                    if (args) {
+                        reject('`isEmpty` takes no arguments', call)
+                        return null
+                    }
+                    return new SqlBinary('=', new SqlFunction('CHAR_LENGTH', [translateExpr(call.objectExpression)]), new SqlLiteral(0))
+                case 'round':
+                    if (args.size() > 1) {
+                        reject('`round` expects no arguments, or one scale argument', call)
+                        return null
+                    }
+                    List<SqlExpr> roundArgs = [translateExpr(call.objectExpression)]
+                    if (args) roundArgs << translateExpr(args[0])
+                    return new SqlFunction('ROUND', roundArgs)
             }
             String functionName = method == null ? null : FUNCTION_MAP[method]
             if (functionName != null) {
                 if (args) {
-                    reject("Method `${method}` with arguments cannot be translated to SQL by the native-sql provider", call)
+                    reject("`${method}()` is translated only with no arguments; extra arguments have no faithful SQL equivalent", call)
                     return null
                 }
                 return new SqlFunction(functionName, [translateExpr(call.objectExpression)])
             }
         }
-        reject("Method `${method}` cannot be translated to SQL by the native-sql provider", call)
+        reject("Method `${method}` cannot be translated to SQL by the ${providerName} provider", call)
         return null
     }
 
@@ -656,20 +698,77 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
 
     private SqlExpr translateSubstring(MethodCallExpression call, List<Expression> argList) {
         if (argList.size() !in [1, 2]) {
-            reject('`substring` expects one or two arguments', call)
+            reject('`substring` expects one or two arguments (a 0-based begin index, and an optional exclusive end index)', call)
             return null
         }
         SqlExpr receiver = translateExpr(call.objectExpression)
-        Expression beginExpr = requireParamValue(argList[0], 'substring')
-        List<SqlExpr> functionArgs = [receiver]
-        // Groovy's 0-based begin index becomes SQL's 1-based FROM position
-        functionArgs << new SqlParam(plusX(beginExpr, constX(1)))
+        List<SqlExpr> functionArgs = [receiver, shiftedIndex(argList[0])]
         if (2 == argList.size()) {
-            Expression endExpr = requireParamValue(argList[1], 'substring')
-            // Groovy's exclusive end index becomes SQL's FOR length
-            functionArgs << new SqlParam(minusX(endExpr, beginExpr))
+            functionArgs << substringLength(argList[0], argList[1])
         }
         return new SqlFunction('SUBSTRING', functionArgs)
+    }
+
+    // Groovy's 0-based begin index becomes SQL's 1-based FROM position.
+    // Literals and captured variables stay a single bound parameter; a column
+    // index is shifted in SQL so it can still be pushed down.
+    private SqlExpr shiftedIndex(Expression beginExpr) {
+        SqlExpr translated = translateExpr(beginExpr)
+        if (translated instanceof SqlParam) {
+            return new SqlParam(plusX(((SqlParam) translated).valueExpr, constX(1)))
+        }
+        return new SqlBinary('+', translated, new SqlLiteral(1))
+    }
+
+    private SqlExpr substringLength(Expression beginExpr, Expression endExpr) {
+        SqlExpr begin = translateExpr(beginExpr)
+        SqlExpr end = translateExpr(endExpr)
+        if (begin instanceof SqlParam && end instanceof SqlParam) {
+            return new SqlParam(minusX(((SqlParam) end).valueExpr, ((SqlParam) begin).valueExpr))
+        }
+        return new SqlBinary('-', end, begin)
+    }
+
+    private SqlExpr translateRangeMember(Expression left, RangeExpression range, boolean negated, Expression reported) {
+        Expression fromExpr = range.from
+        Expression toExpr = range.to
+        if (!(fromExpr instanceof ConstantExpression) || !(toExpr instanceof ConstantExpression)) {
+            reject('`in` against a range is translated only when both bounds are compile-time constants, ' +
+                    'because a descending Groovy range still contains every value between its endpoints. ' +
+                    'Write `x >= low && x <= high` when the order is known', reported)
+            return null
+        }
+        Object fromVal = ((ConstantExpression) fromExpr).value
+        Object toVal = ((ConstantExpression) toExpr).value
+        if (!(fromVal instanceof Comparable) || !(toVal instanceof Comparable)) {
+            reject('`in` against a range requires comparable constant bounds', reported)
+            return null
+        }
+        int cmp
+        try {
+            cmp = (fromVal <=> toVal)
+        } catch (RuntimeException ignored) {
+            reject('`in` against a range requires bounds that can be compared with each other', reported)
+            return null
+        }
+        boolean ascending = cmp <= 0
+        SqlExpr value = translateExpr(left)
+        SqlExpr low = new SqlParam(ascending ? fromExpr : toExpr)
+        SqlExpr high = new SqlParam(ascending ? toExpr : fromExpr)
+        String lowOp = '>='
+        String highOp = '<='
+        if (!range.inclusive) {
+            // the exclusive end is the original `to`, which may be the lower bound of a descending range
+            if (ascending) {
+                highOp = '<'
+            } else {
+                lowOp = '>'
+            }
+        }
+        SqlExpr predicate = new SqlBinary('AND',
+                new SqlBinary(lowOp, value, low),
+                new SqlBinary(highOp, value, high))
+        return negated ? new SqlUnary('NOT', predicate) : predicate
     }
 
     private Expression requireParamValue(Expression expr, String method) {
@@ -771,7 +870,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
                 error(untranslatable.message, untranslatable.node ?: expression)
                 return null
             }
-            GinqToSqlTranslator splitter = new GinqToSqlTranslator(sourceUnit)
+            GinqToSqlTranslator splitter = new GinqToSqlTranslator(sourceUnit, providerName)
             splitter.recoverUntranslatable = true
             return splitter.planSplit((GinqExpression) expression)
         } finally {
@@ -967,10 +1066,38 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
      * catches {@link Untranslatable}; strict mode records a compile error.
      */
     private void reject(String message, ASTNode node) {
+        reject(message, node, true)
+    }
+
+    /**
+     * @param hintMixedMode append how to enable in-memory evaluation. Omitted
+     * while planning mixed mode, and for failures mixed mode cannot repair.
+     */
+    private void reject(String message, ASTNode node, boolean hintMixedMode) {
         if (recoverUntranslatable) {
             throw new Untranslatable(message, node)
         }
-        error(message, node)
+        error(hintMixedMode ? message + MIXED_HINT : message, node)
+    }
+
+    private static boolean plainTableName(String name) {
+        if (!name) return false
+        for (String part : name.split('\\.', -1)) {
+            if (!simpleIdentifier(part)) return false
+        }
+        return true
+    }
+
+    private static boolean simpleIdentifier(String part) {
+        if (!part) return false
+        for (int i = 0; i < part.length(); i++) {
+            char ch = part.charAt(i)
+            // ASCII letter, digit or underscore. Char literals are Strings under static compilation.
+            boolean letter = (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || ch == 95
+            boolean digit = ch >= 48 && ch <= 57
+            if (!(letter || (i > 0 && digit))) return false
+        }
+        return true
     }
 
     private void error(String message, ASTNode node) {
@@ -998,5 +1125,9 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
             length     : 'CHAR_LENGTH',
             size       : 'CHAR_LENGTH',
             abs        : 'ABS',
+            floor      : 'FLOOR',
+            ceil       : 'CEILING',
     ]
+    private static final String MIXED_HINT =
+            '. Rewrite it in supported SQL, or set `mixedMode: true` to evaluate that clause in memory.'
 }

@@ -53,6 +53,41 @@ public interface Dialect {
     }
 
     /**
+     * Whether {@code SUBSTRING} is rendered in the ANSI
+     * {@code SUBSTRING(x FROM start FOR length)} form. Dialects that only
+     * accept {@code SUBSTR(x, start, length)} return {@code false}.
+     *
+     * @return {@code true} for the ANSI form
+     * @since 6.0.0
+     */
+    default boolean substringFromFor() {
+        return true;
+    }
+
+    /**
+     * Whether {@code MOD(x, y)} is available. Dialects that only have the
+     * {@code %} operator return {@code false}.
+     *
+     * @return {@code true} when {@code MOD} is a function
+     * @since 6.0.0
+     */
+    default boolean moduloFunction() {
+        return true;
+    }
+
+    /**
+     * Whether {@code ORDER BY} accepts {@code NULLS FIRST}/{@code NULLS LAST}.
+     * When {@code false}, the renderer emulates the requested null order so
+     * results stay faithful to GINQ, which defaults to nulls last.
+     *
+     * @return {@code true} when the dialect has explicit null ordering
+     * @since 6.0.0
+     */
+    default boolean explicitNullOrdering() {
+        return true;
+    }
+
+    /**
      * Returns the set operator subtracting one query result from another.
      *
      * @return the operator text, {@code EXCEPT} by default

@@ -41,6 +41,7 @@ import org.apache.groovy.ginq.provider.sql.ir.SqlUnary
 import org.apache.groovy.ginq.provider.sql.ir.SqlExpr
 import org.apache.groovy.ginq.provider.sql.render.AnsiDialect
 import org.apache.groovy.ginq.provider.sql.render.Dialect
+import org.apache.groovy.ginq.provider.sql.render.Dialects
 import org.apache.groovy.ginq.provider.sql.render.RenderedSql
 import org.apache.groovy.ginq.provider.sql.render.SqlRenderer
 import org.codehaus.groovy.ast.expr.ConstantExpression
@@ -250,6 +251,39 @@ class SqlRendererTest {
         def rendered = new SqlRenderer(new LimitThenOffsetDialect()).render(query)
         assert 'SELECT e.name FROM employees e LIMIT ? OFFSET ?' == rendered.sql
         assert [5, 2] == values(rendered)
+    }
+
+    @Test
+    void testNativeDialectsQuoteLimitAndFunctions() {
+        def query = new SqlQuery()
+        query.from = new SqlTableRef('hr.employees', 'e')
+        query.where = new SqlFunction('MOD', [col('e', 'salary'), param(2)])
+        query.orderBy << new SqlOrderSpec(col('e', 'name'), true, true)
+        query.offset = param(1)
+        query.fetch = param(2)
+        query.projections << new SqlProjection(new SqlFunction('CHAR_LENGTH', [col('e', 'name')]))
+        query.projections << new SqlProjection(new SqlFunction('SUBSTRING', [col('e', 'name'), param(1), param(3)]))
+
+        def mysql = new SqlRenderer(Dialects.resolve('mysql')).render(query)
+        assert 'SELECT CHAR_LENGTH(`e`.`name`), SUBSTRING(`e`.`name` FROM ? FOR ?) FROM `hr`.`employees` `e` ' +
+                'WHERE MOD(`e`.`salary`, ?) ORDER BY (`e`.`name` IS NULL) ASC, `e`.`name` ASC ' +
+                'LIMIT ? OFFSET ?' == mysql.sql
+        assert [1, 3, 2, 2, 1] == values(mysql)
+
+        def sqlite = new SqlRenderer(Dialects.resolve('SQLITE')).render(query)
+        assert 'SELECT LENGTH("e"."name"), SUBSTR("e"."name", ?, ?) FROM "hr"."employees" "e" ' +
+                'WHERE "e"."salary" % ? ORDER BY ("e"."name" IS NULL) ASC, "e"."name" ASC ' +
+                'LIMIT ? OFFSET ?' == sqlite.sql
+        assert [1, 3, 2, 2, 1] == values(sqlite)
+
+        def postgres = new SqlRenderer(Dialects.resolve('PostgreSQL')).render(query)
+        assert postgres.sql.contains('FROM "hr"."employees" "e"')
+        assert postgres.sql.contains('OFFSET ? ROWS FETCH NEXT ? ROWS ONLY')
+        assert postgres.sql.contains('CHAR_LENGTH("e"."name")')
+        assert [1, 3, 2, 1, 2] == values(postgres)
+
+        assert Dialects.resolve('nope') == null
+        assert Dialects.resolve('h2') instanceof AnsiDialect
     }
 
     private static SqlQuery simpleQuery(String table) {

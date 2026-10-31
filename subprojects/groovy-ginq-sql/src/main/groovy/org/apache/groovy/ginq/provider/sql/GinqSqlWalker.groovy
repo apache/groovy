@@ -42,6 +42,8 @@ import org.apache.groovy.ginq.provider.collection.GinqAstWalker
 import org.apache.groovy.ginq.provider.sql.ir.SqlQuery
 import org.apache.groovy.ginq.provider.sql.ir.SqlQueryNode
 import org.apache.groovy.ginq.provider.sql.render.AnsiDialect
+import org.apache.groovy.ginq.provider.sql.render.Dialect
+import org.apache.groovy.ginq.provider.sql.render.Dialects
 import org.apache.groovy.ginq.provider.sql.render.RenderedSql
 import org.apache.groovy.ginq.provider.sql.render.SqlRenderer
 import org.apache.groovy.ginq.provider.sql.runtime.SqlGinqRuntime
@@ -89,6 +91,7 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private final SourceUnit sourceUnit
     private Map<String, String> configuration = [:]
     private Map<String, Expression> configurationExpressions = [:]
+    private Dialect dialect = new AnsiDialect()
 
     GinqSqlWalker(SourceUnit sourceUnit) {
         this.sourceUnit = sourceUnit
@@ -121,7 +124,7 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             return visitMixed(expression, dataSourceExpr)
         }
 
-        SqlQueryNode queryNode = new GinqToSqlTranslator(sourceUnit).translate(expression)
+        SqlQueryNode queryNode = translator().translate(expression)
         if (queryNode == null || sourceUnit.errorCollector.hasErrors()) {
             return constX(null)
         }
@@ -130,7 +133,7 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private Expression visitMixed(AbstractGinqExpression expression, Expression dataSourceExpr) {
         int before = sourceUnit.errorCollector.errorCount
-        MixedPlan plan = new GinqToSqlTranslator(sourceUnit).planMixed(expression)
+        MixedPlan plan = translator().planMixed(expression)
         if (plan == null || sourceUnit.errorCollector.errorCount != before) {
             return constX(null)
         }
@@ -207,8 +210,15 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
      * Validates provider-specific options.
      */
     protected void validateOptions(AbstractGinqExpression expression) {
-        if (configuration.containsKey('dialect')) {
-            error('`dialect` is only supported by the jooq-sql provider', expression)
+        String dialectName = configuration.get(NativeSqlGinqProvider.CONF_DIALECT)
+        if (dialectName != null) {
+            Dialect resolved = Dialects.resolve(dialectName)
+            if (resolved == null) {
+                error("`${dialectName}` is not a native SQL dialect (supported: ${Dialects.SUPPORTED}). " +
+                        "For other databases use `provider: 'jooq-sql'` with a jOOQ SQLDialect name.", expression)
+            } else {
+                dialect = resolved
+            }
         }
         validateMixedMode(expression)
     }
@@ -227,7 +237,11 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
      * Renders the translated query to SQL text plus ordered parameters.
      */
     protected RenderedSql renderSql(SqlQueryNode queryNode, AbstractGinqExpression expression) {
-        return new SqlRenderer(new AnsiDialect()).render(queryNode)
+        return new SqlRenderer(dialect).render(queryNode)
+    }
+
+    private GinqToSqlTranslator translator() {
+        return new GinqToSqlTranslator(sourceUnit, providerName)
     }
 
     @Override

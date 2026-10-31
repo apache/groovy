@@ -261,6 +261,50 @@ class GinqSqlTranslationTest {
         assert [1, 2] == db.params
     }
 
+    @Test
+    void testFunctionsAndConstantRange() {
+        def low = 1
+        GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.salary in 3000..5000 && e.name.concat('!') == 'Alice!'
+            select e.name.length(), e.salary.abs(), e.salary.round(0), e.name.substring(low, 3)
+        }
+        assert 'SELECT CHAR_LENGTH(e.name), ABS(e.salary), ROUND(e.salary, ?), ' +
+                'SUBSTRING(e.name FROM ? FOR ?) FROM employees e ' +
+                'WHERE e.salary >= ? AND e.salary <= ? AND e.name || ? = ?' == db.sqlText
+        assert [0, low + 1, 3 - low, 3000, 5000, '!', 'Alice!'] == db.params
+
+        GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.name.isEmpty() || !(e.name.isEmpty())
+            select e.name
+        }
+        assert 'SELECT e.name FROM employees e WHERE CHAR_LENGTH(e.name) = 0 OR NOT (CHAR_LENGTH(e.name) = 0)' == db.sqlText
+    }
+
+    @Test
+    void testDescendingAndExclusiveRanges() {
+        GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.id in 3..1 || e.id in 4..<6
+            select e.id
+        }
+        assert 'SELECT e.id FROM employees e WHERE e.id >= ? AND e.id <= ? OR e.id >= ? AND e.id < ?' == db.sqlText
+        assert [1, 3, 4, 6] == db.params
+    }
+
+    @Test
+    void testNativeH2DialectKeepsAnsiLimit() {
+        GQL(provider: 'native-sql', dialect: 'H2', dataSource: db) {
+            from e in 'employees'
+            orderby e.name
+            limit 1, 2
+            select e.name
+        }
+        assert 'SELECT e.name FROM employees e ORDER BY e.name ASC NULLS LAST OFFSET ? ROWS FETCH NEXT ? ROWS ONLY' == db.sqlText
+        assert [1, 2] == db.params
+    }
+
     static class CapturingSql extends Sql {
         String sqlText
         List params

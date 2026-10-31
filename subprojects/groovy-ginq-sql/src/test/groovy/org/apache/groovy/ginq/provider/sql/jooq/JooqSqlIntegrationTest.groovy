@@ -118,6 +118,17 @@ class JooqSqlIntegrationTest {
     }
 
     @Test
+    void testRoundAndFloorMatchNative() {
+        def result = GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+            from e in 'employees'
+            where e.salary.round(0) == 5000 && e.salary.floor() == e.salary
+            orderby e.name
+            select e.name
+        }
+        assert ['Alice', 'Eve'] == result.collect { it.name }
+    }
+
+    @Test
     void testDefaultDialect() {
         def result = GQL(provider: 'jooq-sql', dataSource: db) {
             from e in 'employees'

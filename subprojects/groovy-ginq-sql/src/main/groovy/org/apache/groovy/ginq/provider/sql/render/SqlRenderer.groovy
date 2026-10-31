@@ -145,9 +145,7 @@ class SqlRenderer {
             sb.append(' ORDER BY ')
             orderBy.eachWithIndex { SqlOrderSpec orderSpec, int i ->
                 if (i > 0) sb.append(', ')
-                renderExpr(orderSpec.expr, sb, parameters)
-                sb.append(orderSpec.asc ? ' ASC' : ' DESC')
-                sb.append(orderSpec.nullsLast ? ' NULLS LAST' : ' NULLS FIRST')
+                renderOrderItem(orderSpec, sb, parameters)
             }
         }
 
@@ -226,7 +224,13 @@ class SqlRenderer {
         } else if (expr instanceof SqlOrdinal) {
             sb.append(expr.position)
         } else if (expr instanceof SqlFunction) {
-            if ('SUBSTRING' == expr.name && expr.args.size() > 1) {
+            if ('MOD' == expr.name && expr.args.size() == 2 && !dialect.moduloFunction()) {
+                renderOperand(expr.args[0], precedence('%'), sb, parameters)
+                sb.append(' % ')
+                renderOperand(expr.args[1], precedence('%') + 1, sb, parameters)
+                return
+            }
+            if ('SUBSTRING' == expr.name && expr.args.size() > 1 && dialect.substringFromFor()) {
                 // ANSI form: SUBSTRING(x FROM start [FOR length])
                 sb.append(dialect.functionName(expr.name)).append('(')
                 renderExpr(expr.args[0], sb, parameters)
@@ -257,7 +261,7 @@ class SqlRenderer {
 
     private void renderTableSource(SqlTableSource tableSource, StringBuilder sb, List<Expression> parameters) {
         if (tableSource instanceof SqlTableRef) {
-            sb.append(dialect.identifier(tableSource.tableName))
+            renderQualifiedName(tableSource.tableName, sb)
         } else if (tableSource instanceof SqlDerivedTable) {
             sb.append('(')
             renderQuery(tableSource.query, sb, parameters)
@@ -266,6 +270,29 @@ class SqlRenderer {
             throw new GroovyBugError("Unknown table source: ${tableSource?.getClass()?.name}")
         }
         sb.append(' ').append(dialect.identifier(tableSource.alias))
+    }
+
+    private void renderOrderItem(SqlOrderSpec orderSpec, StringBuilder sb, List<Expression> parameters) {
+        if (dialect.explicitNullOrdering()) {
+            renderExpr(orderSpec.expr, sb, parameters)
+            sb.append(orderSpec.asc ? ' ASC' : ' DESC')
+            sb.append(orderSpec.nullsLast ? ' NULLS LAST' : ' NULLS FIRST')
+            return
+        }
+        // (expr IS NULL) is 0 for values and 1 for nulls, so ASC puts nulls last
+        sb.append('(')
+        renderExpr(orderSpec.expr, sb, parameters)
+        sb.append(' IS NULL) ').append(orderSpec.nullsLast ? 'ASC' : 'DESC').append(', ')
+        renderExpr(orderSpec.expr, sb, parameters)
+        sb.append(orderSpec.asc ? ' ASC' : ' DESC')
+    }
+
+    private void renderQualifiedName(String name, StringBuilder sb) {
+        String[] parts = name.split('\\.', -1)
+        for (int i = 0; i < parts.length; i++) {
+            if (i > 0) sb.append('.')
+            sb.append(dialect.identifier(parts[i]))
+        }
     }
 
     private static void renderLiteral(Object value, StringBuilder sb) {
@@ -295,7 +322,7 @@ class SqlRenderer {
             case 'AND': return 2
             case '=': case '<>': case '<': case '<=': case '>': case '>=': return 4
             case '+': case '-': case '||': return 5
-            case '*': case '/': return 6
+            case '*': case '/': case '%': return 6
             default: return PREC_UNARY
         }
     }

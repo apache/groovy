@@ -526,4 +526,16 @@ class GinqSqlIntegrationTest {
             connection.close()
         }
     }
+
+    @Test
+    void testFunctionAndRangePushDown() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.salary in 5000..3000 && e.name.toLowerCase().concat('!') == 'alice!'
+            select e.name, e.salary.abs() as absSalary, e.salary.floor() as floorSalary,
+                    e.salary.ceil() as ceilSalary, e.name.length() as nameLength
+        }
+        assert [['Alice', 5000, 5000, 5000, 5]] ==
+                result.collect { [it.name, it.absSalary, it.floorSalary, it.ceilSalary, it.nameLength] }
+    }
 }
