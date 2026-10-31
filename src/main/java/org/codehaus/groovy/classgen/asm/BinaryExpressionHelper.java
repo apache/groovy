@@ -53,6 +53,7 @@ import org.codehaus.groovy.classgen.VariableScopeVisitor.InstanceofFlowBindings;
 import org.codehaus.groovy.runtime.MultipleAssignmentSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -221,6 +222,8 @@ public class BinaryExpressionHelper {
      * @param expression the expression to compile
      */
     public void eval(final BinaryExpression expression) {
+        if (evaluateCompoundAssignmentWithReceiverOnce(expression)) return;
+
         switch (expression.getOperation().getType()) {
         case EQUAL: // = (aka assignment)
             evaluateEqual(expression, false);
@@ -430,6 +433,52 @@ public class BinaryExpressionHelper {
         default:
             throw new GroovyBugError("Operation: " + expression.getOperation() + " not supported");
         }
+    }
+
+    /**
+     * GROOVY-12619: for a compound assignment to a property such as {@code obj().v += 2},
+     * evaluates the receiver once and stores it, so that the read and the write of the
+     * property reuse the value instead of evaluating the receiver expression twice.
+     */
+    private boolean evaluateCompoundAssignmentWithReceiverOnce(final BinaryExpression expression) {
+        int op = expression.getOperation().getType();
+        if (op == EQUAL || op == ELVIS_EQUAL || op == NULL_COALESCE_EQUAL || !Types.isAssignment(op)) return false;
+        if (!(expression.getLeftExpression() instanceof PropertyExpression pexp) || !hasReceiverToEvaluateOnce(pexp)) return false;
+
+        VariableSlotLoader receiver = evaluateIntoTemporary(pexp.getObjectExpression(), "$receiver");
+        BinaryExpression rewrite = binX(withReceiver(pexp, receiver), expression.getOperation(), expression.getRightExpression());
+        rewrite.copyNodeMetaData(expression);
+        rewrite.setSourcePosition(expression);
+        eval(rewrite);
+        controller.getCompileStack().removeVar(receiver.getIndex());
+        return true;
+    }
+
+    /**
+     * Determines if the receiver of a property that is read and then written, as in
+     * {@code obj().v += 2} or {@code obj().v++}, must be evaluated into a temporary.
+     * A variable, class, constant or qualified {@code Outer.this} receiver has no side
+     * effect and is left in place.
+     */
+    private static boolean hasReceiverToEvaluateOnce(final PropertyExpression pexp) {
+        if (pexp.isSpreadSafe() || pexp.isImplicitThis()) return false;
+        Expression receiver = pexp.getObjectExpression();
+        return !(receiver instanceof VariableExpression || receiver instanceof ClassExpression
+                || receiver instanceof ConstantExpression || receiver instanceof BytecodeExpression
+                || isQualifiedThisOrSuper(receiver));
+    }
+
+    private static boolean isQualifiedThisOrSuper(final Expression expression) {
+        if (expression instanceof PropertyExpression pexp && pexp.getObjectExpression() instanceof ClassExpression) {
+            String name = pexp.getPropertyAsString();
+            return "this".equals(name) || "super".equals(name);
+        }
+        return false;
+    }
+
+    private static PropertyExpression withReceiver(final PropertyExpression pexp, final Expression receiver) {
+        Expression objectExpression = pexp.getObjectExpression();
+        return (PropertyExpression) pexp.transformExpression(exp -> exp == objectExpression ? receiver : exp);
     }
 
     /**
@@ -1345,14 +1394,17 @@ public class BinaryExpressionHelper {
      */
     public void evaluatePostfixMethod(final PostfixExpression expression) {
         int op = expression.getOperation().getType();
+        VariableSlotLoader receiver = evaluateReceiverOnce(expression.getExpression());
+        Expression operand = receiver == null ? expression.getExpression() : withReceiver((PropertyExpression) expression.getExpression(), receiver);
         switch (op) {
             case PLUS_PLUS:
-                evaluatePostfixMethod(op, "next", expression.getExpression(), expression);
+                evaluatePostfixMethod(op, "next", operand, expression);
                 break;
             case MINUS_MINUS:
-                evaluatePostfixMethod(op, "previous", expression.getExpression(), expression);
+                evaluatePostfixMethod(op, "previous", operand, expression);
                 break;
         }
+        if (receiver != null) controller.getCompileStack().removeVar(receiver.getIndex());
     }
 
     /**
@@ -1362,14 +1414,29 @@ public class BinaryExpressionHelper {
      */
     public void evaluatePrefixMethod(final PrefixExpression expression) {
         int type = expression.getOperation().getType();
+        VariableSlotLoader receiver = evaluateReceiverOnce(expression.getExpression());
+        Expression operand = receiver == null ? expression.getExpression() : withReceiver((PropertyExpression) expression.getExpression(), receiver);
         switch (type) {
             case PLUS_PLUS:
-                evaluatePrefixMethod(type, "next", expression.getExpression(), expression);
+                evaluatePrefixMethod(type, "next", operand, expression);
                 break;
             case MINUS_MINUS:
-                evaluatePrefixMethod(type, "previous", expression.getExpression(), expression);
+                evaluatePrefixMethod(type, "previous", operand, expression);
                 break;
         }
+        if (receiver != null) controller.getCompileStack().removeVar(receiver.getIndex());
+    }
+
+    /**
+     * GROOVY-12619: evaluates the receiver of a property operand of {@code ++} or
+     * {@code --} into a temporary, so that the read and the write of the property reuse
+     * it. Returns {@code null} when the operand has no such receiver.
+     */
+    private VariableSlotLoader evaluateReceiverOnce(final Expression operand) {
+        if (operand instanceof PropertyExpression pexp && hasReceiverToEvaluateOnce(pexp)) {
+            return evaluateIntoTemporary(pexp.getObjectExpression(), "$receiver");
+        }
+        return null;
     }
 
     private void evaluatePrefixMethod(final int op, final String method, final Expression expression, final Expression orig) {
