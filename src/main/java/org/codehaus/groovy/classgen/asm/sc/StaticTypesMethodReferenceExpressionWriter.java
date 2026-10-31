@@ -56,6 +56,9 @@ import java.util.function.ToIntFunction;
 
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.joining;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
@@ -283,9 +286,65 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             if (methodRefMethod.isStatic() && !referenceTarget.targetIsArgument()) {
                 referenceTarget = referenceTarget.asClassTarget(methodRefMethod.getDeclaringClass());
             }
+        } else if (isInAnotherRuntimePackage(methodRefMethod)) {
+            if (!referenceTarget.classExpression() && !methodRefMethod.isStatic()) {
+                referenceTarget = referenceTarget.markTargetAsArgument();
+            }
+            methodRefMethod = addSyntheticMethodForRuntimeSelection(methodRefMethod, referenceTarget.type());
+            if (!referenceTarget.targetIsArgument()) {
+                referenceTarget = referenceTarget.asClassTarget(methodRefMethod.getDeclaringClass());
+            }
         }
 
         return resolvedMethodReference.with(referenceTarget, methodRefMethod);
+    }
+
+    /**
+     * Determines if the method is a protected or package-private method of a
+     * class with the same package name but of another run-time package (see
+     * {@link AsmClassGenerator#isInSameRuntimePackage}). The JVM refuses a
+     * method handle for such a method in the current class.
+     */
+    private boolean isInAnotherRuntimePackage(final MethodNode mn) {
+        ClassNode declaringClass = mn.getDeclaringClass(), classNode = controller.getClassNode();
+        return !mn.isPublic() && !mn.isPrivate() && samePackageName(declaringClass, classNode)
+            && !AsmClassGenerator.isInSameRuntimePackage(declaringClass, classNode);
+    }
+
+    /**
+     * Creates a method of the current class that calls the method of the
+     * reference. The invocation writer calls it directly if the current class
+     * can, or else selects it at run time.
+     */
+    private MethodNode addSyntheticMethodForRuntimeSelection(final MethodNode mn, final ClassNode targetType) {
+        List<Parameter> parameters = new ArrayList<>();
+        Expression receiver;
+        if (mn.isStatic()) {
+            receiver = classX(mn.getDeclaringClass());
+        } else {
+            Parameter target = new Parameter(targetType.isDerivedFrom(mn.getDeclaringClass()) ? targetType : mn.getDeclaringClass(), "target");
+            parameters.add(target);
+            receiver = varX(target);
+        }
+        List<Expression> arguments = new ArrayList<>();
+        Parameter[] mnParameters = mn.getParameters();
+        for (int i = 0; i < mnParameters.length; i += 1) {
+            Parameter parameter = new Parameter(mnParameters[i].getType(), "p" + i);
+            parameters.add(parameter);
+            arguments.add(varX(parameter));
+        }
+
+        MethodCallExpression methodCall = callX(receiver, mn.getName(), new ArgumentListExpression(arguments));
+        methodCall.setImplicitThis(false);
+        methodCall.setMethodTarget(mn);
+        methodCall.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, mn);
+
+        String methodName = createSyntheticMethodName("access", mn.getDeclaringClass(), mn.getName());
+
+        MethodNode delegateMethod = addSyntheticMethod(methodName, mn.getReturnType(), methodCall, parameters.toArray(Parameter[]::new), mn.getExceptions());
+        delegateMethod.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
+        delegateMethod.setGenericsTypes(mn.getGenericsTypes());
+        return delegateMethod;
     }
 
     private boolean needsVariadicAdapter(final FunctionalInterfaceContext functionalInterface,
@@ -387,11 +446,29 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             addFatalError(error, methodReference);
         } else if (methodNode.isVoidMethod() && !ClassHelper.isPrimitiveVoid(samReturnType)) {
             addFatalError("Invalid return type: void is not convertible to " + samReturnType.getText(), methodReference);
-        } else if (!AsmClassGenerator.isMemberDirectlyAccessible(methodNode.getModifiers(), methodNode.getDeclaringClass(), controller.getClassNode())) {
+        } else if (!AsmClassGenerator.isMemberDirectlyAccessible(methodNode.getModifiers(), methodNode.getDeclaringClass(), controller.getClassNode())
+                || isProtectedMethodOfAnotherPackageWithReceiverOfAnotherClass(methodReference.getExpression(), targetType, methodNode, samParameters)) {
             addFatalError("Cannot access method: " + methodName + " of class: " + methodNode.getDeclaringClass().getText(), methodReference); // GROOVY-11365
         } else if (samParameters.length > 0 && isTypeReferringInstanceMethod(methodReference.getExpression(), methodNode) && !isAssignableTo(samParameters[0].getType(), targetType)) {
             throw new RuntimeParserException("Invalid receiver type: " + samParameters[0].getType().getText() + " is not compatible with " + targetType.getText(), methodReference.getExpression());
         }
+    }
+
+    /**
+     * Determines if the method is a protected instance method of another package
+     * and the receiver of the reference is not of the current class. Outside its
+     * package, a protected instance method can be called only through a receiver
+     * of the subclass (JVMS 4.10.1.8), so the JVM rejects such a reference.
+     */
+    private boolean isProtectedMethodOfAnotherPackageWithReceiverOfAnotherClass(final Expression target, final ClassNode targetType, final MethodNode mn, final Parameter[] samParameters) {
+        if (!mn.isProtected() || mn.isStatic() || samePackageName(mn.getDeclaringClass(), controller.getClassNode()) || isSuperExpression(target)) {
+            return false;
+        }
+        ClassNode receiverType = targetType;
+        if (target instanceof ClassExpression && samParameters.length > 0) {
+            receiverType = samParameters[0].getType(); // type::instanceMethod
+        }
+        return !isSubtype(controller.getClassNode(), receiverType);
     }
 
     private MethodNode addSyntheticMethodForDGSM(final MethodNode mn) {

@@ -844,6 +844,33 @@ package-private constructor of a class that a `GroovyClassLoader` defined in
 another compilation, such as a class of an earlier `GroovyShell` parse. Dynamic
 and `@TypeChecked` code select the constructor at run time as before.
 
+### Groovy 7 — statically compiled code respects the run-time package of a class defined by another `GroovyClassLoader` compilation (GROOVY-12568)
+
+The JVM allows access to a protected or package-private member only within the
+same run-time package, which is the package name and the class loader. A
+`GroovyClassLoader` defines each compilation in memory with a class loader of
+its own: a `GroovyShell` script, `parseClass`, a script run with `groovy`,
+JSR-223. Under `@CompileStatic`, such a compilation now reaches a protected or
+package-private constructor, method or field of a class of an earlier
+compilation, or of a precompiled class, with the same package name through the
+meta-class, as dynamic code does, where it failed with `IllegalAccessError`.
+Code compiled to class files (groovyc, Gradle, Maven, Ant, joint compilation
+with Java) keeps direct access, as javac does.
+
+**Who is affected.** Statically compiled code that reaches such members of a
+class defined by another compilation now follows meta-class semantics for them,
+like dynamic code; in a GraalVM native image those accesses need reflection
+metadata.
+
+**New compile errors.** Under `@CompileStatic`, `new A(...)` of a protected
+constructor of another package in a subclass is now reported ("Cannot call
+protected constructor"); as in Java, only `super(...)` and `new A(...) {}` can
+call it. A protected method of another package called through a receiver of
+the superclass type (`a.m()`, `a.name`, `a::m`, `A::m`) is reported as "Cannot
+access method". Both used to compile and then fail verification, so no working
+code is affected. Dynamic and `@TypeChecked` code, which call them through the
+meta-class, are unchanged.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
