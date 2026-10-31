@@ -1061,6 +1061,181 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Object#previous()'
     }
 
+    // GROOVY-12622
+    @Test
+    void testPostfixAndPrefixOnPropertyCallGetterOnce() {
+        assertScript '''
+            class Counter {
+                int n
+                Counter next() { new Counter(n: n + 1) }
+                Counter previous() { new Counter(n: n - 1) }
+            }
+            class Box {
+                int gets
+                BigDecimal d = 1
+                Integer i = 1
+                Long l = 1L
+                String s = 'a'
+                Character ch = 'a' as Character
+                Counter c = new Counter()
+                BigDecimal getD() { gets++; d }
+                Integer getI() { gets++; i }
+                Long getL() { gets++; l }
+                String getS() { gets++; s }
+                Character getCh() { gets++; ch }
+                Counter getC() { gets++; c }
+            }
+
+            def b = new Box()
+            def r = b.d++
+            assert r == 1 && b.@d == 2 && b.gets == 1
+            r = ++b.d
+            assert r == 3 && b.@d == 3 && b.gets == 2
+            r = b.d--
+            assert r == 3 && b.@d == 2 && b.gets == 3
+            r = --b.d
+            assert r == 1 && b.@d == 1 && b.gets == 4
+
+            b = new Box()
+            r = b.i++
+            assert r == 1 && b.@i == 2 && b.gets == 1
+            r = ++b.i
+            assert r == 3 && b.@i == 3 && b.gets == 2
+
+            b = new Box()
+            r = b.l--
+            assert r == 1L && b.@l == 0L && b.gets == 1
+            r = --b.l
+            assert r == -1L && b.@l == -1L && b.gets == 2
+
+            b = new Box()
+            r = b.s++
+            assert r == 'a' && b.@s == 'b' && b.gets == 1
+            r = ++b.s
+            assert r == 'c' && b.@s == 'c' && b.gets == 2
+
+            b = new Box()
+            r = b.ch++
+            assert r == 'a' && b.@ch == 'b' && b.gets == 1
+
+            b = new Box()
+            Counter c = b.c++
+            assert c.n == 0 && b.@c.n == 1 && b.gets == 1
+            c = --b.c
+            assert c.n == 0 && b.@c.n == 0 && b.gets == 2
+
+            b = new Box()
+            b.d++
+            ++b.d
+            assert b.@d == 3 && b.gets == 2
+        '''
+    }
+
+    // GROOVY-12622
+    @Test
+    void testPostfixAndPrefixOnPropertyCallGetterOnce2() {
+        assertScript '''
+            class Box {
+                static int gets
+                static BigDecimal d = 1
+                static BigDecimal getD() { gets++; d }
+
+                int count
+                BigDecimal e = 1
+                BigDecimal getE() { count++; e }
+
+                def inClosure() {
+                    def r = { -> e++ }()
+                    assert r == 1 && this.@e == 2 && count == 1
+                }
+                def inLambda() {
+                    java.util.function.Supplier<BigDecimal> s = () -> ++e
+                    def r = s.get()
+                    assert r == 3 && this.@e == 3 && count == 2
+                }
+            }
+
+            def r = Box.d++
+            assert r == 1 && Box.@d == 2 && Box.gets == 1
+            r = ++Box.d
+            assert r == 3 && Box.@d == 3 && Box.gets == 2
+
+            def b = new Box()
+            b.inClosure()
+            b.inLambda()
+
+            r = b?.e++
+            assert r == 3 && b.@e == 4 && b.count == 3
+        '''
+    }
+
+    // GROOVY-12622
+    @Test
+    void testPostfixAndPrefixOnSubscriptCallGetAtOnce() {
+        assertScript '''
+            class C {
+                int gets
+                List<Integer> list = [1]
+                Integer getAt(int i) { gets++; list[i] }
+                void putAt(int i, Integer v) { list[i] = v }
+            }
+
+            def c = new C()
+            def r = c[0]++
+            assert r == 1 && c.list == [2] && c.gets == 1
+            r = ++c[0]
+            assert r == 3 && c.list == [3] && c.gets == 2
+            r = c[0]--
+            assert r == 3 && c.list == [2] && c.gets == 3
+            r = --c[0]
+            assert r == 1 && c.list == [1] && c.gets == 4
+        '''
+    }
+
+    // GROOVY-12622
+    @Test
+    void testPostfixAndPrefixOnSubscriptEvaluateIndexOnce() {
+        assertScript '''
+            int calls = 0, idx = 0
+            List<Integer> list = [10, 20]
+            def r = ({ -> calls++; list }())[idx++]++
+            assert r == 10 && list == [11, 20] && idx == 1 && calls == 1
+
+            idx = 0
+            r = ++list[idx++]
+            assert r == 12 && list == [12, 20] && idx == 1
+
+            Integer[] array = [10, 20]
+            idx = 0
+            r = array[idx++]--
+            assert r == 10 && array == [9, 20] as Integer[] && idx == 1
+        '''
+    }
+
+    // GROOVY-12622
+    @Test
+    void testPostfixAndPrefixOnLocalVariable() {
+        assertScript '''
+            Integer i = 1
+            def r = i++
+            assert r == 1 && i == 2
+            r = --i
+            assert r == 1 && i == 1
+
+            String s = 'a'
+            r = s++
+            assert r == 'a' && s == 'b'
+
+            BigDecimal d = 1
+            r = ++d
+            assert r == 2 && d == 2
+
+            char c = 'a'
+            r = c++
+            assert r == 'a' && c == 'b'
+        '''
+    }
+
     // GROOVY-5535, GROOVY-10623
     @Test
     void testAssignToNullInsideIf() {
