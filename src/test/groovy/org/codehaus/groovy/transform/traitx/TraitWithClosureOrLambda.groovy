@@ -510,16 +510,16 @@ final class TraitWithClosureOrLambda {
         for (mode in ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
             assertScript """
                 class Dg {
-                    String who(Class c) { 'delegate' }
-                    String tag(T t) { 'delegate' }
+                    String who(Class c, int i) { 'delegate' }
+                    String tag(T t, int i) { 'delegate' }
                 }
                 $mode
                 trait T {
-                    static String who() { this.simpleName }
-                    private String tag() { getClass().simpleName }
-                    def m() { new Dg().with { who() } }
-                    def n() { new Dg().with { this.who() } }
-                    def p() { new Dg().with { tag() } }
+                    static String who(int i) { this.simpleName }
+                    private String tag(int i) { getClass().simpleName }
+                    def m() { new Dg().with { who(1) } }
+                    def n() { new Dg().with { this.who(1) } }
+                    def p() { new Dg().with { tag(1) } }
                 }
                 class C implements T {
                 }
