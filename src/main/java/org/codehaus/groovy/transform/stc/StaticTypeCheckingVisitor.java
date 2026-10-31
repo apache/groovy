@@ -452,6 +452,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     /** Field currently being visited. */
     protected FieldNode currentField;
+
+    /**
+     * Flow type of a final field whose declared type is dynamic. The field's
+     * JVM type stays the declared type; only type checking and static compilation
+     * of reads use this. {@link #FLOW_TYPE_BLOCKED} means an assignment showed
+     * the value is not one specific type.
+     */
+    private static final String FINAL_FIELD_FLOW_TYPE = "stc.finalFieldFlowType";
+    private static final Object FLOW_TYPE_BLOCKED = new Object();
+    private static final String FINAL_FIELD_FLOW_BLOCKERS = "stc.finalFieldFlowBlockers";
+    private static final String FINAL_FIELD_FLOW_READY = "stc.finalFieldFlowReady";
+    private static final String FINAL_FIELD_CONSTRUCTORS_STARTED = "stc.finalFieldConstructorsStarted";
+    private static final String STATIC_INIT_PULLED = "stc.staticInitPulled";
+    private static final String OBJECT_INIT_DONE = "stc.objectInitDone";
+    private static final String STATIC_INIT_VISITED = "stc.staticInitVisited";
     /** Property currently being visited. */
     protected PropertyNode currentProperty;
     /** Composite extension chain consulted during type checking. */
@@ -586,6 +601,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             try {
                 doWithTypeCheckingExtensions(node, super::visitClass);
+                // Reads from other classes (and from inner classes visited below) need
+                // every initializer and constructor assignment to have been seen.
+                node.redirect().putNodeMetaData(FINAL_FIELD_FLOW_READY, Boolean.TRUE);
                 node.getInnerClasses().forEachRemaining(this::visitClass);
             } finally {
                 typeCheckingContext.isInStaticContext = oldStatic;
@@ -994,6 +1012,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     };
                     Expression lhsRead = readSideCloner.transform(leftExpression);
                     lhsRead.visit(this);
+                    rememberExtensionPropertyGetter(leftExpression, lhsRead);
                     ClassNode lhsType = getType(lhsRead);
                     if (!isPrimitiveType(lhsType)) {
                         rightExpression.visit(this);
@@ -1026,11 +1045,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 };
                 // GROOVY-10628, GROOVY-11563: for "x op= y", find type as if it was "x = x op y"
-                rightExpression = (op == ELVIS_EQUAL || op == NULL_COALESCE_EQUAL ? new ElvisOperatorExpression(cloneMaker.transform(leftExpression), rightExpression, op == NULL_COALESCE_EQUAL) :
-                        binX(cloneMaker.transform(leftExpression), Token.newSymbol(TokenUtil.removeAssignment(op), expression.getOperation().getStartLine(), expression.getOperation().getStartColumn()), rightExpression));
+                Expression readClone = cloneMaker.transform(leftExpression);
+                rightExpression = (op == ELVIS_EQUAL || op == NULL_COALESCE_EQUAL ? new ElvisOperatorExpression(readClone, rightExpression, op == NULL_COALESCE_EQUAL) :
+                        binX(readClone, Token.newSymbol(TokenUtil.removeAssignment(op), expression.getOperation().getStartLine(), expression.getOperation().getStartColumn()), rightExpression));
                 rightExpression.setSourcePosition(expression);
 
                 visitBinaryExpression(assignX(leftExpression, rightExpression, expression));
+                // GROOVY-12524: the write of leftExpression records the setter; keep the getter too
+                rememberExtensionPropertyGetter(leftExpression, readClone);
                 expression.copyNodeMetaData(rightExpression);
                 return;
             }
@@ -1135,6 +1157,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                 ClassNode originType = getOriginalDeclarationType(leftExpression);
                 typeCheckAssignment(expression, leftExpression, originType, rightExpression, resultType);
+                // GROOVY-12535: property writes into a Map call Map.put(Object, Object). A GString
+                // assigned to a String value is accepted, as "String s = gString" is, but is stored
+                // unchanged. Convert it here so the write keeps compiling and stores a String.
+                if (coerceGStringToStringForMapValue(expression, leftExpression, rightExpression, originType, rType)) {
+                    resultType = originType;
+                }
                 // check for implicit conversion like "String a = 123", "int[] b = [1,2,3]", "List c = [].stream()", etc.
                 if (!implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(resultType), wrapTypeIfNecessary(originType))) {
                     resultType = originType;
@@ -1165,6 +1193,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
 
                 storeType(leftExpression, resultType);
+                // Only plain '=' reaches here; compound assignments return above.
+                recordFinalFieldAssignment(leftExpression, resultType);
 
                 // propagate closure parameter information
                 if (leftExpression instanceof VariableExpression
@@ -1463,6 +1493,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (!CLOSURE_TYPE.equals(type)) return false;
         GenericsType[] gts = type.getGenericsTypes();
         return gts != null && gts.length == 1;
+    }
+
+    // GROOVY-12524: the write records the setter; keep the extension getter for static compilation
+    private static void rememberExtensionPropertyGetter(final Expression target, final Expression read) {
+        MethodNode getter = read.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (getter instanceof ExtensionMethodNode && getter.getParameters().length == 0) {
+            target.putNodeMetaData(StaticCompilationMetadataKeys.EXTENSION_PROPERTY_GETTER, getter);
+        }
     }
 
     private static boolean isCompoundAssignment(final Expression exp) {
@@ -2122,6 +2160,39 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     /**
+     * Wraps a {@code GString} written to a {@code String}-valued map property in a cast to
+     * {@code String}. {@code Map.put} cannot see the value type parameter, so without the cast
+     * the {@code GString} is stored as-is. Direct {@code put} and {@code putAt} are unchanged.
+     *
+     * @return {@code true} when the right-hand side was rewritten
+     */
+    private boolean coerceGStringToStringForMapValue(final BinaryExpression assignment, final Expression leftExpression, final Expression rightExpression, final ClassNode leftType, final ClassNode rightType) {
+        if (!isStringType(leftType) || !isGStringOrGStringStringLUB(rightType) || !isMapValueWrite(leftExpression)) {
+            return false;
+        }
+        CastExpression cast = castX(STRING_TYPE, rightExpression);
+        cast.setSourcePosition(rightExpression);
+        cast.putNodeMetaData(INFERRED_TYPE, STRING_TYPE);
+        assignment.setRightExpression(cast);
+        return true;
+    }
+
+    /**
+     * A property-style write whose receiver is a {@code Map}, including an implicit
+     * property resolved through a map delegate ({@code map.with { key = value }}).
+     */
+    private boolean isMapValueWrite(final Expression lhs) {
+        if (lhs instanceof PropertyExpression pexp) {
+            return isOrImplements(getType(pexp.getObjectExpression()), MAP_TYPE);
+        }
+        if (lhs instanceof VariableExpression vexp && vexp.getAccessedVariable() instanceof DynamicVariable) {
+            Object owner = vexp.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
+            return owner instanceof ClassNode ownerType && isOrImplements(ownerType, MAP_TYPE);
+        }
+        return false;
+    }
+
+    /**
      * Checks assignment compatibility and reports any associated type errors.
      */
     protected void typeCheckAssignment(final BinaryExpression assignmentExpression, final Expression leftExpression, final ClassNode leftExpressionType, final Expression rightExpression, final ClassNode rightExpressionType) {
@@ -2290,9 +2361,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 // GROOVY-8299: handle "Iface.super" for interface default methods
                 ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
                 ClassNode accessingType = getType(objectExpression).getGenericsTypes()[0].getType();
-                if (accessingType.isInterface() && enclosingType.implementsInterface(accessingType)) {
-                    storeType(pexp, accessingType);
-                    return true;
+                if (accessingType.isInterface()) {
+                    // Traits keep the "implemented anywhere" check. A plain interface
+                    // qualifier is validated in ResolveVisitor (GROOVY-12526); accepting
+                    // the receiver here avoids "No such property: super".
+                    if (!Traits.isTrait(accessingType) || enclosingType.implementsInterface(accessingType)) {
+                        storeType(pexp, accessingType);
+                        return true;
+                    }
                 }
                 return false;
             }
@@ -2792,7 +2868,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (visitor != null) visitor.visitField(field);
         checkOrMarkPrivateAccess(expression, field, lhsOfAssignment);
         storeReceiverData(expression, receiver); // sets IMPLICIT_RECIEVER and PROPERTY_OWNER
-        storeWithResolve(field.getOriginType(), receiver.getType(), field.getDeclaringClass(), field.isStatic(), expression);
+        ClassNode fieldType = field.getOriginType();
+        if (!lhsOfAssignment) {
+            ClassNode flowType = finalFieldFlowType(field); // GROOVY-12315
+            if (flowType != null) fieldType = flowType;
+        }
+        storeWithResolve(fieldType, receiver.getType(), field.getDeclaringClass(), field.isStatic(), expression);
         if (field.isFinal()) {
             MethodNode enclosing = typeCheckingContext.getEnclosingMethod();
             if (enclosing == null || !enclosing.getName().endsWith("init>"))
@@ -2807,6 +2888,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (visitor != null) visitor.visitProperty(property);
 
         ClassNode propertyType = property.getOriginType();
+        // GROOVY-12315: a standard property (no hand-written getter) for a final
+        // dynamic field. The access method below keeps the declared return type so
+        // its descriptor matches the getter the verifier will generate; the inferred
+        // type of the read is refined afterwards.
+        ClassNode flowType = null;
+        if (!lhsOfAssignment && property.getGetterBlock() == null) {
+            flowType = finalFieldFlowType(property.getField());
+        }
         storeWithResolve(propertyType, receiver.getType(), property.getDeclaringClass(), property.isStatic(), expression);
 
         storeReceiverData(expression, receiver);
@@ -2835,6 +2924,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
         expression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, accessMethod); // GROOVY-11029
         extension.onMethodSelection(expression, accessMethod);
+        if (flowType != null && !expression.isSpreadSafe()) {
+            // storeType would also record a declaration type of lub(declared, flow)
+            // and the static type chooser prefers that wider type, dropping the flow type
+            expression.putNodeMetaData(INFERRED_TYPE, flowType);
+        }
         return true;
     }
 
@@ -2903,6 +2997,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     /** {@inheritDoc} */
     @Override
     public void visitField(final FieldNode node) {
+        // Static blocks run before instance code and before later static field
+        // initializers are observable, so their assignments have to be known
+        // before any field initializer is typed.
+        if (node.getDeclaringClass() != null && node.getDeclaringClass().isPrimaryClassNode()) {
+            pullStaticInitializer(node.getDeclaringClass());
+        }
         boolean osc = typeCheckingContext.isInStaticContext;
         typeCheckingContext.pushTemporaryTypeInfo(); // GROOVY-12166: member scope
         try {
@@ -2931,8 +3031,256 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
 
             BinaryExpression dummy = typeCheckingContext.popEnclosingBinaryExpression();
-            typeCheckAssignment(dummy, target, lType, value, getResultType(lType, ASSIGN, rType, dummy));
+            ClassNode resultType = getResultType(lType, ASSIGN, rType, dummy);
+            typeCheckAssignment(dummy, target, lType, value, resultType);
+            if (target instanceof FieldExpression fieldExpression) {
+                recordFinalFieldFlowType(fieldExpression.getField(), resultType); // GROOVY-12315
+            }
         }
+    }
+
+    /**
+     * Makes static-block and instance-initializer assignments visible before
+     * the first constructor body or ordinary method is type-checked.
+     * <p>
+     * Runtime order is static initialization, then field initializers, then
+     * instance initializers, then the constructor body. Static blocks are
+     * pulled even earlier, from the first field, because a later field
+     * initializer can already observe them.
+     */
+    private void prepareFinalFieldFlow(final ClassNode cn) {
+        if (cn == null || !cn.isPrimaryClassNode()) return;
+        pullStaticInitializer(cn);
+        visitObjectInitializerStatements(cn);
+        cn.redirect().putNodeMetaData(FINAL_FIELD_CONSTRUCTORS_STARTED, Boolean.TRUE);
+    }
+
+    private void pullStaticInitializer(final ClassNode cn) {
+        ClassNode owner = cn.redirect();
+        if (!owner.isPrimaryClassNode()) return;
+        if (Boolean.TRUE.equals(owner.putNodeMetaData(STATIC_INIT_PULLED, Boolean.TRUE))) return;
+        MethodNode clinit = owner.getDeclaredMethod("<clinit>", Parameter.EMPTY_ARRAY);
+        if (clinit != null && !shouldSkipMethodNode(clinit)) {
+            visitMethod(clinit);
+        }
+    }
+
+    private void recordFinalFieldAssignment(final Expression lhs, final ClassNode type) {
+        if (!inFinalFieldInitializerContext()) return;
+        recordFinalFieldFlowType(assignedFinalDynamicField(lhs), type);
+    }
+
+    private boolean inFinalFieldInitializerContext() {
+        MethodNode method = typeCheckingContext.getEnclosingMethod();
+        if (method == null) return currentField != null;
+        return method.isConstructor() || method.isStaticConstructor();
+    }
+
+    /**
+     * Records the type written to a final dynamic field. Several writes are
+     * combined with {@link WideningCategories#lowestUpperBound}; a write whose
+     * type is only {@code Object} (or dynamic) drops the flow type, because
+     * the field can then hold an arbitrary value. {@code null} does not.
+     */
+    private void recordFinalFieldFlowType(final FieldNode field, final ClassNode type) {
+        if (field == null || !field.isFinal() || !isDynamicTyped(field.getOriginType())) return;
+        Object previous = field.getNodeMetaData(FINAL_FIELD_FLOW_TYPE);
+        if (previous == FLOW_TYPE_BLOCKED) return;
+        if (!isPinnedFlowType(type)) {
+            if (type != null && type != UNKNOWN_PARAMETER_TYPE && !isPrimitiveVoid(type)) {
+                field.putNodeMetaData(FINAL_FIELD_FLOW_TYPE, FLOW_TYPE_BLOCKED);
+            }
+            return;
+        }
+        ClassNode next = type;
+        if (previous instanceof ClassNode existing) {
+            if (existing.equals(type)) return;
+            next = lowestUpperBound(existing, type);
+            if (!isPinnedFlowType(next)) {
+                field.putNodeMetaData(FINAL_FIELD_FLOW_TYPE, FLOW_TYPE_BLOCKED);
+                return;
+            }
+        }
+        field.putNodeMetaData(FINAL_FIELD_FLOW_TYPE, next);
+    }
+
+    private ClassNode finalFieldFlowType(final FieldNode field) {
+        if (field == null || !field.isFinal() || !isDynamicTyped(field.getOriginType())) return null;
+        if (isFinalFieldFlowBlocked(field) || !isFinalFieldFlowVisible(field)) return null;
+        Object flow = field.getNodeMetaData(FINAL_FIELD_FLOW_TYPE);
+        if (flow instanceof ClassNode type && isPinnedFlowType(type)) return type;
+        return null;
+    }
+
+    private boolean isFinalFieldFlowVisible(final FieldNode field) {
+        ClassNode owner = field.getDeclaringClass();
+        if (owner == null) return false;
+        owner = owner.redirect();
+        if (Boolean.TRUE.equals(owner.getNodeMetaData(FINAL_FIELD_FLOW_READY))) return true;
+        ClassNode enclosing = typeCheckingContext.getEnclosingClassNode();
+        if (enclosing == null) return false;
+        // Reads in the declaring class itself follow initialization order: field
+        // initializers see earlier initializers only, and methods see every
+        // constructor assignment because constructors are visited first.
+        if (enclosing.redirect() == owner) return true;
+        if (!Boolean.TRUE.equals(owner.getNodeMetaData(FINAL_FIELD_CONSTRUCTORS_STARTED))) return false;
+        for (ClassNode current = enclosing; current != null; current = current.getOuterClass()) {
+            if (current.redirect() == owner) return true;
+        }
+        return false;
+    }
+
+    private boolean isFinalFieldFlowBlocked(final FieldNode field) {
+        ClassNode owner = field.getDeclaringClass();
+        if (owner == null) return true;
+        return finalFieldFlowBlockers(owner).contains(field.getName());
+    }
+
+    /**
+     * A final field's flow type is not trustworthy when a method (or a closure
+     * nested in a method), a compound assignment, or a dynamic property write
+     * can change the value outside the initializer and constructor writes
+     * recorded above. Plain assignments in constructors and initializers,
+     * including assignments nested in a closure there, are recorded instead.
+     */
+    @SuppressWarnings("unchecked")
+    private Set<String> finalFieldFlowBlockers(final ClassNode owner) {
+        ClassNode cn = owner.redirect();
+        Set<String> cached = cn.getNodeMetaData(FINAL_FIELD_FLOW_BLOCKERS);
+        if (cached != null) return cached;
+        Set<String> blocked = new HashSet<>();
+        boolean[] blockAll = { false };
+        for (ConstructorNode constructor : cn.getDeclaredConstructors()) {
+            collectFinalFieldFlowBlockers(cn, constructor.getCode(), false, blocked, blockAll);
+        }
+        MethodNode clinit = cn.getDeclaredMethod("<clinit>", Parameter.EMPTY_ARRAY);
+        if (clinit != null) collectFinalFieldFlowBlockers(cn, clinit.getCode(), false, blocked, blockAll);
+        for (Statement statement : cn.getObjectInitializerStatements()) {
+            collectFinalFieldFlowBlockers(cn, statement, false, blocked, blockAll);
+        }
+        for (MethodNode method : cn.getMethods()) {
+            // getMethods() does not include constructors; <clinit> is scanned above.
+            if (method.isStaticConstructor()) continue;
+            collectFinalFieldFlowBlockers(cn, method.getCode(), true, blocked, blockAll);
+        }
+        if (blockAll[0]) {
+            for (FieldNode field : cn.getFields()) {
+                if (field.isFinal() && isDynamicTyped(field.getOriginType())) blocked.add(field.getName());
+            }
+        }
+        cn.putNodeMetaData(FINAL_FIELD_FLOW_BLOCKERS, blocked);
+        return blocked;
+    }
+
+    private void collectFinalFieldFlowBlockers(final ClassNode owner, final Statement statement, final boolean methodContext, final Set<String> blocked, final boolean[] blockAll) {
+        if (statement == null || blockAll[0]) return;
+        statement.visit(new CodeVisitorSupport() {
+            @Override
+            public void visitBinaryExpression(final BinaryExpression expression) {
+                int op = expression.getOperation().getType();
+                if (isAssignment(op)) {
+                    // Writes in a method (including a closure nested there) are not part of
+                    // initialization, so they must not be trusted. Compound writes in a
+                    // constructor are recorded too, but their result type is easy to get
+                    // wrong, so they also suppress flow typing.
+                    boolean compound = op != EQUAL && op != ELVIS_EQUAL;
+                    noteFinalFieldWrite(owner, expression.getLeftExpression(), methodContext || compound, blocked, blockAll);
+                }
+                super.visitBinaryExpression(expression);
+            }
+
+            @Override
+            public void visitPrefixExpression(final PrefixExpression expression) {
+                noteFinalFieldWrite(owner, expression.getExpression(), true, blocked, blockAll);
+                super.visitPrefixExpression(expression);
+            }
+
+            @Override
+            public void visitPostfixExpression(final PostfixExpression expression) {
+                noteFinalFieldWrite(owner, expression.getExpression(), true, blocked, blockAll);
+                super.visitPostfixExpression(expression);
+            }
+        });
+    }
+
+    private void noteFinalFieldWrite(final ClassNode owner, final Expression lhs, final boolean block, final Set<String> blocked, final boolean[] blockAll) {
+        if (blockAll[0]) return;
+        if (lhs instanceof TupleExpression tuple) {
+            for (Expression element : tuple.getExpressions()) {
+                noteFinalFieldWrite(owner, element, true, blocked, blockAll);
+            }
+            return;
+        }
+        String name = finalFieldWriteName(owner, lhs, blockAll);
+        if (blockAll[0] || !block || name == null) return;
+        blocked.add(name);
+    }
+
+    private String finalFieldWriteName(final ClassNode owner, final Expression lhs, final boolean[] blockAll) {
+        FieldNode field = null;
+        if (lhs instanceof VariableExpression ve) {
+            Variable variable = ve.getAccessedVariable();
+            if (variable instanceof FieldNode fn) field = fn;
+            else if (variable instanceof PropertyNode pn) field = pn.getField();
+        } else if (lhs instanceof FieldExpression fe) {
+            field = fe.getField();
+        } else if (lhs instanceof PropertyExpression pe) {
+            String property = pe.getPropertyAsString();
+            if (property == null) {
+                if (isOwnReceiver(owner, pe.getObjectExpression())) blockAll[0] = true;
+                return null;
+            }
+            if (isOwnReceiver(owner, pe.getObjectExpression())) field = owner.getField(property);
+        }
+        if (field == null || field.getDeclaringClass() == null || field.getDeclaringClass().redirect() != owner.redirect()) return null;
+        if (!field.isFinal() || !isDynamicTyped(field.getOriginType())) return null;
+        return field.getName();
+    }
+
+    private boolean isOwnReceiver(final ClassNode owner, final Expression object) {
+        if (object instanceof VariableExpression ve && (ve.isThisExpression() || ve.isSuperExpression())) return true;
+        if (object instanceof ClassExpression ce) {
+            ClassNode type = ce.getType();
+            if (isClassClassNodeWrappingConcreteType(type)) type = type.getGenericsTypes()[0].getType();
+            return type != null && type.redirect() == owner.redirect();
+        }
+        return false;
+    }
+
+    private FieldNode assignedFinalDynamicField(final Expression lhs) {
+        if (lhs instanceof TupleExpression) return null;
+        FieldNode field = null;
+        if (lhs instanceof VariableExpression ve) {
+            Variable variable = ve.getAccessedVariable();
+            if (variable instanceof FieldNode fn) field = fn;
+            else if (variable instanceof PropertyNode pn) field = pn.getField();
+        } else if (lhs instanceof FieldExpression fe) {
+            field = fe.getField();
+        } else if (lhs instanceof PropertyExpression pe) {
+            String name = pe.getPropertyAsString();
+            if (name == null) return null;
+            ClassNode owner = null;
+            Expression object = pe.getObjectExpression();
+            if (object instanceof ClassExpression ce) {
+                owner = ce.getType();
+                if (isClassClassNodeWrappingConcreteType(owner)) owner = owner.getGenericsTypes()[0].getType();
+            } else if (object instanceof VariableExpression ve && (ve.isThisExpression() || ve.isSuperExpression())) {
+                owner = typeCheckingContext.getEnclosingClassNode();
+            }
+            if (owner != null) field = owner.getField(name);
+        }
+        if (field == null || !field.isFinal() || !isDynamicTyped(field.getOriginType())) return null;
+        return field;
+    }
+
+    private static boolean isPinnedFlowType(final ClassNode type) {
+        if (type == null || type == UNKNOWN_PARAMETER_TYPE || isPrimitiveVoid(type) || isDynamicTyped(type)) return false;
+        if (type instanceof WideningCategories.LowestUpperBoundClassNode
+                || type instanceof UnionTypeClassNode
+                || type instanceof IntersectionTypeClassNode) {
+            return true;
+        }
+        return !isObjectType(type) || type.getGenericsTypes() != null;
     }
 
     /** {@inheritDoc} */
@@ -3726,6 +4074,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (shouldSkipMethodNode(node)) {
             return;
         }
+        prepareFinalFieldFlow(node.getDeclaringClass());
         super.visitConstructor(node);
     }
 
@@ -3734,6 +4083,15 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     public void visitMethod(final MethodNode node) {
         if (shouldSkipMethodNode(node)) {
             return;
+        }
+        // <clinit> is visited once, ahead of field initializers, so a later
+        // walk of the method list must not type-check it again.
+        if (node.isStaticConstructor()
+                && Boolean.TRUE.equals(node.putNodeMetaData(STATIC_INIT_VISITED, Boolean.TRUE))) {
+            return;
+        }
+        if (!node.isStaticConstructor()) {
+            prepareFinalFieldFlow(node.getDeclaringClass());
         }
         if (!extension.beforeVisitMethod(node)) {
             ErrorCollector collector = node.getNodeMetaData(ERROR_COLLECTOR);
@@ -3848,6 +4206,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     /** {@inheritDoc} */
     @Override
     protected void visitObjectInitializerStatements(final ClassNode node) {
+        // Instance initializers run after field initializers and before constructor
+        // bodies. Visit them once, at the first constructor or method, so final-field
+        // flow types include them before any read in a method is checked.
+        if (Boolean.TRUE.equals(node.redirect().putNodeMetaData(OBJECT_INIT_DONE, Boolean.TRUE))) return;
         // GROOVY-5450: create fake constructor node so final field analysis can allow write within non-static initializer block(s)
         ConstructorNode init = new ConstructorNode(0, null, null, new BlockStatement(node.getObjectInitializerStatements(), null));
         typeCheckingContext.pushEnclosingMethod(init);
@@ -4910,6 +5272,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             if (genericsTypes != null && genericsTypes.length == 1
                                     && genericsTypes[0].getLowerBound() == null) {
                                 type = genericsTypes[0].getType();
+                                ClassNode[] upperBounds = genericsTypes[0].getUpperBounds();
+                                if (genericsTypes[0].isWildcard() && upperBounds != null) {
+                                    // Closure<? extends A & B> is the type of a closure that returns an intersection type
+                                    type = upperBounds.length == 1 ? upperBounds[0] : newIntersectionTypeClassNode(Arrays.asList(upperBounds));
+                                }
                             } else {
                                 type = OBJECT_TYPE;
                             }
@@ -6878,12 +7245,20 @@ trying: for (ClassNode[] signature : signatures) {
                         }
                     }
                 }
-                if (property != null && property.getDeclaringClass().getGetterMethod(name) == null) {
-                    MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (property.isStatic() ? Opcodes.ACC_STATIC : 0),
-                            property.getOriginType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
-                    node.setDeclaringClass(property.getDeclaringClass());
-                    node.setSynthetic(true);
-                    methods.add(node);
+                // GROOVY-12525: invent only an accessor Verifier will emit, and point the
+                // call at the property that emits it. A subclass property that declares
+                // getX must not be given a synthetic boolean isX when a superclass
+                // property is what actually emits isX (possibly with another return type).
+                if (property != null && property.getDeclaringClass() != null
+                        && property.getDeclaringClass().getGetterMethod(name) == null) {
+                    PropertyNode generated = hierarchyGeneratesAccessor(property, name);
+                    if (generated != null && generated.getDeclaringClass() != null) {
+                        MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (generated.isStatic() ? Opcodes.ACC_STATIC : 0),
+                                generated.getOriginType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
+                        node.setDeclaringClass(generated.getDeclaringClass());
+                        node.setSynthetic(true);
+                        methods.add(node);
+                    }
                 }
             } else if (args.length == 1 && (methods.isEmpty()
                     || methods.stream().allMatch(MethodNode::isAbstract))) { // GROOVY-10922
@@ -6933,6 +7308,67 @@ trying: for (ClassNode[] signature : signatures) {
         }
 
         return EMPTY_METHODNODE_LIST;
+    }
+
+    /**
+     * The property from {@code property}'s declaring class upward for which
+     * Verifier will emit {@code name}, or null. A more specific property that
+     * does not emit the accessor does not hide one emitted by a superclass.
+     */
+    private static PropertyNode hierarchyGeneratesAccessor(final PropertyNode property, final String name) {
+        ClassNode start = property.getDeclaringClass();
+        if (start == null) return null;
+        for (ClassNode cn = start; cn != null; cn = cn.getSuperClass()) {
+            PropertyNode candidate = (cn == start) ? property : cn.getProperty(property.getName());
+            if (candidate == null) {
+                for (PropertyNode pn : cn.getProperties()) {
+                    if (name.equals(pn.getGetterName())) {
+                        candidate = pn;
+                        break;
+                    }
+                }
+            }
+            if (candidate != null && generatesPropertyGetter(candidate, name)) return candidate;
+        }
+        return null;
+    }
+
+    /**
+     * Mirrors accessor generation in {@code Verifier#visitProperty}: a no-arg
+     * getter is emitted for {@code getX} (or an explicit getter name), and a
+     * primitive {@code boolean} property also emits {@code isX}, unless an
+     * accessor of either name is already declared on the property's class or
+     * a visible final superclass accessor cannot be replaced.
+     */
+    private static boolean generatesPropertyGetter(final PropertyNode property, final String name) {
+        ClassNode owner = property.getDeclaringClass();
+        if (owner == null) return false;
+
+        String explicitName = property.getGetterName();
+        String getterName = explicitName != null ? explicitName : "get" + capitalize(property.getName());
+        boolean primitiveBoolean = explicitName == null && isPrimitiveBoolean(property.getType());
+        String isserName = primitiveBoolean ? "is" + capitalize(property.getName()) : null;
+        if (!name.equals(getterName) && !name.equals(isserName)) return false;
+
+        if (property.getGetterBlock() == null) {
+            if (property.isPrivate()) return false;
+            boolean searchSupers = !property.isStatic();
+            MethodNode getter = owner.getGetterMethod(getterName, searchSupers);
+            if (getter == null && primitiveBoolean) {
+                getter = owner.getGetterMethod(isserName, searchSupers);
+            }
+            if (!needsGeneratedAccessor(owner, getter)) return false;
+        }
+        return true;
+    }
+
+    /** Same replacement rule as {@code Verifier} for an existing property accessor. */
+    private static boolean needsGeneratedAccessor(final ClassNode owner, final MethodNode existing) {
+        if (existing == null) return true;
+        ClassNode declaringClass = existing.getDeclaringClass();
+        if (declaringClass == owner) return false;
+        return declaringClass == null || !(existing.isFinal() && !existing.isPrivate()
+                && (!existing.isPackageScope() || inSamePackage(declaringClass, owner)));
     }
 
     private PropertyNode findProperty(final ClassNode receiver, final String name) {
