@@ -1489,6 +1489,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
     }
 
+    // JLS 5.1.2: byte to short, short or char to int, int to long, long to float, float to double, and transitively
+    private static boolean isWideningPrimitive(ClassNode source, final ClassNode target) {
+        if (isPrimitiveChar(source)) source = int_TYPE; // char widens to the same types as int
+        return isPrimitiveType(source) && isPrimitiveType(target) && isNumberType(source) && isNumberType(target) && isAssignableTo(source, target);
+    }
+
     private static boolean isClosureWithType(final ClassNode type) {
         if (!CLOSURE_TYPE.equals(type)) return false;
         GenericsType[] gts = type.getGenericsTypes();
@@ -3608,6 +3614,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 } else if (statement.isReturningNullOrVoid() ? !isPrimitiveType(inferredReturnType) // GROOVY-7713, GROOVY-8202
                      : GenericsUtils.buildWildcardType(wrapTypeIfNecessary(inferredReturnType)).isCompatibleWith(wrapTypeIfNecessary(type))) {
                     type = inferredReturnType; // GROOVY-8310, GROOVY-10082, GROOVY-10091, GROOVY-10128, GROOVY-10306: allow simple covariance
+                } else if (isWideningPrimitive(getUnwrapper(type), inferredReturnType)) {
+                    type = inferredReturnType; // GROOVY-12616: allow widening primitive conversion, after unboxing if needed
                 } else if ((statement.isReturningNullOrVoid() || !isPrimitiveVoid(type)) && !extension.handleIncompatibleReturnType(statement, type)) {
                     // GROOVY-10277, GROOVY-11490: incompatible return statement (null for primitive or inconvertible type)
                     String value = (statement.isReturningNullOrVoid() ? "null" : "value of type " + prettyPrintType(type));
