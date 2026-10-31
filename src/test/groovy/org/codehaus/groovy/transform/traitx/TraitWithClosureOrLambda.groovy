@@ -503,4 +503,35 @@ final class TraitWithClosureOrLambda {
             """
         }
     }
+
+    // GROOVY-12624
+    @Test
+    void testInvokeTraitMethodFromDelegateClosureNotOnDelegateWithSelfParameter() {
+        for (mode in ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            assertScript """
+                class Dg {
+                    String who(Class c) { 'delegate' }
+                    String tag(T t) { 'delegate' }
+                }
+                $mode
+                trait T {
+                    static String who() { this.simpleName }
+                    private String tag() { getClass().simpleName }
+                    def m() { new Dg().with { who() } }
+                    def n() { new Dg().with { this.who() } }
+                    def p() { new Dg().with { tag() } }
+                }
+                class C implements T {
+                }
+                class D implements T {
+                }
+
+                assert new C().m() == 'C'
+                assert new D().m() == 'D'
+                assert new C().n() == 'C'
+                assert new C().p() == 'C'
+                assert new D().p() == 'D'
+            """
+        }
+    }
 }

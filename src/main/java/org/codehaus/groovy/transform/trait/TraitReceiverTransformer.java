@@ -391,6 +391,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     // this.m(x) --> (this or T$Trait$Helper).m($self or $static$self or (Class)$self.getClass(), x)
                     Expression selfClassOrObject = methodNode.isStatic() && !ClassHelper.isClassType(weaved.getOriginType()) ? castX(ClassHelper.CLASS_Type.getPlainNodeReference(), selfGetClass()) : weaved;
                     newCall = callX(!inClosure ? thisExpr : classX(traitHelper), method, createArgumentList(selfClassOrObject, arguments));
+                    if (inClosure) newCall.setImplicitThis(false); // not a call on the closure's delegate
                 }
                 newCall.setGenericsTypes(call.getGenericsTypes());
                 newCall.setSpreadSafe(call.isSpreadSafe());
