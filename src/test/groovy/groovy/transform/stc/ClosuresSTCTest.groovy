@@ -1459,7 +1459,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-12492
+    // GROOVY-12564
     @Test
     void testCallOfClosureReturningIntersectionType() {
         assertScript '''
