@@ -20,6 +20,8 @@ package org.codehaus.groovy.transform.traitx
 
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -156,6 +158,132 @@ final class VirtualAnnotationTest {
 
             assert Impl.seen() == 'impl'
         '''
+    }
+
+    // GROOVY-12594
+    @ParameterizedTest
+    @ValueSource(strings=['@groovy.transform.CompileDynamic','@groovy.transform.TypeChecked','@groovy.transform.CompileStatic'])
+    void virtualStaticAccessor_readAsProperty(String mode) {
+        assertScript """
+            import groovy.transform.Virtual
+            import java.util.function.Supplier
+
+            $mode
+            trait V {
+                @Virtual
+                static boolean isVr() { false }
+                @Virtual
+                static String getLabel() { 'trait' }
+                static String sm() { vr ? 'yes' : 'no' }
+                static String st() { this.label }
+                static String sc() { def c = { -> label }; c() }
+                static String sl() { Supplier<String> s = () -> label; s.get() }
+                String im() { vr ? 'yes' : 'no' }
+                String it() { this.label }
+                String ic() { def c = { -> label }; c() }
+            }
+            $mode
+            class Over implements V {
+                static boolean isVr() { true }
+                static String getLabel() { 'impl' }
+            }
+            $mode
+            class Def implements V {
+            }
+
+            $mode void m() {
+                assert Over.sm() == 'yes'
+                assert Def.sm()  == 'no'
+                assert Over.st() == 'impl'
+                assert Def.st()  == 'trait'
+                assert Over.sc() == 'impl'
+                assert Def.sc()  == 'trait'
+                assert Over.sl() == 'impl'
+                assert Def.sl()  == 'trait'
+                assert new Over().im() == 'yes'
+                assert new Def().im()  == 'no'
+                assert new Over().it() == 'impl'
+                assert new Def().it()  == 'trait'
+                assert new Over().ic() == 'impl'
+                assert new Def().ic()  == 'trait'
+                assert Over.vr && !Def.vr
+                assert Over.label == 'impl' && Def.label == 'trait'
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12594
+    @ParameterizedTest
+    @ValueSource(strings=['@groovy.transform.CompileDynamic','@groovy.transform.TypeChecked','@groovy.transform.CompileStatic'])
+    void virtualStaticAccessor_writtenAsProperty(String mode) {
+        assertScript """
+            import groovy.transform.Virtual
+
+            $mode
+            trait V {
+                static int store = 1
+                @Virtual
+                static int getCount() { store }
+                @Virtual
+                static void setCount(int n) { store = n }
+                static int sm() { count = 5; count }
+                static int sc() { count += 10; count++; count }
+                int im() { count = 7; count }
+            }
+            $mode
+            class Over implements V {
+                static void setCount(int n) { store = n * 2 }
+            }
+            $mode
+            class Def implements V {
+            }
+
+            $mode void m() {
+                assert Over.sm() == 10
+                assert Def.sm()  == 5
+                assert Over.sc() == 82
+                assert Def.sc()  == 16
+                assert new Over().im() == 14
+                assert new Def().im()  == 7
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12594
+    @ParameterizedTest
+    @ValueSource(strings=['@groovy.transform.CompileDynamic','@groovy.transform.TypeChecked','@groovy.transform.CompileStatic'])
+    void virtualStaticAccessor_ofSuperTrait_readAsProperty(String mode) {
+        assertScript """
+            import groovy.transform.Virtual
+
+            $mode
+            trait P {
+                @Virtual
+                static String getLabel() { 'trait' }
+            }
+            $mode
+            trait V extends P {
+                static String sm() { label }
+                String im() { label }
+            }
+            $mode
+            class Over implements V {
+                static String getLabel() { 'impl' }
+            }
+            $mode
+            class Def implements V {
+            }
+
+            $mode void m() {
+                assert Over.sm() == 'impl'
+                assert Def.sm()  == 'trait'
+                assert new Over().im() == 'impl'
+                assert new Def().im()  == 'trait'
+            }
+            m()
+        """
     }
 
     // ============ Validation ============

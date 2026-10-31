@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 
@@ -193,8 +194,44 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
                         }
                     }
                 }
+                // GROOVY-12594: "$self.name" or "$static$self.name" for a @Virtual static accessor, which
+                // is not on the trait interface; resolve it at runtime through the implementing class
+                ClassNode propertyType = findVirtualStaticAccessorType(objectExpressionType, propertyName, !context.isTargetOfEnclosingAssignment(pexp));
+                if (propertyType != null) {
+                    pexp.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, propertyType);
+                    storeType(pexp, propertyType);
+                    return true;
+                }
             }
         }
         return false;
+    }
+
+    /**
+     * Returns the property type of a {@code @Virtual} static getter (or setter, when
+     * {@code readOnly} is {@code false}) of the given trait or one of its super traits,
+     * or {@code null} if there is none. The helper copy of a static method takes the
+     * receiver class as its first parameter.
+     */
+    private static ClassNode findVirtualStaticAccessorType(final ClassNode traitType, final String propertyName, final boolean readOnly) {
+        String suffix = capitalize(propertyName);
+        for (ClassNode trait : Traits.findTraits(traitType)) {
+            ClassNode helper = Traits.findHelper(trait);
+            if (helper == null) continue;
+            for (MethodNode m : helper.getMethods()) {
+                if (!m.isStatic() || m.getAnnotations(VIRTUAL_TYPE).isEmpty()) continue;
+                Parameter[] params = m.getParameters();
+                if (readOnly) {
+                    if (params.length == 1 && !ClassHelper.isPrimitiveVoid(m.getReturnType())
+                            && (m.getName().equals("get" + suffix) || (m.getName().equals("is" + suffix)
+                                && ClassHelper.isPrimitiveBoolean(m.getReturnType())))) {
+                        return m.getReturnType();
+                    }
+                } else if (params.length == 2 && m.getName().equals("set" + suffix)) {
+                    return params[1].getType();
+                }
+            }
+        }
+        return null;
     }
 }
