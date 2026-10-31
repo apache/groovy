@@ -861,4 +861,137 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
         assert err =~ /No signature of method.* is applicable for argument types: \(ArrayList\)/
     }
+
+    // GROOVY-12588
+    @Test
+    void testCoerceToFunctionalInterface22() {
+        assertScript '''
+            Closure<String> c = { 'x' }
+            Supplier<String> s = c
+            assert s.get() == 'x'
+            assert s !instanceof Closure
+
+            s = null
+            s = c
+            assert s.get() == 'x'
+
+            Supplier<? extends CharSequence> w = c
+            assert w.get() == 'x'
+
+            Supplier<Object> o = c
+            assert o.get() == 'x'
+
+            Closure<ArrayList<String>> d = { ['y'] }
+            Supplier<List<String>> l = d
+            assert l.get() == ['y']
+        '''
+
+        assertScript '''
+            class C {
+                Closure<String> closure = { 'p' }
+                Supplier<String> supplier
+                void setClosure(Closure<String> c) {
+                    supplier = c
+                }
+            }
+            def c = new C()
+            Supplier<String> s = c.closure
+            assert s.get() == 'p'
+            c.setClosure { 'q' }
+            assert c.supplier.get() == 'q'
+
+            List<Closure<String>> list = [c.closure]
+            s = list[0]
+            assert s.get() == 'p'
+
+            def <T> T pick(T a, T b) { a }
+            s = pick({ 'a' }, { 'b' })
+            assert s.get() == 'a'
+        '''
+
+        assertScript '''
+            abstract class A<T> { abstract T get() }
+            class D extends Closure<String> {
+                D() { super(null) }
+                String doCall() { 'd' }
+            }
+            Closure<String> c = { 'x' }
+            A<String> a = c
+            assert a.get() == 'x'
+            Supplier<String> s = new D()
+            assert s.get() == 'd'
+        '''
+    }
+
+    // GROOVY-12588
+    @Test
+    void testCoerceToFunctionalInterface23() {
+        assertScript '''
+            Closure<String> c = { int i -> 'x' + i }
+            Function<Integer,String> f = c
+            assert f.apply(1) == 'x1'
+
+            Closure<String> d = { a, b -> "$a$b".toString() }
+            BiFunction<Integer,Integer,String> g = d
+            assert g.apply(1,2) == '12'
+
+            Closure<Integer> e = { String s -> s.length() }
+            ToIntFunction<String> h = e
+            assert h.applyAsInt('abc') == 3
+
+            Closure<Integer> k = { String x, String y -> x <=> y }
+            Comparator<String> m = k
+            assert m.compare('a','b') < 0
+
+            def list = []
+            Closure<Boolean> n = { list.add(it) }
+            Consumer<String> p = n
+            p.accept('z')
+            assert list == ['z']
+        '''
+    }
+
+    // GROOVY-12588
+    @Test
+    void testCoerceToFunctionalInterface24() {
+        shouldFailWithMessages '''
+            Closure<Integer> c = { 1 }
+            Supplier<String> s = c
+        ''',
+        'Incompatible generic argument types. Cannot assign groovy.lang.Closure<java.lang.Integer> to: java.util.function.Supplier<java.lang.String>'
+
+        shouldFailWithMessages '''
+            Closure<Integer> c = { 1 }
+            Supplier<String> s = null
+            s = c
+        ''',
+        'Incompatible generic argument types. Cannot assign groovy.lang.Closure<java.lang.Integer> to: java.util.function.Supplier<java.lang.String>'
+
+        shouldFailWithMessages '''
+            Closure<Integer> c = { int i -> i }
+            Function<Integer,String> f = c
+        ''',
+        'Incompatible generic argument types. Cannot assign groovy.lang.Closure<java.lang.Integer> to: java.util.function.Function<java.lang.Integer, java.lang.String>'
+
+        shouldFailWithMessages '''
+            Closure<List<Integer>> c = { [1] }
+            Supplier<List<String>> s = c
+        ''',
+        'Incompatible generic argument types. Cannot assign groovy.lang.Closure<java.util.List<java.lang.Integer>> to: java.util.function.Supplier<java.util.List<java.lang.String>>'
+
+        shouldFailWithMessages '''
+            Closure<String> c = { String x -> x }
+            ToIntFunction<String> f = c
+        ''',
+        'Incompatible generic argument types. Cannot assign groovy.lang.Closure<java.lang.String> to: java.util.function.ToIntFunction<java.lang.String>'
+
+        shouldFailWithMessages '''
+            class D extends Closure<Integer> {
+                D() { super(null) }
+                Integer doCall() { 1 }
+            }
+            Supplier<String> s = new D()
+        ''',
+        'Incompatible generic argument types. Cannot assign D to: java.util.function.Supplier<java.lang.String>'
+    }
 }
