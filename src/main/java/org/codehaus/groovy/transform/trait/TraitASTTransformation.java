@@ -330,7 +330,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         BlockStatement toBlock = getBlockStatement(initializer, toCode);
         for (Statement next : initStatements) {
             Parameter selfParam = createSelfParameter(cNode, false);
-            toBlock.addStatement(processBody(varX(selfParam), next, cNode, helper, fieldHelper, fieldNames));
+            toBlock.addStatement(processBody(varX(selfParam), next, cNode, helper, fieldHelper, fieldNames, isStaticallyCompiled(cNode, cNode)));
         }
         initStatements.clear();
 
@@ -558,7 +558,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         if (initExpression != null) {
             VariableExpression thisObject = varX(selectedMethod.getParameters()[0]);
             ExpressionStatement initValue = new ExpressionStatement(initExpression);
-            processBody(thisObject, initValue, trait, helper, fieldHelper, knownFields);
+            processBody(thisObject, initValue, trait, helper, fieldHelper, knownFields, isStaticallyCompiled(trait, trait));
             initExpression = initValue.getExpression(); // extract transformed expression
             if (field.isFinal()) {
                 String baseName = field.isStatic() ? Traits.STATIC_INIT_METHOD : Traits.INIT_METHOD;
@@ -770,7 +770,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 methodNode.getReturnType(),
                 helperParams,
                 methodNode.getExceptions(),
-                processBody(varX(helperParams[0]), methodNode.getCode(), traitClass, traitHelperClass, fieldHelper, knownFields)
+                processBody(varX(helperParams[0]), methodNode.getCode(), traitClass, traitHelperClass, fieldHelper, knownFields, isStaticallyCompiled(methodNode, traitClass))
         );
         for (AnnotationNode annotation : methodNode.getAnnotations()) {
             if (!annotation.getClassNode().equals(OVERRIDE_TYPE)) {
@@ -791,13 +791,34 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         return mNode;
     }
 
-    private Statement processBody(final VariableExpression thisObject, final Statement code, final ClassNode trait, final ClassNode traitHelper, final ClassNode fieldHelper, final Collection<String> knownFields) {
+    private Statement processBody(final VariableExpression thisObject, final Statement code, final ClassNode trait, final ClassNode traitHelper, final ClassNode fieldHelper, final Collection<String> knownFields, final boolean staticallyCompiled) {
         if (code != null) {
             code.visit(new NAryOperationRewriter(sourceUnit, knownFields));
             code.visit(new SuperCallTraitTransformer(sourceUnit));
-            code.visit(new TraitReceiverTransformer(thisObject, sourceUnit, trait, traitHelper, fieldHelper, knownFields));
+            code.visit(new TraitReceiverTransformer(thisObject, sourceUnit, trait, traitHelper, fieldHelper, knownFields, staticallyCompiled));
         }
         return code;
+    }
+
+    /**
+     * Indicates whether trait code will be statically compiled: the member, or else the trait, is
+     * annotated with {@code @CompileStatic}, and not with {@code @CompileDynamic} or in skip mode.
+     */
+    private static boolean isStaticallyCompiled(final AnnotatedNode member, final ClassNode trait) {
+        for (AnnotatedNode node : new AnnotatedNode[]{member, trait}) {
+            boolean compileStatic = false;
+            for (AnnotationNode annotation : node.getAnnotations()) {
+                String name = annotation.getClassNode().getName();
+                Expression mode = annotation.getMember("value");
+                if (name.equals("groovy.transform.CompileDynamic") || (mode != null && mode.getText().equals("groovy.transform.TypeCheckingMode.SKIP")
+                        && (name.equals("groovy.transform.CompileStatic") || name.equals("groovy.transform.TypeChecked")))) {
+                    return false;
+                }
+                compileStatic = compileStatic || name.equals("groovy.transform.CompileStatic");
+            }
+            if (compileStatic) return true;
+        }
+        return false;
     }
 
     //--------------------------------------------------------------------------
