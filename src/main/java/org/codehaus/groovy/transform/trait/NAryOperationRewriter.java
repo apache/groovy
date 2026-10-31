@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
@@ -82,6 +83,10 @@ class NAryOperationRewriter extends ClassCodeExpressionTransformer {
         }
         if (exp instanceof PostfixExpression) {
             return transformPostfixExpression((PostfixExpression) exp);
+        }
+        if (exp instanceof ClosureExpression) { // GROOVY-12603: closure or lambda in trait code
+            ((ClosureExpression) exp).getCode().visit(this);
+            return exp;
         }
         return super.transform(exp);
     }
