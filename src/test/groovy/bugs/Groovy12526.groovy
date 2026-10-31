@@ -24,16 +24,16 @@ import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 /**
- * Qualified {@code X.super.m()} is legal only when {@code X} is a direct
- * superinterface of the current type, or an enclosing class. javac rejects
- * every other qualifier.
+ * Qualified {@code X.super.m()} needs {@code X} to be the current type, one of
+ * its superinterfaces, or an enclosing class. Statically compiled code needs an
+ * interface {@code X} to be a direct superinterface, as javac does.
  */
 final class Groovy12526 {
 
     private static final String NOT_DIRECT = 'is not a direct superinterface'
 
     @Test
-    void testInterfaceSuperOnItselfIsRejectedInEveryMode() {
+    void testInterfaceSuperOnItselfIsRejectedUnderStaticCompilation() {
         def body = '''
             interface J {
                 default String m() { 'J' }
@@ -43,9 +43,9 @@ final class Groovy12526 {
                 default String n() { I.super.m() }
             }
             class C implements I {}
-            new C().n()
+            assert new C().n() == 'I'
         '''
-        assertRejectedInEveryMode(body, "'I' is not a direct superinterface")
+        assertRejectedUnderStaticCompilation(body, "'I' is not a direct superinterface")
     }
 
     @Test
@@ -63,7 +63,7 @@ final class Groovy12526 {
     }
 
     @Test
-    void testIndirectSuperinterfaceIsRejectedInEveryMode() {
+    void testIndirectSuperinterfaceIsRejectedUnderStaticCompilation() {
         def body = '''
             interface J {
                 default String m() { 'J' }
@@ -72,13 +72,13 @@ final class Groovy12526 {
             class C implements I {
                 String n() { J.super.m() }
             }
-            new C().n()
+            assert new C().n() == 'J'
         '''
-        assertRejectedInEveryMode(body, "'J' is not a direct superinterface")
+        assertRejectedUnderStaticCompilation(body, "'J' is not a direct superinterface")
     }
 
     @Test
-    void testSuperinterfaceInheritedOnlyFromSuperclassIsRejectedInEveryMode() {
+    void testSuperinterfaceInheritedOnlyFromSuperclassIsRejectedUnderStaticCompilation() {
         def body = '''
             interface I {
                 default String m() { 'I' }
@@ -87,9 +87,25 @@ final class Groovy12526 {
             class C extends B {
                 String n() { I.super.m() }
             }
-            new C().n()
+            assert new C().n() == 'I'
         '''
-        assertRejectedInEveryMode(body, "'I' is not a direct superinterface")
+        assertRejectedUnderStaticCompilation(body, "'I' is not a direct superinterface")
+    }
+
+    @Test
+    void testIndirectSuperinterfaceOfAnInterfaceIsRejectedUnderStaticCompilation() {
+        def body = '''
+            interface K {
+                default String m() { 'K' }
+            }
+            interface J extends K {}
+            interface I extends J {
+                default String n() { K.super.m() }
+            }
+            class C implements I {}
+            assert new C().n() == 'K'
+        '''
+        assertRejectedUnderStaticCompilation(body, "'K' is not a direct superinterface")
     }
 
     @Test
@@ -283,6 +299,16 @@ final class Groovy12526 {
             assert err.message.contains(snippet) : err.message
             assert !err.message.contains('No such property: super') : err.message
         }
+    }
+
+    /** Dynamic and {@code @TypeChecked} code runs; {@code @CompileStatic} code is rejected. */
+    private static void assertRejectedUnderStaticCompilation(String body, String snippet) {
+        def (dynamic, typeChecked, compileStatic) = modes(body)
+        assertScript(dynamic)
+        assertScript(typeChecked)
+        def err = shouldFail(compileStatic)
+        assert err.message.contains(NOT_DIRECT) : err.message
+        assert err.message.contains(snippet) : err.message
     }
 
     private static void assertRunsInEveryMode(String body) {
