@@ -1330,6 +1330,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 inferParameterAndReturnTypesOfClosureOnRHS(target, lambda);
                 source.putNodeMetaData(PARAMETER_TYPE, lambda.getNodeMetaData(PARAMETER_TYPE));
                 source.putNodeMetaData(CLOSURE_ARGUMENTS, extractTypesFromParameters(lambda.getParameters()));
+            } else if (source instanceof MethodPointerExpression) { // GROOVY-12607: check method return type
+                source.putNodeMetaData(PARAMETER_TYPE, target);
             }
         }
     }
@@ -3919,7 +3921,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
 
                 ClassNode ownerType = receiverType;
-                candidates.stream()
+                List<ClassNode> returnTypes = candidates.stream()
                         .peek(candidate -> checkOrMarkPrivateAccess(expression, candidate)) // GROOVY-11365
                         .map (candidate -> {
                             ClassNode returnType = candidate.getReturnType();
@@ -3931,17 +3933,17 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             }
                             return returnType;
                         })
-                        .reduce(WideningCategories::lowestUpperBound).ifPresent(returnType -> {
-                            ClassNode closureType = wrapClosureType(returnType);
-                            storeType(expression, closureType);
-                            // GROOVY-10858: check method return type
-                            ClassNode targetType = expression.getNodeMetaData(PARAMETER_TYPE);
-                            if (!returnType.isGenericsPlaceHolder() && isSAMType(targetType)) {
-                                targetType = GenericsUtils.parameterizeSAM(targetType).getV2();
-                                if (!isPrimitiveVoid(targetType) && !checkCompatibleAssignmentTypes(targetType, returnType, null, false)) // TODO: ext.handleIncompatibleReturnType
-                                    addStaticTypeError("Invalid return type: " + prettyPrintType(returnType) + " is not convertible to " + prettyPrintType(targetType), expression);
-                            }
-                        });
+                        .collect(Collectors.toList());
+                ClassNode returnType = returnTypes.stream().reduce(WideningCategories::lowestUpperBound).get();
+                storeType(expression, wrapClosureType(returnType));
+                // GROOVY-10858: check method return type
+                ClassNode targetType = expression.getNodeMetaData(PARAMETER_TYPE);
+                if (isSAMType(targetType)) {
+                    ClassNode samReturnType = GenericsUtils.parameterizeSAM(targetType).getV2();
+                    // GROOVY-12607: accept if any overload returns a compatible type
+                    if (returnTypes.stream().noneMatch(type -> type.isGenericsPlaceHolder() || isCompatibleReturnType(samReturnType, type))) // TODO: ext.handleIncompatibleReturnType
+                        addStaticTypeError("Invalid return type: " + prettyPrintType(returnType) + " is not convertible to " + prettyPrintType(samReturnType), expression);
+                }
                 expression.putNodeMetaData(MethodNode.class, candidates);
 
                 if (asBoolean(arguments)) {
@@ -3960,6 +3962,19 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 addStaticTypeError("Cannot find matching method " + prettyPrintTypeName(type) + "#" + nameText + ". Please check if the declared type is correct and if the method exists.", nameExpr);
             }
         }
+    }
+
+    /**
+     * Checks the return type of a method referenced by a method pointer or method
+     * reference against the return type of the target functional interface. The
+     * value is not converted, so a reference type must be a supertype of the
+     * (boxed) return type; for example, {@code int} does not fit {@code String}.
+     */
+    private static boolean isCompatibleReturnType(final ClassNode samReturnType, final ClassNode returnType) {
+        if (isPrimitiveVoid(samReturnType)) return true;
+        if (!checkCompatibleAssignmentTypes(samReturnType, returnType, null, false)) return false;
+        return isPrimitiveType(samReturnType) || samReturnType.isGenericsPlaceHolder()
+            || implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(returnType), samReturnType);
     }
 
     private static Expression typedValueExpression(final ClassNode type) {
