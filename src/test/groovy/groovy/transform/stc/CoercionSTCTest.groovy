@@ -864,7 +864,7 @@ import static groovy.test.GroovyAssert.shouldFail
 
     // GROOVY-12606
     @Test
-    void testCoerceClosureReturnToFunctionalInterface() {
+    void testCoerceClosureValueReturnedByClosureToFunctionalInterface() {
         assertScript '''
             class C {
                 static String take(Supplier<Supplier<String>> s) { s.get().get() }
@@ -917,7 +917,7 @@ import static groovy.test.GroovyAssert.shouldFail
 
     // GROOVY-12606
     @Test
-    void testCoerceClosureReturnToFunctionalInterface2() {
+    void testCoerceClosureValueReturnedByClosureToFunctionalInterface2() {
         shouldFailWithMessages '''
             String take(Supplier<Supplier<String>> s) { s.get().get() }
             Closure<Integer> c = { 1 }
