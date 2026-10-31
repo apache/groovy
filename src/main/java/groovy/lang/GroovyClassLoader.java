@@ -237,6 +237,7 @@ public class GroovyClassLoader extends URLClassLoader {
         }
 
         CompilationUnit unit = createCompilationUnit(config, codeSource);
+        markDefinedInMemory(unit);
         var generatedClasses = new LinkedHashMap<ClassNode, ClassVisitor>();
         ClassCollector collector = createCollector(unit, classNode.getModule().getContext());
         try {
@@ -414,6 +415,7 @@ public class GroovyClassLoader extends URLClassLoader {
         validate(codeSource);
         // Was neither already loaded nor compiling, so compile and add to cache.
         CompilationUnit unit = createCompilationUnit(config, codeSource.getCodeSource());
+        markDefinedInMemory(unit);
         if (recompile != null ? recompile : config.getRecompileGroovySource()) {
             unit.addFirstPhaseOperation(TimestampAdder.INSTANCE, CompilePhase.CLASS_GENERATION.getPhaseNumber());
         }
@@ -446,6 +448,22 @@ public class GroovyClassLoader extends URLClassLoader {
             if (c.getName().equals(mainName)) answer = c;
         }
         return answer;
+    }
+
+    /**
+     * Records that the classes of the compilation unit are defined by an
+     * {@link InnerLoader} of their own, so that the compiler does not assume
+     * that a class of another compilation unit is in the same run-time package.
+     * <p>
+     * Every compilation of {@code parseClass} is marked, whatever its
+     * {@link ClassCollector} does with the classes. A subclass whose collector
+     * defines them with this class loader itself, rather than with an
+     * {@code InnerLoader}, therefore reaches the non-public members of classes
+     * of its other compilations through the meta-class where a direct access
+     * would also work; that is slower, but not wrong.
+     */
+    private static void markDefinedInMemory(final CompilationUnit unit) {
+        unit.getAST().putNodeMetaData(InnerLoader.class, Boolean.TRUE);
     }
 
     private static void validate(final GroovyCodeSource codeSource) {
