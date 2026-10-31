@@ -175,18 +175,26 @@ final class AgentChangesTest {
         // End-to-end via the FlowPublisherAdapter
         assertScript '''
             import groovy.concurrent.Agent
+            import java.util.concurrent.CountDownLatch
+            import java.util.concurrent.Flow
 
             def agent = Agent.create(0)
             try {
+                def changes = agent.changes()
+                def subscribed = new CountDownLatch(1)
+                // changes is hot: the consumer sees only updates made after it subscribed
+                Flow.Publisher<Integer> watched = { Flow.Subscriber<Integer> subscriber ->
+                    changes.subscribe(subscriber)
+                    subscribed.countDown()
+                } as Flow.Publisher<Integer>
                 def collected = []
                 async {
-                    Thread.sleep(100) // let consumer subscribe
+                    subscribed.await()
                     3.times { agent.send { it + 1 } }
-                    Thread.sleep(100) // let the sends propagate before shutdown
-                    agent.shutdown()
+                    agent.shutdown() // closes changes after the queued updates
                 }
 
-                for await (val in agent.changes()) {
+                for await (val in watched) {
                     collected << val
                 }
                 assert collected == [1, 2, 3]
