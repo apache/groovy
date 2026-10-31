@@ -130,6 +130,46 @@ public class IndyGuardsFiltersAndSignatures {
     protected static final MethodHandle NULL_REF = MethodHandles.constant(Object.class, null);
 
     /**
+     * Whether {@link MethodHandle#asType} keeps every conversion strongly on the handle
+     * converted, as JDK 17 does. Later JDKs keep a conversion strongly only when the
+     * converted handle's own types keep the classes of the new type reachable.
+     */
+    static final boolean STRONG_AS_TYPE_CACHE = Runtime.version().feature() < 18;
+
+    /**
+     * Converts {@code handle} to the type of one call site with {@link MethodHandle#asType}.
+     * The handle may live as long as the runtime or longer: a handle in a static field, or one
+     * the JDK shares. A conversion is cached on the handle converted; where that cache is
+     * strong, a conversion to a type of some class loader would keep the loader reachable after
+     * it was discarded, so there the conversion is made on a new handle that invokes this one.
+     *
+     * @param handle the handle to convert
+     * @param type   the type of the call site
+     * @return the converted handle
+     */
+    static MethodHandle asCallSiteType(final MethodHandle handle, final MethodType type) {
+        return unshared(handle, type).asType(type);
+    }
+
+    /**
+     * Converts {@code handle} to the type of one call site with
+     * {@link MethodHandles#explicitCastArguments}, without caching the conversion on
+     * {@code handle} where that cache is strong; see {@link #asCallSiteType}.
+     *
+     * @param handle the handle to convert
+     * @param type   the type of the call site
+     * @return the converted handle
+     */
+    static MethodHandle explicitCastToCallSiteType(final MethodHandle handle, final MethodType type) {
+        return MethodHandles.explicitCastArguments(unshared(handle, type), type);
+    }
+
+    private static MethodHandle unshared(final MethodHandle handle, final MethodType type) {
+        if (!STRONG_AS_TYPE_CACHE || handle.type().equals(type)) return handle;
+        return MethodHandles.exactInvoker(handle.type()).bindTo(handle);
+    }
+
+    /**
      * Adapter shim for the non-fast-path property write of the indy
      * {@code SetPropertySelector}. The parameter order — {@code name},
      * {@code sender}, {@code receiver}, {@code value} — is chosen so that
