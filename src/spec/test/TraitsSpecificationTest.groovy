@@ -570,6 +570,7 @@ class LenientEntity implements Configurable {
 assert StrictEntity.describe()  == 'nullable=false'        // <6>
 assert LenientEntity.describe() == 'nullable=true'         // <7>
 assert LenientEntity.nullableByDefault() == true           // <8>
+assert Configurable.describe()  == 'nullable=false'        // <9>
 // end::virtual_default[]
 '''
     }
