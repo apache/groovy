@@ -948,7 +948,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                             && typeClass != EnumConstantClassNode.class) {
                         type = declaringClass; // ex: LUB type
                     }
-                    if (ClassHelper.isObjectType(declaringClass)) {
+                    if (ClassHelper.isObjectType(declaringClass) && !isArrayClone(type, target)) {
                         // checkcast not necessary because Object never evolves
                         // and it prevents a potential ClassCastException if the
                         // delegate of a closure is changed in an SC closure
@@ -961,6 +961,14 @@ public class StaticInvocationWriter extends InvocationWriter {
                 setType(type);
             }
             return type;
+        }
+
+        /**
+         * Array clone is modelled as protected {@code Object#clone()}, so the
+         * verifier requires the receiver to be typed as the array.
+         */
+        private static boolean isArrayClone(final ClassNode type, final MethodNode target) {
+            return type.isArray() && "clone".equals(target.getName()) && target.getParameters().length == 0;
         }
     }
 }
