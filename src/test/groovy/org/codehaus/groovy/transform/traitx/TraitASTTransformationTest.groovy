@@ -4310,4 +4310,77 @@ final class TraitASTTransformationTest {
             assert c.count == 2
         '''
     }
+
+    // GROOVY-12613
+    @CompileModesTest
+    void testCompoundAssignmentEvaluatesTargetOnce(String mode) {
+        assertScript shell, """
+            class Box { int v }
+            $mode
+            trait T {
+                int calls
+                Box box = new Box()
+                Box obj() { box }
+                String key() { calls += 1; 'k' }
+                def m() {
+                    List<Integer> list = [0, 0]
+                    int i = 0
+                    list[i++] += 1
+                    obj().v += 2
+                    obj().v -= 1
+                    Map<String, Integer> map = [k: 1]
+                    map[key()] += 3
+                    int x = 1
+                    x += 4
+                    Box other = new Box(v: 5)
+                    other.v *= 2
+                    [i, list, box.v, map, x, other.v, calls]
+                }
+                static sm() {
+                    List<Integer> list = [0, 0]
+                    int i = 0
+                    list[i++] += 1
+                    [i, list]
+                }
+            }
+            class C implements T {
+            }
+
+            assert new C().m() == [1, [1, 0], 1, [k: 4], 5, 10, 1]
+            assert C.sm() == [1, [1, 0]]
+        """
+    }
+
+    // GROOVY-12613
+    @CompileModesTest
+    void testCompoundAssignmentOfTraitFieldOrProperty(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                private int a = 1
+                public  int b = 1
+                static  int c = 1
+                int p = 1
+                def m() {
+                    a += 1
+                    b *= 3
+                    c -= 1
+                    p += 4
+                    this.a += 10
+                    this.b -= 1
+                    this.p *= 2
+                    [a, b, c, p]
+                }
+                static sm() {
+                    c += 5
+                    c
+                }
+            }
+            class C implements T {
+            }
+
+            assert new C().m() == [12, 2, 0, 10]
+            assert C.sm() == 5
+        """
+    }
 }
