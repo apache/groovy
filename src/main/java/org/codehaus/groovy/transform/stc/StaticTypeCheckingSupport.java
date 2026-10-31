@@ -116,6 +116,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isNumberType;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.ast.ClassHelper.isSAMType;
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperBoolean;
@@ -1500,10 +1501,32 @@ public abstract class StaticTypeCheckingSupport {
         } else if (parameterType.isUsingGenerics() && argumentType.isUsingGenerics()) {
             if (!GenericsUtils.buildWildcardType(parameterType).isCompatibleWith(argumentType)) {
                 boolean samCoercion = argumentType.equals(CLOSURE_TYPE) && isSAMType(parameterType);
-                if (!samCoercion) return false; // else assume parameters and return checked earlier
+                if (!samCoercion) return false; // else assume parameters checked earlier
+                return isClosureCoercibleToSAM(parameterType, argumentType); // GROOVY-12599
             }
+        } else if (parameterType.isUsingGenerics() && argumentType.isDerivedFrom(CLOSURE_TYPE) && isSAMType(parameterType)) {
+            return isClosureCoercibleToSAM(parameterType, argumentType); // GROOVY-12599: Closure subclass
         }
         return true;
+    }
+
+    /**
+     * Checks if a value of type {@code Closure<R>} can be coerced to the given
+     * SAM type: its abstract method returns void or a type that accepts {@code R}.
+     * A raw {@code Closure}, {@code Closure<Object>} or unresolved {@code R} is
+     * accepted, as is {@code GString} for {@code String}.
+     */
+    static boolean isClosureCoercibleToSAM(final ClassNode samType, final ClassNode closureType) {
+        ClassNode returnType = GenericsUtils.parameterizeSAM(samType).getV2();
+        if (isPrimitiveVoid(returnType) || GenericsUtils.hasUnresolvedGenerics(returnType)) return true;
+        ClassNode closure = GenericsUtils.findParameterizedType(CLOSURE_TYPE, closureType);
+        GenericsType[] closureGenerics = (closure != null ? closure.getGenericsTypes() : null);
+        if (closureGenerics == null) return true; // raw Closure
+        ClassNode closureReturnType = getCombinedBoundType(closureGenerics[0]);
+        if (isObjectType(closureReturnType) || GenericsUtils.hasUnresolvedGenerics(closureReturnType)) return true;
+        if (isStringType(returnType) && isGStringOrGStringStringLUB(closureReturnType)) return true; // converted on return
+        return GenericsUtils.buildWildcardType(StaticTypeCheckingVisitor.wrapTypeIfNecessary(returnType))
+                .isCompatibleWith(StaticTypeCheckingVisitor.wrapTypeIfNecessary(closureReturnType));
     }
 
     /**
