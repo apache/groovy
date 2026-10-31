@@ -2420,6 +2420,138 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-12590
+    @CompileModesTest
+    void testTraitStaticAccessorReadAsProperty(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static boolean flag = true
+                static boolean isReady() { flag }
+                static String sm() { ready ? 'yes' : 'no' }
+                static String st() { this.ready ? 'yes' : 'no' }
+                static Closure getG() { { -> flag } }
+                static Object sg() { g.call() }
+            }
+            $mode
+            class C implements T {
+            }
+            $mode
+            class D implements T {
+            }
+
+            $mode void m() {
+                assert C.sm() == 'yes'
+                assert C.st() == 'yes'
+                assert C.sg() == true
+                D.flag = false // each implementing class has its own trait state
+                assert C.sm() == 'yes'
+                assert D.sm() == 'no'
+                assert D.st() == 'no'
+                assert D.sg() == false
+            }
+            m()
+        """
+
+        assertScript shell, """
+            import java.util.function.Supplier
+
+            $mode
+            trait T {
+                static boolean flag = true
+                static boolean isReady() { flag }
+                String getName() { 'name' }
+                String im() { ready ? 'yes' : 'no' }
+                String iname() { name }
+                String ic() { def c = { -> ready ? 'yes' : 'no' }; c() }
+                static String sc() { def c = { -> ready ? 'yes' : 'no' }; c() }
+                static String sl() { Supplier<String> s = () -> ready ? 'yes' : 'no'; s.get() }
+            }
+            $mode
+            class C implements T {
+            }
+            $mode
+            class D implements T {
+            }
+
+            $mode void m() {
+                D.flag = false
+                assert new C().im() == 'yes'
+                assert new D().im() == 'no'
+                assert new C().iname() == 'name'
+                assert new C().ic() == 'yes'
+                assert new D().ic() == 'no'
+                assert C.sc() == 'yes'
+                assert D.sc() == 'no'
+                assert C.sl() == 'yes'
+                assert D.sl() == 'no'
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12590
+    @CompileModesTest
+    void testTraitStaticAccessorWrittenAsProperty(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+                static int set(int n) { cnt = n; count }
+                static int add(int n) { cnt += n; count }
+                static int post() { cnt++; count }
+                static int pre() { ++cnt; count }
+                int iset(int n) { cnt = n; count }
+                int iadd(int n) { cnt += n; count }
+                int ipost() { cnt++; count }
+            }
+            $mode
+            class C implements T {
+            }
+
+            $mode void m() {
+                assert C.set(10) == 10
+                assert C.add(5) == 15
+                assert C.post() == 16
+                assert C.pre() == 17
+                assert new C().iset(20) == 20
+                assert new C().iadd(5) == 25
+                assert new C().ipost() == 26
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12590
+    @CompileModesTest
+    void testSuperTraitStaticAccessorAsProperty(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+            }
+            $mode
+            trait U extends T {
+                static int s() { cnt }
+                int i() { cnt = 5; cnt++; cnt }
+            }
+            $mode
+            class C implements U {
+            }
+
+            $mode void m() {
+                assert C.s() == 1
+                assert new C().i() == 6
+                assert C.s() == 6
+            }
+            m()
+        """
+    }
+
     @Test
     void testTraitMethodShouldBeDefaultImplementationUsingReflection() {
         assertScript shell, '''
@@ -4309,5 +4441,105 @@ final class TraitASTTransformationTest {
             def c = new C(); c.bump(); c.bump()
             assert c.count == 2
         '''
+    }
+
+    // GROOVY-12596: "this.name" for a static accessor of the trait
+    @CompileModesTest
+    void testThisStaticAccessorOfTrait(String mode) {
+        assertScript shell, """
+            import java.util.function.Supplier
+
+            $mode
+            trait T {
+                private static boolean flag = true
+                private static String nm = 'T'
+                static boolean isReady() { flag }
+                static void setReady(boolean b) { flag = b }
+                static String getName() { nm }
+                static void setName(String n) { nm = n }
+                boolean im() { this.ready }
+                String ip() { this.name }
+                void is(String n) { this.name = n }
+                String ic() { def c = { -> this.name }; c() }
+                String il() { Supplier<String> s = () -> this.name; s.get() }
+                static boolean sm() { this.ready }
+            }
+            $mode
+            trait U extends T {
+                static String us() { this.name }
+                static void uss(String n) { this.name = n }
+                String ui() { this.name }
+            }
+            class C implements U {
+            }
+            class D implements U {
+            }
+
+            def c = new C(), d = new D()
+            assert c.im() && d.im()
+            D.ready = false // each implementing class has its own trait state
+            assert c.im() && C.sm()
+            assert !d.im() && !D.sm()
+            c.is('c')
+            assert c.ip() == 'c' && c.ic() == 'c' && c.il() == 'c'
+            assert d.ip() == 'T' && d.ic() == 'T' && d.il() == 'T'
+            D.uss('d')
+            assert D.us() == 'd' && d.ui() == 'd'
+            assert C.us() == 'c' && c.ui() == 'c'
+        """
+    }
+
+    // GROOVY-12596
+    @CompileModesTest
+    void testThisStaticAccessorOfTrait2(String mode) {
+        assertScript shell, """
+            import java.util.function.Supplier
+
+            $mode
+            trait T {
+                static boolean isReady() { true }
+                static String getName() { 'T' }
+                static void setName(String n) { assert n == 'x' }
+                boolean im() { this.ready }
+                String ip() { this.name }
+                void is() { this.name = 'x' }
+                String ic() { def c = { -> this.name }; c() }
+                String il() { Supplier<String> s = () -> this.name; s.get() }
+            }
+            $mode
+            trait U extends T {
+                static String us() { this.name }
+                static void uss() { this.name = 'x' }
+                String ui() { this.name }
+            }
+            class C implements U {
+            }
+
+            def c = new C()
+            assert c.im()
+            assert c.ip() == 'T'
+            c.is()
+            assert c.ic() == 'T'
+            assert c.il() == 'T'
+            assert C.us() == 'T'
+            C.uss()
+            assert c.ui() == 'T'
+        """
+    }
+
+    // GROOVY-12596: a static accessor of a trait is not read through another instance
+    @ParameterizedTest
+    @ValueSource(strings=['@TypeChecked','@CompileStatic'])
+    void testStaticAccessorOfTraitThroughInstance(String mode) {
+        def err = shouldFail shell, """
+            $mode
+            trait T {
+                static boolean isReady() { true }
+                boolean other(T that) { that.ready }
+            }
+            $mode
+            def m(T t) { t.ready }
+        """
+        assert err.message.count('static method of interface T can only be accessed with class qualifier') == 2
     }
 }
