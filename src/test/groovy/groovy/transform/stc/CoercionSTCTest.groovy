@@ -864,7 +864,7 @@ import static groovy.test.GroovyAssert.shouldFail
 
     // GROOVY-12616
     @Test
-    void testCoerceToFunctionalInterface22() {
+    void testCoerceWideningPrimitiveReturnToFunctionalInterface() {
         assertScript '''
             ToLongFunction<String> f = (String s) -> s.length()
             assert f.applyAsLong('abc') == 3L
