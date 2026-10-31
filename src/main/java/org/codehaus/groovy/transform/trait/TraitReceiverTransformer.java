@@ -57,6 +57,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
@@ -363,6 +364,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             MethodNode methodNode = findConcreteMethod(traitClass, call.getMethodAsString());
             if (methodNode != null) {
                 MethodCallExpression newCall;
+                MethodCallExpression helperCall = null;
                 if (methodNode.isStatic() && !methodNode.isPrivate() && !inClosure && hasAnnotation(methodNode, VIRTUAL_TYPE)) {
                     // Default dispatch for trait static methods is
                     // declarer-bound; per-implementer override visibility
@@ -372,10 +374,24 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     // visible from trait code.
 
                     // GROOVY-11985: this.m(x) --> ($static$self or (Class)$self.getClass()).m(x)
-                    Expression selfClass = ClassHelper.isClassType(weaved.getOriginType()) ? varX(weaved) : castX(ClassHelper.CLASS_Type.getPlainNodeReference(), callX(varX(weaved), "getClass"));
-                    newCall = callX(selfClass, method, transform(arguments));
+                    boolean staticSelf = ClassHelper.isClassType(weaved.getOriginType());
+                    Expression selfClass = staticSelf ? varX(weaved) : castX(ClassHelper.CLASS_Type.getPlainNodeReference(), callX(varX(weaved), "getClass"));
+                    Expression newArgs = transform(arguments);
+                    newCall = callX(selfClass, method, newArgs);
                     newCall.setImplicitThis(false);
                     newCall.putNodeMetaData(TraitASTTransformation.DO_DYNAMIC, methodNode.getReturnType());
+                    if (staticSelf) {
+                        // GROOVY-12604: a promoted static called through the trait (T.m())
+                        // has the trait interface as $static$self, which does not carry
+                        // @Virtual statics; there is no implementing class to dispatch to
+                        ClassNode helper = traitClass.equals(methodNode.getDeclaringClass()) ? traitHelper : methodNode.getDeclaringClass();
+                        Expression self = traitClass.equals(methodNode.getDeclaringClass()) ? varX(weaved) : castX(ClassHelper.CLASS_Type.getPlainNodeReference(), varX(weaved)); // Class<U> to Class<T>
+                        helperCall = callX(classX(helper), method, createArgumentList(self, newArgs, false));
+                        helperCall.setImplicitThis(false);
+                        helperCall.setGenericsTypes(call.getGenericsTypes());
+                        helperCall.setSpreadSafe(call.isSpreadSafe());
+                        helperCall.setSourcePosition(call);
+                    }
                 } else {
                     // Reached for: plain (non-@Virtual) static, private static,
                     // instance method, or any call inside a closure.
@@ -387,6 +403,12 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 newCall.setGenericsTypes(call.getGenericsTypes());
                 newCall.setSpreadSafe(call.isSpreadSafe());
                 newCall.setSourcePosition(call);
+                if (helperCall != null) {
+                    // ($static$self.isInterface() ? T$Trait$Helper.m($static$self, x) : $static$self.m(x))
+                    Expression dispatch = ternaryX(callX(varX(weaved), "isInterface"), helperCall, newCall);
+                    dispatch.setSourcePosition(call);
+                    return dispatch;
+                }
                 return newCall;
             }
         }
@@ -426,14 +448,18 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
     }
 
     private ArgumentListExpression createArgumentList(final Expression self, final Expression arguments) {
+        return createArgumentList(self, arguments, true);
+    }
+
+    private ArgumentListExpression createArgumentList(final Expression self, final Expression arguments, final boolean transform) {
         ArgumentListExpression newArgs = new ArgumentListExpression();
         newArgs.addExpression(self);
         if (arguments instanceof TupleExpression) {
             for (Expression argument : (TupleExpression) arguments) {
-                newArgs.addExpression(transform(argument));
+                newArgs.addExpression(transform ? transform(argument) : argument);
             }
         } else {
-            newArgs.addExpression(transform(arguments));
+            newArgs.addExpression(transform ? transform(arguments) : arguments);
         }
         return newArgs;
     }
