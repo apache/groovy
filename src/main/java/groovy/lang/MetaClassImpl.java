@@ -83,11 +83,13 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.URL;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -565,6 +567,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
              */
             boolean useThis;
 
+            /**
+             * Extension methods of the superclass by name, per class of the hierarchy.
+             */
+            Map<Class<?>, Map<String, List<MetaMethod>>> superExtensionMethods;
+
             /** {@inheritDoc} */
             @Override
             public void methodNameAction(final Class<?> c, final MetaMethodIndex.Cache e) {
@@ -577,7 +584,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         if (matchedMethod >= 0) {
                             methods.set(i, mopMethods[matchedMethod]);
                         } else if (!useThis && notSuperUseful(method, c)) {
-                            methods.remove(i--); // not fit for super usage
+                            MetaMethod hidden = getHiddenExtensionMethod(method, c);
+                            if (hidden != null) {
+                                methods.set(i, hidden);
+                            } else {
+                                methods.remove(i--); // not fit for super usage
+                            }
                         }
                     }
                     if (!useThis) {
@@ -592,7 +604,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         if (useThis) e.methods = mopMethods[matchedMethod];
                         else e.methodsForSuper = mopMethods[matchedMethod];
                     } else if (!useThis && notSuperUseful(method, c)) {
-                        e.methodsForSuper = null; // not fit for super usage
+                        e.methodsForSuper = getHiddenExtensionMethod(method, c); // null: not fit for super usage
                     }
                 }
             }
@@ -633,6 +645,62 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     }
                 }
                 return -1;
+            }
+
+            /**
+             * Finds the extension method of a superclass, or of an interface that
+             * {@code c} or a superclass implements, that a method of class {@code c}
+             * overrides: "super.name()" within {@code c} calls it, as there is no
+             * super$ helper for it. The one for the most specific type wins; of two
+             * for unrelated types, the one met first in the order of
+             * {@link #getExtensionMethodsOfSupertypes(Class)}.
+             */
+            private MetaMethod getHiddenExtensionMethod(final MetaMethod method, final Class<?> c) {
+                if (method.isStatic() || isBridge(method) || method.getDeclaringClass().getTheClass() != c || c.getSuperclass() == null) return null;
+                if (superExtensionMethods == null) superExtensionMethods = new HashMap<>();
+                List<MetaMethod> candidates = superExtensionMethods.computeIfAbsent(c, this::getExtensionMethodsOfSupertypes).get(method.getName());
+                MetaMethod hidden = null;
+                if (candidates != null) {
+                    for (MetaMethod m : candidates) {
+                        if (MetaMethod.equal(m.getParameterTypes(), method.getParameterTypes())
+                                && (hidden == null || hidden.getDeclaringClass().getTheClass().isAssignableFrom(m.getDeclaringClass().getTheClass()))) {
+                            hidden = m; // the one for the most specific type
+                        }
+                    }
+                }
+                return hidden;
+            }
+
+            /**
+             * The extension methods of the supertypes of {@code c} by name: those of
+             * the superclasses, nearest first, then those of the interfaces of
+             * {@code c} and of each superclass in turn, each in the order the class
+             * declares them, breadth first. The order is that of the declarations,
+             * not of {@link CachedClass#getInterfaces()}, which is a hash set.
+             */
+            private Map<String, List<MetaMethod>> getExtensionMethodsOfSupertypes(final Class<?> c) {
+                Set<Class<?>> types = new LinkedHashSet<>();
+                for (Class<?> sc = c.getSuperclass(); sc != null; sc = sc.getSuperclass()) {
+                    types.add(sc);
+                }
+                Deque<Class<?>> interfaces = new ArrayDeque<>();
+                for (Class<?> t = c; t != null; t = t.getSuperclass()) {
+                    Collections.addAll(interfaces, t.getInterfaces());
+                }
+                while (!interfaces.isEmpty()) {
+                    Class<?> i = interfaces.removeFirst();
+                    if (types.add(i)) Collections.addAll(interfaces, i.getInterfaces());
+                }
+
+                Map<String, List<MetaMethod>> methodsByName = new HashMap<>();
+                for (Class<?> type : types) {
+                    for (MetaMethod m : ReflectionCache.getCachedClass(type).getNewMetaMethods()) {
+                        if (isDGM(m) && !m.isStatic()) {
+                            methodsByName.computeIfAbsent(m.getName(), name -> new ArrayList<>()).add(m);
+                        }
+                    }
+                }
+                return methodsByName;
             }
 
             private boolean notSuperUseful(final MetaMethod method, final Class<?> c) {
