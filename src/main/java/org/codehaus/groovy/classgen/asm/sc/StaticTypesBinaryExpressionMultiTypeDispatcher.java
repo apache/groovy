@@ -106,10 +106,17 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
     protected void writePostOrPrefixMethod(final int op, final String method, final Expression expression, final Expression orig) {
         MethodNode mn = orig.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
         if (mn != null) {
-            controller.getOperandStack().pop();
-            MethodCallExpression call = callX(expression, method);
+            // GROOVY-12622: call next() or previous() on the value already loaded;
+            // evaluating the operand again repeats the getter or getAt call
+            OperandStack operandStack = controller.getOperandStack();
+            ClassNode valueType = operandStack.getTopOperand();
+            int slot = controller.getCompileStack().defineTemporaryVariable("$value", valueType, true);
+            MethodCallExpression call = callX(new VariableSlotLoader(valueType, slot, operandStack), method);
             call.setMethodTarget(mn);
+            call.setImplicitThis(false);
+            call.setSourcePosition(orig);
             call.visit(controller.getAcg());
+            controller.getCompileStack().removeVar(slot);
             return;
         }
 
