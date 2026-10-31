@@ -861,4 +861,87 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
         assert err =~ /No signature of method.* is applicable for argument types: \(ArrayList\)/
     }
+
+    // GROOVY-12606
+    @Test
+    void testCoerceClosureReturnToFunctionalInterface() {
+        assertScript '''
+            class C {
+                static String take(Supplier<Supplier<String>> s) { s.get().get() }
+                String make(Supplier<Supplier<String>> s) { s.get().get() }
+                static String raw(Closure r) { take { r } }
+            }
+            Closure<String> c = { 'x' }
+            assert C.take { c } == 'x'
+            assert C.take { -> return c } == 'x'
+            assert C.take { return { 'y' } } == 'y'
+            assert C.take(() -> c) == 'x'
+            assert C.take(() -> { return c }) == 'x'
+            assert new C().make { c } == 'x'
+            assert new C().make(() -> c) == 'x'
+            assert C.raw { 'r' } == 'r'
+
+            Supplier<Supplier<String>> s = { c }
+            def v = s.get()
+            assert v !instanceof Closure
+            assert v.get() == 'x'
+
+            Supplier<Supplier<String>> t = () -> c
+            v = t.get()
+            assert v !instanceof Closure
+            assert v.get() == 'x'
+
+            Function<Integer,Supplier<String>> f = { Integer i -> c }
+            assert f.apply(1).get() == 'x'
+            f = (Integer i) -> c
+            assert f.apply(1).get() == 'x'
+
+            java.util.concurrent.Callable<Supplier<? extends CharSequence>> k = { c }
+            assert k.call().get() == 'x'
+
+            Closure<Integer> n = { String str -> str.length() }
+            Supplier<Function<String,Integer>> g = { n }
+            assert g.get().apply('abc') == 3
+
+            Closure<ArrayList<String>> d = { ['z'] }
+            Supplier<Supplier<List<String>>> l = () -> d
+            assert l.get().get() == ['z']
+
+            int runs = 0
+            Closure<Integer> i = { -> runs += 1 }
+            Supplier<Runnable> r = { i }
+            r.get().run()
+            assert runs == 1
+        '''
+    }
+
+    // GROOVY-12606
+    @Test
+    void testCoerceClosureReturnToFunctionalInterface2() {
+        shouldFailWithMessages '''
+            String take(Supplier<Supplier<String>> s) { s.get().get() }
+            Closure<Integer> c = { 1 }
+            take { c }
+        ''',
+        'Cannot return value of type groovy.lang.Closure<java.lang.Integer> for closure expecting java.util.function.Supplier<java.lang.String>'
+
+        shouldFailWithMessages '''
+            String take(Supplier<Supplier<String>> s) { s.get().get() }
+            Closure<Integer> c = { 1 }
+            take(() -> c)
+        ''',
+        'Cannot return value of type groovy.lang.Closure<java.lang.Integer> for lambda expecting java.util.function.Supplier<java.lang.String>'
+
+        shouldFailWithMessages '''
+            Closure<List<Integer>> c = { [1] }
+            Supplier<Supplier<List<String>>> s = { c }
+        ''',
+        'Cannot return value of type groovy.lang.Closure<java.util.List<java.lang.Integer>> for closure expecting java.util.function.Supplier<java.util.List<java.lang.String>>'
+
+        shouldFailWithMessages '''
+            Closure<String> c = { 'x' }
+            Supplier<ToIntFunction<String>> s = { c }
+        ''',
+        'Cannot return value of type groovy.lang.Closure<java.lang.String> for closure expecting java.util.function.ToIntFunction<java.lang.String>'
+    }
 }
