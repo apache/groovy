@@ -5707,12 +5707,28 @@ out:                if (mn.size() != 1) {
         ClassNode declaringClass = target.getDeclaringClass();
         if (declaringClass.isInterface() && target.isStatic()) {
             Expression objectExpression = getObjectExpression(call);
-            if (objectExpression != null) { ClassNode type = getType(objectExpression);
+            if (objectExpression != null && !(Traits.isTrait(declaringClass) && isTraitReceiver(objectExpression))) { ClassNode type = getType(objectExpression);
                 if (!isClassClassNodeWrappingConcreteType(type) || !type.getGenericsTypes()[0].getType().equals(declaringClass)) {
                     addStaticTypeError("static method of interface " + prettyPrintTypeName(declaringClass) + " can only be accessed with class qualifier", call);
                 }
             }
         }
+    }
+
+    /**
+     * Indicates whether the expression is the "$self" or "$static$self" parameter
+     * of a trait helper method, which stands for the implementing instance or class
+     * ("this.name" in trait code).
+     */
+    private static boolean isTraitReceiver(final Expression expression) { // GROOVY-12596
+        if (expression instanceof VariableExpression vexp) {
+            if (isTraitSelf(vexp) != null) return true;
+            if (Traits.STATIC_THIS_OBJECT.equals(vexp.getName()) && vexp.getAccessedVariable() instanceof Parameter parameter) {
+                ClassNode type = parameter.getType();
+                return isClassClassNodeWrappingConcreteType(type) && Traits.isTrait(type.getGenericsTypes()[0].getType());
+            }
+        }
+        return false;
     }
 
     private void checkSuperCallFromClosure(final Expression call, final MethodNode target) {

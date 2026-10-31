@@ -4442,4 +4442,104 @@ final class TraitASTTransformationTest {
             assert c.count == 2
         '''
     }
+
+    // GROOVY-12596: "this.name" for a static accessor of the trait
+    @CompileModesTest
+    void testThisStaticAccessorOfTrait(String mode) {
+        assertScript shell, """
+            import java.util.function.Supplier
+
+            $mode
+            trait T {
+                private static boolean flag = true
+                private static String nm = 'T'
+                static boolean isReady() { flag }
+                static void setReady(boolean b) { flag = b }
+                static String getName() { nm }
+                static void setName(String n) { nm = n }
+                boolean im() { this.ready }
+                String ip() { this.name }
+                void is(String n) { this.name = n }
+                String ic() { def c = { -> this.name }; c() }
+                String il() { Supplier<String> s = () -> this.name; s.get() }
+                static boolean sm() { this.ready }
+            }
+            $mode
+            trait U extends T {
+                static String us() { this.name }
+                static void uss(String n) { this.name = n }
+                String ui() { this.name }
+            }
+            class C implements U {
+            }
+            class D implements U {
+            }
+
+            def c = new C(), d = new D()
+            assert c.im() && d.im()
+            D.ready = false // each implementing class has its own trait state
+            assert c.im() && C.sm()
+            assert !d.im() && !D.sm()
+            c.is('c')
+            assert c.ip() == 'c' && c.ic() == 'c' && c.il() == 'c'
+            assert d.ip() == 'T' && d.ic() == 'T' && d.il() == 'T'
+            D.uss('d')
+            assert D.us() == 'd' && d.ui() == 'd'
+            assert C.us() == 'c' && c.ui() == 'c'
+        """
+    }
+
+    // GROOVY-12596
+    @CompileModesTest
+    void testThisStaticAccessorOfTrait2(String mode) {
+        assertScript shell, """
+            import java.util.function.Supplier
+
+            $mode
+            trait T {
+                static boolean isReady() { true }
+                static String getName() { 'T' }
+                static void setName(String n) { assert n == 'x' }
+                boolean im() { this.ready }
+                String ip() { this.name }
+                void is() { this.name = 'x' }
+                String ic() { def c = { -> this.name }; c() }
+                String il() { Supplier<String> s = () -> this.name; s.get() }
+            }
+            $mode
+            trait U extends T {
+                static String us() { this.name }
+                static void uss() { this.name = 'x' }
+                String ui() { this.name }
+            }
+            class C implements U {
+            }
+
+            def c = new C()
+            assert c.im()
+            assert c.ip() == 'T'
+            c.is()
+            assert c.ic() == 'T'
+            assert c.il() == 'T'
+            assert C.us() == 'T'
+            C.uss()
+            assert c.ui() == 'T'
+        """
+    }
+
+    // GROOVY-12596: a static accessor of a trait is not read through another instance
+    @ParameterizedTest
+    @ValueSource(strings=['@TypeChecked','@CompileStatic'])
+    void testStaticAccessorOfTraitThroughInstance(String mode) {
+        def err = shouldFail shell, """
+            $mode
+            trait T {
+                static boolean isReady() { true }
+                boolean other(T that) { that.ready }
+            }
+            $mode
+            def m(T t) { t.ready }
+        """
+        assert err.message.count('static method of interface T can only be accessed with class qualifier') == 2
+    }
 }
