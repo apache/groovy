@@ -1535,6 +1535,21 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12576
+    @Test
+    void testClosureObjectMethodWithoutThisObject() {
+        assertScript '''
+            class C {
+                String toString() { 'C' }
+                Closure<String> c() { { -> toString() } }
+            }
+
+            C c = new C()
+            assert c.c().rehydrate(null, c, null)() == 'C'
+            assert c.c().rehydrate(null, 'o', null)() == 'o'
+        '''
+    }
+
     // GROOVY-9604
     @Test
     void testClosureResolveStrategy() {

@@ -391,8 +391,9 @@ public class StaticInvocationWriter extends InvocationWriter {
                     theReceiver = thisObjectExpression(enclosingClass, declaringClass);
                     MethodNode objectMethod = getObjectMethod(target);
                     if (objectMethod != null && !enclosingClass.implementsInterface(ClassHelper.GENERATED_LAMBDA_TYPE)) {
-                        // a closure without a this object, e.g. after dehydrate(), uses its own method
-                        theReceiver = new ThisObjectOrClosureExpression(theReceiver);
+                        // a closure without a this object, e.g. after rehydrate(), uses its owner's method,
+                        // or its own method when it has no owner either, e.g. after dehydrate()
+                        theReceiver = new ThisObjectOwnerOrClosureExpression(theReceiver);
                         theTarget = objectMethod;
                     }
                 }
@@ -826,13 +827,13 @@ public class StaticInvocationWriter extends InvocationWriter {
     }
 
     /**
-     * Loads the this object of the closure being generated, or the closure
-     * itself when the this object is {@code null}.
+     * Loads the this object of the closure being generated, or its owner when
+     * the this object is {@code null}, or the closure itself when both are.
      */
-    private class ThisObjectOrClosureExpression extends Expression {
+    private class ThisObjectOwnerOrClosureExpression extends Expression {
         private final Expression thisObject;
 
-        ThisObjectOrClosureExpression(final Expression thisObject) {
+        ThisObjectOwnerOrClosureExpression(final Expression thisObject) {
             this.thisObject = thisObject;
             setType(ClassHelper.OBJECT_TYPE);
         }
@@ -848,6 +849,11 @@ public class StaticInvocationWriter extends InvocationWriter {
             if (visitor instanceof AsmClassGenerator) {
                 MethodVisitor mv = controller.getMethodVisitor();
                 Label done = new Label();
+                mv.visitInsn(DUP);
+                mv.visitJumpInsn(IFNONNULL, done);
+                mv.visitInsn(POP);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getOwner", "()Ljava/lang/Object;", false);
                 mv.visitInsn(DUP);
                 mv.visitJumpInsn(IFNONNULL, done);
                 mv.visitInsn(POP);
