@@ -809,7 +809,7 @@ of `CompilationUnit` that adds it as a phase operation, or that calls
 `PlaceholderVisitor.isPlaceholder`. Drop the phase operation. Where code needs
 to know whether a variable is `_`, check its name.
 
-### Groovy 7 — statically compiled constructor references call the constructor directly (GROOVY-12488)
+### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
 
 Under `@CompileStatic`, a constructor reference such as `X::new` created the
 object through the meta-class, which selected the constructor at run time from
