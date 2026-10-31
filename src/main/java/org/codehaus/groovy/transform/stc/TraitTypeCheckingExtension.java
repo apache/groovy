@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.transform.trait.TraitASTTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 
@@ -166,7 +167,7 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
     }
 
     /**
-     * Resolves synthetic trait static-field accessor properties.
+     * Resolves synthetic trait field accessor properties.
      */
     @Override
     public boolean handleUnresolvedProperty(final PropertyExpression pexp) {
@@ -176,20 +177,29 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
             String propertyName = pexp.getPropertyAsString();
             if (propertyName != null) {
                 ClassNode objectExpressionType = getType(objectExpression);
-                if (isClassClassNodeWrappingConcreteType(objectExpressionType)) {
+                boolean staticContext = isClassClassNodeWrappingConcreteType(objectExpressionType);
+                if (staticContext) {
                     objectExpressionType = objectExpressionType.getGenericsTypes()[0].getType();
                 }
                 for (ClassNode trait : Traits.findTraits(objectExpressionType)) {
                     if (propertyName.startsWith(trait.getName().replace('.', '_') + "__")) {
+                        MethodNode getter = null;
                         ClassNode staticFieldHelper = Traits.findStaticFieldHelper(trait);
-                        if (staticFieldHelper != null) {
-                            MethodNode getter = staticFieldHelper.getDeclaredMethod(propertyName + "$get", Parameter.EMPTY_ARRAY);
-                            if (getter != null) { // GROOVY-11663: resolve "$self.pack_Type__name" to a static field access method
-                                ClassNode returnType = typeCheckingVisitor.inferReturnTypeGenerics(objectExpressionType, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
-                                pexp.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, returnType);
-                                storeType(pexp, returnType);
-                                return true;
+                        if (staticFieldHelper != null) { // GROOVY-11663: resolve "$self.pack_Type__name" to a static field access method
+                            getter = staticFieldHelper.getDeclaredMethod(propertyName + "$get", Parameter.EMPTY_ARRAY);
+                        }
+                        if (getter == null && !staticContext) { // GROOVY-12609: or to an instance field access method
+                            ClassNode fieldHelper = Traits.findFieldHelper(trait);
+                            if (fieldHelper != null) {
+                                getter = fieldHelper.getDeclaredMethod(propertyName + "$get", Parameter.EMPTY_ARRAY);
                             }
+                        }
+                        if (getter != null) {
+                            ClassNode returnType = typeCheckingVisitor.inferReturnTypeGenerics(objectExpressionType, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
+                            returnType = GenericsUtils.correctToGenericsSpecRecurse(GenericsUtils.createGenericsSpec(trait), returnType); // field of A<T> in B extends A<Integer>
+                            pexp.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, returnType);
+                            storeType(pexp, returnType);
+                            return true;
                         }
                     }
                 }
