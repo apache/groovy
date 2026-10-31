@@ -727,9 +727,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         Statement invocation = impl.isVoidMethod() ? stmt(call) : returnS(call);
         Statement body = block(StaticInvocationWriter.gstringBridgePrologue(controller, samParams), invocation);
         ClassNode[] exceptions = impl.getExceptions() == null ? ClassNode.EMPTY_ARRAY : impl.getExceptions();
-        MethodNode adapter = controller.getClassNode().addSyntheticMethod(
+        ClassNode classNode = controller.getClassNode();
+        MethodNode adapter = classNode.addSyntheticMethod(
             createSyntheticMethodName("gstring", impl.getDeclaringClass(), impl.getName()),
-            Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+            // the JVM rejects ACC_FINAL on any method of an interface (JVMS 4.6)
+            Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | (classNode.isInterface() ? 0 : Opcodes.ACC_FINAL),
             impl.getReturnType(),
             adapterParams,
             exceptions,
