@@ -2420,6 +2420,62 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-12593
+    @CompileModesTest
+    void testTraitStaticPropertyNamedLikeFieldOfClass(String mode) {
+        for (name in ['name', 'module', 'componentType', 'packageName']) {
+            assertScript shell, """
+                $mode
+                trait T {
+                    static String $name = 'x'
+                    static String sm1() { $name = 'a'; $name }
+                    static String sm2() { this.$name = 'b'; $name }
+                    static String sm3() { $name += 'c'; $name }
+                    static String sm4() { Closure c = { -> $name = 'd' }; c.call(); $name }
+                    static String sm5() { Runnable r = () -> { $name = 'e' }; r.run(); $name }
+                    String im1() { $name = 'f'; $name }
+                    String im2() { this.$name = 'g'; $name }
+                }
+                $mode
+                class C implements T {
+                }
+
+                $mode void m() {
+                    assert C.sm1() == 'a'
+                    assert C.sm2() == 'b'
+                    assert C.sm3() == 'bc'
+                    assert C.sm4() == 'd'
+                    assert C.sm5() == 'e'
+                    assert C.$name == 'e'
+                    assert new C().im1() == 'f'
+                    assert new C().im2() == 'g'
+                    assert C.$name == 'g'
+                }
+                m()
+            """
+        }
+
+        assertScript shell, """
+            $mode
+            trait T {
+                static String name = 'x'
+            }
+            $mode
+            trait U extends T {
+                static void update(String value) { name = value }
+            }
+            $mode
+            class C implements U {
+            }
+
+            $mode void m() {
+                C.update('y')
+                assert C.name == 'y'
+            }
+            m()
+        """
+    }
+
     @Test
     void testTraitMethodShouldBeDefaultImplementationUsingReflection() {
         assertScript shell, '''

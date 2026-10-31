@@ -296,15 +296,15 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
     }
 
     private static FieldNode tryGetFieldNode(final ClassNode weavedType, final String fieldName) {
-        FieldNode fn = weavedType.getDeclaredField(fieldName);
-        if (fn == null && ClassHelper.isClassType(weavedType)) {
+        if (ClassHelper.isClassType(weavedType)) {
+            // GROOVY-12593: for static properties look in the trait, not in java.lang.Class (name, module, ...)
             GenericsType[] genericsTypes = weavedType.getGenericsTypes();
             if (genericsTypes != null && genericsTypes.length == 1) {
-                // for static properties
-                fn = genericsTypes[0].getType().getDeclaredField(fieldName);
+                return genericsTypes[0].getType().getDeclaredField(fieldName);
             }
+            return null;
         }
-        return fn;
+        return weavedType.getDeclaredField(fieldName);
     }
 
     private void throwSuperError(final ASTNode node) {
