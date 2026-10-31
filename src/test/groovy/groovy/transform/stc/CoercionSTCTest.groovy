@@ -861,4 +861,90 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
         assert err =~ /No signature of method.* is applicable for argument types: \(ArrayList\)/
     }
+
+    // GROOVY-12616
+    @Test
+    void testCoerceToFunctionalInterface22() {
+        assertScript '''
+            ToLongFunction<String> f = (String s) -> s.length()
+            assert f.applyAsLong('abc') == 3L
+            ToLongFunction<String> g = { String s -> s.length() }
+            assert g.applyAsLong('abc') == 3L
+            def h = { String s -> s.length() } as ToLongFunction<String>
+            assert h.applyAsLong('abc') == 3L
+        '''
+
+        assertScript '''
+            long m(ToLongFunction<String> f) { f.applyAsLong('abcd') }
+            assert m((String s) -> s.length()) == 4L
+            assert m { String s -> s.length() } == 4L
+            assert m { s -> s.length() } == 4L
+        '''
+
+        assertScript '''
+            ToDoubleFunction<String> i = (String s) -> s.length()
+            ToDoubleFunction<String> j = (String s) -> (long) s.length()
+            ToDoubleFunction<String> k = (String s) -> (float) s.length()
+            assert i.applyAsDouble('abc') == 3.0d
+            assert j.applyAsDouble('abc') == 3.0d
+            assert k.applyAsDouble('abc') == 3.0d
+        '''
+
+        assertScript '''
+            LongSupplier s = () -> 42
+            assert s.getAsLong() == 42L
+            DoubleUnaryOperator o = (double d) -> 1
+            assert o.applyAsDouble(0.5d) == 1.0d
+            IntSupplier c = () -> 'x'.charAt(0)
+            assert c.getAsInt() == 120
+            IntSupplier b = { -> (byte) 1 }
+            assert b.getAsInt() == 1
+        '''
+
+        assertScript '''
+            class C {
+                int n = 5
+                long test() {
+                    LongSupplier s = () -> n
+                    s.getAsLong()
+                }
+            }
+            assert new C().test() == 5L
+        '''
+
+        // unboxing then widening
+        assertScript '''
+            ToLongFunction<String> f = (String s) -> Integer.valueOf(s.length())
+            assert f.applyAsLong('abc') == 3L
+            LongSupplier s = { -> Integer.valueOf(42) }
+            assert s.getAsLong() == 42L
+        '''
+
+        assertScript '''
+            ToLongFunction<String> f = (String s) -> { if (s) return s.length(); return 0L }
+            assert f.applyAsLong('abc') == 3L
+            assert f.applyAsLong('') == 0L
+        '''
+
+        shouldFailWithMessages '''
+            ToIntFunction<String> f = (String s) -> (long) s.length()
+        ''',
+        'Cannot return value of type long for lambda expecting int'
+
+        shouldFailWithMessages '''
+            ToIntFunction<String> f = { String s -> (double) s.length() }
+        ''',
+        'Cannot return value of type double for closure expecting int'
+
+        shouldFailWithMessages '''
+            ToIntFunction<String> f = (String s) -> Long.valueOf(s.length())
+        ''',
+        'Cannot return value of type java.lang.Long for lambda expecting int'
+
+        shouldFailWithMessages '''
+            interface S { short get() }
+            S s = () -> 'x'.charAt(0)
+        ''',
+        'Cannot return value of type char for lambda expecting short'
+    }
 }
