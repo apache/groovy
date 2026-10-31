@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -205,6 +206,32 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
             }
         }
         return false;
+    }
+
+    /**
+     * Keeps a {@code @Virtual} static accessor read as a property dynamic when the
+     * receiver class has a getter of the same name, such as {@code Class.getName()}.
+     */
+    @Override
+    public void onMethodSelection(final Expression expression, final MethodNode target) {
+        if (expression instanceof PropertyExpression pexp
+                && pexp.getObjectExpression() instanceof VariableExpression objectExpression
+                && objectExpression.getText().endsWith(Traits.THIS_OBJECT)) {
+            String propertyName = pexp.getPropertyAsString();
+            if (propertyName != null) {
+                ClassNode objectExpressionType = getType(objectExpression);
+                if (isClassClassNodeWrappingConcreteType(objectExpressionType)) {
+                    objectExpressionType = objectExpressionType.getGenericsTypes()[0].getType();
+                }
+                // GROOVY-12594: "$static$self.name" for a @Virtual static getName() must not bind to Class#getName()
+                ClassNode propertyType = findVirtualStaticAccessorType(objectExpressionType, propertyName, true);
+                if (propertyType != null) {
+                    pexp.removeNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+                    pexp.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, propertyType);
+                    storeType(pexp, propertyType);
+                }
+            }
+        }
     }
 
     /**

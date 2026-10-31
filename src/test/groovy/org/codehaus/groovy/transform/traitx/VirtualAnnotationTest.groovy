@@ -286,6 +286,139 @@ final class VirtualAnnotationTest {
         """
     }
 
+    // GROOVY-12594
+    @ParameterizedTest
+    @ValueSource(strings=['@groovy.transform.CompileDynamic','@groovy.transform.TypeChecked','@groovy.transform.CompileStatic'])
+    void virtualStaticAccessor_namedLikeClassProperty_readAsProperty(String mode) {
+        assertScript """
+            import groovy.transform.Virtual
+            import java.util.function.Supplier
+
+            $mode
+            trait V {
+                @Virtual
+                static String getName() { 'trait' }
+                @Virtual
+                static boolean isInterface() { true }
+                @Virtual
+                static String getSimpleName() { 'trait' }
+                static String sm() { name }
+                static String st() { this.name }
+                static String sc() { def c = { -> name }; c() }
+                static String sl() { Supplier<String> s = () -> name; s.get() }
+                static boolean si() { this.interface }
+                static String ss() { simpleName }
+                String im() { name }
+                String it() { this.name }
+                boolean ii() { this.interface }
+                String is() { simpleName }
+            }
+            $mode
+            class Over implements V {
+                static String getName() { 'impl' }
+                static boolean isInterface() { false }
+                static String getSimpleName() { 'impl' }
+            }
+            $mode
+            class Def implements V {
+            }
+
+            $mode void m() {
+                assert Over.sm() == 'impl'
+                assert Def.sm()  == 'trait'
+                assert Over.st() == 'impl'
+                assert Def.st()  == 'trait'
+                assert Over.sc() == 'impl'
+                assert Def.sc()  == 'trait'
+                assert Over.sl() == 'impl'
+                assert Def.sl()  == 'trait'
+                assert !Over.si()
+                assert Def.si()
+                assert Over.ss() == 'impl'
+                assert Def.ss()  == 'trait'
+                assert new Over().im() == 'impl'
+                assert new Def().im()  == 'trait'
+                assert new Over().it() == 'impl'
+                assert new Def().it()  == 'trait'
+                assert !new Over().ii()
+                assert new Def().ii()
+                assert new Over().is() == 'impl'
+                assert new Def().is()  == 'trait'
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12594
+    @ParameterizedTest
+    @ValueSource(strings=['@groovy.transform.CompileDynamic','@groovy.transform.TypeChecked','@groovy.transform.CompileStatic'])
+    void virtualStaticAccessor_namedLikeClassProperty_writtenAsProperty(String mode) {
+        assertScript """
+            import groovy.transform.Virtual
+
+            $mode
+            trait V {
+                static String store = ''
+                @Virtual
+                static String getName() { store }
+                @Virtual
+                static void setName(String n) { store = n }
+                static String sm() { name = 'a'; name }
+                static String sc() { name += 'b'; name }
+            }
+            $mode
+            class Over implements V {
+                static void setName(String n) { store = n * 2 }
+            }
+            $mode
+            class Def implements V {
+            }
+
+            $mode void m() {
+                assert Over.sm() == 'aa'
+                assert Def.sm()  == 'a'
+                assert Over.sc() == 'aabaab'
+                assert Def.sc()  == 'ab'
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12594
+    @ParameterizedTest
+    @ValueSource(strings=['@groovy.transform.CompileDynamic','@groovy.transform.TypeChecked','@groovy.transform.CompileStatic'])
+    void virtualStaticAccessor_ofSuperTrait_namedLikeClassProperty(String mode) {
+        assertScript """
+            import groovy.transform.Virtual
+
+            $mode
+            trait P {
+                @Virtual
+                static String getSimpleName() { 'trait' }
+            }
+            $mode
+            trait V extends P {
+                static String sm() { simpleName }
+                String im() { simpleName }
+            }
+            $mode
+            class Over implements V {
+                static String getSimpleName() { 'impl' }
+            }
+            $mode
+            class Def implements V {
+            }
+
+            $mode void m() {
+                assert Over.sm() == 'impl'
+                assert Def.sm()  == 'trait'
+                assert new Over().im() == 'impl'
+                assert new Def().im()  == 'trait'
+            }
+            m()
+        """
+    }
+
     // ============ Validation ============
 
     /** {@code @Virtual} on an instance method → compile error. */
