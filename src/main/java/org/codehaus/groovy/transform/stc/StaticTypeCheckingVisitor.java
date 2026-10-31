@@ -1050,7 +1050,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         binX(readClone, Token.newSymbol(TokenUtil.removeAssignment(op), expression.getOperation().getStartLine(), expression.getOperation().getStartColumn()), rightExpression));
                 rightExpression.setSourcePosition(expression);
 
-                visitBinaryExpression(assignX(leftExpression, rightExpression, expression));
+                BinaryExpression assignment = assignX(leftExpression, rightExpression, expression);
+                visitBinaryExpression(assignment);
+                // GROOVY-12535: a map value converted for the assignment is converted for the compound write too
+                if (assignment.getRightExpression() instanceof CastExpression cast && cast.getNodeMetaData(MAP_VALUE_CONVERSION) != null) {
+                    convertMapValue(expression, cast.getType());
+                }
                 // GROOVY-12524: the write of leftExpression records the setter; keep the getter too
                 rememberExtensionPropertyGetter(leftExpression, readClone);
                 expression.copyNodeMetaData(rightExpression);
@@ -1135,7 +1140,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     List<MethodNode> methods = findMethod(lType, "putAt", arguments);
                     if (methods.isEmpty()) {
                         addNoMatchingMethodError(lType, "putAt", arguments, enclosingBinaryExpression);
-                    } else if (methods.size() == 1) {
+                    } else if (methods.size() == 1
+                            // GROOVY-12535: the assignment converts a value that only the tagged putAt accepts
+                            && mapValueTypeToConvertTo(lType, arguments[0], arguments[1]) == null) {
                         typeCheckMethodsWithGenericsOrFail(lType, arguments, methods.get(0), enclosingExpressionRHS);
                     }
                 }
@@ -1157,11 +1164,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                 ClassNode originType = getOriginalDeclarationType(leftExpression);
                 typeCheckAssignment(expression, leftExpression, originType, rightExpression, resultType);
-                // GROOVY-12535: property writes into a Map call Map.put(Object, Object). A GString
-                // assigned to a String value is accepted, as "String s = gString" is, but is stored
-                // unchanged. Convert it here so the write keeps compiling and stores a String.
-                if (coerceGStringToStringForMapValue(expression, leftExpression, rightExpression, originType, rType)) {
-                    resultType = originType;
+                // GROOVY-12535: a property or subscript write to a map stores the value as is, through
+                // Map.put(Object, Object). A value accepted for the map's value type but not of that type,
+                // such as a GString for String, is converted to it, as putAt(Map, Object, Object, Class) does.
+                ClassNode mapValueType = mapValueTypeToConvertTo(leftExpression, rType);
+                if (mapValueType != null) {
+                    convertMapValue(expression, mapValueType);
+                    resultType = mapValueType;
                 }
                 // check for implicit conversion like "String a = 123", "int[] b = [1,2,3]", "List c = [].stream()", etc.
                 if (!implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(resultType), wrapTypeIfNecessary(originType))) {
@@ -2159,37 +2168,77 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         return false;
     }
 
+    private static final String MAP_VALUE_CONVERSION = "stc.mapValueConversion";
+
     /**
-     * Wraps a {@code GString} written to a {@code String}-valued map property in a cast to
-     * {@code String}. {@code Map.put} cannot see the value type parameter, so without the cast
-     * the {@code GString} is stored as-is. Direct {@code put} and {@code putAt} are unchanged.
-     *
-     * @return {@code true} when the right-hand side was rewritten
+     * Returns the value type of the map written by a property or subscript assignment
+     * when the value needs converting to it, or {@code null}. The property may be
+     * one of a map delegate ({@code map.with { key = value }}).
      */
-    private boolean coerceGStringToStringForMapValue(final BinaryExpression assignment, final Expression leftExpression, final Expression rightExpression, final ClassNode leftType, final ClassNode rightType) {
-        if (!isStringType(leftType) || !isGStringOrGStringStringLUB(rightType) || !isMapValueWrite(leftExpression)) {
-            return false;
+    private ClassNode mapValueTypeToConvertTo(final Expression lhs, final ClassNode valueType) {
+        ClassNode mapType = null, keyType = STRING_TYPE;
+        if (lhs instanceof PropertyExpression pexp) {
+            mapType = getType(pexp.getObjectExpression());
+        } else if (lhs instanceof VariableExpression vexp && vexp.getAccessedVariable() instanceof DynamicVariable) {
+            Object owner = vexp.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
+            if (owner instanceof ClassNode ownerType) mapType = ownerType;
+        } else if (lhs instanceof BinaryExpression subscript && isArrayOp(subscript.getOperation().getType())) {
+            mapType = getType(subscript.getLeftExpression());
+            keyType = getType(subscript.getRightExpression());
         }
-        CastExpression cast = castX(STRING_TYPE, rightExpression);
-        cast.setSourcePosition(rightExpression);
-        cast.putNodeMetaData(INFERRED_TYPE, STRING_TYPE);
-        assignment.setRightExpression(cast);
-        return true;
+        return mapType == null ? null : mapValueTypeToConvertTo(mapType, keyType, valueType);
     }
 
     /**
-     * A property-style write whose receiver is a {@code Map}, including an implicit
-     * property resolved through a map delegate ({@code map.with { key = value }}).
+     * Type checks a write of a value to a map as the call {@code putAt(map, key, value)}.
+     * Returns the map's value type when the value is accepted only by the {@code putAt}
+     * whose {@link ClassTag} token the compiler supplies from that type: the value is not
+     * of the type but converts to it. The upgrade of the write is treated as a
+     * {@code @ClassTag} preemption, so the consent veto of
+     * {@link CompilerConfiguration#isClassTagPreemptionDisabled()} keeps the write as it is.
      */
-    private boolean isMapValueWrite(final Expression lhs) {
-        if (lhs instanceof PropertyExpression pexp) {
-            return isOrImplements(getType(pexp.getObjectExpression()), MAP_TYPE);
+    private ClassNode mapValueTypeToConvertTo(final ClassNode mapType, final ClassNode keyType, final ClassNode valueType) {
+        if (valueType == null || valueType == UNKNOWN_PARAMETER_TYPE || !isOrImplements(mapType, MAP_TYPE)
+                || !ClassTagSupport.isPreemptionPossible(this)) {
+            return null;
         }
-        if (lhs instanceof VariableExpression vexp && vexp.getAccessedVariable() instanceof DynamicVariable) {
-            Object owner = vexp.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
-            return owner instanceof ClassNode ownerType && isOrImplements(ownerType, MAP_TYPE);
+        // the value type of the map, as a variable of that type would be declared
+        GenericsType[] mapTypeArguments = GenericsUtils.parameterizeType(mapType, MAP_TYPE).getGenericsTypes();
+        if (mapTypeArguments == null || mapTypeArguments.length != 2 || mapTypeArguments[1].isWildcard() || mapTypeArguments[1].isPlaceholder()) {
+            return null;
         }
-        return false;
+        ClassNode mapValueType = mapTypeArguments[1].getType();
+        // the value is accepted for a variable of the value type
+        if (!checkCompatibleAssignmentTypes(mapValueType, valueType, null, false)
+                || (mapValueType.isUsingGenerics() && !missesGenericsTypes(valueType)
+                    && !GenericsUtils.buildWildcardType(mapValueType).isCompatibleWith(wrapTypeIfNecessary(valueType)))) {
+            return null;
+        }
+        ClassNode[] args = {keyType, valueType};
+        for (MethodNode putAt : findMethod(mapType, "putAt", args)) {
+            if (typeCheckMethodsWithGenerics(mapType, args, putAt)) return null; // the value is of the value type
+        }
+        // only the putAt whose token the compiler supplies accepts the value: it converts the value
+        ClassTagSupport.ClassTagMatch tagged = ClassTagSupport.matchAdditive(this, List.of(Receiver.<String>make(mapType)), "putAt", args);
+        if (tagged == null) return null;
+        ClassNode[] taggedArgs = tagged.expandArgumentTypes(args);
+        for (MethodNode putAt : findMethod(mapType.getPlainNodeReference(), "putAt", taggedArgs)) {
+            if (typeCheckMethodsWithGenerics(mapType, taggedArgs, putAt)) return mapValueType;
+        }
+        return null;
+    }
+
+    /**
+     * Wraps the value of an assignment in a cast to the value type of the map it is
+     * written to; see {@link #mapValueTypeToConvertTo(ClassNode, ClassNode, ClassNode)}.
+     */
+    private static void convertMapValue(final BinaryExpression assignment, final ClassNode valueType) {
+        Expression value = assignment.getRightExpression();
+        CastExpression cast = castX(valueType, value);
+        cast.setSourcePosition(value);
+        cast.putNodeMetaData(INFERRED_TYPE, valueType);
+        cast.putNodeMetaData(MAP_VALUE_CONVERSION, Boolean.TRUE);
+        assignment.setRightExpression(cast);
     }
 
     /**
@@ -5353,6 +5402,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         if (tagged != null) {
                             ClassNode[] taggedArgs = tagged.expandArgumentTypes(args);
                             List<MethodNode> taggedMn = findMethod(tagged.receiver.getType().getPlainNodeReference(), name, taggedArgs);
+                            // the tagged overload must accept the call with its generics, else the call stays as written
+                            taggedMn.removeIf(taggedMethod -> !typeCheckMethodsWithGenerics(tagged.receiver.getType(), taggedArgs, taggedMethod));
                             if (!taggedMn.isEmpty()) {
                                 MethodNode taggedFirst = taggedMn.get(0);
                                 taggedMn = allowStaticAccessToMember(taggedMn, !tagged.receiver.isObject());
