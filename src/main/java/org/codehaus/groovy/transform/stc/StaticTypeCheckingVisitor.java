@@ -2253,6 +2253,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         if (!extension.handleIncompatibleAssignment(targetType, valueType, entryExpression)) {
                             addAssignmentError(targetType, valueType, entryExpression);
                         }
+                    } else if (propertyTypes.size() == 1 && implementsInterfaceOrIsSubclassOf(valueType, CLOSURE_TYPE)) {
+                        ClassNode propertyType = propertyTypes.iterator().next();
+                        if (isSAMType(propertyType)) { // a closure value is converted to the type of the property
+                            keyExpression.putNodeMetaData(PARAMETER_TYPE, propertyType);
+                        }
                     }
                 }
             }
