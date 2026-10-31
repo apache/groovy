@@ -1009,6 +1009,186 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.Integer to variable of type java.lang.Character'
     }
 
+    // GROOVY-12625
+    @Test
+    void testPostfixAndPrefixOnSubscriptOfNumber() {
+        assertScript '''
+            List<BigDecimal> list = [1.0]
+            def r = list[0]++
+            assert r == 1.0 && list == [2.0]
+            r = ++list[0]
+            assert r == 3.0 && list == [3.0]
+            r = list[0]--
+            assert r == 3.0 && list == [2.0]
+            r = --list[0]
+            assert r == 1.0 && list == [1.0]
+
+            BigDecimal[] array = [1.0]
+            r = array[0]++
+            assert r == 1.0 && array[0] == 2.0
+            r = --array[0]
+            assert r == 1.0 && array[0] == 1.0
+
+            Map<String, BigDecimal> map = [x: 1.0]
+            r = map['x']++
+            assert r == 1.0 && map == [x: 2.0]
+            r = --map['x']
+            assert r == 1.0 && map == [x: 1.0]
+            r = map.x++
+            assert r == 1.0 && map == [x: 2.0]
+
+            List<BigInteger> big = [1G]
+            r = big[0]++
+            assert r == 1G && big == [2G]
+
+            List<List<BigDecimal>> nested = [[1.0]]
+            r = ++nested[0][0]
+            assert r == 2.0 && nested == [[2.0]]
+
+            List<BigDecimal> safe = [1.0]
+            r = safe?[0]++
+            assert r == 1.0 && safe == [2.0]
+
+            list[0]++
+            ++list[0]
+            array[0]--
+            --array[0]
+            assert list == [3.0] && array[0] == -1.0
+        '''
+    }
+
+    // GROOVY-12625
+    @Test
+    void testPostfixAndPrefixOnSubscriptOfNonNumber() {
+        assertScript '''
+            List<String> strings = ['a']
+            def r = strings[0]++
+            assert r == 'a' && strings == ['b']
+            r = ++strings[0]
+            assert r == 'c' && strings == ['c']
+            r = --strings[0]
+            assert r == 'b' && strings == ['b']
+
+            String[] array = ['a']
+            r = array[0]--
+            assert r == 'a' && array[0] == '`'
+
+            List<Character> chars = ['a' as Character]
+            r = chars[0]++
+            assert r == 'a' && chars == ['b' as Character]
+
+            char[] primitive = ['a' as char]
+            r = ++primitive[0]
+            assert r == 'b' && primitive[0] == ('b' as char)
+
+            Map<String, String> map = [x: 'a']
+            r = map['x']++
+            assert r == 'a' && map == [x: 'b']
+        '''
+        assertScript '''
+            class Counter {
+                int n
+                Counter next() { new Counter(n: n + 1) }
+                Counter previous() { new Counter(n: n - 1) }
+            }
+
+            List<Counter> list = [new Counter()]
+            Counter c = list[0]++
+            assert c.n == 0 && list[0].n == 1
+            c = --list[0]
+            assert c.n == 0 && list[0].n == 0
+            c = ++list[0]
+            assert c.n == 1 && list[0].n == 1
+        '''
+    }
+
+    // GROOVY-12625
+    @Test
+    void testPostfixAndPrefixOnSubscriptOfCustomGetAtAndPutAt() {
+        assertScript '''
+            class Box {
+                BigDecimal value = 1.0
+                String text = 'a'
+                BigDecimal getAt(int i) { value }
+                void putAt(int i, BigDecimal v) { value = v }
+                String getAt(String key) { text }
+                void putAt(String key, String v) { text = v }
+            }
+
+            def box = new Box()
+            def r = box[0]++
+            assert r == 1.0 && box.value == 2.0
+            r = ++box[0]
+            assert r == 3.0 && box.value == 3.0
+            r = box['k']++
+            assert r == 'a' && box.text == 'b'
+            r = --box['k']
+            assert r == 'a' && box.text == 'a'
+        '''
+    }
+
+    // GROOVY-12625
+    @Test
+    void testPostfixAndPrefixOnSubscriptOfMissingMapKey() {
+        assertScript '''
+            Map<String, BigDecimal> map = [:].withDefault { 0.0 }
+            def r = map['x']++
+            assert r == 0.0 && map == [x: 1.0]
+            r = --map['y']
+            assert r == -1.0 && map == [x: 1.0, y: -1.0]
+        '''
+        assertScript '''
+            Map<String, String> map = [:]
+            try {
+                map['x']++
+                assert false
+            } catch (NullPointerException expected) {
+            }
+        '''
+    }
+
+    // GROOVY-12625
+    @Test
+    void testPostfixAndPrefixOnSubscriptInClosureLambdaAndStaticMethod() {
+        assertScript '''
+            class C {
+                List<BigDecimal> list = [1.0]
+                static BigDecimal[] array = [1.0]
+                BigDecimal viaClosure() {
+                    def closure = { -> list[0]++ }
+                    closure()
+                }
+                BigDecimal viaLambda() {
+                    java.util.function.Supplier<BigDecimal> supplier = () -> ++list[0]
+                    supplier.get()
+                }
+                static BigDecimal viaStatic() {
+                    array[0]--
+                }
+            }
+
+            def c = new C()
+            assert c.viaClosure() == 1.0 && c.list == [2.0]
+            assert c.viaLambda() == 3.0 && c.list == [3.0]
+            assert C.viaStatic() == 1.0 && C.array[0] == 0.0
+        '''
+    }
+
+    // GROOVY-12625
+    @Test
+    void testPostfixAndPrefixOnSubscriptOfObject() {
+        shouldFailWithMessages '''
+            List<Object> list = [1]
+            list[0]++
+        ''',
+        'Cannot find matching method java.lang.Object#next()'
+        shouldFailWithMessages '''
+            Object[] array = [1]
+            --array[0]
+        ''',
+        'Cannot find matching method java.lang.Object#previous()'
+    }
+
     @Test
     void testPostfixOnObject() {
         shouldFailWithMessages '''
