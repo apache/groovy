@@ -97,6 +97,11 @@ public final class Dialects {
         public String identifier(String identifier) {
             return quote(identifier, '"');
         }
+
+        @Override
+        public String realTypeName() {
+            return "DOUBLE PRECISION";
+        }
     }
 
     private static final class MySqlDialect implements Dialect {
@@ -120,6 +125,11 @@ public final class Dialects {
         @Override
         public String identifier(String identifier) {
             return quote(identifier, '"');
+        }
+
+        @Override
+        public String realTypeName() {
+            return "REAL";
         }
 
         @Override

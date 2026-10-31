@@ -1258,13 +1258,16 @@ A set of common methods and operators maps to SQL: `toUpperCase()`/`toLowerCase(
 `substring(...)` to `SUBSTRING(...)` (Groovy's 0-based, exclusive indexes; a column index is
 shifted in SQL), `replace(a, b)` to `REPLACE(...)`, `concat(other)` and string `+` to `||`,
 `abs()`/`floor()`/`ceil()`/`round()`/`round(scale)` to the same-named SQL functions (`ceil` is
-`CEILING`), `%` to `MOD`, `&&`/`||`/`!` to `AND`/`OR`/`NOT`, and ternary expressions to
-`CASE WHEN ... END`. The Elvis operator is
+`CEILING`), `%` to `MOD`, `/` to real division (`CAST(... AS DOUBLE)`), `&&`/`||`/`!` to `AND`/`OR`/`NOT`,
+and ternary expressions to `CASE WHEN ... END`. The Elvis operator is
 rejected: write an explicit `== null` ternary. A constant range on the right of `in`, including a
 descending or exclusive range, becomes a pair of comparisons (`1..3` and `3..1` are the same
 bounds). A range whose bounds are not compile-time constants is rejected, because a descending
 Groovy range still contains the values between its endpoints; write `x >= low && x <= high` when
-the order is known. SQL nulls propagate where Groovy would throw, for example `null.toUpperCase()`.
+the order is known. `in []` matches nothing and `!in []` matches every row. `contains(null)`
+(and `startsWith`/`endsWith`) does not match the text `null`. `sum` of an all-null group is 0,
+matching the collection provider. SQL nulls propagate where Groovy would throw, for example
+`null.toUpperCase()`.
 
 Table names are simple identifiers or `schema.table`. Anything else, including quotes and
 spaces, is rejected. A quoting `table()` helper is not part of this backend yet.

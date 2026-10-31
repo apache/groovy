@@ -528,6 +528,58 @@ class GinqSqlIntegrationTest {
     }
 
     @Test
+    void testRealDivisionDoesNotTruncate() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.id / 2 > 2
+            orderby e.name
+            select e.name
+        }
+        assert ['Eve', 'Frank'] == result.collect { it.name }
+    }
+
+    @Test
+    void testEmptyInList() {
+        def none = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.id in []
+            select e.name
+        }
+        assert [] == none.toList()
+        def all = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.id !in []
+            select e.id
+        }
+        assert 6 == all.toList().size()
+    }
+
+    @Test
+    void testContainsNullDoesNotMatchTheWordNull() {
+        def missing = null
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.name.contains(missing) || e.name == 'null'
+            select e.name
+        }
+        assert [] == result.toList()
+    }
+
+    @Test
+    void testSumOfAllNullsIsZero() {
+        db.execute('insert into employees (id, name, salary, deptId, active) values (?, ?, ?, ?, ?)',
+                [7, 'Gina', null, 1, true])
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.name == 'Gina'
+            groupby e.name
+            select sum(e.salary) as total
+        }
+        assert 1 == result.toList().size()
+        assert result.toList()[0].total == 0
+    }
+
+    @Test
     void testFunctionAndRangePushDown() {
         def result = GQL(provider: 'native-sql', dataSource: db) {
             from e in 'employees'

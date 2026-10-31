@@ -118,6 +118,17 @@ class JooqSqlIntegrationTest {
     }
 
     @Test
+    void testRealDivisionMatchesNative() {
+        def result = GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+            from e in 'employees'
+            where e.id / 2 > 2
+            orderby e.name
+            select e.name
+        }
+        assert ['Eve', 'Frank'] == result.collect { it.name }
+    }
+
+    @Test
     void testRoundAndFloorMatchNative() {
         def result = GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
             from e in 'employees'

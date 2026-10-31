@@ -21,6 +21,10 @@ package org.apache.groovy.ginq.provider.sql.jooq
 import groovy.sql.Sql
 import org.apache.groovy.ginq.provider.sql.GinqSqlTestSupport
 import org.apache.groovy.ginq.provider.sql.GinqSqlTranslationTest.CapturingSql
+import org.apache.groovy.ginq.provider.sql.ir.SqlColumn
+import org.apache.groovy.ginq.provider.sql.ir.SqlProjection
+import org.apache.groovy.ginq.provider.sql.ir.SqlQuery
+import org.apache.groovy.ginq.provider.sql.ir.SqlTableRef
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -91,5 +95,15 @@ class JooqSqlTranslationTest {
                 "where (e.deptId is not null and e.name like ? escape '!') " +
                 'group by e.deptId having count(*) > ?' == db.sqlText
         assert ['%a%', 1] == db.params
+    }
+
+    @Test
+    void testSchemaQualifiedTableIsTwoIdentifiers() {
+        def query = new SqlQuery()
+        query.from = new SqlTableRef('hr.employees', 'e')
+        query.projections << new SqlProjection(new SqlColumn('e', 'id'))
+        def sql = JooqRenderer.render(query, 'H2').sql.toLowerCase()
+        assert sql.contains('from hr.employees e')
+        assert !sql.contains('"hr.employees"')
     }
 }

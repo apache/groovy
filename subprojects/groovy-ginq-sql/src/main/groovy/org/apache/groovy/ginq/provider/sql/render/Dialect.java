@@ -88,6 +88,17 @@ public interface Dialect {
     }
 
     /**
+     * SQL type name that forces real division, matching Groovy {@code /}
+     * rather than integer truncation.
+     *
+     * @return the type name
+     * @since 6.0.0
+     */
+    default String realTypeName() {
+        return "DOUBLE";
+    }
+
+    /**
      * Returns the set operator subtracting one query result from another.
      *
      * @return the operator text, {@code EXCEPT} by default

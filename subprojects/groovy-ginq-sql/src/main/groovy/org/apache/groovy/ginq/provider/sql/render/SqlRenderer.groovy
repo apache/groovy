@@ -174,6 +174,16 @@ class SqlRenderer {
         } else if (expr instanceof SqlLiteral) {
             renderLiteral(expr.value, sb)
         } else if (expr instanceof SqlBinary) {
+            if ('/' == expr.op) {
+                // Groovy divides in real arithmetic; SQL integer division would truncate
+                String realType = dialect.realTypeName()
+                sb.append('(CAST(')
+                renderExpr(expr.left, sb, parameters)
+                sb.append(' AS ').append(realType).append(') / CAST(')
+                renderExpr(expr.right, sb, parameters)
+                sb.append(' AS ').append(realType).append('))')
+                return
+            }
             int prec = precedence(expr.op)
             renderOperand(expr.left, prec, sb, parameters)
             sb.append(' ').append(expr.op).append(' ')

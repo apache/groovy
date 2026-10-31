@@ -63,6 +63,7 @@ import org.jooq.Table
 import org.jooq.conf.RenderQuotedNames
 import org.jooq.conf.Settings
 import org.jooq.impl.DSL
+import org.jooq.impl.SQLDataType
 
 import java.util.regex.Matcher
 
@@ -200,7 +201,8 @@ class JooqRenderer {
 
     private Table buildTableSource(DSLContext ctx, SqlTableSource tableSource) {
         if (tableSource instanceof SqlTableRef) {
-            return DSL.table(DSL.name(tableSource.tableName)).as(tableSource.alias)
+            String[] parts = tableSource.tableName.split('\\.', -1)
+            return DSL.table(DSL.name(parts)).as(tableSource.alias)
         }
         if (tableSource instanceof SqlDerivedTable) {
             return buildQuery(ctx, tableSource.query).asTable(tableSource.alias)
@@ -287,7 +289,8 @@ class JooqRenderer {
                 case '+': return buildField(ctx, expr.left).add(buildField(ctx, expr.right))
                 case '-': return buildField(ctx, expr.left).sub(buildField(ctx, expr.right))
                 case '*': return buildField(ctx, expr.left).mul(buildField(ctx, expr.right))
-                case '/': return buildField(ctx, expr.left).div(buildField(ctx, expr.right))
+                case '/': return DSL.cast(buildField(ctx, expr.left), SQLDataType.DOUBLE)
+                        .div(DSL.cast(buildField(ctx, expr.right), SQLDataType.DOUBLE))
                 case '||': return DSL.concat(buildField(ctx, expr.left), buildField(ctx, expr.right))
                 default: return DSL.field(buildCondition(ctx, expr))
             }
@@ -320,6 +323,7 @@ class JooqRenderer {
             case 'SUBSTRING': return fields.size() > 2
                     ? DSL.substring(fields[0], fields[1], fields[2])
                     : DSL.substring(fields[0], fields[1])
+            case 'COALESCE': return DSL.coalesce(fields[0], fields[1])
             case 'COUNT': return DSL.count(fields[0])
             case 'SUM': return DSL.sum(fields[0])
             case 'AVG': return DSL.avg(fields[0])

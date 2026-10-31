@@ -467,7 +467,6 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         if (expr instanceof BooleanExpression) return translateExpr(expr.expression)
         if (expr instanceof TernaryExpression) return translateTernary(expr)
         if (expr instanceof BinaryExpression) return translateBinary(expr)
-        if (expr instanceof NotExpression) return new SqlUnary('NOT', translateExpr(expr.expression))
         if (expr instanceof UnaryMinusExpression) return new SqlUnary('-', translateExpr(expr.expression))
         if (expr instanceof PropertyExpression) return translateProperty(expr)
         if (expr instanceof MethodCallExpression) return translateMethodCall(expr)
@@ -516,7 +515,12 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
                     reject("only list literals, constant ranges and subqueries are supported on the right-hand side of `in` by the ${providerName} provider", right)
                     return null
                 }
-                List<SqlExpr> values = ((ListExpression) right).expressions.collect { Expression e -> translateExpr(e) }
+                List<Expression> elements = ((ListExpression) right).expressions
+                if (elements.isEmpty()) {
+                    // `x in []` is false and `x !in []` is true, including when x is null
+                    return new SqlBinary('=', new SqlLiteral(1), new SqlLiteral('!in' == op ? 1 : 0))
+                }
+                List<SqlExpr> values = elements.collect { Expression e -> translateExpr(e) }
                 return new SqlIn(translateExpr(left), values, '!in' == op)
             case '==':
             case '!=':
@@ -579,6 +583,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
                 if (name in tableAliases) return new SqlColumn(name, property)
                 if (1 == tableAliases.size()) return new SqlColumn(tableAliases[0], property)
                 error("cannot resolve `${expr.text}`: name the aggregate lambda parameter after a table alias for multi-table queries", expr)
+                return null
             }
             if (name in tableAliases) {
                 return new SqlColumn(name, property)
@@ -796,7 +801,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         }
         Expression arg = args[0]
         if (!lambdaStyle) {
-            return new SqlFunction(functionName, [translateExpr(arg)])
+            return finishAggregate(method, new SqlFunction(functionName, [translateExpr(arg)]))
         }
         if (!(arg instanceof ClosureExpression)) {
             reject("aggregate function `${method}` expects a lambda argument, e.g. `${groupAlias}.${method}(e -> e.salary)`", arg)
@@ -808,10 +813,18 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         String previousParam = aggregateLambdaParam
         aggregateLambdaParam = param
         try {
-            return new SqlFunction(functionName, [translateExpr(body)])
+            return finishAggregate(method, new SqlFunction(functionName, [translateExpr(body)]))
         } finally {
             aggregateLambdaParam = previousParam
         }
+    }
+
+    // Groovy sum treats null as zero, so an all-null group is 0 rather than SQL null
+    private static SqlExpr finishAggregate(String method, SqlExpr call) {
+        if ('sum' == method) {
+            return new SqlFunction('COALESCE', [call, new SqlLiteral(0)])
+        }
+        return call
     }
 
     private Expression extractSingleExpression(ClosureExpression closure) {

@@ -214,12 +214,16 @@ public final class SqlGinqRuntime {
      * itself) with {@code !}, matching the {@code ESCAPE '!'} clause the
      * renderer emits. Used for {@code contains}/{@code startsWith}/{@code endsWith}.
      *
-     * @param value the value to match literally
+     * @param value the value to match literally; {@code null} stays {@code null}
+     *              so the predicate is unknown instead of matching the text {@code "null"}
      * @param matchBefore whether anything may precede the value
      * @param matchAfter whether anything may follow the value
-     * @return the escaped pattern
+     * @return the escaped pattern, or {@code null} when {@code value} is {@code null}
      */
     public static String likePattern(Object value, boolean matchBefore, boolean matchAfter) {
+        if (value == null) {
+            return null;
+        }
         String escaped = String.valueOf(value)
                 .replace("!", "!!")
                 .replace("%", "!%")

@@ -173,7 +173,7 @@ class GinqSqlTranslationTest {
             having count() > 1
             select e.deptId, count() as cnt, sum(e.salary) as total
         }
-        assert 'SELECT e.deptId, COUNT(*) AS cnt, SUM(e.salary) AS total FROM employees e ' +
+        assert 'SELECT e.deptId, COUNT(*) AS cnt, COALESCE(SUM(e.salary), 0) AS total FROM employees e ' +
                 'GROUP BY e.deptId HAVING COUNT(*) > ?' == db.sqlText
         assert [1] == db.params
     }
@@ -280,6 +280,18 @@ class GinqSqlTranslationTest {
             select e.name
         }
         assert 'SELECT e.name FROM employees e WHERE CHAR_LENGTH(e.name) = 0 OR NOT (CHAR_LENGTH(e.name) = 0)' == db.sqlText
+    }
+
+    @Test
+    void testEmptyInAndNullLikePattern() {
+        def missing = null
+        GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.id in [] || e.name.contains(missing)
+            select e.name
+        }
+        assert 'SELECT e.name FROM employees e WHERE 1 = 0 OR e.name LIKE ? ESCAPE \'!\'' == db.sqlText
+        assert [null] == db.params
     }
 
     @Test
