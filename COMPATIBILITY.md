@@ -660,6 +660,27 @@ compiler produced, unless the caller runs the visitor itself. A copy of
 `CompilationUnit` that adds the visitor as a phase operation still compiles
 and can drop it.
 
+### Groovy 6.0.1 — parallel collections run on the pool in scope (GROOVY-12457)
+
+Parallel collection methods (incubating) run on the pool bound with
+`Pool.withCurrent`. In 6.0.0 a pool not backed by a `ForkJoinPool`, such as
+`Pool.virtual()` or `Pool.io()`, was silently replaced by the common
+fork-join pool, so blocking callbacks gained nothing from it.
+
+**Who is affected.**
+
+- Callbacks under `Pool.virtual()` or `Pool.io()` now run on that pool's
+  threads. A short-circuit (`findParallel`, `findAnyParallel`,
+  `anyParallel`, `everyParallel`) or a failing sibling interrupts callbacks
+  still running there, which closes an interruptible channel they are
+  blocked on.
+- `Pool.current()` returns the pool on its own worker threads, where it
+  returned `null`, so a nested parallel call stays on that pool.
+- `groupByParallel` returns its keys in first-seen order, as `groupBy` does.
+- `grepParallel` keeps an element when `isCase` is Groovy-true, as `grep`
+  does. A filter whose `isCase` returns `null`, `0`, an empty string or an
+  empty collection no longer keeps every element.
+
 ### Groovy 7 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
 
 For a dynamic property write or read, the runtime checks whether the receiver
