@@ -2690,6 +2690,160 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12509
+    @ParameterizedTest
+    @ValueSource(strings=['@CompileDynamic','@TypeChecked','@CompileStatic'])
+    void testSiblingClassPrivateMemberReference(String tag) {
+        assertScript shell, """
+            $tag
+            class Outer {
+                static class Box {
+                    final String v
+                    private Box(String a, String b) { v = a + b }
+                    Box() { v = '!' }
+                    private static String sm() { 'sm' }
+                    private String im() { 'im' + v }
+                }
+                static class Other {
+                    static String test() {
+                        BiFunction<String, String, Box> ctor = Box::new
+                        Supplier<String> sm = Box::sm
+                        Function<Box, String> im = Box::im
+                        Supplier<String> bound = new Box()::im
+                        ctor.apply('a', 'b').v + sm.get() + im.apply(new Box()) + bound.get()
+                    }
+                    static String viaClosure() {
+                        def c = { ->
+                            Supplier<String> sm = Box::sm
+                            Function<Box, String> im = Box::im
+                            sm.get() + im.apply(new Box())
+                        }
+                        c()
+                    }
+                }
+            }
+            assert Outer.Other.test() == 'absmim!im!'
+            assert Outer.Other.viaClosure() == 'smim!'
+        """
+    }
+
+    // GROOVY-12509
+    @ParameterizedTest
+    @ValueSource(strings=['@CompileDynamic','@TypeChecked','@CompileStatic'])
+    void testSiblingClassPrivateConstructorReferenceIsPreferredOverload(String tag) {
+        assertScript shell, """
+            $tag
+            class Outer {
+                static class Box {
+                    final String v
+                    private Box(String s) { v = 'Box(String)' }
+                    Box(Object o) { v = 'Box(Object)' }
+                }
+                static class Other {
+                    static String test() {
+                        Function<String, Box> f = Box::new
+                        f.apply('x').v
+                    }
+                }
+            }
+            assert Outer.Other.test() == 'Box(String)'
+        """
+    }
+
+    // GROOVY-12509: dynamic Groovy and @TypeChecked reject a class that mixes
+    // private and public methods of one name, so this overload exists only here
+    @Test
+    void testSiblingClassPrivateMethodReferenceIsPreferredOverload() {
+        assertScript shell, '''
+            @CompileStatic
+            class Outer {
+                static class Box {
+                    private static String sm(String s) { 'sm(String)' }
+                    static String sm(Object o) { 'sm(Object)' }
+                }
+                static class Other {
+                    static String test() {
+                        Function<String, String> f = Box::sm
+                        f.apply('x')
+                    }
+                }
+            }
+            assert Outer.Other.test() == 'sm(String)'
+        '''
+    }
+
+    // GROOVY-12510: a private method is not inherited (JLS 8.2); javac rejects these
+    // references and dynamic Groovy throws MissingMethodException, even in the class
+    // that declares the method
+    @ParameterizedTest
+    @ValueSource(strings=['TypeChecked','CompileStatic'])
+    void testPrivateMethodOfSuperclassReferenceThroughSubclass(String mode) {
+        def refs = [
+            'Function<Sub, String> f = Sub::im'  : 'im',
+            'Supplier<String> f = new Sub()::im' : 'im',
+            'Supplier<String> f = Sub::sm'       : 'sm',
+            'def f = new Sub().&im'              : 'im',
+            'def f = Sub.&sm'                    : 'sm',
+        ]
+        refs.each { ref, name ->
+            for (where in ['Outer', 'Box', 'Other']) {
+                def err = shouldFail shell, """
+                    @$mode
+                    class Outer {
+                        static class Box {
+                            private String im() { 'im' }
+                            private static String sm() { 'sm' }
+                            ${where == 'Box' ? "static test() { $ref }" : ''}
+                        }
+                        static class Sub extends Box {
+                        }
+                        static class Other {
+                            ${where == 'Other' ? "static test() { $ref }" : ''}
+                        }
+                        ${where == 'Outer' ? "static test() { $ref }" : ''}
+                    }
+                """
+                if (mode == 'TypeChecked' || ref.contains('.&')) {
+                    assert err.message.contains("Cannot find matching method Outer\$Sub#${name}.")
+                } else {
+                    assert err.message =~ /Failed to find (class )?method '${name}\(.*\)'.* for the type: Outer[$]Sub/
+                }
+            }
+        }
+    }
+
+    // GROOVY-12510
+    @ParameterizedTest
+    @ValueSource(strings=['@CompileDynamic','@TypeChecked','@CompileStatic'])
+    void testPrivateMethodOfSuperclassReferenceThroughItsType(String tag) {
+        assertScript shell, """
+            $tag
+            class Outer {
+                static class Box {
+                    private String im() { 'im' }
+                }
+                static class Sub extends Box {
+                }
+                static class Other {
+                    static String test() {
+                        Function<Box, String> f = Box::im
+                        Box b = new Sub()
+                        Supplier<String> g = b::im
+                        f.apply(new Sub()) + g.get()
+                    }
+                }
+                static String test() {
+                    Function<Box, String> f = Box::im
+                    Box b = new Sub()
+                    Supplier<String> g = b::im
+                    f.apply(new Sub()) + g.get()
+                }
+            }
+            assert Outer.test() == 'imim'
+            assert Outer.Other.test() == 'imim'
+        """
+    }
+
     // GROOVY-11365
     @Test
     void testInnerClassProtectedMethodReference() {
@@ -3204,6 +3358,41 @@ final class MethodReferenceTest {
                 'C.gstring$Integer$parseInt$1(Ljava/lang/Object;)I'
             )
             assert !bytecode.hasSequence(['INVOKEDYNAMIC applyAsInt(Ljava/lang/Integer;)Ljava/util/function/ToIntFunction;'])
+        }
+
+        // GROOVY-12509
+        @Test
+        void testSiblingClassPrivateMethodReferenceUsesDirectBootstrapTarget() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    static class Box {
+                        private static String sm() { 'sm' }
+                        private String im() { 'im' }
+                    }
+                    static class Other {
+                        static Supplier<String> staticMethod() {
+                            Box::sm
+                        }
+                        static Function<Box, String> instanceMethod() {
+                            Box::im
+                        }
+                    }
+                }
+            '''
+
+            assertUsesInvokeDynamicFactory(
+                compileStaticBytecode(classNamePattern: 'C\\$Other', method: 'staticMethod', script),
+                'INVOKEDYNAMIC get()Ljava/util/function/Supplier;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C$Box.sm()Ljava/lang/String;'
+            )
+            assertUsesInvokeDynamicFactory(
+                compileStaticBytecode(classNamePattern: 'C\\$Other', method: 'instanceMethod', script),
+                'INVOKEDYNAMIC apply()Ljava/util/function/Function;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C$Box.im()Ljava/lang/String;'
+            )
         }
 
         @Test

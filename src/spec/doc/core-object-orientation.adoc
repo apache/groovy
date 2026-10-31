@@ -247,6 +247,11 @@ include::../test/ClassTest.groovy[tags=inner_class,indent=0]
 <2> inner class definition, inside its enclosing class
 <3> even being private, a field of the enclosing class is accessed by the inner class
 
+As in Java, the classes nested in the same top-level class can also use each other's private members.
+Private members are not inherited, though: when `Sub` extends `Base`, a private field or instance method of `Base` cannot be used through a `Sub` receiver, such as `new Sub().secret()`, except in `Base` itself.
+Within `Sub`, only `this.@name` and `super.@name` reach such a field directly.
+In an inner class of `Base` that also extends `Base`, an unqualified `secret()` therefore calls the method of the enclosing `Base` instance.
+
 There are some reasons for using inner classes:
 
  * They increase encapsulation by hiding the inner class from other classes, which do not need to know about it. This also leads to cleaner packages and workspaces.

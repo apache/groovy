@@ -22,15 +22,18 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
@@ -78,6 +81,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filter
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignableTo;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isInheritedPrivateMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.resolveClassNodeGenerics;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -555,7 +559,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     }
 
     private MethodNode findMethodRefMethod(final String methodName, final Parameter[] samParameters, final Expression typeOrTargetRef, final ClassNode typeOrTargetRefType) {
-        List<MethodNode> methods = findVisibleMethods(methodName, typeOrTargetRefType);
+        List<MethodNode> methods = findVisibleMethods(methodName, typeOrTargetRefType, typeOrTargetRef);
 
         ToIntFunction<Parameter[]> distance = (parameters) -> { // GROOVY-10972: select from closest matches
             return allParametersAndArgumentsMatch(parameters, Arrays.stream(samParameters).map(Parameter::getType).toArray(ClassNode[]::new));
@@ -631,7 +635,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         }).thenComparing(StaticTypesMethodReferenceExpressionWriter::isExtensionMethod)).orElse(null);
     }
 
-    private List<MethodNode> findVisibleMethods(final String name, final ClassNode type) {
+    private List<MethodNode> findVisibleMethods(final String name, final ClassNode type, final Expression typeOrTargetRef) {
         List<MethodNode> methods = type.getMethods(name);
         // GROOVY-10791, GROOVY-11467: include non-static interface methods
         Set<ClassNode> implemented = getInterfacesAndSuperInterfaces(type);
@@ -644,7 +648,24 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             }
         }
         methods.addAll(findDGMMethodsForClassNode(controller.getSourceUnit().getClassLoader(), type, name));
-        return filterMethodsByVisibility(methods, controller.getClassNode());
+        methods = filterMethodsByVisibility(methods, controller.getClassNode());
+
+        // a private method of a superclass is not a member of the type (JLS 8.2),
+        // but it is one of the declared type of a variable whose type is narrower
+        ClassNode declaredType = getDeclaredType(typeOrTargetRef);
+        methods.removeIf(method -> isInheritedPrivateMethod(method, type) && !method.getDeclaringClass().equals(declaredType));
+        return methods;
+    }
+
+    private static ClassNode getDeclaredType(final Expression expression) {
+        if (expression instanceof VariableExpression variable && !variable.isThisExpression() && !variable.isSuperExpression()) {
+            Variable target = variable;
+            while (target instanceof VariableExpression ve && ve.getAccessedVariable() != null && ve.getAccessedVariable() != ve) {
+                target = ve.getAccessedVariable();
+            }
+            if (!(target instanceof DynamicVariable)) return target.getOriginType();
+        }
+        return null;
     }
 
     private void addFatalError(final String msg, final ASTNode node) {

@@ -841,4 +841,30 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             assert new C(['foo1', 'foo2']).fooNames.size() == 2
         '''
     }
+
+    // GROOVY-12509
+    @Override @Test
+    void testPrivateAccessorOfNestMateViaPropertySyntax() {
+        super.testPrivateAccessorOfNestMateViaPropertySyntax()
+        String other = astTrees['Outer$Other'][1]
+        assert other.contains('INVOKEVIRTUAL Outer$Box.getX ()Ljava/lang/String;')
+        assert other.contains('INVOKEVIRTUAL Outer$Box.isB ()Z')
+        assert other.contains('INVOKEVIRTUAL Outer$Box.setY (Ljava/lang/String;)V')
+        assert other.contains('INVOKESTATIC Outer$Box.getZ ()Ljava/lang/String;')
+    }
+
+    // GROOVY-12513
+    @Override @Test
+    void testPrivateFieldThroughDeclaredTypeOfNarrowedVariable() {
+        assertScript PRIVATE_FIELD_THROUGH_DECLARED_TYPE + '''
+            assert Outer.Other.read() == 'ffx'
+            assert Outer.Other.write() == 'w!'
+            assert Outer.Other.attribute() == 'a'
+            assert Outer.Other.viaClosure() == 'f'
+            assert Outer.Other.viaLambda() == 'f'
+            assert Outer.Other.narrowed(sub) == 'fx'
+            assert Outer.Other.cast() == 'f'
+            assert Outer.read() == 'fx'
+        '''
+    }
 }

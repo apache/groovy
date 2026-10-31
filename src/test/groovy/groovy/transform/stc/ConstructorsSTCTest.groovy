@@ -788,4 +788,112 @@ import static groovy.test.GroovyAssert.shouldFail
         ''',
         'Cannot find matching constructor C()'
     }
+
+    // GROOVY-12509
+    @Test
+    void testPrivateConstructorOfSiblingClass() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Outer {
+                static class Box {
+                    final String v
+                    private Box(String a, String b) { v = a + b }
+                }
+                static class Other {
+                    static String test() { new Box('a', 'b').v }
+                    static String viaClosure() {
+                        def c = { -> new Box('c', 'd').v }
+                        c()
+                    }
+                    static String viaLambda() {
+                        Supplier<String> s = () -> new Box('e', 'f').v
+                        s.get()
+                    }
+                    static String viaAnonymousClass() {
+                        new Object() {
+                            String get() { new Box('g', 'h').v }
+                        }.get()
+                    }
+                }
+            }
+            assert Outer.Other.test() == 'ab'
+            assert Outer.Other.viaClosure() == 'cd'
+            assert Outer.Other.viaLambda() == 'ef'
+            assert Outer.Other.viaAnonymousClass() == 'gh'
+        '''
+    }
+
+    // GROOVY-12509
+    @Test
+    void testPrivateConstructorOfSiblingClassWithDefaultArgument() {
+        assertScript '''
+            class Outer {
+                static class Box {
+                    final String v
+                    private Box(String a, String b = 'b') { v = a + b }
+                }
+                static class Other {
+                    static String test() { new Box('a').v + new Box('c', 'd').v }
+                }
+            }
+            assert Outer.Other.test() == 'abcd'
+        '''
+    }
+
+    // GROOVY-12509
+    @Test
+    void testPrivateConstructorOfNestMateSuperclass() {
+        assertScript '''
+            class Outer {
+                static class Box {
+                    final String v
+                    private Box() { v = 'implicit' }
+                    private Box(String s) { v = s }
+                }
+                static class Sub1 extends Box {
+                    Sub1() { }
+                }
+                static class Sub2 extends Box {
+                    Sub2() { super('explicit') }
+                }
+            }
+            assert new Outer.Sub1().v == 'implicit'
+            assert new Outer.Sub2().v == 'explicit'
+        '''
+    }
+
+    // GROOVY-12509
+    @Test
+    void testPrivateConstructorOfSiblingClassIsPreferredOverload() {
+        assertScript '''
+            class Outer {
+                static class Box {
+                    final String v
+                    private Box(String s) { v = 'Box(String)' }
+                    Box(Object o) { v = 'Box(Object)' }
+                }
+                static class Other {
+                    static String test() { new Box('x').v }
+                }
+            }
+            assert Outer.Other.test() == 'Box(String)'
+        '''
+    }
+
+    // GROOVY-12509
+    @Test
+    void testPrivateConstructorOfClassInAnotherNest() {
+        shouldFailWithMessages '''
+            class Outer1 {
+                static class Box {
+                    private Box(String s) { }
+                }
+            }
+            class Outer2 {
+                static test() { new Outer1.Box('x') }
+            }
+        ''',
+        'Cannot find matching constructor Outer1$Box(java.lang.String)'
+    }
 }

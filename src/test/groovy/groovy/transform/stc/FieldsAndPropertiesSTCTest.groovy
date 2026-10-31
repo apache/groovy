@@ -2044,6 +2044,131 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12509
+    @Test
+    void testPrivateAccessorOfNestMateViaPropertySyntax() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Outer {
+                static class Box {
+                    List log = []
+                    private String getX() { 'gx' }
+                    private boolean isB() { true }
+                    private void setY(String s) { log << 'sy' + s }
+                    private static String getZ() { 'gz' }
+                }
+                static class Other {
+                    static String read() { new Box().x + new Box().b + Box.z }
+                    static List write() { def box = new Box(); box.y = '1'; box.log }
+                    static List mapConstructor() { new Box(y: '2').log }
+                    static String viaClosure() {
+                        def c = { -> new Box().x + Box.z }
+                        c()
+                    }
+                    static String viaLambda() {
+                        Supplier<String> s = () -> new Box().x
+                        s.get()
+                    }
+                    static String viaAnonymousClass() {
+                        new Object() {
+                            String get() { new Box().x }
+                        }.get()
+                    }
+                    static String viaDelegate() {
+                        new Box().with { x + b }
+                    }
+                }
+                static String read() { new Box().x + Box.z }
+                static List write() { def box = new Box(); box.y = '3'; box.log }
+            }
+            assert Outer.Other.read() == 'gxtruegz'
+            assert Outer.Other.write() == ['sy1']
+            assert Outer.Other.mapConstructor() == ['sy2']
+            assert Outer.Other.viaClosure() == 'gxgz'
+            assert Outer.Other.viaLambda() == 'gx'
+            assert Outer.Other.viaAnonymousClass() == 'gx'
+            assert Outer.Other.viaDelegate() == 'gxtrue'
+            assert Outer.read() == 'gxgz'
+            assert Outer.write() == ['sy3']
+        '''
+    }
+
+    // GROOVY-12509: dynamic Groovy also calls the accessors here, not the field
+    @Test
+    void testPrivateAccessorOfNestMateVersusPrivateField() {
+        assertScript '''
+            class Outer {
+                static class Box {
+                    private String w = 'field'
+                    private String getW() { 'getter' }
+                    private void setW(String s) { w = 'setter:' + s }
+                }
+                static class Other {
+                    static String read() { new Box().w }
+                    static String write() { def box = new Box(); box.w = 'v'; box.@w }
+                }
+                static String read() { new Box().w }
+                static String write() { def box = new Box(); box.w = 'v'; box.@w }
+            }
+            assert Outer.Other.read() == 'getter'
+            assert Outer.Other.write() == 'setter:v'
+            assert Outer.read() == 'getter'
+            assert Outer.write() == 'setter:v'
+        '''
+    }
+
+    // GROOVY-12509: private members are not inherited (JLS 8.2)
+    @Test
+    void testPrivateAccessorOrFieldOfNestMateSuperclassViaSubclass() {
+        for (expr in ['new Sub().x', 'new Sub().y = "1"', 'new Sub().f']) {
+            def name = expr.substring(10, 11)
+            shouldFailWithMessages """
+                class Outer {
+                    static class Box {
+                        private String f = 'f'
+                        private String getX() { 'gx' }
+                        private void setY(String s) { }
+                    }
+                    static class Sub extends Box {
+                    }
+                    static class Other {
+                        static test() { $expr }
+                    }
+                    static test() { $expr }
+                }
+            """,
+            "No such property: $name for class: Outer\$Sub", // sibling
+            "No such property: $name for class: Outer\$Sub"  // outer class
+        }
+
+        shouldFailWithMessages '''
+            class Outer {
+                static class Box {
+                    private static String getZ() { 'gz' }
+                }
+                static class Sub extends Box {
+                }
+                static class Other {
+                    static test() { Sub.z }
+                }
+            }
+        ''',
+        'No such property: z for Class or static property for class: Outer$Sub'
+
+        shouldFailWithMessages '''
+            class Outer {
+                static class Box {
+                    private String f = 'f'
+                }
+                static class Sub extends Box {
+                    def test() { f }
+                }
+            }
+        ''',
+        'No such property: f for class: Outer$Sub'
+    }
+
     // GROOVY-12509: a regression in 6.0.0, from GROOVY-12310
     @Test
     void testFieldOfPrivateNestedTypeOfNestMate() {
@@ -2093,6 +2218,210 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             }
         ''',
         'Cannot access field: x of class: P$Hidden from class: Q'
+    }
+
+    // GROOVY-12511: a nested class that extends its outer class does not inherit the
+    // outer class's private fields and accessors, so an unqualified name refers to the
+    // enclosing instance, as in javac and dynamic Groovy; this.@name is its own field
+    @Test
+    void testPrivateFieldOfEnclosingClassFromNestedSubclass() {
+        assertScript '''
+            class Box {
+                private String f = 'outer'
+                private static String sf = 'static'
+                private String getP() { 'p:' + f }
+                class Sub extends Box {
+                    Sub() { this.@f = 'own' }
+                    String read() { f }
+                    String viaClosure() { def c = { -> f }; c() }
+                    String property() { p }
+                    String statics() { sf + Box.sf }
+                    String write() { f = 'w'; [this.@f, f].join(',') }
+                }
+                String anonymous() {
+                    new Box() {
+                        { this.@f = 'own' }
+                        String toString() { f + ',' + this.@f }
+                    }.toString()
+                }
+            }
+            def box = new Box()
+            def sub = new Box.Sub(box)
+            assert sub.read() == 'outer'
+            assert sub.viaClosure() == 'outer'
+            assert sub.property() == 'p:outer'
+            assert sub.statics() == 'staticstatic'
+            assert box.anonymous() == 'outer,own'
+            assert sub.write() == 'own,w'
+            assert box.@f == 'w'
+        '''
+    }
+
+    // GROOVY-12511: without an enclosing instance there is no private field to use;
+    // javac reports a non-static field referenced from a static context, and dynamic
+    // Groovy throws MissingPropertyException
+    @Test
+    void testPrivateFieldOfSuperclassFromNestedSubclassWithoutEnclosingInstance() {
+        [
+            'class Shape { private String nm; static class Circle extends Shape { def d() { nm } } }'           : 'nm for class: Shape$Circle',
+            'class Shape { private String nm; static class Circle extends Shape { def d() { this.nm } } }'      : 'nm for class: Shape$Circle',
+            'class Shape { private String nm; static class Circle extends Shape { def d() { nm = "x" } } }'     : 'nm for class: Shape$Circle',
+            'class Shape { private String getP() { "p" }; static class Circle extends Shape { def d() { p } } }' : 'p for class: Shape$Circle',
+            'class Box { private String f; class Sub extends Box { def d() { this.f } } }'                       : 'f for class: Box$Sub',
+            'enum E { A { def d() { f } }; private String f }'                                                     : 'f for class: E$1',
+            'enum E { A { def d() { p } }; private String getP() { "p" } }'                                        : 'p for class: E$1',
+        ].each { code, message ->
+            shouldFailWithMessages code, "No such property: $message"
+        }
+
+        assertScript '''
+            class Shape {
+                private String nm = 'shape'
+                private static String sf = 'static'
+                static class Circle extends Shape {
+                    String d() { this.@nm + sf }
+                }
+            }
+            enum E {
+                A { String d() { sf } }
+                private static String sf = 'enum'
+                String d() { 'base' }
+            }
+            assert new Shape.Circle().d() == 'shapestatic'
+            assert E.A.d() == 'enum'
+        '''
+    }
+
+    // GROOVY-12511: a private static field of the superclass stays reachable through
+    // the subclass, as in dynamic Groovy and like a private static method
+    @Test
+    void testPrivateStaticFieldOfSuperclassThroughNestedSubclass() {
+        assertScript '''
+            class Outer {
+                private static String sf = 'static'
+                static class Sub extends Outer {
+                    String read() { Sub.sf + new Sub().sf }
+                    static String write() { Sub.sf = 'w'; Outer.sf }
+                }
+                static class Other {
+                    static String read() { Sub.sf }
+                }
+            }
+            assert new Outer.Sub().read() == 'staticstatic'
+            assert Outer.Other.read() == 'static'
+            assert Outer.Sub.write() == 'w'
+        '''
+    }
+
+    /**
+     * Uses a private field and a private getter through a variable declared with
+     * their class, which flow typing narrows to a subclass. Run by the static
+     * compilation test; @TypeChecked accesses these properties dynamically, and
+     * the meta-class of a subclass offers no private field of its superclass, so
+     * here they are only compiled.
+     */
+    protected static final String PRIVATE_FIELD_THROUGH_DECLARED_TYPE = '''
+        import java.util.function.Supplier
+
+        class Outer {
+            static class Box {
+                private String f = 'f'
+                private String getX() { 'x' }
+            }
+            static class Sub extends Box {
+            }
+            static class Other {
+                static String read() { Box b = new Sub(); b.f + b.@f + b.x }
+                static String write() { Box b = new Sub(); b.f = 'w'; b.f += '!'; b.@f }
+                static String attribute() { Box b = new Sub(); b.@f = 'a'; b.@f }
+                static String viaClosure() { Box b = new Sub(); def c = { -> b.f }; c() }
+                static String viaLambda() { Box b = new Sub(); Supplier<String> s = () -> b.f; s.get() }
+                static String narrowed(Box b) { if (b instanceof Sub) { return b.f + b.x }; null }
+                static String cast() { Sub s = new Sub(); ((Box) s).@f }
+            }
+            static String read() { Box b = new Sub(); b.f + b.x }
+        }
+        def sub = new Outer.Sub()
+    '''
+
+    // GROOVY-12513
+    @Test
+    void testPrivateFieldThroughDeclaredTypeOfNarrowedVariable() {
+        assertScript PRIVATE_FIELD_THROUGH_DECLARED_TYPE
+    }
+
+    // GROOVY-12513: a private field is not inherited, so a receiver whose type is
+    // only the subclass still has no such property
+    @Test
+    void testPrivateFieldThroughSubclassTypedReceiver() {
+        for (code in ['def b = new Sub(); b.f', 'new Sub().f', 'Object o = new Sub(); if (o instanceof Sub) o.f']) {
+            shouldFailWithMessages """
+                class Outer {
+                    static class Box {
+                        private String f = 'f'
+                    }
+                    static class Sub extends Box {
+                    }
+                    static test() { $code }
+                }
+            """,
+            'No such property: f for class: Outer$Sub'
+        }
+    }
+
+    // GROOVY-12523: a private field is not inherited, and the meta-class of a subclass
+    // offers no private field of its superclass, so "sub.@f" is rejected, as javac does
+    @Test
+    void testPrivateFieldOfSuperclassThroughSubclassTypedReceiverViaAttribute() {
+        for (code in [
+            'class Outer { private String f; static class Sub extends Outer { def t(Sub sub) { sub.@f } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t(Sub sub) { sub.@f = "w" } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t(Sub sub) { sub.@f += "!" } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t(Sub sub) { def c = { -> sub.@f }; c() } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t(Sub sub) { java.util.function.Supplier<String> s = () -> sub.@f; s.get() } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t() { new Sub().@f } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t() { def d = new Sub(); d.@f } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t(Object o) { if (o instanceof Sub) o.@f } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t(Sub sub) { sub.with { it.@f } } } }',
+            'class Outer { private String f; static class Sub extends Outer { def t(Sub2 s) { s.@f } }; static class Sub2 extends Sub { } }',
+            'class Outer { private String f; static class Sub extends Outer { }; static class Other { static t(Sub sub) { sub.@f } } }',
+            'class Outer { private String f; static class Sub extends Outer { }; static class Other { static t(Sub sub) { sub.@f = "w" } } }',
+            'class Outer { private String f; class Sub extends Outer { def t(Sub sub) { sub.@f } } }',
+        ]) {
+            shouldFailWithMessages code, 'Cannot access field: f of class: Outer'
+        }
+    }
+
+    // GROOVY-12523: "this.@f" and "super.@f" use the field directly, as dynamic Groovy
+    // does, and so does the declaring class itself
+    @Test
+    void testPrivateFieldOfSuperclassViaThisOrSuperAttribute() {
+        assertScript '''
+            class Outer {
+                private String f = 'outer'
+                String read(Sub sub) { sub.@f }
+                String write(Sub sub) { sub.@f = 'w'; sub.@f }
+                static class Sub extends Outer {
+                    String own() { this.@f = 'own'; this.@f }
+                    String viaSuper() { super.@f }
+                }
+                static class Sub2 extends Sub {
+                    String viaSuper2() { super.@f = 's2'; super.@f }
+                }
+            }
+            enum E {
+                A { String d() { this.@g } }
+                private String g = 'g'
+                abstract String d()
+            }
+            def sub = new Outer.Sub()
+            assert new Outer().read(sub) == 'outer'
+            assert new Outer().write(sub) == 'w'
+            assert sub.own() == 'own'
+            assert sub.viaSuper() == 'own'
+            assert new Outer.Sub2().viaSuper2() == 's2'
+            assert E.A.d() == 'g'
+        '''
     }
 
     // GROOVY-12314: package-private and protected fields that Java access rules

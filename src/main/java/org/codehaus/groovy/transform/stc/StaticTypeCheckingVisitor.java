@@ -40,6 +40,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.DynamicVariable;
+import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
@@ -153,6 +154,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -330,6 +332,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isBool
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isCompareToBoolean;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isGStringOrGStringStringLUB;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isInheritedPrivateMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isOperationInGroup;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isParameterizedWithGStringOrGStringString;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isParameterizedWithString;
@@ -473,6 +476,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected DefaultTypeCheckingExtension extension;
     /** Mutable state for the current type-checking run. */
     protected TypeCheckingContext typeCheckingContext;
+    /** Declared type of the variable whose method {@link #findMethod} is looking up, if any. */
+    private ClassNode declaredReceiverType;
 
     /**
      * Creates a static type-checking visitor for the supplied source and class.
@@ -719,7 +724,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (fn != null && fn.isPrivate() && !fn.isSynthetic()) {
             ClassNode declaringClass = fn.getDeclaringClass();
             ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
-            if (declaringClass == enclosingClass ? typeCheckingContext.getEnclosingClosure() != null : inSameNest(declaringClass, enclosingClass)) {
+            if (declaringClass == enclosingClass ? typeCheckingContext.getEnclosingClosure() != null : inSameNest(declaringClass, enclosingClass)
+                    // this.@name in a subclass is the field of "this", not of an enclosing instance
+                    && !(declaringClass != enclosingClass && enclosingClass.isDerivedFrom(declaringClass)
+                            && source instanceof PropertyExpression pe && isThisExpression(pe.getObjectExpression()))) {
                 source.putNodeMetaData(lhsOfAssignment ? PV_FIELDS_MUTATION : PV_FIELDS_ACCESS, fn);
             }
         }
@@ -2332,6 +2340,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (propertyName == null) return false;
 
         Expression objectExpression = pexp.getObjectExpression();
+        // a private member of the declared type is reachable when flow typing narrows the variable
+        ClassNode declaredType = getDeclaredType(objectExpression);
         if (objectExpression instanceof ConstructorCallExpression) {
             ClassNode rawType = getType(objectExpression).getPlainNodeReference();
             inferDiamondType((ConstructorCallExpression) objectExpression, rawType);
@@ -2419,7 +2429,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             for (MethodNode method : findMethodsWithGenerated(wrapTypeIfNecessary(receiverType), setterName)) {
                 if (method.getParameters().length == 1 && (!staticOnly || method.isStatic()) && (!publicOnly || method.isPublic())
                         // GROOVY-11319:
-                        && hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), method.getDeclaringClass(), method.getModifiers())) {
+                        && isAccessibleAccessor(method, receiverType, declaredType)) {
                     setters.add(method);
                 }
             }
@@ -2445,6 +2455,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 if (!handledTypes.add(current)) continue;
 
                 FieldNode field = current.getDeclaredField(propertyName);
+                if (field != null && !field.isStatic() && !(pexp instanceof AttributeExpression) && !current.equals(receiverType) && !current.equals(declaredType)
+                        && isInheritedPrivateMember(field.getModifiers(), field.getDeclaringClass())) {
+                    field = null; // JLS 8.2: find the outer class's field, if any, as Outer.this.name
+                }
                 if (field == null) {
                     if (current.getSuperClass() != null)
                         queue.addFirst(current.getSuperClass());
@@ -2490,7 +2504,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
                 if (getter != null && ((publicOnly && (!getter.isPublic() || propertyName.equals("class") || propertyName.equals("empty")))
                         // GROOVY-11319:
-                        || !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), getter.getDeclaringClass(), getter.getModifiers()))) {
+                        || !isAccessibleAccessor(getter, receiverType, declaredType))) {
                     getter = null;
                 }
 
@@ -2626,7 +2640,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
         if (pexp.isImplicitThis() && isThisExpression(objectExpression)) {
             Iterator<ClassNode> iter = enclosingTypes.iterator(); // first enclosing is "this" type
-            boolean staticOnly = hasNoEnclosingInstance(iter.next()) || typeCheckingContext.isInStaticContext;
+            ClassNode thisType = iter.next(); // an enum constant body has no enclosing instance either
+            boolean staticOnly = hasNoEnclosingInstance(thisType) || thisType.redirect() instanceof EnumConstantClassNode || typeCheckingContext.isInStaticContext;
             while (iter.hasNext()) {
                 ClassNode outer = iter.next();
                 // GROOVY-7994, GROOVY-11198: try "this.propertyName" as "Outer.propertyName" or "Outer.this.propertyName"
@@ -2646,6 +2661,35 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         MethodNode getter = classNode.getGetterMethod(getterName, searchSupers);
         if (getter != null && (getter.getModifiers() & Opcodes.ACC_BRIDGE) != 0) getter = null; // GROOVY-11341
         return getter;
+    }
+
+    /**
+     * Determines if a getter or setter may be used through property syntax. A
+     * private accessor is reachable from every class of its nest (JLS 6.6.1),
+     * but only through its own class, because private members are not
+     * inherited (JLS 8.2). Its own class may also be the declared type of a
+     * variable whose inferred type is a subclass.
+     */
+    private boolean isAccessibleAccessor(final MethodNode accessor, final ClassNode receiverType, final ClassNode declaredType) {
+        ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
+        ClassNode declaringClass = accessor.getDeclaringClass();
+        if (!declaringClass.equals(receiverType) && !declaringClass.equals(declaredType)
+                && isInheritedPrivateMember(accessor.getModifiers(), declaringClass)) {
+            return false;
+        }
+        return hasAccessToMember(enclosingClass, declaringClass, accessor.getModifiers())
+            || (accessor.isPrivate() && inSameNest(declaringClass, enclosingClass));
+    }
+
+    /**
+     * Determines if a private field or accessor of the given class, found on a
+     * subclass, is out of reach because private members are not inherited
+     * (JLS 8.2). The declaring class itself may still use it, as in dynamic
+     * Groovy. A nested subclass then finds the outer class's member through its
+     * enclosing instance, if it has one.
+     */
+    private boolean isInheritedPrivateMember(final int modifiers, final ClassNode declaringClass) {
+        return Modifier.isPrivate(modifiers) && !declaringClass.equals(typeCheckingContext.getEnclosingClassNode());
     }
 
     private static boolean hasAccessToMember(final ClassNode accessor, final ClassNode receiver, final int modifiers) {
@@ -2823,8 +2867,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * syntax to a field of a foreign nest that Java rules would reject — a
      * direct field access that static compilation cannot honour (no access
      * bridge exists). The deliberate dynamic escape hatches remain: attribute
-     * access (.@), and closure bodies (GROOVY-9195) — including delegate-resolved
-     * access — whose property dispatch stays dynamic-capable under static compilation.
+     * access (.@), except to a private field of a superclass through a receiver
+     * whose type is a subclass (JLS 8.2), which dynamic Groovy rejects too, and
+     * closure bodies (GROOVY-9195) — including delegate-resolved access — whose
+     * property dispatch stays dynamic-capable under static compilation.
      */
     private boolean isFieldAccessible(final FieldNode field, final ClassNode receiver, final PropertyExpression expression, final String delegationData) {
         // GROOVY-12310: when the qualifying type itself is out of reach (e.g. a public
@@ -2834,7 +2880,18 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             return false;
         }
         boolean superField = isSuperExpression(expression.getObjectExpression());
-        boolean exactReceiver = (!superField && receiver.equals(field.getDeclaringClass()) && !field.getDeclaringClass().isAbstract()); // GROOVY-7300, GROOVY-11358
+        // JLS 8.2: a private instance field is not a member of a subclass, and the meta-class
+        // of a subclass offers no private field of its superclass, so "sub.@name" fails at run
+        // time; "this.@name" and "super.@name" use the field directly, as in dynamic Groovy
+        if (expression instanceof AttributeExpression && !field.isStatic() && !superField
+                && !isThisExpression(expression.getObjectExpression())
+                && !field.getDeclaringClass().equals(receiver)
+                && !field.getDeclaringClass().equals(getDeclaredType(expression.getObjectExpression()))
+                && isInheritedPrivateMember(field.getModifiers(), field.getDeclaringClass())) {
+            return false;
+        }
+        boolean exactReceiver = (!superField && !field.getDeclaringClass().isAbstract() // GROOVY-7300, GROOVY-11358
+                && (receiver.equals(field.getDeclaringClass()) || field.getDeclaringClass().equals(getDeclaredType(expression.getObjectExpression()))));
         if (exactReceiver && delegationData == null
                 && typeCheckingContext.getEnclosingClosure() == null
                 && !(expression instanceof AttributeExpression)
@@ -3888,7 +3945,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             for (Receiver<String> currentReceiver : receivers) {
                 receiverType = wrapTypeIfNecessary(currentReceiver.getType());
 
-                candidates = findMethodsWithGenerated(receiverType, nameText);
+                candidates = removeInheritedPrivateMethods(findMethodsWithGenerated(receiverType, nameText), receiverType, getDeclaredType(expression.getExpression()), false);
                 // GROOVY-10741: check for reference to a property node's method
                 MethodNode generated = findPropertyMethod(receiverType, nameText);
                 if (generated != null && candidates.stream().noneMatch(m -> m.getName().equals(generated.getName()))) {
@@ -5324,7 +5381,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
                     MethodNode first = null;
                     for (Receiver<String> currentReceiver : receivers) {
-                        mn = findMethod(currentReceiver.getType().getPlainNodeReference(), name, args);
+                        declaredReceiverType = getDeclaredType(objectExpression);
+                        try {
+                            mn = findMethod(currentReceiver.getType().getPlainNodeReference(), name, args);
+                        } finally {
+                            declaredReceiverType = null;
+                        }
                         if (!mn.isEmpty()) {
                             first = mn.get(0); // capture for error reporting
                             chosenReceiver = currentReceiver;
@@ -7198,7 +7260,7 @@ trying: for (ClassNode[] signature : signatures) {
                 }
             }
         } else {
-            methods = findMethodsWithGenerated(receiver, name);
+            methods = removeInheritedPrivateMethods(findMethodsWithGenerated(receiver, name), receiver, declaredReceiverType, true);
             if ("call".equals(name) && receiver.isInterface()) {
                 MethodNode sam = findSAM(receiver);
                 if (sam != null && !"call".equals(sam.getName())) {
@@ -7213,7 +7275,7 @@ trying: for (ClassNode[] signature : signatures) {
                 boolean staticOnly = hasNoEnclosingInstance(receiver);
                 for (ClassNode outer = receiver; (outer = outer.getOuterClass()) != null;
                         staticOnly = staticOnly || hasNoEnclosingInstance(outer)) {
-                    methods.addAll(allowStaticAccessToMember(findMethodsWithGenerated(outer, name), staticOnly));
+                    methods.addAll(allowStaticAccessToMember(removeInheritedPrivateMethods(findMethodsWithGenerated(outer, name), outer, null, true), staticOnly));
                 }
             }
             if (args == null || args.length == 0) {
@@ -7303,6 +7365,37 @@ trying: for (ClassNode[] signature : signatures) {
         }
 
         return EMPTY_METHODNODE_LIST;
+    }
+
+    /**
+     * Removes the private methods that {@code type} only inherits from a superclass
+     * (JLS 8.2). A method declared by {@code declaredType} is kept: that is the
+     * declared type of a variable whose inferred type is the narrower type. For a
+     * call, two cases that dynamic Groovy runs are kept as well: a private static
+     * method, and a private method called from its declaring class. For a method
+     * reference or pointer they are not, because dynamic Groovy fails on those.
+     */
+    private List<MethodNode> removeInheritedPrivateMethods(final List<MethodNode> methods, final ClassNode type, final ClassNode declaredType, final boolean call) {
+        ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
+        Predicate<MethodNode> inherited = method -> isInheritedPrivateMethod(method, type)
+                && !method.getDeclaringClass().equals(declaredType)
+                && !(call && (method.isStatic() || method.getDeclaringClass().equals(enclosingClass)));
+        if (methods.stream().noneMatch(inherited)) return methods;
+
+        List<MethodNode> result = new ArrayList<>(methods);
+        result.removeIf(inherited);
+        return result;
+    }
+
+    /**
+     * Returns the declared type of a variable, which flow typing may have narrowed.
+     */
+    private static ClassNode getDeclaredType(final Expression expression) {
+        if (expression instanceof VariableExpression variable && !variable.isThisExpression() && !variable.isSuperExpression()) {
+            Variable target = findTargetVariable(variable);
+            if (!(target instanceof DynamicVariable)) return target.getOriginType();
+        }
+        return null;
     }
 
     /**
