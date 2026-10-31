@@ -367,6 +367,40 @@ final class Groovy12315 {
         '''
     }
 
+    // no subclass can override the generated getter of a final class
+    @Test
+    void testPropertyReadFromClosureInFinalClassIsFlowTyped() {
+        assertScript '''
+            import java.util.function.IntSupplier
+            @groovy.transform.CompileStatic
+            final class Foo {
+                final bar = 'abc'
+                final sb = new StringBuilder()
+                int closure() { ({ -> bar.length() })() }
+                int lambda()  { IntSupplier s = () -> bar.length(); s.getAsInt() }
+                Foo add(String s) { tap { sb.append(s) } }
+            }
+            def foo = new Foo()
+            assert foo.closure() == 3
+            assert foo.lambda() == 3
+            assert foo.add('x').add('y').sb.toString() == 'xy'
+        '''
+    }
+
+    // a hand-written getter of a final class is not the field
+    @Test
+    void testPropertyWithGetterReadFromClosureInFinalClassIsNotFlowTyped() {
+        def err = shouldFail '''
+            @groovy.transform.CompileStatic
+            final class Foo {
+                final bar = 'abc'
+                def getBar() { 42 }
+                int foo() { ({ -> bar.length() })() }
+            }
+        '''
+        assert err.message.contains('length')
+    }
+
     // a private field is not a property: a closure reads the field itself
     @Test
     void testPrivateFieldReadFromClosureIsFlowTyped() {
