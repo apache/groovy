@@ -38,7 +38,9 @@ import org.apache.groovy.ginq.provider.sql.ir.SqlSetQuery
 import org.apache.groovy.ginq.provider.sql.ir.SqlStar
 import org.apache.groovy.ginq.provider.sql.ir.SqlTableRef
 import org.apache.groovy.ginq.provider.sql.ir.SqlUnary
+import org.apache.groovy.ginq.provider.sql.ir.SqlExpr
 import org.apache.groovy.ginq.provider.sql.render.AnsiDialect
+import org.apache.groovy.ginq.provider.sql.render.Dialect
 import org.apache.groovy.ginq.provider.sql.render.RenderedSql
 import org.apache.groovy.ginq.provider.sql.render.SqlRenderer
 import org.codehaus.groovy.ast.expr.ConstantExpression
@@ -237,6 +239,19 @@ class SqlRendererTest {
         assert [1, 2] == values(rendered)
     }
 
+    @Test
+    void testDialectChoosesLimitPlaceholderOrder() {
+        def query = new SqlQuery()
+        query.from = new SqlTableRef('employees', 'e')
+        query.offset = param(2)
+        query.fetch = param(5)
+        query.projections << new SqlProjection(col('e', 'name'))
+
+        def rendered = new SqlRenderer(new LimitThenOffsetDialect()).render(query)
+        assert 'SELECT e.name FROM employees e LIMIT ? OFFSET ?' == rendered.sql
+        assert [5, 2] == values(rendered)
+    }
+
     private static SqlQuery simpleQuery(String table) {
         def query = new SqlQuery()
         query.from = new SqlTableRef(table, table)
@@ -258,5 +273,19 @@ class SqlRendererTest {
 
     private static List<Object> values(RenderedSql renderedSql) {
         renderedSql.parameters.collect { ((ConstantExpression) it).value }
+    }
+
+    private static class LimitThenOffsetDialect implements Dialect {
+        @Override
+        void renderLimit(SqlExpr offset, SqlExpr fetch, Dialect.LimitRender out) {
+            if (fetch != null) {
+                out.text(' LIMIT ')
+                out.expr(fetch)
+            }
+            if (offset != null) {
+                out.text(' OFFSET ')
+                out.expr(offset)
+            }
+        }
     }
 }

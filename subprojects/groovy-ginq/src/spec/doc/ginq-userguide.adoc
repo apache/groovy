@@ -1210,11 +1210,37 @@ The result rows are `groovy.sql.GroovyRowResult` instances.
 Every literal and captured variable in the query becomes a positional bound parameter, so the SQL
 text never contains user-supplied values and SQL injection is structurally impossible.
 
-The SQL backend operates in strict mode: an expression either translates cleanly to SQL, or the
-query is rejected at compile time with an error explaining the untranslatable construct. The main
-current restriction is window functions. Aggregation is supported both in the classic form, e.g.
-`groupby e.deptId` with `select e.deptId, count(), sum(e.salary)`, and the `groupby ... into g`
-form, e.g. `g.count()`, `g.sum(e -> e.salary)`.
+The SQL backend operates in strict mode by default: an expression either translates cleanly to SQL,
+or the query is rejected at compile time with an error explaining the untranslatable construct.
+Opt in to mixed mode with `mixedMode: true` (the same option on `native-sql` and `jooq-sql`) when
+a query also needs something SQL cannot express, such as an arbitrary Groovy method, a window
+function, or a join to an in-memory collection:
+[source, groovy]
+----
+def result = GQL(provider: 'native-sql', mixedMode: true, dataSource: db) {
+    from e in 'employees'
+    where e.salary > threshold
+    select e.name.reverse()
+}
+----
+
+Mixed mode splits the query at the first clause that does not translate (`from`, each `join`,
+`where`, then `orderby` and `limit`). The translatable prefix is executed on the database and
+comes back as `GroovyRowResult` rows; the remaining clauses run in memory through the collection
+provider. A single-table prefix is one row per result. A join prefix projects `alias.*` for each
+alias and is zipped back into one row per alias, so the in-memory tail still sees `e.name` and
+`d.name`. A `where` clause is kept together: if any part of it cannot be translated, the whole
+predicate runs in memory and only the preceding `from`/`join` clauses are pushed.
+`groupby` is not pushed when a later clause falls back to memory, so grouped results keep
+collection-provider semantics. `orderby` and `limit` are pushed only when they apply to the source
+rows (there is no `groupby`) and they themselves translate. Set operations are not split; one that
+does not translate entirely is still a compile error. `mixedMode: false`, or omitting the option,
+keeps the strict default. The `from` source itself must still be a string table name or a subquery
+that translates to SQL.
+
+The main current restriction in strict mode is window functions. Aggregation is supported both in
+the classic form, e.g. `groupby e.deptId` with `select e.deptId, count(), sum(e.salary)`, and the
+`groupby ... into g` form, e.g. `g.count()`, `g.sum(e -> e.salary)`.
 
 Nested queries translate to SQL subqueries: a nested query as a data source becomes a derived
 table, `(...).exists()` becomes `EXISTS (...)`, `in` against a nested query becomes `IN (subquery)`,
@@ -1258,6 +1284,8 @@ def result = GQL(provider: 'jooq-sql', dialect: 'POSTGRES', dataSource: db) {
 jOOQ is used at compile time only: execution and results are identical to the `native-sql`
 provider (bound positional parameters, `GroovyRowResult` rows), and jOOQ does not need to be
 on the runtime classpath. With no `dialect` option, jOOQ's `DEFAULT` dialect is used.
+`mixedMode: true` is available here as well and uses the same split as `native-sql`; only the
+pushed prefix is rendered by jOOQ.
 Selecting `provider: 'sql'` auto-detects, preferring `jooq-sql` over `native-sql` when both
 are available.
 

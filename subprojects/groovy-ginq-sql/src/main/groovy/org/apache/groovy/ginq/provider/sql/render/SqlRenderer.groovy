@@ -151,15 +151,18 @@ class SqlRenderer {
             }
         }
 
-        if (offset != null) {
-            sb.append(' OFFSET ')
-            renderExpr(offset, sb, parameters)
-            sb.append(' ROWS')
-        }
-        if (fetch != null) {
-            sb.append(offset != null ? ' FETCH NEXT ' : ' FETCH FIRST ')
-            renderExpr(fetch, sb, parameters)
-            sb.append(' ROWS ONLY')
+        if (offset != null || fetch != null) {
+            dialect.renderLimit(offset, fetch, new Dialect.LimitRender() {
+                @Override
+                void text(String text) {
+                    sb.append(text)
+                }
+
+                @Override
+                void expr(SqlExpr expr) {
+                    renderExpr(expr, sb, parameters)
+                }
+            })
         }
     }
 

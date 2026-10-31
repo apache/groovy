@@ -19,6 +19,7 @@
 package org.apache.groovy.ginq.provider.sql.jooq;
 
 import org.apache.groovy.ginq.provider.GinqProvider;
+import org.apache.groovy.ginq.provider.sql.NativeSqlGinqProvider;
 import org.apache.groovy.lang.annotation.Incubating;
 
 import java.util.List;
@@ -49,6 +50,6 @@ public class JooqSqlGinqProvider implements GinqProvider {
 
     @Override
     public List<String> getAdditionalOptionNames() {
-        return List.of(CONF_DIALECT);
+        return List.of(CONF_DIALECT, NativeSqlGinqProvider.CONF_MIXED_MODE);
     }
 }

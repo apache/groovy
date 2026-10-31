@@ -50,6 +50,7 @@ class JooqSqlWalker extends GinqSqlWalker {
     @Override
     protected void validateOptions(AbstractGinqExpression expression) {
         // `dialect` is supported by this provider
+        validateMixedMode(expression)
     }
 
     @Override

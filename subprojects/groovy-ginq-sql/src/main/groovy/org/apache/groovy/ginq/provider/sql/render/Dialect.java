@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ginq.provider.sql.render;
 
+import org.apache.groovy.ginq.provider.sql.ir.SqlExpr;
 import org.apache.groovy.lang.annotation.Incubating;
 
 /**
@@ -58,5 +59,51 @@ public interface Dialect {
      */
     default String minusOperator() {
         return "EXCEPT";
+    }
+
+    /**
+     * Appends the {@code OFFSET}/{@code FETCH} clause. The default is ANSI
+     * {@code OFFSET n ROWS FETCH NEXT m ROWS ONLY}, using {@code FETCH FIRST}
+     * when there is no offset. Implementations must pass each non-null
+     * expression to {@link LimitRender#expr(SqlExpr)} exactly once, in the
+     * order their text emits placeholders, so the parameter list stays aligned.
+     *
+     * @param offset the offset expression, or {@code null}
+     * @param fetch the row-count expression, or {@code null}
+     * @param out receives clause text and expressions
+     * @since 6.0.0
+     */
+    default void renderLimit(SqlExpr offset, SqlExpr fetch, LimitRender out) {
+        if (offset != null) {
+            out.text(" OFFSET ");
+            out.expr(offset);
+            out.text(" ROWS");
+        }
+        if (fetch != null) {
+            out.text(offset != null ? " FETCH NEXT " : " FETCH FIRST ");
+            out.expr(fetch);
+            out.text(" ROWS ONLY");
+        }
+    }
+
+    /**
+     * Receives the text and expressions of a limit clause, in placeholder order.
+     *
+     * @since 6.0.0
+     */
+    interface LimitRender {
+        /**
+         * Appends literal SQL text that contains no placeholders.
+         *
+         * @param text the text to append
+         */
+        void text(String text);
+
+        /**
+         * Renders an offset or fetch expression, including its placeholder.
+         *
+         * @param expr the expression to render
+         */
+        void expr(SqlExpr expr);
     }
 }

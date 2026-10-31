@@ -24,6 +24,8 @@ import org.apache.groovy.ginq.dsl.GinqAstVisitor
 import org.apache.groovy.ginq.dsl.GinqSyntaxError
 import org.apache.groovy.ginq.dsl.SyntaxErrorReportable
 import org.apache.groovy.ginq.dsl.expression.AbstractGinqExpression
+import org.apache.groovy.ginq.dsl.expression.DataSourceExpression
+import org.apache.groovy.ginq.dsl.expression.FilterExpression
 import org.apache.groovy.ginq.dsl.expression.FromExpression
 import org.apache.groovy.ginq.dsl.expression.GinqExpression
 import org.apache.groovy.ginq.dsl.expression.GroupExpression
@@ -36,6 +38,8 @@ import org.apache.groovy.ginq.dsl.expression.SelectExpression
 import org.apache.groovy.ginq.dsl.expression.SetOperationExpression
 import org.apache.groovy.ginq.dsl.expression.ShutdownExpression
 import org.apache.groovy.ginq.dsl.expression.WhereExpression
+import org.apache.groovy.ginq.provider.collection.GinqAstWalker
+import org.apache.groovy.ginq.provider.sql.ir.SqlQuery
 import org.apache.groovy.ginq.provider.sql.ir.SqlQueryNode
 import org.apache.groovy.ginq.provider.sql.render.AnsiDialect
 import org.apache.groovy.ginq.provider.sql.render.RenderedSql
@@ -45,15 +49,31 @@ import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.GroovyBugError
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.expr.ClosureExpression
+import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
+import org.codehaus.groovy.ast.expr.ExpressionTransformer
 import org.codehaus.groovy.ast.expr.ListExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.TupleExpression
+import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.ReturnStatement
+import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.SourceUnit
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declS
+import static org.codehaus.groovy.ast.tools.GeneralUtils.lambdaX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.params
+import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
 
 /**
  * The native SQL provider: transforms a GINQ query into a call executing the
@@ -92,16 +112,87 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                     'note that `@GQ` does not support `dataSource`', expression)
         }
         validateOptions(expression)
+        if (sourceUnit.errorCollector.hasErrors()) {
+            return constX(null)
+        }
+
+        if (isMixedMode()) {
+            return visitMixed(expression, dataSourceExpr)
+        }
 
         SqlQueryNode queryNode = new GinqToSqlTranslator(sourceUnit).translate(expression)
-        RenderedSql renderedSql = renderSql(queryNode, expression)
+        if (queryNode == null || sourceUnit.errorCollector.hasErrors()) {
+            return constX(null)
+        }
+        return executeExpression(renderSql(queryNode, expression), dataSourceExpr, expression)
+    }
 
+    private Expression visitMixed(AbstractGinqExpression expression, Expression dataSourceExpr) {
+        int before = sourceUnit.errorCollector.errorCount
+        MixedPlan plan = new GinqToSqlTranslator(sourceUnit).planMixed(expression)
+        if (plan == null || sourceUnit.errorCollector.errorCount != before) {
+            return constX(null)
+        }
+        if (plan.fullQuery != null) {
+            return executeExpression(renderSql(plan.fullQuery, expression), dataSourceExpr, expression)
+        }
+        return emitMixed(plan, expression, dataSourceExpr)
+    }
+
+    private Expression emitMixed(MixedPlan plan, AbstractGinqExpression expression, Expression dataSourceExpr) {
+        GinqExpression tail = plan.tail
+        if (plan.columnCountQueries.isEmpty()) {
+            tail.fromExpression.dataSourceExpr = executeExpression(renderSql(plan.prefix, expression), dataSourceExpr, expression)
+            materializeQuery(tail)
+            return runCollection(tail)
+        }
+
+        String rowsName = "__ginqRows${mixedSeq++}"
+        VariableExpression rowsVar = varX(rowsName)
+        List<Expression> counts = []
+        for (SqlQuery countQuery : plan.columnCountQueries) {
+            RenderedSql rendered = renderSql(countQuery, expression)
+            counts << callX(classX(SQL_GINQ_RUNTIME_TYPE), 'columnCount',
+                    args(dataSourceExpr, constX(rendered.sql), new ListExpression(rendered.parameters)))
+        }
+        RenderedSql prefixSql = renderSql(plan.prefix, expression)
+        Expression zip = callX(classX(SQL_GINQ_RUNTIME_TYPE), 'zipAliases', args(
+                dataSourceExpr,
+                constX(prefixSql.sql),
+                new ListExpression(prefixSql.parameters),
+                new ListExpression(counts)))
+        tail.fromExpression.dataSourceExpr = callX(rowsVar, 'get', constX(0))
+        for (int i = 0; i < plan.pushedJoins; i++) {
+            tail.joinExpressionList[i].dataSourceExpr = callX(rowsVar, 'get', constX(i + 1))
+        }
+        materializeQuery(tail)
+        Expression tailExec = runCollection(tail)
+        Expression wrapper = callX(lambdaX(params(), block(
+                declS(localVarX(rowsName), zip),
+                returnS(tailExec)
+        )), 'call')
+        wrapper.setSourcePosition(expression)
+        return wrapper
+    }
+
+    private Expression runCollection(GinqExpression tail) {
+        GinqAstWalker walker = new GinqAstWalker(sourceUnit)
+        walker.configuration = Collections.<String, String>emptyMap()
+        walker.configurationExpressions = Collections.<String, Expression>emptyMap()
+        return (Expression) walker.visit(tail)
+    }
+
+    private MethodCallExpression executeExpression(RenderedSql renderedSql, Expression dataSourceExpr, AbstractGinqExpression expression) {
         MethodCallExpression executeCall = callX(
                 classX(SQL_GINQ_RUNTIME_TYPE),
                 'execute',
                 args(dataSourceExpr, constX(renderedSql.sql), new ListExpression(renderedSql.parameters)))
         executeCall.setSourcePosition(expression)
         return executeCall
+    }
+
+    private boolean isMixedMode() {
+        return 'true' == configuration.get(NativeSqlGinqProvider.CONF_MIXED_MODE)
     }
 
     /**
@@ -117,6 +208,17 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     protected void validateOptions(AbstractGinqExpression expression) {
         if (configuration.containsKey('dialect')) {
             error('`dialect` is only supported by the jooq-sql provider', expression)
+        }
+        validateMixedMode(expression)
+    }
+
+    /**
+     * Checks the shared {@code mixedMode} option. Absent means strict mode.
+     */
+    protected void validateMixedMode(AbstractGinqExpression expression) {
+        String mixedMode = configuration.get(NativeSqlGinqProvider.CONF_MIXED_MODE)
+        if (mixedMode != null && !('true' == mixedMode || 'false' == mixedMode)) {
+            error('`mixedMode` must be `true` or `false`', expression)
         }
     }
 
@@ -210,6 +312,115 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     protected void error(String message, org.codehaus.groovy.ast.ASTNode node) {
         collectSyntaxError(new GinqSyntaxError(message, node.lineNumber, node.columnNumber))
     }
+
+    /**
+     * Replaces string table names that the in-memory tail would otherwise
+     * iterate as character sequences. Sources already rewritten to the SQL
+     * prefix result are left alone. Nested queries stay GINQ so the collection
+     * provider can correlate them, but their tables are loaded with {@code SELECT *}.
+     */
+    private void materializeQuery(GinqExpression ginqExpression) {
+        materializeSource(ginqExpression.fromExpression)
+        for (JoinExpression joinExpression : ginqExpression.joinExpressionList) {
+            materializeSource(joinExpression)
+            if (joinExpression.onExpression != null) {
+                joinExpression.onExpression.filterExpr = materialize(joinExpression.onExpression.filterExpr)
+            }
+        }
+        materializeFilter(ginqExpression.whereExpression)
+        GroupExpression groupExpression = ginqExpression.groupExpression
+        if (groupExpression != null) {
+            materializeTuple(groupExpression.classifierExpr)
+            materializeFilter(groupExpression.havingExpression)
+        }
+        if (ginqExpression.orderExpression != null) {
+            materializeTuple(ginqExpression.orderExpression.ordersExpr)
+        }
+        if (ginqExpression.limitExpression != null) {
+            materializeTuple(ginqExpression.limitExpression.offsetAndSizeExpr)
+        }
+        materializeTuple(ginqExpression.selectExpression.projectionExpr)
+    }
+
+    private void materializeSet(SetOperationExpression setOperation) {
+        AbstractGinqExpression left = setOperation.left
+        if (left instanceof GinqExpression) {
+            materializeQuery((GinqExpression) left)
+        } else if (left instanceof SetOperationExpression) {
+            materializeSet((SetOperationExpression) left)
+        }
+        materializeQuery(setOperation.right)
+    }
+
+    private void materializeFilter(FilterExpression filter) {
+        if (filter != null) {
+            filter.filterExpr = materialize(filter.filterExpr)
+        }
+    }
+
+    private void materializeSource(DataSourceExpression source) {
+        Expression dataSource = source.dataSourceExpr
+        if (dataSource instanceof ConstantExpression && dataSource.value instanceof String) {
+            source.dataSourceExpr = selectAll((String) dataSource.value)
+        } else if (dataSource instanceof GinqExpression) {
+            materializeQuery((GinqExpression) dataSource)
+        } else if (dataSource instanceof SetOperationExpression) {
+            materializeSet((SetOperationExpression) dataSource)
+        }
+    }
+
+    private void materializeTuple(Expression expr) {
+        if (expr instanceof TupleExpression) {
+            List<Expression> expressions = ((TupleExpression) expr).expressions
+            for (int i = 0; i < expressions.size(); i++) {
+                expressions.set(i, materialize(expressions.get(i)))
+            }
+        }
+    }
+
+    private Expression materialize(Expression expr) {
+        if (expr == null) {
+            return null
+        }
+        return ((ListExpression) new ListExpression(Collections.singletonList(expr)).transformExpression(new ExpressionTransformer() {
+            @Override
+            Expression transform(Expression expression) {
+                if (expression instanceof GinqExpression) {
+                    materializeQuery((GinqExpression) expression)
+                    return expression
+                }
+                if (expression instanceof SetOperationExpression) {
+                    materializeSet((SetOperationExpression) expression)
+                    return expression
+                }
+                if (expression instanceof ClosureExpression) {
+                    materializeStatement(((ClosureExpression) expression).code)
+                    return expression
+                }
+                return expression.transformExpression(this)
+            }
+        })).getExpression(0)
+    }
+
+    private void materializeStatement(Statement statement) {
+        if (statement instanceof BlockStatement) {
+            for (Statement child : ((BlockStatement) statement).statements) {
+                materializeStatement(child)
+            }
+        } else if (statement instanceof ExpressionStatement) {
+            ((ExpressionStatement) statement).expression = materialize(((ExpressionStatement) statement).expression)
+        } else if (statement instanceof ReturnStatement) {
+            ((ReturnStatement) statement).expression = materialize(((ReturnStatement) statement).expression)
+        }
+    }
+
+    private Expression selectAll(String tableName) {
+        Expression dataSourceExpr = configurationExpressions.get(GinqGroovyMethods.CONF_DATA_SOURCE)
+        return callX(classX(SQL_GINQ_RUNTIME_TYPE), 'execute',
+                args(dataSourceExpr, constX('SELECT * FROM ' + tableName), new ListExpression()))
+    }
+
+    private int mixedSeq
 
     private static final ClassNode SQL_GINQ_RUNTIME_TYPE = ClassHelper.makeCached(SqlGinqRuntime)
 }

@@ -264,6 +264,8 @@ class GinqSqlTranslationTest {
     static class CapturingSql extends Sql {
         String sqlText
         List params
+        final List<String> sqlTexts = []
+        final List<List> paramLists = []
 
         CapturingSql(Sql parent) {
             super(parent)
@@ -273,6 +275,8 @@ class GinqSqlTranslationTest {
         List<GroovyRowResult> rows(String sql, List<?> params) throws SQLException {
             this.sqlText = sql
             this.params = new ArrayList(params)
+            sqlTexts << sql
+            paramLists << new ArrayList(params)
             return super.rows(sql, params)
         }
     }

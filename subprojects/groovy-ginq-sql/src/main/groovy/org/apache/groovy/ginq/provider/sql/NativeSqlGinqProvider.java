@@ -21,6 +21,8 @@ package org.apache.groovy.ginq.provider.sql;
 import org.apache.groovy.ginq.provider.GinqProvider;
 import org.apache.groovy.lang.annotation.Incubating;
 
+import java.util.List;
+
 /**
  * Registers the dependency-free {@code native-sql} GINQ provider.
  *
@@ -28,6 +30,14 @@ import org.apache.groovy.lang.annotation.Incubating;
  */
 @Incubating
 public class NativeSqlGinqProvider implements GinqProvider {
+    /**
+     * Opt-in switch for mixed-mode execution. Absent or {@code false} keeps
+     * strict mode: an untranslatable construct is a compile error.
+     * {@code true} pushes the translatable clause prefix to the database and
+     * finishes the rest in memory.
+     */
+    public static final String CONF_MIXED_MODE = "mixedMode";
+
     @Override
     public String getName() {
         return "native-sql";
@@ -36,5 +46,10 @@ public class NativeSqlGinqProvider implements GinqProvider {
     @Override
     public String getAstWalkerClassName() {
         return "org.apache.groovy.ginq.provider.sql.GinqSqlWalker";
+    }
+
+    @Override
+    public List<String> getAdditionalOptionNames() {
+        return List.of(CONF_MIXED_MODE);
     }
 }

@@ -20,5 +20,7 @@
 /**
  * SQL provider for GINQ (GEP-26): translates GINQ queries into ANSI SQL with bound
  * parameters at compile time and executes them against a relational database at runtime.
+ * Strict mode is the default; {@code mixedMode: true} pushes the translatable clause
+ * prefix and finishes the rest in memory.
  */
 package org.apache.groovy.ginq.provider.sql;
