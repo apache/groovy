@@ -43,12 +43,14 @@ import org.codehaus.groovy.classgen.BytecodeInstruction;
 import org.codehaus.groovy.classgen.BytecodeSequence;
 import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
+import org.codehaus.groovy.classgen.asm.BytecodeVariable;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.LambdaWriter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
+import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.ArrayList;
@@ -242,7 +244,10 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         mv.visitTypeInsn(NEW, lambdaClassInternalName);
         mv.visitInsn(DUP);
 
-        if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall() || !generatedLambda.accessingInstanceMembers) {
+        BytecodeVariable traitSelf = generatedLambda.accessingInstanceMembers ? getTraitSelf() : null;
+        if (traitSelf != null) {
+            operandStack.loadOrStoreVariable(traitSelf, false); // GROOVY-12602: like closure.rehydrate($self,$self,$self)
+        } else if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall() || !generatedLambda.accessingInstanceMembers) {
             classX(controller.getThisType()).visit(controller.getAcg());
         } else {
             loadThis();
@@ -256,6 +261,20 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         mv.visitMethodInsn(INVOKESPECIAL, lambdaClassInternalName, "<init>", createMethodDescriptor(VOID_TYPE, lambdaClassConstructorParameters), generatedLambda.lambdaClass.isInterface());
 
         operandStack.replace(CLOSURE_TYPE, lambdaClassConstructorParameters.length);
+    }
+
+    /**
+     * Returns the {@code $self} parameter of the trait helper method that encloses the lambda, if any.
+     */
+    private BytecodeVariable getTraitSelf() {
+        MethodNode methodNode = controller.getMethodNode();
+        if (methodNode != null && !controller.isInGeneratedFunction() && Traits.isTrait(controller.getClassNode().getOuterClass())) {
+            Parameter[] parameters = methodNode.getParameters();
+            if (parameters.length > 0 && Traits.THIS_OBJECT.equals(parameters[0].getName())) {
+                return controller.getCompileStack().getVariable(Traits.THIS_OBJECT, false);
+            }
+        }
+        return null;
     }
 
     private void loadSharedVariables(final Parameter[] lambdaSharedVariableParameters) {
