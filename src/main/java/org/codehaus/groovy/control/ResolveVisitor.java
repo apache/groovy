@@ -1238,10 +1238,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         ClassNode type = expression.getObjectExpression().getType();
         if ("super".equals(prop) && expression.getObjectExpression() instanceof ClassExpression
                 && type.isInterface() && !Traits.isTrait(type)) {
-            // GROOVY-12526: javac accepts Iface.super only for a direct superinterface.
-            // An enclosing interface, the current type, or an indirect superinterface is not enough.
+            // GROOVY-12526: Iface.super needs Iface to be the current type or one of its superinterfaces.
+            // Static compilation further requires a direct superinterface, as javac does; see StaticCompilationVisitor.
             // Trait.super is left to SuperCallTraitTransformer.
-            if (!directlyDeclaresInterface(currentClass, type)) {
+            if (!directlyDeclaresInterface(currentClass, type) && !currentClass.equals(type) && !currentClass.implementsInterface(type)) {
                 addError("'" + type.getName() + "' is not a direct superinterface of '" + currentClass.getName() + "'", expression);
             }
             return;
