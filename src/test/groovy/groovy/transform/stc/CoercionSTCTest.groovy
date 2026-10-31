@@ -895,6 +895,13 @@ import static groovy.test.GroovyAssert.shouldFail
             }
             Closure<String> k = { 'k' }
             new K(k)
+
+            class D extends Closure<String> {
+                D() { super(null) }
+                String doCall() { 'D' }
+            }
+            assert take(new D()) == 'd'
+            assert give(new D()) == 'D'
         '''
     }
 
@@ -954,6 +961,18 @@ import static groovy.test.GroovyAssert.shouldFail
             new K(c)
         ''',
         'Cannot call K#<init>(java.util.function.Supplier<java.lang.String>) with arguments [groovy.lang.Closure<java.lang.Integer>]'
+
+        shouldFailWithMessages '''
+            class D extends Closure<Integer> {
+                D() { super(null) }
+                Integer doCall() { 1 }
+            }
+            class C {
+                static take(Supplier<String> s) { s.get() }
+            }
+            C.take(new D())
+        ''',
+        'Cannot call C#take(java.util.function.Supplier<java.lang.String>) with arguments [D]'
 
         shouldFailWithMessages '''
             Optional<String> o = Optional.empty()

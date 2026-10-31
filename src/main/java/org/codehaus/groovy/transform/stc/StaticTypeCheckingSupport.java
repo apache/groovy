@@ -1504,6 +1504,8 @@ public abstract class StaticTypeCheckingSupport {
                 if (!samCoercion) return false; // else assume parameters checked earlier
                 return isClosureCoercibleToSAM(parameterType, argumentType); // GROOVY-12599
             }
+        } else if (parameterType.isUsingGenerics() && argumentType.isDerivedFrom(CLOSURE_TYPE) && isSAMType(parameterType)) {
+            return isClosureCoercibleToSAM(parameterType, argumentType); // GROOVY-12599: Closure subclass
         }
         return true;
     }
