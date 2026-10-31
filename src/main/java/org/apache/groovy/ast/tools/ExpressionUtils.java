@@ -85,6 +85,19 @@ public final class ExpressionUtils {
     }
 
     /**
+     * Checks whether the supplied expression is {@code Type.super} for a class
+     * {@code Type}: the superclass of the enclosing instance of type {@code Type}.
+     * For an interface, {@code Type.super} selects its default methods instead.
+     *
+     * @param expression the expression to inspect
+     * @return {@code true} if the expression is {@code Type.super} and {@code Type} is not an interface
+     */
+    public static boolean isOuterSuperExpression(final Expression expression) {
+        return expression instanceof PropertyExpression pexp && "super".equals(pexp.getPropertyAsString())
+            && pexp.getObjectExpression() instanceof ClassExpression && !pexp.getObjectExpression().getType().isInterface();
+    }
+
+    /**
      * Checks whether the supplied expression references {@code this} or {@code super}.
      *
      * @param expression the expression to inspect

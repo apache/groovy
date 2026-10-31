@@ -60,6 +60,7 @@ import java.util.TreeMap;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isOuterSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.mayHaveSideEffects;
@@ -165,6 +166,9 @@ public class InvocationWriter {
             sender = controller.getThisType();
             implicitThis = false;
             safe = false;
+        } else if (isOuterSuperExpression(receiver)) {
+            // "Outer.super.name": the member of Outer's superclass, also for an instance of a subclass of Outer
+            sender = ((PropertyExpression) receiver).getObjectExpression().getType();
         } else {
             sender = controller.getClassNode();
         }
@@ -358,14 +362,6 @@ public class InvocationWriter {
     private boolean isClassWithSuper(final Expression exp) {
         if (exp instanceof PropertyExpression pexp) {
             return pexp.getObjectExpression() instanceof ClassExpression && "super".equals(pexp.getPropertyAsString());
-        }
-        return false;
-    }
-
-    private boolean isOuterClassSuper(final Expression exp) {
-        if (isClassWithSuper(exp)) {
-            PropertyExpression pexp = (PropertyExpression) exp;
-            return !pexp.getObjectExpression().getType().isInterface();
         }
         return false;
     }
@@ -651,7 +647,7 @@ public class InvocationWriter {
             if (isFunctionalInterface(type)) call = transformToRealMethodCall(call, type);
         }
         MethodCallerMultiAdapter adapter = invokeMethod;
-        if (isSuperExpression(receiver) || isOuterClassSuper(receiver)) { // GROOVY-11611
+        if (isSuperExpression(receiver) || isOuterSuperExpression(receiver)) { // GROOVY-11611
             adapter = invokeMethodOnSuper;
         } else if (isThisExpression(receiver)) {
             adapter = invokeMethodOnCurrent;
