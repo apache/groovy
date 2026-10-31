@@ -4413,4 +4413,84 @@ final class TraitASTTransformationTest {
             assert c.m(Closure.OWNER_ONLY) == 1
         """
     }
+
+    // GROOVY-12618
+    @CompileModesTest
+    void testSuperTraitStaticMethodInDelegateFirstClosure(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static int size() { 1 }
+                static String triple(int n) { this.simpleName + ':' + n * 3 }
+            }
+            $mode
+            trait U extends T {
+                def m1() { [5, 6].with { size() } }
+                static sm1() { [5, 6].with { size() } }
+                def m2() { new Object().with { size() } }
+                static sm2() { new Object().with { size() + ':' + triple(10) } }
+                def m3() { new Tripler().with { triple(10) } }
+                static sm3() { new Tripler().with { triple(10) } }
+                def m4() { [5, 6, 7].with { new Object().with { size() } } }
+                def m5() { def r; [5, 6].each { r = size() }; r }
+                def m6() { java.util.function.Supplier<Integer> s = () -> size(); s.get() }
+            }
+            class Tripler {
+                String triple(int n) { 'Tripler:' + n * 100 }
+            }
+            $mode
+            class C implements U {
+            }
+            $mode
+            class D implements U {
+                static int size() { 3 }
+            }
+
+            assert new C().m1() == 2
+            assert C.sm1() == 2
+            assert new C().m2() == 1
+            assert C.sm2() == '1:C:30'
+            assert new C().m3() == 'Tripler:1000'
+            assert C.sm3() == 'Tripler:1000'
+            assert new C().m4() == 3
+            assert new C().m5() == 1
+            assert new C().m6() == 1
+            // the trait calls the method of the super trait, not the one of the implementing class
+            assert new D().m1() == 2
+            assert new D().m2() == 1
+            assert D.sm2() == '1:D:30'
+            assert new D().m6() == 1
+        """
+    }
+
+    // GROOVY-12618
+    @CompileModesTest
+    void testSuperTraitStaticMethodInClosureWithDelegateSetAtRuntime(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static int size() { 1 }
+            }
+            $mode
+            trait U extends T {
+                def m(int strategy) {
+                    Closure<Integer> c = { size() }
+                    c.resolveStrategy = strategy
+                    c.delegate = [5, 6]
+                    c()
+                }
+            }
+            $mode
+            class C implements U {
+            }
+
+            def c = new C()
+            // statically compiled code selects the method at compile time, as in a class
+            int delegateResult = '$mode' == '@CompileStatic' ? 1 : 2
+            assert c.m(Closure.DELEGATE_FIRST) == delegateResult
+            assert c.m(Closure.DELEGATE_ONLY) == delegateResult
+            assert c.m(Closure.OWNER_FIRST) == 1
+            assert c.m(Closure.OWNER_ONLY) == 1
+        """
+    }
 }

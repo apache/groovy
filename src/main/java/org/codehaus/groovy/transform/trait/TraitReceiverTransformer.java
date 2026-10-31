@@ -388,8 +388,8 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     // this.m(x) --> (this or T$Trait$Helper).m($self or $static$self or (Class)$self.getClass(), x)
                     Expression selfClassOrObject = methodNode.isStatic() && !ClassHelper.isClassType(weaved.getOriginType()) ? castX(ClassHelper.CLASS_Type.getPlainNodeReference(), callX(weaved, "getClass")) : weaved;
                     newCall = callX(!inClosure ? thisExpr : classX(traitHelper), method, createArgumentList(selfClassOrObject, arguments));
-                    if (inClosure && !inLambda && call.isImplicitThis() && methodNode.getDeclaringClass().equals(traitClass)) {
-                        // GROOVY-12611: m(x) in a closure may target the closure's delegate; the type
+                    if (inClosure && !inLambda && call.isImplicitThis()) {
+                        // GROOVY-12611, GROOVY-12618: m(x) in a closure may target the closure's delegate; the type
                         // checker of statically compiled code keeps T$Trait$Helper.m($self, x) or
                         // selects m(x) on the delegate, otherwise the closure resolves m(x) and its
                         // metaclass falls back to the trait helper for the owner

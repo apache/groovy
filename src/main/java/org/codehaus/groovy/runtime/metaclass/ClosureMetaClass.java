@@ -76,6 +76,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
     private final Map<String, CachedField> attributes = new HashMap<>();
     private MethodChooser chooser;
     private final Class<?> traitHelper;
+    private List<Class<?>> superTraitHelpers;
 
     private static MetaClassImpl classMetaClass;
     private static MetaClassImpl CLOSURE_METACLASS;
@@ -426,8 +427,9 @@ public final class ClosureMetaClass extends MetaClassImpl {
     /**
      * Returns the method of the trait helper class that encloses the closure class
      * for a private or static method of the trait that accepts the owner (or its
-     * class) and the arguments. A public instance method of the trait is called on
-     * the owner.
+     * class) and the arguments, or the method of a super trait helper class for a
+     * public static method of a super trait. A public instance method of the trait
+     * is called on the owner.
      */
     private MetaMethod getTraitMethod(final Object owner, final String methodName, final Class<?>[] argClasses) {
         if (traitHelper == null || owner == null || owner instanceof Closure) {
@@ -442,12 +444,52 @@ public final class ClosureMetaClass extends MetaClassImpl {
             types[0] = Class.class; // static method called from an instance method
             method = helperMetaClass.pickMethod(methodName, types);
         }
-        return isTraitMethod(method) ? method : null;
+        if (isTraitMethod(method)) {
+            return method;
+        }
+        types[0] = Class.class; // GROOVY-12618: public static method of a super trait
+        for (Class<?> superTraitHelper : getSuperTraitHelpers()) {
+            method = registry.getMetaClass(superTraitHelper).pickMethod(methodName, types);
+            if (method != null && method.isStatic() && method.isPublic() && method.getDeclaringClass().getTheClass() == superTraitHelper
+                    && method.getNativeParameterTypes()[0] == Class.class) {
+                return method;
+            }
+        }
+        return null;
     }
 
     private boolean isTraitMethod(final MetaMethod method) {
         return method != null && method.isStatic() && method.getDeclaringClass().getTheClass() == traitHelper
                 && (method.isPrivate() || method.getNativeParameterTypes()[0] == Class.class);
+    }
+
+    /**
+     * Returns the helper classes of the super traits of the trait, in the order the
+     * trait helper class forwards calls to static methods it does not declare.
+     */
+    private List<Class<?>> getSuperTraitHelpers() {
+        List<Class<?>> helpers = superTraitHelpers;
+        if (helpers == null) {
+            List<Class<?>> list = new ArrayList<>();
+            collectSuperTraitHelpers(traitHelper.getEnclosingClass(), list);
+            superTraitHelpers = helpers = List.copyOf(list);
+        }
+        return helpers;
+    }
+
+    private static void collectSuperTraitHelpers(final Class<?> trait, final List<Class<?>> helpers) {
+        Class<?>[] interfaces = trait.getInterfaces();
+        for (int i = interfaces.length; i > 0; ) {
+            Class<?> superTrait = interfaces[--i];
+            if (superTrait.isAnnotationPresent(Trait.class)) {
+                try {
+                    Class<?> helper = Class.forName(superTrait.getName() + "$Trait$Helper", false, superTrait.getClassLoader());
+                    if (!helpers.contains(helper)) helpers.add(helper);
+                } catch (ClassNotFoundException ignore) {
+                }
+                collectSuperTraitHelpers(superTrait, helpers);
+            }
+        }
     }
 
     private static final Set<String> INTERNAL_METHODS = Set.of("curry", "ncurry", "rcurry", "leftShift", "rightShift");
