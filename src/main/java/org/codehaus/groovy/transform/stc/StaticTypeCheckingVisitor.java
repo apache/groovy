@@ -3482,6 +3482,13 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             ClassNode operandType = getType(operand);
             boolean isPostfix = (origin instanceof PostfixExpression);
             String name = (operator == PLUS_PLUS ? "next" : operator == MINUS_MINUS ? "previous" : null);
+            // GROOVY-12625: pass a stand-in for a subscript operand; findMethodOrFail takes a
+            // binary expression for the operator call and would replace its getAt target
+            Expression receiver = operand;
+            if (operand instanceof BinaryExpression) {
+                receiver = varX("_dummy_", operandType);
+                receiver.setSourcePosition(operand);
+            }
 
             if (name != null && isNumberType(operandType)) {
                 if (!isPrimitiveType(operandType)) {
@@ -3497,7 +3504,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
             if (name != null && operandType.isDerivedFrom(Number_TYPE)) {
                 // special case for numbers, improve type checking as we can expect ++ and -- to return the same type
-                MethodNode node = findMethodOrFail(operand, operandType, name);
+                MethodNode node = findMethodOrFail(receiver, operandType, name);
                 if (node != null) {
                     storeTargetMethod(origin, node);
                     storeType(origin, getMathWideningClassNode(operandType));
@@ -3509,7 +3516,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 return;
             }
 
-            MethodNode node = findMethodOrFail(operand, operandType, name);
+            MethodNode node = findMethodOrFail(receiver, operandType, name);
             if (node != null) {
                 storeTargetMethod(origin, node);
                 storeType(origin, isPostfix ? operandType : inferReturnTypeGenerics(operandType, node, ArgumentListExpression.EMPTY_ARGUMENTS));
