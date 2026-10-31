@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793343889298,
+  "lastUpdate": 1793429902287,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -6125,6 +6125,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.groovyRuntime",
             "value": 1519,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194129,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "ef76fcba756be3331227627f78b5ba6b62109645",
+          "message": "GROOVY-12533: this.name in an inner subclass reads the enclosing instance's private field\n\nIn a subclass nested in the class that declares a private field, this.@name\nis the field of this instance, but this.name and a bare name resolve to the\nenclosing instance, as in dynamic code. Static compilation read this.name\nfrom this instance since the field was made reachable from a closure. It now\ndoes so only when there is no enclosing instance, as in a static nested\nsubclass, and a bare name there no longer fails verification.",
+          "timestamp": "2026-10-31T04:58:32Z",
+          "url": "https://github.com/apache/groovy/commit/ef76fcba756be3331227627f78b5ba6b62109645"
+        },
+        "date": 1793429901436,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4018,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 440,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 855,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1524,
             "unit": "classes"
           },
           {
