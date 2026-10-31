@@ -32,11 +32,18 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Rewrites variable expressions that stand in for property, enum, field, or direct method access.
  */
 class VariableExpressionTransformer {
+
+    private final StaticCompilationTransformer scTransformer;
+
+    VariableExpressionTransformer(final StaticCompilationTransformer scTransformer) {
+        this.scTransformer = scTransformer;
+    }
 
     /**
      * Rewrites a variable expression when static-compilation metadata identifies a more specific target.
@@ -102,7 +109,7 @@ class VariableExpressionTransformer {
         return pe;
     }
 
-    private static Expression tryTransformPrivateFieldAccess(final VariableExpression ve) {
+    private Expression tryTransformPrivateFieldAccess(final VariableExpression ve) {
         FieldNode field = ve.getNodeMetaData(StaticTypesMarker.PV_FIELDS_ACCESS);
         if (field == null) {
             field = ve.getNodeMetaData(StaticTypesMarker.PV_FIELDS_MUTATION);
@@ -112,8 +119,17 @@ class VariableExpressionTransformer {
         }
 
         // access to a private field from a section of code that normally doesn't have access to it, like a closure block or inner class
-        Expression fieldOwner = field.isStatic() ? classX(field.getDeclaringClass()) : propX(classX(field.getDeclaringClass()), "this");
-        if (!field.isStatic()) fieldOwner.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, field.getDeclaringClass());
+        ClassNode declaringClass = field.getDeclaringClass();
+        Expression fieldOwner;
+        if (field.isStatic()) {
+            fieldOwner = classX(declaringClass);
+        } else if (scTransformer.extendsClass(declaringClass) && !scTransformer.hasEnclosingInstanceOf(declaringClass)) {
+            // GROOVY-12533: a static nested subclass has the field but no enclosing instance
+            fieldOwner = varX("this");
+        } else {
+            fieldOwner = propX(classX(declaringClass), "this");
+            fieldOwner.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, declaringClass);
+        }
         PropertyExpression pe = attrX(fieldOwner, ve.getName()); // GROOVY-10687, GROOVY-11412: direct access
         pe.putNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE, field.getOriginType());
         pe.getProperty().setSourcePosition(ve);

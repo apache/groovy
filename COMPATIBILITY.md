@@ -652,6 +652,27 @@ variables of any other name, are still checked for duplicates. The
 undeclared multi-assignment `(_, y, _) = …` was never affected: it assigns
 the existing `_` (or the binding variable) twice.
 
+### Groovy 6.0.1 — parallel collections run on the pool in scope (GROOVY-12457)
+
+Parallel collection methods (incubating) run on the pool bound with
+`Pool.withCurrent`. In 6.0.0 a pool not backed by a `ForkJoinPool`, such as
+`Pool.virtual()` or `Pool.io()`, was silently replaced by the common
+fork-join pool, so blocking callbacks gained nothing from it.
+
+**Who is affected.**
+
+- Callbacks under `Pool.virtual()` or `Pool.io()` now run on that pool's
+  threads. A short-circuit (`findParallel`, `findAnyParallel`,
+  `anyParallel`, `everyParallel`) or a failing sibling interrupts callbacks
+  still running there, which closes an interruptible channel they are
+  blocked on.
+- `Pool.current()` returns the pool on its own worker threads, where it
+  returned `null`, so a nested parallel call stays on that pool.
+- `groupByParallel` returns its keys in first-seen order, as `groupBy` does.
+- `grepParallel` keeps an element when `isCase` is Groovy-true, as `grep`
+  does. A filter whose `isCase` returns `null`, `0`, an empty string or an
+  empty collection no longer keeps every element.
+
 ### Groovy 7 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
 
 For a dynamic property write or read, the runtime checks whether the receiver
@@ -809,7 +830,7 @@ of `CompilationUnit` that adds it as a phase operation, or that calls
 `PlaceholderVisitor.isPlaceholder`. Drop the phase operation. Where code needs
 to know whether a variable is `_`, check its name.
 
-### Groovy 7 — statically compiled constructor references call the constructor directly (GROOVY-12488)
+### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
 
 Under `@CompileStatic`, a constructor reference such as `X::new` created the
 object through the meta-class, which selected the constructor at run time from
