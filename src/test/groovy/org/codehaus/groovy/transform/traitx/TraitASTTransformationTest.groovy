@@ -2420,6 +2420,263 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-12590
+    @CompileModesTest
+    void testTraitStaticAccessorReadAsProperty(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static boolean flag = true
+                static boolean isReady() { flag }
+                static String sm() { ready ? 'yes' : 'no' }
+                static String st() { this.ready ? 'yes' : 'no' }
+                static Closure getG() { { -> flag } }
+                static Object sg() { g.call() }
+            }
+            $mode
+            class C implements T {
+            }
+            $mode
+            class D implements T {
+            }
+
+            $mode void m() {
+                assert C.sm() == 'yes'
+                assert C.st() == 'yes'
+                assert C.sg() == true
+                D.flag = false // each implementing class has its own trait state
+                assert C.sm() == 'yes'
+                assert D.sm() == 'no'
+                assert D.st() == 'no'
+                assert D.sg() == false
+            }
+            m()
+        """
+
+        assertScript shell, """
+            import java.util.function.Supplier
+
+            $mode
+            trait T {
+                static boolean flag = true
+                static boolean isReady() { flag }
+                String getName() { 'name' }
+                String im() { ready ? 'yes' : 'no' }
+                String iname() { name }
+                String ic() { def c = { -> ready ? 'yes' : 'no' }; c() }
+                static String sc() { def c = { -> ready ? 'yes' : 'no' }; c() }
+                static String sl() { Supplier<String> s = () -> ready ? 'yes' : 'no'; s.get() }
+            }
+            $mode
+            class C implements T {
+            }
+            $mode
+            class D implements T {
+            }
+
+            $mode void m() {
+                D.flag = false
+                assert new C().im() == 'yes'
+                assert new D().im() == 'no'
+                assert new C().iname() == 'name'
+                assert new C().ic() == 'yes'
+                assert new D().ic() == 'no'
+                assert C.sc() == 'yes'
+                assert D.sc() == 'no'
+                assert C.sl() == 'yes'
+                assert D.sl() == 'no'
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12590
+    @CompileModesTest
+    void testTraitStaticAccessorWrittenAsProperty(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+                static int set(int n) { cnt = n; count }
+                static int add(int n) { cnt += n; count }
+                static int post() { cnt++; count }
+                static int pre() { ++cnt; count }
+                int iset(int n) { cnt = n; count }
+                int iadd(int n) { cnt += n; count }
+                int ipost() { cnt++; count }
+            }
+            $mode
+            class C implements T {
+            }
+
+            $mode void m() {
+                assert C.set(10) == 10
+                assert C.add(5) == 15
+                assert C.post() == 16
+                assert C.pre() == 17
+                assert new C().iset(20) == 20
+                assert new C().iadd(5) == 25
+                assert new C().ipost() == 26
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12590
+    @CompileModesTest
+    void testSuperTraitStaticAccessorAsProperty(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+            }
+            $mode
+            trait U extends T {
+                static int s() { cnt }
+                int i() { cnt = 5; cnt++; cnt }
+            }
+            $mode
+            class C implements U {
+            }
+
+            $mode void m() {
+                assert C.s() == 1
+                assert new C().i() == 6
+                assert C.s() == 6
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12608
+    @CompileModesTest
+    void testSuperTraitStaticAccessorAsPropertyInClosure(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                private static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+                static boolean isReady() { count > 0 }
+            }
+            $mode
+            trait U extends T {
+                int ic() { def c = { -> cnt }; c() }
+                String ir() { def c = { -> ready ? 'yes' : 'no' }; c() }
+                int inner() { def c = { -> def d = { -> cnt }; d() }; c() }
+                int iset(int n) { def c = { -> cnt = n }; c(); cnt }
+                int ipost() { def c = { -> cnt++ }; c(); cnt }
+                static int sc() { def c = { -> cnt }; c() }
+                static int sadd(int n) { def c = { -> cnt += n }; c(); cnt }
+            }
+            $mode
+            trait V extends U {
+                int vc() { def c = { -> cnt }; c() }
+            }
+            $mode
+            class C implements V {
+            }
+            $mode
+            class D implements V {
+            }
+
+            $mode void m() {
+                D.cnt = 0 // each implementing class has its own trait state
+                assert new D().ic() == 0
+                assert D.sc() == 0
+                assert new D().ir() == 'no'
+                assert new C().ic() == 1
+                assert new C().ir() == 'yes'
+                assert new C().inner() == 1
+                assert C.sc() == 1
+                assert new C().iset(5) == 5
+                assert new C().ipost() == 6
+                assert C.sadd(2) == 8
+                assert new C().vc() == 8
+            }
+            m()
+        """
+
+        assertScript shell, """
+            import java.util.function.Supplier
+
+            $mode
+            trait T {
+                static int count = 1
+                static String s = 'x'
+            }
+            $mode
+            trait U extends T {
+                int ic() { def c = { -> count }; c() }
+                static int sc() { def c = { -> count }; c() }
+                static String sw() { def c = { -> s = 'y' }; c(); s }
+                String iw() { def c = { -> s = 'z' }; c(); s }
+                int il() { Supplier<Integer> s = () -> count; s.get() }
+                static int sl() { Supplier<Integer> s = () -> count; s.get() }
+                static int sset(int n) { Runnable r = () -> { count = n }; r.run(); count }
+            }
+            $mode
+            class C implements U {
+            }
+            $mode
+            class D implements U {
+            }
+
+            $mode void m() {
+                D.count = 2 // each implementing class has its own trait state
+                assert new C().ic() == 1
+                assert new D().ic() == 2
+                assert C.sc() == 1
+                assert D.sc() == 2
+                assert C.sw() == 'y'
+                assert new C().iw() == 'z'
+                assert D.s == 'x'
+                assert new C().il() == 1
+                assert new D().il() == 2
+                assert C.sl() == 1
+                assert D.sl() == 2
+                assert C.sset(3) == 3
+                assert D.count == 2
+            }
+            m()
+        """
+
+        // the closure's delegate still comes first
+        assertScript shell, """
+            class P {
+                int cnt = 42
+            }
+            $mode
+            trait T {
+                private static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+            }
+            $mode
+            trait U extends T {
+                int get(P p) { p.with { cnt } }
+                int set(P p, int n) { p.with { cnt = n }; cnt }
+                static int sget(P p) { p.with { cnt } }
+            }
+            $mode
+            class C implements U {
+            }
+
+            $mode void m() {
+                def p = new P()
+                assert new C().get(p) == 42
+                assert C.sget(p) == 42
+                assert new C().set(p, 7) == 1
+                assert p.cnt == 7
+            }
+            m()
+        """
+    }
+
     @Test
     void testTraitMethodShouldBeDefaultImplementationUsingReflection() {
         assertScript shell, '''
