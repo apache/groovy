@@ -1496,6 +1496,45 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12576
+    @Test
+    void testClosureObjectMethodResolveStrategy() {
+        assertScript '''
+            class C {
+                String toString() { 'C' }
+                static List<Object> self(@DelegatesTo(value=String, strategy=Closure.TO_SELF) Closure c) {
+                    c.resolveStrategy = Closure.TO_SELF
+                    c.delegate = 'd'
+                    [c(), c.toString()]
+                }
+                static Object delegateOnly(@DelegatesTo(value=String, strategy=Closure.DELEGATE_ONLY) Closure c) {
+                    c.resolveStrategy = Closure.DELEGATE_ONLY
+                    c.delegate = 'd'
+                    c()
+                }
+                static Object ownerOnly(@DelegatesTo(value=String, strategy=Closure.OWNER_ONLY) Closure c) {
+                    c.resolveStrategy = Closure.OWNER_ONLY
+                    c.delegate = 'd'
+                    c()
+                }
+                List<Object> m() {
+                    Closure<String> outer = { -> { -> toString() }() }
+                    List<Object> tos = self { -> toString() }
+                    List<Object> nested = self { -> { -> toString() }() }
+                    [
+                        tos[0] == tos[1],
+                        nested[0] == nested[1],
+                        outer() == outer.toString(),
+                        delegateOnly { -> toString() },
+                        ownerOnly { -> toString() }
+                    ]
+                }
+            }
+
+            assert new C().m() == [true, true, true, 'd', 'C']
+        '''
+    }
+
     // GROOVY-9604
     @Test
     void testClosureResolveStrategy() {

@@ -5198,6 +5198,16 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
     }
 
+    /**
+     * Tells whether the innermost enclosing closure is a closure, not a lambda,
+     * whose owner is an enclosing closure.
+     */
+    private static boolean isOwnerClosure(final List<TypeCheckingContext.EnclosingClosure> enclosingClosures) {
+        return enclosingClosures.size() > 1
+            && !(enclosingClosures.get(0).getClosureExpression() instanceof LambdaExpression)
+            && !(enclosingClosures.get(1).getClosureExpression() instanceof LambdaExpression);
+    }
+
     private static void addDelegateReceiver(final List<Receiver<String>> receivers, final ClassNode delegate, final String path) {
         if (isClassClassNodeWrappingConcreteType(delegate)) { // GROOVY-11393: Type from Class<Type>
             receivers.add(new Receiver<>(delegate.getGenericsTypes()[0].getType(), false, path));
@@ -5308,11 +5318,28 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     && typeCheckingContext.getEnclosingClosure() != null
                     && !name.equals("call") && !name.equals("doCall")) { // GROOVY-9662
                     mn = CLOSURE_TYPE.getMethods(name);
-                    // a method of Object is looked up on the delegate or owner, as at run time
-                    mn.removeIf(m -> isObjectType(m.getDeclaringClass()));
+                    DelegationMetadata dmd = typeCheckingContext.delegationMetadata;
+                    int strategy = dmd != null ? dmd.getStrategy() : Closure.OWNER_FIRST;
+                    if (strategy != Closure.TO_SELF) {
+                        // a method of Object is looked up on the delegate or owner, as at run time
+                        List<MethodNode> objectMethods = new ArrayList<>(mn);
+                        objectMethods.removeIf(m -> !isObjectType(m.getDeclaringClass()));
+                        mn.removeIf(m -> isObjectType(m.getDeclaringClass()));
+                        if (mn.isEmpty() && !objectMethods.isEmpty()
+                                && (strategy == Closure.OWNER_FIRST || strategy == Closure.OWNER_ONLY)
+                                && isOwnerClosure(typeCheckingContext.getEnclosingClosureStack())) {
+                            // the owner is a closure, so it is the owner's own method
+                            mn = objectMethods;
+                            chosenReceiver = new Receiver<>(CLOSURE_TYPE.getPlainNodeReference(), "owner");
+                        }
+                    }
                     if (!mn.isEmpty()) {
                         receiver = CLOSURE_TYPE.getPlainNodeReference();
-                        objectExpression.removeNodeMetaData(INFERRED_TYPE);
+                        if (strategy == Closure.TO_SELF && mn.stream().anyMatch(m -> isObjectType(m.getDeclaringClass()))) {
+                            objectExpression.putNodeMetaData(INFERRED_TYPE, receiver); // tells the static compiler to call it on the closure
+                        } else {
+                            objectExpression.removeNodeMetaData(INFERRED_TYPE);
+                        }
                     }
                 }
                 if (mn == null || mn.isEmpty()) {

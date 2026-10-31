@@ -378,8 +378,10 @@ public class StaticInvocationWriter extends InvocationWriter {
             MethodNode theTarget = target;
             if (implicitThis && isThisExpression(receiver)
                     && (!isSubtype(declaringClass, enclosingClass)
-                        // a method of Object called in a closure or lambda is not called on it
-                        || (ClassHelper.isObjectType(declaringClass) && controller.isInGeneratedFunction()))) {
+                        // a method of Object called in a closure or lambda is not called on it,
+                        // unless it was resolved against the closure itself (TO_SELF)
+                        || (ClassHelper.isObjectType(declaringClass) && controller.isInGeneratedFunction()
+                            && !isSubtype(ClassHelper.CLOSURE_TYPE, receiverType)))) {
                 if (target.isStatic()) {
                     theReceiver = classX(declaringClass);
                 } else if (!controller.isInGeneratedFunction()) {
