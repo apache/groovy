@@ -47,5 +47,7 @@ public enum StaticCompilationMetadataKeys {
      * the class converting its instances to a type, or {@code null} if there is none. Such a class implements
      * the type and has a constructor taking the closure.
      */
-    FUNCTIONAL_INTERFACE_ADAPTER
+    FUNCTIONAL_INTERFACE_ADAPTER,
+    /** Extension getter for the read half of a compound assignment to an extension property. */
+    EXTENSION_PROPERTY_GETTER
 }

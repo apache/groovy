@@ -582,6 +582,12 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
                 'L2',
                 'LINENUMBER 5',
                 'ALOAD 2',
+                'DUP',
+                'INSTANCEOF groovy/lang/GString',
+                'IFEQ L3',
+                'INVOKEVIRTUAL java/lang/Object.toString ()Ljava/lang/String;',
+                'L3',
+                'FRAME',
                 'CHECKCAST java/lang/String',
                 'INVOKEVIRTUAL java/lang/String.toUpperCase ()Ljava/lang/String;',
                 'ARETURN'
@@ -1001,8 +1007,8 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             'INVOKEDYNAMIC apply()Ljava/util/function/Function;',
             // handle kind 0x6 : INVOKESTATIC
             'java/lang/invoke/LambdaMetafactory.metafactory',
-            // handle kind 0x5 : INVOKEVIRTUAL
-            'java/lang/String.toUpperCase()Ljava/lang/String;'
+            // GROOVY-12536: erased parameter, GString converted before String.toUpperCase
+            'script.gstring$String$toUpperCase$1(Ljava/lang/Object;)Ljava/lang/String;'
         ])
         assertScript(code)
     }
