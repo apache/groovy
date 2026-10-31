@@ -4491,6 +4491,38 @@ final class TraitASTTransformationTest {
             assert c.m(Closure.DELEGATE_ONLY) == delegateResult
             assert c.m(Closure.OWNER_FIRST) == 1
             assert c.m(Closure.OWNER_ONLY) == 1
+
+    // GROOVY-12611
+    @CompileModesTest
+    void testTraitMethodInClosureWithDelegateMethodTakingSelfArgument(String mode) {
+        assertScript shell, """
+            class Dg {
+                String who(Class c) { 'delegate' }
+                String tag(Object self) { 'delegate' }
+                String twice(Object self, int n) { 'delegate' }
+                String thrice(Class c, int n) { 'delegate' }
+            }
+            $mode
+            trait T {
+                static String who() { 'trait' }
+                private String tag() { 'trait' }
+                private String twice(int n) { 'trait' }
+                static String thrice(int n) { 'trait' }
+                def m1() { new Dg().with { twice(2) + ' ' + thrice(3) } }
+                static sm1() { new Dg().with { thrice(3) } }
+                def m2() { new Dg().with { who() + ' ' + tag() } }
+                static sm2() { new Dg().with { who() } }
+            }
+            $mode
+            class C implements T {
+            }
+
+            assert new C().m1() == 'trait trait'
+            assert C.sm1() == 'trait'
+            // as in a class, dynamically compiled code calls a method with one parameter for a call without arguments
+            String noArgResult = '$mode' == '@CompileStatic' ? 'trait' : 'delegate'
+            assert new C().m2() == noArgResult + ' ' + noArgResult
+            assert C.sm2() == noArgResult
         """
     }
 }
