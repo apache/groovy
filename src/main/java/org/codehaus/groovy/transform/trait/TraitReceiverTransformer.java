@@ -90,6 +90,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
     private boolean inClosure;
     private boolean inLambdaOnly; // in a lambda that is not in a closure
+    private boolean inLambda;
 
     /**
      * Creates a transformer that rewrites trait receiver access against the woven receiver.
@@ -183,6 +184,9 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         } else if (exp instanceof VariableExpression vexp) {
             Variable accessedVariable = vexp.getAccessedVariable();
             if (accessedVariable instanceof FieldNode || accessedVariable instanceof PropertyNode) {
+                if (isClosurePropertyReference(vexp)) {
+                    return exp; // GROOVY-12598: resolve through the closure's delegate and owner
+                }
                 if (knownFields.contains(vexp.getName())) {
                     return transformFieldReference(exp, accessedVariable instanceof FieldNode
                             ? (FieldNode) accessedVariable : ((PropertyNode) accessedVariable).getField(), null);
@@ -235,12 +239,14 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             mce.setImplicitThis(false);
             mce.setMethodTarget(ClassHelper.CLOSURE_TYPE.getMethods("rehydrate").get(0));
             mce.setSourcePosition(exp);
-            boolean oldInClosure = inClosure, oldInLambdaOnly = inLambdaOnly;
+            boolean oldInClosure = inClosure, oldInLambdaOnly = inLambdaOnly, oldInLambda = inLambda;
             inLambdaOnly = exp instanceof LambdaExpression && (!inClosure || inLambdaOnly);
             inClosure = true;
+            inLambda = oldInLambda || exp instanceof LambdaExpression;
             ((ClosureExpression) exp).getCode().visit(this);
             inClosure = oldInClosure;
             inLambdaOnly = oldInLambdaOnly;
+            inLambda = oldInLambda;
             // The rewrite we do is causing some troubles with type checking, which will
             // not be able to perform closure parameter type inference
             // so we store the replacement, which will be done *after* type checking.
@@ -258,6 +264,9 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         Token operation = exp.getOperation();
         if (operation.getType() == Types.ASSIGN) {
             String leftFieldName = null;
+            if (leftExpression instanceof VariableExpression && isClosurePropertyReference((VariableExpression) leftExpression)) {
+                return binX(leftExpression, operation, transform(rightExpression)); // GROOVY-12598
+            }
             if (leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).getAccessedVariable() instanceof FieldNode) {
                 leftFieldName = ((VariableExpression) leftExpression).getAccessedVariable().getName();
             } else if (leftExpression instanceof FieldExpression) {
@@ -322,6 +331,20 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         if (fn.isStatic()) mce.putNodeMetaData(TraitASTTransformation.DO_DYNAMIC, fn.getOriginType());
 
         return mce;
+    }
+
+    /**
+     * Indicates whether the variable is an instance property of the trait (declared
+     * or backed by an accessor method) referenced from a closure. Such a reference
+     * is left for the closure to resolve, so that its delegate is checked according
+     * to the resolve strategy, as it is for a property of a class. The closure owner
+     * is the implementing instance, which has the property's accessor methods.
+     */
+    private boolean isClosurePropertyReference(final VariableExpression vexp) {
+        if (!inClosure || inLambda || ClassHelper.isClassType(weaved.getOriginType())) return false;
+        Variable accessedVariable = vexp.getAccessedVariable();
+        return !accessedVariable.isInStaticContext() && (accessedVariable instanceof PropertyNode
+            || (accessedVariable instanceof FieldNode && traitClass.getProperty(vexp.getName()) != null));
     }
 
     /**
