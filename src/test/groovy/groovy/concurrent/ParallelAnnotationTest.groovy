@@ -127,37 +127,42 @@ final class ParallelAnnotationTest {
         // time out — eliminating the split-heuristic flakiness of simply
         // counting thread names over a small data set.
         //
-        // Use ParallelScope.withPool(parties) rather than the common pool:
-        // CyclicBarrier.await is unmanaged blocking, so a contended
-        // ForkJoinPool.commonPool() (other tests / background FJP work)
-        // can leave only one free worker. That worker hits the barrier and
-        // never runs the second party → TimeoutException wrapped as
-        // UndeclaredThrowableException through the SAM Consumer proxy.
-        // A dedicated pool of size == parties isolates the check and works
-        // even on single-core hosts (two worker threads time-share; blocking
-        // on the barrier frees the core for the other party).
+        // CyclicBarrier.await blocks the worker. One spare thread lets the
+        // forked sibling run after the inline leaf blocks. The pool does not
+        // grow past its parallelism.
         assertScript '''
             import groovy.transform.Parallel
             import groovy.concurrent.ParallelScope
+            import groovy.concurrent.Pool
             import java.util.concurrent.CopyOnWriteArraySet
             import java.util.concurrent.CyclicBarrier
             import java.util.concurrent.TimeUnit
 
             int parties = 2
-            ParallelScope.withPool(parties) { scope ->
-                def threadNames = new CopyOnWriteArraySet()
-                def barrier = new CyclicBarrier(parties)
+            int threads = parties + 1
+            def pool = Pool.fixed(threads)
+            def fjp = pool.asForkJoinPool()
+            try {
+                ParallelScope.withPool(pool) { scope ->
+                    def threadNames = new CopyOnWriteArraySet()
+                    20.times {
+                        def barrier = new CyclicBarrier(parties)
 
-                // Real product shape: `@Parallel for (i in 1..n)` on IntRange.
-                // Pool isolation (above) is what makes the barrier rendezvous safe;
-                // RandomAccess on IntRange improves parallelStream split quality.
-                @Parallel
-                for (item in 1..parties) {
-                    threadNames << Thread.currentThread().name
-                    barrier.await(5, TimeUnit.SECONDS)
+                        // Real product shape: `@Parallel for (i in 1..n)` on IntRange.
+                        @Parallel
+                        for (item in 1..parties) {
+                            threadNames << Thread.currentThread().name
+                            barrier.await(5, TimeUnit.SECONDS)
+                        }
+                    }
+
+                    assert threadNames.size() >= parties
+                    assert threadNames.size() <= threads
                 }
-
-                assert threadNames.size() == parties
+                assert fjp.parallelism == threads
+                assert fjp.poolSize <= threads
+            } finally {
+                pool.close()
             }
         '''
     }
