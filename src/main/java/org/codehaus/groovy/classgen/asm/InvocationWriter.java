@@ -58,6 +58,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isOuterSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
@@ -240,8 +241,14 @@ public class InvocationWriter {
                         && !enclosingClass.implementsInterface(declaringClass)) {
                     // outer class method invocation
                     compileStack.pushImplicitThis(false);
-                    if (!controller.isInGeneratedFunction() && isThis(receiver)) {
-                        objectExpression = new PropertyExpression(new ClassExpression(declaringClass), "this");
+                    if (isThis(receiver)) {
+                        ClassNode outerType = getImplicitReceiverType(enclosingClass, declaringClass);
+                        if (!controller.isInGeneratedFunction()) {
+                            objectExpression = new PropertyExpression(new ClassExpression(outerType != null ? outerType : declaringClass), "this");
+                        } else if (outerType != null && !outerType.equals(controller.getThisType())) {
+                            // method of an enclosing instance of the closure's this object
+                            objectExpression = new PropertyExpression(new ClassExpression(outerType), "this");
+                        }
                     }
                 } else {
                     compileStack.pushImplicitThis(implicitThis);
@@ -314,6 +321,34 @@ public class InvocationWriter {
         }
         operandStack.push(returnType);
         return true;
+    }
+
+    /**
+     * Finds the class of the instance that an implicit-this call to a method
+     * of {@code declaringClass} is made on: the innermost class, starting at
+     * {@code enclosingClass} and skipping closures and lambdas, that extends
+     * or implements {@code declaringClass} and is reachable through enclosing
+     * instances.
+     *
+     * @param enclosingClass the class being generated
+     * @param declaringClass the class that declares the target method
+     * @return the class whose instance receives the call, or {@code null} if
+     *         no enclosing instance has the method
+     */
+    protected static ClassNode getImplicitReceiverType(final ClassNode enclosingClass, final ClassNode declaringClass) {
+        ClassNode type = enclosingClass;
+        while (type != null) {
+            if (ClassHelper.isGeneratedFunction(type)) {
+                type = type.getOuterClass();
+            } else if (isSubtype(declaringClass, type)) {
+                return type;
+            } else if (type.getDeclaredField("this$0") != null) {
+                type = type.getOuterClass();
+            } else {
+                break; // no enclosing instance
+            }
+        }
+        return null;
     }
 
     private boolean callSuperDefault(final ClassNode enclosingClass, final MethodNode target, final Expression receiver) {
