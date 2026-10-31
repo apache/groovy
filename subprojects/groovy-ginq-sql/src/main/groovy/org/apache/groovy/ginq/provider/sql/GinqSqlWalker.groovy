@@ -47,6 +47,7 @@ import org.apache.groovy.ginq.provider.sql.render.SqlRenderer
 import org.apache.groovy.ginq.provider.sql.runtime.SqlGinqRuntime
 import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.GroovyBugError
+import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.expr.ClosureExpression
@@ -309,7 +310,7 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return configurationExpressions
     }
 
-    protected void error(String message, org.codehaus.groovy.ast.ASTNode node) {
+    protected void error(String message, ASTNode node) {
         collectSyntaxError(new GinqSyntaxError(message, node.lineNumber, node.columnNumber))
     }
 

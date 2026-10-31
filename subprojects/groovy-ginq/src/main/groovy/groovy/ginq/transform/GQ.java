@@ -19,6 +19,7 @@
 package groovy.ginq.transform;
 
 import org.apache.groovy.ginq.dsl.GinqAstVisitor;
+import org.apache.groovy.ginq.provider.GinqProvider;
 import org.apache.groovy.ginq.provider.collection.runtime.Queryable;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
@@ -66,7 +67,7 @@ public @interface GQ {
 
     /**
      * Specify the GINQ provider by name, e.g. {@code collection} (the default) or a
-     * provider registered via the {@link org.apache.groovy.ginq.provider.GinqProvider}
+     * provider registered via the {@link GinqProvider}
      * SPI such as {@code native-sql}.
      * <p>
      * Note that database-backed providers also require a {@code dataSource}, which

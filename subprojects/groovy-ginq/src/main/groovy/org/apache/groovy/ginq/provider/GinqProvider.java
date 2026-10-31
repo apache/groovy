@@ -18,16 +18,18 @@
  */
 package org.apache.groovy.ginq.provider;
 
+import org.apache.groovy.ginq.dsl.GinqAstVisitor;
 import org.apache.groovy.lang.annotation.Incubating;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.ServiceLoader;
 
 /**
  * Represents a named GINQ provider, i.e. an execution back-end for GINQ queries,
- * discovered via {@link java.util.ServiceLoader}. A provider maps a short name,
+ * discovered via {@link ServiceLoader}. A provider maps a short name,
  * usable as the {@code provider} option of {@code GQ}/{@code GQL}/{@code @GQ},
- * to the {@link org.apache.groovy.ginq.dsl.GinqAstVisitor} implementation that
+ * to the {@link GinqAstVisitor} implementation that
  * transforms GINQ queries for that back-end.
  * <p>
  * The {@code collection} provider is built in; provider modules, e.g. {@code groovy-ginq-sql},
@@ -47,7 +49,7 @@ public interface GinqProvider {
 
     /**
      * Returns the fully qualified name of the provider's
-     * {@link org.apache.groovy.ginq.dsl.GinqAstVisitor} implementation.
+     * {@link GinqAstVisitor} implementation.
      *
      * @return the AST walker class name
      */

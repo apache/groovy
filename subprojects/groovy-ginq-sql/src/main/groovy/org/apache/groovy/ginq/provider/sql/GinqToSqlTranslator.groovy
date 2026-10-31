@@ -60,6 +60,7 @@ import org.apache.groovy.ginq.provider.sql.ir.SqlTableSource
 import org.apache.groovy.ginq.provider.sql.ir.SqlUnary
 import org.apache.groovy.ginq.provider.sql.runtime.SqlGinqRuntime
 import org.apache.groovy.lang.annotation.Incubating
+import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
@@ -965,14 +966,14 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
      * Reports a construct that has no SQL translation. Mixed-mode planning
      * catches {@link Untranslatable}; strict mode records a compile error.
      */
-    private void reject(String message, org.codehaus.groovy.ast.ASTNode node) {
+    private void reject(String message, ASTNode node) {
         if (recoverUntranslatable) {
             throw new Untranslatable(message, node)
         }
         error(message, node)
     }
 
-    private void error(String message, org.codehaus.groovy.ast.ASTNode node) {
+    private void error(String message, ASTNode node) {
         collectSyntaxError(new GinqSyntaxError(message, node.lineNumber, node.columnNumber))
     }
 

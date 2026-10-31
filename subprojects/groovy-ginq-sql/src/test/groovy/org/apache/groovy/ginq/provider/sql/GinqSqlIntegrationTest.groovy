@@ -19,9 +19,12 @@
 package org.apache.groovy.ginq.provider.sql
 
 import groovy.sql.Sql
+import org.h2.jdbcx.JdbcDataSource
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+
+import java.sql.DriverManager
 
 /**
  * Runs GINQ queries end-to-end against an in-memory H2 database
@@ -500,7 +503,7 @@ class GinqSqlIntegrationTest {
 
     @Test
     void testDataSourceAsJdbcDataSource() {
-        def dataSource = new org.h2.jdbcx.JdbcDataSource(URL: dbUrl, user: 'sa', password: '')
+        def dataSource = new JdbcDataSource(URL: dbUrl, user: 'sa', password: '')
         def result = GQL(provider: 'native-sql', dataSource: dataSource) {
             from e in 'employees'
             where e.id == 4
@@ -511,7 +514,7 @@ class GinqSqlIntegrationTest {
 
     @Test
     void testDataSourceAsConnection() {
-        def connection = java.sql.DriverManager.getConnection(dbUrl, 'sa', '')
+        def connection = DriverManager.getConnection(dbUrl, 'sa', '')
         try {
             def result = GQL(provider: 'native-sql', dataSource: connection) {
                 from e in 'employees'
