@@ -2789,6 +2789,118 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12617
+    @ParameterizedTest
+    @ValueSource(strings=['@CompileDynamic','@TypeChecked','@CompileStatic'])
+    void testPrimitiveBooleanSAMFromNonBooleanReturnType(String tag) {
+        assertScript shell, """
+            $tag
+            class C {
+                static String str(String s) { s }
+                static Object obj(String s) { s }
+                static List<String> list(String s) { s ? [s] : [] }
+                static Integer length(String s) { s.length() }
+                static int size(String s) { s.size() }
+                static String join(String... s) { s.join('') }
+                String prefix = ''
+                String prepend(String s) { prefix + s }
+                static void test() {
+                    Predicate<String> p = C::str
+                    assert !p.test('') && p.test('x')
+                    p = C.&str
+                    assert !p.test('') && p.test('x')
+                    p = C::obj
+                    assert !p.test('') && p.test('x')
+                    p = C::list
+                    assert !p.test('') && p.test('x')
+                    p = C::length
+                    assert !p.test('') && p.test('x')
+                    p = C::size
+                    assert !p.test('') && p.test('x')
+                    p = C::join
+                    assert !p.test('') && p.test('x')
+                    p = new C()::prepend
+                    assert !p.test('') && p.test('x')
+                    p = new C(prefix: 'x')::prepend
+                    assert p.test('')
+                    p = String::trim
+                    assert !p.test(' ') && p.test('x')
+                    p = ''::concat
+                    assert !p.test('') && p.test('x')
+                    p = String::reverse
+                    assert !p.test('') && p.test('x')
+                    p = ''::plus
+                    assert !p.test('') && p.test('x')
+                    p = StringBuilder::new
+                    assert !p.test('') && p.test('x')
+
+                    BiPredicate<String, String> bp = String::concat
+                    assert !bp.test('', '') && bp.test('', 'x')
+                    IntPredicate ip = Integer::toString
+                    assert ip.test(0)
+                    BooleanSupplier bs = 'x'::trim
+                    assert bs.getAsBoolean()
+                }
+            }
+            C.test()
+        """
+    }
+
+    // GROOVY-12617
+    @Test
+    void testPrimitiveBooleanSAMFromNonBooleanReturnTypeSerializable() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                interface SerPred<T> extends Serializable, Predicate<T> {}
+
+                static String str(String s) { s }
+                static void test() {
+                    SerPred<String> p = C::str
+                    assert !p.test('') && p.test('x')
+
+                    def out = new ByteArrayOutputStream()
+                    out.withObjectOutputStream { it.writeObject(p) }
+                    def q = new ByteArrayInputStream(out.toByteArray()).withObjectInputStream(C.classLoader) { (SerPred<String>) it.readObject() }
+                    assert !q.test('') && q.test('x')
+                }
+            }
+            C.test()
+        '''
+    }
+
+    // GROOVY-12617
+    @Test
+    void testPrimitiveNumberSAMFromNonWideningReturnType() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToByteFunc<T> { byte apply(T t) }
+            @FunctionalInterface interface ToFloatFunc<T> { float apply(T t) }
+
+            @CompileStatic
+            class C {
+                static BigDecimal decimal(String s) { new BigDecimal(s) }
+                static long longValue(String s) { Long.parseLong(s) }
+                static Long longObject(String s) { Long.valueOf(s) }
+                static double doubleValue(String s) { Double.parseDouble(s) }
+                static void test() {
+                    ToDoubleFunction<String> d = C::decimal
+                    assert d.applyAsDouble('1.5') == 1.5d
+                    ToIntFunction<String> i = C::longValue
+                    assert i.applyAsInt('42') == 42
+                    i = C::longObject
+                    assert i.applyAsInt('42') == 42
+                    ToByteFunc<String> b = C::longValue
+                    assert b.apply('65') == (byte) 65
+                    ToFloatFunc<String> f = C::doubleValue
+                    assert f.apply('0.5') == 0.5f
+                    ToLongFunction<String> l = C::doubleValue
+                    assert l.applyAsLong('7.9') == 7L
+                }
+            }
+            C.test()
+        '''
+    }
+
     @Test
     void testByteReturnSAMMethodReference() {
         assertScript shell, '''
