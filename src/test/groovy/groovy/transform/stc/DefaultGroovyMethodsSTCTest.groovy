@@ -121,8 +121,8 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
             List<String> strings = ['x','y','z']
             assert strings.getSequence() == 'x'
             assert strings.getString() == 'x'
-          //assert strings.sequence == 'x'
-          //assert strings.string == 'x'
+            assert strings.sequence == 'x'
+            assert strings.string == 'x'
         '''
 
         shouldFailWithMessages '''
@@ -136,6 +136,136 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call org.codehaus.groovy.runtime.m12n.TestStringExtension#getString(java.util.List<java.lang.String>) with arguments [java.util.ArrayList<java.lang.Number>]',
         'No such property: sequence for class: java.util.ArrayList',
         'No such property: string for class: java.util.ArrayList'
+    }
+
+    // GROOVY-12534
+    @Test
+    void testListExtensionProperty() {
+        assertScript '''
+            class Person { String name }
+            class Row { String joined = 'p' }
+            class MyStrings extends ArrayList<String> {
+                String label = 'label'
+                String readLabel() { this.@label }
+            }
+
+            @groovy.transform.CompileStatic
+            class C {
+                String test(List<String> words) { words.joined }
+
+                void check() {
+                    List<String> words = ['x', 'y']
+                    assert words.getJoined() == 'x,y'
+                    assert words.joined == 'x,y'
+                    assert words.plural
+                    assert words?.joined == 'x,y'
+                    assert words.indices == 0..1
+                    assert words.sorted
+                    assert !words.empty
+
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        def expr = node.rightExpression
+                        assert !expr.spreadSafe
+                        def target = expr.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                        assert target instanceof org.codehaus.groovy.transform.stc.ExtensionMethodNode
+                        assert target.name == 'getJoined'
+                    })
+                    def joined = words.joined
+                    assert joined == 'x,y'
+
+                    List<String> empty = []
+                    assert empty.joined == ''
+                    assert !empty.plural
+                    assert empty.empty
+                    assert empty.sorted
+
+                    List<String> nothing = null
+                    assert nothing?.joined == null
+
+                    ArrayList<String> array = ['x', 'y']
+                    assert array.joined == 'x,y'
+                    assert array.arrayJoined == 'x:y'
+
+                    List<String> linked = new LinkedList<String>(['x', 'y'])
+                    assert linked.joined == 'x,y'
+                    List<String> fixed = Arrays.asList('x', 'y')
+                    assert fixed.joined == 'x,y'
+
+                    assert ['a', 'b'].sorted
+                    assert !(['b', 'a'] as List<String>).sorted
+
+                    List<Person> people = [new Person(name:'Joe'), new Person(name:'Bob')]
+                    assert people.name == ['Joe', 'Bob']
+                    assert people*.name == ['Joe', 'Bob']
+
+                    // extension is List<String>, so a List<Row> keeps the element property
+                    List<Row> rows = [new Row(), new Row()]
+                    assert rows.joined == ['p', 'p']
+
+                    def mine = new MyStrings()
+                    mine.addAll(['x', 'y'])
+                    assert mine.joined == 'x,y'
+                    assert mine.arrayJoined == 'x:y'
+                    assert mine.label == 'label'
+                    assert mine.readLabel() == 'label'
+                    mine.label = 'renamed'
+                    assert mine.label == 'renamed'
+
+                    words.joined = 'a,b'
+                    assert words == ['a', 'b']
+                    assert words.joined == 'a,b'
+                }
+            }
+            assert new C().test(['x', 'y']) == 'x,y'
+            new C().check()
+        '''
+    }
+
+    // GROOVY-12534
+    @Test
+    void testListDeclaredFieldAndUnarySetter() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class C {
+                void check(bugs.Groovy12534Support list) {
+                    list.add('x')
+
+                    // a field declared on the list is the list's own property
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        def expr = node.rightExpression
+                        assert !expr.spreadSafe
+                    })
+                    def tag = list.tag
+                    assert tag == 't'
+
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        def expr = node.rightExpression
+                        assert expr.leftExpression instanceof org.codehaus.groovy.ast.expr.PropertyExpression
+                        assert !expr.leftExpression.spreadSafe
+                    })
+                    def updatedTag = (list.tag = 'u')
+                    assert updatedTag == 'u'
+                    assert list.tag == 'u'
+
+                    // a one-argument setter declared on the list writes the list, not each element
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        def expr = node.rightExpression
+                        assert !expr.spreadSafe
+                        def target = expr.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                        assert target != null
+                        assert target.name == 'getMark'
+                    })
+                    def mark = list.mark
+                    assert mark == 'm'
+
+                    list.mark = 'renamed'
+                    assert list.mark == 'renamed'
+                    assert list == ['x']
+                    assert list.size() == 1
+                }
+            }
+            new C().check(new bugs.Groovy12534Support())
+        '''
     }
 
     // GROOVY-5584
