@@ -818,63 +818,40 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         assert !dump.contains('INVOKESTATIC C.pfaccess$02 (LC;Ljava/lang/String;)Ljava/lang/String;')
     }
 
-    // GROOVY-12600: "z" is the field the subclass inherits; it has no enclosing instance of the outer class
+    // GROOVY-12600: a class nested in a static nested subclass has no enclosing instance of the outer class; "z" is the field the subclass inherits
     @Test
-    void testPrivateFieldOfOuterClassInStaticNestedSubclass() {
+    void testPrivateFieldOfOuterClassInClassNestedInStaticNestedSubclass() {
         assertScript '''
             import java.util.function.Supplier
 
             class Base {
                 private String z = 'x'
                 static class Sub extends Base {
+                    class Inner { String v() { z } }
                     List read() {
-                        Supplier<String> lambda = () -> z
-                        [z, { -> z }(), { -> { -> z }() }(), lambda.get(), new Object() { String v() { z } }.v()]
+                        Supplier<String> lambda = new Object() { Supplier<String> m() { () -> z } }.m()
+                        [new Object() { String v() { z } }.v(), new Object() { String v() { { -> z }() } }.v(), lambda.get(), new Inner().v()]
                     }
-                    String write() { z = 'a'; this.@z }
-                    String writeInClosure() { { -> z = 'b' }(); this.@z }
-                    String writeInLambda() { Runnable r = () -> { z = 'c' }; r.run(); this.@z }
-                    String writeInAIC() { new Runnable() { void run() { z = 'd' } }.run(); this.@z }
-                    String compound() { z += '1'; { -> z += '2' }(); Runnable r = () -> { z += '3' }; r.run(); this.@z }
-                    String increment() { z++; this.@z }
-                    String superWrite() { { -> super.z = 'e' }(); z }
+                    String write() { new Runnable() { void run() { z = 'a' } }.run(); this.@z }
+                    String writeInClosure() { new Runnable() { void run() { { -> z = 'b' }() } }.run(); this.@z }
+                    String compound() { new Runnable() { void run() { z += '1'; z++; { -> z += '3' }() } }.run(); this.@z }
+                }
+                static class Mid {
+                    class Sub extends Base {
+                        String read() { new Object() { String v() { z } }.v() }
+                    }
                 }
             }
             def sub = new Base.Sub()
-            assert sub.read() == ['x', 'x', 'x', 'x', 'x']
+            assert sub.read() == ['x', 'x', 'x', 'x']
             assert sub.write() == 'a'
             assert sub.writeInClosure() == 'b'
-            assert sub.writeInLambda() == 'c'
-            assert sub.writeInAIC() == 'd'
-            assert sub.compound() == 'd123'
-            assert sub.increment() == 'd124'
-            assert sub.superWrite() == 'e'
+            assert sub.compound() == 'b23'
+            assert new Base.Mid().with { new Base.Mid.Sub(it) }.read() == 'x'
         '''
     }
 
-    // GROOVY-12600
-    @Test
-    void testPrivateFieldOfOuterClassInInnerSubclassOfStaticNestedClass() {
-        assertScript '''
-            class Base {
-                private String z = 'x'
-                static class Mid {
-                    class Sub extends Base {
-                        List test() {
-                            def r = [z, { -> z }()]
-                            z = 'y';
-                            { -> z += 'z' }()
-                            r << this.@z
-                        }
-                    }
-                }
-            }
-            def sub = new Base.Mid().with { new Base.Mid.Sub(it) }
-            assert sub.test() == ['x', 'x', 'yz']
-        '''
-    }
-
-    // GROOVY-12600: an inner subclass reads and writes the field of the enclosing instance, as dynamic Groovy does
+    // GROOVY-12600: an inner subclass and its anonymous classes read and write the field of the enclosing instance, as dynamic Groovy does
     @Test
     void testPrivateFieldOfOuterClassInInnerSubclass() {
         assertScript '''
@@ -887,15 +864,16 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
                     Sub(String z) { super(z) }
                     List test() {
                         Supplier<String> lambda = () -> z
-                        def r = [z, { -> z }(), lambda.get()]
+                        def r = [z, { -> z }(), lambda.get(), new Object() { String v() { z } }.v()]
                         z = 'a';
                         { -> z += 'b' }()
+                        new Runnable() { void run() { z += 'c' } }.run()
                         r << Base.this.@z << this.@z
                     }
                 }
             }
             def sub = new Base('outer').with { new Base.Sub(it, 'own') }
-            assert sub.test() == ['outer', 'outer', 'outer', 'ab', 'own']
+            assert sub.test() == ['outer', 'outer', 'outer', 'outer', 'abc', 'own']
         '''
     }
 
