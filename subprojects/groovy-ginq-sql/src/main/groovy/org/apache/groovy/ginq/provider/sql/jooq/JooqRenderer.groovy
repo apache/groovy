@@ -323,14 +323,37 @@ class JooqRenderer {
             case 'SUBSTRING': return fields.size() > 2
                     ? DSL.substring(fields[0], fields[1], fields[2])
                     : DSL.substring(fields[0], fields[1])
-            case 'COALESCE': return DSL.coalesce(fields[0], fields[1])
-            case 'COUNT': return DSL.count(fields[0])
+            case 'COALESCE': return coalesce(fields)
+            case 'COUNT': return function.distinct ? DSL.countDistinct(fields[0]) : DSL.count(fields[0])
+            case 'GREATEST': return extreme(true, fields)
+            case 'LEAST': return extreme(false, fields)
             case 'SUM': return DSL.sum(fields[0])
             case 'AVG': return DSL.avg(fields[0])
             case 'MIN': return DSL.min(fields[0])
             case 'MAX': return DSL.max(fields[0])
             default: return DSL.function(function.name, Object, fields as Field[])
         }
+    }
+
+    private Field coalesce(List<Field> fields) {
+        if (2 == fields.size()) return DSL.coalesce(fields[0], fields[1])
+        return DSL.coalesce(fields[0], tail(fields))
+    }
+
+    // GREATEST/LEAST, or SQLite's scalar max/min
+    private Field extreme(boolean greatest, List<Field> fields) {
+        if (SQLDialect.SQLITE == dialect.family()) {
+            return DSL.function(greatest ? 'max' : 'min', Object, fields as Field[])
+        }
+        return greatest ? DSL.greatest(fields[0], tail(fields)) : DSL.least(fields[0], tail(fields))
+    }
+
+    private static Field[] tail(List<Field> fields) {
+        Field[] rest = new Field[fields.size() - 1]
+        for (int i = 1; i < fields.size(); i++) {
+            rest[i - 1] = fields.get(i)
+        }
+        return rest
     }
 
     private Param registerParam(SqlParam param) {

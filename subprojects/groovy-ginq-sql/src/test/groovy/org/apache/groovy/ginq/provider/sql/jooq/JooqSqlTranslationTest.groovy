@@ -22,9 +22,12 @@ import groovy.sql.Sql
 import org.apache.groovy.ginq.provider.sql.GinqSqlTestSupport
 import org.apache.groovy.ginq.provider.sql.GinqSqlTranslationTest.CapturingSql
 import org.apache.groovy.ginq.provider.sql.ir.SqlColumn
+import org.apache.groovy.ginq.provider.sql.ir.SqlFunction
+import org.apache.groovy.ginq.provider.sql.ir.SqlParam
 import org.apache.groovy.ginq.provider.sql.ir.SqlProjection
 import org.apache.groovy.ginq.provider.sql.ir.SqlQuery
 import org.apache.groovy.ginq.provider.sql.ir.SqlTableRef
+import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -95,6 +98,41 @@ class JooqSqlTranslationTest {
                 "where (e.deptId is not null and e.name like ? escape '!') " +
                 'group by e.deptId having count(*) > ?' == db.sqlText
         assert ['%a%', 1] == db.params
+    }
+
+    @Test
+    void testCoalesceCountDistinctAndExtremes() {
+        def floor = 4500
+        GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+            from e in 'employees'
+            where coalesce(e.deptId, 0) > 0
+            select coalesce(e.name, 'x') as display, Math.max(e.salary, floor) as hi, Math.min(e.salary, floor) as lo
+        }
+        assert 'select coalesce(e.name, ?) display, greatest(e.salary, ?) hi, least(e.salary, ?) lo ' +
+                'from employees e where coalesce(e.deptId, ?) > ?' == db.sqlText
+        assert ['x', 4500, 4500, 0, 0] == db.params
+
+        GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+            from e in 'employees'
+            groupby e.deptId
+            select e.deptId, count(distinct(e.salary)) as kinds
+        }
+        assert 'select e.deptId, count(distinct e.salary) kinds from employees e group by e.deptId' == db.sqlText
+    }
+
+    @Test
+    void testSqliteRendersScalarMaxMin() {
+        def query = new SqlQuery()
+        query.from = new SqlTableRef('employees', 'e')
+        query.projections << new SqlProjection(new SqlFunction('GREATEST', [new SqlColumn('e', 'salary'), new SqlParam(new ConstantExpression(1))]))
+        query.projections << new SqlProjection(new SqlFunction('LEAST', [new SqlColumn('e', 'salary'), new SqlParam(new ConstantExpression(2))]))
+        query.projections << new SqlProjection(new SqlFunction('COUNT', [new SqlColumn('e', 'deptId')], true))
+        def sql = JooqRenderer.render(query, 'SQLITE').sql.toLowerCase()
+        assert sql.contains('max(')
+        assert sql.contains('min(')
+        assert sql.contains('count(distinct')
+        assert !sql.contains('greatest')
+        assert !sql.contains('least')
     }
 
     @Test

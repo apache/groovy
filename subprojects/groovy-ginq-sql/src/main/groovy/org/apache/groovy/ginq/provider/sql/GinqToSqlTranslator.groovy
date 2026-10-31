@@ -67,6 +67,7 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.BooleanExpression
 import org.codehaus.groovy.ast.expr.CastExpression
+import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.ElvisOperatorExpression
@@ -478,8 +479,9 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
 
     private SqlExpr translateTernary(TernaryExpression expr) {
         if (expr instanceof ElvisOperatorExpression) {
+            // truthiness is not SQL null, so ?: is not COALESCE
             reject("the Elvis operator cannot be translated to SQL by the ${providerName} provider; " +
-                    'use an explicit ternary with a `== null` check', expr)
+                    'Groovy truthiness is not SQL null. Use `coalesce(...)` or an explicit ternary with a `== null` check', expr)
             return null
         }
         return new SqlCaseWhen(
@@ -637,7 +639,13 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         if (call.implicitThis && AGGREGATE_FUNCTION_MAP.containsKey(method)) {
             return translateAggregate(call, args, false)
         }
+        if (call.implicitThis && 'coalesce' == method) {
+            return translateCoalesce(call, args)
+        }
         if (!call.implicitThis) {
+            if (('max' == method || 'min' == method) && isMathReceiver(call.objectExpression)) {
+                return translateMathExtremum(call, args)
+            }
             switch (method) {
                 case 'contains':
                     return translateLike(call, args, true, true)
@@ -785,6 +793,38 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         return ((SqlParam) translated).valueExpr
     }
 
+    private SqlExpr translateCoalesce(MethodCallExpression call, List<Expression> args) {
+        if (args.size() < 2) {
+            reject('`coalesce` expects at least two arguments', call)
+            return null
+        }
+        List<SqlExpr> values = []
+        for (Expression arg : args) {
+            values << translateExpr(arg)
+        }
+        return new SqlFunction('COALESCE', values)
+    }
+
+    // java.lang.Math.max/min are binary. A table alias named Math is not the class.
+    private boolean isMathReceiver(Expression object) {
+        if (object instanceof ClassExpression) {
+            String name = ((ClassExpression) object).type.name
+            return 'java.lang.Math' == name || 'Math' == name
+        }
+        String text = object.text
+        if ('java.lang.Math' == text) return true
+        return 'Math' == text && !(text in tableAliases)
+    }
+
+    private SqlExpr translateMathExtremum(MethodCallExpression call, List<Expression> args) {
+        if (2 != args.size()) {
+            reject('`Math.max` and `Math.min` expect two arguments', call)
+            return null
+        }
+        String sqlName = 'max' == call.methodAsString ? 'GREATEST' : 'LEAST'
+        return new SqlFunction(sqlName, [translateExpr(args[0]), translateExpr(args[1])])
+    }
+
     private SqlExpr translateAggregate(MethodCallExpression call, List<Expression> args, boolean lambdaStyle) {
         String method = call.methodAsString
         String functionName = AGGREGATE_FUNCTION_MAP[method]
@@ -801,22 +841,79 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         }
         Expression arg = args[0]
         if (!lambdaStyle) {
-            return finishAggregate(method, new SqlFunction(functionName, [translateExpr(arg)]))
+            return translatePlainAggregate(call, method, functionName, arg)
         }
-        if (!(arg instanceof ClosureExpression)) {
+        return translateLambdaAggregate(call, method, functionName, arg)
+    }
+
+    private SqlExpr translatePlainAggregate(MethodCallExpression call, String method, String functionName, Expression arg) {
+        MethodCallExpression distinct = distinctCall(arg)
+        if (distinct != null) {
+            Expression inner = countDistinctArgument(call, method, distinct)
+            if (inner == null) return null
+            return new SqlFunction(functionName, [translateExpr(inner)], true)
+        }
+        return finishAggregate(method, new SqlFunction(functionName, [translateExpr(arg)]))
+    }
+
+    private SqlExpr translateLambdaAggregate(MethodCallExpression call, String method, String functionName, Expression arg) {
+        boolean countDistinct = false
+        ClosureExpression closure
+        MethodCallExpression wrapped = distinctCall(arg)
+        if (wrapped != null) {
+            Expression inner = countDistinctArgument(call, method, wrapped)
+            if (inner == null) return null
+            if (!(inner instanceof ClosureExpression)) {
+                reject("aggregate function `count` expects a lambda argument, e.g. `${groupAlias}.count(distinct(e -> e.salary))`", inner)
+                return null
+            }
+            closure = (ClosureExpression) inner
+            countDistinct = true
+        } else if (!(arg instanceof ClosureExpression)) {
             reject("aggregate function `${method}` expects a lambda argument, e.g. `${groupAlias}.${method}(e -> e.salary)`", arg)
             return null
+        } else {
+            closure = (ClosureExpression) arg
         }
-        ClosureExpression closure = (ClosureExpression) arg
         String param = closure.parameters ? closure.parameters[0].name : 'it'
         Expression body = extractSingleExpression(closure)
+        if (body == null) return null
+        if (!countDistinct) {
+            MethodCallExpression bodyDistinct = distinctCall(body)
+            if (bodyDistinct != null) {
+                body = countDistinctArgument(call, method, bodyDistinct)
+                if (body == null) return null
+                countDistinct = true
+            }
+        }
         String previousParam = aggregateLambdaParam
         aggregateLambdaParam = param
         try {
-            return finishAggregate(method, new SqlFunction(functionName, [translateExpr(body)]))
+            return finishAggregate(method, new SqlFunction(functionName, [translateExpr(body)], countDistinct))
         } finally {
             aggregateLambdaParam = previousParam
         }
+    }
+
+    // count(distinct(expr)) and g.count(distinct(e -> expr)); other aggregates stay plain
+    private Expression countDistinctArgument(MethodCallExpression aggregate, String method, MethodCallExpression distinct) {
+        if ('count' != method) {
+            reject('distinct aggregates are supported only for `count`', aggregate)
+            return null
+        }
+        List<Expression> inner = ((TupleExpression) distinct.arguments).expressions
+        if (1 != inner.size()) {
+            reject('`count(distinct(...))` expects a single expression', distinct)
+            return null
+        }
+        return inner[0]
+    }
+
+    private static MethodCallExpression distinctCall(Expression expr) {
+        if (!(expr instanceof MethodCallExpression)) return null
+        MethodCallExpression call = (MethodCallExpression) expr
+        if (call.implicitThis && 'distinct' == call.methodAsString) return call
+        return null
     }
 
     // Groovy sum treats null as zero, so an all-null group is 0 rather than SQL null

@@ -43,7 +43,9 @@ public interface Dialect {
 
     /**
      * Maps an ANSI function name, e.g. {@code UPPER} or {@code SUM},
-     * to its dialect-specific counterpart.
+     * to its dialect-specific counterpart. {@code GREATEST} and {@code LEAST}
+     * are included; a dialect that spells those as scalar {@code MAX} and
+     * {@code MIN} overrides this method.
      *
      * @param ansiName the ANSI function name
      * @return the dialect-specific function name

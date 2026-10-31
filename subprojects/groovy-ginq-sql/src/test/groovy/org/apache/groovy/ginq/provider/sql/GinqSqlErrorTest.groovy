@@ -302,6 +302,50 @@ class GinqSqlErrorTest {
     }
 
     @Test
+    void testCoalesceNeedsTwoArguments() {
+        def err = shouldFail '''\
+            GQ(provider: 'native-sql', dataSource: db) {
+                from e in 'employees'
+                select coalesce(e.name)
+            }
+        '''
+        assert err.message.contains('`coalesce` expects at least two arguments')
+    }
+
+    @Test
+    void testDistinctAggregateOnlyForCount() {
+        def err = shouldFail '''\
+            GQ(provider: 'native-sql', dataSource: db) {
+                from e in 'employees'
+                select sum(distinct(e.salary))
+            }
+        '''
+        assert err.message.contains('distinct aggregates are supported only for `count`')
+    }
+
+    @Test
+    void testCountDistinctExpectsOneExpression() {
+        def err = shouldFail '''\
+            GQ(provider: 'native-sql', dataSource: db) {
+                from e in 'employees'
+                select count(distinct(e.salary, e.deptId))
+            }
+        '''
+        assert err.message.contains('`count(distinct(...))` expects a single expression')
+    }
+
+    @Test
+    void testMathMaxExpectsTwoArguments() {
+        def err = shouldFail '''\
+            GQ(provider: 'native-sql', dataSource: db) {
+                from e in 'employees'
+                select Math.max(e.salary)
+            }
+        '''
+        assert err.message.contains('`Math.max` and `Math.min` expect two arguments')
+    }
+
+    @Test
     void testAggregateLambdaParamForMultiTableQuery() {
         def err = shouldFail '''\
             GQ(provider: 'native-sql', dataSource: db) {

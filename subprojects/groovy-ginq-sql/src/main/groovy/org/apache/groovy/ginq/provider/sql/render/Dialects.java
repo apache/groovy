@@ -139,6 +139,11 @@ public final class Dialects {
                     return "LENGTH";
                 case "SUBSTRING":
                     return "SUBSTR";
+                case "GREATEST":
+                    // scalar max/min; GREATEST/LEAST arrived only in later SQLite
+                    return "MAX";
+                case "LEAST":
+                    return "MIN";
                 default:
                     return ansiName;
             }

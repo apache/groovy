@@ -140,6 +140,31 @@ class JooqSqlIntegrationTest {
     }
 
     @Test
+    void testCoalesceCountDistinctAndExtremes() {
+        db.execute('insert into employees (id, name, salary, deptId, active) values (?, ?, ?, ?, ?)',
+                [7, 'Grace', 5000, 1, true])
+        def floor = 4500
+        def result = GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+            from e in 'employees'
+            where e.deptId != null
+            groupby e.deptId
+            orderby e.deptId
+            select e.deptId, count(distinct(e.salary)) as kinds
+        }
+        assert [[1, 2], [2, 2], [3, 1]] == result.collect { [it.deptId, it.kinds] }
+
+        def rows = GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+            from e in 'employees'
+            where e.id == 4 || e.id == 6
+            orderby e.id
+            select e.id, coalesce(e.deptId, 0) as dept, (e.deptId == null ? 0 : e.deptId) as viaTernary,
+                    Math.max(e.salary, floor) as hi, Math.min(e.salary, floor) as lo
+        }
+        assert [[4, 0, 0, 4500, 2000], [6, 3, 3, 6000, 4500]] ==
+                rows.collect { [it.id, it.dept, it.viaTernary, it.hi, it.lo] }
+    }
+
+    @Test
     void testDefaultDialect() {
         def result = GQL(provider: 'jooq-sql', dataSource: db) {
             from e in 'employees'

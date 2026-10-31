@@ -306,6 +306,53 @@ class GinqSqlTranslationTest {
     }
 
     @Test
+    void testCoalesce() {
+        def fallback = 'n/a'
+        GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where coalesce(e.deptId, 0) == 0
+            select coalesce(e.name, fallback, 'x') as display
+        }
+        assert 'SELECT COALESCE(e.name, ?, ?) AS display FROM employees e WHERE COALESCE(e.deptId, ?) = ?' == db.sqlText
+        assert ['n/a', 'x', 0, 0] == db.params
+    }
+
+    @Test
+    void testCountDistinct() {
+        GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            groupby e.deptId into g
+            having count(distinct(e.salary)) > 1
+            select g.deptId, count(distinct(e.salary)) as kinds, g.count(distinct(e -> e.name)) as names
+        }
+        assert 'SELECT e.deptId AS deptId, COUNT(DISTINCT e.salary) AS kinds, COUNT(DISTINCT e.name) AS names FROM employees e ' +
+                'GROUP BY e.deptId HAVING COUNT(DISTINCT e.salary) > ?' == db.sqlText
+        assert [1] == db.params
+    }
+
+    @Test
+    void testCountDistinctLambdaBody() {
+        GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            groupby e.deptId into g
+            select g.count(e -> distinct(e.salary)) as kinds
+        }
+        assert 'SELECT COUNT(DISTINCT e.salary) AS kinds FROM employees e GROUP BY e.deptId' == db.sqlText
+    }
+
+    @Test
+    void testMathMaxAndMin() {
+        def floor = 4500
+        def cap = 5500
+        GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            select Math.max(e.salary, floor) as hi, Math.min(e.salary, cap) as lo
+        }
+        assert 'SELECT GREATEST(e.salary, ?) AS hi, LEAST(e.salary, ?) AS lo FROM employees e' == db.sqlText
+        assert [4500, 5500] == db.params
+    }
+
+    @Test
     void testNativeH2DialectKeepsAnsiLimit() {
         GQL(provider: 'native-sql', dialect: 'H2', dataSource: db) {
             from e in 'employees'

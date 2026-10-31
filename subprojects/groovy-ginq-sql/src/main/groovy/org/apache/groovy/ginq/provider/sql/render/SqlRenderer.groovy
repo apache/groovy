@@ -254,6 +254,7 @@ class SqlRenderer {
                 return
             }
             sb.append(dialect.functionName(expr.name)).append('(')
+            if (expr.distinct) sb.append('DISTINCT ')
             expr.args.eachWithIndex { SqlExpr argExpr, int i ->
                 if (i > 0) sb.append(', ')
                 renderExpr(argExpr, sb, parameters)

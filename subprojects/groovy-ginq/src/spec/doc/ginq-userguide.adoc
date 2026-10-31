@@ -1239,11 +1239,16 @@ so the limit is applied to the filtered rows rather than to an unordered prefix.
 are not split; one that does not translate entirely is still a compile error. `mixedMode: false`,
 or omitting the option, keeps the strict default. The `from` source itself must still be a string
 table name or a subquery that translates to SQL. Strict-mode errors name the construct that failed
-and say how to rewrite it or how to enable `mixedMode`.
+and say how to rewrite it or how to enable `mixedMode`. This split follows the same boundary as
+LINQ's `AsEnumerable`: a translatable prefix runs in the database and the rest of the query
+continues in memory. It is never the default.
 
 The main current restriction in strict mode is window functions. Aggregation is supported both in
 the classic form, e.g. `groupby e.deptId` with `select e.deptId, count(), sum(e.salary)`, and the
 `groupby ... into g` form, e.g. `g.count()`, `g.sum(e -> e.salary)`.
+`count(distinct(e.deptId))` and `g.count(distinct(e -> e.deptId))` (or
+`g.count(e -> distinct(e.deptId))`) translate to `COUNT(DISTINCT ...)`. Other aggregates do not
+take `distinct`.
 
 Nested queries translate to SQL subqueries: a nested query as a data source becomes a derived
 table, `(...).exists()` becomes `EXISTS (...)`, `in` against a nested query becomes `IN (subquery)`,
@@ -1259,8 +1264,11 @@ A set of common methods and operators maps to SQL: `toUpperCase()`/`toLowerCase(
 shifted in SQL), `replace(a, b)` to `REPLACE(...)`, `concat(other)` and string `+` to `||`,
 `abs()`/`floor()`/`ceil()`/`round()`/`round(scale)` to the same-named SQL functions (`ceil` is
 `CEILING`), `%` to `MOD`, `/` to real division (`CAST(... AS DOUBLE)`), `&&`/`||`/`!` to `AND`/`OR`/`NOT`,
-and ternary expressions to `CASE WHEN ... END`. The Elvis operator is
-rejected: write an explicit `== null` ternary. A constant range on the right of `in`, including a
+and ternary expressions to `CASE WHEN ... END`. `coalesce(a, b, ...)` translates to SQL `COALESCE`
+(the first non-null argument). The Elvis operator is not mapped to `COALESCE`: Groovy truthiness
+is not SQL null, so write `coalesce(...)` or an explicit `== null` ternary.
+`Math.max(a, b)` and `Math.min(a, b)` translate to `GREATEST` and `LEAST`.
+A constant range on the right of `in`, including a
 descending or exclusive range, becomes a pair of comparisons (`1..3` and `3..1` are the same
 bounds). A range whose bounds are not compile-time constants is rejected, because a descending
 Groovy range still contains the values between its endpoints; write `x >= low && x <= high` when
@@ -1276,7 +1284,8 @@ The native provider accepts a small `dialect` option for the points that vary am
 open-source databases: `ansi` (the default), `h2` (ANSI; H2 uppercases unquoted names, so they
 are left unquoted), `postgres`, `mysql`, `mariadb`, and `sqlite`. MySQL, MariaDB and SQLite use
 `LIMIT`/`OFFSET` and emulate `NULLS FIRST`/`NULLS LAST`, which they do not spell. SQLite spells
-`LENGTH`, `SUBSTR` and `%` instead of `CHAR_LENGTH`, `SUBSTRING` and `MOD`. `FLOOR`/`CEILING`
+`LENGTH`, `SUBSTR` and `%` instead of `CHAR_LENGTH`, `SUBSTRING` and `MOD`, and scalar `MAX`/`MIN`
+instead of `GREATEST`/`LEAST`. `FLOOR`/`CEILING`
 are not available on SQLite. Other databases belong on `jooq-sql`.
 
 A trailing `orderby`/`limit` on the final operand of a set operation applies to the combined

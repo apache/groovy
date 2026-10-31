@@ -580,6 +580,70 @@ class GinqSqlIntegrationTest {
     }
 
     @Test
+    void testCoalesceMatchesNullTernary() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            orderby e.id
+            select e.id, coalesce(e.deptId, 0) as dept, (e.deptId == null ? 0 : e.deptId) as viaTernary
+        }
+        assert [[1, 1, 1], [2, 1, 1], [3, 2, 2], [4, 0, 0], [5, 2, 2], [6, 3, 3]] ==
+                result.collect { [it.id, it.dept, it.viaTernary] }
+        def onlyNullDept = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where coalesce(e.deptId, -1) == -1
+            select e.name
+        }
+        assert ['Dave'] == onlyNullDept.collect { it.name }
+    }
+
+    @Test
+    void testCountDistinct() {
+        db.execute('insert into employees (id, name, salary, deptId, active) values (?, ?, ?, ?, ?)',
+                [7, 'Grace', 5000, 1, true])
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.deptId != null
+            groupby e.deptId
+            orderby e.deptId
+            select e.deptId, count() as cnt, count(distinct(e.salary)) as kinds
+        }
+        assert [[1, 3, 2], [2, 2, 2], [3, 1, 1]] == result.collect { [it.deptId, it.cnt, it.kinds] }
+
+        def total = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            select count(distinct(e.deptId)) as depts
+        }
+        assert 3 == total.toList()[0].depts
+
+        def into = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.deptId == 1
+            groupby e.deptId into g
+            select g.count(distinct(e -> e.salary)) as viaCall, g.count(e -> distinct(e.salary)) as viaBody
+        }
+        assert [[2, 2]] == into.collect { [it.viaCall, it.viaBody] }
+    }
+
+    @Test
+    void testMathMaxAndMinMatchComparison() {
+        def floor = 4500
+        def cap = 5500
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            orderby e.id
+            select Math.max(e.salary, floor) as hi, (e.salary > floor ? e.salary : floor) as hiTernary,
+                    Math.min(e.salary, cap) as lo, (e.salary < cap ? e.salary : cap) as loTernary
+        }
+        assert [[5000, 5000, 5000, 5000],
+                [4500, 4500, 3000, 3000],
+                [4500, 4500, 4000, 4000],
+                [4500, 4500, 2000, 2000],
+                [5000, 5000, 5000, 5000],
+                [6000, 6000, 5500, 5500]] ==
+                result.collect { [it.hi, it.hiTernary, it.lo, it.loTernary] }
+    }
+
+    @Test
     void testFunctionAndRangePushDown() {
         def result = GQL(provider: 'native-sql', dataSource: db) {
             from e in 'employees'

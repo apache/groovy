@@ -286,6 +286,29 @@ class SqlRendererTest {
         assert Dialects.resolve('h2') instanceof AnsiDialect
     }
 
+    @Test
+    void testCountDistinctAndGreatestLeast() {
+        def query = new SqlQuery()
+        query.from = new SqlTableRef('employees', 'e')
+        query.projections << new SqlProjection(new SqlFunction('COUNT', [col('e', 'deptId')], true))
+        query.projections << new SqlProjection(new SqlFunction('GREATEST', [col('e', 'salary'), param(1)]))
+        query.projections << new SqlProjection(new SqlFunction('LEAST', [col('e', 'salary'), param(2)]))
+
+        def rendered = render(query)
+        assert 'SELECT COUNT(DISTINCT e.deptId), GREATEST(e.salary, ?), LEAST(e.salary, ?) FROM employees e' == rendered.sql
+        assert [1, 2] == values(rendered)
+
+        def sqlite = new SqlRenderer(Dialects.resolve('sqlite')).render(query)
+        assert 'SELECT COUNT(DISTINCT "e"."deptId"), MAX("e"."salary", ?), MIN("e"."salary", ?) FROM "employees" "e"' == sqlite.sql
+        assert !sqlite.sql.contains('GREATEST')
+        assert !sqlite.sql.contains('LEAST')
+
+        def mysql = new SqlRenderer(Dialects.resolve('mysql')).render(query)
+        assert mysql.sql.contains('COUNT(DISTINCT `e`.`deptId`)')
+        assert mysql.sql.contains('GREATEST(`e`.`salary`, ?)')
+        assert mysql.sql.contains('LEAST(`e`.`salary`, ?)')
+    }
+
     private static SqlQuery simpleQuery(String table) {
         def query = new SqlQuery()
         query.from = new SqlTableRef(table, table)
