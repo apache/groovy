@@ -654,6 +654,125 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Incompatible instanceof types'
     }
 
+    // GROOVY-12562: a check that guards nothing narrows nothing
+    @Test
+    void testInstanceOf30() {
+        assertScript '''
+            String two(Object a, Object b) { "$a,$b" }
+            def concatenation(CharSequence cs) { 'x' + (cs instanceof String) + cs.length() }
+            def argument(CharSequence cs) { two(cs instanceof String, cs.length()) }
+            def element(CharSequence cs) { [cs instanceof String, cs.length()] }
+            def equality(CharSequence cs) { (cs instanceof String) == cs.isEmpty() }
+            def bitwiseAnd(CharSequence cs) { cs instanceof String & cs.length() > 0 }
+            def bitwiseAndCondition(CharSequence cs) { if (cs instanceof String & cs.length() > 0) cs.toUpperCase() else 'no' }
+            def equalityCondition(CharSequence cs) { if ((cs instanceof StringBuilder) == false) cs.reverse() else 'no' }
+            def callCondition(CharSequence cs) { if (Objects.nonNull(cs instanceof StringBuilder)) cs.reverse() else 'no' }
+
+            def sb = new StringBuilder('ab')
+            assert concatenation(sb) == 'xfalse2'
+            assert argument(sb) == 'false,2'
+            assert element(sb) == [false, 2]
+            assert equality(sb)
+            assert !bitwiseAnd(sb)
+            assert bitwiseAndCondition('ab') == 'AB'
+            assert bitwiseAndCondition(sb) == 'no'
+            assert equalityCondition('ab') == 'ba'
+            assert callCondition('ab') == 'ba'
+        '''
+
+        for (expression in ["'' + (cs instanceof String) + cs.toUpperCase()", 'two(cs instanceof String, cs.toUpperCase())',
+                            '[cs instanceof String, cs.toUpperCase()]', 'cs instanceof String & Objects.isNull(cs.toUpperCase())']) {
+            shouldFailWithMessages """
+                def two(Object a, Object b) { }
+                def test(CharSequence cs) { $expression }
+            """,
+            'Cannot find matching method java.lang.CharSequence#toUpperCase()'
+        }
+    }
+
+    // GROOVY-12562: a check compared with a boolean literal narrows like the check, or like its negation
+    @Test
+    void testInstanceOf31() {
+        assertScript '''
+            def eqTrue(x)      { if ((x instanceof String) == true) x.length() else -1 }
+            def neFalse(x)     { if ((x instanceof String) != false) x.length() else -1 }
+            def trueEq(x)      { if (true == (x instanceof String)) x.length() else -1 }
+            def identical(x)   { if ((x instanceof String) === true) x.length() else -1 }
+            def eqFalse(x)     { if ((x instanceof String) == false) -1 else x.length() }
+            def neTrue(x)      { if ((x instanceof String) != true) -1 else x.length() }
+            def falseEq(x)     { if (false == (x instanceof String)) -1 else x.length() }
+            def notEqFalse(x)  { if ((x !instanceof String) == false) x.length() else -1 }
+            def earlyReturn(x) { if ((x instanceof String) == false) return -1; x.length() }
+            def conditional(x) { (x instanceof String) == true ? x.length() : -1 }
+            def assigned(x)    { boolean b; if ((b = x instanceof String)) x.length() else -1 }
+            def cast(x)        { if ((boolean) (x instanceof String)) x.length() else -1 }
+            def coerced(x)     { if ((x instanceof String) as boolean) x.length() else -1 }
+            def loop(x)        { for (int i = 0; x instanceof String; i += 1) return x.length(); -1 }
+            def operand(x)     { (x instanceof String) == true && x.length() > 1 }
+            def negated(x)     { !((x instanceof String) == false) && x.length() > 1 }
+            def asserted(x)    { assert (x instanceof String) == true; x.length() }
+
+            for (m in [this.&eqTrue, this.&neFalse, this.&trueEq, this.&identical, this.&eqFalse, this.&neTrue, this.&falseEq,
+                       this.&notEqFalse, this.&earlyReturn, this.&conditional, this.&assigned, this.&cast, this.&coerced, this.&loop]) {
+                assert m('abc') == 3
+                assert m(42) == -1
+            }
+            assert operand('abc') && !operand(42)
+            assert negated('abc') && !negated(42)
+            assert asserted('abc') == 3
+        '''
+
+        for (condition in ['(x instanceof String) == false', '(x instanceof String) != true', 'false == (x instanceof String)']) {
+            shouldFailWithMessages """
+                def test(x) { if ($condition) x.length() }
+            """,
+            'Cannot find matching method java.lang.Object#length()'
+        }
+        shouldFailWithMessages '''
+            def test(x) { if ((x instanceof String) == true) { } else x.length() }
+        ''',
+        'Cannot find matching method java.lang.Object#length()'
+    }
+
+    // GROOVY-12562: the condition of a loop narrows in the loop only
+    @Test
+    void testInstanceOf32() {
+        assertScript '''
+            def whileLoop(x) { int n = 0; while (x instanceof String && n == 0) { n = x.length() }; n }
+            def forLoop(x) { for (int i = 0; x instanceof String; i += 1) return x.length(); -1 }
+            def doWhileLoop(x) { int n = 0; do { n += 1 } while (x instanceof String && x.length() > n); n }
+
+            assert whileLoop('abc') == 3 && whileLoop(42) == 0
+            assert forLoop('abc') == 3 && forLoop(42) == -1
+            assert doWhileLoop('abc') == 3 && doWhileLoop(42) == 1
+        '''
+
+        for (loop in ['while (x instanceof String) { break }', 'for (; x instanceof String; ) { break }',
+                      'do { } while (x instanceof String)', 'while (x instanceof String && x.length() > 1) { break }']) {
+            shouldFailWithMessages """
+                def test(x) { $loop; x.length() }
+            """,
+            'Cannot find matching method java.lang.Object#length()'
+        }
+    }
+
+    // GROOVY-12562: a method checked from within a condition leaves the checks of the condition in place
+    @Test
+    void testInstanceOf33() {
+        assertScript '''
+            def test(x) { if (check1(x) && x instanceof String) x.length() else -1 }
+            def conditional(x) { check2(x) && x instanceof String ? x.length() : -1 }
+            def closure(x) { def c = { -> check3(x) && x instanceof String ? x.length() : -1 }; c() }
+            private check1(x) { x != null }
+            private check2(x) { x != null }
+            private check3(x) { x != null }
+
+            assert test('abc') == 3 && test(42) == -1
+            assert conditional('abc') == 3 && conditional(42) == -1
+            assert closure('abc') == 3 && closure(42) == -1
+        '''
+    }
+
     // GROOVY-5226
     @Test
     void testNestedInstanceOf1() {
