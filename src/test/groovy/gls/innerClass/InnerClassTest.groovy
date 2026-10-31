@@ -2876,6 +2876,36 @@ final class InnerClassTest {
         """
     }
 
+    // GROOVY-12514: 'Type.this.name' within an inner subclass reads what 'this.name' reads
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testQualifiedThisOfCurrentInnerSubclass(String mode) {
+        assertScript """
+            $mode
+            class Base {
+                private String z
+                public String pub
+                String prop
+                Base(String v) { z = v; pub = v; prop = v }
+                String getZ0() { z }
+                class Sub extends Base {
+                    Sub(String v) { super(v) }
+                    List read() {
+                        [Sub.this.z, this.z, { -> Sub.this.z }(), (() -> Sub.this.z)(),
+                         Sub.this.pub, Sub.this.prop, { -> Sub.this.prop }(), Sub.this.toString()]
+                    }
+                    List write() { Sub.this.z = 'w'; [z0, Base.this.z0] }
+                    String toString() { 's' }
+                }
+                List test() { [new Sub('inner').read(), new Sub('inner').write()] }
+            }
+            assert new Base('outer').test() == [
+                ['outer', 'outer', 'outer', 'outer', 'inner', 'inner', 'inner', 's'],
+                ['inner', 'w']
+            ]
+        """
+    }
+
     // GROOVY-12514
     @Test
     void testQualifiedThisOfCurrentNestedClassInStaticContext() {

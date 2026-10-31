@@ -78,7 +78,7 @@ class PropertyExpressionTransformer {
             AttributeExpression ae;
             if (field.isStatic()) {
                 ae = new AttributeExpression(classX(field.getDeclaringClass()), pe.getProperty());
-            } else if (!isThisExpression(pe.getObjectExpression())) {
+            } else if (!isThisExpression(pe.getObjectExpression()) && !scTransformer.isQualifiedThisOfTransformClass(pe.getObjectExpression())) {
                 ae = new AttributeExpression(scTransformer.transform(pe.getObjectExpression()), pe.getProperty(), pe.isSafe());
             } else if (scTransformer.extendsClass(field.getDeclaringClass())
                     && (pe instanceof AttributeExpression || !scTransformer.hasEnclosingInstanceOf(field.getDeclaringClass()))) {
