@@ -2552,6 +2552,122 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-12608
+    @CompileModesTest
+    void testSuperTraitStaticAccessorAsPropertyInClosure(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                private static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+                static boolean isReady() { count > 0 }
+            }
+            $mode
+            trait U extends T {
+                int ic() { def c = { -> cnt }; c() }
+                String ir() { def c = { -> ready ? 'yes' : 'no' }; c() }
+                int inner() { def c = { -> def d = { -> cnt }; d() }; c() }
+                int iset(int n) { def c = { -> cnt = n }; c(); cnt }
+                int ipost() { def c = { -> cnt++ }; c(); cnt }
+                static int sc() { def c = { -> cnt }; c() }
+                static int sadd(int n) { def c = { -> cnt += n }; c(); cnt }
+            }
+            $mode
+            trait V extends U {
+                int vc() { def c = { -> cnt }; c() }
+            }
+            $mode
+            class C implements V {
+            }
+            $mode
+            class D implements V {
+            }
+
+            $mode void m() {
+                D.cnt = 0 // each implementing class has its own trait state
+                assert new D().ic() == 0
+                assert D.sc() == 0
+                assert new D().ir() == 'no'
+                assert new C().ic() == 1
+                assert new C().ir() == 'yes'
+                assert new C().inner() == 1
+                assert C.sc() == 1
+                assert new C().iset(5) == 5
+                assert new C().ipost() == 6
+                assert C.sadd(2) == 8
+                assert new C().vc() == 8
+            }
+            m()
+        """
+
+        assertScript shell, """
+            import java.util.function.Supplier
+
+            $mode
+            trait T {
+                static int count = 1
+            }
+            $mode
+            trait U extends T {
+                int ic() { def c = { -> count }; c() }
+                int il() { Supplier<Integer> s = () -> count; s.get() }
+                static int sl() { Supplier<Integer> s = () -> count; s.get() }
+                static int sset(int n) { Runnable r = () -> { count = n }; r.run(); count }
+            }
+            $mode
+            class C implements U {
+            }
+            $mode
+            class D implements U {
+            }
+
+            $mode void m() {
+                D.count = 2 // each implementing class has its own trait state
+                assert new C().ic() == 1
+                assert new D().ic() == 2
+                assert new C().il() == 1
+                assert new D().il() == 2
+                assert C.sl() == 1
+                assert D.sl() == 2
+                assert C.sset(3) == 3
+                assert D.count == 2
+            }
+            m()
+        """
+
+        // the closure's delegate still comes first
+        assertScript shell, """
+            class P {
+                int cnt = 42
+            }
+            $mode
+            trait T {
+                private static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+            }
+            $mode
+            trait U extends T {
+                int get(P p) { p.with { cnt } }
+                int set(P p, int n) { p.with { cnt = n }; cnt }
+                static int sget(P p) { p.with { cnt } }
+            }
+            $mode
+            class C implements U {
+            }
+
+            $mode void m() {
+                def p = new P()
+                assert new C().get(p) == 42
+                assert C.sget(p) == 42
+                assert new C().set(p, 7) == 1
+                assert p.cnt == 7
+            }
+            m()
+        """
+    }
+
     @Test
     void testTraitMethodShouldBeDefaultImplementationUsingReflection() {
         assertScript shell, '''
