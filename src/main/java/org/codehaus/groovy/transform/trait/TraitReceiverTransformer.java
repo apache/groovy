@@ -37,6 +37,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
@@ -47,6 +48,7 @@ import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 
 import java.util.Collection;
+import java.util.List;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
@@ -81,6 +83,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
     private final Collection<String> knownFields;
 
     private boolean inClosure;
+    private boolean inLambda;
 
     /**
      * Creates a transformer that rewrites trait receiver access against the woven receiver.
@@ -218,10 +221,12 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             mce.setImplicitThis(false);
             mce.setMethodTarget(ClassHelper.CLOSURE_TYPE.getMethods("rehydrate").get(0));
             mce.setSourcePosition(exp);
-            boolean oldInClosure = inClosure;
+            boolean oldInClosure = inClosure, oldInLambda = inLambda;
             inClosure = true;
+            inLambda = exp instanceof LambdaExpression;
             ((ClosureExpression) exp).getCode().visit(this);
             inClosure = oldInClosure;
+            inLambda = oldInLambda;
             // The rewrite we do is causing some troubles with type checking, which will
             // not be able to perform closure parameter type inference
             // so we store the replacement, which will be done *after* type checking.
@@ -383,6 +388,20 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     // this.m(x) --> (this or T$Trait$Helper).m($self or $static$self or (Class)$self.getClass(), x)
                     Expression selfClassOrObject = methodNode.isStatic() && !ClassHelper.isClassType(weaved.getOriginType()) ? castX(ClassHelper.CLASS_Type.getPlainNodeReference(), callX(weaved, "getClass")) : weaved;
                     newCall = callX(!inClosure ? thisExpr : classX(traitHelper), method, createArgumentList(selfClassOrObject, arguments));
+                    if (inClosure && !inLambda && call.isImplicitThis() && methodNode.getDeclaringClass().equals(traitClass)) {
+                        // GROOVY-12611: m(x) in a closure may target the closure's delegate; the type
+                        // checker of statically compiled code keeps T$Trait$Helper.m($self, x) or
+                        // selects m(x) on the delegate, otherwise the closure resolves m(x) and its
+                        // metaclass falls back to the trait helper for the owner
+                        List<Expression> args = ((ArgumentListExpression) newCall.getArguments()).getExpressions();
+                        MethodCallExpression closureCall = callX(thisExpr, method, args(args.subList(1, args.size()).toArray(Expression[]::new)));
+                        closureCall.setGenericsTypes(call.getGenericsTypes());
+                        closureCall.setImplicitThis(true);
+                        closureCall.setSafe(call.isSafe());
+                        closureCall.setSpreadSafe(call.isSpreadSafe());
+                        closureCall.setSourcePosition(call);
+                        newCall.putNodeMetaData(TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT, closureCall);
+                    }
                 }
                 newCall.setGenericsTypes(call.getGenericsTypes());
                 newCall.setSpreadSafe(call.isSpreadSafe());

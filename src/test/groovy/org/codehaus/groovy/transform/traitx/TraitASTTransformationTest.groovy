@@ -4310,4 +4310,107 @@ final class TraitASTTransformationTest {
             assert c.count == 2
         '''
     }
+
+    // GROOVY-12611
+    @CompileModesTest
+    void testPrivateTraitMethodInDelegateFirstClosure(String mode) {
+        assertScript shell, """
+            class Num {
+                int plus(int a, int b) { a * b }
+                int name() { 42 }
+            }
+            $mode
+            trait T {
+                private int size() { 1 }
+                private int plus(int a, int b) { a + b }
+                private String name() { 'trait' }
+                private <X> X id(X x) { x }
+                def m1() { [5, 6].with { size() } }
+                def m2() { new Num().with { plus(2, 3) } }
+                def m3() { new Num().with { def n = name(); n + 1 } }
+                def m4() { [5, 6, 7].with { new Object().with { size() } } }
+                def m5() { dt([5, 6]) { size() } }
+                def m6() { new Object().with { size() + plus(2, 3) + id(1) } }
+                def m7() { def r; [5, 6].each { r = size() }; r }
+                def m8() { [5, 6].with { this.size() } }
+                def m9() { java.util.function.Supplier<Integer> s = () -> size(); s.get() }
+                def dt(List list, @DelegatesTo(value=List, strategy=Closure.DELEGATE_FIRST) Closure block) {
+                    block.resolveStrategy = Closure.DELEGATE_FIRST
+                    block.delegate = list
+                    block()
+                }
+            }
+            $mode
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.m1() == 2
+            assert c.m2() == 6
+            assert c.m3() == 43
+            assert c.m4() == 3
+            assert c.m5() == 2
+            assert c.m6() == 7
+            assert c.m7() == 1
+            assert c.m8() == 1
+            assert c.m9() == 1
+        """
+    }
+
+    // GROOVY-12611
+    @CompileModesTest
+    void testStaticTraitMethodInDelegateFirstClosure(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static int size() { 1 }
+                private static int triple(int n) { n * 3 }
+                def m1() { [5, 6].with { size() + triple(10) } }
+                static sm1() { [5, 6].with { size() + triple(10) } }
+                def m2() { new Object().with { size() + triple(10) } }
+                static sm2() { new Object().with { size() + triple(10) } }
+                def m3() { new Tripler().with { size() + triple(10) } }
+            }
+            class Tripler {
+                int triple(int n) { n * 100 }
+            }
+            $mode
+            class C implements T {
+            }
+
+            assert new C().m1() == 32
+            assert C.sm1() == 32
+            assert new C().m2() == 31
+            assert C.sm2() == 31
+            assert new C().m3() == 1001
+        """
+    }
+
+    // GROOVY-12611
+    @CompileModesTest
+    void testPrivateTraitMethodInClosureWithDelegateSetAtRuntime(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                private int size() { 1 }
+                def m(int strategy) {
+                    Closure<Integer> c = { size() }
+                    c.resolveStrategy = strategy
+                    c.delegate = [5, 6]
+                    c()
+                }
+            }
+            $mode
+            class C implements T {
+            }
+
+            def c = new C()
+            // statically compiled code selects the method at compile time, as in a class
+            int delegateResult = '$mode' == '@CompileStatic' ? 1 : 2
+            assert c.m(Closure.DELEGATE_FIRST) == delegateResult
+            assert c.m(Closure.DELEGATE_ONLY) == delegateResult
+            assert c.m(Closure.OWNER_FIRST) == 1
+            assert c.m(Closure.OWNER_ONLY) == 1
+        """
+    }
 }

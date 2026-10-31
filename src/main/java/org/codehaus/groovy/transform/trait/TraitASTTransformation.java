@@ -38,6 +38,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
@@ -804,6 +805,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
     private static class PostTypeCheckingExpressionReplacer extends ClassCodeExpressionTransformer {
         private final SourceUnit sourceUnit;
+        private boolean inClosure;
 
         PostTypeCheckingExpressionReplacer(final SourceUnit sourceUnit) {
             this.sourceUnit = sourceUnit;
@@ -818,6 +820,16 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         public Expression transform(final Expression exp) {
             if (exp != null) {
                 Expression replacement = exp.getNodeMetaData(POST_TYPECHECKING_REPLACEMENT);
+                if (exp instanceof ClosureExpression closure) {
+                    // GROOVY-12611: replace calls to trait methods within the closure
+                    boolean oldInClosure = inClosure;
+                    inClosure = true;
+                    closure.getCode().visit(this);
+                    inClosure = oldInClosure;
+                    if (inClosure) return exp; // a nested closure is not rehydrated
+                } else if (replacement instanceof MethodCallExpression call) {
+                    call.setArguments(transform(call.getArguments()));
+                }
                 if (replacement != null) {
                     return replacement;
                 }
