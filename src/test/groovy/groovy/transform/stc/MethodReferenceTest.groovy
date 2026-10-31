@@ -741,6 +741,115 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-12623
+    @ParameterizedTest
+    @ValueSource(strings=['@CompileDynamic','@TypeChecked','@CompileStatic'])
+    void testPrimitiveSAMFromTypeParameterReturnType(String tag) {
+        assertScript shell, """
+            @FunctionalInterface interface ToChar<T> { char apply(T t) }
+
+            $tag
+            class C {
+                static class Box<T> {
+                    T value
+                    T get() { value }
+                }
+                static <T> T id(T t) { t }
+                static <T> T first(T... ts) { ts[0] }
+                def <T> T me(T t) { t }
+                static void test() {
+                    Predicate<String> p = C::id
+                    assert [p.test(''), p.test('x')] == [false, true]
+                    p = new C()::me
+                    assert [p.test(''), p.test('x')] == [false, true]
+                    p = C::first
+                    assert [p.test(''), p.test('x')] == [false, true]
+                    Map<String, String> m = [a: 'x', b: '']
+                    p = m::get
+                    assert [p.test('a'), p.test('b'), p.test('z')] == [true, false, false]
+
+                    BiPredicate<C, String> bp = C::me
+                    assert [bp.test(new C(), ''), bp.test(new C(), 'x')] == [false, true]
+                    BiPredicate<Map<String, String>, String> mp = Map::get
+                    assert [mp.test(m, 'a'), mp.test(m, 'b'), mp.test(m, 'z')] == [true, false, false]
+                    Predicate<List<String>> lp = List::first
+                    assert [lp.test(['']), lp.test(['x'])] == [false, true]
+                    Predicate<Box<String>> xp = Box::get
+                    assert [xp.test(new Box<String>(value: '')), xp.test(new Box<String>(value: 'x'))] == [false, true]
+                    Predicate<Integer> ip = C::id
+                    assert [ip.test(0), ip.test(1)] == [false, true]
+                    Predicate<Object> op = C::id
+                    assert [op.test(null), op.test(''), op.test([]), op.test([1]), op.test(true)] == [false, false, false, true, true]
+                    IntPredicate i = C::id
+                    assert [i.test(0), i.test(1)] == [false, true]
+                    BooleanSupplier bs = Optional.of('')::get
+                    assert !bs.getAsBoolean()
+
+                    ToIntFunction<Character> tf = C::id
+                    assert tf.applyAsInt('A' as char) == 65
+                    ToIntFunction<String> sf = C::id
+                    assert sf.applyAsInt('A') == 65
+                    ToChar<String> cf = C::id
+                    assert cf.apply('x') == ('x' as char)
+                }
+            }
+            C.test()
+        """
+    }
+
+    // GROOVY-12623
+    @Test
+    void testPrimitiveSAMFromTypeParameterReturnTypeSerializable() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                interface SerPred<T> extends Serializable, Predicate<T> {}
+
+                static <T> T id(T t) { t }
+                static void test() {
+                    SerPred<String> p = C::id
+                    assert !p.test('') && p.test('x')
+
+                    def out = new ByteArrayOutputStream()
+                    out.withObjectOutputStream { it.writeObject(p) }
+                    def q = new ByteArrayInputStream(out.toByteArray()).withObjectInputStream(C.classLoader) { (SerPred<String>) it.readObject() }
+                    assert !q.test('') && q.test('x')
+                }
+            }
+            C.test()
+        '''
+    }
+
+    // GROOVY-12623: a type argument that LambdaMetafactory converts is not converted by Groovy truth or cast
+    @Test
+    void testPrimitiveSAMFromTypeParameterReturnTypeNoConversion() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                static void test() {
+                    Map<String, Boolean> m = [a: true, b: false]
+                    Predicate<String> p = m::get
+                    assert p.test('a') && !p.test('b')
+                    groovy.test.GroovyAssert.shouldFail(NullPointerException) { p.test('z') }
+
+                    Predicate<Boolean> bp = C::id
+                    assert !bp.test(false) && bp.test(true)
+                    groovy.test.GroovyAssert.shouldFail(NullPointerException) { bp.test(null) }
+
+                    ToIntFunction<Long> f = C::id
+                    assert f.applyAsInt(5L) == 5
+                    groovy.test.GroovyAssert.shouldFail(NullPointerException) { f.applyAsInt(null) }
+                    ToLongFunction<Integer> g = C::id
+                    assert g.applyAsLong(5) == 5L
+                    ToDoubleFunction<BigDecimal> h = C::id
+                    assert h.applyAsDouble(1.5G) == 1.5d
+                }
+            }
+            C.test()
+        '''
+    }
+
     // GROOVY-11026
     @Test // instance::instanceMethod
     void testBiFunctionII() {
