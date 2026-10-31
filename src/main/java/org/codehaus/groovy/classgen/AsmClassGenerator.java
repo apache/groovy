@@ -1308,15 +1308,20 @@ public class AsmClassGenerator extends ClassGenerator {
      * Determines if the given field can be directly accessed by the given class
      * (via {@code GETFIELD}, {@code GETSTATIC}, etc. bytecode instructions).
      * <p>
-     * A protected or package-private field of a class with the same package
-     * name is accessible only within the same run-time package; see
-     * {@link #isInSameRuntimePackage}. Otherwise it is directly accessible
-     * only through the subclass rule for a protected field.
+     * Unlike {@link #isMemberDirectlyAccessible}, the package name is not
+     * enough for a protected or package-private field; it needs the same
+     * run-time package (see {@link #isInSameRuntimePackage}).
      */
     public static boolean isFieldDirectlyAccessible(final FieldNode field, final ClassNode accessingClass) {
-        if (field == null || !isMemberDirectlyAccessible(field.getModifiers(), field.getDeclaringClass(), accessingClass)) return false;
+        if (field == null) return false;
         ClassNode declaringClass = field.getDeclaringClass();
-        return field.isPublic() || field.isPrivate() || isInSameRuntimePackage(declaringClass, accessingClass)
+        if (field.isPublic() || field.isPrivate()) { // nestmates can access a private field
+            return isMemberDirectlyAccessible(field.getModifiers(), declaringClass, accessingClass);
+        }
+        // JVMS 5.4.4: a protected or package-private field is accessible from the run-time package of its declaring
+        // class, which includes the declaring class, and a protected field also from a subclass; access from a class
+        // of the same package name but another run-time package fails with IllegalAccessError
+        return isInSameRuntimePackage(declaringClass, accessingClass)
             || (field.isProtected() && accessingClass.isDerivedFrom(declaringClass));
     }
 
