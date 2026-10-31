@@ -452,6 +452,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     /** Field currently being visited. */
     protected FieldNode currentField;
+
+    /**
+     * Type of the value of a final field whose declared type is dynamic, from
+     * its initializer and the assignments of the initializer blocks and the
+     * constructors. The field keeps its declared type; the flow type refines
+     * reads of the field itself within the declaring class. The value
+     * {@link #FLOW_TYPE_BLOCKED} marks a field whose value is not one type.
+     */
+    private static final String FINAL_FIELD_FLOW_TYPE = "stc.finalFieldFlowType";
+    private static final Object FLOW_TYPE_BLOCKED = new Object();
+    private static final String STATIC_INIT_PULLED = "stc.staticInitPulled";
+    private static final String STATIC_INIT_VISITED = "stc.staticInitVisited";
+    private static final String OBJECT_INIT_DONE = "stc.objectInitDone";
     /** Property currently being visited. */
     protected PropertyNode currentProperty;
     /** Composite extension chain consulted during type checking. */
@@ -1032,6 +1045,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         binX(readClone, Token.newSymbol(TokenUtil.removeAssignment(op), expression.getOperation().getStartLine(), expression.getOperation().getStartColumn()), rightExpression));
                 rightExpression.setSourcePosition(expression);
 
+                // the write of a final field by an operator other than ?= or ??= blocks its flow type
+                if (op != ELVIS_EQUAL && op != NULL_COALESCE_EQUAL) blockFinalFieldFlow(leftExpression);
                 visitBinaryExpression(assignX(leftExpression, rightExpression, expression));
                 // GROOVY-12524: the write of leftExpression records the setter; keep the getter too
                 rememberExtensionPropertyGetter(leftExpression, readClone);
@@ -1175,6 +1190,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
 
                 storeType(leftExpression, resultType);
+                recordFinalFieldAssignment(leftExpression, resultType);
 
                 // propagate closure parameter information
                 if (leftExpression instanceof VariableExpression
@@ -2177,6 +2193,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      */
     protected void typeCheckAssignment(final BinaryExpression assignmentExpression, final Expression leftExpression, final ClassNode leftExpressionType, final Expression rightExpression, final ClassNode rightExpressionType) {
         if (leftExpression instanceof TupleExpression) {
+            blockFinalFieldFlow(leftExpression);
             if (!typeCheckMultipleAssignmentAndContinue(leftExpression, rightExpression)) return;
         }
 
@@ -2848,7 +2865,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (visitor != null) visitor.visitField(field);
         checkOrMarkPrivateAccess(expression, field, lhsOfAssignment);
         storeReceiverData(expression, receiver); // sets IMPLICIT_RECIEVER and PROPERTY_OWNER
-        storeWithResolve(field.getOriginType(), receiver.getType(), field.getDeclaringClass(), field.isStatic(), expression);
+        ClassNode fieldType = field.getOriginType();
+        if (!lhsOfAssignment) {
+            ClassNode flowType = finalFieldFlowType(field);
+            if (flowType != null) fieldType = flowType;
+        }
+        storeWithResolve(fieldType, receiver.getType(), field.getDeclaringClass(), field.isStatic(), expression);
         if (field.isFinal()) {
             MethodNode enclosing = typeCheckingContext.getEnclosingMethod();
             if (enclosing == null || !enclosing.getName().endsWith("init>"))
@@ -2959,6 +2981,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     /** {@inheritDoc} */
     @Override
     public void visitField(final FieldNode node) {
+        pullStaticInitializer(node.getDeclaringClass()); // static blocks run before field initializers can be observed
         boolean osc = typeCheckingContext.isInStaticContext;
         typeCheckingContext.pushTemporaryTypeInfo(); // GROOVY-12166: member scope
         try {
@@ -2987,8 +3010,135 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
 
             BinaryExpression dummy = typeCheckingContext.popEnclosingBinaryExpression();
-            typeCheckAssignment(dummy, target, lType, value, getResultType(lType, ASSIGN, rType, dummy));
+            ClassNode resultType = getResultType(lType, ASSIGN, rType, dummy);
+            typeCheckAssignment(dummy, target, lType, value, resultType);
+            if (target instanceof FieldExpression fieldExpression) {
+                recordFinalFieldFlowType(fieldExpression.getField(), resultType);
+            }
         }
+    }
+
+    /**
+     * Visits the static blocks and the instance initializer blocks of a class
+     * before its first constructor body or method, because they run before
+     * either and may assign a final field.
+     */
+    private void prepareFinalFieldFlow(final ClassNode cn) {
+        if (cn == null || !cn.isPrimaryClassNode()) return;
+        pullStaticInitializer(cn);
+        visitObjectInitializerStatements(cn);
+    }
+
+    private void pullStaticInitializer(final ClassNode cn) {
+        if (cn == null) return;
+        ClassNode owner = cn.redirect();
+        if (!owner.isPrimaryClassNode()) return;
+        if (Boolean.TRUE.equals(owner.putNodeMetaData(STATIC_INIT_PULLED, Boolean.TRUE))) return;
+        MethodNode clinit = owner.getDeclaredMethod("<clinit>", Parameter.EMPTY_ARRAY);
+        if (clinit != null && !shouldSkipMethodNode(clinit)) {
+            visitMethod(clinit);
+        }
+    }
+
+    private void recordFinalFieldAssignment(final Expression lhs, final ClassNode type) {
+        if (inFinalFieldInitializerContext()) {
+            recordFinalFieldFlowType(assignedFinalDynamicField(lhs), type);
+        }
+    }
+
+    /**
+     * Combines the type of a value assigned to a final field with the types
+     * assigned before. A {@code null} value says nothing about the type. A
+     * value of no one type, such as {@code Object} or a bound synthesized by
+     * {@link WideningCategories#lowestUpperBound}, blocks the flow type: a
+     * bound of several types invites overload ambiguity that is hard to
+     * trace back to the constructors that produced it.
+     */
+    private void recordFinalFieldFlowType(final FieldNode field, final ClassNode type) {
+        if (!isFinalDynamicField(field)) return;
+        Object previous = field.getNodeMetaData(FINAL_FIELD_FLOW_TYPE);
+        if (previous == FLOW_TYPE_BLOCKED) return;
+        if (type == null || type == UNKNOWN_PARAMETER_TYPE || isPrimitiveVoid(type)) return;
+        ClassNode next = previous instanceof ClassNode existing ? lowestUpperBound(existing, type) : type;
+        field.putNodeMetaData(FINAL_FIELD_FLOW_TYPE, isFlowType(next) ? next : FLOW_TYPE_BLOCKED);
+    }
+
+    /**
+     * Blocks the flow type of a final field written other than by a plain
+     * assignment: by a compound assignment, by {@code ++} or {@code --}, or
+     * as an element of a tuple. Static compilation writes such an operation
+     * with the declared type of the field.
+     */
+    private void blockFinalFieldFlow(final Expression lhs) {
+        if (!inFinalFieldInitializerContext()) return;
+        if (lhs instanceof TupleExpression tuple) {
+            for (Expression element : tuple.getExpressions()) {
+                blockFinalFieldFlow(element);
+            }
+            return;
+        }
+        FieldNode field = assignedFinalDynamicField(lhs);
+        if (field != null) field.putNodeMetaData(FINAL_FIELD_FLOW_TYPE, FLOW_TYPE_BLOCKED);
+    }
+
+    /** A field initializer, an initializer block or a constructor: where a final field may be assigned. */
+    private boolean inFinalFieldInitializerContext() {
+        MethodNode method = typeCheckingContext.getEnclosingMethod();
+        if (method == null) return currentField != null;
+        return method.isConstructor() || method.isStaticConstructor();
+    }
+
+    private FieldNode assignedFinalDynamicField(final Expression lhs) {
+        FieldNode field = null;
+        if (lhs instanceof VariableExpression ve) {
+            Variable variable = ve.getAccessedVariable();
+            if (variable instanceof FieldNode fn) field = fn;
+            else if (variable instanceof PropertyNode pn) field = pn.getField();
+        } else if (lhs instanceof FieldExpression fe) {
+            field = fe.getField();
+        } else if (lhs instanceof PropertyExpression pe) {
+            String name = pe.getPropertyAsString();
+            Expression object = pe.getObjectExpression();
+            ClassNode owner = null;
+            if (object instanceof ClassExpression ce) {
+                owner = ce.getType();
+            } else if (isThisExpression(object) || isSuperExpression(object)) {
+                owner = typeCheckingContext.getEnclosingClassNode();
+            }
+            if (name != null && owner != null) field = owner.getField(name);
+        }
+        return isFinalDynamicField(field) ? field : null;
+    }
+
+    private ClassNode finalFieldFlowType(final FieldNode field) {
+        if (!isFinalDynamicField(field) || !isDirectFieldRead(field)) return null;
+        Object flow = field.getNodeMetaData(FINAL_FIELD_FLOW_TYPE);
+        return flow instanceof ClassNode type ? type : null;
+    }
+
+    /**
+     * Tells whether a read is of the field itself rather than of the getter of
+     * a property, which a subclass may override: the read is in the declaring
+     * class and, for an instance property, not in a closure or lambda, which
+     * reads the property through its getter.
+     */
+    private boolean isDirectFieldRead(final FieldNode field) {
+        ClassNode owner = field.getDeclaringClass();
+        ClassNode enclosing = typeCheckingContext.getEnclosingClassNode();
+        if (owner == null || enclosing == null || enclosing.redirect() != owner.redirect()) return false;
+        return typeCheckingContext.getEnclosingClosure() == null || field.isStatic() || owner.getProperty(field.getName()) == null;
+    }
+
+    private static boolean isFinalDynamicField(final FieldNode field) {
+        return field != null && field.isFinal() && isDynamicTyped(field.getOriginType());
+    }
+
+    /** One class or interface; not {@code Object}, and not a bound synthesized from several types. */
+    private static boolean isFlowType(final ClassNode type) {
+        return !isDynamicTyped(type) && !isObjectType(type)
+                && !(type instanceof WideningCategories.LowestUpperBoundClassNode)
+                && !(type instanceof UnionTypeClassNode)
+                && !(type instanceof IntersectionTypeClassNode);
     }
 
     /** {@inheritDoc} */
@@ -3177,6 +3327,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         // push "operand += 1" or "operand -= 1" onto stack for LHS checks
         token.ifPresent(value -> typeCheckingContext.pushEnclosingBinaryExpression(binX(operand, value, constX(1))));
         try {
+            blockFinalFieldFlow(operand);
             operand.visit(this);
             SetterInfo setterInfo = removeSetterInfo(operand);
             if (setterInfo != null) {
@@ -3782,6 +3933,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (shouldSkipMethodNode(node)) {
             return;
         }
+        prepareFinalFieldFlow(node.getDeclaringClass());
         super.visitConstructor(node);
     }
 
@@ -3790,6 +3942,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     public void visitMethod(final MethodNode node) {
         if (shouldSkipMethodNode(node)) {
             return;
+        }
+        if (node.isStaticConstructor()) {
+            // visited once, ahead of the field initializers; see pullStaticInitializer
+            if (Boolean.TRUE.equals(node.putNodeMetaData(STATIC_INIT_VISITED, Boolean.TRUE))) return;
+        } else {
+            prepareFinalFieldFlow(node.getDeclaringClass());
         }
         if (!extension.beforeVisitMethod(node)) {
             ErrorCollector collector = node.getNodeMetaData(ERROR_COLLECTOR);
@@ -3904,6 +4062,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     /** {@inheritDoc} */
     @Override
     protected void visitObjectInitializerStatements(final ClassNode node) {
+        // visited once, ahead of the constructor bodies and methods; see prepareFinalFieldFlow
+        if (Boolean.TRUE.equals(node.redirect().putNodeMetaData(OBJECT_INIT_DONE, Boolean.TRUE))) return;
         // GROOVY-5450: create fake constructor node so final field analysis can allow write within non-static initializer block(s)
         ConstructorNode init = new ConstructorNode(0, null, null, new BlockStatement(node.getObjectInitializerStatements(), null));
         typeCheckingContext.pushEnclosingMethod(init);
