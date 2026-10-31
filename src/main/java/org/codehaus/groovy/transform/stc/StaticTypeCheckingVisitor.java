@@ -782,7 +782,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                     // falls through
                   case "thisObject":
-                    vexp.putNodeMetaData(INFERRED_TYPE, makeThis());
+                    vexp.putNodeMetaData(INFERRED_TYPE, makeThisObject());
                     return;
                   case "parameterTypes":
                     vexp.putNodeMetaData(INFERRED_TYPE, CLASS_Type.getPlainNodeReference().makeArray());
@@ -5373,6 +5373,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         if (existsProperty(property, true)
                                 && getType(property).equals(CLOSURE_TYPE)) {
                             chosenReceiver = Receiver.make(getType(property));
+                            if (isStaticPropertyOfTraitSelf(property)) {
+                                // the static accessor of the trait would read the property of the trait, not of the
+                                // class the trait is applied to, which $self or $static$self is at run time
+                                property.putNodeMetaData(DYNAMIC_RESOLUTION, CLOSURE_TYPE);
+                            }
                             call.putNodeMetaData("callable property", property);
                             List<Expression> list = argumentList.getExpressions();
                             int nArgs = list.stream().noneMatch(e -> e instanceof SpreadExpression) ? list.size() : -1;
@@ -5461,7 +5466,7 @@ out:                if (mn.size() != 1) {
                                 }
                                 // falls through
                               case "getThisObject":
-                                returnType = makeThis();
+                                returnType = makeThisObject();
                             }
                         } else if (returnType.isGenericsPlaceHolder() || isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
                             ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), targetMethod, callArguments, call.getGenericsTypes());
@@ -7564,6 +7569,37 @@ trying: for (ClassNode[] signature : signatures) {
         return null;
     }
 
+    /**
+     * Whether the property is a static property of a trait read in a method of its helper, through the
+     * {@code $self} or {@code $static$self} parameter, or through the implicit this of a closure or lambda,
+     * which is that parameter too. The trait reads such a property with a static accessor.
+     */
+    private boolean isStaticPropertyOfTraitSelf(final PropertyExpression property) {
+        if (!(property.getObjectExpression() instanceof VariableExpression receiver)) return false;
+        Variable self = receiver.getAccessedVariable();
+        if (receiver.isThisExpression() && property.isImplicitThis() && typeCheckingContext.getEnclosingClosure() != null) {
+            MethodNode method = typeCheckingContext.getEnclosingMethod(); // a closure or lambda in a trait method
+            if (method == null || method.getParameters().length == 0) return false;
+            self = method.getParameters()[0];
+        }
+        if (!(self instanceof Parameter)) return false;
+        ClassNode trait = null;
+        if (Traits.THIS_OBJECT.equals(self.getName())) {
+            trait = self.getType();
+        } else if (Traits.STATIC_THIS_OBJECT.equals(self.getName()) && isClassClassNodeWrappingConcreteType(self.getType())) {
+            trait = self.getType().getGenericsTypes()[0].getType();
+        }
+        if (trait == null || !Traits.isTrait(trait)) return false;
+        // the getter the trait transformation generates, or an explicit one; the property is a closure, and only a
+        // boolean property is read through an isser
+        String getter = "get" + capitalize(property.getPropertyAsString());
+        for (ClassNode t : Traits.findTraits(trait)) {
+            MethodNode method = t.getDeclaredMethod(getter, Parameter.EMPTY_ARRAY);
+            if (method != null && method.isStatic()) return true;
+        }
+        return false;
+    }
+
     private static ClassNode makeSelf(final ClassNode trait) {
         Set<ClassNode> selfTypes = Traits.collectSelfTypes(trait, new LinkedHashSet<>());
         if (!selfTypes.isEmpty()) {
@@ -7579,6 +7615,24 @@ trying: for (ClassNode[] signature : signatures) {
 
     private ClassNode makeThis() {
         return makeType(typeCheckingContext.getEnclosingClassNode(), typeCheckingContext.isInStaticContext);
+    }
+
+    /**
+     * Returns the type of the this object of the enclosing closure, which is also its owner when it is not
+     * nested in another closure. In an instance method or instance initializer of a trait, the trait
+     * transformation rehydrates each closure written there to the {@code $self} parameter, and a closure in a
+     * lambda gets the this object of the lambda, which is {@code $self} too, so it is the type of the instance
+     * the trait is applied to.
+     */
+    private ClassNode makeThisObject() {
+        MethodNode method = typeCheckingContext.getEnclosingMethod();
+        if (method != null && method.getParameters().length > 0 && Traits.isTrait(method.getDeclaringClass().getOuterClass())) {
+            Parameter self = method.getParameters()[0];
+            if (Traits.THIS_OBJECT.equals(self.getName()) && Traits.isTrait(self.getType())) {
+                return makeSelf(self.getType());
+            }
+        }
+        return makeThis();
     }
 
     /**
