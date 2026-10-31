@@ -27,6 +27,7 @@ import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -167,6 +168,9 @@ public class MopWriter {
                 }
             }
         }
+        // the order of the methods depends on how the class nodes they come from were built: by reflection, whose
+        // order is unspecified, or from bytecode; sort them so the class file does not depend on it
+        list.sort(Comparator.comparing(MethodNode::getName).thenComparing((MethodNode mn) -> mn.getTypeDescriptor()));
         generateMopCalls(list, isThis);
     }
 

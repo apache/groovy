@@ -253,6 +253,7 @@ public abstract class Selector {
 
     private static class CastSelector extends MethodSelector {
         private final Class<?> staticSourceType, staticTargetType;
+        private boolean selectedThroughMetaClass;
 
         /**
          * Creates a selector for cast call sites.
@@ -304,6 +305,17 @@ public abstract class Selector {
             doCallSiteTargetSet();
         }
 
+        /**
+         * A cast depends on the receiver's metaclass only when it selects {@code asBoolean} through it. Every other
+         * cast is decided by the class of the value, which the argument and class switch point guards cover, so
+         * reading the metaclass would only call {@code getMetaClass()} on the value: a class-based proxy forwards
+         * that call to its target.
+         */
+        @Override
+        protected boolean guardsReceiverMetaClass() {
+            return selectedThroughMetaClass;
+        }
+
         private void handleNullWithoutBoolean() {
             if (args[0] == null) {
                 if (staticTargetType.isPrimitive()) {
@@ -348,6 +360,7 @@ public abstract class Selector {
             }
 
             name = "asBoolean";
+            selectedThroughMetaClass = true;
             super.setCallSiteTarget();
             MethodHandle elseCallAsBoolean = handle;
 
@@ -1332,6 +1345,14 @@ public abstract class Selector {
         }
 
         /**
+         * Whether the selected handle depends on the metaclass of a {@code GroovyObject} receiver, so that
+         * {@link #setGuards(Object)} guards it with the receiver's metaclass.
+         */
+        protected boolean guardsReceiverMetaClass() {
+            return true;
+        }
+
+        /**
          * Sets all argument and receiver guards.
          */
         public void setGuards(Object receiver) {
@@ -1340,7 +1361,7 @@ public abstract class Selector {
             MethodHandle fallback = callSite.getFallbackTarget();
 
             // special guards for receiver
-            if (receiver instanceof GroovyObject go) {
+            if (receiver instanceof GroovyObject go && guardsReceiverMetaClass()) {
                 MetaClass mc = go.getMetaClass();
                 MethodHandle test = SAME_MC.bindTo(mc);
                 // drop dummy receiver
@@ -1418,10 +1439,11 @@ public abstract class Selector {
         }
 
         /**
-         * do the actual call site target set, if the call is supposed to be cached
+         * Marks the end of selection. The selector does not set the call site target itself:
+         * {@link IndyInterface} installs the selected handle once the site is hot enough.
          */
         public void doCallSiteTargetSet() {
-            if (LOG_ENABLED) LOG.info("call site stays uncached");
+            if (LOG_ENABLED) LOG.info("selection done, call site target left to IndyInterface");
         }
 
         /**
