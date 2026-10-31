@@ -2607,10 +2607,14 @@ final class TraitASTTransformationTest {
             $mode
             trait T {
                 static int count = 1
+                static String s = 'x'
             }
             $mode
             trait U extends T {
                 int ic() { def c = { -> count }; c() }
+                static int sc() { def c = { -> count }; c() }
+                static String sw() { def c = { -> s = 'y' }; c(); s }
+                String iw() { def c = { -> s = 'z' }; c(); s }
                 int il() { Supplier<Integer> s = () -> count; s.get() }
                 static int sl() { Supplier<Integer> s = () -> count; s.get() }
                 static int sset(int n) { Runnable r = () -> { count = n }; r.run(); count }
@@ -2626,6 +2630,11 @@ final class TraitASTTransformationTest {
                 D.count = 2 // each implementing class has its own trait state
                 assert new C().ic() == 1
                 assert new D().ic() == 2
+                assert C.sc() == 1
+                assert D.sc() == 2
+                assert C.sw() == 'y'
+                assert new C().iw() == 'z'
+                assert D.s == 'x'
                 assert new C().il() == 1
                 assert new D().il() == 2
                 assert C.sl() == 1
