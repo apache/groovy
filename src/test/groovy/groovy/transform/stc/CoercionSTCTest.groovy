@@ -861,4 +861,72 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
         assert err =~ /No signature of method.* is applicable for argument types: \(ArrayList\)/
     }
+
+    // GROOVY-12620
+    @Test
+    void testCoerceNarrowingConstantReturnToFunctionalInterface() {
+        String sams = '''
+            interface B { byte get() }
+            interface S { short get() }
+            interface C { char get() }
+            interface F { short apply(int i) }
+        '''
+
+        assertScript sams + '''
+            B b1 = () -> 1
+            B b2 = { -> -128 }
+            B b3 = { -> return 127 }
+            S s1 = () -> 1
+            S s2 = { -> -32768 }
+            S s3 = () -> { return 32767 }
+            C c1 = () -> 65
+            C c2 = { -> 0 }
+            C c3 = () -> 65535
+            assert b1.get() == (byte) 1 && b2.get() == Byte.MIN_VALUE && b3.get() == Byte.MAX_VALUE
+            assert s1.get() == (short) 1 && s2.get() == Short.MIN_VALUE && s3.get() == Short.MAX_VALUE
+            assert c1.get() == (char) 65 && c2.get() == (char) 0 && c3.get() == Character.MAX_VALUE
+        '''
+
+        assertScript sams + '''
+            F f = (int i) -> { if (i > 0) return 1; return -1 }
+            F g = { int i -> if (i > 0) { 2 } else { 3 } }
+            assert f.apply(5) == (short) 1 && f.apply(0) == (short) -1
+            assert g.apply(5) == (short) 2 && g.apply(0) == (short) 3
+            def h = { -> 4 } as S
+            assert h.get() == (short) 4
+        '''
+
+        assertScript sams + '''
+            short m(S s) { s.get() }
+            assert m(() -> 5) == (short) 5
+            assert m { -> 6 } == (short) 6
+        '''
+
+        assertScript sams + '''
+            class D {
+                static byte one() { B b = () -> 1; b.get() }
+                char two() { C c = { -> 66 }; c.get() }
+            }
+            assert D.one() == (byte) 1
+            assert new D().two() == (char) 66
+        '''
+
+        shouldFailWithMessages sams + '''
+            B b = () -> 128
+            S s = () -> 70000
+            C c = { -> -1 }
+        ''',
+        'Cannot return value of type int for lambda expecting byte',
+        'Cannot return value of type int for lambda expecting short',
+        'Cannot return value of type int for closure expecting char'
+
+        shouldFailWithMessages sams + '''
+            F f = (int i) -> i
+            B b = { -> 1 + 1 }
+            C c = () -> 65L
+        ''',
+        'Cannot return value of type int for lambda expecting short',
+        'Cannot return value of type int for closure expecting byte',
+        'Cannot return value of type long for lambda expecting char'
+    }
 }
