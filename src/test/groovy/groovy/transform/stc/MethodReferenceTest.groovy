@@ -2598,6 +2598,35 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // GROOVY-12536
+    void testMethodReferencesInStaticAndDefaultMethodsOfInterface() {
+        assertScript shell, '''
+            import java.lang.reflect.Modifier
+
+            class Foo {
+                String value
+                Foo(String value) { this.value = value }
+            }
+            @CompileStatic
+            interface I {
+                static List<String> upper(List<String> list) { list.stream().map(String::toUpperCase).toList() }
+                default List<Integer> lengths(List<String> list) { list.stream().map(String::length).toList() }
+                static Function<String, Foo> make() { Foo::new }
+                default Function<String, Foo> create() { Foo::new }
+            }
+
+            assert I.upper(['a', "${'b'}"]) == ['A', 'B']
+            assert new I() {}.lengths(['ab', "${'c'}"]) == [2, 1]
+            assert I.make().apply('m').value == 'm'
+            assert new I() {}.create().apply("${'c'}").value == 'c'
+
+            // a coverage agent adds its own synthetic $jacocoInit
+            def helpers = I.declaredMethods.findAll { it.synthetic && !it.name.startsWith('$') }
+            assert helpers*.name.collect { it.substring(0, it.indexOf('$')) }.toSet() == ['ctorRef', 'gstring'] as Set
+            assert helpers.every { Modifier.isPrivate(it.modifiers) && !Modifier.isFinal(it.modifiers) }
+        '''
+    }
+
     @Nested
     class NativeMethodReferenceBytecodeTest extends AbstractBytecodeTestCase {
         @Test
