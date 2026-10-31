@@ -2673,6 +2673,64 @@ final class TraitASTTransformationTest {
         assert err.message =~ 'Prefix expressions on trait fields/properties are not supported in traits'
     }
 
+    // GROOVY-12603
+    @CompileModesTest
+    void testCompoundAssignmentOfTraitFieldInClosure(String mode) {
+        assertScript shell, """
+            import java.util.function.Consumer
+
+            $mode
+            trait T {
+                private int a = 1
+                public  int b = 1
+                static  int c = 1
+                def m() {
+                    [1].each { a += 2 }
+                    [1].each { b *= 3 }
+                    [1].each { c -= 1 }
+                    Consumer<Integer> f = (Integer i) -> { a += i; b -= i; c += i }
+                    f.accept(10)
+                    [1].each { a = a + 1 }
+                    [a, b, c]
+                }
+                static sm() {
+                    [1].each { c += 2 }
+                    Consumer<Integer> f = (Integer i) -> { c *= i }
+                    f.accept(3)
+                    c
+                }
+            }
+            class C implements T {
+            }
+
+            assert new C().m() == [14, -7, 10]
+            assert C.sm() == 36
+        """
+    }
+
+    // GROOVY-12603
+    @ParameterizedTest
+    @ValueSource(strings=['x++','x--','++x','--x'])
+    void testPrefixOrPostfixOfTraitFieldInClosure(String op) {
+        String kind = op.startsWith('x') ? 'Postfix' : 'Prefix'
+        for (decl in [['private int x', ''], ['public int x', ''], ['static int x', ''], ['static int x', 'static']]) {
+            def err = shouldFail shell, """
+                import java.util.function.Consumer
+
+                trait T {
+                    ${decl[0]}
+                    ${decl[1]} def m() {
+                        [1].each { $op }
+                        Consumer<Integer> f = (Integer i) -> { $op }
+                        f.accept(1)
+                        x
+                    }
+                }
+            """
+            assert err.message.count("$kind expressions on trait fields/properties are not supported in traits") == 2
+        }
+    }
+
     // GROOVY-6691
     @Test
     void testTraitImplementingGenericSuperTrait() {
