@@ -131,7 +131,7 @@ class NAryOperationRewriter extends ClassCodeExpressionTransformer {
         BinaryExpression operation = new BinaryExpression(
                 exp.getLeftExpression(),
                 Token.newSymbol(token, -1, -1),
-                exp.getRightExpression()
+                transform(exp.getRightExpression()) // GROOVY-12615: rewrite nested compound assignments too
         );
         operation.setSourcePosition(exp);
         BinaryExpression result = new BinaryExpression(
