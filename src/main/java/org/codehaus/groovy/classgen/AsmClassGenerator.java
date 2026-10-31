@@ -159,7 +159,6 @@ import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.isVargs;
@@ -1308,9 +1307,23 @@ public class AsmClassGenerator extends ClassGenerator {
     /**
      * Determines if the given field can be directly accessed by the given class
      * (via {@code GETFIELD}, {@code GETSTATIC}, etc. bytecode instructions).
+     * <p>
+     * Unlike {@link #isMemberDirectlyAccessible}, the package name is not
+     * enough for a protected or package-private field; it needs the same
+     * run-time package (see {@link #isInSameRuntimePackage}).
      */
     public static boolean isFieldDirectlyAccessible(final FieldNode field, final ClassNode accessingClass) {
-        return field != null && isMemberDirectlyAccessible(field.getModifiers(), field.getDeclaringClass(), accessingClass);
+        if (field == null) return false;
+        ClassNode declaringClass = field.getDeclaringClass();
+        if (!isClassDirectlyAccessible(declaringClass, accessingClass)) return false;
+        if (field.isPublic() || field.isPrivate()) { // nestmates can access a private field
+            return isMemberDirectlyAccessible(field.getModifiers(), declaringClass, accessingClass);
+        }
+        // JVMS 5.4.4: a protected or package-private field is accessible from the run-time package of its declaring
+        // class, which includes the declaring class, and a protected field also from a subclass; access from a class
+        // of the same package name but another run-time package fails with IllegalAccessError
+        return isInSameRuntimePackage(declaringClass, accessingClass)
+            || (field.isProtected() && accessingClass.isDerivedFrom(declaringClass));
     }
 
     /**
@@ -1346,6 +1359,40 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         // see GroovyClassLoader: the classes of this compilation are defined by an InnerLoader of their own
         return unit == null || !Boolean.TRUE.equals(unit.getNodeMetaData(GroovyClassLoader.InnerLoader.class));
+    }
+
+    /**
+     * Determines if the bytecode of the accessing class can name the class, for
+     * example in {@code NEW}, {@code CHECKCAST} or as the owner of a member. The
+     * JVM allows that for a class that is not public only within its run-time
+     * package; see {@link #isInSameRuntimePackage}. This returns {@code false}
+     * only for a class that is not public, with the same package name as the
+     * accessing class, but known to be in another run-time package.
+     *
+     * @param type the class to name (an array names its component type)
+     * @param accessingClass the class whose bytecode names it
+     */
+    public static boolean isClassDirectlyAccessible(final ClassNode type, final ClassNode accessingClass) {
+        ClassNode cn = type;
+        while (cn.isArray()) cn = cn.getComponentType();
+        if (ClassHelper.isPrimitiveType(cn) || cn.isGenericsPlaceHolder()) return true;
+        cn = cn.redirect();
+        // a protected nested class is public in its class file
+        if ((cn.getModifiers() & (ACC_PUBLIC | ACC_PROTECTED)) != 0) return true;
+        return !Objects.equals(cn.getPackageName(), accessingClass.getPackageName()) || isInSameRuntimePackage(cn, accessingClass);
+    }
+
+    /**
+     * Returns the nearest superclass of the type that the accessing class can
+     * name, or {@code Object}.
+     *
+     * @see #isClassDirectlyAccessible
+     */
+    public static ClassNode getDirectlyAccessibleSuperClass(final ClassNode type, final ClassNode accessingClass) {
+        for (ClassNode sc = type.getSuperClass(); sc != null; sc = sc.getSuperClass()) {
+            if (isClassDirectlyAccessible(sc, accessingClass)) return sc;
+        }
+        return ClassHelper.OBJECT_TYPE;
     }
 
     /**
@@ -1519,7 +1566,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 } else {
                     fieldNode = classNode.getSuperClass().getDeclaredField(name);
                     // GROOVY-4497, GROOVY-11764: do not visit super class field if it is private or package-private
-                    if (fieldNode != null && (fieldNode.isPrivate() || !(fieldNode.isPublic() || fieldNode.isProtected() || inSamePackage(classNode, classNode.getSuperClass())))) {
+                    if (fieldNode != null && (fieldNode.isPrivate() || !(fieldNode.isPublic() || fieldNode.isProtected() || isFieldDirectlyAccessible(fieldNode, classNode)))) {
                         fieldNode = null;
                     }
                 }

@@ -20,8 +20,10 @@ package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.StatementMetaTypeChooser;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
@@ -37,6 +39,29 @@ public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
     /** {@inheritDoc} */
     @Override
     public ClassNode resolveType(final Expression exp, final ClassNode current) {
+        ClassNode type = resolveInferredType(exp, current);
+        if (type != null && current != null // public: a type checking extension may resolve without a class
+                && !AsmClassGenerator.isClassDirectlyAccessible(type, current) && !isDeclaredAs(exp, type)) {
+            // a class that is not public, of another run-time package, cannot be named by the bytecode of the
+            // current class, so the value is typed as the nearest superclass that can (like a dynamic value)
+            return AsmClassGenerator.getDirectlyAccessibleSuperClass(type, current);
+        }
+        return type;
+    }
+
+    /**
+     * Determines if the expression is a variable, parameter or field declared
+     * with the given type, rather than one whose type is inferred.
+     */
+    private static boolean isDeclaredAs(final Expression exp, final ClassNode type) {
+        if (exp instanceof VariableExpression) {
+            Variable variable = (Variable) getTarget(exp); // the expression or the variable it accesses
+            return !variable.isDynamicTyped() && variable.getOriginType().equals(type);
+        }
+        return false;
+    }
+
+    private ClassNode resolveInferredType(final Expression exp, final ClassNode current) {
         ClassNode inferredType = exp.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE);
         if (inferredType == null) {
             inferredType = exp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);

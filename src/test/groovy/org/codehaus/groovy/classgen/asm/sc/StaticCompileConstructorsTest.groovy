@@ -61,6 +61,64 @@ final class StaticCompileConstructorsTest extends ConstructorsSTCTest implements
         assert method.count('ACONST_NULL') == 0
     }
 
+    // GROOVY-12568
+    @Override
+    @Test
+    void testProtectedConstructorOfAnotherPackage() {
+        assertScript '''package p
+            class A {
+                final String value
+                protected A(String value) { this.value = value }
+            }
+            true
+        '''
+        shouldFailWithMessages '''package q
+            class C extends p.A {
+                C() { super('c') }
+                static p.A make() {
+                    new p.A('x') // only super(...) or an anonymous inner class can call it
+                }
+            }
+        ''',
+        'Cannot call protected constructor for p.A from class q.C'
+
+        shouldFailWithMessages '''
+            class C extends ObjectInputStream {
+                static ObjectInputStream make() {
+                    new ObjectInputStream() // only super() or an anonymous inner class can call it
+                }
+            }
+        ''',
+        'Cannot call protected constructor for java.io.ObjectInputStream from class C'
+    }
+
+    // GROOVY-12568
+    @Test
+    void testMapStyleConstructionWithProtectedConstructorOfAnotherPackage() {
+        shouldFailWithMessages '''
+            class C extends ObjectOutputStream {
+                C() { super() }
+                static ObjectOutputStream make() {
+                    new ObjectOutputStream([:]) // map-style construction calls the protected ObjectOutputStream()
+                }
+            }
+        ''',
+        'Cannot call protected constructor for java.io.ObjectOutputStream from class C'
+    }
+
+    // GROOVY-12568
+    @Test
+    void testProtectedConstructorOfAnotherPackageIsCalledDirectlyThroughSuperOrAnonymousInnerClass() {
+        testProtectedConstructorOfAnotherPackageThroughSuperOrAnonymousInnerClass()
+
+        String c = astTrees['C'][1]
+        assert c.contains('INVOKESPECIAL java/io/ObjectInputStream.<init> ()V')
+        assert c.contains('NEW C$1')
+        String aic = astTrees['C$1'][1]
+        assert aic.contains('INVOKESPECIAL java/io/ObjectInputStream.<init> ()V')
+        assert !(c + aic).contains('ScriptBytecodeAdapter.invokeNew')
+    }
+
     // GROOVY-12453
     @Test
     void testMapConstructorWithinPowerAssert() {
