@@ -681,7 +681,7 @@ fork-join pool, so blocking callbacks gained nothing from it.
   does. A filter whose `isCase` returns `null`, `0`, an empty string or an
   empty collection no longer keeps every element.
 
-### Groovy 7 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
+### Groovy 6.0.1 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
 
 For a dynamic property write or read, the runtime checks whether the receiver
 overrides the `setProperty` or `getProperty` that `GroovyObject` provides. An
@@ -723,83 +723,7 @@ trait. Also unchanged: a `setProperty` or `getProperty` contributed through
 still consulted on each access. `GroovyObjectOverrides`, which holds the check, is
 internal, so `japicmp` does not report this change.
 
-### Groovy 7 — Groovy Console smart highlighter and the language host
-
-`SmartDocumentFilter.getLatestTokenList()` now returns delimiter spans
-(`offset`, `length`, `text`) from semantic tokens, not ANTLR `Token`s.
-`HIGHLIGHTED_TOKEN_TYPE_LIST` is no longer published. Both types have been
-public since 3.0, so this is a source and binary break for embedders that
-read the lexer token list. Brace matching uses the new spans.
-`GroovyLanguageClient` is `@Internal`. `GroovyLanguageEngine` lives in an
-internal package; hosts talk to `GroovyLanguageClient`.
-
-`groovy-console` and `groovy-groovysh` depend on `groovy-lsp` at runtime,
-so a distribution that includes those modules also includes LSP4J and Gson.
-`groovy-groovysh` no longer puts `groovy-console` on its compile classpath.
-`/console` from the shell needs `groovy-console` available separately and
-fails quietly when it is absent.
-
-`ImportCustomizer` reports star imports as package names without a
-trailing dot (`java.io`, not `java.io.`). `getImportClassNames`,
-`getStarImports`, `getStaticStarImports`, `getAliases` and
-`getStaticImports` are new in 7.0.0.
-
-A distribution that omits `groovy-lsp` or Gson still opens the console
-and groovysh. The console uses regex highlighting, leaves the language
-host unset, and disables Compiler Assistance on that window. A warning
-is logged for the highlighter and another for the host. The saved
-preference is not changed. The shell uses its Inspector completer and
-prints one warning. `noSyntaxCheck` set in
-`groovysh_init.groovy` is applied before the language session starts.
-
-`@ASTTest` stays a no-op when `groovy.asttest.enable` is `false`. A
-per-thread override used by in-process tooling can only force that
-no-op. It cannot evaluate the closure against that property.
-
-### Groovy 7 — `SignatureCodec` version 1 no longer round-trips a union node
-
-`SignatureCodecVersion1` used to encode a checker-only `UnionTypeClassNode` by
-name and rebuild one on decode. Newly encoded signatures store the lowest upper
-bound that has a stable binary name, or `Object`. Historical payloads that still
-carry the `UnionTypeClassNode` tag are consumed and then widened the same way.
-
-The method descriptors are unchanged, so `japicmp` does not report this.
-Callers of `SignatureCodecVersion1.decode` that expected a union node now
-receive the shared supertype. Between GROOVY-6401 (2013) and GROOVY-12472 the
-compiler wrote no `@TypeCheckingInfo` inferred-return annotations.
-
-### Groovy 7 — inferred return types of methods with a sole implementation (GROOVY-12472)
-
-A call to a method declared with `def` now has the type the method's body
-returns, rather than `Object`, when no other body can run for the call: a
-`final` method or a method of a `final` class, and a `private` or `static`
-method when the call is statically compiled (or, for a `static` method, names
-its class). The type is inferred within the class being checked and read from
-the class file for a precompiled class. Reading such a getter as a property
-(`label` for `def getLabel()`) gets the same type. Overridable methods keep
-their declared return type, as since GROOVY-6401.
-
-- **More programs compile.** Code that called such a method and relied on the
-  result had to cast or declare; it now type checks as written.
-- **Statically compiled overload selection can change.** An argument whose type
-  was `Object` now has the inferred type, so `pick(name())` with `pick(Object)`
-  and `pick(String)` overloads selects `pick(String)` where it used to select
-  `pick(Object)`. Type checked (dynamically dispatched) code already selected by
-  the runtime type and is unaffected.
-- **Class files carry `@TypeChecked.TypeCheckingInfo` again**, on each such
-  method that is not `private` and is type checked (`@TypeChecked` or
-  `@CompileStatic`); a dynamically compiled method records nothing, so its
-  callers keep its declared return type. It is a runtime-retained annotation, so
-  code that lists a method's annotations by reflection sees it.
-- **The inferred type is part of the method's contract for statically compiled
-  callers.** A caller compiled against one version of a class relies on the
-  result having the type recorded there; if a later version of the method
-  returns a value of another type, the caller can fail at runtime. Declare the return type of a
-  method whose result type may change between versions.
-
-The method descriptors are unchanged, so `japicmp` does not report this.
-
-### Groovy 7 — `>` and `>=` with a primitive NaN operand are false (GROOVY-12538)
+### Groovy 6.0.1 — `>` and `>=` with a primitive NaN operand are false (GROOVY-12538)
 
 When both operands of a comparison are primitive `double` or `float` values,
 the compiler compares them with a JVM instruction. It used the variant that
@@ -858,6 +782,29 @@ a protected constructor of another package, and for a protected or
 package-private constructor of a class that a `GroovyClassLoader` defined in
 another compilation, such as a class of an earlier `GroovyShell` parse. Dynamic
 and `@TypeChecked` code select the constructor at run time as before.
+
+### Groovy 6.0.1 — type checking rejects a call to a property accessor that is not generated (GROOVY-12525)
+
+Static type checking assumed that a property had both an `isX()` and a
+`getX()` accessor, whether or not the class generates them. A call to an
+accessor that does not exist was accepted at compile time and failed at
+run time with `MissingMethodException` under `@TypeChecked`, or
+`NoSuchMethodError` under `@CompileStatic`. Such a call is now a compile
+error, `Cannot find matching method`. The accessors type checking accepts
+are the ones the class generates:
+
+- A `boolean` property generates `isX()` and `getX()`, unless the class
+  declares one of them itself, in which case only that one exists.
+- A `Boolean` property, or a property of any other type, generates only
+  `getX()`.
+
+**Who is affected.** `@TypeChecked` code that calls such a missing accessor
+on a class with `methodMissing`, for example `b.isName()` for a `String`
+property `name`. That call reached `methodMissing` at run time and now no
+longer compiles. Call the accessor the class generates, read the property
+(`b.name`), or mark the method `@TypeChecked(TypeCheckingMode.SKIP)` to keep
+the dynamic call. Other calls to a missing accessor already failed at run
+time, and dynamic code is unchanged.
 
 ## The binary-compatibility check
 
