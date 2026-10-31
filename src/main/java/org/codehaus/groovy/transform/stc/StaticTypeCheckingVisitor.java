@@ -2630,7 +2630,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             while (iter.hasNext()) {
                 ClassNode outer = iter.next();
                 // GROOVY-7994, GROOVY-11198: try "this.propertyName" as "Outer.propertyName" or "Outer.this.propertyName"
-                PropertyExpression pe = propX(staticOnly ? classX(outer) : propX(classX(outer), "this"), pexp.getProperty());
+                Expression outerThis = staticOnly ? classX(outer) : propX(classX(outer), "this");
+                outerThis.putNodeMetaData("implicit outer this", Boolean.TRUE); // dispatched on "this"
+                PropertyExpression pe = propX(outerThis, pexp.getProperty());
                 if (existsProperty(pe, readMode, visitor)) {
                     pexp.copyNodeMetaData(pe);
                     return true;
@@ -2843,7 +2845,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             exactReceiver = false; // GROOVY-12290
         }
         if ((superField || !receiver.equals(field.getDeclaringClass())) && !(expression instanceof AttributeExpression)
-                && !isStaticDispatchScope() && isDynamicallyUnreachableThroughSubclass(field, superField && lhsOfAssignment)) {
+                && !isStaticDispatchScope() && isDynamicallyUnreachableThroughSubclass(field, receiver, expression, lhsOfAssignment)) {
             return false; // GROOVY-12610
         }
         return exactReceiver
@@ -2856,16 +2858,20 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * metaclass of a subclass does not list a private instance field of a
      * superclass, so only code of the declaring class reaches it, or code of an
      * inner class whose chain of enclosing instances leads to the declaring class.
-     * The runtime does not fall back to the enclosing instance for a write through
-     * {@code super}. Static compilation accesses the field directly from any class
-     * of its nest.
+     * The runtime falls back to the enclosing instance only for a receiver of the
+     * calling class, and not for a write through {@code super}. Static compilation
+     * accesses the field directly from any class of its nest.
      */
-    private boolean isDynamicallyUnreachableThroughSubclass(final FieldNode field, final boolean superWrite) {
+    private boolean isDynamicallyUnreachableThroughSubclass(final FieldNode field, final ClassNode receiver, final PropertyExpression expression, final boolean lhsOfAssignment) {
         if (!field.isPrivate() || field.isStatic()) return false;
         ClassNode declaringClass = field.getDeclaringClass();
         ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
         if (enclosingClass.equals(declaringClass)) return false;
-        if (superWrite) return true;
+        Expression objectExpression = expression.getObjectExpression();
+        if (isSuperExpression(objectExpression) ? lhsOfAssignment
+                : !receiver.isDerivedFrom(enclosingClass) && objectExpression.getNodeMetaData("implicit outer this") == null) {
+            return true;
+        }
         for (ClassNode cn = enclosingClass; !cn.equals(declaringClass); cn = cn.getOuterClass()) {
             if (cn.getOuterClass() == null || hasNoEnclosingInstance(cn)) return true;
         }

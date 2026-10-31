@@ -603,6 +603,37 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    // GROOVY-12621: static compilation accesses the field directly on any receiver
+    @Override @Test
+    void testPrivateFieldOfSuperclassViaReceiverOfOtherClass() {
+        assertScript '''
+            class Base {
+                private String z = 'x'
+                static class Nested extends Base {
+                }
+                class Sub extends Base {
+                    def m1(Nested that) { that.z }
+                    def m2(Sub2 that) { that.z }
+                    def m3() { new Object() { def get() { Sub.this.z } }.get() }
+                    def m4(Sub that) { new Object() { def get() { that.z } }.get() }
+                }
+                class Sub2 extends Base {
+                }
+                class Inner {
+                    def m1(Nested that) { that.z }
+                    def m2(Sub that) { that.z }
+                    def m3(Nested that) { def c = { -> that.z }; c() }
+                    def m4(Sub that) { that.z = 'y'; that.z }
+                }
+                List test() {
+                    def sub = new Sub(), nested = new Nested(), inner = new Inner()
+                    [sub.m1(nested), sub.m2(new Sub2()), sub.m3(), sub.m4(sub), inner.m1(nested), inner.m2(sub), inner.m3(nested), inner.m4(sub)]
+                }
+            }
+            assert new Base().test() == ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'y']
+        '''
+    }
+
     @Override @Test
     void testPropertyWithMultipleSetters() {
         // we need to override the test because the AST is going to be changed

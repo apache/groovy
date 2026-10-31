@@ -2164,6 +2164,71 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'No such property: z for class: Base', 'No such property: z for class: Base'
     }
 
+    // GROOVY-12621: the runtime falls back to the enclosing instance only for a receiver of the calling class
+    @Test
+    void testPrivateFieldOfSuperclassViaReceiverOfOtherClass() {
+        shouldFailWithMessages '''
+            class Base {
+                private String z = 'x'
+                static class Nested extends Base {
+                }
+                class Sub extends Base {
+                    def m1(Nested that) { that.z }
+                    def m2(Sub2 that) { that.z }
+                    def m3() { new Object() { def get() { Sub.this.z } }.get() }
+                    def m4(Sub that) { new Object() { def get() { that.z } }.get() }
+                }
+                class Sub2 extends Base {
+                }
+                class Inner {
+                    def m1(Nested that) { that.z }
+                    def m2(Sub that) { that.z }
+                    def m3(Nested that) { def c = { -> that.z }; c() }
+                    void m4(Sub that) { that.z = 'y' }
+                }
+            }
+        ''',
+        'No such property: z for class: Base$Nested', 'No such property: z for class: Base$Sub2',
+        'No such property: z for class: Base$Sub', 'No such property: z for class: Base$Sub',
+        'No such property: z for class: Base$Nested', 'No such property: z for class: Base$Sub',
+        'No such property: z for class: Base$Nested', 'No such property: z for class: Base$Sub'
+    }
+
+    // GROOVY-12621: a receiver of the calling class, or of an enclosing class through
+    // implicit "this", reaches the field through the enclosing instance
+    @Test
+    void testPrivateFieldOfSuperclassViaReceiverOfCallingClass() {
+        assertScript '''
+            class Base {
+                private String z = 'x'
+                static class Nested extends Base {
+                }
+                class Sub extends Base {
+                    def m1(Sub that) { that.z }
+                    def m2(SubSub that) { def c = { -> that.z }; c() }
+                    def m3() { def c = { -> super.z }; c() }
+                    def m4(Nested that) { that.with { z } }
+                    def m5() { new Object() { def get() { z } }.get() }
+                    def m6() { new Inner().get() }
+                    class Inner {
+                        def get() { z }
+                    }
+                }
+                class SubSub extends Sub {
+                }
+                class Other {
+                    def m1(Sub that) { that.with { z } }
+                    def m2() { new Object() { def get() { z } }.get() }
+                }
+                List test() {
+                    def sub = new Sub(), other = new Other()
+                    [sub.m1(sub), sub.m2(new SubSub()), sub.m3(), sub.m4(new Nested()), sub.m5(), sub.m6(), other.m1(sub), other.m2()]
+                }
+            }
+            assert new Base().test() == ['x'] * 8
+        '''
+    }
+
     // GROOVY-12509: a regression in 6.0.0, from GROOVY-12310
     @Test
     void testFieldOfPrivateNestedTypeOfNestMate() {
