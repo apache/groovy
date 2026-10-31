@@ -411,4 +411,96 @@ final class TraitWithClosureOrLambda {
             assert C.one() == 'good bad ugly'
         '''
     }
+
+    // GROOVY-12624
+    @Test
+    void testInvokeTraitStaticMethodFromDelegateClosureInInstanceMethod() {
+        for (mode in ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            assertScript """
+                $mode
+                trait T {
+                    static String who() { this.simpleName }
+                    def m() { new Object().with { who() } }
+                    def n() { 'x'.with { this.who() } }
+                    def p() { [1].collect { who() + it } }
+                    def q() { java.util.function.Supplier<String> s = () -> who(); s.get() }
+                    @groovy.transform.Virtual
+                    static String vwho() { this.simpleName }
+                    def r() { new Object().with { vwho() } }
+                }
+                class C implements T {
+                }
+                class D implements T {
+                }
+
+                assert new C().m() == 'C'
+                assert new D().m() == 'D'
+                assert new C().n() == 'C'
+                assert new D().n() == 'D'
+                assert new C().p() == ['C1']
+                assert new D().p() == ['D1']
+                assert new C().q() == 'C'
+                assert new D().q() == 'D'
+                assert new C().r() == 'C'
+                assert new D().r() == 'D'
+            """
+        }
+    }
+
+    // GROOVY-12624
+    @Test
+    void testInvokeSuperTraitStaticMethodFromDelegateClosureInInstanceMethod() {
+        for (mode in ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            assertScript """
+                $mode
+                trait S {
+                    static String who() { this.simpleName }
+                }
+                $mode
+                trait T extends S {
+                    def m() { new Object().with { who() } }
+                }
+                class C implements T {
+                }
+                class D implements T {
+                }
+
+                assert new C().m() == 'C'
+                assert new D().m() == 'D'
+            """
+        }
+    }
+
+    // GROOVY-12624
+    @Test
+    void testReadTraitStaticFieldFromDelegateClosureInInstanceMethod() {
+        for (mode in ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            assertScript """
+                $mode
+                trait T {
+                    static String label = 'T'
+                    public static String tag = 'T'
+                    def m() { new Object().with { label } }
+                    def n() { new Object().with { tag } }
+                    def p() { new Object().with { label = 'p'; tag = 'p' } }
+                }
+                class C implements T {
+                }
+                class D implements T {
+                }
+
+                C.label = 'C'
+                D.label = 'D'
+                assert new C().m() == 'C'
+                assert new D().m() == 'D'
+                assert new C().n() == 'T'
+                assert new D().n() == 'T'
+                new C().p()
+                assert new C().m() == 'p'
+                assert new C().n() == 'p'
+                assert new D().m() == 'D'
+                assert new D().n() == 'T'
+            """
+        }
+    }
 }
