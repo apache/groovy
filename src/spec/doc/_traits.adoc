@@ -748,6 +748,7 @@ include::../test/TraitsSpecificationTest.groovy[tags=virtual_default,indent=0]
 <6> the default is seen for `StrictEntity`
 <7> the override is seen by the trait's own `describe()` for `LenientEntity`
 <8> and externally via `Impl.m()`
+<9> called through the trait itself, where there is no implementing class, the trait's default is used
 
 Reach for `@Virtual` when the overridable thing is genuinely a property of the _type_ rather than of an instance —
 a policy or configuration default that answers a question about the class as a whole (Grails uses this for hooks
