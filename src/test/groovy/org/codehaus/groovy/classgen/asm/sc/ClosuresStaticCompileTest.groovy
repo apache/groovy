@@ -144,4 +144,101 @@ final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticC
             test(new Pogo())
         '''
     }
+
+    // GROOVY-10979
+    @Test
+    void testClosurePassedForATypeParameterIsConvertedToTheInterfaceTheCallBindsItTo() {
+        assertScript '''
+            import java.util.concurrent.atomic.AtomicReference
+            import java.util.function.Function
+            import java.util.function.Supplier
+            interface Shout extends Function<String, String> { }
+            class C {
+                static <T extends Function<String, String>> T second(T a, T b) { b }
+                static <T> void addAll(List<T> list, T... items) { list.addAll(items) }
+                static <T> T id(T t) { t }
+                static List<Supplier<String>> suppliers(boolean flag) {
+                    List<Supplier<String>> list = []
+                    list.add { 'add' }
+                    list.add(0) { 'insert' }
+                    list.set(0) { 'set' }
+                    list << { 'shift' }
+                    addAll(list, { 'vararg' }, { 'varargs' })
+                    Closure<String> variable = { 'variable' }
+                    list.add(variable)
+                    list.add(flag ? { 'then' } : { 'else' })
+                    list.add(new AtomicReference<Supplier<String>>({ 'constructor' }).get())
+                    list.add(C.<Supplier<String>>id { 'type argument' })
+                    list
+                }
+                static Map<String, Function<String, String>> functions() {
+                    Map<String, Function<String, String>> map = [:]
+                    map.put('put') { String s -> s + '!' }
+                    map.putIfAbsent('implicit') { it.toUpperCase() }
+                    map.put('lambda', (String s) -> s + '?')
+                    map.put('reference', String::toUpperCase)
+                    map
+                }
+                static Shout shout() {
+                    Shout shout = { String s -> s + '!' }
+                    second(shout, { String s -> s + '?' }) // T is Shout
+                }
+            }
+
+            def suppliers = C.suppliers(true)
+            assert suppliers*.get() == ['set', 'add', 'shift', 'vararg', 'varargs', 'variable', 'then', 'constructor', 'type argument']
+            assert suppliers.every { it instanceof Supplier && !(it instanceof Closure) }
+            assert C.suppliers(false)[6].get() == 'else'
+            def functions = C.functions()
+            assert functions.collectEntries { k, f -> [k, f.apply('ab')] } == [put: 'ab!', implicit: 'AB', lambda: 'ab?', reference: 'AB']
+            assert functions.values().every { !(it instanceof Closure) }
+            def shout = C.shout()
+            assert shout.apply('a') == 'a?'
+            assert shout instanceof Shout
+        '''
+    }
+
+    // GROOVY-10979
+    @Test
+    void testClosureReturnedForATypeParameterIsConvertedToTheInterfaceTheCallBindsItTo() {
+        assertScript '''
+            import java.util.function.Supplier
+            class C {
+                static <T> T pick(T a, T b) { b }
+            }
+
+            List<Supplier<String>> list = []
+            list.add(C.pick({ 'a' }, { 'b' })) // T of pick is Closure, E of add is Supplier
+            list << C.pick({ 'a' }, { 'c' })
+            Collections.addAll(list, C.pick({ 'a' }, { 'd' }), C.pick({ 'a' }, { 'e' }))
+            Map<String, Supplier<String>> map = [:]
+            map.put('k', C.pick({ 'a' }, { 'f' }))
+            list.add(map.k)
+            assert list*.get() == ['b', 'c', 'd', 'e', 'f']
+            assert list.every { it instanceof Supplier && !(it instanceof Closure) }
+        '''
+    }
+
+    // GROOVY-10979
+    @Test
+    void testClosurePassedForATypeParameterWithSeveralBounds() {
+        assertScript '''
+            interface SerializableRunnable extends Runnable, Serializable { }
+            class C {
+                static List<Object> seen = []
+                static <T extends Runnable & Serializable> void run(T a, T b) { seen << a << b; a.run(); b.run() }
+                static <T extends Comparable<T>> T max(T a, T b) { a >= b ? a : b }
+            }
+
+            int n = 0
+            C.run({ n += 1 }, { n += 1 }) // Closure is Runnable and Serializable
+            assert C.seen.every { it instanceof Closure }
+            SerializableRunnable task = { n += 1 }
+            C.run(task, { n += 1 }) // T is SerializableRunnable
+            assert C.seen[3] instanceof SerializableRunnable && !(C.seen[3] instanceof Closure)
+            assert n == 4
+            def max = C.max({ 1 }, { 2 }) // a closure becomes a Comparable
+            assert max instanceof Comparable && !(max instanceof Closure)
+        '''
+    }
 }

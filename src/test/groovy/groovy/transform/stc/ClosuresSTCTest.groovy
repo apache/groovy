@@ -1459,6 +1459,32 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10979
+    @Test
+    void testClosuresPassedForTheSameTypeParameter() {
+        assertScript '''
+            import java.util.function.Function
+            import java.util.function.Supplier
+            class C {
+                static List<Object> seen = []
+                static <T> void both(T a, T b) { seen << a << b }
+                static <T> T pick(T a, T b) { b }
+                static <T extends Function<String, String>> T second(T a, T b) { b }
+            }
+
+            C.both({ 'a' }, { 'b' }) // T is Closure
+            assert C.seen.every { it instanceof Closure }
+            def closure = C.pick({ 'a' }, { 'b' })
+            assert closure instanceof Closure && closure() == 'b'
+            Supplier supplier = C.pick({ 'a' }, { 'b' })
+            assert supplier.get() == 'b'
+            supplier = C.<Supplier<String>>pick({ 'a' }, { 'b' })
+            assert supplier.get() == 'b'
+            def function = C.second({ it + '!' }, { it + '?' }) // T is bound by Function
+            assert function.apply('a') == 'a?'
+        '''
+    }
+
     // GROOVY-12564
     @Test
     void testCallOfClosureReturningIntersectionType() {
