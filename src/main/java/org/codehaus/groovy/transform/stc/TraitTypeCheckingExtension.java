@@ -219,12 +219,21 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
     }
 
     /**
-     * Keeps a {@code @Virtual} static accessor read as a property dynamic when the
-     * receiver class has a getter of the same name, such as {@code Class.getName()}.
+     * Keeps a call that the trait transformation marked for dynamic dispatch dynamic
+     * when the receiver type declares a method that matches it, and likewise keeps a
+     * {@code @Virtual} static accessor read as a property dynamic when the receiver
+     * class has a getter of the same name, such as {@code Class.getName()}.
      */
     @Override
     public void onMethodSelection(final Expression expression, final MethodNode target) {
-        if (expression instanceof PropertyExpression pexp
+        // GROOVY-12601: $static$self.getName() for a @Virtual static getName() must not bind to Class#getName()
+        if (expression instanceof MethodCallExpression mce && mce.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) == null) {
+            ClassNode returnType = mce.getNodeMetaData(TraitASTTransformation.DO_DYNAMIC);
+            if (returnType != null) {
+                mce.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, makeDynamic(mce, returnType));
+                storeType(mce, returnType);
+            }
+        } else if (expression instanceof PropertyExpression pexp
                 && pexp.getObjectExpression() instanceof VariableExpression objectExpression
                 && objectExpression.getText().endsWith(Traits.THIS_OBJECT)) {
             String propertyName = pexp.getPropertyAsString();
