@@ -270,9 +270,12 @@ public class JavaStubGenerator {
             Verifier verifier = new Verifier() {
                 @Override
                 public void visitClass(ClassNode node) {
-                    List<Statement> savedStatements = new ArrayList<>(node.getObjectInitializerStatements());
+                    List<Statement> objectInitializers = node.getObjectInitializerStatements();
+                    List<Statement> savedStatements = new ArrayList<>(objectInitializers);
                     super.visitClass(node);
-                    node.getObjectInitializerStatements().addAll(savedStatements);
+                    // restore the initializers: cleared for a class, but kept for an interface or trait
+                    objectInitializers.clear();
+                    objectInitializers.addAll(savedStatements);
 
                     for (ClassNode trait : findTraits(node)) {
                         // GROOVY-9031: replace property type placeholder with resolved type from trait generics
