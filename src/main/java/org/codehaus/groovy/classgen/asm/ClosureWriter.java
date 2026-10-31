@@ -478,7 +478,7 @@ public class ClosureWriter {
     private static ClassNode inferredClosureReturnType(final ClosureExpression expression) {
         ClassNode returnType = expression.getNodeMetaData(INFERRED_RETURN_TYPE);
         if (returnType == null) returnType = ClassHelper.OBJECT_TYPE;
-        else if (returnType.isPrimaryClassNode()) returnType = returnType.getPlainNodeReference();
+        else if (returnType.isPrimaryClassNode() && !returnType.isRedirectNode()) returnType = returnType.getPlainNodeReference();
         else if (ClassHelper.isPrimitiveType(returnType)) returnType = ClassHelper.getWrapper(returnType);
         else if (GenericsUtils.hasUnresolvedGenerics(returnType)) returnType = GenericsUtils.nonGeneric(returnType);
         return returnType;
@@ -1475,7 +1475,9 @@ public class ClosureWriter {
         // GROOVY-9971: closure return type is mapped to Groovy cast by classgen
         ClassNode returnType = expression.getNodeMetaData(INFERRED_RETURN_TYPE);
         if (returnType == null) returnType = ClassHelper.OBJECT_TYPE; // not STC or unknown path
-        else if (returnType.isPrimaryClassNode()) returnType = returnType.getPlainNodeReference();
+        // the class node itself carries the declared type parameters; a parameterized reference to a class of the
+        // compilation unit keeps its type arguments, as a reference to a class read from bytecode does
+        else if (returnType.isPrimaryClassNode() && !returnType.isRedirectNode()) returnType = returnType.getPlainNodeReference();
         else if (ClassHelper.isPrimitiveType(returnType)) returnType = ClassHelper.getWrapper(returnType);
         else if (GenericsUtils.hasUnresolvedGenerics(returnType)) returnType = GenericsUtils.nonGeneric(returnType);
 
