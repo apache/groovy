@@ -49,6 +49,8 @@ import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 
 import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
@@ -191,7 +193,8 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     // GROOVY-12608: a statically compiled lambda has no delegate or thisObject to resolve
                     // a static accessor of a super trait through, so it captures $self or $static$self;
                     // otherwise a lambda is a closure, whose delegate may provide the name
-                    || (inLambdaOnly && staticallyCompiled && isSuperTraitStaticProperty(vexp.getName())))) {
+                    || (inLambdaOnly && staticallyCompiled && isSuperTraitStaticProperty(vexp.getName()))
+                    || isSuperTraitFieldName(vexp.getName()))) { // GROOVY-12609
                 PropertyExpression propertyExpression = propX(varX(weaved), vexp.getName());
                 propertyExpression.getProperty().setSourcePosition(exp);
                 return propertyExpression;
@@ -307,6 +310,42 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         if (fn.isStatic()) mce.putNodeMetaData(TraitASTTransformation.DO_DYNAMIC, fn.getOriginType());
 
         return mce;
+    }
+
+    /**
+     * Checks if a name is the remapped name ("pack_Type__name") of
+     * a field of a super trait, which refers to the implementing class also in a
+     * closure.
+     */
+    private boolean isSuperTraitFieldName(final String name) {
+        if (!name.contains("__")) return false;
+        Set<ClassNode> traits = new LinkedHashSet<>();
+        collectSuperTraits(traitClass, traits);
+        for (ClassNode trait : traits) {
+            String prefix = trait.getName().replace('.', '_') + "__";
+            if (name.startsWith(prefix)) {
+                if (trait.getDeclaredField(name.substring(prefix.length())) != null) {
+                    return true; // trait not transformed yet
+                }
+                TraitHelpersTuple helpers = Traits.findHelpers(trait);
+                for (ClassNode fieldHelper : new ClassNode[]{helpers.getFieldHelper(), helpers.getStaticFieldHelper()}) {
+                    if (fieldHelper != null && fieldHelper.getDeclaredMethod(name + Traits.DIRECT_GETTER_SUFFIX, Parameter.EMPTY_ARRAY) != null) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private static void collectSuperTraits(final ClassNode cNode, final Set<ClassNode> traits) {
+        for (ClassNode face : cNode.getInterfaces()) {
+            if (Traits.isTrait(face) && traits.add(face)) collectSuperTraits(face, traits);
+        }
+        ClassNode superClass = cNode.getUnresolvedSuperClass();
+        if (Traits.isTrait(superClass) && traits.add(superClass)) { // trait not transformed yet
+            collectSuperTraits(superClass, traits);
+        }
     }
 
     private static FieldNode tryGetFieldNode(final ClassNode weavedType, final String fieldName) {
