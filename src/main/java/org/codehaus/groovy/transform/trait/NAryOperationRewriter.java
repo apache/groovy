@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
@@ -44,6 +45,8 @@ import static org.codehaus.groovy.syntax.Types.EQUAL;
 class NAryOperationRewriter extends ClassCodeExpressionTransformer {
     private final SourceUnit sourceUnit;
     private final Collection<String> knownFields;
+
+    private boolean inClosure;
 
     /**
      * Creates a rewriter for compound operations that target trait fields.
@@ -82,6 +85,13 @@ class NAryOperationRewriter extends ClassCodeExpressionTransformer {
         }
         if (exp instanceof PostfixExpression) {
             return transformPostfixExpression((PostfixExpression) exp);
+        }
+        if (exp instanceof ClosureExpression) { // GROOVY-12603: closure or lambda in trait code
+            boolean oldInClosure = inClosure;
+            inClosure = true;
+            ((ClosureExpression) exp).getCode().visit(this);
+            inClosure = oldInClosure;
+            return exp;
         }
         return super.transform(exp);
     }
@@ -126,6 +136,10 @@ class NAryOperationRewriter extends ClassCodeExpressionTransformer {
         int token = TokenUtil.removeAssignment(op);
         if (token == op) {
             // no transform needed
+            return super.transform(exp);
+        }
+        if (inClosure && !isInternalFieldAccess(exp.getLeftExpression())) {
+            // GROOVY-12603: within a closure only a trait field needs the rewrite
             return super.transform(exp);
         }
         BinaryExpression operation = new BinaryExpression(
