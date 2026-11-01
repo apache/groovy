@@ -2498,6 +2498,16 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
                 PropertyNode property = current.getProperty(propertyName);
                 property = allowStaticAccessToMember(property, staticOnly);
+                ClassNode setterReceiverType = receiverType;
+                if (!readMode && setters.isEmpty() && current != receiverType && isInTraitCode() && Traits.isTrait(current)) {
+                    // GROOVY-12608: trait code inherits the static setter of a super trait
+                    for (MethodNode method : current.getDeclaredMethods(setterName)) {
+                        if (method.isStatic() && method.isPublic() && method.getParameters().length == 1) {
+                            setters.add(method);
+                            setterReceiverType = current;
+                        }
+                    }
+                }
                 // prefer explicit getter/setter for out-of-scope references
                 if (property == null || !enclosingTypes.contains(current)) {
                     if (readMode) {
@@ -2524,7 +2534,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             }
                             BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
                             if (enclosingBinaryExpression != null) {
-                                putSetterInfo(enclosingBinaryExpression.getLeftExpression(), new SetterInfo(receiverType, setterName, setters));
+                                putSetterInfo(enclosingBinaryExpression.getLeftExpression(), new SetterInfo(setterReceiverType, setterName, setters));
                             }
                             storeReceiverData(pexp, receiver);
                             pexp.removeNodeMetaData(READONLY_PROPERTY);
@@ -5706,6 +5716,15 @@ out:                if (mn.size() != 1) {
         for (ClassNode selfType : Traits.collectSelfTypes(receiver, new LinkedHashSet<>())) {
             owners.add(Receiver.make(selfType));
         }
+    }
+
+    /**
+     * Indicates whether the code being checked is trait code, which is moved to the
+     * trait's helper class before it is checked.
+     */
+    private boolean isInTraitCode() {
+        ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
+        return Traits.isTrait(enclosingType.getOuterClass()) && enclosingType.getName().endsWith("$Helper");
     }
 
     private static void addTraitType(final ClassNode receiver, final List<Receiver<String>> owners) {

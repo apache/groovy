@@ -46,6 +46,7 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeInstruction;
@@ -69,6 +70,7 @@ import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
+import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -92,6 +94,7 @@ import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
 import static org.apache.groovy.ast.tools.ExpressionUtils.mayHaveSideEffects;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
@@ -109,6 +112,7 @@ import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.IFEQ;
+import static org.objectweb.asm.Opcodes.IFNE;
 import static org.objectweb.asm.Opcodes.IFNONNULL;
 import static org.objectweb.asm.Opcodes.IFNULL;
 import static org.objectweb.asm.Opcodes.INSTANCEOF;
@@ -320,6 +324,41 @@ public class StaticInvocationWriter extends InvocationWriter {
     protected boolean writeDirectMethodCall(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args) {
         if (target == null) return false;
 
+        // GROOVY-12608: "name" in a closure in trait code, which the type checker resolved to
+        // a static accessor of a (super) trait through the closure's owner, is the same call
+        boolean closureThis = implicitThis && isThisExpression(receiver) && isInTraitClosure();
+        MethodNode helperMethod = closureThis || isTraitSelf(receiver) ? findTraitHelperMethod(target) : null;
+        if (helperMethod != null) {
+            // GROOVY-12590: "$static$self.name" or "$self.name" in trait code, which is how
+            // a trait's static accessor is read or written with property syntax, goes to the
+            // trait helper with the implementing class, as "getName()" does, not to the trait
+            // interface's forwarder, which passes the trait itself as the receiver class
+            Expression selfClass = receiver;
+            if (closureThis) {
+                // the closure's thisObject is $self, or $static$self in a static trait method
+                selfClass = bytecodeX(ClassHelper.CLASS_Type, mv -> {
+                    Label isClass = new Label();
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getThisObject", "()Ljava/lang/Object;", false);
+                    mv.visitInsn(DUP);
+                    mv.visitTypeInsn(INSTANCEOF, "java/lang/Class");
+                    mv.visitJumpInsn(IFNE, isClass);
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
+                    mv.visitLabel(isClass);
+                    mv.visitTypeInsn(CHECKCAST, "java/lang/Class");
+                });
+            } else if (!ClassHelper.isClassType(receiver.getType())) { // $self.getClass()
+                MethodCallExpression getClass = callX(receiver, "getClass");
+                getClass.setImplicitThis(false);
+                getClass.setMethodTarget(ClassHelper.OBJECT_TYPE.getDeclaredMethod("getClass", Parameter.EMPTY_ARRAY));
+                selfClass = getClass;
+            }
+            List<Expression> argumentList = new ArrayList<>();
+            argumentList.add(selfClass);
+            argumentList.addAll(args.getExpressions());
+            return writeDirectMethodCall(helperMethod, false, classX(helperMethod.getDeclaringClass()), args(argumentList));
+        }
+
         ClassNode enclosingClass = controller.getClassNode();
         ClassNode declaringClass = target.getDeclaringClass();
 
@@ -418,6 +457,51 @@ public class StaticInvocationWriter extends InvocationWriter {
             writeMethodAccessError(target, receiver != null ? receiver : args);
             return false;
         }
+    }
+
+    /**
+     * Returns the trait helper method behind {@code target} when {@code target} is a
+     * static method of a trait, which the trait interface forwards to its helper with
+     * the trait as the receiver class.
+     */
+    private static MethodNode findTraitHelperMethod(final MethodNode target) {
+        if (target.isStatic() && isTrait(target.getDeclaringClass())) {
+            Parameter[] parameters = target.getParameters();
+            for (MethodNode method : Traits.findHelper(target.getDeclaringClass()).getDeclaredMethods(target.getName())) {
+                Parameter[] helperParameters = method.getParameters();
+                if (method.isStatic() && helperParameters.length == parameters.length + 1
+                        && ClassHelper.isClassType(helperParameters[0].getType())
+                        && ParameterUtils.parametersEqual(Arrays.copyOfRange(helperParameters, 1, helperParameters.length), parameters)) {
+                    return method;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Indicates whether the code being written is in a closure, not a lambda, in trait
+     * code. The trait transformation rehydrates such a closure, so that its thisObject
+     * is the trait helper's {@code $self} or {@code $static$self} parameter.
+     */
+    private boolean isInTraitClosure() {
+        ClassNode type = controller.getClassNode();
+        if (controller.isStaticMethod() || !type.implementsInterface(ClassHelper.GENERATED_CLOSURE_Type)) {
+            return false;
+        }
+        while (ClassHelper.isGeneratedFunction(type)) {
+            type = type.getOuterClass();
+        }
+        return isTrait(type.getOuterClass());
+    }
+
+    /**
+     * Indicates whether {@code expression} is the {@code $self} or {@code $static$self}
+     * parameter of a trait helper method, which is the implementing instance or class.
+     */
+    static boolean isTraitSelf(final Expression expression) {
+        return expression instanceof VariableExpression ve && ve.getAccessedVariable() instanceof Parameter
+                && (Traits.THIS_OBJECT.equals(ve.getName()) || Traits.STATIC_THIS_OBJECT.equals(ve.getName()));
     }
 
     /**
