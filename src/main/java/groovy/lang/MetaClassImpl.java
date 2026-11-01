@@ -577,7 +577,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         if (matchedMethod >= 0) {
                             methods.set(i, mopMethods[matchedMethod]);
                         } else if (!useThis && notSuperUseful(method, c)) {
-                            methods.remove(i--); // not fit for super usage
+                            MetaMethod hidden = getHiddenStaticMethod(method, c);
+                            if (hidden != null) {
+                                methods.set(i, hidden);
+                            } else {
+                                methods.remove(i--); // not fit for super usage
+                            }
                         }
                     }
                     if (!useThis) {
@@ -592,7 +597,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         if (useThis) e.methods = mopMethods[matchedMethod];
                         else e.methodsForSuper = mopMethods[matchedMethod];
                     } else if (!useThis && notSuperUseful(method, c)) {
-                        e.methodsForSuper = null; // not fit for super usage
+                        e.methodsForSuper = getHiddenStaticMethod(method, c); // null: not fit for super usage
                     }
                 }
             }
@@ -633,6 +638,24 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     }
                 }
                 return -1;
+            }
+
+            /**
+             * Finds the static method of a superclass that a static method of
+             * class {@code c} hides: "super.name()" within {@code c} calls it.
+             */
+            private MetaMethod getHiddenStaticMethod(final MetaMethod method, final Class<?> c) {
+                if (!method.isStatic() || isDGM(method) || method.getDeclaringClass().getTheClass() != c) return null;
+                for (CachedClass sc = ReflectionCache.getCachedClass(c).getCachedSuperClass(); sc != null; sc = sc.getCachedSuperClass()) {
+                    for (CachedMethod m : sc.getMethods()) {
+                        if (m.isStatic() && m.getName().equals(method.getName())
+                                && MetaMethod.equal(m.getParameterTypes(), method.getParameterTypes())
+                                && (m.isPublic() || m.isProtected() || (!m.isPrivate() && inSamePackage(sc.getTheClass(), c)))) {
+                            return m;
+                        }
+                    }
+                }
+                return null;
             }
 
             private boolean notSuperUseful(final MetaMethod method, final Class<?> c) {
