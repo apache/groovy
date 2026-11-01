@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793429902287,
+  "lastUpdate": 1793516328573,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -6177,6 +6177,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.groovyRuntime",
             "value": 1524,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194129,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Scott Murphy Heiberg",
+            "username": "codeconsole",
+            "email": "scott@alwaysvip.com"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "9d8259b8e3458be41184dee236f274730228c2ac",
+          "message": "GROOVY-12613: rewrite compound assignment in trait code only for a trait field",
+          "timestamp": "2026-10-31T05:48:51Z",
+          "url": "https://github.com/apache/groovy/commit/9d8259b8e3458be41184dee236f274730228c2ac"
+        },
+        "date": 1793516327581,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4021,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 441,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 856,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1526,
             "unit": "classes"
           },
           {
