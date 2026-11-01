@@ -129,6 +129,12 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
      */
     public static final String POST_TYPECHECKING_REPLACEMENT = TraitReceiverTransformer.class + ".replacement";
 
+    /**
+     * Metadata key that marks the cast applied to a value written to a trait field, which
+     * type checking treats as an assignment to the field.
+     */
+    public static final String FIELD_ASSIGNMENT = TraitReceiverTransformer.class + ".fieldAssignment";
+
     private CompilationUnit compilationUnit;
 
     /**
