@@ -25,7 +25,7 @@ import org.apache.groovy.lang.annotation.Incubating
  * Represents a searched {@code CASE WHEN ... THEN ... ELSE ... END} expression,
  * the translation of a ternary expression.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 @CompileStatic

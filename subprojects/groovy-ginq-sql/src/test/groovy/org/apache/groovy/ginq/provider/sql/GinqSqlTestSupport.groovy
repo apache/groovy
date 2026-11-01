@@ -20,6 +20,7 @@ package org.apache.groovy.ginq.provider.sql
 
 import groovy.sql.Sql
 
+import java.sql.SQLException
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -55,7 +56,7 @@ class GinqSqlTestSupport {
     static void closeDb(Sql db) {
         try {
             db.execute 'SHUTDOWN'
-        } catch (java.sql.SQLException ignore) {
+        } catch (SQLException ignore) {
             // H2 reports the connection as closed once SHUTDOWN completes
         }
         db.close()

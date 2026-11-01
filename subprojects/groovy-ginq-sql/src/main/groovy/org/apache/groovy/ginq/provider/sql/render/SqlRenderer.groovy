@@ -21,6 +21,7 @@ package org.apache.groovy.ginq.provider.sql.render
 import groovy.transform.CompileStatic
 import org.apache.groovy.ginq.provider.sql.ir.SqlBinary
 import org.apache.groovy.ginq.provider.sql.ir.SqlCaseWhen
+import org.apache.groovy.ginq.provider.sql.ir.SqlCast
 import org.apache.groovy.ginq.provider.sql.ir.SqlColumn
 import org.apache.groovy.ginq.provider.sql.ir.SqlCountStar
 import org.apache.groovy.ginq.provider.sql.ir.SqlDerivedTable
@@ -54,7 +55,7 @@ import org.codehaus.groovy.ast.expr.Expression
  * collecting the parameter value expressions in emission order so they are
  * guaranteed to match the placeholders.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 @CompileStatic
@@ -145,21 +146,22 @@ class SqlRenderer {
             sb.append(' ORDER BY ')
             orderBy.eachWithIndex { SqlOrderSpec orderSpec, int i ->
                 if (i > 0) sb.append(', ')
-                renderExpr(orderSpec.expr, sb, parameters)
-                sb.append(orderSpec.asc ? ' ASC' : ' DESC')
-                sb.append(orderSpec.nullsLast ? ' NULLS LAST' : ' NULLS FIRST')
+                renderOrderItem(orderSpec, sb, parameters)
             }
         }
 
-        if (offset != null) {
-            sb.append(' OFFSET ')
-            renderExpr(offset, sb, parameters)
-            sb.append(' ROWS')
-        }
-        if (fetch != null) {
-            sb.append(offset != null ? ' FETCH NEXT ' : ' FETCH FIRST ')
-            renderExpr(fetch, sb, parameters)
-            sb.append(' ROWS ONLY')
+        if (offset != null || fetch != null) {
+            dialect.renderLimit(offset, fetch, new Dialect.LimitRender() {
+                @Override
+                void text(String text) {
+                    sb.append(text)
+                }
+
+                @Override
+                void expr(SqlExpr expr) {
+                    renderExpr(expr, sb, parameters)
+                }
+            })
         }
     }
 
@@ -173,6 +175,16 @@ class SqlRenderer {
         } else if (expr instanceof SqlLiteral) {
             renderLiteral(expr.value, sb)
         } else if (expr instanceof SqlBinary) {
+            if ('/' == expr.op) {
+                // Groovy divides in real arithmetic; SQL integer division would truncate
+                String realType = dialect.realTypeName()
+                sb.append('(CAST(')
+                renderExpr(expr.left, sb, parameters)
+                sb.append(' AS ').append(realType).append(') / CAST(')
+                renderExpr(expr.right, sb, parameters)
+                sb.append(' AS ').append(realType).append('))')
+                return
+            }
             int prec = precedence(expr.op)
             renderOperand(expr.left, prec, sb, parameters)
             sb.append(' ').append(expr.op).append(' ')
@@ -222,8 +234,22 @@ class SqlRenderer {
             sb.append(' END')
         } else if (expr instanceof SqlOrdinal) {
             sb.append(expr.position)
+        } else if (expr instanceof SqlCast) {
+            sb.append('CAST(')
+            renderExpr(expr.expr, sb, parameters)
+            sb.append(' AS ').append(expr.sqlType).append(')')
         } else if (expr instanceof SqlFunction) {
-            if ('SUBSTRING' == expr.name && expr.args.size() > 1) {
+            if ('POSITION' == expr.name && expr.args.size() == 2) {
+                renderSearchPosition(expr.args[0], expr.args[1], sb, parameters)
+                return
+            }
+            if ('MOD' == expr.name && expr.args.size() == 2 && !dialect.moduloFunction()) {
+                renderOperand(expr.args[0], precedence('%'), sb, parameters)
+                sb.append(' % ')
+                renderOperand(expr.args[1], precedence('%') + 1, sb, parameters)
+                return
+            }
+            if ('SUBSTRING' == expr.name && expr.args.size() > 1 && dialect.substringFromFor()) {
                 // ANSI form: SUBSTRING(x FROM start [FOR length])
                 sb.append(dialect.functionName(expr.name)).append('(')
                 renderExpr(expr.args[0], sb, parameters)
@@ -237,6 +263,7 @@ class SqlRenderer {
                 return
             }
             sb.append(dialect.functionName(expr.name)).append('(')
+            if (expr.distinct) sb.append('DISTINCT ')
             expr.args.eachWithIndex { SqlExpr argExpr, int i ->
                 if (i > 0) sb.append(', ')
                 renderExpr(argExpr, sb, parameters)
@@ -252,9 +279,35 @@ class SqlRenderer {
         }
     }
 
+    // needle is args[0] and haystack is args[1], the ANSI POSITION argument order
+    private void renderSearchPosition(SqlExpr needle, SqlExpr haystack, StringBuilder sb, List<Expression> parameters) {
+        switch (dialect.searchPosition()) {
+            case Dialect.SearchPosition.LOCATE:
+                sb.append('LOCATE(')
+                renderExpr(needle, sb, parameters)
+                sb.append(', ')
+                renderExpr(haystack, sb, parameters)
+                sb.append(')')
+                return
+            case Dialect.SearchPosition.INSTR:
+                sb.append('INSTR(')
+                renderExpr(haystack, sb, parameters)
+                sb.append(', ')
+                renderExpr(needle, sb, parameters)
+                sb.append(')')
+                return
+            default:
+                sb.append('POSITION(')
+                renderExpr(needle, sb, parameters)
+                sb.append(' IN ')
+                renderExpr(haystack, sb, parameters)
+                sb.append(')')
+        }
+    }
+
     private void renderTableSource(SqlTableSource tableSource, StringBuilder sb, List<Expression> parameters) {
         if (tableSource instanceof SqlTableRef) {
-            sb.append(dialect.identifier(tableSource.tableName))
+            renderQualifiedName(tableSource.tableName, sb)
         } else if (tableSource instanceof SqlDerivedTable) {
             sb.append('(')
             renderQuery(tableSource.query, sb, parameters)
@@ -263,6 +316,25 @@ class SqlRenderer {
             throw new GroovyBugError("Unknown table source: ${tableSource?.getClass()?.name}")
         }
         sb.append(' ').append(dialect.identifier(tableSource.alias))
+    }
+
+    private void renderOrderItem(SqlOrderSpec orderSpec, StringBuilder sb, List<Expression> parameters) {
+        if (dialect.explicitNullOrdering()) {
+            renderExpr(orderSpec.expr, sb, parameters)
+            sb.append(orderSpec.asc ? ' ASC' : ' DESC')
+            sb.append(orderSpec.nullsLast ? ' NULLS LAST' : ' NULLS FIRST')
+            return
+        }
+        // (expr IS NULL) is 0 for values and 1 for nulls, so ASC puts nulls last
+        sb.append('(')
+        renderExpr(orderSpec.expr, sb, parameters)
+        sb.append(' IS NULL) ').append(orderSpec.nullsLast ? 'ASC' : 'DESC').append(', ')
+        renderExpr(orderSpec.expr, sb, parameters)
+        sb.append(orderSpec.asc ? ' ASC' : ' DESC')
+    }
+
+    private void renderQualifiedName(String name, StringBuilder sb) {
+        sb.append(dialect.qualifiedName(name))
     }
 
     private static void renderLiteral(Object value, StringBuilder sb) {
@@ -292,7 +364,7 @@ class SqlRenderer {
             case 'AND': return 2
             case '=': case '<>': case '<': case '<=': case '>': case '>=': return 4
             case '+': case '-': case '||': return 5
-            case '*': case '/': return 6
+            case '*': case '/': case '%': return 6
             default: return PREC_UNARY
         }
     }

@@ -23,7 +23,7 @@ import org.apache.groovy.lang.annotation.Incubating;
 /**
  * The default dialect: plain ANSI SQL.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 public class AnsiDialect implements Dialect {

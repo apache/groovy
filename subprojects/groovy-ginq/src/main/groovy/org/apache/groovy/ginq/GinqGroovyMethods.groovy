@@ -141,18 +141,47 @@ class GinqGroovyMethods {
             collectErrors("Options `${CONF_PROVIDER}` and `${CONF_AST_WALKER}` are mutually exclusive", ginqConfigurationMapExpression, sourceUnit)
         }
 
-        Map<String, String> providers = [:]
-        for (GinqProvider ginqProvider : ServiceLoader.load(GinqProvider, GinqGroovyMethods.class.classLoader)) {
-            providers.put(ginqProvider.name, ginqProvider.astWalkerClassName)
+        ClassLoader loader = GinqGroovyMethods.class.classLoader
+        Map<String, GinqProvider> providers = [:]
+        for (GinqProvider ginqProvider : ServiceLoader.load(GinqProvider, loader)) {
+            providers.put(ginqProvider.name, ginqProvider)
         }
 
-        String astWalkerClassName
+        String astWalkerClassName = null
+        boolean unavailable = false
         if (CONF_PROVIDER_AUTO_SQL == provider) {
-            astWalkerClassName = PREFERRED_SQL_PROVIDERS.findResult { providers.get(it) }
+            // Each candidate decides whether its own dependencies load.
+            // jooq-sql is registered even when the optional jOOQ classes are absent.
+            List<String> reasons = []
+            for (String name : PREFERRED_SQL_PROVIDERS) {
+                GinqProvider candidate = providers.get(name)
+                if (candidate == null) {
+                    continue
+                }
+                String reason = candidate.unavailableReason(loader)
+                if (reason == null) {
+                    astWalkerClassName = candidate.astWalkerClassName
+                    break
+                }
+                reasons.add(reason)
+            }
+            if (!astWalkerClassName && reasons) {
+                unavailable = true
+                collectErrors("No usable GINQ SQL provider. ${reasons.join('; ')}", ginqConfigurationMapExpression, sourceUnit)
+            }
         } else {
-            astWalkerClassName = providers.get(provider)
+            GinqProvider selected = providers.get(provider)
+            if (selected != null) {
+                String reason = selected.unavailableReason(loader)
+                if (reason == null) {
+                    astWalkerClassName = selected.astWalkerClassName
+                } else {
+                    unavailable = true
+                    collectErrors(reason, ginqConfigurationMapExpression, sourceUnit)
+                }
+            }
         }
-        if (!astWalkerClassName) {
+        if (!astWalkerClassName && !unavailable) {
             List<String> knownProviders = [CONF_PROVIDER_COLLECTION] + providers.keySet().sort()
             collectErrors("Unknown GINQ provider: ${provider}. (known providers: ${knownProviders}) " +
                     'Is the provider module, e.g. groovy-ginq-sql, on the compile classpath?', ginqConfigurationMapExpression, sourceUnit)
@@ -212,7 +241,7 @@ class GinqGroovyMethods {
      * Configuration key selecting the GINQ provider by name, e.g. {@code collection} (the default)
      * or a provider registered via the {@link GinqProvider} SPI such as {@code native-sql}.
      *
-     * @since 6.0.0
+     * @since 7.0.0
      */
     public static final String CONF_PROVIDER = 'provider'
     /**
@@ -220,7 +249,7 @@ class GinqGroovyMethods {
      * Its value is an arbitrary expression evaluated at runtime, available to
      * providers via {@link GinqAstVisitor#setConfigurationExpressions(Map)}.
      *
-     * @since 6.0.0
+     * @since 7.0.0
      */
     public static final String CONF_DATA_SOURCE = 'dataSource'
     // The 'astWalker' key selects a custom GinqAstVisitor provider; that SPI is still
@@ -229,6 +258,7 @@ class GinqGroovyMethods {
     private static final String CONF_OPTIMIZE = 'optimize'
     private static final String CONF_PROVIDER_COLLECTION = 'collection'
     private static final String CONF_PROVIDER_AUTO_SQL = 'sql'
+    // First candidate whose dependencies load wins. jOOQ is preferred; native-sql is the fallback.
     private static final List<String> PREFERRED_SQL_PROVIDERS = ['jooq-sql', 'native-sql']
     private static final String DEFAULT_AST_WALKER_CLASS_NAME = GinqAstWalker.class.name
     private static final String TRUE_STR = 'true'

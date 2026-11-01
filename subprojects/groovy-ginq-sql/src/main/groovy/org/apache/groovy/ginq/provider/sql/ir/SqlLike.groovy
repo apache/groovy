@@ -25,7 +25,7 @@ import org.apache.groovy.lang.annotation.Incubating
  * Represents a {@code LIKE} test. The pattern is always rendered with
  * {@code ESCAPE '!'}; pattern values are escaped accordingly at runtime.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 @CompileStatic

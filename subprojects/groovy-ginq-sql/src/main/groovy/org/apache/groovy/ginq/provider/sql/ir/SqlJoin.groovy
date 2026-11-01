@@ -25,7 +25,7 @@ import org.apache.groovy.lang.annotation.Incubating
  * Represents a SQL join clause. The {@code on} condition is {@code null}
  * for cross joins only.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 @CompileStatic

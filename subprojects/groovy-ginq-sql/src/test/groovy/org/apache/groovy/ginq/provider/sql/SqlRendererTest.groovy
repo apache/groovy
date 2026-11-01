@@ -21,6 +21,7 @@ package org.apache.groovy.ginq.provider.sql
 import groovy.transform.CompileStatic
 import org.apache.groovy.ginq.provider.sql.ir.SqlBinary
 import org.apache.groovy.ginq.provider.sql.ir.SqlCaseWhen
+import org.apache.groovy.ginq.provider.sql.ir.SqlCast
 import org.apache.groovy.ginq.provider.sql.ir.SqlColumn
 import org.apache.groovy.ginq.provider.sql.ir.SqlCountStar
 import org.apache.groovy.ginq.provider.sql.ir.SqlFunction
@@ -28,6 +29,7 @@ import org.apache.groovy.ginq.provider.sql.ir.SqlIn
 import org.apache.groovy.ginq.provider.sql.ir.SqlIsNull
 import org.apache.groovy.ginq.provider.sql.ir.SqlJoin
 import org.apache.groovy.ginq.provider.sql.ir.SqlLike
+import org.apache.groovy.ginq.provider.sql.ir.SqlLiteral
 import org.apache.groovy.ginq.provider.sql.ir.SqlOrderSpec
 import org.apache.groovy.ginq.provider.sql.ir.SqlOrdinal
 import org.apache.groovy.ginq.provider.sql.ir.SqlParam
@@ -38,11 +40,16 @@ import org.apache.groovy.ginq.provider.sql.ir.SqlSetQuery
 import org.apache.groovy.ginq.provider.sql.ir.SqlStar
 import org.apache.groovy.ginq.provider.sql.ir.SqlTableRef
 import org.apache.groovy.ginq.provider.sql.ir.SqlUnary
+import org.apache.groovy.ginq.provider.sql.ir.SqlExpr
 import org.apache.groovy.ginq.provider.sql.render.AnsiDialect
+import org.apache.groovy.ginq.provider.sql.render.Dialect
+import org.apache.groovy.ginq.provider.sql.render.Dialects
 import org.apache.groovy.ginq.provider.sql.render.RenderedSql
 import org.apache.groovy.ginq.provider.sql.render.SqlRenderer
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
 
 @CompileStatic
 class SqlRendererTest {
@@ -237,6 +244,128 @@ class SqlRendererTest {
         assert [1, 2] == values(rendered)
     }
 
+    @Test
+    void testDialectChoosesLimitPlaceholderOrder() {
+        def query = new SqlQuery()
+        query.from = new SqlTableRef('employees', 'e')
+        query.offset = param(2)
+        query.fetch = param(5)
+        query.projections << new SqlProjection(col('e', 'name'))
+
+        def rendered = new SqlRenderer(new LimitThenOffsetDialect()).render(query)
+        assert 'SELECT e.name FROM employees e LIMIT ? OFFSET ?' == rendered.sql
+        assert [5, 2] == values(rendered)
+    }
+
+    @Test
+    void testNativeDialectsQuoteLimitAndFunctions() {
+        def query = new SqlQuery()
+        query.from = new SqlTableRef('hr.employees', 'e')
+        query.where = new SqlFunction('MOD', [col('e', 'salary'), param(2)])
+        query.orderBy << new SqlOrderSpec(col('e', 'name'), true, true)
+        query.offset = param(1)
+        query.fetch = param(2)
+        query.projections << new SqlProjection(new SqlFunction('CHAR_LENGTH', [col('e', 'name')]))
+        query.projections << new SqlProjection(new SqlFunction('SUBSTRING', [col('e', 'name'), param(1), param(3)]))
+
+        def mysql = new SqlRenderer(Dialects.resolve('mysql')).render(query)
+        assert 'SELECT CHAR_LENGTH(`e`.`name`), SUBSTRING(`e`.`name` FROM ? FOR ?) FROM `hr`.`employees` `e` ' +
+                'WHERE MOD(`e`.`salary`, ?) ORDER BY (`e`.`name` IS NULL) ASC, `e`.`name` ASC ' +
+                'LIMIT ? OFFSET ?' == mysql.sql
+        assert [1, 3, 2, 2, 1] == values(mysql)
+
+        def sqlite = new SqlRenderer(Dialects.resolve('SQLITE')).render(query)
+        assert 'SELECT LENGTH("e"."name"), SUBSTR("e"."name", ?, ?) FROM "hr"."employees" "e" ' +
+                'WHERE "e"."salary" % ? ORDER BY ("e"."name" IS NULL) ASC, "e"."name" ASC ' +
+                'LIMIT ? OFFSET ?' == sqlite.sql
+        assert [1, 3, 2, 2, 1] == values(sqlite)
+
+        def postgres = new SqlRenderer(Dialects.resolve('PostgreSQL')).render(query)
+        assert postgres.sql.contains('FROM "hr"."employees" "e"')
+        assert postgres.sql.contains('OFFSET ? ROWS FETCH NEXT ? ROWS ONLY')
+        assert postgres.sql.contains('CHAR_LENGTH("e"."name")')
+        assert [1, 3, 2, 1, 2] == values(postgres)
+
+        assert Dialects.resolve('nope') == null
+        assert Dialects.resolve('h2') instanceof AnsiDialect
+    }
+
+    @Test
+    void testCountDistinctAndGreatestLeast() {
+        def query = new SqlQuery()
+        query.from = new SqlTableRef('employees', 'e')
+        query.projections << new SqlProjection(new SqlFunction('COUNT', [col('e', 'deptId')], true))
+        query.projections << new SqlProjection(new SqlFunction('GREATEST', [col('e', 'salary'), param(1)]))
+        query.projections << new SqlProjection(new SqlFunction('LEAST', [col('e', 'salary'), param(2)]))
+
+        def rendered = render(query)
+        assert 'SELECT COUNT(DISTINCT e.deptId), GREATEST(e.salary, ?), LEAST(e.salary, ?) FROM employees e' == rendered.sql
+        assert [1, 2] == values(rendered)
+
+        def sqlite = new SqlRenderer(Dialects.resolve('sqlite')).render(query)
+        assert 'SELECT COUNT(DISTINCT "e"."deptId"), MAX("e"."salary", ?), MIN("e"."salary", ?) FROM "employees" "e"' == sqlite.sql
+        assert !sqlite.sql.contains('GREATEST')
+        assert !sqlite.sql.contains('LEAST')
+
+        def mysql = new SqlRenderer(Dialects.resolve('mysql')).render(query)
+        assert mysql.sql.contains('COUNT(DISTINCT `e`.`deptId`)')
+        assert mysql.sql.contains('GREATEST(`e`.`salary`, ?)')
+        assert mysql.sql.contains('LEAST(`e`.`salary`, ?)')
+    }
+
+    @Test
+    void testSqliteRejectsFloorAndCeiling() {
+        def floor = shouldFail(IllegalArgumentException) {
+            new SqlRenderer(Dialects.resolve('sqlite')).render(functionQuery('FLOOR'))
+        }
+        assert floor.message.contains('FLOOR')
+        assert floor.message.contains('sqlite')
+        assert !floor.message.contains('SELECT')
+
+        def ceiling = shouldFail(IllegalArgumentException) {
+            new SqlRenderer(Dialects.resolve('sqlite')).render(functionQuery('CEILING'))
+        }
+        assert ceiling.message.contains('CEILING')
+        assert ceiling.message.contains('sqlite')
+
+        def ansi = new SqlRenderer(Dialects.resolve('ansi')).render(functionQuery('FLOOR'))
+        assert ansi.sql.contains('FLOOR(')
+        def h2 = new SqlRenderer(Dialects.resolve('h2')).render(functionQuery('CEILING'))
+        assert h2.sql.contains('CEILING(')
+    }
+
+    @Test
+    void testCastAndSearchPosition() {
+        def query = new SqlQuery()
+        query.from = new SqlTableRef('employees', 'e')
+        query.projections << new SqlProjection(new SqlCast(col('e', 'id'), 'DECIMAL(10,2)'))
+        query.projections << new SqlProjection(new SqlBinary('-',
+                new SqlFunction('POSITION', [param('li'), col('e', 'name')]),
+                new SqlLiteral(1)))
+
+        def rendered = render(query)
+        assert 'SELECT CAST(e.id AS DECIMAL(10,2)), POSITION(? IN e.name) - 1 FROM employees e' == rendered.sql
+        assert ['li'] == values(rendered)
+
+        def mysql = new SqlRenderer(Dialects.resolve('mysql')).render(query)
+        assert mysql.sql.contains('CAST(`e`.`id` AS DECIMAL(10,2))')
+        assert mysql.sql.contains('LOCATE(?, `e`.`name`) - 1')
+        assert !mysql.sql.contains('POSITION')
+
+        def sqlite = new SqlRenderer(Dialects.resolve('sqlite')).render(query)
+        assert sqlite.sql.contains('CAST("e"."id" AS DECIMAL(10,2))')
+        assert sqlite.sql.contains('INSTR("e"."name", ?) - 1')
+        assert !sqlite.sql.contains('POSITION')
+        assert !sqlite.sql.contains('LOCATE')
+    }
+
+    private static SqlQuery functionQuery(String name) {
+        def query = new SqlQuery()
+        query.from = new SqlTableRef('employees', 'e')
+        query.projections << new SqlProjection(new SqlFunction(name, [col('e', 'salary')]))
+        return query
+    }
+
     private static SqlQuery simpleQuery(String table) {
         def query = new SqlQuery()
         query.from = new SqlTableRef(table, table)
@@ -258,5 +387,19 @@ class SqlRendererTest {
 
     private static List<Object> values(RenderedSql renderedSql) {
         renderedSql.parameters.collect { ((ConstantExpression) it).value }
+    }
+
+    private static class LimitThenOffsetDialect implements Dialect {
+        @Override
+        void renderLimit(SqlExpr offset, SqlExpr fetch, Dialect.LimitRender out) {
+            if (fetch != null) {
+                out.text(' LIMIT ')
+                out.expr(fetch)
+            }
+            if (offset != null) {
+                out.text(' OFFSET ')
+                out.expr(offset)
+            }
+        }
     }
 }
