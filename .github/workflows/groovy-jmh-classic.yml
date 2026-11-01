@@ -64,23 +64,43 @@ jobs:
       # branch; see groovy-build-test.yml (lts job) for the full rationale.
       # The `perf` key segment keeps a cache lineage for the perf/JMH
       # workflow family, whose dependency set differs from the main build.
-      - name: "🗄 Cache Gradle dependencies (~/.gradle/caches/modules-2 + wrapper)"
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        # The action's own caching is disabled: dependency jars and wrapper
+        # dists are cached by the explicit branch-keyed cache step below instead.
+        with:
+          cache-disabled: true
+      # On Windows setup-gradle may set GRADLE_USER_HOME=D:\a\.gradle, so
+      # caching ~/.gradle never hits and the save fails path validation.
+      - name: "🗄 Cache Gradle dependencies (GRADLE_USER_HOME modules-2 + wrapper)"
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
-            ~/.gradle/caches/modules-2
-            ~/.gradle/wrapper
+            ${{ env.GRADLE_USER_HOME }}/caches/modules-2
+            ${{ env.GRADLE_USER_HOME }}/wrapper
           key: gradle-deps-${{ runner.os }}-perf-${{ github.base_ref || github.ref_name }}-${{ hashFiles('versions.properties', 'gradle/wrapper/gradle-wrapper.properties', 'settings.gradle', 'build-logic/build.gradle') }}
           restore-keys: |
             gradle-deps-${{ runner.os }}-perf-${{ github.base_ref || github.ref_name }}-
-      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
-        # The action's own caching is disabled: dependency jars and wrapper
-        # dists are cached by the explicit branch-keyed step above instead.
-        with:
-          cache-disabled: true
       - name: JMH (${{ matrix.suite }} classic)
         run: ./gradlew perf:jmh -PbenchInclude=${{ matrix.pattern }} -Pindy=false -PjmhResultFormat=JSON
         timeout-minutes: 90
+      - name: "🛑 Stop Gradle daemon before cache save"
+        if: always()
+        continue-on-error: true
+        run: ./gradlew --stop
+      - name: "🧹 Scrub Gradle cache lock files before save"
+        if: always()
+        shell: bash
+        run: |
+          dir="${GRADLE_USER_HOME:-$HOME/.gradle}/caches"
+          [ -d "$dir" ] || { echo "No $dir — nothing to scrub."; exit 0; }
+          deleted=0
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            echo "lock: $f"
+            rm -f "$f"
+            deleted=$((deleted + 1))
+          done < <(find "$dir" -name '*.lock' 2>/dev/null)
+          echo "Scrubbed $deleted Gradle cache lock file(s) before cache save."
       - name: Rename JMH result file
         run: |
           mv subprojects/performance/build/results/jmh/results.json \
