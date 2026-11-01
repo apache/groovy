@@ -61,6 +61,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.MethodPointerExpression
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression
 import org.codehaus.groovy.ast.expr.NotExpression
+import org.codehaus.groovy.ast.expr.PatternExpression
 import org.codehaus.groovy.ast.expr.PostfixExpression
 import org.codehaus.groovy.ast.expr.PrefixExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
@@ -745,15 +746,37 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
         printLineBreak()
     }
 
-    /** Renders a switch case. */
+    /** Renders a switch case, in the arrow form when it was written that way. */
     @Override
     void visitCaseStatement(CaseStatement statement) {
         print 'case '
         statement?.expression?.visit this
-        print ':'
+        print statement?.arrow ? ' ->' : ':'
         printLineBreak()
         indented {
             statement?.code?.visit this
+        }
+    }
+
+    /**
+     * Renders a pattern match (GEP-19), the label of a pattern arm or
+     * {@code source instanceof pattern}: as written until instruction
+     * selection, and as the code the compiler derived from it afterwards.
+     */
+    @Override
+    void visitPatternExpression(PatternExpression expression) {
+        if (expression.lowered) {
+            expression.lowered.visit this
+            return
+        }
+        if (expression.instanceOf) {
+            expression.source.visit this
+            print ' instanceof '
+        }
+        print expression.pattern.text
+        if (expression.hasGuard()) {
+            print ' when '
+            expression.guard.visit this
         }
     }
 

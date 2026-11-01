@@ -936,6 +936,81 @@ package-private constructor of a class that a `GroovyClassLoader` defined in
 another compilation, such as a class of an earlier `GroovyShell` parse. Dynamic
 and `@TypeChecked` code select the constructor at run time as before.
 
+### Groovy 7 — `MatchException` for an exhaustive switch expression on a Java 21+ target
+
+A switch expression the type checker accepted without a `default` (a complete
+enum, an unconditional pattern, or labels covering a native sealed hierarchy)
+can match nothing at run time only when an enum constant or sealed subtype was
+added after the switch was compiled. When the target bytecode is 21 or later
+that now throws `java.lang.MatchException`, as `javac` does (JEP 441). The
+decision is made from `CompilerConfiguration.getTargetBytecode()`, so it is
+fixed per compiled class and does not depend on the JDK that later runs it; a
+class compiled for 17 keeps throwing `IncompatibleClassChangeError` (enum) or
+`IllegalStateException` on every JDK.
+
+**Who is affected.** Code compiled for a 21+ target that catches
+`IncompatibleClassChangeError` or `Error` around such a switch: the enum case
+moves from an `Error` to a `RuntimeException`. Neither exception is meant to be
+caught; write a `default` arm that throws when a defined exception is wanted.
+A `null` selector is not this case: no constant, class or pattern label
+matches it, so unless the switch has an explicit `case null` arm it throws
+`IllegalStateException` on every target. A switch *statement* still does
+nothing when unmatched.
+
+### Groovy 7 — `case Foo() ->` is a zero-component record pattern (GEP-19)
+
+An arrow-form case label made of a capitalised name and empty parentheses,
+such as `case None() ->` or `case Opt.None() ->`, is now a record pattern that
+matches an instance of the record `None` without components, as in Java
+(JEP 440). It used to call a method named `None` and use the result as an
+`isCase` label. The same applies where such a call sits inside another
+pattern-shaped label, for example `case [Foo(), 2] ->` or `case Some(None()) ->`.
+
+**Who is affected.** Code whose arrow-form case labels call a method with a
+capitalised name and no arguments. It now fails to compile with `unable to
+resolve class`, at the label, unless a class of that name exists. Quote the
+name (`case 'Evens'() ->`) or qualify the call (`case this.Evens() ->`) to keep
+calling the method. Colon-form labels (`case Evens():`), lowercase names
+(`case evens() ->`) and calls with arguments are unchanged.
+
+### Groovy 7 — `case []`, `case [:]` and `_` in a list or map label are patterns (GEP-19)
+
+A `[...]` or `[k: v]` case label is a pattern when it is empty or contains a
+binding form (`var x`, `def x`, `Type x`, `_`, a rest binding); any other list
+or map label keeps its `isCase` meaning. Three labels that were valid before
+patterns therefore change meaning: `case []` now matches an empty list, array
+or `Iterable` where `[].isCase(x)` matched nothing; `case [:]` now matches an
+empty map where `[:].isCase(x)` matched nothing; and `_`, which Groovy accepts
+as a variable name, is the wildcard pattern inside a list or map label, so
+`case [_, 1]` matches any two-element list whose second element is `1` rather
+than testing containment in the list `[_, 1]`.
+
+**Who is affected.** Code with such labels, which is rare, as the first two
+never matched. To keep the old meaning, bind the literal to a variable first
+or spell it differently: `case [].asImmutable()`, or `case [x, 1]` with the
+variable renamed.
+
+### Groovy 7 — `instanceof T name` is a `PatternExpression` in the AST (GEP-19)
+
+The parser builds `e instanceof T name` and `e !instanceof T name` as a
+`PatternExpression` holding a `TypePattern`, the same node that represents
+record patterns and the labels of pattern arms, where Groovy 6 built a
+`BinaryExpression` whose right operand was a `DeclarationExpression`. The
+Groovy 6 shape is still what the type checker and class generation see:
+`PatternLowering`, the first operation of instruction selection, derives it
+from the pattern, and a `GroovyCodeVisitor` without an interest in patterns
+traverses it from then on through the default `visitPatternExpression`.
+Compiled code is unchanged.
+
+**Who is affected.** AST transforms, compilation customizers and tools that
+run before instruction selection and look for the Groovy 6 shape, by matching
+`BinaryExpression` with `Types.KEYWORD_INSTANCEOF` or
+`Types.COMPARE_NOT_INSTANCEOF` and a `DeclarationExpression` right operand.
+They now see a `PatternExpression` with `isInstanceOf()` true; the matched
+value is `getSource()`, the type and variable are on the `TypePattern`, and
+the negated form is a `NotExpression` around it. `e instanceof T` without a
+binding is a `BinaryExpression` as before.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)

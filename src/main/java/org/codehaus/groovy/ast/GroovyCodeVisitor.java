@@ -44,6 +44,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -525,6 +526,29 @@ public interface GroovyCodeVisitor {
             caseStatement.visit(this);
         }
         visit(expression.getDefaultStatement());
+    }
+
+    /**
+     * Visits a pattern match (GEP-19). Until instruction selection, the default
+     * implementation visits the expressions written in the match: the matched
+     * value of {@code instanceof}, the {@code when} guard of an arm, and the
+     * literal elements of list and map patterns. From instruction selection
+     * on, it visits the code the compiler derived from the pattern, so that a
+     * visitor without an interest in patterns keeps traversing without a
+     * source change; a visitor with one reads
+     * {@link PatternExpression#getPattern()} either way.
+     *
+     * @param expression the {@link PatternExpression} to process
+     * @since 7.0.0
+     */
+    default void visitPatternExpression(PatternExpression expression) {
+        if (expression.getLowered() != null) {
+            visit(expression.getLowered());
+        } else {
+            visit(expression.getSource());
+            visit(expression.getGuard());
+            visitListOfExpressions(expression.getPattern().expressions());
+        }
     }
 
     /**
