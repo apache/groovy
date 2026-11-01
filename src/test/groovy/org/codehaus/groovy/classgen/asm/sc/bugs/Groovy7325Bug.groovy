@@ -55,4 +55,88 @@ final class Groovy7325Bug extends StaticTypeCheckingTestCase implements StaticCo
         ''',
         'Cannot access method: clone() of class: java.lang.Object'
     }
+
+    // GROOVY-12568
+    @Test
+    void testProtectedMethodOfAnotherPackageThroughReceiverOfSuperclass() {
+        assertScript '''package p
+            class A {
+                protected String im() { 'im' }
+                protected String getQp() { 'qp' }
+                protected void setQs(String s) { }
+            }
+            true
+        '''
+        shouldFailWithMessages '''package q
+            class B extends p.A {
+                static String test(p.A a) {
+                    a.im()
+                }
+            }
+        ''',
+        'Cannot access method: im() of class: p.A'
+
+        shouldFailWithMessages '''package q
+            class B extends p.A {
+                static String test(p.A a) {
+                    a.qp
+                }
+            }
+        ''',
+        'Cannot access method: getQp() of class: p.A'
+
+        shouldFailWithMessages '''package q
+            class B extends p.A {
+                static void test(p.A a) {
+                    a.qs = 'v'
+                }
+            }
+        ''',
+        'Cannot access method: setQs(java.lang.String) of class: p.A'
+
+        shouldFailWithMessages '''package q
+            class B extends p.A {
+                static java.util.function.Supplier<String> test(p.A a) {
+                    a::im
+                }
+            }
+        ''',
+        'Cannot access method: im of class: p.A'
+
+        shouldFailWithMessages '''package q
+            class B extends p.A {
+                static java.util.function.Function<p.A, String> test() {
+                    p.A::im
+                }
+            }
+        ''',
+        'Cannot access method: im of class: p.A'
+    }
+
+    // GROOVY-12568
+    @Test
+    void testProtectedMembersOfAnotherPackageThroughReceiverOfSubclass() {
+        assertScript '''package p
+            class A {
+                protected String im() { 'im' }
+                protected static String sm() { 'sm' }
+                protected String getQp() { 'qp' }
+                protected String f = 'f'
+            }
+            true
+        '''
+        assertScript '''package q
+            import java.util.function.*
+
+            class B extends p.A {
+                List test(B b, p.A a) {
+                    Supplier<String> bound = this::im
+                    Function<B, String> unbound = B::im
+                    a.@f = 'w' // field of a receiver of the superclass: written through the meta-class
+                    [im(), this.im(), super.im(), b.im(), sm(), p.A.sm(), qp, b.qp, bound.get(), unbound.apply(b), a.@f]
+                }
+            }
+            assert new B().test(new B(), new B()) == ['im', 'im', 'im', 'im', 'sm', 'sm', 'qp', 'qp', 'im', 'im', 'w']
+        '''
+    }
 }
