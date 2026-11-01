@@ -936,6 +936,60 @@ package-private constructor of a class that a `GroovyClassLoader` defined in
 another compilation, such as a class of an earlier `GroovyShell` parse. Dynamic
 and `@TypeChecked` code select the constructor at run time as before.
 
+### Groovy 7 — an `instanceof` check narrows a variable only where it guards the code (GROOVY-12562)
+
+Under `@TypeChecked` and `@CompileStatic`, an `instanceof` check used to narrow
+the variable it checks for the rest of the expression or condition, wherever
+the check was. It now narrows only where its outcome decides what is evaluated
+next: in the condition of an `if`, `while`, `for`, `assert` or conditional
+expression, in an operand of `&&`, `||` or `!`, and when the check is compared
+with a boolean literal, assigned in a condition or cast to `boolean`. The
+condition of a loop narrows inside the loop only.
+
+```groovy
+@CompileStatic
+def f(Object x) { '' + (x instanceof String) + x.length() }
+// before: compiled; f(new StringBuilder('ab')) threw ClassCastException
+// now:    Cannot find matching method java.lang.Object#length()
+
+@CompileStatic
+def g(Object x) { x instanceof String ? 'true' + x.length() : 'false' }
+// before and now: compiles, the check guards the call
+```
+
+**Who is affected.** Code that compiled before and now fails with an error
+such as "Cannot find matching method", because it relied on a narrowing that
+nothing ensured:
+- a check that is an operand of any other operator, a method argument or a
+  list element: `'' + (x instanceof String) + x.length()`,
+  `foo(x instanceof String, x.length())`, `[x instanceof String, x.length()]`,
+  `(x instanceof String) == x.isEmpty()`, and the right operand of `&` in
+  `x instanceof String & x.length() > 0`;
+- a variable used after a loop whose condition checked it:
+  `while (x instanceof String) { break }; x.length()`, and the same for a
+  classic `for` and a `do`/`while` loop;
+- the branch of a check compared with `false`, or with `true` using `!=`:
+  `if ((x instanceof String) == false) x.length()` used to narrow `x` to
+  `String` in the branch where it is not one.
+
+Under `@CompileStatic` such code threw `ClassCastException` whenever the check
+was false. Under `@TypeChecked` the call is dispatched dynamically, so it may
+have run correctly. Move the check into a condition that guards the use, or
+cast the variable.
+
+**More programs compile.** The `else` branch of
+`if ((x instanceof String) == false)` and the code after
+`if ((x instanceof String) == false) return` are now narrowed to `String`, as
+for `!(x instanceof String)`.
+
+**What is unchanged.** A check that is a statement of its own,
+`x instanceof String; x.length()`, or that is only stored,
+`boolean b = x instanceof String; x.length()`, did not narrow the following
+statements before and does not now. `assert x instanceof String` and
+`if (!(x instanceof String)) return` still narrow the code after them.
+`case String:` in a `switch`, `catch` parameters, `instanceof` patterns such as
+`x instanceof String s`, and dynamic code are unaffected.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
