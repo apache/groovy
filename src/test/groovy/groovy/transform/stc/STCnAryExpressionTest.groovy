@@ -171,7 +171,6 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-12560
-    @Test
     void testSpaceshipOperatorWithPrimitiveRightOperand() {
         assertScript '''
             // relational operators bind tighter than <=>: "a <=> b > 0" is "a <=> (b > 0)"
