@@ -48,6 +48,7 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +67,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractPlaceholders;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.hasUnresolvedGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe0;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.isVargs;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersCompatible;
@@ -656,7 +659,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     /**
      * When a method reference is applied to a {@code String} that came from a type variable,
      * route it through a synthetic method that accepts the erased type and converts a
-     * {@code GString} before the referenced method sees the value.
+     * {@code GString} before the referenced method sees the value. Likewise, when the
+     * referenced method returns a type parameter that stands for a type which
+     * {@code LambdaMetafactory} cannot convert to the primitive return type of the functional
+     * interface, the synthetic method returns the primitive type and converts the value as a
+     * statically compiled cast does; for example, {@code boolean} by Groovy truth.
      */
     private GStringAdaptation adaptGStringParameters(final FunctionalInterfaceContext functionalInterface,
                                                      final ResolvedMethodReference resolved,
@@ -675,7 +682,6 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                 any = true;
             }
         }
-        if (!any) return null;
 
         boolean capturing = resolved.referenceTarget().isCapturing();
         boolean virtual = !impl.isStatic();
@@ -685,6 +691,27 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         if (virtual && !capturing && (samCount < 1 || implCount != samCount - 1)) return null;
         if (!virtual && capturing && implCount != samCount + 1) return null;
         if (!virtual && !capturing && implCount != samCount) return null;
+
+        ClassNode samReturnType = functionalInterface.abstractMethod().getReturnType();
+        boolean convertReturn = false;
+        if (impl.getReturnType().isGenericsPlaceHolder()) { // GROOVY-12623
+            // the exact parameter types are without type arguments
+            ClassNode[] argumentTypes = source.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+            if (argumentTypes == null || argumentTypes.length != samCount) {
+                argumentTypes = Arrays.stream(exact).map(Parameter::getType).toArray(ClassNode[]::new);
+            }
+            ClassNode receiverType = null;
+            if (capturing) {
+                receiverType = resolved.referenceTarget().type();
+                if (!virtual) argumentTypes = prependType(receiverType, argumentTypes);
+            } else if (virtual) {
+                receiverType = argumentTypes[0];
+                argumentTypes = Arrays.copyOfRange(argumentTypes, 1, samCount);
+            }
+            ClassNode returnType = resolveReturnTypeArgument(impl, receiverType, argumentTypes);
+            convertReturn = returnType != null && isTypeArgumentConversionRequired(returnType, samReturnType);
+        }
+        if (!any && !convertReturn) return null;
 
         Parameter[] samParams = new Parameter[samCount];
         for (int i = 0; i < samCount; i += 1) {
@@ -725,20 +752,68 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         call.setSourcePosition(source);
 
         Statement invocation = impl.isVoidMethod() ? stmt(call) : returnS(call);
-        Statement body = block(StaticInvocationWriter.gstringBridgePrologue(controller, samParams), invocation);
+        Statement body = any ? block(StaticInvocationWriter.gstringBridgePrologue(controller, samParams), invocation) : invocation;
         ClassNode[] exceptions = impl.getExceptions() == null ? ClassNode.EMPTY_ARRAY : impl.getExceptions();
         ClassNode classNode = controller.getClassNode();
         MethodNode adapter = classNode.addSyntheticMethod(
-            createSyntheticMethodName("gstring", impl.getDeclaringClass(), impl.getName()),
+            createSyntheticMethodName(any ? "gstring" : "adapt", impl.getDeclaringClass(), impl.getName()),
             // the JVM rejects ACC_FINAL on any method of an interface (JVMS 4.6)
             Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | (classNode.isInterface() ? 0 : Opcodes.ACC_FINAL),
-            impl.getReturnType(),
+            convertReturn ? samReturnType : impl.getReturnType(),
             adapterParams,
             exceptions,
             body);
         adapter.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
         adapter.setSourcePosition(source);
         return new GStringAdaptation(adapter, samParams);
+    }
+
+    /**
+     * Resolves the type that the type parameter returned by {@code impl} stands for: a type
+     * parameter of the method from the argument types, or a type parameter of the declaring
+     * class from the receiver type.
+     *
+     * @return the type, or {@code null} if it cannot be resolved
+     */
+    private static ClassNode resolveReturnTypeArgument(final MethodNode impl, final ClassNode receiverType, final ClassNode[] argumentTypes) {
+        String name = impl.getReturnType().getUnresolvedName();
+        Map<String, ClassNode> spec = new HashMap<>();
+        GenericsType[] typeParameters = impl.getGenericsTypes();
+        if (typeParameters != null && Arrays.stream(typeParameters).anyMatch(tp -> tp.getName().equals(name))) {
+            Parameter[] parameters = impl.getParameters();
+            for (int i = 0, n = Math.min(parameters.length, argumentTypes.length); i < n; i += 1) {
+                if (hasUnresolvedGenerics(parameters[i].getType())) {
+                    extractSuperClassGenerics(argumentTypes[i], parameters[i].getType(), spec);
+                }
+            }
+        } else if (receiverType != null && hasUnresolvedGenerics(impl.getDeclaringClass())) {
+            extractSuperClassGenerics(receiverType, impl.getDeclaringClass(), spec);
+        }
+        ClassNode type = spec.get(name);
+        return type == null || type.isGenericsPlaceHolder() ? null : type;
+    }
+
+    /**
+     * Determines if a value of {@code type}, returned as a type parameter, must be converted to the
+     * primitive return type of the functional interface by Groovy. For the erased return value,
+     * {@code LambdaMetafactory} casts to {@code Number} and unboxes for a numeric return type and
+     * casts to the wrapper type and unboxes for {@code boolean} or {@code char}.
+     */
+    private static boolean isTypeArgumentConversionRequired(final ClassNode type, final ClassNode samReturnType) {
+        if (!ClassHelper.isPrimitiveType(samReturnType) || ClassHelper.isPrimitiveVoid(samReturnType)) {
+            return false;
+        }
+        if (ClassHelper.isPrimitiveBoolean(samReturnType) || ClassHelper.isPrimitiveChar(samReturnType)) {
+            return !ClassHelper.getUnwrapper(type).equals(samReturnType);
+        }
+        return !implementsInterfaceOrIsSubclassOf(ClassHelper.getWrapper(type), ClassHelper.Number_TYPE);
+    }
+
+    private static ClassNode[] prependType(final ClassNode first, final ClassNode[] rest) {
+        ClassNode[] all = new ClassNode[rest.length + 1];
+        all[0] = first;
+        System.arraycopy(rest, 0, all, 1, rest.length);
+        return all;
     }
 
     private static Parameter[] prependParameter(final Parameter first, final Parameter[] rest) {
