@@ -4553,4 +4553,46 @@ final class TraitASTTransformationTest {
         }
         assert err.message.contains('Postfix expressions on trait fields/properties are not supported in traits')
     }
+
+    // GROOVY-12638
+    @CompileModesTest
+    void testElvisAssignmentOfTraitField(String mode) {
+        assertScript shell, """
+            import java.util.function.Consumer
+
+            $mode
+            trait T {
+                Integer p, q = 0, r = 7
+                private Integer a
+                public  Integer b = 0
+                static  Integer c
+                int d = 1
+                def m() {
+                    p ?= 1; q ?= 2; r ?= 3
+                    a ??= 4; b ??= 5
+                    this.p ??= 6
+                    [p, q, r, a, b]
+                }
+                def mc() {
+                    [1].each { p ?= 1; a ??= 2 }
+                    Consumer<Integer> f = (Integer i) -> { q ?= i; b ??= i }
+                    f.accept(3)
+                    [p, a, q, b]
+                }
+                def mn() { p ?= (d += 1); [p, d] }
+                static sm() {
+                    c ??= 8
+                    c ?= 9
+                    c
+                }
+            }
+            class C implements T {
+            }
+
+            assert new C().m() == [1, 2, 7, 4, 0]
+            assert new C().mc() == [1, 2, 3, 0]
+            assert new C().mn() == [2, 2]
+            assert C.sm() == 8
+        """
+    }
 }
