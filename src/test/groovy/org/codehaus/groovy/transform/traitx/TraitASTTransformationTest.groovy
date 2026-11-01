@@ -4064,6 +4064,174 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-12609
+    @CompileModesTest
+    void testTraitAccessToInheritedStaticFieldInClosure(String mode) {
+        assertScript shell, """
+            $mode
+            trait A {
+                public static String shared = 'x'
+            }
+            $mode
+            trait B extends A {
+                static one() {
+                    def c = { A__shared }
+                    c()
+                }
+                static two() {
+                    def c = { A__shared = 'y'; A__shared += 'z' }
+                    c()
+                    A__shared
+                }
+                static three() {
+                    java.util.function.Supplier<String> s = () -> A__shared
+                    s.get()
+                }
+                Object four() {
+                    def c = { A__shared.toUpperCase() }
+                    c()
+                }
+            }
+            class C implements B {
+            }
+
+            assert C.one() == 'x'
+            assert C.three() == 'x'
+            assert new C().four() == 'X'
+            assert C.two() == 'yz'
+        """
+    }
+
+    // GROOVY-12609
+    @CompileModesTest
+    void testTraitAccessToInheritedInstanceField(String mode) {
+        assertScript shell, """
+            $mode
+            trait A<T> {
+                public String field = 'x'
+                public T value
+            }
+            $mode
+            trait B extends A<Integer> {
+                Object one() {
+                    A__field + this.A__field
+                }
+                Object two() {
+                    A__field = 'y'
+                    A__field += 'z'
+                    A__field
+                }
+                Object three() {
+                    def c = { A__field = A__field.toUpperCase() }
+                    c()
+                    java.util.function.Supplier<String> s = () -> A__field
+                    s.get()
+                }
+                int four() {
+                    A__value = 2
+                    def c = { A__value * 3 }
+                    c()
+                }
+            }
+            class C implements B {
+            }
+
+            assert new C().one() == 'xx'
+            assert new C().two() == 'yz'
+            assert new C().three() == 'X'
+            assert new C().four() == 6
+        """
+    }
+
+    // GROOVY-12609
+    @CompileModesTest
+    void testTraitAccessToIndirectlyInheritedFields(String mode) {
+        assertScript shell, """
+            $mode
+            trait V extends U {
+                static one() {
+                    def c = { T__shared }
+                    c()
+                }
+                Object two() {
+                    def c = { T__field }
+                    c()
+                }
+            }
+            $mode
+            trait U extends T {
+            }
+            $mode
+            trait T {
+                public static String shared = 'x'
+                public String field = 'y'
+            }
+            class C implements V {
+            }
+
+            assert C.one() == 'x'
+            assert new C().two() == 'y'
+        """
+    }
+
+    static trait TraitWithPublicFields {
+        public static String shared = 'x'
+        public String field = 'y'
+    }
+
+    // GROOVY-12609
+    @CompileModesTest
+    void testTraitAccessToPrecompiledInheritedFields(String mode) {
+        String prefix = TraitWithPublicFields.name.replace('.', '_') + '__'
+        assertScript shell, """
+            import ${this.class.name}.TraitWithPublicFields
+
+            $mode
+            trait B extends TraitWithPublicFields {
+                static one() {
+                    def c = { ${prefix}shared }
+                    c()
+                }
+                Object two() {
+                    ${prefix}field += 'z'
+                    def c = { ${prefix}field }
+                    c()
+                }
+            }
+            class C implements B {
+            }
+
+            assert C.one() == 'x'
+            assert new C().two() == 'yz'
+        """
+    }
+
+    // GROOVY-12609
+    @CompileModesTest
+    void testTraitAccessToInheritedInstanceFieldInStaticContext(String mode) {
+        def err = shouldFail shell, """
+            $mode
+            trait A {
+                public String field = 'x'
+            }
+            $mode
+            trait B extends A {
+                static one() {
+                    A__field
+                }
+            }
+            class C implements B {
+            }
+
+            C.one()
+        """
+        if (mode.endsWith('Dynamic')) {
+            assert err instanceof MissingPropertyException
+        } else {
+            assert err.message =~ /\[Static type checking\] - No such property: A__field for Class or static property for class: B/
+        }
+    }
+
     // GROOVY-9386
     @CompileModesTest
     void testTraitPropertyInitializedByTap(String mode) {
