@@ -35,6 +35,8 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PostfixExpression;
+import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
@@ -216,6 +218,10 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
         }
         if (expr instanceof MapExpression) {
             return mapExpressionTransformer.transformMapExpression((MapExpression) expr);
+        }
+        if (expr instanceof PrefixExpression || expr instanceof PostfixExpression) {
+            Expression increment = binaryExpressionTransformer.transformExtensionPropertyIncrement(expr);
+            if (increment != null) return increment;
         }
         return super.transform(expr);
     }
