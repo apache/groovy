@@ -2842,8 +2842,29 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 && !inSameNest(field.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode())) {
             exactReceiver = false; // GROOVY-12290
         }
+        if ((superField || !receiver.equals(field.getDeclaringClass())) && !(expression instanceof AttributeExpression)
+                && !isStaticDispatchScope() && isDynamicallyUnreachableThroughSubclass(field)) {
+            return false; // GROOVY-12610
+        }
         return exactReceiver
                 || hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), field.getDeclaringClass(), field.getModifiers());
+    }
+
+    /**
+     * Determines if dynamic dispatch cannot find the field when it is accessed
+     * through a subclass of its declaring class from the current position. The
+     * metaclass of a subclass does not list a private instance field of a
+     * superclass, so only code of the declaring class reaches it, or code of an
+     * inner class whose chain of enclosing instances leads to the declaring class.
+     * Static compilation accesses the field directly from any class of its nest.
+     */
+    private boolean isDynamicallyUnreachableThroughSubclass(final FieldNode field) {
+        if (!field.isPrivate() || field.isStatic()) return false;
+        ClassNode declaringClass = field.getDeclaringClass();
+        for (ClassNode cn = typeCheckingContext.getEnclosingClassNode(); !cn.equals(declaringClass); cn = cn.getOuterClass()) {
+            if (cn.getOuterClass() == null || hasNoEnclosingInstance(cn)) return true;
+        }
+        return false;
     }
 
     private boolean storeField(final FieldNode field, final PropertyExpression expression, final Receiver<String> receiver, final ClassCodeVisitorSupport visitor, final boolean lhsOfAssignment) {
