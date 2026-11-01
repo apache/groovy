@@ -700,22 +700,40 @@ final class WorkingWithCollectionsTest {
     // end::t2_class[]
 
     @Test
-    void testMapBarePropertyShadowsOuterField() {
+    void testMapInitializerBareNameReadsEnclosingField() {
         assertScript '''
             // tag::bare_self_shadow[]
             class Outer {
                 static final String NAME = 'from-enclosing-field'
 
-                // An unqualified name in the body of a Map subclass is a property read on
-                // `this`, so it reads the (missing) entry and shadows the enclosing field:
-                static Map<String, String> shadowed  = new HashMap<String, String>() { { put('k', NAME)       } }
+                // In an anonymous-inner-class initializer, a bare name that matches an
+                // enclosing field is that field, not a map entry:
+                static Map<String, String> fromField = new HashMap<String, String>() { { put('k', NAME) } }
 
-                // Qualifying the reference resolves the enclosing field:
-                static Map<String, String> qualified = new HashMap<String, String>() { { put('k', Outer.NAME) } }
+                // A bare name that is not an enclosing member is still a map property.
+                // A missing entry reads as null; an assignment stores an entry:
+                Map<String, String> missingKey() {
+                    new HashMap<String, String>() { { put('k', ABSENT) } }
+                }
+
+                Map<String, String> storeOther() {
+                    new HashMap<String, String>() { { other = 'stored-on-map' } }
+                }
+
+                // In a method of the subclass, the bare name is a property of the map again:
+                String fromMethod() {
+                    def map = new HashMap<String, String>() {
+                        String read() { NAME }
+                    }
+                    map.put('NAME', 'from-entry')
+                    map.read()
+                }
             }
 
-            assert Outer.shadowed['k']  == null                     // 'NAME' read as a (missing) entry
-            assert Outer.qualified['k'] == 'from-enclosing-field'   // the enclosing field
+            assert Outer.fromField['k'] == 'from-enclosing-field'
+            assert new Outer().missingKey()['k'] == null
+            assert new Outer().storeOther()['other'] == 'stored-on-map'
+            assert new Outer().fromMethod() == 'from-entry'
             // end::bare_self_shadow[]
         '''
     }

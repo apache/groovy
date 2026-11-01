@@ -389,19 +389,20 @@ Two things to take away: after the addition of `getAt(Map, String)`/`putAt(Map, 
 equivalent to `m.get('k')` in every row and both compilation modes; and `m.k` resolves to a declared
 property when one exists (use `['k']`/`get` to be sure of reading the entry).
 
-The tables above all use an explicit receiver `m`. A separate gotcha applies to an *unqualified* name read
-inside the body of a `Map` subclass -- a method, a `with(map) { ... }` block, or an anonymous-inner-class
-initializer. There the implicit receiver is the map itself, so the name is a property read on `this` and
-resolves to the *entry*, not to any binding in an enclosing scope. From Groovy 5, this self property takes
-precedence over an enclosing-class field of the same name (see https://issues.apache.org/jira/browse/GROOVY-10985[GROOVY-10985]),
-so such a reference silently yields `null` for a missing entry rather than reading the field:
+The tables above all use an explicit receiver `m`. An *unqualified* name in a method of a `Map` subclass, or in a
+`with(map) { ... }` block, is a property read on the map. From Groovy 5 that self property takes precedence over
+an enclosing-class field of the same name (see https://issues.apache.org/jira/browse/GROOVY-10985[GROOVY-10985]),
+so a missing entry yields `null`. Qualify the reference (`Outer.NAME`) to read the enclosing field.
+
+An anonymous-inner-class initializer is different. A bare name there that matches an enclosing field is resolved
+to that field (see https://issues.apache.org/jira/browse/GROOVY-12063[GROOVY-12063]). A name that is not an
+enclosing member is still a map-entry read or write. In a method of the subclass, the bare name is a property
+of the map again, so it reads the entry rather than the enclosing field:
 
 [source,groovy]
 --------------------------------------------------
 include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=bare_self_shadow,indent=0]
 --------------------------------------------------
-
-Qualify the outer reference (`Outer.NAME` above) to read the enclosing field.
 
 === Iterating on maps
 
