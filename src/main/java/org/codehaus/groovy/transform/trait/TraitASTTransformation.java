@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform.trait;
 
 import groovy.lang.GroovyRuntimeException;
+import groovy.lang.MissingFieldException;
 import groovy.lang.MissingMethodException;
 import groovy.transform.CompilationUnitAware;
 import groovy.transform.Sealed;
@@ -316,6 +317,18 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         // the forwarder is added.
         for (MethodNode m : interfaceStatics) {
             cNode.addMethod(createInterfaceStaticForwarder(cNode, helper, m));
+        }
+
+        // GROOVY-12597: a forwarder passes the trait itself as $static$self, but
+        // static state exists only in implementing classes; install accessors on
+        // the trait interface that report this instead of a missing T__x$get
+        if (!interfaceStatics.isEmpty()) {
+            for (FieldNode field : fields) {
+                if (field.isStatic()) {
+                    cNode.addMethod(createTraitStaticStateAccessor(cNode, field, Traits.helperGetterName(field), Parameter.EMPTY_ARRAY));
+                    cNode.addMethod(createTraitStaticStateAccessor(cNode, field, Traits.helperSetterName(field), new Parameter[]{new Parameter(field.getOriginType(), "val")}));
+                }
+            }
         }
 
         // copy statements from static and instance init blocks
@@ -737,6 +750,24 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         GeneralUtils.copyAnnotatedNodeAnnotations(original, copied, notCopied);
         forwarder.addAnnotations(copied);
         return forwarder;
+    }
+
+    /**
+     * Builds a public-static accessor on the trait interface for a static trait
+     * field. Implementing classes declare their own accessors, so this one is
+     * reached only when a promoted trait static is called through the trait
+     * itself; it throws, as the trait has no static state of its own.
+     */
+    private static MethodNode createTraitStaticStateAccessor(final ClassNode traitClass, final FieldNode field, final String name, final Parameter[] params) {
+        String message = "Cannot access static field " + field.getName() + " of trait " + traitClass.getName()
+                + " through the trait itself: trait static state belongs to each implementing class,"
+                + " so call the trait static method on an implementing class";
+        Statement body = throwS(ctorX(ClassHelper.make(MissingFieldException.class),
+                args(constX(message), constX(field.getName()), classX(traitClass))));
+        MethodNode accessor = new MethodNode(name, ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
+                params.length == 0 ? field.getOriginType() : VOID_TYPE, params, ClassNode.EMPTY_ARRAY, body);
+        accessor.setSourcePosition(field);
+        return accessor;
     }
 
     private MethodNode processMethod(final ClassNode traitClass, final ClassNode traitHelperClass, final MethodNode methodNode, final ClassNode fieldHelper, final Collection<String> knownFields) {
