@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.MultipleAssignmentMetadata;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
@@ -63,6 +64,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isQualifiedThisOrSuper;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
@@ -436,9 +438,9 @@ public class BinaryExpressionHelper {
     }
 
     /**
-     * GROOVY-12619: for a compound assignment to a property such as {@code obj().v += 2},
-     * evaluates the receiver once and stores it, so that the read and the write of the
-     * property reuse the value instead of evaluating the receiver expression twice.
+     * For a compound assignment to a property such as {@code obj().v += 2}, evaluates
+     * the receiver once and stores it, so that the read and the write of the property
+     * reuse the value instead of evaluating the receiver expression twice.
      */
     private boolean evaluateCompoundAssignmentWithReceiverOnce(final BinaryExpression expression) {
         int op = expression.getOperation().getType();
@@ -457,23 +459,21 @@ public class BinaryExpressionHelper {
     /**
      * Determines if the receiver of a property that is read and then written, as in
      * {@code obj().v += 2} or {@code obj().v++}, must be evaluated into a temporary.
-     * A variable, class, constant or qualified {@code Outer.this} receiver has no side
-     * effect and is left in place.
+     * A local variable, parameter, {@code this}, {@code super}, class, constant or
+     * qualified {@code Outer.this} receiver has no side effect and is left in place.
+     * Any other name, such as a dynamic variable or a property read through the
+     * meta-class, may call a getter and is evaluated into the temporary.
      */
     private static boolean hasReceiverToEvaluateOnce(final PropertyExpression pexp) {
         if (pexp.isSpreadSafe() || pexp.isImplicitThis()) return false;
         Expression receiver = pexp.getObjectExpression();
-        return !(receiver instanceof VariableExpression || receiver instanceof ClassExpression
-                || receiver instanceof ConstantExpression || receiver instanceof BytecodeExpression
-                || isQualifiedThisOrSuper(receiver));
-    }
-
-    private static boolean isQualifiedThisOrSuper(final Expression expression) {
-        if (expression instanceof PropertyExpression pexp && pexp.getObjectExpression() instanceof ClassExpression) {
-            String name = pexp.getPropertyAsString();
-            return "this".equals(name) || "super".equals(name);
+        if (receiver instanceof VariableExpression ve) {
+            Variable accessed = ve.getAccessedVariable();
+            return !ve.isThisExpression() && !ve.isSuperExpression()
+                    && !(accessed instanceof VariableExpression) && !(accessed instanceof Parameter);
         }
-        return false;
+        return !(receiver instanceof ClassExpression || receiver instanceof ConstantExpression
+                || receiver instanceof BytecodeExpression || isQualifiedThisOrSuper(receiver));
     }
 
     private static PropertyExpression withReceiver(final PropertyExpression pexp, final Expression receiver) {
@@ -1428,9 +1428,9 @@ public class BinaryExpressionHelper {
     }
 
     /**
-     * GROOVY-12619: evaluates the receiver of a property operand of {@code ++} or
-     * {@code --} into a temporary, so that the read and the write of the property reuse
-     * it. Returns {@code null} when the operand has no such receiver.
+     * Evaluates the receiver of a property operand of {@code ++} or {@code --} into a
+     * temporary, so that the read and the write of the property reuse it. Returns
+     * {@code null} when the operand has no such receiver.
      */
     private VariableSlotLoader evaluateReceiverOnce(final Expression operand) {
         if (operand instanceof PropertyExpression pexp && hasReceiverToEvaluateOnce(pexp)) {
