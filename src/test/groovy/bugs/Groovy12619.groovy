@@ -28,7 +28,7 @@ import static groovy.test.GroovyAssert.assertScript
  * {@code obj().v++}, must evaluate the receiver of the property once and reuse it for
  * the read and the write. Previously the receiver was evaluated twice.
  */
-final class GroovyNNNNN {
+final class Groovy12619 {
 
     private static final String BOX = '''
         class Box {
@@ -125,6 +125,50 @@ final class GroovyNNNNN {
                 }
             }
             assert new C().test() == [3, 4]
+        """
+    }
+
+    // a name that resolves to a getter is a receiver with a side effect
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testNameReadThroughGetter(String mode) {
+        assertScript BOX + """
+            $mode
+            class C {
+                int calls = 0
+                Box box = new Box()
+                Box getB() { calls += 1; box }
+                def test() {
+                    b.v += 1
+                    b.v++
+                    ++b.v
+                    b.d += 1
+                    Closure c = { -> b.v += 1; b.v++ }
+                    c()
+                    [calls, box.v, box.d]
+                }
+            }
+            assert new C().test() == [6, 6, 2.5]
+        """
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testPropertyWithGetterInClosure(String mode) {
+        assertScript BOX + """
+            $mode
+            class C {
+                int calls = 0
+                Box p = new Box()
+                Box getP() { calls += 1; p }
+                def test() {
+                    p.v += 1
+                    Closure c = { -> p.v += 1; p.v++ }
+                    c()
+                    [calls, p.v]
+                }
+            }
+            assert new C().test() == [2, 4]
         """
     }
 
@@ -227,7 +271,7 @@ final class GroovyNNNNN {
                     [calls, file.text]
                 }
             }
-            File file = File.createTempFile('groovyNNNNN', null)
+            File file = File.createTempFile('groovy12619', null)
             try {
                 file.text = 'a'
                 assert new C(file: file).test() == [1, 'ab']

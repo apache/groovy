@@ -65,6 +65,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isQualifiedThisOrSuper;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -176,11 +177,11 @@ public class BinaryExpressionTransformer {
     }
 
     /**
-     * GROOVY-12524: {@code file.text += 'b'} is a property whose accessors are
-     * extension methods. Plain reads and writes already target those methods;
-     * compound assignment must do the same instead of a dynamic property site.
-     * The receiver is evaluated once and reused for the read and the write, as
-     * dynamic Groovy and {@code @TypeChecked} do (GROOVY-12619).
+     * {@code file.text += 'b'} is a property whose accessors are extension
+     * methods. Plain reads and writes already target those methods; compound
+     * assignment must do the same instead of a dynamic property site. The
+     * receiver is evaluated once and reused for the read and the write, as
+     * dynamic Groovy and {@code @TypeChecked} do.
      */
     private Expression transformExtensionPropertyCompoundAssignment(final BinaryExpression bin) {
         if (bin.getNodeMetaData(StaticTypesMarker.COMPOUND_ASSIGN_TARGET) != null) return null;
@@ -463,7 +464,7 @@ public class BinaryExpressionTransformer {
     }
 
     /**
-     * GROOVY-12619: the receiver of a property that is read and then written, as in
+     * The receiver of a property that is read and then written, as in
      * {@code obj().v += 2}, is evaluated once. A variable, class, constant or qualified
      * {@code Outer.this} receiver has no side effect and is left in place.
      */
@@ -474,14 +475,6 @@ public class BinaryExpressionTransformer {
             return receiver;
         }
         return new TemporaryVariableExpression(receiver);
-    }
-
-    private static boolean isQualifiedThisOrSuper(final Expression expression) {
-        if (expression instanceof PropertyExpression pexp && pexp.getObjectExpression() instanceof ClassExpression) {
-            String name = pexp.getPropertyAsString();
-            return "this".equals(name) || "super".equals(name);
-        }
-        return false;
     }
 
     private Expression transformEqualityComparison(final BinaryExpression bin, final boolean eq) {

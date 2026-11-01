@@ -696,6 +696,66 @@ longer compiles. Call the accessor the class generates, read the property
 the dynamic call. Other calls to a missing accessor already failed at run
 time, and dynamic code is unchanged.
 
+### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
+
+Under `@CompileStatic`, a constructor reference such as `X::new` created the
+object through the meta-class, which selected the constructor at run time from
+the types of the arguments. The constructor is now selected at compile time,
+among the constructors visible from the enclosing class, for the parameter
+types of the functional interface, as for `new X(args)` in the same class and
+as in Java, and it is called directly.
+
+**Who is affected.** Statically compiled constructor references whose result
+depended on that run-time selection:
+
+- The overload is chosen by the static parameter types of the functional
+  interface. `Function<CharSequence, X> f = X::new` calls `X(CharSequence)` even
+  when it is given a `String`. With `IL(Object)` and `IL(long)`,
+  `Function<Integer, IL>` calls `IL(Object)`, where it called `IL(long)`; with
+  `IL2(int)` and `IL2(Integer)`, `IntFunction<IL2>` calls `IL2(int)`, where it
+  called `IL2(Integer)`.
+- An `Object[]` given to `Function<Object, VO>` for `VO(Object...)` is passed as
+  one element, where its elements were passed.
+- `null` given to `Function<Integer, PI>` for `PI(int)` throws
+  `NullPointerException`, where it threw `GroovyRuntimeException`.
+- A constructor the enclosing class cannot call no longer wins over one it can.
+  With `private Foo(String)` and `public Foo(Object)`, `Function<String, Foo>`
+  in another class calls `Foo(Object)`, as `new Foo(s)` does.
+- A constructor added or overridden through the meta-class, for example with
+  `ExpandoMetaClass`, is not used, as for a statically compiled `new`.
+
+**What is unchanged.** The constructor is still selected at run time when no
+single constructor matches the parameter types (GROOVY-10971), for an enum, for
+a protected constructor of another package, and for a protected or
+package-private constructor of a class that a `GroovyClassLoader` defined in
+another compilation, such as a class of an earlier `GroovyShell` parse. Dynamic
+and `@TypeChecked` code select the constructor at run time as before.
+
+### Groovy 6.0.1 — the receiver of a compound-assigned or incremented property is evaluated once (GROOVY-12619)
+
+A compound assignment or an increment of a property, such as `obj().v += 2`
+or `obj().v++`, evaluated the receiver expression twice: once for the read
+and once for the write. The receiver is now evaluated once and used for
+both, as it already was for subscripts such as `list[i()] += 2`. This
+applies in dynamic Groovy, under `@TypeChecked` and under `@CompileStatic`.
+
+It covers `+=` and the other compound assignment operators, prefix and
+postfix `++` and `--`, attribute access (`obj().@f += 2`), safe navigation
+(`obj()?.v += 2`), property chains, a static property reached through an
+instance, extension properties such as `file.text += 'x'`, and a receiver
+named by a property or dynamic variable that is read through a getter. The
+elvis assignment `?=` is unchanged.
+
+**Who is affected.** Code whose receiver expression has a side effect or
+returns a different object on each evaluation:
+
+- A method or getter that counts calls, logs, or otherwise has an effect
+  now runs once per compound assignment or increment, where it ran twice.
+- A receiver that yields a new or a different object each time, such as
+  `iterator.next().v += 1` or `new Box().v++`, now reads and writes the
+  same object. Before, the read came from one object and the write went to
+  the next.
+
 ### Groovy 7 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
 
 For a dynamic property write or read, the runtime checks whether the receiver
@@ -852,41 +912,6 @@ The class was deprecated in Groovy 6.
 of `CompilationUnit` that adds it as a phase operation, or that calls
 `PlaceholderVisitor.isPlaceholder`. Drop the phase operation. Where code needs
 to know whether a variable is `_`, check its name.
-
-### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
-
-Under `@CompileStatic`, a constructor reference such as `X::new` created the
-object through the meta-class, which selected the constructor at run time from
-the types of the arguments. The constructor is now selected at compile time,
-among the constructors visible from the enclosing class, for the parameter
-types of the functional interface, as for `new X(args)` in the same class and
-as in Java, and it is called directly.
-
-**Who is affected.** Statically compiled constructor references whose result
-depended on that run-time selection:
-
-- The overload is chosen by the static parameter types of the functional
-  interface. `Function<CharSequence, X> f = X::new` calls `X(CharSequence)` even
-  when it is given a `String`. With `IL(Object)` and `IL(long)`,
-  `Function<Integer, IL>` calls `IL(Object)`, where it called `IL(long)`; with
-  `IL2(int)` and `IL2(Integer)`, `IntFunction<IL2>` calls `IL2(int)`, where it
-  called `IL2(Integer)`.
-- An `Object[]` given to `Function<Object, VO>` for `VO(Object...)` is passed as
-  one element, where its elements were passed.
-- `null` given to `Function<Integer, PI>` for `PI(int)` throws
-  `NullPointerException`, where it threw `GroovyRuntimeException`.
-- A constructor the enclosing class cannot call no longer wins over one it can.
-  With `private Foo(String)` and `public Foo(Object)`, `Function<String, Foo>`
-  in another class calls `Foo(Object)`, as `new Foo(s)` does.
-- A constructor added or overridden through the meta-class, for example with
-  `ExpandoMetaClass`, is not used, as for a statically compiled `new`.
-
-**What is unchanged.** The constructor is still selected at run time when no
-single constructor matches the parameter types (GROOVY-10971), for an enum, for
-a protected constructor of another package, and for a protected or
-package-private constructor of a class that a `GroovyClassLoader` defined in
-another compilation, such as a class of an earlier `GroovyShell` parse. Dynamic
-and `@TypeChecked` code select the constructor at run time as before.
 
 ## The binary-compatibility check
 
