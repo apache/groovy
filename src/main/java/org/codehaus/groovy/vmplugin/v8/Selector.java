@@ -188,6 +188,13 @@ public abstract class Selector {
     SwitchPoint mopSwitchPoint;
 
     /**
+     * Class-domain SwitchPoint of the selected metaclass's class, when that is
+     * not the receiver's class (a proxy or mock whose metaclass is the one of
+     * the type it stands in for); {@code null} otherwise.
+     */
+    SwitchPoint metaClassSwitchPoint;
+
+    /**
      * Cache values for read-only access
      */
     private static final CallType[] CALL_TYPE_VALUES = CallType.values();
@@ -947,7 +954,9 @@ public abstract class Selector {
             for (int attempt = 0; attempt < 3; attempt++) {
                 mopSwitchPoint = IndyInvalidation.classSwitchPointFor(args[0]);
                 getMetaClass();
-                if (!mopSwitchPoint.hasBeenInvalidated()) return;
+                metaClassSwitchPoint = IndyInvalidation.foreignMetaClassSwitchPointFor(args[0], mc);
+                if (!mopSwitchPoint.hasBeenInvalidated()
+                        && (metaClassSwitchPoint == null || !metaClassSwitchPoint.hasBeenInvalidated())) return;
             }
             cache = false;
         }
@@ -1405,6 +1414,11 @@ public abstract class Selector {
             handle = applyMopSwitchPoints(handle, fallback,
                     mopSwitchPoint != null ? mopSwitchPoint : IndyInvalidation.classSwitchPointFor(receiver));
             if (LOG_ENABLED) LOG.info("added class switch point guard");
+            if (metaClassSwitchPoint != null) {
+                // the metaclass belongs to another class, whose changes retire that class's domain
+                handle = applyMopSwitchPoints(handle, fallback, metaClassSwitchPoint);
+                if (LOG_ENABLED) LOG.info("added metaclass owner switch point guard");
+            }
 
             Predicate<Class<?>> nonFinalOrNullUnsafe = (t) -> {
                 return !Modifier.isFinal(t.getModifiers())
