@@ -2530,7 +2530,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             pexp.removeNodeMetaData(READONLY_PROPERTY);
                             return true;
                         } else if (getter != null && setters.isEmpty() && (field == null || field.isFinal()
-                                || !isFieldAccessible(field, receiverType, pexp, receiver.getData()))) { // GROOVY-12290: inaccessible field cannot make the property writable
+                                || !isFieldAccessible(field, receiverType, pexp, receiver.getData(), true))) { // GROOVY-12290: inaccessible field cannot make the property writable
                             pexp.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE); // GROOVY-9127
                         }
                     }
@@ -2630,7 +2630,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             while (iter.hasNext()) {
                 ClassNode outer = iter.next();
                 // GROOVY-7994, GROOVY-11198: try "this.propertyName" as "Outer.propertyName" or "Outer.this.propertyName"
-                PropertyExpression pe = propX(staticOnly ? classX(outer) : propX(classX(outer), "this"), pexp.getProperty());
+                Expression outerThis = staticOnly ? classX(outer) : propX(classX(outer), "this");
+                outerThis.putNodeMetaData("implicit outer this", Boolean.TRUE); // dispatched on "this"
+                PropertyExpression pe = propX(outerThis, pexp.getProperty());
                 if (existsProperty(pe, readMode, visitor)) {
                     pexp.copyNodeMetaData(pe);
                     return true;
@@ -2826,7 +2828,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * access (.@), and closure bodies (GROOVY-9195) — including delegate-resolved
      * access — whose property dispatch stays dynamic-capable under static compilation.
      */
-    private boolean isFieldAccessible(final FieldNode field, final ClassNode receiver, final PropertyExpression expression, final String delegationData) {
+    private boolean isFieldAccessible(final FieldNode field, final ClassNode receiver, final PropertyExpression expression, final String delegationData, final boolean lhsOfAssignment) {
         // GROOVY-12310: when the qualifying type itself is out of reach (e.g. a public
         // enum constant of a package-private nested enum), no static emission can name
         // it -- the JVM rejects the class resolution before it looks at the member
@@ -2842,12 +2844,42 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 && !inSameNest(field.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode())) {
             exactReceiver = false; // GROOVY-12290
         }
+        if ((superField || !receiver.equals(field.getDeclaringClass())) && !(expression instanceof AttributeExpression)
+                && !isStaticDispatchScope() && isDynamicallyUnreachableThroughSubclass(field, receiver, expression, lhsOfAssignment)) {
+            return false; // GROOVY-12610
+        }
         return exactReceiver
                 || hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), field.getDeclaringClass(), field.getModifiers());
     }
 
+    /**
+     * Determines if dynamic dispatch cannot find the field when it is accessed
+     * through a subclass of its declaring class from the current position. The
+     * metaclass of a subclass does not list a private instance field of a
+     * superclass, so only code of the declaring class reaches it, or code of an
+     * inner class whose chain of enclosing instances leads to the declaring class.
+     * The runtime falls back to the enclosing instance only for a receiver of the
+     * calling class, and not for a write through {@code super}. Static compilation
+     * accesses the field directly from any class of its nest.
+     */
+    private boolean isDynamicallyUnreachableThroughSubclass(final FieldNode field, final ClassNode receiver, final PropertyExpression expression, final boolean lhsOfAssignment) {
+        if (!field.isPrivate() || field.isStatic()) return false;
+        ClassNode declaringClass = field.getDeclaringClass();
+        ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
+        if (enclosingClass.equals(declaringClass)) return false;
+        Expression objectExpression = expression.getObjectExpression();
+        if (isSuperExpression(objectExpression) ? lhsOfAssignment
+                : !receiver.isDerivedFrom(enclosingClass) && objectExpression.getNodeMetaData("implicit outer this") == null) {
+            return true;
+        }
+        for (ClassNode cn = enclosingClass; !cn.equals(declaringClass); cn = cn.getOuterClass()) {
+            if (cn.getOuterClass() == null || hasNoEnclosingInstance(cn)) return true;
+        }
+        return false;
+    }
+
     private boolean storeField(final FieldNode field, final PropertyExpression expression, final Receiver<String> receiver, final ClassCodeVisitorSupport visitor, final boolean lhsOfAssignment) {
-        boolean accessible = isFieldAccessible(field, receiver.getType(), expression, receiver.getData());
+        boolean accessible = isFieldAccessible(field, receiver.getType(), expression, receiver.getData(), lhsOfAssignment);
         if (!accessible) {
             if (expression instanceof AttributeExpression) {
                 addStaticTypeError("Cannot access field: " + field.getName() + " of class: " + prettyPrintTypeName(field.getDeclaringClass()), expression.getProperty());
