@@ -442,7 +442,7 @@ public class BinaryExpressionHelper {
      */
     private boolean evaluateCompoundAssignmentWithReceiverOnce(final BinaryExpression expression) {
         int op = expression.getOperation().getType();
-        if (op == EQUAL || op == ELVIS_EQUAL || op == NULL_COALESCE_EQUAL || !Types.isAssignment(op)) return false;
+        if (op == EQUAL || op == ELVIS_EQUAL || !Types.isAssignment(op)) return false;
         if (!(expression.getLeftExpression() instanceof PropertyExpression pexp) || !hasReceiverToEvaluateOnce(pexp)) return false;
 
         VariableSlotLoader receiver = evaluateIntoTemporary(pexp.getObjectExpression(), "$receiver");
