@@ -36,12 +36,14 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -124,22 +126,34 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  * by every list pattern arm of the switch, so that the selector is traversed
  * at most once per evaluation of the switch.
  * <p>
+ * A record pattern whose type is a record with components known at compile
+ * time (a native Groovy or Java record) and the pattern's number of them reads
+ * each component through its accessor, {@code __$$rp1.x()}, boxed to
+ * {@code Object} where it is the operand of an {@code instanceof} test; a type
+ * pattern on a primitive component of its own type binds without a test, as
+ * that component cannot be {@code null}. Any other value, such as an emulated
+ * record or an object deconstructed through its {@code toList()} method, is
+ * deconstructed at run time by {@link RecordPatternSupport#components} into a
+ * list that is sized and indexed.
+ * <p>
  * {@code source instanceof T name} becomes the {@code instanceof} binding of
  * JEP 394, and {@code source instanceof R(...)} a short-circuit conjunction of
  * ordinary expressions and such bindings, so flow scoping makes every binding
  * visible where the conjunction is true, e.g.
- * {@code p instanceof Point(int x, var y)} becomes:
+ * {@code p instanceof Point(int x, var y)} becomes, for a record {@code Point}:
  * <pre>
  * p instanceof Point __$$rp1
- *   &amp;&amp; RecordPatternSupport.componentsOrEmpty(__$$rp1) instanceof List __$$rc2
- *   &amp;&amp; __$$rc2.size() == 2
- *   &amp;&amp; RecordPatternSupport.component(__$$rc2, 0) instanceof Integer x
+ *   &amp;&amp; ((Object) __$$rp1.x()) instanceof Integer x
  *   &amp;&amp; RecordPatternSupport.bindable() instanceof Object y
- *   &amp;&amp; RecordPatternSupport.bound(y = RecordPatternSupport.component(__$$rc2, 1))
+ *   &amp;&amp; RecordPatternSupport.bound(y = __$$rp1.y())
  * </pre>
  * A {@code var}/{@code def} component is unconditional: a {@code null}
  * component keeps the match alive and leaves the binding {@code null}, so its
  * variable is introduced by a test against a non-null token and then assigned.
+ * A value deconstructed at run time is bound by
+ * {@link RecordPatternSupport#componentsOrEmpty} and indexed by
+ * {@link RecordPatternSupport#component}, which tolerate the {@code null}
+ * default of a pattern variable whose type test failed.
  *
  * @since 7.0.0
  */
@@ -340,6 +354,21 @@ public final class PatternLowering extends ClassCodeVisitorSupport {
     private void appendRecordItems(final RecordPattern pattern, final Expression source, final Token instanceOf, final List<Object> items) {
         String recordName = "__$$rp" + seq++;
         items.add(binX(source, instanceOf, declX(atType(varX(recordName, pattern.type()), pattern.type()), EmptyExpression.INSTANCE)));
+        List<RecordComponentNode> accessible = accessibleComponents(pattern);
+        if (accessible != null) {
+            for (int i = 0, n = pattern.components().size(); i < n; i += 1) {
+                MatchPattern component = pattern.components().get(i);
+                if (component instanceof WildcardPattern) continue;
+                Expression access = accessorX(recordName, accessible.get(i));
+                if (component instanceof TypePattern typed && isTotalFor(typed, accessible.get(i).getType())) {
+                    // a primitive component of the pattern's type cannot fail the test, so bind it directly
+                    if (typed.variable() != null) items.add(declS(typed.variable(), access));
+                } else {
+                    appendElementItems(component, tested(component, access), instanceOf, items);
+                }
+            }
+            return;
+        }
         String componentsName = "__$$rc" + seq++;
         items.add(declS(localVarX(componentsName, ClassHelper.LIST_TYPE.getPlainNodeReference()),
                 callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "components", args(varX(recordName)))));
@@ -463,6 +492,16 @@ public final class PatternLowering extends ClassCodeVisitorSupport {
     private void appendRecordConjuncts(final RecordPattern pattern, final Expression source, final Token instanceOf, final List<Expression> conjuncts) {
         String recordName = "__$$rp" + seq++;
         conjuncts.add(binX(source, instanceOf, declX(atType(varX(recordName, pattern.type()), pattern.type()), EmptyExpression.INSTANCE)));
+        List<RecordComponentNode> accessible = accessibleComponents(pattern);
+        if (accessible != null) {
+            // the accessor calls follow the type test in a short-circuit conjunction
+            for (int i = 0, n = pattern.components().size(); i < n; i += 1) {
+                MatchPattern component = pattern.components().get(i);
+                if (component instanceof WildcardPattern) continue;
+                appendComponentConjuncts(component, tested(component, accessorX(recordName, accessible.get(i))), instanceOf, conjuncts);
+            }
+            return;
+        }
         // componentsOrEmpty(...) always yields a List; this conjunct just binds it
         String componentsName = "__$$rc" + seq++;
         conjuncts.add(binX(callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "componentsOrEmpty", args(varX(recordName))), instanceOf,
@@ -472,23 +511,77 @@ public final class PatternLowering extends ClassCodeVisitorSupport {
             MatchPattern component = pattern.components().get(i);
             if (component instanceof WildcardPattern) continue;
             Expression access = callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "component", args(varX(componentsName), constX(i, true)));
-            if (component instanceof RecordPattern nested) {
-                appendRecordConjuncts(nested, access, instanceOf, conjuncts);
-            } else if (component instanceof TypePattern typed) {
-                // the variable of a primitive type pattern is declared with the wrapper type
-                // here, as instanceof binds the tested object (see PatternExpression.instanceOf)
-                Expression test = typed.variable() != null
-                        ? declaring(typed.variable(), typed.type())
-                        : atType(new ClassExpression(ClassHelper.getWrapper(typed.type())), typed.type());
-                conjuncts.add(binX(access, instanceOf, test));
-            } else if (component instanceof BindingPattern binding) {
-                // instanceof never matches null, so the pattern variable is introduced by a
-                // test against a non-null token and then assigned the component value
-                conjuncts.add(binX(callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "bindable"), instanceOf,
-                        declX(binding.variable(), EmptyExpression.INSTANCE)));
-                conjuncts.add(callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "bound", args(assignX(varX(binding.variable()), access))));
-            }
+            appendComponentConjuncts(component, access, instanceOf, conjuncts);
         }
+    }
+
+    /** The conjuncts for one record component of an {@code instanceof} record pattern, whose value is {@code access}. */
+    private void appendComponentConjuncts(final MatchPattern component, final Expression access, final Token instanceOf, final List<Expression> conjuncts) {
+        if (component instanceof RecordPattern nested) {
+            appendRecordConjuncts(nested, access, instanceOf, conjuncts);
+        } else if (component instanceof TypePattern typed) {
+            // the variable of a primitive type pattern is declared with the wrapper type
+            // here, as instanceof binds the tested object (see PatternExpression.instanceOf)
+            Expression test = typed.variable() != null
+                    ? declaring(typed.variable(), typed.type())
+                    : atType(new ClassExpression(ClassHelper.getWrapper(typed.type())), typed.type());
+            conjuncts.add(binX(access, instanceOf, test));
+        } else if (component instanceof BindingPattern binding) {
+            // instanceof never matches null, so the pattern variable is introduced by a
+            // test against a non-null token and then assigned the component value
+            conjuncts.add(binX(callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "bindable"), instanceOf,
+                    declX(binding.variable(), EmptyExpression.INSTANCE)));
+            conjuncts.add(callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "bound", args(assignX(varX(binding.variable()), access))));
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // record components
+
+    /**
+     * The record components a pattern reads through their accessors: those of
+     * its type when the type is a record whose components are known at compile
+     * time (a native Groovy or Java record; an emulated record declares none)
+     * with as many components as the pattern. Otherwise {@code null}: the value
+     * is deconstructed at run time through {@link RecordPatternSupport}, which
+     * also leaves a pattern of the wrong arity, an error under static type
+     * checking, as a pattern that never matches in dynamic code.
+     */
+    private static List<RecordComponentNode> accessibleComponents(final RecordPattern pattern) {
+        if (!pattern.isRecord()) return null;
+        List<RecordComponentNode> declared = pattern.type().getRecordComponents();
+        return declared.size() == pattern.components().size() ? declared : null;
+    }
+
+    /** The accessor call that reads {@code component} of the record held by the variable {@code recordName}. */
+    private static Expression accessorX(final String recordName, final RecordComponentNode component) {
+        MethodCallExpression accessor = callX(varX(recordName), component.getName());
+        accessor.setImplicitThis(false);
+        return accessor;
+    }
+
+    /**
+     * The component value as the operand of the {@code instanceof} test a type,
+     * record, list or map component pattern makes: cast to {@code Object}, so
+     * that a primitive component is boxed for the test and a component pattern
+     * that cannot match the declared component type (not a diagnostic of the
+     * type checker, which reports an impossible pattern at the case label) is
+     * a test that fails rather than an incompatible {@code instanceof}. A binding
+     * or constant component pattern reads the value as it is.
+     */
+    private static Expression tested(final MatchPattern component, final Expression access) {
+        return component instanceof BindingPattern || component instanceof ConstantPattern
+                ? access : castX(ClassHelper.OBJECT_TYPE, access);
+    }
+
+    /**
+     * Whether a type pattern matches every value of a record component of the
+     * given type: when the component is a primitive of the pattern's type,
+     * which cannot be {@code null}, as {@link RecordPattern#isTotal} counts it.
+     */
+    private static boolean isTotalFor(final TypePattern typed, final ClassNode componentType) {
+        return ClassHelper.isPrimitiveType(componentType)
+                && ClassHelper.getWrapper(componentType).equals(ClassHelper.getWrapper(typed.type()));
     }
 
     //--------------------------------------------------------------------------
