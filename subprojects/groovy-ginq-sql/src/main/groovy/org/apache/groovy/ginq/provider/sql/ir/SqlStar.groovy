@@ -24,7 +24,7 @@ import org.apache.groovy.lang.annotation.Incubating
 /**
  * Represents {@code *} or {@code alias.*} in a select list.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 @CompileStatic

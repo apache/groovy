@@ -24,7 +24,7 @@ import org.apache.groovy.lang.annotation.Incubating;
  * Marks a renderable top-level query: either a simple {@link SqlQuery}
  * or a {@link SqlSetQuery} combining queries with a set operation.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 public interface SqlQueryNode {

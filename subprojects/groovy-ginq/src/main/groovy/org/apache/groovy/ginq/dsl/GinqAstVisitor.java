@@ -157,14 +157,14 @@ public interface GinqAstVisitor<R> {
      * providers to splice runtime values, e.g. a {@code dataSource}, into generated code.
      *
      * @param configurationExpressions the raw option value expressions keyed by option name
-     * @since 6.0.0
+     * @since 7.0.0
      */
     default void setConfigurationExpressions(Map<String, Expression> configurationExpressions) {}
     /**
      * Returns the raw option value expressions.
      *
      * @return the current raw option value expressions keyed by option name
-     * @since 6.0.0
+     * @since 7.0.0
      */
     default Map<String, Expression> getConfigurationExpressions() { return Collections.emptyMap(); }
 }

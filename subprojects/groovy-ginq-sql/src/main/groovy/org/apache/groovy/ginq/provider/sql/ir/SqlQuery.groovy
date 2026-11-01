@@ -24,7 +24,7 @@ import org.apache.groovy.lang.annotation.Incubating
 /**
  * Represents a single SQL {@code SELECT} query.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 @CompileStatic

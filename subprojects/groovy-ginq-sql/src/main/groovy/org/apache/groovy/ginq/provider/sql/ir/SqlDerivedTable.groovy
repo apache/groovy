@@ -25,7 +25,7 @@ import org.apache.groovy.lang.annotation.Incubating
  * Represents an aliased derived table, i.e. a parenthesized subquery
  * in a {@code FROM} or join clause.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 @CompileStatic

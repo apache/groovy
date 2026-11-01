@@ -27,7 +27,7 @@ import org.apache.groovy.lang.annotation.Incubating
  * left-nested chaining of GINQ set operations. Ordering and limiting
  * apply to the combined result and reference select-list ordinals.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 @CompileStatic

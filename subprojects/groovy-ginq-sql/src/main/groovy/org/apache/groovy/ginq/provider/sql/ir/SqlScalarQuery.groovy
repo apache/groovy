@@ -24,7 +24,7 @@ import org.apache.groovy.lang.annotation.Incubating
 /**
  * Represents a parenthesized scalar subquery used as an expression.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 @CompileStatic

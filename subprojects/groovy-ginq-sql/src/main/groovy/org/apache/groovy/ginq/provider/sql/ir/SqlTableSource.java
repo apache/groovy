@@ -24,7 +24,7 @@ import org.apache.groovy.lang.annotation.Incubating;
  * Marks an aliased source of rows in a {@code FROM} or join clause:
  * either a {@link SqlTableRef} or a {@link SqlDerivedTable}.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 public interface SqlTableSource {
