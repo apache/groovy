@@ -806,6 +806,31 @@ longer compiles. Call the accessor the class generates, read the property
 the dynamic call. Other calls to a missing accessor already failed at run
 time, and dynamic code is unchanged.
 
+### Groovy 6.0.1 — the receiver of a compound-assigned or incremented property is evaluated once (GROOVY-12619)
+
+A compound assignment or an increment of a property, such as `obj().v += 2`
+or `obj().v++`, evaluated the receiver expression twice: once for the read
+and once for the write. The receiver is now evaluated once and used for
+both, as it already was for subscripts such as `list[i()] += 2`. This
+applies in dynamic Groovy, under `@TypeChecked` and under `@CompileStatic`.
+
+It covers `+=` and the other compound assignment operators, prefix and
+postfix `++` and `--`, attribute access (`obj().@f += 2`), safe navigation
+(`obj()?.v += 2`), property chains, a static property reached through an
+instance, extension properties such as `file.text += 'x'`, and a receiver
+named by a property or dynamic variable that is read through a getter. The
+elvis assignment `?=` is unchanged.
+
+**Who is affected.** Code whose receiver expression has a side effect or
+returns a different object on each evaluation:
+
+- A method or getter that counts calls, logs, or otherwise has an effect
+  now runs once per compound assignment or increment, where it ran twice.
+- A receiver that yields a new or a different object each time, such as
+  `iterator.next().v += 1` or `new Box().v++`, now reads and writes the
+  same object. Before, the read came from one object and the write went to
+  the next.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
