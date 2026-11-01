@@ -72,7 +72,6 @@ public record McpServerConfig(Path root, List<String> classpath, int maxMessageB
      *
      * @param root workspace jail, or {@code null}
      * @param classpath compile classpath, or {@code null} for none
-     * @return the config
      */
     public McpServerConfig(final Path root, final List<String> classpath) {
         this(root, classpath, DEFAULT_MAX_MESSAGE_BYTES, DEFAULT_MAX_SOURCE_CHARS, DEFAULT_MAX_RESULT_CHARS);
