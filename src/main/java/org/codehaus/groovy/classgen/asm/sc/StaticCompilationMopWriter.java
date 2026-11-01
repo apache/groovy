@@ -20,11 +20,18 @@ package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Set;
+
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 /**
  * A MOP Writer that skips the generation of MOP methods. This writer is used
@@ -53,7 +60,37 @@ public class StaticCompilationMopWriter extends MopWriter {
         ClassNode classNode = controller.getClassNode();
         LinkedList<MethodNode> requiredMopMethods = classNode.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);
         if (requiredMopMethods != null) {
-            generateMopCalls(requiredMopMethods, false);
+            // one method per name and descriptor, however many closures call it
+            Set<String> signatures = new HashSet<>();
+            LinkedList<MethodNode> mopMethods = new LinkedList<>();
+            for (MethodNode method : requiredMopMethods) {
+                if (signatures.add(getMopMethodName(method, false) + BytecodeHelper.getMethodDescriptor(method.getReturnType(), method.getParameters()))) {
+                    mopMethods.add(method);
+                }
+            }
+            generateMopCalls(mopMethods, false);
         }
+    }
+
+    /**
+     * Creates the target for a call to the super$ helper that a class gets for
+     * a method of its superclass listed in its {@link StaticTypesMarker#SUPER_MOP_METHOD_REQUIRED}
+     * metadata.
+     *
+     * @param helperType the class that declares the helper
+     * @param superMethod the method of the superclass
+     * @return the helper method
+     */
+    public static MethodNode getSuperMopMethod(final ClassNode helperType, final MethodNode superMethod) {
+        MethodNode helper = new MethodNode(
+                getMopMethodName(superMethod, false),
+                ACC_PUBLIC | ACC_SYNTHETIC,
+                superMethod.getReturnType(),
+                superMethod.getParameters(),
+                superMethod.getExceptions(),
+                EmptyStatement.INSTANCE
+        );
+        helper.setDeclaringClass(helperType);
+        return helper;
     }
 }

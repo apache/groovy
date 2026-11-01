@@ -144,6 +144,7 @@ import java.util.function.Consumer;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isOuterSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
@@ -1407,6 +1408,14 @@ public class AsmClassGenerator extends ClassGenerator {
         );
     }
 
+    /**
+     * Determines if an expression is "super" or "Outer.super" for a class: a
+     * property of it is a property of the superclass of the instance.
+     */
+    private static boolean isSuperOrOuterSuper(final Expression expression) {
+        return isSuperExpression(expression) || isOuterSuperExpression(expression);
+    }
+
     private void visitAttributeOrProperty(final PropertyExpression pexp, final MethodCallerMultiAdapter adapter) {
         ClassNode classNode = controller.getClassNode();
         String propertyName = pexp.getPropertyAsString();
@@ -1550,9 +1559,9 @@ public class AsmClassGenerator extends ClassGenerator {
         if (!visited) {
             MethodCallerMultiAdapter adapter;
             if (controller.getCompileStack().isLHS()) {
-                adapter = isSuperExpression(objectExpression) ? setPropertyOnSuper : isGroovyObject(expression) ? setGroovyObjectProperty : setProperty;
+                adapter = isSuperOrOuterSuper(objectExpression) ? setPropertyOnSuper : isGroovyObject(expression) ? setGroovyObjectProperty : setProperty;
             } else {
-                adapter = isSuperExpression(objectExpression) ? getPropertyOnSuper : isGroovyObject(expression) ? getGroovyObjectProperty : getProperty;
+                adapter = isSuperOrOuterSuper(objectExpression) ? getPropertyOnSuper : isGroovyObject(expression) ? getGroovyObjectProperty : getProperty;
             }
             visitAttributeOrProperty(expression, adapter);
         }
@@ -1605,9 +1614,9 @@ public class AsmClassGenerator extends ClassGenerator {
         if (!visited) {
             MethodCallerMultiAdapter adapter;
             if (controller.getCompileStack().isLHS()) {
-                adapter = isSuperExpression(objectExpression) ? setFieldOnSuper : isGroovyObject(expression) ? setGroovyObjectField : setField;
+                adapter = isSuperOrOuterSuper(objectExpression) ? setFieldOnSuper : isGroovyObject(expression) ? setGroovyObjectField : setField;
             } else {
-                adapter = isSuperExpression(objectExpression) ? getFieldOnSuper : isGroovyObject(expression) ? getGroovyObjectField : getField;
+                adapter = isSuperOrOuterSuper(objectExpression) ? getFieldOnSuper : isGroovyObject(expression) ? getGroovyObjectField : getField;
             }
             visitAttributeOrProperty(expression, adapter);
         }
