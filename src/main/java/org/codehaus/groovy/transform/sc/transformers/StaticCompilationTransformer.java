@@ -160,6 +160,21 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     }
 
     /**
+     * Returns the innermost class that encloses the class being rewritten,
+     * with an enclosing instance of it, and extends the given class; or
+     * {@code null} when there is none.
+     */
+    ClassNode findEnclosingSubclassOf(final ClassNode type) {
+        ClassNode cn = transformClass;
+        while (cn instanceof InnerClassNode && !cn.isStaticClass() && (cn.getModifiers() & ACC_STATIC) == 0) {
+            cn = cn.getOuterClass();
+            if (cn == null || cn.equals(type)) break;
+            if (cn.isDerivedFrom(type)) return cn;
+        }
+        return null;
+    }
+
+    /**
      * Visits a statement container within the current class or method.
      *
      * @param code the code container to visit
