@@ -14617,6 +14617,38 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * A helper method to allow maps to work with subscript operators and property
+     * writes when the type of the values is known. The value is converted to that
+     * type, as an assignment to a variable of that type converts it: a {@code GString}
+     * becomes a {@code String}, an {@code Integer} written to a map of {@code Long}
+     * values a {@code Long}. The map then holds values of the type it declares.
+     * <pre class="groovyTestCase">
+     * def name = 'Groovy'
+     * Map&lt;String, String&gt; greetings = [:]
+     * greetings.putAt('hello', "Hello, $name", String)
+     * assert greetings.hello instanceof String
+     * assert greetings.hello == 'Hello, Groovy'
+     * </pre>
+     * Under static type checking the type token is compiler-supplied from the map's
+     * value type: a property or subscript write, or a call of {@code putAt} without
+     * the token, selects this method in place of the other {@code putAt} methods, which
+     * store the value as it is. {@code greetings.hello = "Hello, $name"} on a
+     * {@code Map<String, String>} stores a {@code String}.
+     *
+     * @param self      a Map
+     * @param key       an Object as a key for the map
+     * @param value     the value to convert and put into the map
+     * @param valueType the type of the values of the map
+     * @return the converted value
+     * @since 7.0.0
+     */
+    public static <K,V> V putAt(Map<K,V> self, K key, Object value, @ClassTag(preempt=true) Class<V> valueType) {
+        V converted = valueType.cast(DefaultTypeTransformation.castToType(value, valueType));
+        self.put(key, converted);
+        return converted;
+    }
+
+    /**
      * Support assigning a range of values with a single assignment statement.
      *
      * @param self  a BitSet

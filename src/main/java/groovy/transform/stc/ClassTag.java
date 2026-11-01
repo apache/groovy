@@ -59,7 +59,8 @@ import java.lang.annotation.Target;
  *   <li><em>Intent</em> &mdash; the API author must declare the tagged overload preemptive with
  *   {@link #preempt() preempt=true}; without it the overload is only ever selected additively.
  *   Groovy's own checked {@code withDefault} overloads declare it (their lenient sibling predates
- *   them and could silently corrupt a typed map's key set).</li>
+ *   them and could silently corrupt a typed map's key set), as does the {@code putAt} that
+ *   converts a value to the map's value type.</li>
  *   <li><em>Containment</em> &mdash; a tagged overload may only preempt a token-less overload
  *   declared by the same class (or, for instance methods, the same class hierarchy). A library
  *   can upgrade callers of <em>its own</em> lenient API but can never capture calls owned by

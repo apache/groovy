@@ -936,6 +936,29 @@ package-private constructor of a class that a `GroovyClassLoader` defined in
 another compilation, such as a class of an earlier `GroovyShell` parse. Dynamic
 and `@TypeChecked` code select the constructor at run time as before.
 
+### Groovy 7 — a value written to a typed map is converted to the map's value type (GROOVY-12535)
+
+Under `@TypeChecked` and `@CompileStatic`, a property or subscript write to a
+map whose value type is known (`Map<String,String> m; m.k = "$name"`,
+`m['k'] = "$name"`, `m.k ?= "$name"`, `m.with { k = "$name" }`) stores the
+value converted to the value type, as `String s = "$name"` does: a `GString`
+becomes a `String`, an `Integer` written to a `Map<String,Long>` a `Long`. The
+compiler supplies the value type to `putAt(Map, Object, Object, Class)` as a
+`@ClassTag` token, and an explicit `m.putAt('k', "$name")` binds the same
+overload. Before, the property write stored the `GString` as it was and the
+subscript write was rejected.
+
+**Who is affected.** Code that read the stored value back as a `GString`, for
+example to see later changes to an interpolated variable, or compared it with
+`is`. A value of the value type is stored as before, a map whose value type is
+not known (`def`, raw or a wildcard) is written as before, and dynamic code is
+unchanged. `Map.put` with a `GString` is still rejected.
+
+**Opting out.** The upgrade is a `@ClassTag` preemption, so
+`groovy.classtag.preemption.disable` (or
+`CompilerConfiguration.setClassTagPreemptionDisabled`) keeps the previous
+behaviour.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)

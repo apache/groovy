@@ -1592,6 +1592,11 @@ include::../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_specialcase,in
 ----
 ====
 
+NOTE: This applies to a declared `String`: a variable, field, parameter or return type, which the runtime
+converts to. A `String` type argument gets no such conversion, so `List<String> list = ["$name"]` is an error
+(call `toString()`). Since Groovy 7, a write to a map whose value type is `String`, by property or subscript,
+converts the value instead: see <<classtag-annotation,`@ClassTag`>>.
+
 * _or_ `o` is null and `T` is not a primitive type
 
 +
@@ -2432,6 +2437,14 @@ include::../test/typing/ClassTagSpecTest.groovy[tags=classtag_preempt,indent=0]
 <1> under static compilation the call binds `withDefault(Map<K,V>, Class<K>, Class<V>, Closure)` with
 `String.class` and `Integer.class` injected; the returned map rejects ill-typed keys and values
 <2> reads behave as before for well-typed keys
+
+Since Groovy 7, a write to a map by property or subscript, or by `putAt`, is upgraded the same way when the value
+is accepted for the map's value type but is not of it: `putAt(Map<K,V>, K, Object, Class<V>)` converts the value
+to the value type, as an assignment to a variable of that type would, so the map holds what its declaration
+promises (link:https://issues.apache.org/jira/browse/GROOVY-12535[GROOVY-12535]). A `GString` written to a
+`Map<String,String>` is stored as a `String`, and an `Integer` written to a `Map<String,Long>` as a `Long`. A
+value of the value type is stored as it is, and a map whose value type is not known (`def`, raw or a wildcard)
+is written as before.
 
 Preemption is deliberately constrained by three independent controls:
 
