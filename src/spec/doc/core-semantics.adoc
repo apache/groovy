@@ -608,7 +608,10 @@ A record pattern `case T(p1, p2, ...) ->` deconstructs a value of record type
 pattern, a `var`/`def` binding, another record pattern, or `_`, which
 discards the component. A record without components is matched by empty
 parentheses after its name, such as `case None()`. The value may be a native or emulated Groovy record,
-a Java record, or any class providing a `toList()` method. A pattern whose
+a Java record, or any class providing a `toList()` method. A native record's
+components are read through its accessor methods, in order and only as far as
+the match proceeds; any other value is deconstructed through its `toList()`
+method, which is called once per match attempt. A pattern whose
 component count differs from the record's never matches, and is a compile
 error under `@TypeChecked` / `@CompileStatic`. There, a `var`/`def` component
 binding takes the type of its record component, and the type arguments of a

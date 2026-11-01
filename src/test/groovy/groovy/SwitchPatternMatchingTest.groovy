@@ -21,6 +21,10 @@ package groovy
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.Opcodes
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -1428,8 +1432,8 @@ final class SwitchPatternMatchingTest {
 
     @Test
     void testRecordDeconstructedOncePerMatch() {
-        // the closure-free lowering binds pattern variables while matching,
-        // so a matched record is deconstructed exactly once
+        // pattern variables are bound while matching, so a matched value is
+        // deconstructed exactly once
         assertScript '''
             class Counter {
                 static int reads = 0
@@ -1467,8 +1471,7 @@ final class SwitchPatternMatchingTest {
     @Test
     void testPrimitiveComponentBindingTypeConsistentAcrossLowerings() {
         // a primitive-typed component binds its declared primitive type whether the
-        // switch takes the closure-free lowering (all-pattern) or the closure-label
-        // lowering (mixed with a legacy label)
+        // switch has only pattern labels or mixes them with a legacy label
         assertScript '''
             import groovy.transform.CompileStatic
             record Point(int x, int y) {}
@@ -1540,8 +1543,7 @@ final class SwitchPatternMatchingTest {
 
     @Test
     void testPrimitiveTypePatternMixedWithLegacyLabel() {
-        // both the guarded (closure label) and unguarded (class literal label)
-        // forms of the closure-label lowering
+        // a primitive type pattern, guarded and unguarded, alongside a legacy label
         assertScript '''
             def describe(subject) {
                 switch (subject) {
@@ -1980,6 +1982,118 @@ final class SwitchPatternMatchingTest {
         }
     }
 
+    @Test
+    void testKnownRecordComponentsReadThroughAccessors() {
+        // a record whose components are known at compile time is deconstructed through
+        // its accessors, in a switch arm and in instanceof, not through the runtime helper
+        def calls = methodCalls('''
+            import groovy.transform.CompileStatic
+            record Point(int x, Object y) {}
+            @CompileStatic
+            class Sample {
+                static String arm(Object o) {
+                    switch (o) {
+                        case Point(int x, var y) -> "$x $y"
+                        default                  -> 'other'
+                    }
+                }
+                static boolean test(Object o) {
+                    o instanceof Point(int x, var y) && x > 0
+                }
+            }
+        ''', 'Sample')
+        assert calls.count('Point.x') == 2 && calls.count('Point.y') == 2
+        assert calls.intersect(['RecordPatternSupport.components', 'RecordPatternSupport.componentsOrEmpty', 'RecordPatternSupport.component']).isEmpty()
+    }
+
+    @Test
+    void testPrecompiledRecordComponentsReadThroughAccessors() {
+        // the components of a record compiled earlier are known from its class
+        def loader = new GroovyClassLoader()
+        loader.parseClass('record Pair(String left, int right) {}')
+        def calls = methodCalls('''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            class Sample {
+                static String arm(Object o) {
+                    switch (o) {
+                        case Pair(var l, int r) -> "$l $r"
+                        default                 -> 'other'
+                    }
+                }
+            }
+        ''', 'Sample', loader)
+        assert calls.containsAll(['Pair.left', 'Pair.right'])
+        assert !calls.contains('RecordPatternSupport.components')
+        assert new GroovyShell(loader).evaluate('''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            String arm(Object o) {
+                switch (o) {
+                    case Pair(var l, int r) -> "$l $r"
+                    default                 -> 'other'
+                }
+            }
+            arm(new Pair('a', 1)) + '|' + arm('x')
+        ''') == 'a 1|other'
+    }
+
+    @Test
+    void testEmulatedRecordDeconstructedAtRunTime() {
+        // an emulated record declares no record components, so it deconstructs
+        // through its toList() method like any other deconstructable value
+        def source = '''
+            import groovy.transform.CompileStatic
+            import groovy.transform.RecordOptions
+            import groovy.transform.RecordTypeMode
+            @RecordOptions(mode = RecordTypeMode.EMULATE)
+            record Pair(String left, int right) {}
+            @CompileStatic
+            class Sample {
+                static String arm(Object o) {
+                    switch (o) {
+                        case Pair(var l, var r) -> "$l $r"
+                        default                 -> 'other'
+                    }
+                }
+            }
+        '''
+        assert methodCalls(source, 'Sample').contains('RecordPatternSupport.components')
+        assertScript source + '''
+            assert Sample.arm(new Pair('a', 1)) == 'a 1'
+            assert Sample.arm('x') == 'other'
+        '''
+    }
+
+    @Test
+    void testRecordComponentsReadInOrderUpToTheFirstFailingTest() {
+        // a component is read when its pattern is tried, so a failing component
+        // test ends the deconstruction and a later component is not read
+        for (mode in ['', '@CompileStatic']) {
+            assertScript """
+                import groovy.transform.CompileStatic
+                record Pair(Object left, Object right) {
+                    static List<String> reads = []
+                    Object left() { reads << 'left'; left }
+                    Object right() { reads << 'right'; right }
+                }
+                $mode
+                String describe(Object o) {
+                    switch (o) {
+                        case Pair(String l, var r) -> "\$l \$r"
+                        case Pair(var l, var r)    -> "any \$l \$r"
+                        default                    -> 'other'
+                    }
+                }
+                assert describe(new Pair('a', 1)) == 'a 1'
+                assert Pair.reads == ['left', 'right']
+                Pair.reads.clear()
+                assert describe(new Pair(1, 2)) == 'any 1 2'
+                assert Pair.reads == ['left', 'left', 'right']
+            """
+        }
+    }
+
     private static List<String> patternSwitchWarnings(String source) {
         def cu = new CompilationUnit()
         cu.addSource('PatternSwitchTestScript.groovy', source)
@@ -1987,5 +2101,26 @@ final class SwitchPatternMatchingTest {
         (cu.errorCollector.warnings ?: [])*.message.findAll {
             it.contains('pattern switch') || it.contains('case pattern')
         }
+    }
+
+    /** The {@code Owner.name} of every method call instruction in the named class of the compiled source. */
+    private static List<String> methodCalls(String source, String className, GroovyClassLoader loader = null) {
+        def cu = loader != null ? new CompilationUnit(loader) : new CompilationUnit()
+        cu.addSource('MethodCallsTestScript.groovy', source)
+        cu.compile(Phases.CLASS_GENERATION)
+        byte[] bytes = cu.classes.find { it.name == className }.bytes
+        def calls = []
+        new ClassReader(bytes).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    void visitMethodInsn(int opcode, String owner, String method, String desc, boolean itf) {
+                        calls << (owner.substring(owner.lastIndexOf('/') + 1) + '.' + method)
+                    }
+                }
+            }
+        }, 0)
+        calls
     }
 }

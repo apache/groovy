@@ -1448,6 +1448,6 @@ b $$v"""/$,
         // once lowered, the code the compiler compiles is shown
         result = compileToScript(script, CompilePhase.INSTRUCTION_SELECTION)
         assert result.contains('__$$pv')
-        assert result.contains('org.apache.groovy.runtime.RecordPatternSupport.componentsOrEmpty')
+        assert result.contains('org.apache.groovy.runtime.RecordPatternSupport.bound(x = __$$rp0.x())')
     }
 }
