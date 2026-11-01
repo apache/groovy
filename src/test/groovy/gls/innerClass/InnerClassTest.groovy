@@ -2667,6 +2667,64 @@ final class InnerClassTest {
         assert err.message =~ /No such property: X for class: Other/
     }
 
+    // GROOVY-12627
+    @Test
+    void testNestedPropertyHandling8() {
+        assertScript '''
+            class Base {
+                private String z = 'outer'
+                private int n = 1
+                class Sub extends Base {
+                    def write() { { -> Sub.this.z = 'w' }(); Base.this.z }
+                    def plusEq() { { -> Sub.this.z += 'w' }(); Base.this.z }
+                    def increment() { { -> Sub.this.n++ }(); Base.this.n }
+                    def nested() { { -> { -> Sub.this.z = 'w' }() }(); Base.this.z }
+                    def lambda() { (() -> Sub.this.z = 'w')(); Base.this.z }
+                    def spread() { { -> [Sub.this]*.z = 'w' }(); { -> [Sub.this]*.z }() }
+                    def read() { { -> Sub.this.z }() }
+                }
+                class Inner {
+                    def write() { { -> Inner.this.z = 'w' }(); Base.this.z }
+                    def spread() { { -> [Inner.this]*.z }() }
+                    def local() { def i = this; { -> i.z = 'w' }(); Base.this.z }
+                }
+                def sub() { new Sub() }
+                def inner() { new Inner() }
+            }
+            assert new Base().sub().read() == 'outer'
+            assert new Base().sub().write() == 'w'
+            assert new Base().sub().plusEq() == 'outerw'
+            assert new Base().sub().increment() == 2
+            assert new Base().sub().nested() == 'w'
+            assert new Base().sub().lambda() == 'w'
+            assert new Base().sub().spread() == ['w']
+            assert new Base().inner().write() == 'w'
+            assert new Base().inner().spread() == ['outer']
+            assert new Base().inner().local() == 'w'
+        '''
+    }
+
+    // GROOVY-12627
+    @ParameterizedTest
+    @ValueSource(strings=['CompileDynamic','TypeChecked'])
+    void testNestedPropertyHandling9(String mode) {
+        assertScript """
+            import groovy.transform.*
+
+            class Base {
+                private String z = 'outer'
+                @$mode
+                class Sub extends Base {
+                    def write() { def s = this; { -> s.z = 'w' }(); Base.this.z }
+                    def read() { def s = this; { -> s.z }() }
+                }
+                def sub() { new Sub() }
+            }
+            assert new Base().sub().read() == 'outer'
+            assert new Base().sub().write() == 'w'
+        """
+    }
+
     // GROOVY-7312
     @Test
     void testInnerClassOfInterfaceIsStatic() {
