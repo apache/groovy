@@ -18,6 +18,9 @@
  */
 package bugs
 
+import groovy.junit6.plugin.ForkedJvm
+import groovy.transform.CompileStatic
+import org.codehaus.groovy.reflection.ClassInfo
 import org.codehaus.groovy.reflection.GroovyClassValue
 import org.junit.jupiter.api.Test
 import org.objectweb.asm.ClassWriter
@@ -25,7 +28,9 @@ import org.objectweb.asm.Opcodes
 
 import java.lang.ref.SoftReference
 import java.lang.ref.WeakReference
+import java.util.concurrent.atomic.LongAdder
 
+import static groovy.test.GroovyAssert.shouldFail
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertFalse
 import static org.junit.jupiter.api.Assertions.assertNotSame
@@ -346,6 +351,211 @@ final class Groovy12142 {
         assert new StringBuilder('a').append('b').toString() == 'ab' // metaclass re-created on demand
     }
 
+    // GROOVY-12580
+    @Test
+    void testRemovedClassKeepsItsDefaultGroovyMethods() {
+        ClassInfo.remove(StringBuilder)
+
+        // << must append to the receiver: without StringBuilder's own leftShift the call fell
+        // back to CharSequence's, which returns a new builder and leaves the receiver empty
+        def sb = new StringBuilder('a')
+        sb << 'b'
+        assertEquals('ab', sb.toString())
+        def leftShift = GroovySystem.metaClassRegistry.getMetaClass(StringBuilder).pickMethod('leftShift', [Object] as Class[])
+        assertEquals(StringBuilder, leftShift.declaringClass.theClass)
+        // a method declared for StringBuilder alone has nothing to fall back to
+        sb[0..0] = 'z'
+        assertEquals('zb', sb.toString())
+    }
+
+    // GROOVY-12580
+    @Test
+    void testRemovedClassLosesTheMetaClassesSetForIt() {
+        RemovedClassHost.metaClass.perClass = { -> 'class' }
+        def adder = new LongAdder()
+        adder.metaClass.perInstance = { -> 'instance' }
+        assertEquals('class', new RemovedClassHost().perClass())
+        assertEquals('instance', adder.perInstance())
+
+        ClassInfo.remove(RemovedClassHost)
+        ClassInfo.remove(LongAdder)
+
+        shouldFail(MissingMethodException) { new RemovedClassHost().perClass() }
+        shouldFail(MissingMethodException) { adder.perInstance() }
+        adder.increment() // the class itself still works
+        assertEquals(1L, adder.sum())
+    }
+
+    static class RemovedClassHost {
+    }
+
+    // GROOVY-12580
+    @Test
+    @CompileStatic
+    void testRemovingAClassWithoutClassInfoCreatesNone() {
+        assertFalse(hasClassInfo(NeverDispatchedHost))
+        ClassInfo.remove(NeverDispatchedHost)
+        assertFalse(hasClassInfo(NeverDispatchedHost))
+    }
+
+    static class NeverDispatchedHost {
+    }
+
+    @CompileStatic
+    private static boolean hasClassInfo(Class<?> type) {
+        for (ClassInfo ci : ClassInfo.getAllClassInfo()) {
+            if (ci.getTheClass() == type) return true
+        }
+        return false
+    }
+
+    // GROOVY-12580
+    @Test
+    @ForkedJvm
+    void testDocumentedSweepLeavesTheRuntimeWorking() {
+        assertEquals([2, 4, 6], [1, 2, 3].collect { it * 2 })
+        for (ClassInfo ci : ClassInfo.getAllClassInfo()) {
+            Class<?> c = ci.getTheClass()
+            if (c != null) ClassInfo.remove(c)
+        }
+
+        // default Groovy methods
+        assertEquals([2, 4, 6], [1, 2, 3].collect { it * 2 })
+        assertEquals('abab', 'ab' * 2)
+        def sb = new StringBuilder()
+        sb << 'x'
+        assertEquals('x', sb.toString())
+        assertEquals('[a:1]', [a: 1].toString())
+        // extension module methods (src/test-resources), instance and static
+        assertEquals('CBA', 'abc'.reverseToUpperCase())
+        assertEquals(42, String.answer())
+    }
+
+    /**
+     * Keeping the default Groovy methods for the {@code ClassInfo} that replaces a removed one
+     * must not undo what the documented sweep is for: the class loader of a discarded Groovy
+     * runtime must still be released.
+     */
+    // GROOVY-12580
+    @Test
+    @ForkedJvm(jvmArgs = ['-Xmx256m'])
+    void testDocumentedSweepReleasesAnIsolatedRuntime() {
+        assertLoaderCollected(runIsolatedRuntimeAndSweep(null))
+    }
+
+    /**
+     * The sweep as the integration guide writes it in Groovy. It is statically compiled: a
+     * dynamic call made after the first removal can associate a class with that runtime again.
+     */
+    // GROOVY-12580
+    @Test
+    @ForkedJvm(jvmArgs = ['-Xmx256m'])
+    void testDocumentedGroovySweepReleasesAnIsolatedRuntime() {
+        assertLoaderCollected(runIsolatedRuntimeAndSweep('''
+            import groovy.transform.CompileStatic
+            import org.codehaus.groovy.reflection.ClassInfo
+
+            @CompileStatic
+            static void releaseGroovy() {
+                for (ClassInfo ci : ClassInfo.getAllClassInfo()) {
+                    Class<?> c = ci.getTheClass()
+                    if (c != null) ClassInfo.remove(c)
+                }
+            }
+
+            releaseGroovy()
+        '''))
+    }
+
+    private static void assertLoaderCollected(WeakReference<ClassLoader> loaderRef) {
+        assertLoaderCollected(loaderRef, 'the documented sweep must release the class loader of a discarded runtime')
+    }
+
+    /**
+     * Runs a script in a Groovy runtime of its own class loader, then the documented sweep on
+     * that runtime: the given script, run by that runtime, or else reflective calls from here.
+     * Statically compiled, so this runtime links no call site to that one.
+     */
+    @CompileStatic
+    private static WeakReference<ClassLoader> runIsolatedRuntimeAndSweep(String groovySweep) {
+        URL[] urls = System.getProperty('java.class.path').split(File.pathSeparator).collect { String entry ->
+            new File(entry).toURI().toURL()
+        } as URL[]
+        def loader = new URLClassLoader(urls, ClassLoader.getPlatformClassLoader())
+        Class<?> shellClass = loader.loadClass('groovy.lang.GroovyShell')
+        Object shell = shellClass.getConstructor().newInstance()
+        def evaluate = shellClass.getMethod('evaluate', String)
+        Object result = evaluate.invoke(shell, "def sb = new StringBuilder(); sb << 'x'; [1, 2, 3].collect { it * 2 }.sum() + sb.size()")
+        assertEquals(13, result)
+
+        if (groovySweep != null) {
+            evaluate.invoke(shell, groovySweep)
+        } else {
+            Class<?> infoClass = loader.loadClass(ClassInfo.name)
+            def theClass = infoClass.getMethod('getTheClass')
+            def remove = infoClass.getMethod('remove', Class)
+            for (Object info : (Collection<?>) infoClass.getMethod('getAllClassInfo').invoke(null)) {
+                Object c = theClass.invoke(info)
+                if (c != null) remove.invoke(null, c)
+            }
+        }
+        loader.close()
+        new WeakReference<ClassLoader>(loader)
+    }
+
+    /**
+     * Linking a call site converts method handles to the call site type, and on JDK 17 a
+     * handle keeps its last conversion strongly. A handle the JDK shares (the identity handle
+     * for {@code Object} that a cast converted, the argument collector of
+     * {@code catchException}) or one in a static field of the runtime then kept the class
+     * loader of a discarded script reachable.
+     */
+    // GROOVY-12579
+    @Test
+    @ForkedJvm(jvmArgs = ['-Xmx256m'])
+    @CompileStatic // no call made by this test may replace a conversion under test
+    void testDynamicCallsKeepNoDiscardedScriptLoaderReachable() {
+        assertLoaderCollected(runInDiscardedLoader('''
+            interface Shape { String name() }
+            class Holder implements Shape {
+                String label = 'h'
+                Holder next
+                String name() { label }
+                Holder self(Holder other) { other ?: this }
+            }
+            def held = new Holder()
+            Holder holder = held              // a cast
+            Shape shape = held                // a cast to an interface
+            holder.next = holder.self(null)   // a typed receiver and a null argument
+            Holder next = holder.next
+            def label = next?.next?.label     // null-safe calls
+            try { holder.self(42) } catch (MissingMethodException expected) { }
+            [shape.name(), label].toString()
+        '''), 'dynamic calls must not keep the class loader of a discarded script reachable')
+    }
+
+    @CompileStatic
+    private static WeakReference<ClassLoader> runInDiscardedLoader(String source) {
+        def loader = new GroovyClassLoader(Groovy12142.classLoader)
+        Script script = (Script) loader.parseClass(source).getDeclaredConstructor().newInstance()
+        assertEquals('[h, h]', script.run())
+        script = null
+        loader.close()
+        new WeakReference<ClassLoader>(loader)
+    }
+
+    @CompileStatic
+    private static void assertLoaderCollected(WeakReference<ClassLoader> loaderRef, String message) {
+        boolean collected = false
+        for (int i = 0; i < 200 && !collected; i++) {
+            System.gc()
+            if (i % 50 == 10) forceSoftReferenceClearing()
+            collected = loaderRef.get() == null
+            if (!collected) Thread.sleep(10)
+        }
+        assertTrue(collected, message)
+    }
+
     @Test
     void testScaffoldControl_classCollectsWithNoAssociationAtAll() {
         def clsRef = loadThrowawayClass(null)
@@ -360,6 +570,7 @@ final class Groovy12142 {
     }
 
     /** Allocates until OutOfMemoryError so the JVM clears soft references first. */
+    @CompileStatic
     private static void forceSoftReferenceClearing() {
         try {
             def hog = []
