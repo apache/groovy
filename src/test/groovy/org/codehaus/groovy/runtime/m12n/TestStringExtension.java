@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import bugs.Groovy12534People;
+
 public class TestStringExtension {
 
     public static String reverseToUpperCase(String self) {
@@ -53,5 +55,10 @@ public class TestStringExtension {
 
     public static boolean isPlural(List<?> self) {
         return self.size() > 1;
+    }
+
+    // GROOVY-12534: name belongs to the list subclass, and collides with the element property
+    public static String getName(Groovy12534People self) {
+        return "the collection";
     }
 }
