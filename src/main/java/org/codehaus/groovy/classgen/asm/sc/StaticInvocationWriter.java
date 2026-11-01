@@ -84,6 +84,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.formatTypeName;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.isCompatibleWith;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
@@ -93,6 +94,7 @@ import static org.apache.groovy.ast.tools.ExpressionUtils.mayHaveSideEffects;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
@@ -522,7 +524,8 @@ public class StaticInvocationWriter extends InvocationWriter {
             List<Expression> lastArgs = new ArrayList<>();
             for (int i = nPrms - 1; i < nArgs; i += 1) {
                 Expression arg = argumentList.get(i);
-                lastArgs.add(arg);
+                ClassNode functionalType = getFunctionalTypeArgument(arg, typeChooser.resolveType(arg, classNode), lastPrmType.getComponentType());
+                lastArgs.add(functionalType != null ? castX(functionalType, arg) : arg);
                 spread = spread || arg instanceof SpreadExpression;
             }
             if (spread) { // GROOVY-10597
@@ -598,8 +601,33 @@ public class StaticInvocationWriter extends InvocationWriter {
     private void visitArgument(final Expression argument, final ClassNode parameterType) {
         argument.visit(controller.getAcg());
         if (!isNullConstant(argument)) {
-            controller.getOperandStack().doGroovyCast(parameterType);
+            OperandStack operandStack = controller.getOperandStack();
+            // the type checker's type: a call of a generic method such as <T> T pick(T a, T b) leaves the erasure
+            ClassNode argumentType = controller.getTypeChooser().resolveType(argument, controller.getClassNode());
+            ClassNode functionalType = getFunctionalTypeArgument(argument, argumentType, parameterType);
+            if (functionalType != null) operandStack.doGroovyCast(functionalType);
+            operandStack.doGroovyCast(parameterType);
         }
+    }
+
+    /**
+     * Returns the functional interface the type checker found a closure argument converted to, if the parameter
+     * is declared with a type parameter, whose erasure does not name the interface: {@code E} of {@code add(E)}
+     * called on a {@code List<Supplier<String>>}, for instance. A closure for a parameter declared with any other
+     * type is converted to that type, if at all, and gives {@code null}.
+     *
+     * @param argument the argument expression
+     * @param argumentType the type the type checker inferred for the argument
+     * @param parameterType the declared type of the parameter
+     */
+    private static ClassNode getFunctionalTypeArgument(final Expression argument, final ClassNode argumentType, final ClassNode parameterType) {
+        if (parameterType.isGenericsPlaceHolder()
+                && argument.getNodeMetaData(StaticTypesMarker.PARAMETER_TYPE) instanceof ClassNode type
+                && (argumentType.equals(ClassHelper.CLOSURE_TYPE) || argumentType.isDerivedFrom(ClassHelper.CLOSURE_TYPE))
+                && isCompatibleWith(type, parameterType.redirect())) {
+            return type;
+        }
+        return null;
     }
 
     /** {@inheritDoc} */

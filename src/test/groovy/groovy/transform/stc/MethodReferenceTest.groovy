@@ -2305,25 +2305,44 @@ final class MethodReferenceTest {
         assert err.message =~ /Argument is a method reference, but parameter type 'java.lang.Object' is not a functional interface/
     }
 
-    // GROOVY-10979
+    // GROOVY-10979, GROOVY-12492
     @Test
     void testNotFunctionalInterface3() {
+        assertScript shell, '''
+            Integer m(String x) {
+                return x.length()
+            }
+            @CompileStatic
+            void test() {
+                BiFunction<Function<String, Integer>, Number, Function<String, Integer>> y = { Function<String, Integer> f, Number n ->
+                    { String s -> f.apply(s) + n.intValue() } as Function<String, Integer>
+                }
+                BinaryOperator<Function<String, Integer>> z = { Function<String, Integer> f, Function<String, Integer> g -> f }
+                // reduce number(s) to string-to-integer functions: U is bound to a functional interface
+                Function<String, Integer> f = [1, 2].stream().<Function<String, Integer>>reduce(this::m, y, z)
+                assert f.apply('abc') == 6
+                f = (Function<String, Integer>) [1, 2].stream().reduce(this::m, y, z)
+                assert f.apply('abc') == 6
+                f = (Function<String, Integer>) [1, 2].stream().reduce((String s) -> 1, y, z)
+                assert f.apply('abc') == 4
+            }
+
+            test()
+        '''
+
         def err = shouldFail shell, '''
             Integer m(String x) {
                 return 1
             }
+            static <T> T id(T t) {
+                return t
+            }
             @CompileStatic
             void test() {
-                java.util.stream.Stream<Number>                                          x = null
-                BiFunction<Function<String, Integer>, Number, Function<String, Integer>> y = null
-                BinaryOperator<Function<String, Integer>>                                z = null
-                // reduce number(s) to string-to-integer functions
-                x.<Function<String, Integer>>reduce(this::m, y, z)
-                x.reduce(this::m, y, z)
-                x.reduce((s) -> 1, y, z)
+                id(this::m)
             }
         '''
-        assert err.message =~ /Argument is a method reference, but parameter type 'U' is not a functional interface/
+        assert err.message =~ /Argument is a method reference, but parameter type 'T' is not a functional interface/
     }
 
     // GROOVY-11254
