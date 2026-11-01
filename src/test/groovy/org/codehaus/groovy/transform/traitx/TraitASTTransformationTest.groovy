@@ -4442,6 +4442,52 @@ final class TraitASTTransformationTest {
         """
     }
 
+    @CompileModesTest
+    void testCompoundAssignmentOperatorsOnTraitFields(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                int i = 7
+                private long l = 1
+                public double d = 1
+                boolean f = false, g = true
+                String s = 'a'
+                List<Integer> list = [1]
+                BigDecimal bd = 1.5
+                static int si = 5
+                def m() {
+                    i %= 4; i *= 3; i >>= 1; i ^= 3; i &= 6; i |= 1; i <<= 2; i >>>= 1; i -= 4
+                    l += 2; l *= 4
+                    d /= 4
+                    f |= true; g &= false; f ^= true
+                    s += 'b'; s *= 2
+                    list += [2, 3]; list -= [1]
+                    bd += 1; bd /= 2
+                    si += 1
+                    [i, l, d, f, g, s, list, bd, si]
+                }
+                def mc() {
+                    [1].each { i %= 4; i <<= 2; l *= 4; d /= 4; f |= true; s *= 2; list += [2]; bd /= 2; si -= 1 }
+                    [i, l, d, f, s, list, bd, si]
+                }
+                static sm() {
+                    si *= 3; si %= 4; si <<= 3; si |= 1
+                    si
+                }
+            }
+            class C1 implements T {
+            }
+            class C2 implements T {
+            }
+            class C3 implements T {
+            }
+
+            assert new C1().m() == [10, 12, 0.25d, false, false, 'abab', [2, 3], 1.25, 6]
+            assert new C2().mc() == [12, 4, 0.25d, true, 'aa', [1, 2], 0.75, 4]
+            assert C3.sm() == 25
+        """
+    }
+
     // GROOVY-12615
     @CompileModesTest
     void testNestedCompoundAssignmentOnTraitFields(String mode) {
