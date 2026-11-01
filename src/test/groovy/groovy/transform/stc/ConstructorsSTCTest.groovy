@@ -305,6 +305,44 @@ import static groovy.test.GroovyAssert.shouldFail
         'Dynamic keys in map-style constructors are unsupported'
     }
 
+    // GROOVY-12568
+    @Test
+    void testProtectedConstructorOfAnotherPackage() {
+        assertScript '''package p
+            class A {
+                final String value
+                protected A(String value) { this.value = value }
+            }
+            true
+        '''
+        assertScript '''package q
+            class C extends p.A {
+                C() { super('c') }
+                static p.A make() {
+                    new p.A('x') // only super(...) or an anonymous inner class can call it in Java
+                }
+            }
+            assert C.make().value == 'x'
+        '''
+    }
+
+    // GROOVY-12568
+    @Test
+    void testProtectedConstructorOfAnotherPackageThroughSuperOrAnonymousInnerClass() {
+        assertScript '''
+            class C extends ObjectInputStream {
+                C() { super() }
+                C(int i) { this() }
+                static ObjectInputStream make() {
+                    new ObjectInputStream() {}
+                }
+            }
+            assert new C() instanceof ObjectInputStream
+            assert new C(1) instanceof ObjectInputStream
+            assert C.make() instanceof ObjectInputStream
+        '''
+    }
+
     @Test
     void testConstructWithMapAndInheritance() {
         assertScript '''
