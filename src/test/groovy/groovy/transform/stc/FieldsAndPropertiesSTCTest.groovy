@@ -2822,6 +2822,57 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method C#setP(java.lang.Object)'
     }
 
+    // GROOVY-12304
+    @Test
+    void testDynamicPropertyName() {
+        for (expr in ['[a: 1]."a${\'\'}"', 'map."$key"', 'map?."$key"', '[map]*."$key"', 'date."$key"', 'this."$key"']) {
+            shouldFailWithMessages """
+                Map map = [a: 1]
+                Date date = new Date()
+                String key = 'a'
+                $expr
+            """,
+            'Cannot resolve dynamic property name at compile time; consider using subscript notation, e.g. receiver[name], instead'
+        }
+
+        for (expr in ['map."$key" = 2', 'date."$key" = 0L']) {
+            shouldFailWithMessages """
+                Map map = [a: 1]
+                Date date = new Date()
+                String key = 'a'
+                $expr
+            """,
+            'Cannot resolve dynamic property name at compile time; consider using subscript notation, e.g. receiver[name], instead'
+        }
+    }
+
+    // GROOVY-12304
+    @Test
+    void testDynamicAttributeName() {
+        shouldFailWithMessages '''
+            class C { int x }
+            String key = 'x'
+            new C().@"$key"
+        ''',
+        'Cannot resolve dynamic attribute name at compile time'
+    }
+
+    // GROOVY-12304
+    @Test
+    void testDynamicPropertyNameViaSubscript() {
+        assertScript '''
+            Map map = [a: 1]
+            Date date = new Date(0)
+            String key = 'a'
+            assert map[key] == 1
+            map[key] = 2
+            assert map == [a: 2]
+            key = 'time'
+            date[key] = 5L
+            assert date[key] == 5L
+        '''
+    }
+
     //--------------------------------------------------------------------------
 
     static interface InterfaceWithField {

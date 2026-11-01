@@ -927,6 +927,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     + " from class: " + prettyPrintTypeName(typeCheckingContext.getEnclosingClassNode()), expression.getLineNumber() > 0 ? expression : expression.getProperty());
             return;
         }
+        if (expression.getPropertyAsString() == null) {
+            addStaticTypeError(expression instanceof AttributeExpression
+                    ? "Cannot resolve dynamic attribute name at compile time"
+                    : "Cannot resolve dynamic property name at compile time; consider using subscript notation, e.g. receiver[name], instead", expression.getProperty());
+            return;
+        }
 
         var objectExpression = expression.getObjectExpression();
         var objectExpressionType = findCurrentInstanceOfClass(objectExpression, getType(objectExpression));
