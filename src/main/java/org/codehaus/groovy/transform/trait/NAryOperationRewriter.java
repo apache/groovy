@@ -38,8 +38,8 @@ import static org.codehaus.groovy.syntax.Types.EQUAL;
 
 
 /**
- * Rewrites some expressions found in traits so that they are compatible. For example, x++ will be rewritten into x = x
- * + 1 and x += y into x = x + y
+ * Rewrites some expressions found in traits so that they are compatible. For example, if x is a trait field, x += y
+ * will be rewritten into x = x + y, and x++ is rejected
  */
 class NAryOperationRewriter extends ClassCodeExpressionTransformer {
     private final SourceUnit sourceUnit;
@@ -126,6 +126,10 @@ class NAryOperationRewriter extends ClassCodeExpressionTransformer {
         int token = TokenUtil.removeAssignment(op);
         if (token == op) {
             // no transform needed
+            return super.transform(exp);
+        }
+        if (!isInternalFieldAccess(exp.getLeftExpression())) {
+            // GROOVY-12613: only a trait field needs the rewrite; others keep single evaluation of the target
             return super.transform(exp);
         }
         BinaryExpression operation = new BinaryExpression(

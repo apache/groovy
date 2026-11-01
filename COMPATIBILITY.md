@@ -596,6 +596,29 @@ such as a `StringBuilder`, now throws `ClassCastException` where a
 `String`-only method is called on it. Variables declared `String`, `def` or
 `var`, and dynamic code, behave as before.
 
+### Groovy 6.0.1 — enum constants with literal arguments are created without the meta class (GROOVY-12490)
+
+GROOVY-12240 made an enum whose constants have no arguments create them with a
+direct constructor call. An enum whose constants have arguments is now created
+the same way when every argument is a literal (a constant, `null` or a class
+literal) and the compiler can tell which constructor the runtime would select:
+one fixed-arity constructor of that arity, each literal of the parameter's own
+type, the primitive of a wrapper literal, or a type other than `Boolean`
+that it extends or implements. Any other
+enum keeps the synthetic `$INIT` helper, which selects the constructor through
+the meta class.
+
+**Who is affected.** Code that registered a meta class, or an
+`ExpandoMetaClass` constructor, for such an enum before it initialized, to
+observe or replace the creation of its constants. That no longer sees them, as
+it already did not for enums without arguments. Writing one argument as a
+non-literal expression, such as `'one'.toString()` in place of `'one'`, keeps
+the whole enum on `$INIT`.
+
+**What is unchanged.** The constants' values, ordinals and fields, the
+constructor chosen, and enums with named arguments, class bodies, abstract
+methods or overloads the literals cannot tell apart.
+
 ### Groovy 6.0.1 — `super.x = v` calls a setter of the superclass when it has several (GROOVY-12521)
 
 When a superclass declared more than one `setX` method — `setX(int)` and
@@ -651,6 +674,75 @@ Method and constructor parameters, fields and properties named `_`, and
 variables of any other name, are still checked for duplicates. The
 undeclared multi-assignment `(_, y, _) = …` was never affected: it assigns
 the existing `_` (or the binding variable) twice.
+
+### Groovy 6.0.1 — parallel collections run on the pool in scope (GROOVY-12457)
+
+Parallel collection methods (incubating) run on the pool bound with
+`Pool.withCurrent`. In 6.0.0 a pool not backed by a `ForkJoinPool`, such as
+`Pool.virtual()` or `Pool.io()`, was silently replaced by the common
+fork-join pool, so blocking callbacks gained nothing from it.
+
+**Who is affected.**
+
+- Callbacks under `Pool.virtual()` or `Pool.io()` now run on that pool's
+  threads. A short-circuit (`findParallel`, `findAnyParallel`,
+  `anyParallel`, `everyParallel`) or a failing sibling interrupts callbacks
+  still running there, which closes an interruptible channel they are
+  blocked on.
+- `Pool.current()` returns the pool on its own worker threads, where it
+  returned `null`, so a nested parallel call stays on that pool.
+- `groupByParallel` returns its keys in first-seen order, as `groupBy` does.
+- `grepParallel` keeps an element when `isCase` is Groovy-true, as `grep`
+  does. A filter whose `isCase` returns `null`, `0`, an empty string or an
+  empty collection no longer keeps every element.
+
+### Groovy 6.0.1 — type checking rejects a call to a property accessor that is not generated (GROOVY-12525)
+
+Static type checking assumed that a property had both an `isX()` and a
+`getX()` accessor, whether or not the class generates them. A call to an
+accessor that does not exist was accepted at compile time and failed at
+run time with `MissingMethodException` under `@TypeChecked`, or
+`NoSuchMethodError` under `@CompileStatic`. Such a call is now a compile
+error, `Cannot find matching method`. The accessors type checking accepts
+are the ones the class generates:
+
+- A `boolean` property generates `isX()` and `getX()`, unless the class
+  declares one of them itself, in which case only that one exists.
+- A `Boolean` property, or a property of any other type, generates only
+  `getX()`.
+
+**Who is affected.** `@TypeChecked` code that calls such a missing accessor
+on a class with `methodMissing`, for example `b.isName()` for a `String`
+property `name`. That call reached `methodMissing` at run time and now no
+longer compiles. Call the accessor the class generates, read the property
+(`b.name`), or mark the method `@TypeChecked(TypeCheckingMode.SKIP)` to keep
+the dynamic call. Other calls to a missing accessor already failed at run
+time, and dynamic code is unchanged.
+
+### Groovy 6.0.1 — the receiver of a compound-assigned or incremented property is evaluated once (GROOVY-12619)
+
+A compound assignment or an increment of a property, such as `obj().v += 2`
+or `obj().v++`, evaluated the receiver expression twice: once for the read
+and once for the write. The receiver is now evaluated once and used for
+both, as it already was for subscripts such as `list[i()] += 2`. This
+applies in dynamic Groovy, under `@TypeChecked` and under `@CompileStatic`.
+
+It covers `+=` and the other compound assignment operators, prefix and
+postfix `++` and `--`, attribute access (`obj().@f += 2`), safe navigation
+(`obj()?.v += 2`), property chains, a static property reached through an
+instance, extension properties such as `file.text += 'x'`, and a receiver
+named by a property or dynamic variable that is read through a getter. The
+elvis assignment `?=` is unchanged.
+
+**Who is affected.** Code whose receiver expression has a side effect or
+returns a different object on each evaluation:
+
+- A method or getter that counts calls, logs, or otherwise has an effect
+  now runs once per compound assignment or increment, where it ran twice.
+- A receiver that yields a new or a different object each time, such as
+  `iterator.next().v += 1` or `new Box().v++`, now reads and writes the
+  same object. Before, the read came from one object and the write went to
+  the next.
 
 ### Groovy 7 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
 
@@ -809,7 +901,7 @@ of `CompilationUnit` that adds it as a phase operation, or that calls
 `PlaceholderVisitor.isPlaceholder`. Drop the phase operation. Where code needs
 to know whether a variable is `_`, check its name.
 
-### Groovy 7 — statically compiled constructor references call the constructor directly (GROOVY-12488)
+### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
 
 Under `@CompileStatic`, a constructor reference such as `X::new` created the
 object through the meta-class, which selected the constructor at run time from

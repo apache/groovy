@@ -42,6 +42,7 @@ import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RecordComponentNode;
+import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
@@ -358,6 +359,7 @@ public class AsmClassGenerator extends ClassGenerator {
      */
     @Override
     public void visitClass(final ClassNode classNode) {
+        if (classNode.isEnum()) EnumConstantInit.substitute(classNode); // before any visitor reads the static initializer
         referencedClasses.clear();
 
         WriterControllerFactory factory = classNode.getNodeMetaData(WriterControllerFactory.class);
@@ -489,7 +491,21 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void maybeInnerClassEntry(final ClassNode classNode) {
-        if (classNode.getOuterClass() != null) makeInnerClassEntry(classNode);
+        if (classNode.getOuterClass() != null) {
+            makeInnerClassEntry(classNode);
+        } else if (classNode.redirect() instanceof DecompiledClassNode decompiled) { // GROOVY-12544
+            decompiled.visitInnerClassEntries(classVisitor);
+        } else if (!classNode.isPrimaryClassNode() && !classNode.isArray() && classNode.isResolved()) {
+            makeInnerClassEntry(classNode.getTypeClass());
+        }
+    }
+
+    private void makeInnerClassEntry(final Class<?> innerClass) {
+        Class<?> outerClass = innerClass.getDeclaringClass();
+        if (outerClass == null) return; // top-level, local or anonymous
+        makeInnerClassEntry(outerClass);
+        classVisitor.visitInnerClass(BytecodeHelper.getClassInternalName(innerClass),
+                BytecodeHelper.getClassInternalName(outerClass), innerClass.getSimpleName(), innerClass.getModifiers());
     }
 
     private void makeInnerClassEntry(final ClassNode innerClass) {

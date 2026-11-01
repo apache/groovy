@@ -95,6 +95,21 @@ public final class ExpressionUtils {
     }
 
     /**
+     * Checks whether the supplied expression is a qualified {@code this} or {@code super},
+     * such as {@code Outer.this}.
+     *
+     * @param expression the expression to inspect
+     * @return {@code true} if the expression is a class literal followed by {@code this} or {@code super}
+     */
+    public static boolean isQualifiedThisOrSuper(final Expression expression) {
+        if (expression instanceof PropertyExpression pexp && pexp.getObjectExpression() instanceof ClassExpression) {
+            String name = pexp.getPropertyAsString();
+            return "this".equals(name) || "super".equals(name);
+        }
+        return false;
+    }
+
+    /**
      * Checks whether evaluating the supplied expression could be observed.
      * Conservative: only a class literal and a variable (including {@code this}
      * and {@code super}) are known to be free of side effects; any other
