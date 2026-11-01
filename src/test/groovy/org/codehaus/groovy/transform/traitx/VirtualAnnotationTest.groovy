@@ -158,6 +158,129 @@ final class VirtualAnnotationTest {
         '''
     }
 
+    // GROOVY-12604
+    @Test
+    void virtualStatic_calledFromPromotedStatic_throughTrait() {
+        for (mode in ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            assertScript """
+                import groovy.transform.Virtual
+
+                $mode
+                trait T {
+                    @Virtual
+                    static String setting() { 'default' }
+                    @Virtual
+                    static String format(String key, int n) { key + '#' + n }
+                    static String describe() { 'setting=' + setting() }
+                    static String describeThis() { 'setting=' + this.setting() }
+                    static String describeArgs(String key) { format(key, 2) }
+                }
+                $mode
+                class C implements T { }
+                $mode
+                class Over implements T {
+                    static String setting() { 'over' }
+                    static String format(String key, int n) { key * n }
+                }
+
+                assert T.describe() == 'setting=default'
+                assert T.describeThis() == 'setting=default'
+                assert T.describeArgs('k') == 'k#2'
+
+                assert C.describe() == 'setting=default'
+                assert C.describeArgs('k') == 'k#2'
+
+                assert Over.describe() == 'setting=over'
+                assert Over.describeThis() == 'setting=over'
+                assert Over.describeArgs('k') == 'kk'
+            """
+        }
+    }
+
+    // GROOVY-12604
+    @Test
+    void virtualStatic_withClosureOrLambdaArgument_calledFromPromotedStatic_throughTrait() {
+        for (mode in ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            assertScript """
+                import groovy.transform.Virtual
+                import java.util.function.Supplier
+
+                $mode
+                trait T {
+                    @Virtual
+                    static String viaClosure(Closure<String> c) { 'T:' + c.call() }
+                    @Virtual
+                    static String viaSupplier(Supplier<String> s) { 'T:' + s.get() }
+                    static String describe(String p) {
+                        String q = p * 2
+                        viaClosure { p + q } + ',' + viaSupplier(() -> q + p)
+                    }
+                }
+                $mode
+                class C implements T { }
+                $mode
+                class Over implements T {
+                    static String viaClosure(Closure<String> c) { 'O:' + c.call() }
+                    static String viaSupplier(Supplier<String> s) { 'O:' + s.get() }
+                }
+
+                assert T.describe('a') == 'T:aaa,T:aaa'
+                assert C.describe('a') == 'T:aaa,T:aaa'
+                assert Over.describe('a') == 'O:aaa,O:aaa'
+            """
+        }
+    }
+
+    // GROOVY-12604
+    @Test
+    void virtualStatic_calledFromSubTraitPromotedStatic_throughSubTrait() {
+        for (mode in ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            assertScript """
+                import groovy.transform.Virtual
+
+                $mode
+                trait T {
+                    @Virtual
+                    static String setting() { 'default' }
+                }
+                $mode
+                trait U extends T {
+                    static String describe() { 'setting=' + setting() }
+                }
+                $mode
+                class C implements U { }
+                $mode
+                class Over implements U { static String setting() { 'over' } }
+
+                assert U.describe() == 'setting=default'
+                assert C.describe() == 'setting=default'
+                assert Over.describe() == 'setting=over'
+            """
+        }
+    }
+
+    // GROOVY-12604
+    @Test
+    void virtualStatic_calledFromClosureInPromotedStatic_throughTrait() {
+        for (mode in ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            assertScript """
+                import groovy.transform.Virtual
+
+                $mode
+                trait T {
+                    @Virtual
+                    static String setting() { 'default' }
+                    static String describe() { [1].collect { 'setting=' + setting() }[0] }
+                }
+                $mode
+                class Over implements T { static String setting() { 'over' } }
+
+                assert T.describe() == 'setting=default'
+                assert Over.describe() == 'setting=default' // closure carve-out: helper-bound
+            """
+        }
+    }
+
     // ============ Validation ============
 
     /** {@code @Virtual} on an instance method → compile error. */
