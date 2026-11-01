@@ -1837,6 +1837,151 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-12518
+    @Test
+    void testSuperPropertyInClosure() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Base {
+                String name = 'base'
+                boolean flag = true
+                String getP() { 'p:base' }
+                String s = 's:base'
+                void setS(String value) { s = 'set:' + value }
+            }
+            class Sub extends Base {
+                String name = 'sub'
+                boolean flag = false
+                String getP() { 'p:sub' }
+                void setS(String value) { }
+                List read() {
+                    Supplier<String> lambda = () -> super.name
+                    [{ -> super.p }(), { -> super.name }(), { -> super.flag }(), lambda.get(), { -> { -> super.name }() }()]
+                }
+                List write() {
+                    def c = { -> super.name = 'w' }
+                    def d = { -> super.s = 'v' }
+                    [c(), d(), super.name, super.s, name]
+                }
+            }
+            def sub = new Sub()
+            assert sub.read() == ['p:base', 'base', true, 'base', 'base']
+            assert sub.write() == ['w', 'v', 'w', 'set:v', 'sub']
+        '''
+    }
+
+    // GROOVY-12518
+    @Test
+    void testSuperPropertyIncrementAndCompoundAssignment() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Base {
+                int n = 1
+                String s = 'a'
+                int m = 5
+                int getM() { m }
+                void setM(int value) { m = value * 10 }
+                String q
+            }
+            class Sub extends Base {
+                int n = 100
+                String s = 'z'
+                int m = 500
+                int getM() { m }
+                void setM(int value) { m = value }
+                String q = 'sub'
+                List inClass() {
+                    [super.n++, ++super.n, super.n--, super.n += 5, super.s += 'b', super.m++, super.m += 1, super.q ?= 'q', super.n, super.s, super.m, super.q]
+                }
+                List inClosure() {
+                    Supplier<Integer> lambda = () -> super.n++
+                    [{ -> super.n++ }(), { -> ++super.n }(), lambda.get(), { -> super.n += 5 }(), { -> super.s += 'c' }(), { -> super.m++ }(), { -> super.m += 1 }(), super.n, super.s, super.m]
+                }
+                List own() { [n, s, m, q] }
+            }
+            def sub = new Sub()
+            assert sub.inClass() == [1, 3, 3, 7, 'ab', 5, 61, 'q', 7, 'ab', 610, 'q']
+            assert sub.own() == [100, 'z', 500, 'sub']
+            sub = new Sub()
+            assert sub.inClosure() == [1, 3, 3, 9, 'ac', 5, 61, 9, 'ac', 610]
+            assert sub.own() == [100, 'z', 500, 'sub']
+        '''
+    }
+
+    // GROOVY-12589: "super.name" calls the accessor of the superclass, as dynamic Groovy does
+    @Test
+    void testSuperPropertyInClassNestedInSuperclass() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Base {
+                boolean f
+                boolean isF() { true }
+                boolean getF() { false }
+                String name = 'base'
+                String x = 'x'
+                String getX() { x }
+                void setX(String value) { x = value + '!' }
+
+                static class Sub extends Base {
+                    boolean isF() { false }
+                    boolean getF() { true }
+                    String getName() { 'sub' }
+                    String getX() { 'sub' }
+                    void setX(String value) { }
+                    List read() {
+                        Supplier<Boolean> lambda = () -> super.f
+                        [super.f, { -> super.f }(), lambda.get(), { -> { -> super.f }() }(), super.name, { -> super.name }(), super.x, { -> super.x }()]
+                    }
+                    List write() {
+                        def c = { -> super.x = 'c' }
+                        def d = { -> super.x += 'd' }
+                        [c(), super.x, d(), super.x, x]
+                    }
+                    List own() {
+                        [f, this.f, { -> f }(), { -> this.f }(), name, x]
+                    }
+                }
+                class Inner extends Base {
+                    boolean isF() { false }
+                    List read() {
+                        [super.f, { -> super.f }(), f]
+                    }
+                }
+            }
+            def sub = new Base.Sub()
+            assert sub.read() == [true, true, true, true, 'base', 'base', 'x', 'x']
+            assert sub.write() == ['c', 'c!', 'c!d', 'c!d!', 'sub']
+            assert sub.own() == [false, false, false, false, 'sub', 'sub']
+            assert new Base.Inner(new Base()).read() == [true, true, false]
+        '''
+    }
+
+    // GROOVY-12589: for a boolean property, "isName" is the accessor when "getName" is declared, too
+    @Test
+    void testSuperBooleanPropertyWithIsserAndGetter() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Base {
+                boolean f
+                boolean isF() { true }
+                boolean getF() { false }
+            }
+            class Sub extends Base {
+                boolean isF() { false }
+                boolean getF() { true }
+                List read() {
+                    Supplier<Boolean> lambda = () -> super.f
+                    [super.f, { -> super.f }(), lambda.get(), f, this.f, { -> f }(), { -> this.f }()]
+                }
+            }
+            assert new Sub().read() == [true, true, true, false, false, false, false]
+        '''
+    }
+
     @Test
     void testPrivateFieldAccessInClosure1() {
         assertScript '''

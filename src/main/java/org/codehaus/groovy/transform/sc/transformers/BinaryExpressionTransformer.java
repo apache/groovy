@@ -42,6 +42,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.WriterController;
+import org.codehaus.groovy.classgen.asm.sc.StaticCompilationMopWriter;
 import org.codehaus.groovy.classgen.asm.sc.StaticPropertyAccessHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.syntax.Token;
@@ -373,6 +374,18 @@ public class BinaryExpressionTransformer {
         if (directMCT != null) {
             Expression left = staticCompilationTransformer.transform(bin.getLeftExpression());
             Expression right = staticCompilationTransformer.transform(bin.getRightExpression());
+            ClassNode superType = bin.getLeftExpression().getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);
+            if (superType != null && left instanceof PropertyExpression pe) {
+                // transform "super.x = val" in a closure or "Outer.super.x = val" into "def tmp = val; this.super$n$setX(tmp); tmp"
+                return transformAssignmentToSetterCall(
+                        varX("this"),
+                        StaticCompilationMopWriter.getSuperMopMethod(superType, directMCT),
+                        right,
+                        true,
+                        false,
+                        pe.getProperty(),
+                        bin);
+            }
             if (left instanceof PropertyExpression pe) {
                 // transform "a.x = val" into "def tmp = val; a.setX(tmp); tmp"
                 return transformAssignmentToSetterCall(

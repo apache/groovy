@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -142,6 +143,15 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
      */
     boolean extendsClass(final ClassNode type) {
         return transformClass != null && !transformClass.equals(type) && transformClass.isDerivedFrom(type);
+    }
+
+    /**
+     * Tells whether the expression is {@code Type.this} for the class whose body
+     * is being rewritten, which is {@code this}.
+     */
+    boolean isQualifiedThisOfTransformClass(final Expression expr) {
+        return expr instanceof PropertyExpression pe && "this".equals(pe.getPropertyAsString())
+            && pe.getObjectExpression() instanceof ClassExpression && pe.getObjectExpression().getType().equals(transformClass);
     }
 
     /**
