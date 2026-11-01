@@ -936,6 +936,31 @@ package-private constructor of a class that a `GroovyClassLoader` defined in
 another compilation, such as a class of an earlier `GroovyShell` parse. Dynamic
 and `@TypeChecked` code select the constructor at run time as before.
 
+### Groovy 7 — a final `def` field is read with the type of its value (GROOVY-12315)
+
+Within the class that declares it, a read of a final field declared without a
+type has the type of the value assigned by its initializer, its initializer
+blocks and its constructors, as a local variable does. The field keeps `Object`
+as its declared type. The flow type applies where the field itself is read: in
+a method, constructor or initializer body of the declaring class, and in a
+closure or lambda there too for a private field, a static property, or a
+property of a `final` class with a generated getter. Any other read through
+the property getter keeps the declared type, because a subclass may override
+the getter: from a closure or lambda in the class, an inner class, a subclass
+or another class. A value of no one type (`Object`, or a bound of
+several types assigned by different constructors) gives no flow type, nor does
+a field written by a compound assignment, `++`, `--` or a tuple assignment.
+
+- **More programs compile.** `final bar = 'abc'` followed by `bar.length()` in
+  a method of the class type checks without a cast.
+- **Statically compiled overload selection can change.** `m(bar)` with
+  `m(Object)` and `m(String)` overloads now selects `m(String)`. Type checked
+  (dynamically dispatched) code already selected by the runtime type.
+- **An `instanceof` that cannot be true is an error**, as for a local variable:
+  `bar instanceof Integer` when `bar` was assigned a String.
+
+The field descriptors are unchanged, so `japicmp` does not report this.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
