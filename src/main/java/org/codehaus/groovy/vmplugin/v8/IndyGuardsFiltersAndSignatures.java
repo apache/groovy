@@ -36,6 +36,7 @@ import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
+import org.codehaus.groovy.vmplugin.JavaFeatureVersion;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -134,7 +135,7 @@ public class IndyGuardsFiltersAndSignatures {
      * converted, as JDK 17 does. Later JDKs keep a conversion strongly only when the
      * converted handle's own types keep the classes of the new type reachable.
      */
-    static final boolean STRONG_AS_TYPE_CACHE = Runtime.version().feature() < 18;
+    static final boolean STRONG_AS_TYPE_CACHE = JavaFeatureVersion.current() < 18;
 
     /**
      * Converts {@code handle} to the type of one call site with {@link MethodHandle#asType}.
