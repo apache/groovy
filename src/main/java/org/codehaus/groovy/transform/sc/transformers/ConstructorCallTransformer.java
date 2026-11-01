@@ -216,6 +216,9 @@ public class ConstructorCallTransformer {
                         assignX(varExpression, valExpression) // tmp.key = value
                 );
                 setExpression.setSourcePosition(entryExpression);
+                // the transformed expression may or may not write a line number (a setter
+                // call of a compiled class does not), so write the entry's own line first
+                acg.onLineNumber(entryExpression, "visitMapEntryExpression");
                 setExpression.visit(acg);
                 operandStack.pop();
             }
