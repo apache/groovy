@@ -4553,4 +4553,77 @@ final class TraitASTTransformationTest {
         }
         assert err.message.contains('Postfix expressions on trait fields/properties are not supported in traits')
     }
+
+    // GROOVY-12639
+    @Test
+    void testAssignmentOfTraitFieldConvertsValueInDynamicCode() {
+        assertScript shell, '''
+            trait T {
+                int i = 3
+                short s = 1
+                byte b = 1
+                String str
+                char ch
+                int[] arr
+                def m() { i /= 2; s += 1; b <<= 1; [i, s, b] }
+                def mc() { [1].each { i /= 2; s += 1 }; [i, s] }
+                def n() { i = 7.9G; s = 2; b = 3; str = 8; ch = 'c'; arr = [1, 2]; [i, s, b, str, ch, arr] }
+            }
+            class C implements T {
+            }
+
+            assert new C().m() == [1, 2, 2]
+            assert new C().mc() == [1, 2]
+            assert new C().n() == [7, 2, 3, '8', 'c' as char, [1, 2] as int[]]
+        '''
+    }
+
+    // GROOVY-12639
+    @CompileModesTest
+    void testAssignmentOfTraitFieldConvertsValue(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                short s = 1
+                byte b = 1
+                String str
+                char ch
+                int[] arr
+                static short ss = 1
+                def m() {
+                    s = 2; b = 3; str = 8; ch = 'c'; arr = [1, 2]; b <<= 1
+                    [1].each { s = 4 }
+                    [s, b, str, ch, arr]
+                }
+                static sm() { ss = 5; ss }
+            }
+            class C implements T {
+            }
+
+            assert new C().m() == [4, 6, '8', 'c' as char, [1, 2] as int[]]
+            assert C.sm() == 5
+        """
+    }
+
+    // GROOVY-12639
+    @ParameterizedTest
+    @ValueSource(strings=['@TypeChecked','@CompileStatic'])
+    void testAssignmentOfTraitFieldIsCheckedAsAnAssignment(String mode) {
+        for (pair in [['i /= 2', 'Cannot assign value of type java.math.BigDecimal to variable of type int'],
+                      ['i = 1.5G', 'Cannot assign value of type java.math.BigDecimal to variable of type int'],
+                      ['s += 1', 'Possible loss of precision from int to short'],
+                      ['s = 100000', 'Possible loss of precision from int to short'],
+                      ['[1].each { i += 1L }', 'Possible loss of precision from long to int']]) {
+            def err = shouldFail shell, """
+                $mode
+                trait T {
+                    int i = 3
+                    short s = 1
+                    def m() { ${pair[0]} }
+                }
+            """
+            assert err.message.contains(pair[1]) : "'${pair[0]}': ${err.message}"
+            assert !err.message.contains('$set')
+        }
+    }
 }

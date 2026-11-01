@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -41,6 +42,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
@@ -284,7 +286,16 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         if (value == null) {
             mce = callX(receiver, Traits.helperGetterName(fn));
         } else {
-            mce = callX(receiver, Traits.helperSetterName(fn), transform(value));
+            Expression newValue = transform(value);
+            ClassNode type = fn.getOriginType();
+            if (!ClassHelper.isDynamicTyped(type) && !type.isGenericsPlaceHolder() && !GenericsUtils.hasUnresolvedGenerics(type)) {
+                // GROOVY-12639: convert the value as an assignment to the field would
+                CastExpression cast = castX(type, newValue);
+                cast.setSourcePosition(value);
+                cast.putNodeMetaData(TraitASTTransformation.FIELD_ASSIGNMENT, Boolean.TRUE);
+                newValue = cast;
+            }
+            mce = callX(receiver, Traits.helperSetterName(fn), newValue);
         }
         mce.setImplicitThis(false);
         mce.setSourcePosition(exp);

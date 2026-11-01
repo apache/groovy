@@ -125,6 +125,7 @@ import org.codehaus.groovy.transform.RecordTypeASTTransformation;
 import org.codehaus.groovy.transform.SealedASTTransformation;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
+import org.codehaus.groovy.transform.trait.TraitASTTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
@@ -6350,6 +6351,14 @@ trying: for (ClassNode[] signature : signatures) {
         }
 
         source.visit(this);
+
+        if (expression.getNodeMetaData(TraitASTTransformation.FIELD_ASSIGNMENT) != null) {
+            // GROOVY-12639: a value written to a trait field is checked as an assignment to the field
+            ClassNode sourceType = isNullConstant(source) ? UNKNOWN_PARAMETER_TYPE : getInferredTypeFromTempInfo(source, getType(source));
+            BinaryExpression assignment = assignX(varX("value", target), source, expression);
+            typeCheckAssignment(assignment, assignment.getLeftExpression(), target, source, sourceType);
+            return;
+        }
 
         if (!expression.isCoerce() && !checkCast(target, source)) {
             addStaticTypeError("Inconvertible types: cannot cast " + prettyPrintType(getType(source)) + " to " + prettyPrintType(target), expression);
