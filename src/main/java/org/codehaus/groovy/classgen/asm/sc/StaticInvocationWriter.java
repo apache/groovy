@@ -61,6 +61,7 @@ import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
 import org.codehaus.groovy.classgen.asm.WriterController;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
@@ -85,6 +86,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.formatTypeName;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
@@ -121,6 +123,8 @@ import static org.objectweb.asm.Opcodes.POP;
  */
 public class StaticInvocationWriter extends InvocationWriter {
 
+    private static final MethodCallerMultiAdapter invokeNew = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeNew", true, true);
+
     private final AtomicInteger labelCounter = new AtomicInteger();
 
     /**
@@ -146,6 +150,10 @@ public class StaticInvocationWriter extends InvocationWriter {
             return;
         }
         if (writeAICCall(call)) return;
+        if (!AsmClassGenerator.isClassDirectlyAccessible(call.getType(), controller.getClassNode())) {
+            writeDynamicConstructorCall(call, call.getType()); // the bytecode cannot name the class
+            return;
+        }
         ConstructorNode cn;
         if (mn instanceof ConstructorNode) {
             cn = (ConstructorNode) mn;
@@ -155,6 +163,19 @@ public class StaticInvocationWriter extends InvocationWriter {
         }
         ClassNode declaringClass = cn.getDeclaringClass();
         ClassNode enclosingClass = controller.getClassNode();
+        if (!cn.isPrivate() && !isDirectlyAccessible(cn, enclosingClass)) {
+            if (samePackageName(declaringClass, enclosingClass)) {
+                writeDynamicConstructorCall(call, declaringClass);
+                return;
+            }
+            // JLS 6.6.2.2: outside its package, only super(...) or an anonymous inner class can call a protected constructor;
+            // reported here, while the class is generated, so @TypeChecked code is not checked for it and works dynamically
+            controller.getSourceUnit().addError(new SyntaxException(
+                    "Cannot call " + (cn.isProtected() ? "protected" : "package-private") + " constructor for "
+                            + declaringClass.toString(false) + " from class " + enclosingClass.toString(false),
+                    call
+            ));
+        }
         List<Expression> argList = call.getArguments() instanceof TupleExpression
                 ? ((TupleExpression) call.getArguments()).getExpressions() : List.of(call.getArguments());
         if (!AsmClassGenerator.isMemberDirectlyAccessible(cn.getModifiers(), declaringClass, enclosingClass)) {
@@ -192,8 +213,9 @@ public class StaticInvocationWriter extends InvocationWriter {
      * <p>
      * Unlike {@link AsmClassGenerator#isMemberDirectlyAccessible}, there is no
      * subclass rule: the verifier rejects {@code NEW} and {@code INVOKESPECIAL}
-     * of a protected constructor of another package in a subclass too, so a
-     * constructor reference to it creates the object through the meta-class.
+     * of a protected constructor of another package in a subclass too, so
+     * {@code new} of it is reported and a constructor reference to it creates
+     * the object through the meta-class.
      */
     static boolean isDirectlyAccessible(final ConstructorNode ctor, final ClassNode accessingClass) {
         if (ctor.isPublic()) return true;
@@ -202,6 +224,55 @@ public class StaticInvocationWriter extends InvocationWriter {
             return AsmClassGenerator.isMemberDirectlyAccessible(ctor.getModifiers(), declaringClass, accessingClass);
         }
         return AsmClassGenerator.isInSameRuntimePackage(declaringClass, accessingClass);
+    }
+
+    /**
+     * Creates the object through the meta-class, which selects the constructor
+     * at run time, for a constructor that the current class cannot call directly.
+     * The object is typed as the class, or as its nearest superclass that the
+     * current class can name.
+     */
+    private void writeDynamicConstructorCall(final ConstructorCallExpression call, final ClassNode type) {
+        Expression arguments = call.getArguments();
+        makeUncachedCall(call, classX(controller.getClassNode()), classX(type), null, arguments,
+                invokeNew, false, false, false, AsmClassGenerator.containsSpreadExpression(arguments));
+        ClassNode resultType = directlyAccessibleType(type, controller.getClassNode());
+        BytecodeHelper.doCast(controller.getMethodVisitor(), resultType);
+        controller.getOperandStack().replace(resultType);
+    }
+
+    /**
+     * Returns the type, or its nearest superclass that the bytecode of the
+     * accessing class can name.
+     *
+     * @see AsmClassGenerator#isClassDirectlyAccessible
+     */
+    static ClassNode directlyAccessibleType(final ClassNode type, final ClassNode accessingClass) {
+        if (AsmClassGenerator.isClassDirectlyAccessible(type, accessingClass)) return type;
+        return AsmClassGenerator.getDirectlyAccessibleSuperClass(type, accessingClass);
+    }
+
+    /**
+     * Finds a public instance method with the name and parameters of the target
+     * method that a superclass or interface of its declaring class declares and
+     * that the current class can name.
+     */
+    private static MethodNode findDirectlyAccessibleDeclaration(final MethodNode target, final ClassNode enclosingClass) {
+        ClassNode declaringClass = target.getDeclaringClass();
+        List<ClassNode> types = new ArrayList<>();
+        for (ClassNode sc = declaringClass.getSuperClass(); sc != null; sc = sc.getSuperClass()) {
+            types.add(sc);
+        }
+        for (ClassNode sc = declaringClass; sc != null; sc = sc.getSuperClass()) {
+            types.addAll(sc.getAllInterfaces());
+        }
+        for (ClassNode type : types) {
+            if (AsmClassGenerator.isClassDirectlyAccessible(type, enclosingClass)) {
+                MethodNode method = type.getDeclaredMethod(target.getName(), target.getParameters());
+                if (method != null && method.isPublic() && !method.isStatic()) return method;
+            }
+        }
+        return null;
     }
 
     /** {@inheritDoc} */
@@ -371,8 +442,31 @@ public class StaticInvocationWriter extends InvocationWriter {
             receiverType = receiverType.getGenericsTypes()[0].getType(); // GROOVY-11694
         }
 
+        if (!AsmClassGenerator.isClassDirectlyAccessible(declaringClass, enclosingClass)) {
+            // the bytecode cannot name a class that is not public of another run-time package: call the method
+            // through a class that declares it and that the current class can name, or select it at run time
+            MethodNode declaration = target.isStatic() ? null : findDirectlyAccessibleDeclaration(target, enclosingClass);
+            return declaration != null && writeDirectMethodCall(declaration, implicitThis, receiver, args);
+        }
+        for (Parameter parameter : target.getParameters()) {
+            if (!AsmClassGenerator.isClassDirectlyAccessible(parameter.getType(), enclosingClass)) {
+                return false; // the argument would need a cast to a class the bytecode cannot name
+            }
+        }
+
+        if (!target.isPublic() && !target.isPrivate() && samePackageName(declaringClass, enclosingClass)
+                && !AsmClassGenerator.isInSameRuntimePackage(declaringClass, enclosingClass)
+                && !(target.isProtected() && enclosingClass.isDerivedFrom(declaringClass)
+                        && (target.isStatic() || isSuperExpression(receiver) || isSubtype(enclosingClass, receiverType)))) {
+            // a protected or package-private method of a class of another run-time package, which is the package
+            // name and the class loader, is selected at run time (except for the subclass rule of a protected method)
+            return false;
+        }
+
         if (AsmClassGenerator.isMemberDirectlyAccessible(target.getModifiers(), declaringClass, enclosingClass)
-                && !(target.isProtected() && !inSamePackage(declaringClass, enclosingClass) && !isSubtype(receiverType, enclosingClass))) { // GROOVY-7325
+                // GROOVY-7325, JVMS 4.10.1.8: outside its package, a protected instance method needs a receiver of the current class
+                && !(target.isProtected() && !target.isStatic() && !inSamePackage(declaringClass, enclosingClass) && receiver != null
+                        && !isSuperExpression(receiver) && !isClassWithSuper(receiver) && !isSubtype(enclosingClass, receiverType))) {
             boolean isThisImplicit = implicitThis;
             Expression theReceiver = receiver;
             MethodNode theTarget = target;
@@ -410,7 +504,13 @@ public class StaticInvocationWriter extends InvocationWriter {
                 if (storedTypeTarget != null) checkcastReceiver.setType(storedType); // no cast to the narrower type
                 theReceiver = checkcastReceiver;
             }
-            return super.writeDirectMethodCall(theTarget, isThisImplicit, theReceiver, args);
+            OperandStack operandStack = controller.getOperandStack();
+            int depth = operandStack.getStackLength();
+            boolean written = super.writeDirectMethodCall(theTarget, isThisImplicit, theReceiver, args);
+            if (operandStack.getStackLength() > depth) { // the result, unless elided, may be of a class the bytecode cannot name
+                operandStack.replace(directlyAccessibleType(operandStack.getTopOperand(), enclosingClass));
+            }
+            return written;
 
         } else if (tryBridgeMethod(target, receiver, implicitThis, args, enclosingClass)) {
             return true;
@@ -658,8 +758,14 @@ public class StaticInvocationWriter extends InvocationWriter {
             var result = new TemporaryVariableExpression(cce);
             if (produceResultList) result.visit(controller.getAcg());
 
-            ClassNode elementType = StaticTypeCheckingVisitor.inferLoopElementType(controller.getTypeChooser().resolveType(receiver, controller.getClassNode()));
+            ClassNode inferredElementType = StaticTypeCheckingVisitor.inferLoopElementType(controller.getTypeChooser().resolveType(receiver, controller.getClassNode()));
+            // an element of a class the bytecode cannot name is held as its nearest nameable superclass
+            ClassNode elementType = directlyAccessibleType(inferredElementType, controller.getClassNode());
             Parameter element = new Parameter(elementType, "for$it$" + labelCounter.incrementAndGet());
+            VariableExpression elementRef = varX(element);
+            if (elementType != inferredElementType) {
+                elementRef.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, inferredElementType); // for member selection
+            }
 
             VariableScope varScope = new VariableScope(controller.getCompileStack().getScope());
             varScope.setInStaticContext(varScope.getParent().isInStaticContext());
@@ -669,7 +775,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             Expression nextValue;
             if (origin instanceof MethodCallExpression oldMCE) {
                 MethodCallExpression newMCE = callX(
-                        varX(element),
+                        elementRef,
                         oldMCE.getMethod(),
                         oldMCE.getArguments()
                 );
@@ -684,8 +790,8 @@ public class StaticInvocationWriter extends InvocationWriter {
             } else {
                 PropertyExpression oldPE = (PropertyExpression) origin;
                 PropertyExpression newPE = origin instanceof AttributeExpression
-                    ? new AttributeExpression(varX(element), oldPE.getProperty(), true)
-                    : new  PropertyExpression(varX(element), oldPE.getProperty(), true);
+                    ? new AttributeExpression(elementRef, oldPE.getProperty(), true)
+                    : new  PropertyExpression(elementRef, oldPE.getProperty(), true);
                 newPE.setImplicitThis(false);
                 newPE.setNodeMetaData(StaticTypesMarker.INFERRED_TYPE, valuesType);
                 nextValue = newPE;

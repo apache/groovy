@@ -234,9 +234,28 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             }
         }
 
+        if (isFieldOfAnotherRuntimePackage(receiverType, propertyName)) {
+            makeDynamicGetProperty(receiver, propertyName, safe);
+            return;
+        }
+
         addPropertyAccessError(receiver, propertyName, receiverType);
         controller.getMethodVisitor().visitInsn(ACONST_NULL);
         controller.getOperandStack().push(OBJECT_TYPE);
+    }
+
+    /**
+     * Determines if the property is a protected or package-private field of a
+     * class with the same package name but of another run-time package (see
+     * {@link AsmClassGenerator#isInSameRuntimePackage}). Such a field is read
+     * through the meta-class when the current class cannot access it directly.
+     */
+    private boolean isFieldOfAnotherRuntimePackage(final ClassNode receiverType, final String propertyName) {
+        FieldNode field = getField(receiverType, propertyName);
+        if (field == null || field.isPrivate()) return false;
+        ClassNode declaringClass = field.getDeclaringClass(), classNode = controller.getClassNode();
+        return !AsmClassGenerator.isClassDirectlyAccessible(declaringClass, classNode)
+            || (!field.isPublic() && samePackageName(declaringClass, classNode) && !AsmClassGenerator.isInSameRuntimePackage(declaringClass, classNode));
     }
 
     private void makeDynamicGetProperty(final Expression receiver, final String propertyName, final boolean safe) {
@@ -282,6 +301,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         if (componentType == null) {
             componentType = inferLoopElementType(controller.getTypeChooser().resolveType(receiver, controller.getClassNode()));
         }
+        // an element of a class the bytecode cannot name is held as its nearest nameable superclass
+        ClassNode elementType = StaticInvocationWriter.directlyAccessibleType(componentType, controller.getClassNode());
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
         MethodVisitor mv = controller.getMethodVisitor();
@@ -302,7 +323,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         int list = compileStack.defineTemporaryVariable(tmpList, false);
         Variable iterator = varX("iterator", Iterator_TYPE);
         int iter = compileStack.defineTemporaryVariable(iterator, false);
-        Variable nextVar = varX("next", componentType);
+        Variable nextVar = varX("next", elementType);
         int next = compileStack.defineTemporaryVariable(nextVar, false);
 
         mv.visitTypeInsn(NEW, "java/util/ArrayList");
@@ -326,15 +347,14 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         mv.visitJumpInsn(IFEQ, l3);
         mv.visitVarInsn(ALOAD, iter);
         mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Iterator", "next", "()Ljava/lang/Object;", true);
-        mv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(componentType));
+        mv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(elementType));
         mv.visitVarInsn(ASTORE, next);
         Label l4 = new Label();
         mv.visitLabel(l4);
         mv.visitVarInsn(ALOAD, list);
-        Expression pexp = propX(
-                bytecodeX(componentType, v -> v.visitVarInsn(ALOAD, next)),
-                propertyName
-        );
+        Expression element = bytecodeX(elementType, v -> v.visitVarInsn(ALOAD, next));
+        element.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, componentType); // for property selection
+        Expression pexp = propX(element, propertyName);
         pexp.visit(controller.getAcg());
         operandStack.box();
         operandStack.remove(1);
@@ -403,6 +423,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
 
         if (isMapDotProperty) {
             writeMapDotProperty(receiver, propertyName, safe);
+            return;
+        }
+
+        if (isFieldOfAnotherRuntimePackage(receiverType, propertyName)) {
+            makeDynamicGetProperty(receiver, propertyName, safe);
             return;
         }
 
@@ -519,14 +544,17 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             OperandStack operandStack = controller.getOperandStack();
             MethodVisitor mv = controller.getMethodVisitor();
             ClassNode resultType = field.getOriginType();
+            // a field typed by a class the bytecode cannot name gives a value of its nearest nameable superclass
+            ClassNode valueType = StaticInvocationWriter.directlyAccessibleType(resultType, controller.getClassNode());
             if (field.isStatic()) {
                 if (!implicitThis && mayHaveSideEffects(receiver)) {
                     // a static field read through an expression still evaluates it (JLS 15.11.1)
                     receiver.visit(controller.getAcg());
                     operandStack.pop();
                 }
-                mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(receiverType), fieldName, BytecodeHelper.getTypeDescription(resultType));
-                operandStack.push(resultType);
+                ClassNode owner = AsmClassGenerator.isClassDirectlyAccessible(receiverType, controller.getClassNode()) ? receiverType : field.getOwner();
+                mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(owner), fieldName, BytecodeHelper.getTypeDescription(resultType));
+                operandStack.push(valueType);
             } else {
                 // JVMS 4.10.1.8: a protected field of a superclass in another run-time package is
                 // directly readable only through a receiver whose type is assignable to the
@@ -537,7 +565,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                 ClassNode currentClass = controller.getClassNode();
                 ClassNode castType = field.getOwner();
                 if (field.isProtected() && !currentClass.equals(field.getOwner())
-                        && !samePackageName(currentClass, field.getOwner())) {
+                        && !AsmClassGenerator.isInSameRuntimePackage(field.getOwner(), currentClass)) {
                     if (receiverType.isDerivedFrom(currentClass)) castType = currentClass;
                     else return false;
                 }
@@ -566,11 +594,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                     if (isPrimitiveType(resultType)) {
                         operandStack.replace(resultType);
                         operandStack.box();
-                        resultType = operandStack.getTopOperand();
+                        valueType = operandStack.getTopOperand();
                     }
                     mv.visitLabel(skip);
                 }
-                operandStack.replace(resultType);
+                operandStack.replace(valueType);
             }
             return true;
         }
@@ -862,6 +890,15 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
 
         FieldNode fn = AsmClassGenerator.getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(controller.getClassNode(), receiverType, name, false);
         if (fn == null) return false;
+        ClassNode currentClass = controller.getClassNode();
+        if (!fn.isStatic() && fn.isProtected() && !currentClass.equals(fn.getOwner())
+                && !AsmClassGenerator.isInSameRuntimePackage(fn.getOwner(), currentClass)
+                && !receiverType.isDerivedFrom(currentClass)) {
+            return false; // JVMS 4.10.1.8: in another run-time package, the receiver must be of the current class
+        }
+        if (!AsmClassGenerator.isClassDirectlyAccessible(fn.getType(), currentClass)) {
+            return false; // the value would need a cast to a class the bytecode cannot name
+        }
 
         OperandStack os = controller.getOperandStack();
         os.doGroovyCast(fn.getType());
@@ -871,15 +908,17 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             controller.getCompileStack().pushLHS(false);
             objectExpression.visit(controller.getAcg());
             controller.getCompileStack().popLHS();
-            if (!receiverType.equals(os.getTopOperand())) {
-                BytecodeHelper.doCast(mv, receiverType);
-                os.replace(receiverType);
+            ClassNode castType = AsmClassGenerator.isClassDirectlyAccessible(receiverType, currentClass) ? receiverType : fn.getOwner();
+            if (!castType.equals(os.getTopOperand())) {
+                BytecodeHelper.doCast(mv, castType);
+                os.replace(castType);
             }
             os.swap(); // stack: operand, receiver, ...
             mv.visitFieldInsn(PUTFIELD, BytecodeHelper.getClassInternalName(fn.getOwner()), name, BytecodeHelper.getTypeDescription(fn.getType()));
             os.remove(2);
         } else { // stack: operand, ...
-            mv.visitFieldInsn(PUTSTATIC, BytecodeHelper.getClassInternalName(receiverType), name, BytecodeHelper.getTypeDescription(fn.getType()));
+            ClassNode owner = AsmClassGenerator.isClassDirectlyAccessible(receiverType, controller.getClassNode()) ? receiverType : fn.getOwner();
+            mv.visitFieldInsn(PUTSTATIC, BytecodeHelper.getClassInternalName(owner), name, BytecodeHelper.getTypeDescription(fn.getType()));
             os.remove(1);
         }
 
