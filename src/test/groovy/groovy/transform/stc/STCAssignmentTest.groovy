@@ -1189,6 +1189,29 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Object#previous()'
     }
 
+    // an element of a raw list has no type argument; the message names its bound
+    @Test
+    void testPostfixAndPrefixOnSubscriptOfRawList() {
+        shouldFailWithMessages '''
+            def test(List list) {
+                list[0]++
+            }
+        ''',
+        'Cannot find matching method java.lang.Object#next()'
+        shouldFailWithMessages '''
+            def test(List list) {
+                list[0].foo()
+            }
+        ''',
+        'Cannot find matching method java.lang.Object#foo()'
+        shouldFailWithMessages '''
+            def <T> void test(List<T> list) {
+                list[0]++
+            }
+        ''',
+        'Cannot find matching method T#next()'
+    }
+
     @Test
     void testPostfixOnObject() {
         shouldFailWithMessages '''
