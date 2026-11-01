@@ -268,6 +268,47 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12534
+    @Test
+    void testListSubclassDeclaredFieldAndSpread() {
+        assertScript '''
+            class Person {
+                String name
+            }
+            class People extends ArrayList<Person> {
+                String name = 'the collection'
+            }
+            @groovy.transform.CompileStatic
+            def test() {
+                def people = new People()
+                people.add(new Person(name: 'Alice'))
+                people.add(new Person(name: 'Bob'))
+
+                assert people.name == 'the collection'
+                assert people*.name == ['Alice', 'Bob']
+            }
+            test()
+        '''
+    }
+
+    // GROOVY-12534
+    // see org.codehaus.groovy.runtime.m12n.TestStringExtension#getName
+    @Test
+    void testListSubclassExtensionPropertyAndSpread() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            def test() {
+                def people = new bugs.Groovy12534People()
+                people.add(new bugs.Groovy12534Person(name: 'Alice'))
+                people.add(new bugs.Groovy12534Person(name: 'Bob'))
+
+                assert people.name == 'the collection'
+                assert people*.name == ['Alice', 'Bob']
+            }
+            test()
+        '''
+    }
+
     // GROOVY-5584
     @Test
     void testEachOnMap() {
