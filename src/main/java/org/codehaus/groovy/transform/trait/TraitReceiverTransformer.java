@@ -392,9 +392,12 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         }
 
         // this.m(x) --> (this or $self or $static$self).m(x)
-        MethodCallExpression newCall = callX(inClosure ? thisExpr : weaved, method, transform(arguments));
+        // In a closure, an implicit this is left to the closure's resolve strategy; an explicit one is the
+        // instance (or class) the trait is applied to, as this alone is, and not the static helper class.
+        boolean implicitThisInClosure = inClosure && call.isImplicitThis();
+        MethodCallExpression newCall = callX(implicitThisInClosure ? thisExpr : weaved, method, transform(arguments));
         newCall.setGenericsTypes(call.getGenericsTypes()); // GROOVY-11302: this.<T>m(x)
-        newCall.setImplicitThis(inClosure ? call.isImplicitThis() : false);
+        newCall.setImplicitThis(implicitThisInClosure);
         newCall.setSafe(inClosure ? call.isSafe() : false);
         newCall.setSpreadSafe(call.isSpreadSafe());
         newCall.setSourcePosition(call);
