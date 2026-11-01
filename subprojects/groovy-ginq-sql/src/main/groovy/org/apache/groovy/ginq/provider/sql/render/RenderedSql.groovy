@@ -26,7 +26,7 @@ import org.codehaus.groovy.ast.expr.Expression
  * Represents rendered SQL text plus the parameter value expressions
  * in positional order, one per {@code ?} placeholder.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 @CompileStatic

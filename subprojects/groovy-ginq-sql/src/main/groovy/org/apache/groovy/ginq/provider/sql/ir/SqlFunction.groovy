@@ -24,17 +24,25 @@ import org.apache.groovy.lang.annotation.Incubating
 /**
  * Represents a function call by its ANSI name, e.g. {@code UPPER} or an
  * aggregate such as {@code SUM}. Dialects may map the name when rendering.
+ * When {@code distinct} is set, the call is an aggregate
+ * {@code COUNT(DISTINCT ...)}.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 @CompileStatic
 class SqlFunction extends SqlExpr {
     final String name
     final List<SqlExpr> args
+    final boolean distinct
 
     SqlFunction(String name, List<SqlExpr> args) {
+        this(name, args, false)
+    }
+
+    SqlFunction(String name, List<SqlExpr> args, boolean distinct) {
         this.name = name
         this.args = args
+        this.distinct = distinct
     }
 }

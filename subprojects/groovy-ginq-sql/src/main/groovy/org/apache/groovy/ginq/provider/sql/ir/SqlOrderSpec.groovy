@@ -25,7 +25,7 @@ import org.apache.groovy.lang.annotation.Incubating
  * Represents an {@code ORDER BY} item. Null ordering is always rendered
  * explicitly since the GINQ default (nulls last) differs from some databases.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 @CompileStatic

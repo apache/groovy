@@ -24,7 +24,7 @@ import org.apache.groovy.lang.annotation.Incubating
 /**
  * Represents an {@code IS NULL} or {@code IS NOT NULL} test.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 @CompileStatic

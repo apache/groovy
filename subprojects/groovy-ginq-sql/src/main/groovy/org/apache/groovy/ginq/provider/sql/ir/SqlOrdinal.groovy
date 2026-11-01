@@ -26,7 +26,7 @@ import org.apache.groovy.lang.annotation.Incubating
  * set operation result. Rendered inline (not as a parameter) since it is a
  * structural position computed at compile time.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 @CompileStatic

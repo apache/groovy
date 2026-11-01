@@ -27,7 +27,7 @@ import org.apache.groovy.lang.annotation.Incubating
  * parameter safety is preserved. Used where databases require a typed value
  * for inference, e.g. {@code CASE} branches.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 @CompileStatic

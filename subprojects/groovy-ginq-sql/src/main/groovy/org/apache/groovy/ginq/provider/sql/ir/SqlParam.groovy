@@ -28,7 +28,7 @@ import org.codehaus.groovy.ast.expr.Expression
  * the renderer emits a positional {@code ?} placeholder and collects the
  * expressions in emission order, so SQL text never contains user values.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 @CompileStatic

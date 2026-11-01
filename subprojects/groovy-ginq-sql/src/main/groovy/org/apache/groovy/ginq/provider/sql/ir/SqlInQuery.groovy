@@ -24,7 +24,7 @@ import org.apache.groovy.lang.annotation.Incubating
 /**
  * Represents an {@code IN} or {@code NOT IN} test against a subquery.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 @CompileStatic

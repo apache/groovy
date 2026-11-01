@@ -25,7 +25,7 @@ import org.apache.groovy.lang.annotation.Incubating
  * Represents a binary operation with a SQL operator, e.g.
  * {@code =}, {@code <>}, {@code AND}, {@code OR}, {@code +}.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 @CompileStatic

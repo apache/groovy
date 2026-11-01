@@ -21,13 +21,30 @@ package org.apache.groovy.ginq.provider.sql;
 import org.apache.groovy.ginq.provider.GinqProvider;
 import org.apache.groovy.lang.annotation.Incubating;
 
+import java.util.List;
+
 /**
  * Registers the dependency-free {@code native-sql} GINQ provider.
  *
- * @since 6.0.0
+ * @since 7.0.0
  */
 @Incubating
 public class NativeSqlGinqProvider implements GinqProvider {
+    /**
+     * Opt-in switch for mixed-mode execution. Absent or {@code false} keeps
+     * strict mode: an untranslatable construct is a compile error.
+     * {@code true} pushes the translatable clause prefix to the database and
+     * finishes the rest in memory.
+     */
+    public static final String CONF_MIXED_MODE = "mixedMode";
+
+    /**
+     * Names a built-in native dialect ({@code ansi}, {@code h2}, {@code postgres},
+     * {@code mysql}, {@code mariadb}, {@code sqlite}). Absent means ANSI.
+     * Other databases use the {@code jooq-sql} provider.
+     */
+    public static final String CONF_DIALECT = "dialect";
+
     @Override
     public String getName() {
         return "native-sql";
@@ -36,5 +53,21 @@ public class NativeSqlGinqProvider implements GinqProvider {
     @Override
     public String getAstWalkerClassName() {
         return "org.apache.groovy.ginq.provider.sql.GinqSqlWalker";
+    }
+
+    @Override
+    public List<String> getAdditionalOptionNames() {
+        return List.of(CONF_MIXED_MODE, CONF_DIALECT);
+    }
+
+    /**
+     * {@code native-sql} needs {@code groovy-sql} and nothing from jOOQ.
+     */
+    @Override
+    public String unavailableReason(ClassLoader loader) {
+        if (GinqProvider.canLoad(loader, "groovy.sql.Sql")) {
+            return null;
+        }
+        return "the native-sql provider requires org.apache.groovy:groovy-sql on the compile classpath";
     }
 }
