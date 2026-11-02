@@ -19,6 +19,7 @@
 package org.apache.groovy.ginq.provider.sql.ir
 
 import groovy.transform.CompileStatic
+import org.apache.groovy.ginq.provider.sql.SqlFunctionMapping
 import org.apache.groovy.lang.annotation.Incubating
 
 /**
@@ -32,12 +33,12 @@ import org.apache.groovy.lang.annotation.Incubating
  * builds one.
  * <p>
  * <b>How a follow-up adds GINQ window functions.</b> Register each name
- * with {@link org.apache.groovy.ginq.provider.sql.SqlFunctionMapping#window}
+ * with {@link SqlFunctionMapping#window}
  * on the built-in registry before it is sealed, for example
  * {@code rowNumber} to {@code ROW_NUMBER} with no arguments. The mapping
  * translates only the function call. {@code GinqToSqlTranslator} already
  * recognizes {@code fn(...) over(partitionby ... orderby ... rows|range ...)},
- * looks the name up as {@link org.apache.groovy.ginq.provider.sql.SqlFunctionMapping.Kind#WINDOW},
+ * looks the name up as {@link SqlFunctionMapping.Kind#WINDOW},
  * and wraps the function in this node. No change to the renderer spine
  * is required. Until those registrations exist,
  * {@code SqlFunctionRegistry.standard()} has no window mappings and
