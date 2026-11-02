@@ -42,8 +42,11 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression
  * shape constant and a branch in {@link #translate}.
  * <p>
  * A window function is a {@link #window} entry of {@link Kind#WINDOW}.
- * {@link #translate} still returns only the function call. The translator
- * attaches {@code OVER}. Aggregates are not entries of any kind.
+ * {@link #translate} returns the function call; the translator attaches
+ * {@code OVER} and applies {@link WindowForm}. Grouped aggregates stay off
+ * this registry. The same names registered as {@link Kind#WINDOW}
+ * ({@code min}, {@code max}, {@code count}, {@code sum}, {@code avg}) are
+ * the window forms, not {@link Kind#MATH} and not the grouped path.
  *
  * @since 7.0.0
  */
@@ -65,10 +68,43 @@ final class SqlFunctionMapping {
          * Distinct from the scalar kinds above and from aggregates, which
          * are not registry entries: {@code Math.min} is {@link #MATH},
          * aggregate {@code min} is the translator's aggregate path, and a
-         * window {@code min} would be this kind.
-         * {@link SqlFunctionRegistry#standard()} registers none.
+         * window {@code min} is this kind.
+         * {@link SqlFunctionRegistry#standard()} registers the GINQ window
+         * functions under this kind, before the registry is sealed.
          */
         WINDOW
+    }
+
+    /**
+     * How a {@link Kind#WINDOW} mapping is turned into SQL.
+     * <p>
+     * {@code PLAIN} is the extension point: the call is rendered as written,
+     * including a frame. The built-in functions use the other forms so the
+     * SQL matches GINQ where the standard window function would not:
+     * {@code rowNumber} counts from 0, {@code ntile} uses GINQ's bucket
+     * formula, {@code nthValue} counts from 0, and a frame on a ranking or
+     * offset function is rejected because SQL defines those functions
+     * without one. The public {@code window} factories always use {@code PLAIN}.
+     */
+    enum WindowForm {
+        /** {@code NAME(args) OVER window}, frame kept as written. */
+        PLAIN,
+        /** {@code LEAD}/{@code LAG}. A frame is rejected. */
+        OFFSET,
+        /** {@code (ROW_NUMBER() OVER window) - 1}. A frame is rejected. */
+        ZERO_BASED,
+        /** GINQ's {@code floor(buckets * (row_number - 1) / count)}. A frame is rejected. */
+        NTILE,
+        /** {@code RANK}, {@code DENSE_RANK} or {@code CUME_DIST}. Needs {@code orderby}. A frame is rejected. */
+        RANK,
+        /** {@code PERCENT_RANK}, with a one-row partition yielding 1. Needs {@code orderby}. A frame is rejected. */
+        PERCENT,
+        /** {@code FIRST_VALUE}/{@code LAST_VALUE}. The default frame is the whole partition. */
+        VALUE,
+        /** {@code NTH_VALUE} with a 0-based index. The default frame is the whole partition. */
+        NTH,
+        /** {@code COUNT}/{@code SUM}/{@code AVG}/{@code MIN}/{@code MAX}. The default frame is the whole partition. */
+        AGGREGATE
     }
 
     private enum Shape {
@@ -86,10 +122,12 @@ final class SqlFunctionMapping {
     private final String arityMessage
     private final boolean matchBefore
     private final boolean matchAfter
+    /** Non-null for {@link Kind#WINDOW}. */
+    private final WindowForm windowForm
 
     private SqlFunctionMapping(String groovyName, Kind kind, Shape shape, String sqlName,
                                int minArgs, int maxArgs, String arityMessage,
-                               boolean matchBefore, boolean matchAfter) {
+                               boolean matchBefore, boolean matchAfter, WindowForm windowForm) {
         this.groovyName = groovyName
         this.kind = kind
         this.shape = shape
@@ -99,6 +137,7 @@ final class SqlFunctionMapping {
         this.arityMessage = arityMessage
         this.matchBefore = matchBefore
         this.matchAfter = matchAfter
+        this.windowForm = windowForm
     }
 
     /**
@@ -167,7 +206,7 @@ final class SqlFunctionMapping {
         checkSql(sqlName)
         checkRange(minArgs, maxArgs)
         return new SqlFunctionMapping(groovyName, Kind.RECEIVER, Shape.SQL_FUNCTION, sqlName,
-                minArgs, maxArgs, arityMessage, false, false)
+                minArgs, maxArgs, arityMessage, false, false, null)
     }
 
     @PackageScope
@@ -176,7 +215,7 @@ final class SqlFunctionMapping {
         checkSql(sqlName)
         checkRange(minArgs, maxArgs)
         return new SqlFunctionMapping(groovyName, Kind.FREE, Shape.SQL_FUNCTION, sqlName,
-                minArgs, maxArgs, arityMessage, false, false)
+                minArgs, maxArgs, arityMessage, false, false, null)
     }
 
     /**
@@ -188,7 +227,7 @@ final class SqlFunctionMapping {
      * @return the mapping
      */
     static SqlFunctionMapping window(String groovyName, String sqlName) {
-        return window(groovyName, sqlName, 0, 0, null)
+        return window(groovyName, sqlName, 0, 0, null, WindowForm.PLAIN)
     }
 
     /**
@@ -200,7 +239,7 @@ final class SqlFunctionMapping {
      * @return the mapping
      */
     static SqlFunctionMapping window(String groovyName, String sqlName, int arguments) {
-        return window(groovyName, sqlName, arguments, arguments, null)
+        return window(groovyName, sqlName, arguments, arguments, null, WindowForm.PLAIN)
     }
 
     /**
@@ -213,16 +252,29 @@ final class SqlFunctionMapping {
      * @return the mapping
      */
     static SqlFunctionMapping window(String groovyName, String sqlName, int minArgs, int maxArgs) {
-        return window(groovyName, sqlName, minArgs, maxArgs, null)
+        return window(groovyName, sqlName, minArgs, maxArgs, null, WindowForm.PLAIN)
     }
 
     @PackageScope
     static SqlFunctionMapping window(String groovyName, String sqlName, int minArgs, int maxArgs, String arityMessage) {
+        return window(groovyName, sqlName, minArgs, maxArgs, arityMessage, WindowForm.PLAIN)
+    }
+
+    /**
+     * A built-in window function. Public factories stay {@link WindowForm#PLAIN}
+     * so a caller-supplied mapping is not rewritten to GINQ's adjustments.
+     */
+    @PackageScope
+    static SqlFunctionMapping window(String groovyName, String sqlName, int minArgs, int maxArgs,
+                                     String arityMessage, WindowForm windowForm) {
         checkMethod(groovyName)
         checkSql(sqlName)
         checkRange(minArgs, maxArgs)
+        if (windowForm == null) {
+            throw new IllegalArgumentException('a window mapping needs a form')
+        }
         return new SqlFunctionMapping(groovyName, Kind.WINDOW, Shape.SQL_FUNCTION, sqlName,
-                minArgs, maxArgs, arityMessage, false, false)
+                minArgs, maxArgs, arityMessage, false, false, windowForm)
     }
 
     @PackageScope
@@ -230,38 +282,38 @@ final class SqlFunctionMapping {
         checkMethod(groovyName)
         checkSql(sqlName)
         return new SqlFunctionMapping(groovyName, Kind.MATH, Shape.SQL_FUNCTION, sqlName,
-                2, 2, arityMessage, false, false)
+                2, 2, arityMessage, false, false, null)
     }
 
     @PackageScope
     static SqlFunctionMapping concat() {
-        return new SqlFunctionMapping('concat', Kind.RECEIVER, Shape.CONCAT, null, 1, 1, null, false, false)
+        return new SqlFunctionMapping('concat', Kind.RECEIVER, Shape.CONCAT, null, 1, 1, null, false, false, null)
     }
 
     @PackageScope
     static SqlFunctionMapping isEmpty() {
-        return new SqlFunctionMapping('isEmpty', Kind.RECEIVER, Shape.IS_EMPTY, null, 0, 0, null, false, false)
+        return new SqlFunctionMapping('isEmpty', Kind.RECEIVER, Shape.IS_EMPTY, null, 0, 0, null, false, false, null)
     }
 
     @PackageScope
     static SqlFunctionMapping substring() {
-        return new SqlFunctionMapping('substring', Kind.RECEIVER, Shape.SUBSTRING, null, 1, 2, null, false, false)
+        return new SqlFunctionMapping('substring', Kind.RECEIVER, Shape.SUBSTRING, null, 1, 2, null, false, false, null)
     }
 
     @PackageScope
     static SqlFunctionMapping like(String groovyName, boolean matchBefore, boolean matchAfter) {
         checkMethod(groovyName)
-        return new SqlFunctionMapping(groovyName, Kind.RECEIVER, Shape.LIKE, null, 1, 1, null, matchBefore, matchAfter)
+        return new SqlFunctionMapping(groovyName, Kind.RECEIVER, Shape.LIKE, null, 1, 1, null, matchBefore, matchAfter, null)
     }
 
     @PackageScope
     static SqlFunctionMapping indexOf() {
-        return new SqlFunctionMapping('indexOf', Kind.RECEIVER, Shape.INDEX_OF, null, 1, 1, null, false, false)
+        return new SqlFunctionMapping('indexOf', Kind.RECEIVER, Shape.INDEX_OF, null, 1, 1, null, false, false, null)
     }
 
     @PackageScope
     static SqlFunctionMapping cast() {
-        return new SqlFunctionMapping('cast', Kind.FREE, Shape.CAST, null, 2, 2, null, false, false)
+        return new SqlFunctionMapping('cast', Kind.FREE, Shape.CAST, null, 2, 2, null, false, false, null)
     }
 
     /**
@@ -356,6 +408,47 @@ final class SqlFunctionMapping {
             return null
         }
         return new SqlCast(site.expr(args.get(0)), canonical)
+    }
+
+    /**
+     * @param argc how many arguments the call has, not counting {@code over}
+     * @return the diagnostic, or {@code null} when the count is accepted
+     */
+    @PackageScope
+    String arityError(int argc) {
+        if (argc < minArgs || argc > maxArgs) return wrongArity()
+        return null
+    }
+
+    /** Ranking and offset functions have no SQL frame. */
+    @PackageScope
+    boolean rejectsWindowFrame() {
+        return windowForm == WindowForm.OFFSET || windowForm == WindowForm.ZERO_BASED
+                || windowForm == WindowForm.NTILE || windowForm == WindowForm.RANK
+                || windowForm == WindowForm.PERCENT
+    }
+
+    /**
+     * Aggregates and {@code firstValue}/{@code lastValue}/{@code nthValue}
+     * see the whole partition when GINQ writes no {@code rows} or {@code range}.
+     * SQL's default with {@code ORDER BY} stops at the current row, so the
+     * translator supplies the frame.
+     */
+    @PackageScope
+    boolean wholePartitionByDefault() {
+        return windowForm == WindowForm.VALUE || windowForm == WindowForm.NTH
+                || windowForm == WindowForm.AGGREGATE
+    }
+
+    /** {@code rank} and its relatives return null in GINQ when nothing is ordered. */
+    @PackageScope
+    boolean requiresWindowOrder() {
+        return windowForm == WindowForm.RANK || windowForm == WindowForm.PERCENT
+    }
+
+    @PackageScope
+    WindowForm windowForm() {
+        return windowForm
     }
 
     private String wrongArity() {

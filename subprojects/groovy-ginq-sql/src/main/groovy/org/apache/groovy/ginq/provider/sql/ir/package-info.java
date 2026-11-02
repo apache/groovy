@@ -23,8 +23,8 @@
  * <p>
  * Window calls are {@link SqlWindowCall}: a function
  * plus an {@link SqlWindow} (partition, order, and an
- * optional {@code ROWS} or {@code RANGE} frame). Renderers already visit that node. The sealed
- * standard function registry registers no window functions, so the translator does not build
- * one until a follow-up registers {@code SqlFunctionMapping.Kind.WINDOW} entries.
+ * optional {@code ROWS} or {@code RANGE} frame). Both renderers visit that node.
+ * The translator builds one for each window function registered on the sealed
+ * standard registry.
  */
 package org.apache.groovy.ginq.provider.sql.ir;

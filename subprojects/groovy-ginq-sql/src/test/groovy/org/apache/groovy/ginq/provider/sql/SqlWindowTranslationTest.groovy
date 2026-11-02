@@ -21,6 +21,8 @@ package org.apache.groovy.ginq.provider.sql
 import org.apache.groovy.ginq.dsl.GinqAstBuilder
 import org.apache.groovy.ginq.dsl.expression.AbstractGinqExpression
 import org.apache.groovy.ginq.dsl.expression.GinqExpression
+import org.apache.groovy.ginq.dsl.expression.SetOperationExpression
+import org.apache.groovy.ginq.provider.sql.ir.SqlBinary
 import org.apache.groovy.ginq.provider.sql.ir.SqlColumn
 import org.apache.groovy.ginq.provider.sql.ir.SqlCountStar
 import org.apache.groovy.ginq.provider.sql.ir.SqlExpr
@@ -31,6 +33,7 @@ import org.apache.groovy.ginq.provider.sql.ir.SqlParam
 import org.apache.groovy.ginq.provider.sql.ir.SqlProjection
 import org.apache.groovy.ginq.provider.sql.ir.SqlQuery
 import org.apache.groovy.ginq.provider.sql.ir.SqlQueryNode
+import org.apache.groovy.ginq.provider.sql.ir.SqlSetQuery
 import org.apache.groovy.ginq.provider.sql.ir.SqlTableRef
 import org.apache.groovy.ginq.provider.sql.ir.SqlWindow
 import org.apache.groovy.ginq.provider.sql.ir.SqlWindowBound
@@ -55,10 +58,9 @@ import org.junit.jupiter.api.Test
 import static groovy.test.GroovyAssert.shouldFail
 
 /**
- * Proves the window-function extension point without registering any GINQ
- * window function on {@link SqlFunctionRegistry#standard()}. A copy of the
- * registry supplies a fake {@code rowNumber} mapping; the walker must build
- * {@link SqlWindowCall} and the renderers must emit {@code OVER}.
+ * Built-in window functions translate to {@code OVER}. A copy of the registry
+ * can still add a plain mapping; that mapping is not rewritten with the
+ * built-in adjustments.
  */
 class SqlWindowTranslationTest {
 
@@ -68,12 +70,17 @@ class SqlWindowTranslationTest {
             from e in 'nums'
             select (rowNumber() over(orderby n))
         ''')
-        def query = translate(parsed, rowNumberRegistry())
+        def query = translate(parsed, null)
         assert noErrors(parsed)
 
         assert query.projections.size() == 1
-        assert query.projections[0].expr instanceof SqlWindowCall
-        SqlWindowCall call = (SqlWindowCall) query.projections[0].expr
+        assert query.projections[0].expr instanceof SqlBinary
+        SqlBinary adjusted = (SqlBinary) query.projections[0].expr
+        assert '-' == adjusted.op
+        assert adjusted.right instanceof SqlLiteral
+        assert 1 == adjusted.right.value
+        assert adjusted.left instanceof SqlWindowCall
+        SqlWindowCall call = (SqlWindowCall) adjusted.left
         assert call.function instanceof SqlFunction
         assert 'ROW_NUMBER' == call.function.name
         assert call.function.args.empty
@@ -87,15 +94,15 @@ class SqlWindowTranslationTest {
         assert query.orderBy.empty
 
         def ansi = new SqlRenderer(new AnsiDialect()).render(query)
-        assert 'SELECT ROW_NUMBER() OVER (ORDER BY ? ASC NULLS LAST) FROM nums e' == ansi.sql
+        assert 'SELECT ROW_NUMBER() OVER (ORDER BY ? ASC NULLS LAST) - 1 FROM nums e' == ansi.sql
         assert ['n'] == ansi.parameters*.text
 
         def mysql = new SqlRenderer(Dialects.resolve('mysql')).render(query)
-        assert 'SELECT ROW_NUMBER() OVER (ORDER BY (? IS NULL) ASC, ? ASC) FROM `nums` `e`' == mysql.sql
+        assert 'SELECT ROW_NUMBER() OVER (ORDER BY (? IS NULL) ASC, ? ASC) - 1 FROM `nums` `e`' == mysql.sql
         assert ['n', 'n'] == mysql.parameters*.text
 
         def jooq = JooqRenderer.render(query, 'H2').sql
-        assert 'select ROW_NUMBER() over (order by ? asc nulls last) from nums e' == jooq
+        assert 'select (ROW_NUMBER() over (order by ? asc nulls last) - 1) from nums e' == jooq
     }
 
     @Test
@@ -104,24 +111,24 @@ class SqlWindowTranslationTest {
             from e in 'nums'
             select (rowNumber() over())
         ''')
-        def query = translate(parsed, rowNumberRegistry())
+        def query = translate(parsed, null)
         assert noErrors(parsed)
-        SqlWindowCall call = (SqlWindowCall) query.projections[0].expr
+        SqlBinary adjusted = (SqlBinary) query.projections[0].expr
+        SqlWindowCall call = (SqlWindowCall) adjusted.left
         assert call.window.partitionBy.empty
         assert call.window.orderBy.empty
         assert call.window.frame == null
-        assert 'SELECT ROW_NUMBER() OVER () FROM nums e' == new SqlRenderer(new AnsiDialect()).render(query).sql
-        assert 'select ROW_NUMBER() over () from nums e' == JooqRenderer.render(query, 'H2').sql
+        assert 'SELECT ROW_NUMBER() OVER () - 1 FROM nums e' == new SqlRenderer(new AnsiDialect()).render(query).sql
+        assert 'select (ROW_NUMBER() over () - 1) from nums e' == JooqRenderer.render(query, 'H2').sql
     }
 
     @Test
     void testPartitionOrderAndRowsFrame() {
-        def registry = rowNumberRegistry()
-        registry.register(SqlFunctionMapping.window('sum', 'SUM', 1))
+        def registry = plainRegistry()
         def parsed = parse('''
             from e in 'employees'
-            select (rowNumber() over(partitionby e.deptId, e.name.toUpperCase() orderby e.salary in desc rows -1, 1)),
-                   (sum(e.salary) over(orderby e.salary range null, 0))
+            select (myNumber() over(partitionby e.deptId, e.name.toUpperCase() orderby e.salary in desc rows -1, 1)),
+                   (mySum(e.salary) over(orderby e.salary range null, 0))
         ''')
         def query = translate(parsed, registry)
         assert noErrors(parsed)
@@ -164,7 +171,7 @@ class SqlWindowTranslationTest {
     void testUnregisteredOverStaysDeferred() {
         def parsed = parse('''
             from e in 'employees'
-            select (sum(e.salary) over(partitionby e.deptId)), (rowNumber() over(orderby e.salary))
+            select (median(e.salary) over(partitionby e.deptId)), (stdev(e.salary) over(orderby e.salary))
         ''')
         def err = shouldFail(MultipleCompilationErrorsException) {
             translate(parsed, null)
@@ -180,7 +187,7 @@ class SqlWindowTranslationTest {
             select (rowNumber() over(orderby e.salary rows bound, 1))
         ''')
         def err = shouldFail(MultipleCompilationErrorsException) {
-            translate(parsed, rowNumberRegistry())
+            translate(parsed, null)
         }
         assert err.message.contains('window frame bounds must be literals')
         assert !err.message.contains('window functions are deferred')
@@ -193,7 +200,7 @@ class SqlWindowTranslationTest {
             select (rowNumber() over(orderby e.salary rows -1, 1 range -1, 0))
         ''')
         def err = shouldFail(MultipleCompilationErrorsException) {
-            translate(parsed, rowNumberRegistry())
+            translate(parsed, null)
         }
         assert err.message.contains('`rows` and `range` cannot both be used in one `over`')
     }
@@ -245,18 +252,260 @@ class SqlWindowTranslationTest {
         }
     }
 
-    private static SqlFunctionRegistry rowNumberRegistry() {
+    @Test
+    void testBuiltInWindowFunctions() {
+        def parsed = parse('''
+            from e in 'employees'
+            select (rank() over(partitionby e.deptId orderby e.salary)),
+                   (denseRank() over(orderby e.salary in desc)),
+                   (cumeDist() over(orderby e.salary)),
+                   (lead(e.name) over(orderby e.id)),
+                   (lead(e.name, 2, 'NONE') over(orderby e.id)),
+                   (lag(e.salary, 1) over(orderby e.id)),
+                   (firstValue(e.name) over(partitionby e.deptId orderby e.name)),
+                   (lastValue(e.name) over(orderby e.name)),
+                   (nthValue(e.name, 0) over(orderby e.id)),
+                   (nthValue(e.name, 2) over(orderby e.id)),
+                   (count() over(orderby e.id)),
+                   (count(e.deptId) over()),
+                   (count(distinct(e.salary)) over(partitionby e.deptId)),
+                   (sum(e.salary) over(orderby e.id)),
+                   (sum(e -> e.salary) over(partitionby e.deptId)),
+                   (avg(e.salary) over(partitionby e.deptId)),
+                   (min(e.salary) over(partitionby e.deptId)),
+                   (max(e.salary) over())
+        ''')
+        def query = translate(parsed, null)
+        assert noErrors(parsed)
+        def sql = ansi(query).sql
+        def jooq = JooqRenderer.render(query, 'H2').sql.toLowerCase()
+
+        assert sql.contains('RANK() OVER (PARTITION BY e.deptId ORDER BY e.salary ASC NULLS LAST)')
+        assert sql.contains('DENSE_RANK() OVER (ORDER BY e.salary DESC NULLS LAST)')
+        assert sql.contains('CUME_DIST() OVER (ORDER BY e.salary ASC NULLS LAST)')
+        assert sql.contains('LEAD(e.name) OVER (ORDER BY e.id ASC NULLS LAST)')
+        assert sql.contains('LEAD(e.name, ?, ?) OVER (ORDER BY e.id ASC NULLS LAST)')
+        assert sql.contains('LAG(e.salary, ?) OVER (ORDER BY e.id ASC NULLS LAST)')
+        assert sql.contains('FIRST_VALUE(e.name) OVER (PARTITION BY e.deptId ORDER BY e.name ASC NULLS LAST ' +
+                'ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)')
+        assert sql.contains('LAST_VALUE(e.name) OVER (ORDER BY e.name ASC NULLS LAST ' +
+                'ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)')
+        assert sql.contains('NTH_VALUE(e.name, ?) OVER (ORDER BY e.id ASC NULLS LAST ' +
+                'ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)')
+        assert sql.contains('COUNT(*) OVER (ORDER BY e.id ASC NULLS LAST ' +
+                'ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)')
+        assert sql.contains('COUNT(e.deptId) OVER ()')
+        assert sql.contains('COUNT(DISTINCT e.salary) OVER (PARTITION BY e.deptId)')
+        assert sql.contains('COALESCE(SUM(e.salary) OVER (ORDER BY e.id ASC NULLS LAST ' +
+                'ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING), 0)')
+        assert sql.contains('COALESCE(SUM(e.salary) OVER (PARTITION BY e.deptId), 0)')
+        assert sql.contains('AVG(e.salary) OVER (PARTITION BY e.deptId)')
+        assert sql.contains('MIN(e.salary) OVER (PARTITION BY e.deptId)')
+        assert sql.contains('MAX(e.salary) OVER ()')
+        assert !sql.contains('window functions are deferred')
+
+        assert jooq.contains('rank() over (partition by e.deptid order by e.salary asc nulls last)')
+        assert jooq.contains('nth_value(e.name, ?) over (order by e.id asc nulls last rows between unbounded preceding and unbounded following)')
+        assert jooq.contains('count(*) over (order by e.id asc nulls last rows between unbounded preceding and unbounded following)')
+        assert jooq.contains('coalesce(sum(e.salary) over (order by e.id asc nulls last rows between unbounded preceding and unbounded following), 0)')
+        assert jooq.contains('lead(e.name, ?, ?) over (order by e.id asc nulls last)')
+    }
+
+    @Test
+    void testNtileUsesGinqBucketsAndPercentRankKeepsASingleton() {
+        def parsed = parse('''
+            from e in 'employees'
+            select (ntile(4) over(partitionby e.deptId orderby e.salary)),
+                   (percentRank() over(partitionby e.deptId orderby e.salary))
+        ''')
+        def query = translate(parsed, null)
+        assert noErrors(parsed)
+        def sql = ansi(query).sql
+        assert sql.contains('FLOOR((CAST(? * (ROW_NUMBER() OVER (PARTITION BY e.deptId ORDER BY e.salary ASC NULLS LAST) - 1) AS DOUBLE) ' +
+                '/ CAST(COUNT(*) OVER (PARTITION BY e.deptId) AS DOUBLE)))')
+        assert sql.contains('CASE WHEN COUNT(*) OVER (PARTITION BY e.deptId) = 1 THEN 1 ' +
+                'ELSE PERCENT_RANK() OVER (PARTITION BY e.deptId ORDER BY e.salary ASC NULLS LAST) END')
+
+        def jooq = JooqRenderer.render(query, 'H2').sql.toLowerCase()
+        assert jooq.contains('floor')
+        assert jooq.contains('row_number() over (partition by e.deptid order by e.salary asc nulls last)')
+        assert jooq.contains('count(*) over (partition by e.deptid)')
+        assert jooq.contains('percent_rank() over (partition by e.deptid order by e.salary asc nulls last)')
+        assert jooq.contains('case when')
+    }
+
+    @Test
+    void testRowsFrameOnAnAggregateAndExplicitBounds() {
+        def parsed = parse('''
+            from e in 'employees'
+            select (sum(e.salary) over(orderby e.id rows -1, 1)),
+                   (avg(e.salary) over(orderby e.salary range null, 0)),
+                   (min(e.salary) over(rows 0, null))
+        ''')
+        def query = translate(parsed, null)
+        assert noErrors(parsed)
+        def sql = ansi(query).sql
+        assert sql.contains('COALESCE(SUM(e.salary) OVER (ORDER BY e.id ASC NULLS LAST ' +
+                'ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING), 0)')
+        assert sql.contains('AVG(e.salary) OVER (ORDER BY e.salary ASC NULLS LAST ' +
+                'RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)')
+        assert sql.contains('MIN(e.salary) OVER (ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING)')
+        def jooq = JooqRenderer.render(query, 'H2').sql.toLowerCase()
+        assert jooq.contains('sum(e.salary) over (order by e.id asc nulls last rows between 1 preceding and 1 following)')
+        assert jooq.contains('avg(e.salary) over (order by e.salary asc nulls last range between unbounded preceding and current row)')
+    }
+
+    @Test
+    void testRankingFunctionRejectsAFrame() {
+        def parsed = parse('''
+            from e in 'employees'
+            select (rank() over(orderby e.salary rows -1, 1))
+        ''')
+        def err = shouldFail(MultipleCompilationErrorsException) {
+            translate(parsed, null)
+        }
+        assert err.message.contains('does not accept `rows`')
+        assert !err.message.contains('window functions are deferred')
+    }
+
+    @Test
+    void testRankWithoutOrderStaysInMemory() {
+        def parsed = parse('''
+            from e in 'employees'
+            select (denseRank() over(partitionby e.deptId))
+        ''')
+        def err = shouldFail(MultipleCompilationErrorsException) {
+            translate(parsed, null)
+        }
+        assert err.message.contains('needs `orderby`')
+        assert err.message.contains('mixedMode: true')
+    }
+
+    @Test
+    void testFrameThatEndsBeforeItStarts() {
+        def parsed = parse('''
+            from e in 'employees'
+            select (sum(e.salary) over(orderby e.salary rows 1, -1))
+        ''')
+        def err = shouldFail(MultipleCompilationErrorsException) {
+            translate(parsed, null)
+        }
+        assert err.message.contains('ends before it starts')
+    }
+
+    @Test
+    void testNthValueAndOffsetsRejectIllegalLiterals() {
+        def negativeIndex = parse('''
+            from e in 'employees'
+            select (nthValue(e.name, -1) over(orderby e.id))
+        ''')
+        def indexErr = shouldFail(MultipleCompilationErrorsException) {
+            translate(negativeIndex, null)
+        }
+        assert indexErr.message.contains('whole number >= 0')
+
+        def negativeLead = parse('''
+            from e in 'employees'
+            select (lead(e.name, -2) over(orderby e.id))
+        ''')
+        def leadErr = shouldFail(MultipleCompilationErrorsException) {
+            translate(negativeLead, null)
+        }
+        assert leadErr.message.contains('offset must be a whole number >= 0')
+    }
+
+    @Test
+    void testWindowOnlyInSelectAndOrderBy() {
+        def where = parse('''
+            from e in 'employees'
+            where (rowNumber() over(orderby e.id)) > 0
+            select e.name
+        ''')
+        def whereErr = shouldFail(MultipleCompilationErrorsException) {
+            translate(where, null)
+        }
+        assert whereErr.message.contains('only supported in `select` and `orderby`')
+        assert !whereErr.message.contains('mixedMode: true')
+
+        def nested = parse('''
+            from e in 'employees'
+            select (sum(rowNumber() over(orderby e.id)) over())
+        ''')
+        def nestedErr = shouldFail(MultipleCompilationErrorsException) {
+            translate(nested, null)
+        }
+        assert nestedErr.message.contains('cannot be nested')
+
+        def ordered = parse('''
+            from e in 'employees'
+            orderby (rowNumber() over(orderby e.salary))
+            select e.name
+        ''')
+        def query = translate(ordered, null)
+        assert noErrors(ordered)
+        assert ansi(query).sql.contains('ORDER BY ROW_NUMBER() OVER (ORDER BY e.salary ASC NULLS LAST) - 1')
+    }
+
+    @Test
+    void testSetOperationOrdersByAWindowProjection() {
+        def parsed = parse('''
+            from a in 'employees'
+            select (rowNumber() over(orderby a.id))
+            union
+            from b in 'employees'
+            orderby (rowNumber() over(orderby b.id))
+            select (rowNumber() over(orderby b.id))
+        ''')
+        def node = translateNode(parsed)
+        assert noErrors(parsed)
+        assert node instanceof SqlSetQuery
+        def sql = new SqlRenderer(new AnsiDialect()).render(node).sql
+        assert sql.contains('UNION')
+        assert sql.endsWith('ORDER BY 1 ASC NULLS LAST')
+        assert sql.count('ROW_NUMBER()') == 2
+    }
+
+    @Test
+    void testSqliteRejectsANumericRangeOffset() {
+        def parsed = parse('''
+            from e in 'employees'
+            select (sum(e.salary) over(orderby e.salary range -2, 0))
+        ''')
+        def query = translate(parsed, null)
+        assert noErrors(parsed)
+        def err = shouldFail(IllegalArgumentException) {
+            new SqlRenderer(Dialects.resolve('sqlite')).render(query)
+        }
+        assert err.message.contains('numeric RANGE offset')
+        def jooqErr = shouldFail(IllegalArgumentException) {
+            JooqRenderer.render(query, 'SQLITE')
+        }
+        assert jooqErr.message.contains('numeric RANGE offset')
+        assert new SqlRenderer(Dialects.resolve('sqlite')).render(queryOf(new SqlWindowCall(
+                new SqlFunction('SUM', [new SqlColumn('e', 'salary')]),
+                new SqlWindow([], [new SqlOrderSpec(new SqlColumn('e', 'salary'), true, true)],
+                        new SqlWindowFrame(SqlWindowFrame.Unit.RANGE,
+                                SqlWindowBound.unboundedPreceding(), SqlWindowBound.currentRow()))))).sql
+                .contains('RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW')
+    }
+
+    private static SqlFunctionRegistry plainRegistry() {
         def registry = SqlFunctionRegistry.standard().copy()
-        registry.register(SqlFunctionMapping.window('rowNumber', 'ROW_NUMBER'))
+        registry.register(SqlFunctionMapping.window('myNumber', 'ROW_NUMBER'))
+        registry.register(SqlFunctionMapping.window('mySum', 'SUM', 1))
         return registry
     }
 
     private static SqlQuery translate(Parsed parsed, SqlFunctionRegistry registry) {
-        GinqSqlWalker walker = new GinqSqlWalker(parsed.sourceUnit)
-        if (registry != null) walker.setFunctions(registry)
-        SqlQueryNode node = walker.translate(parsed.ginq)
+        SqlQueryNode node = translateNode(parsed, registry)
         assert node instanceof SqlQuery
         return (SqlQuery) node
+    }
+
+    private static SqlQueryNode translateNode(Parsed parsed, SqlFunctionRegistry registry = null) {
+        GinqSqlWalker walker = new GinqSqlWalker(parsed.sourceUnit)
+        if (registry != null) walker.setFunctions(registry)
+        return walker.translate(parsed.ginq)
     }
 
     private static Parsed parse(String query) {
@@ -277,8 +526,8 @@ class SqlWindowTranslationTest {
         DeclarationExpression declaration = (DeclarationExpression) statement.expression
         ClosureExpression closure = (ClosureExpression) declaration.rightExpression
         AbstractGinqExpression built = new GinqAstBuilder(sourceUnit).buildAST(closure.code)
-        assert built instanceof GinqExpression
-        return new Parsed(sourceUnit, (GinqExpression) built)
+        assert built instanceof GinqExpression || built instanceof SetOperationExpression
+        return new Parsed(sourceUnit, built)
     }
 
     private static boolean noErrors(Parsed parsed) {
@@ -320,9 +569,9 @@ class SqlWindowTranslationTest {
 
     private static class Parsed {
         final SourceUnit sourceUnit
-        final GinqExpression ginq
+        final AbstractGinqExpression ginq
 
-        private Parsed(SourceUnit sourceUnit, GinqExpression ginq) {
+        private Parsed(SourceUnit sourceUnit, AbstractGinqExpression ginq) {
             this.sourceUnit = sourceUnit
             this.ginq = ginq
         }

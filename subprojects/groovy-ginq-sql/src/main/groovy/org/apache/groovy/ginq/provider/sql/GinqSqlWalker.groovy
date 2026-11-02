@@ -84,12 +84,10 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
  * equivalent SQL, rendered at compile time with all user values bound as
  * positional parameters, against the configured {@code dataSource}.
  * <p>
- * Window functions are not pushed down. Translation uses
+ * Registered window functions are pushed down. Translation uses
  * {@link SqlFunctionRegistry#standard()} unless a caller in this package
- * passes another registry. The built-in registry has no
- * {@link SqlFunctionMapping.Kind#WINDOW} mappings, so {@code over} is
- * rejected and mixed mode evaluates it in memory. A follow-up registers
- * the GINQ window functions on that registry.
+ * passes another registry. A window name the built-in registry does not
+ * list is rejected, and mixed mode evaluates that clause in memory.
  *
  * @since 7.0.0
  */
@@ -281,7 +279,7 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     /**
      * Replaces the function registry used to translate this query.
-     * The default is the sealed built-in set, which has no window functions.
+     * The default is the sealed built-in set, including its window functions.
      *
      * @param functions the registry, usually {@link SqlFunctionRegistry#standard()}
      * or a {@link SqlFunctionRegistry#copy()} with extra mappings

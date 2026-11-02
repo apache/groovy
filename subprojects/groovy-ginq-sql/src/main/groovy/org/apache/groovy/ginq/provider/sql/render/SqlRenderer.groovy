@@ -372,10 +372,22 @@ class SqlRenderer {
     }
 
     private void renderFrame(SqlWindowFrame frame, StringBuilder sb, List<Expression> parameters) {
+        if (frame.unit == SqlWindowFrame.Unit.RANGE && !dialect.numericRangeOffset() && numericRangeOffset(frame)) {
+            throw new IllegalArgumentException(
+                    'the sqlite dialect supports RANGE frames only with UNBOUNDED and CURRENT ROW bounds. ' +
+                    'A numeric RANGE offset has no SQLite equivalent; use `rows`, or a dialect that supports it')
+        }
         sb.append(frame.unit.name()).append(' BETWEEN ')
         renderBound(frame.lower, sb, parameters)
         sb.append(' AND ')
         renderBound(frame.upper, sb, parameters)
+    }
+
+    private static boolean numericRangeOffset(SqlWindowFrame frame) {
+        return frame.lower.kind == SqlWindowBound.Kind.PRECEDING
+                || frame.lower.kind == SqlWindowBound.Kind.FOLLOWING
+                || frame.upper.kind == SqlWindowBound.Kind.PRECEDING
+                || frame.upper.kind == SqlWindowBound.Kind.FOLLOWING
     }
 
     private void renderBound(SqlWindowBound bound, StringBuilder sb, List<Expression> parameters) {

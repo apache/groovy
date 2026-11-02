@@ -32,15 +32,19 @@ import org.apache.groovy.lang.annotation.Incubating
  * <li>scalar — {@link SqlFunctionMapping.Kind#RECEIVER}, {@link SqlFunctionMapping.Kind#FREE}
  * and {@link SqlFunctionMapping.Kind#MATH}. {@code Math.min} and {@code Math.max}
  * are the entries here ({@code LEAST} and {@code GREATEST}).</li>
- * <li>aggregate — not registered. {@code min}, {@code max}, {@code count},
- * {@code sum} and {@code avg}, including {@code count(distinct)}, stay on the
- * translator's aggregate path.</li>
+ * <li>aggregate — not registered. Grouped {@code min}, {@code max},
+ * {@code count}, {@code sum} and {@code avg}, including {@code count(distinct)},
+ * stay on the translator's aggregate path.</li>
  * <li>window — {@link SqlFunctionMapping.Kind#WINDOW}, registered with
- * {@link SqlFunctionMapping#window}. {@link #standard()} registers none, so
- * {@code fn(...) over(...)} is rejected until a follow-up adds
- * {@code rowNumber}, {@code rank}, and the other GINQ window functions
- * to the built-in registration before the registry is sealed. A {@link #copy()} can
- * register one sooner; that does not change {@link #standard()}.</li>
+ * {@link SqlFunctionMapping#window} before {@link #standard()} is sealed.
+ * The built-in set is the GINQ window surface that has a portable SQL
+ * equivalent: {@code rowNumber}, {@code rank}, {@code denseRank},
+ * {@code percentRank}, {@code cumeDist}, {@code ntile}, {@code lead},
+ * {@code lag}, {@code firstValue}, {@code lastValue}, {@code nthValue},
+ * and the aggregate-as-window forms {@code count}, {@code sum}, {@code avg},
+ * {@code min} and {@code max}. {@code median}, {@code stdev}, {@code stdevp},
+ * {@code var}, {@code varp} and {@code agg} are not registered. A {@link #copy()}
+ * can register another name; that does not change {@link #standard()}.</li>
  * </ul>
  * <p>
  * Not registered, because the SQL function is not faithful to Groovy:
@@ -150,6 +154,40 @@ final class SqlFunctionRegistry {
                 '`Math.max` and `Math.min` expect two arguments'))
         registry.register(SqlFunctionMapping.cast())
         registry.register(SqlFunctionMapping.indexOf())
+        // Window functions. Kind.WINDOW, registered before seal, and not the
+        // grouped aggregate path or Math.min/Math.max.
+        registry.register(SqlFunctionMapping.window('rowNumber', 'ROW_NUMBER', 0, 0,
+                '`rowNumber()` takes no arguments', SqlFunctionMapping.WindowForm.ZERO_BASED))
+        registry.register(SqlFunctionMapping.window('rank', 'RANK', 0, 0,
+                '`rank()` takes no arguments', SqlFunctionMapping.WindowForm.RANK))
+        registry.register(SqlFunctionMapping.window('denseRank', 'DENSE_RANK', 0, 0,
+                '`denseRank()` takes no arguments', SqlFunctionMapping.WindowForm.RANK))
+        registry.register(SqlFunctionMapping.window('percentRank', 'PERCENT_RANK', 0, 0,
+                '`percentRank()` takes no arguments', SqlFunctionMapping.WindowForm.PERCENT))
+        registry.register(SqlFunctionMapping.window('cumeDist', 'CUME_DIST', 0, 0,
+                '`cumeDist()` takes no arguments', SqlFunctionMapping.WindowForm.RANK))
+        registry.register(SqlFunctionMapping.window('ntile', 'NTILE', 1, 1,
+                '`ntile` expects one argument, the number of buckets', SqlFunctionMapping.WindowForm.NTILE))
+        registry.register(SqlFunctionMapping.window('lead', 'LEAD', 1, 3,
+                '`lead` expects the value, and optionally an offset and a default', SqlFunctionMapping.WindowForm.OFFSET))
+        registry.register(SqlFunctionMapping.window('lag', 'LAG', 1, 3,
+                '`lag` expects the value, and optionally an offset and a default', SqlFunctionMapping.WindowForm.OFFSET))
+        registry.register(SqlFunctionMapping.window('firstValue', 'FIRST_VALUE', 1, 1,
+                '`firstValue` expects the value', SqlFunctionMapping.WindowForm.VALUE))
+        registry.register(SqlFunctionMapping.window('lastValue', 'LAST_VALUE', 1, 1,
+                '`lastValue` expects the value', SqlFunctionMapping.WindowForm.VALUE))
+        registry.register(SqlFunctionMapping.window('nthValue', 'NTH_VALUE', 2, 2,
+                '`nthValue` expects the value and a 0-based index', SqlFunctionMapping.WindowForm.NTH))
+        registry.register(SqlFunctionMapping.window('count', 'COUNT', 0, 1,
+                '`count` expects no arguments, or one argument', SqlFunctionMapping.WindowForm.AGGREGATE))
+        registry.register(SqlFunctionMapping.window('sum', 'SUM', 1, 1,
+                '`sum` expects one argument', SqlFunctionMapping.WindowForm.AGGREGATE))
+        registry.register(SqlFunctionMapping.window('avg', 'AVG', 1, 1,
+                '`avg` expects one argument', SqlFunctionMapping.WindowForm.AGGREGATE))
+        registry.register(SqlFunctionMapping.window('min', 'MIN', 1, 1,
+                '`min` expects one argument', SqlFunctionMapping.WindowForm.AGGREGATE))
+        registry.register(SqlFunctionMapping.window('max', 'MAX', 1, 1,
+                '`max` expects one argument', SqlFunctionMapping.WindowForm.AGGREGATE))
         registry.seal()
         return registry
     }
