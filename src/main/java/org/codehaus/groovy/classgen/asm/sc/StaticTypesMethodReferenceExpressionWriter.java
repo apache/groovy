@@ -48,7 +48,6 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -68,8 +67,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractPlaceholders;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.hasUnresolvedGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe0;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.isVargs;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersCompatible;
@@ -702,26 +699,14 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         if (!virtual && !capturing && implCount != samCount) return null;
 
         ClassNode samReturnType = functionalInterface.abstractMethod().getReturnType();
-        boolean convertReturn = false;
-        if (impl.getReturnType().isGenericsPlaceHolder()) { // GROOVY-12623
-            // the exact parameter types are without type arguments
-            ClassNode[] argumentTypes = source.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
-            if (argumentTypes == null || argumentTypes.length != samCount) {
-                argumentTypes = Arrays.stream(exact).map(Parameter::getType).toArray(ClassNode[]::new);
-            }
-            ClassNode receiverType = null;
-            if (capturing) {
-                receiverType = resolved.referenceTarget().type();
-                if (!virtual) argumentTypes = prependType(receiverType, argumentTypes);
-            } else if (virtual) {
-                receiverType = argumentTypes[0];
-                argumentTypes = Arrays.copyOfRange(argumentTypes, 1, samCount);
-            }
-            ClassNode returnType = resolveReturnTypeArgument(impl, receiverType, argumentTypes);
-            convertReturn = returnType != null && isTypeArgumentConversionRequired(returnType, samReturnType);
-        } else {
-            convertReturn = isReturnConversionRequired(impl.getReturnType(), samReturnType); // GROOVY-12617
+        ClassNode returnType = impl.getReturnType();
+        boolean erased = returnType.isGenericsPlaceHolder();
+        if (erased) { // GROOVY-12623: the type checker resolves the type argument
+            ClassNode inferred = source.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+            GenericsType[] gts = inferred != null ? inferred.getGenericsTypes() : null;
+            returnType = gts != null && gts.length == 1 && !gts[0].getType().isGenericsPlaceHolder() ? gts[0].getType() : null;
         }
+        boolean convertReturn = returnType != null && isReturnConversionRequired(returnType, erased, samReturnType); // GROOVY-12617
         if (!any && !convertReturn) return null;
 
         Parameter[] samParams = new Parameter[samCount];
@@ -780,69 +765,30 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     }
 
     /**
-     * Determines if a value of {@code returnType} must be converted to the return type of the
-     * functional interface by Groovy. {@code LambdaMetafactory} converts a value to a primitive
-     * type only by unboxing and widening primitive conversion.
+     * Determines if a value of {@code returnType} must be converted to the primitive return type
+     * of the functional interface by Groovy, because {@code LambdaMetafactory} cannot convert it.
+     * For a declared return type, the metafactory unboxes and applies widening primitive
+     * conversion. For a type parameter (erased to {@code Object}), it casts to the wrapper type
+     * of {@code boolean} or {@code char}, or to {@code Number} for a numeric type, and unboxes.
+     * Which conversions are allowed at all is decided by the type checker.
+     *
+     * @param returnType the declared return type, or the type argument for an erased one
+     * @param erased     whether the referenced method returns a type parameter
      */
-    private static boolean isReturnConversionRequired(final ClassNode returnType, final ClassNode samReturnType) {
+    private static boolean isReturnConversionRequired(final ClassNode returnType, final boolean erased, final ClassNode samReturnType) {
         if (!ClassHelper.isPrimitiveType(samReturnType) || ClassHelper.isPrimitiveVoid(samReturnType)
-                || ClassHelper.isPrimitiveVoid(returnType) || returnType.isGenericsPlaceHolder()) {
+                || ClassHelper.isPrimitiveVoid(returnType)) {
             return false;
         }
         ClassNode type = ClassHelper.getUnwrapper(returnType);
+        // must precede the erased test: it keeps a Boolean or Character type argument on the
+        // metafactory, which unboxes it as Java does, so that null is not converted by Groovy
         if (type.equals(samReturnType)) return false;
-        List<ClassNode> widening = List.of(ClassHelper.byte_TYPE, ClassHelper.short_TYPE, ClassHelper.int_TYPE,
-                                           ClassHelper.long_TYPE, ClassHelper.float_TYPE, ClassHelper.double_TYPE);
-        int from = ClassHelper.isPrimitiveChar(type) ? 1 : widening.indexOf(type), to = widening.indexOf(samReturnType);
-        return from < 0 || from >= to; // char widens like short, but not to short; nothing widens to char or boolean
-    }
-
-    /**
-     * Resolves the type that the type parameter returned by {@code impl} stands for: a type
-     * parameter of the method from the argument types, or a type parameter of the declaring
-     * class from the receiver type.
-     *
-     * @return the type, or {@code null} if it cannot be resolved
-     */
-    private static ClassNode resolveReturnTypeArgument(final MethodNode impl, final ClassNode receiverType, final ClassNode[] argumentTypes) {
-        String name = impl.getReturnType().getUnresolvedName();
-        Map<String, ClassNode> spec = new HashMap<>();
-        GenericsType[] typeParameters = impl.getGenericsTypes();
-        if (typeParameters != null && Arrays.stream(typeParameters).anyMatch(tp -> tp.getName().equals(name))) {
-            Parameter[] parameters = impl.getParameters();
-            for (int i = 0, n = Math.min(parameters.length, argumentTypes.length); i < n; i += 1) {
-                if (hasUnresolvedGenerics(parameters[i].getType())) {
-                    extractSuperClassGenerics(argumentTypes[i], parameters[i].getType(), spec);
-                }
-            }
-        } else if (receiverType != null && hasUnresolvedGenerics(impl.getDeclaringClass())) {
-            extractSuperClassGenerics(receiverType, impl.getDeclaringClass(), spec);
+        if (erased) {
+            return ClassHelper.isPrimitiveBoolean(samReturnType) || ClassHelper.isPrimitiveChar(samReturnType)
+                    || !implementsInterfaceOrIsSubclassOf(ClassHelper.getWrapper(returnType), ClassHelper.Number_TYPE);
         }
-        ClassNode type = spec.get(name);
-        return type == null || type.isGenericsPlaceHolder() ? null : type;
-    }
-
-    /**
-     * Determines if a value of {@code type}, returned as a type parameter, must be converted to the
-     * primitive return type of the functional interface by Groovy. For the erased return value,
-     * {@code LambdaMetafactory} casts to {@code Number} and unboxes for a numeric return type and
-     * casts to the wrapper type and unboxes for {@code boolean} or {@code char}.
-     */
-    private static boolean isTypeArgumentConversionRequired(final ClassNode type, final ClassNode samReturnType) {
-        if (!ClassHelper.isPrimitiveType(samReturnType) || ClassHelper.isPrimitiveVoid(samReturnType)) {
-            return false;
-        }
-        if (ClassHelper.isPrimitiveBoolean(samReturnType) || ClassHelper.isPrimitiveChar(samReturnType)) {
-            return !ClassHelper.getUnwrapper(type).equals(samReturnType);
-        }
-        return !implementsInterfaceOrIsSubclassOf(ClassHelper.getWrapper(type), ClassHelper.Number_TYPE);
-    }
-
-    private static ClassNode[] prependType(final ClassNode first, final ClassNode[] rest) {
-        ClassNode[] all = new ClassNode[rest.length + 1];
-        all[0] = first;
-        System.arraycopy(rest, 0, all, 1, rest.length);
-        return all;
+        return !(ClassHelper.isNumberType(type) && ClassHelper.isNumberType(samReturnType) && isAssignableTo(type, samReturnType));
     }
 
     private static Parameter[] prependParameter(final Parameter first, final Parameter[] rest) {

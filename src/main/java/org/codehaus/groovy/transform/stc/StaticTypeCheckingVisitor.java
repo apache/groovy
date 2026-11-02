@@ -1386,6 +1386,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 inferParameterAndReturnTypesOfClosureOnRHS(target, lambda);
                 source.putNodeMetaData(PARAMETER_TYPE, lambda.getNodeMetaData(PARAMETER_TYPE));
                 source.putNodeMetaData(CLOSURE_ARGUMENTS, extractTypesFromParameters(lambda.getParameters()));
+            } else if (source instanceof MethodPointerExpression) { // as for a method pointer argument
+                source.putNodeMetaData(PARAMETER_TYPE, target);
             }
         }
     }
@@ -1543,12 +1545,6 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
             return true;
         }
-    }
-
-    // JLS 5.1.2: byte to short, short or char to int, int to long, long to float, float to double, and transitively
-    private static boolean isWideningPrimitive(ClassNode source, final ClassNode target) {
-        if (isPrimitiveChar(source)) source = int_TYPE; // char widens to the same types as int
-        return isPrimitiveType(source) && isPrimitiveType(target) && isNumberType(source) && isNumberType(target) && isAssignableTo(source, target);
     }
 
     private static boolean isClosureWithType(final ClassNode type) {
@@ -3558,8 +3554,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 } else if (statement.isReturningNullOrVoid() ? !isPrimitiveType(inferredReturnType) // GROOVY-7713, GROOVY-8202
                      : GenericsUtils.buildWildcardType(wrapTypeIfNecessary(inferredReturnType)).isCompatibleWith(wrapTypeIfNecessary(type))) {
                     type = inferredReturnType; // GROOVY-8310, GROOVY-10082, GROOVY-10091, GROOVY-10128, GROOVY-10306: allow simple covariance
-                } else if (isWideningPrimitive(getUnwrapper(type), inferredReturnType)) {
-                    type = inferredReturnType; // GROOVY-12616: allow widening primitive conversion, after unboxing if needed
+                } else if (!statement.isReturningNullOrVoid() && isPrimitiveType(inferredReturnType)
+                        && checkReturnValue(inferredReturnType, type, expression, statement)) {
+                    type = inferredReturnType; // GROOVY-12616: the value is converted to a primitive return type as by a method's return
                 } else if ((statement.isReturningNullOrVoid() || !isPrimitiveVoid(type)) && !extension.handleIncompatibleReturnType(statement, type)) {
                     // GROOVY-10277, GROOVY-11490: incompatible return statement (null for primitive or inconvertible type)
                     String value = (statement.isReturningNullOrVoid() ? "null" : "value of type " + prettyPrintType(type));
@@ -3573,26 +3570,52 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
         if (enclosingMethod != null && !enclosingMethod.isVoidMethod() && !enclosingMethod.isDynamicReturnType()) {
             ClassNode returnType = enclosingMethod.getReturnType();
-            boolean literal = !returnType.isArray() // arrays: see addPrecisionErrors
-                    && (expression instanceof ListExpression || expression instanceof MapExpression);
-            if (!isPrimitiveVoid(getUnwrapper(type)) && !checkCompatibleAssignmentTypes(returnType, type, expression, literal)) {
+            if (!isPrimitiveVoid(getUnwrapper(type)) && !checkReturnValue(returnType, type, expression, statement)) {
                 if (!extension.handleIncompatibleReturnType(statement, type)) {
                     addStaticTypeError("Cannot return value of type " + prettyPrintType(type) + " for method returning " + prettyPrintType(returnType), expression);
                 }
-            } else if (literal && !implementsInterfaceOrIsSubclassOf(type, returnType)) {
-                // GROOVY-12644: check a list or map literal as for "ReturnType x = literal"
-                BinaryExpression dummy = assignX(varX("{target}", returnType), expression, statement);
-                ClassNode resultType = getResultType(returnType, ASSIGN, type, dummy);
-                typeCheckAssignment(dummy, dummy.getLeftExpression(), returnType, expression, resultType);
-            } else if (implementsInterfaceOrIsSubclassOf(type, returnType)) {
-                BinaryExpression dummy = assignX(varX("{target}", returnType), expression, statement);
-                ClassNode resultType = getResultType(returnType, ASSIGN, type, dummy); // GROOVY-10295
-                checkTypeGenerics(returnType, resultType, expression);
-            } else { // GROOVY-11623: check array items or number bounds
-                addPrecisionErrors(returnType.redirect(), returnType, type, expression);
             }
         }
         return null;
+    }
+
+    /**
+     * Checks a value returned to {@code target}: the return type of a method, or the primitive
+     * return type of the functional interface implemented by a closure, lambda or method reference.
+     * A return converts its value as an assignment does, so the rules are those of
+     * {@link StaticTypeCheckingSupport#checkCompatibleAssignmentTypes(ClassNode, ClassNode, Expression, boolean)
+     * checkCompatibleAssignmentTypes}, followed by the assignment check for a list or map literal,
+     * the generics check for a subtype or the loss-of-precision check for a number. Use this rather
+     * than a separate set of rules, so that every kind of return accepts the same values.
+     *
+     * @param target    the type returned to
+     * @param type      the type of the returned value
+     * @param value     the returned value, or the method reference whose method returns it
+     * @param statement the return statement, or {@code null} for a method reference
+     * @return {@code false} if the types are incompatible, which the caller reports; a literal,
+     *         generics or precision error is reported here and still returns {@code true}
+     */
+    private boolean checkReturnValue(final ClassNode target, final ClassNode type, final Expression value, final ReturnStatement statement) {
+        boolean literal = statement != null && !target.isArray() && !isPrimitiveType(target) // arrays: see addPrecisionErrors
+                && (value instanceof ListExpression || value instanceof MapExpression);
+        if (!checkCompatibleAssignmentTypes(target, type, value, literal)) {
+            return false;
+        }
+        if (literal && !implementsInterfaceOrIsSubclassOf(type, target)) {
+            // GROOVY-12644: check a list or map literal as for "ReturnType x = literal"
+            BinaryExpression dummy = assignX(varX("{target}", target), value, statement);
+            ClassNode resultType = getResultType(target, ASSIGN, type, dummy);
+            typeCheckAssignment(dummy, dummy.getLeftExpression(), target, value, resultType);
+        } else if (implementsInterfaceOrIsSubclassOf(type, target)) {
+            if (statement != null) {
+                BinaryExpression dummy = assignX(varX("{target}", target), value, statement);
+                ClassNode resultType = getResultType(target, ASSIGN, type, dummy); // GROOVY-10295
+                checkTypeGenerics(target, resultType, value);
+            }
+        } else { // GROOVY-11623: check array items or number bounds
+            addPrecisionErrors(target.redirect(), target, type, value);
+        }
+        return true;
     }
 
     /**
@@ -3885,6 +3908,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
 
                 ClassNode ownerType = receiverType;
+                ClassNode targetSAM = expression.getNodeMetaData(PARAMETER_TYPE);
+                // a method pointer is not given the SAM parameter types, so its methods stay
+                // selected at run time; they are used only to resolve a returned type parameter
+                ClassNode[] samArguments = arguments != null || expression instanceof MethodReferenceExpression
+                        || !isSAMType(targetSAM) ? arguments : GenericsUtils.parameterizeSAM(targetSAM).getV1();
                 candidates.stream()
                         .peek(candidate -> checkOrMarkPrivateAccess(expression, candidate)) // GROOVY-11365
                         .map (candidate -> {
@@ -3895,6 +3923,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                                 extractGenericsConnections(spec, ownerType, candidate.getDeclaringClass());
                                 returnType = applyGenericsContext(spec, returnType);
                             }
+                            if (returnType.isGenericsPlaceHolder() && asBoolean(samArguments)) { // GROOVY-12623
+                                returnType = resolveMethodReferenceReturnType(expression, candidate, returnType, samArguments);
+                            }
                             return returnType;
                         })
                         .reduce(WideningCategories::lowestUpperBound).ifPresent(returnType -> {
@@ -3904,7 +3935,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             ClassNode targetType = expression.getNodeMetaData(PARAMETER_TYPE);
                             if (!returnType.isGenericsPlaceHolder() && isSAMType(targetType)) {
                                 targetType = GenericsUtils.parameterizeSAM(targetType).getV2();
-                                if (!isPrimitiveVoid(targetType) && !checkCompatibleAssignmentTypes(targetType, returnType, null, false)) // TODO: ext.handleIncompatibleReturnType
+                                if (!isPrimitiveVoid(targetType) && !checkReturnValue(targetType, returnType, expression, null)) // TODO: ext.handleIncompatibleReturnType
                                     addStaticTypeError("Invalid return type: " + prettyPrintType(returnType) + " is not convertible to " + prettyPrintType(targetType), expression);
                             }
                         });
@@ -3926,6 +3957,39 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 addStaticTypeError("Cannot find matching method " + prettyPrintTypeName(type) + "#" + nameText + ". Please check if the declared type is correct and if the method exists.", nameExpr);
             }
         }
+    }
+
+    /**
+     * Resolves a type parameter of the referenced method that the method returns, from the
+     * parameter types of the functional interface. The method's parameters take the functional
+     * interface's parameters, after the receiver for an instance method referenced through its
+     * class, or after the self parameter for an extension method referenced through an instance.
+     *
+     * @return the type argument, or {@code returnType} if it cannot be resolved
+     */
+    private static ClassNode resolveMethodReferenceReturnType(final MethodPointerExpression expression, final MethodNode candidate,
+                                                              final ClassNode returnType, final ClassNode[] arguments) {
+        boolean referenceThroughClass = expression.getExpression() instanceof ClassExpression;
+        MethodNode method = candidate;
+        int offset = 0; // index of the functional interface parameter given to the method's first parameter
+        if (candidate instanceof ExtensionMethodNode extension && !extension.isStaticExtension()) {
+            method = extension.getExtensionMethodNode(); // the self parameter comes first
+            if (!referenceThroughClass) offset = -1; // the receiver is the self parameter
+        } else if (!candidate.isStatic() && referenceThroughClass) {
+            offset = 1; // the first parameter is the receiver
+        }
+        Parameter[] parameters = method.getParameters();
+        Map<GenericsTypeName, GenericsType> spec = new HashMap<>();
+        for (int i = Math.max(0, -offset), n = parameters.length; i < n && i + offset < arguments.length; i += 1) {
+            ClassNode parameterType = parameters[i].getType();
+            ClassNode argumentType = wrapTypeIfNecessary(arguments[i + offset]);
+            if (parameterType.isArray() && !argumentType.isArray() && i == n - 1) {
+                parameterType = parameterType.getComponentType(); // variadic
+            }
+            extractGenericsConnections(spec, argumentType, parameterType);
+        }
+        ClassNode resolved = applyGenericsContext(spec, returnType);
+        return resolved.isGenericsPlaceHolder() ? returnType : resolved;
     }
 
     private static Expression typedValueExpression(final ClassNode type) {
