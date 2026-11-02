@@ -27,28 +27,21 @@ import org.apache.groovy.lang.annotation.Incubating
  * <p>
  * {@code function} is the call without {@code OVER}, usually a
  * {@link SqlFunction}. {@code count()} with no argument is a
- * {@link SqlCountStar}, which this node can already wrap; the built-in
- * registry does not register it yet. The native and jOOQ renderers both
- * visit this node. They are reached only when a translator actually
- * builds one.
+ * {@link SqlCountStar}. The native and jOOQ renderers both visit this node.
  * <p>
- * <b>How a follow-up adds GINQ window functions.</b> Register each name
- * with {@link SqlFunctionMapping#window}
- * on the built-in registry before it is sealed, for example
- * {@code rowNumber} to {@code ROW_NUMBER} with no arguments. The mapping
- * translates only the function call. {@code GinqToSqlTranslator} already
- * recognizes {@code fn(...) over(partitionby ... orderby ... rows|range ...)},
- * looks the name up as {@link SqlFunctionMapping.Kind#WINDOW},
- * and wraps the function in this node. No change to the renderer spine
- * is required. Until those registrations exist,
- * {@code SqlFunctionRegistry.standard()} has no window mappings and
- * {@code over} is rejected with a stable message so mixed mode still
- * evaluates the clause in memory.
+ * {@code SqlFunctionRegistry.standard()} registers the portable GINQ window
+ * functions as {@link SqlFunctionMapping.Kind#WINDOW} before it is sealed.
+ * {@code GinqToSqlTranslator} recognizes
+ * {@code fn(...) over(partitionby ... orderby ... rows|range ...)} and wraps
+ * the function in this node. Adjustments that are not part of the function
+ * call itself, such as {@code rowNumber}'s {@code - 1}, sit outside this node.
+ * A name that is not registered is rejected with a stable message so mixed
+ * mode still evaluates the clause in memory.
  * <p>
- * Window {@code min} is that kind, not {@code Math.min} and not the
- * aggregate path. Set-operation {@code ORDER BY} matching does not yet
- * treat two window calls as the same expression; extend it if a window
- * projection is ordered on a union result.
+ * Window {@code min} is that kind, not {@code Math.min} and not the grouped
+ * aggregate path. Set-operation {@code ORDER BY} matching treats two window
+ * calls as the same expression when the function, partition, order and frame
+ * match, so a window projection can be ordered on a union result.
  *
  * @since 7.0.0
  */

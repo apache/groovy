@@ -144,11 +144,26 @@ class GinqSqlMixedModeTest {
             from e in 'employees'
             where e.deptId == 1
             orderby e.name
-            select e.name, (rowNumber() over(orderby e.name))
+            select e.name, (median(e.salary) over(orderby e.name))
         }
         assert 'SELECT e.* FROM employees e WHERE e.deptId = ? ORDER BY e.name ASC NULLS LAST' == db.sqlText
         assert [1] == db.params
-        assert [['Alice', 0], ['Bob', 1]] == result.toList()
+        assert [['Alice', 4000], ['Bob', 4000]] == result.toList()
+    }
+
+    @Test
+    void testRegisteredWindowIsPushed() {
+        def result = GQL(provider: 'native-sql', mixedMode: true, dataSource: db) {
+            from e in 'employees'
+            where e.deptId == 1
+            orderby e.name
+            select e.name, (rowNumber() over(orderby e.name)) as rn
+        }
+        assert db.sqlText.contains('ROW_NUMBER() OVER (ORDER BY e.name ASC NULLS LAST) - 1')
+        assert db.sqlText.contains('WHERE e.deptId = ?')
+        assert !db.sqlText.contains('e.*')
+        assert [1] == db.params
+        assert [['Alice', 0], ['Bob', 1]] == result.collect { [it.name, it.rn] }
     }
 
     @Test

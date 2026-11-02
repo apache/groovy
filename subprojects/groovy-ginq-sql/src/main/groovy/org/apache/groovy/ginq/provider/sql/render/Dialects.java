@@ -180,6 +180,11 @@ public final class Dialects {
         }
 
         @Override
+        public boolean numericRangeOffset() {
+            return false;
+        }
+
+        @Override
         public void renderLimit(SqlExpr offset, SqlExpr fetch, LimitRender out) {
             limitOffset(offset, fetch, out);
         }

@@ -126,6 +126,19 @@ public interface Dialect {
     }
 
     /**
+     * Whether a {@code RANGE} frame may use a numeric offset
+     * ({@code n PRECEDING} or {@code n FOLLOWING}). SQLite accepts only
+     * {@code UNBOUNDED} and {@code CURRENT ROW} in a {@code RANGE} frame.
+     * {@code ROWS} offsets are not affected.
+     *
+     * @return {@code true} when a numeric {@code RANGE} offset is supported
+     * @since 7.0.0
+     */
+    default boolean numericRangeOffset() {
+        return true;
+    }
+
+    /**
      * Whether {@code ORDER BY} accepts {@code NULLS FIRST}/{@code NULLS LAST}.
      * When {@code false}, the renderer emulates the requested null order so
      * results stay faithful to GINQ, which defaults to nulls last.

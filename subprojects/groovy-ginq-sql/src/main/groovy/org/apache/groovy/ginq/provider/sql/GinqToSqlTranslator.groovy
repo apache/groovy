@@ -112,12 +112,13 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
  * {@link #recoverUntranslatable} set, constructs that have no SQL equivalent
  * raise {@link Untranslatable} so mixed mode can move that clause in memory.
  * <p>
- * {@code fn(...) over(...)} is a window call. It is translated only when
+ * {@code fn(...) over(...)} is a window call. It is translated when
  * {@code fn} is registered as {@link SqlFunctionMapping.Kind#WINDOW}.
- * {@link SqlFunctionRegistry#standard()} registers none, so the call is
- * rejected with a stable "window functions are deferred" message and
- * mixed mode keeps running it in memory. A follow-up registers the GINQ
- * window functions; this class already builds {@link SqlWindowCall}.
+ * {@link SqlFunctionRegistry#standard()} registers the portable GINQ window
+ * functions. A name that is not registered ({@code median}, {@code stdev},
+ * {@code stdevp}, {@code var}, {@code varp}, {@code agg}) is rejected with
+ * the stable "window functions are deferred" message, and mixed mode keeps
+ * running that clause in memory.
  *
  * @since 7.0.0
  */
@@ -133,6 +134,10 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
     private final Map<String, SqlExpr> groupKeysByName = [:]
     private String aggregateLambdaParam
     private boolean recoverUntranslatable
+    /** Window calls are legal in {@code select} and query {@code orderby}. */
+    private boolean windowAllowed
+    /** A window function inside another window function has no SQL form. */
+    private int windowDepth
     private final SqlFunctionSite calls = new CallSite()
 
     GinqToSqlTranslator(SourceUnit sourceUnit, String providerName = 'native-sql') {
@@ -141,9 +146,9 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
 
     /**
      * @param functions scalar and window mappings. {@link SqlFunctionRegistry#standard()}
-     * registers no window functions. A copy with {@link SqlFunctionMapping.Kind#WINDOW}
-     * entries is how a caller, including a test, turns {@code over} into
-     * {@link SqlWindowCall} without changing the sealed built-in set.
+     * is the sealed built-in set. A {@link SqlFunctionRegistry#copy()} can
+     * register another {@link SqlFunctionMapping.Kind#WINDOW} name without
+     * changing that set.
      */
     @PackageScope
     GinqToSqlTranslator(SourceUnit sourceUnit, String providerName, SqlFunctionRegistry functions) {
@@ -271,7 +276,39 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
             SqlCast other = (SqlCast) b
             return a.sqlType == other.sqlType && sameExpr(a.expr, other.expr)
         }
+        if (a instanceof SqlLiteral) {
+            return Objects.equals(((SqlLiteral) a).value, ((SqlLiteral) b).value)
+        }
+        if (a instanceof SqlCaseWhen) {
+            SqlCaseWhen other = (SqlCaseWhen) b
+            return sameExpr(a.condition, other.condition) && sameExpr(a.thenExpr, other.thenExpr)
+                    && sameExpr(a.elseExpr, other.elseExpr)
+        }
+        if (a instanceof SqlWindowCall) {
+            SqlWindowCall other = (SqlWindowCall) b
+            return sameExpr(a.function, other.function) && sameWindow(a.window, other.window)
+        }
         return false // parameters and parameter-bearing expressions are never comparable
+    }
+
+    private static boolean sameWindow(SqlWindow a, SqlWindow b) {
+        if (a.partitionBy.size() != b.partitionBy.size() || a.orderBy.size() != b.orderBy.size()) return false
+        for (int i = 0; i < a.partitionBy.size(); i++) {
+            if (!sameExpr(a.partitionBy.get(i), b.partitionBy.get(i))) return false
+        }
+        for (int i = 0; i < a.orderBy.size(); i++) {
+            SqlOrderSpec left = a.orderBy.get(i)
+            SqlOrderSpec right = b.orderBy.get(i)
+            if (left.asc != right.asc || left.nullsLast != right.nullsLast || !sameExpr(left.expr, right.expr)) return false
+        }
+        if (a.frame == null || b.frame == null) return a.frame == null && b.frame == null
+        return a.frame.unit == b.frame.unit && sameBound(a.frame.lower, b.frame.lower) && sameBound(a.frame.upper, b.frame.upper)
+    }
+
+    private static boolean sameBound(SqlWindowBound a, SqlWindowBound b) {
+        if (a.kind != b.kind) return false
+        if (a.offset == null || b.offset == null) return a.offset == null && b.offset == null
+        return sameExpr(a.offset, b.offset)
     }
 
     private GinqExpression requireGinqExpression(AbstractGinqExpression expression) {
@@ -415,8 +452,14 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
     }
 
     private void translateOrders(Expression ordersExpr, SqlQuery query) {
-        for (SqlOrderSpec orderSpec : translateOrderList(ordersExpr)) {
-            query.orderBy << orderSpec
+        boolean previousWindow = windowAllowed
+        windowAllowed = true
+        try {
+            for (SqlOrderSpec orderSpec : translateOrderList(ordersExpr)) {
+                query.orderBy << orderSpec
+            }
+        } finally {
+            windowAllowed = previousWindow
         }
     }
 
@@ -468,24 +511,30 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         Boolean distinct = ginqExpression.getNodeMetaData(GinqAstBuilder.GINQ_SELECT_DISTINCT)
         query.distinct = Boolean.TRUE == distinct
 
-        for (Expression projection : ((TupleExpression) selectExpression.projectionExpr).expressions) {
-            String alias = null
-            Expression expr = projection
-            if (projection instanceof CastExpression) {
-                alias = projection.type.text
-                expr = projection.expression
-            }
-            if (expr instanceof VariableExpression && expr.text in tableAliases) {
-                if (alias != null) {
-                    error("whole-row projection `${expr.text}` cannot be aliased", projection)
+        boolean previousWindow = windowAllowed
+        windowAllowed = true
+        try {
+            for (Expression projection : ((TupleExpression) selectExpression.projectionExpr).expressions) {
+                String alias = null
+                Expression expr = projection
+                if (projection instanceof CastExpression) {
+                    alias = projection.type.text
+                    expr = projection.expression
                 }
-                query.projections << new SqlProjection(new SqlStar(expr.text))
-            } else {
-                if (alias == null) {
-                    alias = groupKeyProjectionAlias(expr)
+                if (expr instanceof VariableExpression && expr.text in tableAliases) {
+                    if (alias != null) {
+                        error("whole-row projection `${expr.text}` cannot be aliased", projection)
+                    }
+                    query.projections << new SqlProjection(new SqlStar(expr.text))
+                } else {
+                    if (alias == null) {
+                        alias = groupKeyProjectionAlias(expr)
+                    }
+                    query.projections << new SqlProjection(translateExpr(expr), alias)
                 }
-                query.projections << new SqlProjection(translateExpr(expr), alias)
             }
+        } finally {
+            windowAllowed = previousWindow
         }
     }
 
@@ -741,6 +790,23 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
     }
 
     private SqlExpr translateWindow(MethodCallExpression overCall) {
+        if (!windowAllowed) {
+            reject('`over` is only supported in `select` and `orderby`', overCall, false)
+            return null
+        }
+        if (windowDepth > 0) {
+            reject('window functions cannot be nested', overCall, false)
+            return null
+        }
+        windowDepth++
+        try {
+            return translateWindowCall(overCall)
+        } finally {
+            windowDepth--
+        }
+    }
+
+    private SqlExpr translateWindowCall(MethodCallExpression overCall) {
         MethodCallExpression functionCall = (MethodCallExpression) overCall.objectExpression
         String name = functionCall.methodAsString
         SqlFunctionMapping mapping = name == null ? null : functions.find(name, SqlFunctionMapping.Kind.WINDOW)
@@ -748,16 +814,145 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
             reject("${WINDOW_DEFERRED_PREFIX}${providerName} provider", overCall)
             return null
         }
+        if (!functionCall.implicitThis) {
+            reject("`${name}(...) over(...)` is written as a function, not a method on a value", functionCall)
+            return null
+        }
         if (!(functionCall.arguments instanceof TupleExpression)) {
             reject("`${name}` cannot be translated to SQL by the ${providerName} provider", functionCall)
             return null
         }
         List<Expression> functionArgs = ((TupleExpression) functionCall.arguments).expressions
-        SqlExpr function = mapping.translate(functionCall, functionArgs, calls)
-        if (function == null) return null
+        String arity = mapping.arityError(functionArgs.size())
+        if (arity != null) {
+            reject(arity, functionCall)
+            return null
+        }
         SqlWindow window = translateWindowSpec(overCall)
         if (window == null) return null
-        return new SqlWindowCall(function, window)
+        if (window.frame != null && mapping.rejectsWindowFrame()) {
+            String unit = window.frame.unit.name().toLowerCase(Locale.ROOT)
+            reject("`${name}() over(...)` does not accept `${unit}`. " +
+                    'SQL defines that function without a frame, and GINQ would apply one', overCall)
+            return null
+        }
+        if (mapping.requiresWindowOrder() && !window.orderBy) {
+            reject("`${name}() over(...)` needs `orderby`. Without it GINQ returns null", overCall)
+            return null
+        }
+        SqlWindow effective = window
+        if (mapping.wholePartitionByDefault() && window.frame == null && window.orderBy) {
+            effective = new SqlWindow(window.partitionBy, window.orderBy, wholePartitionFrame())
+        }
+        SqlFunctionMapping.WindowForm form = mapping.windowForm()
+        if (form == SqlFunctionMapping.WindowForm.NTILE) {
+            return translateNtile(functionCall, functionArgs, effective)
+        }
+        if (form == SqlFunctionMapping.WindowForm.AGGREGATE) {
+            return translateAggregateWindow(functionCall, functionArgs, effective)
+        }
+        if ((('lead' == name || 'lag' == name) && functionArgs.size() >= 2 && !acceptWholeOffset(name, functionCall, functionArgs.get(1)))
+                || (form == SqlFunctionMapping.WindowForm.NTH && !acceptNthIndex(functionCall, functionArgs.get(1)))) {
+            return null
+        }
+        SqlExpr function = mapping.translate(functionCall, functionArgs, calls)
+        if (function == null) return null
+        if (form == SqlFunctionMapping.WindowForm.NTH) {
+            function = shiftNthIndex((SqlFunction) function)
+            if (function == null) return null
+        }
+        SqlWindowCall call = new SqlWindowCall(function, effective)
+        if (form == SqlFunctionMapping.WindowForm.ZERO_BASED) {
+            return new SqlBinary('-', call, new SqlLiteral(1))
+        }
+        if (form == SqlFunctionMapping.WindowForm.PERCENT) {
+            return percentRank(call, effective)
+        }
+        return call
+    }
+
+    // GINQ's default frame is the whole partition. SQL's default, once ORDER BY
+    // is present, stops at the current row, which would turn lastValue into the
+    // current row and sum into a running total.
+    private static SqlWindowFrame wholePartitionFrame() {
+        return new SqlWindowFrame(SqlWindowFrame.Unit.ROWS,
+                SqlWindowBound.unboundedPreceding(), SqlWindowBound.unboundedFollowing())
+    }
+
+    // floor(buckets * (row_number() - 1) / count(*)) over the same partition.
+    // That is GINQ's 0-based bucket formula. SQL NTILE is 1-based and places
+    // the remainder on the first buckets, which is a different sequence.
+    private SqlExpr translateNtile(MethodCallExpression call, List<Expression> args, SqlWindow window) {
+        if (!acceptNtileBuckets(call, args.get(0))) return null
+        SqlExpr buckets = translateExpr(args.get(0))
+        if (buckets == null) return null
+        SqlWindow numbering = new SqlWindow(window.partitionBy, window.orderBy, null)
+        SqlWindow counting = new SqlWindow(window.partitionBy, Collections.<SqlOrderSpec>emptyList(), null)
+        SqlExpr row = new SqlBinary('-',
+                new SqlWindowCall(new SqlFunction('ROW_NUMBER', Collections.<SqlExpr>emptyList()), numbering),
+                new SqlLiteral(1))
+        SqlExpr product = new SqlBinary('*', buckets, row)
+        SqlExpr count = new SqlWindowCall(new SqlCountStar(), counting)
+        return new SqlFunction('FLOOR', [new SqlBinary('/', product, count)])
+    }
+
+    private boolean acceptNtileBuckets(MethodCallExpression call, Expression buckets) {
+        return acceptWholeNumber(buckets, '`ntile` expects a whole number of buckets >= 0', call)
+    }
+
+    // One row: GINQ returns 1. SQL PERCENT_RANK returns 0.
+    private static SqlExpr percentRank(SqlWindowCall rank, SqlWindow window) {
+        SqlWindow counting = new SqlWindow(window.partitionBy, Collections.<SqlOrderSpec>emptyList(), null)
+        SqlExpr oneRow = new SqlBinary('=', new SqlWindowCall(new SqlCountStar(), counting), new SqlLiteral(1))
+        return new SqlCaseWhen(oneRow, new SqlLiteral(1), rank)
+    }
+
+    private SqlExpr translateAggregateWindow(MethodCallExpression call, List<Expression> args, SqlWindow window) {
+        boolean lambda = 1 == args.size() && args.get(0) instanceof ClosureExpression
+        SqlExpr function = translateAggregateCall(call, args, lambda)
+        if (function == null) return null
+        SqlExpr windowed = new SqlWindowCall(function, window)
+        // GINQ sum treats null as zero, so an all-null frame is 0 rather than SQL null.
+        // The coalesce wraps the window call: COALESCE(SUM(x), 0) OVER (...) is not SQL.
+        if ('sum' == call.methodAsString) {
+            return new SqlFunction('COALESCE', [windowed, new SqlLiteral(0)])
+        }
+        return windowed
+    }
+
+    // Constants are bound parameters, same as every other GINQ literal. Adding 1
+    // in the parameter keeps NTH_VALUE 1-based without putting arithmetic in the SQL.
+    private SqlExpr shiftNthIndex(SqlFunction function) {
+        if (function.args.size() != 2 || function.args.get(1) == null) return null
+        SqlExpr index = function.args.get(1)
+        SqlExpr shifted
+        if (index instanceof SqlParam) {
+            shifted = new SqlParam(plusX(((SqlParam) index).valueExpr, constX(1)))
+        } else {
+            shifted = new SqlBinary('+', index, new SqlLiteral(1))
+        }
+        return new SqlFunction(function.name, [function.args.get(0), shifted])
+    }
+
+    private boolean acceptNthIndex(MethodCallExpression call, Expression index) {
+        return acceptWholeNumber(index, '`nthValue` index must be a whole number >= 0. The first row is 0', call)
+    }
+
+    private boolean acceptWholeOffset(String name, MethodCallExpression call, Expression offset) {
+        return acceptWholeNumber(offset, "`${name}` offset must be a whole number >= 0", call)
+    }
+
+    // A non-literal is bound as a parameter and checked by the database.
+    // ntile(0) is kept: GINQ defines that bucket count as 0.
+    private boolean acceptWholeNumber(Expression expr, String message, MethodCallExpression call) {
+        Number literal = signedFrameNumber(expr)
+        if (literal == null) return true
+        BigDecimal n = frameDecimal(literal)
+        if (n == null || n.signum() < 0 || !wholeFrameNumber(n)) {
+            reject(message, call)
+            return false
+        }
+        return true
     }
 
     private SqlWindow translateWindowSpec(MethodCallExpression overCall) {
@@ -833,6 +1028,10 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
             if (lower == null) return null
             SqlWindowBound upper = translateFrameBound(bounds.get(1), false, unit)
             if (upper == null) return null
+            if (frameEndsBeforeItStarts(lower, upper)) {
+                reject('the window frame ends before it starts', frameCall)
+                return null
+            }
             frame = new SqlWindowFrame(unit, lower, upper)
         }
         List<SqlExpr> partition = []
@@ -872,6 +1071,17 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
             reject('`rows` bounds must be whole numbers', expr)
             return null
         }
+        // RowBound uses these sentinels for the ends of the partition. A numeric
+        // literal of that magnitude is the same bound; `Long.MIN_VALUE` written
+        // as a property is not a literal and stays untranslatable.
+        if (SqlWindowFrame.Unit.ROWS == unit) {
+            if (lower && decimal.compareTo(BigDecimal.valueOf(Long.MIN_VALUE)) == 0) {
+                return SqlWindowBound.unboundedPreceding()
+            }
+            if (!lower && decimal.compareTo(BigDecimal.valueOf(Long.MAX_VALUE)) == 0) {
+                return SqlWindowBound.unboundedFollowing()
+            }
+        }
         int sign = decimal.signum()
         if (sign == 0) return SqlWindowBound.currentRow()
         SqlLiteral magnitude = new SqlLiteral(frameMagnitude(decimal))
@@ -908,6 +1118,36 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
 
     private static boolean wholeFrameNumber(BigDecimal decimal) {
         return decimal.stripTrailingZeros().scale() <= 0
+    }
+
+    // Earlier bound has the smaller rank. Equal PRECEDING offsets: the larger
+    // offset is earlier. Equal FOLLOWING offsets: the smaller offset is earlier.
+    private static boolean frameEndsBeforeItStarts(SqlWindowBound lower, SqlWindowBound upper) {
+        int lowerRank = frameRank(lower.kind)
+        int upperRank = frameRank(upper.kind)
+        if (lowerRank != upperRank) return lowerRank > upperRank
+        BigDecimal lowerOffset = frameOffset(lower)
+        BigDecimal upperOffset = frameOffset(upper)
+        if (lowerOffset == null || upperOffset == null) return false
+        if (lower.kind == SqlWindowBound.Kind.PRECEDING) return lowerOffset.compareTo(upperOffset) < 0
+        if (lower.kind == SqlWindowBound.Kind.FOLLOWING) return lowerOffset.compareTo(upperOffset) > 0
+        return false
+    }
+
+    private static int frameRank(SqlWindowBound.Kind kind) {
+        switch (kind) {
+            case SqlWindowBound.Kind.UNBOUNDED_PRECEDING: return 0
+            case SqlWindowBound.Kind.PRECEDING: return 1
+            case SqlWindowBound.Kind.CURRENT_ROW: return 2
+            case SqlWindowBound.Kind.FOLLOWING: return 3
+            case SqlWindowBound.Kind.UNBOUNDED_FOLLOWING: return 4
+            default: return 2
+        }
+    }
+
+    private static BigDecimal frameOffset(SqlWindowBound bound) {
+        if (!(bound.offset instanceof SqlLiteral) || !(((SqlLiteral) bound.offset).value instanceof Number)) return null
+        return frameDecimal((Number) ((SqlLiteral) bound.offset).value)
     }
 
     private static Object frameMagnitude(BigDecimal decimal) {
@@ -1032,6 +1272,14 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
     }
 
     private SqlExpr translateAggregate(MethodCallExpression call, List<Expression> args, boolean lambdaStyle) {
+        SqlExpr function = translateAggregateCall(call, args, lambdaStyle)
+        if (function == null) return null
+        return finishAggregate(call.methodAsString, function)
+    }
+
+    // The function alone, without the null-as-zero coalesce. A window sum applies
+    // that coalesce outside OVER.
+    private SqlExpr translateAggregateCall(MethodCallExpression call, List<Expression> args, boolean lambdaStyle) {
         String method = call.methodAsString
         String functionName = AGGREGATE_FUNCTION_MAP[method]
         if (functionName == null) {
@@ -1059,7 +1307,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
             if (inner == null) return null
             return new SqlFunction(functionName, [translateExpr(inner)], true)
         }
-        return finishAggregate(method, new SqlFunction(functionName, [translateExpr(arg)]))
+        return new SqlFunction(functionName, [translateExpr(arg)])
     }
 
     private SqlExpr translateLambdaAggregate(MethodCallExpression call, String method, String functionName, Expression arg) {
@@ -1095,7 +1343,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         String previousParam = aggregateLambdaParam
         aggregateLambdaParam = param
         try {
-            return finishAggregate(method, new SqlFunction(functionName, [translateExpr(body)], countDistinct))
+            return new SqlFunction(functionName, [translateExpr(body)], countDistinct)
         } finally {
             aggregateLambdaParam = previousParam
         }

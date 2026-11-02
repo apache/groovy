@@ -378,12 +378,14 @@ class JooqRenderer {
     }
 
     private WindowSpecification applyFrame(WindowSpecificationRowsStep step, SqlWindowFrame frame) {
+        rejectSqliteNumericRange(frame)
         boolean rows = frame.unit == SqlWindowFrame.Unit.ROWS
         WindowSpecificationRowsAndStep between = rows ? rowsBetween(step, frame.lower) : rangeBetween(step, frame.lower)
         return andBound(between, frame.upper)
     }
 
-    private static WindowSpecification frameOnly(SqlWindowFrame frame) {
+    private WindowSpecification frameOnly(SqlWindowFrame frame) {
+        rejectSqliteNumericRange(frame)
         boolean rows = frame.unit == SqlWindowFrame.Unit.ROWS
         WindowSpecificationRowsAndStep between = rows ? rowsBetween(frame.lower) : rangeBetween(frame.lower)
         return andBound(between, frame.upper)
@@ -441,6 +443,16 @@ class JooqRenderer {
             case SqlWindowBound.Kind.FOLLOWING: return between.andFollowing(frameOffset(bound))
             case SqlWindowBound.Kind.UNBOUNDED_FOLLOWING: return between.andUnboundedFollowing()
             default: throw new GroovyBugError("Unknown window bound: ${bound.kind}")
+        }
+    }
+
+    private void rejectSqliteNumericRange(SqlWindowFrame frame) {
+        if (frame.unit != SqlWindowFrame.Unit.RANGE || SQLDialect.SQLITE != dialect.family()) return
+        if (frame.lower.kind == SqlWindowBound.Kind.PRECEDING || frame.lower.kind == SqlWindowBound.Kind.FOLLOWING
+                || frame.upper.kind == SqlWindowBound.Kind.PRECEDING || frame.upper.kind == SqlWindowBound.Kind.FOLLOWING) {
+            throw new IllegalArgumentException(
+                    'the sqlite dialect supports RANGE frames only with UNBOUNDED and CURRENT ROW bounds. ' +
+                    'A numeric RANGE offset has no SQLite equivalent; use `rows`, or a dialect that supports it')
         }
     }
 
