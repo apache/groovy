@@ -18,7 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.GroovyAssert
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 import org.junit.jupiter.api.Test
 
@@ -193,8 +192,8 @@ import static groovy.test.GroovyAssert.shouldFail
         shouldFail GroovyCastException, '''
             EnumMap m = [:] // constructor fails on empty map
         '''
-        // GROOVY-12585: dynamic, like the shouldFail cases above
-        GroovyAssert.assertScript '''
+        // GROOVY-12643
+        assertScript '''
             SortedMap m = [:]
             assert m instanceof TreeMap
         '''

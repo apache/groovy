@@ -939,10 +939,8 @@ constructor arguments.
 - **A single-element list assigned to a collection class fills it.**
   `Vector v = [5]`, `PriorityQueue q = [5]` and `ArrayDeque d = [5]` passed the
   element to the class's capacity constructor and gave an empty collection.
-  They now contain the element, as `[5] as Vector` already did. Under
-  `@CompileStatic` these declarations still call the capacity constructor
-  until GROOVY-12643; `@TypeChecked` code runs the dynamic cast and gets the
-  element.
+  They now contain the element, as `[5] as Vector` already did. For
+  `@CompileStatic` code, see GROOVY-12643 below.
 
 **What is unchanged.** Targets that already worked, such as `Set`, `List`,
 `HashSet` (still a `LinkedHashSet` on assignment), `TreeSet`, `ArrayList`,
@@ -952,6 +950,39 @@ still a proxy that calls the map's closures. `TreeSet` and `TreeMap` defaults
 throw for incomparable or `null` elements and keys, as `as SortedSet` and
 `TreeSet t = list` already did. The method signatures are unchanged, so
 `japicmp` does not report this.
+
+### Groovy 7 — type checking of list and map literals assigned to collection types (GROOVY-12643)
+
+Under `@TypeChecked` and `@CompileStatic`, a list or map literal assigned to a
+collection or map type now follows the defaults of the runtime cast (see
+GROOVY-12585 above).
+
+- **Interface targets compile.** A list literal assigned to `SortedSet`,
+  `NavigableSet`, `Queue`, `Deque` or `BlockingQueue`, and a map literal
+  assigned to `SortedMap`, `NavigableMap` or `ConcurrentMap`, used to be a
+  compile error ("Cannot assign value of type ArrayList…" or "Cannot find
+  matching constructor"). It now compiles. The variable's inferred type is the
+  default implementation, as `Set` infers `LinkedHashSet`, and the elements
+  are checked against the declared type arguments.
+- **A collection class copies the elements.** For a list literal assigned to a
+  concrete collection class with a constructor taking a collection, or a
+  no-arg constructor, the list-constructor rule no longer passes the elements
+  as constructor arguments; the elements are copied, and checked against the
+  declared type arguments. So `LinkedList l = [3, 1]` and `Stack s = [3, 1]`
+  now compile, and under `@CompileStatic`, `Vector v = [5]`,
+  `PriorityQueue q = [5]` and `ArrayDeque d = [5]` hold the element instead of
+  being empty with that capacity.
+
+**Who is affected.** Statically compiled code that used a one-element literal
+to set a capacity, such as `Vector v = [10]`, now gets a one-element
+collection, and with type arguments, such as `ArrayDeque<String> d = [16]`, it
+is a compile error. Write `new ArrayDeque(16)` for a capacity.
+
+**What is unchanged.** Other classes still use the list-constructor rule, such
+as `Dimension d = [100, 200]`, as does a collection class whose only
+constructors take the elements. Assigning a variable of another collection
+type, such as `SortedSet s = aList`, is still an error. A literal returned from
+a method is not covered (GROOVY-12644).
 
 ### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
 
