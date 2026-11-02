@@ -901,6 +901,58 @@ of `CompilationUnit` that adds it as a phase operation, or that calls
 `PlaceholderVisitor.isPlaceholder`. Drop the phase operation. Where code needs
 to know whether a variable is `_`, check its name.
 
+### Groovy 7 — casting and `as` share default collection and map implementations (GROOVY-12585)
+
+A collection, array, stream or map that is assigned or cast to a collection or
+map type (`T x = value`, `(T) value`) and one coerced with `as` now get the
+same result. A value that is already an instance of the target is returned
+unchanged, as before. Otherwise an interface target gets a default
+implementation:
+
+| Target | Default |
+|---|---|
+| `List`, `Collection`, `Iterable` | `ArrayList` |
+| `Set` | `LinkedHashSet` |
+| `SortedSet`, `NavigableSet` | `TreeSet` |
+| `Queue`, `Deque` | `LinkedList` |
+| `BlockingQueue` | `LinkedBlockingQueue` |
+| `SortedMap`, `NavigableMap` | `TreeMap` |
+| `ConcurrentMap` | `ConcurrentHashMap` |
+
+A concrete collection class gets its copy constructor, or else its no-arg
+constructor followed by `addAll`, before the elements are tried as
+constructor arguments.
+
+- **More assignments succeed.** `SortedSet s = list`, `Queue q = list`,
+  `Deque d = list`, `Stack s = list`, `List l = aSet`, `SortedMap m = map` and
+  `Iterable i = anArray` failed with `GroovyCastException`; they now succeed.
+- **`as` returns a real collection instead of a proxy** for `NavigableSet`,
+  `Deque`, `BlockingQueue`, `SortedMap`, `NavigableMap` and `ConcurrentMap`,
+  and for `Iterable` and `Deque` with an array source. The proxy delegated to
+  the original collection or map without providing the interface's behaviour,
+  so `([3, 1, 2, 1] as NavigableSet).size()` was 4 and
+  `([b: 2, a: 1] as SortedMap).firstKey()` threw. The result is now a copy, so
+  code relying on the proxy seeing later changes to the original sees a
+  snapshot.
+- **`anArray as Set` keeps element order**, giving a `LinkedHashSet` rather
+  than a `HashSet`, as `Set s = anArray` and `aList as Set` already did.
+- **A single-element list assigned to a collection class fills it.**
+  `Vector v = [5]`, `PriorityQueue q = [5]` and `ArrayDeque d = [5]` passed the
+  element to the class's capacity constructor and gave an empty collection.
+  They now contain the element, as `[5] as Vector` already did. Under
+  `@CompileStatic` these declarations still call the capacity constructor
+  until GROOVY-12643; `@TypeChecked` code runs the dynamic cast and gets the
+  element.
+
+**What is unchanged.** Targets that already worked, such as `Set`, `List`,
+`HashSet` (still a `LinkedHashSet` on assignment), `TreeSet`, `ArrayList`,
+`LinkedList`, `TreeMap` and the JDK 21 sequenced types. A map coerced with
+`as` to a non-collection interface, such as `Runnable` or `Comparator`, is
+still a proxy that calls the map's closures. `TreeSet` and `TreeMap` defaults
+throw for incomparable or `null` elements and keys, as `as SortedSet` and
+`TreeSet t = list` already did. The method signatures are unchanged, so
+`japicmp` does not report this.
+
 ### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
 
 Under `@CompileStatic`, a constructor reference such as `X::new` created the
