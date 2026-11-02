@@ -3565,10 +3565,17 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
         if (enclosingMethod != null && !enclosingMethod.isVoidMethod() && !enclosingMethod.isDynamicReturnType()) {
             ClassNode returnType = enclosingMethod.getReturnType();
-            if (!isPrimitiveVoid(getUnwrapper(type)) && !checkCompatibleAssignmentTypes(returnType, type, expression, false)) {
+            boolean literal = !returnType.isArray() // arrays: see addPrecisionErrors
+                    && (expression instanceof ListExpression || expression instanceof MapExpression);
+            if (!isPrimitiveVoid(getUnwrapper(type)) && !checkCompatibleAssignmentTypes(returnType, type, expression, literal)) {
                 if (!extension.handleIncompatibleReturnType(statement, type)) {
                     addStaticTypeError("Cannot return value of type " + prettyPrintType(type) + " for method returning " + prettyPrintType(returnType), expression);
                 }
+            } else if (literal && !implementsInterfaceOrIsSubclassOf(type, returnType)) {
+                // GROOVY-12644: check a list or map literal as for "ReturnType x = literal"
+                BinaryExpression dummy = assignX(varX("{target}", returnType), expression, statement);
+                ClassNode resultType = getResultType(returnType, ASSIGN, type, dummy);
+                typeCheckAssignment(dummy, dummy.getLeftExpression(), returnType, expression, resultType);
             } else if (implementsInterfaceOrIsSubclassOf(type, returnType)) {
                 BinaryExpression dummy = assignX(varX("{target}", returnType), expression, statement);
                 ClassNode resultType = getResultType(returnType, ASSIGN, type, dummy); // GROOVY-10295

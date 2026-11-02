@@ -1563,6 +1563,9 @@ to a variable of type `T` if:
 * the assignment is a variable declaration and `A` is a list literal and `T` has a constructor whose parameters match the types of the elements in the list literal.
 If `T` is a collection class with a constructor taking a collection, or a no-arg constructor, the variable instead holds a copy of the elements,
 so `Vector v = [5]` holds `5` rather than having a capacity of 5
+
+The same rules apply to a list or map literal returned from a method with a declared return type, so `Set m() { [3, 1] }` and `java.awt.Point m() { [1, 2] }` type check
+as `Set s = [3, 1]` and `java.awt.Point p = [1, 2]` do. A closure or lambda result is not converted, so for a closure or lambda the literal's own type must suit the expected return type.
 * the assignment is a variable declaration and `A` is a map literal and `T` has a no-arg constructor and a property for each of the map keys
 * `A` is a list literal and `T` is `SortedSet` or `NavigableSet` (giving a `TreeSet`), `Queue` or `Deque` (giving a `LinkedList`) or `BlockingQueue` (giving a `LinkedBlockingQueue`),
 or `A` is a map literal and `T` is `SortedMap` or `NavigableMap` (giving a `TreeMap`) or `ConcurrentMap` (giving a `ConcurrentHashMap`); the elements must suit the type arguments of `T`
