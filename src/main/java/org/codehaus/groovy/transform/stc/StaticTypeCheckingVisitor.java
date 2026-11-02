@@ -134,6 +134,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.EnumMap;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -144,11 +145,21 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.StringJoiner;
+import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
@@ -415,6 +426,48 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode LINKEDHASHMAP_CLASSNODE = LinkedHashMap_TYPE;
     /** Cached {@link Enumeration} type. */
     protected static final ClassNode ENUMERATION_TYPE = ClassHelper.make(Enumeration.class);
+
+    // interface targets of a list or map literal and the default implementation the runtime cast
+    // creates for each; keep in step with DefaultTypeTransformation's table
+    private static final Map<String, ClassNode> LIST_LITERAL_DEFAULTS = Map.of(
+        SortedSet.class.getName(), ClassHelper.make(TreeSet.class),
+        NavigableSet.class.getName(), ClassHelper.make(TreeSet.class),
+        Queue.class.getName(), ClassHelper.make(LinkedList.class),
+        Deque.class.getName(), ClassHelper.make(LinkedList.class),
+        BlockingQueue.class.getName(), ClassHelper.make(LinkedBlockingQueue.class));
+    private static final Map<String, ClassNode> MAP_LITERAL_DEFAULTS = Map.of(
+        SortedMap.class.getName(), ClassHelper.make(TreeMap.class),
+        NavigableMap.class.getName(), ClassHelper.make(TreeMap.class),
+        ConcurrentMap.class.getName(), ClassHelper.make(ConcurrentHashMap.class));
+
+    /**
+     * A concrete collection class that a list literal initializes through its copy constructor,
+     * or else its no-arg constructor followed by addAll, as the runtime cast does, rather than
+     * by passing the elements as constructor arguments.
+     */
+    private static boolean isCopyableCollectionType(final ClassNode type) {
+        if (type.isArray() || type.isInterface() || type.isAbstract()
+                || !implementsInterfaceOrIsSubclassOf(type, Collection_TYPE)) {
+            return false;
+        }
+        List<ConstructorNode> constructors = type.getDeclaredConstructors();
+        if (constructors.isEmpty()) return true; // default constructor
+        for (ConstructorNode constructor : constructors) {
+            if (constructor.isPrivate()) continue;
+            Parameter[] parameters = constructor.getParameters();
+            if (parameters.length == 0 || (parameters.length == 1
+                    && implementsInterfaceOrIsSubclassOf(ArrayList_TYPE, parameters[0].getType()))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static ClassNode literalDefaultImplementation(final ClassNode target, final Expression literal) {
+        if (literal instanceof ListExpression) return LIST_LITERAL_DEFAULTS.get(target.redirect().getName());
+        if (literal instanceof MapExpression) return MAP_LITERAL_DEFAULTS.get(target.redirect().getName());
+        return null;
+    }
     /** Cached {@link CharSequence} type (GROOVY-9848: membership operator dispatch). */
     protected static final ClassNode CHAR_SEQUENCE_TYPE = ClassHelper.make(CharSequence.class);
     /** Cached {@link Map.Entry} type. */
@@ -2094,14 +2147,18 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         ClassNode concreteType;
         List<Expression> expressions = ((ListExpression) rightExpression).getExpressions();
         if (implementsInterfaceOrIsSubclassOf((concreteType = ArrayList_TYPE), leftRedirect)
-                || implementsInterfaceOrIsSubclassOf((concreteType = LinkedHashSet_TYPE), leftRedirect)) {
+                || implementsInterfaceOrIsSubclassOf((concreteType = LinkedHashSet_TYPE), leftRedirect)
+                || (concreteType = literalDefaultImplementation(leftRedirect, rightExpression)) != null) {
             // GROOVY-11309: (? super ArrayList or LinkedHashSet) x = [ ]
+            // GROOVY-12643: (SortedSet, NavigableSet, Queue, Deque or BlockingQueue) x = [ ]
             if (expressions.isEmpty()) { // skip SBA.createList for empty
                 rightExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET,
                     concreteType.getDeclaredConstructor(Parameter.EMPTY_ARRAY));
             }
         } else if (isWildcardLeftHandSide(leftRedirect) && !isClassType(leftRedirect)) {
             // GROOVY-6802, GROOVY-6803: ([Bb]oolean or String) x = [ ]
+        } else if (isCopyableCollectionType(leftRedirect)) {
+            // GROOVY-12643: (LinkedList, Vector, ...) x = [ ] copies the elements
         } else if (leftRedirect.isArray() || !leftRedirect.isAbstract()) {
             // if left type is not a list but right type is a list, then we're in the case of a groovy
             // constructor type : Dimension d = [100,200]
@@ -2119,8 +2176,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private void addMapAssignmentConstructorErrors(final ClassNode leftRedirect, final Expression leftExpression, final MapExpression rightExpression) {
-        if (implementsInterfaceOrIsSubclassOf(LinkedHashMap_TYPE, leftRedirect)) {
+        if (implementsInterfaceOrIsSubclassOf(LinkedHashMap_TYPE, leftRedirect)
+                || literalDefaultImplementation(leftRedirect, rightExpression) != null) {
             // GROOVY-11309: (? super LinkedHashMap) x = map literal
+            // GROOVY-12643: (SortedMap, NavigableMap or ConcurrentMap) x = map literal
         } else if (isWildcardLeftHandSide(leftRedirect) && !isClassType(leftRedirect)) {
             // GROOVY-6802, GROOVY-6803: [Bb]oolean or String target
         } else {
@@ -2152,6 +2211,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private static boolean isConstructorAbbreviation(final ClassNode leftType, final Expression rightExpression) {
+        if (literalDefaultImplementation(leftType, rightExpression) != null
+                || (rightExpression instanceof ListExpression && isCopyableCollectionType(leftType.redirect()))) {
+            return false;
+        }
         if (rightExpression instanceof ListExpression) {
             return !(ArrayList_TYPE.isDerivedFrom(leftType) || ArrayList_TYPE.implementsInterface(leftType)
                     || LinkedHashSet_TYPE.isDerivedFrom(leftType) || LinkedHashSet_TYPE.implementsInterface(leftType));
@@ -6676,10 +6739,21 @@ trying: for (ClassNode[] signature : signatures) {
                             || LinkedHashSet_TYPE.isDerivedFrom(leftRedirect)) { // GROOVY-6912
                         return getLiteralResultType(left, right, LinkedHashSet_TYPE); // GROOVY-7128
                     }
+                    ClassNode defaultType = literalDefaultImplementation(leftRedirect, rightExpression);
+                    if (defaultType != null) { // GROOVY-12643
+                        return getLiteralResultType(left, right, defaultType);
+                    }
+                    if (isCopyableCollectionType(leftRedirect)) { // GROOVY-12643
+                        return getLiteralResultType(left, right, leftRedirect);
+                    }
                 } else if (rightExpression instanceof MapExpression) {
                     if (MAP_TYPE.equals(leftRedirect)
                             || LinkedHashMap_TYPE.isDerivedFrom(leftRedirect)) {
                         return getLiteralResultType(left, right, LinkedHashMap_TYPE); // GROOVY-7128, GROOVY-9844
+                    }
+                    ClassNode defaultType = literalDefaultImplementation(leftRedirect, rightExpression);
+                    if (defaultType != null) { // GROOVY-12643
+                        return getLiteralResultType(left, right, defaultType);
                     }
                 } else if (rightExpression instanceof ClosureExpression
                         || rightExpression instanceof MethodPointerExpression) {

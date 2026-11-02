@@ -1560,8 +1560,12 @@ include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_byte,indent=0
 In addition to the assignment rules above, if an assignment is deemed invalid, in type checked mode, a _list_ literal or a _map_ literal `A` can be assigned
 to a variable of type `T` if:
 
-* the assignment is a variable declaration and `A` is a list literal and `T` has a constructor whose parameters match the types of the elements in the list literal
+* the assignment is a variable declaration and `A` is a list literal and `T` has a constructor whose parameters match the types of the elements in the list literal.
+If `T` is a collection class with a constructor taking a collection, or a no-arg constructor, the variable instead holds a copy of the elements,
+so `Vector v = [5]` holds `5` rather than having a capacity of 5
 * the assignment is a variable declaration and `A` is a map literal and `T` has a no-arg constructor and a property for each of the map keys
+* `A` is a list literal and `T` is `SortedSet` or `NavigableSet` (giving a `TreeSet`), `Queue` or `Deque` (giving a `LinkedList`) or `BlockingQueue` (giving a `LinkedBlockingQueue`),
+or `A` is a map literal and `T` is `SortedMap` or `NavigableMap` (giving a `TreeMap`) or `ConcurrentMap` (giving a `ConcurrentHashMap`); the elements must suit the type arguments of `T`
 
 For example, instead of writing:
 
