@@ -28,6 +28,8 @@
  * still runs window functions in memory. The SQL IR and both renderers can already emit
  * {@code OVER}. A follow-up registers each GINQ window function on
  * {@code SqlFunctionRegistry} as {@code Kind.WINDOW}; aggregates and {@code Math.min}/{@code Math.max}
- * stay on their existing paths. See {@link org.apache.groovy.ginq.provider.sql.ir.SqlWindowCall}.
+ * stay on their existing paths. See {@link SqlWindowCall}.
  */
 package org.apache.groovy.ginq.provider.sql;
+
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindowCall;
