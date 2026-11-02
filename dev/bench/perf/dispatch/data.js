@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793516328573,
+  "lastUpdate": 1793603573871,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -6224,6 +6224,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.hidden",
             "value": 856,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1526,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194129,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Scott Murphy Heiberg",
+            "username": "codeconsole",
+            "email": "scott@alwaysvip.com"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "09837793319f39daecd31fc9cff53c9bd04b9ae5",
+          "message": "GROOVY-12587: Read a static trait property through this like an unqualified reference\n\nInside a trait method, this.flag for a trait property was rewritten with a\nplaceholder non-static field, so the accessor was called on the field helper\n(instance method) or on the Class receiver (static method) without the dynamic\ndispatch marker that static trait fields get. The static type checker then\ncould not find T__flag$get. Use the trait's declared field, as the unqualified\nreference does, so a static property is accessed through the implementing class.",
+          "timestamp": "2026-10-30T22:45:48Z",
+          "url": "https://github.com/apache/groovy/commit/09837793319f39daecd31fc9cff53c9bd04b9ae5"
+        },
+        "date": 1793603573351,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4020,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 440,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 855,
             "unit": "classes"
           },
           {
