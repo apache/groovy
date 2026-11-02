@@ -19,6 +19,7 @@
 package org.apache.groovy.ginq.provider.sql
 
 import groovy.transform.CompileStatic
+import groovy.transform.PackageScope
 import org.apache.groovy.ginq.GinqGroovyMethods
 import org.apache.groovy.ginq.dsl.GinqAstVisitor
 import org.apache.groovy.ginq.dsl.GinqSyntaxError
@@ -82,6 +83,13 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
  * The native SQL provider: transforms a GINQ query into a call executing the
  * equivalent SQL, rendered at compile time with all user values bound as
  * positional parameters, against the configured {@code dataSource}.
+ * <p>
+ * Window functions are not pushed down. Translation uses
+ * {@link SqlFunctionRegistry#standard()} unless a caller in this package
+ * passes another registry. The built-in registry has no
+ * {@link SqlFunctionMapping.Kind#WINDOW} mappings, so {@code over} is
+ * rejected and mixed mode evaluates it in memory. A follow-up registers
+ * the GINQ window functions on that registry.
  *
  * @since 7.0.0
  */
@@ -92,6 +100,7 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private Map<String, String> configuration = [:]
     private Map<String, Expression> configurationExpressions = [:]
     private Dialect dialect = new AnsiDialect()
+    private SqlFunctionRegistry functions = SqlFunctionRegistry.standard()
 
     GinqSqlWalker(SourceUnit sourceUnit) {
         this.sourceUnit = sourceUnit
@@ -270,8 +279,33 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         }
     }
 
+    /**
+     * Replaces the function registry used to translate this query.
+     * The default is the sealed built-in set, which has no window functions.
+     *
+     * @param functions the registry, usually {@link SqlFunctionRegistry#standard()}
+     * or a {@link SqlFunctionRegistry#copy()} with extra mappings
+     */
+    @PackageScope
+    void setFunctions(SqlFunctionRegistry functions) {
+        if (functions == null) {
+            throw new IllegalArgumentException('functions is required')
+        }
+        this.functions = functions
+    }
+
+    /**
+     * Translates {@code expression} to SQL IR without rendering or executing it.
+     * Production {@link #visit} does both. Tests use this to inspect a
+     * {@code SqlWindowCall} produced from a GINQ {@code over} clause.
+     */
+    @PackageScope
+    SqlQueryNode translate(AbstractGinqExpression expression) {
+        return translator().translate(expression)
+    }
+
     private GinqToSqlTranslator translator() {
-        return new GinqToSqlTranslator(sourceUnit, providerName, capabilities())
+        return new GinqToSqlTranslator(sourceUnit, providerName, functions, capabilities())
     }
 
     /**

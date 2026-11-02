@@ -57,6 +57,9 @@ class SqlFunctionRegistryTest {
         assert registry.find('padLeft', SqlFunctionMapping.Kind.RECEIVER) == null
         assert registry.find('signum', SqlFunctionMapping.Kind.RECEIVER) == null
         assert registry.find('max', SqlFunctionMapping.Kind.RECEIVER) == null
+        assert registry.find('rowNumber', SqlFunctionMapping.Kind.WINDOW) == null
+        assert registry.find('min', SqlFunctionMapping.Kind.WINDOW) == null
+        assert 'LEAST' == registry.find('min', SqlFunctionMapping.Kind.MATH).sqlName
     }
 
     @Test
@@ -79,6 +82,40 @@ class SqlFunctionRegistryTest {
 
         def injected = shouldFail(IllegalArgumentException) {
             extra.register(SqlFunctionMapping.receiver('evil', 'UPPER; DROP'))
+        }
+        assert injected.message.contains('uppercase identifier')
+    }
+
+    @Test
+    void testWindowKindStaysOffTheSealedRegistry() {
+        def extra = SqlFunctionRegistry.standard().copy()
+        extra.register(SqlFunctionMapping.window('rowNumber', 'ROW_NUMBER'))
+        extra.register(SqlFunctionMapping.window('lead', 'LEAD', 1, 3))
+        assert 'ROW_NUMBER' == extra.find('rowNumber', SqlFunctionMapping.Kind.WINDOW).sqlName
+        assert 'LEAD' == extra.find('lead', SqlFunctionMapping.Kind.WINDOW).sqlName
+        assert extra.find('rowNumber', SqlFunctionMapping.Kind.FREE) == null
+        assert 'LEAST' == extra.find('min', SqlFunctionMapping.Kind.MATH).sqlName
+        assert SqlFunctionRegistry.standard().find('rowNumber', SqlFunctionMapping.Kind.WINDOW) == null
+
+        def call = callX(varX('this'), 'rowNumber')
+        def expr = extra.find('rowNumber', SqlFunctionMapping.Kind.WINDOW).translate(call, [], recordingSite())
+        assert expr instanceof SqlFunction
+        assert 'ROW_NUMBER' == expr.name
+        assert expr.args.empty
+
+        def duplicate = shouldFail(IllegalArgumentException) {
+            extra.register(SqlFunctionMapping.window('rowNumber', 'RANK'))
+        }
+        assert duplicate.message.contains('already registered')
+        assert duplicate.message.contains('WINDOW')
+
+        def sealed = shouldFail(IllegalStateException) {
+            SqlFunctionRegistry.standard().register(SqlFunctionMapping.window('rank', 'RANK'))
+        }
+        assert sealed.message.contains('sealed')
+
+        def injected = shouldFail(IllegalArgumentException) {
+            extra.register(SqlFunctionMapping.window('ntile', 'NTILE; DROP'))
         }
         assert injected.message.contains('uppercase identifier')
     }

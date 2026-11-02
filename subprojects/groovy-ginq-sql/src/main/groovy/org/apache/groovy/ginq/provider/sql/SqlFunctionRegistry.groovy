@@ -27,10 +27,21 @@ import org.apache.groovy.lang.annotation.Incubating
  * {@link #standard()} is the sealed set the translator uses. A new uniform
  * function is one {@link #register} line here (or on a {@link #copy()} for a
  * caller that is not the built-in set). Unknown names are not registered, so
- * the translator keeps rejecting them. Aggregates ({@code count}, {@code sum},
- * {@code avg}, {@code min}, {@code max}, including {@code count(distinct)})
- * stay on the aggregate path: {@code min} and {@code max} there are aggregates,
- * while {@code Math.min} and {@code Math.max} are the entries in this registry.
+ * the translator keeps rejecting them. Three uses of a Groovy name stay apart:
+ * <ul>
+ * <li>scalar — {@link SqlFunctionMapping.Kind#RECEIVER}, {@link SqlFunctionMapping.Kind#FREE}
+ * and {@link SqlFunctionMapping.Kind#MATH}. {@code Math.min} and {@code Math.max}
+ * are the entries here ({@code LEAST} and {@code GREATEST}).</li>
+ * <li>aggregate — not registered. {@code min}, {@code max}, {@code count},
+ * {@code sum} and {@code avg}, including {@code count(distinct)}, stay on the
+ * translator's aggregate path.</li>
+ * <li>window — {@link SqlFunctionMapping.Kind#WINDOW}, registered with
+ * {@link SqlFunctionMapping#window}. {@link #standard()} registers none, so
+ * {@code fn(...) over(...)} is rejected until a follow-up adds
+ * {@code rowNumber}, {@code rank}, and the other GINQ window functions
+ * to the built-in registration before the registry is sealed. A {@link #copy()} can
+ * register one sooner; that does not change {@link #standard()}.</li>
+ * </ul>
  * <p>
  * Not registered, because the SQL function is not faithful to Groovy:
  * {@code padLeft} and {@code padRight} ({@code LPAD} and {@code RPAD} truncate
