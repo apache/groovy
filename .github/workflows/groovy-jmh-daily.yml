@@ -123,8 +123,11 @@ jobs:
           while IFS= read -r f; do
             [ -n "$f" ] || continue
             echo "lock: $f"
-            rm -f "$f"
-            deleted=$((deleted + 1))
+            if rm -f "$f"; then
+              deleted=$((deleted + 1))
+            else
+              echo "skipped busy lock: $f"
+            fi
           done < <(find "$dir" -name '*.lock' 2>/dev/null)
           echo "Scrubbed $deleted Gradle cache lock file(s) before cache save."
       # Dashboards index: https://apache.github.io/groovy/
