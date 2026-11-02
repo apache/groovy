@@ -179,8 +179,11 @@ jobs:
           while IFS= read -r f; do
             [ -n "$f" ] || continue
             echo "lock: $f"
-            rm -f "$f"
-            deleted=$((deleted + 1))
+            if rm -f "$f"; then
+              deleted=$((deleted + 1))
+            else
+              echo "skipped busy lock: $f"
+            fi
           done < <(find "$dir" -name '*.lock' 2>/dev/null)
           echo "Scrubbed $deleted Gradle cache lock file(s) before cache save."
       # Ivy records a transient "not found" (e.g. an HTTP 404 from the CDN/WAF in
@@ -317,8 +320,11 @@ jobs:
           while IFS= read -r f; do
             [ -n "$f" ] || continue
             echo "lock: $f"
-            rm -f "$f"
-            deleted=$((deleted + 1))
+            if rm -f "$f"; then
+              deleted=$((deleted + 1))
+            else
+              echo "skipped busy lock: $f"
+            fi
           done < <(find "$dir" -name '*.lock' 2>/dev/null)
           echo "Scrubbed $deleted Gradle cache lock file(s) before cache save."
       # See the lts job for rationale: drop only Ivy's transient `exists=false`
@@ -596,8 +602,11 @@ jobs:
           while IFS= read -r f; do
             [ -n "$f" ] || continue
             echo "lock: $f"
-            rm -f "$f"
-            deleted=$((deleted + 1))
+            if rm -f "$f"; then
+              deleted=$((deleted + 1))
+            else
+              echo "skipped busy lock: $f"
+            fi
           done < <(find "$dir" -name '*.lock' 2>/dev/null)
           echo "Scrubbed $deleted Gradle cache lock file(s) before cache save."
       # See the lts job for rationale: drop only Ivy's transient `exists=false`
