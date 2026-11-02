@@ -981,8 +981,25 @@ is a compile error. Write `new ArrayDeque(16)` for a capacity.
 **What is unchanged.** Other classes still use the list-constructor rule, such
 as `Dimension d = [100, 200]`, as does a collection class whose only
 constructors take the elements. Assigning a variable of another collection
-type, such as `SortedSet s = aList`, is still an error. A literal returned from
-a method is not covered (GROOVY-12644).
+type, such as `SortedSet s = aList`, is still an error. For a literal returned
+from a method, see GROOVY-12644 below.
+
+### Groovy 7 — type checking of list and map literals returned from a method (GROOVY-12644)
+
+Under `@TypeChecked` and `@CompileStatic`, a list or map literal returned from
+a method with a declared return type is now checked as it is when assigned to a
+variable of that type. Before, it was accepted only when the literal's own
+class (`ArrayList` or `LinkedHashMap`) was assignable to the return type, so
+`Set m() { [3, 1] }`, `TreeMap m() { [b: 2, a: 1] }` and
+`Point m() { [1, 2] }` were compile errors ("Cannot return value of type …
+for method returning …"). They now compile and return the value the
+declaration would hold, with the elements checked against the declared type
+arguments.
+
+**Who is affected.** Only code that did not compile before; a return that was
+accepted is unchanged. A closure or lambda result, a non-literal value such as
+`Set m() { aList }`, and a literal inside another expression, such as
+`b ? [1] : [2]`, are still checked as before.
 
 ### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
 
