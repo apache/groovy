@@ -1001,6 +1001,67 @@ accepted is unchanged. A closure or lambda result, a non-literal value such as
 `Set m() { aList }`, and a literal inside another expression, such as
 `b ? [1] : [2]`, are still checked as before.
 
+### Groovy 7 — values returned to a functional interface type are checked as a method's return (GROOVY-12616, GROOVY-12617, GROOVY-12623)
+
+Under `@TypeChecked` and `@CompileStatic`, a value that a closure, lambda,
+method reference (`::`) or method pointer (`.&`) returns to a functional
+interface whose method returns a primitive type is now checked as the `return`
+of a method declared with that type. A number may be widened, but not narrowed
+unless it is a constant that fits; `char` is not converted to a number type,
+and only an `int` or a one-character string constant is converted to `char`;
+and any value is accepted for `boolean`, by Groovy truth. A method reference or
+method pointer returning a number to a wrapper type, as in `Supplier<Byte>`, is
+checked for loss of precision too. Under `@CompileStatic`, the value is
+converted as that method would convert it.
+Dynamically compiled code is unaffected.
+
+**No longer rejected, or no longer failing at run time.**
+
+- A closure or lambda may return a value that widens, as in
+  `ToLongFunction<String> f = s -> s.length()`, a constant that fits, as in
+  `IntSupplier s = () -> 7L`, a `BigDecimal` for `double` or `float`, or an
+  `int` for `char`. These were rejected with "Cannot return value of type …".
+- Under `@CompileStatic`, a method reference needing Groovy truth, as in
+  `Predicate<String> p = H::str`, `BigDecimal` to `double` or `float`, or `int`
+  to `char` compiled but threw `BootstrapMethodError`, or `ClassCastException`
+  for a method returning a type parameter. It now runs.
+
+**Now rejected at compile time.** The following compiled before:
+
+- A method pointer assigned to a functional interface was not checked, and its
+  value was converted at run time as by a cast. For example, with
+  `static long longValue()` and `static String str() { 'A' }`,
+  `IntSupplier s = H.&longValue` narrowed the value, and `IntSupplier s = H.&str`
+  returned 65. It is now checked as a method reference is, in both modes. A
+  method pointer passed as an argument was already checked, but narrowing was
+  allowed. A method pointer to a method returning a type parameter, as in
+  `ToIntFunction<Long> f = H.&id`, is checked against the type argument
+  inferred from the functional interface's parameter types, as a method
+  reference is. The method pointer is still a `Closure`, and which of several
+  overloaded methods it calls is still decided at run time.
+- A method reference to a method returning a type parameter was not checked,
+  as in `ToIntFunction<Long> f = H::id` for `static <T> T id(T t)`. Under
+  `@CompileStatic`, a narrowing ran and truncated the value through
+  `Number.intValue()` and similar; under `@TypeChecked`, every conversion ran as
+  a cast, including `String` and `char` to a number. The type argument is now
+  inferred from the functional interface's parameter types and checked.
+- Under `@TypeChecked`, a method reference that narrows, as in
+  `IntSupplier s = H::longValue`, converted the value at run time. Under
+  `@CompileStatic` it threw `BootstrapMethodError`, so there it now fails
+  earlier rather than differently.
+- A method reference or method pointer whose number value would be narrowed
+  for a wrapper return type, as in `Supplier<Byte> s = H::v` or `H.&v` for
+  `static int v()`, is now reported as "Possible loss of precision", as a
+  method `Byte m() { H.v() }` already was. Before, `s.get()` returned an
+  `Integer`.
+
+To keep a narrowing, convert explicitly, as in
+`IntSupplier s = () -> (int) H.longValue()`.
+
+**What is unchanged.** A functional interface whose method returns a reference
+type, such as `Supplier<Long>`, still requires the returned value's type to be
+compatible, so `Supplier<Long> s = () -> 1` remains an error (GROOVY-11414).
+
 ### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
 
 Under `@CompileStatic`, a constructor reference such as `X::new` created the

@@ -659,10 +659,14 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
             assert result == 1.0d
         '''
 
-        shouldFailWithMessages sam + '''
+        // GROOVY-12616: converted as by a method's return
+        assertScript sam + '''
             Operation operation = { return 1.0; }
-        ''',
-        'Cannot return value of type java.math.BigDecimal for closure expecting double'
+            def result = operation.calculate(2)
+            assert result == 1.0d
+            Operation lambda = (int i) -> 1.5
+            assert lambda.calculate(2) == 1.5d
+        '''
     }
 
     // GROOVY-8427
@@ -895,8 +899,6 @@ import static groovy.test.GroovyAssert.shouldFail
             assert s.getAsLong() == 42L
             DoubleUnaryOperator o = (double d) -> 1
             assert o.applyAsDouble(0.5d) == 1.0d
-            IntSupplier c = () -> 'x'.charAt(0)
-            assert c.getAsInt() == 120
             IntSupplier b = { -> (byte) 1 }
             assert b.getAsInt() == 1
         '''
@@ -929,17 +931,38 @@ import static groovy.test.GroovyAssert.shouldFail
         shouldFailWithMessages '''
             ToIntFunction<String> f = (String s) -> (long) s.length()
         ''',
-        'Cannot return value of type long for lambda expecting int'
+        'Possible loss of precision from long to int'
 
         shouldFailWithMessages '''
             ToIntFunction<String> f = { String s -> (double) s.length() }
         ''',
-        'Cannot return value of type double for closure expecting int'
+        'Possible loss of precision from double to int'
 
         shouldFailWithMessages '''
             ToIntFunction<String> f = (String s) -> Long.valueOf(s.length())
         ''',
-        'Cannot return value of type java.lang.Long for lambda expecting int'
+        'Possible loss of precision from java.lang.Long to int'
+
+        // a constant is checked for loss of precision, as for a method's return
+        assertScript '''
+            IntSupplier i = () -> 7L
+            assert i.getAsInt() == 7
+            IntSupplier j = { -> 7.0d }
+            assert j.getAsInt() == 7
+            DoubleSupplier d = () -> 1.5G
+            assert d.getAsDouble() == 1.5d
+        '''
+
+        shouldFailWithMessages '''
+            IntSupplier i = () -> 7_000_000_000L
+        ''',
+        'Possible loss of precision from long to int'
+
+        // char is not converted to a number type, as in an assignment or a method's return
+        shouldFailWithMessages '''
+            IntSupplier c = () -> 'x'.charAt(0)
+        ''',
+        'Cannot return value of type char for lambda expecting int'
 
         shouldFailWithMessages '''
             interface S { short get() }

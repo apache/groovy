@@ -784,17 +784,94 @@ final class MethodReferenceTest {
                     assert [i.test(0), i.test(1)] == [false, true]
                     BooleanSupplier bs = Optional.of('')::get
                     assert !bs.getAsBoolean()
-
-                    ToIntFunction<Character> tf = C::id
-                    assert tf.applyAsInt('A' as char) == 65
-                    ToIntFunction<String> sf = C::id
-                    assert sf.applyAsInt('A') == 65
-                    ToChar<String> cf = C::id
-                    assert cf.apply('x') == ('x' as char)
                 }
             }
             C.test()
         """
+    }
+
+    // GROOVY-12623: the type argument is checked as the return type of a method would be
+    @Test
+    void testPrimitiveSAMFromTypeParameterReturnTypeIncompatible() {
+        for (ref in ['ToIntFunction<Character> f = C::id', 'ToIntFunction<String> f = C::id', 'ToChar<String> f = C::id']) {
+            def err = shouldFail shell, """
+                @FunctionalInterface interface ToChar<T> { char apply(T t) }
+                @CompileStatic
+                class C {
+                    static <T> T id(T t) { t }
+                    static void test() {
+                        $ref
+                    }
+                }
+            """
+            assert err.message =~ /Invalid return type: java.lang.(Character|String) is not convertible to (int|char)/
+        }
+
+        def err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                static void test() {
+                    ToIntFunction<Long> f = C::id
+                }
+            }
+        '''
+        assert err.message =~ /Possible loss of precision from java.lang.Long to int/
+    }
+
+    // GROOVY-12623
+    @ParameterizedTest
+    @ValueSource(strings = [
+        'ToIntFunction<Long> f = C.&id',
+        'ToIntFunction<Long> f = new C().&me',
+        'ToIntFunction<List<Long>> f = List.&first',
+        'use(C.&id)',
+    ])
+    void testMethodPointerFromTypeParameterReturnTypeIncompatible(String ref) {
+        def err = shouldFail shell, """
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                def <T> T me(T t) { t }
+                static int use(ToIntFunction<Long> f) { f.applyAsInt(5L) }
+                static void test() {
+                    $ref
+                }
+            }
+        """
+        assert err.message =~ /Possible loss of precision from java.lang.Long to int/
+    }
+
+    // GROOVY-12623: a method pointer still selects its method at run time
+    @Test
+    void testMethodPointerFromTypeParameterReturnType() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static <T> T id(T t) { t }
+                static void test() {
+                    ToLongFunction<Integer> f = C.&id
+                    assert f.applyAsLong(5) == 5L
+                    Predicate<String> p = C.&id
+                    assert !p.test('') && p.test('x')
+                    ToIntFunction<Integer> g = C.&id.memoize()
+                    assert g.applyAsInt(5) == 5
+                }
+            }
+            C.test()
+        '''
+
+        def err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                static int f(Object o) { 1 }
+                static long f(Long l) { 2L }
+                static void test() {
+                    ToIntFunction<Object> g = C.&f // f(Long) may be called
+                }
+            }
+        '''
+        assert err.message =~ /Possible loss of precision from long to int/
     }
 
     // GROOVY-12623
@@ -837,11 +914,9 @@ final class MethodReferenceTest {
                     assert !bp.test(false) && bp.test(true)
                     groovy.test.GroovyAssert.shouldFail(NullPointerException) { bp.test(null) }
 
-                    ToIntFunction<Long> f = C::id
-                    assert f.applyAsInt(5L) == 5
-                    groovy.test.GroovyAssert.shouldFail(NullPointerException) { f.applyAsInt(null) }
                     ToLongFunction<Integer> g = C::id
                     assert g.applyAsLong(5) == 5L
+                    groovy.test.GroovyAssert.shouldFail(NullPointerException) { g.applyAsLong(null) }
                     ToDoubleFunction<BigDecimal> h = C::id
                     assert h.applyAsDouble(1.5G) == 1.5d
                 }
@@ -2994,20 +3069,32 @@ final class MethodReferenceTest {
                 static void test() {
                     ToDoubleFunction<String> d = C::decimal
                     assert d.applyAsDouble('1.5') == 1.5d
-                    ToIntFunction<String> i = C::longValue
-                    assert i.applyAsInt('42') == 42
-                    i = C::longObject
-                    assert i.applyAsInt('42') == 42
-                    ToByteFunc<String> b = C::longValue
-                    assert b.apply('65') == (byte) 65
-                    ToFloatFunc<String> f = C::doubleValue
+                    ToFloatFunc<String> f = C::decimal
                     assert f.apply('0.5') == 0.5f
-                    ToLongFunction<String> l = C::doubleValue
-                    assert l.applyAsLong('7.9') == 7L
                 }
             }
             C.test()
         '''
+
+        // narrowing is checked as for the return of a method
+        for (ref in ['ToIntFunction<String> f = C::longValue', 'ToIntFunction<String> f = C::longObject',
+                     'ToByteFunc<String> f = C::longValue', 'ToFloatFunc<String> f = C::doubleValue',
+                     'ToLongFunction<String> f = C::doubleValue']) {
+            def err = shouldFail shell, """
+                @FunctionalInterface interface ToByteFunc<T> { byte apply(T t) }
+                @FunctionalInterface interface ToFloatFunc<T> { float apply(T t) }
+                @CompileStatic
+                class C {
+                    static long longValue(String s) { Long.parseLong(s) }
+                    static Long longObject(String s) { Long.valueOf(s) }
+                    static double doubleValue(String s) { Double.parseDouble(s) }
+                    static void test() {
+                        $ref
+                    }
+                }
+            """
+            assert err.message =~ /Possible loss of precision from /
+        }
     }
 
     @Test
