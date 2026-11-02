@@ -22,6 +22,12 @@ import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 import org.codehaus.groovy.runtime.MethodClosure
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.tree.ClassNode
+import org.objectweb.asm.tree.JumpInsnNode
+import org.objectweb.asm.tree.MethodNode
+import org.objectweb.asm.tree.analysis.Analyzer
+import org.objectweb.asm.tree.analysis.BasicInterpreter
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -1060,5 +1066,46 @@ import static groovy.test.GroovyAssert.shouldFail
             }
         '''
         assert err.message =~ /Cannot assign value of type java.lang.Object to variable of type java.lang.Number/
+    }
+
+    // a loop whose back edge carries values on the operand stack cannot be
+    // compiled on-stack by HotSpot, so a method run once stays interpreted
+    @Test
+    void testSpreadLoopsWithEmptyOperandStack() {
+        def script = '''
+            class P {
+                int x
+                int twice() { 2 * x }
+            }
+            @groovy.transform.CompileStatic
+            List m(List<P> ps, List<List<P>> pss) {
+                def xs = ps*.x
+                def ys = ps*.twice()
+                def total = ps*.x?.sum()
+                ps*.twice()
+                def nested = pss*.size()
+                [xs, ys, total, nested]
+            }
+            assert m([new P(x: 1), new P(x: 2)], [[new P(x: 3)], []]) == [[1, 2], [2, 4], 3, [1, 0]]
+            assert m(null, null) == [null, null, null, null]
+        '''
+        compile(method: 'm', script)
+        def depths = backEdgeStackDepths('m')
+        assert depths.size() == 5
+        assert depths.every { it == 0 }
+
+        assertScript script
+    }
+
+    private List<Integer> backEdgeStackDepths(String methodName) {
+        def cn = new ClassNode()
+        new ClassReader(classBytes).accept(cn, 0)
+        MethodNode mn = cn.methods.find { it.name == methodName }
+        def frames = new Analyzer(new BasicInterpreter()).analyze(cn.name, mn)
+        def insns = mn.instructions
+        insns.findAll { it instanceof JumpInsnNode }.findResults { JumpInsnNode jump ->
+            int target = insns.indexOf(jump.label)
+            target < insns.indexOf(jump) ? frames[target].stackSize : null
+        }
     }
 }
