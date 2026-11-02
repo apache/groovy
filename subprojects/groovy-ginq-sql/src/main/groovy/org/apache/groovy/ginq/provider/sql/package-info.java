@@ -23,5 +23,11 @@
  * The native renderer defaults to ANSI and can target a small set of open-source dialects.
  * Strict mode is the default; {@code mixedMode: true} pushes the translatable clause
  * prefix and finishes the rest in memory.
+ * <p>
+ * {@code fn(...) over(...)} is recognized and rejected with a stable message, so mixed mode
+ * still runs window functions in memory. The SQL IR and both renderers can already emit
+ * {@code OVER}. A follow-up registers each GINQ window function on
+ * {@code SqlFunctionRegistry} as {@code Kind.WINDOW}; aggregates and {@code Math.min}/{@code Math.max}
+ * stay on their existing paths. See {@link org.apache.groovy.ginq.provider.sql.ir.SqlWindowCall}.
  */
 package org.apache.groovy.ginq.provider.sql;

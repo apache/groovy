@@ -46,15 +46,24 @@ import org.apache.groovy.ginq.provider.sql.ir.SqlStar
 import org.apache.groovy.ginq.provider.sql.ir.SqlTableRef
 import org.apache.groovy.ginq.provider.sql.ir.SqlTableSource
 import org.apache.groovy.ginq.provider.sql.ir.SqlUnary
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindow
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindowBound
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindowCall
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindowFrame
 import org.apache.groovy.ginq.provider.sql.render.RenderedSql
 import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.GroovyBugError
+
+import java.math.BigDecimal
+import java.math.BigInteger
 import org.codehaus.groovy.ast.expr.Expression
 import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.DataType
 import org.jooq.Field
+import org.jooq.GroupField
 import org.jooq.JoinType
+import org.jooq.OrderField
 import org.jooq.Param
 import org.jooq.SQLDialect
 import org.jooq.Select
@@ -62,6 +71,10 @@ import org.jooq.SelectFieldOrAsterisk
 import org.jooq.SelectQuery
 import org.jooq.SortField
 import org.jooq.Table
+import org.jooq.WindowSpecification
+import org.jooq.WindowSpecificationOrderByStep
+import org.jooq.WindowSpecificationRowsAndStep
+import org.jooq.WindowSpecificationRowsStep
 import org.jooq.conf.RenderQuotedNames
 import org.jooq.conf.Settings
 import org.jooq.impl.DSL
@@ -282,6 +295,9 @@ class JooqRenderer {
         if (expr instanceof SqlFunction) {
             return buildFunction(ctx, (SqlFunction) expr)
         }
+        if (expr instanceof SqlWindowCall) {
+            return buildWindow(ctx, (SqlWindowCall) expr)
+        }
         if (expr instanceof SqlCaseWhen) {
             return DSL.when(buildCondition(ctx, expr.condition), buildField(ctx, expr.thenExpr))
                     .otherwise(buildField(ctx, expr.elseExpr))
@@ -310,6 +326,142 @@ class JooqRenderer {
             return DSL.field(buildCondition(ctx, expr))
         }
         throw new GroovyBugError("Unknown SQL expression: ${expr?.getClass()?.name}")
+    }
+
+    // The function is rendered as a query part and the window specification as another,
+    // so a registered name such as ROW_NUMBER stays an identifier and is not concatenated
+    // from the GINQ source. Frame offsets that are not Java int literals have no jOOQ
+    // API here; the native renderer prints those expressions.
+    private Field buildWindow(DSLContext ctx, SqlWindowCall call) {
+        Field function = buildField(ctx, call.function)
+        WindowSpecification specification = windowSpecification(ctx, call.window)
+        if (specification == null) {
+            return DSL.field('{0} over ()', Object.class, function)
+        }
+        return DSL.field('{0} over ({1})', Object.class, function, specification)
+    }
+
+    private WindowSpecification windowSpecification(DSLContext ctx, SqlWindow window) {
+        WindowSpecificationRowsStep step = null
+        if (window.partitionBy) {
+            WindowSpecificationOrderByStep partitioned = DSL.partitionBy(groupFields(ctx, window.partitionBy))
+            if (window.orderBy) {
+                step = partitioned.orderBy(orderFields(ctx, window.orderBy))
+            } else {
+                step = partitioned
+            }
+        } else if (window.orderBy) {
+            step = DSL.orderBy(orderFields(ctx, window.orderBy))
+        }
+        if (step == null) {
+            if (window.frame == null) return null
+            return frameOnly(window.frame)
+        }
+        if (window.frame == null) return step
+        return applyFrame(step, window.frame)
+    }
+
+    private GroupField[] groupFields(DSLContext ctx, List<SqlExpr> exprs) {
+        GroupField[] fields = new GroupField[exprs.size()]
+        for (int i = 0; i < exprs.size(); i++) {
+            fields[i] = buildField(ctx, exprs.get(i))
+        }
+        return fields
+    }
+
+    private OrderField[] orderFields(DSLContext ctx, List<SqlOrderSpec> orderBy) {
+        OrderField[] fields = new OrderField[orderBy.size()]
+        for (int i = 0; i < orderBy.size(); i++) {
+            fields[i] = buildSortField(ctx, orderBy.get(i))
+        }
+        return fields
+    }
+
+    private WindowSpecification applyFrame(WindowSpecificationRowsStep step, SqlWindowFrame frame) {
+        boolean rows = frame.unit == SqlWindowFrame.Unit.ROWS
+        WindowSpecificationRowsAndStep between = rows ? rowsBetween(step, frame.lower) : rangeBetween(step, frame.lower)
+        return andBound(between, frame.upper)
+    }
+
+    private static WindowSpecification frameOnly(SqlWindowFrame frame) {
+        boolean rows = frame.unit == SqlWindowFrame.Unit.ROWS
+        WindowSpecificationRowsAndStep between = rows ? rowsBetween(frame.lower) : rangeBetween(frame.lower)
+        return andBound(between, frame.upper)
+    }
+
+    private static WindowSpecificationRowsAndStep rowsBetween(WindowSpecificationRowsStep step, SqlWindowBound bound) {
+        switch (bound.kind) {
+            case SqlWindowBound.Kind.UNBOUNDED_PRECEDING: return step.rowsBetweenUnboundedPreceding()
+            case SqlWindowBound.Kind.PRECEDING: return step.rowsBetweenPreceding(frameOffset(bound))
+            case SqlWindowBound.Kind.CURRENT_ROW: return step.rowsBetweenCurrentRow()
+            case SqlWindowBound.Kind.FOLLOWING: return step.rowsBetweenFollowing(frameOffset(bound))
+            case SqlWindowBound.Kind.UNBOUNDED_FOLLOWING: return step.rowsBetweenUnboundedFollowing()
+            default: throw new GroovyBugError("Unknown window bound: ${bound.kind}")
+        }
+    }
+
+    private static WindowSpecificationRowsAndStep rangeBetween(WindowSpecificationRowsStep step, SqlWindowBound bound) {
+        switch (bound.kind) {
+            case SqlWindowBound.Kind.UNBOUNDED_PRECEDING: return step.rangeBetweenUnboundedPreceding()
+            case SqlWindowBound.Kind.PRECEDING: return step.rangeBetweenPreceding(frameOffset(bound))
+            case SqlWindowBound.Kind.CURRENT_ROW: return step.rangeBetweenCurrentRow()
+            case SqlWindowBound.Kind.FOLLOWING: return step.rangeBetweenFollowing(frameOffset(bound))
+            case SqlWindowBound.Kind.UNBOUNDED_FOLLOWING: return step.rangeBetweenUnboundedFollowing()
+            default: throw new GroovyBugError("Unknown window bound: ${bound.kind}")
+        }
+    }
+
+    private static WindowSpecificationRowsAndStep rowsBetween(SqlWindowBound bound) {
+        switch (bound.kind) {
+            case SqlWindowBound.Kind.UNBOUNDED_PRECEDING: return DSL.rowsBetweenUnboundedPreceding()
+            case SqlWindowBound.Kind.PRECEDING: return DSL.rowsBetweenPreceding(frameOffset(bound))
+            case SqlWindowBound.Kind.CURRENT_ROW: return DSL.rowsBetweenCurrentRow()
+            case SqlWindowBound.Kind.FOLLOWING: return DSL.rowsBetweenFollowing(frameOffset(bound))
+            case SqlWindowBound.Kind.UNBOUNDED_FOLLOWING: return DSL.rowsBetweenUnboundedFollowing()
+            default: throw new GroovyBugError("Unknown window bound: ${bound.kind}")
+        }
+    }
+
+    private static WindowSpecificationRowsAndStep rangeBetween(SqlWindowBound bound) {
+        switch (bound.kind) {
+            case SqlWindowBound.Kind.UNBOUNDED_PRECEDING: return DSL.rangeBetweenUnboundedPreceding()
+            case SqlWindowBound.Kind.PRECEDING: return DSL.rangeBetweenPreceding(frameOffset(bound))
+            case SqlWindowBound.Kind.CURRENT_ROW: return DSL.rangeBetweenCurrentRow()
+            case SqlWindowBound.Kind.FOLLOWING: return DSL.rangeBetweenFollowing(frameOffset(bound))
+            case SqlWindowBound.Kind.UNBOUNDED_FOLLOWING: return DSL.rangeBetweenUnboundedFollowing()
+            default: throw new GroovyBugError("Unknown window bound: ${bound.kind}")
+        }
+    }
+
+    private static WindowSpecification andBound(WindowSpecificationRowsAndStep between, SqlWindowBound bound) {
+        switch (bound.kind) {
+            case SqlWindowBound.Kind.UNBOUNDED_PRECEDING: return between.andUnboundedPreceding()
+            case SqlWindowBound.Kind.PRECEDING: return between.andPreceding(frameOffset(bound))
+            case SqlWindowBound.Kind.CURRENT_ROW: return between.andCurrentRow()
+            case SqlWindowBound.Kind.FOLLOWING: return between.andFollowing(frameOffset(bound))
+            case SqlWindowBound.Kind.UNBOUNDED_FOLLOWING: return between.andUnboundedFollowing()
+            default: throw new GroovyBugError("Unknown window bound: ${bound.kind}")
+        }
+    }
+
+    private static int frameOffset(SqlWindowBound bound) {
+        if (!(bound.offset instanceof SqlLiteral) || !(((SqlLiteral) bound.offset).value instanceof Number)) {
+            throw new IllegalArgumentException(
+                    'the jooq-sql provider renders a window frame offset only when it is an integer literal')
+        }
+        Number number = (Number) ((SqlLiteral) bound.offset).value
+        try {
+            if (number instanceof BigDecimal) return ((BigDecimal) number).intValueExact()
+            if (number instanceof BigInteger) return ((BigInteger) number).intValueExact()
+            long value = number.longValue()
+            if ((number instanceof Double || number instanceof Float) && number.doubleValue() != value) {
+                throw new ArithmeticException('fraction')
+            }
+            return Math.toIntExact(value)
+        } catch (ArithmeticException ignored) {
+            throw new IllegalArgumentException(
+                    'the jooq-sql provider renders a window frame offset only when it fits in a Java int')
+        }
     }
 
     private Field buildFunction(DSLContext ctx, SqlFunction function) {

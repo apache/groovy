@@ -41,6 +41,10 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression
  * {@code indexOf}, {@code concat}, {@code isEmpty}, {@code substring},
  * {@code contains}) are still registry entries; a further shape is a new
  * shape constant and a branch in {@link #translate}.
+ * <p>
+ * A window function is a {@link #window} entry of {@link Kind#WINDOW}.
+ * {@link #translate} still returns only the function call. The translator
+ * attaches {@code OVER}. Aggregates are not entries of any kind.
  *
  * @since 7.0.0
  */
@@ -56,7 +60,16 @@ final class SqlFunctionMapping {
         /** An implicit-this call, e.g. {@code coalesce(a, b)}. */
         FREE,
         /** A static call on {@code java.lang.Math}, e.g. {@code Math.max(a, b)}. */
-        MATH
+        MATH,
+        /**
+         * A window function called as {@code fn(...) over(...)}.
+         * Distinct from the scalar kinds above and from aggregates, which
+         * are not registry entries: {@code Math.min} is {@link #MATH},
+         * aggregate {@code min} is the translator's aggregate path, and a
+         * window {@code min} would be this kind.
+         * {@link SqlFunctionRegistry#standard()} registers none.
+         */
+        WINDOW
     }
 
     private enum Shape {
@@ -164,6 +177,52 @@ final class SqlFunctionMapping {
         checkSql(sqlName)
         checkRange(minArgs, maxArgs)
         return new SqlFunctionMapping(groovyName, Kind.FREE, Shape.SQL_FUNCTION, sqlName,
+                minArgs, maxArgs, arityMessage, false, false)
+    }
+
+    /**
+     * A window function with no arguments, e.g. {@code rowNumber} to {@code ROW_NUMBER}.
+     * The translator supplies the {@code OVER} clause; this mapping is only the call.
+     *
+     * @param groovyName the Groovy function name
+     * @param sqlName the ANSI function name
+     * @return the mapping
+     */
+    static SqlFunctionMapping window(String groovyName, String sqlName) {
+        return window(groovyName, sqlName, 0, 0, null)
+    }
+
+    /**
+     * A window function with a fixed number of arguments, e.g. {@code ntile}.
+     *
+     * @param groovyName the Groovy function name
+     * @param sqlName the ANSI function name
+     * @param arguments how many arguments the function takes, not counting {@code over}
+     * @return the mapping
+     */
+    static SqlFunctionMapping window(String groovyName, String sqlName, int arguments) {
+        return window(groovyName, sqlName, arguments, arguments, null)
+    }
+
+    /**
+     * A window function with an argument range, e.g. {@code lead} with 1 to 3.
+     *
+     * @param groovyName the Groovy function name
+     * @param sqlName the ANSI function name
+     * @param minArgs minimum argument count, not counting {@code over}
+     * @param maxArgs maximum argument count, not counting {@code over}
+     * @return the mapping
+     */
+    static SqlFunctionMapping window(String groovyName, String sqlName, int minArgs, int maxArgs) {
+        return window(groovyName, sqlName, minArgs, maxArgs, null)
+    }
+
+    @PackageScope
+    static SqlFunctionMapping window(String groovyName, String sqlName, int minArgs, int maxArgs, String arityMessage) {
+        checkMethod(groovyName)
+        checkSql(sqlName)
+        checkRange(minArgs, maxArgs)
+        return new SqlFunctionMapping(groovyName, Kind.WINDOW, Shape.SQL_FUNCTION, sqlName,
                 minArgs, maxArgs, arityMessage, false, false)
     }
 
