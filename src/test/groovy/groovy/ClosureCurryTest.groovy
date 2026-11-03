@@ -151,6 +151,28 @@ final class ClosureCurryTest {
         assert res == cc.delegate.z
     }
 
+    // GROOVY-12673
+    @Test
+    void testThisObject() {
+        assertScript '''
+            class O {
+                def make() { { a, b -> a + b } }
+            }
+            def o = new O()
+            def c = o.make()
+
+            assert c.curry(1).thisObject === o
+            assert c.rcurry(1).thisObject === o
+            assert c.ncurry(1, 2).thisObject === o
+            assert c.curry(1).curry(2).thisObject === o
+            assert c.curry(1).getThisObject() === o
+
+            @groovy.transform.CompileStatic
+            def thisObjectOf(Closure c) { c.curry(1).thisObject }
+            assert thisObjectOf(c) === o
+        '''
+    }
+
     @Test
     void testExpandoWithCurry() {
         def sz = 'java.util.Date'.size()

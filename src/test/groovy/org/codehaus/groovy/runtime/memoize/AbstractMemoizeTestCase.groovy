@@ -41,6 +41,62 @@ abstract class AbstractMemoizeTestCase {
         assert 4 == mem(2)
     }
 
+    // GROOVY-12673
+    @Test
+    void testDelegateAndThisObject() {
+        def d = [name: 'd']
+        Closure cl = { x -> name + x }
+        cl.delegate = d
+        cl.resolveStrategy = Closure.DELEGATE_FIRST
+        Closure mem = buildMemoizeClosure(cl)
+
+        assert mem.owner === this
+        assert mem.thisObject === this
+        assert mem.delegate === d
+        assert mem.resolveStrategy == Closure.DELEGATE_FIRST
+        assert mem(1) == 'd1'
+    }
+
+    // GROOVY-12673
+    @Test
+    void testSetDelegateAndResolveStrategy() {
+        def d = [name: 'd']
+        Closure mem = buildMemoizeClosure { x -> name + x }
+        mem.delegate = d
+        mem.resolveStrategy = Closure.DELEGATE_ONLY
+
+        assert mem.delegate === d
+        assert mem.resolveStrategy == Closure.DELEGATE_ONLY
+        assert mem(1) == 'd1'
+    }
+
+    // GROOVY-12673
+    @Test
+    void testSetDelegateAndResolveStrategyLeavesTheMemoizedClosureAlone() {
+        Closure cl = { x -> name + x }
+        def cd = [name: 'c']
+        cl.delegate = cd
+        cl.resolveStrategy = Closure.DELEGATE_ONLY
+        Closure mem = buildMemoizeClosure(cl)
+        mem.delegate = [name: 'd']
+        mem.resolveStrategy = Closure.DELEGATE_FIRST
+
+        assert mem(1) == 'd1'
+        assert cl.delegate === cd
+        assert cl.resolveStrategy == Closure.DELEGATE_ONLY
+        assert cl(1) == 'c1'
+    }
+
+    // GROOVY-12673
+    @Test
+    void testWith() {
+        Closure mem = buildMemoizeClosure { m -> name }
+
+        assert [name: 'd'].with(mem) == 'd'
+        assert mem.delegate === this
+        assert mem.resolveStrategy == Closure.OWNER_FIRST
+    }
+
     abstract Closure buildMemoizeClosure(Closure cl)
 
     @Test
@@ -179,6 +235,75 @@ abstract class AbstractMemoizeTestCase {
 
         static Closure dehydrated() {
             return { x -> x * 2 }.dehydrate()
+        }
+    }
+
+    // GROOVY-12669
+    @Test
+    void testRehydrateCallsTheRehydratedClosure() {
+        def o = new Named('o')
+        def p = new Named('p')
+        Closure mem = buildMemoizeClosure(o.closure())
+        assert mem(1) == 'o1'
+
+        Closure copy = mem.rehydrate(null, p, p)
+        assert copy.owner.is(p)
+        assert copy(1) == 'p1'
+        assert copy(2) == 'p2'
+        assert copy(1) == 'p1'
+        assert p.calls == 2
+
+        assert mem(1) == 'o1'
+        assert mem(2) == 'o2'
+        assert o.calls == 2
+    }
+
+    // GROOVY-12669
+    @Test
+    void testRehydrateUsesTheNewDelegate() {
+        Closure cl = { x -> bar + x }
+        cl.delegate = [bar: 'a']
+        Closure mem = buildMemoizeClosure(cl)
+        assert mem(1) == 'a1'
+
+        Closure copy = mem.rehydrate([bar: 'b'], this, this)
+        assert copy(1) == 'b1'
+        assert mem(1) == 'a1'
+    }
+
+    // GROOVY-12669
+    @Test
+    void testDehydrateClearsTheMemoizedClosure() {
+        def o = new Named('o')
+        def p = new Named('p')
+        Closure mem = buildMemoizeClosure(o.closure())
+        assert mem(1) == 'o1'
+
+        Closure copy = mem.dehydrate()
+        [copy, copy.@closure].each {
+            assert it.owner == null
+            assert it.delegate == null
+            assert it.thisObject == null
+        }
+        assert copy.rehydrate(null, p, p)(1) == 'p1'
+        assert o.calls == 1
+    }
+
+    static class Named {
+        final String name
+        int calls
+
+        Named(String name) {
+            this.name = name
+        }
+
+        String foo() {
+            calls++
+            name
+        }
+
+        Closure closure() {
+            return { x -> foo() + x }
         }
     }
 }

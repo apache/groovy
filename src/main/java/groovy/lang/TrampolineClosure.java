@@ -40,7 +40,7 @@ final class TrampolineClosure<V> extends Closure<V> {
      * @param original the wrapped closure
      */
     TrampolineClosure(final Closure<V> original) {
-        super(original.getOwner(), original.getDelegate());
+        super(original.getOwner(), original.getThisObject());
         this.original = original;
     }
 
@@ -68,7 +68,7 @@ final class TrampolineClosure<V> extends Closure<V> {
      */
     @Override
     public int getMaximumNumberOfParameters() {
-        return original.maximumNumberOfParameters;
+        return original.getMaximumNumberOfParameters();
     }
 
     /**
@@ -76,7 +76,50 @@ final class TrampolineClosure<V> extends Closure<V> {
      */
     @Override
     public Class[] getParameterTypes() {
-        return original.parameterTypes;
+        return original.getParameterTypes();
+    }
+
+    /**
+     * Delegates to the wrapped closure
+     */
+    @Override
+    public Object getDelegate() {
+        return original.getDelegate();
+    }
+
+    /**
+     * Delegates to the wrapped closure, which resolves the calls the trampoline makes
+     */
+    @Override
+    public void setDelegate(final Object delegate) {
+        original.setDelegate(delegate);
+    }
+
+    /**
+     * Delegates to the wrapped closure
+     */
+    @Override
+    public int getResolveStrategy() {
+        return original.getResolveStrategy();
+    }
+
+    /**
+     * Delegates to the wrapped closure, which resolves the calls the trampoline makes
+     */
+    @Override
+    public void setResolveStrategy(final int resolveStrategy) {
+        original.setResolveStrategy(resolveStrategy);
+    }
+
+    /**
+     * Clones the wrapped closure too, so that setting the delegate or resolve strategy of the copy
+     * leaves this trampoline alone.
+     * @return An instance of TrampolineClosure wrapping a copy of the original closure.
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public Object clone() {
+        return new TrampolineClosure<V>((Closure<V>) original.clone());
     }
 
     /**
