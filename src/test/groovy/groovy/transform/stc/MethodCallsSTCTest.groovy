@@ -2017,6 +2017,7 @@ import static groovy.test.GroovyAssert.shouldFail
                 static String m() { getSimpleName() }
                 static String s() { toString() }
                 static boolean b(Object o) { isInstance(o) }
+                static String c(Class type) { getName() }
                 static class Bar {
                     static String m() { getName() }
                 }
@@ -2025,6 +2026,7 @@ import static groovy.test.GroovyAssert.shouldFail
             assert Foo.m() == 'Foo'
             assert Foo.s() == 'class Foo'
             assert Foo.b(new Foo()) && !Foo.b('x')
+            assert Foo.c(String) == 'Foo'
             assert Foo.Bar.m() == 'Foo$Bar'
         '''
     }
