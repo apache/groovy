@@ -44,6 +44,7 @@ import org.codehaus.groovy.util.FastArray;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -557,7 +558,12 @@ public final class ClosureMetaClass extends MetaClassImpl {
      */
     @Override
     public List<MetaProperty> getProperties() {
-        return CLOSURE_METACLASS.getProperties();
+        List<MetaProperty> answer = new ArrayList<>();
+        for (MetaProperty mp : CLOSURE_METACLASS.getProperties()) {
+            // GROOVY-12675: a closure class does not inherit the private members of Closure
+            if (!Modifier.isPrivate(mp.getModifiers())) answer.add(mp);
+        }
+        return answer;
     }
 
     /**
