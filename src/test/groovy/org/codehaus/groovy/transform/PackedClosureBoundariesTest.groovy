@@ -93,22 +93,23 @@ final class PackedClosureBoundariesTest {
     @Test
     void constructorAndInitializerEscapesDecline() {
         // GROOVY-12652: a constructor, and an instance initializer block (inlined into every
-        // constructor), is a method to the escape and serialization gates; [description,
-        // checked under @CompileStatic too?, class body] (an append under @CompileStatic is
-        // rewritten to a leftShift call the escape walk does not see: GROOVY-12650)
+        // constructor), is a method to the escape and serialization gates; [description, class body]
         [
-            ['field store in a constructor',       true,  'Closure f\nC() { f = { x -> x } }'],
-            ['property store in a constructor',    true,  'C(Map m) { m.handler = { x -> x } }'],
-            ['appended in a constructor',          false, 'C(List<Closure> s) { s << { x -> x } }'],
-            ['Serializable cast in a constructor', true,  'C() { assert ({ x -> x } as Serializable) != null }'],
-            ['field store in an initializer',      true,  'Closure f; { f = { x -> x } }'],
-            ['property store in an initializer',   true,  'Map m = [:]; { m.handler = { x -> x } }'],
-            ['appended in an initializer',         false, 'List<Closure> s = []; { s << { x -> x } }'],
-        ].each { desc, checkCs, body ->
-            assert !packs("class C {\n${body}\n}"), "dynamic: '$desc' should NOT pack"
-            assert !packs("@groovy.transform.TypeChecked\nclass C {\n${body}\n}"), "@TypeChecked: '$desc' should NOT pack"
-            if (checkCs) {
-                assert !packs("@groovy.transform.CompileStatic\nclass C {\n${body}\n}"), "@CompileStatic: '$desc' should NOT pack"
+            ['field store in a constructor',        'Closure f\nC() { f = { x -> x } }'],
+            ['property store in a constructor',     'C(Map m) { m.handler = { x -> x } }'],
+            ['setter store in a constructor',       'C(H h) { h.handler = { x -> x } }'],
+            ['appended in a constructor',           'C(List<Closure> s) { s << { x -> x } }'],
+            ['Serializable cast in a constructor',  'C() { assert ({ x -> x } as Serializable) != null }'],
+            ['field store in an initializer',       'Closure f; { f = { x -> x } }'],
+            ['property store in an initializer',    'Map m = [:]; { m.handler = { x -> x } }'],
+            ['setter store in an initializer',      'H h = new H(); { h.handler = { x -> x } }'],
+            ['appended in an initializer',          'List<Closure> s = []; { s << { x -> x } }'],
+        ].each { desc, body ->
+            // under @CompileStatic the setter store and the append are rewritten to method calls
+            // before class generation; the escape walk runs ahead of that rewrite (GROOVY-12650)
+            ['', '@groovy.transform.TypeChecked\n', '@groovy.transform.CompileStatic\n'].each { annotation ->
+                assert !packs("${annotation}class C {\n${body}\n}\nclass H { Closure handler }"),
+                        "${annotation.trim() ?: 'dynamic'}: '$desc' should NOT pack"
             }
         }
     }
