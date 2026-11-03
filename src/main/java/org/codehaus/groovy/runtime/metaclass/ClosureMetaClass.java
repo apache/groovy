@@ -393,6 +393,10 @@ public final class ClosureMetaClass extends MetaClassImpl {
             } catch (GroovyRuntimeException gre) {
                 first.addSuppressed(gre);
             }
+        } else if (thisType == object.getClass() && object instanceof GroovyObject go
+                && go.getMetaClass() instanceof MetaClassImpl mci) { // GROOVY-12610: private method of a nest-mate superclass
+            MetaMethod method = mci.getNestmatePrivateMethod(thisType, methodName, arguments);
+            if (method != null) return method.doMethodInvoke(object, arguments);
         }
         throw first;
     }
