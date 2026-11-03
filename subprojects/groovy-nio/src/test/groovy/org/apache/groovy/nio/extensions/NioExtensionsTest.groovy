@@ -1204,7 +1204,7 @@ class NioExtensionsTest extends Specification {
         result == ['a', 'b', 'c']
     }
 
-    // GROOVY-NNNNN
+    // GROOVY-12676
     def testWithObjectInputStreamAndClassLoaderReadsPrimitiveClasses() {
         setup:
         def path = tempFile.toPath()
