@@ -22,6 +22,8 @@ package org.codehaus.groovy.runtime.memoize
 import groovy.transform.PackedClosures
 import org.junit.jupiter.api.Test
 
+import java.lang.invoke.SerializedLambda
+
 import static org.junit.jupiter.api.Assertions.assertEquals
 
 
@@ -216,10 +218,12 @@ abstract class AbstractMemoizeTestCase {
         assert mem(2) == 4
     }
 
+    // rejects SerializedLambda, as serialization filters often do
     static Closure roundTrip(Closure closure) {
         def out = new ByteArrayOutputStream()
         out.withObjectOutputStream { it.writeObject(closure) }
         new ByteArrayInputStream(out.toByteArray()).withObjectInputStream(AbstractMemoizeTestCase.classLoader) {
+            it.objectInputFilter = ObjectInputFilter.Config.createFilter("!${SerializedLambda.name}")
             (Closure) it.readObject()
         }
     }
