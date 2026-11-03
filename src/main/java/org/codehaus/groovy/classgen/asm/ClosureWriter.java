@@ -49,6 +49,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
+import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -602,29 +603,62 @@ public class ClosureWriter {
             private void mark(final Expression e) {
                 if (e instanceof ClosureExpression) escaping.add((ClosureExpression) e);
             }
+            /**
+             * Marks every literal the escaping value {@code e} can be or keep: both branches of a
+             * ternary or elvis, the operand of a cast that keeps the closure, and the receiver of a
+             * call whose result keeps it (see {@link #isWrappingCall}).
+             */
+            private void markValue(final Expression e) {
+                if (e instanceof TernaryExpression) {
+                    markValue(((TernaryExpression) e).getTrueExpression()); // for elvis, the left operand
+                    markValue(((TernaryExpression) e).getFalseExpression());
+                } else if (e instanceof CastExpression && keepsClosure(e.getType())) {
+                    markValue(((CastExpression) e).getExpression());
+                } else if (e instanceof MethodCallExpression && isWrappingCall((MethodCallExpression) e)) {
+                    markValue(((MethodCallExpression) e).getObjectExpression());
+                } else {
+                    mark(e);
+                }
+            }
             @Override public void visitReturnStatement(final ReturnStatement statement) {
-                mark(statement.getExpression());
+                markValue(statement.getExpression());
                 super.visitReturnStatement(statement);
             }
             @Override public void visitBinaryExpression(final BinaryExpression be) {
                 int op = be.getOperation().getType();
                 if (op == Types.EQUAL && !isLocalTarget(be.getLeftExpression())) {
-                    mark(be.getRightExpression());          // assigned to a field/property/index
+                    markValue(be.getRightExpression());     // assigned to a field/property/index
                 } else if (op == Types.LEFT_SHIFT) {
-                    mark(be.getRightExpression());          // appended, e.g. list << { ... }
+                    markValue(be.getRightExpression());     // appended, e.g. list << { ... }
                 }
                 super.visitBinaryExpression(be);
             }
             @Override public void visitListExpression(final ListExpression le) {
-                le.getExpressions().forEach(this::mark);
+                le.getExpressions().forEach(this::markValue);
                 super.visitListExpression(le);
             }
             @Override public void visitMapEntryExpression(final MapEntryExpression me) {
-                mark(me.getValueExpression());
+                markValue(me.getValueExpression());
                 super.visitMapEntryExpression(me);
             }
         });
         return escaping;
+    }
+
+    /**
+     * True for a call on a closure whose result keeps it and passes a delegate set on the result on
+     * to it: {@code curry}, {@code rcurry} and {@code ncurry} (a {@code CurriedClosure} over a clone),
+     * {@code asWritable} (a wrapper), and {@code clone}, {@code dehydrate} and {@code rehydrate} (a
+     * copy; the copy of a packed closure is still packed). {@code trampoline} and the {@code memoize}
+     * family are not followed: their wrappers keep a delegate of their own and never pass it on.
+     */
+    private static boolean isWrappingCall(final MethodCallExpression call) {
+        return WRAPPING_CALLS.contains(call.getMethodAsString());
+    }
+
+    /** True when a cast to {@code type} yields the closure itself rather than a coerced proxy. */
+    private static boolean keepsClosure(final ClassNode type) {
+        return ClassHelper.isObjectType(type) || type.isDerivedFrom(ClassHelper.CLOSURE_TYPE);
     }
 
     /** True when an assignment target is a plain local variable (not a field/property that escapes). */
@@ -831,6 +865,9 @@ public class ClosureWriter {
                     "getResolveStrategy", "setDelegate", "setDirective", "setResolveStrategy",
                     "getMaximumNumberOfParameters", "getParameterTypes", "getMetaClass", "setMetaClass",
                     "invokeMethod", "getProperty", "setProperty"));
+
+    private static final Set<String> WRAPPING_CALLS =
+            new HashSet<>(Arrays.asList("curry", "rcurry", "ncurry", "asWritable", "clone", "dehydrate", "rehydrate"));
 
     /**
      * Rebinds captured-variable references in the moved body to the hoisted method's parameters,

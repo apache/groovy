@@ -63,6 +63,9 @@ final class PackedClosureBoundariesTest {
         ['returned',                     false, false, 'Closure m() { return { x -> x } }'],
         ['stored to property',           false, false, 'def m(Map attrs) { attrs.handler = { x -> x } }'],
         ['in a collection literal',      false, false, 'def m() { [{ x -> x }] }'],
+        ['returned from a ternary',      false, false, 'Closure m(boolean b) { return b ? { x -> x } : null }'],  // GROOVY-12659
+        ['returned curried',             false, false, 'Closure m() { return { x, y -> x }.curry(1) }'],         // GROOVY-12659
+        ['curried and called locally',   true,  true,  'def m() { { x, y -> x }.curry(1)(2) }'],                 // GROOVY-12659
         // ---- serialization-bound: declines everywhere -------------------------------------------
         ['cast to Serializable',         false, false, 'def m() { ({ it } as Serializable) != null }'],
         ['local into writeObject',       false, false, '''def m() {
