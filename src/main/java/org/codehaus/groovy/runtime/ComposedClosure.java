@@ -104,6 +104,24 @@ public final class ComposedClosure<V> extends Closure<V> {
         return new ComposedClosure<V>(first, second);
     }
 
+    /**
+     * Dehydrates both composed closures and composes the copies: a composed closure calls
+     * through them rather than through its own owner, delegate and this object.
+     */
+    @Override
+    public Closure<V> dehydrate() {
+        return new ComposedClosure<V>(first.dehydrate(), second.dehydrate());
+    }
+
+    /**
+     * Rehydrates both composed closures and composes the copies: a composed closure calls
+     * through them rather than through its own owner, delegate and this object.
+     */
+    @Override
+    public Closure<V> rehydrate(Object delegate, Object owner, Object thisObject) {
+        return new ComposedClosure<V>(first.rehydrate(delegate, owner, thisObject), second.rehydrate(delegate, owner, thisObject));
+    }
+
     @Override
     public Class[] getParameterTypes() {
         return first.getParameterTypes();

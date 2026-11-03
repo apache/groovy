@@ -222,4 +222,51 @@ final class ClosureComposeTest {
             assert inc4('abc') == 'abg'
         '''
     }
+
+    // GROOVY-12665
+    @Test
+    void testRehydrateComposedClosure() {
+        assertScript '''
+            class O { def foo() { 'o' } }
+            class D { def foo() { 'd' } }
+            def o = new O(), d = new D()
+            def first = { x, y -> foo() + x + y }
+            def second = { s -> s + foo() }
+
+            assert (first >> second).rehydrate(d, o, o)(1, 2) == 'o12o'
+            assert (second << first).rehydrate(d, o, o)(1, 2) == 'o12o'
+
+            def c = first >> second
+            c.resolveStrategy = Closure.DELEGATE_FIRST
+            def r = c.rehydrate(d, o, o)
+            assert r !== c
+            assert r.delegate === d
+            assert r.resolveStrategy == Closure.DELEGATE_FIRST
+            assert r(1, 2) == 'd12d'
+            assert c.delegate === this
+        '''
+    }
+
+    // GROOVY-12665
+    @Test
+    void testDehydrateComposedClosure() {
+        assertScript '''
+            class O { def foo() { 'o' } }
+            def c = { x, y -> x + y } >> { it * 2 }
+            def k = c.dehydrate()
+            assert k.delegate === null
+            assert k(1, 2) == 6
+
+            def baos = new ByteArrayOutputStream()
+            baos.withObjectOutputStream {
+                it << ({ x, y -> foo() + x + y } >> { it + '!' }).dehydrate()
+            }
+            def read
+            new ByteArrayInputStream(baos.toByteArray()).withObjectInputStream(this.class.classLoader) {
+                it.eachObject { read = it }
+            }
+            def o = new O()
+            assert read.rehydrate(o, o, o)(1, 2) == 'o12!'
+        '''
+    }
 }
