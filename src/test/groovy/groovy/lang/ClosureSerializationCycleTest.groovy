@@ -19,6 +19,9 @@
 package groovy.lang
 
 import groovy.transform.PackedClosures
+import org.apache.groovy.runtime.async.AsyncClosureUtils
+import org.apache.groovy.runtime.async.AsyncSupport
+import org.apache.groovy.runtime.async.GeneratorBridge
 import org.apache.groovy.util.Closures
 import org.codehaus.groovy.runtime.CurriedClosure
 import org.junit.jupiter.api.Test
@@ -193,6 +196,24 @@ final class ClosureSerializationCycleTest {
         }
     }
 
+    // GROOVY-12679
+    @Test
+    void testAsyncClosureCyclesRejected() {
+        // the async wrappers call and forward to a 'closure' field outside the default walk
+        ['serializeCyclicAsyncClosure', 'serializeCyclicAsyncGeneratorClosure'].each { name ->
+            byte[] bytes = Holder."$name"()
+            def err = shouldFail(InvalidObjectException) { deserialize(bytes) }
+            assert err.message.contains('cycle'), name
+        }
+    }
+
+    // GROOVY-12679
+    @Test
+    void testLegitimateAsyncClosuresRoundTrip() {
+        assert AsyncSupport.await(deserialize(Holder.serializeAsyncClosure()).call(4)) == 8
+        assert deserialize(Holder.serializeAsyncGeneratorClosure()).call(2).toList() == [0, 1]
+    }
+
     // GROOVY-12339
     @Test
     void testLegitimateMemoizedClosureRoundTrips() {
@@ -318,6 +339,26 @@ final class ClosureSerializationCycleTest {
             def memoized = { x -> x * 2 }.memoizeAtLeast(4)
             memoized(3)
             serialize(memoized)
+        }
+
+        static byte[] serializeAsyncClosure() {
+            serialize(AsyncClosureUtils.wrapAsync { x -> x * 2 })
+        }
+
+        static byte[] serializeAsyncGeneratorClosure() {
+            serialize(AsyncClosureUtils.wrapAsyncGenerator { GeneratorBridge bridge, n -> n.times { bridge.yield(it) } })
+        }
+
+        static byte[] serializeCyclicAsyncClosure() {
+            def wrapped = AsyncClosureUtils.wrapAsync { x -> x }
+            setDeclaredField(wrapped, 'closure', wrapped)
+            serialize(wrapped)
+        }
+
+        static byte[] serializeCyclicAsyncGeneratorClosure() {
+            def wrapped = AsyncClosureUtils.wrapAsyncGenerator { GeneratorBridge bridge -> }
+            setDeclaredField(wrapped, 'closure', wrapped)
+            serialize(wrapped)
         }
 
         static byte[] serializeCyclicSoftMemoized() {
