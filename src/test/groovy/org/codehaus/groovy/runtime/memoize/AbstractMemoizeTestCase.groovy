@@ -19,6 +19,7 @@
 package org.codehaus.groovy.runtime.memoize
 
 
+import groovy.transform.PackedClosures
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -233,6 +234,59 @@ abstract class AbstractMemoizeTestCase {
 
         Closure closure() {
             return { x -> foo() + x }
+        }
+    }
+
+    // GROOVY-12674
+    @Test
+    void testSerializedCopyStillMemoizes() {
+        Closure mem = buildMemoizeClosure(new Counting().closure())
+        assert mem(1) == 2
+
+        Closure copy = roundTrip(mem)
+        Counting owner = copy.owner
+        assert owner.calls == 1
+        assert copy(1) == 2
+        assert copy(2) == 4
+        assert copy(3) == 6
+        int calls = owner.calls
+        assert copy(2) == 4
+        assert copy(3) == 6
+        assert owner.calls == calls
+    }
+
+    // GROOVY-12674
+    @Test
+    void testSerializedCopyOfDehydratedClosure() {
+        Closure mem = buildMemoizeClosure(Counting.dehydrated())
+        assert mem(1) == 2
+
+        Closure copy = roundTrip(mem)
+        assert copy.owner == null
+        assert copy(1) == 2
+        assert copy(2) == 4
+        assert mem(2) == 4
+    }
+
+    static Closure roundTrip(Closure closure) {
+        def out = new ByteArrayOutputStream()
+        out.withObjectOutputStream { it.writeObject(closure) }
+        new ByteArrayInputStream(out.toByteArray()).withObjectInputStream(AbstractMemoizeTestCase.classLoader) {
+            (Closure) it.readObject()
+        }
+    }
+
+    // serialized fixtures: the closures have to compile as classes
+    @PackedClosures(mode = PackedClosures.PackMode.DISABLED)
+    static class Counting implements Serializable {
+        int calls
+
+        Closure closure() {
+            return { x -> calls++; x == null ? null : x * 2 }
+        }
+
+        static Closure dehydrated() {
+            return { x -> x * 2 }.dehydrate()
         }
     }
 }

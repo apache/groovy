@@ -20,8 +20,11 @@ package org.codehaus.groovy.runtime.memoize;
 
 import groovy.lang.Closure;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
 import java.io.Serial;
+import java.io.Serializable;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.util.Collections;
@@ -92,6 +95,8 @@ public abstract class Memoize {
      * is maintained to protect recently touched memoized values against eviction by the garbage collector.
      * A copy made by {@code dehydrate} or {@code rehydrate} calls the dehydrated or rehydrated closure and shares
      * the supplied cache.
+     * The memoized values are not serialized with the memoizing closure, which is deserialized with the cache
+     * emptied of them.
      *
      * @param protectedCacheSize The number of hard references to keep in order to prevent some (LRU) memoized return values from eviction
      * @param cache A map to hold memoized return values
@@ -275,28 +280,64 @@ public abstract class Memoize {
         }
     }
 
+    /**
+     * A soft reference to a memoized value which serializes as a cleared reference: a {@link SoftReference} is not
+     * serializable, and the garbage collector may clear it at any time, so the cache entry holding it is dropped.
+     */
+    private static final class MemoizedValueReference extends SoftReference<Object> implements Serializable {
+        @Serial
+        private static final long serialVersionUID = -6513385424356211474L;
+
+        MemoizedValueReference(final Object value, final ReferenceQueue<Object> queue) {
+            super(value, queue);
+        }
+
+        @Serial
+        private Object writeReplace() throws ObjectStreamException {
+            return new ClearedReference();
+        }
+    }
+
+    /**
+     * The serialized form of a {@link MemoizedValueReference}.
+     */
+    private static final class ClearedReference implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 2464318405930846528L;
+
+        @Serial
+        private Object readResolve() throws ObjectStreamException {
+            return new SoftReference<Object>(null);
+        }
+    }
+
     private static class SoftReferenceMemoizeFunction<V> extends MemoizeFunction<V> {
         @Serial
         private static final long serialVersionUID = -1338206227167457991L;
-        final ProtectionStorage lruProtectionStorage;
-        final ReferenceQueue queue;
         final int protectedCacheSize;
+        transient ProtectionStorage lruProtectionStorage;
+        transient ReferenceQueue<Object> queue;
 
         SoftReferenceMemoizeFunction(final MemoizeCache<Object, ?> cache, final Supplier<? extends MemoizeCache<Object, ?>> cacheFactory,
                 Closure<V> closure, final int protectedCacheSize) {
-            this(cache, cacheFactory, closure, protectedCacheSize,
-                    protectedCacheSize > 0 ?
-                            new LRUProtectionStorage(protectedCacheSize) :
-                            new NullProtectionStorage(), // Nothing should be done when no elements need protection against eviction
-                    new ReferenceQueue());
+            super(cache, cacheFactory, closure);
+            this.protectedCacheSize = protectedCacheSize;
+            initTransientFields();
         }
 
         private SoftReferenceMemoizeFunction(final MemoizeCache<Object, ?> cache, final Supplier<? extends MemoizeCache<Object, ?>> cacheFactory,
-                Closure<V> closure, final int protectedCacheSize, ProtectionStorage lruProtectionStorage, ReferenceQueue queue) {
+                Closure<V> closure, final int protectedCacheSize, ProtectionStorage lruProtectionStorage, ReferenceQueue<Object> queue) {
             super(cache, cacheFactory, closure);
             this.protectedCacheSize = protectedCacheSize;
             this.lruProtectionStorage = lruProtectionStorage;
             this.queue = queue;
+        }
+
+        private void initTransientFields() {
+            lruProtectionStorage = protectedCacheSize > 0 ?
+                    new LRUProtectionStorage(protectedCacheSize) :
+                    new NullProtectionStorage(); // Nothing should be done when no elements need protection against eviction
+            queue = new ReferenceQueue<Object>();
         }
 
         /**
@@ -318,7 +359,7 @@ public abstract class Memoize {
             SoftReference reference = (SoftReference) cache.getAndPut(key, k -> {
                 Object r = closure.call(args);
 
-                return null != r ? new SoftReference<Object>(r, queue) : new SoftReference<Object>(MEMOIZE_NULL);
+                return null != r ? new MemoizedValueReference(r, queue) : new MemoizedValueReference(MEMOIZE_NULL, null);
             });
 
             Object result = reference.get();
@@ -334,6 +375,17 @@ public abstract class Memoize {
          */
         private static void cleanUpNullReferences(final MemoizeCache<Object, Object> cache, final ReferenceQueue queue) {
             while(queue.poll() != null) {}  //empty the reference queue
+            cache.cleanUpNullReferences();
+        }
+
+        /**
+         * Starts with empty protection storage and reference queue and drops the cache entries, which were
+         * serialized as cleared references.
+         */
+        @Serial
+        private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+            in.defaultReadObject();
+            initTransientFields();
             cache.cleanUpNullReferences();
         }
 
