@@ -424,7 +424,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     /** Closure methods that {@code ClosureMetaClass} looks up on the delegate under {@code DELEGATE_ONLY}. */
     private static final Set<String> CLOSURE_DELEGATE_ONLY_METHODS = Set.of("curry", "ncurry", "rcurry", "leftShift", "rightShift");
 
-    private static final List<ClassNode> TUPLE_TYPES =Arrays.stream(ClassHelper.TUPLE_CLASSES).map(ClassHelper::makeWithoutCaching).collect(Collectors.toList());
+    private static final List<ClassNode> TUPLE_TYPES = Arrays.stream(ClassHelper.TUPLE_CLASSES).map(ClassHelper::makeWithoutCaching).collect(Collectors.toList());
 
     /** Cached zero-argument {@code Closure#call()} method. */
     public static final MethodNode CLOSURE_CALL_NO_ARG  = CLOSURE_TYPE.getDeclaredMethod("call", Parameter.EMPTY_ARRAY);
