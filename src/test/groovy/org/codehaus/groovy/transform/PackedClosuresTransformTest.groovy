@@ -266,6 +266,94 @@ final class PackedClosuresTransformTest {
         assertEquals([101, 102], instance(src + '\n new C()').m())  // captured local 100, not field 999
     }
 
+    /** Dynamic packing owner with helpers that call a closure argument and report whether it was packed. */
+    private static final String DYNAMIC_CLOSURE_RECEIVER_OWNER = '''
+        import org.codehaus.groovy.runtime.PackedClosure
+        @groovy.transform.PackedClosures
+        class R {
+            String toString() { 'R' }
+            static List call0(Closure c) { [c(), c] }
+            static List call1(Closure c) { [c(2), c] }
+            static List packed(List results) { results.collect { it[1] instanceof PackedClosure } }
+    '''
+
+    // GROOVY-12663
+    @Test
+    void dynamicClosuresCallingClosureMethodsDecline() {
+        // ClosureMetaClass resolves the methods Closure declares (and doCall) against the closure
+        // itself; a hoisted body called them on R (MissingMethodException, or Object.clone()). The
+        // same holds for the maximumNumberOfParameters and parameterTypes properties.
+        def r = instance(DYNAMIC_CLOSURE_RECEIVER_OWNER + '''
+            List m() {
+                def a = call0 { -> memoize() }
+                def b = call1 { x -> curry(1) }
+                def c = call0 { -> dehydrate() }
+                def d = call0 { -> rehydrate(null, null, null) }
+                def e = call0 { -> asWritable() }
+                def f = call0 { -> clone() }
+                def g = call0 { -> trampoline() }
+                def h = call0 { -> rightShift { it } }
+                def i = call1 { int x -> x > 0 ? call(x - 1) : 'done' }
+                def j = call1 { int x -> x > 0 ? doCall(x - 1) : 'done' }
+                def k = call1 { int x -> maximumNumberOfParameters }
+                def l = call1 { int x -> parameterTypes }
+                [[a[0] instanceof Closure, b[0] instanceof Closure, c[0].getClass() == c[1].getClass(),
+                  d[0].getClass() == d[1].getClass(), e[0] instanceof Writable, f[0].getClass() == f[1].getClass(),
+                  g[0] instanceof Closure, h[0] instanceof Closure, i[0], j[0], k[0], l[0] as List],
+                 packed([a, b, c, d, e, f, g, h, i, j, k, l])]
+            }
+        }
+        new R()
+        ''')
+        assertEquals([[true] * 8 + ['done', 'done', 1, [int]], [false] * 12], r.m())
+    }
+
+    // GROOVY-12663
+    @Test
+    void dynamicClosuresCallingObjectMethodsInANestedClosureDecline() {
+        // In a nested closure, toString(), hashCode(), equals(), getClass() and the GDK methods try the
+        // owner first, the enclosing closure, which answers them itself. A nested closure in a hoisted
+        // body has R as its owner, so they reached R. Those outer closures stay classes; calls that
+        // resolve to R anyway still pack.
+        def r = instance(DYNAMIC_CLOSURE_RECEIVER_OWNER + '''
+            List nested() {
+                def a = call0 { -> { -> toString() }() }
+                def b = call0 { -> { -> hashCode() }() }
+                def c = call0 { -> { -> equals(this) }() }
+                def d = call0 { -> { -> getClass() }() }
+                def e = call0 { -> { -> with { it } }() }
+                def f = call0 { -> { -> is(this) }() }
+                def g = call0 { -> [1].collect { toString() }[0] }
+                [[a[0] == a[1].toString(), b[0] == b[1].hashCode(), c[0], d[0] == d[1].getClass(), e[0].is(e[1]), f[0],
+                  g[0] == g[1].toString()], packed([a, b, c, d, e, f, g])]
+            }
+            List ownerResolved() {
+                def a = call0 { -> toString() }
+                def b = call0 { -> getClass() }
+                def c = call0 { -> is(this) }
+                def d = call0 { -> { -> memoize() }() }
+                def e = call0 { -> { -> { -> toString() }() }() }
+                def f = call0 { -> [1].each { print('') }; 'p' }
+                [[a[0], b[0], c[0], d[0] instanceof Closure, e[0] != 'R', f[0]], packed([a, b, c, d, e, f])]
+            }
+        }
+        new R()
+        ''')
+        assertEquals([[true, true, false, true, true, false, true], [false] * 7], r.nested())
+        assertEquals([['R', r.getClass(), true, true, true, 'p'], [true] * 6], r.ownerResolved())
+    }
+
+    // GROOVY-12663
+    @Test
+    void strictModeReportsDynamicClosureReceiverDecline() {
+        String src = '''import groovy.transform.PackedClosures
+            import groovy.transform.PackedClosures.PackMode
+            @PackedClosures(mode = PackMode.STRICT)
+            class X { def m() { def c = { -> memoize() }; c() } }'''
+        def e = assertThrows(MultipleCompilationErrorsException) { generatedClassNames(src) }
+        assertTrue(e.message.contains('calls a method on a closure object'), e.message)
+    }
+
     /** Source with one closure that packs and one that declines (a with{} delegate DSL), at the given mode. */
     private static String modeSrc(String mode) {
         """import groovy.transform.CompileStatic
