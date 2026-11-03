@@ -49,6 +49,8 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.Formatter;
 import java.util.Iterator;
@@ -270,6 +272,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Create an object input stream for this input stream using the given class loader.
+     * The class loader also resolves the interfaces of a serialized {@link Proxy}.
      * <p>
      * Classes named in the stream are resolved without running their static initializers,
      * matching how {@link ObjectInputStream} resolves them itself. A class that is actually
@@ -284,10 +287,45 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
     public static ObjectInputStream newObjectInputStream(InputStream inputStream, final ClassLoader classLoader) throws IOException {
         return new ObjectInputStream(inputStream) {
             @Override
+            protected Class<?> resolveProxyClass(String[] interfaces) throws IOException, ClassNotFoundException {
+                return loadProxyClass(interfaces, classLoader);
+            }
+
+            @Override
             protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
                 return Class.forName(desc.getName(), false, classLoader);
             }
         };
+    }
+
+    /**
+     * Mirrors {@link ObjectInputStream}'s own proxy class resolution, but loads the
+     * interfaces through the given class loader instead of the latest user-defined one.
+     */
+    private static Class<?> loadProxyClass(String[] interfaces, ClassLoader classLoader) throws ClassNotFoundException {
+        // GROOVY-12681: a proxy class must be defined where its non-public interfaces live
+        ClassLoader nonPublicLoader = null;
+        boolean hasNonPublicInterface = false;
+        Class<?>[] classes = new Class<?>[interfaces.length];
+        for (int i = 0; i < interfaces.length; i += 1) {
+            Class<?> c = Class.forName(interfaces[i], false, classLoader);
+            if (!Modifier.isPublic(c.getModifiers())) {
+                if (!hasNonPublicInterface) {
+                    nonPublicLoader = c.getClassLoader();
+                    hasNonPublicInterface = true;
+                } else if (nonPublicLoader != c.getClassLoader()) {
+                    throw new IllegalAccessError("conflicting non-public interface class loaders");
+                }
+            }
+            classes[i] = c;
+        }
+        try {
+            @SuppressWarnings("deprecation") // Proxy.getProxyClass is what ObjectInputStream itself uses
+            Class<?> proxyClass = Proxy.getProxyClass(hasNonPublicInterface ? nonPublicLoader : classLoader, classes);
+            return proxyClass;
+        } catch (IllegalArgumentException e) {
+            throw new ClassNotFoundException(null, e);
+        }
     }
 
     /**
