@@ -22,6 +22,7 @@ import groovy.lang.Closure;
 
 import java.io.ObjectStreamException;
 import java.io.Serial;
+import java.io.Serializable;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.util.Collections;
@@ -102,7 +103,9 @@ public abstract class Memoize {
     /**
      * A place-holder for cached null values
      */
-    private static class MemoizeNullValue {
+    private static class MemoizeNullValue implements Serializable {
+        @Serial
+        private static final long serialVersionUID = -4169021506238179930L;
 
         @Override
         public boolean equals(final Object obj) {
@@ -112,6 +115,15 @@ public abstract class Memoize {
         @Override
         public int hashCode() {
             return "MemoizeNullValue".hashCode();
+        }
+
+        /**
+         * Resolves to the shared place-holder, which the memoizing closures compare cached values
+         * against by identity.
+         */
+        @Serial
+        private Object readResolve() throws ObjectStreamException {
+            return MEMOIZE_NULL;
         }
     }
 
