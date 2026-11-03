@@ -367,4 +367,55 @@ final class ClosurePackCapabilityTest {
             '''))
         }
     }
+
+    // GROOVY-12666
+    @Test
+    void autoPackedClosureRehydratedOntoAnotherOwnerUsesIt() {
+        // the flag path: a @CompileStatic closure class reads foo() and name from the rehydrated this
+        // object, and throws ClassCastException for an object that is not an O; the packed body
+        // kept reading them from the receiver it was created with. A body that does not use its
+        // receiver keeps running against it, so rehydrating onto an unrelated object (the DSL
+        // builder idiom) keeps working.
+        String src = '''import groovy.transform.CompileStatic
+            class Builder {}
+            @CompileStatic
+            class O {
+                String name
+                String foo() { 'foo ' + name }
+                static Object attempt(Closure c, Object t) {
+                    try { c.rehydrate(t, t, t).call() } catch (ClassCastException e) { 'CCE' }
+                }
+                List run(O b) {
+                    Closure f = { -> foo() }
+                    Closure n = { -> name }
+                    Closure free = { -> [1, 2].collect { Integer i -> i * 2 } }
+                    Closure print = { -> sprintf('%s', 'x') }
+                    assert [f, n, free, print].every { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+                    def builder = new Builder()
+                    [attempt(f, b), attempt(n, b), attempt(f, builder), attempt(n, builder),
+                     attempt(free, builder), attempt(print, builder), f(), n()]
+                }
+            }'''
+        assertEquals(['foo b', 'b', 'CCE', 'CCE', [2, 4], 'x', 'foo a', 'a'],
+                eval(src, "new O(name: 'a').run(new O(name: 'b'))", true))
+    }
+
+    // GROOVY-12666
+    @Test
+    void syntacticallyPackedClosureRehydratedOntoAnInstanceOfItsOwnerClassUsesIt() {
+        // the dynamic syntactic path packs a body that calls a method on an explicit this;
+        // rehydrated onto another instance of the owner class, it calls that instance, as the
+        // closure class does
+        String src = '''
+            class O {
+                String name
+                String foo() { name }
+                List run(O b) {
+                    Closure c = { -> this.foo() }
+                    assert c instanceof org.codehaus.groovy.runtime.PackedClosure
+                    [c.rehydrate(null, b, b)(), c()]
+                }
+            }'''
+        assertEquals(['b', 'a'], eval(src, "new O(name: 'a').run(new O(name: 'b'))", true))
+    }
 }
