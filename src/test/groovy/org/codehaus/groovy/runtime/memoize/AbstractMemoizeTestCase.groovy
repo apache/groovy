@@ -21,7 +21,6 @@ package org.codehaus.groovy.runtime.memoize
 
 import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.shouldFail
 import static org.junit.jupiter.api.Assertions.assertEquals
 
 
@@ -171,9 +170,10 @@ abstract class AbstractMemoizeTestCase {
         assert mem(1) == 'o1'
 
         Closure copy = mem.dehydrate()
-        assert copy.owner == null
-        shouldFail(NullPointerException) {
-            copy(1)
+        [copy, copy.@closure].each {
+            assert it.owner == null
+            assert it.delegate == null
+            assert it.thisObject == null
         }
         assert copy.rehydrate(null, p, p)(1) == 'p1'
         assert o.calls == 1

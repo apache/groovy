@@ -20,6 +20,8 @@ package org.codehaus.groovy.runtime.memoize
 
 import org.junit.jupiter.api.Test
 
+import java.lang.invoke.SerializedLambda
+
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -229,6 +231,19 @@ class MemoizeTest extends AbstractMemoizeTestCase {
 
     // GROOVY-12669
     @Test
+    void testSerializedFormHasNoSerializedLambda() {
+        def p = new Named('p')
+        byte[] bytes = serialize(new Named('o').closure().memoize().dehydrate())
+        assert !new String(bytes, 'ISO-8859-1').contains(SerializedLambda.name)
+
+        Closure copy = deserialize(bytes).rehydrate(null, p, p)
+        assert copy(1) == 'p1'
+        assert copy(1) == 'p1'
+        assert p.calls == 1
+    }
+
+    // GROOVY-12669
+    @Test
     void testCopyOfClosureMemoizedWithSuppliedCacheSharesTheCache() {
         def o = new Named('o')
         def p = new Named('p')
@@ -251,6 +266,7 @@ class MemoizeTest extends AbstractMemoizeTestCase {
 
     private static Object deserialize(byte[] bytes) {
         new ByteArrayInputStream(bytes).withObjectInputStream(MemoizeTest.classLoader) {
+            it.objectInputFilter = ObjectInputFilter.Config.createFilter("!${SerializedLambda.name}")
             it.readObject()
         }
     }
