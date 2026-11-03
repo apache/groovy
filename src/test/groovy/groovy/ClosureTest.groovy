@@ -688,4 +688,115 @@ final class ClosureTest {
             new D().test()
         """
     }
+
+    // GROOVY-12671
+    @Test
+    void testOwnerFirstWithNullOwnerProperty() {
+        assertScript '''
+            class D {
+                def bar = 'delegate'
+            }
+            class C {
+                def test() {
+                    def d = new D()
+                    def c = { -> [bar, bar = 'set', bar += '!'] }.rehydrate(d, null, null)
+                    assert c.resolveStrategy == Closure.OWNER_FIRST
+                    [c(), d.bar]
+                }
+            }
+
+            assert new C().test() == [['delegate', 'set', 'set!'], 'set!']
+        '''
+    }
+
+    // GROOVY-12671
+    @Test
+    void testOwnerFirstWithNullOwnerPropertyTypeChecked() {
+        assertScript '''
+            class D {
+                def bar = 'delegate'
+            }
+            @groovy.transform.TypeChecked
+            class C {
+                String bar = 'owner'
+                def test() {
+                    def d = new D()
+                    def c = { -> bar = bar + '!' }.rehydrate(d, null, null)
+                    c()
+                    [d.bar, bar]
+                }
+            }
+
+            assert new C().test() == ['delegate!', 'owner']
+        '''
+    }
+
+    // GROOVY-12671
+    @Test
+    void testDehydratedClosureWithDelegateProperty() {
+        assertScript '''
+            class D {
+                def bar = 'delegate'
+            }
+            class C {
+                def test() {
+                    def c = { -> bar }.dehydrate()
+                    c.delegate = new D()
+                    c()
+                }
+            }
+
+            assert new C().test() == 'delegate'
+        '''
+    }
+
+    // GROOVY-12671
+    @ParameterizedTest
+    @ValueSource(strings=['OWNER_FIRST', 'DELEGATE_FIRST', 'OWNER_ONLY', 'DELEGATE_ONLY'])
+    void testMissingPropertyWithNullOwnerAndDelegate(String strategy) {
+        for (body in ['bar', 'bar = 1']) {
+            def err = shouldFail MissingPropertyException, """
+                def c = { -> $body }.dehydrate()
+                c.resolveStrategy = Closure.$strategy
+                c()
+            """
+            assert err.property == 'bar'
+        }
+    }
+
+    // GROOVY-12671
+    @ParameterizedTest
+    @ValueSource(strings=['OWNER_ONLY', 'DELEGATE_ONLY'])
+    void testMissingPropertyWithNullOnlyCandidate(String strategy) {
+        def args = strategy == 'OWNER_ONLY' ? 'new D(), null, null' : 'null, new D(), null'
+        for (body in ['bar', 'bar = 1']) {
+            def err = shouldFail MissingPropertyException, """
+                class D {
+                    def bar = 'not the target'
+                }
+                def c = { -> $body }.rehydrate($args)
+                c.resolveStrategy = Closure.$strategy
+                c()
+            """
+            assert err.property == 'bar'
+        }
+    }
+
+    // GROOVY-12671
+    @ParameterizedTest
+    @ValueSource(strings=['OWNER_FIRST', 'DELEGATE_FIRST'])
+    void testMissingPropertyWithNullSecondCandidate(String strategy) {
+        def args = strategy == 'OWNER_FIRST' ? 'null, new D(), null' : 'new D(), null, null'
+        for (body in ['nope', 'nope = 1']) {
+            def err = shouldFail MissingPropertyException, """
+                class D {
+                }
+                def c = { -> $body }.rehydrate($args)
+                c.resolveStrategy = Closure.$strategy
+                c()
+            """
+            assert err.property == 'nope'
+            assert err.type.name == 'D'
+        }
+    }
 }
