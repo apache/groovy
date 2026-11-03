@@ -20,10 +20,14 @@ package org.codehaus.groovy.runtime.memoize
 
 import org.junit.jupiter.api.Test
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 class MemoizeTest extends AbstractMemoizeTestCase {
+
+    private static final AtomicInteger NULL_RESULT_CALLS = new AtomicInteger()
 
     Closure buildMemoizeClosure(Closure cl) {
         cl.memoize()
@@ -253,6 +257,27 @@ class MemoizeTest extends AbstractMemoizeTestCase {
         new ByteArrayInputStream(bytes).withObjectInputStream(MemoizeTest.classLoader) {
             it.readObject()
         }
+    }
+
+    // GROOVY-12677
+    @Test
+    void testCachedNullResultSurvivesSerialization() {
+        NULL_RESULT_CALLS.set(0)
+        Closure memoized = { x -> MemoizeTest.NULL_RESULT_CALLS.incrementAndGet(); null }.dehydrate().memoize()
+        assert memoized(1) == null
+        assert NULL_RESULT_CALLS.get() == 1
+
+        def bytes = new ByteArrayOutputStream()
+        bytes.withObjectOutputStream { it.writeObject(memoized) }
+        Closure copy = new ByteArrayInputStream(bytes.toByteArray()).withObjectInputStream(MemoizeTest.classLoader) {
+            it.readObject()
+        }
+
+        assert copy(1) == null
+        assert copy(1) == null
+        assert NULL_RESULT_CALLS.get() == 1
+        assert copy(2) == null
+        assert NULL_RESULT_CALLS.get() == 2
     }
 
     private static class ClassWithMemoizeClosureProperty {
