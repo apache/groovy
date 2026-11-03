@@ -1204,6 +1204,23 @@ class NioExtensionsTest extends Specification {
         result == ['a', 'b', 'c']
     }
 
+    // GROOVY-NNNNN
+    def testWithObjectInputStreamAndClassLoaderReadsPrimitiveClasses() {
+        setup:
+        def path = tempFile.toPath()
+        def oos = new ObjectOutputStream(new FileOutputStream(tempFile))
+        oos.writeObject([int, void])
+        oos.close()
+
+        when:
+        def result = path.withObjectInputStream(getClass().classLoader) { ois ->
+            ois.readObject()
+        }
+
+        then:
+        result == [int, void]
+    }
+
     def testWithInputStream() {
         setup:
         def path = tempFile.toPath()
