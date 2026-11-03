@@ -200,6 +200,13 @@ final class ClosureSerializationCycleTest {
         assert deserialize(bytes).call(4) == 8
     }
 
+    // GROOVY-12674
+    @Test
+    void testLegitimateSoftReferenceMemoizedClosureRoundTrips() {
+        byte[] bytes = Holder.serializeSoftMemoized()
+        assert deserialize(bytes).call(4) == 8
+    }
+
     // GROOVY-12339
     @Test
     void testLegitimateFunctionalHybridRoundTrips() {
@@ -307,13 +314,14 @@ final class ClosureSerializationCycleTest {
             serialize(memoized)
         }
 
-        static byte[] serializeCyclicSoftMemoized() {
-            // A real instance cannot be serialized: it holds a non-transient ReferenceQueue. A forged
-            // gadget stream is hand-written and under no such constraint, so the unserializable fields
-            // are cleared here to produce the stream an attacker would simply author.
+        static byte[] serializeSoftMemoized() {
             def memoized = { x -> x * 2 }.memoizeAtLeast(4)
-            setDeclaredField(memoized, 'queue', null)
-            setDeclaredField(memoized, 'lruProtectionStorage', null)
+            memoized(3)
+            serialize(memoized)
+        }
+
+        static byte[] serializeCyclicSoftMemoized() {
+            def memoized = { x -> x * 2 }.memoizeAtLeast(4)
             setDeclaredField(memoized, 'closure', memoized)
             serialize(memoized)
         }

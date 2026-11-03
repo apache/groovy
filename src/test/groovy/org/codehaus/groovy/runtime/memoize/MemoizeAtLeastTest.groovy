@@ -91,4 +91,34 @@ class MemoizeAtLeastTest extends AbstractMemoizeTestCase {
 
         assert 3 == cnt.get()
     }
+
+    // GROOVY-12674
+    @Test
+    void testSerializedCopyDropsCachedValues() {
+        [0, 2].each { protectedCacheSize ->
+            Closure mem = new Counting().closure().memoizeAtLeast(protectedCacheSize)
+            assert mem(1) == 2
+            assert mem(null) == null
+
+            Closure copy = roundTrip(mem)
+            Counting owner = copy.owner
+            assert owner.calls == 2
+            assert copy(1) == 2
+            assert copy(null) == null
+            assert owner.calls == 4
+            assert copy(1) == 2
+            assert copy(null) == null
+            assert owner.calls == 4
+            assert mem(1) == 2
+            assert mem.owner.calls == 2
+        }
+    }
+
+    // GROOVY-12674
+    @Test
+    void testSerializedCopyKeepsProtectedCacheSize() {
+        Closure copy = roundTrip(new Counting().closure().memoizeAtLeast(2))
+        [1, 2, 3].each { copy(it) }
+        assert copy.@lruProtectionStorage.size() == 2
+    }
 }

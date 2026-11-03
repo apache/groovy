@@ -125,4 +125,26 @@ class MemoizeBetweenTest extends AbstractMemoizeTestCase {
 
         assert 3 == cnt.get()
     }
+
+    // GROOVY-12674
+    @Test
+    void testSerializedCopyDropsCachedValuesAndKeepsLimits() {
+        Closure mem = new Counting().closure().memoizeBetween(1, 2)
+        assert mem(1) == 2
+        assert mem(null) == null
+
+        Closure copy = roundTrip(mem)
+        Counting owner = copy.owner
+        assert owner.calls == 2
+        assert copy(1) == 2
+        assert copy(2) == 4
+        assert owner.calls == 4
+        assert copy(1) == 2
+        assert copy(2) == 4
+        assert owner.calls == 4
+        assert copy.@lruProtectionStorage.size() == 1
+        assert copy(3) == 6
+        assert copy(1) == 2
+        assert owner.calls == 6
+    }
 }
