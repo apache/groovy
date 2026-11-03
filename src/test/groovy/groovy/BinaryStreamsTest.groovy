@@ -22,6 +22,8 @@ import org.junit.jupiter.api.Test
 
 import java.util.ArrayList
 
+import static groovy.test.GroovyAssert.shouldFail
+
 
 /**
  * Test case for DefaultGroovyMethods involving Object streams and data streams.
@@ -64,6 +66,50 @@ final class BinaryStreamsTest {
             assert ois.readObject() == "Yoinks!"
             assert ois.readObject() == new Date(1170466550755)
         }
+    }
+
+    // GROOVY-12676
+    @Test
+    void testWithObjectStreamAndClassLoaderReadsPrimitiveClasses() {
+        def types = [boolean, byte, char, short, int, long, float, double, void, int[], String]
+        def bytes = new ByteArrayOutputStream()
+        bytes.withObjectOutputStream { oos -> oos.writeObject(types) }
+
+        def result = new ByteArrayInputStream(bytes.toByteArray()).withObjectInputStream(getClass().classLoader) { ois ->
+            ois.readObject()
+        }
+        assert result == types
+    }
+
+    // GROOVY-12676
+    @Test
+    void testWithObjectStreamAndClassLoaderReadsDehydratedClosureWithPrimitiveParameters() {
+        def temp = tempFile
+        temp.withObjectOutputStream { oos -> oos.writeObject({ int i, long l -> i + l }.dehydrate()) }
+
+        def closure = temp.withObjectInputStream(getClass().classLoader) { ois -> ois.readObject() }
+        assert closure.parameterTypes == [int, long] as Class[]
+        assert closure(1, 2L) == 3L
+
+        def ois = temp.newObjectInputStream(getClass().classLoader)
+        try {
+            assert ois.readObject()(3, 4L) == 7L
+        } finally {
+            ois.close()
+        }
+    }
+
+    // GROOVY-12676
+    @Test
+    void testWithObjectStreamAndClassLoaderStillResolvesClassesThroughThatLoader() {
+        def bytes = new ByteArrayOutputStream()
+        bytes.withObjectOutputStream { oos -> oos.writeObject([int, IntRange]) }
+        def bootstrapOnly = new URLClassLoader(new URL[0], (ClassLoader) null)
+
+        def e = shouldFail(ClassNotFoundException) {
+            new ByteArrayInputStream(bytes.toByteArray()).withObjectInputStream(bootstrapOnly) { ois -> ois.readObject() }
+        }
+        assert e.message == 'groovy.lang.IntRange'
     }
 
     @Test
