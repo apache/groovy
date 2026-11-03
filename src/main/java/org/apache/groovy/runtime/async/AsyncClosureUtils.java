@@ -23,6 +23,7 @@ import groovy.lang.Closure;
 
 import java.io.ObjectStreamException;
 import java.io.Serial;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -160,6 +161,8 @@ public final class AsyncClosureUtils {
 
         AsyncClosure(final Closure<T> closure) {
             super(closure);
+            parameterTypes = closure.getParameterTypes();
+            maximumNumberOfParameters = closure.getMaximumNumberOfParameters();
         }
 
         @SuppressWarnings({"unchecked", "unused"})
@@ -168,12 +171,21 @@ public final class AsyncClosureUtils {
         }
     }
 
+    /**
+     * Reports the parameters of the wrapped closure after the leading {@link GeneratorBridge},
+     * which this closure supplies itself.
+     */
     private static final class AsyncGeneratorClosure<T> extends WrappingClosure<Iterable<T>> {
         @Serial
         private static final long serialVersionUID = 2105939587003781539L;
 
         AsyncGeneratorClosure(final Closure<?> closure) {
             super(closure);
+            Class<?>[] types = closure.getParameterTypes();
+            if (types.length > 0) {
+                parameterTypes = Arrays.copyOfRange(types, 1, types.length);
+                maximumNumberOfParameters = parameterTypes.length;
+            }
         }
 
         @SuppressWarnings("unused")
