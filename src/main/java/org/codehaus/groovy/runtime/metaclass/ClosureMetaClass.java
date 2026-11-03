@@ -314,8 +314,8 @@ public final class ClosureMetaClass extends MetaClassImpl {
             method = getDelegateMethod(closure, delegate, methodName, argClasses);
             callObject = delegate;
             if (method == null) {
-                invokeOnDelegate = (delegate != closure);
-                invokeOnOwner = (owner != closure);
+                invokeOnDelegate = (delegate != closure) && (delegate != null);
+                invokeOnOwner = (owner != closure) && (owner != null);
                 ownerFirst = false;
             }
             break;
@@ -323,8 +323,8 @@ public final class ClosureMetaClass extends MetaClassImpl {
             method = getDelegateMethod(closure, owner, methodName, argClasses);
             callObject = owner;
             if (method == null) {
-                invokeOnDelegate = (delegate != closure);
-                invokeOnOwner = (owner != closure);
+                invokeOnDelegate = (delegate != closure) && (delegate != null);
+                invokeOnOwner = (owner != closure) && (owner != null);
                 ownerFirst = true;
             }
             break;

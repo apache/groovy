@@ -21,6 +21,7 @@ package gls.invocation
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 final class ClosureDelegationTest {
 
@@ -252,5 +253,120 @@ final class ClosureDelegationTest {
             def result = c.metaClass.invokeMethod(this.getClass(), c, 'sprintf', ['%d', 42] as Object[], false, true)
             assert result == '42'
         '''
+    }
+
+    // GROOVY-12667
+    @Test
+    void testDelegateFirstWithNullDelegate() {
+        assertScript '''
+            class C {
+                def foo() { 'owner' }
+                String toString() { 'C' }
+                def test() {
+                    def c = { -> [foo(), toString(), is(this)] }
+                    c.resolveStrategy = Closure.DELEGATE_FIRST
+                    c.delegate = null
+                    c()
+                }
+            }
+
+            assert new C().test() == ['owner', 'C', true]
+        '''
+    }
+
+    // GROOVY-12667
+    @Test
+    void testDelegateFirstWithNullDelegateStaticContext() {
+        assertScript '''
+            class C {
+                static foo() { 'owner' }
+                static test() {
+                    def c = { -> foo() }
+                    c.resolveStrategy = Closure.DELEGATE_FIRST
+                    c.delegate = null
+                    c()
+                }
+            }
+
+            assert C.test() == 'owner'
+        '''
+    }
+
+    // GROOVY-12667
+    @Test
+    void testDelegateFirstWithNullDelegateTypeChecked() {
+        assertScript '''
+            @groovy.transform.TypeChecked
+            class C {
+                def foo() { 'owner' }
+                def test() {
+                    def c = { -> foo() }
+                    c.resolveStrategy = Closure.DELEGATE_FIRST
+                    c.delegate = null
+                    c()
+                }
+            }
+
+            assert new C().test() == 'owner'
+        '''
+    }
+
+    // GROOVY-12667
+    @Test
+    void testOwnerFirstWithNullOwner() {
+        assertScript '''
+            class D {
+                def bar() { 'delegate' }
+            }
+            class C {
+                def test() {
+                    def c = { -> bar() }.rehydrate(new D(), null, this)
+                    c.resolveStrategy = Closure.OWNER_FIRST
+                    c()
+                }
+            }
+
+            assert new C().test() == 'delegate'
+        '''
+    }
+
+    // GROOVY-12667
+    @Test
+    void testMissingMethodWithNullDelegate() {
+        for (strategy in ['OWNER_FIRST', 'DELEGATE_FIRST']) {
+            def err = shouldFail MissingMethodException, """
+                class C {
+                    def test() {
+                        def c = { -> nope() }
+                        c.resolveStrategy = Closure.$strategy
+                        c.delegate = null
+                        c()
+                    }
+                }
+
+                new C().test()
+            """
+            assert err.method == 'nope'
+        }
+    }
+
+    // GROOVY-12667
+    @Test
+    void testDehydratedClosureMissingMethod() {
+        for (strategy in ['OWNER_FIRST', 'DELEGATE_FIRST']) {
+            def err = shouldFail MissingMethodException, """
+                class C {
+                    def foo() { 'owner' }
+                    def test() {
+                        def c = { -> foo() }.dehydrate()
+                        c.resolveStrategy = Closure.$strategy
+                        c()
+                    }
+                }
+
+                new C().test()
+            """
+            assert err.method == 'foo'
+        }
     }
 }
