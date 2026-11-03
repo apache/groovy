@@ -41,6 +41,7 @@ import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.classgen.asm.ClosureWriter;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -274,6 +275,9 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
         if (staticCompilationVisitor.isSkipMode(node)) {
             // method has already been visited by a static type checking visitor
             return;
+        }
+        if (!isConstructor) {
+            ClosureWriter.markEscapingClosures(node); // GROOVY-12650
         }
         super.visitConstructorOrMethod(node, isConstructor);
     }
