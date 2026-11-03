@@ -3698,6 +3698,21 @@ final class AsyncAwaitTest {
 
     // GROOVY-12679
     @Test
+    void testWrapAsyncReportsParameters() {
+        assertScript '''
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
+
+            Closure wrapped = AsyncClosureUtils.wrapAsync { String k, Integer v -> k * v }
+
+            assert wrapped.maximumNumberOfParameters == 2
+            assert wrapped.parameterTypes == [String, Integer] as Class[]
+            assert [a: 1, b: 2].collect(wrapped).collect { await(it) } == ['a', 'bb']
+            assert wrapped.clone().parameterTypes == [String, Integer] as Class[]
+        '''
+    }
+
+    // GROOVY-12679
+    @Test
     void testWrapAsyncGeneratorSetDelegateAndResolveStrategy() {
         assertScript '''
             import org.apache.groovy.runtime.async.AsyncClosureUtils
@@ -3734,6 +3749,23 @@ final class AsyncAwaitTest {
             assert new Ctx().with(wrapped).toList() == [1, 2]
             assert wrapped.delegate === this
             assert wrapped.resolveStrategy == Closure.OWNER_FIRST
+        '''
+    }
+
+    // GROOVY-12679
+    @Test
+    void testWrapAsyncGeneratorReportsParametersAfterBridge() {
+        assertScript '''
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
+            import org.apache.groovy.runtime.async.GeneratorBridge
+
+            Closure wrapped = AsyncClosureUtils.wrapAsyncGenerator { GeneratorBridge bridge, String k, Integer v ->
+                v.times { bridge.yield(k) }
+            }
+
+            assert wrapped.maximumNumberOfParameters == 2
+            assert wrapped.parameterTypes == [String, Integer] as Class[]
+            assert [a: 1, b: 2].collect(wrapped)*.toList() == [['a'], ['b', 'b']]
         '''
     }
 
