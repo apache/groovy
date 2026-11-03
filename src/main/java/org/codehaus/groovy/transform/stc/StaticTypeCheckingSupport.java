@@ -889,7 +889,15 @@ public abstract class StaticTypeCheckingSupport {
             }
             return sj.toString();
         }
-        return type.isGenericsPlaceHolder() ? type.getUnresolvedName() : type.getText();
+        if (type.isGenericsPlaceHolder()) {
+            // a "#T" placeholder stands for a type variable with no witness; name its bound
+            ClassNode bound = type.redirect();
+            if (type.getUnresolvedName().charAt(0) == '#' && bound != type) {
+                return prettyPrintTypeName(bound);
+            }
+            return type.getUnresolvedName();
+        }
+        return type.getText();
     }
 
     /**

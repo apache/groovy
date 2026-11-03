@@ -114,6 +114,7 @@ import static org.objectweb.asm.Opcodes.IFNULL;
 import static org.objectweb.asm.Opcodes.INSTANCEOF;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static org.objectweb.asm.Opcodes.POP;
 
 /**
  * Invocation writer for statically compiled code paths.
@@ -229,6 +230,16 @@ public class StaticInvocationWriter extends InvocationWriter {
         // on a special call, there's no object on stack
         controller.getOperandStack().remove(1);
         controller.getCompileStack().pop();
+    }
+
+    /**
+     * Returns the public instance method of {@code Object} that the given
+     * method is or overrides, like {@code toString()}, or {@code null}.
+     */
+    private static MethodNode getObjectMethod(final MethodNode method) {
+        if (method.isStatic() || !method.isPublic()) return null;
+        MethodNode objectMethod = ClassHelper.OBJECT_TYPE.getDeclaredMethod(method.getName(), method.getParameters());
+        return objectMethod != null && objectMethod.isPublic() && !objectMethod.isStatic() ? objectMethod : null;
     }
 
     private Expression thisObjectExpression(final ClassNode source, final ClassNode target) {
@@ -364,8 +375,13 @@ public class StaticInvocationWriter extends InvocationWriter {
                 && !(target.isProtected() && !inSamePackage(declaringClass, enclosingClass) && !isSubtype(receiverType, enclosingClass))) { // GROOVY-7325
             boolean isThisImplicit = implicitThis;
             Expression theReceiver = receiver;
+            MethodNode theTarget = target;
             if (implicitThis && isThisExpression(receiver)
-                    && !isSubtype(declaringClass, enclosingClass)) {
+                    && (!isSubtype(declaringClass, enclosingClass)
+                        // a method of Object called in a closure or lambda is not called on it,
+                        // unless it was resolved against the closure itself (TO_SELF)
+                        || (ClassHelper.isObjectType(declaringClass) && controller.isInGeneratedFunction()
+                            && !isSubtype(ClassHelper.CLOSURE_TYPE, receiverType)))) {
                 if (target.isStatic()) {
                     theReceiver = classX(declaringClass);
                 } else if (!controller.isInGeneratedFunction()) {
@@ -373,16 +389,22 @@ public class StaticInvocationWriter extends InvocationWriter {
                     theReceiver = propX(classX(outerType != null ? outerType : declaringClass), "this");
                 } else {
                     theReceiver = thisObjectExpression(enclosingClass, declaringClass);
+                    MethodNode objectMethod = getObjectMethod(target);
+                    if (objectMethod != null && !enclosingClass.implementsInterface(ClassHelper.GENERATED_LAMBDA_TYPE)) {
+                        // a closure without a this object, e.g. after rehydrate(), uses its owner's method,
+                        // or its own method when it has no owner either, e.g. after dehydrate()
+                        theReceiver = new ThisObjectOwnerOrClosureExpression(theReceiver);
+                        theTarget = objectMethod;
+                    }
                 }
                 if (!(theReceiver instanceof VariableExpression)) isThisImplicit = false;
-                theReceiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, declaringClass);
+                theReceiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, theTarget.getDeclaringClass());
             }
-            MethodNode theTarget = target;
             if (theReceiver != null && !target.isStatic() && !isSuperExpression(receiver) && !isClassWithSuper(receiver)
                     && currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) == null) {
                 // call CHECKCAST in order to avoid calls to castToType (aka dynamic behaviour)
                 ClassNode storedType = storedTypeIfWiderThanInferred(theReceiver, receiverType);
-                MethodNode storedTypeTarget = storedType != null ? findSameMethodOf(storedType, target) : null;
+                MethodNode storedTypeTarget = storedType != null ? findSameMethodOf(storedType, theTarget) : null;
                 if (storedTypeTarget != null) theTarget = storedTypeTarget;
                 CheckcastReceiverExpression checkcastReceiver = new CheckcastReceiverExpression(theReceiver, theTarget);
                 if (storedTypeTarget != null) checkcastReceiver.setType(storedType); // no cast to the narrower type
@@ -802,6 +824,44 @@ public class StaticInvocationWriter extends InvocationWriter {
         mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "toString", "()Ljava/lang/String;", false);
         mv.visitLabel(isString);
         mv.visitTypeInsn(CHECKCAST, "java/lang/String");
+    }
+
+    /**
+     * Loads the this object of the closure being generated, or its owner when
+     * the this object is {@code null}, or the closure itself when both are.
+     */
+    private class ThisObjectOwnerOrClosureExpression extends Expression {
+        private final Expression thisObject;
+
+        ThisObjectOwnerOrClosureExpression(final Expression thisObject) {
+            this.thisObject = thisObject;
+            setType(ClassHelper.OBJECT_TYPE);
+        }
+
+        @Override
+        public Expression transformExpression(final ExpressionTransformer transformer) {
+            return this;
+        }
+
+        @Override
+        public void visit(final GroovyCodeVisitor visitor) {
+            thisObject.visit(visitor);
+            if (visitor instanceof AsmClassGenerator) {
+                MethodVisitor mv = controller.getMethodVisitor();
+                Label done = new Label();
+                mv.visitInsn(DUP);
+                mv.visitJumpInsn(IFNONNULL, done);
+                mv.visitInsn(POP);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getOwner", "()Ljava/lang/Object;", false);
+                mv.visitInsn(DUP);
+                mv.visitJumpInsn(IFNONNULL, done);
+                mv.visitInsn(POP);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitLabel(done);
+                controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
+            }
+        }
     }
 
     /**

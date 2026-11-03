@@ -185,6 +185,35 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12560
+    @Test
+    void testSpaceshipOperatorWithPrimitiveRightOperand() {
+        assertScript '''
+            // relational operators bind tighter than <=>: "a <=> b > 0" is "a <=> (b > 0)"
+            static <T extends Comparable<T>> int typeParameterAndBoolean(T a, int b) { a <=> b > 0 }
+            static <T extends Comparable<T>> int inClosure(T a, int b) { Closure<Integer> c = { a <=> b > 0 }; c() }
+            static <T extends Comparable<T>> int typeParameterAndInt(T a) { a <=> 1 }
+            int bigDecimalAndInt(BigDecimal a, int b) { a <=> b }
+            int numberAndInt(Number a, int b) { a <=> b }
+            int intAndLong(int a, long b) { a <=> b }
+            int intAndDouble(int a, double b) { a <=> b }
+            int boxedAndInt(Integer a, int b) { a <=> b }
+
+            assert typeParameterAndBoolean(true, 1) == 0
+            assert typeParameterAndBoolean(false, 1) < 0
+            assert inClosure(true, 0) > 0
+            assert typeParameterAndInt(2) > 0
+            assert typeParameterAndInt(1) == 0
+            assert bigDecimalAndInt(2.5, 2) > 0
+            assert bigDecimalAndInt(2.0, 2) == 0
+            assert numberAndInt(1L, 2) < 0
+            assert intAndLong(0, 4294967296L) < 0
+            assert intAndDouble(1, 1.5d) < 0
+            assert boxedAndInt(3, 2) > 0
+            assert boxedAndInt(null, 2) < 0
+        '''
+    }
+
     // GROOVY-6137, GROOVY-7473, GROOVY-10909
     @Test
     void testInOperatorImplicitNullSafetyChecks() {
