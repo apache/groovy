@@ -667,21 +667,13 @@ public class ClosureWriter {
         Set<ClosureExpression> escaping = Collections.newSetFromMap(new IdentityHashMap<>());
         code.visit(new CodeVisitorSupport() {
             private void mark(final Expression e) {
-                if (e instanceof ClosureExpression) {
-                    escaping.add((ClosureExpression) e);
-                } else if (e instanceof BinaryExpression && isComposition(((BinaryExpression) e).getOperation().getType())) {
-                    mark(((BinaryExpression) e).getLeftExpression());     // composed, e.g. c >> { ... } or { ... } << c
-                    mark(((BinaryExpression) e).getRightExpression());
-                } else if (e instanceof MethodCallExpression && isCompositionCall((MethodCallExpression) e)) {
-                    MethodCallExpression call = (MethodCallExpression) e; // c.rightShift({ ... }), also how SC compiles c >> { ... }
-                    mark(call.getObjectExpression());
-                    mark(((TupleExpression) call.getArguments()).getExpression(0));
-                }
+                if (e instanceof ClosureExpression) escaping.add((ClosureExpression) e);
             }
             /**
              * Marks every literal the escaping value {@code e} can be or keep: both branches of a
-             * ternary or elvis, the operand of a cast that keeps the closure, and the receiver of a
-             * call whose result keeps it (see {@link #isWrappingCall}).
+             * ternary or elvis, the operand of a cast that keeps the closure, the receiver of a
+             * call whose result keeps it (see {@link #isWrappingCall}), and both operands of a
+             * composition, each followed the same way.
              */
             private void markValue(final Expression e) {
                 if (e instanceof TernaryExpression) {
@@ -691,6 +683,13 @@ public class ClosureWriter {
                     markValue(((CastExpression) e).getExpression());
                 } else if (e instanceof MethodCallExpression && isWrappingCall((MethodCallExpression) e)) {
                     markValue(((MethodCallExpression) e).getObjectExpression());
+                } else if (e instanceof BinaryExpression && isComposition(((BinaryExpression) e).getOperation().getType())) {
+                    markValue(((BinaryExpression) e).getLeftExpression());     // composed, e.g. c >> { ... } or { ... } << c
+                    markValue(((BinaryExpression) e).getRightExpression());
+                } else if (e instanceof MethodCallExpression && isCompositionCall((MethodCallExpression) e)) {
+                    MethodCallExpression call = (MethodCallExpression) e;      // c.rightShift({ ... }), also how SC compiles c >> { ... }
+                    markValue(call.getObjectExpression());
+                    markValue(((TupleExpression) call.getArguments()).getExpression(0));
                 } else {
                     mark(e);
                 }

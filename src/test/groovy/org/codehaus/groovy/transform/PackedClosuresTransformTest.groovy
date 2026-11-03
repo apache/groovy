@@ -967,6 +967,37 @@ final class PackedClosuresTransformTest {
         assertEquals(3, s.localCurry())
     }
 
+    // GROOVY-12656, GROOVY-12659
+    @Test
+    void conditionalAndWrappedOperandsOfAnEscapingCompositionAreDeclined() {
+        // A composition keeps its operands, and a ternary, cast or wrapping call in an operand keeps
+        // the literal in it, so the literal escapes wherever the composition does. The same
+        // composition only called in the method still packs.
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { mode ->
+            String src = """class Holder { Closure handler }
+                @groovy.transform.PackedClosures $mode
+                class E {
+                    void ternary(Holder h, Closure c, boolean b) { h.handler = c >> (b ? { Integer x -> x + 1 } : { Integer x -> x - 1 }) }
+                    Closure elvis(Closure c, Closure d)         { return (d ?: { Integer x -> x + 1 }) << c }
+                    Closure curried(Closure c)                 { c >> { Integer x, Integer y -> x + y }.curry(1) }
+                    Closure cast(Closure c)                    { c >> (Closure) { Integer x -> x + 1 } }
+                    int local(Closure c, boolean b)            { (int) (c >> (b ? { Integer x -> x + 1 } : { Integer x -> x - 1 }))(1) } // -> both pack
+                }"""
+            String name = mode ?: 'dynamic'
+            def names = generatedClassNames(src)
+            assertEquals(5, closureClassCount(names), "[$name] composed conditional and wrapped escapes should be declined: $names")
+
+            def (e, h) = instance(src + '\n [new E(), new Holder()]')
+            Closure twice = { x -> x * 2 }
+            e.ternary(h, twice, true)
+            [h.handler, e.elvis(twice, null), e.curried(twice), e.cast(twice)].each {
+                it.delegate = 'd'                        // no packed-adapter guard
+                assertEquals(7, it(3))
+            }
+            assertEquals(3, e.local(twice, true))
+        }
+    }
+
     @Test
     void captureWrittenAfterTheLiteralInAConstructorOrInitializerIsShared() {
         // GROOVY-12653: a capture written anywhere in the constructor -- here after the literal --
