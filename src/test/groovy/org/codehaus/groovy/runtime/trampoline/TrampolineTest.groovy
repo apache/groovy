@@ -48,6 +48,52 @@ class TrampolineTest {
         assert 0 == funA(2000)
     }
 
+    // GROOVY-12673
+    @Test
+    void testDelegateAndThisObject() {
+        def d = [name: 'd']
+        def c = { x -> name + x }
+        c.delegate = d
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        def t = c.trampoline()
+
+        assert t.owner === this
+        assert t.thisObject === this
+        assert t.delegate === d
+        assert t.resolveStrategy == Closure.DELEGATE_FIRST
+        assert t(1) == 'd1'
+        assert c.trampoline(1).thisObject === this
+        assert c.trampoline(1).delegate === d
+    }
+
+    // GROOVY-12673
+    @Test
+    void testSetDelegateAndResolveStrategy() {
+        def d = [name: 'd']
+        def t = { x -> name + x }.trampoline()
+        t.delegate = d
+        t.resolveStrategy = Closure.DELEGATE_ONLY
+
+        assert t.delegate === d
+        assert t.resolveStrategy == Closure.DELEGATE_ONLY
+        assert t(1) == 'd1'
+
+        def r
+        r = { int n -> n == 0 ? name : r.trampoline(n - 1) }.trampoline()
+        r.delegate = d
+        assert r(1000) == 'd'
+    }
+
+    // GROOVY-12673
+    @Test
+    void testWith() {
+        def t = { m -> name }.trampoline()
+
+        assert [name: 'd'].with(t) == 'd'
+        assert t.delegate === this
+        assert t.resolveStrategy == Closure.OWNER_FIRST
+    }
+
     @Test
     public void testMutualRecursionWithTrampolineOnFunAOnly() {
         def funB
