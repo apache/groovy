@@ -193,6 +193,24 @@ public final class CurriedClosure<V> extends Closure<V> {
         return new CurriedClosure<V>(index, uncurriedClosure, curriedArguments);
     }
 
+    /**
+     * Dehydrates the wrapped closure and curries the copy: the owner of a curried closure is the
+     * closure it wraps, so clearing it would leave nothing to call.
+     */
+    @Override
+    public Closure<V> dehydrate() {
+        return new CurriedClosure<V>(index, getOwner().dehydrate(), curriedArguments);
+    }
+
+    /**
+     * Rehydrates the wrapped closure and curries the copy: the owner of a curried closure is the
+     * closure it wraps, so replacing it would leave nothing to call.
+     */
+    @Override
+    public Closure<V> rehydrate(final Object delegate, final Object owner, final Object thisObject) {
+        return new CurriedClosure<V>(index, getOwner().rehydrate(delegate, owner, thisObject), curriedArguments);
+    }
+
     @Override
     public Class[] getParameterTypes() {
         Class[] oldParams = getOwner().getParameterTypes();
