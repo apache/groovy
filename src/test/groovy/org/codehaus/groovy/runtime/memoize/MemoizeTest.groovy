@@ -265,4 +265,16 @@ class MemoizeTest extends AbstractMemoizeTestCase {
             ++timesCalledSoftRef
         }.memoizeAtLeast(4)
     }
+
+    // GROOVY-12674
+    @Test
+    void testSerializedCopyKeepsCachedValues() {
+        Closure mem = new Counting().closure().memoize()
+        assert mem(1) == 2
+
+        Closure copy = roundTrip(mem)
+        Counting owner = copy.owner
+        assert copy(1) == 2
+        assert owner.calls == 1
+    }
 }

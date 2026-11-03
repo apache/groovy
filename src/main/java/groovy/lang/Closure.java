@@ -1076,6 +1076,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * The cache gets garbage-collected together with the memoized closure.
      * A copy made by {@link #dehydrate()} or {@link #rehydrate(Object, Object, Object)} calls the dehydrated or
      * rehydrated closure and starts with an empty cache with the same limits.
+     * A serialized memoized closure does not carry its softly referenced cached values: it is deserialized with an
+     * empty cache with the same limits.
      * @param protectedCacheSize Number of cached return values to protect from garbage collection
      * @return A new function forwarding to the original one while caching the results
      */
@@ -1108,6 +1110,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * The cache gets garbage-collected together with the memoized closure.
      * A copy made by {@link #dehydrate()} or {@link #rehydrate(Object, Object, Object)} calls the dehydrated or
      * rehydrated closure and starts with an empty cache with the same limits.
+     * A serialized memoized closure does not carry its softly referenced cached values: it is deserialized with an
+     * empty cache with the same limits.
      * @param protectedCacheSize Number of cached return values to protect from garbage collection
      * @param maxCacheSize The maximum size the cache can grow to
      * @return A new function forwarding to the original one while caching the results
