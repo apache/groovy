@@ -1086,6 +1086,137 @@ final class LambdaTest {
         }
     }
 
+    // GROOVY-12668
+    @Test
+    void testLambdaCallsEnclosingClassMethodNamedLikeClosureMethod() {
+        assertScript shell, '''
+            class C {
+                String getDelegate() { 'delegate' }
+                String getOwner() { 'owner' }
+                String getThisObject() { 'thisObject' }
+                int getMaximumNumberOfParameters() { 42 }
+                String curry(Object o) { 'curry' + o }
+                String rcurry(Object o) { 'rcurry' + o }
+                String ncurry(int i, Object o) { 'ncurry' + i + o }
+                String memoizeAtMost(int i) { 'memoizeAtMost' + i }
+                List<Object> m() {
+                    Supplier<Object> a = () -> getDelegate()
+                    Supplier<Object> b = () -> getOwner()
+                    Supplier<Object> c = () -> getThisObject()
+                    Supplier<Object> d = () -> getMaximumNumberOfParameters()
+                    Supplier<Object> e = () -> curry(1)
+                    Supplier<Object> f = () -> rcurry(2)
+                    Supplier<Object> g = () -> ncurry(3, 4)
+                    Supplier<Object> h = () -> memoizeAtMost(5)
+                    [a.get(), b.get(), c.get(), d.get(), e.get(), f.get(), g.get(), h.get()]
+                }
+                List<Object> p() {
+                    Supplier<Object> a = () -> delegate
+                    Supplier<Object> b = () -> owner
+                    Supplier<Object> c = () -> thisObject
+                    Supplier<Object> d = () -> maximumNumberOfParameters
+                    Supplier<String> e = () -> delegate.toUpperCase()
+                    [a.get(), b.get(), c.get(), d.get(), e.get()]
+                }
+            }
+
+            def c = new C()
+            assert c.m() == ['delegate', 'owner', 'thisObject', 42, 'curry1', 'rcurry2', 'ncurry34', 'memoizeAtMost5']
+            assert c.p() == ['delegate', 'owner', 'thisObject', 42, 'DELEGATE']
+        '''
+    }
+
+    // GROOVY-12668
+    @Test
+    void testLambdaCallsEnclosingClassStaticMethodNamedLikeClosureMethod() {
+        assertScript shell, '''
+            class C {
+                static String getDelegate() { 'delegate' }
+                static String curry(Object o) { 'curry' + o }
+                static List<Object> sm() {
+                    Supplier<Object> a = () -> getDelegate()
+                    Supplier<Object> b = () -> curry(1)
+                    Supplier<Object> c = () -> delegate
+                    [a.get(), b.get(), c.get()]
+                }
+                List<Object> m() {
+                    Supplier<Object> a = () -> getDelegate()
+                    Supplier<Object> b = () -> curry(2)
+                    [a.get(), b.get()]
+                }
+            }
+
+            assert C.sm() == ['delegate', 'curry1', 'delegate']
+            assert new C().m() == ['delegate', 'curry2']
+        '''
+    }
+
+    // GROOVY-12668
+    @Test
+    void testNestedLambdaAndClosureCallMethodNamedLikeClosureMethod() {
+        assertScript shell, '''
+            class C {
+                String getDelegate() { 'delegate' }
+                String memoizeAtMost(int i) { 'memoizeAtMost' + i }
+                List<Object> m() {
+                    Closure<Object> lambdaInClosure = { -> Supplier<Object> s = () -> getDelegate(); s.get() }
+                    Supplier<Object> lambdaInLambda = () -> { Supplier<Object> s = () -> memoizeAtMost(1); return s.get() }
+                    // a closure in a lambda is a closure: its own methods come first
+                    Supplier<Object> closureInLambda = () -> { -> memoizeAtMost(2) }()
+                    [lambdaInClosure(), lambdaInLambda.get(), closureInLambda.get()]
+                }
+            }
+
+            def result = new C().m()
+            assert result[0] == 'delegate'
+            assert result[1] == 'memoizeAtMost1'
+            assert result[2] instanceof Closure
+        '''
+    }
+
+    // GROOVY-12668
+    @Test
+    void testLambdaCallsClosureMethodWithoutEnclosingClassMethod() {
+        assertScript shell, '''
+            class C {
+                List<Object> m() {
+                    Supplier<Object> a = () -> getThisObject()
+                    Supplier<Object> b = () -> getDelegate()
+                    [a.get(), b.get()]
+                }
+            }
+
+            def c = new C()
+            assert c.m().every { it.is(c) }
+        '''
+    }
+
+    // GROOVY-12668: a lambda in dynamic or type-checked code is a closure at run time
+    @Test
+    void testDynamicLambdaCallsClosureMethodBeforeEnclosingClassMethod() {
+        for (mode in ['', '@groovy.transform.TypeChecked']) {
+            assertScript """
+                import java.util.function.Supplier
+
+                $mode
+                class C {
+                    String getDelegate() { 'delegate' }
+                    String memoizeAtMost(int i) { 'memoizeAtMost' + i }
+                    List<Object> m() {
+                        Supplier<Object> a = () -> getDelegate()
+                        Supplier<Object> b = () -> memoizeAtMost(1)
+                        [a.get(), b.get()]
+                    }
+                }
+
+                def c = new C()
+                def result = c.m()
+                assert result[0].is(c)
+                assert result[1] instanceof Closure
+            """
+        }
+    }
+
     @Test
     void testInitializeBlocks() {
         assertScript shell, '''
