@@ -44,7 +44,8 @@ public final class AsyncClosureUtils {
     /**
      * Wraps a closure so that each invocation executes the body
      * asynchronously and returns an {@link Awaitable}. The returned closure
-     * reads and sets the delegate and resolve strategy of the wrapped one.
+     * calls a copy of the wrapped one, as a curried closure does, and reads
+     * and sets the delegate and resolve strategy of that copy.
      *
      * <pre>{@code
      * def asyncTask = AsyncClosureUtils.wrapAsync { expensiveWork() }
@@ -64,7 +65,8 @@ public final class AsyncClosureUtils {
     /**
      * Wraps a generator closure so that each invocation returns an
      * {@link Iterable} backed by a {@link GeneratorBridge}. The returned closure
-     * reads and sets the delegate and resolve strategy of the wrapped one.
+     * calls a copy of the wrapped one, as a curried closure does, and reads
+     * and sets the delegate and resolve strategy of that copy.
      *
      * @param closure the generator closure; receives a GeneratorBridge
      *                as its first parameter
@@ -78,9 +80,10 @@ public final class AsyncClosureUtils {
     }
 
     /**
-     * A closure which calls the closure it wraps. The wrapped closure resolves the names its body
+     * A closure which calls a copy of the closure it wraps. The copy resolves the names its body
      * uses, so the delegate and resolve strategy are read from and written to it, and copies of
-     * this closure wrap copies of it.
+     * this closure wrap copies of it. Wrapping a copy, as a curried closure does, keeps the
+     * delegate and resolve strategy set on this closure away from the caller's closure.
      */
     private abstract static class WrappingClosure<V> extends Closure<V> {
         @Serial
@@ -89,7 +92,7 @@ public final class AsyncClosureUtils {
 
         WrappingClosure(final Closure<?> closure) {
             super(closure.getOwner(), closure.getThisObject());
-            this.closure = closure;
+            this.closure = (Closure<?>) closure.clone();
         }
 
         @Override

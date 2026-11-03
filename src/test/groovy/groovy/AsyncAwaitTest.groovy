@@ -3642,6 +3642,39 @@ final class AsyncAwaitTest {
 
     // GROOVY-12679
     @Test
+    void testWrapAsyncSetDelegateAndResolveStrategyLeavesTheWrappedClosureAlone() {
+        assertScript '''
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
+            import org.apache.groovy.runtime.async.GeneratorBridge
+
+            class Ctx { String name }
+            def c = new Ctx(name: 'c')
+            Closure cl = { -> name }
+            cl.delegate = c
+            cl.resolveStrategy = Closure.DELEGATE_ONLY
+            Closure gen = { GeneratorBridge bridge -> bridge.yield(name) }
+            gen.delegate = c
+            gen.resolveStrategy = Closure.DELEGATE_ONLY
+
+            Closure wrapped = AsyncClosureUtils.wrapAsync(cl)
+            wrapped.delegate = new Ctx(name: 'd')
+            wrapped.resolveStrategy = Closure.DELEGATE_FIRST
+            assert await(wrapped()) == 'd'
+            Closure wrappedGen = AsyncClosureUtils.wrapAsyncGenerator(gen)
+            wrappedGen.delegate = new Ctx(name: 'd')
+            wrappedGen.resolveStrategy = Closure.DELEGATE_FIRST
+            assert wrappedGen().toList() == ['d']
+
+            [cl, gen].each {
+                assert it.delegate === c
+                assert it.resolveStrategy == Closure.DELEGATE_ONLY
+            }
+            assert cl() == 'c'
+        '''
+    }
+
+    // GROOVY-12679
+    @Test
     void testWrapAsyncReportsDelegateAndThisObject() {
         assertScript '''
             import org.apache.groovy.runtime.async.AsyncClosureUtils
