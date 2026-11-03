@@ -20,6 +20,7 @@ package org.codehaus.groovy.transform.sc.transformers;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.MultipleAssignmentMetadata;
 import org.codehaus.groovy.ast.Parameter;
@@ -30,6 +31,7 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -38,6 +40,7 @@ import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.tools.WideningCategories;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.sc.StaticPropertyAccessHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -62,6 +65,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isQualifiedThisOrSuper;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -173,11 +177,11 @@ public class BinaryExpressionTransformer {
     }
 
     /**
-     * GROOVY-12524: {@code file.text += 'b'} is a property whose accessors are
-     * extension methods. Plain reads and writes already target those methods;
-     * compound assignment must do the same instead of a dynamic property site.
-     * The receiver is evaluated once for the read and again for the write, which
-     * is the same order dynamic Groovy and {@code @TypeChecked} use.
+     * {@code file.text += 'b'} is a property whose accessors are extension
+     * methods. Plain reads and writes already target those methods; compound
+     * assignment must do the same instead of a dynamic property site. The
+     * receiver is evaluated once and reused for the read and the write, as
+     * dynamic Groovy and {@code @TypeChecked} do.
      */
     private Expression transformExtensionPropertyCompoundAssignment(final BinaryExpression bin) {
         if (bin.getNodeMetaData(StaticTypesMarker.COMPOUND_ASSIGN_TARGET) != null) return null;
@@ -210,6 +214,8 @@ public class BinaryExpressionTransformer {
         }
 
         receiver = staticCompilationTransformer.transform(receiver);
+        Expression unchanged = receiver;
+        if (!implicitThis) receiver = transformReceiverOnce(receiver);
         ClassNode readType = getter.getReturnType();
         MethodCallExpression getterCall = callX(receiver, getter.getName());
         getterCall.setImplicitThis(implicitThis);
@@ -223,7 +229,11 @@ public class BinaryExpressionTransformer {
         if (value == null) return null;
 
         Expression name = left instanceof PropertyExpression ? ((PropertyExpression) left).getProperty() : left;
-        return transformAssignmentToSetterCall(receiver, setter, value, implicitThis, safe, name, bin);
+        Expression setterCall = transformAssignmentToSetterCall(receiver, setter, value, implicitThis, safe, name, bin);
+        if (receiver != unchanged) {
+            return new ReleasingExpression(setterCall, (TemporaryVariableExpression) receiver);
+        }
+        return setterCall;
     }
 
     private static VariableExpression implicitPropertyReceiver(final VariableExpression property) {
@@ -453,6 +463,20 @@ public class BinaryExpressionTransformer {
         return new TemporaryVariableExpression(exp);
     }
 
+    /**
+     * The receiver of a property that is read and then written, as in
+     * {@code obj().v += 2}, is evaluated once. A variable, class, constant or qualified
+     * {@code Outer.this} receiver has no side effect and is left in place.
+     */
+    private static Expression transformReceiverOnce(final Expression receiver) {
+        if (receiver instanceof VariableExpression || receiver instanceof ClassExpression
+                || receiver instanceof ConstantExpression || receiver instanceof TemporaryVariableExpression
+                || isQualifiedThisOrSuper(receiver)) {
+            return receiver;
+        }
+        return new TemporaryVariableExpression(receiver);
+    }
+
     private Expression transformEqualityComparison(final BinaryExpression bin, final boolean eq) {
         Expression leftExpression = bin.getLeftExpression(), rightExpression = bin.getRightExpression();
         if (isNullConstant(rightExpression)) {
@@ -479,10 +503,8 @@ public class BinaryExpressionTransformer {
         Expression leftExpression = bin.getLeftExpression(), rightExpression = bin.getRightExpression();
         ClassNode leftType = findType(leftExpression), rightType = findType(rightExpression);
 
-        // same-type primitive compare
-        if (leftType.equals(rightType)
-                && ClassHelper.isPrimitiveType(leftType)
-                || ClassHelper.isPrimitiveType(rightType)) {
+        // same-type primitive compare; operands of different types are compared as dynamic Groovy does
+        if (ClassHelper.isPrimitiveType(leftType) && leftType.equals(rightType)) {
             ClassNode wrapperType = ClassHelper.getWrapper(leftType);
             Expression leftAndRight = args(
                 staticCompilationTransformer.transform(leftExpression),
@@ -620,6 +642,13 @@ public class BinaryExpressionTransformer {
                                                      .andThen(classgenCallback(be.getLeftExpression()))
                     );
                 }
+            } else if (left instanceof PropertyExpression pe && !pe.isSpreadSafe() && !pe.isImplicitThis()) {
+                // GROOVY-12619: one execution of receiver
+                Expression receiver = pe.getObjectExpression();
+                pe.setObjectExpression(transformReceiverOnce(receiver));
+                if (pe.getObjectExpression() != receiver) {
+                    expr.putNodeMetaData("classgen.callback", classgenCallback(pe.getObjectExpression()));
+                }
             }
         } else {
             expr = call;
@@ -702,5 +731,33 @@ public class BinaryExpressionTransformer {
 
     private static Consumer<WriterController> classgenCallback(final Expression source) {
         return (source instanceof TemporaryVariableExpression ? ((TemporaryVariableExpression) source)::remove : wc -> {});
+    }
+
+    /**
+     * Visits an expression and then releases a temporary variable that it uses.
+     */
+    private static final class ReleasingExpression extends ListOfExpressionsExpression {
+
+        private final Expression expression;
+        private final TemporaryVariableExpression temp;
+
+        ReleasingExpression(final Expression expression, final TemporaryVariableExpression temp) {
+            super(new ArrayList<>(Collections.singletonList(expression)));
+            this.expression = expression;
+            this.temp = temp;
+        }
+
+        @Override
+        public Expression transformExpression(final ExpressionTransformer transformer) {
+            return new ReleasingExpression(transformer.transform(expression), temp);
+        }
+
+        @Override
+        public void visit(final GroovyCodeVisitor visitor) {
+            super.visit(visitor);
+            if (visitor instanceof AsmClassGenerator acg) {
+                temp.remove(acg.getController());
+            }
+        }
     }
 }
