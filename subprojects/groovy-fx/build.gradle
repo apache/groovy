@@ -93,6 +93,10 @@ groovyLibrary {
     withoutBinaryCompatibilityChecks()
     moduleDescriptor {
         extensionClasses = 'org.apache.groovy.groovyfx.extensions.FXExtensions'
+        // FXExtensions' signatures mention javafx.base types, so without JavaFX the class cannot be
+        // scanned: defer the module until JavaFX is on the class path (e.g. after @Grab) rather than
+        // breaking every compilation for a Groovy install that happens to have this jar in lib.
+        requiredClasses = 'javafx.beans.binding.NumberBinding'
     }
 }
 
