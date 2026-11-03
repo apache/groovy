@@ -588,6 +588,24 @@ final class PackedClosuresTransformTest {
     }
 
     @Test
+    void captureWrittenAfterTheLiteralInAConstructorOrInitializerIsShared() {
+        // GROOVY-12653: a capture written anywhere in the constructor -- here after the literal --
+        // is threaded as the shared Reference, not copied by value when the literal is created
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { annotation ->
+            def r = instance("""$annotation
+                @groovy.transform.PackedClosures
+                class H {
+                    Object fromCtor, fromInit;
+                    { Closure c; c = { x -> c == null ? 'stale' : 'set' }; fromInit = c(0) }
+                    H() { Closure c; c = { x -> c == null ? 'stale' : 'set' }; fromCtor = c(0) }
+                }
+                def h = new H()
+                [h.fromCtor, h.fromInit]""")
+            assertEquals(['set', 'set'], r, "[$annotation]")
+        }
+    }
+
+    @Test
     void nestedClosureRecapturingReadOnlyCaptureGetsTheSharedReference() {
         // a nested closure that stays a class takes the shared groovy.lang.Reference for every
         // capture in its constructor; a read-only capture of the PACKED outer must therefore be

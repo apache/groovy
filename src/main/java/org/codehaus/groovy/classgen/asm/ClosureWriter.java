@@ -778,7 +778,7 @@ public class ClosureWriter {
     private Set<String> holderCaptureNames(final ClosureExpression expression) {
         Set<String> captured = capturedNames(expression);
         Set<String> holder = new HashSet<>(collectWrittenNames(expression.getCode()));
-        MethodNode m = controller.getMethodNode();
+        MethodNode m = enclosingMethod();
         if (m != null && m.getCode() != null) {
             holder.addAll(writtenNamesByMethod.computeIfAbsent(m, k -> collectWrittenNames(k.getCode())));
         }
