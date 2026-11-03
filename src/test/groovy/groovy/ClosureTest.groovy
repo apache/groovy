@@ -317,6 +317,36 @@ final class ClosureTest {
         assert rehydrate() == 'Hello'
     }
 
+    // GROOVY-12665
+    @Test
+    void testDehydrateAndRehydrateWritableClosure() {
+        assertScript '''
+            class O { def foo() { 'o' } }
+            class D { def foo() { 'd' } }
+            def o = new O(), d = new D()
+            def w = { x -> foo() + x }.asWritable()
+
+            def r = w.rehydrate(d, o, o)
+            assert r !== w
+            assert r instanceof Writable
+            assert r.delegate === d
+            assert r.owner === o
+            assert r.thisObject === o
+            assert r(1) == 'o1'
+            assert w.curry(1).rehydrate(d, o, o)() == 'o1'
+            assert w.delegate === this
+            assert w.owner === this
+
+            def k = { x -> x + 1 }.asWritable().dehydrate()
+            assert k instanceof Writable
+            assert k.delegate === null
+            assert k.owner === null
+            assert k.thisObject === null
+            assert k(1) == 2
+            assert k.rehydrate(d, o, o)(1) == 2
+        '''
+    }
+
     // GROOVY-5151
     @Test
     void testClosureSerialization() {
