@@ -119,10 +119,10 @@ public abstract class Memoize {
         @Serial
         private static final long serialVersionUID = -2780003153676993093L;
         final MemoizeCache<Object, Object> cache;
-        final Closure<V> closure;
+        Closure<V> closure;
 
         MemoizeFunction(final MemoizeCache<Object, ?> cache, Closure<V> closure) {
-            super(closure.getOwner());
+            super(closure.getOwner(), closure.getThisObject());
             this.cache = coerce(cache);
             this.closure = closure;
             parameterTypes = closure.getParameterTypes();
@@ -147,6 +147,38 @@ public abstract class Memoize {
 
         public V doCall(final Object... args) {
             return call(args);
+        }
+
+        @Override
+        public Object getDelegate() {
+            return closure.getDelegate();
+        }
+
+        @Override
+        public void setDelegate(final Object delegate) {
+            closure.setDelegate(delegate);
+        }
+
+        @Override
+        public int getResolveStrategy() {
+            return closure.getResolveStrategy();
+        }
+
+        @Override
+        public void setResolveStrategy(final int resolveStrategy) {
+            closure.setResolveStrategy(resolveStrategy);
+        }
+
+        /**
+         * Clones the memoized closure too, so that setting the delegate or resolve strategy of the
+         * copy leaves this function alone. The copy shares the cache.
+         */
+        @Override
+        @SuppressWarnings("unchecked")
+        public Object clone() {
+            MemoizeFunction<V> result = (MemoizeFunction<V>) super.clone();
+            result.closure = (Closure<V>) closure.clone();
+            return result;
         }
 
         /**
