@@ -5222,19 +5222,6 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             && !(enclosingClosures.get(1).getClosureExpression() instanceof LambdaExpression);
     }
 
-    /**
-     * Tells whether the owner of the innermost enclosing closure or lambda is an
-     * enclosing closure. A lambda that is statically compiled to a native lambda
-     * is owned by the enclosing instance (or class) at any depth of nesting.
-     */
-    private boolean hasClosureOwner() {
-        List<TypeCheckingContext.EnclosingClosure> enclosingClosures = typeCheckingContext.getEnclosingClosureStack();
-        if (enclosingClosures.size() < 2) return false;
-        ClosureExpression closure = enclosingClosures.get(0).getClosureExpression();
-        return !(closure instanceof LambdaExpression && isStaticDispatchScope()
-                && isFunctionalInterface(closure.getNodeMetaData(PARAMETER_TYPE)));
-    }
-
     private static void addDelegateReceiver(final List<Receiver<String>> receivers, final ClassNode delegate, final String path) {
         if (isClassClassNodeWrappingConcreteType(delegate)) { // GROOVY-11393: Type from Class<Type>
             receivers.add(new Receiver<>(delegate.getGenericsTypes()[0].getType(), false, path));
@@ -7638,6 +7625,19 @@ trying: for (ClassNode[] signature : signatures) {
 
     private ClassNode makeSuper() {
         return makeType(typeCheckingContext.getEnclosingClassNode().getUnresolvedSuperClass(), typeCheckingContext.isInStaticContext);
+    }
+
+    /**
+     * Tells whether the owner of the innermost enclosing closure or lambda is an
+     * enclosing closure. A lambda that is statically compiled to a native lambda
+     * is owned by the enclosing instance (or class) at any depth of nesting.
+     */
+    private boolean hasClosureOwner() {
+        List<TypeCheckingContext.EnclosingClosure> enclosingClosures = typeCheckingContext.getEnclosingClosureStack();
+        if (enclosingClosures.size() < 2) return false;
+        ClosureExpression closure = enclosingClosures.get(0).getClosureExpression();
+        return !(closure instanceof LambdaExpression && isStaticDispatchScope()
+                && isFunctionalInterface(closure.getNodeMetaData(PARAMETER_TYPE)));
     }
 
     private ClassNode makeThis() {
