@@ -162,9 +162,20 @@ jobs:
           exit 0
         timeout-minutes: 15
       - name: "🏃Test with Gradle"
-        run: ./gradlew test ${{ matrix.junit-network }} -Pgroovy.grape.bridge-cache=true -Ptarget.java.home="$JAVA_HOME_${{ matrix.java }}_${{ runner.arch }}"
+        run: |
+          # thread-dump the test JVMs if results stop arriving (see the script)
+          .github/scripts/test-stall-watchdog.sh "$RUNNER_TEMP/stall-dumps" "$JAVA_HOME_${{ matrix.java }}_${{ runner.arch }}" &
+          trap "kill $! 2>/dev/null" EXIT
+          ./gradlew test ${{ matrix.junit-network }} -Pgroovy.grape.bridge-cache=true -Ptarget.java.home="$JAVA_HOME_${{ matrix.java }}_${{ runner.arch }}"
         shell: bash
         timeout-minutes: 60
+      - name: "🧵 Upload stall thread dumps"
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: stall-dumps-${{ matrix.os }}-${{ matrix.java }}
+          path: ${{ runner.temp }}/stall-dumps/
+          if-no-files-found: ignore
       - name: "🛑 Stop Gradle daemon before cache save"
         if: always()
         continue-on-error: true
@@ -304,8 +315,20 @@ jobs:
           exit 0
         timeout-minutes: 15
       - name: "🏃Test with Gradle"
-        run: ./gradlew test -Pgroovy.grape.bridge-cache=true -Ptarget.java.home="$JAVA_HOME_${{ matrix.java }}_X64"
+        run: |
+          # thread-dump the test JVMs if results stop arriving (see the script)
+          .github/scripts/test-stall-watchdog.sh "$RUNNER_TEMP/stall-dumps" "$JAVA_HOME_${{ matrix.java }}_X64" &
+          trap "kill $! 2>/dev/null" EXIT
+          ./gradlew test -Pgroovy.grape.bridge-cache=true -Ptarget.java.home="$JAVA_HOME_${{ matrix.java }}_X64"
+        shell: bash
         timeout-minutes: 60
+      - name: "🧵 Upload stall thread dumps"
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: stall-dumps-additional-${{ matrix.java }}
+          path: ${{ runner.temp }}/stall-dumps/
+          if-no-files-found: ignore
       - name: "🛑 Stop Gradle daemon before cache save"
         if: always()
         continue-on-error: true
@@ -585,9 +608,20 @@ jobs:
           exit 0
         timeout-minutes: 15
       - name: "🏃Test with Gradle"
-        run: ./gradlew test -Pgroovy.grape.bridge-cache=true -Ptarget.java.home="$EA_JAVA_HOME"
+        run: |
+          # thread-dump the test JVMs if results stop arriving (see the script)
+          .github/scripts/test-stall-watchdog.sh "$RUNNER_TEMP/stall-dumps" "$EA_JAVA_HOME" &
+          trap "kill $! 2>/dev/null" EXIT
+          ./gradlew test -Pgroovy.grape.bridge-cache=true -Ptarget.java.home="$EA_JAVA_HOME"
         shell: bash
         timeout-minutes: 60
+      - name: "🧵 Upload stall thread dumps"
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: stall-dumps-ea
+          path: ${{ runner.temp }}/stall-dumps/
+          if-no-files-found: ignore
       - name: "🛑 Stop Gradle daemon before cache save"
         if: always()
         continue-on-error: true
