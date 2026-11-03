@@ -1309,6 +1309,24 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         }
 
         /**
+         * Dehydrates the enclosing closure and wraps the copy: the owner of a writable closure is
+         * the closure it wraps, so clearing it would leave nothing to call.
+         */
+        @Override
+        public Closure dehydrate() {
+            return Closure.this.dehydrate().asWritable();
+        }
+
+        /**
+         * Rehydrates the enclosing closure and wraps the copy: the owner of a writable closure is
+         * the closure it wraps, so replacing it would leave nothing to call.
+         */
+        @Override
+        public Closure rehydrate(Object delegate, Object owner, Object thisObject) {
+            return Closure.this.rehydrate(delegate, owner, thisObject).asWritable();
+        }
+
+        /**
          * {@inheritDoc}
          */
         @Override
