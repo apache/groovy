@@ -645,22 +645,6 @@ public class ClosureWriter {
         return escaping;
     }
 
-    /**
-     * True for a call on a closure whose result keeps it and passes a delegate set on the result on
-     * to it: {@code curry}, {@code rcurry} and {@code ncurry} (a {@code CurriedClosure} over a clone),
-     * {@code asWritable} (a wrapper), and {@code clone}, {@code dehydrate} and {@code rehydrate} (a
-     * copy; the copy of a packed closure is still packed). {@code trampoline} and the {@code memoize}
-     * family are not followed: their wrappers keep a delegate of their own and never pass it on.
-     */
-    private static boolean isWrappingCall(final MethodCallExpression call) {
-        return WRAPPING_CALLS.contains(call.getMethodAsString());
-    }
-
-    /** True when a cast to {@code type} yields the closure itself rather than a coerced proxy. */
-    private static boolean keepsClosure(final ClassNode type) {
-        return ClassHelper.isObjectType(type) || type.isDerivedFrom(ClassHelper.CLOSURE_TYPE);
-    }
-
     /** True when an assignment target is a plain local variable (not a field/property that escapes). */
     private static boolean isLocalTarget(final Expression lhs) {
         if (!(lhs instanceof VariableExpression)) return false;   // property/field/index target
@@ -868,6 +852,22 @@ public class ClosureWriter {
 
     private static final Set<String> WRAPPING_CALLS =
             new HashSet<>(Arrays.asList("curry", "rcurry", "ncurry", "asWritable", "clone", "dehydrate", "rehydrate"));
+
+    /**
+     * True for a call on a closure whose result keeps it and passes a delegate set on the result on
+     * to it: {@code curry}, {@code rcurry} and {@code ncurry} (a {@code CurriedClosure} over a clone),
+     * {@code asWritable} (a wrapper), and {@code clone}, {@code dehydrate} and {@code rehydrate} (a
+     * copy; the copy of a packed closure is still packed). {@code trampoline} and the {@code memoize}
+     * family are not followed: their wrappers keep a delegate of their own and never pass it on.
+     */
+    private static boolean isWrappingCall(final MethodCallExpression call) {
+        return WRAPPING_CALLS.contains(call.getMethodAsString());
+    }
+
+    /** True when a cast to {@code type} yields the closure itself rather than a coerced proxy. */
+    private static boolean keepsClosure(final ClassNode type) {
+        return ClassHelper.isObjectType(type) || type.isDerivedFrom(ClassHelper.CLOSURE_TYPE);
+    }
 
     /**
      * Rebinds captured-variable references in the moved body to the hoisted method's parameters,
