@@ -1272,6 +1272,14 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
          * {@inheritDoc}
          */
         @Override
+        public Object getThisObject() {
+            return Closure.this.getThisObject();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
         public Class[] getParameterTypes() {
             return Closure.this.getParameterTypes();
         }
