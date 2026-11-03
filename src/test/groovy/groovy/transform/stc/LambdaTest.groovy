@@ -1067,25 +1067,6 @@ final class LambdaTest {
         }
     }
 
-    // GROOVY-11480
-    @Test
-    void testNestedLambdaAccessingInstanceFields3() {
-        for (qual in ['','Test1.this.']) {
-            assertScript shell, """
-                class Test1 {
-                    class Test2 {
-                        def m() {
-                            Optional.empty().orElseGet(() -> Optional.empty().orElseGet(() -> ${qual}n))
-                        }
-                    }
-                    private n = 123
-                }
-
-                assert new Test1.Test2(new Test1()).m() == 123
-            """
-        }
-    }
-
     // GROOVY-12678
     @Test
     void testNestedLambdaOwnerDelegateThisObject() {
@@ -1155,6 +1136,25 @@ final class LambdaTest {
                 assert c.closureInClosure() == 2
                 assert c.closureLambdaInClosure() == 1
                 assert c.closureLambdaInLambda() == 0
+            """
+        }
+    }
+
+    // GROOVY-11480
+    @Test
+    void testNestedLambdaAccessingInstanceFields3() {
+        for (qual in ['','Test1.this.']) {
+            assertScript shell, """
+                class Test1 {
+                    class Test2 {
+                        def m() {
+                            Optional.empty().orElseGet(() -> Optional.empty().orElseGet(() -> ${qual}n))
+                        }
+                    }
+                    private n = 123
+                }
+
+                assert new Test1.Test2(new Test1()).m() == 123
             """
         }
     }
