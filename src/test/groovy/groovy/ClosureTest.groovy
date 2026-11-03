@@ -24,6 +24,7 @@ import org.junit.jupiter.params.provider.ValueSource
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
+import static java.lang.reflect.Modifier.isPrivate
 import static java.lang.reflect.Modifier.isPublic
 import static java.lang.reflect.Modifier.isStatic
 
@@ -222,6 +223,18 @@ final class ClosureTest {
                 closure."$property.name" == closure.(MetaProperty.getGetterName(property.name, property.type))()
             }
         }
+    }
+
+    // GROOVY-12675
+    @Test
+    void testGetPropertiesExcludesPrivateMembersOfClosure() {
+        Closure closure = { -> }
+        def properties = closure.metaClass.properties
+
+        assert properties.every { !isPrivate(it.modifiers) }
+        assert properties*.name.containsAll(['class', 'delegate', 'directive', 'maximumNumberOfParameters',
+                'owner', 'parameterTypes', 'resolveStrategy', 'thisObject', 'DONE', 'IDENTITY'])
+        assert properties*.name.disjoint(['bcw', 'serialVersionUID', 'thisType'])
     }
 
     @Test
