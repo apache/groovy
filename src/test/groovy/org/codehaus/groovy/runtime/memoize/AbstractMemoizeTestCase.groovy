@@ -40,6 +40,45 @@ abstract class AbstractMemoizeTestCase {
         assert 4 == mem(2)
     }
 
+    // GROOVY-12673
+    @Test
+    void testDelegateAndThisObject() {
+        def d = [name: 'd']
+        Closure cl = { x -> name + x }
+        cl.delegate = d
+        cl.resolveStrategy = Closure.DELEGATE_FIRST
+        Closure mem = buildMemoizeClosure(cl)
+
+        assert mem.owner === this
+        assert mem.thisObject === this
+        assert mem.delegate === d
+        assert mem.resolveStrategy == Closure.DELEGATE_FIRST
+        assert mem(1) == 'd1'
+    }
+
+    // GROOVY-12673
+    @Test
+    void testSetDelegateAndResolveStrategy() {
+        def d = [name: 'd']
+        Closure mem = buildMemoizeClosure { x -> name + x }
+        mem.delegate = d
+        mem.resolveStrategy = Closure.DELEGATE_ONLY
+
+        assert mem.delegate === d
+        assert mem.resolveStrategy == Closure.DELEGATE_ONLY
+        assert mem(1) == 'd1'
+    }
+
+    // GROOVY-12673
+    @Test
+    void testWith() {
+        Closure mem = buildMemoizeClosure { m -> name }
+
+        assert [name: 'd'].with(mem) == 'd'
+        assert mem.delegate === this
+        assert mem.resolveStrategy == Closure.OWNER_FIRST
+    }
+
     abstract Closure buildMemoizeClosure(Closure cl)
 
     @Test
