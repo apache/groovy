@@ -163,6 +163,67 @@ final class PackedClosuresTransformTest {
         assertEquals([3, 6, 9], e.maps([1, 2, 3]))
     }
 
+    // GROOVY-12650
+    @Test
+    void escapingClosuresAreDeclinedTheSameUnderCompileStatic() {
+        // Static compilation rewrites `<<`, subscript stores and setter-backed property stores into
+        // method calls before class generation; the closures they store still escape and must be
+        // declined exactly as in dynamic code. An explicit leftShift(...) call is not an escape site
+        // in either mode, so that closure packs, as does the owner-local one.
+        String src = '''@groovy.transform.PackedClosures
+            ANNOTATION
+            class E {
+                Closure prop
+                static Closure sprop
+                void appended(List<Closure> sink)          { sink << { x -> x } }
+                void toSetter(E other)                     { other.prop = { x -> x } }
+                void toThisSetter()                        { this.prop = { x -> x } }
+                void toImplicitSetter()                    { prop = { x -> x } }
+                static void toStaticSetter()               { sprop = { x -> x } }
+                void toListIndex(List<Closure> sink)       { sink[0] = { x -> x } }
+                void toArrayIndex(Closure[] sink)          { sink[0] = { x -> x } }
+                void toMapKey(Map<String, Closure> sink)   { sink.k = { x -> x } }
+                void toMapIndex(Map<String, Closure> sink) { sink['k'] = { x -> x } }
+                void toField(Holder h)                     { h.@f = { x -> x } }
+                Holder named()                             { new Holder(g: { x -> x }) }
+                void called(List<Closure> sink)            { sink.leftShift({ x -> x }) } // a call: packs
+                List<Integer> maps(List<Integer> xs)       { xs.collect { x -> x * 3 } }  // owner-local: packs
+            }
+            class Holder { public Closure f; Closure g }'''
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { ann ->
+            String mode = ann ?: 'dynamic'
+            String code = src.replace('ANNOTATION', ann)
+            def names = generatedClassNames(code)
+            assertEquals(11, closureClassCount(names), "[$mode] escaping closures should be declined: $names")
+
+            def e = instance(code + '\n new E()')
+            def list = []; e.appended(list); e.called(list)
+            assertEquals(1, list[0](1))
+            assertEquals(2, list[1](2))
+            e.toImplicitSetter(); assertEquals(4, e.prop(4))
+            def map = [:]; e.toMapKey(map); assertEquals(5, map.k(5))
+            assertEquals(6, e.named().g(6))
+            assertEquals([3, 6], e.maps([1, 2]))
+        }
+    }
+
+    // GROOVY-12650
+    @Test
+    void compileStaticReportsAnEscapeHiddenByARewrite() {
+        String src = '''import groovy.transform.CompileStatic
+            import groovy.transform.PackedClosures
+            import groovy.transform.PackedClosures.PackMode
+            @CompileStatic @PackedClosures(mode = PackMode.WARN)
+            class W {
+                Closure prop
+                void appended(List<Closure> sink) { sink << { String s -> s } }
+                void toSetter(W other)            { other.prop = { String s -> s } }
+            }'''
+        def ws = warnings(src)
+        assertEquals(2, ws.size(), "expected one warning per escaping closure, got: ${ws*.message}")
+        ws.each { assertTrue(it.message.contains('escapes its method'), "warning should name the escape: $it.message") }
+    }
+
     /**
      * Under {@code @CompileStatic} the transform applies a cast-to-context heuristic: the hoisted
      * method is marked {@code @CompileStatic(SKIP)} (so its Object-typed body is checked dynamically),
