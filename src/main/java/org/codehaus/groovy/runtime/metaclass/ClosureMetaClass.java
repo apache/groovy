@@ -31,6 +31,7 @@ import groovy.lang.MetaMethod;
 import groovy.lang.MetaProperty;
 import groovy.lang.MissingMethodException;
 import groovy.lang.ProxyMetaClass;
+import org.apache.groovy.util.BeanUtils;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -193,7 +194,18 @@ public final class ClosureMetaClass extends MetaClassImpl {
      */
     @Override
     public MetaProperty getMetaProperty(final String name) {
-        return CLOSURE_METACLASS.getMetaProperty(name);
+        MetaProperty mp = CLOSURE_METACLASS.getMetaProperty(name);
+        // GROOVY-12680: a closure class does not inherit the private members of Closure
+        return (mp != null && mp.isPrivate()) ? null : mp;
+    }
+
+    private static boolean isPrivateClosureProperty(final Class sender, final String name) {
+        if (sender == Closure.class) return false;
+        MetaProperty mp = CLOSURE_METACLASS.getMetaProperty(name);
+        if (mp == null && name != null && !name.isEmpty() && Character.isUpperCase(name.charAt(0))) {
+            mp = CLOSURE_METACLASS.getMetaProperty(BeanUtils.decapitalize(name)); // GROOVY-9618
+        }
+        return (mp != null && mp.isPrivate());
     }
 
     private MetaMethod pickClosureMethod(final Class<?>[] argClasses) {
@@ -628,6 +640,8 @@ public final class ClosureMetaClass extends MetaClassImpl {
     public Object getProperty(final Class sender, final Object object, final String name, final boolean useSuper, final boolean fromInsideClass) {
         if (object instanceof Class) {
             return getStaticMetaClass().getProperty(sender, object, name, useSuper, fromInsideClass);
+        } else if (isPrivateClosureProperty(sender, name)) {
+            return CLOSURE_METACLASS.invokeMissingProperty(object, name, null, true);
         } else {
             return CLOSURE_METACLASS.getProperty(sender, object, name, useSuper, fromInsideClass);
         }
@@ -716,6 +730,8 @@ public final class ClosureMetaClass extends MetaClassImpl {
     public void setProperty(final Class sender, final Object object, final String name, final Object newValue, final boolean useSuper, final boolean fromInsideClass) {
         if (object instanceof Class) {
             getStaticMetaClass().setProperty(sender, object, name, newValue, useSuper, fromInsideClass);
+        } else if (isPrivateClosureProperty(sender, name)) {
+            CLOSURE_METACLASS.invokeMissingProperty(object, name, newValue, false);
         } else {
             CLOSURE_METACLASS.setProperty(sender, object, name, newValue, useSuper, fromInsideClass);
         }
