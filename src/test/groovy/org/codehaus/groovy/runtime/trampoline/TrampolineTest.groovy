@@ -19,6 +19,9 @@
 package org.codehaus.groovy.runtime.trampoline
 
 import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
 /**
  * Test for the trampoline capabilities of closures.
  */
@@ -61,5 +64,49 @@ class TrampolineTest {
         funB = { int num -> num == 0 ? 0 : funA.trampoline(num - 1)}
         assert 0 == funA.trampoline(1000)()
         assert 0 == funA.trampoline()(2000)
+    }
+
+    // GROOVY-12665
+    @Test
+    void testRehydrateTrampolinedClosure() {
+        assertScript '''
+            class O { def foo() { 'o' } }
+            class D { def foo() { 'd' } }
+            def o = new O(), d = new D()
+            def t = { x -> foo() + x }.trampoline()
+
+            def r = t.rehydrate(d, o, o)
+            assert r !== t
+            assert r.owner === o
+            assert r(1) == 'o1'
+            assert t.owner === this
+
+            def c = { x -> foo() + x }
+            c.resolveStrategy = Closure.DELEGATE_FIRST
+            assert c.trampoline().rehydrate(d, o, o)(1) == 'd1'
+        '''
+    }
+
+    // GROOVY-12665
+    @Test
+    void testDehydrateTrampolinedClosure() {
+        assertScript '''
+            class O { def foo() { 'o' } }
+            def k = { x -> x + 1 }.trampoline().dehydrate()
+            assert k.delegate === null
+            assert k.owner === null
+            assert k(1) == 2
+
+            def baos = new ByteArrayOutputStream()
+            baos.withObjectOutputStream {
+                it << { x -> foo() + x }.trampoline().dehydrate()
+            }
+            def read
+            new ByteArrayInputStream(baos.toByteArray()).withObjectInputStream(this.class.classLoader) {
+                it.eachObject { read = it }
+            }
+            def o = new O()
+            assert read.rehydrate(o, o, o)(1) == 'o1'
+        '''
     }
 }
