@@ -63,6 +63,8 @@ final class PackedClosureBoundariesTest {
         ['returned',                     false, false, 'Closure m() { return { x -> x } }'],
         ['stored to property',           false, false, 'def m(Map attrs) { attrs.handler = { x -> x } }'],
         ['in a collection literal',      false, false, 'def m() { [{ x -> x }] }'],
+        ['stored to property by ?=',     false, false, 'Closure handler\ndef m(C other) { other.handler ?= { x -> x } }'],  // GROOVY-12651
+        ['stored to field by ??=',       false, false, 'Closure handler\ndef m() { handler ??= { x -> x } }'],             // GROOVY-12651
         // ---- serialization-bound: declines everywhere -------------------------------------------
         ['cast to Serializable',         false, false, 'def m() { ({ it } as Serializable) != null }'],
         ['local into writeObject',       false, false, '''def m() {

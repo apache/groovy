@@ -163,6 +163,76 @@ final class PackedClosuresTransformTest {
         assertEquals([3, 6, 9], e.maps([1, 2, 3]))
     }
 
+    // GROOVY-12651
+    @Test
+    void compoundAssignmentEscapesAreDeclined() {
+        // ?= and ??= store the literal, <<= and >>= compose it into a closure that keeps a clone of
+        // it, <<= appends it to a list and += adds it to a new one. Into a field/property/index each
+        // escapes the method, so each is declined and a delegate set on the stored value works as it
+        // does without packing. -= and a store into a local still pack.
+        ['', '@groovy.transform.TypeChecked'].each { mode ->
+            String src = """class Holder { Closure handler; List<Closure> handlers = [] }
+                @groovy.transform.PackedClosures $mode
+                class E {
+                    Closure field = null
+                    void elvis(Holder h)          { h.handler ?= { Integer x -> x * 2 } }     // property
+                    void nullCoalesce(Holder h)   { h.@handler ??= { Integer x -> x * 2 } }   // attribute
+                    void composeLeft(Closure[] a) { a[0] <<= { Integer x -> x + 1 } }         // index
+                    void composeRight()           { field >>= { Integer x -> x + 1 } }        // field
+                    void append(Holder h)         { h.handlers <<= { Integer x -> x - 1 } }   // appended
+                    void plus(Holder h)           { h.handlers += { Integer x -> x - 2 } }    // added
+                    int local(int n)              { Closure c = null; c ?= { Integer x -> x * 3 }; (int) c(n) }
+                    List minus(List xs)           { xs -= { x -> x }; xs }
+                }"""
+            def names = generatedClassNames(src)
+            assertEquals(6, closureClassCount(names), "[$mode] compound escapes should be declined: $names")
+
+            def (e, h) = instance(src + '\n [new E(), new Holder()]')
+            e.elvis(h); h.handler.delegate = 'd'
+            assertEquals(42, h.handler(21))
+            h.handler = null; e.nullCoalesce(h); h.handler.delegate = 'd'
+            assertEquals(42, h.handler(21))
+            Closure[] a = [{ x -> x * 10 }]; e.composeLeft(a); a[0].delegate = 'd'
+            assertEquals(30, a[0](2))                    // a[0] << c: c runs first
+            e.field = { x -> x * 10 }; e.composeRight(); e.field.delegate = 'd'
+            assertEquals(21, e.field(2))                 // field >> c: c runs second
+            e.append(h); e.plus(h); h.handlers*.delegate = 'd'
+            assertEquals([9, 8], h.handlers*.call(10))
+            assertEquals(12, e.local(4))
+            assertEquals([1, 2], e.minus([1, 2]))
+        }
+    }
+
+    // GROOVY-12651
+    @Test
+    void compileStaticCompoundStoresAreDeclined() {
+        // ?= and ??= keep their assignment shape under @CompileStatic, so the escape gate sees them
+        String src = '''class Holder { Closure handler }
+            @groovy.transform.CompileStatic
+            @groovy.transform.PackedClosures
+            class S {
+                Closure field = null
+                void property(Holder h)  { h.handler ?= { Integer x -> x * 2 } }
+                void attribute(Holder h) { h.@handler ??= { Integer x -> x * 2 } }
+                void index(Closure[] a)  { a[0] ?= { Integer x -> x * 2 } }
+                void toField()           { field ??= { Integer x -> x * 2 } }
+                int local(int n)         { Closure c = null; c ?= { Integer x -> x * 3 }; (int) c(n) }
+            }'''
+        def names = generatedClassNames(src)
+        assertEquals(4, closureClassCount(names), "compound stores should be declined: $names")
+
+        def (s, h) = instance(src + '\n [new S(), new Holder()]')
+        s.property(h); h.handler.delegate = 'd'
+        assertEquals(42, h.handler(21))
+        h.handler = null; s.attribute(h); h.handler.delegate = 'd'
+        assertEquals(42, h.handler(21))
+        Closure[] a = new Closure[1]; s.index(a); a[0].delegate = 'd'
+        assertEquals(42, a[0](21))
+        s.toField(); s.field.delegate = 'd'
+        assertEquals(42, s.field(21))
+        assertEquals(12, s.local(4))
+    }
+
     /**
      * Under {@code @CompileStatic} the transform applies a cast-to-context heuristic: the hoisted
      * method is marked {@code @CompileStatic(SKIP)} (so its Object-typed body is checked dynamically),

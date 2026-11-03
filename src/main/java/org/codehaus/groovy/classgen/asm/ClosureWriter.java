@@ -584,7 +584,8 @@ public class ClosureWriter {
      * shared adapter that fails fast if a delegate is later set on it. To avoid that surprise for the
      * clearest cases, decline (keep a real closure class for) a closure literal that visibly escapes
      * the method it is written in: stored into a field/property/index (e.g. {@code attrs.optionValue =
-     * { ... }}), returned, appended with {@code <<}, or placed in a list/map literal. Transitive escapes
+     * { ... }}, or by a compound assignment that stores or composes it, such as {@code ?=} or
+     * {@code >>=}), returned, appended with {@code <<}, or placed in a list/map literal. Transitive escapes
      * (via a local that is later returned) are intentionally not chased here; the runtime guard remains
      * the backstop for those.
      */
@@ -608,10 +609,10 @@ public class ClosureWriter {
             }
             @Override public void visitBinaryExpression(final BinaryExpression be) {
                 int op = be.getOperation().getType();
-                if (op == Types.EQUAL && !isLocalTarget(be.getLeftExpression())) {
-                    mark(be.getRightExpression());          // assigned to a field/property/index
-                } else if (op == Types.LEFT_SHIFT) {
-                    mark(be.getRightExpression());          // appended, e.g. list << { ... }
+                if (storesRightOperand(op) && !isLocalTarget(be.getLeftExpression())) {
+                    mark(be.getRightExpression());          // stored at a field/property/index, e.g. attrs.handler ?= { ... }
+                } else if (op == Types.LEFT_SHIFT || op == Types.LEFT_SHIFT_EQUAL) {
+                    mark(be.getRightExpression());          // appended or composed, e.g. list << { ... }, handler <<= { ... }
                 }
                 super.visitBinaryExpression(be);
             }
@@ -625,6 +626,24 @@ public class ClosureWriter {
             }
         });
         return escaping;
+    }
+
+    /**
+     * True for the assignment operators whose stored value can hold the right operand: {@code =},
+     * {@code ?=} and {@code ??=} store it, {@code >>=} composes it into a closure (which keeps a
+     * clone of it) and {@code +=} adds it to a collection.
+     */
+    private static boolean storesRightOperand(final int op) {
+        switch (op) {
+          case Types.EQUAL:
+          case Types.ELVIS_EQUAL:
+          case Types.NULL_COALESCE_EQUAL:
+          case Types.RIGHT_SHIFT_EQUAL:
+          case Types.PLUS_EQUAL:
+            return true;
+          default:
+            return false;
+        }
     }
 
     /** True when an assignment target is a plain local variable (not a field/property that escapes). */
