@@ -72,6 +72,7 @@ platform (`linux`, `linux-aarch64`, `mac`, `mac-aarch64` or `win`):
 +
 [source,groovy]
 ----
+@GrabConfig(systemClassLoader=true)
 @Grab(group='org.openjfx', module='javafx-base', version='21.0.8', classifier='mac-aarch64')
 @Grab(group='org.openjfx', module='javafx-graphics', version='21.0.8', classifier='mac-aarch64')
 @Grab(group='org.openjfx', module='javafx-controls', version='21.0.8', classifier='mac-aarch64')
@@ -79,6 +80,12 @@ platform (`linux`, `linux-aarch64`, `mac`, `mac-aarch64` or `win`):
 +
 When JavaFX is loaded from the classpath rather than the module path, it
 prints a warning about an unsupported configuration; the warning is harmless.
+The `groovy-fx` jar in the distribution's `lib` directory is loaded by the
+launcher's root class loader, and its classes can only link against JavaFX
+classes that loader can see, which is what `systemClassLoader=true` arranges.
+Until JavaFX is available, the module's extension methods are deferred and
+scripts that do not use them are unaffected; they are registered as soon as
+the grab completes.
 
 The module is compiled against JavaFX 21, the oldest line that supports JDK
 17, and runs against any later JavaFX. Because the builder works reflectively,

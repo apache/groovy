@@ -246,6 +246,7 @@ class GrapeMaven implements GrapeEngine {
                     runnerServicesFound = GrapeUtil.checkForRunner(services)
                 }
             }
+            GrapeUtil.processDeferredExtensionModules()
             if (runnerServicesFound) {
                 GrapeUtil.registryLoad(loader)
             }
