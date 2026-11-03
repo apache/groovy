@@ -134,4 +134,22 @@ final class TrampolineClosure<V> extends Closure<V> {
     public Closure<V> trampoline() {
         return this;
     }
+
+    /**
+     * Dehydrates the wrapped closure and trampolines the copy, since calls go through the wrapped closure.
+     * @return An instance of TrampolineClosure wrapping a dehydrated copy of the original closure.
+     */
+    @Override
+    public Closure<V> dehydrate() {
+        return new TrampolineClosure<V>(original.dehydrate());
+    }
+
+    /**
+     * Rehydrates the wrapped closure and trampolines the copy, since calls go through the wrapped closure.
+     * @return An instance of TrampolineClosure wrapping a rehydrated copy of the original closure.
+     */
+    @Override
+    public Closure<V> rehydrate(final Object delegate, final Object owner, final Object thisObject) {
+        return new TrampolineClosure<V>(original.rehydrate(delegate, owner, thisObject));
+    }
 }
