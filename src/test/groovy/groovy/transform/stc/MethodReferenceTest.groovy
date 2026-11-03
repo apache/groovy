@@ -3435,11 +3435,13 @@ final class MethodReferenceTest {
             assertNoDynamicConstructorCall(bytecode)
         }
 
-        // GROOVY-12488
+        // GROOVY-12488, GROOVY-12657
         @Test
         void testPrivateConstructorOfNestedClassIsCalledDirectlyFromClosureOrLambda() {
             def script = '''
                 @CompileStatic
+                // keep the closure class this test inspects when groovy.target.closure.pack is set
+                @groovy.transform.PackedClosures(mode = groovy.transform.PackedClosures.PackMode.DISABLED)
                 class C {
                     static class Box {
                         private Box(String value) { }
