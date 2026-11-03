@@ -326,4 +326,57 @@ final class ClosureCurryTest {
             cl.ncurry(4, 'd')('a', 'b')
         }
     }
+
+    // GROOVY-12665
+    @Test
+    void testRehydrateCurriedClosure() {
+        assertScript '''
+            class O { def foo() { 'o' } }
+            class D { def foo() { 'd' }; def bar() { 'b' } }
+            def o = new O(), d = new D()
+            def c = { x, y -> foo() + x + y }
+
+            assert c.curry(1).rehydrate(d, o, o)(2) == 'o12'
+            assert c.rcurry(2).rehydrate(d, o, o)(1) == 'o12'
+            assert c.ncurry(1, 2).rehydrate(d, o, o)(1) == 'o12'
+            assert c.curry(1).curry(2).rehydrate(d, o, o)() == 'o12'
+            assert { x, y -> bar() + x + y }.curry(1).rehydrate(d, o, o)(2) == 'b12'
+
+            def k = c.curry(1)
+            k.resolveStrategy = Closure.DELEGATE_FIRST
+            def r = k.rehydrate(d, o, o)
+            assert r !== k
+            assert r.delegate === d
+            assert r.owner.owner === o
+            assert r.owner.thisObject === o
+            assert r.resolveStrategy == Closure.DELEGATE_FIRST
+            assert r(2) == 'd12'
+            assert k.delegate === this
+            assert k.owner.owner === this
+        '''
+    }
+
+    // GROOVY-12665
+    @Test
+    void testDehydrateCurriedClosure() {
+        assertScript '''
+            class O { def foo() { 'o' } }
+            def k = { x, y -> x + y }.curry(1).dehydrate()
+            assert k.delegate === null
+            assert k.owner.owner === null
+            assert k.owner.thisObject === null
+            assert k(2) == 3
+
+            def baos = new ByteArrayOutputStream()
+            baos.withObjectOutputStream {
+                it << { x, y -> foo() + x + y }.rcurry(2).dehydrate()
+            }
+            def read
+            new ByteArrayInputStream(baos.toByteArray()).withObjectInputStream(this.class.classLoader) {
+                it.eachObject { read = it }
+            }
+            def o = new O()
+            assert read.rehydrate(o, o, o)(1) == 'o12'
+        '''
+    }
 }
