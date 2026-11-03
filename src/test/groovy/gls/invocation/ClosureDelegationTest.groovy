@@ -192,4 +192,65 @@ final class ClosureDelegationTest {
             assert hash.metaClass.invokeMethod(C, hash, 'hashCode', [] as Object[], false, false) == hash.hashCode()
         '''
     }
+
+    // GROOVY-12664
+    @Test
+    void testClosureExtensionCalledOnceWhenDelegateAndOwnerUnavailable() {
+        assertScript '''
+            int count = 0
+            def c = { -> with { ++count } }
+            c.resolveStrategy = Closure.DELEGATE_ONLY
+            c.delegate = null
+            assert c() == 1
+            assert count == 1
+
+            count = 0
+            c = { -> with { ++count } }
+            c.resolveStrategy = Closure.DELEGATE_ONLY
+            c.delegate = c
+            assert c() == 1
+            assert count == 1
+
+            count = 0
+            c = { -> with { ++count } }.dehydrate()
+            c.resolveStrategy = Closure.DELEGATE_ONLY
+            assert c() == 1
+            assert count == 1
+
+            count = 0
+            c = { -> with { ++count } }.rehydrate(null, null, null)
+            c.resolveStrategy = Closure.OWNER_ONLY
+            assert c() == 1
+            assert count == 1
+        '''
+    }
+
+    // GROOVY-12664
+    @Test
+    void testClosureExtensionCalledOnceWhenDelegateAndOwnerUnavailableTypeChecked() {
+        assertScript '''
+            @groovy.transform.TypeChecked
+            def test() {
+                int count = 0
+                Closure c = { -> with { ++count } }
+                c.resolveStrategy = Closure.DELEGATE_ONLY
+                c.delegate = null
+                assert c() == 1
+                assert count == 1
+            }
+            test()
+        '''
+    }
+
+    // GROOVY-12664
+    @Test
+    void testClosureExtensionResultReturnedByMetaClass() {
+        assertScript '''
+            def c = { -> }
+            c.resolveStrategy = Closure.DELEGATE_ONLY
+            c.delegate = null
+            def result = c.metaClass.invokeMethod(this.getClass(), c, 'sprintf', ['%d', 42] as Object[], false, true)
+            assert result == '42'
+        '''
+    }
 }
