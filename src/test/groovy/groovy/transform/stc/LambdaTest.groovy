@@ -1095,20 +1095,14 @@ final class LambdaTest {
                 String getOwner() { 'owner' }
                 String getThisObject() { 'thisObject' }
                 int getMaximumNumberOfParameters() { 42 }
-                String curry(Object o) { 'curry' + o }
-                String rcurry(Object o) { 'rcurry' + o }
-                String ncurry(int i, Object o) { 'ncurry' + i + o }
                 String memoizeAtMost(int i) { 'memoizeAtMost' + i }
                 List<Object> m() {
                     Supplier<Object> a = () -> getDelegate()
                     Supplier<Object> b = () -> getOwner()
                     Supplier<Object> c = () -> getThisObject()
                     Supplier<Object> d = () -> getMaximumNumberOfParameters()
-                    Supplier<Object> e = () -> curry(1)
-                    Supplier<Object> f = () -> rcurry(2)
-                    Supplier<Object> g = () -> ncurry(3, 4)
-                    Supplier<Object> h = () -> memoizeAtMost(5)
-                    [a.get(), b.get(), c.get(), d.get(), e.get(), f.get(), g.get(), h.get()]
+                    Supplier<Object> e = () -> memoizeAtMost(5)
+                    [a.get(), b.get(), c.get(), d.get(), e.get()]
                 }
                 List<Object> p() {
                     Supplier<Object> a = () -> delegate
@@ -1121,8 +1115,30 @@ final class LambdaTest {
             }
 
             def c = new C()
-            assert c.m() == ['delegate', 'owner', 'thisObject', 42, 'curry1', 'rcurry2', 'ncurry34', 'memoizeAtMost5']
+            assert c.m() == ['delegate', 'owner', 'thisObject', 42, 'memoizeAtMost5']
             assert c.p() == ['delegate', 'owner', 'thisObject', 42, 'DELEGATE']
+        '''
+    }
+
+    // GROOVY-12668
+    @Test
+    void testLambdaCallsEnclosingClassCurryMethod() {
+        assertScript shell, '''
+            class C {
+                String curry(Object o) { 'curry' + o }
+                String rcurry(Object o) { 'rcurry' + o }
+                String ncurry(int i, Object o) { 'ncurry' + i + o }
+                static String curry(int i, int j) { 'static' + i + j }
+                List<Object> m() {
+                    Supplier<Object> a = () -> curry(1)
+                    Supplier<Object> b = () -> rcurry(2)
+                    Supplier<Object> c = () -> ncurry(3, 4)
+                    Supplier<Object> d = () -> curry(5, 6)
+                    [a.get(), b.get(), c.get(), d.get()]
+                }
+            }
+
+            assert new C().m() == ['curry1', 'rcurry2', 'ncurry34', 'static56']
         '''
     }
 
@@ -1132,22 +1148,22 @@ final class LambdaTest {
         assertScript shell, '''
             class C {
                 static String getDelegate() { 'delegate' }
-                static String curry(Object o) { 'curry' + o }
+                static String memoizeAtMost(int i) { 'memoizeAtMost' + i }
                 static List<Object> sm() {
                     Supplier<Object> a = () -> getDelegate()
-                    Supplier<Object> b = () -> curry(1)
+                    Supplier<Object> b = () -> memoizeAtMost(1)
                     Supplier<Object> c = () -> delegate
                     [a.get(), b.get(), c.get()]
                 }
                 List<Object> m() {
                     Supplier<Object> a = () -> getDelegate()
-                    Supplier<Object> b = () -> curry(2)
+                    Supplier<Object> b = () -> memoizeAtMost(2)
                     [a.get(), b.get()]
                 }
             }
 
-            assert C.sm() == ['delegate', 'curry1', 'delegate']
-            assert new C().m() == ['delegate', 'curry2']
+            assert C.sm() == ['delegate', 'memoizeAtMost1', 'delegate']
+            assert new C().m() == ['delegate', 'memoizeAtMost2']
         '''
     }
 
