@@ -403,19 +403,22 @@ final class ClosurePackCapabilityTest {
     // GROOVY-12666
     @Test
     void syntacticallyPackedClosureRehydratedOntoAnInstanceOfItsOwnerClassUsesIt() {
-        // the dynamic syntactic path packs a body that calls a method on an explicit this;
-        // rehydrated onto another instance of the owner class, it calls that instance, as the
-        // closure class does
+        // the dynamic syntactic path packs a body with no free name, which cannot name this
+        // (GROOVY-12670) but can create a nested closure, whose this object is the enclosing
+        // closure's this object: for the hoisted body, its receiver. Rehydrated onto
+        // another instance of the owner class, the copy hands that instance on, as the closure
+        // class does
         String src = '''
             class O {
                 String name
                 String foo() { name }
                 List run(O b) {
-                    Closure c = { -> this.foo() }
-                    assert c instanceof org.codehaus.groovy.runtime.PackedClosure
-                    [c.rehydrate(null, b, b)(), c()]
+                    Closure c = { -> Closure n = { -> 0 }; n.getThisObject().foo() }
+                    [c.rehydrate(null, b, b)(), c(), c instanceof org.codehaus.groovy.runtime.PackedClosure]
                 }
             }'''
-        assertEquals(['b', 'a'], eval(src, "new O(name: 'a').run(new O(name: 'b'))", true))
+        String tail = "new O(name: 'a').run(new O(name: 'b'))"
+        assertEquals(['b', 'a', false], eval(src, tail, false))
+        assertEquals(['b', 'a', true], eval(src, tail, true))
     }
 }
