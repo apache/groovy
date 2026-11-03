@@ -133,6 +133,28 @@ final class ClosureComposeTest {
         '''
     }
 
+    // GROOVY-12673
+    @Test
+    void testThisObject() {
+        assertScript '''
+            class O {
+                def make() { return { x -> x + 1 } }
+            }
+            def o = new O()
+            def c = o.make()
+
+            assert (c >> { it * 2 }).thisObject === o
+            assert (c << { it * 2 }).thisObject === this
+            assert c.andThen { it * 2 }.thisObject === o
+            assert c.composeSelf().thisObject === o
+            assert (c >> { it * 2 }).getThisObject() === o
+
+            @groovy.transform.CompileStatic
+            def thisObjectOf(Closure c) { (c >> { it }).thisObject }
+            assert thisObjectOf(c) === o
+        '''
+    }
+
     @Test
     void testAndThenCS() {
         assertScript '''
