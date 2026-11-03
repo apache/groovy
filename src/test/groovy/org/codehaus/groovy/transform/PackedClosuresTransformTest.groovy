@@ -855,11 +855,11 @@ final class PackedClosuresTransformTest {
     @Test
     void conditionalAndWrappedClosuresEscapeWhereTheirValueDoes() {
         // A literal that is a branch of a ternary or elvis is the value whenever that branch is taken.
-        // curry/rcurry/ncurry and asWritable wrap it and pass a delegate set on the wrapper on to it;
-        // clone, dehydrate and rehydrate copy it, and a copy of a packed closure is still packed. So
-        // the literal escapes wherever the conditional or the call result does. trampoline and the
-        // memoize family keep a delegate of their own, and a SAM coercion is not a closure, so those
-        // still pack, as does a conditional or curried literal that is only called in the method.
+        // curry/rcurry/ncurry, asWritable, trampoline and the memoize family wrap it and may pass a
+        // delegate set on the wrapper on to it; clone, dehydrate and rehydrate copy it, and a copy of
+        // a packed closure is still packed. So the literal escapes wherever the conditional or the
+        // call result does. A SAM coercion is not a closure, so it still packs, as does a conditional
+        // or curried literal that is only called in the method.
         ['', '@groovy.transform.TypeChecked'].each { mode ->
             String src = """class Holder { Closure handler; List<Closure> list = [] }
                 @groovy.transform.PackedClosures $mode
@@ -884,14 +884,15 @@ final class PackedClosuresTransformTest {
                     Closure rehydrated()              { { Integer x -> x + 1 }.rehydrate(null, this, this) }
                     void curriedBranch(boolean b)     { field = b ? { Integer x, Integer y -> x + y }.curry(1) : null } // branch, field
                     void toObject()                   { any = (Object) { Integer x -> x + 1 } }                   // cast, field
-                    Closure trampolined()             { { Integer x -> x + 1 }.trampoline() }                     // -> packs
-                    Closure memoized()                { { Integer x -> x + 1 }.memoize() }                        // -> packs
+                    Closure trampolined()             { { Integer x -> x + 1 }.trampoline() }                     // implicit return
+                    Closure memoized()                { { Integer x -> x + 1 }.memoize() }
+                    Closure memoizedAtMost()          { { Integer x -> x + 1 }.memoizeAtMost(2) }
                     void coerced()                    { task = { -> } as Runnable }                               // -> packs
                     def local(boolean b)              { (b ? { Integer x -> x + 1 } : { Integer x -> x - 1 })(1) } // -> both pack
                     def localCurry()                  { { Integer x, Integer y -> x + y }.curry(1)(2) }          // -> packs
                 }"""
             def names = generatedClassNames(src)
-            assertEquals(17, closureClassCount(names), "[$mode] conditional and wrapped escapes should be declined: $names")
+            assertEquals(20, closureClassCount(names), "[$mode] conditional and wrapped escapes should be declined: $names")
 
             def (e, h) = instance(src + '\n [new E(), new Holder()]')
             e.ternary(h, true); h.handler.delegate = 'd'
@@ -924,8 +925,8 @@ final class PackedClosuresTransformTest {
             assertEquals(4, e.field(3))
             e.toObject(); e.any.delegate = 'd'
             assertEquals(4, e.any(3))
-            [e.trampolined(), e.memoized()].each {
-                it.delegate = 'd'                        // kept by the wrapper, not passed on
+            [e.trampolined(), e.memoized(), e.memoizedAtMost()].each {
+                it.delegate = 'd'
                 assertEquals(4, it(3))
             }
             assertEquals(2, e.local(true))
@@ -947,12 +948,12 @@ final class PackedClosuresTransformTest {
                 Closure curried()             { return { Integer x, Integer y -> x + y }.curry(1) }
                 void writable()               { field = { Integer x -> x + 1 }.asWritable() }
                 Closure cloned()              { (Closure) { Integer x -> x + 1 }.clone() }
-                Closure memoized()            { { Integer x -> x + 1 }.memoize() }                        // -> packs
+                Closure memoized()            { { Integer x -> x + 1 }.memoize() }
                 int local(boolean b)          { (int) (b ? { Integer x -> x + 1 } : { Integer x -> x - 1 })(1) } // -> both pack
                 int localCurry()              { (int) { Integer x, Integer y -> x + y }.curry(1)(2) }    // -> packs
             }'''
         def names = generatedClassNames(src)
-        assertEquals(7, closureClassCount(names), "conditional and wrapped escapes should be declined: $names")
+        assertEquals(8, closureClassCount(names), "conditional and wrapped escapes should be declined: $names")
 
         def s = instance(src + '\n new S()')
         [s.returned(true), s.implicit(null), s.inList(null)[0], s.curried(), s.cloned(), s.memoized()].each {
