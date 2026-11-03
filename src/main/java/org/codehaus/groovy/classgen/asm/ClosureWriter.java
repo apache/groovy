@@ -518,9 +518,19 @@ public class ClosureWriter {
         }
     }
 
+    /**
+     * The method or constructor whose code is being written. {@link WriterController#getMethodNode()}
+     * is null inside a constructor, and a constructor's code also holds the instance initializer
+     * blocks and field initializers the {@code Verifier} inlined into it.
+     */
+    private MethodNode enclosingMethod() {
+        MethodNode m = controller.getMethodNode();
+        return (m != null) ? m : controller.getConstructorNode();
+    }
+
     /** The most specific {@code @PackedClosures} mode in scope (method wins over class), or null if not annotated. */
     private PackMode annotatedMode() {
-        MethodNode m = controller.getMethodNode();
+        MethodNode m = enclosingMethod();
         PackMode mode = (m != null) ? packModeOf(m.getAnnotations()) : null;
         if (mode != null) return mode;
         for (ClassNode c = controller.getClassNode(); c != null; c = c.getOuterClass()) {
@@ -556,15 +566,16 @@ public class ClosureWriter {
         }
         String triggerReason = triggerDeclineReason(expression);
         if (triggerReason != null) return triggerReason;
+        // before the escape gate: a field initializer is also a field store in the constructor it is inlined into
+        if (isFieldInitializer(expression)) {
+            return "it initialises a field (a visible escape: the closure outlives its construction context)";
+        }
         if (escapesEnclosingMethod(expression)) {
             return "it escapes its method (returned, stored to a field/property/index, appended, or in a collection literal)";
         }
         if (serializationBound(expression)) {
             return "it is visibly serialization-bound (cast or coerced to a Serializable type, or passed directly "
                     + "to writeObject) and packed closures are not serializable";
-        }
-        if (isFieldInitializer(expression)) {
-            return "it initialises a field (a visible escape: the closure outlives its construction context)";
         }
         if (isIntersectionTyped(expression)) {
             return "it is cast to an intersection type, whose marker interfaces the shared adapter cannot declare";
@@ -589,7 +600,7 @@ public class ClosureWriter {
      * the backstop for those.
      */
     private boolean escapesEnclosingMethod(final ClosureExpression expression) {
-        MethodNode m = controller.getMethodNode();
+        MethodNode m = enclosingMethod();
         if (m == null || m.getCode() == null) return false;
         return escapingClosuresByMethod
                 .computeIfAbsent(m, k -> collectEscapingClosures(k.getCode()))
@@ -645,7 +656,7 @@ public class ClosureWriter {
      * Declines are reported by {@code @PackedClosures(mode = WARN | STRICT)} like any other.
      */
     private boolean serializationBound(final ClosureExpression expression) {
-        MethodNode m = controller.getMethodNode();
+        MethodNode m = enclosingMethod();
         if (m == null || m.getCode() == null) return false;
         return serializationBoundByMethod
                 .computeIfAbsent(m, k -> collectSerializationBoundClosures(k.getCode()))

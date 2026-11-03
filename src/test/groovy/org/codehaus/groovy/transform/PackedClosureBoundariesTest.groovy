@@ -91,6 +91,37 @@ final class PackedClosureBoundariesTest {
     }
 
     @Test
+    void constructorAndInitializerEscapesDecline() {
+        // GROOVY-12652: a constructor, and an instance initializer block (inlined into every
+        // constructor), is a method to the escape and serialization gates; [description,
+        // checked under @CompileStatic too?, class body] (an append under @CompileStatic is
+        // rewritten to a leftShift call the escape walk does not see: GROOVY-12650)
+        [
+            ['field store in a constructor',       true,  'Closure f\nC() { f = { x -> x } }'],
+            ['property store in a constructor',    true,  'C(Map m) { m.handler = { x -> x } }'],
+            ['appended in a constructor',          false, 'C(List<Closure> s) { s << { x -> x } }'],
+            ['Serializable cast in a constructor', true,  'C() { assert ({ x -> x } as Serializable) != null }'],
+            ['field store in an initializer',      true,  'Closure f; { f = { x -> x } }'],
+            ['property store in an initializer',   true,  'Map m = [:]; { m.handler = { x -> x } }'],
+            ['appended in an initializer',         false, 'List<Closure> s = []; { s << { x -> x } }'],
+        ].each { desc, checkCs, body ->
+            assert !packs("class C {\n${body}\n}"), "dynamic: '$desc' should NOT pack"
+            assert !packs("@groovy.transform.TypeChecked\nclass C {\n${body}\n}"), "@TypeChecked: '$desc' should NOT pack"
+            if (checkCs) {
+                assert !packs("@groovy.transform.CompileStatic\nclass C {\n${body}\n}"), "@CompileStatic: '$desc' should NOT pack"
+            }
+        }
+    }
+
+    @Test
+    void constructorAndInitializerLocalClosuresPack() {
+        ['', '@groovy.transform.TypeChecked\n', '@groovy.transform.CompileStatic\n'].each { annotation ->
+            assert packs("${annotation}class C { C(List<Integer> xs) { xs.each { x -> x } } }")
+            assert packs("${annotation}class C { List<Integer> xs = [1]; { xs.each { x -> x } } }")
+        }
+    }
+
+    @Test
     void traitBodyDeclines() {
         assert !packs('trait T { def m(List<Integer> xs) { xs.collect { it * 2 } } }\nclass C implements T {}')
     }

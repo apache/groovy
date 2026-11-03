@@ -163,6 +163,28 @@ final class PackedClosuresTransformTest {
         assertEquals([3, 6, 9], e.maps([1, 2, 3]))
     }
 
+    @Test
+    void escapingClosuresInConstructorsAndInitializersAreDeclined() {
+        // GROOVY-12652: the escape gate also covers constructors and instance initializer blocks
+        // (inlined into every constructor); a declined closure keeps its class, so setting a
+        // delegate on it works instead of failing the packed adapter's runtime guard
+        String src = '''@groovy.transform.PackedClosures
+            class K {
+                Closure fromCtor, fromInit;
+                { fromInit = { x -> x + 1 } }                                              // field store
+                K(List<Closure> sink) { sink << { x -> x * 2 }; fromCtor = { x -> x - 1 } } // appended, field store
+                K(Map attrs) { attrs.handler = { x -> x * 3 } }                             // property store
+                K(List<Integer> xs, int n) { xs.each { x -> n += x } }                      // local -> packs
+            }'''
+        def names = generatedClassNames(src)
+        assertEquals(4, closureClassCount(names), "escaping closures should be declined: $names")
+
+        def (sink, attrs) = [[], [:]]
+        def k = instance(src + '\n return { s, a -> new K(a); new K(s) }')(sink, attrs)
+        [k.fromCtor, k.fromInit, sink[0], attrs.handler].each { it.delegate = 'd' } // no packed-adapter guard
+        assertEquals([9, 11, 10, 30], [k.fromCtor(10), k.fromInit(10), sink[0](5), attrs.handler(10)])
+    }
+
     /**
      * Under {@code @CompileStatic} the transform applies a cast-to-context heuristic: the hoisted
      * method is marked {@code @CompileStatic(SKIP)} (so its Object-typed body is checked dynamically),
@@ -357,6 +379,48 @@ final class PackedClosuresTransformTest {
             if (prev != null) System.setProperty(CompilerConfiguration.CLOSURE_PACKING, prev)
             else System.clearProperty(CompilerConfiguration.CLOSURE_PACKING)
         }
+    }
+
+    @Test
+    void modeOnAConstructorGovernsItsBodyAndInitializers() {
+        // GROOVY-12652: a constructor is a scope of its own, like a method (most specific wins),
+        // and its scope includes the instance initializer blocks inlined into it
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { annotation ->
+            String src = """import groovy.transform.PackedClosures
+                import groovy.transform.PackedClosures.PackMode
+                $annotation
+                class A {
+                    List<Integer> r
+                    @PackedClosures A(List<Integer> xs) { r = xs.collect { Integer x -> x * 2 } } // packs
+                    A() { r = [1].collect { Integer x -> x } }                                    // not in scope
+                }
+                $annotation
+                @PackedClosures
+                class D {
+                    List<Integer> r
+                    @PackedClosures(mode = PackMode.DISABLED) D(List<Integer> xs) { r = xs.collect { Integer x -> x } }
+                }"""
+            assertEquals(['A$_closure1', 'D$_closure1'], generatedClassNames(src).findAll { it.contains('_closure') },
+                    "[$annotation] only the out-of-scope and DISABLED constructors' closures keep a class")
+            assertEquals([2, 4], instance(src + '\n new A([1, 2])').r)
+        }
+
+        String strict = '''import groovy.transform.PackedClosures
+            import groovy.transform.PackedClosures.PackMode
+            class S { @PackedClosures(mode = PackMode.STRICT) S(List<Closure> sink) { sink << { x -> x } } }'''
+        def e = assertThrows(MultipleCompilationErrorsException) { generatedClassNames(strict) }
+        assertTrue(e.message.contains('not packed') && e.message.contains('escapes'), e.message)
+
+        def ws = warnings('''import groovy.transform.PackedClosures
+            import groovy.transform.PackedClosures.PackMode
+            @PackedClosures(mode = PackMode.WARN)
+            class W {
+                Closure f, g = { x -> x };
+                { f = { x -> x } }
+            }''')*.message
+        assertEquals(2, ws.size(), "expected the initializer block and field initializer declines: $ws")
+        assertTrue(ws.any { it.contains('escapes its method') }, "the block's field store escapes: $ws")
+        assertTrue(ws.any { it.contains('initialises a field') }, "the field initializer keeps its reason: $ws")
     }
 
     @Test

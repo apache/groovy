@@ -27,7 +27,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Opt-in for compact closure compilation: within the annotated class or method, an eligible closure
+ * Opt-in for compact closure compilation: within the annotated class, method or constructor (whose
+ * scope includes the instance initializer blocks and field initializers run by it), an eligible closure
  * literal's body is hoisted into a synthetic method on the enclosing class and the literal is replaced
  * by a shared {@link PackedClosure} adapter, instead of generating one
  * inner class per closure. The value stays a real {@code groovy.lang.Closure}, so {@code curry},
@@ -89,7 +90,7 @@ import java.lang.annotation.Target;
  */
 @Incubating
 @Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.TYPE, ElementType.METHOD})
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR})
 public @interface PackedClosures {
     /**
      * The packing behaviour of this scope: {@link PackMode#LENIENT} (pack, silent on declines, the
