@@ -187,6 +187,11 @@ public final class CurriedClosure<V> extends Closure<V> {
     }
 
     @Override
+    public Object getThisObject() {
+        return getOwner().getThisObject();
+    }
+
+    @Override
     public Object clone() {
         @SuppressWarnings("unchecked")
         Closure<V> uncurriedClosure = (Closure<V>) getOwner().clone();
