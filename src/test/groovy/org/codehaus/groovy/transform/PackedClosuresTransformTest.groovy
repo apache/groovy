@@ -185,6 +185,38 @@ final class PackedClosuresTransformTest {
         assertEquals([9, 11, 10, 30], [k.fromCtor(10), k.fromInit(10), sink[0](5), attrs.handler(10)])
     }
 
+    @Test
+    void compileStaticConstructorAndInitializerEscapesHiddenByARewriteAreDeclined() {
+        // GROOVY-12650, GROOVY-12652: under @CompileStatic an append and a setter-backed store in a
+        // constructor or an instance initializer block are rewritten to method calls before class
+        // generation; the escape walk runs ahead of that rewrite there too, whether the scope comes
+        // from the class or from a constructor
+        String src = '''import groovy.transform.CompileStatic
+            import groovy.transform.PackedClosures
+            @CompileStatic @PackedClosures
+            class K {
+                Holder held = new Holder();
+                { held.handler = { Integer x -> x + 1 } }                                     // setter store
+                K(List<Closure> sink, Holder h) { sink << { Integer x -> x * 2 }; h.handler = { Integer x -> x * 3 } }
+                K(List<Integer> xs) { xs.each { Integer x -> x } }                             // local -> packs
+            }
+            @CompileStatic
+            class L {
+                List<Closure> sink = [];
+                { sink << { Integer x -> x - 1 } }                                             // appended
+                @PackedClosures L() { }
+            }
+            class Holder { Closure handler }'''
+        def names = generatedClassNames(src)
+        assertEquals(4, closureClassCount(names), "escaping closures should be declined: $names")
+
+        def (sink, h) = [[], null]
+        def made = instance(src + '\n return { s -> def h = new Holder(); [new K(s, h), h, new L()] }')(sink)
+        def (k, holder, l) = made
+        [k.held.handler, sink[0], holder.handler, l.sink[0]].each { it.delegate = 'd' } // no packed-adapter guard
+        assertEquals([11, 10, 30, 9], [k.held.handler(10), sink[0](5), holder.handler(10), l.sink[0](10)])
+    }
+
     // GROOVY-12650
     @Test
     void escapingClosuresAreDeclinedTheSameUnderCompileStatic() {

@@ -276,9 +276,18 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
             // method has already been visited by a static type checking visitor
             return;
         }
-        if (!isConstructor) {
-            ClosureWriter.markEscapingClosures(node); // GROOVY-12650
-        }
+        ClosureWriter.markEscapingClosures(node); // GROOVY-12650, GROOVY-12652
         super.visitConstructorOrMethod(node, isConstructor);
+    }
+
+    /**
+     * Marks the escaping closures of the instance initializer blocks before transforming them.
+     *
+     * @param node the class whose initializer blocks are visited
+     */
+    @Override
+    protected void visitObjectInitializerStatements(final ClassNode node) {
+        ClosureWriter.markEscapingClosures(node); // GROOVY-12652
+        super.visitObjectInitializerStatements(node);
     }
 }

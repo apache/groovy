@@ -619,16 +619,41 @@ public class ClosureWriter {
      * at class generation. Static compilation calls this before its transformers turn
      * {@code list << { ... }}, subscript stores and setter-backed property stores into method calls,
      * shapes the escape walk no longer recognises. Does nothing unless the flag or a non-DISABLED
-     * {@code @PackedClosures} on the method or an enclosing class requests packing.
+     * {@code @PackedClosures} on the method or constructor or an enclosing class requests packing.
      *
-     * @param method the method whose body is about to be transformed
+     * @param method the method or constructor whose body is about to be transformed
      */
     public static void markEscapingClosures(final MethodNode method) {
-        if (method.getCode() == null) return;
-        PackMode mode = annotatedMode(method, method.getDeclaringClass());
-        if (mode == PackMode.DISABLED
-                || (mode == null && !SystemUtil.getBooleanSafe(CompilerConfiguration.CLOSURE_PACKING))) return;
-        for (ClosureExpression closure : collectEscapingClosures(method.getCode())) {
+        if (method.getCode() == null || !packingRequested(method, method.getDeclaringClass())) return;
+        markEscapingClosures(method.getCode());
+    }
+
+    /**
+     * Marks the escaping closure literals in the instance initializer blocks of the class, as
+     * {@link #markEscapingClosures(MethodNode)} does for a method. The {@code Verifier} later inlines
+     * these blocks into each constructor, so they are marked when the flag, the class or any of its
+     * constructors requests packing.
+     *
+     * @param classNode the class whose initializer blocks are about to be transformed
+     */
+    public static void markEscapingClosures(final ClassNode classNode) {
+        boolean requested = packingRequested(null, classNode);
+        for (ConstructorNode constructor : classNode.getDeclaredConstructors()) {
+            requested = requested || packingRequested(constructor, classNode);
+        }
+        if (!requested) return;
+        for (Statement statement : classNode.getObjectInitializerStatements()) {
+            markEscapingClosures(statement);
+        }
+    }
+
+    private static boolean packingRequested(final MethodNode method, final ClassNode classNode) {
+        PackMode mode = annotatedMode(method, classNode);
+        return mode != null ? mode != PackMode.DISABLED : SystemUtil.getBooleanSafe(CompilerConfiguration.CLOSURE_PACKING);
+    }
+
+    private static void markEscapingClosures(final Statement code) {
+        for (ClosureExpression closure : collectEscapingClosures(code)) {
             closure.putNodeMetaData(ESCAPES_METHOD, Boolean.TRUE);
         }
     }
