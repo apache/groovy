@@ -24,6 +24,7 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertThrows
@@ -264,6 +265,81 @@ final class PackedClosuresTransformTest {
             }'''
         assertEquals(['C'], generatedClassNames(src))          // the closure packs (no closure class)
         assertEquals([101, 102], instance(src + '\n new C()').m())  // captured local 100, not field 999
+    }
+
+    // GROOVY-12655
+    @Test
+    void bindingAndDynamicPropertyStoresAreDeclinedAtCompileTime() {
+        // A bare name that is not a local is stored through the MOP: to the script binding (also
+        // where a script method stores an @Field), or to a dynamic property of the owner. Code
+        // outside the method reads it there, so the store is an escape like a field store, and
+        // setting a delegate on the stored closure must not fail. A store to a local still packs.
+        String script = '''import groovy.transform.Field
+            @Field Closure fieldHandler
+            @groovy.transform.PackedClosures
+            int install() {
+                handler = { x -> x + 1 }        // binding variable
+                fieldHandler = { x -> x + 2 }   // @Field from a script method
+                def local = { x -> x * 2 }      // local -> packs
+                local(3)
+            }
+            assert install() == 6
+            handler.delegate = 'd'
+            fieldHandler.delegate = 'd'
+            [handler(1), fieldHandler(1)]'''
+        assertEquals(2, closureClassCount(generatedClassNames(script)), 'the two binding stores should be declined')
+        assertEquals([2, 3], instance(script))
+
+        String src = '''@groovy.transform.PackedClosures
+            class P {
+                Map store = [:]
+                def propertyMissing(String name, value) { store[name] = value }
+                int install() {
+                    handler = { x -> x + 1 }    // dynamic property of the owner
+                    def local = { x -> x * 2 }  // local -> packs
+                    local(3)
+                }
+            }'''
+        assertEquals(1, closureClassCount(generatedClassNames(src)), 'the dynamic property store should be declined')
+        def p = instance(src + '\n new P()')
+        assertEquals(6, p.install())
+        p.store.handler.delegate = 'd'
+        assertEquals(2, p.store.handler(1))
+    }
+
+    // GROOVY-12655
+    @Test
+    void flagPathDeclinesBindingStores(@TempDir File dir) {
+        // the flag packs no-free-name closures in a script's run() and in @CompileStatic code; a
+        // binding store there is an escape too (under @CompileStatic, a binding variable compiles
+        // only when a type checking extension makes it dynamic)
+        String script = '''handler = { x -> x + 1 }   // binding variable
+            def local = { x -> x * 2 }                 // local -> packs
+            [handler.getClass().name, local.getClass().name]'''
+        new File(dir, 'BindingVariables.groovy').text = 'unresolvedVariable { var -> makeDynamic(var, CLOSURE_TYPE) }'
+        String csScript = '''@groovy.transform.CompileStatic(extensions = 'BindingVariables.groovy')
+            List install() {
+                handler = { int x -> x + 1 }       // binding variable
+                def local = { int x -> x * 2 }     // local -> packs
+                [handler.getClass().name, local.getClass().name]
+            }
+            install()'''
+        String prev = System.getProperty(CompilerConfiguration.CLOSURE_PACKING)
+        System.setProperty(CompilerConfiguration.CLOSURE_PACKING, 'true')
+        try {
+            def names = instance(script)
+            assertTrue(names[0].contains('_run_closure'), "the binding store should keep its class: $names")
+            assertTrue(names[1].contains('PackedClosure'), "the local store should pack: $names")
+
+            def shell = new GroovyShell()
+            shell.classLoader.addClasspath(dir.path)
+            names = shell.evaluate(csScript)
+            assertTrue(names[0].contains('_install_closure'), "the binding store should keep its class: $names")
+            assertTrue(names[1].contains('PackedClosure'), "the local store should pack: $names")
+        } finally {
+            if (prev != null) System.setProperty(CompilerConfiguration.CLOSURE_PACKING, prev)
+            else System.clearProperty(CompilerConfiguration.CLOSURE_PACKING)
+        }
     }
 
     /** Source with one closure that packs and one that declines (a with{} delegate DSL), at the given mode. */

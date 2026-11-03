@@ -631,7 +631,9 @@ public class ClosureWriter {
     private static boolean isLocalTarget(final Expression lhs) {
         if (!(lhs instanceof VariableExpression)) return false;   // property/field/index target
         Variable v = ((VariableExpression) lhs).getAccessedVariable();
-        return !(v instanceof FieldNode) && !(v instanceof PropertyNode);
+        // a DynamicVariable is stored through the MOP: to a script's binding, or to a dynamic
+        // property of the owner, where code outside the method can read it
+        return !(v instanceof FieldNode) && !(v instanceof PropertyNode) && !(v instanceof DynamicVariable);
     }
 
     /**
