@@ -3482,6 +3482,13 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             ClassNode operandType = getType(operand);
             boolean isPostfix = (origin instanceof PostfixExpression);
             String name = (operator == PLUS_PLUS ? "next" : operator == MINUS_MINUS ? "previous" : null);
+            // GROOVY-12625: pass a stand-in for a subscript operand; findMethodOrFail takes a
+            // binary expression for the operator call and would replace its getAt target
+            Expression receiver = operand;
+            if (operand instanceof BinaryExpression) {
+                receiver = varX("_dummy_", operandType);
+                receiver.setSourcePosition(operand);
+            }
 
             if (name != null && isNumberType(operandType)) {
                 if (!isPrimitiveType(operandType)) {
@@ -3497,7 +3504,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
             if (name != null && operandType.isDerivedFrom(Number_TYPE)) {
                 // special case for numbers, improve type checking as we can expect ++ and -- to return the same type
-                MethodNode node = findMethodOrFail(operand, operandType, name);
+                MethodNode node = findMethodOrFail(receiver, operandType, name);
                 if (node != null) {
                     storeTargetMethod(origin, node);
                     storeType(origin, getMathWideningClassNode(operandType));
@@ -3509,7 +3516,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 return;
             }
 
-            MethodNode node = findMethodOrFail(operand, operandType, name);
+            MethodNode node = findMethodOrFail(receiver, operandType, name);
             if (node != null) {
                 storeTargetMethod(origin, node);
                 storeType(origin, isPostfix ? operandType : inferReturnTypeGenerics(operandType, node, ArgumentListExpression.EMPTY_ARGUMENTS));
@@ -3665,7 +3672,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 final ClassNode[] argumentTypes = getArgumentTypes(argumentList);
 
                 MethodNode ctor;
-                if (looksLikeNamedArgConstructor(receiver, argumentTypes)
+                // GROOVY-12484: a public constructor of an inaccessible type is still out of reach
+                if (!call.isSpecialCall() && !hasAccessToClass(typeCheckingContext.getEnclosingClassNode(), receiver)) {
+                    addStaticTypeError("Cannot access constructor of class: " + prettyPrintTypeName(receiver)
+                            + " from class: " + prettyPrintTypeName(typeCheckingContext.getEnclosingClassNode()), call);
+                    visitMethodCallArguments(receiver, argumentList, true, null);
+                    checkForbiddenSpreadArgument(argumentList);
+                    ctor = null;
+                } else if (looksLikeNamedArgConstructor(receiver, argumentTypes)
                         && findMethod(receiver, "<init>", argumentTypes).isEmpty()
                         && findMethod(receiver, "<init>", init(argumentTypes)).size() == 1) {
                     ctor = typeCheckMapConstructor(call, receiver, arguments);
@@ -5198,6 +5212,16 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
     }
 
+    /**
+     * Tells whether the innermost enclosing closure is a closure, not a lambda,
+     * whose owner is an enclosing closure.
+     */
+    private static boolean isOwnerClosure(final List<TypeCheckingContext.EnclosingClosure> enclosingClosures) {
+        return enclosingClosures.size() > 1
+            && !(enclosingClosures.get(0).getClosureExpression() instanceof LambdaExpression)
+            && !(enclosingClosures.get(1).getClosureExpression() instanceof LambdaExpression);
+    }
+
     private static void addDelegateReceiver(final List<Receiver<String>> receivers, final ClassNode delegate, final String path) {
         if (isClassClassNodeWrappingConcreteType(delegate)) { // GROOVY-11393: Type from Class<Type>
             receivers.add(new Receiver<>(delegate.getGenericsTypes()[0].getType(), false, path));
@@ -5308,9 +5332,28 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     && typeCheckingContext.getEnclosingClosure() != null
                     && !name.equals("call") && !name.equals("doCall")) { // GROOVY-9662
                     mn = CLOSURE_TYPE.getMethods(name);
+                    DelegationMetadata dmd = typeCheckingContext.delegationMetadata;
+                    int strategy = dmd != null ? dmd.getStrategy() : Closure.OWNER_FIRST;
+                    if (strategy != Closure.TO_SELF) {
+                        // a method of Object is looked up on the delegate or owner, as at run time
+                        List<MethodNode> objectMethods = new ArrayList<>(mn);
+                        objectMethods.removeIf(m -> !isObjectType(m.getDeclaringClass()));
+                        mn.removeIf(m -> isObjectType(m.getDeclaringClass()));
+                        if (mn.isEmpty() && !objectMethods.isEmpty()
+                                && (strategy == Closure.OWNER_FIRST || strategy == Closure.OWNER_ONLY)
+                                && isOwnerClosure(typeCheckingContext.getEnclosingClosureStack())) {
+                            // the owner is a closure, so it is the owner's own method
+                            mn = objectMethods;
+                            chosenReceiver = new Receiver<>(CLOSURE_TYPE.getPlainNodeReference(), "owner");
+                        }
+                    }
                     if (!mn.isEmpty()) {
                         receiver = CLOSURE_TYPE.getPlainNodeReference();
-                        objectExpression.removeNodeMetaData(INFERRED_TYPE);
+                        if (strategy == Closure.TO_SELF && mn.stream().anyMatch(m -> isObjectType(m.getDeclaringClass()))) {
+                            objectExpression.putNodeMetaData(INFERRED_TYPE, receiver); // tells the static compiler to call it on the closure
+                        } else {
+                            objectExpression.removeNodeMetaData(INFERRED_TYPE);
+                        }
                     }
                 }
                 if (mn == null || mn.isEmpty()) {
@@ -5425,6 +5468,13 @@ out:                if (mn.size() != 1) {
                         ClassNode declaringClass = targetMethod.getDeclaringClass();
                         if (chosenReceiver == null) {
                             chosenReceiver = Receiver.make(declaringClass.getPlainNodeReference());
+                        }
+                        // GROOVY-12484: the qualifying type must be accessible (JLS 6.6.1); the method's
+                        // own modifiers do not help when the class reference itself cannot be resolved
+                        if (objectExpression instanceof ClassExpression && !isClassType(chosenReceiver.getType())
+                                && !hasAccessToClass(typeCheckingContext.getEnclosingClassNode(), chosenReceiver.getType())) {
+                            addStaticTypeError("Cannot access method: " + name + " of class: " + prettyPrintTypeName(chosenReceiver.getType())
+                                    + " from class: " + prettyPrintTypeName(typeCheckingContext.getEnclosingClassNode()), call.getMethod());
                         }
                         if (!targetMethod.isStatic() && !(isClassType(declaringClass) || isObjectType(declaringClass)) // GROOVY-10939: Class or Object
                                 && !chosenReceiver.isObject() && !Boolean.TRUE.equals(call.getNodeMetaData(DYNAMIC_RESOLUTION))) {
