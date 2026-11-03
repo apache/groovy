@@ -45,6 +45,89 @@ class TrampolineTest {
         assert 0 == funA(2000)
     }
 
+    // GROOVY-12673
+    @Test
+    void testDelegateAndThisObject() {
+        def d = [name: 'd']
+        def c = { x -> name + x }
+        c.delegate = d
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        def t = c.trampoline()
+
+        assert t.owner === this
+        assert t.thisObject === this
+        assert t.delegate === d
+        assert t.resolveStrategy == Closure.DELEGATE_FIRST
+        assert t(1) == 'd1'
+        assert c.trampoline(1).thisObject === this
+        assert c.trampoline(1).delegate === d
+    }
+
+    // GROOVY-12673
+    @Test
+    void testSetDelegateAndResolveStrategy() {
+        def d = [name: 'd']
+        def t = { x -> name + x }.trampoline()
+        t.delegate = d
+        t.resolveStrategy = Closure.DELEGATE_ONLY
+
+        assert t.delegate === d
+        assert t.resolveStrategy == Closure.DELEGATE_ONLY
+        assert t(1) == 'd1'
+
+        def r
+        r = { int n -> n == 0 ? name : r.trampoline(n - 1) }.trampoline()
+        r.delegate = d
+        assert r(1000) == 'd'
+    }
+
+    // GROOVY-12673
+    @Test
+    void testSetDelegateAndResolveStrategyLeavesTheTrampolinedClosureAlone() {
+        def c = { x -> name + x }
+        def cd = [name: 'c']
+        c.delegate = cd
+        c.resolveStrategy = Closure.DELEGATE_ONLY
+
+        def t = c.trampoline()
+        t.delegate = [name: 'd']
+        t.resolveStrategy = Closure.DELEGATE_FIRST
+        assert t(1) == 'd1'
+        def curried = c.trampoline(1)
+        curried.delegate = [name: 'e']
+        curried.resolveStrategy = Closure.DELEGATE_FIRST
+        assert curried() == 'e1'
+
+        assert c.delegate === cd
+        assert c.resolveStrategy == Closure.DELEGATE_ONLY
+        assert c(1) == 'c1'
+    }
+
+    // GROOVY-12673
+    @Test
+    void testWith() {
+        def t = { m -> name }.trampoline()
+
+        assert [name: 'd'].with(t) == 'd'
+        assert t.delegate === this
+        assert t.resolveStrategy == Closure.OWNER_FIRST
+    }
+
+    // GROOVY-12673
+    @Test
+    void testParametersOfWrappedClosure() {
+        def c = { String s, Integer i -> s + i }
+
+        [c.asWritable(), c >> { it }, c.memoize(), c.curry('s')].each { w ->
+            def t = w.trampoline()
+            assert t.maximumNumberOfParameters == w.maximumNumberOfParameters
+            assert t.parameterTypes == w.parameterTypes
+        }
+        assert c.asWritable().trampoline().parameterTypes == [String, Integer] as Class[]
+        assert c.asWritable().curry('s').trampoline().parameterTypes == [Integer] as Class[]
+        assert c.asWritable().trampoline('s', 1)() == 's1'
+    }
+
     @Test
     public void testMutualRecursionWithTrampolineOnFunAOnly() {
         def funB

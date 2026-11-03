@@ -241,6 +241,21 @@ final class ClosureTest {
         // like in testGetProperties(), don't know how to test metaClass property
     }
 
+    // GROOVY-12673
+    @Test
+    void testWritableClosureThisObject() {
+        def w = { x -> x }.asWritable()
+
+        assert w.thisObject === this
+        assert w.getThisObject() === this
+        assert w.curry(1).getThisObject() === this
+        assertScript '''
+            @groovy.transform.CompileStatic
+            def thisObjectOf(Closure c) { c.asWritable().thisObject }
+            assert thisObjectOf { -> } === this
+        '''
+    }
+
     // GROOVY-2150: list items spread over closure parameters
     @Test
     void testCallClosureWithList() {

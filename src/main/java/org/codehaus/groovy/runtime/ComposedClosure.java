@@ -100,6 +100,11 @@ public final class ComposedClosure<V> extends Closure<V> {
     }
 
     @Override
+    public Object getThisObject() {
+        return ((Closure) getOwner()).getThisObject();
+    }
+
+    @Override
     public Object clone() {
         return new ComposedClosure<V>(first, second);
     }
