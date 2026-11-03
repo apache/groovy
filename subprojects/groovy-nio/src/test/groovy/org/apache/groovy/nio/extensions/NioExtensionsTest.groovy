@@ -1188,6 +1188,37 @@ class NioExtensionsTest extends Specification {
         result == 'test object'
     }
 
+    // GROOVY-12681
+    def testWithObjectInputStreamAndClassLoaderReadsProxy() {
+        setup:
+        def path = tempFile.toPath()
+        def loader = new GroovyClassLoader(getClass().classLoader)
+        def greeter = loader.parseClass('interface Greeter { String greet() }')
+        def handler = loader.parseClass('''
+            class Handler implements java.lang.reflect.InvocationHandler, Serializable {
+                Object invoke(Object proxy, java.lang.reflect.Method method, Object[] args) {
+                    method.declaringClass == Object ? method.invoke(this, args) : 'hi'
+                }
+            }
+        ''')
+        path.withObjectOutputStream { oos ->
+            oos.writeObject(java.lang.reflect.Proxy.newProxyInstance(loader, [greeter] as Class[], handler.getDeclaredConstructor().newInstance()))
+        }
+
+        when:
+        def result = path.withObjectInputStream(loader) { ois ->
+            ois.readObject()
+        }
+        def ois = path.newObjectInputStream(loader)
+        def again = ois.readObject()
+        ois.close()
+
+        then:
+        greeter.isInstance(result)
+        result.greet() == 'hi'
+        again.greet() == 'hi'
+    }
+
     def testWithObjectInputStreamAndClassLoader() {
         setup:
         def path = tempFile.toPath()

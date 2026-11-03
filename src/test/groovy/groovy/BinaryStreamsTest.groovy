@@ -20,6 +20,10 @@ package groovy
 
 import org.junit.jupiter.api.Test
 
+import java.lang.reflect.InvocationHandler
+import java.lang.reflect.Method
+import java.lang.reflect.Modifier
+import java.lang.reflect.Proxy
 import java.util.ArrayList
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -156,6 +160,80 @@ final class BinaryStreamsTest {
         }
     }
 
+    // GROOVY-12681
+    @Test
+    void testWithObjectStreamAndClassLoaderReadsProxy() {
+        def loader = new GroovyClassLoader(getClass().classLoader)
+        def greeter = loader.parseClass('interface Greeter { String greet() }')
+        def bytes = new ByteArrayOutputStream()
+        bytes.withObjectOutputStream { oos -> oos.writeObject(newProxy(loader, greeter)) }
+
+        def result = new ByteArrayInputStream(bytes.toByteArray()).withObjectInputStream(loader) { ois -> ois.readObject() }
+        assert greeter.isInstance(result)
+        assert result.getClass().classLoader.is(loader)
+        assert result.greet() == 'greet'
+
+        def ois = new ByteArrayInputStream(bytes.toByteArray()).newObjectInputStream(loader)
+        try {
+            assert ois.readObject().greet() == 'greet'
+        } finally {
+            ois.close()
+        }
+    }
+
+    // GROOVY-12681
+    @Test
+    void testWithObjectStreamAndClassLoaderReadsProxyFromFile() {
+        def loader = new GroovyClassLoader(getClass().classLoader)
+        def greeter = loader.parseClass('interface Greeter { String greet() }')
+        def temp = tempFile
+        temp.withObjectOutputStream { oos -> oos.writeObject(newProxy(loader, greeter, Runnable)) }
+
+        def result = temp.withObjectInputStream(loader) { ois -> ois.readObject() }
+        assert greeter.isInstance(result) && result instanceof Runnable
+        assert result.greet() == 'greet'
+
+        def ois = temp.newObjectInputStream(loader)
+        try {
+            assert ois.readObject().greet() == 'greet'
+        } finally {
+            ois.close()
+        }
+    }
+
+    // GROOVY-12681
+    @Test
+    void testWithObjectStreamAndClassLoaderReadsProxyOfNonPublicInterface() {
+        def loader = new GroovyClassLoader(getClass().classLoader)
+        def secret = loader.parseClass('''
+            @groovy.transform.PackageScope interface Secret { String tell() }
+            interface Greeter { String greet() }
+        ''')
+        def greeter = loader.loadClass('Greeter')
+        assert !Modifier.isPublic(secret.modifiers)
+        def bytes = new ByteArrayOutputStream()
+        bytes.withObjectOutputStream { oos -> oos.writeObject(newProxy(secret.classLoader, greeter, secret)) }
+
+        def result = new ByteArrayInputStream(bytes.toByteArray()).withObjectInputStream(loader) { ois -> ois.readObject() }
+        assert secret.isInstance(result) && greeter.isInstance(result)
+        // the proxy class is defined where its non-public interface lives
+        assert result.getClass().classLoader.is(secret.classLoader)
+        assert result.greet() == 'greet'
+    }
+
+    // GROOVY-12681
+    @Test
+    void testWithObjectStreamAndClassLoaderResolvesProxyInterfacesThroughThatLoader() {
+        def bytes = new ByteArrayOutputStream()
+        bytes.withObjectOutputStream { oos -> oos.writeObject(newProxy(getClass().classLoader, Greeting)) }
+        def bootstrapOnly = new URLClassLoader(new URL[0], (ClassLoader) null)
+
+        def e = shouldFail(ClassNotFoundException) {
+            new ByteArrayInputStream(bytes.toByteArray()).withObjectInputStream(bootstrapOnly) { ois -> ois.readObject() }
+        }
+        assert e.message == Greeting.name
+    }
+
     void manualTestRawSocketsProcessing() {
         def server
         def port = 999
@@ -214,6 +292,21 @@ final class BinaryStreamsTest {
         client.close()
         server.close()
         assert result == 1024
+    }
+
+    private static Object newProxy(ClassLoader loader, Class<?>... interfaces) {
+        Proxy.newProxyInstance(loader, interfaces, new MethodNameHandler())
+    }
+
+    interface Greeting {
+        String greet()
+    }
+
+    static class MethodNameHandler implements InvocationHandler, Serializable {
+        @Override
+        Object invoke(Object proxy, Method method, Object[] args) {
+            method.declaringClass == Object ? method.invoke(this, args) : method.name
+        }
     }
 
     private File getTempFile() {
