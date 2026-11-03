@@ -68,7 +68,7 @@ final class TrampolineClosure<V> extends Closure<V> {
      */
     @Override
     public int getMaximumNumberOfParameters() {
-        return original.maximumNumberOfParameters;
+        return original.getMaximumNumberOfParameters();
     }
 
     /**
@@ -76,7 +76,7 @@ final class TrampolineClosure<V> extends Closure<V> {
      */
     @Override
     public Class[] getParameterTypes() {
-        return original.parameterTypes;
+        return original.getParameterTypes();
     }
 
     /**
