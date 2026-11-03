@@ -421,4 +421,25 @@ final class ClosurePackCapabilityTest {
         assertEquals(['b', 'a', false], eval(src, tail, false))
         assertEquals(['b', 'a', true], eval(src, tail, true))
     }
+
+    // GROOVY-12666
+    @Test
+    void syntacticallyPackedClosureCreatedOnASubclassInstanceRehydratesOntoAnInstanceOfItsOwnerClass() {
+        // created by an inherited method of a subclass instance, the closure's receiver is that
+        // instance; rehydrated onto an instance of the owner class that is not a subclass instance,
+        // the closure class hands the new this object to the nested closure, so the copy must too
+        String src = '''
+            class O {
+                String name
+                String foo() { name }
+                List run(O b) {
+                    Closure c = { -> Closure n = { -> 0 }; n.getThisObject().foo() }
+                    [c.rehydrate(null, b, b)(), c(), c instanceof org.codehaus.groovy.runtime.PackedClosure]
+                }
+            }
+            class P extends O {}'''
+        String tail = "new P(name: 'p').run(new O(name: 'b'))"
+        assertEquals(['b', 'p', false], eval(src, tail, false))
+        assertEquals(['b', 'p', true], eval(src, tail, true))
+    }
 }

@@ -390,6 +390,45 @@ final class PackedClosuresTransformTest {
         assertEquals(['b', 'a', 'b', 'CCE'], instance(src))
     }
 
+    // GROOVY-12666
+    @Test
+    void closureCreatedOnASubclassInstanceRehydratesOntoAnInstanceOfTheEnclosingClass() {
+        // a closure created by an inherited method of a subclass instance has that instance as its
+        // receiver; rehydrated onto an instance of the enclosing class that is not a subclass
+        // instance, the closure class uses the new this object, so the copy must take it even where
+        // the body is not marked as using its receiver (an extension method on the implicit this)
+        String src = '''
+            import groovy.transform.CompileStatic
+            import groovy.transform.PackedClosures
+            @CompileStatic
+            @PackedClosures
+            class O {
+                String name
+                String foo() { 'foo ' + name }
+                String toString() { 'O:' + name }
+                Map<String, Closure> packed() {
+                    Closure c1 = { -> foo() }, c2 = { -> name }, c3 = { -> inspect() }
+                    [foo: c1, name: c2, extension: c3]
+                }
+                @PackedClosures(mode = PackedClosures.PackMode.DISABLED)
+                Map<String, Closure> unpacked() {
+                    Closure c1 = { -> foo() }, c2 = { -> name }, c3 = { -> inspect() }
+                    [foo: c1, name: c2, extension: c3]
+                }
+            }
+            class P extends O {}
+            def a = new P(name: 'a'), b = new O(name: 'b')
+            def packed = a.packed(), unpacked = a.unpacked()
+            assert packed.values().every { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+            assert !unpacked.values().any { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+            def results = { Map<String, Closure> cs -> cs.collectEntries { k, c -> [k, c.rehydrate(null, b, b)()] } }
+            [results(packed), results(unpacked)]
+        '''
+        def (packed, unpacked) = instance(src)
+        assertEquals([foo: 'foo b', name: 'b', extension: 'O:b'], unpacked)
+        assertEquals(unpacked, packed)
+    }
+
     @Test
     void capturedLocalShadowingAFieldIsReboundToTheLocalNotTheField() {
         // The captured 'base' is a local that shadows the field of the same name (the one form of

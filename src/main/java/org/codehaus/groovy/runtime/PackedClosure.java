@@ -291,18 +291,34 @@ public abstract class PackedClosure extends Closure<Object> {
     // hoisted body runs against the receiver, so the copy takes the new this object as its receiver
     // when that is sound or the body needs it: always for a body that uses its receiver (the
     // dispatch table's checkcast then throws the same ClassCastException for a foreign object), and
-    // for any other body only when the object is an instance of the receiver's class. A body that
-    // does not use its receiver keeps the old one for a foreign object, so rehydrating it onto a
+    // for any other body only when the object is an instance of the receiver's class or of the
+    // enclosing class (the receiver may be a subclass instance running an inherited method). A body
+    // that does not use its receiver keeps the old one for a foreign object, so rehydrating it onto a
     // builder or other unrelated this object (the DSL idiom) keeps working. A null this object, the
     // dehydrate() disconnect, keeps the receiver too.
     @Override
     public Closure<Object> rehydrate(final Object delegate, final Object owner, final Object thisObject) {
         PackedClosure result = (PackedClosure) super.rehydrate(delegate, owner, thisObject);
         if (!strict && thisObject != null && thisObject != receiver
-                && (usesReceiver || receiver.getClass().isInstance(thisObject))) {
+                && (usesReceiver || receiver.getClass().isInstance(thisObject) || isEnclosingClassInstance(thisObject))) {
             result.receiver = thisObject;
         }
         return result;
+    }
+
+    /**
+     * Whether the object is an instance of the class hosting the hoisted method. The dispatch
+     * tables are lambdas spun in that class, so it is their nest host. Where the lambdas are
+     * ordinary classes (native images) they are their own nest host, which no this object is an
+     * instance of; that, or a failed lookup, leaves only the receiver's class to count.
+     */
+    private boolean isEnclosingClassInstance(final Object thisObject) {
+        if (dispatcher == null) return false;
+        try {
+            return dispatcher.getClass().getNestHost().isInstance(thisObject);
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     @Override
