@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
@@ -47,6 +48,8 @@ import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 
 import java.util.Map;
+
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
 
 /**
  * Some expressions use symbols as aliases to method calls (&lt;&lt;, +=, ...). In static compilation,
@@ -84,7 +87,7 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     private final MethodCallExpressionTransformer methodCallExpressionTransformer = new MethodCallExpressionTransformer(this);
     private final ConstructorCallTransformer constructorCallTransformer = new ConstructorCallTransformer(this);
     private final PropertyExpressionTransformer propertyExpressionTransformer = new PropertyExpressionTransformer(this);
-    private final VariableExpressionTransformer variableExpressionTransformer = new VariableExpressionTransformer();
+    private final VariableExpressionTransformer variableExpressionTransformer = new VariableExpressionTransformer(this);
     private final ClosureExpressionTransformer closureExpressionTransformer = new ClosureExpressionTransformer(this);
     private final BooleanExpressionTransformer booleanExpressionTransformer = new BooleanExpressionTransformer(this);
     private final BinaryExpressionTransformer binaryExpressionTransformer = new BinaryExpressionTransformer(this);
@@ -133,12 +136,27 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     }
 
     /**
-     * Returns the class whose body is currently being rewritten.
-     * Closures are not classes yet at this phase, so a closure body reports
-     * the enclosing class — the receiver of {@code this} inside that closure.
+     * Tells whether the class whose body is being rewritten extends the given
+     * class. Closures are not classes yet at this phase, so a closure body
+     * reports the enclosing class, the receiver of {@code this} in the closure.
      */
-    public ClassNode getTransformClass() {
-        return transformClass;
+    boolean extendsClass(final ClassNode type) {
+        return transformClass != null && !transformClass.equals(type) && transformClass.isDerivedFrom(type);
+    }
+
+    /**
+     * Tells whether the class whose body is being rewritten is nested in the
+     * given class with an enclosing instance of it, so that {@code Type.this}
+     * is available: no class on the way out is static.
+     */
+    boolean hasEnclosingInstanceOf(final ClassNode type) {
+        ClassNode cn = transformClass;
+        while (cn instanceof InnerClassNode && !cn.isStaticClass() && (cn.getModifiers() & ACC_STATIC) == 0) {
+            cn = cn.getOuterClass();
+            if (cn == null) break;
+            if (cn.equals(type)) return true;
+        }
+        return false;
     }
 
     /**
