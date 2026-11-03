@@ -130,6 +130,27 @@ class MemoizeTest extends AbstractMemoizeTestCase {
         assert c.mcSoftRef() == 1
     }
 
+    // GROOVY-12677
+    @Test
+    void testCachedNullResultSurvivesSerialization() {
+        NULL_RESULT_CALLS.set(0)
+        Closure memoized = { x -> MemoizeTest.NULL_RESULT_CALLS.incrementAndGet(); null }.dehydrate().memoize()
+        assert memoized(1) == null
+        assert NULL_RESULT_CALLS.get() == 1
+
+        def bytes = new ByteArrayOutputStream()
+        bytes.withObjectOutputStream { it.writeObject(memoized) }
+        Closure copy = new ByteArrayInputStream(bytes.toByteArray()).withObjectInputStream(MemoizeTest.classLoader) {
+            it.readObject()
+        }
+
+        assert copy(1) == null
+        assert copy(1) == null
+        assert NULL_RESULT_CALLS.get() == 1
+        assert copy(2) == null
+        assert NULL_RESULT_CALLS.get() == 2
+    }
+
     // GROOVY-8486
     @Test
     void testMemoizeConcurrently() {
@@ -257,27 +278,6 @@ class MemoizeTest extends AbstractMemoizeTestCase {
         new ByteArrayInputStream(bytes).withObjectInputStream(MemoizeTest.classLoader) {
             it.readObject()
         }
-    }
-
-    // GROOVY-12677
-    @Test
-    void testCachedNullResultSurvivesSerialization() {
-        NULL_RESULT_CALLS.set(0)
-        Closure memoized = { x -> MemoizeTest.NULL_RESULT_CALLS.incrementAndGet(); null }.dehydrate().memoize()
-        assert memoized(1) == null
-        assert NULL_RESULT_CALLS.get() == 1
-
-        def bytes = new ByteArrayOutputStream()
-        bytes.withObjectOutputStream { it.writeObject(memoized) }
-        Closure copy = new ByteArrayInputStream(bytes.toByteArray()).withObjectInputStream(MemoizeTest.classLoader) {
-            it.readObject()
-        }
-
-        assert copy(1) == null
-        assert copy(1) == null
-        assert NULL_RESULT_CALLS.get() == 1
-        assert copy(2) == null
-        assert NULL_RESULT_CALLS.get() == 2
     }
 
     private static class ClassWithMemoizeClosureProperty {
