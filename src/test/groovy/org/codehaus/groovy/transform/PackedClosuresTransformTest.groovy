@@ -550,4 +550,87 @@ final class PackedClosuresTransformTest {
                 "the nested map-value closures keep their classes: $names")
         assertEquals([3, 0], instance(src + '\n new N()').m())
     }
+
+    // GROOVY-12656
+    @Test
+    void composedClosuresEscapeWhereTheCompositionDoes() {
+        // c >> { ... } and { ... } << c build a ComposedClosure that keeps a clone of the literal (a
+        // clone of a packed closure is still packed) and passes a delegate set on it on to the clone.
+        // A composition stored, returned, appended or placed in a collection literal therefore takes
+        // the literal with it, so the literal is declined; a composition used only locally still packs.
+        ['', '@groovy.transform.TypeChecked'].each { mode ->
+            String src = """class Holder { Closure handler; List<Closure> list = [] }
+                @groovy.transform.PackedClosures $mode
+                class E {
+                    Closure field
+                    void right(Holder h, Closure c)    { h.handler = c >> { Integer x -> x + 1 } }         // property, right operand
+                    void left(Holder h, Closure c)     { h.handler = { Integer x -> x + 1 } << c }         // property, left of <<
+                    Closure returned(Closure c)        { return { Integer x -> x + 1 } << c }              // returned
+                    Closure implicit(Closure c)        { c >> { Integer x -> x + 1 } }                     // implicit return
+                    void nested(Closure c)             { field = c >> ({ Integer x -> x + 1 } >> c) }      // nested, field
+                    void appended(Holder h, Closure c) { h.list << (c >> { Integer x -> x + 1 }) }         // appended
+                    List inList(Closure c)             { [c >> { Integer x -> x + 1 }] }                   // list literal
+                    Map inMap(Closure c)               { [k: c >> { Integer x -> x + 1 }] }                // map literal
+                    void call(Holder h, Closure c)     { h.handler = c.rightShift { Integer x -> x + 1 } } // method form
+                    int local(Closure c, int n)        { (int) (c >> { Integer x -> x + 1 })(n) }         // local -> packs
+                    int localVar(Closure c, int n)     { Closure d = { Integer x -> x + 1 } << c; (int) d(n) } // local -> packs
+                }"""
+            def names = generatedClassNames(src)
+            assertEquals(9, closureClassCount(names), "[$mode] composed escapes should be declined: $names")
+
+            def (e, h) = instance(src + '\n [new E(), new Holder()]')
+            Closure twice = { x -> x * 2 }
+            e.right(h, twice); h.handler.delegate = 'd'
+            assertEquals(7, h.handler(3))                // twice, then + 1
+            e.left(h, twice); h.handler.delegate = 'd'
+            assertEquals(7, h.handler(3))
+            def r = e.returned(twice); r.delegate = 'd'
+            assertEquals(7, r(3))
+            r = e.implicit(twice); r.delegate = 'd'
+            assertEquals(7, r(3))
+            e.nested(twice); e.field.delegate = 'd'
+            assertEquals(14, e.field(3))                 // twice, + 1, twice
+            e.appended(h, twice); h.list*.delegate = 'd'
+            assertEquals([7], h.list*.call(3))
+            r = e.inList(twice)[0]; r.delegate = 'd'
+            assertEquals(7, r(3))
+            r = e.inMap(twice).k; r.delegate = 'd'
+            assertEquals(7, r(3))
+            e.call(h, twice); h.handler.delegate = 'd'
+            assertEquals(7, h.handler(3))
+            assertEquals(7, e.local(twice, 3))
+            assertEquals(7, e.localVar(twice, 3))
+        }
+    }
+
+    // GROOVY-12656
+    @Test
+    void compileStaticComposedEscapesAreDeclined() {
+        // static compilation turns c >> { ... } into c.rightShift({ ... }) before class generation;
+        // the escape walk follows that form into a return, a field store and a collection literal
+        String src = '''@groovy.transform.CompileStatic
+            @groovy.transform.PackedClosures
+            class S {
+                Closure field
+                Closure returned(Closure c) { return { Integer x -> x + 1 } << c }
+                Closure implicit(Closure c) { c >> { Integer x -> x + 1 } }
+                void toField(Closure c)     { field = c >> { Integer x -> x + 1 } }
+                List inList(Closure c)      { [c >> { Integer x -> x + 1 }] }
+                int local(Closure c, int n) { (int) (c >> { Integer x -> x + 1 })(n) }
+            }'''
+        def names = generatedClassNames(src)
+        assertEquals(4, closureClassCount(names), "composed escapes should be declined: $names")
+
+        def s = instance(src + '\n new S()')
+        Closure twice = { x -> x * 2 }
+        def r = s.returned(twice); r.delegate = 'd'
+        assertEquals(7, r(3))
+        r = s.implicit(twice); r.delegate = 'd'
+        assertEquals(7, r(3))
+        s.toField(twice); s.field.delegate = 'd'
+        assertEquals(7, s.field(3))
+        r = s.inList(twice)[0]; r.delegate = 'd'
+        assertEquals(7, r(3))
+        assertEquals(7, s.local(twice, 3))
+    }
 }

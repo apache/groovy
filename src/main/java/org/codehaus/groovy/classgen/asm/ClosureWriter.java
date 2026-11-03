@@ -587,6 +587,9 @@ public class ClosureWriter {
      * { ... }}), returned, appended with {@code <<}, or placed in a list/map literal. Transitive escapes
      * (via a local that is later returned) are intentionally not chased here; the runtime guard remains
      * the backstop for those.
+     * <p>
+     * A literal composed with {@code >>} or {@code <<} escapes wherever the composition does, e.g.
+     * {@code h.handler = c >> { ... }}; the same composition used only in the method still packs.
      */
     private boolean escapesEnclosingMethod(final ClosureExpression expression) {
         MethodNode m = controller.getMethodNode();
@@ -600,7 +603,16 @@ public class ClosureWriter {
         Set<ClosureExpression> escaping = Collections.newSetFromMap(new IdentityHashMap<>());
         code.visit(new CodeVisitorSupport() {
             private void mark(final Expression e) {
-                if (e instanceof ClosureExpression) escaping.add((ClosureExpression) e);
+                if (e instanceof ClosureExpression) {
+                    escaping.add((ClosureExpression) e);
+                } else if (e instanceof BinaryExpression && isComposition(((BinaryExpression) e).getOperation().getType())) {
+                    mark(((BinaryExpression) e).getLeftExpression());     // composed, e.g. c >> { ... } or { ... } << c
+                    mark(((BinaryExpression) e).getRightExpression());
+                } else if (e instanceof MethodCallExpression && isCompositionCall((MethodCallExpression) e)) {
+                    MethodCallExpression call = (MethodCallExpression) e; // c.rightShift({ ... }), also how SC compiles c >> { ... }
+                    mark(call.getObjectExpression());
+                    mark(((TupleExpression) call.getArguments()).getExpression(0));
+                }
             }
             @Override public void visitReturnStatement(final ReturnStatement statement) {
                 mark(statement.getExpression());
@@ -632,6 +644,24 @@ public class ClosureWriter {
         if (!(lhs instanceof VariableExpression)) return false;   // property/field/index target
         Variable v = ((VariableExpression) lhs).getAccessedVariable();
         return !(v instanceof FieldNode) && !(v instanceof PropertyNode);
+    }
+
+    /**
+     * True for {@code >>} and {@code <<}. On closures they compose: the {@code ComposedClosure} keeps a
+     * clone of each operand (a clone of a packed closure is still packed) and passes a delegate set on
+     * it on to them. On a collection {@code <<} appends. Either way the result holds the operands, so
+     * an operand escapes wherever the result does.
+     */
+    private static boolean isComposition(final int op) {
+        return op == Types.RIGHT_SHIFT || op == Types.LEFT_SHIFT;
+    }
+
+    /** True for a one-argument {@code rightShift} or {@code leftShift} call, the method form of {@link #isComposition}. */
+    private static boolean isCompositionCall(final MethodCallExpression call) {
+        String name = call.getMethodAsString();
+        return ("rightShift".equals(name) || "leftShift".equals(name))
+                && call.getArguments() instanceof TupleExpression
+                && ((TupleExpression) call.getArguments()).getExpressions().size() == 1;
     }
 
     /**

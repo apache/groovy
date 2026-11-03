@@ -61,6 +61,9 @@ final class PackedClosureBoundariesTest {
         // parameters here so escape is provably the operative gate (implicit `it` itself packs:
         // see the 'implicit it' case above).
         ['returned',                     false, false, 'Closure m() { return { x -> x } }'],
+        ['returned composed',            false, false, 'Closure m(Closure c) { return { x -> x } << c }'],  // GROOVY-12656
+        ['composed in a list literal',   false, false, 'def m(Closure c) { [c >> { x -> x }] }'],           // GROOVY-12656
+        ['composed and called locally',  true,  true,  'def m(Closure c) { (c >> { x -> x })(1) }'],        // GROOVY-12656
         ['stored to property',           false, false, 'def m(Map attrs) { attrs.handler = { x -> x } }'],
         ['in a collection literal',      false, false, 'def m() { [{ x -> x }] }'],
         // ---- serialization-bound: declines everywhere -------------------------------------------
