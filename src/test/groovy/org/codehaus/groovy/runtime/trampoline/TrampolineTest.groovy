@@ -83,6 +83,28 @@ class TrampolineTest {
 
     // GROOVY-12673
     @Test
+    void testSetDelegateAndResolveStrategyLeavesTheTrampolinedClosureAlone() {
+        def c = { x -> name + x }
+        def cd = [name: 'c']
+        c.delegate = cd
+        c.resolveStrategy = Closure.DELEGATE_ONLY
+
+        def t = c.trampoline()
+        t.delegate = [name: 'd']
+        t.resolveStrategy = Closure.DELEGATE_FIRST
+        assert t(1) == 'd1'
+        def curried = c.trampoline(1)
+        curried.delegate = [name: 'e']
+        curried.resolveStrategy = Closure.DELEGATE_FIRST
+        assert curried() == 'e1'
+
+        assert c.delegate === cd
+        assert c.resolveStrategy == Closure.DELEGATE_ONLY
+        assert c(1) == 'c1'
+    }
+
+    // GROOVY-12673
+    @Test
     void testWith() {
         def t = { m -> name }.trampoline()
 

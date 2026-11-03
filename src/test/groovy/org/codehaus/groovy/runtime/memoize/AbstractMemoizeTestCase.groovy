@@ -71,6 +71,23 @@ abstract class AbstractMemoizeTestCase {
 
     // GROOVY-12673
     @Test
+    void testSetDelegateAndResolveStrategyLeavesTheMemoizedClosureAlone() {
+        Closure cl = { x -> name + x }
+        def cd = [name: 'c']
+        cl.delegate = cd
+        cl.resolveStrategy = Closure.DELEGATE_ONLY
+        Closure mem = buildMemoizeClosure(cl)
+        mem.delegate = [name: 'd']
+        mem.resolveStrategy = Closure.DELEGATE_FIRST
+
+        assert mem(1) == 'd1'
+        assert cl.delegate === cd
+        assert cl.resolveStrategy == Closure.DELEGATE_ONLY
+        assert cl(1) == 'c1'
+    }
+
+    // GROOVY-12673
+    @Test
     void testWith() {
         Closure mem = buildMemoizeClosure { m -> name }
 

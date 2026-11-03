@@ -1188,11 +1188,14 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * the calculation and, instead of a recursive call to itself or another function, it returns a new closure,
      * which will be executed by the trampoline as the next step.
      * Once a non-closure value is returned, the trampoline stops and returns the value as the final result.
+     * The trampoline calls a copy of this closure, as a curried closure does, so setting its delegate or
+     * resolve strategy leaves this closure alone.
      * @return A closure, which will execute the original closure on a trampoline.
      * @see #trampoline(Object...)
      */
+    @SuppressWarnings("unchecked")
     public Closure<V> trampoline() {
-        return new TrampolineClosure<V>(this);
+        return new TrampolineClosure<V>((Closure<V>) clone());
     }
 
     /**

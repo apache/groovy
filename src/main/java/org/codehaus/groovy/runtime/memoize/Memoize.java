@@ -52,12 +52,13 @@ public abstract class Memoize {
      * the supplied cache.
      *
      * @param cache A map to hold memoized return values
-     * @param closure The closure to memoize
+     * @param closure The closure to memoize. The memoized closure calls a copy of it, as a curried closure does,
+     *                so setting the delegate or resolve strategy of the memoized closure leaves it alone
      * @param <V> The closure's return type
      * @return A new memoized closure
      */
     public static <V> Closure<V> buildMemoizeFunction(final MemoizeCache<Object, Object> cache, final Closure<V> closure) {
-        return new MemoizeFunction<V>(cache, null, closure);
+        return new MemoizeFunction<V>(cache, null, cloneOf(closure));
     }
 
     /**
@@ -70,12 +71,13 @@ public abstract class Memoize {
      * delegate and this object. The factory has to be serializable for the memoized closure to be serializable.
      *
      * @param cacheFactory Creates the map to hold memoized return values
-     * @param closure The closure to memoize
+     * @param closure The closure to memoize. The memoized closure calls a copy of it, as a curried closure does,
+     *                so setting the delegate or resolve strategy of the memoized closure leaves it alone
      * @param <V> The closure's return type
      * @return A new memoized closure
      */
     public static <V> Closure<V> buildMemoizeFunction(final Supplier<? extends MemoizeCache<Object, Object>> cacheFactory, final Closure<V> closure) {
-        return new MemoizeFunction<V>(cacheFactory.get(), cacheFactory, closure);
+        return new MemoizeFunction<V>(cacheFactory.get(), cacheFactory, cloneOf(closure));
     }
 
     /**
@@ -95,12 +97,13 @@ public abstract class Memoize {
      *
      * @param protectedCacheSize The number of hard references to keep in order to prevent some (LRU) memoized return values from eviction
      * @param cache A map to hold memoized return values
-     * @param closure The closure to memoize
+     * @param closure The closure to memoize. The memoized closure calls a copy of it, as a curried closure does,
+     *                so setting the delegate or resolve strategy of the memoized closure leaves it alone
      * @param <V> The closure's return type
      * @return A new memoized closure
      */
     public static <V> Closure<V> buildSoftReferenceMemoizeFunction(final int protectedCacheSize, final MemoizeCache<Object, SoftReference<Object>> cache, final Closure<V> closure) {
-        return new SoftReferenceMemoizeFunction<V>(cache, null, closure, protectedCacheSize);
+        return new SoftReferenceMemoizeFunction<V>(cache, null, cloneOf(closure), protectedCacheSize);
     }
 
     /**
@@ -119,12 +122,22 @@ public abstract class Memoize {
      *
      * @param protectedCacheSize The number of hard references to keep in order to prevent some (LRU) memoized return values from eviction
      * @param cacheFactory Creates the map to hold memoized return values
-     * @param closure The closure to memoize
+     * @param closure The closure to memoize. The memoized closure calls a copy of it, as a curried closure does,
+     *                so setting the delegate or resolve strategy of the memoized closure leaves it alone
      * @param <V> The closure's return type
      * @return A new memoized closure
      */
     public static <V> Closure<V> buildSoftReferenceMemoizeFunction(final int protectedCacheSize, final Supplier<? extends MemoizeCache<Object, SoftReference<Object>>> cacheFactory, final Closure<V> closure) {
-        return new SoftReferenceMemoizeFunction<V>(cacheFactory.get(), cacheFactory, closure, protectedCacheSize);
+        return new SoftReferenceMemoizeFunction<V>(cacheFactory.get(), cacheFactory, cloneOf(closure), protectedCacheSize);
+    }
+
+    /**
+     * Copies the closure to memoize, so that the delegate or resolve strategy set on the memoized closure,
+     * which forwards them to the closure it calls, never reaches the caller's closure.
+     */
+    @SuppressWarnings("unchecked")
+    private static <V> Closure<V> cloneOf(final Closure<V> closure) {
+        return (Closure<V>) closure.clone();
     }
 
     /**
