@@ -1218,8 +1218,8 @@ text never contains user-supplied values and SQL injection is structurally impos
 The SQL backend operates in strict mode by default: an expression either translates cleanly to SQL,
 or the query is rejected at compile time with an error explaining the untranslatable construct.
 Opt in to mixed mode with `mixedMode: true` (the same option on `native-sql` and `jooq-sql`) when
-a query also needs something SQL cannot express, such as an arbitrary Groovy method, a window
-function, or a join to an in-memory collection:
+a query also needs something SQL cannot express, such as an arbitrary Groovy method or a join to
+an in-memory collection:
 [source, groovy]
 ----
 def result = GQL(provider: 'native-sql', mixedMode: true, dataSource: db) {
@@ -1248,7 +1248,13 @@ and say how to rewrite it or how to enable `mixedMode`. This split follows the s
 LINQ's `AsEnumerable`: a translatable prefix runs in the database and the rest of the query
 continues in memory. It is never the default.
 
-The main current restriction in strict mode is window functions. Aggregation is supported both in
+Portable GINQ window functions translate in strict mode under `native-sql` and `jooq-sql`:
+`fn(...) over(...)` becomes ANSI `OVER`. That covers `rowNumber`, `rank`, `denseRank`,
+`percentRank`, `cumeDist`, `ntile`, `lead`, `lag`, `firstValue`, `lastValue` and `nthValue`,
+and the window aggregates `count`, `sum`, `avg`, `min` and `max`. The window forms of
+`median`, `stdev`, `stdevp`, `var`, `varp` and `agg` remain deferred and are not translated;
+strict mode rejects them, and `mixedMode: true` still evaluates that clause in memory.
+Aggregation is supported both in
 the classic form, e.g. `groupby e.deptId` with `select e.deptId, count(), sum(e.salary)`, and the
 `groupby ... into g` form, e.g. `g.count()`, `g.sum(e -> e.salary)`.
 `count(distinct(e.deptId))` and `g.count(distinct(e -> e.deptId))` (or
