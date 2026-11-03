@@ -767,9 +767,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // a dynamic variable is either a closure property, a class member referenced from a closure, or an undeclared variable
 
             if (enclosingClosure != null) {
-                // GROOVY-12668: in a native lambda, a property of the enclosing class comes first
-                if (isNativeLambda(enclosingClosure) && tryVariableExpressionAsProperty(vexp, name)) return;
-
                 switch (name) {
                   case "delegate":
                     var dm = getDelegationMetadata(enclosingClosure.getClosureExpression());
@@ -5227,9 +5224,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
     /**
      * Tells whether the given enclosing closure is a lambda in statically compiled
-     * code. In such a lambda, as in Java, a method or property of the enclosing
-     * class comes before one of {@code Closure}. A lambda in dynamic or type-checked
-     * code is a closure at run time, where the closure's own members come first.
+     * code. In such a lambda, as in Java, a method of the enclosing class comes
+     * before one of {@code Closure}. A lambda in dynamic or type-checked code is
+     * a closure at run time, where the closure's own methods come first.
      */
     private boolean isNativeLambda(final TypeCheckingContext.EnclosingClosure enclosingClosure) {
         return enclosingClosure.getClosureExpression() instanceof LambdaExpression && isStaticDispatchScope();
