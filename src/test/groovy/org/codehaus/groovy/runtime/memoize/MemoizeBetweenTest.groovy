@@ -89,6 +89,30 @@ class MemoizeBetweenTest extends AbstractMemoizeTestCase {
         assert flag
     }
 
+    // GROOVY-12669
+    @Test
+    void testRehydratedCopyKeepsTheCacheSizes() {
+        def o = new Named('o')
+        def p = new Named('p')
+        Closure mem = o.closure().memoizeBetween(2, 3)
+        [1, 2, 3].each { mem(it) }
+
+        Closure copy = mem.rehydrate(null, p, p)
+        assert copy.@protectedCacheSize == 2
+        assert copy.@lruProtectionStorage.@maxSize == 2
+        assert !copy.@lruProtectionStorage.is(mem.@lruProtectionStorage)
+        assert !copy.@queue.is(mem.@queue)
+        [1, 2, 3].each { assert copy(it) == "p$it" }
+        [1, 2, 3].each { assert copy(it) == "p$it" }
+        assert p.calls == 3
+        assert copy(4) == 'p4'
+        assert copy(1) == 'p1'
+        assert p.calls == 5
+
+        [1, 2, 3].each { assert mem(it) == "o$it" }
+        assert o.calls == 3
+    }
+
     @Test
     void testMemoizeBetweenConcurrently() {
         AtomicInteger cnt = new AtomicInteger(0)

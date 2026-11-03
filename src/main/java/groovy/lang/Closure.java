@@ -35,6 +35,7 @@ import org.codehaus.groovy.runtime.memoize.ConcurrentCommonCache;
 import org.codehaus.groovy.runtime.memoize.ConcurrentSoftCache;
 import org.codehaus.groovy.runtime.memoize.LRUCache;
 import org.codehaus.groovy.runtime.memoize.Memoize;
+import org.codehaus.groovy.runtime.memoize.MemoizeCache;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass;
 import org.codehaus.groovy.runtime.metaclass.PackedClosureMetaClass;
 
@@ -48,6 +49,7 @@ import java.io.Writer;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -65,6 +67,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Represents any closure object in Groovy.
@@ -1020,11 +1023,13 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * the performance trade-off still makes concurrent use of memoized functions safe and highly recommended.
      *
      * The cache gets garbage-collected together with the memoized closure.
+     * A copy made by {@link #dehydrate()} or {@link #rehydrate(Object, Object, Object)} calls the dehydrated or
+     * rehydrated closure and starts with an empty cache with the same limits.
      *
      * @return A new closure forwarding to the original one while caching the results
      */
     public Closure<V> memoize() {
-        return Memoize.buildMemoizeFunction(new ConcurrentCommonCache(), this);
+        return Memoize.buildMemoizeFunction((Supplier<MemoizeCache<Object, Object>> & Serializable) ConcurrentCommonCache::new, this);
     }
 
     /**
@@ -1039,6 +1044,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * the performance trade-off still makes concurrent use of memoized functions safe and highly recommended.
      *
      * The cache gets garbage-collected together with the memoized closure.
+     * A copy made by {@link #dehydrate()} or {@link #rehydrate(Object, Object, Object)} calls the dehydrated or
+     * rehydrated closure and starts with an empty cache with the same limits.
      *
      * @param maxCacheSize The maximum size the cache can grow to
      * @return A new function forwarding to the original one while caching the results
@@ -1046,7 +1053,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     public Closure<V> memoizeAtMost(final int maxCacheSize) {
         if (maxCacheSize < 0) throw new IllegalArgumentException("A non-negative number is required as the maxCacheSize parameter for memoizeAtMost.");
 
-        return Memoize.buildMemoizeFunction(new LRUCache(maxCacheSize), this);
+        return Memoize.buildMemoizeFunction((Supplier<MemoizeCache<Object, Object>> & Serializable) () -> new LRUCache<>(maxCacheSize), this);
     }
 
     /**
@@ -1067,13 +1074,16 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * the performance trade-off still makes concurrent use of memoized functions safe and highly recommended.
      *
      * The cache gets garbage-collected together with the memoized closure.
+     * A copy made by {@link #dehydrate()} or {@link #rehydrate(Object, Object, Object)} calls the dehydrated or
+     * rehydrated closure and starts with an empty cache with the same limits.
      * @param protectedCacheSize Number of cached return values to protect from garbage collection
      * @return A new function forwarding to the original one while caching the results
      */
     public Closure<V> memoizeAtLeast(final int protectedCacheSize) {
         if (protectedCacheSize < 0) throw new IllegalArgumentException("A non-negative number is required as the protectedCacheSize parameter for memoizeAtLeast.");
 
-        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, new ConcurrentSoftCache<Object, Object>(), this);
+        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize,
+                (Supplier<MemoizeCache<Object, SoftReference<Object>>> & Serializable) ConcurrentSoftCache<Object, Object>::new, this);
     }
 
     /**
@@ -1096,6 +1106,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * the performance trade-off still makes concurrent use of memoized functions safe and highly recommended.
      *
      * The cache gets garbage-collected together with the memoized closure.
+     * A copy made by {@link #dehydrate()} or {@link #rehydrate(Object, Object, Object)} calls the dehydrated or
+     * rehydrated closure and starts with an empty cache with the same limits.
      * @param protectedCacheSize Number of cached return values to protect from garbage collection
      * @param maxCacheSize The maximum size the cache can grow to
      * @return A new function forwarding to the original one while caching the results
@@ -1105,7 +1117,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         if (maxCacheSize < 0) throw new IllegalArgumentException("A non-negative number is required as the maxCacheSize parameter for memoizeBetween.");
         if (protectedCacheSize > maxCacheSize) throw new IllegalArgumentException("The maxCacheSize parameter to memoizeBetween is required to be greater or equal to the protectedCacheSize parameter.");
 
-        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, new ConcurrentSoftCache<Object, Object>(maxCacheSize), this);
+        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize,
+                (Supplier<MemoizeCache<Object, SoftReference<Object>>> & Serializable) () -> new ConcurrentSoftCache<Object, Object>(maxCacheSize), this);
     }
 
     /**
