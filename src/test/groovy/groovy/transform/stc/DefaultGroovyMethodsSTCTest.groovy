@@ -198,7 +198,11 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
                     assert people.name == ['Joe', 'Bob']
                     assert people*.name == ['Joe', 'Bob']
 
-                    // extension is List<String>, so a List<Row> keeps the element property
+                    // getJoined(List<String>) does not apply to List<Row> under
+                    // @CompileStatic, which respects the receiver generics and
+                    // reads each element's property. The value ['p', 'p'] is
+                    // CS-specific: dynamic Groovy and @TypeChecked select that
+                    // extension by erasure, so this is not cross-mode semantics.
                     List<Row> rows = [new Row(), new Row()]
                     assert rows.joined == ['p', 'p']
 

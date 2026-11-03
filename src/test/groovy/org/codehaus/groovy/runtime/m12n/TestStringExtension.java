@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+// GROOVY-12534: m12n.TestStringExtension depends on bugs.Groovy12534People
 import bugs.Groovy12534People;
 
 public class TestStringExtension {
