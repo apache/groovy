@@ -94,6 +94,21 @@ class TrampolineTest {
         assert t.resolveStrategy == Closure.OWNER_FIRST
     }
 
+    // GROOVY-12673
+    @Test
+    void testParametersOfWrappedClosure() {
+        def c = { String s, Integer i -> s + i }
+
+        [c.asWritable(), c >> { it }, c.memoize(), c.curry('s')].each { w ->
+            def t = w.trampoline()
+            assert t.maximumNumberOfParameters == w.maximumNumberOfParameters
+            assert t.parameterTypes == w.parameterTypes
+        }
+        assert c.asWritable().trampoline().parameterTypes == [String, Integer] as Class[]
+        assert c.asWritable().curry('s').trampoline().parameterTypes == [Integer] as Class[]
+        assert c.asWritable().trampoline('s', 1)() == 's1'
+    }
+
     @Test
     public void testMutualRecursionWithTrampolineOnFunAOnly() {
         def funB
