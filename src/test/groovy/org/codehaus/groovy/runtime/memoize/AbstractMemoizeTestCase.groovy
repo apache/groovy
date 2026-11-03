@@ -166,4 +166,73 @@ abstract class AbstractMemoizeTestCase {
         assert desiredResult == mem(*args)
         assert callFlag.empty
     }
+
+    // GROOVY-12669
+    @Test
+    void testRehydrateCallsTheRehydratedClosure() {
+        def o = new Named('o')
+        def p = new Named('p')
+        Closure mem = buildMemoizeClosure(o.closure())
+        assert mem(1) == 'o1'
+
+        Closure copy = mem.rehydrate(null, p, p)
+        assert copy.owner.is(p)
+        assert copy(1) == 'p1'
+        assert copy(2) == 'p2'
+        assert copy(1) == 'p1'
+        assert p.calls == 2
+
+        assert mem(1) == 'o1'
+        assert mem(2) == 'o2'
+        assert o.calls == 2
+    }
+
+    // GROOVY-12669
+    @Test
+    void testRehydrateUsesTheNewDelegate() {
+        Closure cl = { x -> bar + x }
+        cl.delegate = [bar: 'a']
+        Closure mem = buildMemoizeClosure(cl)
+        assert mem(1) == 'a1'
+
+        Closure copy = mem.rehydrate([bar: 'b'], this, this)
+        assert copy(1) == 'b1'
+        assert mem(1) == 'a1'
+    }
+
+    // GROOVY-12669
+    @Test
+    void testDehydrateClearsTheMemoizedClosure() {
+        def o = new Named('o')
+        def p = new Named('p')
+        Closure mem = buildMemoizeClosure(o.closure())
+        assert mem(1) == 'o1'
+
+        Closure copy = mem.dehydrate()
+        [copy, copy.@closure].each {
+            assert it.owner == null
+            assert it.delegate == null
+            assert it.thisObject == null
+        }
+        assert copy.rehydrate(null, p, p)(1) == 'p1'
+        assert o.calls == 1
+    }
+
+    static class Named {
+        final String name
+        int calls
+
+        Named(String name) {
+            this.name = name
+        }
+
+        String foo() {
+            calls++
+            name
+        }
+
+        Closure closure() {
+            return { x -> foo() + x }
+        }
+    }
 }
