@@ -326,4 +326,71 @@ final class FormatStringCheckerTest {
         assert '%x'.formatted(16) == '10'
         '''
     }
+
+    // GROOVY-12688
+    @Test
+    void testEnumAndRecordDeclarations() {
+        assertScript shell, '''
+            enum Size { S, M }
+            record Point(int x, int y) {}
+            assert Size.valueOf('M').ordinal() == 1
+            assert new Point(1, 2).y() == 2
+        '''
+        assertScript '''
+            import groovy.transform.TypeChecked
+
+            @TypeChecked(extensions = 'groovy.typecheckers.FormatStringChecker')
+            class Shapes {
+                enum Size { S, M }
+                record Point(int x, int y) {}
+                static String describe() { String.format('%s %d', Size.M.name(), new Point(1, 2).x()) }
+            }
+            assert Shapes.describe() == 'M 1'
+        '''
+    }
+
+    // GROOVY-12688
+    @Test
+    void testFormatErrorsReportedWithEnumAndRecordDeclarations() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+
+            @TypeChecked(extensions = 'groovy.typecheckers.FormatStringChecker')
+            class Shapes {
+                enum Size {
+                    S, M
+                    String code() { sprintf('%x', name()) }
+                }
+                record Point(int x, int y) {
+                    String flag() { String.format('%c', x > y) }
+                }
+                static String describe() { String.format('%d', 'some string') }
+            }
+        '''
+        assert err.message =~ /IllegalFormatConversion: d != java\.lang\.String/
+        assert err.message =~ /IllegalFormatConversion: x != java\.lang\.String/
+        assert err.message =~ /IllegalFormatConversion: c != java\.lang\.Boolean/
+        assert !err.message.contains('General error')
+    }
+
+    // GROOVY-12688
+    @Test
+    void testMethodsWithoutBody() {
+        assertScript shell, '''
+            interface Named { String name() }
+            enum Op {
+                PLUS { int apply(int a, int b) { a + b } }
+                abstract int apply(int a, int b)
+            }
+            assert Op.PLUS.apply(1, 2) == 3
+        '''
+        def err = shouldFail shell, '''
+            enum Op {
+                PLUS { String show() { String.format('%d', 'some string') } }
+                abstract String show()
+            }
+        '''
+        assert err.message =~ /IllegalFormatConversion: d != java\.lang\.String/
+        assert !err.message.contains('General error')
+    }
 }

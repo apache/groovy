@@ -97,6 +97,7 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
     Object run() {
         afterMethodCall { call ->
             def method = getTargetMethod(call)
+            if (method == null) return
             def annoNames = method.annotations*.classNode*.name
             if (annoNames.any { name ->
                 name in [
@@ -109,7 +110,7 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
         }
 
         afterVisitMethod { MethodNode method ->
-            method.code.visit(makeVisitor())
+            method.code?.visit(makeVisitor())
         }
     }
 
