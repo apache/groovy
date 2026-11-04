@@ -26,7 +26,14 @@ import org.junit.jupiter.api.Test
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.util.TraceClassVisitor
 
+import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT_PACKAGE_FIRST
+
 final class Groovy12555 {
+
+    private static final Map<String, String> SOURCES = [
+        'Factory.groovy': 'class Factory { static String hello() { "mine" } }',
+        'Caller.groovy': 'class Caller { def run() { Factory.hello() } }'
+    ]
 
     private File dir
 
@@ -41,30 +48,36 @@ final class Groovy12555 {
     }
 
     /**
-     * Compiles all sources together, then compiles {@code recompiled} against the other sources compiled,
-     * as an incremental build does, and returns the text of each recompiled class from both compilations.
+     * Compiles the sources together, then compiles {@code Caller} alone against {@code Factory}, either compiled,
+     * as an incremental build has it, or as a source on the class path, and returns the text of {@code Caller}
+     * from both compilations.
      */
-    private Map<String, List<String>> compileBothWays(Map<String, String> sources, List<String> recompiled) {
+    private List<String> compileCallerBothWays(Map<String, Boolean> options, boolean factoryCompiled) {
         File sourceDir = new File(dir, 'src')
-        Map<String, File> files = sources.collectEntries { name, text ->
-            File file = new File(sourceDir, name)
-            file.parentFile.mkdirs()
-            file.text = text
-            [name, file]
-        }
-        CompilationUnit together = compile(new File(dir, 'together'), files.values() as List, null)
+        Map<String, File> files = SOURCES.collectEntries { name, text -> [name, write(new File(sourceDir, name), text)] }
+        CompilationUnit together = compile(new File(dir, 'together'), files.values() as List, null, options)
         File first = new File(dir, 'first')
-        compile(first, files.findAll { !recompiled.contains(it.key) }.values() as List, null)
-        CompilationUnit separate = compile(new File(dir, 'separate'), recompiled.collect { files[it] }, first)
-        separate.classes*.name.collectEntries { name ->
-            [name, [text(together, name), text(separate, name)]]
+        if (factoryCompiled) {
+            compile(first, [files['Factory.groovy']], null, options)
+        } else {
+            write(new File(first, 'Factory.groovy'), SOURCES['Factory.groovy'])
         }
+        CompilationUnit separate = compile(new File(dir, 'separate'), [files['Caller.groovy']], first, options)
+        [text(together, 'Caller'), text(separate, 'Caller')]
     }
 
-    private static CompilationUnit compile(File targetDir, List<File> sources, File classpath) {
-        def loader = new GroovyClassLoader(Groovy12555.classLoader)
+    private static File write(File file, String text) {
+        file.parentFile.mkdirs()
+        file.text = text
+        file
+    }
+
+    private static CompilationUnit compile(File targetDir, List<File> sources, File classpath, Map<String, Boolean> options) {
+        def config = new CompilerConfiguration(targetDirectory: targetDir)
+        config.optimizationOptions.putAll(options)
+        def loader = new GroovyClassLoader(Groovy12555.classLoader, config)
         if (classpath) loader.addClasspath(classpath.absolutePath)
-        def unit = new CompilationUnit(new CompilerConfiguration(targetDirectory: targetDir), null, loader)
+        def unit = new CompilationUnit(config, null, loader)
         unit.addSources(sources as File[])
         unit.compile()
         unit
@@ -80,13 +93,40 @@ final class Groovy12555 {
     // a class of the default package refers to a compiled class of the default package rather
     // than to a default import of the same name, as it does when both are compiled together
     @Test
-    void testDefaultPackageClassBeforeDefaultImports() {
-        def texts = compileBothWays([
-            'Factory.groovy': 'class Factory { static String hello() { "mine" } }',
-            'Caller.groovy': 'class Caller { def run() { Factory.hello() } }'
-        ], ['Caller.groovy'])
-        def (together, separate) = texts['Caller']
+    void testCompiledDefaultPackageClassBeforeDefaultImports() {
+        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_FIRST): true], true)
         assert together == separate
         assert !separate.contains('groovy/util/Factory')
+    }
+
+    // the option is on unless it is set to false
+    @Test
+    void testDefaultPackageFirstByDefault() {
+        def (together, separate) = compileCallerBothWays([:], true)
+        assert together == separate
+        assert !separate.contains('groovy/util/Factory')
+    }
+
+    // with the option off, the default import comes before a compiled class of the default package, as it used to
+    @Test
+    void testCompiledDefaultPackageClassAfterDefaultImportsWhenOff() {
+        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_FIRST): false], true)
+        assert !together.contains('groovy/util/Factory')
+        assert separate.contains('groovy/util/Factory')
+    }
+
+    // a source of the default package on the class path is compiled and referred to rather than a default import
+    @Test
+    void testDefaultPackageSourceBeforeDefaultImports() {
+        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_FIRST): true], false)
+        assert together == separate
+        assert !separate.contains('groovy/util/Factory')
+    }
+
+    @Test
+    void testDefaultPackageSourceAfterDefaultImportsWhenOff() {
+        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_FIRST): false], false)
+        assert !together.contains('groovy/util/Factory')
+        assert separate.contains('groovy/util/Factory')
     }
 }
