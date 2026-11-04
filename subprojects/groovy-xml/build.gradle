@@ -20,12 +20,22 @@ plugins {
     id 'org.apache.groovy-library'
 }
 
+// typed parsing falls back to Jackson 2 when Jackson 3 is absent, so jackson2Test reruns
+// the typed tests on the test runtime classpath with Jackson 3 swapped for Jackson 2
+configurations.dependencyScope('jackson2TestRuntimeOnly')
+def jackson2TestRuntimeClasspath = configurations.resolvable('jackson2TestRuntimeClasspath') {
+    extendsFrom configurations.testImplementation, configurations.testRuntimeOnly, configurations.jackson2TestRuntimeOnly
+    exclude group: 'tools.jackson.core'
+    attributes.addAllLater(configurations.testRuntimeClasspath.attributes)
+}
+
 dependencies {
     api project(':') // MarkupBuilder extends BuilderSupport...
 
     testImplementation projects.groovyTest
     testImplementation "xmlunit:xmlunit:${versions.xmlunit}"
-    testRuntimeOnly "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
+    testRuntimeOnly "tools.jackson.core:jackson-databind:${versions.jackson3}"
+    jackson2TestRuntimeOnly "com.fasterxml.jackson.core:jackson-databind:${versions.jackson2}"
     testImplementation("org.spockframework:spock-core:${versions.spock}") {
         exclude group: 'org.apache.groovy'
     }
@@ -49,6 +59,22 @@ plugins.withId('eclipse') {
 tasks.named('test') {
     useJUnitPlatform()
     systemProperty 'spock.iKnowWhatImDoing.disableGroovyVersionCheck', 'true'
+}
+
+def jackson2Test = tasks.register('jackson2Test', Test) {
+    description = 'Runs the typed XML parsing tests with only Jackson 2 on the classpath.'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath - configurations.testRuntimeClasspath + jackson2TestRuntimeClasspath.get()
+    useJUnitPlatform()
+    systemProperty 'groovy.xml.test.jackson2Only', 'true'
+    filter {
+        includeTestsMatching 'groovy.xml.XmlParserTypedTest'
+    }
+}
+
+tasks.named('check') {
+    dependsOn jackson2Test
 }
 
 groovyLibrary {
