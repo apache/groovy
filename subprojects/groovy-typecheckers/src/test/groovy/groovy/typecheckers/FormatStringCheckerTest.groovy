@@ -258,6 +258,67 @@ final class FormatStringCheckerTest {
         assert err.message =~ /IllegalFormatConversion: c != java\.lang\.Boolean/
     }
 
+    // GROOVY-12689
+    @Test
+    void testArgsOfTypesFromSameSource() {
+        assertScript shell, '''
+            class Foo { String toString() { 'foo' } }
+            assert String.format('%s', new Foo()) == 'foo'
+        '''
+        assertScript '''
+            import groovy.transform.TypeChecked
+
+            class Foo { String toString() { 'foo' } }
+            enum Color { RED, GREEN }
+            class Stamp extends Date { Stamp() { super(0L) } }
+
+            @TypeChecked(extensions = 'groovy.typecheckers.FormatStringChecker')
+            class Main {
+                static String show(Foo foo, Foo[] foos) {
+                    String.format('%s %s %b %d', foo, Color.RED, foos, foos.length)
+                }
+                static String year() {
+                    String.format('%tY', new Stamp())
+                }
+                String self() {
+                    String.format('%s', this)
+                }
+                String toString() { 'main' }
+            }
+            assert Main.show(new Foo(), new Foo[0]) == 'foo RED true 0'
+            assert Main.year() == String.format('%tY', new Date(0L))
+            assert new Main().self() == 'main'
+        '''
+    }
+
+    // GROOVY-12689
+    @Test
+    void testIllegalConversionForArgsOfTypesFromSameSource() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+
+            class Foo {}
+            enum Color { RED, GREEN }
+
+            @TypeChecked(extensions = 'groovy.typecheckers.FormatStringChecker')
+            class Main {
+                static String number(Foo foo) {
+                    String.format('%d', foo)
+                }
+                static String letter() {
+                    String.format('%c', Color.RED)
+                }
+                static String time(Foo foo) {
+                    String.format('%tY', foo)
+                }
+            }
+        '''
+        assert err.message =~ /IllegalFormatConversion: d != Foo/
+        assert err.message =~ /IllegalFormatConversion: c != Color/
+        assert err.message =~ /IllegalFormatConversion: Y != Foo/
+        assert !err.message.contains('BUG!')
+    }
+
     @Test
     void testMissingFormatArgumentForConstantArgs() {
         def err = shouldFail shell, '''
@@ -325,5 +386,72 @@ final class FormatStringCheckerTest {
         assertScript shell, '''
         assert '%x'.formatted(16) == '10'
         '''
+    }
+
+    // GROOVY-12688
+    @Test
+    void testEnumAndRecordDeclarations() {
+        assertScript shell, '''
+            enum Size { S, M }
+            record Point(int x, int y) {}
+            assert Size.valueOf('M').ordinal() == 1
+            assert new Point(1, 2).y() == 2
+        '''
+        assertScript '''
+            import groovy.transform.TypeChecked
+
+            @TypeChecked(extensions = 'groovy.typecheckers.FormatStringChecker')
+            class Shapes {
+                enum Size { S, M }
+                record Point(int x, int y) {}
+                static String describe() { String.format('%s %d', Size.M.name(), new Point(1, 2).x()) }
+            }
+            assert Shapes.describe() == 'M 1'
+        '''
+    }
+
+    // GROOVY-12688
+    @Test
+    void testFormatErrorsReportedWithEnumAndRecordDeclarations() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+
+            @TypeChecked(extensions = 'groovy.typecheckers.FormatStringChecker')
+            class Shapes {
+                enum Size {
+                    S, M
+                    String code() { sprintf('%x', name()) }
+                }
+                record Point(int x, int y) {
+                    String flag() { String.format('%c', x > y) }
+                }
+                static String describe() { String.format('%d', 'some string') }
+            }
+        '''
+        assert err.message =~ /IllegalFormatConversion: d != java\.lang\.String/
+        assert err.message =~ /IllegalFormatConversion: x != java\.lang\.String/
+        assert err.message =~ /IllegalFormatConversion: c != java\.lang\.Boolean/
+        assert !err.message.contains('General error')
+    }
+
+    // GROOVY-12688
+    @Test
+    void testMethodsWithoutBody() {
+        assertScript shell, '''
+            interface Named { String name() }
+            enum Op {
+                PLUS { int apply(int a, int b) { a + b } }
+                abstract int apply(int a, int b)
+            }
+            assert Op.PLUS.apply(1, 2) == 3
+        '''
+        def err = shouldFail shell, '''
+            enum Op {
+                PLUS { String show() { String.format('%d', 'some string') } }
+                abstract String show()
+            }
+        '''
+        assert err.message =~ /IllegalFormatConversion: d != java\.lang\.String/
+        assert !err.message.contains('General error')
     }
 }

@@ -121,6 +121,16 @@ NOTE: For simple cases, Groovy's `as` coercion also works with the untyped resul
 The `parseTextAs` method uses Jackson databinding, which supports richer annotation-driven
 mapping via `@JsonProperty`, `@JsonFormat`, etc.
 
+[NOTE]
+====
+Typed parsing and writing use Jackson 3. The annotations in `com.fasterxml.jackson.annotation`,
+such as `@JsonProperty`, `@JsonFormat`, `@JsonIgnore` and `@JsonCreator`, work as they did
+with Jackson 2, because Jackson 3 still uses that package. The databind annotations moved:
+take `@JsonSerialize`, `@JsonDeserialize`, `@JsonNaming`, `@JsonPOJOBuilder` and the rest
+from `tools.jackson.databind.annotation`. Jackson 3 silently ignores the Jackson 2 versions
+in `com.fasterxml.jackson.databind.annotation`.
+====
+
 [[toml_typed_temporal]]
 === Typed date and time values
 
