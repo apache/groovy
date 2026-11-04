@@ -1738,9 +1738,9 @@ The reason the call to `toUpperCase` works is because the type of `message` was 
 
 ===== Variables vs fields in type inference
 
-It is worth noting that although the compiler performs type inference on local variables, it does *not* perform any kind
-of type inference on fields, always falling back to the *declared type* of a field. To illustrate this, let's take a
-look at this example:
+It is worth noting that although the compiler performs type inference on local variables, it does *not* perform type
+inference on a field that can be reassigned, always falling back to the *declared type* of the field. To illustrate
+this, let's take a look at this example:
 
 [source,groovy]
 ----
@@ -1759,8 +1759,25 @@ Why such a difference? The reason is _thread safety_. At compile time, we can't 
 a field. Any thread can access any field at any time and between the moment a field is assigned a variable of some
 type in a method and the time is used the line after, another thread may have changed the contents of the field. This
 is not the case for local variables: we know if they "escape" or not, so we can make sure that the type of a variable is
-constant (or not) over time. Note that even if a field is final, the JVM makes no guarantee about it, so the type checker
-doesn't behave differently if a field is final or not.
+constant (or not) over time.
+
+A `final` field declared without a type is the exception, because it holds one value for its lifetime. Within the class
+that declares it, a read of the field has the type of the value assigned by its initializer, its initializer blocks and
+its constructors, as a local variable would:
+
+[source,groovy]
+----
+include::../test/typing/TypeCheckingTest.groovy[tags=typeinference_final_field,indent=0]
+----
+<1> `someUntypedField` is `final` and assigned a `String`
+<2> so calling `toUpperCase` in a method of the class is allowed
+<3> but a closure or lambda reads the property through its getter, which a subclass may override, so there the field
+has its declared type and only the methods of `Object` are available
+
+The inferred type is used only where the field itself is read: in the methods, constructors and initializers of the
+declaring class, and in a closure or lambda there for a private field, a static property, or a property of a `final`
+class. A read through the getter, from a closure or lambda, an inner class, a subclass or another class, keeps the
+declared type. Constructors that assign values of unrelated types give no inferred type either.
 
 TIP: This is one of the reasons why we recommend to use *typed* fields. While using `def` for local variables is perfectly
 fine thanks to type inference, this is not the case for fields, which also belong to the public API of a class, hence the
