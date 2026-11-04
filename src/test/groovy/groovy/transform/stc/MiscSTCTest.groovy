@@ -536,4 +536,31 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
             method()
         '''
     }
+
+    // GROOVY-12691
+    @Test
+    void testErrorsAtDistinctPositionsAreAllReported() {
+        // lines 2 to 5, column 47
+        shouldFailWithMessages """
+${' ' * 46}missing1()
+${' ' * 46}missing2()
+${' ' * 46}missing3()
+${' ' * 46}missing4()
+        """,
+        '#missing1()', '#missing2()', '#missing3()', '#missing4()'
+
+        // line 2, columns 5 and 69
+        shouldFailWithMessages """
+${' ' * 4}missing1(); ${' ' * 52}missing2()
+        """,
+        '#missing1()', '#missing2()'
+
+        // line 2, column 9 and line 4, column 8
+        shouldFailWithMessages """
+${' ' * 8}missing1()
+
+${' ' * 7}missing2()
+        """,
+        '#missing1()', '#missing2()'
+    }
 }
