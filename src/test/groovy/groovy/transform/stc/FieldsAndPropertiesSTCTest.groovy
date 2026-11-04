@@ -2257,18 +2257,13 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-12511: without an enclosing instance there is no private field to use;
-    // javac reports a non-static field referenced from a static context, and dynamic
-    // Groovy throws MissingPropertyException
+    // GROOVY-12511: without an enclosing instance there is no private accessor to use;
+    // dynamic Groovy throws MissingPropertyException. A private field of the outer
+    // class is the field of this instance there (GROOVY-12533).
     @Test
     void testPrivateFieldOfSuperclassFromNestedSubclassWithoutEnclosingInstance() {
         [
-            'class Shape { private String nm; static class Circle extends Shape { def d() { nm } } }'           : 'nm for class: Shape$Circle',
-            'class Shape { private String nm; static class Circle extends Shape { def d() { this.nm } } }'      : 'nm for class: Shape$Circle',
-            'class Shape { private String nm; static class Circle extends Shape { def d() { nm = "x" } } }'     : 'nm for class: Shape$Circle',
             'class Shape { private String getP() { "p" }; static class Circle extends Shape { def d() { p } } }' : 'p for class: Shape$Circle',
-            'class Box { private String f; class Sub extends Box { def d() { this.f } } }'                       : 'f for class: Box$Sub',
-            'enum E { A { def d() { f } }; private String f }'                                                     : 'f for class: E$1',
             'enum E { A { def d() { p } }; private String getP() { "p" } }'                                        : 'p for class: E$1',
         ].each { code, message ->
             shouldFailWithMessages code, "No such property: $message"

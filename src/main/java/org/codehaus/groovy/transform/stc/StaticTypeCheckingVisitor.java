@@ -724,10 +724,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (fn != null && fn.isPrivate() && !fn.isSynthetic()) {
             ClassNode declaringClass = fn.getDeclaringClass();
             ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
-            if (declaringClass == enclosingClass ? typeCheckingContext.getEnclosingClosure() != null : inSameNest(declaringClass, enclosingClass)
-                    // this.@name in a subclass is the field of "this", not of an enclosing instance
-                    && !(declaringClass != enclosingClass && enclosingClass.isDerivedFrom(declaringClass)
-                            && source instanceof PropertyExpression pe && isThisExpression(pe.getObjectExpression()))) {
+            if (declaringClass == enclosingClass ? typeCheckingContext.getEnclosingClosure() != null : inSameNest(declaringClass, enclosingClass)) {
                 source.putNodeMetaData(lhsOfAssignment ? PV_FIELDS_MUTATION : PV_FIELDS_ACCESS, fn);
             }
         }
@@ -2456,7 +2453,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
                 FieldNode field = current.getDeclaredField(propertyName);
                 if (field != null && !field.isStatic() && !(pexp instanceof AttributeExpression) && !current.equals(receiverType) && !current.equals(declaredType)
-                        && isInheritedPrivateMember(field.getModifiers(), field.getDeclaringClass())) {
+                        && isInheritedPrivateMember(field.getModifiers(), field.getDeclaringClass())
+                        // GROOVY-12533: in a class nested in the declaring class, this.name is the field of the enclosing instance, or of this instance without one
+                        && !(isThisExpression(objectExpression) && isNestedIn(typeCheckingContext.getEnclosingClassNode(), field.getDeclaringClass()))) {
                     field = null; // JLS 8.2: find the outer class's field, if any, as Outer.this.name
                 }
                 if (field == null) {
@@ -2690,6 +2689,16 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      */
     private boolean isInheritedPrivateMember(final int modifiers, final ClassNode declaringClass) {
         return Modifier.isPrivate(modifiers) && !declaringClass.equals(typeCheckingContext.getEnclosingClassNode());
+    }
+
+    /**
+     * Determines if {@code type} is nested, at any depth, in {@code outer}.
+     */
+    private static boolean isNestedIn(final ClassNode type, final ClassNode outer) {
+        for (ClassNode cn = type.getOuterClass(); cn != null; cn = cn.getOuterClass()) {
+            if (cn.equals(outer)) return true;
+        }
+        return false;
     }
 
     private static boolean hasAccessToMember(final ClassNode accessor, final ClassNode receiver, final int modifiers) {

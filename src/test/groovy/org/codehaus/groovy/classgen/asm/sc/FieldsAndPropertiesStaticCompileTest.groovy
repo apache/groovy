@@ -867,4 +867,20 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             assert Outer.read() == 'fx'
         '''
     }
+
+    // GROOVY-12533: without an enclosing instance, a private field of the outer
+    // class is the field of this instance
+    @Test
+    void testPrivateFieldOfSuperclassFromNestedSubclassWithoutEnclosingInstanceIsItsOwn() {
+        assertScript '''
+            class Shape {
+                private String nm = 'shape'
+                static class Circle extends Shape {
+                    Circle() { nm = 'circle' }
+                    String d() { [nm, this.nm, { -> nm }()].join(',') }
+                }
+            }
+            assert new Shape.Circle().d() == 'circle,circle,circle'
+        '''
+    }
 }
