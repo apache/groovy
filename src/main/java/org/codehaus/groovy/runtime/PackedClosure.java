@@ -319,17 +319,13 @@ public abstract class PackedClosure extends Closure<Object> {
     // Dispatch call() straight to dispatchAll: a varargs doCall would be vararg-ambiguous
     // through the metaclass when a single argument is itself an Object[] (the metaclass would treat
     // the element as the whole argument list and spread it) — which is exactly why dispatchAll is
-    // NOT named doCall. Unwrap invoker exceptions exactly as Closure.call does, so user exceptions
-    // surface unwrapped.
+    // NOT named doCall. No reflective step lies between this lane and the hoisted body, so there is
+    // no invoker wrapping to undo: body exceptions propagate as-is, as on Closure.call's cached
+    // handle path (only mopCall, which goes through the metaclass, unwraps).
     @Override
     public final Object call(final Object... args) {
         if (!mopUnperturbed()) return mopCall((args != null) ? args : EMPTY);
-        try {
-            return dispatchAll((args != null) ? args : EMPTY);
-        } catch (InvokerInvocationException e) {
-            UncheckedThrow.rethrow(e.getCause());
-            return null; // unreachable
-        }
+        return dispatchAll((args != null) ? args : EMPTY);
     }
 
     // Fast lane for the ubiquitous one-argument call (each/collect on an arity-1 closure): the base
@@ -343,12 +339,7 @@ public abstract class PackedClosure extends Closure<Object> {
         // cool call sites (and its own standalone compilation lean): the argument-wrapping
         // fallbacks allocate, so they live out-of-line in callGeneral
         if (maximumNumberOfParameters != 1 || !mopUnperturbed()) return callGeneral(arguments);
-        try {
-            return dispatchOne(coerceArg(arguments, parameterTypes[0]));
-        } catch (InvokerInvocationException e) {
-            UncheckedThrow.rethrow(e.getCause());
-            return null; // unreachable
-        }
+        return dispatchOne(coerceArg(arguments, parameterTypes[0]));
     }
 
     private Object callGeneral(final Object arguments) {
