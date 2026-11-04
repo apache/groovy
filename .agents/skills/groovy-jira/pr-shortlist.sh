@@ -44,6 +44,13 @@
 #   - small, needs your review       (authored by someone else)
 # Groups are printed nearest-to-merge first. "Yours" means the `gh` viewer.
 #
+# The "since-commit:" column names who has commented (PR comment, review
+# or review-thread comment) after the PR's last commit, leaving out the
+# PR's author and automated accounts (GitHub bots and codecov-commenter,
+# which is a plain user account). "(replied)" means the author has
+# commented after the latest of those. The last commit's committedDate
+# stands in for the push time, which GraphQL no longer exposes.
+#
 # Read-only; `gh` must be authenticated for GitHub.
 set -euo pipefail
 
@@ -69,8 +76,10 @@ query($owner: String!, $name: String!, $endCursor: String) {
         number title isDraft additions deletions mergeable
         author { login }
         commits(last: 1) { nodes { commit { committedDate statusCheckRollup { state } } } }
-        reviews(last: 20) { nodes { author { login } state submittedAt } }
-        reviewThreads(first: 50) { nodes { isResolved } }
+        comments(last: 20) { nodes { author { login __typename } createdAt } }
+        reviews(last: 20) { nodes { author { login __typename } state submittedAt } }
+        reviewThreads(first: 50) { nodes { isResolved
+          comments(last: 1) { nodes { author { login __typename } createdAt } } } }
       }
     }
   }
@@ -88,6 +97,8 @@ jq -rs --argjson max "${MAX_SIZE}" '
     ["large",      "Larger than \($max) lines, no approval"]
   ];
 
+  def automated: .__typename == "Bot" or .login == "codecov-commenter";
+
   (.[0].data.viewer.login) as $me
   | [.[].data.repository.pullRequests.nodes[]
       | (.commits.nodes[0].commit) as $c
@@ -96,7 +107,18 @@ jq -rs --argjson max "${MAX_SIZE}" '
       | ([.reviews.nodes[] | select(.state == "CHANGES_REQUESTED")] | length) as $chg
       | ([.reviewThreads.nodes[] | select(.isResolved | not)] | length) as $unres
       | (.additions + .deletions) as $size
-      | {number, title, size: $size, ci: $ci, unres: $unres,
+      | .author.login as $author
+      | ([.comments.nodes[] | {who: .author, at: .createdAt}]
+         + [.reviews.nodes[] | {who: .author, at: .submittedAt}]
+         + [.reviewThreads.nodes[].comments.nodes[] | {who: .author, at: .createdAt}]
+         | map(select(.who != null and .at > $c.committedDate and (.who | automated | not)))) as $recent
+      | [$recent[] | select(.who.login != $author)] as $others
+      | (if ($others | length) == 0 then "-"
+         else "since-commit:\([$others[].who.login] | unique | join(","))"
+              + (if ([$recent[] | select(.who.login == $author) | .at] | max // "")
+                    > ([$others[].at] | max) then " (replied)" else "" end)
+         end) as $since
+      | {number, title, size: $size, ci: $ci, unres: $unres, since: $since,
          author: .author.login,
          approvers: ([$appr[].author.login] | unique | join(",")),
          group: (if .isDraft then "draft"
@@ -118,7 +140,7 @@ jq -rs --argjson max "${MAX_SIZE}" '
       | "== \($title) (\($rows | length))",
         ($rows[] | ["#\(.number)", .author, "\(.size) lines", .ci,
                     (if .approvers == "" then "-" else "approved:\(.approvers)" end),
-                    "unresolved:\(.unres)", .title[0:100]] | @tsv),
+                    "unresolved:\(.unres)", .since, .title[0:100]] | @tsv),
         ""),
     "Not shown: \([$prs[] | select(.group == "draft")] | length) draft, \([$prs[] | select(.group == "conflicting")] | length) with merge conflicts"
 ' "${TMP}/pages.json"

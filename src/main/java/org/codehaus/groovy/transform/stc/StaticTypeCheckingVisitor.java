@@ -158,6 +158,7 @@ import java.util.stream.IntStream;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoEnclosingInstance;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.enumConstantName;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.intConstant;
@@ -920,6 +921,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (inaccessibleField != null) { // GROOVY-12314: the property exists but Java access rules reject it
             addStaticTypeError("Cannot access field: " + inaccessibleField.getName() + " of class: " + prettyPrintTypeName(inaccessibleField.getDeclaringClass())
                     + " from class: " + prettyPrintTypeName(typeCheckingContext.getEnclosingClassNode()), expression.getLineNumber() > 0 ? expression : expression.getProperty());
+            return;
+        }
+        if (expression.getPropertyAsString() == null) {
+            addStaticTypeError(expression instanceof AttributeExpression
+                    ? "Cannot resolve dynamic attribute name at compile time"
+                    : "Cannot resolve dynamic property name at compile time; consider using subscript notation, e.g. receiver[name], instead", expression.getProperty());
             return;
         }
 
@@ -7940,13 +7947,25 @@ trying: for (ClassNode[] signature : signatures) {
         outer.forEach(target::putIfAbsent);
     }
 
+    /**
+     * Returns the type named by {@code Type::name}, or by {@code this::name} in a static context.
+     */
+    private static ClassNode typeReference(final Expression expression) {
+        if (expression instanceof ClassExpression) return expression.getType();
+        if (isThisExpression(expression)) {
+            ClassNode type = expression.getNodeMetaData(INFERRED_TYPE);
+            if (type != null && isClassClassNodeWrappingConcreteType(type)) return type.getGenericsTypes()[0].getType();
+        }
+        return null;
+    }
+
     private static ClassNode[] collateMethodReferenceParameterTypes(final MethodPointerExpression source, final MethodNode target) {
         Parameter[] params;
 
         if (target instanceof ExtensionMethodNode && !((ExtensionMethodNode) target).isStaticExtension()) {
             params = ((ExtensionMethodNode) target).getExtensionMethodNode().getParameters();
-        } else if (!target.isStatic() && source.getExpression() instanceof ClassExpression) {
-            ClassNode thisType = source.getExpression().getType();
+        } else if (!target.isStatic() && typeReference(source.getExpression()) != null) {
+            ClassNode thisType = typeReference(source.getExpression());
             // there is an implicit parameter for "String::length"
             int n = target.getParameters().length;
             params = new Parameter[n + 1];

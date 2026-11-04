@@ -238,8 +238,8 @@ known_non_findings:
     rationale: >-
       robustness of code meant to consume untrusted input; see THREAT_MODEL.md#6. Nesting depth now bounded by
       default in all of them — XML mitigated by P2 (secure processing); YAML/TOML/CSV bounded by Jackson
-      StreamReadConstraints; JsonSlurper enforces a Groovy-level nesting-depth cap (default 1000, matching
-      StreamReadConstraints; groovy.json.maxNestingDepth / setMaxNestingDepth; GROOVY-12064, 6.0.0). Language
+      StreamReadConstraints (Jackson 3: depth 500); JsonSlurper enforces a Groovy-level nesting-depth cap (default 1000,
+      Jackson 2's StreamReadConstraints default; groovy.json.maxNestingDepth / setMaxNestingDepth; GROOVY-12064, 6.0.0). Language
       parser excluded (parses trusted source only). No parser-robustness items remain open (see open_items).
   - pattern: dynamic proxy / runtime class generation (Proxy, ProxyGenerator)
     disposition: KNOWN-NON-FINDING

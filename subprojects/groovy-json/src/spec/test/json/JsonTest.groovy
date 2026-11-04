@@ -310,8 +310,8 @@ class JsonTest {
         // For advanced cases (typed collections, date parsing, @JsonProperty),
         // use jackson-databind directly:
         //
-        // @Grab('com.fasterxml.jackson.core:jackson-databind')
-        // import com.fasterxml.jackson.databind.ObjectMapper
+        // @Grab('tools.jackson.core:jackson-databind')
+        // import tools.jackson.databind.ObjectMapper
         //
         // def config = new ObjectMapper().readValue(jsonString, ServerConfig)
         // end::jackson_direct[]
