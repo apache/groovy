@@ -21,12 +21,10 @@ package org.codehaus.groovy.transform;
 import groovy.transform.CompilationUnitAware;
 import groovy.transform.TypeChecked;
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.SwitchExpression;
@@ -37,7 +35,6 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
@@ -62,8 +59,8 @@ public class StaticTypesTransformation implements ASTTransformation, Compilation
         AnnotationNode annotationInformation = (AnnotationNode) nodes[0];
         Map<String,Expression> members = annotationInformation.getMembers();
         Expression extensions = members.get("extensions");
-        AnnotatedNode node = (AnnotatedNode) nodes[1];
-        StaticTypeCheckingVisitor visitor = null;
+        ASTNode node = nodes[1];
+        StaticTypeCheckingVisitor visitor;
         if (node instanceof ClassNode classNode) {
             visitor = newVisitor(source, classNode);
             visitor.setCompilationUnit(compilationUnit);
@@ -77,14 +74,14 @@ public class StaticTypesTransformation implements ASTTransformation, Compilation
             visitor.setMethodsToBeVisited(Collections.singleton(methodNode));
             visitor.initialize();
             visitor.visitMethod(methodNode);
-        } else if (!(node instanceof PropertyNode)) {
-            source.addError(new SyntaxException(STATIC_ERROR_PREFIX + "Unimplemented node type",
-                    node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()));
+        } else {
+            // GROOVY-12693: the annotation targets types, methods and constructors; any other
+            // placement (local variable, field, parameter, loop statement) is reported by
+            // ExtendedVerifier at class generation, so there is nothing to check here
+            return;
         }
-        if (visitor != null) {
-            visitor.performSecondPass();
-            resolveEnumConstantsInSwitchCases(node, source);
-        }
+        visitor.performSecondPass();
+        resolveEnumConstantsInSwitchCases(node, source);
     }
 
     /**
@@ -93,7 +90,7 @@ public class StaticTypesTransformation implements ASTTransformation, Compilation
      * without static compilation they would otherwise be dynamic property lookups
      * on the enclosing class, failing at runtime.
      */
-    private static void resolveEnumConstantsInSwitchCases(final AnnotatedNode node, final SourceUnit source) {
+    private static void resolveEnumConstantsInSwitchCases(final ASTNode node, final SourceUnit source) {
         ClassCodeExpressionTransformer transformer = new ClassCodeExpressionTransformer() {
             @Override
             protected SourceUnit getSourceUnit() {

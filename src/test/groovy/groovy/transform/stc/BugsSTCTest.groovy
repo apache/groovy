@@ -1589,4 +1589,51 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot find matching method Sub#isFlag()'
     }
+
+    // GROOVY-12693
+    @Test
+    void testTypeCheckedOrCompileStaticOnLocalVariable() {
+        shouldFailWithMessages '''
+            @groovy.transform.TypeChecked
+            int x = 1
+        ''',
+        'Annotation @groovy.transform.TypeChecked is not allowed on element LOCAL_VARIABLE'
+
+        shouldFailWithMessages '''
+            class C {
+                void m() {
+                    @groovy.transform.CompileStatic
+                    def x = 1
+                }
+            }
+        ''',
+        'Annotation @groovy.transform.CompileStatic is not allowed on element LOCAL_VARIABLE'
+    }
+
+    // GROOVY-12693
+    @Test
+    void testTypeCheckedOrCompileStaticOnFieldParameterOrStatement() {
+        shouldFailWithMessages '''
+            class C {
+                @groovy.transform.CompileStatic
+                private int f = 1
+            }
+        ''',
+        'Annotation @groovy.transform.CompileStatic is not allowed on element FIELD'
+
+        shouldFailWithMessages '''
+            class C {
+                void m(@groovy.transform.TypeChecked int p) {
+                }
+            }
+        ''',
+        'Annotation @groovy.transform.TypeChecked is not allowed on element PARAMETER'
+
+        shouldFailWithMessages '''
+            @groovy.transform.CompileStatic
+            for (int i = 0; i < 1; i += 1) {
+            }
+        ''',
+        'Annotation @groovy.transform.CompileStatic is not allowed on element STATEMENT'
+    }
 }
