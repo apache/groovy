@@ -844,6 +844,7 @@ public class IndyInterface {
      *
      * @since 6.0.0
      */
+    @GroovyABI(since = "6.0.0")
     public static CallSite packedDispatchers(MethodHandles.Lookup caller, String name, MethodType type,
             MethodHandle factory) throws Throwable {
         return GeneratedDispatcher.bootstrap(caller, name, type, factory);
