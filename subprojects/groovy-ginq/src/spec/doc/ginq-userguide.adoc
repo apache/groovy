@@ -1207,6 +1207,11 @@ Rather than loading rows into memory, the query is translated at compile time in
 WHERE e.salary > ?`, and filtering, joining and aggregating are pushed down to the database.
 The result rows are `groovy.sql.GroovyRowResult` instances.
 
+Aggregate and expression values keep the types the database returns, so they can differ
+from an in-memory query. The collection provider returns `BigDecimal` for `avg` (and for
+`sum` and the other numeric aggregates). H2 returns `AVG` as a `Double`. In mixed mode the
+in-memory tail sees those database types on the columns the pushed prefix projected.
+
 Every literal and captured variable in the query becomes a positional bound parameter, so the SQL
 text never contains user-supplied values and SQL injection is structurally impossible.
 
