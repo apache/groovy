@@ -26,7 +26,7 @@ import static bugs.Groovy3465Helper.func
 final class Groovy3465 {
 
     @Test
-    void testCallingAStaticImportedMethodWithNamedParamaters() {
+    void testCallingAStaticImportedMethodWithNamedParameters() {
         func text: 'Some text', value: 1
         func(text: 'Some text', value: 1)
         func([text: 'Some text', value: 1])
