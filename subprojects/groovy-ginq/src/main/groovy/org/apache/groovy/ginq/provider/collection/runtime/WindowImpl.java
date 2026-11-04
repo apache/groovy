@@ -149,12 +149,16 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         }
 
         long result = 1L;
-        T latest = null;
+        // The window list is ordered, so a new preceding key differs from the
+        // adjacent row. The sentinel must not go through the key extractor:
+        // `orderby e.prop` would dereference a null row.
+        T previous = null;
         for (T t : list) {
-            if (comparator.compare(currentRecord.getV1(), t) > 0 && comparator.compare(latest, t) != 0) {
+            if (comparator.compare(currentRecord.getV1(), t) > 0
+                    && (null == previous || comparator.compare(previous, t) != 0)) {
                 result++;
             }
-            latest = t;
+            previous = t;
         }
         return result;
     }
@@ -244,37 +248,73 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
             ValueBound<? extends U> valueBound = windowDefinition.range();
             U lower = valueBound.getLower();
             U upper = valueBound.getUpper();
-            if (value instanceof Number && (lower instanceof Number || null == lower) && (upper instanceof Number || null == upper)) {
-                final List<Order<? super T, ? extends U>> orderList = windowDefinition.orderBy();
-                if (orderList.size() == 1) {
-                    Order<? super T, ? extends U> order = orderList.get(0);
+            boolean numericBounds = (lower instanceof Number || null == lower) && (upper instanceof Number || null == upper);
+            final List<Order<? super T, ? extends U>> orderList = windowDefinition.orderBy();
+            if (numericBounds && null != orderList && 1 == orderList.size() && (value instanceof Number || null == value)) {
+                if (listWithIndex.isEmpty()) {
+                    return null;
+                }
+                Order<? super T, ? extends U> order = orderList.get(0);
+                List<U> keys = listWithIndex.stream()
+                        .map(e -> order.getKeyExtractor().apply(e.getV1()))
+                        .collect(Collectors.toList());
+                int keyCount = keys.size();
+                int[] span = numericSpan(keys, order.isNullsLast());
+                int numericStart = span[0];
+                int numericEnd = span[1];
+                boolean hasNumeric = numericStart <= numericEnd;
+                boolean hasNull = order.isNullsLast() ? numericEnd < keyCount - 1 : numericStart > 0;
 
-                    if (listWithIndex.isEmpty()) {
+                if (null == value) {
+                    // A null plus an offset is null. The offset bounds therefore
+                    // address the null peer group; an unbounded bound addresses
+                    // the corresponding edge of the partition.
+                    RowBound bound = nullKeyRange(lower, upper, keyCount, numericStart, numericEnd, order.isNullsLast());
+                    if (null == bound) {
                         return null;
                     }
-                    int flag = order.isAsc() ? 1 : -1;
-                    BigDecimal firstElement = toBigDecimal((Number) order.getKeyExtractor().apply(listWithIndex.get(0).getV1()));
-                    BigDecimal lastElement = toBigDecimal((Number) order.getKeyExtractor().apply(listWithIndex.get(size - 1).getV1()));
-
-                    BigDecimal lowerValue = null == lower ? MIN_VALUE : toBigDecimal(plus((Number) value, (Number) lower));
-                    BigDecimal upperValue = null == upper ? MAX_VALUE : toBigDecimal(plus((Number) value, (Number) upper));
-                    if ((flag * lowerValue.compareTo(firstElement) < 0 && flag * upperValue.compareTo(firstElement) < 0)
-                            || (flag * lowerValue.compareTo(lastElement) > 0 && flag * upperValue.compareTo(lastElement) > 0)) {
+                    firstIndex = bound.getLower();
+                    lastIndex = bound.getUpper();
+                } else if (!hasNull) {
+                    long[] indexes = numericRangeIndexes(order.isAsc(), (Number) value, (Number) lower, (Number) upper, keys);
+                    if (null == indexes) {
                         return null;
                     }
-
-                    List<U> list =
-                            listWithIndex.stream()
-                                    .map(e -> order.getKeyExtractor().apply(e.getV1()))
-                                    .collect(Collectors.toList());
-                    if (order.isAsc()) {
-                        firstIndex = getIndexByValue(lowerValue, true, list);
-                        lastIndex = getIndexByValue(upperValue, false, list);
+                    firstIndex = indexes[0];
+                    lastIndex = indexes[1];
+                } else if (!hasNumeric) {
+                    if (null == lower && null == upper) {
+                        firstIndex = 0;
+                        lastIndex = keyCount - 1L;
                     } else {
-                        final List<U> reversedList = new ReversedList<>(list);
-                        lastIndex = size - 1 - getIndexByValue(lowerValue, true, reversedList);
-                        firstIndex = size - 1 - getIndexByValue(upperValue, false, reversedList);
+                        return null;
                     }
+                } else {
+                    List<U> numericKeys = keys.subList(numericStart, numericEnd + 1);
+                    long[] indexes = numericRangeIndexes(order.isAsc(), (Number) value, (Number) lower, (Number) upper, numericKeys);
+                    if (null == indexes) {
+                        return null;
+                    }
+                    int numericSize = numericKeys.size();
+                    if ((indexes[0] < 0 && indexes[1] < 0) || (indexes[0] >= numericSize && indexes[1] >= numericSize)) {
+                        return null;
+                    }
+                    // Null keys are not inside a finite numeric interval. Include
+                    // them only when an unbounded side already reaches the numeric
+                    // edge they sit against, so the frame stays one contiguous slice.
+                    long absFirst = numericStart + Math.max(indexes[0], 0L);
+                    long absLast = numericStart + Math.min(indexes[1], numericSize - 1L);
+                    if (null == lower && absFirst == numericStart) {
+                        absFirst = 0;
+                    }
+                    if (null == upper && absLast == numericEnd) {
+                        absLast = keyCount - 1L;
+                    }
+                    if (absFirst > absLast) {
+                        return null;
+                    }
+                    firstIndex = absFirst;
+                    lastIndex = absLast;
                 }
             }
         }
@@ -283,6 +323,98 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
             return null;
         }
         return new RowBound(Math.max(firstIndex, 0L), Math.min(lastIndex, size - 1L));
+    }
+
+    /**
+     * Finds the contiguous numeric keys. Null keys are grouped at one end by the
+     * window order ({@code NULLS LAST} by default, {@code NULLS FIRST} otherwise).
+     *
+     * @param keys ordered window keys
+     * @param nullsLast whether null keys sort after non-null keys
+     * @param <U> the order value type
+     * @return {@code [numericStart, numericEnd]}; the end is before the start when every key is null
+     */
+    private static <U> int[] numericSpan(List<U> keys, boolean nullsLast) {
+        int size = keys.size();
+        int numericStart;
+        int numericEnd;
+        if (nullsLast) {
+            numericEnd = size - 1;
+            while (numericEnd >= 0 && null == keys.get(numericEnd)) {
+                numericEnd--;
+            }
+            numericStart = 0;
+        } else {
+            numericStart = 0;
+            while (numericStart < size && null == keys.get(numericStart)) {
+                numericStart++;
+            }
+            numericEnd = size - 1;
+        }
+        return new int[] {numericStart, numericEnd};
+    }
+
+    /**
+     * Resolves a numeric {@code range} frame against keys that are all non-null numbers.
+     * A null offset is an unbounded bound. Returns {@code null} when the interval misses
+     * every key. The indexes follow {@code keys} and may lie outside {@code [0, size)}.
+     *
+     * @param asc whether the keys are ascending
+     * @param value the current order value
+     * @param lower the lower offset, or {@code null} for unbounded preceding
+     * @param upper the upper offset, or {@code null} for unbounded following
+     * @param keys non-null numeric keys in window order
+     * @param <U> the order value type
+     * @return the relative {@code [first, last]} indexes, or {@code null} when the frame is empty
+     */
+    private static <U extends Comparable<? super U>> long[] numericRangeIndexes(boolean asc, Number value, Number lower, Number upper, List<U> keys) {
+        int size = keys.size();
+        int flag = asc ? 1 : -1;
+        BigDecimal firstElement = toBigDecimal((Number) keys.get(0));
+        BigDecimal lastElement = toBigDecimal((Number) keys.get(size - 1));
+        BigDecimal lowerValue = null == lower ? MIN_VALUE : toBigDecimal(plus(value, lower));
+        BigDecimal upperValue = null == upper ? MAX_VALUE : toBigDecimal(plus(value, upper));
+        if ((flag * lowerValue.compareTo(firstElement) < 0 && flag * upperValue.compareTo(firstElement) < 0)
+                || (flag * lowerValue.compareTo(lastElement) > 0 && flag * upperValue.compareTo(lastElement) > 0)) {
+            return null;
+        }
+        long firstIndex;
+        long lastIndex;
+        if (asc) {
+            firstIndex = getIndexByValue(lowerValue, true, keys);
+            lastIndex = getIndexByValue(upperValue, false, keys);
+        } else {
+            List<U> reversedList = new ReversedList<>(keys);
+            lastIndex = size - 1L - getIndexByValue(lowerValue, true, reversedList);
+            firstIndex = size - 1L - getIndexByValue(upperValue, false, reversedList);
+        }
+        return new long[] {firstIndex, lastIndex};
+    }
+
+    /**
+     * Range frame for a null current key. Offset bounds select the null peer group.
+     * Unbounded bounds select the edges of the partition.
+     *
+     * @param lower the lower offset, or {@code null} when unbounded
+     * @param upper the upper offset, or {@code null} when unbounded
+     * @param size the partition size
+     * @param numericStart index of the first numeric key
+     * @param numericEnd index of the last numeric key
+     * @param nullsLast whether null keys sort last
+     * @return the frame, or {@code null} when it is empty
+     */
+    private static RowBound nullKeyRange(Object lower, Object upper, int size, int numericStart, int numericEnd, boolean nullsLast) {
+        long peerStart = nullsLast ? numericEnd + 1L : 0L;
+        long peerEnd = nullsLast ? size - 1L : numericStart - 1L;
+        if (peerStart > peerEnd) {
+            return null;
+        }
+        long start = null == lower ? 0L : peerStart;
+        long end = null == upper ? size - 1L : peerEnd;
+        if (start > end) {
+            return null;
+        }
+        return new RowBound(start, end);
     }
 
     private static <T, U extends Comparable<? super U>> long getIndexByValue(BigDecimal value, boolean isLower, List<U> list) {
