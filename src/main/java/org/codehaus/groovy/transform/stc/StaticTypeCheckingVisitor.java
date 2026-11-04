@@ -783,7 +783,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     vexp.putNodeMetaData(INFERRED_TYPE, temporaryType);
                 }
                 if (vexp.getAccessedVariable() != accessedVariable) { // GROOVY-11360: field hidden by dynamic property
-                    if (vexp.getLineNumber() > 0 && !typeCheckingContext.reportedErrors.contains(((long) vexp.getLineNumber()) << 16 + vexp.getColumnNumber())) {
+                    if (vexp.getLineNumber() > 0 && !typeCheckingContext.reportedErrors.contains((((long) vexp.getLineNumber()) << 32) + vexp.getColumnNumber())) {
                         String text = "The field: " + accessedVariable.getName() + " of class: " + prettyPrintTypeName(((FieldNode) accessedVariable).getDeclaringClass()) +
                                                 " is hidden by a dynamic property. A qualifier is required to reference it.";
                         Token token = new Token(0, name, vexp.getLineNumber(), vexp.getColumnNumber()); // ASTNode to CSTNode
@@ -7657,7 +7657,7 @@ out:    for (ClassNode type : todo) {
     /** {@inheritDoc} */
     @Override
     public void addError(final String msg, final ASTNode node) {
-        Long err = ((long) node.getLineNumber()) << 16 + node.getColumnNumber();
+        Long err = (((long) node.getLineNumber()) << 32) + node.getColumnNumber();
         if ((DEBUG_GENERATED_CODE && node.getLineNumber() < 0) || !typeCheckingContext.reportedErrors.contains(err)) {
             SourceUnit source = getSourceUnit();
             ErrorCollector sourceCollector = source.getErrorCollector();

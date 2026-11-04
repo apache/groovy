@@ -19,8 +19,11 @@
 package groovy.transform.stc
 
 import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.messages.WarningMessage
 import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Unit tests for static type checking : closures.
@@ -1108,6 +1111,34 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             config.targetDirectory.deleteDir()
             parentDir.deleteDir()
         }
+    }
+
+    // GROOVY-12691
+    @Test
+    void testLexicalScopeVersusGetDynamicPropertyAfterError() {
+        config.warningLevel = WarningMessage.POSSIBLE_ERRORS
+        // the error is at line 5, column 47 and the field reference at line 7, column 47
+        def err = shouldFail(MultipleCompilationErrorsException) {
+            shell.parse """
+                class C {
+                    private static final value = "C"
+                    def m(D d) {
+${' ' * 46}missing()
+                        d.with {
+${' ' * 46}value
+                        }
+                    }
+                }
+                class D {
+                    def get(String name) {
+                        if (name == "value") "D"
+                    }
+                }
+            """
+        }
+        assert err.errorCollector.errorCount == 1
+        assert err.errorCollector.warnings*.message == [
+                'The field: value of class: C is hidden by a dynamic property. A qualifier is required to reference it.']
     }
 
     // GROOVY-7701
