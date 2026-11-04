@@ -208,6 +208,9 @@ public abstract class PackedClosure extends Closure<Object> {
     private final String method;
     private final Object[] captured;
     private final boolean strict;
+    // GEP-27 OpenClosure spike: the live resolver an open closure's free names go through (also
+    // its captured[0]), attached by OpenClosure#create; null for an ordinary packed closure.
+    private OpenClosure.ClassicResolver classic;
     // Lazy: only the adapted (arity-mismatch) path needs it, and building it in the constructor
     // would put an allocation on every closure creation and push <init> past the JIT's inline budget.
     private ParameterTypes paramInfo;
@@ -243,12 +246,19 @@ public abstract class PackedClosure extends Closure<Object> {
         this.parameterTypes = visibleTypes;
     }
 
+    /** Attaches the open body's resolver, so delegate/strategy changes reconfigure name resolution. */
+    void openOver(final OpenClosure.ClassicResolver resolver) {
+        this.classic = resolver;
+        resolver.bind(this);
+    }
+
     // GEP-27 runtime guard: a hoisted body binds free names to the owner at compile time, so it
     // cannot honour a caller-set delegate. Rather than silently mis-resolve (returning the owner's
     // member where a normal closure would reach the delegate), fail fast at the point of misuse.
     // Setting the delegate to the owner is the harmless default and stays a no-op.
     @Override
     public void setDelegate(final Object delegate) {
+        if (classic != null) classic.setDelegate(delegate);
         if (strict && delegate != null && delegate != getOwner()) {
             throw new UnsupportedOperationException(
                     "Cannot set a delegate on a @PackedClosures closure (hoisted method '" + method
@@ -264,6 +274,7 @@ public abstract class PackedClosure extends Closure<Object> {
         // DELEGATE_FIRST/DELEGATE_ONLY need a delegate the hoisted body cannot consult; TO_SELF
         // would resolve names against this shared adapter, which has no user-defined members.
         // Only owner-based resolution (OWNER_FIRST/OWNER_ONLY) is reproducible by a hoisted body.
+        if (classic != null) classic.setResolveStrategy(resolveStrategy);
         if (strict && resolveStrategy != OWNER_FIRST && resolveStrategy != OWNER_ONLY) {
             throw new UnsupportedOperationException(
                     "Cannot set resolveStrategy=" + strategyName(resolveStrategy)

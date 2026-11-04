@@ -2230,6 +2230,15 @@
                 },
                 {
                     "kind": "method",
+                    "name": "openClosure",
+                    "descriptor": "(Ljava/lang/Object;Ljava/lang/Object;ILjava/lang/String;[Ljava/lang/Object;[Ljava/lang/Class;ZZ)Lgroovy/lang/Closure;",
+                    "since": "7.0.0",
+                    "deprecated-since": null,
+                    "tombstone": null,
+                    "type": "org.codehaus.groovy.runtime.ScriptBytecodeAdapter"
+                },
+                {
+                    "kind": "method",
                     "name": "packedClosure",
                     "descriptor": "(Ljava/lang/Object;Ljava/lang/Object;ILjava/lang/String;[Ljava/lang/Object;[Ljava/lang/Class;ZZZ)Lgroovy/lang/Closure;",
                     "since": "6.0.0",
