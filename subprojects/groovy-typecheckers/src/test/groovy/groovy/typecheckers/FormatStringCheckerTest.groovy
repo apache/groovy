@@ -351,6 +351,48 @@ final class FormatStringCheckerTest {
         assert err.message =~ /MissingFormatArgument: Format specifier '%\d[$]s'/
     }
 
+    // GROOVY-12692
+    @Test
+    void testPercentAndLineSeparatorTakeNoArgumentForInferredArgs() {
+        assertScript shell, '''
+            String s = 'some string' + ''
+            String n = System.lineSeparator()
+            assert String.format('100%% %s', s) == '100% some string'
+            assert String.format('%s %%', s) == 'some string %'
+            assert String.format('%s%n', s) == "some string$n"
+            assert String.format('%n%s', s) == "${n}some string"
+            assert String.format('%s %% %s', s, s) == 'some string % some string'
+            assert String.format('%s %% %<s', s) == 'some string % some string'
+            assert String.format('%s%n%<s', s) == "some string${n}some string"
+            assert String.format('%-3%|%s', s) == '%  |some string'
+        '''
+    }
+
+    // GROOVY-12692
+    @Test
+    void testFormatErrorsAfterPercentAndLineSeparatorForInferredArgs() {
+        def err = shouldFail shell, '''
+            String.format('100%% %d', 'some string' + '')
+        '''
+        assert err.message =~ /IllegalFormatConversion: d != java\.lang\.String/
+        err = shouldFail shell, '''
+            String.format('%s %% %s', 'some string' + '')
+        '''
+        assert err.message =~ "MissingFormatArgument: Format specifier '%s'"
+        err = shouldFail shell, '''
+            String.format('%s%n%s', 'some string' + '')
+        '''
+        assert err.message =~ "MissingFormatArgument: Format specifier '%s'"
+        err = shouldFail shell, '''
+            String.format('%% %<s', 'some string' + '')
+        '''
+        assert err.message =~ /MissingFormatArgument: Format specifier '%<s'/
+        err = shouldFail shell, '''
+            String.format('%--3% %s', 'some string' + '')
+        '''
+        assert err.message =~ /DuplicateFormatFlags: Flags = '-'/
+    }
+
     @Test
     void testValidFormatStringsConstantArgs() {
         assertScript shell, '''
