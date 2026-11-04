@@ -24,9 +24,10 @@ import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 /**
- * GROOVY-12315: a final field with a dynamic declared type still has one
- * value for its lifetime, so flow typing should know that value's type the
- * way it already does for a local variable.
+ * A final field with a dynamic declared type holds one value for its lifetime,
+ * so a read of the field itself within the declaring class has the type of
+ * that value, as a local variable does. A read through the property getter,
+ * which a subclass may override, keeps the declared type.
  */
 final class Groovy12315 {
 
@@ -82,14 +83,14 @@ final class Groovy12315 {
     }
 
     @Test
-    void testFinalFieldUsedFromClosure() {
+    void testFinalFieldOfAnotherInstanceOfTheClass() {
         assertScript '''
             @groovy.transform.CompileStatic
             class Foo {
                 final bar = 'abc'
-                int foo() { ({ -> bar.length() })() }
+                int foo(Foo other) { other.bar.length() }
             }
-            assert new Foo().foo() == 3
+            assert new Foo().foo(new Foo()) == 3
         '''
     }
 
@@ -160,6 +161,19 @@ final class Groovy12315 {
     }
 
     @Test
+    void testStaticFieldAssignedByClassName() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Foo {
+                static final bar
+                static { Foo.bar = 'abc' }
+                static int n() { Foo.bar.length() }
+            }
+            assert Foo.n() == 3
+        '''
+    }
+
+    @Test
     void testFinalListFieldKeepsComponentType() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -184,34 +198,91 @@ final class Groovy12315 {
     }
 
     @Test
-    void testFinalFieldReadFromAnotherClass() {
+    void testOverloadIsChosenByTheFlowType() {
         assertScript '''
             @groovy.transform.CompileStatic
             class Foo {
                 final bar = 'abc'
+                static String m(Object o) { 'Object' }
+                static String m(String s) { 'String' }
+                String test() { m(bar) }
             }
+            assert new Foo().test() == 'String'
+        '''
+    }
+
+    // the same type written twice keeps that type
+    @Test
+    void testConstructorAssignsSameTypeAsInitializer() {
+        assertScript '''
             @groovy.transform.CompileStatic
-            class Baz {
-                static int n(Foo f) { f.bar.length() }
+            class Foo {
+                final bar = 'ab'
+                Foo() { bar = 'abcd' }
+                int n() { bar.length() }
             }
-            assert Baz.n(new Foo()) == 3
+            assert new Foo().n() == 4
         '''
     }
 
     @Test
-    void testSubclassReadsInheritedFinalField() {
+    void testElvisAssignmentKeepsString() {
         assertScript '''
             @groovy.transform.CompileStatic
             class Foo {
-                final bar = 'abc'
-            }
-            @groovy.transform.CompileStatic
-            class Sub extends Foo {
+                final bar = 'ab'
+                Foo() { bar ?= 'abcd' }
                 int n() { bar.length() }
             }
-            assert new Sub().n() == 3
+            assert new Foo().n() == 2
         '''
     }
+
+    @Test
+    void testAbstractMethodDoesNotBlockFlow() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            abstract class Foo {
+                final bar = 'abc'
+                abstract void m()
+                int n() { bar.length() }
+            }
+            assert new Foo() { void m() {} }.n() == 3
+        '''
+    }
+
+    @Test
+    void testWritesOfOtherFieldsAndPropertiesDoNotMatter() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Base {
+                String bar = 'x'
+            }
+            @groovy.transform.CompileStatic
+            class Sub extends Base {
+                final baz = 'abc'
+                final String typed = 't'
+                def plain = 1
+                private String hidden = ''
+                String getProp() { hidden }
+                void setProp(String s) { hidden = s }
+                Sub() {
+                    super.bar = 'y'
+                    typed = 'u'
+                    plain = 2
+                    prop = 'z'
+                }
+                void setOther(Sub other) { other.plain = 3 }
+                int n() { baz.length() }
+            }
+            def s = new Sub()
+            assert s.bar == 'y' && s.typed == 'u' && s.plain == 2 && s.prop == 'z'
+            assert s.n() == 3
+        '''
+    }
+
+    //--------------------------------------------------------------------------
+    // reads that do not use the flow type
 
     @Test
     void testNonFinalFieldIsNotFlowTyped() {
@@ -249,6 +320,193 @@ final class Groovy12315 {
         '''
     }
 
+    // a closure or lambda reads a property through its getter, which a subclass may override
+    @Test
+    void testPropertyReadFromClosureIsNotFlowTyped() {
+        def err = shouldFail '''
+            @groovy.transform.CompileStatic
+            class Foo {
+                final bar = 'abc'
+                int foo() { ({ -> bar.length() })() }
+            }
+        '''
+        assert err.message.contains('length')
+
+        err = shouldFail '''
+            import java.util.function.IntSupplier
+            @groovy.transform.CompileStatic
+            class Foo {
+                final bar = 'abc'
+                int foo() { IntSupplier s = () -> bar.length(); s.getAsInt() }
+            }
+        '''
+        assert err.message.contains('length')
+    }
+
+    @Test
+    void testOverriddenGetterIsNotBypassed() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Foo {
+                final bar = 'abc'
+                static String m(Object o) { 'Object:' + o }
+                static String m(String s) { 'String:' + s }
+                String direct()  { m(bar) }
+                String closure() { ({ -> m(bar) })() }
+                class Inner { String inner() { m(bar) } }
+                String inner()   { new Inner().inner() }
+            }
+            @groovy.transform.CompileStatic
+            class Sub extends Foo {
+                def getBar() { 42 }
+            }
+            def sub = new Sub()
+            assert sub.direct()  == 'String:abc'
+            assert sub.closure() == 'Object:42'
+            assert sub.inner()   == 'Object:42'
+        '''
+    }
+
+    // no subclass can override the generated getter of a final class
+    @Test
+    void testPropertyReadFromClosureInFinalClassIsFlowTyped() {
+        assertScript '''
+            import java.util.function.IntSupplier
+            @groovy.transform.CompileStatic
+            final class Foo {
+                final bar = 'abc'
+                final sb = new StringBuilder()
+                int closure() { ({ -> bar.length() })() }
+                int lambda()  { IntSupplier s = () -> bar.length(); s.getAsInt() }
+                Foo add(String s) { tap { sb.append(s) } }
+            }
+            def foo = new Foo()
+            assert foo.closure() == 3
+            assert foo.lambda() == 3
+            assert foo.add('x').add('y').sb.toString() == 'xy'
+        '''
+    }
+
+    // a hand-written getter of a final class is not the field
+    @Test
+    void testPropertyWithGetterReadFromClosureInFinalClassIsNotFlowTyped() {
+        def err = shouldFail '''
+            @groovy.transform.CompileStatic
+            final class Foo {
+                final bar = 'abc'
+                def getBar() { 42 }
+                int foo() { ({ -> bar.length() })() }
+            }
+        '''
+        assert err.message.contains('length')
+    }
+
+    // a private field is not a property: a closure reads the field itself
+    @Test
+    void testPrivateFieldReadFromClosureIsFlowTyped() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Foo {
+                private final bar = 'abc'
+                int foo() { ({ -> bar.length() })() }
+            }
+            assert new Foo().foo() == 3
+        '''
+    }
+
+    // the getter of a static property cannot be overridden
+    @Test
+    void testStaticPropertyReadFromClosureIsFlowTyped() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Foo {
+                static final bar = 'abc'
+                static int foo() { ({ -> bar.length() })() }
+            }
+            assert Foo.foo() == 3
+        '''
+    }
+
+    @Test
+    void testInnerClassReadIsNotFlowTyped() {
+        def err = shouldFail '''
+            @groovy.transform.CompileStatic
+            class Foo {
+                final bar = 'abc'
+                class Inner {
+                    int n() { bar.length() }
+                }
+            }
+        '''
+        assert err.message.contains('length')
+    }
+
+    @Test
+    void testAnonymousClassReadIsNotFlowTyped() {
+        def err = shouldFail '''
+            class Foo {
+                final bar = 'abc'
+                @groovy.transform.CompileStatic
+                Object make() {
+                    return new Object() {
+                        int n() { bar.length() }
+                    }
+                }
+            }
+        '''
+        assert err.message.contains('length')
+    }
+
+    @Test
+    void testSubclassReadIsNotFlowTyped() {
+        def err = shouldFail '''
+            @groovy.transform.CompileStatic
+            class Foo {
+                final bar = 'abc'
+            }
+            @groovy.transform.CompileStatic
+            class Sub extends Foo {
+                int n() { bar.length() }
+            }
+        '''
+        assert err.message.contains('length')
+    }
+
+    @Test
+    void testAnotherClassReadIsNotFlowTyped() {
+        def err = shouldFail '''
+            @groovy.transform.CompileStatic
+            class Foo {
+                final bar = 'abc'
+            }
+            @groovy.transform.CompileStatic
+            class Baz {
+                static int n(Foo f) { f.bar.length() }
+            }
+        '''
+        assert err.message.contains('length')
+    }
+
+    @Test
+    void testSpreadReadIsNotFlowTyped() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Foo {
+                final bar = 'ab'
+            }
+            @groovy.transform.CompileStatic
+            class Baz {
+                static List n(List<Foo> foos) { foos*.bar }
+                static def one(Foo f) { f*.bar }
+            }
+            assert Baz.n([new Foo()]) == ['ab']
+            assert Baz.one(new Foo()) == ['ab']
+        '''
+    }
+
+    //--------------------------------------------------------------------------
+    // values of no one type
+
     @Test
     void testConstructorsWithUnrelatedTypesDoNotFlow() {
         def err = shouldFail '''
@@ -257,10 +515,27 @@ final class Groovy12315 {
                 final bar
                 Foo(String s) { bar = s }
                 Foo(int i) { bar = i }
-                int foo() { bar.length() }
+                Comparable foo() { bar }
             }
         '''
-        assert err.message.contains('length')
+        assert err.message.contains('Comparable')
+    }
+
+    @Test
+    void testOverloadsAreNotAmbiguousForUnrelatedTypes() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Foo {
+                final bar
+                Foo(String s) { bar = s }
+                Foo(Integer i) { bar = i }
+                static String m(Object o) { 'Object' }
+                static String m(Comparable c) { 'Comparable' }
+                static String m(Serializable s) { 'Serializable' }
+                String test() { m(bar) }
+            }
+            assert new Foo(1).test() == 'Object'
+        '''
     }
 
     @Test
@@ -314,22 +589,7 @@ final class Groovy12315 {
         assert err.message.contains('length')
     }
 
-    // Same pinned type written twice keeps that type (no least-upper-bound).
-    @Test
-    void testConstructorAssignsSameTypeAsInitializer() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class Foo {
-                final bar = 'ab'
-                Foo() { bar = 'abcd' }
-                int n() { bar.length() }
-            }
-            assert new Foo().n() == 4
-        '''
-    }
-
-    // Two interfaces with nothing in common lub to Object, which is not a flow type.
-    // An untyped write blocks the flow type; a later write must not revive it.
+    // an untyped write blocks the flow type; a later write must not revive it
     @Test
     void testBlockedFlowTypeStaysBlocked() {
         def err = shouldFail '''
@@ -363,230 +623,19 @@ final class Groovy12315 {
     }
 
     @Test
-    void testStaticFieldAssignedByClassName() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class Foo {
-                static final bar
-                static { Foo.bar = 'abc' }
-                static int n() { Foo.bar.length() }
-            }
-            assert Foo.n() == 3
-        '''
-    }
-
-    @Test
-    void testElvisAssignmentKeepsString() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class Foo {
-                final bar = 'ab'
-                Foo() { bar ?= 'abcd' }
-                int n() { bar.length() }
-            }
-            assert new Foo().n() == 2
-        '''
-    }
-
-    // A closure is not a constructor, so the final-field write is rejected.
-    // Type checking still walks the closure while recording initializer flow.
-    @Test
-    void testClosureAssignmentOutsideConstructorIsRejected() {
+    void testIntersectionCastInitializerDoesNotFlow() {
         def err = shouldFail '''
             @groovy.transform.CompileStatic
-            class Foo {
-                final bar
-                Foo() {
-                    def assign = { bar = 'abc' }
-                    assign()
-                }
-                int n() { bar.length() }
-            }
-        '''
-        assert err.message.contains('final')
-    }
-
-    @Test
-    void testSpreadReadDoesNotNeedANarrowElementType() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class Foo {
-                final bar = 'ab'
-            }
-            @groovy.transform.CompileStatic
-            class Baz {
-                static List n(List<Foo> foos) { foos*.bar }
-            }
-            assert Baz.n([new Foo()]) == ['ab']
-        '''
-    }
-
-    @Test
-    void testAbstractMethodDoesNotBlockFlow() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            abstract class Foo {
-                final bar = 'abc'
-                abstract void m()
-                int n() { bar.length() }
-            }
-            assert new Foo() { void m() {} }.n() == 3
-        '''
-    }
-
-    @Test
-    void testInnerClassReadsOuterFinalField() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class Foo {
-                final bar = 'abc'
-                class Inner {
-                    int n() { bar.length() }
-                }
-            }
-            assert new Foo().new Inner().n() == 3
-        '''
-    }
-
-    @Test
-    void testSuperPropertyAssignmentDoesNotBlockSubclassField() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class Base {
-                String bar = 'x'
-            }
-            @groovy.transform.CompileStatic
-            class Sub extends Base {
-                final baz = 'abc'
-                Sub() { super.bar = 'y' }
-                int n() { baz.length() }
-            }
-            def s = new Sub()
-            assert s.bar == 'y'
-            assert s.n() == 3
-        '''
-    }
-
-    @Test
-    void testOtherInstanceWriteIsNotAnOwnReceiver() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class Foo {
-                final bar = 'abc'
-                String note = ''
-                void setOther(Foo other) { other.note = 'zzzz' }
-                int n() { bar.length() }
-            }
-            def a = new Foo()
-            def b = new Foo()
-            a.setOther(b)
-            assert b.note == 'zzzz'
-            assert a.n() == 3
-        '''
-    }
-
-    @Test
-    void testDynamicWriteOnAnotherInstanceDoesNotBlock() {
-        // A dynamic name on another receiver is not an own-field write, so the
-        // final field keeps its flow type. The write itself is not a static property.
-        def err = shouldFail '''
-            @groovy.transform.CompileStatic
-            class Foo {
-                final bar = 'abc'
-                String note = ''
-                void setNote(Foo other) {
-                    def p = 'note'
-                    other."$p" = 'zzzz'
-                }
-                int n() { bar.length() }
-            }
-            new Foo().n()
-        '''
-        assert err.message.contains('property')
-        assert !err.message.contains('length')
-    }
-
-    @Test
-    void testOwnWritesOfNonFlowFieldsAreIgnored() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class Foo {
-                final bar = 'abc'
-                final String typed = 't'
-                def plain = 1
-                Foo() {
-                    typed = 'u'
-                    plain = 2
-                }
-                int n() { bar.length() }
-            }
-            def f = new Foo()
-            assert f.typed == 'u'
-            assert f.plain == 2
-            assert f.n() == 3
-        '''
-    }
-
-    @Test
-    void testSpreadOfNonFinalField() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class Foo {
-                String name = 'a'
-            }
-            @groovy.transform.CompileStatic
-            class Baz {
-                static List n(List<Foo> foos) { foos*.name }
-            }
-            assert Baz.n([new Foo()]) == ['a']
-        '''
-    }
-
-    @Test
-    void testForeignClassPropertyWrite() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class Foo {
-                final bar = 'abc'
-                void m() { System.err = System.err }
-                int n() { bar.length() }
-            }
-            assert new Foo().n() == 3
-        '''
-    }
-
-    @Test
-    void testIntersectionCastInitializerIsPinned() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class Both implements Runnable, java.io.Serializable {
+            class Both implements Runnable, Serializable {
                 void run() {}
             }
             @groovy.transform.CompileStatic
             class Foo {
-                final bar = (Runnable & java.io.Serializable) new Both()
+                final bar = (Runnable & Serializable) new Both()
                 void n() { bar.run() }
             }
-            new Foo().n()
         '''
-    }
-
-    @Test
-    void testPropertyNodeAssignmentDoesNotBlockFinalField() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class Foo {
-                final bar = 'abc'
-                private String hidden = ''
-                String getProp() { hidden }
-                void setProp(String s) { hidden = s }
-                Foo() { prop = 'z' }
-                int n() { bar.length() }
-            }
-            def f = new Foo()
-            assert f.prop == 'z'
-            assert f.n() == 3
-        '''
+        assert err.message.contains('run')
     }
 
     @Test
@@ -616,86 +665,31 @@ final class Groovy12315 {
     }
 
     @Test
-    void testReaderBeforeFieldClassIsNotFlowTyped() {
-        def err = shouldFail '''
-            @groovy.transform.CompileStatic
-            class Baz {
-                static int n(Foo f) { f.bar.length() }
-            }
-            @groovy.transform.CompileStatic
-            class Foo {
-                final bar = 'abc'
-            }
-        '''
-        assert err.message.contains('length')
-    }
-
-    @Test
-    void testMethodAssignmentBlocksFlow() {
-        def err = shouldFail '''
-            @groovy.transform.CompileStatic
-            class Foo {
-                final bar = 'abc'
-                void bad() { bar = 'nope' }
-                int n() { bar.length() }
-            }
-        '''
-        assert err.message.contains('length') || err.message.contains('read-only') || err.message.contains('final')
-    }
-
-    @Test
     void testCompoundAssignmentBlocksFlow() {
         def err = shouldFail '''
             @groovy.transform.CompileStatic
             class Foo {
-                final bar = 1
+                final bar = 40
                 Foo() { bar += 2 }
                 int n() { bar + 0 }
             }
         '''
-        assert err.message.contains('plus') || err.message.contains('final') || err.message.contains('read-only')
+        assert err.message.contains('plus')
     }
 
     @Test
     void testPrefixAndPostfixBlockFlow() {
-        def err = shouldFail '''
-            @groovy.transform.CompileStatic
-            class Foo {
-                final bar = 1
-                Foo() { ++bar }
-                int n() { bar + 0 }
-            }
-        '''
-        assert err.message.contains('plus') || err.message.contains('final') || err.message.contains('read-only')
-
-        err = shouldFail '''
-            @groovy.transform.CompileStatic
-            class Foo {
-                final bar = 1
-                Foo() { bar++ }
-                int n() { bar + 0 }
-            }
-        '''
-        assert err.message.contains('plus') || err.message.contains('final') || err.message.contains('read-only')
-    }
-
-    @Test
-    void testDynamicPropertyWriteBlocksFlow() {
-        def err = shouldFail '''
-            @groovy.transform.CompileStatic
-            class Foo {
-                final bar = 'abc'
-                final String typed = 't'
-                def plain = 1
-                Foo() {
-                    def p = 'zzz'
-                    this."$p" = 1
-                    bar = 'abcd'
+        for (String increment : ['++bar', 'bar++']) {
+            def err = shouldFail """
+                @groovy.transform.CompileStatic
+                class Foo {
+                    final bar = 1
+                    Foo() { $increment }
+                    int n() { bar + 0 }
                 }
-                int n() { bar.length() }
-            }
-        '''
-        assert err.message.contains('length') || err.message.contains('final') || err.message.contains('read-only')
+            """
+            assert err.message.contains('plus') : err.message
+        }
     }
 
     @Test
@@ -711,61 +705,36 @@ final class Groovy12315 {
                 int n() { bar.length() }
             }
         '''
-        assert err.message.contains('length') || err.message.contains('final') || err.message.contains('read-only')
+        assert err.message.contains('length')
     }
 
-    // Method-only @CompileStatic visits the anonymous class while the outer
-    // class has started its constructors but has not finished the class visit.
+    // a closure is not a constructor, so the write is rejected
     @Test
-    void testAnonymousClassInsideMethodCheckedMember() {
+    void testClosureAssignmentOutsideConstructorIsRejected() {
         def err = shouldFail '''
+            @groovy.transform.CompileStatic
+            class Foo {
+                final bar
+                Foo() {
+                    def assign = { bar = 'abc' }
+                    assign()
+                }
+                int n() { bar.length() }
+            }
+        '''
+        assert err.message.contains('final')
+    }
+
+    @Test
+    void testMethodAssignmentIsRejected() {
+        def err = shouldFail '''
+            @groovy.transform.CompileStatic
             class Foo {
                 final bar = 'abc'
-                @groovy.transform.CompileStatic
-                Object make() {
-                    return new Object() {
-                        int n() { bar.length() }
-                    }
-                }
-            }
-            new Foo().make()
-        '''
-        assert err.message.contains('length')
-    }
-
-    @Test
-    void testSpreadOnSingleReceiver() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class Foo {
-                final bar = 'ab'
-            }
-            @groovy.transform.CompileStatic
-            class Baz {
-                static def n(Foo f) { f*.bar }
-            }
-            assert Baz.n(new Foo()) == ['ab']
-        '''
-    }
-
-    @Test
-    void testAnonymousClassReadsUnreadyForeignField() {
-        def err = shouldFail '''
-            class Other {
-                final baz = 'xy'
-                @groovy.transform.CompileStatic
-                int seed() { baz.length() }
-            }
-            class Holder {
-                @groovy.transform.CompileStatic
-                int n() {
-                    def o = new Object() {
-                        int m(Other x) { x.baz.length() }
-                    }
-                    return o.m(new Other())
-                }
+                void bad() { bar = 'nope' }
+                int n() { bar.length() }
             }
         '''
-        assert err.message.contains('length')
+        assert err.message.contains('read-only') || err.message.contains('final')
     }
 }

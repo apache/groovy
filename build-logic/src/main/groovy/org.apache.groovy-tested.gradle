@@ -152,7 +152,7 @@ tasks.withType(Test).configureEach {
         TargetJavaHomeSupport.announceTestExecutableOnce(project, executable.toString())
     }
 
-    forkEvery = 40
+    forkEvery = 50
     maxParallelForks = sharedConfiguration.testMaxParallelForks
     scanForTestClasses = true
     ignoreFailures = false
