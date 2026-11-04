@@ -51,6 +51,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -786,8 +787,10 @@ public class BinaryExpressionHelper {
 
             compileStack.removeVar(resultIdx);
 
-        } else if (expression instanceof VariableExpression || expression instanceof PropertyExpression || expression instanceof FieldExpression) {
-            // here we handle a++ and a.b++
+        } else if (expression instanceof FieldExpression
+                || expression instanceof PropertyExpression
+                || (expression instanceof VariableExpression && !isThisOrSuper(expression))) { // GROOVY-7947
+            // write "++a" or "a++" result back to "a", leaving result on stack for caller
             controller.getOperandStack().dup();
             controller.getCompileStack().pushLHS(true);
             expression.visit(controller.getAcg());
