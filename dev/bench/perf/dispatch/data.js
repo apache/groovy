@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793688835086,
+  "lastUpdate": 1793775635528,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -6333,6 +6333,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.groovyRuntime",
             "value": 1526,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194129,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Scott Murphy Heiberg",
+            "username": "codeconsole",
+            "email": "scott@alwaysvip.com"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "e2d15b1c92c14094d61ca013de2e4c7812703041",
+          "message": "GROOVY-12689: keep FormatStringChecker from failing on same-source argument types\n\nFor a non-constant argument, checkFormatStringTypes took the runtime\nclass of the argument's static type. A class, enum, record or anonymous\nclass compiled in the same compilation unit has no runtime class yet,\nso ClassNode#getTypeClass threw \"BUG! ... called before the type class\nis set\" and the compilation aborted, even for '%s'. Compare the\nargument's ClassNode with the ClassHelper types instead, so such\narguments are checked like precompiled ones.",
+          "timestamp": "2026-11-04T04:58:56Z",
+          "url": "https://github.com/apache/groovy/commit/e2d15b1c92c14094d61ca013de2e4c7812703041"
+        },
+        "date": 1793775634871,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4019,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 438,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 853,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1527,
             "unit": "classes"
           },
           {
