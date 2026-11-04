@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793688811967,
+  "lastUpdate": 1793775616109,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -9076,6 +9076,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 316.84666666666664,
             "range": "±23.08",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Scott Murphy Heiberg",
+            "username": "codeconsole",
+            "email": "scott@alwaysvip.com"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "e2d15b1c92c14094d61ca013de2e4c7812703041",
+          "message": "GROOVY-12689: keep FormatStringChecker from failing on same-source argument types\n\nFor a non-constant argument, checkFormatStringTypes took the runtime\nclass of the argument's static type. A class, enum, record or anonymous\nclass compiled in the same compilation unit has no runtime class yet,\nso ClassNode#getTypeClass threw \"BUG! ... called before the type class\nis set\" and the compilation aborted, even for '%s'. Compare the\nargument's ClassNode with the ClassHelper types instead, so such\narguments are checked like precompiled ones.",
+          "timestamp": "2026-11-04T04:58:56Z",
+          "url": "https://github.com/apache/groovy/commit/e2d15b1c92c14094d61ca013de2e4c7812703041"
+        },
+        "date": 1793775609836,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 528.2266666666667,
+            "range": "±20.59",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 650.2766666666666,
+            "range": "±214.35",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 591.6400000000001,
+            "range": "±151.65",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 477.3066666666667,
+            "range": "±19.36",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 471.59666666666664,
+            "range": "±20.48",
             "unit": "ms",
             "extra": "6.0.0"
           }
