@@ -67,7 +67,7 @@ final class ScriptsAndClassesSpecTest {
         assertScript '''
             import groovy.transform.*
             import com.fasterxml.jackson.annotation.*
-            import com.fasterxml.jackson.databind.ObjectMapper
+            import tools.jackson.databind.ObjectMapper
 
             // tag::script_with_explicit_instance_run[]
             @JsonIgnoreProperties(["binding"])

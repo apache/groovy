@@ -172,8 +172,10 @@ equivalent if you need to adapt it):
   merging: approved / approved-but-pushed-since / small and waiting
   for a reviewer (yours vs. others') / open discussion / CI failing
   or pending / larger than `max-size` lines (default 600); drafts and
-  conflicting PRs are only counted. Use it to pick which PRs to
-  progress next. Needs an authenticated `gh` and `jq` (no JIRA call).
+  conflicting PRs are only counted. Each row's `since-commit:` column
+  names who has commented since the PR's last commit (author and
+  automated accounts left out; `(replied)` when the author answered
+  after them). Use it to pick which PRs to progress next. Needs an authenticated `gh` and `jq` (no JIRA call).
 
 All are read-only (no mutation, and anonymous against JIRA) — they do
 not change the read-only / hand-back posture this skill enforces.
