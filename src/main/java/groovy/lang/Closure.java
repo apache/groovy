@@ -1029,7 +1029,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * @return A new closure forwarding to the original one while caching the results
      */
     public Closure<V> memoize() {
-        return Memoize.buildMemoizeFunction((Supplier<MemoizeCache<Object, Object>> & Serializable) ConcurrentCommonCache::new, this);
+        return Memoize.buildMemoizeFunction(new CommonCacheFactory(), this);
     }
 
     /**
@@ -1053,7 +1053,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     public Closure<V> memoizeAtMost(final int maxCacheSize) {
         if (maxCacheSize < 0) throw new IllegalArgumentException("A non-negative number is required as the maxCacheSize parameter for memoizeAtMost.");
 
-        return Memoize.buildMemoizeFunction((Supplier<MemoizeCache<Object, Object>> & Serializable) () -> new LRUCache<>(maxCacheSize), this);
+        return Memoize.buildMemoizeFunction(new LRUCacheFactory(maxCacheSize), this);
     }
 
     /**
@@ -1084,8 +1084,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     public Closure<V> memoizeAtLeast(final int protectedCacheSize) {
         if (protectedCacheSize < 0) throw new IllegalArgumentException("A non-negative number is required as the protectedCacheSize parameter for memoizeAtLeast.");
 
-        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize,
-                (Supplier<MemoizeCache<Object, SoftReference<Object>>> & Serializable) ConcurrentSoftCache<Object, Object>::new, this);
+        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, new SoftCacheFactory(), this);
     }
 
     /**
@@ -1121,8 +1120,71 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         if (maxCacheSize < 0) throw new IllegalArgumentException("A non-negative number is required as the maxCacheSize parameter for memoizeBetween.");
         if (protectedCacheSize > maxCacheSize) throw new IllegalArgumentException("The maxCacheSize parameter to memoizeBetween is required to be greater or equal to the protectedCacheSize parameter.");
 
-        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize,
-                (Supplier<MemoizeCache<Object, SoftReference<Object>>> & Serializable) () -> new ConcurrentSoftCache<Object, Object>(maxCacheSize), this);
+        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, new LRUSoftCacheFactory(maxCacheSize), this);
+    }
+
+    /*
+     * The cache factories of the memoize variants are named classes rather than serializable lambdas: a lambda
+     * serializes as a SerializedLambda naming a compiler-generated method of this class, which a reader on
+     * another version or build of Groovy cannot resolve, whereas a class has a fixed serialVersionUID.
+     */
+
+    /**
+     * Creates the unlimited cache of {@link #memoize()}.
+     */
+    private static final class CommonCacheFactory implements Supplier<MemoizeCache<Object, Object>>, Serializable {
+        @Serial private static final long serialVersionUID = 6116480301574367289L;
+
+        @Override
+        public MemoizeCache<Object, Object> get() {
+            return new ConcurrentCommonCache<>();
+        }
+    }
+
+    /**
+     * Creates the size-limited cache of {@link #memoizeAtMost(int)}.
+     */
+    private static final class LRUCacheFactory implements Supplier<MemoizeCache<Object, Object>>, Serializable {
+        @Serial private static final long serialVersionUID = -8012874337951012233L;
+        private final int maxCacheSize;
+
+        LRUCacheFactory(final int maxCacheSize) {
+            this.maxCacheSize = maxCacheSize;
+        }
+
+        @Override
+        public MemoizeCache<Object, Object> get() {
+            return new LRUCache<>(maxCacheSize);
+        }
+    }
+
+    /**
+     * Creates the softly referencing cache of {@link #memoizeAtLeast(int)}.
+     */
+    private static final class SoftCacheFactory implements Supplier<MemoizeCache<Object, SoftReference<Object>>>, Serializable {
+        @Serial private static final long serialVersionUID = 3317720119265043152L;
+
+        @Override
+        public MemoizeCache<Object, SoftReference<Object>> get() {
+            return new ConcurrentSoftCache<>();
+        }
+    }
+
+    /**
+     * Creates the size-limited, softly referencing cache of {@link #memoizeBetween(int, int)}.
+     */
+    private static final class LRUSoftCacheFactory implements Supplier<MemoizeCache<Object, SoftReference<Object>>>, Serializable {
+        @Serial private static final long serialVersionUID = -1963503275018435307L;
+        private final int maxCacheSize;
+
+        LRUSoftCacheFactory(final int maxCacheSize) {
+            this.maxCacheSize = maxCacheSize;
+        }
+
+        @Override
+        public MemoizeCache<Object, SoftReference<Object>> get() {
+            return new ConcurrentSoftCache<>(maxCacheSize);
+        }
     }
 
     /**
