@@ -744,7 +744,7 @@ returns a different object on each evaluation:
   same object. Before, the read came from one object and the write went to
   the next.
 
-### Groovy 7 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
+### Groovy 6.0.1 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
 
 For a dynamic property write or read, the runtime checks whether the receiver
 overrides the `setProperty` or `getProperty` that `GroovyObject` provides. An
@@ -785,6 +785,31 @@ trait. Also unchanged: a `setProperty` or `getProperty` contributed through
 `ExpandoMetaClass`, a per-instance metaclass or a mixin, because the metaclass is
 still consulted on each access. `GroovyObjectOverrides`, which holds the check, is
 internal, so `japicmp` does not report this change.
+
+### Groovy 6.0.1 — `>` and `>=` with a primitive NaN operand are false (GROOVY-12538)
+
+When both operands of a comparison are primitive `double` or `float` values,
+the compiler compares them with a JVM instruction. It used the variant that
+treats NaN as greater than every value for all four ordered operators, so
+`NaN > x` and `NaN >= x` were `true` while `NaN < x` and `NaN <= x` were
+`false`. All four are now `false`, as in Java (JLS 15.20.1), and as Groovy
+already gave when both operands are `Double` objects. This applies to
+variables, fields and parameters declared `double` or `float`, in dynamic code
+as well as under `@TypeChecked` and `@CompileStatic`, and to `Double.NaN` and
+`Float.NaN` under `@CompileStatic`, where they are primitive.
+
+**Who is affected.** Code that relied on a NaN comparing greater, for example
+`if (reading > limit)` treating a NaN reading as over the limit. Use
+`Double.isNaN` where NaN needs handling of its own.
+
+**What is unchanged.** Comparisons that go through Groovy's number comparison
+rather than a primitive instruction: operands of different types such as
+`Double` against `Integer` or `BigDecimal`, where NaN is still greater than
+every value as in `Double.compareTo` (GROOVY-3309); `==` on `Double` objects,
+which still treats NaN as equal to NaN as `Double.equals` does; and `<=>`,
+which follows `Double.compare` for primitives and objects alike. Classes
+compiled by an earlier release keep the old comparison until they are
+recompiled.
 
 ### Groovy 7 — Groovy Console smart highlighter and the language host
 
@@ -861,31 +886,6 @@ their declared return type, as since GROOVY-6401.
   method whose result type may change between versions.
 
 The method descriptors are unchanged, so `japicmp` does not report this.
-
-### Groovy 7 — `>` and `>=` with a primitive NaN operand are false (GROOVY-12538)
-
-When both operands of a comparison are primitive `double` or `float` values,
-the compiler compares them with a JVM instruction. It used the variant that
-treats NaN as greater than every value for all four ordered operators, so
-`NaN > x` and `NaN >= x` were `true` while `NaN < x` and `NaN <= x` were
-`false`. All four are now `false`, as in Java (JLS 15.20.1), and as Groovy
-already gave when both operands are `Double` objects. This applies to
-variables, fields and parameters declared `double` or `float`, in dynamic code
-as well as under `@TypeChecked` and `@CompileStatic`, and to `Double.NaN` and
-`Float.NaN` under `@CompileStatic`, where they are primitive.
-
-**Who is affected.** Code that relied on a NaN comparing greater, for example
-`if (reading > limit)` treating a NaN reading as over the limit. Use
-`Double.isNaN` where NaN needs handling of its own.
-
-**What is unchanged.** Comparisons that go through Groovy's number comparison
-rather than a primitive instruction: operands of different types such as
-`Double` against `Integer` or `BigDecimal`, where NaN is still greater than
-every value as in `Double.compareTo` (GROOVY-3309); `==` on `Double` objects,
-which still treats NaN as equal to NaN as `Double.equals` does; and `<=>`,
-which follows `Double.compare` for primitives and objects alike. Classes
-compiled by an earlier release keep the old comparison until they are
-recompiled.
 
 ### Groovy 7 — `PlaceholderVisitor` is removed (GROOVY-11744)
 
