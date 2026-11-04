@@ -3437,6 +3437,37 @@ final class MethodReferenceTest {
             assertNoDynamicConstructorCall(lambda)
         }
 
+        // GROOVY-12488, GROOVY-12657
+        @Test
+        void testPrivateConstructorOfNestedClassIsCalledDirectlyFromPackedClosureOrLambda() {
+            def script = '''
+                @CompileStatic
+                // pack the closure into a method of C whatever groovy.target.closure.pack is set to
+                @groovy.transform.PackedClosures(mode = groovy.transform.PackedClosures.PackMode.STRICT)
+                class C {
+                    static class Box {
+                        private Box(String value) { }
+                    }
+                    static Function<String, Box> inClosure() {
+                        def make = { -> Function<String, Box> f = Box::new; f }
+                        make()
+                    }
+                    static Function<String, Box> inLambda() {
+                        Supplier<Function<String, Box>> make = () -> { Function<String, Box> f = Box::new; f }
+                        make.get()
+                    }
+                }
+            '''
+
+            def closure = compileStaticMethodBytecode('ctorRef$$packed$closure$0$0', script)
+            assert closure.hasSequence(['NEW C$Box', 'ALOAD 0', 'INVOKESPECIAL C$Box.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(closure)
+
+            def lambda = compileStaticMethodBytecode('ctorRef$doCall$1', script, 'C$_inLambda_lambda1')
+            assert lambda.hasSequence(['NEW C$Box', 'ALOAD 0', 'INVOKESPECIAL C$Box.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(lambda)
+        }
+
         // GROOVY-12488
         @Test
         void testConstructorReferenceSelectsConstructorVisibleFromEnclosingClass() {
