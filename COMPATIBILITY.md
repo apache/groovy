@@ -1481,6 +1481,58 @@ is still rejected.
 `CompilerConfiguration.setClassTagPreemptionDisabled`) keeps the previous
 behaviour.
 
+### Groovy 7 — a closure skips a null owner or delegate (GROOVY-12667, GROOVY-12671)
+
+A closure's owner or delegate can be null: after `dehydrate()`, after
+`rehydrate` with a null argument, or after `delegate = null`. A method call or
+property access in the closure body that resolves through the owner and
+delegate now skips a null one instead of calling or reading on null:
+
+- **The other candidate answers.** With `OWNER_FIRST` (the default) and a null
+  owner, the delegate's method or property is used. Earlier versions threw
+  `NullPointerException` for a property in every version, and for a method
+  from Groovy 4 on (Groovy 3 skipped the null for methods). With
+  `DELEGATE_FIRST` and a null delegate, methods now use the owner as
+  properties already did.
+- **With no candidate, the error is a missing member.** When both are null, or
+  the one target of `OWNER_ONLY` or `DELEGATE_ONLY` is null, a method of the
+  closure itself (`toString()`, `with`, `tap` and the like) runs on the
+  closure. Any other method throws `MissingMethodException`, and a property
+  throws `MissingPropertyException`, where `NullPointerException` was thrown
+  before. In Groovy 6, `toString()` and `with` instead ran against `null`.
+
+The rules are the same whether the closure dispatches through its own
+metaclass or, once it has an `ExpandoMetaClass` (after
+`ExpandoMetaClass.enableGlobally()` or after adding to a closure's metaclass),
+through `MetaClassImpl`. In a `@CompileStatic` closure, a property write
+resolves this way too. A method call or property read compiled against the
+owner is unchanged.
+
+**Who is affected.** Code that catches `NullPointerException` around a call
+in a closure with a null owner or delegate, and code that relied on
+`toString()` or `with` receiving `null` there. Nothing that ran without an
+exception before behaves differently, apart from those methods of the closure.
+No public API changes, so `japicmp` does not report this.
+
+### Groovy 7 — a closure's metaclass does not expose the private fields of `Closure` (GROOVY-12675, GROOVY-12680)
+
+A closure class does not inherit the private fields of `groovy.lang.Closure`
+(`bcw`, `thisType`, `mopPerturbed`, `serialVersionUID` and others), and its
+metaclass now treats them as any metaclass treats a superclass's private
+fields: `getProperties()` does not list them, `getMetaProperty` and
+`hasProperty` return null, and `getProperty` and `setProperty` throw
+`MissingPropertyException`. Earlier versions returned `bcw` and
+`serialVersionUID` through the metaclass. From Groovy 5 they also found and
+overwrote `thisType`, through the metaclass or through `closure.thisType = ...`
+under `TO_SELF`, and overwriting it broke the closure's access to private
+fields of its enclosing class. A `MissingPropertyException` for a closure no
+longer suggests these fields ("Possible solutions: bcw").
+
+**Who is affected.** Only code reading these fields through a closure's
+metaclass. `closure.properties` and the public properties of `Closure`
+(`owner`, `delegate`, `resolveStrategy`, `maximumNumberOfParameters` and the
+rest) are unchanged.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
