@@ -258,6 +258,67 @@ final class FormatStringCheckerTest {
         assert err.message =~ /IllegalFormatConversion: c != java\.lang\.Boolean/
     }
 
+    // GROOVY-12689
+    @Test
+    void testArgsOfTypesFromSameSource() {
+        assertScript shell, '''
+            class Foo { String toString() { 'foo' } }
+            assert String.format('%s', new Foo()) == 'foo'
+        '''
+        assertScript '''
+            import groovy.transform.TypeChecked
+
+            class Foo { String toString() { 'foo' } }
+            enum Color { RED, GREEN }
+            class Stamp extends Date { Stamp() { super(0L) } }
+
+            @TypeChecked(extensions = 'groovy.typecheckers.FormatStringChecker')
+            class Main {
+                static String show(Foo foo, Foo[] foos) {
+                    String.format('%s %s %b %d', foo, Color.RED, foos, foos.length)
+                }
+                static String year() {
+                    String.format('%tY', new Stamp())
+                }
+                String self() {
+                    String.format('%s', this)
+                }
+                String toString() { 'main' }
+            }
+            assert Main.show(new Foo(), new Foo[0]) == 'foo RED true 0'
+            assert Main.year() == String.format('%tY', new Date(0L))
+            assert new Main().self() == 'main'
+        '''
+    }
+
+    // GROOVY-12689
+    @Test
+    void testIllegalConversionForArgsOfTypesFromSameSource() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+
+            class Foo {}
+            enum Color { RED, GREEN }
+
+            @TypeChecked(extensions = 'groovy.typecheckers.FormatStringChecker')
+            class Main {
+                static String number(Foo foo) {
+                    String.format('%d', foo)
+                }
+                static String letter() {
+                    String.format('%c', Color.RED)
+                }
+                static String time(Foo foo) {
+                    String.format('%tY', foo)
+                }
+            }
+        '''
+        assert err.message =~ /IllegalFormatConversion: d != Foo/
+        assert err.message =~ /IllegalFormatConversion: c != Color/
+        assert err.message =~ /IllegalFormatConversion: Y != Foo/
+        assert !err.message.contains('BUG!')
+    }
+
     @Test
     void testMissingFormatArgumentForConstantArgs() {
         def err = shouldFail shell, '''
