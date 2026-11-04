@@ -1025,6 +1025,9 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * The cache gets garbage-collected together with the memoized closure.
      * A copy made by {@link #dehydrate()} or {@link #rehydrate(Object, Object, Object)} calls the dehydrated or
      * rehydrated closure and starts with an empty cache with the same limits.
+     * The memoizing closure calls this closure and reports and takes its delegate and resolve strategy, so
+     * setting them on either affects both; {@link #clone()} of the memoizing closure makes an independent copy
+     * sharing the cache.
      *
      * @return A new closure forwarding to the original one while caching the results
      */
@@ -1046,6 +1049,9 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * The cache gets garbage-collected together with the memoized closure.
      * A copy made by {@link #dehydrate()} or {@link #rehydrate(Object, Object, Object)} calls the dehydrated or
      * rehydrated closure and starts with an empty cache with the same limits.
+     * The memoizing closure calls this closure and reports and takes its delegate and resolve strategy, so
+     * setting them on either affects both; {@link #clone()} of the memoizing closure makes an independent copy
+     * sharing the cache.
      *
      * @param maxCacheSize The maximum size the cache can grow to
      * @return A new function forwarding to the original one while caching the results
@@ -1076,6 +1082,9 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * The cache gets garbage-collected together with the memoized closure.
      * A copy made by {@link #dehydrate()} or {@link #rehydrate(Object, Object, Object)} calls the dehydrated or
      * rehydrated closure and starts with an empty cache with the same limits.
+     * The memoizing closure calls this closure and reports and takes its delegate and resolve strategy, so
+     * setting them on either affects both; {@link #clone()} of the memoizing closure makes an independent copy
+     * sharing the cache.
      * A serialized memoized closure does not carry its softly referenced cached values: it is deserialized with an
      * empty cache with the same limits.
      * @param protectedCacheSize Number of cached return values to protect from garbage collection
@@ -1109,6 +1118,9 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * The cache gets garbage-collected together with the memoized closure.
      * A copy made by {@link #dehydrate()} or {@link #rehydrate(Object, Object, Object)} calls the dehydrated or
      * rehydrated closure and starts with an empty cache with the same limits.
+     * The memoizing closure calls this closure and reports and takes its delegate and resolve strategy, so
+     * setting them on either affects both; {@link #clone()} of the memoizing closure makes an independent copy
+     * sharing the cache.
      * A serialized memoized closure does not carry its softly referenced cached values: it is deserialized with an
      * empty cache with the same limits.
      * @param protectedCacheSize Number of cached return values to protect from garbage collection
@@ -1203,6 +1215,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * def factorial = { n {@code ->} fact(n, 1G)}
      * println factorial(20) // {@code =>} 2432902008176640000
      * </pre>
+     * The trampolined closure calls a copy of this closure curried with the parameters, and reports and takes
+     * the copy's delegate and resolve strategy; {@link #clone()} of the trampolined closure makes an independent copy.
      *
      * @param args Parameters to the closure, so as the trampoline mechanism can call it
      * @return A closure, which will execute the original closure on a trampoline.
@@ -1218,6 +1232,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * the calculation and, instead of a recursive call to itself or another function, it returns a new closure,
      * which will be executed by the trampoline as the next step.
      * Once a non-closure value is returned, the trampoline stops and returns the value as the final result.
+     * The trampolined closure calls this closure and reports and takes its delegate and resolve strategy, so
+     * setting them on either affects both; {@link #clone()} of the trampolined closure makes an independent copy.
      * @return A closure, which will execute the original closure on a trampoline.
      * @see #trampoline(Object...)
      */
