@@ -488,4 +488,25 @@ final class RegexCheckerTest {
             check()
         '''
     }
+
+    // GROOVY-12688
+    @Test
+    void testMethodsWithoutBody() {
+        assertScript shell, '''
+            interface Named { String name() }
+            enum Op {
+                PLUS { int apply(int a, int b) { a + b } }
+                abstract int apply(int a, int b)
+            }
+            assert Op.PLUS.apply(1, 2) == 3
+        '''
+        def err = shouldFail shell, '''
+            enum Op {
+                SHORT { Pattern pattern() { ~/\\w{3/ } }
+                abstract Pattern pattern()
+            }
+        '''
+        assert err.message =~ /Bad regex: Unclosed counted closure/
+        assert !err.message.contains('General error')
+    }
 }
