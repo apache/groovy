@@ -1001,6 +1001,23 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12595
+    @Test
+    void testArrayCloneOfArrayElement() {
+        assertScript '''
+            float[] one(float[][] a) { a[0].clone() }
+            String[] two(String[][] a) { a[0].clone() }
+
+            float[][] f = [[1f, 2f] as float[]]
+            assert one(f) == [1f, 2f] as float[]
+            assert !one(f).is(f[0])
+
+            String[][] s = [['x', 'y'] as String[]]
+            assert two(s) == ['x', 'y'] as String[]
+            assert !two(s).is(s[0])
+        '''
+    }
+
     // GROOVY-5793
     @Test
     void testShouldNotForceAsTypeWhenListOfNullAssignedToArray() {
