@@ -59,6 +59,7 @@ import java.util.function.ToIntFunction;
 
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.joining;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
@@ -81,6 +82,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filter
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignableTo;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isInheritedPrivateMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.resolveClassNodeGenerics;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -117,7 +119,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         MethodReferenceTarget referenceTarget = resolveMethodReferenceTarget(methodReferenceExpression);
         ResolvedMethodReference resolvedMethodReference = resolveMethodReference(methodReferenceExpression, functionalInterface, referenceTarget);
-        validate(methodReferenceExpression, referenceTarget.type(), resolvedMethodReference.methodName(),
+        validate(methodReferenceExpression, referenceTarget.expression(), referenceTarget.type(), resolvedMethodReference.methodName(),
             resolvedMethodReference.implementationMethod(), functionalInterface.parametersWithExactType(),
             resolveClassNodeGenerics(extractPlaceholders(functionalInterface.functionalType()), null, functionalInterface.abstractMethod().getReturnType()));
 
@@ -200,6 +202,12 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         if (ClassHelper.isPrimitiveType(targetType)) { // GROOVY-11353
             targetType = ClassHelper.getWrapper(targetType);
+        } else if (!classExpression && isThisExpression(typeOrTargetRef) && isClassClassNodeWrappingConcreteType(targetType)) {
+            // "this" in a static context is the class itself: this::name is resolved like Type::name
+            targetType = targetType.getGenericsTypes()[0].getType();
+            typeOrTargetRef = classX(targetType);
+            typeOrTargetRef.setSourcePosition(methodReferenceExpression.getExpression());
+            classExpression = true;
         }
 
         return new MethodReferenceTarget(typeOrTargetRef, targetType, classExpression, false);
@@ -377,10 +385,10 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         }
     }
 
-    private void validate(final MethodReferenceExpression methodReference, final ClassNode targetType, final String methodName, final MethodNode methodNode, final Parameter[] samParameters, final ClassNode samReturnType) {
+    private void validate(final MethodReferenceExpression methodReference, final Expression typeOrTargetRef, final ClassNode targetType, final String methodName, final MethodNode methodNode, final Parameter[] samParameters, final ClassNode samReturnType) {
         if (methodNode == null) {
             String error;
-            if (!(methodReference.getExpression() instanceof ClassExpression)) {
+            if (!(typeOrTargetRef instanceof ClassExpression)) {
                 error = "Failed to find method '%s(%s)'";
             } else {
                 error = "Failed to find class method '%s(%s)'";
@@ -393,7 +401,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             addFatalError("Invalid return type: void is not convertible to " + samReturnType.getText(), methodReference);
         } else if (!AsmClassGenerator.isMemberDirectlyAccessible(methodNode.getModifiers(), methodNode.getDeclaringClass(), controller.getClassNode())) {
             addFatalError("Cannot access method: " + methodName + " of class: " + methodNode.getDeclaringClass().getText(), methodReference); // GROOVY-11365
-        } else if (samParameters.length > 0 && isTypeReferringInstanceMethod(methodReference.getExpression(), methodNode) && !isAssignableTo(samParameters[0].getType(), targetType)) {
+        } else if (samParameters.length > 0 && isTypeReferringInstanceMethod(typeOrTargetRef, methodNode) && !isAssignableTo(samParameters[0].getType(), targetType)) {
             throw new RuntimeParserException("Invalid receiver type: " + samParameters[0].getType().getText() + " is not compatible with " + targetType.getText(), methodReference.getExpression());
         }
     }

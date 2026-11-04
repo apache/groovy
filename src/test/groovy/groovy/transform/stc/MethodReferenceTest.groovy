@@ -3295,6 +3295,80 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // GROOVY-12481
+    void testThisMethodReferenceInStaticContext() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static int foo() { 42 }
+                static int bar(int i) { i + 1 }
+                static Supplier<Integer> s
+                static {
+                    s = this::foo
+                }
+                static test() {
+                    Supplier<Integer> s = this::foo
+                    assert s.get() == 42
+                    Function<Integer, Integer> f = this::bar
+                    assert f.apply(41) == 42
+                    assert C.s.get() == 42
+                    Supplier<String> n = this::getSimpleName // method of java.lang.Class
+                    assert n.get() == 'C'
+                    def c = { -> Supplier<Integer> r = this::foo; r.get() }
+                    assert c() == 42
+                }
+            }
+            C.test()
+        '''
+    }
+
+    @Test // GROOVY-12481
+    void testThisMethodReferenceInStaticContextOfNestedClass() {
+        assertScript shell, '''
+            @CompileStatic
+            class Outer {
+                static int foo() { 1 }
+                static class Nested {
+                    static int foo() { 2 }
+                    static test() {
+                        Supplier<Integer> s = this::foo // Nested::foo, not Outer::foo
+                        assert s.get() == 2
+                    }
+                }
+            }
+            Outer.Nested.test()
+        '''
+    }
+
+    @Test // GROOVY-12481
+    void testThisMethodReferenceToInstanceMethodInStaticContext() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                int inst() { 42 }
+                static test() {
+                    Function<C, Integer> f = this::inst // like C::inst
+                    assert f.apply(new C()) == 42
+                }
+            }
+            C.test()
+        '''
+    }
+
+    @Test // GROOVY-12481
+    void testThisMethodReferenceToInstanceMethodInStaticContextNeedsReceiver() {
+        def err = shouldFail shell, '''
+            @CompileStatic
+            class C {
+                int inst() { 42 }
+                static test() {
+                    Supplier<Integer> s = this::inst
+                }
+            }
+        '''
+        assert err.message.contains("Failed to find class method 'inst()' for the type: C")
+    }
+
     @Nested
     class NativeMethodReferenceBytecodeTest extends AbstractBytecodeTestCase {
         @Test
@@ -3595,11 +3669,13 @@ final class MethodReferenceTest {
             assertNoDynamicConstructorCall(bytecode)
         }
 
-        // GROOVY-12488
+        // GROOVY-12488, GROOVY-12657
         @Test
         void testPrivateConstructorOfNestedClassIsCalledDirectlyFromClosureOrLambda() {
             def script = '''
                 @CompileStatic
+                // keep the closure class this test inspects when groovy.target.closure.pack is set
+                @groovy.transform.PackedClosures(mode = groovy.transform.PackedClosures.PackMode.DISABLED)
                 class C {
                     static class Box {
                         private Box(String value) { }
@@ -3620,6 +3696,37 @@ final class MethodReferenceTest {
             assertNoDynamicConstructorCall(closure)
 
             def lambda = compileStaticMethodBytecode('ctorRef$doCall$1', script, 'C$_inLambda_lambda2')
+            assert lambda.hasSequence(['NEW C$Box', 'ALOAD 0', 'INVOKESPECIAL C$Box.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(lambda)
+        }
+
+        // GROOVY-12488, GROOVY-12657
+        @Test
+        void testPrivateConstructorOfNestedClassIsCalledDirectlyFromPackedClosureOrLambda() {
+            def script = '''
+                @CompileStatic
+                // pack the closure into a method of C whatever groovy.target.closure.pack is set to
+                @groovy.transform.PackedClosures(mode = groovy.transform.PackedClosures.PackMode.STRICT)
+                class C {
+                    static class Box {
+                        private Box(String value) { }
+                    }
+                    static Function<String, Box> inClosure() {
+                        def make = { -> Function<String, Box> f = Box::new; f }
+                        make()
+                    }
+                    static Function<String, Box> inLambda() {
+                        Supplier<Function<String, Box>> make = () -> { Function<String, Box> f = Box::new; f }
+                        make.get()
+                    }
+                }
+            '''
+
+            def closure = compileStaticMethodBytecode('ctorRef$$packed$closure$0$0', script)
+            assert closure.hasSequence(['NEW C$Box', 'ALOAD 0', 'INVOKESPECIAL C$Box.<init> (Ljava/lang/String;)V'])
+            assertNoDynamicConstructorCall(closure)
+
+            def lambda = compileStaticMethodBytecode('ctorRef$doCall$1', script, 'C$_inLambda_lambda1')
             assert lambda.hasSequence(['NEW C$Box', 'ALOAD 0', 'INVOKESPECIAL C$Box.<init> (Ljava/lang/String;)V'])
             assertNoDynamicConstructorCall(lambda)
         }

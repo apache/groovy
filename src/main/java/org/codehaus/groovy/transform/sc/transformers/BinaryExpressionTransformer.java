@@ -35,6 +35,8 @@ import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PostfixExpression;
+import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
@@ -71,6 +73,7 @@ import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.elvisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
@@ -194,24 +197,28 @@ public class BinaryExpressionTransformer {
         if (left instanceof PropertyExpression && ((PropertyExpression) left).isSpreadSafe()) return null;
 
         MethodNode setter = left.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-        if (!(setter instanceof ExtensionMethodNode) || setter.getParameters().length != 1) return null;
-
-        MethodNode getter = extensionPropertyGetter(left, (ExtensionMethodNode) setter);
-        if (getter == null) return null;
+        if (setter == null || setter.getParameters().length != 1) return null;
 
         boolean implicitThis;
         boolean safe;
         Expression receiver;
+        String propertyName;
         if (left instanceof PropertyExpression) {
             PropertyExpression property = (PropertyExpression) left;
             receiver = property.getObjectExpression();
             implicitThis = property.isImplicitThis();
             safe = property.isSafe();
+            propertyName = property.getPropertyAsString();
         } else {
             receiver = implicitPropertyReceiver((VariableExpression) left);
             implicitThis = true;
             safe = false;
+            propertyName = ((VariableExpression) left).getName();
         }
+
+        // the setter may be a real method when the getter is an extension method
+        MethodNode getter = propertyGetter(left, setter, receiverType(receiver), propertyName, true);
+        if (getter == null) return null;
 
         receiver = staticCompilationTransformer.transform(receiver);
         Expression unchanged = receiver;
@@ -236,6 +243,118 @@ public class BinaryExpressionTransformer {
         return setterCall;
     }
 
+    /**
+     * {@code b.count++} or {@code --b.count} on a property with an extension
+     * getter or setter. The operand cannot be read or written as a property, so
+     * the increment is a getter call, then {@code next()} or {@code previous()},
+     * then a setter call. The receiver is evaluated once. A prefix expression
+     * yields the new value and a postfix expression the old one. A bare name is
+     * left alone: in a closure it may resolve through the delegate, which code
+     * generation already handles.
+     *
+     * @param expr a prefix or postfix expression
+     * @return the rewritten expression, or {@code null} when the operand is not such a property
+     */
+    Expression transformExtensionPropertyIncrement(final Expression expr) {
+        boolean postfix = expr instanceof PostfixExpression;
+        Expression operand = postfix ? ((PostfixExpression) expr).getExpression() : ((PrefixExpression) expr).getExpression();
+        int op = (postfix ? ((PostfixExpression) expr).getOperation() : ((PrefixExpression) expr).getOperation()).getType();
+        if (op != Types.PLUS_PLUS && op != Types.MINUS_MINUS) return null;
+
+        if (!(operand instanceof PropertyExpression) || operand instanceof AttributeExpression) return null;
+        PropertyExpression property = (PropertyExpression) operand;
+        String propertyName = property.getPropertyAsString();
+        if (property.isSpreadSafe() || propertyName == null) return null;
+
+        MethodNode setter = operand.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (setter == null || setter.getParameters().length != 1) return null;
+
+        Expression receiver = property.getObjectExpression();
+        // the type checker resolves no read for an increment, so the getter is found here
+        MethodNode getter = propertyGetter(operand, setter, receiverType(receiver), propertyName, false);
+        if (getter == null) return null;
+
+        boolean implicitThis = property.isImplicitThis();
+        boolean safe = property.isSafe();
+
+        receiver = staticCompilationTransformer.transform(receiver);
+        Expression unchanged = receiver;
+        if (!implicitThis) receiver = transformReceiverOnce(receiver);
+        List<TemporaryVariableExpression> temps = new ArrayList<>();
+        if (receiver != unchanged) temps.add((TemporaryVariableExpression) receiver);
+
+        ClassNode readType = getter.getReturnType();
+        MethodCallExpression getterCall = callX(receiver, getter.getName());
+        getterCall.setImplicitThis(implicitThis);
+        getterCall.setMethodTarget(getter);
+        getterCall.setSafe(safe);
+        getterCall.setSourcePosition(operand);
+        getterCall.putNodeMetaData(INFERRED_TYPE, readType);
+
+        Expression current = getterCall;
+        if (postfix) {
+            TemporaryVariableExpression old = new TemporaryVariableExpression(getterCall);
+            temps.add(0, old);
+            current = old;
+        }
+        Expression value = incrementValue(expr, op, current, readType, setter.getParameters()[0].getType());
+        if (value == null) return null;
+
+        Expression setterCall = transformAssignmentToSetterCall(receiver, setter, value, implicitThis, safe, property.getProperty(), expr);
+        if (postfix) {
+            return new SequenceExpression(setterCall, current, temps);
+        }
+        return temps.isEmpty() ? setterCall : new ReleasingExpression(setterCall, temps.get(0));
+    }
+
+    /**
+     * The new value of an increment or decrement: {@code next()} or
+     * {@code previous()} where the type checker resolved one, otherwise plus
+     * or minus one for a primitive or boxed number. The value is converted to
+     * the setter's parameter type only where it does not already fit, so a
+     * setter that accepts a wider type gets the value unchanged, as it does
+     * in dynamic Groovy.
+     *
+     * @param readType the getter's return type
+     * @param writeType the setter's parameter type
+     */
+    private Expression incrementValue(final Expression expr, final int op, final Expression current, final ClassNode readType, final ClassNode writeType) {
+        MethodNode method = expr.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (method != null) {
+            MethodCallExpression call = callX(current, method.getName());
+            call.setImplicitThis(false);
+            call.setMethodTarget(method);
+            call.setSourcePosition(expr);
+            ClassNode returnType = method.getReturnType();
+            call.putNodeMetaData(INFERRED_TYPE, returnType);
+            if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(returnType, writeType)) {
+                return call;
+            }
+            return staticCompilationTransformer.transform(castX(writeType, call)); // e.g. next(Number) for a BigDecimal
+        }
+        ClassNode arithmeticType = ClassHelper.getUnwrapper(readType);
+        if (ClassHelper.isPrimitiveType(arithmeticType) && !ClassHelper.isPrimitiveBoolean(arithmeticType)) {
+            Expression operand = arithmeticType.equals(readType) ? current : castX(arithmeticType, current);
+            int bare = op == Types.PLUS_PLUS ? Types.PLUS : Types.MINUS;
+            BinaryExpression step = binX(operand, Token.newSymbol(bare, expr.getLineNumber(), expr.getColumnNumber()), constX(1, true));
+            step.setSourcePosition(expr);
+            return staticCompilationTransformer.transform(castX(writeType, step));
+        }
+        return null;
+    }
+
+    private static MethodNode realPropertyGetter(final ClassNode type, final String name, final boolean isStatic) {
+        MethodNode getter = type.getGetterMethod("get" + capitalize(name));
+        if (getter == null) {
+            getter = type.getGetterMethod("is" + capitalize(name));
+        }
+        return getter != null && getter.getParameters().length == 0 && getter.isStatic() == isStatic ? getter : null;
+    }
+
+    private ClassNode receiverType(final Expression receiver) {
+        return receiver instanceof ClassExpression ? receiver.getType() : findType(receiver);
+    }
+
     private static VariableExpression implicitPropertyReceiver(final VariableExpression property) {
         Object implicit = property.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
         String receiverName = "this";
@@ -251,27 +370,47 @@ public class BinaryExpressionTransformer {
         return receiver;
     }
 
-    private MethodNode extensionPropertyGetter(final Expression left, final ExtensionMethodNode setter) {
-        Object stored = left.getNodeMetaData(StaticCompilationMetadataKeys.EXTENSION_PROPERTY_GETTER);
+    /**
+     * The getter that reads the property {@code setter} writes, when one of
+     * the two is an extension method; {@code null} when neither is or no
+     * getter applies. An extension getter the type checker recorded comes
+     * first. Then a real getter of the receiver type, which a plain read calls
+     * ahead of an extension getter of the same property. Then an extension
+     * getter.
+     *
+     * @param readResolved whether the type checker resolved the read, so that
+     *        with a real setter only an extension getter it recorded applies
+     */
+    private MethodNode propertyGetter(final Expression target, final MethodNode setter, final ClassNode receiverType, final String propertyName, final boolean readResolved) {
+        Object stored = target.getNodeMetaData(StaticCompilationMetadataKeys.EXTENSION_PROPERTY_GETTER);
         if (stored instanceof ExtensionMethodNode && ((MethodNode) stored).getParameters().length == 0) {
             return (MethodNode) stored;
         }
-        String propertyName = left instanceof PropertyExpression
-                ? ((PropertyExpression) left).getPropertyAsString()
-                : ((VariableExpression) left).getName();
         if (propertyName == null) return null;
-        return findExtensionPropertyGetter(setter, propertyName);
+
+        boolean extensionSetter = setter instanceof ExtensionMethodNode;
+        boolean isStatic = extensionSetter ? ((ExtensionMethodNode) setter).isStaticExtension() : setter.isStatic();
+        if (receiverType != null) {
+            MethodNode realGetter = realPropertyGetter(receiverType, propertyName, isStatic);
+            if (realGetter != null) {
+                return extensionSetter ? realGetter : null; // two real accessors need no rewrite
+            }
+        }
+        if (extensionSetter) {
+            return findExtensionPropertyGetter(setter.getDeclaringClass(), isStatic, propertyName);
+        }
+        if (readResolved || receiverType == null) return null;
+        return findExtensionPropertyGetter(receiverType, isStatic, propertyName);
     }
 
-    private MethodNode findExtensionPropertyGetter(final ExtensionMethodNode setter, final String propertyName) {
+    private MethodNode findExtensionPropertyGetter(final ClassNode receiverType, final boolean staticExtension, final String propertyName) {
         // SourceUnit always installs a class loader, so the lookup can use it directly.
         ClassLoader loader = staticCompilationTransformer.getSourceUnit().getClassLoader();
 
-        ClassNode receiverType = setter.getDeclaringClass();
         Set<MethodNode> methods = new LinkedHashSet<>();
-        collectExtensionGetters(methods, loader, receiverType, propertyName, setter.isStaticExtension());
+        collectExtensionGetters(methods, loader, receiverType, propertyName, staticExtension);
         if (ClassHelper.isPrimitiveType(receiverType)) {
-            collectExtensionGetters(methods, loader, ClassHelper.getWrapper(receiverType), propertyName, setter.isStaticExtension());
+            collectExtensionGetters(methods, loader, ClassHelper.getWrapper(receiverType), propertyName, staticExtension);
         }
         List<MethodNode> best = StaticTypeCheckingSupport.chooseBestMethod(receiverType, methods, ClassNode.EMPTY_ARRAY);
         if (best.size() == 1) {
@@ -731,6 +870,47 @@ public class BinaryExpressionTransformer {
 
     private static Consumer<WriterController> classgenCallback(final Expression source) {
         return (source instanceof TemporaryVariableExpression ? ((TemporaryVariableExpression) source)::remove : wc -> {});
+    }
+
+    /**
+     * Evaluates {@code first} and discards its value, then evaluates {@code second}
+     * as the value of the expression, and releases the temporaries afterwards.
+     */
+    private static final class SequenceExpression extends Expression {
+
+        private final Expression first;
+        private final Expression second;
+        private final List<TemporaryVariableExpression> temps;
+
+        SequenceExpression(final Expression first, final Expression second, final List<TemporaryVariableExpression> temps) {
+            this.first = first;
+            this.second = second;
+            this.temps = temps;
+            setSourcePosition(first);
+            copyNodeMetaData(second);
+        }
+
+        @Override
+        public ClassNode getType() {
+            return second.getType();
+        }
+
+        @Override
+        public Expression transformExpression(final ExpressionTransformer transformer) {
+            return new SequenceExpression(transformer.transform(first), transformer.transform(second), temps);
+        }
+
+        @Override
+        public void visit(final GroovyCodeVisitor visitor) {
+            first.visit(visitor);
+            if (visitor instanceof AsmClassGenerator acg) {
+                acg.getController().getOperandStack().pop();
+            }
+            second.visit(visitor);
+            if (visitor instanceof AsmClassGenerator acg) {
+                for (TemporaryVariableExpression temp : temps) temp.remove(acg.getController());
+            }
+        }
     }
 
     /**
