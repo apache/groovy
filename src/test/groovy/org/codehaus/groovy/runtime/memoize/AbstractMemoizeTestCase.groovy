@@ -268,6 +268,16 @@ abstract class AbstractMemoizeTestCase {
         assert mem(2) == 4
     }
 
+    // GROOVY-12669: the serialized form names cache factory classes, not compiler-generated lambda methods,
+    // which a reader on another version or build of Groovy cannot resolve
+    @Test
+    void testSerializedFormHoldsNoLambda() {
+        Closure mem = buildMemoizeClosure(Counting.dehydrated())
+        def out = new ByteArrayOutputStream()
+        out.withObjectOutputStream { it.writeObject(mem) }
+        assert !new String(out.toByteArray(), 'ISO-8859-1').contains('SerializedLambda')
+    }
+
     static Closure roundTrip(Closure closure) {
         def out = new ByteArrayOutputStream()
         out.withObjectOutputStream { it.writeObject(closure) }
