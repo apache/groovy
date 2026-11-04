@@ -369,4 +369,54 @@ final class ClosureDelegationTest {
             assert err.method == 'foo'
         }
     }
+
+    // GROOVY-12667, GROOVY-12578: a closure whose metaclass is an ExpandoMetaClass dispatches
+    // through MetaClassImpl, which skips a null owner or delegate as ClosureMetaClass does
+    @Test
+    void testNullOwnerOrDelegateWithEitherClosureDispatch() {
+        assertScript '''
+            import org.codehaus.groovy.runtime.InvokerHelper
+            import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass
+            import static groovy.test.GroovyAssert.shouldFail
+
+            class D { def foo() { 'delegate' } }
+            class C {
+                def foo() { 'owner' }
+                Closure callsFoo() { { -> foo() } }
+                Closure callsToString() { { -> toString() } }
+                Closure callsWith() { { -> int n = 0; with { n++ }; n } }
+            }
+
+            def run = { Closure closure, Object delegate, Object owner, int strategy, boolean expando ->
+                Closure c = closure.rehydrate(delegate, owner, owner)
+                c.resolveStrategy = strategy
+                if (expando) {
+                    def emc = new ExpandoMetaClass(c.getClass(), false, true)
+                    emc.initialize()
+                    c.setMetaClass(emc)
+                }
+                assert (InvokerHelper.getMetaClass(c) instanceof ClosureMetaClass) == !expando
+                c()
+            }
+
+            for (expando in [false, true]) {
+                // the other candidate answers
+                assert run(new C().callsFoo(), new D(), null, Closure.OWNER_FIRST, expando) == 'delegate'
+                assert run(new C().callsFoo(), null, new C(), Closure.DELEGATE_FIRST, expando) == 'owner'
+
+                for (strategy in [Closure.OWNER_FIRST, Closure.DELEGATE_FIRST, Closure.OWNER_ONLY]) {
+                    // with no candidate, a method of the closure itself is called once on the closure
+                    Closure c = new C().callsToString()
+                    assert run(c, null, null, strategy, expando).startsWith(c.getClass().name + '@')
+                    assert run(new C().callsWith(), null, null, strategy, expando) == 1
+
+                    // and any other method is missing
+                    def err = shouldFail(MissingMethodException) {
+                        run(new C().callsFoo(), null, null, strategy, expando)
+                    }
+                    assert err.method == 'foo'
+                }
+            }
+        '''
+    }
 }

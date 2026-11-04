@@ -1045,6 +1045,39 @@ which method a reference names, rather than on argument classes alone, is
 not cached; this arises only for calls that were ambiguous or chose the
 wrong overload before.
 
+### Groovy 6.0.1 — a closure method call skips a null owner or delegate (GROOVY-12667)
+
+A closure's owner or delegate can be null: after `dehydrate()`, after
+`rehydrate` with a null argument, or after `delegate = null`. A method call in
+the closure body that resolves through the owner and delegate now skips a null
+one instead of calling on null:
+
+- **The other candidate answers.** With `OWNER_FIRST` (the default) and a null
+  owner, the delegate's method is used; with `DELEGATE_FIRST` and a null
+  delegate, the owner's. Earlier versions threw `NullPointerException` (from
+  Groovy 4 on; Groovy 3 skipped the null).
+- **With no candidate, the error is a missing method.** When both are null, or
+  the one target of `OWNER_ONLY` or `DELEGATE_ONLY` is null, a method of the
+  closure itself (`toString()`, `with`, `tap` and the like) runs on the
+  closure, and any other method throws `MissingMethodException`, where
+  `NullPointerException` was thrown before. In Groovy 6.0.0, `toString()` and
+  `with` instead ran against `null`, as such methods are first tried on the
+  delegate and owner (GROOVY-11858).
+
+The rules are the same whether the closure dispatches through its own
+metaclass or, once it has an `ExpandoMetaClass` (after
+`ExpandoMetaClass.enableGlobally()` or after adding to a closure's metaclass),
+through `MetaClassImpl`. A method call compiled against the owner is
+unchanged. Property access is unchanged: with a null owner or delegate it can
+still throw `NullPointerException` (Groovy 7 skips the null there too,
+GROOVY-12671).
+
+**Who is affected.** Code that catches `NullPointerException` around a method
+call in a closure with a null owner or delegate, and code that relied on
+`toString()` or `with` receiving `null` there. Nothing that ran without an
+exception before behaves differently, apart from those methods of the
+closure. No public API changes, so `japicmp` does not report this.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
