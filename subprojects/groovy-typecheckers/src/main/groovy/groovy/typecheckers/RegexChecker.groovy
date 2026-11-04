@@ -121,7 +121,7 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
     @Override
     Object run() {
         beforeVisitMethod { MethodNode method ->
-            method.code.visit(new CheckingVisitor() {
+            method.code?.visit(new CheckingVisitor() {
                 @Override
                 void visitBitwiseNegationExpression(BitwiseNegationExpression expression) {
                     super.visitBitwiseNegationExpression(expression)
@@ -258,7 +258,7 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
         }
 
         afterVisitMethod { MethodNode method ->
-            method.code.visit(new CheckingVisitor() {
+            method.code?.visit(new CheckingVisitor() {
                 @Override
                 void visitDeclarationExpression(DeclarationExpression decl) {
                     super.visitDeclarationExpression(decl)
