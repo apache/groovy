@@ -18,15 +18,14 @@
  */
 package groovy.csv;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.MappingIterator;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.dataformat.csv.CsvMapper;
-import com.fasterxml.jackson.dataformat.csv.CsvParser;
-import com.fasterxml.jackson.dataformat.csv.CsvSchema;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.groovy.lang.annotation.Incubating;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.MappingIterator;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.dataformat.csv.CsvMapper;
+import tools.jackson.dataformat.csv.CsvReadFeature;
+import tools.jackson.dataformat.csv.CsvSchema;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,14 +70,16 @@ public class CsvSlurper {
         this.mapper = mapper();
     }
 
-    // CsvMapper is thread-safe once configured, so a single shared instance is reused
+    // CsvMapper is thread-safe once configured, so a single shared instance is reused.
+    // Jackson 2's defaults keep databinding behaving as it did before Jackson 3; java.time
+    // support is built in. Jackson 2's CsvMapper also sorted properties alphabetically, which
+    // configureForJackson2() does not restore: a plain class's columns are alphabetical while
+    // record components keep their declaration order, as the user guide documents.
     private static final CsvMapper MAPPER = CsvMapper.builder()
-            .addModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-            .disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
-            // record components in declaration order rather than alphabetical,
-            // so schemas derived from a type match its declared column order
-            .enable(MapperFeature.SORT_CREATOR_PROPERTIES_BY_DECLARATION_ORDER)
+            .configureForJackson2()
+            .enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)
+            .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+            .disable(DateTimeFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
             .build();
 
     static CsvMapper mapper() {
@@ -186,7 +187,7 @@ public class CsvSlurper {
             // no header row and no explicit columns: generate column names per row
             MappingIterator<String[]> it = mapper
                     .readerFor(String[].class)
-                    .with(CsvParser.Feature.WRAP_AS_ARRAY)
+                    .with(CsvReadFeature.WRAP_AS_ARRAY)
                     .with(buildSchema())
                     .readValues(reader);
             List<Map<String, String>> result = new ArrayList<>();
@@ -199,7 +200,7 @@ public class CsvSlurper {
                 result.add(map);
             }
             return result;
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new CsvRuntimeException(e);
         }
     }
@@ -322,7 +323,7 @@ public class CsvSlurper {
                     .with(schema)
                     .readValues(reader);
             return it.readAll();
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new CsvRuntimeException(e);
         }
     }
