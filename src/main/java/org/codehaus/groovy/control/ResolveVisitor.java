@@ -986,13 +986,18 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     /**
      * Looks up a class of the default package on the class path for a class of the default package. It takes
      * precedence over the default imports, as a class of a named package does for a class of the same package and
-     * as a class of the default package that is being compiled does. A miss leaves {@code type} untouched and is
-     * cached by the {@link ClassNodeResolver}, so the later {@link #resolveToOuter} of the same lookup is a no-op.
+     * as a class of the default package that is being compiled does, unless the
+     * {@link CompilerConfiguration#DEFAULT_PACKAGE_FIRST} option is {@code false}. A miss leaves {@code type}
+     * untouched and is cached by the {@link ClassNodeResolver}, so the later {@link #resolveToOuter} of the same
+     * lookup is a no-op.
      *
      * @param type the type to resolve
      * @return {@code true} if the type was resolved
      */
     private boolean resolveFromDefaultPackage(final ClassNode type) {
+        if (compilationUnit == null || Boolean.FALSE.equals(compilationUnit.getConfiguration().getOptimizationOptions().get(CompilerConfiguration.DEFAULT_PACKAGE_FIRST))) {
+            return false;
+        }
         ModuleNode module = currentClass.getModule();
         if (module == null || module.hasPackageName() || type instanceof ConstructedClassWithPackage
                 || type instanceof ConstructedNestedClass || type instanceof LowerCaseClass) {
