@@ -3919,4 +3919,48 @@ final class ParserNegativeSyntaxTest {
             |1 error
             |'''.stripMargin()
     }
+
+    // GROOVY-12694
+    @Test
+    void 'type pattern in case label after a record declaration'() {
+        // `(double radius)` is a record header the parser had already
+        // accepted, not a cast missing its ')'; the case label is the error
+        expectParseError '''\
+            |record Circle(double radius) {}
+            |Object o = new Circle(1)
+            |String s = switch (o) { case Circle c -> 'circle'; default -> 'other' }
+            |'''.stripMargin(), '''\
+            |Unexpected input: 'String s = switch (o) { case Circle c' @ line 3, column 37.
+            |   String s = switch (o) { case Circle c -> 'circle'; default -> 'other' }
+            |                                       ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    // GROOVY-12694
+    @Test
+    void 'closed paren groups before a later syntax error are not missing parens'() {
+        // a primitive-typed parameter, a for header and a parenthesised
+        // call all read as `( type <expr>` to the cast scan
+        expectParseError '''\
+            |for (int i = 0; i < 3; i++) { println i }
+            |Object o = 1
+            |String s = switch (o) { case Integer i -> 'int'; default -> 'other' }
+            |'''.stripMargin(), '''\
+            |Unexpected input: 'String s = switch (o) { case Integer i' @ line 3, column 38.
+            |   String s = switch (o) { case Integer i -> 'int'; default -> 'other' }
+            |                                        ^
+            |
+            |1 error
+            |'''.stripMargin()
+        expectParseError 'def foo(int x) { x }\ndef y = 1 +', '''\
+            |Unexpected input: '+' @ line 2, column 11.
+            |   def y = 1 +
+            |             ^
+            |
+            |1 error
+            |'''.stripMargin()
+        expectContains 'def y = (Math.max(1, 2))\ndef z = 1 +', "Unexpected input: '+' @ line 2, column 11."
+    }
 }
