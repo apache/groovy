@@ -45,7 +45,6 @@ import org.codehaus.groovy.util.FastArray;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -196,8 +195,15 @@ public final class ClosureMetaClass extends MetaClassImpl {
     @Override
     public MetaProperty getMetaProperty(final String name) {
         MetaProperty mp = CLOSURE_METACLASS.getMetaProperty(name);
-        // GROOVY-12680: a closure class does not inherit the private members of Closure
-        return (mp != null && mp.isPrivate()) ? null : mp;
+        return isPrivateMemberOfClosure(mp) ? null : mp;
+    }
+
+    /**
+     * A closure class does not inherit the private members of {@link Closure}, so the
+     * property list and every property lookup of a closure's metaclass leave them out.
+     */
+    private static boolean isPrivateMemberOfClosure(final MetaProperty mp) {
+        return mp != null && mp.isPrivate();
     }
 
     private static boolean isPrivateClosureProperty(final Class sender, final String name) {
@@ -206,7 +212,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         if (mp == null && name != null && !name.isEmpty() && Character.isUpperCase(name.charAt(0))) {
             mp = CLOSURE_METACLASS.getMetaProperty(BeanUtils.decapitalize(name)); // GROOVY-9618
         }
-        return (mp != null && mp.isPrivate());
+        return isPrivateMemberOfClosure(mp);
     }
 
     private MetaMethod pickClosureMethod(final Class<?>[] argClasses) {
@@ -572,8 +578,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
     public List<MetaProperty> getProperties() {
         List<MetaProperty> answer = new ArrayList<>();
         for (MetaProperty mp : CLOSURE_METACLASS.getProperties()) {
-            // GROOVY-12675: a closure class does not inherit the private members of Closure
-            if (!Modifier.isPrivate(mp.getModifiers())) answer.add(mp);
+            if (!isPrivateMemberOfClosure(mp)) answer.add(mp);
         }
         return answer;
     }

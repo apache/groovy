@@ -637,6 +637,40 @@ final class ClosureTest {
         assert c() == 1
     }
 
+    // GROOVY-12675, GROOVY-12680: the property list and the property lookups of a closure's
+    // metaclass agree, for every private field of Closure that has no public accessor
+    @Test
+    void testMetaClassPropertyListAndLookupsAgree() {
+        Closure c = { -> 1 }
+        def mc = c.metaClass
+        def listed = mc.properties*.name as Set
+
+        for (name in listed) {
+            assert mc.getMetaProperty(name) != null
+            assert mc.hasProperty(c, name) != null
+        }
+
+        def hasAccessor = { String name ->
+            Closure.methods.any { it.parameterCount == 0 && it.name in ['get' + name.capitalize(), 'is' + name.capitalize()] }
+        }
+        def privateFields = Closure.declaredFields.findAll { isPrivate(it.modifiers) && !it.synthetic && !hasAccessor(it.name) }*.name
+        assert privateFields.containsAll(['bcw', 'mopPerturbed', 'serialVersionUID', 'thisType'])
+
+        for (name in privateFields) {
+            assert !(name in listed)
+            assert mc.getMetaProperty(name) == null
+            assert mc.hasProperty(c, name) == null
+            def err = shouldFail(MissingPropertyException) {
+                mc.getProperty(c, name)
+            }
+            assert err.property == name
+            err = shouldFail(MissingPropertyException) {
+                mc.setProperty(c, name, null)
+            }
+            assert err.property == name
+        }
+    }
+
     // GROOVY-12680
     @Test
     void testMetaClassStillExposesPublicMembersOfClosure() {
