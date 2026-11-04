@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ginq.provider.sql;
 
+import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.ast.ASTNode;
 
 /**
@@ -25,6 +26,7 @@ import org.codehaus.groovy.ast.ASTNode;
  * becomes a compile error; in mixed mode the planner catches it and moves the
  * enclosing clause to in-memory execution.
  */
+@Incubating
 final class Untranslatable extends RuntimeException {
     private final ASTNode node;
 

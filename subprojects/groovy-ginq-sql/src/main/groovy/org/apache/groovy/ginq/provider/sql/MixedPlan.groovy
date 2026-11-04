@@ -23,6 +23,7 @@ import groovy.transform.PackageScope
 import org.apache.groovy.ginq.dsl.expression.GinqExpression
 import org.apache.groovy.ginq.provider.sql.ir.SqlQuery
 import org.apache.groovy.ginq.provider.sql.ir.SqlQueryNode
+import org.apache.groovy.lang.annotation.Incubating
 
 /**
  * Result of planning a query for mixed-mode execution.
@@ -32,6 +33,7 @@ import org.apache.groovy.ginq.provider.sql.ir.SqlQueryNode
  * projections) and {@link #tail} is the remainder, executed in memory.
  */
 @PackageScope
+@Incubating
 @CompileStatic
 class MixedPlan {
     final SqlQueryNode fullQuery
