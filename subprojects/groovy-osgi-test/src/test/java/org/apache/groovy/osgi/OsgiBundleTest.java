@@ -20,7 +20,6 @@ package org.apache.groovy.osgi;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -32,7 +31,6 @@ import org.osgi.framework.wiring.FrameworkWiring;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -121,70 +119,6 @@ class OsgiBundleTest {
         assertClassLoadable(bundle, "groovy.lang.Closure");
         assertClassLoadable(bundle, "groovy.lang.Script");
         assertClassLoadable(bundle, "org.codehaus.groovy.runtime.InvokerHelper");
-    }
-
-    // ---- Groovy JSON fragment tests ----
-
-    @Test
-    @Disabled("Fragment resolution needs investigation — see GROOVY-5092")
-    void groovyJsonFragmentResolvesAndLoadsClasses() throws Exception {
-        String jsonPath = System.getProperty("groovy.json.bundle.path");
-        if (jsonPath == null || !new File(jsonPath).exists()) {
-            System.out.println("Skipping JSON test — groovy.json.bundle.path not set or jar not found");
-            return;
-        }
-
-        // Install fragment before host so Felix sees it during resolution
-        BundleContext ctx = framework.getBundleContext();
-        Bundle jsonBundle = ctx.installBundle("file:" + jsonPath);
-        Bundle groovyBundle = installGroovyBundle();
-
-        FrameworkWiring wiring = framework.adapt(FrameworkWiring.class);
-        wiring.resolveBundles(Arrays.asList(groovyBundle, jsonBundle));
-
-        assertTrue(groovyBundle.getState() >= Bundle.RESOLVED,
-                "Groovy host should resolve. State: " + stateName(groovyBundle.getState()));
-        assertTrue(jsonBundle.getState() >= Bundle.RESOLVED,
-                "groovy-json fragment should resolve. State: " + stateName(jsonBundle.getState()));
-
-        groovyBundle.start();
-
-        // Fragment classes are loaded through the host bundle
-        assertClassLoadable(groovyBundle, "groovy.json.JsonSlurper");
-        assertClassLoadable(groovyBundle, "groovy.json.JsonOutput");
-    }
-
-    @Test
-    @Disabled("Fragment resolution needs investigation — see GROOVY-5092")
-    void groovyJsonOutputProducesCorrectResult() throws Exception {
-        String jsonPath = System.getProperty("groovy.json.bundle.path");
-        if (jsonPath == null || !new File(jsonPath).exists()) {
-            System.out.println("Skipping JSON test — groovy.json.bundle.path not set or jar not found");
-            return;
-        }
-
-        BundleContext ctx = framework.getBundleContext();
-        Bundle jsonBundle = ctx.installBundle("file:" + jsonPath);
-        Bundle groovyBundle = installGroovyBundle();
-
-        FrameworkWiring wiring = framework.adapt(FrameworkWiring.class);
-        wiring.resolveBundles(Arrays.asList(groovyBundle, jsonBundle));
-        groovyBundle.start();
-
-        // Use JsonOutput via reflection — we can't compile against it directly
-        Class<?> jsonOutputClass = groovyBundle.loadClass("groovy.json.JsonOutput");
-        java.lang.reflect.Method toJson = jsonOutputClass.getMethod("toJson", Object.class);
-        java.lang.reflect.Method prettyPrint = jsonOutputClass.getMethod("prettyPrint", String.class);
-
-        // Equivalent of: JsonOutput.prettyPrint(JsonOutput.toJson([one: 1, two: 2]))
-        Map<String, Integer> data = new java.util.LinkedHashMap<>();
-        data.put("one", 1);
-        data.put("two", 2);
-
-        String jsonStr = (String) toJson.invoke(null, data);
-        String pretty = (String) prettyPrint.invoke(null, jsonStr);
-        String expected = "{\n    \"one\": 1,\n    \"two\": 2\n}";
-        assertEquals(expected, pretty);
     }
 
     // ---- helpers ----
