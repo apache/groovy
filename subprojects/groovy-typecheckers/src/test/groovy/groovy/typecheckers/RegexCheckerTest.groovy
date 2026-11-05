@@ -590,4 +590,138 @@ final class RegexCheckerTest {
             assert m.group(name) == 'foo'
         '''
     }
+
+    // GROOVY-12697: the singular form of the group-count diagnostic, for both lookup shapes
+    @Test
+    void testBadRegexGroupCountForSingleGroup() {
+        def err = shouldFail shell, '''
+            def m = 'foobar' =~ /(...).../
+            assert m.find()
+            assert m.group(2)
+        '''
+        assert err.message.contains('Invalid group count 2 for regex with 1 group')
+        assert !err.message.contains('1 groups')
+
+        err = shouldFail shell, '''
+            def m = 'foobar' =~ /(...).../
+            assert m[0][2]
+        '''
+        assert err.message.contains('Invalid group count 2 for regex with 1 group')
+        assert !err.message.contains('1 groups')
+    }
+
+    // GROOVY-12697: a non-constant outer index does not stop the constant inner index being checked
+    @Test
+    void testGroupCountWithNonConstantOuterIndex() {
+        assertScript shell, '''
+            def pick(int which) {
+                def m = 'foobar' =~ /(...)(...)/
+                assert m[which][1] == 'foo'
+                m[which][2]
+            }
+            assert pick(0) == 'bar'
+        '''
+        def err = shouldFail shell, '''
+            def m = 'foobar' =~ /(...)(...)/
+            int which = 'foobar'.size() - 6
+            assert m[which][3]
+        '''
+        assert err.message.contains('Invalid group count 3 for regex with 2 groups')
+    }
+
+    // GROOVY-12697: a matcher without a tracked regex (parameter or field) is left to the runtime
+    @Test
+    void testGroupLookupOnUntrackedMatcher() {
+        assertScript shell, '''
+            String pick(Matcher m, String name) {
+                assert m.find()
+                m.group('first') + m.group(name) + m.group(2)
+            }
+            assert pick('foobar' =~ /(?<first>...)(?<second>...)/, 'second') == 'foobarbar'
+        '''
+        assertScript shell, '''
+            class Holder {
+                Matcher m = 'foobar' =~ /(?<first>...)(?<second>...)/
+                String first() { m.find() ? m.group('first') : null }
+                String named(String name) { m.group(name) }
+            }
+            def h = new Holder()
+            assert h.first() == 'foo'
+            assert h.named('second') == 'bar'
+        '''
+    }
+
+    // GROOVY-12697: the findGroups path records a group count without names; a (mistyped) matcher
+    // declared from it must not crash the extension or earn a spurious group-name diagnostic
+    @Test
+    void testGroupNameLookupOnReceiverWithoutTrackedNames() {
+        def err = shouldFail shell, '''
+            Pattern p = ~/(...)(...)/
+            Matcher m = 'foobar'.findGroups(p)
+            m.group('first')
+        '''
+        assert err.message.contains('Cannot assign value of type java.util.List')
+        assert !err.message.contains('Invalid group name')
+        assert !err.message.contains('General error')
+    }
+
+    // GROOVY-12697: in COMMENTS mode the opener may carry whitespace around and inside the name
+    @Test
+    void testNamedGroupLookupInCommentsMode() {
+        assertScript shell, '''
+            Matcher m = 'foobar' =~ /(?x) (?< fir st > ...) (?<second>...)/
+            assert m.find()
+            assert m.group('first') == 'foo'
+            assert m.group('second') == 'bar'
+        '''
+        def err = shouldFail shell, '''
+            Matcher m = 'foobar' =~ /(?x) (?< fir st > ...) (?<second>...)/
+            assert m.find()
+            assert m.group('fir st')
+        '''
+        assert err.message.contains("Invalid group name 'fir st' for regex with named groups first, second")
+    }
+
+    // GROOVY-12697: the group names travel with the group count on every propagation path,
+    // and a constant name is also resolved through a local constant
+    @Test
+    void testBadNamedGroupLookupVariants() {
+        def err = shouldFail shell, '''
+            Matcher m = (~/(?<first>...)(...)/).matcher('foobar')
+            assert m.find()
+            assert m.group('second')
+        '''
+        assert err.message.contains("Invalid group name 'second' for regex with named group first")
+
+        err = shouldFail shell, '''
+            def m = groovy.util.regex.RegexGuard.matcher(/(?<first>...)(?<second>...)/, 'foobar', 100)
+            assert m.find()
+            m.group('third')
+        '''
+        assert err.message.contains("Invalid group name 'third' for regex with named groups first, second")
+
+        err = shouldFail shell, '''
+            def m = groovy.util.regex.RegexGuard.findRegex('foobar', /(...)(...)/, 100)
+            assert m.find()
+            m.group('first')
+        '''
+        assert err.message.contains("Invalid group name 'first' for regex with no named groups")
+
+        err = shouldFail shell, '''
+            @groovy.transform.SafeRegex(millis = 100)
+            def check() {
+                def m = 'foobar' =~ /(?<first>...)(?<second>...)/
+                m.group('third')
+            }
+        '''
+        assert err.message.contains("Invalid group name 'third' for regex with named groups first, second")
+
+        err = shouldFail shell, '''
+            def m = 'foobar' =~ /(?<first>...)(?<second>...)/
+            assert m.find()
+            String name = 'third'
+            assert m.group(name)
+        '''
+        assert err.message.contains("Invalid group name 'third' for regex with named groups first, second")
+    }
 }
