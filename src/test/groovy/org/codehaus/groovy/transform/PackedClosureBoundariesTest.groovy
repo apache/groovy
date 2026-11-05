@@ -50,6 +50,10 @@ final class PackedClosureBoundariesTest {
         ['implicit-this method call',    false, true,  'def helper(x) { x }\ndef m(List<Integer> xs) { xs.collect { helper(it) } }'],
         ['bare field-bound name',        false, true,  'int field = 1\ndef m(List<Integer> xs) { xs.collect { it + field } }'],
         ['explicit this-property',       false, true,  'int field = 1\ndef m(List<Integer> xs) { xs.collect { it + this.field } }'],
+        // GROOVY-12670: an explicit this is the closure's this object, which rehydrate replaces
+        ['explicit this',                false, true,  'def m() { def c = { -> this }; c() }'],
+        ['explicit this-method call',    false, true,  'def foo() { 1 }\ndef m() { def c = { -> this.foo() }; c() }'],
+        ['explicit this in nested',      false, true,  'def foo() { 1 }\ndef m() { def c = { -> ({ -> this.foo() })() }; c() }'],
         // ---- real-Closure semantics: declines everywhere ----------------------------------------
         ['uses delegate',                false, false, 'def m() { def c = { delegate.toString() }; c }'],
         ['uses owner',                   false, false, 'def m() { def c = { owner.toString() }; c }'],

@@ -18,7 +18,12 @@
  */
 package org.codehaus.groovy.runtime.m12n;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+// GROOVY-12534: m12n.TestStringExtension depends on bugs.Groovy12534People
+import bugs.Groovy12534People;
 
 public class TestStringExtension {
 
@@ -32,5 +37,29 @@ public class TestStringExtension {
 
     public static <CS extends CharSequence> CharSequence getSequence(List<CS> self) {
         return self.get(0);
+    }
+
+    public static String getJoined(List<String> self) {
+        return String.join(",", self);
+    }
+
+    public static void setJoined(List<String> self, String value) {
+        self.clear();
+        if (value != null && !value.isEmpty()) {
+            self.addAll(Arrays.asList(value.split(",")));
+        }
+    }
+
+    public static String getArrayJoined(ArrayList<String> self) {
+        return String.join(":", self);
+    }
+
+    public static boolean isPlural(List<?> self) {
+        return self.size() > 1;
+    }
+
+    // GROOVY-12534: name belongs to the list subclass, and collides with the element property
+    public static String getName(Groovy12534People self) {
+        return "the collection";
     }
 }
