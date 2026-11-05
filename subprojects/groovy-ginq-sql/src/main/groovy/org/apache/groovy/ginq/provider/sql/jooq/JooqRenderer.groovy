@@ -51,6 +51,7 @@ import org.apache.groovy.ginq.provider.sql.ir.SqlWindow
 import org.apache.groovy.ginq.provider.sql.ir.SqlWindowBound
 import org.apache.groovy.ginq.provider.sql.ir.SqlWindowCall
 import org.apache.groovy.ginq.provider.sql.ir.SqlWindowFrame
+import org.apache.groovy.ginq.provider.sql.render.Dialect
 import org.apache.groovy.ginq.provider.sql.render.RenderedSql
 import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.GroovyBugError
@@ -315,6 +316,8 @@ class JooqRenderer {
                 case '*': return buildField(ctx, expr.left).mul(buildField(ctx, expr.right))
                 case '/': return DSL.cast(buildField(ctx, expr.left), SQLDataType.DOUBLE)
                         .div(DSL.cast(buildField(ctx, expr.right), SQLDataType.DOUBLE))
+                case 'IDIV': return DSL.cast(buildField(ctx, expr.left), integerType())
+                        .div(DSL.cast(buildField(ctx, expr.right), integerType()))
                 case '||': return DSL.concat(buildField(ctx, expr.left), buildField(ctx, expr.right))
                 default: return DSL.field(buildCondition(ctx, expr))
             }
@@ -336,6 +339,7 @@ class JooqRenderer {
     // from the GINQ source. Frame offsets that are not Java int literals have no jOOQ
     // API here; the native renderer prints those expressions.
     private Field buildWindow(DSLContext ctx, SqlWindowCall call) {
+        Dialect.rejectCountDistinctOver(call.function, jooqCountDistinctOver(), dialectName())
         Field function = buildField(ctx, call.function)
         WindowSpecification specification = windowSpecification(ctx, call.window)
         if (specification == null) {
@@ -381,14 +385,14 @@ class JooqRenderer {
     }
 
     private WindowSpecification applyFrame(WindowSpecificationRowsStep step, SqlWindowFrame frame) {
-        rejectSqliteNumericRange(frame)
+        rejectUnsupportedRange(frame)
         boolean rows = frame.unit == SqlWindowFrame.Unit.ROWS
         WindowSpecificationRowsAndStep between = rows ? rowsBetween(step, frame.lower) : rangeBetween(step, frame.lower)
         return andBound(between, frame.upper)
     }
 
     private WindowSpecification frameOnly(SqlWindowFrame frame) {
-        rejectSqliteNumericRange(frame)
+        rejectUnsupportedRange(frame)
         boolean rows = frame.unit == SqlWindowFrame.Unit.ROWS
         WindowSpecificationRowsAndStep between = rows ? rowsBetween(frame.lower) : rangeBetween(frame.lower)
         return andBound(between, frame.upper)
@@ -449,14 +453,29 @@ class JooqRenderer {
         }
     }
 
-    private void rejectSqliteNumericRange(SqlWindowFrame frame) {
-        if (frame.unit != SqlWindowFrame.Unit.RANGE || SQLDialect.SQLITE != dialect.family()) return
-        if (frame.lower.kind == SqlWindowBound.Kind.PRECEDING || frame.lower.kind == SqlWindowBound.Kind.FOLLOWING
-                || frame.upper.kind == SqlWindowBound.Kind.PRECEDING || frame.upper.kind == SqlWindowBound.Kind.FOLLOWING) {
-            throw new IllegalArgumentException(
-                    'the sqlite dialect supports RANGE frames only with UNBOUNDED and CURRENT ROW bounds. ' +
-                    'A numeric RANGE offset has no SQLite equivalent; use `rows`, or a dialect that supports it')
-        }
+    private void rejectUnsupportedRange(SqlWindowFrame frame) {
+        Dialect.rejectRangeOffset(frame, jooqNumericRangeOffset(), jooqExplicitNullOrdering(), dialectName())
+    }
+
+    private String dialectName() {
+        return dialect.family().name().toLowerCase(Locale.ROOT)
+    }
+
+    private boolean jooqNumericRangeOffset() {
+        return SQLDialect.SQLITE != dialect.family()
+    }
+
+    private boolean jooqExplicitNullOrdering() {
+        SQLDialect family = dialect.family()
+        return SQLDialect.MYSQL != family && SQLDialect.MARIADB != family && SQLDialect.SQLITE != family
+    }
+
+    private boolean jooqCountDistinctOver() {
+        return SQLDialect.SQLITE != dialect.family()
+    }
+
+    private DataType integerType() {
+        return SQLDialect.SQLITE == dialect.family() ? SQLDataType.INTEGER : SQLDataType.BIGINT
     }
 
     private static int frameOffset(SqlWindowBound bound) {

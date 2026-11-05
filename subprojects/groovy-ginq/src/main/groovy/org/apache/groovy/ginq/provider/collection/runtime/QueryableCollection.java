@@ -37,6 +37,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -270,13 +271,8 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public Queryable<Tuple2<?, Queryable<T>>> groupBy(Function<? super T, ?> classifier, Predicate<? super Tuple2<?, Queryable<? extends T>>> having) {
-        Collector<T, ?, ? extends Map<?, List<T>>> groupingBy =
-                isParallel() ? Collectors.groupingByConcurrent(classifier, Collectors.toList())
-                             : Collectors.groupingBy(classifier, Collectors.toList());
-
         Stream<Tuple2<?, Queryable<T>>> stream =
-                this.stream()
-                        .collect(groupingBy)
+                groupAllowingNullKeys(this.stream(), classifier, isParallel())
                         .entrySet().stream()
                         .filter(m -> null == having || having.test(tuple(m.getKey(), from(m.getValue()))))
                         .map(m -> tuple(m.getKey(), from(m.getValue())));
@@ -286,20 +282,46 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public <K> Queryable<GroupResult<K, T>> groupByInto(Function<? super T, ? extends K> classifier, Predicate<? super GroupResult<K, T>> having) {
-        Collector<T, ?, ? extends Map<K, List<T>>> groupingBy =
-                isParallel() ? Collectors.groupingByConcurrent(classifier, Collectors.toList())
-                             : Collectors.groupingBy(classifier, Collectors.toList());
-
         // Materialize group elements as lists so they can be iterated multiple times
         // (e.g., having g.count() > 1 followed by select g.count())
         Stream<GroupResult<K, T>> stream =
-                this.stream()
-                        .collect(groupingBy)
+                groupAllowingNullKeys(this.stream(), classifier, isParallel())
                         .entrySet().stream()
-                        .map(m -> GroupResult.<K, T>of(m.getKey(), from(m.getValue())))
+                        .map(m -> GroupResult.<K, T>of(castGroupKey(m.getKey()), from(m.getValue())))
                         .filter(gr -> null == having || having.test(gr));
 
         return from(stream);
+    }
+
+    /**
+     * Groups a stream, keeping a single group for null keys.
+     * {@code Collectors.groupingBy} rejects a null key, which made
+     * {@code partitionby} of a null value fail.
+     */
+    private static <T> Map<Object, List<T>> groupAllowingNullKeys(Stream<T> stream, Function<? super T, ?> classifier, boolean parallel) {
+        if (!parallel) {
+            Map<Object, List<T>> grouped = new HashMap<>();
+            stream.forEach(item -> grouped.computeIfAbsent(classifier.apply(item), key -> new ArrayList<>()).add(item));
+            return grouped;
+        }
+        // ConcurrentHashMap cannot store a null key, so null is masked while grouping.
+        Map<Object, List<T>> masked = stream.collect(Collectors.groupingByConcurrent(item -> {
+            Object key = classifier.apply(item);
+            return null == key ? NULL_GROUP : key;
+        }, Collectors.toList()));
+        if (!masked.containsKey(NULL_GROUP)) {
+            return masked;
+        }
+        Map<Object, List<T>> grouped = new HashMap<>(masked.size());
+        for (Map.Entry<Object, List<T>> entry : masked.entrySet()) {
+            grouped.put(entry.getKey() == NULL_GROUP ? null : entry.getKey(), entry.getValue());
+        }
+        return grouped;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <K> K castGroupKey(Object key) {
+        return (K) key;
     }
 
     @SafeVarargs
@@ -500,7 +522,11 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                 }, (o1, o2) -> o1)
         );
 
-        return ((BigDecimal) result[1]).divide(toBigDecimal((Long) result[0]), 16, RoundingMode.HALF_UP);
+        long count = (Long) result[0];
+        if (0L == count) {
+            return null;
+        }
+        return ((BigDecimal) result[1]).divide(toBigDecimal(count), 16, RoundingMode.HALF_UP);
     }
 
     @Override
@@ -576,6 +602,9 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     private BigDecimal vr(Function<? super T, ? extends Number> mapper, int diff) {
         BigDecimal avg = this.avg(mapper);
+        if (null == avg) {
+            return null;
+        }
         Object[] result = agg(q -> q.stream()
                 .map(mapper)
                 .filter(Objects::nonNull)
@@ -586,12 +615,20 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                     return r;
                 }, (o1, o2) -> o1));
 
-        return ((BigDecimal) result[1]).divide(toBigDecimal((Long) result[0] - diff), 16, RoundingMode.HALF_UP);
+        long divisor = (Long) result[0] - diff;
+        if (0L == divisor) {
+            return null;
+        }
+        return ((BigDecimal) result[1]).divide(toBigDecimal(divisor), 16, RoundingMode.HALF_UP);
     }
 
     private BigDecimal sd(Function<? super T, ? extends Number> mapper, int diff) {
+        BigDecimal variance = vr(mapper, diff);
+        if (null == variance) {
+            return null;
+        }
         // `BigDecimal.sqrt` is introduced since Java9, so we can not use it for now.
-        return toBigDecimal(sqrt(vr(mapper, diff).doubleValue()));
+        return toBigDecimal(sqrt(variance.doubleValue()));
     }
 
     @Override
@@ -768,7 +805,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (!(o instanceof PartitionCacheKey that)) return false;
-            return partitionKey.equals(that.partitionKey) && partitionId.equals(that.partitionId);
+            return Objects.equals(partitionKey, that.partitionKey) && Objects.equals(partitionId, that.partitionId);
         }
 
         @Override
@@ -927,6 +964,8 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     private final Lock readLock = rwl.readLock();
     private final Lock writeLock = rwl.writeLock();
     private static final BigDecimal BD_TWO = BigDecimal.valueOf(2);
+    /** Stands in for a null group key in a concurrent map, which cannot store null. */
+    private static final Object NULL_GROUP = new Object();
     private static final String USE_WINDOW_FUNCTION = "useWindowFunction";
     private static final String PARALLEL = "parallel";
     private static final String TRUE_STR = "true";

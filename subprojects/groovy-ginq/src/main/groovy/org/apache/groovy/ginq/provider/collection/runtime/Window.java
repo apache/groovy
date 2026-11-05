@@ -21,14 +21,15 @@ package org.apache.groovy.ginq.provider.collection.runtime;
 import groovy.lang.Tuple2;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.binarySearch;
 import static java.util.Comparator.comparing;
-import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from;
 
 /**
  * Represents window which stores elements used by window functions
@@ -50,12 +51,8 @@ public interface Window<T> extends Queryable<T> {
      */
     static <T, U extends Comparable<? super U>> Window<T> of(Tuple2<T, Long> currentRecord, Partition<Tuple2<T, Long>> partition, WindowDefinition<T, U> windowDefinition) {
         final List<Order<? super T, ? extends U>> orderList = windowDefinition.orderBy();
-        Order<? super T, ? extends U> order;
-        if (null != orderList && 1 == orderList.size()) {
-            order = orderList.get(0);
-        } else {
-            order = null;
-        }
+        // Range offsets use the single order key. Ranking uses every key.
+        Order<? super T, ? extends U> singleOrder = null != orderList && 1 == orderList.size() ? orderList.get(0) : null;
 
         List<Tuple2<T, Long>> listWithIndex = partition.toList();
 
@@ -63,15 +60,25 @@ public interface Window<T> extends Queryable<T> {
                 ? binarySearch(listWithIndex, currentRecord, comparing(Tuple2::getV2))
                 : binarySearch(listWithIndex, currentRecord, WindowImpl.makeComparator(WindowImpl.composeOrders(orderList)).thenComparing(Tuple2::getV2));
         int index = tmpIndex >= 0 ? tmpIndex : -tmpIndex - 1;
-        U value = null == order ? null : order.getKeyExtractor().apply(currentRecord.getV1());
+        U value = null == singleOrder ? null : singleOrder.getKeyExtractor().apply(currentRecord.getV1());
 
         RowBound validRowBound = WindowImpl.getValidRowBound(windowDefinition, index, value, listWithIndex);
-        List<T> list = null == validRowBound ? Collections.emptyList()
-                : from(listWithIndex.stream().map(Tuple2::getV1).collect(Collectors.toList()))
-                .limit(validRowBound.getLower(), validRowBound.getUpper() - validRowBound.getLower() + 1)
-                .toList();
+        List<T> orderedPartition = listWithIndex.stream().map(Tuple2::getV1).collect(Collectors.toList());
+        List<T> frame;
+        if (null == validRowBound) {
+            frame = Collections.emptyList();
+        } else {
+            int from = validRowBound.getLower().intValue();
+            int to = validRowBound.getUpper().intValue();
+            frame = 0 == from && to == orderedPartition.size() - 1
+                    ? orderedPartition
+                    : new ArrayList<>(orderedPartition.subList(from, to + 1));
+        }
+        Comparator<? super T> ordering = null == orderList || orderList.isEmpty()
+                ? null
+                : QueryableCollection.makeComparator(orderList);
 
-        return new WindowImpl<>(currentRecord, index, value, list, order);
+        return new WindowImpl<>(currentRecord, index, frame, ordering, orderedPartition);
     }
 
     /**

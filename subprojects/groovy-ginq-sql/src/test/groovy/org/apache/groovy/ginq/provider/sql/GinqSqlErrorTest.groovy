@@ -147,6 +147,18 @@ class GinqSqlErrorTest {
     }
 
     @Test
+    void testWindowNestedInsideAggregate() {
+        def err = shouldFail '''\
+            GQ(provider: 'native-sql', dataSource: db) {
+                from e in 'employees'
+                select (sum((rowNumber() over(orderby e.id))))
+            }
+        '''
+        assert err.message.contains('nested inside an aggregate')
+        assert !err.message.contains('mixedMode: true')
+    }
+
+    @Test
     void testOrderByInInnerSetOperationOperand() {
         def err = shouldFail '''\
             GQ(provider: 'native-sql', dataSource: db) {
