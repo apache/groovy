@@ -21,11 +21,12 @@ package bugs
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 final class Groovy7947 {
 
     @Test
-    void testPlusPlusOnThis() {
+    void testPlusPlusThis() {
         assertScript '''
             void check(x) {
                 assert x == 1
@@ -36,5 +37,95 @@ final class Groovy7947 {
 
             check(++this)
         '''
+    }
+
+    @Test
+    void testThisPlusPlus() {
+        assertScript '''
+            void check(x) {
+                assert x == this
+            }
+            def next() {
+                return 1
+            }
+
+            check(this++)
+        '''
+    }
+
+    @Test
+    void testSuperPlusPlus() {
+        assertScript '''
+            void check(x) {
+                assert x == this
+            }
+            def next() {
+                return 1
+            }
+
+            check(super++)
+        '''
+    }
+
+    @Test
+    void testPlusPlusSuper() {
+        assertScript '''
+            void check(x) {
+                assert x == 1
+            }
+            def next() {
+                return 1
+            }
+
+            check(++super)
+        '''
+    }
+
+    @Test
+    void testPlusPlusSuper2() {
+        def shell = GroovyShell.withConfig {
+            imports {
+                star 'groovy.transform'
+            }
+        }
+        assertScript shell, '''
+            @InheritConstructors
+            abstract class SuperClass extends Script {
+                def next() {
+                    return 2
+                }
+            }
+
+            null
+        '''
+        assertScript shell, '''
+            @BaseScript SuperClass superClass
+
+            void check(x) {
+                assert x == 1
+            }
+            def next() {
+                return 1
+            }
+
+            check(++super) // runs like this.next()
+        '''
+    }
+
+    @Test
+    void testPlusPlusSuperCS() {
+        def shell = GroovyShell.withConfig {
+            imports {
+                ast groovy.transform.CompileStatic
+            }
+        }
+        def err = shouldFail shell, '''
+            def next() {
+                return 1
+            }
+
+            ++super
+        '''
+        assert err =~ /Cannot find matching method groovy.lang.Script#next/
     }
 }
