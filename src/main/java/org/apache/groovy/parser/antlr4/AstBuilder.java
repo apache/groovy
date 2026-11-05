@@ -4003,6 +4003,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public BinaryExpression visitAssignmentExprAlt(final AssignmentExprAltContext ctx) {
         Expression leftExpr = (Expression) this.visit(ctx.left);
 
+        if (isBuiltInType(leftExpr)) { // `long = 1`, and `var long = 1`, which parses as the call `var(long = 1)`
+            throw createParsingFailedException("'" + leftExpr.getText() + "' is a keyword and cannot be used as a variable name", ctx.left);
+        }
+
         if (leftExpr instanceof VariableExpression
                 && isInsideParentheses(leftExpr)) { // it is a special multiple assignment whose variable count is only one, e.g. (a) = [1]
 

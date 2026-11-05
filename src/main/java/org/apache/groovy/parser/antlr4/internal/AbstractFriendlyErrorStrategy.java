@@ -83,11 +83,16 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.SAFE_INDEX;
 import static org.apache.groovy.parser.antlr4.GroovyParser.SEMI;
 import static org.apache.groovy.parser.antlr4.GroovyParser.SPREAD_DOT;
 import static org.apache.groovy.parser.antlr4.GroovyParser.STATIC;
+import static org.apache.groovy.parser.antlr4.GroovyParser.STRICTFP;
 import static org.apache.groovy.parser.antlr4.GroovyParser.StringLiteral;
 import static org.apache.groovy.parser.antlr4.GroovyParser.SUPER;
 import static org.apache.groovy.parser.antlr4.GroovyParser.THIS;
 import static org.apache.groovy.parser.antlr4.GroovyParser.THREADSAFE;
+import static org.apache.groovy.parser.antlr4.GroovyParser.TRANSIENT;
+import static org.apache.groovy.parser.antlr4.GroovyParser.VAL;
+import static org.apache.groovy.parser.antlr4.GroovyParser.VAR;
 import static org.apache.groovy.parser.antlr4.GroovyParser.VOID;
+import static org.apache.groovy.parser.antlr4.GroovyParser.VOLATILE;
 import static org.apache.groovy.parser.antlr4.GroovyParser.WHILE;
 
 /**
@@ -100,7 +105,9 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.WHILE;
  * </p>
  * <p>
  * Two layers, on purpose: {@link MissingDelimiterDiagnostic} may <em>relocate</em>
- * the caret (insertion point after an unclosed {@code ) } / {@code ] } / {@code } }).
+ * the caret (insertion point after an unclosed {@code ) } / {@code ] } / {@code } }),
+ * and so may {@link #keywordAsVariableName} (back onto a primitive type keyword
+ * that was consumed as the declared type).
  * Keyword / missing-receiver {@code ?[} / array-creation / unclosed type
  * argument / method-in-the-wrong-place / unmatched {@code do} / enum-constant
  * separator / sole-expected-punctuation / unexpected-EOF wording only changes
@@ -120,6 +127,8 @@ abstract class AbstractFriendlyErrorStrategy extends DefaultErrorStrategy {
 
     /**
      * Prefer a relocated "Missing …" closer when the token stream supports it;
+     * then a primitive type keyword in a variable name's place, which also
+     * moves the caret (onto the keyword, {@link #keywordAsVariableName});
      * otherwise refine the generic {@code Unexpected input: ...} fallback
      * (reserved keyword, array creation, unclosed type argument, and the
      * other sentence-only cases in {@link #refineFallbackMessage}).
@@ -139,7 +148,13 @@ abstract class AbstractFriendlyErrorStrategy extends DefaultErrorStrategy {
                 at = hit.at;
                 message = hit.message;
             } else {
-                message = refineFallbackMessage(e, fallbackMessage);
+                Token keyword = keywordAsVariableName(e, at);
+                if (keyword != null) {
+                    at = keyword;
+                    message = keywordAsVariableNameMessage(keyword);
+                } else {
+                    message = refineFallbackMessage(e, fallbackMessage);
+                }
             }
         } catch (IndexOutOfBoundsException | IllegalArgumentException ignored) {
             message = fallbackMessage;
@@ -279,6 +294,166 @@ abstract class AbstractFriendlyErrorStrategy extends DefaultErrorStrategy {
             }
         } catch (IndexOutOfBoundsException | IllegalArgumentException ignored) {
             return null;
+        }
+        return null;
+    }
+
+    /**
+     * A primitive type keyword (or {@code void}) where a variable name
+     * belongs: {@code def long = 1}, {@code final int = 2}, a field
+     * {@code static long = 1} or {@code int long = 1}, {@code def a, long = 2}.
+     * javac says {@code <identifier> expected}; the sentence names the keyword
+     * instead, and the caret goes on the keyword. When ANTLR consumed the
+     * keyword as the declared type, the offender is the {@code =}, {@code ,},
+     * {@code ;}, {@code )} or {@code }} after it, one token past the mistake,
+     * so unlike the sentence-only refinements this one moves the caret.
+     * <p>
+     * Two shapes, both error-path only:
+     * </p>
+     * <ul>
+     * <li>the offender follows the keyword, and the keyword follows a variable
+     * modifier ({@code def long =}) or the parser was already inside
+     * {@code identifier} ({@code def long = 1} in a block,
+     * {@code def (a, long) = ...});</li>
+     * <li>the keyword is the offender, a declarator end follows it, and it
+     * comes after a primitive type or an array dimension ({@code int long = 1}
+     * in a class body) or after a {@code ,} where only a name was accepted
+     * ({@code def a, long = 2}).</li>
+     * </ul>
+     * <p>
+     * Left alone: a keyword followed by {@code (} is a method name
+     * ({@code int long()}); after a {@code ,} that also accepts a type it is an
+     * enum constant list ({@code enum E \{ A, long \}}, named by
+     * {@link #enumMemberAfterComma}); {@code def long} at end of input stays
+     * <em>Unexpected end of input</em>. {@code var long = 1} never gets here:
+     * it parses as the call {@code var(long = 1)}, and {@code AstBuilder}
+     * reports the same sentence for that assignment.
+     * </p>
+     *
+     * @return the keyword token to put the caret on, or {@code null}
+     */
+    static Token keywordAsVariableName(final RecognitionException e, final Token offending) {
+        if (e == null || offending == null || !(e.getInputStream() instanceof TokenStream tokens)) {
+            return null;
+        }
+        if (offending.getTokenIndex() < 1) {
+            return null;
+        }
+        try {
+            return isPrimitiveTypeKeyword(offending.getType())
+                    ? keywordInNamePosition(e, tokens, offending)
+                    : keywordBeforeOffender(e, tokens, offending);
+        } catch (IndexOutOfBoundsException | IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    /**
+     * The keyword is the offender: {@code int long = 1} in a class body,
+     * {@code def a, long = 2}. A declarator end (or a line break) must follow
+     * it; {@code int long()} is a method name.
+     */
+    private static Token keywordInNamePosition(final RecognitionException e, final TokenStream tokens, final Token keyword) {
+        int index = keyword.getTokenIndex();
+        Token next = nextOnChannel(tokens, index);
+        if (next == null || !(endsDeclarator(next.getType()) || next.getType() == NL || next.getType() == Token.EOF)) {
+            return null;
+        }
+        Token prev = previousDefaultChannel(tokens, index, true);
+        if (prev == null) {
+            return null;
+        }
+        int prevType = prev.getType();
+        boolean afterType = prevType == BuiltInPrimitiveType || prevType == RBRACK;
+        return afterType || (prevType == COMMA && nameExpected(e)) ? keyword : null;
+    }
+
+    /**
+     * The offender follows the keyword: {@code def long = 1}, {@code def long;},
+     * {@code def (a, long) = ...}. The keyword must follow a variable modifier,
+     * unless the parser was already inside {@code identifier}.
+     */
+    private static Token keywordBeforeOffender(final RecognitionException e, final TokenStream tokens, final Token offending) {
+        if (!endsDeclarator(offending.getType())) {
+            return null;
+        }
+        Token keyword = previousDefaultChannel(tokens, offending.getTokenIndex(), false);
+        if (keyword == null || !isPrimitiveTypeKeyword(keyword.getType())) {
+            return null;
+        }
+        if (nameExpected(e)) {
+            return keyword;
+        }
+        Token modifier = previousDefaultChannel(tokens, keyword.getTokenIndex(), true);
+        return modifier != null && isVariableModifier(modifier.getType()) ? keyword : null;
+    }
+
+    static String keywordAsVariableNameMessage(final Token keyword) {
+        return "'" + keyword.getText() + "' is a keyword and cannot be used as a variable name";
+    }
+
+    private static boolean isPrimitiveTypeKeyword(final int type) {
+        return type == BuiltInPrimitiveType || type == VOID;
+    }
+
+    /**
+     * What may follow a variable name: an initializer, another declarator,
+     * or the end of the declaration.
+     */
+    private static boolean endsDeclarator(final int type) {
+        return switch (type) {
+            case ASSIGN, COMMA, SEMI, RPAREN, RBRACE -> true;
+            default -> false;
+        };
+    }
+
+    /**
+     * The {@code variableModifier} keywords plus the field-only
+     * {@code transient} / {@code volatile}.
+     */
+    private static boolean isVariableModifier(final int type) {
+        return switch (type) {
+            case DEF, VAR, VAL, FINAL, STATIC, PUBLIC, PRIVATE, PROTECTED,
+                 ABSTRACT, STRICTFP, TRANSIENT, VOLATILE -> true;
+            default -> false;
+        };
+    }
+
+    /**
+     * The parser was inside {@code identifier}: a name was accepted here and
+     * a type was not, so a primitive keyword is a misnamed variable rather
+     * than the start of another declaration or an enum constant list, both of
+     * which expect {@code BuiltInPrimitiveType} too.
+     */
+    private static boolean nameExpected(final RecognitionException e) {
+        final IntervalSet expected;
+        try {
+            expected = e.getExpectedTokens();
+        } catch (IllegalArgumentException | IndexOutOfBoundsException ignored) {
+            return false;
+        }
+        return expected != null && expected.contains(Identifier) && !expected.contains(BuiltInPrimitiveType);
+    }
+
+    /**
+     * First on-channel token after token {@code index}. Prediction stops at
+     * the offender, so the buffer may end there; {@link TokenStream#LT}
+     * fetches the one more token this needs. The stream position is at or
+     * before the offender when a diagnostic is reported; the bound keeps a
+     * stale position from walking down the file.
+     */
+    private static Token nextOnChannel(final TokenStream tokens, final int index) {
+        for (int k = 1; k <= 64; k++) {
+            Token t = tokens.LT(k);
+            if (t == null) {
+                return null;
+            }
+            if (t.getTokenIndex() > index) {
+                return t;
+            }
+            if (t.getType() == Token.EOF) {
+                return null;
+            }
         }
         return null;
     }

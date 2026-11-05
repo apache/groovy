@@ -3761,6 +3761,89 @@ final class ParserNegativeSyntaxTest {
     }
 
     @Test
+    void 'primitive type keyword as variable name after var'() {
+        // `var long = 1` parses as the call `var(long = 1)`; ResolveVisitor used to report
+        // "you tried to assign a value to the class 'long'" for it
+        expectParseError '''\
+            |var long = 1
+            |'''.stripMargin(), '''\
+            |'long' is a keyword and cannot be used as a variable name @ line 1, column 5.
+            |   var long = 1
+            |       ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'primitive type keyword as variable name after val'() {
+        expectParseError '''\
+            |val long = 1
+            |'''.stripMargin(), '''\
+            |'long' is a keyword and cannot be used as a variable name @ line 1, column 5.
+            |   val long = 1
+            |       ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'primitive type keyword as variable name after def'() {
+        // the parser consumed `long` as the declared type and failed on `=`;
+        // the caret goes back onto the keyword instead of "Unexpected input: 'def long ='"
+        expectParseError '''\
+            |def long = 1
+            |'''.stripMargin(), '''\
+            |'long' is a keyword and cannot be used as a variable name @ line 1, column 5.
+            |   def long = 1
+            |       ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'primitive type keyword as variable name after final'() {
+        expectParseError '''\
+            |final long = 1
+            |'''.stripMargin(), '''\
+            |'long' is a keyword and cannot be used as a variable name @ line 1, column 7.
+            |   final long = 1
+            |         ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'primitive type keyword as variable name in other declaration forms'() {
+        String keyword = "'long' is a keyword and cannot be used as a variable name"
+        expectContains 'var int = 1', "'int' is a keyword and cannot be used as a variable name @ line 1, column 5."
+        expectContains 'def void = 1', "'void' is a keyword and cannot be used as a variable name @ line 1, column 5."
+        expectContains 'long = 1', "$keyword @ line 1, column 1."
+        expectContains 'long += 1', "$keyword @ line 1, column 1."
+        expectContains 'var a = 1, long = 2', "$keyword @ line 1, column 12."
+        expectContains 'def a, long = 2', "$keyword @ line 1, column 8."
+        expectContains 'def long, b', "$keyword @ line 1, column 5."
+        expectContains 'def long;', "$keyword @ line 1, column 5."
+        expectContains 'def (a, long) = [1, 2]', "$keyword @ line 1, column 9."
+        expectContains 'String long = "x"', "$keyword @ line 1, column 8."
+        expectContains 'class C {\n    void m() {\n        def long = 1\n    }\n}', "$keyword @ line 3, column 13."
+        expectContains 'class C { static long = 1 }', "$keyword @ line 1, column 18."
+        expectContains 'class C { int long = 1 }', "$keyword @ line 1, column 15."
+        expectContains 'class C { int[] long }', "$keyword @ line 1, column 17."
+    }
+
+    @Test
+    void 'primitive type keyword that is not a variable name keeps its own diagnostic'() {
+        expectContains 'class C { int long() {} }', "Unexpected input: 'int long'"
+        expectContains 'enum E { A, long }', "';' expected after the last enum constant"
+        expectContains 'import long', "Unexpected input: 'long'"
+        expectContains 'def long', 'Unexpected end of input'
+    }
+
+    @Test
     void 'space between question and bracket is ternary not safe index'() {
         // '?[' is one token; `a? [0]` tokenises as `a` `?` `[0]` (incomplete ternary)
         expectContains 'a? [0]', "Missing ':'"

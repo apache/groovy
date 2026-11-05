@@ -507,6 +507,149 @@ final class ErrorStrategyTest {
         assertNull(AbstractFriendlyErrorStrategy.keywordMessage(GroovyParser.Identifier));
     }
 
+    //--------------------------------------------------------------------------
+    // Primitive type keyword where a variable name belongs
+    //--------------------------------------------------------------------------
+
+    @Test
+    void keywordAsVariableNameAfterModifierMovesCaretOntoKeyword() {
+        // `def long = 1`: the parser consumed `long` as the type and failed on `=`
+        var tokens = lex("def long = 1");
+        Token eq = tokens.get(2);
+        assertEquals(GroovyParser.ASSIGN, eq.getType());
+        Token name = AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(new IntervalSet(), eq, tokens), eq);
+        assertSame(tokens.get(1), name);
+        assertEquals("'long' is a keyword and cannot be used as a variable name",
+                AbstractFriendlyErrorStrategy.keywordAsVariableNameMessage(name));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "final int = 1",
+            "var void = 1",
+            "def\nlong = 1",
+            "def long, b",
+            "def long;",
+            "class C { static boolean = true }",
+            "class C { private long }",
+            "class C { transient int = 1 }"
+    })
+    void keywordAsVariableNameAfterAnyVariableModifier(final String src) {
+        var tokens = lex(src);
+        Token keyword = firstPrimitiveKeyword(tokens);
+        Token offender = tokens.get(keyword.getTokenIndex() + 1);
+        assertSame(keyword, AbstractFriendlyErrorStrategy.keywordAsVariableName(
+                stubException(new IntervalSet(), offender, tokens), offender), src);
+    }
+
+    @Test
+    void keywordAsVariableNameWhenParserExpectedAName() {
+        // inside a block the failure is an input mismatch in `identifier`: no modifier lookback needed
+        IntervalSet names = setOf(GroovyParser.Identifier, GroovyParser.CapitalizedIdentifier);
+        var tokens = lex("{ -> long = 1 }");
+        Token keyword = firstPrimitiveKeyword(tokens);
+        Token eq = tokens.get(keyword.getTokenIndex() + 1);
+        assertSame(keyword, AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(names, eq, tokens), eq));
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(new IntervalSet(), eq, tokens), eq),
+                "no modifier before the keyword and no name expected: not a declaration");
+
+        // `def (a, long) = [1, 2]`: the offender is the `)` after the keyword
+        tokens = lex("def (a, long) = [1, 2]");
+        keyword = firstPrimitiveKeyword(tokens);
+        Token rparen = tokens.get(keyword.getTokenIndex() + 1);
+        assertEquals(GroovyParser.RPAREN, rparen.getType());
+        assertSame(keyword, AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(names, rparen, tokens), rparen));
+    }
+
+    @Test
+    void keywordAsVariableNameWhenKeywordIsTheOffender() {
+        // `int long = 1` in a class body: the keyword itself is the offender, after the type
+        var tokens = lex("class C { int long = 1 }");
+        Token keyword = tokenWithText(tokens, "long");
+        assertSame(keyword, AbstractFriendlyErrorStrategy.keywordAsVariableName(
+                stubException(new IntervalSet(), keyword, tokens), keyword));
+
+        tokens = lex("class C { int[] long }");
+        keyword = tokenWithText(tokens, "long");
+        assertSame(keyword, AbstractFriendlyErrorStrategy.keywordAsVariableName(
+                stubException(new IntervalSet(), keyword, tokens), keyword));
+
+        // `def a, long = 2`: after a comma, only when the parser accepted a name and not a type
+        tokens = lex("def a, long = 2");
+        keyword = tokenWithText(tokens, "long");
+        assertSame(keyword, AbstractFriendlyErrorStrategy.keywordAsVariableName(
+                stubException(setOf(GroovyParser.Identifier, GroovyParser.CapitalizedIdentifier), keyword, tokens), keyword));
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(
+                stubException(setOf(GroovyParser.Identifier, GroovyParser.BuiltInPrimitiveType), keyword, tokens), keyword),
+                "a comma that also accepts a type is an enum constant list");
+    }
+
+    @Test
+    void keywordAsVariableNameLeavesOtherKeywordOffenders() {
+        IntervalSet names = setOf(GroovyParser.Identifier, GroovyParser.CapitalizedIdentifier);
+
+        // method name
+        var tokens = lex("class C { int long() {} }");
+        Token keyword = tokenWithText(tokens, "long");
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(names, keyword, tokens), keyword));
+
+        // not after a type, a modifier or a declarator comma
+        tokens = lex("import long");
+        keyword = tokenWithText(tokens, "long");
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(names, keyword, tokens), keyword));
+        tokens = lex("x = [a long = 1]");
+        keyword = tokenWithText(tokens, "long");
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(names, keyword, tokens), keyword));
+
+        // `def long` at end of input: the offender is EOF
+        tokens = lex("def long");
+        Token eof = tokens.get(tokens.size() - 1);
+        assertEquals(Token.EOF, eof.getType());
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(names, eof, tokens), eof));
+
+        // a newline before `=` is a statement break: `def long` is then an incomplete method
+        tokens = lex("def long\n= 1");
+        Token eq = tokenWithText(tokens, "=");
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(new IntervalSet(), eq, tokens), eq));
+
+        // offender at the start of the stream, or no stream
+        Token first = token(GroovyParser.ASSIGN, "=");
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(names, first, lex("= 1")), first));
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(names, eq), eq));
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(null, eq));
+    }
+
+    @Test
+    void keywordAsVariableNameSwallowsStreamFailure() {
+        CommonToken eq = token(GroovyParser.ASSIGN, "=");
+        eq.setTokenIndex(2);
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(
+                stubException(new IntervalSet(), eq, new ThrowingTokenStream()), eq));
+        CommonToken keyword = token(GroovyParser.BuiltInPrimitiveType, "long");
+        keyword.setTokenIndex(1);
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(
+                stubException(new IntervalSet(), keyword, new ThrowingTokenStream(new IllegalArgumentException("test"))), keyword));
+    }
+
+    private static Token firstPrimitiveKeyword(final CommonTokenStream tokens) {
+        for (int i = 0; i < tokens.size(); i++) {
+            int type = tokens.get(i).getType();
+            if (type == GroovyParser.BuiltInPrimitiveType || type == GroovyParser.VOID) {
+                return tokens.get(i);
+            }
+        }
+        throw new AssertionError("no primitive type keyword");
+    }
+
+    private static Token tokenWithText(final CommonTokenStream tokens, final String text) {
+        for (int i = 0; i < tokens.size(); i++) {
+            if (text.equals(tokens.get(i).getText())) {
+                return tokens.get(i);
+            }
+        }
+        throw new AssertionError("no token " + text);
+    }
+
     @Test
     void refineFallbackIgnoresNlWhenSoleExpectedRemains() {
         Token eof = token(Token.EOF, "<EOF>");
