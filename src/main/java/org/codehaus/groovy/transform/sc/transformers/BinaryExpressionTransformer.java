@@ -711,6 +711,9 @@ public class BinaryExpressionTransformer {
                     Expression right = rightIt.next();
                     BinaryExpression bexp = new DeclarationExpression(left, bin.getOperation(), right);
                     bexp.setSourcePosition(right);
+                    // GROOVY-12702: the split declarations are what the verifier sees, so they
+                    // must keep the annotations of the multiple-assignment declaration
+                    bexp.addAnnotations(bin.getAnnotations());
                     list.addExpression(bexp);
                 }
             }
