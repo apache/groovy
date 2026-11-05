@@ -723,6 +723,7 @@ public class BinaryExpressionTransformer {
                 list.addExpression(bexp);
                 bexp = new DeclarationExpression(left, bin.getOperation(), varX(tmpVar));
                 bexp.setSourcePosition(right);
+                bexp.addAnnotations(bin.getAnnotations());
                 declarations.add(bexp);
             }
             declarations.forEach(list::addExpression);
