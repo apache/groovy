@@ -167,6 +167,17 @@ class GinqSqlMixedModeTest {
     }
 
     @Test
+    void testRankFrameStaysInMemory() {
+        def result = GQL(provider: 'native-sql', mixedMode: true, dataSource: db) {
+            from e in 'employees'
+            orderby e.name
+            select e.name, (rank() over(orderby e.salary rows 0, 0)) as rk
+        }
+        assert !db.sqlText.contains('RANK')
+        assert result.collect { it.rk } == [1, 1, 1, 1, 1, 1]
+    }
+
+    @Test
     void testCorrelatedSubqueryInTheInMemoryTail() {
         def result = GQL(provider: 'native-sql', mixedMode: true, dataSource: db) {
             from e in 'employees'

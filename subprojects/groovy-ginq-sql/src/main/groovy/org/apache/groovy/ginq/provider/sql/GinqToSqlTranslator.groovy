@@ -138,6 +138,8 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
     private boolean windowAllowed
     /** A window function inside another window function has no SQL form. */
     private int windowDepth
+    /** A window function inside an aggregate has no SQL form. */
+    private int aggregateDepth
     private final SqlFunctionSite calls = new CallSite()
 
     GinqToSqlTranslator(SourceUnit sourceUnit, String providerName = 'native-sql') {
@@ -798,6 +800,10 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
             reject('window functions cannot be nested', overCall, false)
             return null
         }
+        if (aggregateDepth > 0) {
+            reject('window functions cannot be nested inside an aggregate', overCall, false)
+            return null
+        }
         windowDepth++
         try {
             return translateWindowCall(overCall)
@@ -832,8 +838,10 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         if (window == null) return null
         if (window.frame != null && mapping.rejectsWindowFrame()) {
             String unit = window.frame.unit.name().toLowerCase(Locale.ROOT)
-            reject("`${name}() over(...)` does not accept `${unit}`. " +
-                    'SQL defines that function without a frame, and GINQ would apply one', overCall)
+            String why = mapping.appliesWindowFrame()
+                    ? 'GINQ applies that frame, and SQL defines the function without one'
+                    : 'SQL defines that function without a frame'
+            reject("`${name}() over(...)` does not accept `${unit}`. " + why, overCall)
             return null
         }
         if (mapping.requiresWindowOrder() && !window.orderBy) {
@@ -879,9 +887,9 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
                 SqlWindowBound.unboundedPreceding(), SqlWindowBound.unboundedFollowing())
     }
 
-    // floor(buckets * (row_number() - 1) / count(*)) over the same partition.
-    // That is GINQ's 0-based bucket formula. SQL NTILE is 1-based and places
-    // the remainder on the first buckets, which is a different sequence.
+    // (buckets * (row_number() - 1)) div count(*) over the same partition.
+    // That is GINQ's 0-based bucket formula, using integer division.
+    // SQL NTILE is 1-based and places the remainder on the first buckets.
     private SqlExpr translateNtile(MethodCallExpression call, List<Expression> args, SqlWindow window) {
         if (!acceptNtileBuckets(call, args.get(0))) return null
         SqlExpr buckets = translateExpr(args.get(0))
@@ -893,7 +901,9 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
                 new SqlLiteral(1))
         SqlExpr product = new SqlBinary('*', buckets, row)
         SqlExpr count = new SqlWindowCall(new SqlCountStar(), counting)
-        return new SqlFunction('FLOOR', [new SqlBinary('/', product, count)])
+        // Integer division matches GINQ's long division and does not need FLOOR,
+        // which some dialects do not have.
+        return new SqlBinary('IDIV', product, count)
     }
 
     private boolean acceptNtileBuckets(MethodCallExpression call, Expression buckets) {
@@ -1032,6 +1042,15 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
                 reject('the window frame ends before it starts', frameCall)
                 return null
             }
+            // GINQ range offsets are added to the current value. SQL PRECEDING
+            // and FOLLOWING point along the sort, so a descending order mirrors
+            // the bounds and swaps the ends. The value interval stays the same.
+            if (!rows && !orderSpecs.isEmpty() && !orderSpecs.get(0).asc) {
+                SqlWindowBound start = mirrorValueBound(upper)
+                SqlWindowBound end = mirrorValueBound(lower)
+                lower = start
+                upper = end
+            }
             frame = new SqlWindowFrame(unit, lower, upper)
         }
         List<SqlExpr> partition = []
@@ -1048,6 +1067,18 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
             }
         }
         return new SqlWindow(partition, orderSpecs, frame)
+    }
+
+    // A value-space bound written as an ascending frame, mirrored into descending order.
+    private static SqlWindowBound mirrorValueBound(SqlWindowBound bound) {
+        switch (bound.kind) {
+            case SqlWindowBound.Kind.UNBOUNDED_PRECEDING: return SqlWindowBound.unboundedFollowing()
+            case SqlWindowBound.Kind.UNBOUNDED_FOLLOWING: return SqlWindowBound.unboundedPreceding()
+            case SqlWindowBound.Kind.CURRENT_ROW: return SqlWindowBound.currentRow()
+            case SqlWindowBound.Kind.PRECEDING: return SqlWindowBound.following(bound.offset)
+            case SqlWindowBound.Kind.FOLLOWING: return SqlWindowBound.preceding(bound.offset)
+            default: throw new IllegalArgumentException("Unknown window bound: ${bound.kind}")
+        }
     }
 
     // GINQ: null is unbounded, 0 is the current row, negative precedes, positive follows.
@@ -1280,6 +1311,15 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
     // The function alone, without the null-as-zero coalesce. A window sum applies
     // that coalesce outside OVER.
     private SqlExpr translateAggregateCall(MethodCallExpression call, List<Expression> args, boolean lambdaStyle) {
+        aggregateDepth++
+        try {
+            return translateAggregateCallBody(call, args, lambdaStyle)
+        } finally {
+            aggregateDepth--
+        }
+    }
+
+    private SqlExpr translateAggregateCallBody(MethodCallExpression call, List<Expression> args, boolean lambdaStyle) {
         String method = call.methodAsString
         String functionName = AGGREGATE_FUNCTION_MAP[method]
         if (functionName == null) {

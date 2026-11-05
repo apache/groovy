@@ -321,13 +321,19 @@ class SqlWindowTranslationTest {
         def query = translate(parsed, null)
         assert noErrors(parsed)
         def sql = ansi(query).sql
-        assert sql.contains('FLOOR((CAST(? * (ROW_NUMBER() OVER (PARTITION BY e.deptId ORDER BY e.salary ASC NULLS LAST) - 1) AS DOUBLE) ' +
-                '/ CAST(COUNT(*) OVER (PARTITION BY e.deptId) AS DOUBLE)))')
+        assert sql.contains('(CAST(? * (ROW_NUMBER() OVER (PARTITION BY e.deptId ORDER BY e.salary ASC NULLS LAST) - 1) AS BIGINT) ' +
+                '/ CAST(COUNT(*) OVER (PARTITION BY e.deptId) AS BIGINT))')
+        assert !sql.contains('FLOOR')
         assert sql.contains('CASE WHEN COUNT(*) OVER (PARTITION BY e.deptId) = 1 THEN 1 ' +
                 'ELSE PERCENT_RANK() OVER (PARTITION BY e.deptId ORDER BY e.salary ASC NULLS LAST) END')
 
+        def sqlite = new SqlRenderer(Dialects.resolve('sqlite')).render(query).sql
+        assert sqlite.contains('AS INTEGER')
+        assert !sqlite.contains('FLOOR')
+
         def jooq = JooqRenderer.render(query, 'H2').sql.toLowerCase()
-        assert jooq.contains('floor')
+        assert !jooq.contains('floor')
+        assert jooq.contains('bigint')
         assert jooq.contains('row_number() over (partition by e.deptid order by e.salary asc nulls last)')
         assert jooq.contains('count(*) over (partition by e.deptid)')
         assert jooq.contains('percent_rank() over (partition by e.deptid order by e.salary asc nulls last)')
@@ -365,7 +371,23 @@ class SqlWindowTranslationTest {
             translate(parsed, null)
         }
         assert err.message.contains('does not accept `rows`')
+        assert err.message.contains('GINQ applies that frame')
         assert !err.message.contains('window functions are deferred')
+    }
+
+    @Test
+    void testOffsetFunctionsRejectAFrameWithoutApplyingIt() {
+        def parsed = parse('''
+            from e in 'employees'
+            select (lead(e.name) over(orderby e.id rows -1, 1)),
+                   (rowNumber() over(orderby e.id rows 0, 0))
+        ''')
+        def err = shouldFail(MultipleCompilationErrorsException) {
+            translate(parsed, null)
+        }
+        assert err.message.contains('does not accept `rows`')
+        assert err.message.contains('SQL defines that function without a frame')
+        assert !err.message.contains('GINQ applies')
     }
 
     @Test
@@ -436,6 +458,16 @@ class SqlWindowTranslationTest {
         }
         assert nestedErr.message.contains('cannot be nested')
 
+        def insideAggregate = parse('''
+            from e in 'employees'
+            select (sum((rowNumber() over(orderby e.id))))
+        ''')
+        def aggregateErr = shouldFail(MultipleCompilationErrorsException) {
+            translate(insideAggregate, null)
+        }
+        assert aggregateErr.message.contains('nested inside an aggregate')
+        assert !aggregateErr.message.contains('mixedMode: true')
+
         def ordered = parse('''
             from e in 'employees'
             orderby (rowNumber() over(orderby e.salary))
@@ -487,6 +519,149 @@ class SqlWindowTranslationTest {
                         new SqlWindowFrame(SqlWindowFrame.Unit.RANGE,
                                 SqlWindowBound.unboundedPreceding(), SqlWindowBound.currentRow()))))).sql
                 .contains('RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW')
+    }
+
+    @Test
+    void testDescendingRangeIsMirroredIntoSortOrder() {
+        def parsed = parse('''
+            from e in 'employees'
+            select (sum(e.salary) over(orderby e.salary in desc range -2, 0)),
+                   (sum(e.salary) over(orderby e.salary in desc range 1, 2)),
+                   (sum(e.salary) over(orderby e.salary in desc range null, 1)),
+                   (sum(e.salary) over(orderby e.salary in desc range 1, null)),
+                   (sum(e.salary) over(orderby e.salary in desc rows -1, 1))
+        ''')
+        def query = translate(parsed, null)
+        assert noErrors(parsed)
+        def sql = ansi(query).sql
+        assert sql.contains('RANGE BETWEEN CURRENT ROW AND 2 FOLLOWING')
+        assert sql.contains('RANGE BETWEEN 2 PRECEDING AND 1 PRECEDING')
+        assert sql.contains('RANGE BETWEEN 1 PRECEDING AND UNBOUNDED FOLLOWING')
+        assert sql.contains('RANGE BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING')
+        assert sql.contains('ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING')
+        def jooq = JooqRenderer.render(query, 'H2').sql.toLowerCase()
+        assert jooq.contains('range between current row and 2 following')
+        assert jooq.contains('rows between 1 preceding and 1 following')
+    }
+
+    @Test
+    void testSeveralOrderKeysAndNullsFirst() {
+        def parsed = parse('''
+            from e in 'employees'
+            select (rank() over(orderby e.salary, e.name in asc(nullsfirst)))
+        ''')
+        def query = translate(parsed, null)
+        assert noErrors(parsed)
+        def sql = ansi(query).sql
+        assert sql.contains('RANK() OVER (ORDER BY e.salary ASC NULLS LAST, e.name ASC NULLS FIRST)')
+    }
+
+    @Test
+    void testMySqlRejectsANumericRangeOffset() {
+        def parsed = parse('''
+            from e in 'employees'
+            select (sum(e.salary) over(orderby e.salary range -2, 0))
+        ''')
+        def query = translate(parsed, null)
+        assert noErrors(parsed)
+        def err = shouldFail(IllegalArgumentException) {
+            new SqlRenderer(Dialects.resolve('mysql')).render(query)
+        }
+        assert err.message.contains('numeric RANGE offset')
+        assert err.message.contains('extra sort key')
+        def maria = shouldFail(IllegalArgumentException) {
+            new SqlRenderer(Dialects.resolve('mariadb')).render(query)
+        }
+        assert maria.message.contains('mariadb')
+        def jooqErr = shouldFail(IllegalArgumentException) {
+            JooqRenderer.render(query, 'MYSQL')
+        }
+        assert jooqErr.message.contains('extra sort key')
+
+        def rows = parse('''
+            from e in 'employees'
+            select (sum(e.salary) over(orderby e.salary rows -1, 1))
+        ''')
+        def rowsQuery = translate(rows, null)
+        def mysqlRows = new SqlRenderer(Dialects.resolve('mysql')).render(rowsQuery).sql
+        assert mysqlRows.contains('ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING')
+        assert mysqlRows.contains('IS NULL')
+    }
+
+    @Test
+    void testSqliteRejectsCountDistinctOver() {
+        def parsed = parse('''
+            from e in 'employees'
+            select (count(distinct(e.salary)) over(partitionby e.deptId))
+        ''')
+        def query = translate(parsed, null)
+        assert noErrors(parsed)
+        assert ansi(query).sql.contains('COUNT(DISTINCT e.salary) OVER (PARTITION BY e.deptId)')
+        def err = shouldFail(IllegalArgumentException) {
+            new SqlRenderer(Dialects.resolve('sqlite')).render(query)
+        }
+        assert err.message.contains('COUNT(DISTINCT)')
+        def jooqErr = shouldFail(IllegalArgumentException) {
+            JooqRenderer.render(query, 'SQLITE')
+        }
+        assert jooqErr.message.contains('COUNT(DISTINCT)')
+    }
+
+    @Test
+    void testRepeatedAndUnknownWindowClauses() {
+        def repeated = parse('''
+            from e in 'employees'
+            select (rowNumber() over(partitionby e.deptId partitionby e.active orderby e.id))
+        ''')
+        def repeatedErr = shouldFail(MultipleCompilationErrorsException) {
+            translate(repeated, null)
+        }
+        assert repeatedErr.message.contains('more than once')
+
+        def both = parse('''
+            from e in 'employees'
+            select (sum(e.salary) over(orderby e.salary rows -1, 1 range -1, 1))
+        ''')
+        def bothErr = shouldFail(MultipleCompilationErrorsException) {
+            translate(both, null)
+        }
+        assert bothErr.message.contains('cannot both be used')
+
+        def unknown = parse('''
+            from e in 'employees'
+            select (rowNumber() over(orderby e.id groups 1))
+        ''')
+        def unknownErr = shouldFail(MultipleCompilationErrorsException) {
+            translate(unknown, null)
+        }
+        assert unknownErr.message.contains('Unknown window clause')
+
+        def noOrder = parse('''
+            from e in 'employees'
+            select (sum(e.salary) over(range 1, 2))
+        ''')
+        def noOrderErr = shouldFail(MultipleCompilationErrorsException) {
+            translate(noOrder, null)
+        }
+        assert noOrderErr.message.contains('`orderby` is expected when using `range`')
+
+        def twoKeys = parse('''
+            from e in 'employees'
+            select (sum(e.salary) over(orderby e.salary, e.name range -1, 1))
+        ''')
+        def twoKeysErr = shouldFail(MultipleCompilationErrorsException) {
+            translate(twoKeys, null)
+        }
+        assert twoKeysErr.message.contains('Only one field is expected')
+
+        def fraction = parse('''
+            from e in 'employees'
+            select (sum(e.salary) over(orderby e.id rows 0.5, 1))
+        ''')
+        def fractionErr = shouldFail(MultipleCompilationErrorsException) {
+            translate(fraction, null)
+        }
+        assert fractionErr.message.contains('whole numbers')
     }
 
     private static SqlFunctionRegistry plainRegistry() {

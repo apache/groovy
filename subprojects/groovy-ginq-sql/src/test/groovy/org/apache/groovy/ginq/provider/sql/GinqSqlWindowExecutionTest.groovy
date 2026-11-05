@@ -129,6 +129,39 @@ class GinqSqlWindowExecutionTest {
         def range = [[1, 1, 1], [2, 2, 3], [5, 2, 10], [5, 2, 10]]
         assert range == nativeRange()
         assert range == jooqRange()
+
+        assert range == nativeDescendingRange()
+        assert range == jooqDescendingRange()
+    }
+
+    @Test
+    void testDescendingNullRangeAndSeveralOrderKeys() {
+        db.execute 'create table marks (n int)'
+        [1, null, 3].each { db.execute 'insert into marks (n) values (?)', [it] }
+        db.execute 'create table blanks (n int)'
+        [null, null].each { db.execute 'insert into blanks (n) values (?)', [it] }
+
+        def throughCurrent = [[1, 2, 1], [3, 3, 4], [null, 1, 0]]
+        assert throughCurrent == nativeThroughCurrent()
+        assert throughCurrent == jooqThroughCurrent()
+
+        def fromCurrent = [[1, 2, 4], [3, 1, 3], [null, 3, 4]]
+        assert fromCurrent == nativeFromCurrent()
+        assert fromCurrent == jooqFromCurrent()
+
+        assert [[null, 2], [null, 2]] == nativeBlankPeers()
+        assert [[null, 2], [null, 2]] == jooqBlankPeers()
+
+        def ranks = [
+                ['Alice', 4, 4],
+                ['Bob', 2, 2],
+                ['Carol', 3, 3],
+                ['Dave', 1, 1],
+                ['Eve', 5, 5],
+                ['Frank', 6, 6]
+        ]
+        assert ranks == nativeMultiRanks()
+        assert ranks == jooqMultiRanks()
     }
 
     @Test
@@ -420,6 +453,104 @@ class GinqSqlWindowExecutionTest {
 
     private static List range(List rows) {
         rows.collect { [it.n, it.cnt, it.total] }
+    }
+
+    private List nativeDescendingRange() {
+        range(GQL(provider: 'native-sql', dataSource: db) {
+            from n in 'nums'
+            orderby n.n
+            select n.n,
+                    (count() over(orderby n.n in desc range -2, 0)) as cnt,
+                    (sum(n.n) over(orderby n.n in desc range -2, 0)) as total
+        })
+    }
+
+    private List jooqDescendingRange() {
+        range(GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+            from n in 'nums'
+            orderby n.n
+            select n.n,
+                    (count() over(orderby n.n in desc range -2, 0)) as cnt,
+                    (sum(n.n) over(orderby n.n in desc range -2, 0)) as total
+        })
+    }
+
+    private List nativeThroughCurrent() {
+        range(GQL(provider: 'native-sql', dataSource: db) {
+            from n in 'marks'
+            orderby n.n
+            select n.n,
+                    (count() over(orderby n.n in desc range null, 0)) as cnt,
+                    (sum(n.n) over(orderby n.n in desc range null, 0)) as total
+        })
+    }
+
+    private List jooqThroughCurrent() {
+        range(GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+            from n in 'marks'
+            orderby n.n
+            select n.n,
+                    (count() over(orderby n.n in desc range null, 0)) as cnt,
+                    (sum(n.n) over(orderby n.n in desc range null, 0)) as total
+        })
+    }
+
+    private List nativeFromCurrent() {
+        range(GQL(provider: 'native-sql', dataSource: db) {
+            from n in 'marks'
+            orderby n.n
+            select n.n,
+                    (count() over(orderby n.n in desc range 0, null)) as cnt,
+                    (sum(n.n) over(orderby n.n in desc range 0, null)) as total
+        })
+    }
+
+    private List jooqFromCurrent() {
+        range(GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+            from n in 'marks'
+            orderby n.n
+            select n.n,
+                    (count() over(orderby n.n in desc range 0, null)) as cnt,
+                    (sum(n.n) over(orderby n.n in desc range 0, null)) as total
+        })
+    }
+
+    private List nativeBlankPeers() {
+        GQL(provider: 'native-sql', dataSource: db) {
+            from n in 'blanks'
+            select n.n, (count() over(orderby n.n range -1, 1)) as cnt
+        }.collect { [it.n, it.cnt] }
+    }
+
+    private List jooqBlankPeers() {
+        GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+            from n in 'blanks'
+            select n.n, (count() over(orderby n.n range -1, 1)) as cnt
+        }.collect { [it.n, it.cnt] }
+    }
+
+    private List nativeMultiRanks() {
+        ranksByName(GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            orderby e.name
+            select e.name,
+                    (rank() over(orderby e.salary, e.name)) as rk,
+                    (denseRank() over(orderby e.salary, e.name)) as dense
+        })
+    }
+
+    private List jooqMultiRanks() {
+        ranksByName(GQL(provider: 'jooq-sql', dialect: 'H2', dataSource: db) {
+            from e in 'employees'
+            orderby e.name
+            select e.name,
+                    (rank() over(orderby e.salary, e.name)) as rk,
+                    (denseRank() over(orderby e.salary, e.name)) as dense
+        })
+    }
+
+    private static List ranksByName(List rows) {
+        rows.collect { [it.name, it.rk, it.dense] }
     }
 
     private List nativeNtile() {

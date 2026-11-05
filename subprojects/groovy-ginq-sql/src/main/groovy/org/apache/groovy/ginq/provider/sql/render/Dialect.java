@@ -19,6 +19,9 @@
 package org.apache.groovy.ginq.provider.sql.render;
 
 import org.apache.groovy.ginq.provider.sql.ir.SqlExpr;
+import org.apache.groovy.ginq.provider.sql.ir.SqlFunction;
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindowBound;
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindowFrame;
 import org.apache.groovy.lang.annotation.Incubating;
 
 /**
@@ -148,6 +151,90 @@ public interface Dialect {
      */
     default boolean explicitNullOrdering() {
         return true;
+    }
+
+    /**
+     * Name used in diagnostics. Dialects that share an implementation
+     * override this so a message names the dialect the caller asked for.
+     *
+     * @return the dialect name
+     * @since 7.0.0
+     */
+    default String name() {
+        return "ansi";
+    }
+
+    /**
+     * SQL type name for truncating integer division, matching GINQ {@code ntile}.
+     *
+     * @return the type name
+     * @since 7.0.0
+     */
+    default String integerTypeName() {
+        return "BIGINT";
+    }
+
+    /**
+     * Whether {@code COUNT(DISTINCT ...)} may be a window function.
+     * SQLite accepts the aggregate and rejects the window form.
+     *
+     * @return {@code true} when the window form is supported
+     * @since 7.0.0
+     */
+    default boolean countDistinctOver() {
+        return true;
+    }
+
+    /**
+     * Rejects a {@code RANGE} offset the dialect cannot render without
+     * changing GINQ's null ordering or the value interval.
+     *
+     * @param frame the frame, or {@code null}
+     * @param numericRangeOffset whether a numeric {@code RANGE} offset is legal
+     * @param explicitNullOrdering whether {@code NULLS FIRST}/{@code LAST} is legal
+     * @param dialectName the name to put in the diagnostic
+     * @since 7.0.0
+     */
+    static void rejectRangeOffset(SqlWindowFrame frame, boolean numericRangeOffset,
+                                   boolean explicitNullOrdering, String dialectName) {
+        if (frame == null || frame.getUnit() != SqlWindowFrame.Unit.RANGE || !numericOffset(frame)) {
+            return;
+        }
+        if (!numericRangeOffset) {
+            throw new IllegalArgumentException(
+                    "the " + dialectName + " dialect supports RANGE frames only with UNBOUNDED and CURRENT ROW bounds. "
+                            + "A numeric RANGE offset has no equivalent; use `rows`, or a dialect that supports it");
+        }
+        if (!explicitNullOrdering) {
+            throw new IllegalArgumentException(
+                    "the " + dialectName + " dialect cannot apply a numeric RANGE offset while ordering nulls. "
+                            + "Null ordering is emulated with an extra sort key, and a numeric RANGE offset needs the single order expression. "
+                            + "Use `rows`, or a dialect with explicit null ordering");
+        }
+    }
+
+    /**
+     * Rejects a window {@code COUNT(DISTINCT ...)} the dialect cannot render.
+     *
+     * @param function the window function, before {@code OVER}
+     * @param supported whether the dialect accepts the window form
+     * @param dialectName the name to put in the diagnostic
+     * @since 7.0.0
+     */
+    static void rejectCountDistinctOver(SqlExpr function, boolean supported, String dialectName) {
+        if (supported || !(function instanceof SqlFunction) || !((SqlFunction) function).isDistinct()) {
+            return;
+        }
+        throw new IllegalArgumentException(
+                "the " + dialectName + " dialect does not support COUNT(DISTINCT) as a window function. "
+                        + "Use `count` without `distinct`, or a dialect that supports it");
+    }
+
+    private static boolean numericOffset(SqlWindowFrame frame) {
+        return frame.getLower().getKind() == SqlWindowBound.Kind.PRECEDING
+                || frame.getLower().getKind() == SqlWindowBound.Kind.FOLLOWING
+                || frame.getUpper().getKind() == SqlWindowBound.Kind.PRECEDING
+                || frame.getUpper().getKind() == SqlWindowBound.Kind.FOLLOWING;
     }
 
     /**

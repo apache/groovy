@@ -1254,6 +1254,21 @@ Portable GINQ window functions translate in strict mode under `native-sql` and `
 and the window aggregates `count`, `sum`, `avg`, `min` and `max`. The window forms of
 `median`, `stdev`, `stdevp`, `var`, `varp` and `agg` remain deferred and are not translated;
 strict mode rejects them, and `mixedMode: true` still evaluates that clause in memory.
+`rows` offsets count rows in window order. `range` offsets are added to the current
+order value in either sort direction, so `range -2, 0` runs from two below the current
+value through the current value. A descending `orderby` keeps that value interval, and
+the generated `RANGE` frame is rewritten so `PRECEDING` and `FOLLOWING` still point
+along the sort. `rank`, `denseRank`, `percentRank`, `cumeDist` and `ntile` accept
+several `orderby` keys. `rank` and its relatives need `orderby`: without it the
+collection provider returns null, and strict SQL rejects the query. `rows` and `range`
+on `rowNumber`, `rank`, `denseRank`, `percentRank`, `cumeDist`, `ntile`, `lead` and
+`lag` are rejected, because SQL defines those functions without a frame. In memory,
+`rank` and its relatives still honor a frame, and the others ignore it. `ntile` is
+GINQ's 0-based formula, rendered with integer division, so it does not depend on
+`FLOOR`. SQLite accepts a `RANGE` frame only when every bound is `UNBOUNDED` or
+`CURRENT ROW`. MySQL and MariaDB cannot combine a numeric `RANGE` offset with GINQ's
+null ordering, which those dialects emulate with a second sort key; use `rows`, or
+`h2` or `postgres`. `COUNT(DISTINCT) OVER` is not available on SQLite.
 Aggregation is supported both in
 the classic form, e.g. `groupby e.deptId` with `select e.deptId, count(), sum(e.salary)`, and the
 `groupby ... into g` form, e.g. `g.count()`, `g.sum(e -> e.salary)`.

@@ -426,6 +426,15 @@ final class SqlFunctionMapping {
     }
 
     /**
+     * {@code rank} and its relatives are computed on the frame in memory.
+     * The other functions that reject a frame ignore it.
+     */
+    @PackageScope
+    boolean appliesWindowFrame() {
+        return windowForm == WindowForm.RANK || windowForm == WindowForm.PERCENT
+    }
+
+    /**
      * Aggregates and {@code firstValue}/{@code lastValue}/{@code nthValue}
      * see the whole partition when GINQ writes no {@code rows} or {@code range}.
      * SQL's default with {@code ORDER BY} stops at the current row, so the

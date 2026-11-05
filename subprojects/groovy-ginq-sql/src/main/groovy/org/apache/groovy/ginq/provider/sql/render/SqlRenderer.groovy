@@ -181,12 +181,13 @@ class SqlRenderer {
         } else if (expr instanceof SqlBinary) {
             if ('/' == expr.op) {
                 // Groovy divides in real arithmetic; SQL integer division would truncate
-                String realType = dialect.realTypeName()
-                sb.append('(CAST(')
-                renderExpr(expr.left, sb, parameters)
-                sb.append(' AS ').append(realType).append(') / CAST(')
-                renderExpr(expr.right, sb, parameters)
-                sb.append(' AS ').append(realType).append('))')
+                renderDivision(expr, dialect.realTypeName(), sb, parameters)
+                return
+            }
+            if ('IDIV' == expr.op) {
+                // Truncating division. ntile uses this so the buckets match GINQ
+                // and dialects without FLOOR can still render it.
+                renderDivision(expr, dialect.integerTypeName(), sb, parameters)
                 return
             }
             int prec = precedence(expr.op)
@@ -274,6 +275,7 @@ class SqlRenderer {
             }
             sb.append(')')
         } else if (expr instanceof SqlWindowCall) {
+            Dialect.rejectCountDistinctOver(expr.function, dialect.countDistinctOver(), dialect.name())
             renderExpr(expr.function, sb, parameters)
             sb.append(' OVER (')
             renderWindow(expr.window, sb, parameters)
@@ -353,22 +355,19 @@ class SqlRenderer {
     }
 
     private void renderFrame(SqlWindowFrame frame, StringBuilder sb, List<Expression> parameters) {
-        if (frame.unit == SqlWindowFrame.Unit.RANGE && !dialect.numericRangeOffset() && numericRangeOffset(frame)) {
-            throw new IllegalArgumentException(
-                    'the sqlite dialect supports RANGE frames only with UNBOUNDED and CURRENT ROW bounds. ' +
-                    'A numeric RANGE offset has no SQLite equivalent; use `rows`, or a dialect that supports it')
-        }
+        Dialect.rejectRangeOffset(frame, dialect.numericRangeOffset(), dialect.explicitNullOrdering(), dialect.name())
         sb.append(frame.unit.name()).append(' BETWEEN ')
         renderBound(frame.lower, sb, parameters)
         sb.append(' AND ')
         renderBound(frame.upper, sb, parameters)
     }
 
-    private static boolean numericRangeOffset(SqlWindowFrame frame) {
-        return frame.lower.kind == SqlWindowBound.Kind.PRECEDING
-                || frame.lower.kind == SqlWindowBound.Kind.FOLLOWING
-                || frame.upper.kind == SqlWindowBound.Kind.PRECEDING
-                || frame.upper.kind == SqlWindowBound.Kind.FOLLOWING
+    private void renderDivision(SqlBinary expr, String typeName, StringBuilder sb, List<Expression> parameters) {
+        sb.append('(CAST(')
+        renderExpr(expr.left, sb, parameters)
+        sb.append(' AS ').append(typeName).append(') / CAST(')
+        renderExpr(expr.right, sb, parameters)
+        sb.append(' AS ').append(typeName).append('))')
     }
 
     private void renderBound(SqlWindowBound bound, StringBuilder sb, List<Expression> parameters) {

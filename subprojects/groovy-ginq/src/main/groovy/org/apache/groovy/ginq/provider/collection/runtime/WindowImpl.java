@@ -37,28 +37,29 @@ import static org.codehaus.groovy.runtime.typehandling.NumberMath.toBigDecimal;
  * Represents window which stores elements used by window functions
  *
  * @param <T> the type of {@link Queryable} element
- * @param <U> the type of field to sort
  * @since 4.0.0
  */
-class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection<T> implements Window<T> {
+class WindowImpl<T> extends QueryableCollection<T> implements Window<T> {
 
     /**
      * Creates a window for the current record.
      *
      * @param currentRecord the current record and row index
      * @param index the current zero-based row index
-     * @param value the current order value
-     * @param list the window contents
-     * @param order the order rule backing the window
+     * @param list the frame contents, the rows aggregates and value functions see
+     * @param comparator the full window order, or {@code null} when the window is unordered.
+     *        Ranking uses every key. A single key is not required
+     * @param orderedPartition the ordered partition. {@code lead}, {@code lag}, {@code rowNumber}
+     *        and {@code ntile} address this list, not the frame
      */
-    WindowImpl(Tuple2<T, Long> currentRecord, int index, U value, List<T> list, Order<? super T, ? extends U> order) {
+    WindowImpl(Tuple2<T, Long> currentRecord, int index, List<T> list,
+               Comparator<? super T> comparator, List<T> orderedPartition) {
         super(list);
         this.currentRecord = currentRecord;
-        this.order = order;
-        this.comparator = null == order ? null : makeComparator(order);
+        this.comparator = comparator;
         this.index = index;
-        this.value = value;
         this.list = list;
+        this.orderedPartition = orderedPartition;
     }
 
     /**
@@ -73,15 +74,16 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
 
     @Override
     public <V> V lead(Function<? super T, ? extends V> extractor, long lead, V def) {
-        V field;
-        if (0 == lead) {
-            field = extractor.apply(currentRecord.getV1());
-        } else if (0 <= index + lead && index + lead < list.size()) {
-            field = extractor.apply(list.get(index + (int) lead));
-        } else {
-            field = def;
+        if (0L == lead) {
+            return extractor.apply(currentRecord.getV1());
         }
-        return field;
+        // The offset is within the ordered partition. The frame list is shorter
+        // and is not indexed by the partition position.
+        long target = (long) index + lead;
+        if (0L <= target && target < orderedPartition.size()) {
+            return extractor.apply(orderedPartition.get((int) target));
+        }
+        return def;
     }
 
     @Override
@@ -122,7 +124,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
      */
     @Override
     public Long rank() {
-        if (null == order) {
+        if (null == comparator) {
             return null;
         }
 
@@ -144,7 +146,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
      */
     @Override
     public Long denseRank() {
-        if (null == order) {
+        if (null == comparator) {
             return null;
         }
 
@@ -170,21 +172,19 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
      */
     @Override
     public BigDecimal percentRank() {
-        if (null == order) {
+        if (null == comparator) {
             return null;
         }
 
         final int size = list.size();
+        if (0 == size) {
+            return null;
+        }
         if (1 == size) {
             return BigDecimal.ONE;
         }
 
-        Long r = rank();
-        if (null == r) {
-            return null;
-        }
-
-        return toBigDecimal(r - 1).divide(toBigDecimal(size - 1), 16, RoundingMode.HALF_UP);
+        return toBigDecimal(rank() - 1).divide(toBigDecimal(size - 1), 16, RoundingMode.HALF_UP);
     }
 
     /**
@@ -194,7 +194,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
      */
     @Override
     public BigDecimal cumeDist() {
-        if (null == order) {
+        if (null == comparator || list.isEmpty()) {
             return null;
         }
         long cnt = list.stream()
@@ -211,7 +211,13 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
      */
     @Override
     public long ntile(long bucketCnt) {
-        return bucketCnt * rowNumber() / list.size();
+        int size = orderedPartition.size();
+        if (0 == size) {
+            return 0L;
+        }
+        // 0-based buckets over the partition. rowNumber() is the partition index,
+        // so the denominator is the partition size even when a frame is present.
+        return bucketCnt * rowNumber() / size;
     }
 
     private static <T, U extends Comparable<? super U>> long getFirstIndex(WindowDefinition<T, U> windowDefinition, int index) {
@@ -268,8 +274,8 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
                 if (null == value) {
                     // A null plus an offset is null. The offset bounds therefore
                     // address the null peer group; an unbounded bound addresses
-                    // the corresponding edge of the partition.
-                    RowBound bound = nullKeyRange(lower, upper, keyCount, numericStart, numericEnd, order.isNullsLast());
+                    // the partition edge in that value direction.
+                    RowBound bound = nullKeyRange(lower, upper, keyCount, numericStart, numericEnd, order.isNullsLast(), order.isAsc());
                     if (null == bound) {
                         return null;
                     }
@@ -283,12 +289,13 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
                     firstIndex = indexes[0];
                     lastIndex = indexes[1];
                 } else if (!hasNumeric) {
-                    if (null == lower && null == upper) {
-                        firstIndex = 0;
-                        lastIndex = keyCount - 1L;
-                    } else {
+                    // Every key is null, so the null peer group is the partition.
+                    RowBound bound = nullKeyRange(lower, upper, keyCount, numericStart, numericEnd, order.isNullsLast(), order.isAsc());
+                    if (null == bound) {
                         return null;
                     }
+                    firstIndex = bound.getLower();
+                    lastIndex = bound.getUpper();
                 } else {
                     List<U> numericKeys = keys.subList(numericStart, numericEnd + 1);
                     long[] indexes = numericRangeIndexes(order.isAsc(), (Number) value, (Number) lower, (Number) upper, numericKeys);
@@ -304,11 +311,23 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
                     // edge they sit against, so the frame stays one contiguous slice.
                     long absFirst = numericStart + Math.max(indexes[0], 0L);
                     long absLast = numericStart + Math.min(indexes[1], numericSize - 1L);
-                    if (null == lower && absFirst == numericStart) {
-                        absFirst = 0;
-                    }
-                    if (null == upper && absLast == numericEnd) {
-                        absLast = keyCount - 1L;
+                    // Nulls are not numbers. Include the null peer group only when
+                    // an unbounded bound runs off the numeric edge that group sits
+                    // against. Ascending nulls-last puts that group after the high
+                    // values; descending nulls-last puts it after the low values.
+                    boolean ascOrder = order.isAsc();
+                    boolean coversLow = ascOrder ? absFirst == numericStart : absLast == numericEnd;
+                    boolean coversHigh = ascOrder ? absLast == numericEnd : absFirst == numericStart;
+                    if (order.isNullsLast()) {
+                        boolean throughTrailing = ascOrder ? coversHigh && null == upper : coversLow && null == lower;
+                        if (throughTrailing) {
+                            absLast = keyCount - 1L;
+                        }
+                    } else {
+                        boolean throughLeading = ascOrder ? coversLow && null == lower : coversHigh && null == upper;
+                        if (throughLeading) {
+                            absFirst = 0L;
+                        }
                     }
                     if (absFirst > absLast) {
                         return null;
@@ -316,13 +335,23 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
                     firstIndex = absFirst;
                     lastIndex = absLast;
                 }
+            } else if (!(null == lower && null == upper)) {
+                throw new IllegalArgumentException(
+                        "range bounds apply to one numeric order key; this order key or these bounds are not numeric");
             }
         }
 
         if ((firstIndex < 0 && lastIndex < 0) || (firstIndex >= size && lastIndex >= size)) {
             return null;
         }
-        return new RowBound(Math.max(firstIndex, 0L), Math.min(lastIndex, size - 1L));
+        long from = Math.max(firstIndex, 0L);
+        long to = Math.min(lastIndex, size - 1L);
+        // A frame that ends before it starts is empty. Clamping each side
+        // independently would ask limit() for a negative length.
+        if (from > to) {
+            return null;
+        }
+        return new RowBound(from, to);
     }
 
     /**
@@ -369,24 +398,28 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
      */
     private static <U extends Comparable<? super U>> long[] numericRangeIndexes(boolean asc, Number value, Number lower, Number upper, List<U> keys) {
         int size = keys.size();
-        int flag = asc ? 1 : -1;
-        BigDecimal firstElement = toBigDecimal((Number) keys.get(0));
-        BigDecimal lastElement = toBigDecimal((Number) keys.get(size - 1));
-        BigDecimal lowerValue = null == lower ? MIN_VALUE : toBigDecimal(plus(value, lower));
-        BigDecimal upperValue = null == upper ? MAX_VALUE : toBigDecimal(plus(value, upper));
-        if ((flag * lowerValue.compareTo(firstElement) < 0 && flag * upperValue.compareTo(firstElement) < 0)
-                || (flag * lowerValue.compareTo(lastElement) > 0 && flag * upperValue.compareTo(lastElement) > 0)) {
+        if (0 == size) {
+            return null;
+        }
+        // Null offsets are truly unbounded. A long sentinel would drop values
+        // outside the long range, such as 1e20.
+        BigDecimal lowerValue = null == lower ? null : toBigDecimal(plus(value, lower));
+        BigDecimal upperValue = null == upper ? null : toBigDecimal(plus(value, upper));
+        BigDecimal smallest = toBigDecimal((Number) (asc ? keys.get(0) : keys.get(size - 1)));
+        BigDecimal largest = toBigDecimal((Number) (asc ? keys.get(size - 1) : keys.get(0)));
+        if ((null != upperValue && upperValue.compareTo(smallest) < 0)
+                || (null != lowerValue && lowerValue.compareTo(largest) > 0)) {
             return null;
         }
         long firstIndex;
         long lastIndex;
         if (asc) {
-            firstIndex = getIndexByValue(lowerValue, true, keys);
-            lastIndex = getIndexByValue(upperValue, false, keys);
+            firstIndex = null == lowerValue ? 0L : getIndexByValue(lowerValue, true, keys);
+            lastIndex = null == upperValue ? size - 1L : getIndexByValue(upperValue, false, keys);
         } else {
             List<U> reversedList = new ReversedList<>(keys);
-            lastIndex = size - 1L - getIndexByValue(lowerValue, true, reversedList);
-            firstIndex = size - 1L - getIndexByValue(upperValue, false, reversedList);
+            lastIndex = null == lowerValue ? size - 1L : size - 1L - getIndexByValue(lowerValue, true, reversedList);
+            firstIndex = null == upperValue ? 0L : size - 1L - getIndexByValue(upperValue, false, reversedList);
         }
         return new long[] {firstIndex, lastIndex};
     }
@@ -401,16 +434,26 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
      * @param numericStart index of the first numeric key
      * @param numericEnd index of the last numeric key
      * @param nullsLast whether null keys sort last
+     * @param asc whether the window order is ascending
      * @return the frame, or {@code null} when it is empty
      */
-    private static RowBound nullKeyRange(Object lower, Object upper, int size, int numericStart, int numericEnd, boolean nullsLast) {
+    private static RowBound nullKeyRange(Object lower, Object upper, int size, int numericStart, int numericEnd, boolean nullsLast, boolean asc) {
         long peerStart = nullsLast ? numericEnd + 1L : 0L;
         long peerEnd = nullsLast ? size - 1L : numericStart - 1L;
         if (peerStart > peerEnd) {
             return null;
         }
-        long start = null == lower ? 0L : peerStart;
-        long end = null == upper ? size - 1L : peerEnd;
+        // A finite offset stays on the null peer group. An unbounded low or high
+        // bound runs to the partition edge in that value direction, which is the
+        // opposite end of the list when the order is descending.
+        boolean lowUnbounded = null == lower;
+        boolean highUnbounded = null == upper;
+        long start = asc
+                ? (lowUnbounded ? 0L : peerStart)
+                : (highUnbounded ? 0L : peerStart);
+        long end = asc
+                ? (highUnbounded ? size - 1L : peerEnd)
+                : (lowUnbounded ? size - 1L : peerEnd);
         if (start > end) {
             return null;
         }
@@ -480,12 +523,9 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     }
 
     private final Tuple2<T, Long> currentRecord;
-    private final Order<? super T, ? extends U> order;
     private final Comparator<? super T> comparator;
     private final int index;
-    private final U value;
     private final List<T> list;
-    private static final BigDecimal MIN_VALUE = toBigDecimal(Long.MIN_VALUE);
-    private static final BigDecimal MAX_VALUE = toBigDecimal(Long.MAX_VALUE);
+    private final List<T> orderedPartition;
     @Serial private static final long serialVersionUID = -3458969297047398621L;
 }
