@@ -28,10 +28,10 @@ import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -1526,8 +1526,11 @@ public class BinaryExpressionHelper {
 
             compileStack.removeVar(resultIdx);
 
-        } else if (expression instanceof VariableExpression || expression instanceof PropertyExpression || expression instanceof FieldExpression) {
-            // here we handle a++ and a.b++
+        } else if (expression instanceof FieldExpression
+                || expression instanceof PropertyExpression
+                || (expression instanceof VariableExpression v
+                    && !(v.isThisExpression() || v.isSuperExpression()))) { // GROOVY-7947
+            // write "++a" or "a++" result back to "a", leaving result on stack for caller
             controller.getOperandStack().dup();
             controller.getCompileStack().pushLHS(true);
             expression.visit(controller.getAcg());
