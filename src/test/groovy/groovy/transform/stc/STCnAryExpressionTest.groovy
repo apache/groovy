@@ -132,6 +132,26 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11375
+    void testShiftOnPrimitivesVariableFlowType() {
+        assertScript '''
+            def x = "--"
+            x = x.size()
+            def y = x << x
+            assert y === 8
+        '''
+    }
+
+    // GROOVY-11375
+    void testPowerOnPrimitivesVariableFlowType() {
+        assertScript '''
+            def x = "--"
+            x = x.size()
+            def y = x ** x
+            assert y === 4
+        '''
+    }
+
     // GROOVY-5644
     void testSpaceshipOperatorNoAmbiguousError() {
         assertScript '''
