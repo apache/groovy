@@ -31,6 +31,11 @@
 <ivysettings>
   <settings defaultResolver="downloadGrapes"/>
   <caches lockStrategy="artifact-lock-nio"/>
+  <!-- a stalled transfer fails instead of blocking the grab, and the artifact lock, forever;
+       the read timeout applies to each read, so it does not limit a long download -->
+  <timeout-constraints>
+    <timeout-constraint name="grape" connectionTimeout="30000" readTimeout="60000"/>
+  </timeout-constraints>
   <resolvers>
     <chain name="downloadGrapes" returnFirst="true">
       <filesystem name="cachedGrapes">
@@ -38,7 +43,7 @@
         <artifact pattern="${user.home}/.groovy/grapes/[organisation]/[module]/[type]s/[artifact]-[revision](-[classifier]).[ext]"/>
       </filesystem>
       <ibiblio name="localm2" root="${user.home.url}/.m2/repository/" checkmodified="true" changingPattern=".*" changingMatcher="regexp" m2compatible="true"/>
-      <ibiblio name="ibiblio" m2compatible="true"/>
+      <ibiblio name="ibiblio" m2compatible="true" timeoutConstraint="grape"/>
     </chain>
   </resolvers>
 </ivysettings>
