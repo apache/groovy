@@ -41,4 +41,17 @@ final class AssignmentsStaticCompileTest extends STCAssignmentTest implements St
         String bytecode = astTrees['C'][1]
         assert !bytecode.contains('java/util/ArrayList') : 'a multiple assignment used as a statement should not create a list'
     }
+
+    // GROOVY-12698: annotations were dropped when the multiple assignment was split into single declarations
+    @Test
+    void testMultiAssignWithMisplacedAnnotation() {
+        // one diagnostic per declared variable, like "@Override def x = 1, y = 2"
+        shouldFailWithMessages '''
+            def m() {
+                @Override def (x, y) = [1, 2]
+            }
+        ''',
+        'Annotation @java.lang.Override is not allowed on element LOCAL_VARIABLE',
+        'Annotation @java.lang.Override is not allowed on element LOCAL_VARIABLE'
+    }
 }
