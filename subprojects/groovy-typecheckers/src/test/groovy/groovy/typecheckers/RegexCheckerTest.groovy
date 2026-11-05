@@ -509,4 +509,85 @@ final class RegexCheckerTest {
         assert err.message =~ /Bad regex: Unclosed counted closure/
         assert !err.message.contains('General error')
     }
+
+    // GROOVY-12697: group(String) used to fail inside the compiler ("Cannot get property 'value' on null object")
+    @Test
+    void testGoodNamedGroupLookup() {
+        assertScript shell, '''
+            String level(String line) {
+                Matcher m = line =~ /(?<level>INFO|WARN|ERROR)/
+                m.find() ? m.group('level') : 'none'
+            }
+            assert level('2026-11-04 WARN disk low') == 'WARN'
+            assert level('2026-11-04 TRACE verbose') == 'none'
+        '''
+        assertScript shell, '''
+            Pattern p = ~/(?<first>...)(?<second>...)/
+            Matcher m = p.matcher('foobar')
+            assert m.find()
+            assert m.group('first') == 'foo'
+            assert m.group('second') == 'bar'
+        '''
+        assertScript shell, '''
+            Matcher m = Pattern.compile(/(?<first>...)(?<second>...)/).matcher('foobar')
+            assert m.find()
+            assert m.group('second') == 'bar'
+        '''
+        // a name tracked through a local constant
+        assertScript shell, '''
+            def m = 'foobar' =~ /(?<first>...)(?<second>...)/
+            assert m.find()
+            String name = 'first'
+            assert m.group(name) == 'foo'
+        '''
+    }
+
+    // GROOVY-12697
+    @Test
+    void testBadNamedGroupLookup() {
+        def err = shouldFail shell, '''
+            def m = 'foobar' =~ /(?<first>...)(?<second>...)/
+            assert m.find()
+            assert m.group('third')
+        '''
+        assert err.message.contains("Invalid group name 'third' for regex with named groups first, second")
+        assert !err.message.contains('General error')
+
+        err = shouldFail shell, '''
+            Pattern p = ~/(?<first>...)(...)/
+            Matcher m = p.matcher('foobar')
+            assert m.find()
+            assert m.group('second')
+        '''
+        assert err.message.contains("Invalid group name 'second' for regex with named group first")
+
+        err = shouldFail shell, '''
+            Matcher m = Pattern.compile(/(...)(...)/).matcher('foobar')
+            assert m.find()
+            assert m.group('first')
+        '''
+        assert err.message.contains("Invalid group name 'first' for regex with no named groups")
+    }
+
+    // GROOVY-12697: a group index or name that is not a constant is left to the runtime
+    @Test
+    void testNonConstantGroupLookup() {
+        assertScript shell, '''
+            String pick(int index, String name) {
+                def m = 'foobar' =~ /(?<first>...)(?<second>...)/
+                assert m.find()
+                m.group(index) + m.group(name) + m[0][index]
+            }
+            assert pick(2, 'first') == 'barfoobar'
+        '''
+        assertScript shell, '''
+            Pattern p = ~/(?<first>...)(?<second>...)/
+            Matcher m = p.matcher('foobar')
+            assert m.find()
+            int index = 'foobar'.size() - 4
+            String name = 'FIRST'.toLowerCase()
+            assert m.group(index) == 'bar'
+            assert m.group(name) == 'foo'
+        '''
+    }
 }
