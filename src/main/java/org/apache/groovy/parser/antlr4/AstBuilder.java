@@ -283,7 +283,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     public ModuleNode buildAST() {
         try {
-            return (ModuleNode) this.visit(this.buildCST());
+            ModuleNode module = (ModuleNode) this.visit(this.buildCST());
+            // The finished tree must not keep the parser graph alive into later phases.
+            releaseParameterContexts(module);
+            return module;
         } catch (Throwable t) {
             // convertException is a no-op for an existing CompilationFailedException and
             // otherwise records (recovery) or fatally fails (default) before wrapping.
@@ -292,9 +295,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             // (belt-and-braces guard suggested in PR review).
             CompilationFailedException cfe = convertException(t);
             if (shouldReturnPartialModuleOnFailure()) {
+                releaseParameterContexts(this.moduleNode);
                 return this.moduleNode;
             }
             throw cfe;
+        } finally {
+            // Drop this parse's interpreter before the recognizer can outlive the visit.
+            // A replaced prediction cache stays reachable through any parser that still
+            // points at the retired ATN, which is what pushes a single large class over
+            // the default compiler heap during class generation.
+            releaseRecognizers();
         }
     }
 
@@ -5669,6 +5679,64 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 collectSyntaxError(new SyntaxException(msg, line, charPositionInLine + 1));
             }
         };
+    }
+
+    /**
+     * A parameter keeps its parse context only so the record header can be lowered
+     * during this visit. The context's parent chain is the whole CST, so leaving it
+     * on the AST pins every token of the file for the rest of compilation.
+     */
+    private void releaseParameterContexts(final ModuleNode module) {
+        if (module == null) return;
+        if (module.getStatementBlock() != null) {
+            module.getStatementBlock().visit(PARAMETER_CONTEXT_RELEASER);
+        }
+        for (ClassNode classNode : module.getClasses()) {
+            releaseClassParameterContexts(classNode);
+        }
+    }
+
+    private void releaseClassParameterContexts(final ClassNode classNode) {
+        for (ConstructorNode constructor : classNode.getDeclaredConstructors()) {
+            clearParameterContexts(constructor.getParameters());
+            if (constructor.getCode() != null) constructor.getCode().visit(PARAMETER_CONTEXT_RELEASER);
+        }
+        for (MethodNode method : classNode.getMethods()) {
+            clearParameterContexts(method.getParameters());
+            if (method.getCode() != null) method.getCode().visit(PARAMETER_CONTEXT_RELEASER);
+        }
+        for (FieldNode field : classNode.getFields()) {
+            if (field.getInitialExpression() != null) field.getInitialExpression().visit(PARAMETER_CONTEXT_RELEASER);
+        }
+        Object header = classNode.getNodeMetaData(RECORD_HEADER);
+        if (header instanceof Parameter[] parameters) {
+            clearParameterContexts(parameters);
+        }
+        classNode.getInnerClasses().forEachRemaining(this::releaseClassParameterContexts);
+    }
+
+    private static void clearParameterContexts(final Parameter[] parameters) {
+        if (parameters == null) return;
+        for (Parameter parameter : parameters) {
+            if (parameter != null) parameter.removeNodeMetaData(PARAMETER_CONTEXT);
+        }
+    }
+
+    private static final CodeVisitorSupport PARAMETER_CONTEXT_RELEASER = new CodeVisitorSupport() {
+        @Override
+        public void visitClosureExpression(final ClosureExpression expression) {
+            clearParameterContexts(expression.getParameters());
+            super.visitClosureExpression(expression);
+        }
+    };
+
+    /**
+     * Detach this parse from the shared prediction cache. The cache itself stays
+     * softly reachable for the next file; this parse must not keep a retired copy.
+     */
+    private void releaseRecognizers() {
+        if (parser != null) parser.release();
+        if (lexer != null) lexer.release();
     }
 
     private void removeErrorListeners() {

@@ -45,6 +45,17 @@ public class GroovyLangLexer extends GroovyLexer {
     }
 
     /**
+     * Drop this lexer's input and interpreter once the AST has been built.
+     * Tokens captured from the file otherwise keep the lexer, and the lexer
+     * keeps its ATN simulator, for the rest of compilation.
+     */
+    void release() {
+        removeErrorListeners();
+        setInterpreter(null);
+        _input = null;
+    }
+
+    /**
      * Returns the next token, with a special case for EOF after a bare {@code $} in a GString.
      * <p>
      * After {@code GStringBegin} or {@code GStringPart} matches a trailing {@code $} at the

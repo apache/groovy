@@ -42,6 +42,18 @@ public class GroovyLangParser extends GroovyParser {
         }
     }
 
+    /**
+     * Drop this parse's token stream, tree and interpreter. The shared prediction
+     * cache stays on the ATN manager; this parser must not keep a copy of it,
+     * or the tree that points at every token of the file.
+     */
+    void release() {
+        removeErrorListeners();
+        setInterpreter(null);
+        _ctx = null;
+        _input = null;
+    }
+
     @Override
     protected FailedPredicateException createFailedPredicateException(String predicate, String message) {
         return new LightWeightFailedPredicateException(this, predicate, message);
