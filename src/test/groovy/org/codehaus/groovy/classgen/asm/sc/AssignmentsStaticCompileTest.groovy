@@ -33,4 +33,12 @@ final class AssignmentsStaticCompileTest extends STCAssignmentTest implements St
         String bytecode = astTrees['C'][1]
         assert !bytecode.contains('ScriptBytecodeAdapter.setGroovyObjectProperty') : '"c.i += 10" should use setter, not dynamic property'
     }
+
+    // GROOVY-12700
+    @Override @Test
+    void testMultiAssignStatement() {
+        super.testMultiAssignStatement()
+        String bytecode = astTrees['C'][1]
+        assert !bytecode.contains('java/util/ArrayList') : 'a multiple assignment used as a statement should not create a list'
+    }
 }
