@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793775616109,
+  "lastUpdate": 1793863129702,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -9133,6 +9133,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 471.59666666666664,
             "range": "±20.48",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "49860af6b85a8c8708463b223b3dc83e1ff2c269",
+          "message": "GROOVY-12696: FormatStringChecker: additional case (reject an explicit argument index of 0 or one too large for an int)\n\nOn the path that checks calls whose arguments are not all constants,\nan explicit argument index of 0 (\"%0$s\") was treated as no index, so\nthe checker either accepted the call, which then failed at run time\nwith IllegalFormatArgumentIndexException (JDK 17+), or reported an\nunrelated error such as IllegalFormatConversion against the next\nargument. An index too large for an int (\"%99999999999$s\") made the\nchecker fail with a NumberFormatException.\n\nCheck the explicit index first, as Formatter does, and report\nIllegalFormatArgumentIndex with Formatter's messages, also for %%, %n\nand %< specifiers. Calls whose arguments are all constants already\nreported these, since that path runs Formatter itself.",
+          "timestamp": "2026-11-05T05:20:51Z",
+          "url": "https://github.com/apache/groovy/commit/49860af6b85a8c8708463b223b3dc83e1ff2c269"
+        },
+        "date": 1793863123671,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 422.8466666666666,
+            "range": "±25.65",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 518.19,
+            "range": "±178.87",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 465.65333333333336,
+            "range": "±119.75",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 371.05000000000007,
+            "range": "±18.53",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 382.6666666666667,
+            "range": "±23.54",
             "unit": "ms",
             "extra": "6.0.0"
           }
