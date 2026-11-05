@@ -138,4 +138,44 @@ final class PropertyMissingTest {
         '''
         assert npe =~ /Cannot get property 'xxx' on null object/
     }
+
+    @Test
+    void testNullDotProperty2() {
+        def npe = shouldFail NullPointerException, '''
+            foo = null
+            foo.bar
+        '''
+        assert npe =~ /Cannot get property 'bar' on null object/
+    }
+
+    // GROOVY-12704
+    @Test
+    void testNullDotProperty3() {
+        def npe = shouldFail NullPointerException, '''
+            foo = null
+            bar = 'baz'
+            foo."$bar"
+        '''
+        assert npe =~ /Cannot get property 'baz' on null object/
+    }
+
+    @Test
+    void testNullDotProperty4() {
+        def npe = shouldFail NullPointerException, '''
+            foo = null
+            foo.bar = null
+        '''
+        assert npe =~ /Cannot set property 'bar' on null object/
+    }
+
+    // GROOVY-12704
+    @Test
+    void testNullDotProperty5() {
+        def npe = shouldFail NullPointerException, '''
+            foo = null
+            bar = 'baz'
+            foo."$bar" = null
+        '''
+        assert npe =~ /Cannot set property 'baz' on null object/
+    }
 }
