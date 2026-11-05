@@ -24,6 +24,8 @@ import org.junit.jupiter.api.Test
 import static org.apache.groovy.parser.antlr4.TestUtils.expectContains
 import static org.apache.groovy.parser.antlr4.TestUtils.expectContainsOnce
 import static org.apache.groovy.parser.antlr4.TestUtils.expectParseError
+import static org.apache.groovy.parser.antlr4.TestUtils.recoveredMessages
+import static org.junit.jupiter.api.Assertions.assertEquals
 
 /**
  * Negative parser tests for the Antlr4 parser: a compact covering set
@@ -3836,11 +3838,47 @@ final class ParserNegativeSyntaxTest {
     }
 
     @Test
+    void 'primitive type keyword as variable name around line breaks and end of input'() {
+        String keyword = "'long' is a keyword and cannot be used as a variable name"
+        // the keyword is the offender and a line break or the end of input follows it
+        expectContains 'class C {\n    int long\n}', "$keyword @ line 2, column 9."
+        expectContains 'def a, long', "$keyword @ line 1, column 8."
+        // a line break before the keyword does not hide the type or the comma
+        expectContains 'class C {\n    int\n    long = 1\n}', "$keyword @ line 3, column 5."
+        expectContains 'def a,\nlong = 2', "$keyword @ line 2, column 1."
+        // the `}` after the keyword is the offender
+        expectContains 'def m() { def long }', "$keyword @ line 1, column 15."
+        expectContains 'class C { int void = 1 }', "'void' is a keyword and cannot be used as a variable name @ line 1, column 15."
+    }
+
+    @Test
+    void 'primitive type keyword as variable name after the other variable modifiers'() {
+        String keyword = "'long' is a keyword and cannot be used as a variable name"
+        expectContains 'class C { public long = 1 }', "$keyword @ line 1, column 18."
+        expectContains 'class C { protected long; }', "$keyword @ line 1, column 21."
+        expectContains 'class C { volatile long }', "$keyword @ line 1, column 20."
+        expectContains 'abstract long = 1', "$keyword @ line 1, column 10."
+        expectContains 'strictfp long = 1', "$keyword @ line 1, column 10."
+    }
+
+    @Test
+    void 'primitive type keyword as variable name is collected under error recovery'() {
+        // the parser reports `def long = 2` first; AstBuilder's diagnostic for `var long = 1` is recorded, not thrown through
+        assertEquals(["'long' is a keyword and cannot be used as a variable name @ line 2, column 5.",
+                      "'long' is a keyword and cannot be used as a variable name @ line 1, column 5."],
+                recoveredMessages('var long = 1\ndef long = 2'))
+    }
+
+    @Test
     void 'primitive type keyword that is not a variable name keeps its own diagnostic'() {
         expectContains 'class C { int long() {} }', "Unexpected input: 'int long'"
         expectContains 'enum E { A, long }', "';' expected after the last enum constant"
         expectContains 'import long', "Unexpected input: 'long'"
         expectContains 'def long', 'Unexpected end of input'
+        // a line break after the keyword is a statement break, not a declarator end
+        expectContains 'def m() { def long\n}', "Unexpected input: '\\n'"
+        // nothing but a comment before the `=`: no keyword to name
+        expectContains '/* no name */ = 1', "Unexpected input: '='"
     }
 
     @Test

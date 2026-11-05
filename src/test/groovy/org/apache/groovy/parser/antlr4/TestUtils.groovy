@@ -42,6 +42,7 @@ package org.apache.groovy.parser.antlr4
     import org.codehaus.groovy.ast.stmt.ReturnStatement
     import org.codehaus.groovy.ast.stmt.ThrowStatement
     import org.codehaus.groovy.ast.stmt.WhileStatement
+    import org.codehaus.groovy.control.CompilationFailedException
     import org.codehaus.groovy.control.CompilationUnit
     import org.codehaus.groovy.control.CompilerConfiguration
     import org.codehaus.groovy.control.ErrorCollector
@@ -49,6 +50,7 @@ package org.apache.groovy.parser.antlr4
     import org.codehaus.groovy.control.ParserPluginFactory
     import org.codehaus.groovy.control.Phases
     import org.codehaus.groovy.control.SourceUnit
+    import org.codehaus.groovy.control.messages.SyntaxErrorMessage
     import org.codehaus.groovy.syntax.Token
     import org.junit.jupiter.api.Assertions
 
@@ -132,6 +134,27 @@ final class TestUtils {
         } catch (e) {
             return (e.message ?: e.toString()).replace('\r\n', '\n')
         }
+    }
+
+    /**
+     * Compile {@code source} through CONVERSION with parser error recovery
+     * enabled and return the collected syntax error messages in collector
+     * order. Fails the test if the compilation does not fail.
+     */
+    static List<String> recoveredMessages(String source) {
+        CompilerConfiguration config = new CompilerConfiguration()
+        config.optimizationOptions.put(CompilerConfiguration.ERROR_RECOVERY, true)
+        CompilationUnit unit = new CompilationUnit(config)
+        unit.addSource('test.groovy', source)
+        try {
+            unit.compile(Phases.CONVERSION)
+            Assertions.fail('expected parse to fail')
+        } catch (CompilationFailedException ignored) {
+            // the diagnostics live on the collector
+        }
+        unit.errorCollector.errors
+                .findAll { it instanceof SyntaxErrorMessage }
+                .collect { ((SyntaxErrorMessage) it).cause.message }
     }
 
     /**

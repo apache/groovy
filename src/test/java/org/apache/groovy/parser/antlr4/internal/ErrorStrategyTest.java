@@ -532,7 +532,13 @@ final class ErrorStrategyTest {
             "def long;",
             "class C { static boolean = true }",
             "class C { private long }",
-            "class C { transient int = 1 }"
+            "class C { transient int = 1 }",
+            "val long = 1",
+            "class C { public long = 1 }",
+            "class C { protected long; }",
+            "class C { volatile long }",
+            "abstract long = 1",
+            "strictfp long = 1"
     })
     void keywordAsVariableNameAfterAnyVariableModifier(final String src) {
         var tokens = lex(src);
@@ -629,6 +635,91 @@ final class ErrorStrategyTest {
         keyword.setTokenIndex(1);
         assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(
                 stubException(new IntervalSet(), keyword, new ThrowingTokenStream(new IllegalArgumentException("test"))), keyword));
+    }
+
+    @Test
+    void keywordAsVariableNameNeedsATokenBeforeTheKeyword() {
+        // the keyword is the offender right after a line break: no type and no comma to look back at
+        var tokens = lex("\nlong = 1");
+        Token keyword = firstPrimitiveKeyword(tokens);
+        assertEquals(1, keyword.getTokenIndex());
+        assertEquals(GroovyParser.NL, tokens.get(0).getType());
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(new IntervalSet(), keyword, tokens), keyword));
+
+        // the keyword opens the stream: no modifier before it (`long = 1` parses, so only AstBuilder sees it)
+        tokens = lex("long = 1");
+        Token eq = tokenWithText(tokens, "=");
+        assertEquals(1, eq.getTokenIndex());
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(new IntervalSet(), eq, tokens), eq));
+
+        // no offending token at all
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(new IntervalSet(), null, tokens), null));
+    }
+
+    @Test
+    void keywordAsVariableNameWithoutAnExpectedSet() {
+        // no expected set means no name was expected: the modifier look-back decides
+        var tokens = lex("def long = 1");
+        Token eq = tokenWithText(tokens, "=");
+        assertSame(tokens.get(1), AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(null, eq, tokens), eq));
+
+        tokens = lex("def a, long = 2");
+        Token keyword = tokenWithText(tokens, "long");
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(null, keyword, tokens), keyword),
+                "after a comma only an expected name makes the keyword a variable");
+    }
+
+    @Test
+    void keywordAsVariableNameSwallowsExpectedTokensFailure() {
+        // ATN.getExpectedTokens rejects an invalid state: that counts as no name expected, not as a lookup failure
+        var tokens = lex("def long = 1");
+        Token eq = tokenWithText(tokens, "=");
+        assertSame(tokens.get(1), AbstractFriendlyErrorStrategy.keywordAsVariableName(
+                expectedTokensFailing(new IllegalArgumentException("Invalid state number."), eq, tokens), eq));
+        assertSame(tokens.get(1), AbstractFriendlyErrorStrategy.keywordAsVariableName(
+                expectedTokensFailing(new IndexOutOfBoundsException("test"), eq, tokens), eq));
+
+        tokens = lex("def a, long = 2");
+        Token keyword = tokenWithText(tokens, "long");
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(
+                expectedTokensFailing(new IllegalArgumentException("Invalid state number."), keyword, tokens), keyword));
+    }
+
+    @Test
+    void keywordAsVariableNameForwardLookIsBounded() {
+        // nothing after the keyword at all
+        CommonToken keyword = token(GroovyParser.BuiltInPrimitiveType, "long");
+        keyword.setTokenIndex(1);
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(
+                stubException(new IntervalSet(), keyword, new EmptyTokenStream()), keyword));
+
+        // a keyword index past the end of the stream: the walk stops at EOF
+        var tokens = lex("def long = 1");
+        keyword.setTokenIndex(tokens.size() + 1);
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(new IntervalSet(), keyword, tokens), keyword));
+
+        // the walk starts at the stream position, which the parser leaves at the offender;
+        // from a stale position more than 64 tokens back it gives up instead of walking down the file
+        tokens = lex("x = 1\n".repeat(20) + "class C { int long = 1 }");
+        Token offender = tokenWithText(tokens, "long");
+        assertTrue(offender.getTokenIndex() > 64);
+        assertNull(AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(new IntervalSet(), offender, tokens), offender));
+        tokens.seek(offender.getTokenIndex());
+        assertSame(offender, AbstractFriendlyErrorStrategy.keywordAsVariableName(stubException(new IntervalSet(), offender, tokens), offender));
+    }
+
+    private static RecognitionException expectedTokensFailing(final RuntimeException failure, final Token offending, final TokenStream input) {
+        return new RecognitionException(null, input, null) {
+            @Override
+            public IntervalSet getExpectedTokens() {
+                throw failure;
+            }
+
+            @Override
+            public Token getOffendingToken() {
+                return offending;
+            }
+        };
     }
 
     private static Token firstPrimitiveKeyword(final CommonTokenStream tokens) {
