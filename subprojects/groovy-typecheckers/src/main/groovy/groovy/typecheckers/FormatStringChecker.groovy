@@ -177,13 +177,21 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
                 expression.value.eachMatch(formatSpecifier) { spec ->
                     def (all, argIndex, flags, width, precision, tgroup, conversion) = spec
                     def flagList = flags?.toList()
+                    if (argIndex) { // Formatter rejects a bad index before looking at anything else
+                        argIndex -= '$'
+                        if (!argIndex.isInteger()) {
+                            addStaticTypeError('IllegalFormatArgumentIndex: Format argument index: (not representable as int)', target)
+                            return
+                        }
+                        argIndex = argIndex.toInteger()
+                        if (argIndex == 0) {
+                            addStaticTypeError('IllegalFormatArgumentIndex: Illegal format argument index = 0', target)
+                            return
+                        }
+                    }
                     if (!tgroup && conversion in ['%', 'n']) { // %% and %n take no argument
                         checkDupFlags(flagList, target)
                         return
-                    }
-                    if (argIndex) {
-                        argIndex -= '$'
-                        argIndex = argIndex.toInteger()
                     }
                     int indexToUse = argIndex ? argIndex - 1 : next // explicit indices are 1-based
                     if (flagList.contains('<')) {
