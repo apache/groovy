@@ -185,7 +185,7 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
                         argIndex -= '$'
                         argIndex = argIndex.toInteger()
                     }
-                    int indexToUse = argIndex ?: next
+                    int indexToUse = argIndex ? argIndex - 1 : next // explicit indices are 1-based
                     if (flagList.contains('<')) {
                         if (prevIndex == -1) {
                             addStaticTypeError("MissingFormatArgument: Format specifier '$all'", target)
