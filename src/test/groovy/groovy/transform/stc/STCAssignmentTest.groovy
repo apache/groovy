@@ -2051,6 +2051,18 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12698
+    @Test
+    void testMultiAssignWithAnnotation() {
+        assertScript '''
+            def m() {
+                @SuppressWarnings('unused') def (x, y) = [1, 2]
+                assert x + y == 3
+            }
+            m()
+        '''
+    }
+
     // GROOVY-10943, GROOVY-11744
     @Test
     void testClosureUnderscorePlaceholder() {

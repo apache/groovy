@@ -711,6 +711,7 @@ public class BinaryExpressionTransformer {
                     Expression right = rightIt.next();
                     BinaryExpression bexp = new DeclarationExpression(left, bin.getOperation(), right);
                     bexp.setSourcePosition(right);
+                    bexp.addAnnotations(bin.getAnnotations()); // retain annotations for later phases
                     list.addExpression(bexp);
                 }
             }
