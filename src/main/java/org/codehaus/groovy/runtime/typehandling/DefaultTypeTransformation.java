@@ -1247,7 +1247,8 @@ public class DefaultTypeTransformation {
         if (left instanceof List && right instanceof List) {
             return DefaultGroovyMethods.equals((List) left, (List) right);
         }
-        if (left instanceof Comparable) {
+        // GROOVY-12699: a Number that is not Comparable compares numerically, as for <=>
+        if (left instanceof Comparable || (left instanceof Number && right instanceof Number)) {
             return compareToWithEqualityCheck(left, right, true) == 0;
         }
         // handle arrays on both sides as special case for efficiency

@@ -1025,6 +1025,28 @@ element. The previous `@CompileStatic` results were wrong, and code that
 relied on them gets different results once recompiled with 6.0.1; the new
 results are correct.
 
+### Groovy 7 — `==` on a `Number` that is not `Comparable` compares numerically (GROOVY-12699)
+
+`==` and `!=` between two numbers, where the left one is a `Number` that does
+not implement `Comparable`, now compare the values numerically, as `<=>`,
+`<` and `>` already did. Before, they called `equals()`, so a `Number`
+subclass such as a fraction type was never `==` to an equal `BigDecimal`,
+`Double` or `Integer`, even when `<=>` returned `0`. This applies in dynamic
+code and under `@TypeChecked` and `@CompileStatic` alike.
+
+**Who is affected.** Besides custom `Number` classes, the JDK's own
+non-`Comparable` numbers: `AtomicInteger`, `AtomicLong`, `LongAdder`,
+`DoubleAdder`, `LongAccumulator` and `DoubleAccumulator`. For example,
+`new AtomicInteger(1) == 1` is now `true`, and two different
+`AtomicInteger` instances holding the same value are now `==`. Before, that
+second comparison was an identity check. Use `is()` where identity is
+meant.
+
+**What is unchanged.** Comparisons where either side is not a `Number`,
+which still use `equals()`; numbers that implement `Comparable`, such as
+`Integer` and `BigDecimal`; and Java collection methods such as
+`List.contains`, which call `equals()` and not Groovy's `==`.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
