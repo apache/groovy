@@ -18,6 +18,7 @@
  */
 package bugs
 
+import groovy.transform.CompileStatic
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -115,9 +116,7 @@ final class Groovy7947 {
     @Test
     void testPlusPlusSuperCS() {
         def shell = GroovyShell.withConfig {
-            imports {
-                ast groovy.transform.CompileStatic
-            }
+            ast CompileStatic
         }
         def err = shouldFail shell, '''
             def next() {

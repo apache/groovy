@@ -982,7 +982,7 @@ public class ScriptBytecodeAdapter {
     }
 
     public static Pattern regexPattern(final Object regex) {
-        return StringGroovyMethods.bitwiseNegate((CharSequence)regex.toString());
+        return StringGroovyMethods.bitwiseNegate(regex.toString());
     }
 
     //spread
@@ -1096,5 +1096,4 @@ public class ScriptBytecodeAdapter {
         return PackedClosure.create(owner, (GeneratedDispatcher.Bundle) dispatchers, id, method,
                 captured, paramTypes, strict, implicit, vararg);
     }
-
 }
