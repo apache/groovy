@@ -4175,11 +4175,11 @@ out:    if (metaClass instanceof MetaClassImpl metaClassImpl) {
     }
 
     /**
-     * <p>Retrieves a property on the given object for the specified arguments.
+     * Retrieves a property on the given object for the specified arguments.
      *
      * @param object   The Object which the property is being retrieved from
      * @param property The name of the property
-     * @return The properties value
+     * @return The property's value
      */
     @Override
     public Object getProperty(Object object, String property) {
@@ -4187,7 +4187,7 @@ out:    if (metaClass instanceof MetaClassImpl metaClassImpl) {
     }
 
     /**
-     * <p>Sets a property on the given object for the specified arguments.
+     * Sets a property on the given object for the specified arguments.
      *
      * @param object   The Object which the property is being retrieved from
      * @param property The name of the property
