@@ -118,6 +118,30 @@ The syntax works for arrays as well as lists, as well as methods that return eit
 include::../test/SemanticsTest.groovy[tags=multiple_assignment_with_arrays_and_lists,indent=0]
 ----
 
+The right-hand side is evaluated completely, from left to right, before any variable
+is assigned, so each value is computed from the variables as they were before the
+statement. This makes swaps and rotations safe:
+
+[source,groovy]
+----
+include::../test/SemanticsTest.groovy[tags=multiple_assignment_swap,indent=0]
+----
+
+Likewise, in a declaration, a name on the right-hand side means what it meant before
+the statement, not a variable that the same statement declares:
+
+[source,groovy]
+----
+include::../test/SemanticsTest.groovy[tags=multiple_assignment_declaration_scope,indent=0]
+----
+
+The value of a multiple assignment is its right-hand side:
+
+[source,groovy]
+----
+include::../test/SemanticsTest.groovy[tags=multiple_assignment_value,indent=0]
+----
+
 ==== Overflow and Underflow
 
 If the left hand side has too many variables, excess ones are filled with null's:
@@ -125,6 +149,14 @@ If the left hand side has too many variables, excess ones are filled with null's
 [source,groovy]
 ----
 include::../test/SemanticsTest.groovy[tags=multiple_assignment_overflow,indent=0]
+----
+
+With `@TypeChecked` or `@CompileStatic`, a list literal with too few values is
+reported when the code is compiled:
+
+[source,groovy]
+----
+include::../test/SemanticsTest.groovy[tags=multiple_assignment_overflow_type_checked,indent=0]
 ----
 
 If the right hand side has too many variables, the extra ones are ignored:
