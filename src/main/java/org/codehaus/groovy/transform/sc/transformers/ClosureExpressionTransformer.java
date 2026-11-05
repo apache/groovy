@@ -53,6 +53,7 @@ public class ClosureExpressionTransformer {
             }
         }
         Statement code = expr.getCode();
+        transformer.collectImplicitReturns(code);
         transformer.visitClassCodeContainer(code);
         return transformer.superTransform(expr);
     }
