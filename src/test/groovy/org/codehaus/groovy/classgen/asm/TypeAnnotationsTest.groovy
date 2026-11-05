@@ -574,6 +574,8 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
         assertDescriptors(bytes, 'lvOnly', [a: [], b: []])
         assertDescriptors(bytes, 'valueUsed', [a: ['LTO;'], b: ['LTO;']])
         assertDescriptors(bytes, 'nonList', [a: ['LTO;'], b: ['LTO;']])
+        // a value naming an earlier variable reads the field, so static compilation declares the variables last
+        assertDescriptors(bytes, 'readsEarlier', [a: ['LTO;'], b: ['LTO;']])
 
         def arrayPath = variableTypeAnnotations(bytes, 'arraySingle').findAll { it.name == 'a' }
         assert arrayPath*.desc == ['LTO;'] : arrayPath.toString()
@@ -610,6 +612,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
             @Retention(RUNTIME) @Target(TYPE_USE) @interface Named { String value() }
 
             ${header}class C {
+                String a = 'f'
                 def single()       { @TO String a = 'x'; a }
                 def declarators()  { @TO String a = 'x', b = 'y'; a + b }
                 def multiple()     { @TO def (String a, String b) = ['x', 'y']; a + b }
@@ -626,6 +629,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
                 def named()        { @Named('n') def (String a, String b) = ['x', 'y']; a + b }
                 def valueUsed()    { @TO def (String a, String b) = ['x', 'y'] }
                 def nonList()      { def rhs = ['x', 'y']; @TO def (String a, String b) = rhs; a + b }
+                def readsEarlier() { @TO def (String a, String b) = ['x', a]; a + b }
             }
             ${header}class ClosureStmt {
                 def m() {
