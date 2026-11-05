@@ -203,6 +203,33 @@ is called, so any JDK-supported configuration is available — with one
 exception: the redirect policy is owned by `followRedirects` (see
 <<redirects,Redirects>>), so a policy set on the raw builder is overridden.
 
+[[compression]]
+== Compression
+
+The JDK `HttpClient` neither asks for nor decodes compressed responses.
+`HttpBuilder` decodes a buffered response body sent with a `gzip` or `deflate`
+`Content-Encoding`, so a server that compresses its responses works without
+any configuration. Asking for compression is opt-in:
+
+[source,groovy]
+----
+def http = HttpBuilder.http {
+    baseUri 'https://api.example.com'
+    compression true                    // sends Accept-Encoding: gzip, deflate
+}
+def result = http.get('/repos')
+assert result.json                      // parsed from the decoded body
+----
+
+- The `Accept-Encoding` header is sent on every request, including each
+  redirect hop. A request that sets its own `Accept-Encoding` header keeps it.
+- The result's `headers()` describe the decoded body, so they omit
+  `Content-Encoding` and `Content-Length`. The raw JDK response, `raw()`, keeps
+  the headers as received.
+- A body with any other content coding, such as `br`, is passed on as received.
+- Streaming requests (`streamAsync` and friends) neither ask for nor decode
+  compressed content; their body is delivered as received.
+
 [[redirects]]
 == Redirects
 
@@ -466,6 +493,8 @@ interface MyApi {
 - `@Timeout(value)` -- per-method override of the request timeout (in seconds)
 - `followRedirects` -- whether to follow HTTP redirects, with the
   origin-confined header semantics described in <<redirects,Redirects>>
+- `compression` -- whether to ask for compressed responses; see
+  <<compression,Compression>>. A compressed response is decoded either way.
 
 Default `0` means no timeout.
 
