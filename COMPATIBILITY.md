@@ -854,15 +854,17 @@ returns a different object on each evaluation:
   same object. Before, the read came from one object and the write went to
   the next.
 
-### Groovy 7 — `@CompileStatic` property and spread results on List subclasses match dynamic Groovy (GROOVY-12534)
+### Groovy 6.0.1 — `@CompileStatic` property and spread results on collections match dynamic Groovy (GROOVY-12534, GROOVY-12649)
 
-Under `@CompileStatic`, property and spread results on a `List` subclass
-with an extension-defined property now match dynamic Groovy and
-`@TypeChecked` (GROOVY-12534,
-[PR #3058](https://github.com/apache/groovy/pull/3058)). A property the
-list itself defines is read from the list; an explicit spread reads it
-from each element. The previous `@CompileStatic` results were wrong. A
-backport to 6.0.x changes those results for existing code; the new
+Under `@CompileStatic`, property and spread results on a `List`, `Set` or
+other `Iterable` type that declares a property, or gets one from an
+extension method, now match dynamic Groovy and `@TypeChecked`
+(GROOVY-12534, [PR #3058](https://github.com/apache/groovy/pull/3058);
+GROOVY-12649). A property the collection itself defines is read from the
+collection; an explicit spread (`people*.name`) reads it from each
+element, and a spread assignment (`people*.name = 'x'`) writes it to each
+element. The previous `@CompileStatic` results were wrong, and code that
+relied on them gets different results once recompiled with 6.0.1; the new
 results are correct.
 
 ## The binary-compatibility check
