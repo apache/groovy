@@ -153,6 +153,11 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         return false; // the type checker proved delegate-independence, so no runtime guard is needed
     }
 
+    @Override
+    protected boolean isOpenPackTriggered(final ClosureExpression expression) {
+        return false; // the GEP-27 OpenClosure spike is dynamic-only: here independence is proved or declined
+    }
+
     /**
      * True when the type checker resolved every implicitly-received name in the closure (and its
      * nested closures) against the owner/parameters rather than a delegate — the delegate-independence
