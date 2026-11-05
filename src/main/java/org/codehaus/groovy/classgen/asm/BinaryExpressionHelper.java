@@ -130,6 +130,7 @@ import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED_EQUAL;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.COMPOUND_ASSIGN_TARGET;
+import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
@@ -603,6 +604,75 @@ public class BinaryExpressionHelper {
     }
 
     /**
+     * Emits a subscript assignment {@code receiver[index] = rhs}.
+     * <p>
+     * When the receiver and index were already evaluated and the assignment
+     * value is discarded, the right-hand side is evaluated as the last
+     * {@code putAt} argument and is not stored in a temporary. Otherwise a
+     * temporary is required so the value can be reproduced after the call,
+     * and a reference temporary is cleared afterwards so it does not keep
+     * that value reachable for the rest of the method.
+     */
+    private void evaluateSubscriptAssignment(final BinaryExpression expression, final BinaryExpression leftBinExpr,
+                                             final VariableSlotLoader subscriptObject, final VariableSlotLoader subscriptIndex,
+                                             final ClassNode lhsType, final boolean returnRightValue) {
+        Expression rightExpression = expression.getRightExpression();
+        Expression receiver = subscriptObject != null ? subscriptObject : leftBinExpr.getLeftExpression();
+        Expression index = subscriptIndex != null ? subscriptIndex : leftBinExpr.getRightExpression();
+        boolean safe = leftBinExpr.isSafe();
+
+        // GROOVY-10657: putAt consumes (receiver, index, rhs). A statement whose
+        // receiver and index are already in slots can evaluate the RHS directly.
+        boolean directRhs = subscriptObject != null
+                && !returnRightValue
+                && !(rightExpression instanceof EmptyExpression);
+
+        if (directRhs) {
+            assignToArray(expression, receiver, index, adaptSubscriptRhs(lhsType, rightExpression), safe);
+        } else {
+            AsmClassGenerator acg = controller.getAcg();
+            MethodVisitor mv = controller.getMethodVisitor();
+            OperandStack operandStack = controller.getOperandStack();
+            CompileStack compileStack = controller.getCompileStack();
+            evaluateRightHandSide(lhsType, rightExpression, acg, mv, operandStack);
+            ClassNode rhsType = operandStack.getTopOperand();
+            int rhsValueId = compileStack.defineTemporaryVariable("$rhs", rhsType, true);
+            Expression rhsValueLoader = new VariableSlotLoader(rhsType, rhsValueId, operandStack);
+            assignToArray(expression, receiver, index, rhsValueLoader, safe);
+            releaseTemporary(rhsType, rhsValueId);
+        }
+        if (subscriptIndex != null) releaseTemporary(subscriptIndex.getType(), subscriptIndex.getIndex());
+        if (subscriptObject != null) releaseTemporary(subscriptObject.getType(), subscriptObject.getIndex());
+    }
+
+    /**
+     * Rewrites a list literal assigned to an array-typed subscript into an
+     * array expression, matching {@link #evaluateRightHandSide}.
+     */
+    private static Expression adaptSubscriptRhs(final ClassNode lhsType, final Expression rightExpression) {
+        if (lhsType.isArray() && rightExpression instanceof ListExpression list) {
+            Expression array = new ArrayExpression(lhsType.getComponentType(), list.getExpressions());
+            array.setSourcePosition(rightExpression);
+            array.setType(lhsType);
+            return array;
+        }
+        return rightExpression;
+    }
+
+    /**
+     * Drops a temporary. A reference slot is cleared first so the value does
+     * not stay reachable after {@code removeVar}, which only forgets the slot.
+     */
+    private void releaseTemporary(final ClassNode type, final int index) {
+        if (!ClassHelper.isPrimitiveType(type)) {
+            MethodVisitor mv = controller.getMethodVisitor();
+            mv.visitInsn(ACONST_NULL);
+            mv.visitVarInsn(ASTORE, index);
+        }
+        controller.getCompileStack().removeVar(index);
+    }
+
+    /**
      * Evaluates an assignment expression.
      *
      * @param expression the assignment expression
@@ -694,6 +764,12 @@ public class BinaryExpressionHelper {
             return;
         }
 
+        if (leftExpression instanceof BinaryExpression leftBinExpr
+                && leftBinExpr.getOperation().getType() == LEFT_SQUARE_BRACKET) {
+            evaluateSubscriptAssignment(expression, leftBinExpr, subscriptObject, subscriptIndex, lhsType, returnRightValue);
+            return;
+        }
+
         evaluateRightHandSide(lhsType, rightExpression, acg, mv, operandStack);
         ClassNode rhsType = operandStack.getTopOperand();
 
@@ -727,17 +803,9 @@ public class BinaryExpressionHelper {
         // TODO: if RHS is already a VariableSlotLoader, then skip creating a new one
         Expression rhsValueLoader = new VariableSlotLoader(rhsType, rhsValueId, operandStack);
 
-        // subscript assignment
-        if (leftExpression instanceof BinaryExpression leftBinExpr) {
-            if (leftBinExpr.getOperation().getType() == LEFT_SQUARE_BRACKET) {
-                Expression receiver = subscriptObject != null ? subscriptObject : leftBinExpr.getLeftExpression();
-                Expression index = subscriptIndex != null ? subscriptIndex : leftBinExpr.getRightExpression();
-                assignToArray(expression, receiver, index, rhsValueLoader, leftBinExpr.isSafe());
-            }
+        // non-subscript binary LHS: the value was staged in $rhs and is not stored
+        if (leftExpression instanceof BinaryExpression) {
             compileStack.removeVar(rhsValueId);
-            // remove the receiver/index temporaries in reverse order of definition (LIFO)
-            if (subscriptIndex != null) compileStack.removeVar(subscriptIndex.getIndex());
-            if (subscriptObject != null) compileStack.removeVar(subscriptObject.getIndex());
             return;
         }
 
