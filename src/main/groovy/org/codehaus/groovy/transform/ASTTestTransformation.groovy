@@ -93,21 +93,27 @@ class ASTTestTransformation implements ASTTransformation, CompilationUnitAware {
             }
         }
 
-        member = annotationNode.getMember('value')
-        if (member && !(member instanceof ClosureExpression)) {
-            throw new SyntaxException('ASTTest value must be a closure', member)
-        }
-        if (!member && !annotationNode.getNodeMetaData(ASTTestTransformation)) {
-            throw new SyntaxException('Missing test expression', annotationNode)
+        // a declaration with several declarators shares one annotation node, so this
+        // transformation is called once per declarator: convert the annotation once
+        ClosureExpression testClosure = annotationNode.getNodeMetaData(ASTTestTransformation)
+        if (testClosure == null) {
+            member = annotationNode.getMember('value')
+            if (member && !(member instanceof ClosureExpression)) {
+                throw new SyntaxException('ASTTest value must be a closure', member)
+            }
+            if (!member) {
+                throw new SyntaxException('Missing test expression', annotationNode)
+            }
+
+            // convert value into node metadata so that the expression doesn't mix up with other AST xforms like STC
+            testClosure = (ClosureExpression) member
+            annotationNode.setNodeMetaData(ASTTestTransformation, testClosure)
+            annotationNode.setMember('value', new ClosureExpression(
+                Parameter.EMPTY_ARRAY, EmptyStatement.INSTANCE))
+            testClosure.variableScope?.@parent = null
         }
 
-        // convert value into node metadata so that the expression doesn't mix up with other AST xforms like STC
-        annotationNode.setNodeMetaData(ASTTestTransformation, member)
-        annotationNode.setMember('value', new ClosureExpression(
-            Parameter.EMPTY_ARRAY, EmptyStatement.INSTANCE))
-        member.variableScope?.@parent = null
-
-        ISourceUnitOperation astTester = new ASTTester(astNode: nodes[1], sourceUnit: source, testClosure: annotationNode.getNodeMetaData(ASTTestTransformation))
+        ISourceUnitOperation astTester = new ASTTester(astNode: nodes[1], sourceUnit: source, testClosure: testClosure)
         for (int p = (phase ?: CompilePhase.SEMANTIC_ANALYSIS).phaseNumber, q = (phase ?: CompilePhase.FINALIZATION).phaseNumber; p <= q; p += 1) {
             compilationUnit.addNewPhaseOperation(astTester, p)
         }
