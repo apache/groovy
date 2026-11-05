@@ -2402,9 +2402,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 pexp.putNodeMetaData(DYNAMIC_RESOLUTION, Boolean.TRUE);
                 return true;
             }
-            // GROOVY-12534: explicit spread (people*.name) reads each element, even when
-            // the list type itself declares that property or an extension supplies it
-            if (pexp.isSpreadSafe() && isOrImplements(receiverType, LIST_TYPE)) {
+            // GROOVY-12534, GROOVY-12649: explicit spread (people*.name) reads each element, even
+            // when the list, set or other iterable declares that property or an extension supplies it
+            if (pexp.isSpreadSafe() && isOrImplements(receiverType, ITERABLE_TYPE)) {
                 continue;
             }
             if (receiverType.isArray() && propertyName.equals("length")) {
