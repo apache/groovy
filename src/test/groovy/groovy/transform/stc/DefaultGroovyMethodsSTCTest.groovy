@@ -313,6 +313,95 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12649
+    @Test
+    void testSetSubclassDeclaredFieldAndSpread() {
+        assertScript '''
+            class Person {
+                String name
+            }
+            class PeopleSet extends LinkedHashSet<Person> {
+                String name = 'the set'
+            }
+            @groovy.transform.CompileStatic
+            def test() {
+                def people = new PeopleSet()
+                people.add(new Person(name: 'Alice'))
+                people.add(new Person(name: 'Bob'))
+
+                assert people.name == 'the set'
+                assert people*.name == ['Alice', 'Bob']
+            }
+            test()
+        '''
+    }
+
+    // GROOVY-12649
+    @Test
+    void testSetSubclassDeclaredGetterAndSpread() {
+        assertScript '''
+            class Person {
+                String name
+            }
+            class PeopleSet extends LinkedHashSet<Person> {
+                String getName() { 'the set' }
+            }
+            @groovy.transform.CompileStatic
+            def test() {
+                def people = new PeopleSet()
+                people.add(new Person(name: 'Alice'))
+                people.add(new Person(name: 'Bob'))
+
+                assert people.name == 'the set'
+                assert people*.name == ['Alice', 'Bob']
+            }
+            test()
+        '''
+    }
+
+    // GROOVY-12649
+    // see org.codehaus.groovy.runtime.m12n.TestStringExtension#getName
+    @Test
+    void testSetSubclassExtensionPropertyAndSpread() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            def test() {
+                def people = new bugs.Groovy12649PeopleSet()
+                people.add(new bugs.Groovy12534Person(name: 'Alice'))
+                people.add(new bugs.Groovy12534Person(name: 'Bob'))
+
+                assert people.name == 'the set'
+                assert people*.name == ['Alice', 'Bob']
+            }
+            test()
+        '''
+    }
+
+    // GROOVY-12649
+    @Test
+    void testIterableDeclaredFieldAndSpread() {
+        assertScript '''
+            class Person {
+                String name
+            }
+            class People implements Iterable<Person> {
+                String name = 'the iterable'
+                List<Person> list = []
+                Iterator<Person> iterator() { list.iterator() }
+            }
+            @groovy.transform.CompileStatic
+            def test() {
+                def people = new People()
+                people.list.add(new Person(name: 'Alice'))
+                people.list.add(new Person(name: 'Bob'))
+
+                assert people.name == 'the iterable'
+                assert people*.name == ['Alice', 'Bob']
+            }
+            test()
+        '''
+    }
+
     // GROOVY-5584
     @Test
     void testEachOnMap() {
