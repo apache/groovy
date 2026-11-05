@@ -197,7 +197,11 @@ class ASTTestTransformation implements ASTTransformation, CompilationUnitAware {
         private void test() {
             def sb = new StringBuilder()
             for (int i = testClosure.lineNumber, n = testClosure.lastLineNumber; i <= n; i += 1) {
-                sb.append(sourceUnit.source.getLine(i, new Janitor())).append('\n')
+                String line = sourceUnit.source.getLine(i, new Janitor())
+                if (i == n) { // drop any code that follows the closure on its last line
+                    line = line.substring(0, testClosure.lastColumnNumber - 1)
+                }
+                sb.append(line).append('\n')
             }
             sb = sb[testClosure.columnNumber..<sb.length()]
             String testSource = sb[0..<sb.lastIndexOf('}')]
