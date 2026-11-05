@@ -72,4 +72,13 @@ public @interface HttpBuilderClient {
      * points at a different host. Default is false.
      */
     boolean confineToBaseUri() default false;
+
+    /**
+     * Whether to ask for compressed responses ({@code Accept-Encoding: gzip, deflate}).
+     * A response body sent with a {@code gzip} or {@code deflate}
+     * {@code Content-Encoding} is decoded either way. Default is false.
+     *
+     * @since 6.0.1
+     */
+    boolean compression() default false;
 }

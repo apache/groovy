@@ -57,12 +57,32 @@ final class HttpClientHelper {
     HttpClientHelper(String baseUrl, Map<String, String> defaultHeaders,
                      int connectTimeoutSeconds, int requestTimeoutSeconds,
                      boolean followRedirects, boolean confineToBaseUri) {
+        this(baseUrl, defaultHeaders, connectTimeoutSeconds, requestTimeoutSeconds,
+                followRedirects, confineToBaseUri, false)
+    }
+
+    /**
+     * Creates a helper backed by a new {@link HttpBuilder}.
+     *
+     * @param baseUrl the base URL used by generated clients
+     * @param defaultHeaders the headers applied to every request
+     * @param connectTimeoutSeconds the connect timeout in seconds, or {@code 0} for none
+     * @param requestTimeoutSeconds the request timeout in seconds, or {@code 0} for none
+     * @param followRedirects whether redirects should be followed automatically
+     * @param confineToBaseUri whether requests are confined to the base URL
+     * @param compression whether requests ask for compressed responses
+     * @since 6.0.1
+     */
+    HttpClientHelper(String baseUrl, Map<String, String> defaultHeaders,
+                     int connectTimeoutSeconds, int requestTimeoutSeconds,
+                     boolean followRedirects, boolean confineToBaseUri, boolean compression) {
         this.http = HttpBuilder.http {
             baseUri(baseUrl)
             if (connectTimeoutSeconds > 0) connectTimeout(Duration.ofSeconds(connectTimeoutSeconds))
             if (requestTimeoutSeconds > 0) requestTimeout(Duration.ofSeconds(requestTimeoutSeconds))
             if (followRedirects) delegate.followRedirects(true)
             if (confineToBaseUri) delegate.confineToBaseUri(true)
+            if (compression) delegate.compression(true)
         }
         this.defaultHeaders = Collections.unmodifiableMap(new LinkedHashMap<>(defaultHeaders))
     }
