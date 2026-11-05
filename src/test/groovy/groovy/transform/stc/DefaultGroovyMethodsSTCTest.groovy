@@ -402,6 +402,55 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12649
+    @Test
+    void testSetSubclassDeclaredFieldAndSpreadAssignment() {
+        assertScript '''
+            class Person {
+                String name
+            }
+            class PeopleSet extends LinkedHashSet<Person> {
+                String name = 'the set'
+            }
+            @groovy.transform.CompileStatic
+            def test() {
+                def people = new PeopleSet()
+                people.add(new Person(name: 'Alice'))
+                people.add(new Person(name: 'Bob'))
+
+                people*.name = 'Carol'
+                assert people*.name == ['Carol', 'Carol']
+                assert people.name == 'the set'
+            }
+            test()
+        '''
+    }
+
+    // GROOVY-12649
+    @Test
+    void testListSubclassDeclaredFieldAndSpreadAssignment() {
+        assertScript '''
+            class Person {
+                String name
+            }
+            class People extends ArrayList<Person> {
+                String name = 'the collection'
+            }
+            @groovy.transform.CompileStatic
+            def test() {
+                def people = new People()
+                people.add(new Person(name: 'Alice'))
+                people.add(new Person(name: 'Bob'))
+
+                def result = (people*.name = 'Carol')
+                assert result == ['Carol', 'Carol']
+                assert people*.name == ['Carol', 'Carol']
+                assert people.name == 'the collection'
+            }
+            test()
+        '''
+    }
+
     // GROOVY-5584
     @Test
     void testEachOnMap() {
