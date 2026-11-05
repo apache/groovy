@@ -1012,6 +1012,17 @@ still uses that jar. YAML aliases, merge keys, tags, complex keys and
 multi-document streams behave as in Groovy 6. `JsonSlurper` and `XmlParser`
 keep their own nesting-depth caps of 1000.
 
+### Groovy 7 — `@CompileStatic` property and spread results on List subclasses match dynamic Groovy (GROOVY-12534)
+
+Under `@CompileStatic`, property and spread results on a `List` subclass
+with an extension-defined property now match dynamic Groovy and
+`@TypeChecked` (GROOVY-12534,
+[PR #3058](https://github.com/apache/groovy/pull/3058)). A property the
+list itself defines is read from the list; an explicit spread reads it
+from each element. The previous `@CompileStatic` results were wrong. A
+backport to 6.0.x changes those results for existing code; the new
+results are correct.
+
 ### Groovy 7 — `N.super.name` and `Outer.super.name` reach the member of the superclass (GROOVY-12514, GROOVY-12517)
 
 Within a nested class `N`, `N.super` is now `super`. Within a class nested in
