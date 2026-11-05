@@ -496,4 +496,47 @@ final class FormatStringCheckerTest {
         assert err.message =~ /IllegalFormatConversion: d != java\.lang\.String/
         assert !err.message.contains('General error')
     }
+
+    // GROOVY-12696
+    @Test
+    void testExplicitArgumentIndexForInferredArgs() {
+        assertScript shell, '''
+            String s = 'some string' + ''
+            Integer i = 7 + 0
+            assert String.format('%1$s', s) == 'some string'
+            assert String.format('%1$s %1$s', s) == 'some string some string'
+            assert String.format('%2$s', s, i) == '7'
+            assert String.format('%2$d %1$s', s, i) == '7 some string'
+            assert String.format('%1$s %2$d', s, i) == 'some string 7'
+            assert String.format('%1$d', i, s) == '7'
+            assert String.format('%2$s %s %<s %1$s', s, i) == '7 some string some string some string'
+            assert String.format('%2$d %<d %s %s', s, i) == '7 7 some string 7'
+            assert sprintf('%2$d %1$s', s, i) == '7 some string'
+        '''
+    }
+
+    // GROOVY-12696
+    @Test
+    void testExplicitArgumentIndexErrorsForInferredArgs() {
+        def err = shouldFail shell, '''
+            String.format('%1$d', 'some string' + '', 7)
+        '''
+        assert err.message =~ /IllegalFormatConversion: d != java\.lang\.String/
+        err = shouldFail shell, '''
+            String.format('%2$d', 7 + 0, 'some string')
+        '''
+        assert err.message =~ /IllegalFormatConversion: d != java\.lang\.String/
+        err = shouldFail shell, '''
+            String.format('%1$s %<d', 'some string' + '', 7)
+        '''
+        assert err.message =~ /IllegalFormatConversion: d != java\.lang\.String/
+        err = shouldFail shell, '''
+            String.format('%3$s', 'some string' + '', 7)
+        '''
+        assert err.message =~ /MissingFormatArgument: Format specifier '%3[$]s'/
+        err = shouldFail shell, '''
+            sprintf('%2$d %1$s', 'some string' + '')
+        '''
+        assert err.message =~ /MissingFormatArgument: Format specifier '%2[$]d'/
+    }
 }
