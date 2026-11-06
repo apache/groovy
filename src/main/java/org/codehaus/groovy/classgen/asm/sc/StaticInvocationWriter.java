@@ -382,7 +382,9 @@ public class StaticInvocationWriter extends InvocationWriter {
         }
 
         if (AsmClassGenerator.isMemberDirectlyAccessible(target.getModifiers(), declaringClass, enclosingClass)
-                && !(target.isProtected() && !inSamePackage(declaringClass, enclosingClass) && !isSubtype(receiverType, enclosingClass))) { // GROOVY-7325
+                // GROOVY-7325, JVMS 4.10.1.8: outside its package, a protected instance method needs a receiver of the current class
+                && !(target.isProtected() && !target.isStatic() && !inSamePackage(declaringClass, enclosingClass) && receiver != null
+                        && !isSuperExpression(receiver) && !isClassWithSuper(receiver) && !isSubtype(enclosingClass, receiverType))) {
             boolean isThisImplicit = implicitThis;
             Expression theReceiver = receiver;
             MethodNode theTarget = target;
