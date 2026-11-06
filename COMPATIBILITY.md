@@ -1344,6 +1344,35 @@ value is `getSource()`, the type and variable are on the `TypePattern`, and
 the negated form is a `NotExpression` around it. `e instanceof T` without a
 binding is a `BinaryExpression` as before.
 
+### Groovy 7 — a value written to a typed map is converted to the map's value type (GROOVY-12535)
+
+Under `@TypeChecked` and `@CompileStatic`, a property or subscript write to a
+map whose value type is known (`Map<String,String> m; m.k = "$name"`,
+`m['k'] = "$name"`, `m.k ?= "$name"`, `m.with { k = "$name" }`) stores the
+value converted to the value type, as an assignment to a variable of that type
+does. So `String s = "$name"` and `Long l = 1` give the rules: a `GString`
+becomes a `String`, an `Integer` written to a `Map<String,Long>` a `Long`, and
+a number written to a `Map<String,String>`, as in `m.k = 123`, the `String`
+`"123"`. The
+compiler supplies the value type to `putAt(Map, Object, Object, Class)` as a
+`@ClassTag` token, and an explicit `m.putAt('k', "$name")` binds the same
+overload. Before, the property write stored the `GString` as it was and the
+subscript write was rejected.
+
+**Who is affected.** Code that read the stored value back as a `GString`, for
+example to see later changes to an interpolated variable, or compared it with
+`is`. Code that relied on the stored value keeping its own type, such as an
+`Integer` in a `Map<String,Long>` or a number in a `Map<String,String>`, now
+reads a value of the declared type. A value of the value type is stored as
+before, a map whose value type is not known (`def`, raw or a wildcard) is
+written as before, and dynamic code is unchanged. `Map.put` with a `GString`
+is still rejected.
+
+**Opting out.** The upgrade is a `@ClassTag` preemption, so
+`groovy.classtag.preemption.disable` (or
+`CompilerConfiguration.setClassTagPreemptionDisabled`) keeps the previous
+behaviour.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
