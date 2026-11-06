@@ -27,7 +27,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Opt-in for compact closure compilation: within the annotated class or method, an eligible closure
+ * Opt-in for compact closure compilation: within the annotated class, method or constructor (whose
+ * scope includes the instance initializer blocks and field initializers run by it), an eligible closure
  * literal's body is hoisted into a synthetic method on the enclosing class and the literal is replaced
  * by a shared {@link PackedClosure} adapter, instead of generating one
  * inner class per closure. The value stays a real {@code groovy.lang.Closure}, so {@code curry},
@@ -42,7 +43,8 @@ import java.lang.annotation.Target;
  *       {@code directive}, {@code metaClass} or {@code super} — it needs a real {@code Closure};</li>
  *   <li>has default parameter values, or contains an anonymous inner class;</li>
  *   <li>is nested inside another closure, or visibly escapes its method (returned, stored to a
- *       field/property/index, initialising a field, appended, or placed in a collection literal);</li>
+ *       field/property/index or a script binding variable, initialising a field, appended, or placed
+ *       in a collection literal);</li>
  *   <li>is visibly serialization-bound (cast or coerced to a {@code Serializable} type, passed
  *       directly to a {@code writeObject} call, or held in a local that is) — it keeps its class
  *       so serialization works;</li>
@@ -89,7 +91,7 @@ import java.lang.annotation.Target;
  */
 @Incubating
 @Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.TYPE, ElementType.METHOD})
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR})
 public @interface PackedClosures {
     /**
      * The packing behaviour of this scope: {@link PackMode#LENIENT} (pack, silent on declines, the
