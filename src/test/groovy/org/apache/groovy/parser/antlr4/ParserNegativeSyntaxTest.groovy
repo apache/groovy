@@ -3963,4 +3963,117 @@ final class ParserNegativeSyntaxTest {
             |'''.stripMargin()
         expectContains 'def y = (Math.max(1, 2))\ndef z = 1 +', "Unexpected input: '+' @ line 2, column 11."
     }
+
+    // GROOVY-12695: a primitive type name where a variable name belongs is named,
+    // with the caret on the name, whichever declaration form is used
+
+    @Test
+    void 'primitive type name as a local variable name'() {
+        expectParseError '''\
+            |var long = 1
+            |'''.stripMargin(), '''\
+            |'long' is a primitive type name and cannot be used as a variable name @ line 1, column 5.
+            |   var long = 1
+            |       ^
+            |
+            |1 error
+            |'''.stripMargin()
+        expectParseError '''\
+            |def long = 1
+            |'''.stripMargin(), '''\
+            |'long' is a primitive type name and cannot be used as a variable name @ line 1, column 5.
+            |   def long = 1
+            |       ^
+            |
+            |1 error
+            |'''.stripMargin()
+        expectParseError '''\
+            |final long = 1
+            |'''.stripMargin(), '''\
+            |'long' is a primitive type name and cannot be used as a variable name @ line 1, column 7.
+            |   final long = 1
+            |         ^
+            |
+            |1 error
+            |'''.stripMargin()
+        expectParseError '''\
+            |long = 1
+            |'''.stripMargin(), '''\
+            |'long' is a primitive type name and cannot be used as a variable name @ line 1, column 1.
+            |   long = 1
+            |   ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'primitive type name as a variable name in other declaration forms'() {
+        String message = "'long' is a primitive type name and cannot be used as a variable name"
+        expectContains 'val long = 1', "$message @ line 1, column 5."
+        expectContains 'var int = 1', "'int' is a primitive type name and cannot be used as a variable name @ line 1, column 5."
+        expectContains 'def void = 1', "'void' is a type name and cannot be used as a variable name @ line 1, column 5."
+        expectContains 'String long = "x"', "$message @ line 1, column 8."
+        expectContains 'def long', "$message @ line 1, column 5."
+        expectContains 'def long;', "$message @ line 1, column 5."
+        expectContains 'def long, b', "$message @ line 1, column 5."
+        expectContains 'def a, long = 2', "$message @ line 1, column 8."
+        expectContains 'def a,\nlong = 2', "$message @ line 2, column 1."
+        expectContains 'def (a, long) = [1, 2]', "$message @ line 1, column 9."
+        expectContains 'long += 1', "$message @ line 1, column 1."
+        expectContains 'def a; (long) = [1]', "$message @ line 1, column 8."
+        expectContains 'def m() {\n    def long = 1\n}', "$message @ line 2, column 9."
+        expectContains 'def m() { def long\n}', "$message @ line 1, column 15."
+    }
+
+    @Test
+    void 'primitive type name as a field name'() {
+        String message = "'long' is a primitive type name and cannot be used as a variable name"
+        expectContains 'class C { int long = 1 }', "$message @ line 1, column 15."
+        expectContains 'class C { int void = 1 }', "'void' is a type name and cannot be used as a variable name @ line 1, column 15."
+        expectContains 'class C { int[] long }', "$message @ line 1, column 17."
+        expectContains 'class C {\n    int long\n}', "$message @ line 2, column 9."
+        expectContains 'class C { static long = 1 }', "$message @ line 1, column 18."
+        expectContains 'class C { public long = 1 }', "$message @ line 1, column 18."
+        expectContains 'class C { protected long; }', "$message @ line 1, column 21."
+        expectContains 'class C { volatile long }', "$message @ line 1, column 20."
+    }
+
+    @Test
+    void 'primitive type name as a parameter or loop variable name'() {
+        String message = "'long' is a primitive type name and cannot be used as a variable name"
+        expectContains 'def m(long) {}', "$message @ line 1, column 7."
+        expectContains 'def m(int, long) {}', "'int' is a primitive type name and cannot be used as a variable name @ line 1, column 7."
+        expectContains 'def c = { long -> long }', "$message @ line 1, column 11."
+        expectContains 'def l = (long) -> 1', "$message @ line 1, column 10."
+        expectContains 'def l = long -> 1', "$message @ line 1, column 9."
+        expectContains 'for (long in [1]) {}', "$message @ line 1, column 6."
+        expectContains 'for (int long : [1]) {}', "$message @ line 1, column 10."
+        expectContains 'for (i, long in [1]) {}', "$message @ line 1, column 9."
+        expectContains 'for (int i = 0, long = 1; ;) {}', "$message @ line 1, column 17."
+        expectContains 'try {} catch (long) {}', "$message @ line 1, column 15."
+        expectContains 'try {} catch (Exception | Error long) {}', "$message @ line 1, column 33."
+    }
+
+    @Test
+    void 'primitive type name that is not a variable name keeps its own diagnostic'() {
+        expectContains 'enum E { A, long }', "';' expected after the last enum constant"
+        expectContains 'import long', "Unexpected input: 'long'"
+        expectContains '/* no name */ = 1', "Unexpected input: '='"
+    }
+
+    @Test
+    void 'primitive type name is still accepted where the grammar allows it'() {
+        for (source in [
+                'def var = 1; def val = 2; def in = 3; def trait = 4',
+                'def m = [long: 1, int: 2, void: 3]; m.long = 4; this.long = 5',
+                'def "long"() { 1 }; this.long()',
+                'switch (1) { case long: break }',
+                'long x = 1; def (int a, long b) = [1, 2]; def ll = [int, long]',
+                'def m(long x) { x }; def c = { long x -> x }; def l = (long x) -> x',
+                'int i = (long) 1; for (long j in [1]) {}; try {} catch (Exception e) {}',
+        ]) {
+            TestUtils.parseModule(source)
+        }
+    }
 }

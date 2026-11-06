@@ -325,6 +325,7 @@ variableDeclarator
 
 variableDeclaratorId
     :   identifier
+    |   builtInType // accepted here so that AstBuilder can name the mistake, e.g. `def long = 1`
     ;
 
 variableInitializer
@@ -676,7 +677,7 @@ statement
     ;
 
 catchClause
-    :   CATCH LPAREN variableModifiersOpt catchType? identifier RPAREN NL* block
+    :   CATCH LPAREN variableModifiersOpt catchType? variableDeclaratorId RPAREN NL* block
     ;
 
 catchType
@@ -725,7 +726,7 @@ forControl
     ;
 
 enhancedForControl
-    :   (indexVariable COMMA)? variableModifiersOpt type? identifier (COLON | IN) expression
+    :   (indexVariable COMMA)? variableModifiersOpt type? variableDeclaratorId (COLON | IN) expression
     ;
 
 indexVariable
