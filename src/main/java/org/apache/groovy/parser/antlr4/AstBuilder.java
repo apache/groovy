@@ -150,6 +150,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -283,10 +284,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     public ModuleNode buildAST() {
         try {
-            ModuleNode module = (ModuleNode) this.visit(this.buildCST());
-            // The finished tree must not keep the parser graph alive into later phases.
-            releaseParameterContexts(module);
-            return module;
+            return (ModuleNode) this.visit(this.buildCST());
         } catch (Throwable t) {
             // convertException is a no-op for an existing CompilationFailedException and
             // otherwise records (recovery) or fatally fails (default) before wrapping.
@@ -295,7 +293,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             // (belt-and-braces guard suggested in PR review).
             CompilationFailedException cfe = convertException(t);
             if (shouldReturnPartialModuleOnFailure()) {
-                releaseParameterContexts(this.moduleNode);
                 return this.moduleNode;
             }
             throw cfe;
@@ -305,6 +302,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             // points at the retired ATN, which is what pushes a single large class over
             // the default compiler heap during class generation.
             releaseRecognizers();
+            parameterContexts.clear();
+            parameterModifierManagers.clear();
         }
     }
 
@@ -1674,8 +1673,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         final int n = parameters.length;
         for (int i = 0; i < n; i += 1) {
             Parameter parameter = parameters[i];
-            FormalParameterContext parameterCtx = parameter.getNodeMetaData(PARAMETER_CONTEXT);
-            ModifierManager parameterModifierManager = parameter.getNodeMetaData(PARAMETER_MODIFIER_MANAGER);
+            FormalParameterContext parameterCtx = (FormalParameterContext) parameterContexts.get(parameter);
+            ModifierManager parameterModifierManager = parameterModifierManagers.get(parameter);
             PropertyNode propertyNode = declareProperty(parameterCtx, parameterModifierManager, parameter.getType(), classNode, i,
                     parameter, parameter.getName(), parameter.getModifiers() | Opcodes.ACC_FINAL, parameter.getInitialExpression());
             propertyNode.getField().putNodeMetaData(IS_RECORD_GENERATED, Boolean.TRUE);
@@ -5377,8 +5376,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                                         ctx
                                 )
                         );
-        parameter.putNodeMetaData(PARAMETER_MODIFIER_MANAGER, modifierManager);
-        parameter.putNodeMetaData(PARAMETER_CONTEXT, ctx);
+        // kept by the builder, not on the parameter: a parse context's parent chain is the whole CST
+        parameterModifierManagers.put(parameter, modifierManager);
+        parameterContexts.put(parameter, ctx);
 
         if (asBoolean(expressionContext)) {
             parameter.setInitialExpression((Expression) this.visit(expressionContext));
@@ -5682,55 +5682,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     /**
-     * A parameter keeps its parse context only so the record header can be lowered
-     * during this visit. The context's parent chain is the whole CST, so leaving it
-     * on the AST pins every token of the file for the rest of compilation.
-     */
-    private void releaseParameterContexts(final ModuleNode module) {
-        if (module == null) return;
-        if (module.getStatementBlock() != null) {
-            module.getStatementBlock().visit(PARAMETER_CONTEXT_RELEASER);
-        }
-        for (ClassNode classNode : module.getClasses()) {
-            releaseClassParameterContexts(classNode);
-        }
-    }
-
-    private void releaseClassParameterContexts(final ClassNode classNode) {
-        for (ConstructorNode constructor : classNode.getDeclaredConstructors()) {
-            clearParameterContexts(constructor.getParameters());
-            if (constructor.getCode() != null) constructor.getCode().visit(PARAMETER_CONTEXT_RELEASER);
-        }
-        for (MethodNode method : classNode.getMethods()) {
-            clearParameterContexts(method.getParameters());
-            if (method.getCode() != null) method.getCode().visit(PARAMETER_CONTEXT_RELEASER);
-        }
-        for (FieldNode field : classNode.getFields()) {
-            if (field.getInitialExpression() != null) field.getInitialExpression().visit(PARAMETER_CONTEXT_RELEASER);
-        }
-        Object header = classNode.getNodeMetaData(RECORD_HEADER);
-        if (header instanceof Parameter[] parameters) {
-            clearParameterContexts(parameters);
-        }
-        classNode.getInnerClasses().forEachRemaining(this::releaseClassParameterContexts);
-    }
-
-    private static void clearParameterContexts(final Parameter[] parameters) {
-        if (parameters == null) return;
-        for (Parameter parameter : parameters) {
-            if (parameter != null) parameter.removeNodeMetaData(PARAMETER_CONTEXT);
-        }
-    }
-
-    private static final CodeVisitorSupport PARAMETER_CONTEXT_RELEASER = new CodeVisitorSupport() {
-        @Override
-        public void visitClosureExpression(final ClosureExpression expression) {
-            clearParameterContexts(expression.getParameters());
-            super.visitClosureExpression(expression);
-        }
-    };
-
-    /**
      * Detach this parse from the shared prediction cache. The cache itself stays
      * softly reachable for the next file; this parse must not keep a retired copy.
      */
@@ -5812,6 +5763,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private final Deque<ClassNode> classNodeStack = new ArrayDeque<>();
     private final Deque<List<InnerClassNode>> anonymousInnerClassesDefinedInMethodStack = new ArrayDeque<>();
     private final Deque<GroovyParserRuleContext> switchExpressionRuleContextStack = new ArrayDeque<>();
+    private final Map<Parameter, GroovyParserRuleContext> parameterContexts = new IdentityHashMap<>();
+    private final Map<Parameter, ModifierManager> parameterModifierManagers = new IdentityHashMap<>();
     /** one entry per enclosing closure/lambda: TRUE if it is the closure of an {@code async} expression */
     private final Deque<Boolean> asyncClosureStack = new ArrayDeque<>();
     /** set just before visiting the closure/lambda of an {@code async} expression; consumed by the closure/lambda visit */
@@ -5890,8 +5843,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static final String INTEGER_LITERAL_TEXT = "_INTEGER_LITERAL_TEXT";
     private static final String FLOATING_POINT_LITERAL_TEXT = "_FLOATING_POINT_LITERAL_TEXT";
     private static final String ENCLOSING_INSTANCE_EXPRESSION = "_ENCLOSING_INSTANCE_EXPRESSION";
-    private static final String PARAMETER_MODIFIER_MANAGER = "_PARAMETER_MODIFIER_MANAGER";
-    private static final String PARAMETER_CONTEXT = "_PARAMETER_CONTEXT";
     private static final String IS_RECORD_GENERATED = "_IS_RECORD_GENERATED";
     private static final String RECORD_HEADER = "_RECORD_HEADER";
     private static final String RECORD_TYPE_NAME = "groovy.transform.RecordType";
