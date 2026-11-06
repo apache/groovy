@@ -190,6 +190,7 @@ public final class RuntimePackageCheck {
     }
 
     private static boolean isOptionOn(final SourceUnit sourceUnit) {
+        if (sourceUnit == null) return false; // a class generated without one is not defined by a GroovyClassLoader compilation
         Object option = sourceUnit.getConfiguration().getOptimizationOptions().get(CompilerConfiguration.RUNTIME_PACKAGE_CHECK);
         return option != null ? Boolean.TRUE.equals(option) // see GroovyClassLoader for the default of a GroovyShell
             : Boolean.TRUE.equals(sourceUnit.getAST().getUnit().getNodeMetaData(CompilerConfiguration.RUNTIME_PACKAGE_CHECK));
