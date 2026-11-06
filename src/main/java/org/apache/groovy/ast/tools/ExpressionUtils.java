@@ -33,8 +33,10 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Set;
 
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
 import static org.codehaus.groovy.syntax.Types.BITWISE_OR;
@@ -95,6 +97,21 @@ public final class ExpressionUtils {
     }
 
     /**
+     * Checks whether the supplied expression is a qualified {@code this} or {@code super},
+     * such as {@code Outer.this}.
+     *
+     * @param expression the expression to inspect
+     * @return {@code true} if the expression is a class literal followed by {@code this} or {@code super}
+     */
+    public static boolean isQualifiedThisOrSuper(final Expression expression) {
+        if (expression instanceof PropertyExpression pexp && pexp.getObjectExpression() instanceof ClassExpression) {
+            String name = pexp.getPropertyAsString();
+            return "this".equals(name) || "super".equals(name);
+        }
+        return false;
+    }
+
+    /**
      * Checks whether evaluating the supplied expression could be observed.
      * Conservative: only a class literal and a variable (including {@code this}
      * and {@code super}) are known to be free of side effects; any other
@@ -145,12 +162,16 @@ public final class ExpressionUtils {
      * @return the transformed expression or the original if no transformation was performed
      */
     public static ConstantExpression transformBinaryConstantExpression(final BinaryExpression be, final ClassNode targetType) {
+        return transformBinaryConstantExpression(be, targetType, new HashSet<>());
+    }
+
+    private static ConstantExpression transformBinaryConstantExpression(final BinaryExpression be, final ClassNode targetType, final Set<FieldNode> inlining) {
         ClassNode wrapperType;
         if (isTypeOrArrayOfType(targetType, ClassHelper.STRING_TYPE, false)) {
             final int opType = be.getOperation().getType();
             if (opType == PLUS) {
-                Expression left = transformInlineConstants(be.getLeftExpression(), targetType);
-                Expression right = transformInlineConstants(be.getRightExpression(), targetType);
+                Expression left = transformInlineConstants(be.getLeftExpression(), targetType, inlining);
+                Expression right = transformInlineConstants(be.getRightExpression(), targetType, inlining);
                 if (left instanceof ConstantExpression && right instanceof ConstantExpression) {
                     Object leftV = ((ConstantExpression) left).getValue();
                     if (leftV == null) leftV = "null";
@@ -167,12 +188,12 @@ public final class ExpressionUtils {
 
                 Expression leftX = be.getLeftExpression();
                 if (!(leftX instanceof ConstantExpression)) {
-                    leftX = transformInlineConstants(leftX, targetType);
+                    leftX = transformInlineConstants(leftX, targetType, inlining);
                 }
                 Expression rightX = be.getRightExpression();
                 if (!(rightX instanceof ConstantExpression)) {
                     boolean isShift = (opType >= LEFT_SHIFT && opType <= RIGHT_SHIFT_UNSIGNED); // GROOVY-9336
-                    rightX = transformInlineConstants(rightX, isShift ? ClassHelper.int_TYPE : targetType);
+                    rightX = transformInlineConstants(rightX, isShift ? ClassHelper.int_TYPE : targetType, inlining);
                 }
                 if (leftX instanceof ConstantExpression && rightX instanceof ConstantExpression) {
                     Number left  = safeNumber((ConstantExpression) leftX);
@@ -276,6 +297,14 @@ public final class ExpressionUtils {
      * @return the transformed type or the original if no transformation was possible
      */
     public static Expression transformInlineConstants(final Expression exp, final ClassNode attrType) {
+        return transformInlineConstants(exp, attrType, new HashSet<>());
+    }
+
+    /**
+     * @param inlining the fields whose initializers are being inlined by the enclosing calls; a field
+     *        reached again through its own initializer has no constant value and is left as it is
+     */
+    private static Expression transformInlineConstants(final Expression exp, final ClassNode attrType, final Set<FieldNode> inlining) {
         if (exp instanceof PropertyExpression pe) {
             Expression e = pe.getObjectExpression();
             ClassNode cn;
@@ -286,8 +315,12 @@ public final class ExpressionUtils {
                     && (fn = ClassNodeUtils.getField(cn, pe.getPropertyAsString())) != null
                     && fn.isStatic()
                     && fn.isFinal()) {
-                if (fn.hasInitialExpression()) {
-                    e = transformInlineConstants(fn.getInitialValueExpression(), attrType);
+                if (fn.hasInitialExpression() && inlining.add(fn)) {
+                    try {
+                        e = transformInlineConstants(fn.getInitialValueExpression(), attrType, inlining);
+                    } finally {
+                        inlining.remove(fn);
+                    }
                     if (e instanceof ConstantExpression) {
                         return e;
                     }
@@ -304,8 +337,13 @@ public final class ExpressionUtils {
             }
         } else if (exp instanceof VariableExpression ve) {
             if (ve.getAccessedVariable() instanceof FieldNode fn) {
-                if (fn.isStatic() && fn.isFinal()) {
-                    Expression e = transformInlineConstants(fn.getInitialValueExpression(), attrType);
+                if (fn.isStatic() && fn.isFinal() && inlining.add(fn)) {
+                    Expression e;
+                    try {
+                        e = transformInlineConstants(fn.getInitialValueExpression(), attrType, inlining);
+                    } finally {
+                        inlining.remove(fn);
+                    }
                     if (e != null) {
                         return e;
                     }
@@ -330,17 +368,17 @@ public final class ExpressionUtils {
                 }
             }
         } else if (exp instanceof CastExpression) {
-            Expression e = transformInlineConstants(((CastExpression) exp).getExpression(), exp.getType());
+            Expression e = transformInlineConstants(((CastExpression) exp).getExpression(), exp.getType(), inlining);
             if (ClassHelper.getWrapper(e.getType()).isDerivedFrom(ClassHelper.getWrapper(attrType))) {
                 return e;
             }
         } else if (exp instanceof BinaryExpression) {
-            ConstantExpression ce = transformBinaryConstantExpression((BinaryExpression) exp, attrType);
+            ConstantExpression ce = transformBinaryConstantExpression((BinaryExpression) exp, attrType, inlining);
             if (ce != null) {
                 return ce;
             }
         } else if (exp instanceof ListExpression) {
-            return transformListOfConstants((ListExpression) exp, attrType);
+            return transformListOfConstants((ListExpression) exp, attrType, inlining);
         }
         return exp;
     }
@@ -377,13 +415,17 @@ public final class ExpressionUtils {
      * @param attrType the target type
      * @return the transformed list or the original if nothing was changed
      */
-    public static Expression transformListOfConstants(final ListExpression origList, ClassNode attrType) {
+    public static Expression transformListOfConstants(final ListExpression origList, final ClassNode attrType) {
+        return transformListOfConstants(origList, attrType, new HashSet<>());
+    }
+
+    private static Expression transformListOfConstants(final ListExpression origList, ClassNode attrType, final Set<FieldNode> inlining) {
         ListExpression newList = new ListExpression();
         attrType = inferLoopElementType(attrType);
         boolean changed = false;
         for (Expression e : origList.getExpressions()) {
             try {
-                Expression transformed = transformInlineConstants(e, attrType);
+                Expression transformed = transformInlineConstants(e, attrType, inlining);
                 newList.addExpression(transformed);
                 if (transformed != e) changed = true;
             } catch (Exception ignored) {
