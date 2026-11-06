@@ -290,13 +290,6 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     /**
-     * Checks if this class loader has compatible {@link CompilerConfiguration}
-     * with the provided one.
-     * @param config the compiler configuration to test for compatibility
-     * @return {@code true} if the provided config is exactly the same instance
-     * of {@link CompilerConfiguration} as this loader has
-     */
-    /**
      * Applies {@link CompilerConfiguration#RUNTIME_PACKAGE_CHECK} to the classes
      * this class loader compiles, unless the configuration sets the option.
      */
@@ -304,6 +297,13 @@ public class GroovyClassLoader extends URLClassLoader {
         runtimePackageCheck = true;
     }
 
+    /**
+     * Checks if this class loader has compatible {@link CompilerConfiguration}
+     * with the provided one.
+     * @param config the compiler configuration to test for compatibility
+     * @return {@code true} if the provided config is exactly the same instance
+     * of {@link CompilerConfiguration} as this loader has
+     */
     public boolean hasCompatibleConfiguration(final CompilerConfiguration config) {
         return (this.config == config);
     }
