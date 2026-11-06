@@ -896,4 +896,46 @@ final class RegexCheckerTest {
         '''
         assert err instanceof IllegalArgumentException
     }
+
+    // GROOVY-12709: fields whose initializers refer to each other have no constant value
+    @Test
+    void testFieldInitializerCycle() {
+        assertScript shell, '''
+            class Cycle {
+                static final String R = S
+                static final String S = R
+                static Pattern compile() { Pattern.compile(R) }
+            }
+            assert Cycle.R == null
+        '''
+        assertScript shell, '''
+            class Cycle {
+                static String R = S
+                static String S = R
+                static Pattern compile() { Pattern.compile(R) }
+            }
+            assert Cycle.R == null
+        '''
+        assertScript shell, '''
+            class Cycle {
+                final String a = b
+                final String b = c
+                final String c = a
+                Pattern compile() { Pattern.compile(a) }
+            }
+            assert new Cycle().a == null
+        '''
+        // a chain of fields that ends in a constant is still followed
+        def err = shouldFail shell, '''
+            class Chain {
+                static final String R = S
+                static final String S = /(a)/
+                static String second() {
+                    Matcher m = Pattern.compile(R).matcher('a')
+                    m.group(2)
+                }
+            }
+        '''
+        assert err.message.contains('Invalid group count 2 for regex with 1 group')
+    }
 }
