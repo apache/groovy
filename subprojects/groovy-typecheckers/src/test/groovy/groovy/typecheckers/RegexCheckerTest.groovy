@@ -801,4 +801,99 @@ final class RegexCheckerTest {
             }
         }
     }
+
+    // GROOVY-12707: in COMMENTS mode whitespace may follow the opening parenthesis, and a comment
+    // may sit inside the name, so the group is found however the regex text spells it
+    @Test
+    void testNamedGroupSpelledAcrossCommentsModeWhitespace() {
+        assertScript shell, '''
+            Matcher m = 'foobar' =~ /(?x)( ?<first>...)/
+            assert m.find()
+            assert m.group('first') == 'foo'
+        '''
+        assertScript shell, '''
+            Matcher m = 'foobar' =~ "(?x)(?<fi#c\\nrst>...)"
+            assert m.find()
+            assert m.group('first') == 'foo'
+        '''
+    }
+
+    // GROOVY-12707: text that only looks like a group opener does not define a group
+    @Test
+    void testGroupOpenerLookalikesDefineNoGroup() {
+        def err = shouldFail shell, '''
+            Matcher m = 'x(?<a>)foo' =~ /\\Q(?<a>)\\E(?<b>...)/
+            assert m.find()
+            m.group('a')
+        '''
+        assert err.message.contains("Invalid group name 'a' for regex with named group b")
+
+        err = shouldFail shell, '''
+            Matcher m = 'afoo' =~ /[(?<a>)](?<b>...)/
+            assert m.find()
+            m.group('a')
+        '''
+        assert err.message.contains("Invalid group name 'a' for regex with named group b")
+
+        // a name that could end the backreference early is not mistaken for a defined one
+        err = shouldFail shell, '''
+            Matcher m = 'foo' =~ /(?<a>...)/
+            assert m.find()
+            m.group('a>|x')
+        '''
+        assert err.message.contains("Invalid group name 'a>|x' for regex with named group a")
+
+        // the names listed are only those the regex defines
+        err = shouldFail shell, '''
+            Matcher m = 'x(?<a>)foobar' =~ /\\Q(?<a>)\\E(?<b>...)(?<c>...)/
+            assert m.find()
+            m.group('d')
+        '''
+        assert err.message.contains("Invalid group name 'd' for regex with named groups b, c")
+    }
+
+    // GROOVY-12707: start and end take a group name or index just as group does
+    @Test
+    void testGroupStartAndEnd() {
+        assertScript shell, '''
+            Matcher m = 'foobar' =~ /(?<first>...)(?<second>...)/
+            assert m.find()
+            assert m.start('second') == 3 && m.end('second') == 6
+            assert m.start(1) == 0 && m.end(2) == 6
+        '''
+        def err = shouldFail shell, '''
+            Matcher m = 'foobar' =~ /(?<first>...)(?<second>...)/
+            assert m.find()
+            m.start('third')
+        '''
+        assert err.message.contains("Invalid group name 'third' for regex with named groups first, second")
+
+        err = shouldFail shell, '''
+            Matcher m = 'foobar' =~ /(?<first>...)(?<second>...)/
+            assert m.find()
+            m.end(3)
+        '''
+        assert err.message.contains('Invalid group count 3 for regex with 2 groups')
+    }
+
+    // GROOVY-12707: where the check cannot tell, the lookup is left to the runtime
+    @Test
+    void testUndecidableGroupNameLeftToRuntime() {
+        // an unterminated quote runs to the end of the regex
+        def err = shouldFail shell, '''
+            Matcher m = 'foo(?<a>' =~ /(?<b>...)\\Q(?<a>/
+            assert m.find()
+            m.group('a')
+        '''
+        assert err instanceof IllegalArgumentException
+        assert err.message.contains('No group with name <a>')
+
+        // a LITERAL pattern has no groups at all
+        err = shouldFail shell, '''
+            Matcher m = Pattern.compile('(?<a>x)', Pattern.LITERAL).matcher('(?<a>x)')
+            assert m.find()
+            m.group('a')
+        '''
+        assert err instanceof IllegalArgumentException
+    }
 }

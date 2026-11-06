@@ -93,6 +93,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkC
  *     assert m.group('first') == 'foo'  // okay
  *     assert m.group('third')           // type error: no such named group
  * </pre>
+ * The group index or name passed to {@code start} and {@code end} is checked in the same way.
  * </li>
  * </ul>
  *
@@ -115,9 +116,10 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
     private static final ClassNode MATCHER_TYPE = ClassHelper.make(Matcher)
     private static final ClassNode REGEX_GUARD_TYPE = ClassHelper.make(RegexGuard)
     private static final String REGEX_GROUP_COUNT = RegexChecker.getSimpleName() + '_INFERRED_GROUP_COUNT'
-    private static final String REGEX_GROUP_NAMES = RegexChecker.getSimpleName() + '_INFERRED_GROUP_NAMES'
+    private static final String REGEX_STRING = RegexChecker.getSimpleName() + '_INFERRED_REGEX'
     private static final String REGEX_MATCHER_RESULT_TYPE = RegexChecker.getSimpleName() + '_MATCHER_RESULT_INFERRED_TYPE'
-    // a named-capturing group opener; the name may contain whitespace in COMMENTS mode
+    // the usual spellings of a named-capturing group opener, including whitespace in COMMENTS mode;
+    // used only to list names in messages, as COMMENTS mode allows other spellings
     private static final Pattern GROUP_NAME = ~/\(\?<\s*([a-zA-Z](?:\s*[a-zA-Z0-9])*)\s*>/
     // String-receiver methods whose first argument is a regex; covers both the JDK methods
     // (matches, split, replaceAll, replaceFirst) and the CharSequence extension methods
@@ -282,7 +284,7 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                         copyRegexMetaData(source, call)
                     }
                     super.visitMethodCallExpression(call)
-                    if (call.objectExpression instanceof VariableExpression && call.methodAsString == 'group' && isMatcher(call.receiver) && call.arguments.expressions) {
+                    if (call.objectExpression instanceof VariableExpression && call.methodAsString in ['group', 'start', 'end'] && isMatcher(call.receiver) && call.arguments.expressions) {
                         def var = findTargetVariable(call.receiver)
                         def maxCnt = regexMetaData(var, REGEX_GROUP_COUNT)
                         if (maxCnt != null) {
@@ -293,10 +295,11 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                                     addStaticTypeError('Invalid group count ' + cnt + ' for regex with ' + maxCnt + ' group' + (maxCnt == 1 ? '' : 's'), call)
                                 }
                             } else {
-                                // group(String): the name must be one the regex defines
+                                // a group name: it must be one the regex defines
                                 def name = findConstExp(arg, String)?.value
-                                List<String> names = regexMetaData(var, REGEX_GROUP_NAMES)
-                                if (name != null && names != null && !names.contains(name)) {
+                                String regex = regexMetaData(var, REGEX_STRING)
+                                if (name != null && regex != null && !definesGroup(regex, name)) {
+                                    def names = findGroupNames(regex)
                                     String known = names ? 'named group' + (names.size() == 1 ? ' ' : 's ') + names.join(', ') : 'no named groups'
                                     addStaticTypeError("Invalid group name '" + name + "' for regex with " + known, call)
                                 }
@@ -348,7 +351,7 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
             def pattern = Pattern.compile(regex.value)
             Matcher m = pattern.matcher('')
             target.putNodeMetaData(REGEX_GROUP_COUNT, m.groupCount())
-            target.putNodeMetaData(REGEX_GROUP_NAMES, findGroupNames(regex.value))
+            target.putNodeMetaData(REGEX_STRING, regex.value)
         } catch (PatternSyntaxException ex) {
             String additional = regex.lineNumber != target.lineNumber ?
                 " @ line $regex.lineNumber, column $regex.columnNumber: " : ': '
@@ -357,9 +360,28 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
     }
 
     /**
-     * Collects the named-capturing group names of a regex that is known to compile. Scanning the text
-     * also picks up openers in escaped or quoted contexts, so the result may name groups the regex does
-     * not define, but it never misses one it does; a lookup is only reported when the name is absent.
+     * Checks whether a regex that is known to compile defines a named-capturing group. A named
+     * backreference to an undefined group does not compile, so the JDK answers exactly, whatever
+     * the spelling of the group in COMMENTS mode; the newline ends a trailing comment. A regex
+     * whose unterminated quote swallows the backreference reports every name as defined.
+     * A name that is not a legal group name is never defined; it is rejected before probing, as
+     * COMMENTS mode would otherwise ignore whitespace within it and other characters could end
+     * the backreference early.
+     */
+    private static boolean definesGroup(String regex, String name) {
+        if (!(name ==~ /[a-zA-Z][a-zA-Z0-9]*/)) return false
+        try {
+            Pattern.compile(regex + '\n\\k<' + name + '>')
+            true
+        } catch (PatternSyntaxException ignore) {
+            false
+        }
+    }
+
+    /**
+     * Lists the named-capturing groups of a regex that is known to compile, for use in messages.
+     * The text scan finds the usual spellings of a group opener; each candidate is confirmed with
+     * {@link #definesGroup} so openers in quoted text or character classes are left out.
      */
     private static List<String> findGroupNames(String regex) {
         List<String> names = []
@@ -367,7 +389,7 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
         while (m.find()) {
             names << m.group(1).replaceAll(/\s+/, '')
         }
-        names
+        names.unique().findAll { definesGroup(regex, it) }
     }
 
     /**
@@ -379,7 +401,7 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
     }
 
     private static void copyRegexMetaData(source, target) {
-        for (String key : [REGEX_GROUP_COUNT, REGEX_GROUP_NAMES]) {
+        for (String key : [REGEX_GROUP_COUNT, REGEX_STRING]) {
             def value = regexMetaData(source, key)
             if (value != null) {
                 target.putNodeMetaData(key, value)
