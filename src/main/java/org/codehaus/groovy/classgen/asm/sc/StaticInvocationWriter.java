@@ -656,7 +656,12 @@ public class StaticInvocationWriter extends InvocationWriter {
             cce.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET,
                     StaticCompilationVisitor.ARRAYLIST_CONSTRUCTOR);
             var result = new TemporaryVariableExpression(cce);
-            if (produceResultList) result.visit(controller.getAcg());
+            if (produceResultList) {
+                // keep the list only in its slot while looping: a loop entered with
+                // a non-empty operand stack cannot be compiled on-stack by HotSpot
+                result.visit(controller.getAcg());
+                operandStack.pop();
+            }
 
             ClassNode elementType = StaticTypeCheckingVisitor.inferLoopElementType(controller.getTypeChooser().resolveType(receiver, controller.getClassNode()));
             Parameter element = new Parameter(elementType, "for$it$" + labelCounter.incrementAndGet());
@@ -700,6 +705,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             loop.setVariableScope(varScope); // GROOVY-11816
             loop.visit(controller.getAcg());
             if (produceResultList) {
+                result.visit(controller.getAcg());
                 result.remove(controller);
             }
             // end of if/else
@@ -1008,7 +1014,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                             && typeClass != EnumConstantClassNode.class) {
                         type = declaringClass; // ex: LUB type
                     }
-                    if (ClassHelper.isObjectType(declaringClass)) {
+                    if (ClassHelper.isObjectType(declaringClass) && !isArrayClone(type, target)) {
                         // checkcast not necessary because Object never evolves
                         // and it prevents a potential ClassCastException if the
                         // delegate of a closure is changed in an SC closure
@@ -1021,6 +1027,14 @@ public class StaticInvocationWriter extends InvocationWriter {
                 setType(type);
             }
             return type;
+        }
+
+        /**
+         * Array clone is modelled as protected {@code Object#clone()}, so the
+         * verifier requires the receiver to be typed as the array.
+         */
+        private static boolean isArrayClone(final ClassNode type, final MethodNode target) {
+            return type.isArray() && "clone".equals(target.getName()) && target.getParameters().length == 0;
         }
     }
 }
