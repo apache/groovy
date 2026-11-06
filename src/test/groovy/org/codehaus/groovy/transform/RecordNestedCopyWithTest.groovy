@@ -21,6 +21,7 @@ package org.codehaus.groovy.transform
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Tests for nested-path {@code copyWith} (map form and transactional
@@ -100,5 +101,45 @@ final class RecordNestedCopyWithTest {
         assertScript shell, GRAPH + '''
             assert p.copyWith { }.is(p)
         '''
+    }
+
+    // GROOVY-12713: the static type checker accepts a dotted key when every segment is a component of the type
+    // reached so far, checks the value against the last segment's type, and reports an unknown segment
+    @Test
+    void record_nested_keys_under_static_type_checking() {
+        assertScript shell, GRAPH + '''
+            @groovy.transform.CompileStatic
+            Person moved(Person person) {
+                person.copyWith('address.city': 'Boston', 'company.address.zip': '07031')
+            }
+            def q = moved(p)
+            assert q.address.city == 'Boston'
+            assert q.company.address.zip == '07031'
+            assert q.company.name == 'Acme'
+        '''
+    }
+
+    @Test
+    void record_nested_key_with_unknown_segment_is_a_static_type_error() {
+        def err = shouldFail shell, GRAPH + '''
+            @groovy.transform.CompileStatic
+            Person moved(Person person) {
+                person.copyWith('address.state': 'MA')
+            }
+            moved(p)
+        '''
+        assert err.message.contains("unexpected named arg: address.state")
+    }
+
+    @Test
+    void record_nested_key_value_is_type_checked_against_the_last_segment() {
+        def err = shouldFail shell, GRAPH + '''
+            @groovy.transform.CompileStatic
+            Person moved(Person person) {
+                person.copyWith('company.address.zip': 7031)
+            }
+            moved(p)
+        '''
+        assert err.message.contains("argument for named param 'company.address.zip' has type 'int' but expected 'java.lang.String'")
     }
 }
