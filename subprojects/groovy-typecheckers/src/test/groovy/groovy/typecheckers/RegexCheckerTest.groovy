@@ -19,11 +19,16 @@
 package groovy.typecheckers
 
 import groovy.transform.TypeChecked
+import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+
+import java.util.regex.Matcher
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -723,5 +728,77 @@ final class RegexCheckerTest {
             assert m.group(name)
         '''
         assert err.message.contains("Invalid group name 'third' for regex with named groups first, second")
+    }
+
+    // GROOVY-12706: a script binding variable is reported as undeclared, not as a general error
+    @Test
+    void testBindingVariableIsUndeclared() {
+        def err = shouldFail shell, '''
+            finder = 'groovy' =~ /(oo)/
+            finder[0]
+        '''
+        assert err.message.contains('The variable [finder] is undeclared')
+        assert !err.message.contains('General error')
+
+        err = shouldFail shell, '''
+            p = ~/(oo)/
+            'groovy'.findGroups(p)
+        '''
+        assert err.message.contains('The variable [p] is undeclared')
+        assert !err.message.contains('General error')
+    }
+
+    // GROOVY-12706: binding variables given a type by another extension (as a typed binding
+    // would) reach the Pattern and Matcher paths; they are left unchecked, not a general error
+    @Test
+    void testTypedBindingVariables() {
+        def typedShell = new GroovyShell(new CompilerConfiguration().tap {
+            def customizer = new ASTTransformationCustomizer(TypeChecked)
+            customizer.annotationParameters = [extensions: ['groovy.typecheckers.RegexChecker', TypedBindingStub.name]]
+            addCompilationCustomizers(customizer, new ImportCustomizer().addStarImports('java.util.regex'))
+        })
+        assertScript typedShell, '''
+            m = 'groovy' =~ /(oo)/
+            assert m[0] == ['oo', 'oo']
+        '''
+        assertScript typedShell, '''
+            p = ~/(oo)/
+            assert 'groovy'.findGroups(p) == ['oo', 'oo']
+        '''
+        assertScript typedShell, '''
+            p = ~/(oo)/
+            def matcher = p.matcher('groovy')
+            assert matcher.find()
+        '''
+        assertScript typedShell, '''
+            m = 'groovy' =~ /(oo)/
+            assert m.find()
+            assert m.group(1) == 'oo'
+        '''
+        // a regex declared in the same script is still checked
+        def err = shouldFail typedShell, '''
+            p = ~/(oo)/
+            def local = 'groovy' =~ /(oo)/
+            local[0][2]
+        '''
+        assert err.message.contains('Invalid group count 2 for regex with 1 group')
+        assert !err.message.contains('General error')
+    }
+
+    /**
+     * Resolves the script variables {@code p} and {@code m} as {@code Pattern} and {@code Matcher},
+     * standing in for a host that records the types of its binding variables.
+     */
+    static class TypedBindingStub extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
+        @Override
+        Object run() {
+            unresolvedVariable { VariableExpression var ->
+                def type = [p: ClassHelper.PATTERN_TYPE, m: ClassHelper.make(Matcher)][var.name]
+                if (type) {
+                    storeType(var, type)
+                    handled = true
+                }
+            }
+        }
     }
 }

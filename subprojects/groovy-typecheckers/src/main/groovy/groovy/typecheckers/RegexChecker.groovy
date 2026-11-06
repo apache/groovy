@@ -20,6 +20,7 @@ package groovy.typecheckers
 
 import groovy.util.regex.RegexGuard
 import org.apache.groovy.typecheckers.CheckingVisitor
+import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
@@ -148,7 +149,7 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                     } else if (expression.operation.type == Types.LEFT_SQUARE_BRACKET) {
                         if (expression.leftExpression instanceof VariableExpression) {
                             def var = findTargetVariable(expression.leftExpression)
-                            def groupCount = var?.getNodeMetaData(REGEX_GROUP_COUNT)
+                            def groupCount = regexMetaData(var, REGEX_GROUP_COUNT)
                             if (groupCount != null) {
                                 expression.putNodeMetaData(REGEX_GROUP_COUNT, groupCount)
                                 if (groupCount == 0) {
@@ -174,7 +175,7 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                             // argument or a pattern variable may still carry a group count
                             def arg = call.arguments.getExpression(0)
                             def source = arg instanceof VariableExpression ? findTargetVariable(arg) : arg
-                            def groupCount = source?.getNodeMetaData(REGEX_GROUP_COUNT)
+                            def groupCount = regexMetaData(source, REGEX_GROUP_COUNT)
                             if (groupCount != null) {
                                 call.putNodeMetaData(REGEX_GROUP_COUNT, groupCount)
                             }
@@ -283,7 +284,7 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                     super.visitMethodCallExpression(call)
                     if (call.objectExpression instanceof VariableExpression && call.methodAsString == 'group' && isMatcher(call.receiver) && call.arguments.expressions) {
                         def var = findTargetVariable(call.receiver)
-                        def maxCnt = var?.getNodeMetaData(REGEX_GROUP_COUNT)
+                        def maxCnt = regexMetaData(var, REGEX_GROUP_COUNT)
                         if (maxCnt != null) {
                             def arg = call.arguments.getExpression(0)
                             def cnt = findConstExp(arg, Integer)?.value
@@ -294,7 +295,7 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                             } else {
                                 // group(String): the name must be one the regex defines
                                 def name = findConstExp(arg, String)?.value
-                                List<String> names = var.getNodeMetaData(REGEX_GROUP_NAMES)
+                                List<String> names = regexMetaData(var, REGEX_GROUP_NAMES)
                                 if (name != null && names != null && !names.contains(name)) {
                                     String known = names ? 'named group' + (names.size() == 1 ? ' ' : 's ') + names.join(', ') : 'no named groups'
                                     addStaticTypeError("Invalid group name '" + name + "' for regex with " + known, call)
@@ -369,9 +370,17 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
         names
     }
 
+    /**
+     * Returns the regex metadata recorded on a node, or {@code null} when there is none. A variable that
+     * resolves to something other than an AST node, such as a script binding variable, is not tracked.
+     */
+    private static Object regexMetaData(source, String key) {
+        source instanceof ASTNode ? source.getNodeMetaData(key) : null
+    }
+
     private static void copyRegexMetaData(source, target) {
         for (String key : [REGEX_GROUP_COUNT, REGEX_GROUP_NAMES]) {
-            def value = source?.getNodeMetaData(key)
+            def value = regexMetaData(source, key)
             if (value != null) {
                 target.putNodeMetaData(key, value)
             }
