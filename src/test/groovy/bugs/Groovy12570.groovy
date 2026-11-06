@@ -204,7 +204,7 @@ final class Groovy12570 {
             B
         '''
         def superMethods = b.declaredMethods*.name.findAll { it.startsWith('super$') }
-        assert superMethods.none { it.endsWith('$pm') }
+        assert !superMethods.any { it.endsWith('$pm') }
         assert superMethods.any { it.endsWith('$qm') }
         assert b.getDeclaredConstructor().newInstance().test() == ['M', 'M']
     }
