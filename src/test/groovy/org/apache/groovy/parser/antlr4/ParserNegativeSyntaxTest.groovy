@@ -3917,17 +3917,19 @@ final class ParserNegativeSyntaxTest {
 
     // GROOVY-12694
     @Test
-    void 'type pattern in case label after a record declaration'() {
+    void 'record header closed before a later syntax error is not a missing paren'() {
         // `(double radius)` is a record header the parser had already
-        // accepted, not a cast missing its ')'; the case label is the error
+        // accepted, not a cast missing its ')'. `case Circle c ->` is a
+        // type pattern (GROOVY-12641), so the recognition failure is the
+        // dangling operator after that switch.
         expectParseError '''\
             |record Circle(double radius) {}
             |Object o = new Circle(1)
             |String s = switch (o) { case Circle c -> 'circle'; default -> 'other' }
-            |'''.stripMargin(), '''\
-            |Unexpected input: 'String s = switch (o) { case Circle c' @ line 3, column 37.
-            |   String s = switch (o) { case Circle c -> 'circle'; default -> 'other' }
-            |                                       ^
+            |def y = 1 +'''.stripMargin(), '''\
+            |Unexpected input: '+' @ line 4, column 11.
+            |   def y = 1 +
+            |             ^
             |
             |1 error
             |'''.stripMargin()
@@ -3937,15 +3939,17 @@ final class ParserNegativeSyntaxTest {
     @Test
     void 'closed paren groups before a later syntax error are not missing parens'() {
         // a primitive-typed parameter, a for header and a parenthesised
-        // call all read as `( type <expr>` to the cast scan
+        // call all read as `( type <expr>` to the cast scan. `case Integer i ->`
+        // is a type pattern (GROOVY-12641); the for-header case uses a
+        // dangling operator as the later recognition failure.
         expectParseError '''\
             |for (int i = 0; i < 3; i++) { println i }
             |Object o = 1
             |String s = switch (o) { case Integer i -> 'int'; default -> 'other' }
-            |'''.stripMargin(), '''\
-            |Unexpected input: 'String s = switch (o) { case Integer i' @ line 3, column 38.
-            |   String s = switch (o) { case Integer i -> 'int'; default -> 'other' }
-            |                                        ^
+            |def y = 1 +'''.stripMargin(), '''\
+            |Unexpected input: '+' @ line 4, column 11.
+            |   def y = 1 +
+            |             ^
             |
             |1 error
             |'''.stripMargin()
