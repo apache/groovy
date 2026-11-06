@@ -181,7 +181,15 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         visitAnnotations(expression, LOCAL_VARIABLE_TARGET);
         // GROOVY-12540: use the declared (origin) type: getType() may be a shared, boxed ClassHelper node for a primitive local
         if (expression.isMultipleAssignmentDeclaration()) {
-            expression.getTupleExpression().forEach(e -> visitTypeAnnotations(((VariableExpression) e).getOriginType()));
+            // GROOVY-12702: a TYPE_USE annotation in declaration position applies to every
+            // variable. Annotations that target only TYPE_USE are removed from the declaration once.
+            List<ClassNode> declaredTypes = new ArrayList<>();
+            for (Expression element : expression.getTupleExpression().getExpressions()) {
+                ClassNode type = ((VariableExpression) element).getOriginType();
+                visitTypeAnnotations(type);
+                declaredTypes.add(type);
+            }
+            extractTypeUseAnnotations(expression.getAnnotations(), declaredTypes, LOCAL_VARIABLE_TARGET);
         } else {
             ClassNode type = expression.getVariableExpression().getOriginType();
             visitTypeAnnotations(type);
@@ -332,7 +340,16 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         }
     }
 
-    private void extractTypeUseAnnotations(final List<AnnotationNode> mixed, ClassNode targetType, final int keepTarget) {
+    private void extractTypeUseAnnotations(final List<AnnotationNode> mixed, final ClassNode targetType, final int keepTarget) {
+        extractTypeUseAnnotations(mixed, List.of(targetType), keepTarget);
+    }
+
+    /**
+     * Moves TYPE_USE annotations from a declaration onto each declared type.
+     * Annotations that are not also allowed on {@code keepTarget} are then removed
+     * from the declaration once, after every type has received them.
+     */
+    private void extractTypeUseAnnotations(final List<AnnotationNode> mixed, final List<ClassNode> targetTypes, final int keepTarget) {
         List<AnnotationNode> typeUseAnnos = new ArrayList<>();
         for (AnnotationNode anno : mixed) {
             if (anno.isTargetAllowed(TYPE_USE_TARGET)) {
@@ -340,13 +357,17 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             }
         }
         if (!typeUseAnnos.isEmpty()) {
-            while (targetType.isArray()) targetType = targetType.getComponentType();
-            // GROOVY-12434: a type node shared with a copied member (e.g. a trait method and
-            // its helper or forwarder) may already hold the same annotation or a copy of it
-            List<AnnotationNode> existing = targetType.getTypeAnnotations();
-            for (AnnotationNode anno : typeUseAnnos) {
-                if (existing.stream().noneMatch(e -> isSameAnnotation(e, anno))) {
-                    targetType.addTypeAnnotation(anno);
+            for (ClassNode targetType : targetTypes) {
+                ClassNode type = targetType;
+                while (type.isArray()) type = type.getComponentType();
+                // GROOVY-12434: a type node shared with a copied member (e.g. a trait method and
+                // its helper or forwarder), or with another variable of this declaration, may
+                // already hold the same annotation or a copy of it
+                List<AnnotationNode> existing = type.getTypeAnnotations();
+                for (AnnotationNode anno : typeUseAnnos) {
+                    if (existing.stream().noneMatch(e -> isSameAnnotation(e, anno))) {
+                        type.addTypeAnnotation(anno);
+                    }
                 }
             }
             for (AnnotationNode anno : typeUseAnnos) {

@@ -234,7 +234,9 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         Expression leftExpression = expression.getLeftExpression();
         if (leftExpression instanceof PropertyExpression pexp
                 && !(leftExpression instanceof AttributeExpression)) {
-            if (!defineVariable && pexp.getNodeMetaData(SUPER_MOP_METHOD_REQUIRED) == null && makeSetProperty(
+            // GROOVY-12649: a spread assignment writes each element; the setters of the
+            // collection itself do not apply, so the spread is rewritten as a loop below
+            if (!defineVariable && !pexp.isSpreadSafe() && pexp.getNodeMetaData(SUPER_MOP_METHOD_REQUIRED) == null && makeSetProperty(
                     pexp.getObjectExpression(),
                     pexp.getProperty(),
                     expression.getRightExpression(),
