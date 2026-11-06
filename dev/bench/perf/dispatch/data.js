@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793863145883,
+  "lastUpdate": 1793948455957,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -6437,6 +6437,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.groovyRuntime",
             "value": 1527,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194129,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "c7a4b2ae4ef019e3680e5f7ee07d90bd460de9cd",
+          "message": "groovysh: suppress deprecation warnings for the JLine command-description API in GroovyshLanguageSession\n\nThe script-description hook on SystemRegistryImpl is still typed on the\ndeprecated org.jline.console CmdDesc/CmdLine (true through JLine 4.5.0),\nso the two methods keep those signatures and get the same suppression\nGroovyEngine already carries.",
+          "timestamp": "2026-11-06T06:38:52Z",
+          "url": "https://github.com/apache/groovy/commit/c7a4b2ae4ef019e3680e5f7ee07d90bd460de9cd"
+        },
+        "date": 1793948455192,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4033,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 437,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 865,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1541,
             "unit": "classes"
           },
           {
