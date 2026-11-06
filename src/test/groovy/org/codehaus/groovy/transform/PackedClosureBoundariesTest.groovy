@@ -65,8 +65,16 @@ final class PackedClosureBoundariesTest {
         // parameters here so escape is provably the operative gate (implicit `it` itself packs:
         // see the 'implicit it' case above).
         ['returned',                     false, false, 'Closure m() { return { x -> x } }'],
+        ['returned composed',            false, false, 'Closure m(Closure c) { return { x -> x } << c }'],  // GROOVY-12656
+        ['composed in a list literal',   false, false, 'def m(Closure c) { [c >> { x -> x }] }'],           // GROOVY-12656
+        ['composed and called locally',  true,  true,  'def m(Closure c) { (c >> { x -> x })(1) }'],        // GROOVY-12656
         ['stored to property',           false, false, 'def m(Map attrs) { attrs.handler = { x -> x } }'],
+        ['returned from a ternary',      false, false, 'Closure m(boolean b) { return b ? { x -> x } : null }'],  // GROOVY-12659
+        ['returned curried',             false, false, 'Closure m() { return { x, y -> x }.curry(1) }'],         // GROOVY-12659
+        ['curried and called locally',   true,  true,  'def m() { { x, y -> x }.curry(1)(2) }'],                 // GROOVY-12659
         ['in a collection literal',      false, false, 'def m() { [{ x -> x }] }'],
+        ['stored to property by ?=',     false, false, 'Closure handler\ndef m(C other) { other.handler ?= { x -> x } }'],  // GROOVY-12651
+        ['stored to field by ??=',       false, false, 'Closure handler\ndef m() { handler ??= { x -> x } }'],             // GROOVY-12651
         // ---- serialization-bound: declines everywhere -------------------------------------------
         ['cast to Serializable',         false, false, 'def m() { ({ it } as Serializable) != null }'],
         ['local into writeObject',       false, false, '''def m() {
@@ -92,6 +100,38 @@ final class PackedClosureBoundariesTest {
         // separate shape: the literal is a class-level field initialiser, not inside a method
         assert !packs('class C { def action = { 42 } }')
         assert !packs('@groovy.transform.CompileStatic\nclass C { def action = { 42 } }')
+    }
+
+    @Test
+    void constructorAndInitializerEscapesDecline() {
+        // GROOVY-12652: a constructor, and an instance initializer block (inlined into every
+        // constructor), is a method to the escape and serialization gates; [description, class body]
+        [
+            ['field store in a constructor',        'Closure f\nC() { f = { x -> x } }'],
+            ['property store in a constructor',     'C(Map m) { m.handler = { x -> x } }'],
+            ['setter store in a constructor',       'C(H h) { h.handler = { x -> x } }'],
+            ['appended in a constructor',           'C(List<Closure> s) { s << { x -> x } }'],
+            ['Serializable cast in a constructor',  'C() { assert ({ x -> x } as Serializable) != null }'],
+            ['field store in an initializer',       'Closure f; { f = { x -> x } }'],
+            ['property store in an initializer',    'Map m = [:]; { m.handler = { x -> x } }'],
+            ['setter store in an initializer',      'H h = new H(); { h.handler = { x -> x } }'],
+            ['appended in an initializer',          'List<Closure> s = []; { s << { x -> x } }'],
+        ].each { desc, body ->
+            // under @CompileStatic the setter store and the append are rewritten to method calls
+            // before class generation; the escape walk runs ahead of that rewrite (GROOVY-12650)
+            ['', '@groovy.transform.TypeChecked\n', '@groovy.transform.CompileStatic\n'].each { annotation ->
+                assert !packs("${annotation}class C {\n${body}\n}\nclass H { Closure handler }"),
+                        "${annotation.trim() ?: 'dynamic'}: '$desc' should NOT pack"
+            }
+        }
+    }
+
+    @Test
+    void constructorAndInitializerLocalClosuresPack() {
+        ['', '@groovy.transform.TypeChecked\n', '@groovy.transform.CompileStatic\n'].each { annotation ->
+            assert packs("${annotation}class C { C(List<Integer> xs) { xs.each { x -> x } } }")
+            assert packs("${annotation}class C { List<Integer> xs = [1]; { xs.each { x -> x } } }")
+        }
     }
 
     @Test
