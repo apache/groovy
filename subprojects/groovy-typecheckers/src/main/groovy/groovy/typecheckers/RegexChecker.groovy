@@ -23,7 +23,9 @@ import org.apache.groovy.typecheckers.CheckingVisitor
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.FieldNode
 import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.Variable
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.BitwiseNegationExpression
 import org.codehaus.groovy.ast.expr.ClassExpression
@@ -32,12 +34,14 @@ import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCall
 import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.syntax.Types
 import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
 import org.codehaus.groovy.transform.stc.StaticTypesMarker
 
+import java.lang.reflect.Modifier
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException
@@ -61,6 +65,8 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkC
  * </pre>
  * These examples illustrate explicitly defined constant strings but local variable
  * or field definitions where a constant string can be determined are also checked.
+ * For {@code Pattern#compile(String, int)} the regex is checked as compiled with its flags,
+ * when they can be determined; otherwise the call is not checked.
  * </li>
  * <li>
  * Invalid regex strings in conjunction with Groovy's regex find and regex match expressions, or the JDK's {@code Pattern#matches} method:
@@ -198,7 +204,16 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                     def arguments = call.arguments
                     if (classType == PATTERN_TYPE && call.methodAsString in ['compile', 'matches'] && arguments.expressions) {
                         def exp = findConstExp(arguments.getExpression(0), String)
-                        checkRegex(exp, call)
+                        if (call.methodAsString == 'compile' && arguments.expressions.size() > 1) {
+                            // compile(regex, flags): flags such as COMMENTS and LITERAL change how the
+                            // regex is parsed, so it is only checked when the flags are known
+                            def flags = findFlags(arguments.getExpression(1), [] as Set)
+                            if (flags != null) {
+                                checkRegex(exp, call, flags)
+                            }
+                        } else {
+                            checkRegex(exp, call)
+                        }
                     } else if (classType == REGEX_GUARD_TYPE && arguments.expressions) {
                         // deadline-guarded evaluation: matches/matcher (typically written by hand)
                         // take the pattern first; the operator-shaped matchRegex/findRegex hooks
@@ -211,6 +226,42 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                     }
                 }
 
+                // initial values of local variables, for flags written as an expression
+                private final Map<Variable, Expression> localInitExps = [:]
+
+                /**
+                 * Determines the value of a flags argument: an int constant, a Pattern flag constant,
+                 * flags combined with '|', or a local variable or field initialized with one of these.
+                 * Returns null when the value is only known at runtime.
+                 */
+                private Integer findFlags(Expression exp, Set<Variable> seen) {
+                    def constant = findConstExp(exp, Integer)
+                    if (constant != null) {
+                        return (Integer) constant.value
+                    }
+                    if (exp instanceof PropertyExpression && exp.objectExpression instanceof ClassExpression
+                            && exp.objectExpression.type == PATTERN_TYPE) {
+                        return patternFlag(exp.propertyAsString)
+                    }
+                    if (exp instanceof BinaryExpression && exp.operation.type == Types.BITWISE_OR) {
+                        def left = findFlags(exp.leftExpression, seen)
+                        def right = findFlags(exp.rightExpression, seen)
+                        return left != null && right != null ? left | right : null
+                    }
+                    if (exp instanceof VariableExpression) {
+                        def var = findTargetVariable(exp)
+                        if (seen.add(var)) {
+                            if (var instanceof FieldNode && var.hasInitialExpression()) {
+                                return findFlags(var.initialExpression, seen)
+                            }
+                            if (localInitExps.containsKey(var)) {
+                                return findFlags(localInitExps.get(var), seen)
+                            }
+                        }
+                    }
+                    null
+                }
+
                 @Override
                 void visitDeclarationExpression(DeclarationExpression decl) {
                     super.visitDeclarationExpression(decl)
@@ -218,6 +269,7 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                         if (decl.rightExpression instanceof ConstantExpression) {
                             localConstVars.put(decl.variableExpression, decl.rightExpression)
                         }
+                        localInitExps.put(decl.variableExpression, decl.rightExpression)
                         copyRegexMetaData(decl.rightExpression, decl.variableExpression)
                     } else if (decl.isMultipleAssignmentDeclaration() && decl.rightExpression instanceof MethodCallExpression
                             && decl.rightExpression.methodAsString == 'findGroups') {
@@ -345,17 +397,35 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
             || exp.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE) == PATTERN_TYPE
     }
 
-    private void checkRegex(ConstantExpression regex, Expression target) {
+    private void checkRegex(ConstantExpression regex, Expression target, int flags = 0) {
         if (regex == null) return
         try {
-            def pattern = Pattern.compile(regex.value)
+            def pattern = Pattern.compile(regex.value, flags)
             Matcher m = pattern.matcher('')
             target.putNodeMetaData(REGEX_GROUP_COUNT, m.groupCount())
-            target.putNodeMetaData(REGEX_STRING, regex.value)
+            // the name check compiles this text again, so it carries the flags that change how
+            // names are read: a LITERAL regex defines no groups, whatever its text contains
+            String text = (flags & Pattern.LITERAL) ? Pattern.quote(regex.value)
+                : (flags & Pattern.COMMENTS) ? '(?x)' + regex.value : regex.value
+            target.putNodeMetaData(REGEX_STRING, text)
         } catch (PatternSyntaxException ex) {
             String additional = regex.lineNumber != target.lineNumber ?
                 " @ line $regex.lineNumber, column $regex.columnNumber: " : ': '
             addStaticTypeError('Bad regex' + additional + ex.message, target)
+        } catch (IllegalArgumentException ex) {
+            addStaticTypeError('Bad regex flags: ' + ex.message, target)
+        }
+    }
+
+    /**
+     * Returns the value of the named {@code Pattern} flag constant, or null if there is none.
+     */
+    private static Integer patternFlag(String name) {
+        try {
+            def field = Pattern.getField(name)
+            Modifier.isStatic(field.modifiers) && field.type == int ? (Integer) field.get(null) : null
+        } catch (NoSuchFieldException ignore) {
+            null
         }
     }
 

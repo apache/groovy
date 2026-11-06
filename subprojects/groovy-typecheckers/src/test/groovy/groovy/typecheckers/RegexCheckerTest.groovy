@@ -887,14 +887,138 @@ final class RegexCheckerTest {
         '''
         assert err instanceof IllegalArgumentException
         assert err.message.contains('No group with name <a>')
+    }
 
-        // a LITERAL pattern has no groups at all
+    // GROOVY-12708: the regex is checked as compiled with its flags, so a regex
+    // that is only valid in COMMENTS or LITERAL mode is accepted
+    @Test
+    void testFlagsArgumentValidRegex() {
+        assertScript shell, '''
+            assert Pattern.compile('(a) # (b', Pattern.COMMENTS).matcher('a').matches()
+        '''
+        assertScript shell, '''
+            Matcher m = Pattern.compile('(?< first >a)', Pattern.COMMENTS).matcher('a')
+            assert m.matches()
+            assert m.group('first') == 'a'
+        '''
+        assertScript shell, '''
+            assert Pattern.compile('a(b', Pattern.LITERAL).matcher('a(b').matches()
+        '''
+        // a flag that does not change parsing leaves the regex invalid
+        def err = shouldFail shell, '''
+            Pattern.compile('a(b', Pattern.CASE_INSENSITIVE)
+        '''
+        assert err.message.contains('Bad regex: Unclosed group')
+    }
+
+    // GROOVY-12708: group lookups are checked against the groups the flags leave
+    @Test
+    void testFlagsArgumentGroupLookups() {
+        def err = shouldFail shell, '''
+            Matcher m = Pattern.compile('(a) # (b)', Pattern.COMMENTS).matcher('a')
+            assert m.matches()
+            m.group(2)
+        '''
+        assert err.message.contains('Invalid group count 2 for regex with 1 group')
+
+        err = shouldFail shell, '''
+            Matcher m = Pattern.compile('(?< first >a)', Pattern.COMMENTS).matcher('a')
+            assert m.matches()
+            m.group('second')
+        '''
+        assert err.message.contains("Invalid group name 'second' for regex with named group first")
+
+        err = shouldFail shell, '''
+            Matcher m = Pattern.compile('(a)', Pattern.LITERAL).matcher('(a)')
+            assert m.matches()
+            m.group(1)
+        '''
+        assert err.message.contains('Invalid group count 1 for regex with 0 groups')
+
         err = shouldFail shell, '''
             Matcher m = Pattern.compile('(?<a>x)', Pattern.LITERAL).matcher('(?<a>x)')
-            assert m.find()
+            assert m.matches()
             m.group('a')
         '''
-        assert err instanceof IllegalArgumentException
+        assert err.message.contains("Invalid group name 'a' for regex with no named groups")
+    }
+
+    // GROOVY-12708: the flags may be combined, written as a number, or held in a
+    // local variable, a field or a static import
+    @Test
+    void testFlagsArgumentForms() {
+        assertScript shell, '''
+            assert Pattern.compile('(A) # (b', Pattern.COMMENTS | Pattern.CASE_INSENSITIVE).matcher('a').matches()
+            assert Pattern.compile('(a) # (b', 4).matcher('a').matches()
+            int flags = Pattern.COMMENTS
+            assert Pattern.compile('(a) # (b', flags).matcher('a').matches()
+        '''
+        assertScript shell, '''
+            import static java.util.regex.Pattern.COMMENTS
+            assert Pattern.compile('(a) # (b', COMMENTS).matcher('a').matches()
+        '''
+        assertScript shell, '''
+            class Holder {
+                static final int FLAGS = Pattern.COMMENTS | Pattern.MULTILINE
+                static boolean check() { Pattern.compile('(a) # (b', FLAGS).matcher('a').matches() }
+            }
+            assert Holder.check()
+        '''
+        // each form is resolved, not skipped: the group count is that of the regex in COMMENTS mode
+        [
+            "Matcher m = Pattern.compile('(A) # (b)', Pattern.COMMENTS | Pattern.CASE_INSENSITIVE).matcher('a')",
+            "Matcher m = Pattern.compile('(a) # (b)', 4).matcher('a')",
+            "int flags = Pattern.COMMENTS | Pattern.CASE_INSENSITIVE\nMatcher m = Pattern.compile('(A) # (b)', flags).matcher('a')",
+            "import static java.util.regex.Pattern.COMMENTS\nMatcher m = Pattern.compile('(a) # (b)', COMMENTS).matcher('a')",
+        ].each { script ->
+            def err = shouldFail shell, script + '\nm.group(2)'
+            assert err.message.contains('Invalid group count 2 for regex with 1 group')
+        }
+        def err = shouldFail shell, '''
+            class Holder {
+                static final int FLAGS = Pattern.COMMENTS | Pattern.MULTILINE
+                static String second() {
+                    Matcher m = Pattern.compile('(a) # (b)', FLAGS).matcher('a')
+                    m.group(2)
+                }
+            }
+        '''
+        assert err.message.contains('Invalid group count 2 for regex with 1 group')
+    }
+
+    // GROOVY-12708: flags known only at runtime leave the regex unchecked
+    @Test
+    void testFlagsArgumentNotKnown() {
+        assertScript shell, '''
+            boolean check(int flags) {
+                Pattern.compile('(a) # (b', flags).matcher('a').matches()
+            }
+            String second(int flags) {
+                Matcher m = Pattern.compile('(a) # (b)', flags).matcher('z')
+                m.matches() ? m.group(2) : null
+            }
+            assert check(Pattern.COMMENTS)
+            assert second(Pattern.COMMENTS) == null
+        '''
+        // fields whose initializers refer to each other have no value to find
+        assertScript shell, '''
+            class Cycle {
+                static final int A = B
+                static final int B = A
+                static Pattern compile() { Pattern.compile('(a) # (b', A) }
+            }
+            assert Cycle.A == 0
+        '''
+    }
+
+    // GROOVY-12708: flags the JDK does not define are reported, as Pattern.compile would reject them
+    @Test
+    void testUnknownFlags() {
+        def err = shouldFail shell, '''
+            Pattern.compile('a', 0x40000000)
+        '''
+        assert err.message.contains('Bad regex flags: Unknown flag 0x40000000')
+        assert !err.message.contains('General error')
     }
 
     // GROOVY-12709: fields whose initializers refer to each other have no constant value
