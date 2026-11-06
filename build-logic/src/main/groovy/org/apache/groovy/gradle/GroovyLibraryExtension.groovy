@@ -231,11 +231,14 @@ class GroovyLibraryExtension {
     class ModuleDescriptorSpec {
         String extensionClasses = ''
         String staticExtensionClasses = ''
+        /** Classes that must be loadable before the extension classes are loaded (an optional dependency's). */
+        String requiredClasses = ''
 
         private void build() {
             def moduleDescriptor = tasks.register('moduleDescriptor', WriteExtensionDescriptorTask) { t ->
                 t.extensionClasses = extensionClasses
                 t.staticExtensionClasses = staticExtensionClasses
+                t.requiredClasses = requiredClasses
             }
             tasks.named('processResources') { Task t ->
                 t.dependsOn(moduleDescriptor)
