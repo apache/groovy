@@ -1837,6 +1837,79 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-12518
+    @Test
+    void testSuperPropertyInClosure() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Base {
+                String name = 'base'
+                boolean flag = true
+                String getP() { 'p:base' }
+                String s = 's:base'
+                void setS(String value) { s = 'set:' + value }
+            }
+            class Sub extends Base {
+                String name = 'sub'
+                boolean flag = false
+                String getP() { 'p:sub' }
+                void setS(String value) { }
+                List read() {
+                    Supplier<String> lambda = () -> super.name
+                    [{ -> super.p }(), { -> super.name }(), { -> super.flag }(), lambda.get(), { -> { -> super.name }() }()]
+                }
+                List write() {
+                    def c = { -> super.name = 'w' }
+                    def d = { -> super.s = 'v' }
+                    [c(), d(), super.name, super.s, name]
+                }
+            }
+            def sub = new Sub()
+            assert sub.read() == ['p:base', 'base', true, 'base', 'base']
+            assert sub.write() == ['w', 'v', 'w', 'set:v', 'sub']
+        '''
+    }
+
+    // GROOVY-12518
+    @Test
+    void testSuperPropertyIncrementAndCompoundAssignment() {
+        assertScript '''
+            import java.util.function.Supplier
+
+            class Base {
+                int n = 1
+                String s = 'a'
+                int m = 5
+                int getM() { m }
+                void setM(int value) { m = value * 10 }
+                String q
+            }
+            class Sub extends Base {
+                int n = 100
+                String s = 'z'
+                int m = 500
+                int getM() { m }
+                void setM(int value) { m = value }
+                String q = 'sub'
+                List inClass() {
+                    [super.n++, ++super.n, super.n--, super.n += 5, super.s += 'b', super.m++, super.m += 1, super.q ?= 'q', super.n, super.s, super.m, super.q]
+                }
+                List inClosure() {
+                    Supplier<Integer> lambda = () -> super.n++
+                    [{ -> super.n++ }(), { -> ++super.n }(), lambda.get(), { -> super.n += 5 }(), { -> super.s += 'c' }(), { -> super.m++ }(), { -> super.m += 1 }(), super.n, super.s, super.m]
+                }
+                List own() { [n, s, m, q] }
+            }
+            def sub = new Sub()
+            assert sub.inClass() == [1, 3, 3, 7, 'ab', 5, 61, 'q', 7, 'ab', 610, 'q']
+            assert sub.own() == [100, 'z', 500, 'sub']
+            sub = new Sub()
+            assert sub.inClosure() == [1, 3, 3, 9, 'ac', 5, 61, 9, 'ac', 610]
+            assert sub.own() == [100, 'z', 500, 'sub']
+        '''
+    }
+
     @Test
     void testPrivateFieldAccessInClosure1() {
         assertScript '''

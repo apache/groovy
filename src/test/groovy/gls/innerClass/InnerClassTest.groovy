@@ -2840,6 +2840,337 @@ final class InnerClassTest {
         '''
     }
 
+    // GROOVY-12514: 'Type.this' within a nested class Type is 'this'
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testQualifiedThisOfCurrentNestedClass(String mode) {
+        assertScript """
+            import java.util.function.Supplier
+
+            $mode
+            class Top {
+                String id = 't'
+                static class N {
+                    String id = 'n'
+                    String pm() { 'pm' }
+                    String test() {
+                        Supplier<String> s = () -> N.this.id
+                        N.this.id + N.this.pm() + { -> N.this.id }() + s.get()
+                    }
+                    String write() { N.this.id = 'w'; id }
+                }
+                class I {
+                    String id = 'i'
+                    String test() { I.this.id + { -> I.this.id }() + Top.this.id }
+                }
+                enum E {
+                    A
+                    String test() { E.this.name() }
+                }
+            }
+            def top = new Top()
+            assert new Top.N().test() == 'npmnn'
+            assert new Top.N().write() == 'w'
+            assert new Top.I(top).test() == 'iit'
+            assert Top.E.A.test() == 'A'
+        """
+    }
+
+    // GROOVY-12514: 'Type.this.name' within an inner subclass reads what 'this.name' reads
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testQualifiedThisOfCurrentInnerSubclass(String mode) {
+        assertScript """
+            $mode
+            class Base {
+                private String z
+                public String pub
+                String prop
+                Base(String v) { z = v; pub = v; prop = v }
+                String getZ0() { z }
+                class Sub extends Base {
+                    Sub(String v) { super(v) }
+                    List read() {
+                        [Sub.this.z, this.z, { -> Sub.this.z }(), (() -> Sub.this.z)(),
+                         Sub.this.pub, Sub.this.prop, { -> Sub.this.prop }(), Sub.this.toString()]
+                    }
+                    List write() { Sub.this.z = 'w'; [z0, Base.this.z0] }
+                    String toString() { 's' }
+                }
+                List test() { [new Sub('inner').read(), new Sub('inner').write()] }
+            }
+            assert new Base('outer').test() == [
+                ['outer', 'outer', 'outer', 'outer', 'inner', 'inner', 'inner', 's'],
+                ['inner', 'w']
+            ]
+        """
+    }
+
+    // GROOVY-12514
+    @Test
+    void testQualifiedThisOfCurrentNestedClassInStaticContext() {
+        def err = shouldFail CompilationFailedException, '''
+            class Top {
+                static class N {
+                    static m() { N.this }
+                }
+            }
+        '''
+        assert err.message.contains("within static nested class 'Top" + '$' + "N' is not allowed in a static context.")
+    }
+
+    // GROOVY-12514: 'Type.super' within a nested class Type is 'super'
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testQualifiedSuperOfCurrentNestedClass(String mode) {
+        assertScript """
+            import java.util.function.Supplier
+
+            class Base {
+                String q = 'q:base'
+                String m() { 'm:base' }
+                String getP() { 'p:base' }
+            }
+            $mode
+            class Top {
+                static class N extends Base {
+                    String q = 'q:n'
+                    String m() { 'm:n' }
+                    String getP() { 'p:n' }
+                    List<String> test() {
+                        Supplier<String> s = () -> N.super.m()
+                        [N.super.m(), N.super.p, N.super.q, { -> N.super.m() }(), s.get()]
+                    }
+                }
+                class I extends Base {
+                    String m() { 'm:i' }
+                    List<String> test() { [I.super.m(), { -> I.super.m() }()] }
+                }
+                enum E {
+                    A
+                    String toString() { 'e' }
+                    String test() { E.super.toString() }
+                }
+            }
+            assert new Top.N().test() == ['m:base', 'p:base', 'q:base', 'm:base', 'm:base']
+            assert new Top.I(new Top()).test() == ['m:base', 'm:base']
+            assert Top.E.A.test() == 'A'
+        """
+    }
+
+    // GROOVY-12514
+    @Test
+    void testQualifiedSuperOfCurrentNestedClassInStaticContext() {
+        def err = shouldFail CompilationFailedException, '''
+            class Top {
+                static class N {
+                    static m() { N.super.toString() }
+                }
+            }
+        '''
+        assert err.message.contains("within static nested class 'Top" + '$' + "N' is not allowed in a static context.")
+    }
+
+    // GROOVY-12517: 'Outer.super' within a class nested in Outer is the superclass of the enclosing instance
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testQualifiedSuperOfOuterClass(String mode) {
+        assertScript """
+            import java.util.function.Supplier
+
+            class Base {
+                String q = 'q:base'
+                boolean f = true
+                int n = 1
+                String m() { 'm:base' }
+                String m(String s) { 'm:base:' + s }
+                String getP() { 'p:base' }
+                String s = 's:base'
+                void setS(String value) { s = 'set:' + value }
+            }
+            $mode
+            class Outer extends Base {
+                String q = 'q:outer'
+                boolean f = false
+                int n = 100
+                String m() { 'm:outer' }
+                String m(String s) { 'm:outer:' + s }
+                String getP() { 'p:outer' }
+                void setS(String value) { }
+                class In {
+                    List read() {
+                        Supplier<String> lambda = () -> Outer.super.m()
+                        [Outer.super.m(), Outer.super.m('x'), Outer.super.p, Outer.super.q, Outer.super.f,
+                         { -> Outer.super.m() + Outer.super.q }(), lambda.get()]
+                    }
+                    List write() {
+                        Outer.super.q = 'w'
+                        Outer.super.s = 'v'
+                        def c = { -> Outer.super.n += 5 }
+                        [Outer.super.n++, c(), Outer.super.q, Outer.super.s, Outer.super.n]
+                    }
+                    class Deep {
+                        String read() { Outer.super.m() + Outer.super.q }
+                    }
+                }
+                List anonymous() {
+                    new Object() {
+                        List read() { [Outer.super.m(), Outer.super.p, { -> Outer.super.q }()] }
+                    }.read()
+                }
+            }
+            def outer = new Outer()
+            def inner = new Outer.In(outer)
+            assert inner.read() == ['m:base', 'm:base:x', 'p:base', 'q:base', true, 'm:baseq:base', 'm:base']
+            assert new Outer.In.Deep(inner).read() == 'm:baseq:base'
+            assert outer.anonymous() == ['m:base', 'p:base', 'q:base']
+            assert inner.write() == [1, 7, 'w', 'set:v', 7]
+            assert [outer.q, outer.f, outer.n] == ['q:outer', false, 100]
+        """
+    }
+
+    // GROOVY-12517, GROOVY-12521: 'Outer.super.x = v' chooses among the setters of the superclass
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testQualifiedSuperOfOuterClassWithOverloadedSetters(String mode) {
+        assertScript """
+            class Base {
+                List log = []
+                String x = 'x'
+                int n = 1
+                void setX(int i) { log << 'x:int:' + i }
+                void setX(String s) { log << 'x:string:' + s; this.@x = s }
+                void setN(String s) { log << 'n:string:' + s }
+                void setN(int i) { log << 'n:int:' + i; this.@n = i }
+            }
+            $mode
+            class Outer extends Base {
+                String x = 'outer'
+                int n = 100
+                class In {
+                    List test() {
+                        Outer.super.x = 'a'
+                        Outer.super.x = 1
+                        Outer.super.x += 'b'
+                        Outer.super.n++
+                        def c = { -> Outer.super.n += 10 }
+                        c()
+                        log + [Outer.super.x, Outer.super.n, x, n]
+                    }
+                }
+            }
+            assert new Outer.In(new Outer()).test() == ['x:string:a', 'x:int:1', 'x:string:ab', 'n:int:2', 'n:int:12', 'ab', 12, 'outer', 100]
+        """
+    }
+
+    // GROOVY-12517: 'Outer.super.@name' and 'N.super.@name' are fields of the superclass
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testQualifiedSuperField(String mode) {
+        assertScript """
+            import java.util.function.Supplier
+
+            class Base {
+                protected String x = 'x:base'
+                protected int n = 1
+                String base() { x + n }
+            }
+            $mode
+            class Top {
+                static class N extends Base {
+                    protected String x = 'x:n'
+                    protected int n = 10
+                    List test() {
+                        Supplier<String> lambda = () -> N.super.@x
+                        List read = [N.super.@x, { -> N.super.@x }(), lambda.get()]
+                        N.super.@x = 'w'
+                        N.super.@n++
+                        def c = { -> N.super.@n += 5 }
+                        c()
+                        read + [base(), x + n]
+                    }
+                }
+            }
+            $mode
+            class Outer extends Base {
+                protected String x = 'x:outer'
+                protected int n = 100
+                class In {
+                    List test() {
+                        Supplier<String> lambda = () -> Outer.super.@x
+                        List read = [Outer.super.@x, { -> Outer.super.@x }(), lambda.get()]
+                        Outer.super.@x = 'w'
+                        Outer.super.@n++
+                        def c = { -> Outer.super.@n += 5 }
+                        c()
+                        read + [Outer.this.base(), Outer.this.@x + Outer.this.@n]
+                    }
+                }
+            }
+            assert new Top.N().test() == ['x:base', 'x:base', 'x:base', 'w7', 'x:n10']
+            assert new Outer.In(new Outer()).test() == ['x:base', 'x:base', 'x:base', 'w7', 'x:outer100']
+        """
+    }
+
+    // GROOVY-12517: 'Outer.super' is the superclass of Outer, also for an instance of a subclass of Outer
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testQualifiedSuperOfOuterClassWithInstanceOfSubclass(String mode) {
+        assertScript """
+            class Base {
+                String q = 'q:base'
+                protected String x = 'x:base'
+                String m() { 'm:base' }
+                String getP() { 'p:base' }
+                String base() { q + ',' + x }
+            }
+            $mode
+            class Outer extends Base {
+                String q = 'q:outer'
+                protected String x = 'x:outer'
+                String m() { 'm:outer' }
+                String getP() { 'p:outer' }
+                class In {
+                    List test() {
+                        List read = [Outer.super.q, Outer.super.@x, Outer.super.m(), Outer.super.p, { -> Outer.super.q + Outer.super.m() }()]
+                        Outer.super.q = 'q:w'
+                        Outer.super.@x = 'x:w'
+                        read + [Outer.this.base()]
+                    }
+                }
+            }
+            class Sub extends Outer {
+                String q = 'q:sub'
+                protected String x = 'x:sub'
+                String m() { 'm:sub' }
+                String getP() { 'p:sub' }
+            }
+            def sub = new Sub()
+            assert new Outer.In(sub).test() == ['q:base', 'x:base', 'm:base', 'p:base', 'q:basem:base', 'q:w,x:w']
+            assert [sub.q, sub.@x] == ['q:sub', 'x:sub']
+        """
+    }
+
+    // GROOVY-12517
+    @Test
+    void testQualifiedSuperOfOuterClassWithoutEnclosingInstance() {
+        [
+            'static class N { def m() { Outer.super.m() } }'                         : 'Outer$N',
+            'static m() { new Object() { String toString() { Outer.super.m() } } }' : 'Outer$1',
+        ].each { code, where ->
+            for (mode in ['', '@groovy.transform.CompileStatic']) {
+                def err = shouldFail CompilationFailedException, """
+                    class Base { String m() { 'm' } }
+                    $mode
+                    class Outer extends Base {
+                        $code
+                    }
+                """
+                assert err.message.contains("The usage of 'Class.this' and 'Class.super' is not allowed in '$where', which has no enclosing instance of 'Outer'.")
+            }
+        }
+    }
+
     // GROOVY-12512: 'Outer.this' needs an enclosing instance at every level
     @Test
     void testOuterThisWithoutEnclosingInstance() {
