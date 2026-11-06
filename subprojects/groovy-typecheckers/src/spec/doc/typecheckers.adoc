@@ -267,7 +267,9 @@ static boolean matches(String regex, CharSequence input)
 a|`java.util.regex.Matcher`
 [source,groovy]
 ----
-String group(int group)
+String group(int group)          String group(String name)
+int start(int group)             int start(String name)
+int end(int group)               int end(String name)
 matcher[matchCount][groupCount]  // getAt shorthand
 ----
 a|Operators
