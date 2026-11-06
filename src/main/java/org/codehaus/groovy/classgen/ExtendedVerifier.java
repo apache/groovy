@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen;
 
+import org.apache.groovy.ast.ModuleInfoNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
@@ -62,6 +63,7 @@ import static org.codehaus.groovy.ast.AnnotationNode.FIELD_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.IMPORT_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.LOCAL_VARIABLE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.METHOD_TARGET;
+import static org.codehaus.groovy.ast.AnnotationNode.MODULE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.PACKAGE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.PARAMETER_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.RECORD_COMPONENT_TARGET;
@@ -129,6 +131,11 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         ModuleNode module = node.getModule();
         if (module != null && visitedModules.add(module)) {
             visitImportAnnotations(module);
+        }
+        if (ModuleInfoNode.of(node) != null) {
+            // Module annotations use ElementType.MODULE, not TYPE (JLS 9.7.4 / 9.6.4.1).
+            visitAnnotations(node, MODULE_TARGET);
+            return;
         }
         if (node.isAnnotationDefinition()) {
             visitAnnotations(node, ANNOTATION_TARGET);
