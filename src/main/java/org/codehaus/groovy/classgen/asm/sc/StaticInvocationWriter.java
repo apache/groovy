@@ -85,6 +85,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.formatTypeName;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
@@ -155,6 +156,15 @@ public class StaticInvocationWriter extends InvocationWriter {
         }
         ClassNode declaringClass = cn.getDeclaringClass();
         ClassNode enclosingClass = controller.getClassNode();
+        if (!cn.isPrivate() && !isDirectlyAccessible(cn, enclosingClass) && !samePackageName(declaringClass, enclosingClass)) {
+            // JLS 6.6.2.2: outside its package, only super(...) or an anonymous inner class can call a protected constructor;
+            // reported here, while the class is generated, so @TypeChecked code is not checked for it and works dynamically
+            controller.getSourceUnit().addError(new SyntaxException(
+                    "Cannot call " + (cn.isProtected() ? "protected" : "package-private") + " constructor for "
+                            + declaringClass.toString(false) + " from class " + enclosingClass.toString(false),
+                    call
+            ));
+        }
         List<Expression> argList = call.getArguments() instanceof TupleExpression
                 ? ((TupleExpression) call.getArguments()).getExpressions() : List.of(call.getArguments());
         if (!AsmClassGenerator.isMemberDirectlyAccessible(cn.getModifiers(), declaringClass, enclosingClass)) {
