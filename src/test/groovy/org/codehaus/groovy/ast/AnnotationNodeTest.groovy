@@ -35,7 +35,8 @@ final class AnnotationNodeTest {
 
         for (target in [TYPE_TARGET, CONSTRUCTOR_TARGET, FIELD_TARGET, PARAMETER_TARGET,
                         LOCAL_VARIABLE_TARGET, ANNOTATION_TARGET, PACKAGE_TARGET,
-                        TYPE_PARAMETER_TARGET, TYPE_USE_TARGET, RECORD_COMPONENT_TARGET]) {
+                        TYPE_PARAMETER_TARGET, TYPE_USE_TARGET, RECORD_COMPONENT_TARGET,
+                        MODULE_TARGET]) {
             assertFalse(node.isTargetAllowed(target))
         }
     }
@@ -46,7 +47,7 @@ final class AnnotationNodeTest {
         def node = new AnnotationNode(ClassHelper.DEPRECATED_TYPE)
 
         for (target in [TYPE_TARGET, CONSTRUCTOR_TARGET, METHOD_TARGET, FIELD_TARGET,
-                        LOCAL_VARIABLE_TARGET, PARAMETER_TARGET, PACKAGE_TARGET]) {
+                        LOCAL_VARIABLE_TARGET, PARAMETER_TARGET, PACKAGE_TARGET, MODULE_TARGET]) {
             assertTrue(node.isTargetAllowed(target))
         }
 
@@ -62,7 +63,7 @@ final class AnnotationNodeTest {
 
         for (target in [TYPE_TARGET, CONSTRUCTOR_TARGET, METHOD_TARGET, FIELD_TARGET,
                         PARAMETER_TARGET, LOCAL_VARIABLE_TARGET, ANNOTATION_TARGET,
-                        PACKAGE_TARGET, RECORD_COMPONENT_TARGET]) {
+                        PACKAGE_TARGET, RECORD_COMPONENT_TARGET, MODULE_TARGET]) {
             assertTrue(node.isTargetAllowed(target))
         }
         assertFalse(node.isTargetAllowed(TYPE_USE_TARGET))
