@@ -1350,12 +1350,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts the given collection to another type. A default concrete
-     * type is used for List, Set, or SortedSet. If the given type has
-     * a constructor taking a collection, that is used. Otherwise, the
-     * call is deferred to {@link #asType(Object,Class)}.  If this
-     * collection is already of the given type, the same instance is
-     * returned.
+     * Converts the given collection to another type. If this collection is
+     * already of the given type, the same instance is returned. For a
+     * collection interface such as List, Set, SortedSet, Queue or Deque, a
+     * default concrete type is used. Otherwise a constructor taking a
+     * collection is used, or for a collection class, the no-arg constructor
+     * followed by addAll. Failing those, the call is deferred to
+     * {@link #asType(Object,Class)}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert ([3, 1, 2, 1] as SortedSet) == [1, 2, 3] as TreeSet
+     * assert ([3, 1, 2] as Deque).peekFirst() == 3
+     * assert ([3, 1, 2] as Stack).peek() == 2
+     * </pre>
      *
      * @param col   a collection
      * @param clazz the desired class
@@ -1368,26 +1374,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (col.getClass() == clazz) {
             return (T) col;
         }
-        if (clazz == List.class) {
-            return (T) asList(col);
-        }
-        if (clazz == Set.class) {
-            if (col instanceof Set) return (T) col;
-            return (T) new LinkedHashSet(col);
-        }
-        if (clazz == SortedSet.class) {
-            if (col instanceof SortedSet) return (T) col;
-            return (T) new TreeSet(col);
-        }
-        if (clazz == Queue.class) {
-            if (col instanceof Queue) return (T) col;
-            return (T) new LinkedList(col);
-        }
-        if (clazz == Stack.class) {
-            if (col instanceof Stack) return (T) col;
-            final Stack stack = new Stack();
-            stack.addAll(col);
-            return (T) stack;
+        if (Collection.class.isAssignableFrom(clazz)
+                && (clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers()))) {
+            return asType((Object) col, clazz); // default implementation, e.g. TreeSet for SortedSet
         }
 
         if (clazz!=String[].class && clazz.isArray()) {
@@ -1457,6 +1446,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static <T> T asType(Map map, Class<T> clazz) {
+        if (!(clazz.isInstance(map)) && clazz.isInterface() && Map.class.isAssignableFrom(clazz)) {
+            try { // a default implementation exists for SortedMap, NavigableMap and ConcurrentMap
+                return (T) DefaultTypeTransformation.castToType(map, clazz);
+            } catch (GroovyCastException ignore) {
+            }
+        }
         if (!(clazz.isInstance(map)) && clazz.isInterface() && !Traits.isTrait(clazz)) {
             return (T) Proxy.newProxyInstance(
                     clazz.getClassLoader(),

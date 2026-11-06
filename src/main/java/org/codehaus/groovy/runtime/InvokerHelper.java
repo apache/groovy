@@ -132,8 +132,8 @@ public class InvokerHelper {
             object = NullObject.getNullObject();
         }
 
-        if (object instanceof Class) {
-            return metaRegistry.getMetaClass((Class) object).getAttribute(object, attribute);
+        if (object instanceof Class c) {
+            return metaRegistry.getMetaClass(c).getAttribute(object, attribute);
         } else if (object instanceof GroovyObject) {
             return ((GroovyObject) object).getMetaClass().getAttribute(object, attribute);
         } else {
@@ -146,8 +146,8 @@ public class InvokerHelper {
             object = NullObject.getNullObject();
         }
 
-        if (object instanceof Class) {
-            metaRegistry.getMetaClass((Class) object).setAttribute(object, attribute, newValue);
+        if (object instanceof Class c) {
+            metaRegistry.getMetaClass(c).setAttribute(object, attribute, newValue);
         } else if (object instanceof GroovyObject) {
             ((GroovyObject) object).getMetaClass().setAttribute(object, attribute, newValue);
         } else {
@@ -161,8 +161,8 @@ public class InvokerHelper {
             object = NullObject.getNullObject();
         }
 
-        if (object instanceof GroovyObject pogo) {
-            return pogo.getProperty(property);
+        if (object instanceof GroovyObject o) {
+            return o.getProperty(property);
         } else if (object instanceof Class c) {
             return metaRegistry.getMetaClass(c).getProperty(object, property);
         } else {
@@ -184,10 +184,10 @@ public class InvokerHelper {
             object = NullObject.getNullObject();
         }
 
-        if (object instanceof GroovyObject pogo) {
-            pogo.setProperty(property, newValue);
-        } else if (object instanceof Class) {
-            metaRegistry.getMetaClass((Class) object).setProperty(object, property, newValue);
+        if (object instanceof GroovyObject o) {
+            o.setProperty(property, newValue);
+        } else if (object instanceof Class c) {
+            metaRegistry.getMetaClass(c).setProperty(object, property, newValue);
         } else {
             ((MetaClassRegistryImpl) metaRegistry).getMetaClass(object).setProperty(object, property, newValue);
         }
@@ -263,10 +263,9 @@ public class InvokerHelper {
         if (value instanceof Byte number) {
             return (byte) -number;
         }
-        if (value instanceof ArrayList) {
-            // value is a list.
-            List newlist = new ArrayList();
-            for (Object o : ((ArrayList) value)) {
+        if (value instanceof ArrayList list) {
+            var newlist = new ArrayList<>();
+            for (Object o : list) {
                 newlist.add(unaryMinus(o));
             }
             return newlist;
@@ -285,10 +284,9 @@ public class InvokerHelper {
                 value instanceof Byte) {
             return value;
         }
-        if (value instanceof ArrayList) {
-            // value is a list.
-            List newlist = new ArrayList();
-            for (Object o : ((ArrayList) value)) {
+        if (value instanceof ArrayList list) {
+            var newlist = new ArrayList<>();
+            for (Object o : list) {
                 newlist.add(unaryPlus(o));
             }
             return newlist;
@@ -341,16 +339,16 @@ public class InvokerHelper {
     }
 
     public static Tuple createTuple(Object[] array) {
-        return new Tuple(array);
+        return new Tuple<>(array);
     }
 
     public static SpreadMap spreadMap(Object value) {
-        if (value instanceof Map) {
-            Object[] values = new Object[((Map) value).size() * 2];
+        if (value instanceof Map map) {
+            Object[] values = new Object[map.size() * 2];
             int index = 0;
-            for (Object key : ((Map) value).keySet()) {
+            for (Object key : map.keySet()) {
                 values[index++] = key;
-                values[index++] = ((Map) value).get(key);
+                values[index++] = map.get(key);
             }
             return new SpreadMap(values);
         }
@@ -358,7 +356,7 @@ public class InvokerHelper {
     }
 
     public static List createList(Object[] values) {
-        List answer = new ArrayList(values.length);
+        var answer = new ArrayList<>(values.length);
 
         // GROOVY-8995: Improve the performance of creating list
         // answer.addAll(Arrays.asList(values));
@@ -381,7 +379,7 @@ public class InvokerHelper {
     }
 
     public static Map createMap(Object[] values) {
-        Map answer = new LinkedHashMap(initialCapacity(values.length / 2));
+        var answer = new LinkedHashMap<>(initialCapacity(values.length / 2));
 
         for (int i = 0, n = values.length; i < n - 1; ) {
             if ((values[i] instanceof SpreadMap) && (values[i + 1] instanceof Map smap)) {
@@ -560,10 +558,9 @@ public class InvokerHelper {
             // value is a regular expression.
             return StringGroovyMethods.bitwiseNegate(value.toString());
         }
-        if (value instanceof ArrayList) {
-            // value is a list.
-            List newlist = new ArrayList();
-            for (Object o : ((ArrayList) value)) {
+        if (value instanceof ArrayList list) {
+            var newlist = new ArrayList<>();
+            for (Object o : list) {
                 newlist.add(bitwiseNegate(o));
             }
             return newlist;
@@ -576,10 +573,10 @@ public class InvokerHelper {
     }
 
     public static MetaClass getMetaClass(Object object) {
-        if (object instanceof GroovyObject) {
-            return ((GroovyObject) object).getMetaClass();
-        } else if (object instanceof Class) {
-            return metaRegistry.getMetaClass((Class<?>) object); // GROOVY-10819
+        if (object instanceof GroovyObject o) {
+            return o.getMetaClass();
+        } else if (object instanceof Class c) {
+            return metaRegistry.getMetaClass(c); // GROOVY-10819
         } else {
             return ((MetaClassRegistryImpl) metaRegistry).getMetaClass(object);
         }
@@ -645,9 +642,7 @@ public class InvokerHelper {
             throw new NullPointerException("Cannot invoke method " + methodName + "() on null object");
         }
 
-        Class theClass = object.getClass();
-
-        MetaClass metaClass = metaRegistry.getMetaClass(theClass.getSuperclass());
+        MetaClass metaClass = metaRegistry.getMetaClass(object.getClass().getSuperclass());
         return metaClass.invokeMethod(object, methodName, asArray(arguments));
     }
 
@@ -677,7 +672,6 @@ public class InvokerHelper {
     }
 
     public static Object[] asUnwrappedArray(Object arguments) {
-
         Object[] args = asArray(arguments);
 
         for (int i = 0; i < args.length; i++) {

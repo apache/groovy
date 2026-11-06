@@ -282,8 +282,8 @@ use `jackson-databind` directly:
 
 [source,groovy]
 ----
-@Grab('com.fasterxml.jackson.core:jackson-databind')
-import com.fasterxml.jackson.databind.ObjectMapper
+@Grab('tools.jackson.core:jackson-databind')
+import tools.jackson.databind.ObjectMapper
 
 def config = new ObjectMapper().readValue(jsonString, ServerConfig)
 ----
