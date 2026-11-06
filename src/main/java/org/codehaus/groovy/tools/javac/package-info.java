@@ -20,5 +20,11 @@
 /**
  * Joint-compilation support integrating Groovy compilation units with Java
  * stub generation and javac execution.
+ * <p>
+ * Stub sources may be kept in memory ({@code memStub}). When
+ * {@code memClassOutput} is enabled as well, javac class files stay on the
+ * heap too, so a joint compile needs neither a stub directory nor a
+ * class-output directory. Disk {@code stubDir} and target-directory output
+ * remain the default.
  */
 package org.codehaus.groovy.tools.javac;

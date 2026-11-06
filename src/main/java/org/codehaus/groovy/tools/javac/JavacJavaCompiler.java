@@ -26,6 +26,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
@@ -57,6 +58,8 @@ public class JavacJavaCompiler implements JavaCompiler {
 
     private final CompilerConfiguration config;
 
+    private InMemoryJavaFileManager memFileManager;
+
     /**
      * Creates a javac-backed compiler for the supplied configuration.
      *
@@ -64,6 +67,18 @@ public class JavacJavaCompiler implements JavaCompiler {
      */
     public JavacJavaCompiler(final CompilerConfiguration config) {
         this.config = Objects.requireNonNull(config);
+    }
+
+    /**
+     * Returns the file manager that captured javac class files during the most
+     * recent {@link #compile}, or {@code null}
+     * when class files were written to disk.
+     *
+     * @return the in-memory file manager, or {@code null}
+     * @since 7.0.0
+     */
+    public InMemoryJavaFileManager getInMemoryJavaFileManager() {
+        return memFileManager;
     }
 
     /**
@@ -75,6 +90,7 @@ public class JavacJavaCompiler implements JavaCompiler {
      */
     @Override
     public void compile(final List<String> files, final CompilationUnit cu) {
+        memFileManager = null;
         List<String> javacParameters = makeParameters(cu.getClassLoader());
         var javacOutput = new StringBuilderWriter();
         int javacReturnValue = 0;
@@ -108,7 +124,20 @@ public class JavacJavaCompiler implements JavaCompiler {
         Locale locale = Locale.ENGLISH;
         Charset charset = Charset.forName(config.getSourceEncoding());
         javax.tools.JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, locale, charset)) {
+        StandardJavaFileManager standard = compiler.getStandardFileManager(null, locale, charset);
+        InMemoryJavaFileManager memManager = null;
+        try {
+            JavaFileManager fileManager = standard;
+            if (config.isMemClassOutput()) {
+                Map<String, byte[]> sink = null;
+                if (cu instanceof JavaAwareCompilationUnit jacu) {
+                    sink = jacu.memClassOutputBytes();
+                }
+                memManager = new InMemoryJavaFileManager(standard, sink);
+                this.memFileManager = memManager;
+                fileManager = memManager;
+            }
+
             Set<JavaFileObject> compilationUnitSet = cu.getJavaCompilationUnitSet(); // java stubs already added
 
             Map<String, Object> options = config.getJointCompilationOptions();
@@ -126,7 +155,7 @@ public class JavacJavaCompiler implements JavaCompiler {
             }
 
             // add java source files to compile
-            fileManager.getJavaFileObjectsFromFiles(
+            standard.getJavaFileObjectsFromFiles(
                     files.stream().map(File::new).toList()
             ).forEach(compilationUnitSet::add);
 
@@ -141,6 +170,12 @@ public class JavacJavaCompiler implements JavaCompiler {
             compilationTask.setLocale(locale);
 
             return compilationTask.call();
+        } finally {
+            if (memManager != null) {
+                memManager.close();
+            } else {
+                standard.close();
+            }
         }
     }
 
@@ -160,11 +195,15 @@ public class JavacJavaCompiler implements JavaCompiler {
     private List<String> makeParameters(final ClassLoader classLoader) {
         List<String> params = new ArrayList<>();
 
-        File targetDir = config.getTargetDirectory();
-        if (targetDir == null) targetDir = new File(".");
+        // memClassOutput captures CLASS_OUTPUT in InMemoryJavaFileManager.
+        // -d would name a directory that mode does not write.
+        if (!config.isMemClassOutput()) {
+            File targetDir = config.getTargetDirectory();
+            if (targetDir == null) targetDir = new File(".");
 
-        params.add("-d");
-        params.add(targetDir.getAbsolutePath());
+            params.add("-d");
+            params.add(targetDir.getAbsolutePath());
+        }
 
         Map<String, Object> options = config.getJointCompilationOptions();
         boolean classpath = false;
@@ -204,9 +243,14 @@ public class JavacJavaCompiler implements JavaCompiler {
             for (ClassLoader loader = classLoader; loader != null; loader = loader.getParent()) {
                 if (loader instanceof URLClassLoader ucl) {
                     for (URL u : ucl.getURLs()) {
+                        // In-memory class output is a non-file URL. javac's classpath is directories and jars only.
+                        if (u == null || !"file".equals(u.getProtocol())) {
+                            continue;
+                        }
                         try {
                             paths.add(new File(u.toURI()).getPath());
-                        } catch (URISyntaxException ignore) {
+                        } catch (URISyntaxException | IllegalArgumentException ignore) {
+                            // skip a classpath entry javac cannot read
                         }
                     }
                 }
