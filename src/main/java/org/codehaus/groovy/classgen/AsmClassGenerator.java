@@ -20,6 +20,7 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
+import org.apache.groovy.ast.pattern.PatternLowering;
 import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.GroovyBugError;
@@ -69,6 +70,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -1014,6 +1016,19 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitSwitchExpression(final SwitchExpression expression) {
         controller.getSwitchExpressionWriter().writeSwitchExpression(expression);
         doPostVisit(expression);
+    }
+
+    /**
+     * Generates bytecode for a pattern match (GEP-19) from the code that
+     * {@link PatternLowering} derived for it.
+     */
+    @Override
+    public void visitPatternExpression(final PatternExpression expression) {
+        if (expression.getLowered() == null) {
+            throw new GroovyBugError("The pattern `" + expression.getText() + "` was not lowered before class generation;"
+                    + " a transform that creates a pattern from instruction selection on lowers it with PatternLowering.lower(ClassNode, SourceUnit)");
+        }
+        expression.getLowered().visit(this);
     }
 
     /**
