@@ -21,6 +21,7 @@ package org.codehaus.groovy.control;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
 import groovy.transform.CompilationUnitAware;
+import org.apache.groovy.ast.pattern.PatternLowering;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -279,6 +280,10 @@ public class CompilationUnit extends ProcessingUnit {
                 }
             }
         }, Phases.CANONICALIZATION);
+
+        // GEP-19: derive the matching code of every pattern, once the phases that
+        // transform the AST are over and before the type checker and classgen see it
+        addPhaseOperation(PatternLowering::lower, Phases.INSTRUCTION_SELECTION);
 
         addPhaseOperation(source -> {
             for (ClassNode cn : source.getAST().getClasses()) {

@@ -60,6 +60,7 @@ org {
                     PropertyExpression        = "Property - \$expression.propertyAsString"
                     NotExpression             = "Not - \$expression.text"
                     CastExpression            = "Cast - \$expression.text"
+                    PatternExpression         = "Pattern - \$expression.text"
                 }
             }
         }

@@ -126,11 +126,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         ResolvedMethodReference invocationReadyMethodReference = prepareInvocationTarget(methodReferenceExpression, adaptedMethodReference);
         MethodReferenceInvocation invocation = createMethodReferenceInvocation(functionalInterface.functionalType(), invocationReadyMethodReference);
         Parameter[] instantiatedParameters = functionalInterface.parametersWithExactType();
-        GStringAdaptation gstringAdaptation = adaptGStringParameters(functionalInterface, invocationReadyMethodReference, methodReferenceExpression);
-        if (gstringAdaptation != null) {
-            invocationReadyMethodReference = invocationReadyMethodReference.with(invocationReadyMethodReference.referenceTarget(), gstringAdaptation.method());
+        Adaptation adaptation = adaptParametersAndReturnType(functionalInterface, invocationReadyMethodReference, methodReferenceExpression);
+        if (adaptation != null) {
+            invocationReadyMethodReference = invocationReadyMethodReference.with(invocationReadyMethodReference.referenceTarget(), adaptation.method());
             invocation = new MethodReferenceInvocation(Opcodes.H_INVOKESTATIC, invocation.invokedTypeDescriptor(), invocation.capturing());
-            instantiatedParameters = gstringAdaptation.instantiatedParameters();
+            instantiatedParameters = adaptation.instantiatedParameters();
         }
 
         if (functionalInterface.serializable()) {
@@ -771,11 +771,16 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     /**
      * When a method reference is applied to a {@code String} that came from a type variable,
      * route it through a synthetic method that accepts the erased type and converts a
-     * {@code GString} before the referenced method sees the value.
+     * {@code GString} before the referenced method sees the value. Likewise, when the
+     * functional interface returns a primitive type that {@code LambdaMetafactory} cannot
+     * convert the referenced method's return value to, or the referenced method returns a type
+     * parameter that stands for such a type, the synthetic method returns the primitive type and
+     * converts the value as a statically compiled cast does; for example, {@code boolean} by
+     * Groovy truth.
      */
-    private GStringAdaptation adaptGStringParameters(final FunctionalInterfaceContext functionalInterface,
-                                                     final ResolvedMethodReference resolved,
-                                                     final MethodReferenceExpression source) {
+    private Adaptation adaptParametersAndReturnType(final FunctionalInterfaceContext functionalInterface,
+                                                    final ResolvedMethodReference resolved,
+                                                    final MethodReferenceExpression source) {
         Parameter[] exact = functionalInterface.parametersWithExactType();
         Parameter[] sam = functionalInterface.abstractMethod().getParameters();
         MethodNode impl = resolved.implementationMethod();
@@ -790,7 +795,6 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                 any = true;
             }
         }
-        if (!any) return null;
 
         boolean capturing = resolved.referenceTarget().isCapturing();
         boolean virtual = !impl.isStatic();
@@ -800,6 +804,17 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         if (virtual && !capturing && (samCount < 1 || implCount != samCount - 1)) return null;
         if (!virtual && capturing && implCount != samCount + 1) return null;
         if (!virtual && !capturing && implCount != samCount) return null;
+
+        ClassNode samReturnType = functionalInterface.abstractMethod().getReturnType();
+        ClassNode returnType = impl.getReturnType();
+        boolean erased = returnType.isGenericsPlaceHolder();
+        if (erased) { // GROOVY-12623: the type checker resolves the type argument
+            ClassNode inferred = source.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+            GenericsType[] gts = inferred != null ? inferred.getGenericsTypes() : null;
+            returnType = gts != null && gts.length == 1 && !gts[0].getType().isGenericsPlaceHolder() ? gts[0].getType() : null;
+        }
+        boolean convertReturn = returnType != null && isReturnConversionRequired(returnType, erased, samReturnType); // GROOVY-12617
+        if (!any && !convertReturn) return null;
 
         Parameter[] samParams = new Parameter[samCount];
         for (int i = 0; i < samCount; i += 1) {
@@ -840,20 +855,47 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         call.setSourcePosition(source);
 
         Statement invocation = impl.isVoidMethod() ? stmt(call) : returnS(call);
-        Statement body = block(StaticInvocationWriter.gstringBridgePrologue(controller, samParams), invocation);
+        Statement body = any ? block(StaticInvocationWriter.gstringBridgePrologue(controller, samParams), invocation) : invocation;
         ClassNode[] exceptions = impl.getExceptions() == null ? ClassNode.EMPTY_ARRAY : impl.getExceptions();
         ClassNode classNode = controller.getClassNode();
         MethodNode adapter = classNode.addSyntheticMethod(
-            createSyntheticMethodName("gstring", impl.getDeclaringClass(), impl.getName()),
+            createSyntheticMethodName(any ? "gstring" : "adapt", impl.getDeclaringClass(), impl.getName()),
             // the JVM rejects ACC_FINAL on any method of an interface (JVMS 4.6)
             Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | (classNode.isInterface() ? 0 : Opcodes.ACC_FINAL),
-            impl.getReturnType(),
+            convertReturn ? samReturnType : impl.getReturnType(),
             adapterParams,
             exceptions,
             body);
         adapter.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
         adapter.setSourcePosition(source);
-        return new GStringAdaptation(adapter, samParams);
+        return new Adaptation(adapter, samParams);
+    }
+
+    /**
+     * Determines if a value of {@code returnType} must be converted to the primitive return type
+     * of the functional interface by Groovy, because {@code LambdaMetafactory} cannot convert it.
+     * For a declared return type, the metafactory unboxes and applies widening primitive
+     * conversion. For a type parameter (erased to {@code Object}), it casts to the wrapper type
+     * of {@code boolean} or {@code char}, or to {@code Number} for a numeric type, and unboxes.
+     * Which conversions are allowed at all is decided by the type checker.
+     *
+     * @param returnType the declared return type, or the type argument for an erased one
+     * @param erased     whether the referenced method returns a type parameter
+     */
+    private static boolean isReturnConversionRequired(final ClassNode returnType, final boolean erased, final ClassNode samReturnType) {
+        if (!ClassHelper.isPrimitiveType(samReturnType) || ClassHelper.isPrimitiveVoid(samReturnType)
+                || ClassHelper.isPrimitiveVoid(returnType)) {
+            return false;
+        }
+        ClassNode type = ClassHelper.getUnwrapper(returnType);
+        // must precede the erased test: it keeps a Boolean or Character type argument on the
+        // metafactory, which unboxes it as Java does, so that null is not converted by Groovy
+        if (type.equals(samReturnType)) return false;
+        if (erased) {
+            return ClassHelper.isPrimitiveBoolean(samReturnType) || ClassHelper.isPrimitiveChar(samReturnType)
+                    || !implementsInterfaceOrIsSubclassOf(ClassHelper.getWrapper(returnType), ClassHelper.Number_TYPE);
+        }
+        return !(ClassHelper.isNumberType(type) && ClassHelper.isNumberType(samReturnType) && isAssignableTo(type, samReturnType));
     }
 
     private static Parameter[] prependParameter(final Parameter first, final Parameter[] rest) {
@@ -1034,9 +1076,9 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     }
 
     /**
-     * Synthetic adapter that accepts an erased {@code String} parameter and the SAM parameters
+     * Synthetic adapter that converts parameters or the return value, and the SAM parameters
      * the metafactory should see.
      */
-    private record GStringAdaptation(MethodNode method, Parameter[] instantiatedParameters) {
+    private record Adaptation(MethodNode method, Parameter[] instantiatedParameters) {
     }
 }
