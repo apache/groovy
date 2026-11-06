@@ -948,6 +948,9 @@ public abstract class Selector {
                     name = "doCall";
                 }
                 method = mci.getMethodWithCaching(selectionBase, name, newArgs, false);
+                if (method == null) { // GROOVY-12610: private method of a nest-mate superclass
+                    method = mci.getNestmatePrivateMethod(getThisType(sender), name, newArgs);
+                }
             }
             if (LOG_ENABLED) LOG.info("retrieved method from meta class: " + method);
         }
