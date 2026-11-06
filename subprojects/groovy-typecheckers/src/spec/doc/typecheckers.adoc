@@ -354,6 +354,12 @@ include::../test/RegexCheckerTest.groovy[tags=introduction_example,indent=0]
 <5> Using the pattern with grep
 <6> An API call passing a String literal regex
 
+For `Pattern.compile(regex, flags)`, the regex is checked as compiled with its flags,
+since flags like `COMMENTS` and `LITERAL` change how it is parsed. The flags must also be
+_constant-like_: an int literal, a `Pattern` flag constant such as `Pattern.COMMENTS`,
+such values combined with `|`, or a field or local variable initialized with one of these.
+When the flags are only known at runtime, the call is not checked.
+
 === Errors detected
 
 Luckily, in the above example, we made no errors in our regex definitions, and the code compiles and executes successfully.
