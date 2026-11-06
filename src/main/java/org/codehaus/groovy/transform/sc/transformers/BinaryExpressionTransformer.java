@@ -20,6 +20,7 @@ package org.codehaus.groovy.transform.sc.transformers;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.MultipleAssignmentMetadata;
@@ -60,6 +61,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -150,7 +152,10 @@ public class BinaryExpressionTransformer {
                 // GEP-20: rest and map-style binders can't be flattened into per-position
                 // single assignments — leave them for the regular codegen path
                 // (BinaryExpressionHelper.evaluateEqual) which knows how to slice / lookup.
-                if (!hasGep20Binder((TupleExpression) leftExpression)) {
+                // GROOVY-12700: the flattened form has the value of its last assignment, not
+                // the list, so flatten only where the value of the assignment is not used
+                if (!hasGep20Binder((TupleExpression) leftExpression)
+                        && staticCompilationTransformer.isValueDiscarded(bin)) {
                     return transformMultipleAssignment(bin);
                 }
             }
@@ -704,13 +709,34 @@ public class BinaryExpressionTransformer {
         List<Expression> rightExpressions = ((ListExpression) bin.getRightExpression()).getExpressions();
         Iterator<Expression> leftIt = leftExpressions.iterator();
         Iterator<Expression> rightIt = rightExpressions.iterator();
-        if (bin instanceof DeclarationExpression) {
+        if (bin instanceof DeclarationExpression && readsEarlierTarget(leftExpressions, rightExpressions)) {
+            // GROOVY-12700: def (a, b) = [1, a] -- the second value names the field or property "a",
+            // not the variable declared by the first declaration; evaluate every value first:
+            // def tmp1 = 1; def tmp2 = a; def a = tmp1; def b = tmp2
+            List<Expression> declarations = new ArrayList<>();
+            while (leftIt.hasNext() && rightIt.hasNext()) {
+                Expression left = leftIt.next();
+                Expression right = rightIt.next();
+                VariableExpression tmpVar = varX("$tmpVar$" + tmpVarCounter++);
+                BinaryExpression bexp = new DeclarationExpression(tmpVar, bin.getOperation(), right);
+                bexp.setSourcePosition(right);
+                list.addExpression(bexp);
+                bexp = new DeclarationExpression(left, bin.getOperation(), varX(tmpVar));
+                bexp.setSourcePosition(right);
+                bexp.addAnnotations(bin.getAnnotations());
+                declarations.add(bexp);
+            }
+            declarations.forEach(list::addExpression);
+        } else if (bin instanceof DeclarationExpression) {
             while (leftIt.hasNext()) {
                 Expression left = leftIt.next();
                 if (rightIt.hasNext()) {
                     Expression right = rightIt.next();
                     BinaryExpression bexp = new DeclarationExpression(left, bin.getOperation(), right);
                     bexp.setSourcePosition(right);
+                    // GROOVY-12702: the split declarations are what the verifier sees, so they
+                    // must keep the annotations of the multiple-assignment declaration
+                    bexp.addAnnotations(bin.getAnnotations());
                     list.addExpression(bexp);
                 }
             }
@@ -743,6 +769,26 @@ public class BinaryExpressionTransformer {
             }
         }
         return staticCompilationTransformer.transform(list);
+    }
+
+    /**
+     * Tells whether a value of a multiple-assignment declaration names a variable
+     * declared for an earlier value, which is not yet in scope for that value.
+     */
+    private static boolean readsEarlierTarget(final List<Expression> leftExpressions, final List<Expression> rightExpressions) {
+        Set<String> declared = new HashSet<>();
+        boolean[] found = new boolean[1];
+        CodeVisitorSupport finder = new CodeVisitorSupport() {
+            @Override
+            public void visitVariableExpression(final VariableExpression expression) {
+                if (declared.contains(expression.getName())) found[0] = true;
+            }
+        };
+        for (int i = 0, n = Math.min(leftExpressions.size(), rightExpressions.size()); i < n && !found[0]; i += 1) {
+            if (!declared.isEmpty()) rightExpressions.get(i).visit(finder);
+            if (leftExpressions.get(i) instanceof VariableExpression target) declared.add(target.getName());
+        }
+        return found[0];
     }
 
     private Expression transformToTargetMethodCall(final BinaryExpression bin, final MethodNode node, final String name) {
