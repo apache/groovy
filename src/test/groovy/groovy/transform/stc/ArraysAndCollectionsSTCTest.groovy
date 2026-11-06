@@ -1381,9 +1381,16 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             assert list.size() == 3
         '''
 
+        // GROOVY-12643: a collection class copies the elements rather than taking them as constructor arguments
         assertScript '''
-            ArrayDeque<String> deque = [123] // ArrayDeque(int numElements)
+            ArrayDeque<Integer> deque = [123] // not ArrayDeque(int numElements)
+            assert deque.size() == 1 && deque.peek() == 123
         '''
+
+        shouldFailWithMessages '''
+            ArrayDeque<String> deque = [123]
+        ''',
+        'Cannot assign java.util.ArrayDeque<java.lang.Integer> to: java.util.ArrayDeque<java.lang.String>'
     }
 
     // GROOVY-10002
@@ -1409,20 +1416,18 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot assign java.util.ArrayList<java.lang.Integer> to: java.util.Collection<java.lang.String>'
 
-        shouldFailWithMessages '''
+        // GROOVY-12643: Queue and Deque literals give a LinkedList
+        assertScript '''
             Deque<String> deque = []
-        ''',
-        'Cannot assign value of type java.util.ArrayList','to variable of type java.util.Deque<java.lang.String>'
-
-        shouldFailWithMessages '''
             Queue<String> queue = []
-        ''',
-        'Cannot assign value of type java.util.ArrayList','to variable of type java.util.Queue<java.lang.String>'
+            Deque<String> filled = [""]
+            assert deque instanceof LinkedList && queue instanceof LinkedList && filled.peekFirst() == ""
+        '''
 
         shouldFailWithMessages '''
-            Deque<String> deque = [""]
+            Deque<String> deque = [1,2,3]
         ''',
-        'Cannot assign value of type java.util.ArrayList<java.lang.String> to variable of type java.util.Deque<java.lang.String>'
+        'Cannot assign java.util.LinkedList<java.lang.Integer> to: java.util.Deque<java.lang.String>'
     }
 
     // GROOVY-7128

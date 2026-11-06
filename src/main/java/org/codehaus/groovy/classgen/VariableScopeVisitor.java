@@ -47,6 +47,7 @@ import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -56,6 +57,7 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -84,6 +86,8 @@ import java.util.function.Supplier;
 import static java.lang.reflect.Modifier.isStatic;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
+import static org.apache.groovy.ast.tools.SwitchPatternUtils.getElementsVariable;
+import static org.apache.groovy.ast.tools.SwitchPatternUtils.getSubjectVariable;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mayCompleteNormally;
 import static org.codehaus.groovy.transform.trait.Traits.isTrait;
@@ -736,6 +740,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitSwitch(final SwitchStatement statement) {
         pushState();
+        declareSubjectVariable(statement);
         super.visitSwitch(statement);
         popState();
     }
@@ -746,8 +751,42 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitSwitchExpression(final SwitchExpression expression) {
         pushState();
+        declareSubjectVariable(expression);
         super.visitSwitchExpression(expression);
         popState();
+    }
+
+    /**
+     * Declares the synthetic variables of a lowered pattern switch (GEP-19),
+     * the subject and the subject's elements, so that the pattern tests and
+     * bindings in its arms resolve to them.
+     */
+    private void declareSubjectVariable(final ASTNode switchNode) {
+        for (Parameter variable : new Parameter[]{getSubjectVariable(switchNode), getElementsVariable(switchNode)}) {
+            if (variable != null) {
+                variable.setInStaticContext(currentScope.isInStaticContext());
+                declare(variable, switchNode);
+            }
+        }
+    }
+
+    /**
+     * Visits a case statement. Before lowering, the label of a pattern arm
+     * (GEP-19) declares the variables its pattern binds, which are in scope
+     * for the guard and the arm; once lowered, the arm declares them itself.
+     */
+    @Override
+    public void visitCaseStatement(final CaseStatement statement) {
+        if (statement.getExpression() instanceof PatternExpression label && label.getLowered() == null) {
+            pushState();
+            for (VariableExpression binding : label.getBindings()) {
+                declare(binding);
+            }
+            super.visitCaseStatement(statement);
+            popState();
+        } else {
+            super.visitCaseStatement(statement);
+        }
     }
 
     /**
@@ -1250,6 +1289,15 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                     }
                     super.visitBinaryExpression(be);
                 }
+
+                @Override
+                public void visitPatternExpression(final PatternExpression pattern) {
+                    if (pattern.getLowered() == null && !pattern.getBindings().isEmpty()) { // GEP-19: not lowered yet
+                        found[0] = true;
+                        return;
+                    }
+                    super.visitPatternExpression(pattern);
+                }
             });
             return found[0];
         }
@@ -1274,6 +1322,15 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                     }
                     super.visitBinaryExpression(be);
                 }
+
+                @Override
+                public void visitPatternExpression(final PatternExpression pattern) {
+                    if (pattern.getLowered() == null) { // GEP-19: not lowered yet
+                        for (VariableExpression binding : pattern.getBindings()) names.add(binding.getName());
+                        return;
+                    }
+                    super.visitPatternExpression(pattern);
+                }
             });
             return Collections.unmodifiableSet(names);
         }
@@ -1292,6 +1349,14 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             Expression expr = expression;
             while (expr instanceof BooleanExpression && !(expr instanceof NotExpression)) {
                 expr = ((BooleanExpression) expr).getExpression();
+            }
+            if (expr instanceof PatternExpression pattern) { // GEP-19
+                if (pattern.getLowered() != null) {
+                    return analyse(pattern.getLowered()); // the bindings of the lowered match
+                }
+                // every variable the pattern binds is assigned when the match succeeds
+                List<VariableExpression> bindings = pattern.getBindings();
+                return bindings.isEmpty() ? EMPTY : new InstanceofFlowBindings(bindings, List.of());
             }
             if (expr instanceof NotExpression not) {
                 return analyse(not.getExpression()).negated();

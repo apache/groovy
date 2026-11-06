@@ -698,7 +698,12 @@ public class StaticInvocationWriter extends InvocationWriter {
             cce.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET,
                     StaticCompilationVisitor.ARRAYLIST_CONSTRUCTOR);
             var result = new TemporaryVariableExpression(cce);
-            if (produceResultList) result.visit(controller.getAcg());
+            if (produceResultList) {
+                // keep the list only in its slot while looping: a loop entered with
+                // a non-empty operand stack cannot be compiled on-stack by HotSpot
+                result.visit(controller.getAcg());
+                operandStack.pop();
+            }
 
             ClassNode elementType = StaticTypeCheckingVisitor.inferLoopElementType(controller.getTypeChooser().resolveType(receiver, controller.getClassNode()));
             Parameter element = new Parameter(elementType, "for$it$" + labelCounter.incrementAndGet());
@@ -742,6 +747,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             loop.setVariableScope(varScope); // GROOVY-11816
             loop.visit(controller.getAcg());
             if (produceResultList) {
+                result.visit(controller.getAcg());
                 result.remove(controller);
             }
             // end of if/else
