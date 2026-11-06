@@ -82,6 +82,27 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         true
     '''
 
+    private static final String HIDDEN = '''package p
+        class Base { String base() { 'base' } }
+        @groovy.transform.PackageScope interface HiddenI { }
+        @groovy.transform.PackageScope class Hidden extends Base implements Runnable {
+            static String SF = 'sf'
+            static String sm(String s) { 'sm:' + s }
+            String name = 'n'
+            public String pubField = 'pf'
+            String own() { 'own' }
+            void run() { }
+        }
+        class Pub {
+            static Hidden make() { new Hidden() }
+            static Runnable makeRunnable() { new Hidden() }
+            static String take(Hidden h) { 'took' }
+            static List<Hidden> list() { [new Hidden()] }
+            public Hidden pubField = new Hidden()
+        }
+        true
+    '''
+
     private static final String SC = '@groovy.transform.CompileStatic'
 
     /** Compiles {@code body} as a method of a class C, with the options shell, clause and annotation, and runs it. */
@@ -442,6 +463,151 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
             System.clearProperty('groovy.runtime.package.check')
         }
         assert !new CompilerConfiguration().optimizationOptions.containsKey(CompilerConfiguration.RUNTIME_PACKAGE_CHECK)
+    }
+
+    // GROOVY-12569
+    @Test
+    void testMessageOfPackagePrivateClassOfAnotherRuntimePackage() {
+        shell.evaluate HIDDEN
+        def err = shouldFail(MultipleCompilationErrorsException) {
+            shell.evaluate '''package p
+                @groovy.transform.CompileStatic
+                class C {
+                    def test() {
+                        new Hidden()
+                    }
+                }
+            '''
+        }
+        assert err.message.contains('Cannot use package-private class p.Hidden from class p.C: ' +
+            'Hidden is defined by another class loader, so the JVM refuses this access. ' +
+            'Use @CompileDynamic to reach it through the meta-class @ line 5,')
+    }
+
+    // GROOVY-12569: the JVM checks the class wherever an instruction names it
+    @Test
+    void testInstructionsThatNamePackagePrivateClassOfAnotherRuntimePackage() {
+        shell.evaluate HIDDEN
+        [
+            'new Hidden()',
+            "new Hidden(name: 'x')",
+            'new Hidden[1]',
+            "Hidden.sm('a')",
+            'Hidden.SF',
+            "Hidden.SF = 'w'",
+            'def h = Pub.make(); h.run()',
+            'def h = Pub.make(); h.own()',
+            'def h = Pub.make(); h.base()',
+            'def h = Pub.make(); h?.own()',
+            'def h = Pub.make(); h.name',
+            "def h = Pub.make(); h.name = 'w'",
+            'def h = Pub.make(); h.pubField',
+            'def h = Pub.make(); h.@pubField',
+            'def h = Pub.make(); h ?: 1',
+            'Pub.make().own()',
+            'new Pub().pubField.own()',
+            'Pub.list()*.own()',
+            'Pub.list().name',
+            'for (h in Pub.list()) { h.own() }',
+            'Pub.list().collect { it.own() }',
+            'Pub.list().collect { it }',
+            'Object o = Pub.make(); (Hidden) o',
+            'Object o = Pub.make(); o as Hidden',
+            'Object o = Pub.make(); o instanceof Hidden',
+            'def h = Pub.make(); java.util.function.Supplier<String> s = h::own; s.get()',
+            "java.util.function.Function<String, String> f = Hidden::sm; f.apply('a')",
+            'java.util.function.Supplier<Object> s = Hidden::new; s.get()',
+            'java.util.function.Supplier<Hidden> s = Pub::make; s.get()',
+            'new Hidden() { }',
+        ].each { body ->
+            def err = shouldFail(MultipleCompilationErrorsException) {
+                evaluate(body)
+            }
+            assert err.message.contains('Cannot use package-private class p.Hidden from class p.C') : body
+        }
+    }
+
+    // GROOVY-12569: no instruction names the class
+    @Test
+    void testValueOfPackagePrivateClassOfAnotherRuntimePackageThatNoInstructionNames() {
+        shell.evaluate HIDDEN
+        assert evaluate('def h = Pub.make(); h.toString(); Object o = h; [h, o, "$h", h == h].size()') == 4
+        assert evaluate('Hidden h = Pub.make(); h != null') == true
+        assert evaluate('Runnable r = Pub.makeRunnable(); r.run(); r != null') == true
+        assert evaluate("Pub.take(Pub.make())") == 'took'
+        assert evaluate('new Pub().pubField != null') == true
+        assert evaluate('Pub.list().size()') == 1
+        assert evaluate('def h = Pub.make(); h.&own; 1') == 1
+    }
+
+    // GROOVY-12569
+    @Test
+    void testSuperTypesOfAnotherRuntimePackage() {
+        shell.evaluate HIDDEN
+        ['class D extends Hidden { }': 'p.Hidden', 'class D implements HiddenI { }': 'p.HiddenI'].each { type, name ->
+            def err = shouldFail(MultipleCompilationErrorsException) {
+                shell.evaluate "package p\n$SC\n$type"
+            }
+            assert err.message.contains("Cannot use package-private class $name from class p.D")
+        }
+    }
+
+    // GROOVY-12569
+    @Test
+    void testPackagePrivateClassInDynamicAndTypeCheckedCode() {
+        shell.evaluate HIDDEN
+        ['', '@groovy.transform.TypeChecked'].each { annotation ->
+            assert evaluate(annotation: annotation, 'def h = new Hidden(); h.run(); [h.own(), h.base(), h.name, h.pubField, Hidden.SF]') == ['own', 'base', 'n', 'pf', 'sf']
+            assert evaluate(annotation: annotation, "Hidden.sm('a')") == 'sm:a'
+            assert evaluate(annotation: annotation, "new Hidden(name: 'x').name") == 'x'
+        }
+    }
+
+    // GROOVY-12569
+    @Test
+    void testPackagePrivateClassOfTheSameScriptOrWithTheOptionOff() {
+        assert shell.evaluate('''package p
+            @groovy.transform.PackageScope class Same { String own() { 'own' } }
+            @groovy.transform.CompileStatic
+            class C {
+                def test() { new Same().own() }
+            }
+            new C().test()
+        ''') == 'own'
+
+        def config = new CompilerConfiguration()
+        config.optimizationOptions[CompilerConfiguration.RUNTIME_PACKAGE_CHECK] = false
+        def shell = new GroovyShell(config)
+        shell.evaluate HIDDEN
+        assertRefusedAtRunTime { evaluate(shell: shell, 'new Hidden()') }
+        assertRefusedAtRunTime { evaluate(shell: shell, 'Hidden.SF') }
+        assertRefusedAtRunTime { evaluate(shell: shell, 'Pub.make().own()') }
+    }
+
+    // GROOVY-12569: class files are expected to be loaded by one class loader
+    @Test
+    void testPackagePrivateClassOfClassCompiledBeforeToClassFiles() {
+        def dir = File.createTempDir()
+        try {
+            compileToDirectory(dir, 'Library.groovy': HIDDEN)
+            compileToDirectory(dir, 'C.groovy': '''package p
+                @groovy.transform.CompileStatic
+                class C {
+                    static List test() {
+                        def h = new Hidden()
+                        [h.own(), h.base(), Hidden.SF, Pub.make().name]
+                    }
+                }
+            ''')
+            def bytecode = extractMethodSequence(new File(dir, 'p/C.class').bytes, 'test')
+            assert bytecode.hasSequence(['NEW p/Hidden', 'DUP', 'INVOKESPECIAL p/Hidden.<init> ()V'])
+            assert bytecode.hasSequence(['INVOKEVIRTUAL p/Hidden.own ()Ljava/lang/String;'])
+
+            def loader = new URLClassLoader([dir.toURI().toURL()] as URL[], this.class.classLoader)
+            assert loader.loadClass('p.C').test() == ['own', 'base', 'sf', 'n']
+        } finally {
+            dir.deleteDir()
+        }
     }
 
     private void assertReportedBy(final GroovyShell shell, final String body) {
