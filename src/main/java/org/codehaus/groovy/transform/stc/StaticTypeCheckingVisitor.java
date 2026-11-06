@@ -3931,8 +3931,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 // selected at run time; they are used only to resolve a returned type parameter
                 ClassNode[] samArguments = arguments != null || expression instanceof MethodReferenceExpression
                         || !isSAMType(targetSAM) ? arguments : GenericsUtils.parameterizeSAM(targetSAM).getV1();
-                candidates.stream()
+                // GROOVY-12716: only the methods that these parameter types can select are returned from
+                List<MethodNode> selectable = samArguments != arguments ? findSelectableMethods(expression, ownerType, candidates, samArguments) : candidates;
+                List<ClassNode> returnTypes = candidates.stream()
                         .peek(candidate -> checkOrMarkPrivateAccess(expression, candidate)) // GROOVY-11365
+                        .filter(selectable::contains)
                         .map (candidate -> {
                             ClassNode returnType = candidate.getReturnType();
                             if (!isStaticInContext(candidate) // GROOVY-11683
@@ -3946,17 +3949,18 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             }
                             return returnType;
                         })
-                        .reduce(WideningCategories::lowestUpperBound).ifPresent(returnType -> {
-                            ClassNode closureType = wrapClosureType(returnType);
-                            storeType(expression, closureType);
-                            // GROOVY-10858: check method return type
-                            ClassNode targetType = expression.getNodeMetaData(PARAMETER_TYPE);
-                            if (!returnType.isGenericsPlaceHolder() && isSAMType(targetType)) {
-                                targetType = GenericsUtils.parameterizeSAM(targetType).getV2();
-                                if (!isPrimitiveVoid(targetType) && !checkReturnValue(targetType, returnType, expression, null)) // TODO: ext.handleIncompatibleReturnType
-                                    addStaticTypeError("Invalid return type: " + prettyPrintType(returnType) + " is not convertible to " + prettyPrintType(targetType), expression);
-                            }
-                        });
+                        .collect(Collectors.toList());
+                ClassNode returnType = returnTypes.stream().reduce(WideningCategories::lowestUpperBound).get();
+                storeType(expression, wrapClosureType(returnType));
+                // GROOVY-10858: check method return type
+                if (isSAMType(targetSAM)) {
+                    ClassNode samReturnType = GenericsUtils.parameterizeSAM(targetSAM).getV2();
+                    // GROOVY-12607: a reference type takes the value unconverted, from any overload that returns a compatible type
+                    if (isPrimitiveType(samReturnType) ? !isPrimitiveVoid(samReturnType) && !returnType.isGenericsPlaceHolder() && !checkReturnValue(samReturnType, returnType, expression, null)
+                            : returnTypes.stream().noneMatch(type -> type.isGenericsPlaceHolder() || isCompatibleReturnType(samReturnType, type))) { // TODO: ext.handleIncompatibleReturnType
+                        addStaticTypeError("Invalid return type: " + prettyPrintType(returnType) + " is not convertible to " + prettyPrintType(samReturnType), expression);
+                    }
+                }
                 expression.putNodeMetaData(MethodNode.class, candidates);
 
                 if (asBoolean(arguments)) {
@@ -3975,6 +3979,37 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 addStaticTypeError("Cannot find matching method " + prettyPrintTypeName(type) + "#" + nameText + ". Please check if the declared type is correct and if the method exists.", nameExpr);
             }
         }
+    }
+
+    /**
+     * Finds the methods that a method pointer can call for values of the parameter types of the
+     * functional interface it implements. It selects its method at run time from the argument
+     * values, so these are the best match for the parameter types and any method with narrower
+     * parameter types, which a value of a subtype selects. A method that takes the arguments only
+     * by converting them, such as {@code abs(long)} for an {@code Integer}, is not selected while
+     * {@code abs(int)} exists.
+     *
+     * @return the methods, or all the candidates if the parameter types select none of them
+     *         or an instance method referenced through its class takes the first as its receiver
+     */
+    private static List<MethodNode> findSelectableMethods(final MethodPointerExpression expression, final ClassNode receiverType,
+                                                          final List<MethodNode> candidates, final ClassNode[] arguments) {
+        if (expression.getExpression() instanceof ClassExpression && candidates.stream().anyMatch(candidate -> !candidate.isStatic())) {
+            return candidates;
+        }
+        List<MethodNode> bestMatches = chooseBestMethod(receiverType, candidates, arguments);
+        List<MethodNode> selectable = candidates.stream()
+                .filter(candidate -> bestMatches.contains(candidate) || takesSubtypesOf(candidate.getParameters(), arguments))
+                .collect(Collectors.toList());
+        return selectable.isEmpty() ? candidates : selectable;
+    }
+
+    private static boolean takesSubtypesOf(final Parameter[] parameters, final ClassNode[] types) {
+        if (parameters.length != types.length) return false;
+        for (int i = 0, n = parameters.length; i < n; i += 1) {
+            if (!implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(parameters[i].getType()), wrapTypeIfNecessary(types[i]))) return false;
+        }
+        return true;
     }
 
     /**
@@ -4008,6 +4043,17 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
         ClassNode resolved = applyGenericsContext(spec, returnType);
         return resolved.isGenericsPlaceHolder() ? returnType : resolved;
+    }
+
+    /**
+     * Checks the return type of a method referenced by a method pointer or method
+     * reference against the return type of the target functional interface. The
+     * value is not converted, so a reference type must be a supertype of the
+     * (boxed) return type; for example, {@code int} does not fit {@code String}.
+     */
+    private static boolean isCompatibleReturnType(final ClassNode samReturnType, final ClassNode returnType) {
+        if (!checkCompatibleAssignmentTypes(samReturnType, returnType, null, false)) return false;
+        return samReturnType.isGenericsPlaceHolder() || implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(returnType), samReturnType);
     }
 
     private static Expression typedValueExpression(final ClassNode type) {
