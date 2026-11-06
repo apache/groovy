@@ -498,6 +498,145 @@ final class ClosureTest {
         '''
     }
 
+    // GROOVY-12680
+    @Test
+    void testMetaClassDoesNotExposePrivateMembersOfClosure() {
+        Closure c = { -> 1 }
+        def mc = c.metaClass
+
+        for (name in ['bcw', 'mopPerturbed', 'serialVersionUID', 'thisType', 'ThisType', 'PROPERTY_GETTERS']) {
+            def err = shouldFail(MissingPropertyException) {
+                mc.getProperty(c, name)
+            }
+            assert err.property == name
+            assert err.type == c.getClass()
+
+            err = shouldFail(MissingPropertyException) {
+                mc.setProperty(c, name, null)
+            }
+            assert err.property == name
+            assert err.type == c.getClass()
+
+            assert mc.getMetaProperty(name) == null
+            assert mc.hasProperty(c, name) == null
+        }
+
+        // access from within Closure itself, like any other private member
+        assert mc.getProperty(Closure, c, 'serialVersionUID', false, true) instanceof Long
+    }
+
+    // GROOVY-12680
+    @Test
+    void testMetaClassCannotOverwritePrivateMembersOfClosure() {
+        assertScript '''
+            import static groovy.test.GroovyAssert.shouldFail
+
+            class C {
+                private secret = 'C'
+                def read() {
+                    Closure c = { -> secret }
+                    def err = shouldFail(MissingPropertyException) {
+                        c.metaClass.setProperty(c, 'thisType', Object)
+                    }
+                    assert err.property == 'thisType'
+                    c()
+                }
+            }
+            class D extends C {
+            }
+
+            assert new D().read() == 'C'
+
+            Closure c = { -> 1 }
+            def err = shouldFail(MissingPropertyException) {
+                c.metaClass.setProperty(c, 'mopPerturbed', true)
+            }
+            assert err.property == 'mopPerturbed'
+        '''
+    }
+
+    // GROOVY-12680
+    @Test
+    void testToSelfDoesNotResolvePrivateMembersOfClosure() {
+        Closure c = { -> 1 }
+        c.resolveStrategy = Closure.TO_SELF
+
+        for (name in ['bcw', 'mopPerturbed', 'serialVersionUID', 'thisType']) {
+            def err = shouldFail(MissingPropertyException) {
+                c."$name"
+            }
+            assert err.property == name
+
+            err = shouldFail(MissingPropertyException) {
+                c."$name" = null
+            }
+            assert err.property == name
+        }
+
+        assert c.DONE == Closure.DONE
+        assert c.owner === this
+        assert c.resolveStrategy == Closure.TO_SELF
+        assert c() == 1
+    }
+
+    // GROOVY-12680
+    @Test
+    void testMetaClassStillExposesPublicMembersOfClosure() {
+        Closure c = { String s, int i -> }
+        def mc = c.metaClass
+
+        assert mc.getProperty(c, 'delegate') === this
+        assert mc.getProperty(c, 'owner') === this
+        assert mc.getProperty(c, 'thisObject') === this
+        assert mc.getProperty(c, 'resolveStrategy') == Closure.OWNER_FIRST
+        assert mc.getProperty(c, 'directive') == 0
+        assert mc.getProperty(c, 'maximumNumberOfParameters') == 2
+        assert mc.getProperty(c, 'parameterTypes') == [String, int] as Class[]
+        assert mc.getProperty(c, 'class') == c.getClass()
+        assert mc.getProperty(c, 'metaClass') != null
+        assert mc.getProperty(c, 'DONE') == Closure.DONE
+        assert mc.getProperty(c, 'OWNER_FIRST') == Closure.OWNER_FIRST
+        assert mc.getProperty(c, 'Owner') === this
+
+        for (name in ['class', 'delegate', 'directive', 'maximumNumberOfParameters', 'metaClass',
+                'owner', 'parameterTypes', 'resolveStrategy', 'thisObject', 'DONE', 'IDENTITY']) {
+            assert mc.getMetaProperty(name)?.name == name
+            assert mc.hasProperty(c, name)?.name == name
+        }
+
+        def object = new Object()
+        mc.setProperty(c, 'delegate', object)
+        mc.setProperty(c, 'resolveStrategy', Closure.DELEGATE_FIRST)
+        mc.setProperty(c, 'directive', Closure.DONE)
+        assert c.delegate === object
+        assert c.resolveStrategy == Closure.DELEGATE_FIRST
+        assert c.directive == Closure.DONE
+    }
+
+    // GROOVY-12680
+    @Test
+    void testOwnerAndDelegatePropertiesNamedLikePrivateMembersOfClosure() {
+        assertScript '''
+            class C {
+                private String thisType = 'owner'
+                def bcw = 'owner'
+
+                def run() {
+                    Closure c = { -> thisType + ':' + bcw + ':' + mopPerturbed }
+                    c.delegate = [mopPerturbed: 'delegate']
+                    def result = c()
+                    Closure d = { -> bcw = 'set'; mopPerturbed = 'set' }
+                    d.delegate = [:]
+                    d.resolveStrategy = Closure.DELEGATE_FIRST
+                    d()
+                    [result, bcw, d.delegate.mopPerturbed]
+                }
+            }
+
+            assert new C().run() == ['owner:owner:delegate', 'owner', 'set']
+        '''
+    }
+
     // GROOVY-2433, GROOVY-3073, GROOVY-9987, GROOVY-11128
     @ParameterizedTest
     @ValueSource(strings=['this.', 'owner.', 'thisObject.', ''])
