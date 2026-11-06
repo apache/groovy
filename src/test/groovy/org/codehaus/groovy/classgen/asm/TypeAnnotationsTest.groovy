@@ -18,9 +18,18 @@
  */
 package org.codehaus.groovy.classgen.asm
 
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty
-import org.codehaus.groovy.control.CompilerConfiguration;
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.tree.ClassNode
+import org.objectweb.asm.tree.LocalVariableAnnotationNode
+import org.objectweb.asm.tree.MethodNode
+
+import static org.junit.jupiter.api.Assertions.assertThrows
 
 final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
 
@@ -508,5 +517,189 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
                 'LOCALVARIABLE @LTypeAnno1;() : LOCAL_VARIABLE, null',
                 'LOCALVARIABLE @LTypeAnno2;() : LOCAL_VARIABLE, null'
         ])
+    }
+
+    // GROOVY-12702
+    @Test
+    void testTypeUseAnnotationOnMultipleAssignmentDeclaration() {
+        assertMultipleAssignmentTypeAnnotations('')
+    }
+
+    // GROOVY-12702
+    @Test
+    void testTypeUseAnnotationOnMultipleAssignmentDeclarationTypeChecked() {
+        assertMultipleAssignmentTypeAnnotations('@groovy.transform.TypeChecked')
+    }
+
+    // GROOVY-12702
+    @Test
+    void testTypeUseAnnotationOnMultipleAssignmentDeclarationCompileStatic() {
+        assertMultipleAssignmentTypeAnnotations('@groovy.transform.CompileStatic')
+    }
+
+    // GROOVY-12702
+    @Test
+    void testMultipleAssignmentRejectsAnnotationNotAllowedOnLocalVariable() {
+        for (String modifiers : ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            def source = imports + """
+                ${modifiers}
+                class C {
+                    def m() { @Override def (String a, String b) = ['x', 'y']; a }
+                }
+            """.stripIndent()
+            def unit = new CompilationUnit()
+            unit.addSource('script', source)
+            def error = assertThrows(MultipleCompilationErrorsException) {
+                unit.compile()
+            }
+            assert error.message.contains('LOCAL_VARIABLE') : modifiers + '\n' + error.message
+        }
+    }
+
+    private void assertMultipleAssignmentTypeAnnotations(String modifiers) {
+        Map<String, byte[]> classes = compileClasses(multipleAssignmentSource(modifiers))
+        byte[] bytes = classes['C']
+        assert bytes != null : classes.keySet().toString()
+
+        assertDescriptors(bytes, 'single', [a: ['LTO;']])
+        assertDescriptors(bytes, 'declarators', [a: ['LTO;'], b: ['LTO;']])
+        assertDescriptors(bytes, 'multiple', [a: ['LTO;'], b: ['LTO;']])
+        assertDescriptors(bytes, 'typePosition', [a: ['LTO;'], b: []])
+        assertDescriptors(bytes, 'perVariable', [a: ['LTO;'], b: ['LTU;']])
+        assertDescriptors(bytes, 'mixed', [a: ['LTO;', 'LTU;'], b: ['LTO;']])
+        assertDescriptors(bytes, 'three', [a: ['LTO;'], b: ['LTO;'], c: ['LTO;']])
+        assertDescriptors(bytes, 'dynamic', [a: ['LTO;'], b: ['LTO;']])
+        assertDescriptors(bytes, 'primitive', [a: ['LTO;'], b: ['LTO;']])
+        assertDescriptors(bytes, 'dual', [a: ['LBoth;'], b: ['LBoth;']])
+        assertDescriptors(bytes, 'lvOnly', [a: [], b: []])
+        assertDescriptors(bytes, 'valueUsed', [a: ['LTO;'], b: ['LTO;']])
+        assertDescriptors(bytes, 'nonList', [a: ['LTO;'], b: ['LTO;']])
+        // a value naming an earlier variable reads the field, so static compilation declares the variables last
+        assertDescriptors(bytes, 'readsEarlier', [a: ['LTO;'], b: ['LTO;']])
+
+        def arrayPath = variableTypeAnnotations(bytes, 'arraySingle').findAll { it.name == 'a' }
+        assert arrayPath*.desc == ['LTO;'] : arrayPath.toString()
+        def arrayMulti = variableTypeAnnotations(bytes, 'arrays')
+        assert arrayMulti.findAll { it.name == 'a' }*.desc == ['LTO;'] : arrayMulti.toString()
+        assert arrayMulti.findAll { it.name == 'b' }*.desc == ['LTO;'] : arrayMulti.toString()
+        assert arrayMulti.findAll { it.name == 'a' }*.path == arrayPath*.path : arrayMulti.toString()
+        assert arrayMulti.findAll { it.name == 'b' }*.path == arrayPath*.path : arrayMulti.toString()
+
+        def named = variableTypeAnnotations(bytes, 'named')
+        for (String variable : ['a', 'b']) {
+            def onVariable = named.findAll { it.name == variable }
+            assert onVariable*.desc == ['LNamed;'] : named.toString()
+            assert onVariable.every { it.values != null && it.values.contains('n') } : named.toString()
+        }
+
+        assertClosureAnnotations(classes, 'ClosureStmt')
+        assertClosureAnnotations(classes, 'ClosureValue')
+    }
+
+    private void assertClosureAnnotations(Map<String, byte[]> classes, String owner) {
+        def closure = classes.find { name, bytes -> name.startsWith(owner + '$') }
+        assert closure != null : "no closure class for ${owner} in ${classes.keySet()}"
+        assertDescriptors(closure.value, 'doCall', [a: ['LTO;'], b: ['LTO;']])
+    }
+
+    private String multipleAssignmentSource(String modifiers) {
+        def header = modifiers ? modifiers + '\n' : ''
+        imports + """
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TO { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TU { }
+            @Retention(RUNTIME) @Target([LOCAL_VARIABLE, TYPE_USE]) @interface Both { }
+            @Retention(RUNTIME) @Target(LOCAL_VARIABLE) @interface LV { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface Named { String value() }
+
+            ${header}class C {
+                String a = 'f'
+                def single()       { @TO String a = 'x'; a }
+                def declarators()  { @TO String a = 'x', b = 'y'; a + b }
+                def multiple()     { @TO def (String a, String b) = ['x', 'y']; a + b }
+                def typePosition() { def (@TO String a, String b) = ['x', 'y']; a + b }
+                def perVariable()  { def (@TO String a, @TU String b) = ['x', 'y']; a + b }
+                def mixed()        { @TO def (@TU String a, String b) = ['x', 'y']; a + b }
+                def three()        { @TO def (String a, String b, String c) = ['x', 'y', 'z']; a }
+                def dynamic()      { @TO def (a, b) = ['x', 'y']; a + b }
+                def primitive()    { @TO def (int a, int b) = [1, 2]; a + b }
+                def arrays()       { @TO def (String[] a, String[] b) = [new String[0], new String[0]]; a }
+                def arraySingle()  { @TO String[] a = null; a }
+                def dual()         { @Both def (String a, String b) = ['x', 'y']; a + b }
+                def lvOnly()       { @LV def (String a, String b) = ['x', 'y']; a + b }
+                def named()        { @Named('n') def (String a, String b) = ['x', 'y']; a + b }
+                def valueUsed()    { @TO def (String a, String b) = ['x', 'y'] }
+                def nonList()      { def rhs = ['x', 'y']; @TO def (String a, String b) = rhs; a + b }
+                def readsEarlier() { @TO def (String a, String b) = ['x', a]; a + b }
+            }
+            ${header}class ClosureStmt {
+                def m() {
+                    def c = { @TO def (String a, String b) = ['x', 'y']; a + b }
+                    c()
+                }
+            }
+            ${header}class ClosureValue {
+                def m() {
+                    def c = { @TO def (String a, String b) = ['x', 'y'] }
+                    c()
+                }
+            }
+        """.stripIndent()
+    }
+
+    private static Map<String, byte[]> compileClasses(String source) {
+        def unit = new CompilationUnit()
+        unit.addSource('script', source)
+        unit.compile(Phases.CLASS_GENERATION)
+        Map<String, byte[]> classes = [:]
+        List<Class> defined = []
+        for (gc in unit.classes) {
+            classes[gc.name] = gc.bytes
+            defined.add(unit.classLoader.defineClass(gc.name, gc.bytes))
+        }
+        // define every class before initializing one: an outer class may refer to a closure class
+        for (Class compiled : defined) {
+            compiled.isInterface()
+        }
+        classes
+    }
+
+    private static void assertDescriptors(byte[] bytes, String method, Map<String, List<String>> expected) {
+        def found = variableTypeAnnotations(bytes, method)
+        expected.each { String variable, List<String> descriptors ->
+            assert variablePresent(bytes, method, variable) : "${method} has no local variable ${variable}"
+            def actual = found.findAll { it.name == variable }
+            assert actual*.desc.sort() == descriptors.sort() : "${method} ${variable}: expected ${descriptors} but found ${actual}"
+        }
+    }
+
+    private static boolean variablePresent(byte[] bytes, String method, String variable) {
+        ClassNode classNode = new ClassNode()
+        new ClassReader(bytes).accept(classNode, 0)
+        MethodNode methodNode = classNode.methods.find { it.name == method }
+        methodNode?.localVariables?.any { it.name == variable }
+    }
+
+    /**
+     * Local-variable type annotations in {@code method}, one entry per (variable, annotation).
+     * {@code path} is empty when the annotation applies to the variable's type itself.
+     */
+    private static List<Map> variableTypeAnnotations(byte[] bytes, String method) {
+        ClassNode classNode = new ClassNode()
+        new ClassReader(bytes).accept(classNode, 0)
+        MethodNode methodNode = classNode.methods.find { it.name == method }
+        assert methodNode != null : "no method ${method} in ${classNode.name}"
+
+        Map<Integer, String> nameBySlot = [:]
+        methodNode.localVariables?.each { nameBySlot[it.index] = it.name }
+
+        List<LocalVariableAnnotationNode> annotations = []
+        if (methodNode.visibleLocalVariableAnnotations) annotations.addAll(methodNode.visibleLocalVariableAnnotations)
+        if (methodNode.invisibleLocalVariableAnnotations) annotations.addAll(methodNode.invisibleLocalVariableAnnotations)
+
+        annotations.collect { LocalVariableAnnotationNode annotation ->
+            annotation.index.collect { int slot ->
+                [name: nameBySlot[slot] ?: "#${slot}", desc: annotation.desc, path: annotation.typePath?.toString() ?: '', values: annotation.values]
+            }
+        }.flatten()
     }
 }

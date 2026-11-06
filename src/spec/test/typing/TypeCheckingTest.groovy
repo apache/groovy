@@ -572,6 +572,28 @@ final class TypeCheckingTest extends StaticTypeCheckingTestCase {
     }
 
     @Test
+    void testTypeInferenceFinalField() {
+        assertScript '''
+            // tag::typeinference_final_field[]
+            class SomeClass {
+                final someUntypedField = '123'                                                      // <1>
+
+                String someMethod() {
+                    someUntypedField.toUpperCase()                                                  // <2>
+                }
+
+                String someClosure() {
+                    def closure = { -> someUntypedField.toString() }                                // <3>
+                    closure()
+                }
+            }
+            // end::typeinference_final_field[]
+            assert new SomeClass().someMethod() == '123'
+            assert new SomeClass().someClosure() == '123'
+        '''
+    }
+
+    @Test
     void testLeastUpperBound() {
         assertScript '''import org.codehaus.groovy.ast.ClassHelper
 
