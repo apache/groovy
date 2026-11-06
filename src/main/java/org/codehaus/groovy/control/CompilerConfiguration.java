@@ -90,14 +90,14 @@ public class CompilerConfiguration {
      * code accesses in another run-time package, which is the package name and
      * the class loader.
      * <p>
-     * A {@link groovy.lang.GroovyClassLoader} defines each compilation in memory
+     * A {@code GroovyClassLoader} defines each compilation in memory
      * with a class loader of its own. A protected or package-private constructor,
      * method or field of a class of another compilation, or of a precompiled
      * class, is therefore out of reach of the JVM even with the same package name,
      * apart from what a subclass can do with a protected member. Such code fails
      * at run time with {@code IllegalAccessError}.
      * <p>
-     * Disabled by default, except that {@link groovy.lang.GroovyShell} enables it
+     * Disabled by default, except that {@code GroovyShell} enables it
      * for the class loader it creates unless this option is set. It has no effect
      * on code compiled to class files, or on dynamic and {@code @TypeChecked} code,
      * which reach such members through the meta-class. Set it through
