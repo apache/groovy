@@ -20,6 +20,7 @@ package org.apache.groovy.osgi;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -125,7 +126,7 @@ class OsgiBundleTest {
     // ---- Groovy JSON fragment tests ----
 
     @Test
-    @org.junit.jupiter.api.Disabled("Fragment resolution needs investigation — see GROOVY-5092")
+    @Disabled("Fragment resolution needs investigation — see GROOVY-5092")
     void groovyJsonFragmentResolvesAndLoadsClasses() throws Exception {
         String jsonPath = System.getProperty("groovy.json.bundle.path");
         if (jsonPath == null || !new File(jsonPath).exists()) {
@@ -154,7 +155,7 @@ class OsgiBundleTest {
     }
 
     @Test
-    @org.junit.jupiter.api.Disabled("Fragment resolution needs investigation — see GROOVY-5092")
+    @Disabled("Fragment resolution needs investigation — see GROOVY-5092")
     void groovyJsonOutputProducesCorrectResult() throws Exception {
         String jsonPath = System.getProperty("groovy.json.bundle.path");
         if (jsonPath == null || !new File(jsonPath).exists()) {

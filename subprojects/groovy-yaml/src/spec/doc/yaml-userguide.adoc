@@ -92,6 +92,29 @@ YAML parsers that represent a `null` value with a library-provided singleton obj
 
 [NOTE]
 ====
+Since Groovy 7, `YamlSlurper` resolves unquoted values by the JSON schema, which the
+Jackson 3 parser behind it applies with no option to change it. That is stricter than the
+YAML 1.2 core schema that most YAML 1.2 parsers use. Only lowercase `true`, `false` and
+`null`, and plain decimal numbers such as `12`, `-3` or `1.5`, become booleans, `null` and
+numbers. Every other unquoted value is a `String`, including the YAML 1.1 words `yes`,
+`no`, `on` and `off`, capitalised forms such as `True`, `FALSE` and `Null`, `~`, and
+numbers written as `0x1F`, `017` or `1_000`. Groovy 6 and earlier read these as booleans,
+`null` or integers, and the core schema would still read `True`, `Null`, `~` and `0x1F`
+as a boolean, `null` and an integer.
+
+The typed API reads `.inf`, `-.inf` and `.nan` as `Double` infinities and NaN. The untyped
+API converts through JSON, which has no such numbers, so it returns them as the strings
+`'Infinity'`, `'-Infinity'` and `'NaN'`. Groovy 6 rejects all three.
+
+A non-empty `String` is true in Groovy, so a document that writes `enabled: off` now
+yields `'off'` and tests as true, without any error. Write `true` and `false` for
+booleans. The typed `parseAs`/`parseTextAs` API fails instead: it rejects `off` for a
+`boolean` property. To read a document written for YAML 1.1 typing, load it with
+SnakeYAML directly (see <<yaml_snakeyaml_typing>>).
+====
+
+[NOTE]
+====
 For the untyped `parse`/`parseText` API, YAML date and time values are returned as
 `String`. `YamlSlurper` routes the untyped path through a YAML-to-JSON conversion,
 and JSON has no native temporal types. Use the typed `parseAs`/`parseTextAs` API
@@ -119,6 +142,16 @@ NOTE: For simple cases, Groovy's `as` coercion also works with the untyped resul
 `def config = new YamlSlurper().parseText(yaml) as ServerConfig`.
 The `parseTextAs` method uses Jackson databinding, which supports richer annotation-driven
 mapping via `@JsonProperty`, `@JsonFormat`, etc.
+
+[NOTE]
+====
+Typed parsing and writing use Jackson 3. The annotations in `com.fasterxml.jackson.annotation`,
+such as `@JsonProperty`, `@JsonFormat`, `@JsonIgnore` and `@JsonCreator`, work as they did
+with Jackson 2, because Jackson 3 still uses that package. The databind annotations moved:
+take `@JsonSerialize`, `@JsonDeserialize`, `@JsonNaming`, `@JsonPOJOBuilder` and the rest
+from `tools.jackson.databind.annotation`. Jackson 3 silently ignores the Jackson 2 versions
+in `com.fasterxml.jackson.databind.annotation`.
+====
 
 [[yaml_typed_temporal]]
 === Typed date and time values
@@ -187,9 +220,9 @@ aliases, not alias support.
 
 The SnakeYAML library resolves anchors, aliases, and merge keys in full. This is not
 part of `groovy-yaml` — it is a second YAML parser used directly, shown here because
-the need is common. Today SnakeYAML happens to reach the classpath transitively via
-the Jackson YAML backend; that arrangement is not yours to rely on (and ends with
-Jackson 3), so declare `org.yaml:snakeyaml` as a dependency if you use this.
+the need is common. The Jackson 3 YAML backend that `groovy-yaml` uses is built on
+SnakeYAML Engine, not SnakeYAML, so declare `org.yaml:snakeyaml` as a dependency if you
+use this.
 
 [source,groovy]
 ----
@@ -207,6 +240,19 @@ tagged-type instantiation that makes careless YAML loading dangerous. Difference
   alias cap is what keeps an alias-expansion document from being a denial of service;
 * a self-referential anchor constructs a genuinely cyclic object graph, which naive
   traversal — `toString()`, `JsonOutput.toJson` — will not survive.
+
+[[yaml_snakeyaml_typing]]
+=== YAML 1.1 typing with SnakeYAML directly
+
+The same SnakeYAML setup also suits a document written for YAML 1.1 typing. SnakeYAML
+resolves unquoted values by the YAML 1.1 rules, so `off`, `yes`, `0x1F` and `~` arrive as
+`false`, `true`, `31` and `null`, where `YamlSlurper` returns them as strings. It needs the
+same `org.yaml:snakeyaml` dependency, and the differences listed above apply.
+
+[source,groovy]
+----
+include::../test/groovy/yaml/YamlParserTest.groovy[tags=yaml11_snakeyaml,indent=0]
+----
 
 === Builders
 
