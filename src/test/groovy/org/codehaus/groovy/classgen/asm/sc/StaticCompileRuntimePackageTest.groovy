@@ -21,18 +21,17 @@ package org.codehaus.groovy.classgen.asm.sc
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.jupiter.api.Test
 
-import javax.tools.ToolProvider
-
 import static groovy.test.GroovyAssert.shouldFail
 
 /**
- * Unit tests for static compilation: protected and package-private members of
- * a class with the same package name, compiled by another compilation and so
- * maybe defined by another class loader.
+ * Unit tests for {@link CompilerConfiguration#RUNTIME_PACKAGE_CHECK}: protected
+ * and package-private members of a class with the same package name, compiled
+ * by another compilation and so maybe defined by another class loader.
  * <p>
  * The JVM allows such access only within the same run-time package, which is
  * the package name and the class loader. GroovyClassLoader defines the classes
@@ -83,164 +82,373 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         true
     '''
 
-    private static final String HIDDEN = '''package p
-        class Base { String base() { 'base' } }
-        @groovy.transform.PackageScope class Hidden extends Base implements Runnable {
-            static String SF = 'sf'
-            static String sm(String s) { 'sm:' + s }
-            String name = 'n'
-            public String pubField = 'pf'
-            boolean ran
-            String own() { 'own' }
-            void run() { ran = true }
-        }
-        true
-    '''
+    private static final String SC = '@groovy.transform.CompileStatic'
 
-    /**
-     * Uses the package-private class {@code Hidden} in the ways that dynamic
-     * code supports from another class loader: none of them names the class.
-     */
-    private static String usesOfHidden(final String className, final String annotation) {
-        """package p
-            $annotation
-            class $className {
-                static List test() {
-                    def h = new Hidden()
-                    h.run()
-                    Runnable r = new Hidden()
-                    r.run()
-                    h.name = 'm'
-                    Hidden.SF = 'w'
-                    java.util.function.Supplier<String> ref = h::own
-                    def ptr = h.&own
-                    def list = [h, new Hidden(name: 'x')]
-                    [h.getClass().name, Hidden.sm('a'), Hidden.SF, h.ran, h.own(), h.base(), h.name, h.pubField,
-                     arg(r), ref.get(), ptr(), list*.name, list.name, (h ?: new Hidden()).own()]
-                }
-                static String arg(Runnable r) { r.getClass().simpleName }
+    /** Compiles {@code body} as a method of a class C, with the options shell, clause and annotation, and runs it. */
+    private Object evaluate(final Map options = [:], final String body) {
+        (options.shell ?: shell).evaluate """package p
+            ${options.containsKey('annotation') ? options.annotation : SC}
+            class C ${options.clause ?: ''} {
+                def test() { $body }
             }
-            ${className}.test()
+            new C().test()
         """
     }
 
-    private static final List USES_OF_HIDDEN = ['p.Hidden', 'sm:a', 'w', true, 'own', 'base', 'm', 'pf', 'Hidden', 'own', 'own', ['m', 'x'], ['m', 'x'], 'own']
-
-    private static final String SHUT = '''package p
-        class Open {
-            public static String SF = 'sf'
-            public String pf = 'pf'
-            public int n = 1
-            public Shut peer
-            protected String prot() { 'open' }
-            String take(Shut s) { 'open' }
-            String take(Object o) { 'object' }
-            static Shut make() { new Shut2() }
-            static Secret secret() { new Shut2() }
+    private void assertReported(final Map options = [:], final String member, final String body) {
+        def err = shouldFail(MultipleCompilationErrorsException) {
+            evaluate(options, body)
         }
-        @groovy.transform.PackageScope class Shut extends Open {
-            String prot() { 'shut' }
-            String take(Shut s) { 'shut' }
-            String own() { 'own' }
-        }
-        @groovy.transform.PackageScope class Shut2 extends Shut implements Secret {
-            String hint() { 'hint' }
-        }
-        @groovy.transform.PackageScope class Plain {
-            String toString() { 'plain' }
-        }
-        @groovy.transform.PackageScope interface Secret {
-            String hint()
-        }
-        class Pub extends Shut {
-        }
-        true
-    '''
-
-    /**
-     * Uses the package-private classes of {@code SHUT} through the public
-     * classes {@code Open} and {@code Pub}: a hidden superclass, a hidden class
-     * that extends {@code Object}, a hidden interface, members of a public
-     * class whose signature names a hidden class, and a public class whose
-     * methods are declared by a hidden class.
-     */
-    private static String usesOfShut(final String className, final String annotation) {
-        """package p
-            import java.util.function.BiFunction
-            import java.util.function.Function
-            import java.util.function.Supplier
-            $annotation
-            class $className {
-                static List test() {
-                    def s = new Shut2()
-                    def plain = new Plain()
-                    def secret = Open.secret()
-                    Shut.@SF = 'w'
-                    s.@pf = 'q'
-                    s.@peer = s
-                    def list = [s]
-                    Function<Shut, String> str = Open::toString
-                    Supplier<Shut> made = Open::make
-                    Supplier<Object> made2 = Open::make
-                    BiFunction<Open, Object, String> take = Open::take
-                    Function<Pub, String> own = Pub::own
-                    [s.getClass().name, plain.toString(), secret.hint(), Shut.SF, s.pf, s?.n, s.peer.is(s), s.prot(), s.take(s),
-                     s.take('x'), s.own(), new Pub().own(), Shut.make().own(), list*.@pf, str.apply(s).startsWith('p.Shut2@'),
-                     made.get().getClass().name, made2.get().getClass().name, take.apply(s, 'x'), own.apply(new Pub())]
-                }
-            }
-            ${className}.test()
-        """
+        assert err.message.contains(member) : body
+        assert err.message.contains('is defined by another class loader, so the JVM refuses this access') : body
+        assert err.message.contains('Use @CompileDynamic to reach it through the meta-class') : body
     }
 
-    private static final List USES_OF_SHUT = ['p.Shut2', 'plain', 'hint', 'w', 'q', 1, true, 'shut', 'shut',
-        'object', 'own', 'own', 'own', ['q'], true, 'p.Shut2', 'p.Shut2', 'object', 'own']
+    private static void assertRefusedAtRunTime(final Closure<?> run) {
+        def err = shouldFail(IncompatibleClassChangeError, run)
+        assert err instanceof IllegalAccessError
+    }
 
     // GROOVY-12568
     @Test
-    void testProtectedAndPackagePrivateConstructorOfClassOfAnotherClassLoader() {
+    void testMessageOfAccessToAnotherRuntimePackage() {
+        shell.evaluate MEMBERS
+        def err = shouldFail(MultipleCompilationErrorsException) {
+            shell.evaluate '''package p
+                @groovy.transform.CompileStatic
+                class C {
+                    def test() {
+                        new M().pm()
+                    }
+                }
+            '''
+        }
+        assert err.message.contains('Cannot call package-private method pm of p.M from class p.C: ' +
+            'M is defined by another class loader, so the JVM refuses this access. ' +
+            'Use @CompileDynamic to reach it through the meta-class @ line 5, column 25.')
+    }
+
+    // GROOVY-12568
+    @Test
+    void testConstructorsOfAnotherRuntimePackage() {
         shell.evaluate LIBRARY
+        [
+            "new A('x')"                                                                         : 'protected constructor of p.A',
+            'new A(1)'                                                                           : 'package-private constructor of p.A',
+            'new A()'                                                                            : 'package-private constructor of p.A',
+            "new A(name: 'n')"                                                                   : 'package-private constructor of p.A',
+            '[1, 2].collect { Integer i -> new A(i) }'                                           : 'package-private constructor of p.A',
+            "java.util.function.Supplier<A> s = () -> new A('y'); s.get()"                       : 'protected constructor of p.A',
+        ].each { body, member -> assertReported(member, body) }
+    }
+
+    // GROOVY-12568
+    @Test
+    void testSuperConstructorsOfAnotherRuntimePackage() {
+        shell.evaluate LIBRARY
+        [
+            'class D extends A { D() { super(1) } }',
+            'class D extends A { D() { super() } }',
+            'class D extends A { D() { } }', // implicit super()
+            'class D extends A { }', // generated constructor
+        ].each { type ->
+            def err = shouldFail(MultipleCompilationErrorsException) {
+                shell.evaluate "package p\n$SC\n$type"
+            }
+            assert err.message.contains('Cannot call package-private constructor of p.A from class p.D') : type
+        }
+        assertReported('package-private constructor of p.A', 'new A(1) { }')
+        assertReported('package-private constructor of p.A', 'new A() { }')
+        assertReported('package-private constructor of p.A', 'int i = 1; new A(i) { int shared() { i } }')
+
+        // a subclass can call a protected constructor with super(...)
         assert shell.evaluate('''package p
             @groovy.transform.CompileStatic
-            class C { // same package name as A, but another class loader
-                static A prot() { new A('x') }
-                static A pkg() { new A(1) }
-                static A none() { new A() }
-                static List<A> closure() { [1, 2].collect { Integer i -> new A(i) } }
-                static A lambda() { java.util.function.Supplier<A> s = () -> new A('y'); s.get() }
-            }
-            [C.prot(), C.pkg(), C.none(), *C.closure(), C.lambda()]*.value
-        ''') == ['prot:x', 'pkg:1', 'none', 'pkg:1', 'pkg:2', 'prot:y']
+            class D extends A { D() { super('x') } }
+            new D().value
+        ''') == 'prot:x'
+        assert evaluate("new A('y') { }.value") == 'prot:y'
+        assert evaluate("String s = 'z'; new A(s) { String shared() { s } }.value") == 'prot:z'
     }
 
     // GROOVY-12568
     @Test
-    void testPackagePrivateConstructorOfPrecompiledClassUsedByScript() {
+    void testMethodsOfAnotherRuntimePackage() {
+        shell.evaluate MEMBERS
+        [
+            'new M().pm()'                                                         : 'package-private method pm of p.M',
+            'new M().qm()'                                                         : 'protected method qm of p.M',
+            'M.spm()'                                                              : 'package-private method spm of p.M',
+            'M.sqm()'                                                              : 'protected method sqm of p.M',
+            'new M().count(1)'                                                     : 'package-private method count of p.M',
+            'new M().pp'                                                           : 'package-private method getPp of p.M',
+            'new M().qp'                                                           : 'protected method getQp of p.M',
+            "new M().qs = 'x'"                                                     : 'protected method setQs of p.M',
+            '[1].collect { new M().pm() }'                                         : 'package-private method pm of p.M',
+            'java.util.function.Supplier<String> s = () -> new M().pm(); s.get()'  : 'package-private method pm of p.M',
+            'new M().with { pm() }'                                                : 'package-private method pm of p.M',
+        ].each { body, member -> assertReported(member, body) }
+    }
+
+    // GROOVY-12568
+    @Test
+    void testInheritedMethodsOfAnotherRuntimePackage() {
+        shell.evaluate MEMBERS
+        [
+            'pm()'                 : 'package-private method pm of p.M',
+            'this.pm()'            : 'package-private method pm of p.M',
+            'super.pm()'           : 'package-private method pm of p.M',
+            'spm()'                : 'package-private method spm of p.M',
+            'pp'                   : 'package-private method getPp of p.M',
+            'super.pp'             : 'package-private method getPp of p.M',
+            'new M().qm()'         : 'protected method qm of p.M', // not through a receiver of the subclass
+            '[1].collect { pm() }' : 'package-private method pm of p.M',
+            '[1].collect { qm() }' : 'protected method qm of p.M', // the closure class is not a subclass
+        ].each { body, member -> assertReported(clause: 'extends M', member, body) }
+
+        // the subclass rule
+        [
+            'qm()'       : 'qm',
+            'this.qm()'  : 'qm',
+            'super.qm()' : 'qm',
+            'sqm()'      : 'sqm',
+            'qp'         : 'qp',
+            'super.qp'   : 'qp',
+            'new C().qm()': 'qm',
+        ].each { body, value -> assert evaluate(clause: 'extends M', body) == value : body }
+    }
+
+    // GROOVY-12568
+    @Test
+    void testFieldsOfAnotherRuntimePackage() {
+        shell.evaluate FIELDS
+        [
+            'new F().pf'                     : 'package-private field pf of p.F',
+            'new F().qf'                     : 'protected field qf of p.F',
+            'new F().@pf'                    : 'package-private field pf of p.F',
+            "new F().@pf = 'w'"              : 'package-private field pf of p.F',
+            "new F().@qf = 'w'"              : 'protected field qf of p.F',
+            'new F().n++'                    : 'package-private field n of p.F',
+            'new F().n += 1'                 : 'package-private field n of p.F',
+            'F.spf'                          : 'package-private field spf of p.F',
+            'F.sqf'                          : 'protected field sqf of p.F',
+            '[1].collect { new F().pf }'     : 'package-private field pf of p.F',
+        ].each { body, member -> assertReported(member, body) }
+    }
+
+    // GROOVY-12568
+    @Test
+    void testInheritedFieldsOfAnotherRuntimePackage() {
+        shell.evaluate FIELDS
+        [
+            'pf'             : 'package-private field pf of p.F',
+            'this.pf'        : 'package-private field pf of p.F',
+            'super.pf'       : 'package-private field pf of p.F',
+            'this.@pf'       : 'package-private field pf of p.F',
+            'super.@pf'      : 'package-private field pf of p.F',
+            "this.@pf = 'w'" : 'package-private field pf of p.F',
+            "super.pf = 'w'" : 'package-private field pf of p.F',
+            'spf'            : 'package-private field spf of p.F',
+            'n++'            : 'package-private field n of p.F',
+            'new F().qf'     : 'protected field qf of p.F', // not through a receiver of the subclass
+        ].each { body, member -> assertReported(clause: 'extends F', member, body) }
+
+        // the subclass rule
+        [
+            'qf'           : 'qf',
+            'this.qf'      : 'qf',
+            'super.qf'     : 'qf',
+            'this.@qf'     : 'qf',
+            'super.@qf'    : 'qf',
+            'sqf'          : 'sqf',
+            'new C().qf'   : 'qf',
+            'new C().@qf'  : 'qf',
+        ].each { body, value -> assert evaluate(clause: 'extends F', body) == value : body }
+    }
+
+    // GROOVY-12568
+    @Test
+    void testMethodReferencesOfAnotherRuntimePackage() {
+        shell.evaluate MEMBERS
+        [
+            'java.util.function.Supplier<String> s = new M()::pm; s.get()'        : 'package-private method pm of p.M',
+            'java.util.function.Supplier<String> s = new M()::qm; s.get()'        : 'protected method qm of p.M',
+            'java.util.function.Function<M, String> f = M::pm; f.apply(new M())'  : 'package-private method pm of p.M',
+            'java.util.function.Supplier<String> s = M::spm; s.get()'             : 'package-private method spm of p.M',
+        ].each { body, member -> assertReported(member, body) }
+
+        assertReported(clause: 'extends M', 'package-private method pm of p.M', 'java.util.function.Supplier<String> s = this::pm; s.get()')
+        assert evaluate(clause: 'extends M', 'java.util.function.Supplier<String> s = this::qm; s.get()') == 'qm'
+    }
+
+    // GROOVY-12568: a public member of such a class, and a constructor reference, are not refused
+    @Test
+    void testWhatTheCheckDoesNotReport() {
+        shell.evaluate LIBRARY
+        shell.evaluate '''package p
+            class B {
+                public String pf = 'pf'
+                String pm() { 'pm' }
+            }
+            true
+        '''
+        assert evaluate('[new B().pf, new B().pm()]') == ['pf', 'pm']
+        assert evaluate('java.util.function.Function<Integer, A> f = A::new; f.apply(2).value') == 'pkg:2'
+        assert evaluate("java.util.function.Function<String, A> f = A::new; f.apply('y').value") == 'prot:y'
+
+        // another package name: the language rules decide, not the run-time package
+        shell.evaluate MEMBERS
+        assert shell.evaluate('''package q
+            @groovy.transform.CompileStatic
+            class C extends p.M {
+                def test() { qm() }
+            }
+            new C().test()
+        ''') == 'qm'
+    }
+
+    // GROOVY-12568
+    @Test
+    void testDynamicAndTypeCheckedCodeUsesTheMetaClass() {
+        shell.evaluate LIBRARY
+        shell.evaluate MEMBERS
+        shell.evaluate FIELDS
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic(groovy.transform.TypeCheckingMode.SKIP)'].each { annotation ->
+            assert evaluate(annotation: annotation, 'new A(1).value') == 'pkg:1'
+            assert evaluate(annotation: annotation, 'new M().pm()') == 'pm'
+            assert evaluate(annotation: annotation, 'M.spm()') == 'spm'
+            assert evaluate(annotation: annotation, 'new F().pf') == 'pf'
+            assert evaluate(annotation: annotation, 'new F().@pf') == 'pf'
+        }
+    }
+
+    // GROOVY-12568
+    @Test
+    void testCompileDynamicReachesTheMember() {
+        shell.evaluate MEMBERS
+        assert shell.evaluate('''package p
+            @groovy.transform.CompileStatic
+            class C {
+                @groovy.transform.CompileDynamic
+                def test() { new M().pm() }
+            }
+            new C().test()
+        ''') == 'pm'
+    }
+
+    // GROOVY-12568
+    @Test
+    void testPrecompiledClassUsedByScript() {
         def unit = new CompilationUnit()
         unit.addSource('Library.groovy', LIBRARY)
         unit.compile(Phases.CLASS_GENERATION)
         def libraryLoader = new GroovyClassLoader()
         unit.classes.each { libraryLoader.defineClass(it.name, it.bytes) }
 
-        assert new GroovyShell(libraryLoader).evaluate('''package p
-            @groovy.transform.CompileStatic
-            A make() { new A(1) }
-            make().value
-        ''') == 'pkg:1'
+        def shell = new GroovyShell(libraryLoader, new CompilerConfiguration())
+        def err = shouldFail(MultipleCompilationErrorsException) {
+            evaluate(shell: shell, 'new A(1)')
+        }
+        assert err.message.contains('Cannot call package-private constructor of p.A from class p.C')
     }
 
     // GROOVY-12568
     @Test
-    void testMapStyleConstructionWithPackagePrivateConstructorOfClassOfAnotherClassLoader() {
-        shell.evaluate LIBRARY
+    void testMembersOfTheSameScriptAreNotReported() {
         assert shell.evaluate('''package p
+            class M {
+                @groovy.transform.PackageScope String pm() { 'pm' }
+                @groovy.transform.PackageScope String pf = 'pf'
+            }
             @groovy.transform.CompileStatic
-            A make() { new A(name: 'n') }
-            @groovy.transform.CompileStatic
-            A make(Map map) { new A(map) } // a map that is not a literal
-            def a = make(), b = make(name: 'm')
-            [a.value + ':' + a.name, b.value + ':' + b.name]
-        ''') == ['none:n', 'none:m']
+            class C {
+                def test() { [new M().pm(), new M().pf] }
+            }
+            new C().test()
+        ''') == ['pm', 'pf']
+    }
+
+    // GROOVY-12568: the option decides over the default of a shell, and no bytecode changes without the check
+    @Test
+    void testOptionOffGivesTheFailureAtRunTime() {
+        def config = new CompilerConfiguration()
+        config.optimizationOptions[CompilerConfiguration.RUNTIME_PACKAGE_CHECK] = false
+        def shell = new GroovyShell(config)
+        shell.evaluate LIBRARY
+        shell.evaluate MEMBERS
+        shell.evaluate FIELDS
+
+        assertRefusedAtRunTime { evaluate(shell: shell, 'new A(1)') }
+        assertRefusedAtRunTime { evaluate(shell: shell, 'new M().pm()') }
+        assertRefusedAtRunTime { evaluate(shell: shell, 'new F().pf') }
+        assertRefusedAtRunTime { evaluate(shell: shell, "new F().@pf = 'w'") }
+    }
+
+    // GROOVY-12568
+    @Test
+    void testShellDoesNotChangeTheConfiguration() {
+        def config = new CompilerConfiguration()
+        def shell = new GroovyShell(config)
+        assert !config.optimizationOptions.containsKey(CompilerConfiguration.RUNTIME_PACKAGE_CHECK)
+        assert !CompilerConfiguration.DEFAULT.optimizationOptions.containsKey(CompilerConfiguration.RUNTIME_PACKAGE_CHECK)
+
+        shell.evaluate MEMBERS
+        assertReportedBy(shell, 'new M().pm()')
+    }
+
+    // GROOVY-12568: a configuration change after the shell is created still applies
+    @Test
+    void testOptionSetAfterTheShellIsCreated() {
+        def config = new CompilerConfiguration()
+        def shell = new GroovyShell(config)
+        shell.evaluate MEMBERS
+        config.optimizationOptions[CompilerConfiguration.RUNTIME_PACKAGE_CHECK] = false
+        assertRefusedAtRunTime { evaluate(shell: shell, 'new M().pm()') }
+    }
+
+    // GROOVY-12568: off for a class loader that is not created by a shell, unless the option is set
+    @Test
+    void testGroovyClassLoader() {
+        def compile = { CompilerConfiguration config, boolean viaShell ->
+            def loader = new GroovyClassLoader(this.class.classLoader, config)
+            def members = loader.parseClass(MEMBERS.replace('true', ''))
+            def caller = '''package p
+                @groovy.transform.CompileStatic
+                class C {
+                    def test() { new M().pm() }
+                }
+            '''
+            viaShell ? new GroovyShell(loader, config).parse(caller + 'new C().test()').run() : loader.parseClass(caller).getDeclaredConstructor().newInstance().test()
+        }
+
+        def config = new CompilerConfiguration()
+        assertRefusedAtRunTime { compile(config, false) }
+        assertRefusedAtRunTime { compile(config, true) } // the shell did not create this class loader
+
+        config = new CompilerConfiguration()
+        config.optimizationOptions[CompilerConfiguration.RUNTIME_PACKAGE_CHECK] = true
+        def err = shouldFail(MultipleCompilationErrorsException) { compile(config, false) }
+        assert err.message.contains('Cannot call package-private method pm of p.M from class p.C')
+    }
+
+    // GROOVY-12568
+    @Test
+    void testSystemProperty() {
+        System.setProperty('groovy.runtime.package.check', 'false')
+        try {
+            def config = new CompilerConfiguration()
+            assert config.optimizationOptions[CompilerConfiguration.RUNTIME_PACKAGE_CHECK] == Boolean.FALSE
+        } finally {
+            System.clearProperty('groovy.runtime.package.check')
+        }
+        assert !new CompilerConfiguration().optimizationOptions.containsKey(CompilerConfiguration.RUNTIME_PACKAGE_CHECK)
+    }
+
+    private void assertReportedBy(final GroovyShell shell, final String body) {
+        def err = shouldFail(MultipleCompilationErrorsException) {
+            evaluate(shell: shell, body)
+        }
+        assert err.message.contains('is defined by another class loader')
     }
 
     // GROOVY-12568
@@ -260,79 +468,6 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         ''')
         assert bytecode.hasSequence(['NEW p/A', 'DUP', 'LDC "x"', 'INVOKESPECIAL p/A.<init> (Ljava/lang/String;)V'])
         assert bytecode.hasSequence(['NEW p/A', 'DUP', 'ICONST_1', 'INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;', 'INVOKESPECIAL p/A.<init> (Ljava/lang/Integer;)V'])
-        assert !bytecode.hasSequence(['ScriptBytecodeAdapter.invokeNew'])
-    }
-
-    // GROOVY-12568
-    @Test
-    void testProtectedAndPackagePrivateConstructorsOfClassOfAnotherClassLoaderAreSelectedAtRuntime() {
-        def bytecode = compileAgainstLibrary(LIBRARY, 'p.C', 'make', '''package p
-            @groovy.transform.CompileStatic
-            class C {
-                static List<A> make() {
-                    [new A('x'), new A(1)]
-                }
-            }
-        ''')
-        assert bytecode.hasSequence(['INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.invokeNewN (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Object;)Ljava/lang/Object;', 'CHECKCAST p/A'])
-        assert !bytecode.hasSequence(['INVOKESPECIAL p/A.<init>'])
-    }
-
-    // GROOVY-12568
-    @Test
-    void testPublicConstructorOfClassOfAnotherClassLoaderIsCalledDirectly() {
-        def bytecode = compileAgainstLibrary('''package p
-            class B {
-                B(String s) { }
-            }
-        ''', 'p.C', 'make', '''package p
-            @groovy.transform.CompileStatic
-            class C {
-                static B make() {
-                    new B('x')
-                }
-            }
-        ''')
-        assert bytecode.hasSequence(['NEW p/B', 'DUP', 'LDC "x"', 'INVOKESPECIAL p/B.<init> (Ljava/lang/String;)V'])
-        assert !bytecode.hasSequence(['ScriptBytecodeAdapter.invokeNew'])
-    }
-
-    // GROOVY-12568
-    @Test
-    void testProtectedAndPackagePrivateMethodsOfClassOfAnotherClassLoader() {
-        shell.evaluate MEMBERS
-        assert shell.evaluate('''package p
-            @groovy.transform.CompileStatic
-            class C { // same package name as M, but another class loader
-                static List test(M m) {
-                    int n = m.count(1)
-                    [m.pm(), m.qm(), M.spm(), M.sqm(), n, m?.pm(), [m]*.qm(), m.qp, m.pp, { -> m.pm() }(), m.with { it.qm() }]
-                }
-                static String setter(M m) {
-                    m.qs = 'v'
-                    m.hidden
-                }
-            }
-            C.test(new M()) << C.setter(new M())
-        ''') == ['pm', 'qm', 'spm', 'sqm', 2, 'pm', ['qm'], 'qp', 'pp', 'pm', 'qm', 'qs:v']
-    }
-
-    // GROOVY-12568
-    @Test
-    void testInheritedProtectedAndPackagePrivateMethodsOfClassOfAnotherClassLoader() {
-        shell.evaluate MEMBERS
-        assert shell.evaluate('''package p
-            @groovy.transform.CompileStatic
-            class B extends M {
-                List test() {
-                    [pm(), qm(), spm(), sqm(), this.pm(), super.qm(), qp, pp, { -> pm() + qm() }()]
-                }
-                static List statics() {
-                    [spm(), sqm()]
-                }
-            }
-            new B().test() + B.statics()
-        ''') == ['pm', 'qm', 'spm', 'sqm', 'pm', 'qm', 'qp', 'pp', 'pmqm', 'spm', 'sqm']
     }
 
     // GROOVY-12568
@@ -354,90 +489,6 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
 
     // GROOVY-12568
     @Test
-    void testProtectedAndPackagePrivateMethodsOfClassOfAnotherClassLoaderAreSelectedAtRuntime() {
-        def bytecode = compileAgainstLibrary(MEMBERS, 'p.C', 'test', '''package p
-            @groovy.transform.CompileStatic
-            class C {
-                static List test(M m) {
-                    [m.pm(), m.qm(), M.spm(), m.hidden]
-                }
-            }
-        ''')
-        assert bytecode.hasSequence(['LDC "pm"', 'CHECKCAST java/lang/String', 'INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.invokeMethod0'])
-        assert bytecode.hasSequence(['LDC "qm"', 'CHECKCAST java/lang/String', 'INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.invokeMethod0'])
-        assert bytecode.hasSequence(['LDC "spm"', 'CHECKCAST java/lang/String', 'INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.invokeMethod0'])
-        assert bytecode.hasSequence(['INVOKEVIRTUAL p/M.getHidden ()Ljava/lang/String;']) // public
-        assert !bytecode.hasSequence(['INVOKEVIRTUAL p/M.pm'])
-        assert !bytecode.hasSequence(['INVOKEVIRTUAL p/M.qm'])
-        assert !bytecode.hasSequence(['INVOKESTATIC p/M.spm'])
-    }
-
-    // GROOVY-12568
-    @Test
-    void testProtectedMethodsOfSuperclassOfAnotherClassLoaderAreCalledDirectly() {
-        def bytecode = compileAgainstLibrary(MEMBERS, 'p.B', 'test', '''package p
-            @groovy.transform.CompileStatic
-            class B extends M {
-                List test(B b) {
-                    [qm(), this.qm(), super.qm(), b.qm(), sqm(), pm()]
-                }
-            }
-        ''')
-        assert bytecode.hasSequence(['ALOAD 0', 'INVOKEVIRTUAL p/B.qm ()Ljava/lang/String;'])
-        assert bytecode.hasSequence(['ALOAD 0', 'INVOKESPECIAL p/M.qm ()Ljava/lang/String;'])
-        assert bytecode.hasSequence(['ALOAD 1', 'INVOKEVIRTUAL p/B.qm ()Ljava/lang/String;'])
-        assert bytecode.hasSequence(['INVOKESTATIC p/M.sqm ()Ljava/lang/String;'])
-        assert bytecode.hasSequence(['LDC "pm"', 'CHECKCAST java/lang/String', 'INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.invokeMethodOnCurrent0'])
-    }
-
-    // GROOVY-12568
-    @Test
-    void testMethodReferencesToProtectedAndPackagePrivateMethodsOfClassOfAnotherClassLoader() {
-        shell.evaluate MEMBERS
-        assert shell.evaluate('''package p
-            import java.util.function.*
-
-            @groovy.transform.CompileStatic
-            class C { // same package name as M, but another class loader
-                static List test(M m) {
-                    Supplier<String> bound = m::pm
-                    Function<M, String> unbound = M::qm
-                    Supplier<String> stat = M::spm
-                    IntUnaryOperator prim = m::count
-                    BiFunction<M, Integer, Integer> unboundPrim = M::count
-                    [bound.get(), unbound.apply(m), stat.get(), prim.applyAsInt(1), unboundPrim.apply(m, 2)]
-                }
-            }
-            @groovy.transform.CompileStatic
-            class B extends M {
-                List test() {
-                    Supplier<String> pkg = this::pm, prot = this::qm, stat = M::sqm
-                    [pkg.get(), prot.get(), stat.get()]
-                }
-            }
-            C.test(new M()) + new B().test()
-        ''') == ['pm', 'qm', 'spm', 2, 3, 'pm', 'qm', 'sqm']
-    }
-
-    // GROOVY-12568
-    @Test
-    void testMethodReferencesOfInterfaceToPackagePrivateMethodsOfClassOfAnotherClassLoader() {
-        shell.evaluate MEMBERS
-        assert shell.evaluate('''package p
-            import java.util.function.*
-
-            @groovy.transform.CompileStatic
-            interface I { // same package name as M, but another class loader
-                static Supplier<String> stat() { M::spm }
-                default Function<M, String> unbound() { M::pm }
-            }
-            assert I.declaredMethods.findAll { it.name.startsWith('access$') }.size() == 2
-            [I.stat().get(), new I() {}.unbound().apply(new M())]
-        ''') == ['spm', 'pm']
-    }
-
-    // GROOVY-12568
-    @Test
     void testMethodReferenceToPackagePrivateMethodOfSameCompilationUnitIsDirect() {
         def bytecode = compile(method: 'test', classNamePattern: 'p.C', MEMBERS + '''
             @groovy.transform.CompileStatic
@@ -449,84 +500,6 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         ''')
         assert bytecode.hasSequence(['// handle kind 0x5 : INVOKEVIRTUAL', 'p/M.pm()Ljava/lang/String;'])
         assert !bytecode.hasSequence(['p/C.access$M$pm$'])
-    }
-
-    // GROOVY-12568
-    @Test
-    void testMethodReferenceToPackagePrivateMethodOfClassOfAnotherClassLoaderIsSelectedAtRuntime() {
-        def script = '''package p
-            @groovy.transform.CompileStatic
-            class C {
-                static java.util.function.Supplier<String> test(M m) {
-                    m::pm
-                }
-            }
-        '''
-        def bytecode = compileAgainstLibrary(MEMBERS, 'p.C', 'test', script)
-        assert bytecode.hasSequence(['// handle kind 0x6 : INVOKESTATIC', 'p/C.access$M$pm$'])
-        assert !bytecode.hasSequence(['p/M.pm()Ljava/lang/String;'])
-
-        String method = bytecode.instructions.find { it.startsWith('p/C.access$M$pm$') }.with { it.substring(4, it.indexOf('(')) }
-        def access = compileAgainstLibrary(MEMBERS, 'p.C', method, script)
-        assert access.hasSequence(['LDC "pm"', 'CHECKCAST java/lang/String', 'INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.invokeMethod0'])
-    }
-
-    // GROOVY-12568
-    @Test
-    void testProtectedAndPackagePrivateFieldsOfClassOfAnotherClassLoader() {
-        shell.evaluate FIELDS
-        assert shell.evaluate('''package p
-            @groovy.transform.CompileStatic
-            class C { // same package name as F, but another class loader
-                static List read(F f) {
-                    [f.pf, f.qf, F.spf, F.sqf, f.@pf, f.@qf, f?.pf, [f]*.pf, { -> f.pf }(), f.with { it.qf }]
-                }
-                static List write(F f) {
-                    f.pf = 'w'
-                    f.qf = 'x'
-                    F.spf = 'y'
-                    f.@n = 5
-                    f.n += 2
-                    f.n++
-                    int m = ++f.n
-                    [f.pf, f.qf, F.spf, f.n, m]
-                }
-            }
-            C.read(new F()) + C.write(new F())
-        ''') == ['pf', 'qf', 'spf', 'sqf', 'pf', 'qf', 'pf', ['pf'], 'pf', 'qf', 'w', 'x', 'y', 9, 9]
-    }
-
-    // GROOVY-12568
-    @Test
-    void testInheritedProtectedAndPackagePrivateFieldsOfClassOfAnotherClassLoader() {
-        shell.evaluate FIELDS
-        assert shell.evaluate('''package p
-            @groovy.transform.CompileStatic
-            class B extends F {
-                List read(F other) {
-                    [pf, qf, this.pf, this.qf, super.pf, this.@pf, super.@pf, spf, sqf, { -> pf + qf }(), other.qf, other.pf]
-                }
-                List write(F other) {
-                    pf = 'a'
-                    this.@qf = 'b'
-                    other.qf = 'c'
-                    other.pf = 'd'
-                    [pf, qf, other.qf, other.pf]
-                }
-            }
-            class D extends F { // dynamic
-                List read() {
-                    [super.pf, super.@pf, this.@pf]
-                }
-                List write() {
-                    super.pf = 'e'
-                    def x = pf
-                    this.@pf = 'f'
-                    [x, pf]
-                }
-            }
-            new B().read(new F()) + new B().write(new F()) + new D().read() + new D().write()
-        ''') == ['pf', 'qf', 'pf', 'qf', 'pf', 'pf', 'pf', 'spf', 'sqf', 'pfqf', 'qf', 'pf', 'a', 'b', 'c', 'd', 'pf', 'pf', 'pf', 'e', 'f']
     }
 
     // GROOVY-12568
@@ -546,73 +519,6 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         assert bytecode.hasSequence(['GETFIELD p/F.qf : Ljava/lang/String;'])
         assert bytecode.hasSequence(['GETSTATIC p/F.spf : Ljava/lang/String;'])
         assert !bytecode.hasSequence(['INVOKESTATIC org/codehaus/groovy/runtime/InvokerHelper.getProperty'])
-    }
-
-    // GROOVY-12568
-    @Test
-    void testProtectedAndPackagePrivateFieldsOfClassOfAnotherClassLoaderAreAccessedAtRuntime() {
-        def bytecode = compileAgainstLibrary(FIELDS, 'p.C', 'test', '''package p
-            @groovy.transform.CompileStatic
-            class C {
-                static List test(F f) {
-                    f.@pf = 'w'
-                    [f.pf, f.qf, F.spf]
-                }
-            }
-        ''')
-        assert bytecode.hasSequence(['LDC "pf"', 'INVOKESTATIC org/codehaus/groovy/runtime/InvokerHelper.getProperty'])
-        assert bytecode.hasSequence(['LDC "qf"', 'INVOKESTATIC org/codehaus/groovy/runtime/InvokerHelper.getProperty'])
-        assert bytecode.hasSequence(['LDC "spf"', 'INVOKESTATIC org/codehaus/groovy/runtime/InvokerHelper.getProperty'])
-        assert bytecode.hasSequence(['LDC "pf"', 'CHECKCAST java/lang/String', 'INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.setGroovyObjectField'])
-        assert !bytecode.hasSequence(['GETFIELD p/F'])
-        assert !bytecode.hasSequence(['PUTFIELD p/F'])
-        assert !bytecode.hasSequence(['GETSTATIC p/F'])
-    }
-
-    // GROOVY-12568
-    @Test
-    void testProtectedFieldOfSuperclassOfAnotherClassLoaderIsAccessedDirectly() {
-        def bytecode = compileAgainstLibrary(FIELDS, 'p.B', 'test', '''package p
-            @groovy.transform.CompileStatic
-            class B extends F {
-                List test() {
-                    this.@qf = 'x'
-                    [qf, sqf, pf]
-                }
-            }
-        ''')
-        assert bytecode.hasSequence(['PUTFIELD p/F.qf : Ljava/lang/String;'])
-        assert bytecode.hasSequence(['GETFIELD p/F.qf : Ljava/lang/String;'])
-        assert bytecode.hasSequence(['GETSTATIC p/B.sqf : Ljava/lang/String;'])
-        assert bytecode.hasSequence(['LDC "pf"', 'INVOKESTATIC org/codehaus/groovy/runtime/InvokerHelper.getProperty'])
-    }
-
-    // GROOVY-12568
-    @Test
-    void testMembersOfClassOfAnotherClassLoaderWithoutInvokeDynamic() {
-        def config = new CompilerConfiguration()
-        config.optimizationOptions[CompilerConfiguration.INVOKEDYNAMIC] = false
-        def shell = new GroovyShell(this.class.classLoader, new Binding(), config)
-        shell.evaluate LIBRARY
-        shell.evaluate MEMBERS
-        shell.evaluate FIELDS
-        assert shell.evaluate('''package p
-            @groovy.transform.CompileStatic
-            class C {
-                static List test(M m, F f) {
-                    java.util.function.Supplier<String> ref = m::pm
-                    f.pf = 'w'
-                    [new A(1).value, m.pm(), M.spm(), m.qp, ref.get(), f.pf, F.spf, dynamic()]
-                }
-                static Object dynamic() {
-                    'dynamic'.toUpperCase().with { it }
-                }
-            }
-            C.test(new M(), new F())
-        ''') == ['pkg:1', 'pm', 'spm', 'qp', 'pm', 'w', 'spf', 'DYNAMIC']
-
-        shell.evaluate HIDDEN
-        assert shell.evaluate(usesOfHidden('S', '@groovy.transform.CompileStatic')) == USES_OF_HIDDEN
     }
 
     // GROOVY-12568
@@ -736,158 +642,13 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         }
     }
 
-    // GROOVY-12569
-    @Test
-    void testMapStyleConstructionOfPackagePrivateClassOfAnotherClassLoader() {
-        shell.evaluate HIDDEN
-        ['D': '', 'S': '@groovy.transform.CompileStatic'].each { name, annotation ->
-            assert shell.evaluate("""package p
-                $annotation
-                class $name {
-                    static List test(Map map) {
-                        [new Hidden(name: 'x').name, new Hidden(map).name]
-                    }
-                }
-                ${name}.test(name: 'y')
-            """) == ['x', 'y']
-        }
-    }
-
-    // GROOVY-12569
-    @Test
-    void testPackagePrivateClassOfAnotherClassLoaderIsUsedAsInDynamicCode() {
-        shell.evaluate HIDDEN
-        assert shell.evaluate(usesOfHidden('D', '')) == USES_OF_HIDDEN
-        assert shell.evaluate(usesOfHidden('S', '@groovy.transform.CompileStatic')) == USES_OF_HIDDEN
-    }
-
-    // GROOVY-12569
-    @Test
-    void testPackagePrivateClassOfLibraryIsUsedByScriptAsInDynamicCode() {
-        def unit = new CompilationUnit()
-        unit.addSource('Library.groovy', HIDDEN)
-        unit.compile(Phases.CLASS_GENERATION)
-        def libraryLoader = new GroovyClassLoader()
-        unit.classes.each { libraryLoader.defineClass(it.name, it.bytes) }
-
-        def shell = new GroovyShell(libraryLoader)
-        assert shell.evaluate(usesOfHidden('D', '')) == USES_OF_HIDDEN
-        assert shell.evaluate(usesOfHidden('S', '@groovy.transform.CompileStatic')) == USES_OF_HIDDEN
-    }
-
-    // GROOVY-12569
-    @Test
-    void testUsesThatNamePackagePrivateClassOfAnotherClassLoaderFailAsInDynamicCode() {
-        shell.evaluate HIDDEN
-        ['', '@groovy.transform.CompileStatic'].each { annotation ->
-            ['Hidden h = new Hidden()', 'Object o = new Hidden(); ((Hidden) o).own()', 'Object o = new Hidden(); o instanceof Hidden'].each { code ->
-                def err = shouldFail(IllegalAccessError) {
-                    shell.evaluate("package p\n$annotation def f() { $code }\nf()")
-                }
-                assert err.message.contains('failed to access class p.Hidden') // JVMS 5.4.4
-            }
-        }
-    }
-
-    // GROOVY-12569
-    @Test
-    void testPackagePrivateClassOfAnotherClassLoaderIsNotNamedInBytecode() {
-        def bytecode = compileAgainstLibrary(HIDDEN, 'p.C', 'test', usesOfHidden('C', '@groovy.transform.CompileStatic'))
-        for (instruction in ['NEW', 'CHECKCAST', 'INSTANCEOF', 'INVOKEVIRTUAL', 'INVOKESTATIC', 'INVOKESPECIAL', 'INVOKEINTERFACE', 'GETFIELD', 'PUTFIELD', 'GETSTATIC', 'PUTSTATIC']) {
-            assert !bytecode.hasSequence([instruction + ' p/Hidden'])
-        }
-        assert bytecode.hasSequence(['INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.invokeNew0'])
-        assert bytecode.hasSequence(['INVOKEINTERFACE java/lang/Runnable.run ()V'])
-        assert bytecode.hasSequence(['INVOKEVIRTUAL p/Base.base ()Ljava/lang/String;'])
-    }
-
-    // GROOVY-12569
-    @Test
-    void testPackagePrivateClassesOfAnotherClassLoaderAreUsedThroughPublicClassesAsInDynamicCode() {
-        shell.evaluate SHUT
-        assert shell.evaluate(usesOfShut('D', '')) == USES_OF_SHUT
-        assert shell.evaluate(usesOfShut('S', '@groovy.transform.CompileStatic')) == USES_OF_SHUT
-    }
-
-    // GROOVY-12569
-    @Test
-    void testPackagePrivateClassesOfAnotherClassLoaderAreNotNamedInBytecodeOfUsesThroughPublicClasses() {
-        def bytecode = compileAgainstLibrary(SHUT, 'p.C', 'test', usesOfShut('C', '@groovy.transform.CompileStatic'))
-        for (instruction in ['NEW', 'CHECKCAST', 'INSTANCEOF', 'INVOKEVIRTUAL', 'INVOKESTATIC', 'INVOKESPECIAL', 'INVOKEINTERFACE', 'GETFIELD', 'PUTFIELD', 'GETSTATIC', 'PUTSTATIC']) {
-            for (type in ['Shut', 'Plain', 'Secret']) {
-                assert !bytecode.hasSequence([instruction + ' p/' + type])
-            }
-        }
-        assert bytecode.hasSequence(['PUTSTATIC p/Open.SF : Ljava/lang/String;'])
-        assert bytecode.hasSequence(['GETSTATIC p/Open.SF : Ljava/lang/String;'])
-        assert bytecode.hasSequence(['PUTFIELD p/Open.pf : Ljava/lang/String;'])
-        assert bytecode.hasSequence(['GETFIELD p/Open.n : I', 'INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;'])
-        assert bytecode.hasSequence(['INVOKEVIRTUAL p/Open.take (Ljava/lang/Object;)Ljava/lang/String;'])
-        assert bytecode.hasSequence(['INVOKESTATIC p/Open.make ()Lp/Shut;'])
-    }
-
-    // GROOVY-12569
-    @Test
-    void testPackagePrivateJavaClassOfAnotherClassLoaderWithInstanceMethodNamedAsStaticMethodOfInterface() {
-        def dir = File.createTempDir()
-        try {
-            def source = new File(dir, 'p/Q.java')
-            source.parentFile.mkdirs()
-            source.text = '''package p;
-                class Q implements java.util.function.Function<Object, String> {
-                    public String apply(Object o) { return "apply"; }
-                    public Q identity() { return this; } // Function.identity() is static, so Q does not inherit it
-                }
-            '''
-            assert ToolProvider.systemJavaCompiler.run(null, null, null, source.path) == 0
-
-            def shell = new GroovyShell(new URLClassLoader([dir.toURI().toURL()] as URL[], this.class.classLoader))
-            ['', '@groovy.transform.CompileStatic'].each { annotation ->
-                assert shell.evaluate("""package p
-                    $annotation
-                    def test() {
-                        def q = new Q()
-                        [q.identity().is(q), q.apply(null)]
-                    }
-                    test()
-                """) == [true, 'apply']
-            }
-        } finally {
-            dir.deleteDir()
-        }
-    }
-
-    // GROOVY-12569
-    @Test
-    void testPackagePrivateClassOfClassFilesOrSameCompilationUnitIsNamedInBytecode() {
-        def script = usesOfHidden('C', '@groovy.transform.CompileStatic')
-        def sameUnit = compile(method: 'test', classNamePattern: 'p.C', HIDDEN + script.replace('package p', ''))
-        assert sameUnit.hasSequence(['NEW p/Hidden', 'DUP', 'INVOKESPECIAL p/Hidden.<init> ()V'])
-        assert sameUnit.hasSequence(['INVOKESTATIC p/Hidden.sm (Ljava/lang/String;)Ljava/lang/String;'])
-        assert sameUnit.hasSequence(['INVOKEVIRTUAL p/Hidden.own ()Ljava/lang/String;'])
-
-        def dir = File.createTempDir()
-        try {
-            compileToDirectory(dir, 'Library.groovy': HIDDEN)
-            compileToDirectory(dir, 'C.groovy': script.substring(0, script.lastIndexOf('C.test()')))
-            def classFiles = extractMethodSequence(new File(dir, 'p/C.class').bytes, 'test')
-            assert classFiles.hasSequence(['NEW p/Hidden', 'DUP', 'INVOKESPECIAL p/Hidden.<init> ()V'])
-            assert classFiles.hasSequence(['INVOKESTATIC p/Hidden.sm (Ljava/lang/String;)Ljava/lang/String;'])
-            assert classFiles.hasSequence(['INVOKEVIRTUAL p/Hidden.own ()Ljava/lang/String;'])
-
-            def loader = new URLClassLoader([dir.toURI().toURL()] as URL[], this.class.classLoader)
-            assert loader.loadClass('p.C').test() == USES_OF_HIDDEN
-        } finally {
-            dir.deleteDir()
-        }
-    }
-
     /**
      * Compiles the sources to class files in {@code dir}, against the class
-     * files already there, as groovyc does.
+     * files already there, as groovyc does. The check has no effect on them.
      */
     private static void compileToDirectory(final Map<String, String> sources, final File dir) {
         def config = new CompilerConfiguration(targetDirectory: dir, classpathList: [dir.path])
+        config.optimizationOptions[CompilerConfiguration.RUNTIME_PACKAGE_CHECK] = true
         def unit = new CompilationUnit(config, null, new GroovyClassLoader(StaticCompileRuntimePackageTest.classLoader, config))
         sources.each { name, text -> unit.addSource(name, text) }
         unit.compile(Phases.OUTPUT)

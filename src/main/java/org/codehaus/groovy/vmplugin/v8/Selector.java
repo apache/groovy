@@ -691,11 +691,7 @@ public abstract class Selector {
                     handle = this.callSite.getLookup().unreflectConstructor(con);
                     if (LOG_ENABLED) LOG.info("successfully unreflected constructor");
                 } catch (IllegalAccessException e) {
-                    // refusal is an access-control outcome, not an internal error, for example a protected
-                    // constructor of an encapsulated JDK class called by new in a subclass: leave the handle
-                    // unset so that the meta-class creates the object, as without invokedynamic
-                    if (LOG_ENABLED) LOG.info("constructor refused, using meta class path");
-                    return;
+                    throw new GroovyBugError(e);
                 }
             } else {
                 super.setHandleForMetaMethod();

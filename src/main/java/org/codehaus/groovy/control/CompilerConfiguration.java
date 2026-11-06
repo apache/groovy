@@ -85,6 +85,30 @@ public class CompilerConfiguration {
     @Incubating
     public static final String ERROR_RECOVERY = "errorRecovery";
 
+    /**
+     * Option for reporting, when a class is generated, what statically compiled
+     * code accesses in another run-time package, which is the package name and
+     * the class loader.
+     * <p>
+     * A {@link groovy.lang.GroovyClassLoader} defines each compilation in memory
+     * with a class loader of its own. A protected or package-private constructor,
+     * method or field of a class of another compilation, or of a precompiled
+     * class, is therefore out of reach of the JVM even with the same package name,
+     * apart from what a subclass can do with a protected member. Such code fails
+     * at run time with {@code IllegalAccessError}.
+     * <p>
+     * Disabled by default, except that {@link groovy.lang.GroovyShell} enables it
+     * for the class loader it creates unless this option is set. It has no effect
+     * on code compiled to class files, or on dynamic and {@code @TypeChecked} code,
+     * which reach such members through the meta-class. Set it through
+     * {@link #getOptimizationOptions()} or the {@code groovy.runtime.package.check}
+     * system property.
+     *
+     * @since 7.0.0
+     */
+    @Incubating
+    public static final String RUNTIME_PACKAGE_CHECK = "runtimePackageCheck";
+
     /** Joint Compilation Option for enabling generating stubs in memory. */
     public static final String MEM_STUB = "memStub";
 
@@ -641,6 +665,7 @@ public class CompilerConfiguration {
         handleOptimizationOption(RUNTIME_GROOVYDOC, getSystemPropertySafe("groovy.attach.runtime.groovydoc"));
         handleOptimizationOption(PARALLEL_PARSE, getSystemPropertySafe("groovy.parallel.parse", "true"));
         handleOptimizationOption(ERROR_RECOVERY, getSystemPropertySafe("groovy.parser.error.recovery"));
+        handleOptimizationOption(RUNTIME_PACKAGE_CHECK, getSystemPropertySafe("groovy.runtime.package.check"));
 
         if (getBooleanSafe("groovy.mem.stub")) {
             jointCompilationOptions = new HashMap<>(2);
