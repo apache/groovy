@@ -573,4 +573,34 @@ final class FormatStringCheckerTest {
             assert String.format('%s %1$<s %1$s%%%n', s) == 'some string some string some string%' + System.lineSeparator()
         '''
     }
+
+    // GROOVY-12709: fields whose initializers refer to each other have no constant value
+    @Test
+    void testFieldInitializerCycle() {
+        assertScript shell, '''
+            class Cycle {
+                static final String F = G
+                static final String G = F
+                static String format() { String.format(F, 1) }
+            }
+            assert Cycle.F == null
+        '''
+        assertScript shell, '''
+            class Cycle {
+                static String F = G
+                static String G = F
+                static String format() { String.format(F, 1) }
+            }
+            assert Cycle.F == null
+        '''
+        // a chain of fields that ends in a constant is still followed
+        def err = shouldFail shell, '''
+            class Chain {
+                static final String F = G
+                static final String G = '%d'
+                static String format() { String.format(F, 'x') }
+            }
+        '''
+        assert err.message =~ /IllegalFormatConversion @ line 4, column \d+: d != java\.lang\.String/
+    }
 }
