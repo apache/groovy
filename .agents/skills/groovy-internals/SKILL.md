@@ -144,6 +144,22 @@ compiler/runtime work:
    "what *not* to do" list in
    [`AGENTS.md`](../../../AGENTS.md).
 
+10. **A private type-compatibility rule in the type checker.**
+    When static type checking compares a value with a type, the
+    rule depends on the context, and each context has one shared
+    check: `StaticTypeCheckingSupport.checkCompatibleAssignmentTypes`
+    plus the loss-of-precision check for an assignment or the
+    return of a value (`StaticTypeCheckingVisitor#checkReturnValue`
+    for a method, closure, lambda or method reference),
+    `isAssignableTo` for method arguments, and `checkCast` for
+    casts. Writing a new widening table or `isXxxCompatible`
+    helper instead makes the contexts disagree, so the same value
+    is accepted in one place and rejected in another. Call the
+    matching check. If its rule looks wrong for your case, change
+    it for every context, and check
+    `ReturnConversionConsistencyTest`, which fails when the kinds
+    of return disagree.
+
 ## Procedure
 
 When making a compiler/runtime change:
@@ -211,6 +227,9 @@ Before declaring the change ready:
 - [ ] Visibility is intentional — `@PackageScope` for
       "visible for testing", `@Internal` or `internal` package
       for implementation detail.
+- [ ] Type-compatibility checks in the type checker call the
+      shared check for their context, not a rule of their own
+      (failure mode 10).
 - [ ] Public-API additions have been justified — see
       [Adding new public API](../../../COMPATIBILITY.md#adding-new-public-api).
 - [ ] Regression test exists, fails on `master`, passes after
