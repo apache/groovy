@@ -282,16 +282,37 @@ shell, not a language REPL. `DefaultCommandDispatcher` throws
 `UnknownCommandException` instead of falling through to a script
 engine, and `Shell.run()` discards the value of `dispatcher.execute`,
 so there is nowhere to print a result. Those semantics are exactly
-what the deprecated console layer supplies. In JLine 4.4.3 the console
-implementations contain no references to `org.jline.shell` either, so
-there is no upstream migration to follow yet.
+what the deprecated console layer supplies.
+
+Upstream has started bridging the two packages, but in the direction
+that does not help us. JLine 4.4.8 added `ConsoleDispatcherBuilder`,
+`ConsoleLineExpander`, `GogoCommandGroup`, `CommandGroupAdapter`,
+`CommandRegistryAdapter` and `DescriptionAdapter` to
+`org.jline.console.impl`. `ConsoleDispatcherBuilder` builds a
+`SystemRegistryImpl` and hides it behind a `CommandDispatcher` façade,
+so a "shell dispatcher" over a `ScriptEngine` is still the deprecated
+registry underneath. `DefaultCommandDispatcher` itself has not grown a
+script-engine fall-through (checked at 4.5.0), and `ScriptEngine` is
+not deprecated, which says there is no shell-side replacement for it.
+The shell dispatcher also pre-processes every line as shell syntax:
+bare `x=5` becomes a string session variable, a trailing `&` is a
+background job, the default line expander rewrites `$VAR` and `~`,
+and the pipeline parser splits on `|`, `>`, `&&` and friends outside
+brackets and quotes. `SystemRegistryImpl` applies pipes only when the
+first word `isCommandOrScript` and otherwise hands the whole line to
+the engine; the shell dispatcher has no such discrimination. The
+`ConsoleEngine` features (variable expansion against the engine
+binding, the `_` and `exception` variables, scripts on `PATH` as
+commands, `/alias`, `/prnt`, `/slurp`, `/doc`, `/pipe`, widget
+creation) have no `org.jline.shell` counterpart either.
 
 What we do instead: keep the deprecated types out of the *published*
 embedding API. `GroovyshOptions.groups` takes `org.jline.shell.CommandGroup`
 and wraps it with `CommandRegistryAdapter`; the result and error
 handlers take `Printer` and plain JDK types.
 
-Revisit when JLine rebases the console implementations on
+Revisit when JLine gives `DefaultCommandDispatcher` a script-engine
+fall-through, rebases the console implementations on
 `org.jline.shell`, or announces a removal release for
 `org.jline.console`. The migration path, when it comes, is a
 `CommandDispatcher` subclass: `DefaultCommandDispatcher.execute(String)`
