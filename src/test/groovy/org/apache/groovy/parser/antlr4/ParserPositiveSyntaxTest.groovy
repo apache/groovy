@@ -49093,4 +49093,2261 @@ final class ParserPositiveSyntaxTest {
             |  </MethodNode>
             |</Module>'''.stripMargin())
     }
+
+    // GROOVY-12641
+    @Test
+    void 'type patterns and when guards in a switch'() {
+        expectAst('''\
+            |// GEP-19: type patterns with binding and `when` guards in switch expressions
+            |
+            |def describe(obj) {
+            |    switch (obj) {
+            |        case Integer i when i > 0 -> "positive $i"
+            |        case Integer i            -> "non-positive $i"
+            |        case String s             -> s.toUpperCase()
+            |        case List list            -> "list of ${list.size()}"
+            |        default                   -> 'other'
+            |    }
+            |}
+            |
+            |assert describe(42) == 'positive 42'
+            |assert describe(-7) == 'non-positive -7'
+            |assert describe('abc') == 'ABC'
+            |assert describe([1, 2, 3]) == 'list of 3'
+            |assert describe(3.5) == 'other'
+            |assert describe(null) == 'other'
+            |
+            |// pattern labels mixed with legacy labels
+            |def kind(x) {
+            |    switch (x) {
+            |        case 0, 1                 -> 'small constant'
+            |        case Number n when n < 0  -> 'negative'
+            |        case Number n             -> "number $n"
+            |        case null                 -> 'nil'
+            |        default                   -> 'other'
+            |    }
+            |}
+            |
+            |assert kind(0) == 'small constant'
+            |assert kind(-3) == 'negative'
+            |assert kind(10) == 'number 10'
+            |assert kind(null) == 'nil'
+            |assert kind('x') == 'other'
+            |
+            |// guards may reference outer locals as well as the pattern variable
+            |def threshold = 5
+            |def sizeCheck = switch ([1, 2, 3, 4, 5, 6]) {
+            |    case List l when l.size() > threshold -> 'big'
+            |    case List l                           -> 'small'
+            |    default                               -> 'other'
+            |}
+            |assert sizeCheck == 'big'
+            |
+            |// arrow switch with patterns used as a statement
+            |def out = []
+            |switch ('hi') {
+            |    case String s -> out << s.reverse()
+            |    default       -> out << 'none'
+            |}
+            |assert out == ['ih']
+            |
+            |// nested switch expressions with patterns
+            |def nested = switch (1) {
+            |    case Integer i -> switch ('a') {
+            |        case String s -> s + i
+            |        default       -> 'inner other'
+            |    }
+            |    default -> 'outer other'
+            |}
+            |assert nested == 'a1'
+            |
+            |// array type pattern
+            |def arr = switch (new String[]{'a', 'b'}) {
+            |    case String[] sa -> sa.length
+            |    default          -> -1
+            |}
+            |assert arr == 2
+            |
+            |// switch subject is evaluated exactly once
+            |int count = 0
+            |def next = { count++; 'x' }
+            |def got = switch (next()) {
+            |    case String s when s == 'x' -> 'match'
+            |    default                     -> 'no'
+            |}
+            |assert got == 'match'
+            |assert count == 1
+            |'''.stripMargin(), '''\
+            |<Module line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |  <BlockStatement line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |    <AssertStatement line="13" column="1" lastLine="13" lastColumn="37">
+            |      <BooleanExpression line="13" column="8" lastLine="13" lastColumn="37">
+            |        <BinaryExpression line="13" column="8" lastLine="13" lastColumn="37" token="==">
+            |          <MethodCallExpression line="13" column="8" lastLine="13" lastColumn="20" implicitThis="true">
+            |            <ConstantExpression line="13" column="8" lastLine="13" lastColumn="16" value="describe"/>
+            |            <ConstantExpression line="13" column="17" lastLine="13" lastColumn="19" value="42"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="13" column="24" lastLine="13" lastColumn="37" value="positive 42"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="14" column="1" lastLine="14" lastColumn="41">
+            |      <BooleanExpression line="14" column="8" lastLine="14" lastColumn="41">
+            |        <BinaryExpression line="14" column="8" lastLine="14" lastColumn="41" token="==">
+            |          <MethodCallExpression line="14" column="8" lastLine="14" lastColumn="20" implicitThis="true">
+            |            <ConstantExpression line="14" column="8" lastLine="14" lastColumn="16" value="describe"/>
+            |            <ConstantExpression line="14" column="17" lastLine="14" lastColumn="19" value="-7"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="14" column="24" lastLine="14" lastColumn="41" value="non-positive -7"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="15" column="1" lastLine="15" lastColumn="32">
+            |      <BooleanExpression line="15" column="8" lastLine="15" lastColumn="32">
+            |        <BinaryExpression line="15" column="8" lastLine="15" lastColumn="32" token="==">
+            |          <MethodCallExpression line="15" column="8" lastLine="15" lastColumn="23" implicitThis="true">
+            |            <ConstantExpression line="15" column="8" lastLine="15" lastColumn="16" value="describe"/>
+            |            <ConstantExpression line="15" column="17" lastLine="15" lastColumn="22" value="abc"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="15" column="27" lastLine="15" lastColumn="32" value="ABC"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="16" column="1" lastLine="16" lastColumn="42">
+            |      <BooleanExpression line="16" column="8" lastLine="16" lastColumn="42">
+            |        <BinaryExpression line="16" column="8" lastLine="16" lastColumn="42" token="==">
+            |          <MethodCallExpression line="16" column="8" lastLine="16" lastColumn="27" implicitThis="true">
+            |            <ConstantExpression line="16" column="8" lastLine="16" lastColumn="16" value="describe"/>
+            |            <ListExpression line="16" column="17" lastLine="16" lastColumn="26">
+            |              <ConstantExpression line="16" column="18" lastLine="16" lastColumn="19" value="1"/>
+            |              <ConstantExpression line="16" column="21" lastLine="16" lastColumn="22" value="2"/>
+            |              <ConstantExpression line="16" column="24" lastLine="16" lastColumn="25" value="3"/>
+            |            </ListExpression>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="16" column="31" lastLine="16" lastColumn="42" value="list of 3"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="17" column="1" lastLine="17" lastColumn="32">
+            |      <BooleanExpression line="17" column="8" lastLine="17" lastColumn="32">
+            |        <BinaryExpression line="17" column="8" lastLine="17" lastColumn="32" token="==">
+            |          <MethodCallExpression line="17" column="8" lastLine="17" lastColumn="21" implicitThis="true">
+            |            <ConstantExpression line="17" column="8" lastLine="17" lastColumn="16" value="describe"/>
+            |            <ConstantExpression line="17" column="17" lastLine="17" lastColumn="20" value="3.5"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="17" column="25" lastLine="17" lastColumn="32" value="other"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="18" column="1" lastLine="18" lastColumn="33">
+            |      <BooleanExpression line="18" column="8" lastLine="18" lastColumn="33">
+            |        <BinaryExpression line="18" column="8" lastLine="18" lastColumn="33" token="==">
+            |          <MethodCallExpression line="18" column="8" lastLine="18" lastColumn="22" implicitThis="true">
+            |            <ConstantExpression line="18" column="8" lastLine="18" lastColumn="16" value="describe"/>
+            |            <ConstantExpression line="18" column="17" lastLine="18" lastColumn="21" value="null"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="18" column="26" lastLine="18" lastColumn="33" value="other"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="31" column="1" lastLine="31" lastColumn="35">
+            |      <BooleanExpression line="31" column="8" lastLine="31" lastColumn="35">
+            |        <BinaryExpression line="31" column="8" lastLine="31" lastColumn="35" token="==">
+            |          <MethodCallExpression line="31" column="8" lastLine="31" lastColumn="15" implicitThis="true">
+            |            <ConstantExpression line="31" column="8" lastLine="31" lastColumn="12" value="kind"/>
+            |            <ConstantExpression line="31" column="13" lastLine="31" lastColumn="14" value="0"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="31" column="19" lastLine="31" lastColumn="35" value="small constant"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="32" column="1" lastLine="32" lastColumn="30">
+            |      <BooleanExpression line="32" column="8" lastLine="32" lastColumn="30">
+            |        <BinaryExpression line="32" column="8" lastLine="32" lastColumn="30" token="==">
+            |          <MethodCallExpression line="32" column="8" lastLine="32" lastColumn="16" implicitThis="true">
+            |            <ConstantExpression line="32" column="8" lastLine="32" lastColumn="12" value="kind"/>
+            |            <ConstantExpression line="32" column="13" lastLine="32" lastColumn="15" value="-3"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="32" column="20" lastLine="32" lastColumn="30" value="negative"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="33" column="1" lastLine="33" lastColumn="31">
+            |      <BooleanExpression line="33" column="8" lastLine="33" lastColumn="31">
+            |        <BinaryExpression line="33" column="8" lastLine="33" lastColumn="31" token="==">
+            |          <MethodCallExpression line="33" column="8" lastLine="33" lastColumn="16" implicitThis="true">
+            |            <ConstantExpression line="33" column="8" lastLine="33" lastColumn="12" value="kind"/>
+            |            <ConstantExpression line="33" column="13" lastLine="33" lastColumn="15" value="10"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="33" column="20" lastLine="33" lastColumn="31" value="number 10"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="34" column="1" lastLine="34" lastColumn="27">
+            |      <BooleanExpression line="34" column="8" lastLine="34" lastColumn="27">
+            |        <BinaryExpression line="34" column="8" lastLine="34" lastColumn="27" token="==">
+            |          <MethodCallExpression line="34" column="8" lastLine="34" lastColumn="18" implicitThis="true">
+            |            <ConstantExpression line="34" column="8" lastLine="34" lastColumn="12" value="kind"/>
+            |            <ConstantExpression line="34" column="13" lastLine="34" lastColumn="17" value="null"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="34" column="22" lastLine="34" lastColumn="27" value="nil"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="35" column="1" lastLine="35" lastColumn="28">
+            |      <BooleanExpression line="35" column="8" lastLine="35" lastColumn="28">
+            |        <BinaryExpression line="35" column="8" lastLine="35" lastColumn="28" token="==">
+            |          <MethodCallExpression line="35" column="8" lastLine="35" lastColumn="17" implicitThis="true">
+            |            <ConstantExpression line="35" column="8" lastLine="35" lastColumn="12" value="kind"/>
+            |            <ConstantExpression line="35" column="13" lastLine="35" lastColumn="16" value="x"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="35" column="21" lastLine="35" lastColumn="28" value="other"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <ExpressionStatement line="38" column="1" lastLine="38" lastColumn="18">
+            |      <DeclarationExpression line="38" column="1" lastLine="38" lastColumn="18" token="=">
+            |        <VariableExpression line="38" column="5" lastLine="38" lastColumn="14" name="threshold"/>
+            |        <ConstantExpression line="38" column="17" lastLine="38" lastColumn="18" value="5"/>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <ExpressionStatement line="39" column="1" lastLine="43" lastColumn="2">
+            |      <DeclarationExpression line="39" column="1" lastLine="43" lastColumn="2" token="=">
+            |        <VariableExpression line="39" column="5" lastLine="39" lastColumn="14" name="sizeCheck"/>
+            |        <SwitchExpression line="39" column="17" lastLine="43" lastColumn="2">
+            |          <ListExpression line="39" column="25" lastLine="39" lastColumn="43">
+            |            <ConstantExpression line="39" column="26" lastLine="39" lastColumn="27" value="1"/>
+            |            <ConstantExpression line="39" column="29" lastLine="39" lastColumn="30" value="2"/>
+            |            <ConstantExpression line="39" column="32" lastLine="39" lastColumn="33" value="3"/>
+            |            <ConstantExpression line="39" column="35" lastLine="39" lastColumn="36" value="4"/>
+            |            <ConstantExpression line="39" column="38" lastLine="39" lastColumn="39" value="5"/>
+            |            <ConstantExpression line="39" column="41" lastLine="39" lastColumn="42" value="6"/>
+            |          </ListExpression>
+            |          <CaseStatement line="40" column="5" lastLine="40" lastColumn="9">
+            |            <PatternExpression line="40" column="10" lastLine="40" lastColumn="42">
+            |              <TypePattern line="40" column="15" lastLine="40" lastColumn="16" type="List" name="l"/>
+            |              <guard>
+            |                <BinaryExpression line="40" column="22" lastLine="40" lastColumn="42" token="&gt;">
+            |                  <MethodCallExpression line="40" column="22" lastLine="40" lastColumn="30">
+            |                    <VariableExpression line="40" column="22" lastLine="40" lastColumn="23" name="l"/>
+            |                    <ConstantExpression line="40" column="24" lastLine="40" lastColumn="28" value="size"/>
+            |                    <ArgumentListExpression line="40" column="28" lastLine="40" lastColumn="30"/>
+            |                  </MethodCallExpression>
+            |                  <VariableExpression line="40" column="33" lastLine="40" lastColumn="42" name="threshold"/>
+            |                </BinaryExpression>
+            |              </guard>
+            |            </PatternExpression>
+            |            <BlockStatement line="40" column="46" lastLine="40" lastColumn="51">
+            |              <YieldStatement line="40" column="46" lastLine="40" lastColumn="51">
+            |                <ConstantExpression line="40" column="46" lastLine="40" lastColumn="51" value="big"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <CaseStatement line="41" column="5" lastLine="41" lastColumn="9">
+            |            <PatternExpression line="41" column="10" lastLine="41" lastColumn="16">
+            |              <TypePattern line="41" column="15" lastLine="41" lastColumn="16" type="List" name="l"/>
+            |            </PatternExpression>
+            |            <BlockStatement line="41" column="46" lastLine="41" lastColumn="53">
+            |              <YieldStatement line="41" column="46" lastLine="41" lastColumn="53">
+            |                <ConstantExpression line="41" column="46" lastLine="41" lastColumn="53" value="small"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <default>
+            |            <BlockStatement line="42" column="46" lastLine="42" lastColumn="53">
+            |              <YieldStatement line="42" column="46" lastLine="42" lastColumn="53">
+            |                <ConstantExpression line="42" column="46" lastLine="42" lastColumn="53" value="other"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </default>
+            |        </SwitchExpression>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <AssertStatement line="44" column="1" lastLine="44" lastColumn="26">
+            |      <BooleanExpression line="44" column="8" lastLine="44" lastColumn="26">
+            |        <BinaryExpression line="44" column="8" lastLine="44" lastColumn="26" token="==">
+            |          <VariableExpression line="44" column="8" lastLine="44" lastColumn="17" name="sizeCheck"/>
+            |          <ConstantExpression line="44" column="21" lastLine="44" lastColumn="26" value="big"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <ExpressionStatement line="47" column="1" lastLine="47" lastColumn="13">
+            |      <DeclarationExpression line="47" column="1" lastLine="47" lastColumn="13" token="=">
+            |        <VariableExpression line="47" column="5" lastLine="47" lastColumn="8" name="out"/>
+            |        <ListExpression line="47" column="11" lastLine="47" lastColumn="13"/>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <SwitchStatement line="48" column="1" lastLine="51" lastColumn="2">
+            |      <ConstantExpression line="48" column="9" lastLine="48" lastColumn="13" value="hi"/>
+            |      <CaseStatement line="49" column="5" lastLine="49" lastColumn="9">
+            |        <PatternExpression line="49" column="10" lastLine="49" lastColumn="18">
+            |          <TypePattern line="49" column="17" lastLine="49" lastColumn="18" type="String" name="s"/>
+            |        </PatternExpression>
+            |        <BlockStatement line="49" column="22" lastLine="49" lastColumn="40">
+            |          <ExpressionStatement line="49" column="22" lastLine="49" lastColumn="40">
+            |            <BinaryExpression line="49" column="22" lastLine="49" lastColumn="40" token="&lt;&lt;">
+            |              <VariableExpression line="49" column="22" lastLine="49" lastColumn="25" name="out"/>
+            |              <MethodCallExpression line="49" column="29" lastLine="49" lastColumn="40">
+            |                <VariableExpression line="49" column="29" lastLine="49" lastColumn="30" name="s"/>
+            |                <ConstantExpression line="49" column="31" lastLine="49" lastColumn="38" value="reverse"/>
+            |                <ArgumentListExpression line="49" column="38" lastLine="49" lastColumn="40"/>
+            |              </MethodCallExpression>
+            |            </BinaryExpression>
+            |          </ExpressionStatement>
+            |          <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |        </BlockStatement>
+            |      </CaseStatement>
+            |      <default>
+            |        <BlockStatement line="50" column="22" lastLine="50" lastColumn="35">
+            |          <ExpressionStatement line="50" column="22" lastLine="50" lastColumn="35">
+            |            <BinaryExpression line="50" column="22" lastLine="50" lastColumn="35" token="&lt;&lt;">
+            |              <VariableExpression line="50" column="22" lastLine="50" lastColumn="25" name="out"/>
+            |              <ConstantExpression line="50" column="29" lastLine="50" lastColumn="35" value="none"/>
+            |            </BinaryExpression>
+            |          </ExpressionStatement>
+            |        </BlockStatement>
+            |      </default>
+            |    </SwitchStatement>
+            |    <AssertStatement line="52" column="1" lastLine="52" lastColumn="21">
+            |      <BooleanExpression line="52" column="8" lastLine="52" lastColumn="21">
+            |        <BinaryExpression line="52" column="8" lastLine="52" lastColumn="21" token="==">
+            |          <VariableExpression line="52" column="8" lastLine="52" lastColumn="11" name="out"/>
+            |          <ListExpression line="52" column="15" lastLine="52" lastColumn="21">
+            |            <ConstantExpression line="52" column="16" lastLine="52" lastColumn="20" value="ih"/>
+            |          </ListExpression>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <ExpressionStatement line="55" column="1" lastLine="61" lastColumn="2">
+            |      <DeclarationExpression line="55" column="1" lastLine="61" lastColumn="2" token="=">
+            |        <VariableExpression line="55" column="5" lastLine="55" lastColumn="11" name="nested"/>
+            |        <SwitchExpression line="55" column="14" lastLine="61" lastColumn="2">
+            |          <ConstantExpression line="55" column="22" lastLine="55" lastColumn="23" value="1"/>
+            |          <CaseStatement line="56" column="5" lastLine="56" lastColumn="9">
+            |            <PatternExpression line="56" column="10" lastLine="56" lastColumn="19">
+            |              <TypePattern line="56" column="18" lastLine="56" lastColumn="19" type="Integer" name="i"/>
+            |            </PatternExpression>
+            |            <BlockStatement line="56" column="23" lastLine="59" lastColumn="6">
+            |              <YieldStatement line="56" column="23" lastLine="59" lastColumn="6">
+            |                <SwitchExpression line="56" column="23" lastLine="59" lastColumn="6">
+            |                  <ConstantExpression line="56" column="31" lastLine="56" lastColumn="34" value="a"/>
+            |                  <CaseStatement line="57" column="9" lastLine="57" lastColumn="13">
+            |                    <PatternExpression line="57" column="14" lastLine="57" lastColumn="22">
+            |                      <TypePattern line="57" column="21" lastLine="57" lastColumn="22" type="String" name="s"/>
+            |                    </PatternExpression>
+            |                    <BlockStatement line="57" column="26" lastLine="57" lastColumn="31">
+            |                      <YieldStatement line="57" column="26" lastLine="57" lastColumn="31">
+            |                        <BinaryExpression line="57" column="26" lastLine="57" lastColumn="31" token="+">
+            |                          <VariableExpression line="57" column="26" lastLine="57" lastColumn="27" name="s"/>
+            |                          <VariableExpression line="57" column="30" lastLine="57" lastColumn="31" name="i"/>
+            |                        </BinaryExpression>
+            |                      </YieldStatement>
+            |                    </BlockStatement>
+            |                  </CaseStatement>
+            |                  <default>
+            |                    <BlockStatement line="58" column="26" lastLine="58" lastColumn="39">
+            |                      <YieldStatement line="58" column="26" lastLine="58" lastColumn="39">
+            |                        <ConstantExpression line="58" column="26" lastLine="58" lastColumn="39" value="inner other"/>
+            |                      </YieldStatement>
+            |                    </BlockStatement>
+            |                  </default>
+            |                </SwitchExpression>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <default>
+            |            <BlockStatement line="60" column="16" lastLine="60" lastColumn="29">
+            |              <YieldStatement line="60" column="16" lastLine="60" lastColumn="29">
+            |                <ConstantExpression line="60" column="16" lastLine="60" lastColumn="29" value="outer other"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </default>
+            |        </SwitchExpression>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <AssertStatement line="62" column="1" lastLine="62" lastColumn="22">
+            |      <BooleanExpression line="62" column="8" lastLine="62" lastColumn="22">
+            |        <BinaryExpression line="62" column="8" lastLine="62" lastColumn="22" token="==">
+            |          <VariableExpression line="62" column="8" lastLine="62" lastColumn="14" name="nested"/>
+            |          <ConstantExpression line="62" column="18" lastLine="62" lastColumn="22" value="a1"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <ExpressionStatement line="65" column="1" lastLine="68" lastColumn="2">
+            |      <DeclarationExpression line="65" column="1" lastLine="68" lastColumn="2" token="=">
+            |        <VariableExpression line="65" column="5" lastLine="65" lastColumn="8" name="arr"/>
+            |        <SwitchExpression line="65" column="11" lastLine="68" lastColumn="2">
+            |          <ArrayExpression line="65" column="19" lastLine="65" lastColumn="41" elementType="String">
+            |            <ConstantExpression line="65" column="32" lastLine="65" lastColumn="35" value="a"/>
+            |            <ConstantExpression line="65" column="37" lastLine="65" lastColumn="40" value="b"/>
+            |          </ArrayExpression>
+            |          <CaseStatement line="66" column="5" lastLine="66" lastColumn="9">
+            |            <PatternExpression line="66" column="10" lastLine="66" lastColumn="21">
+            |              <TypePattern line="66" column="19" lastLine="66" lastColumn="21" type="String[]" name="sa"/>
+            |            </PatternExpression>
+            |            <BlockStatement line="66" column="25" lastLine="66" lastColumn="34">
+            |              <YieldStatement line="66" column="25" lastLine="66" lastColumn="34">
+            |                <PropertyExpression line="66" column="25" lastLine="66" lastColumn="34">
+            |                  <VariableExpression line="66" column="25" lastLine="66" lastColumn="27" name="sa"/>
+            |                  <ConstantExpression line="66" column="28" lastLine="66" lastColumn="34" value="length"/>
+            |                </PropertyExpression>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <default>
+            |            <BlockStatement line="67" column="25" lastLine="67" lastColumn="27">
+            |              <YieldStatement line="67" column="25" lastLine="67" lastColumn="27">
+            |                <ConstantExpression line="67" column="25" lastLine="67" lastColumn="27" value="-1"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </default>
+            |        </SwitchExpression>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <AssertStatement line="69" column="1" lastLine="69" lastColumn="16">
+            |      <BooleanExpression line="69" column="8" lastLine="69" lastColumn="16">
+            |        <BinaryExpression line="69" column="8" lastLine="69" lastColumn="16" token="==">
+            |          <VariableExpression line="69" column="8" lastLine="69" lastColumn="11" name="arr"/>
+            |          <ConstantExpression line="69" column="15" lastLine="69" lastColumn="16" value="2"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <ExpressionStatement line="72" column="1" lastLine="72" lastColumn="14">
+            |      <DeclarationExpression line="72" column="1" lastLine="72" lastColumn="14" token="=">
+            |        <VariableExpression line="72" column="5" lastLine="72" lastColumn="10" name="count" type="java.lang.Integer"/>
+            |        <ConstantExpression line="72" column="13" lastLine="72" lastColumn="14" value="0"/>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <ExpressionStatement line="73" column="1" lastLine="73" lastColumn="28">
+            |      <DeclarationExpression line="73" column="1" lastLine="73" lastColumn="28" token="=">
+            |        <VariableExpression line="73" column="5" lastLine="73" lastColumn="9" name="next"/>
+            |        <ClosureExpression line="73" column="12" lastLine="73" lastColumn="28">
+            |          <BlockStatement line="73" column="14" lastLine="73" lastColumn="26">
+            |            <ExpressionStatement line="73" column="14" lastLine="73" lastColumn="21">
+            |              <PostfixExpression line="73" column="14" lastLine="73" lastColumn="21" token="++">
+            |                <VariableExpression line="73" column="14" lastLine="73" lastColumn="19" name="count"/>
+            |              </PostfixExpression>
+            |            </ExpressionStatement>
+            |            <ExpressionStatement line="73" column="23" lastLine="73" lastColumn="26">
+            |              <ConstantExpression line="73" column="23" lastLine="73" lastColumn="26" value="x"/>
+            |            </ExpressionStatement>
+            |          </BlockStatement>
+            |        </ClosureExpression>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <ExpressionStatement line="74" column="1" lastLine="77" lastColumn="2">
+            |      <DeclarationExpression line="74" column="1" lastLine="77" lastColumn="2" token="=">
+            |        <VariableExpression line="74" column="5" lastLine="74" lastColumn="8" name="got"/>
+            |        <SwitchExpression line="74" column="11" lastLine="77" lastColumn="2">
+            |          <MethodCallExpression line="74" column="19" lastLine="74" lastColumn="25" implicitThis="true">
+            |            <ConstantExpression line="74" column="19" lastLine="74" lastColumn="23" value="next"/>
+            |            <ArgumentListExpression line="74" column="23" lastLine="74" lastColumn="25"/>
+            |          </MethodCallExpression>
+            |          <CaseStatement line="75" column="5" lastLine="75" lastColumn="9">
+            |            <PatternExpression line="75" column="10" lastLine="75" lastColumn="32">
+            |              <TypePattern line="75" column="17" lastLine="75" lastColumn="18" type="String" name="s"/>
+            |              <guard>
+            |                <BinaryExpression line="75" column="24" lastLine="75" lastColumn="32" token="==">
+            |                  <VariableExpression line="75" column="24" lastLine="75" lastColumn="25" name="s"/>
+            |                  <ConstantExpression line="75" column="29" lastLine="75" lastColumn="32" value="x"/>
+            |                </BinaryExpression>
+            |              </guard>
+            |            </PatternExpression>
+            |            <BlockStatement line="75" column="36" lastLine="75" lastColumn="43">
+            |              <YieldStatement line="75" column="36" lastLine="75" lastColumn="43">
+            |                <ConstantExpression line="75" column="36" lastLine="75" lastColumn="43" value="match"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <default>
+            |            <BlockStatement line="76" column="36" lastLine="76" lastColumn="40">
+            |              <YieldStatement line="76" column="36" lastLine="76" lastColumn="40">
+            |                <ConstantExpression line="76" column="36" lastLine="76" lastColumn="40" value="no"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </default>
+            |        </SwitchExpression>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <AssertStatement line="78" column="1" lastLine="78" lastColumn="22">
+            |      <BooleanExpression line="78" column="8" lastLine="78" lastColumn="22">
+            |        <BinaryExpression line="78" column="8" lastLine="78" lastColumn="22" token="==">
+            |          <VariableExpression line="78" column="8" lastLine="78" lastColumn="11" name="got"/>
+            |          <ConstantExpression line="78" column="15" lastLine="78" lastColumn="22" value="match"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="79" column="1" lastLine="79" lastColumn="18">
+            |      <BooleanExpression line="79" column="8" lastLine="79" lastColumn="18">
+            |        <BinaryExpression line="79" column="8" lastLine="79" lastColumn="18" token="==">
+            |          <VariableExpression line="79" column="8" lastLine="79" lastColumn="13" name="count"/>
+            |          <ConstantExpression line="79" column="17" lastLine="79" lastColumn="18" value="1"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |  </BlockStatement>
+            |  <MethodNode line="3" column="1" lastLine="11" lastColumn="2" name="describe" returnType="java.lang.Object">
+            |    <Parameter line="3" column="14" lastLine="3" lastColumn="17" name="obj"/>
+            |    <BlockStatement line="3" column="19" lastLine="11" lastColumn="2">
+            |      <SwitchStatement line="4" column="5" lastLine="10" lastColumn="6">
+            |        <VariableExpression line="4" column="13" lastLine="4" lastColumn="16" name="obj"/>
+            |        <CaseStatement line="5" column="9" lastLine="5" lastColumn="13">
+            |          <PatternExpression line="5" column="14" lastLine="5" lastColumn="34">
+            |            <TypePattern line="5" column="22" lastLine="5" lastColumn="23" type="Integer" name="i"/>
+            |            <guard>
+            |              <BinaryExpression line="5" column="29" lastLine="5" lastColumn="34" token="&gt;">
+            |                <VariableExpression line="5" column="29" lastLine="5" lastColumn="30" name="i"/>
+            |                <ConstantExpression line="5" column="33" lastLine="5" lastColumn="34" value="0"/>
+            |              </BinaryExpression>
+            |            </guard>
+            |          </PatternExpression>
+            |          <BlockStatement line="5" column="38" lastLine="5" lastColumn="51">
+            |            <ExpressionStatement line="5" column="38" lastLine="5" lastColumn="51">
+            |              <GStringExpression line="5" column="38" lastLine="5" lastColumn="51" text="positive $i">
+            |                <VariableExpression line="5" column="49" lastLine="5" lastColumn="50" name="i"/>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="6" column="9" lastLine="6" lastColumn="13">
+            |          <PatternExpression line="6" column="14" lastLine="6" lastColumn="23">
+            |            <TypePattern line="6" column="22" lastLine="6" lastColumn="23" type="Integer" name="i"/>
+            |          </PatternExpression>
+            |          <BlockStatement line="6" column="38" lastLine="6" lastColumn="55">
+            |            <ExpressionStatement line="6" column="38" lastLine="6" lastColumn="55">
+            |              <GStringExpression line="6" column="38" lastLine="6" lastColumn="55" text="non-positive $i">
+            |                <VariableExpression line="6" column="53" lastLine="6" lastColumn="54" name="i"/>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="7" column="9" lastLine="7" lastColumn="13">
+            |          <PatternExpression line="7" column="14" lastLine="7" lastColumn="22">
+            |            <TypePattern line="7" column="21" lastLine="7" lastColumn="22" type="String" name="s"/>
+            |          </PatternExpression>
+            |          <BlockStatement line="7" column="38" lastLine="7" lastColumn="53">
+            |            <ExpressionStatement line="7" column="38" lastLine="7" lastColumn="53">
+            |              <MethodCallExpression line="7" column="38" lastLine="7" lastColumn="53">
+            |                <VariableExpression line="7" column="38" lastLine="7" lastColumn="39" name="s"/>
+            |                <ConstantExpression line="7" column="40" lastLine="7" lastColumn="51" value="toUpperCase"/>
+            |                <ArgumentListExpression line="7" column="51" lastLine="7" lastColumn="53"/>
+            |              </MethodCallExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="8" column="9" lastLine="8" lastColumn="13">
+            |          <PatternExpression line="8" column="14" lastLine="8" lastColumn="23">
+            |            <TypePattern line="8" column="19" lastLine="8" lastColumn="23" type="List" name="list"/>
+            |          </PatternExpression>
+            |          <BlockStatement line="8" column="38" lastLine="8" lastColumn="62">
+            |            <ExpressionStatement line="8" column="38" lastLine="8" lastColumn="62">
+            |              <GStringExpression line="8" column="38" lastLine="8" lastColumn="62" text="list of ${list.size()}">
+            |                <MethodCallExpression line="8" column="49" lastLine="8" lastColumn="60">
+            |                  <VariableExpression line="8" column="49" lastLine="8" lastColumn="53" name="list"/>
+            |                  <ConstantExpression line="8" column="54" lastLine="8" lastColumn="58" value="size"/>
+            |                  <ArgumentListExpression line="8" column="58" lastLine="8" lastColumn="60"/>
+            |                </MethodCallExpression>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <default>
+            |          <BlockStatement line="9" column="38" lastLine="9" lastColumn="45">
+            |            <ExpressionStatement line="9" column="38" lastLine="9" lastColumn="45">
+            |              <ConstantExpression line="9" column="38" lastLine="9" lastColumn="45" value="other"/>
+            |            </ExpressionStatement>
+            |          </BlockStatement>
+            |        </default>
+            |      </SwitchStatement>
+            |    </BlockStatement>
+            |  </MethodNode>
+            |  <MethodNode line="21" column="1" lastLine="29" lastColumn="2" name="kind" returnType="java.lang.Object">
+            |    <Parameter line="21" column="10" lastLine="21" lastColumn="11" name="x"/>
+            |    <BlockStatement line="21" column="13" lastLine="29" lastColumn="2">
+            |      <SwitchStatement line="22" column="5" lastLine="28" lastColumn="6">
+            |        <VariableExpression line="22" column="13" lastLine="22" lastColumn="14" name="x"/>
+            |        <CaseStatement line="23" column="9" lastLine="23" lastColumn="13">
+            |          <ConstantExpression line="23" column="14" lastLine="23" lastColumn="15" value="0"/>
+            |          < line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |        </CaseStatement>
+            |        <CaseStatement line="23" column="9" lastLine="23" lastColumn="13">
+            |          <ConstantExpression line="23" column="17" lastLine="23" lastColumn="18" value="1"/>
+            |          <BlockStatement line="23" column="38" lastLine="23" lastColumn="54">
+            |            <ExpressionStatement line="23" column="38" lastLine="23" lastColumn="54">
+            |              <ConstantExpression line="23" column="38" lastLine="23" lastColumn="54" value="small constant"/>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="24" column="9" lastLine="24" lastColumn="13">
+            |          <PatternExpression line="24" column="14" lastLine="24" lastColumn="33">
+            |            <TypePattern line="24" column="21" lastLine="24" lastColumn="22" type="Number" name="n"/>
+            |            <guard>
+            |              <BinaryExpression line="24" column="28" lastLine="24" lastColumn="33" token="&lt;">
+            |                <VariableExpression line="24" column="28" lastLine="24" lastColumn="29" name="n"/>
+            |                <ConstantExpression line="24" column="32" lastLine="24" lastColumn="33" value="0"/>
+            |              </BinaryExpression>
+            |            </guard>
+            |          </PatternExpression>
+            |          <BlockStatement line="24" column="38" lastLine="24" lastColumn="48">
+            |            <ExpressionStatement line="24" column="38" lastLine="24" lastColumn="48">
+            |              <ConstantExpression line="24" column="38" lastLine="24" lastColumn="48" value="negative"/>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="25" column="9" lastLine="25" lastColumn="13">
+            |          <PatternExpression line="25" column="14" lastLine="25" lastColumn="22">
+            |            <TypePattern line="25" column="21" lastLine="25" lastColumn="22" type="Number" name="n"/>
+            |          </PatternExpression>
+            |          <BlockStatement line="25" column="38" lastLine="25" lastColumn="49">
+            |            <ExpressionStatement line="25" column="38" lastLine="25" lastColumn="49">
+            |              <GStringExpression line="25" column="38" lastLine="25" lastColumn="49" text="number $n">
+            |                <VariableExpression line="25" column="47" lastLine="25" lastColumn="48" name="n"/>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="26" column="9" lastLine="26" lastColumn="13">
+            |          <ConstantExpression line="26" column="14" lastLine="26" lastColumn="18" value="null"/>
+            |          <BlockStatement line="26" column="38" lastLine="26" lastColumn="43">
+            |            <ExpressionStatement line="26" column="38" lastLine="26" lastColumn="43">
+            |              <ConstantExpression line="26" column="38" lastLine="26" lastColumn="43" value="nil"/>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <default>
+            |          <BlockStatement line="27" column="38" lastLine="27" lastColumn="45">
+            |            <ExpressionStatement line="27" column="38" lastLine="27" lastColumn="45">
+            |              <ConstantExpression line="27" column="38" lastLine="27" lastColumn="45" value="other"/>
+            |            </ExpressionStatement>
+            |          </BlockStatement>
+            |        </default>
+            |      </SwitchStatement>
+            |    </BlockStatement>
+            |  </MethodNode>
+            |</Module>
+            |'''.stripMargin())
+    }
+
+    // GROOVY-12641
+    @Test
+    void 'record patterns in a switch'() {
+        expectAst('''\
+            |// GEP-19: record patterns in switch expressions
+            |
+            |record Point(int x, int y) {}
+            |record Line(Point start, Point end) {}
+            |
+            |def describe(obj) {
+            |    switch (obj) {
+            |        case Point(int x, int y) when x == y -> "diagonal $x"
+            |        case Point(int x, _)                 -> "x=$x"
+            |        case Line(Point(_, _), Point p2)     -> "ends at (${p2.x()}, ${p2.y()})"
+            |        default                              -> 'other'
+            |    }
+            |}
+            |
+            |assert describe(new Point(3, 3)) == 'diagonal 3'
+            |assert describe(new Point(1, 2)) == 'x=1'
+            |assert describe(new Line(new Point(0, 0), new Point(4, 5))) == 'ends at (4, 5)'
+            |assert describe('hello') == 'other'
+            |
+            |// var and def component bindings
+            |def sum = switch (new Point(3, 4)) {
+            |    case Point(var a, def b) -> a + b
+            |    default                  -> -1
+            |}
+            |assert sum == 7
+            |
+            |// component type narrowing: mismatching component falls through
+            |record Box(Object value) {}
+            |def content = switch (new Box('text')) {
+            |    case Box(Integer i) -> "int $i"
+            |    case Box(String s)  -> "string ${s.toUpperCase()}"
+            |    default             -> 'other'
+            |}
+            |assert content == 'string TEXT'
+            |
+            |// arity mismatch never matches
+            |def one = switch (new Point(1, 2)) {
+            |    case Point(var a) -> "one $a"
+            |    default           -> 'no match'
+            |}
+            |assert one == 'no match'
+            |
+            |// legacy method call labels keep isCase semantics
+            |def lower(s) { s.toLowerCase() }
+            |def noArg() { 42 }
+            |def legacy = switch ('abc') {
+            |    case lower('ABC') -> 'call label'
+            |    default           -> 'no'
+            |}
+            |assert legacy == 'call label'
+            |def legacy2 = switch (42) {
+            |    case noArg() -> 'no-arg call label'
+            |    default      -> 'no'
+            |}
+            |assert legacy2 == 'no-arg call label'
+            |'''.stripMargin(), '''\
+            |<Module line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |  <BlockStatement line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |    <AssertStatement line="15" column="1" lastLine="15" lastColumn="49">
+            |      <BooleanExpression line="15" column="8" lastLine="15" lastColumn="49">
+            |        <BinaryExpression line="15" column="8" lastLine="15" lastColumn="49" token="==">
+            |          <MethodCallExpression line="15" column="8" lastLine="15" lastColumn="33" implicitThis="true">
+            |            <ConstantExpression line="15" column="8" lastLine="15" lastColumn="16" value="describe"/>
+            |            <ConstructorCallExpression line="15" column="17" lastLine="15" lastColumn="32" type="Point">
+            |              <ArgumentListExpression line="15" column="26" lastLine="15" lastColumn="32">
+            |                <ConstantExpression line="15" column="27" lastLine="15" lastColumn="28" value="3"/>
+            |                <ConstantExpression line="15" column="30" lastLine="15" lastColumn="31" value="3"/>
+            |              </ArgumentListExpression>
+            |            </ConstructorCallExpression>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="15" column="37" lastLine="15" lastColumn="49" value="diagonal 3"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="16" column="1" lastLine="16" lastColumn="42">
+            |      <BooleanExpression line="16" column="8" lastLine="16" lastColumn="42">
+            |        <BinaryExpression line="16" column="8" lastLine="16" lastColumn="42" token="==">
+            |          <MethodCallExpression line="16" column="8" lastLine="16" lastColumn="33" implicitThis="true">
+            |            <ConstantExpression line="16" column="8" lastLine="16" lastColumn="16" value="describe"/>
+            |            <ConstructorCallExpression line="16" column="17" lastLine="16" lastColumn="32" type="Point">
+            |              <ArgumentListExpression line="16" column="26" lastLine="16" lastColumn="32">
+            |                <ConstantExpression line="16" column="27" lastLine="16" lastColumn="28" value="1"/>
+            |                <ConstantExpression line="16" column="30" lastLine="16" lastColumn="31" value="2"/>
+            |              </ArgumentListExpression>
+            |            </ConstructorCallExpression>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="16" column="37" lastLine="16" lastColumn="42" value="x=1"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="17" column="1" lastLine="17" lastColumn="80">
+            |      <BooleanExpression line="17" column="8" lastLine="17" lastColumn="80">
+            |        <BinaryExpression line="17" column="8" lastLine="17" lastColumn="80" token="==">
+            |          <MethodCallExpression line="17" column="8" lastLine="17" lastColumn="60" implicitThis="true">
+            |            <ConstantExpression line="17" column="8" lastLine="17" lastColumn="16" value="describe"/>
+            |            <ConstructorCallExpression line="17" column="17" lastLine="17" lastColumn="59" type="Line">
+            |              <ArgumentListExpression line="17" column="25" lastLine="17" lastColumn="59">
+            |                <ConstructorCallExpression line="17" column="26" lastLine="17" lastColumn="41" type="Point">
+            |                  <ArgumentListExpression line="17" column="35" lastLine="17" lastColumn="41">
+            |                    <ConstantExpression line="17" column="36" lastLine="17" lastColumn="37" value="0"/>
+            |                    <ConstantExpression line="17" column="39" lastLine="17" lastColumn="40" value="0"/>
+            |                  </ArgumentListExpression>
+            |                </ConstructorCallExpression>
+            |                <ConstructorCallExpression line="17" column="43" lastLine="17" lastColumn="58" type="Point">
+            |                  <ArgumentListExpression line="17" column="52" lastLine="17" lastColumn="58">
+            |                    <ConstantExpression line="17" column="53" lastLine="17" lastColumn="54" value="4"/>
+            |                    <ConstantExpression line="17" column="56" lastLine="17" lastColumn="57" value="5"/>
+            |                  </ArgumentListExpression>
+            |                </ConstructorCallExpression>
+            |              </ArgumentListExpression>
+            |            </ConstructorCallExpression>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="17" column="64" lastLine="17" lastColumn="80" value="ends at (4, 5)"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="18" column="1" lastLine="18" lastColumn="36">
+            |      <BooleanExpression line="18" column="8" lastLine="18" lastColumn="36">
+            |        <BinaryExpression line="18" column="8" lastLine="18" lastColumn="36" token="==">
+            |          <MethodCallExpression line="18" column="8" lastLine="18" lastColumn="25" implicitThis="true">
+            |            <ConstantExpression line="18" column="8" lastLine="18" lastColumn="16" value="describe"/>
+            |            <ConstantExpression line="18" column="17" lastLine="18" lastColumn="24" value="hello"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="18" column="29" lastLine="18" lastColumn="36" value="other"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <ExpressionStatement line="21" column="1" lastLine="24" lastColumn="2">
+            |      <DeclarationExpression line="21" column="1" lastLine="24" lastColumn="2" token="=">
+            |        <VariableExpression line="21" column="5" lastLine="21" lastColumn="8" name="sum"/>
+            |        <SwitchExpression line="21" column="11" lastLine="24" lastColumn="2">
+            |          <ConstructorCallExpression line="21" column="19" lastLine="21" lastColumn="34" type="Point">
+            |            <ArgumentListExpression line="21" column="28" lastLine="21" lastColumn="34">
+            |              <ConstantExpression line="21" column="29" lastLine="21" lastColumn="30" value="3"/>
+            |              <ConstantExpression line="21" column="32" lastLine="21" lastColumn="33" value="4"/>
+            |            </ArgumentListExpression>
+            |          </ConstructorCallExpression>
+            |          <CaseStatement line="22" column="5" lastLine="22" lastColumn="9">
+            |            <PatternExpression line="22" column="10" lastLine="22" lastColumn="29">
+            |              <RecordPattern type="Point">
+            |                <BindingPattern line="22" column="20" lastLine="22" lastColumn="21" name="a"/>
+            |                <BindingPattern line="22" column="27" lastLine="22" lastColumn="28" name="b"/>
+            |              </RecordPattern>
+            |            </PatternExpression>
+            |            <BlockStatement line="22" column="33" lastLine="22" lastColumn="38">
+            |              <YieldStatement line="22" column="33" lastLine="22" lastColumn="38">
+            |                <BinaryExpression line="22" column="33" lastLine="22" lastColumn="38" token="+">
+            |                  <VariableExpression line="22" column="33" lastLine="22" lastColumn="34" name="a"/>
+            |                  <VariableExpression line="22" column="37" lastLine="22" lastColumn="38" name="b"/>
+            |                </BinaryExpression>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <default>
+            |            <BlockStatement line="23" column="33" lastLine="23" lastColumn="35">
+            |              <YieldStatement line="23" column="33" lastLine="23" lastColumn="35">
+            |                <ConstantExpression line="23" column="33" lastLine="23" lastColumn="35" value="-1"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </default>
+            |        </SwitchExpression>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <AssertStatement line="25" column="1" lastLine="25" lastColumn="16">
+            |      <BooleanExpression line="25" column="8" lastLine="25" lastColumn="16">
+            |        <BinaryExpression line="25" column="8" lastLine="25" lastColumn="16" token="==">
+            |          <VariableExpression line="25" column="8" lastLine="25" lastColumn="11" name="sum"/>
+            |          <ConstantExpression line="25" column="15" lastLine="25" lastColumn="16" value="7"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <ExpressionStatement line="29" column="1" lastLine="33" lastColumn="2">
+            |      <DeclarationExpression line="29" column="1" lastLine="33" lastColumn="2" token="=">
+            |        <VariableExpression line="29" column="5" lastLine="29" lastColumn="12" name="content"/>
+            |        <SwitchExpression line="29" column="15" lastLine="33" lastColumn="2">
+            |          <ConstructorCallExpression line="29" column="23" lastLine="29" lastColumn="38" type="Box">
+            |            <ConstantExpression line="29" column="31" lastLine="29" lastColumn="37" value="text"/>
+            |          </ConstructorCallExpression>
+            |          <CaseStatement line="30" column="5" lastLine="30" lastColumn="9">
+            |            <PatternExpression line="30" column="10" lastLine="30" lastColumn="24">
+            |              <RecordPattern type="Box">
+            |                <TypePattern line="30" column="22" lastLine="30" lastColumn="23" type="Integer" name="i"/>
+            |              </RecordPattern>
+            |            </PatternExpression>
+            |            <BlockStatement line="30" column="28" lastLine="30" lastColumn="36">
+            |              <YieldStatement line="30" column="28" lastLine="30" lastColumn="36">
+            |                <GStringExpression line="30" column="28" lastLine="30" lastColumn="36" text="int $i">
+            |                  <VariableExpression line="30" column="34" lastLine="30" lastColumn="35" name="i"/>
+            |                </GStringExpression>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <CaseStatement line="31" column="5" lastLine="31" lastColumn="9">
+            |            <PatternExpression line="31" column="10" lastLine="31" lastColumn="23">
+            |              <RecordPattern type="Box">
+            |                <TypePattern line="31" column="21" lastLine="31" lastColumn="22" type="String" name="s"/>
+            |              </RecordPattern>
+            |            </PatternExpression>
+            |            <BlockStatement line="31" column="28" lastLine="31" lastColumn="55">
+            |              <YieldStatement line="31" column="28" lastLine="31" lastColumn="55">
+            |                <GStringExpression line="31" column="28" lastLine="31" lastColumn="55" text="string ${s.toUpperCase()}">
+            |                  <MethodCallExpression line="31" column="38" lastLine="31" lastColumn="53">
+            |                    <VariableExpression line="31" column="38" lastLine="31" lastColumn="39" name="s"/>
+            |                    <ConstantExpression line="31" column="40" lastLine="31" lastColumn="51" value="toUpperCase"/>
+            |                    <ArgumentListExpression line="31" column="51" lastLine="31" lastColumn="53"/>
+            |                  </MethodCallExpression>
+            |                </GStringExpression>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <default>
+            |            <BlockStatement line="32" column="28" lastLine="32" lastColumn="35">
+            |              <YieldStatement line="32" column="28" lastLine="32" lastColumn="35">
+            |                <ConstantExpression line="32" column="28" lastLine="32" lastColumn="35" value="other"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </default>
+            |        </SwitchExpression>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <AssertStatement line="34" column="1" lastLine="34" lastColumn="32">
+            |      <BooleanExpression line="34" column="8" lastLine="34" lastColumn="32">
+            |        <BinaryExpression line="34" column="8" lastLine="34" lastColumn="32" token="==">
+            |          <VariableExpression line="34" column="8" lastLine="34" lastColumn="15" name="content"/>
+            |          <ConstantExpression line="34" column="19" lastLine="34" lastColumn="32" value="string TEXT"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <ExpressionStatement line="37" column="1" lastLine="40" lastColumn="2">
+            |      <DeclarationExpression line="37" column="1" lastLine="40" lastColumn="2" token="=">
+            |        <VariableExpression line="37" column="5" lastLine="37" lastColumn="8" name="one"/>
+            |        <SwitchExpression line="37" column="11" lastLine="40" lastColumn="2">
+            |          <ConstructorCallExpression line="37" column="19" lastLine="37" lastColumn="34" type="Point">
+            |            <ArgumentListExpression line="37" column="28" lastLine="37" lastColumn="34">
+            |              <ConstantExpression line="37" column="29" lastLine="37" lastColumn="30" value="1"/>
+            |              <ConstantExpression line="37" column="32" lastLine="37" lastColumn="33" value="2"/>
+            |            </ArgumentListExpression>
+            |          </ConstructorCallExpression>
+            |          <CaseStatement line="38" column="5" lastLine="38" lastColumn="9">
+            |            <PatternExpression line="38" column="10" lastLine="38" lastColumn="22">
+            |              <RecordPattern type="Point">
+            |                <BindingPattern line="38" column="20" lastLine="38" lastColumn="21" name="a"/>
+            |              </RecordPattern>
+            |            </PatternExpression>
+            |            <BlockStatement line="38" column="26" lastLine="38" lastColumn="34">
+            |              <YieldStatement line="38" column="26" lastLine="38" lastColumn="34">
+            |                <GStringExpression line="38" column="26" lastLine="38" lastColumn="34" text="one $a">
+            |                  <VariableExpression line="38" column="32" lastLine="38" lastColumn="33" name="a"/>
+            |                </GStringExpression>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <default>
+            |            <BlockStatement line="39" column="26" lastLine="39" lastColumn="36">
+            |              <YieldStatement line="39" column="26" lastLine="39" lastColumn="36">
+            |                <ConstantExpression line="39" column="26" lastLine="39" lastColumn="36" value="no match"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </default>
+            |        </SwitchExpression>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <AssertStatement line="41" column="1" lastLine="41" lastColumn="25">
+            |      <BooleanExpression line="41" column="8" lastLine="41" lastColumn="25">
+            |        <BinaryExpression line="41" column="8" lastLine="41" lastColumn="25" token="==">
+            |          <VariableExpression line="41" column="8" lastLine="41" lastColumn="11" name="one"/>
+            |          <ConstantExpression line="41" column="15" lastLine="41" lastColumn="25" value="no match"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <ExpressionStatement line="46" column="1" lastLine="49" lastColumn="2">
+            |      <DeclarationExpression line="46" column="1" lastLine="49" lastColumn="2" token="=">
+            |        <VariableExpression line="46" column="5" lastLine="46" lastColumn="11" name="legacy"/>
+            |        <SwitchExpression line="46" column="14" lastLine="49" lastColumn="2">
+            |          <ConstantExpression line="46" column="22" lastLine="46" lastColumn="27" value="abc"/>
+            |          <CaseStatement line="47" column="5" lastLine="47" lastColumn="9">
+            |            <MethodCallExpression line="47" column="10" lastLine="47" lastColumn="22" implicitThis="true">
+            |              <ConstantExpression line="47" column="10" lastLine="47" lastColumn="15" value="lower"/>
+            |              <ConstantExpression line="47" column="16" lastLine="47" lastColumn="21" value="ABC"/>
+            |            </MethodCallExpression>
+            |            <BlockStatement line="47" column="26" lastLine="47" lastColumn="38">
+            |              <YieldStatement line="47" column="26" lastLine="47" lastColumn="38">
+            |                <ConstantExpression line="47" column="26" lastLine="47" lastColumn="38" value="call label"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <default>
+            |            <BlockStatement line="48" column="26" lastLine="48" lastColumn="30">
+            |              <YieldStatement line="48" column="26" lastLine="48" lastColumn="30">
+            |                <ConstantExpression line="48" column="26" lastLine="48" lastColumn="30" value="no"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </default>
+            |        </SwitchExpression>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <AssertStatement line="50" column="1" lastLine="50" lastColumn="30">
+            |      <BooleanExpression line="50" column="8" lastLine="50" lastColumn="30">
+            |        <BinaryExpression line="50" column="8" lastLine="50" lastColumn="30" token="==">
+            |          <VariableExpression line="50" column="8" lastLine="50" lastColumn="14" name="legacy"/>
+            |          <ConstantExpression line="50" column="18" lastLine="50" lastColumn="30" value="call label"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <ExpressionStatement line="51" column="1" lastLine="54" lastColumn="2">
+            |      <DeclarationExpression line="51" column="1" lastLine="54" lastColumn="2" token="=">
+            |        <VariableExpression line="51" column="5" lastLine="51" lastColumn="12" name="legacy2"/>
+            |        <SwitchExpression line="51" column="15" lastLine="54" lastColumn="2">
+            |          <ConstantExpression line="51" column="23" lastLine="51" lastColumn="25" value="42"/>
+            |          <CaseStatement line="52" column="5" lastLine="52" lastColumn="9">
+            |            <MethodCallExpression line="52" column="10" lastLine="52" lastColumn="17" implicitThis="true">
+            |              <ConstantExpression line="52" column="10" lastLine="52" lastColumn="15" value="noArg"/>
+            |              <ArgumentListExpression line="52" column="15" lastLine="52" lastColumn="17"/>
+            |            </MethodCallExpression>
+            |            <BlockStatement line="52" column="21" lastLine="52" lastColumn="40">
+            |              <YieldStatement line="52" column="21" lastLine="52" lastColumn="40">
+            |                <ConstantExpression line="52" column="21" lastLine="52" lastColumn="40" value="no-arg call label"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <default>
+            |            <BlockStatement line="53" column="21" lastLine="53" lastColumn="25">
+            |              <YieldStatement line="53" column="21" lastLine="53" lastColumn="25">
+            |                <ConstantExpression line="53" column="21" lastLine="53" lastColumn="25" value="no"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </default>
+            |        </SwitchExpression>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <AssertStatement line="55" column="1" lastLine="55" lastColumn="38">
+            |      <BooleanExpression line="55" column="8" lastLine="55" lastColumn="38">
+            |        <BinaryExpression line="55" column="8" lastLine="55" lastColumn="38" token="==">
+            |          <VariableExpression line="55" column="8" lastLine="55" lastColumn="15" name="legacy2"/>
+            |          <ConstantExpression line="55" column="19" lastLine="55" lastColumn="38" value="no-arg call label"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |  </BlockStatement>
+            |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
+            |  <ClassNode line="28" column="1" lastLine="28" lastColumn="28" kind="record" name="Box">
+            |    <PropertyNode line="28" column="12" lastLine="28" lastColumn="24" name="value" type="Object" modifiers="public final"/>
+            |  </ClassNode>
+            |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
+            |  <ClassNode line="4" column="1" lastLine="4" lastColumn="39" kind="record" name="Line">
+            |    <PropertyNode line="4" column="13" lastLine="4" lastColumn="24" name="start" type="Point" modifiers="public final"/>
+            |    <PropertyNode line="4" column="26" lastLine="4" lastColumn="35" name="end" type="Point" modifiers="public final"/>
+            |  </ClassNode>
+            |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
+            |  <ClassNode line="3" column="1" lastLine="3" lastColumn="30" kind="record" name="Point">
+            |    <PropertyNode line="3" column="14" lastLine="3" lastColumn="19" name="x" type="int" modifiers="public final"/>
+            |    <PropertyNode line="3" column="21" lastLine="3" lastColumn="26" name="y" type="int" modifiers="public final"/>
+            |  </ClassNode>
+            |  <MethodNode line="6" column="1" lastLine="13" lastColumn="2" name="describe" returnType="java.lang.Object">
+            |    <Parameter line="6" column="14" lastLine="6" lastColumn="17" name="obj"/>
+            |    <BlockStatement line="6" column="19" lastLine="13" lastColumn="2">
+            |      <SwitchStatement line="7" column="5" lastLine="12" lastColumn="6">
+            |        <VariableExpression line="7" column="13" lastLine="7" lastColumn="16" name="obj"/>
+            |        <CaseStatement line="8" column="9" lastLine="8" lastColumn="13">
+            |          <PatternExpression line="8" column="14" lastLine="8" lastColumn="45">
+            |            <RecordPattern type="Point">
+            |              <TypePattern line="8" column="24" lastLine="8" lastColumn="25" type="int" name="x"/>
+            |              <TypePattern line="8" column="31" lastLine="8" lastColumn="32" type="int" name="y"/>
+            |            </RecordPattern>
+            |            <guard>
+            |              <BinaryExpression line="8" column="39" lastLine="8" lastColumn="45" token="==">
+            |                <VariableExpression line="8" column="39" lastLine="8" lastColumn="40" name="x"/>
+            |                <VariableExpression line="8" column="44" lastLine="8" lastColumn="45" name="y"/>
+            |              </BinaryExpression>
+            |            </guard>
+            |          </PatternExpression>
+            |          <BlockStatement line="8" column="49" lastLine="8" lastColumn="62">
+            |            <ExpressionStatement line="8" column="49" lastLine="8" lastColumn="62">
+            |              <GStringExpression line="8" column="49" lastLine="8" lastColumn="62" text="diagonal $x">
+            |                <VariableExpression line="8" column="60" lastLine="8" lastColumn="61" name="x"/>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="9" column="9" lastLine="9" lastColumn="13">
+            |          <PatternExpression line="9" column="14" lastLine="9" lastColumn="29">
+            |            <RecordPattern type="Point">
+            |              <TypePattern line="9" column="24" lastLine="9" lastColumn="25" type="int" name="x"/>
+            |              <WildcardPattern/>
+            |            </RecordPattern>
+            |          </PatternExpression>
+            |          <BlockStatement line="9" column="49" lastLine="9" lastColumn="55">
+            |            <ExpressionStatement line="9" column="49" lastLine="9" lastColumn="55">
+            |              <GStringExpression line="9" column="49" lastLine="9" lastColumn="55" text="x=$x">
+            |                <VariableExpression line="9" column="53" lastLine="9" lastColumn="54" name="x"/>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="10" column="9" lastLine="10" lastColumn="13">
+            |          <PatternExpression line="10" column="14" lastLine="10" lastColumn="41">
+            |            <RecordPattern type="Line">
+            |              <RecordPattern type="Point">
+            |                <WildcardPattern/>
+            |                <WildcardPattern/>
+            |              </RecordPattern>
+            |              <TypePattern line="10" column="38" lastLine="10" lastColumn="40" type="Point" name="p2"/>
+            |            </RecordPattern>
+            |          </PatternExpression>
+            |          <BlockStatement line="10" column="49" lastLine="10" lastColumn="81">
+            |            <ExpressionStatement line="10" column="49" lastLine="10" lastColumn="81">
+            |              <GStringExpression line="10" column="49" lastLine="10" lastColumn="81" text="ends at (${p2.x()}, ${p2.y()})">
+            |                <MethodCallExpression line="10" column="61" lastLine="10" lastColumn="67">
+            |                  <VariableExpression line="10" column="61" lastLine="10" lastColumn="63" name="p2"/>
+            |                  <ConstantExpression line="10" column="64" lastLine="10" lastColumn="65" value="x"/>
+            |                  <ArgumentListExpression line="10" column="65" lastLine="10" lastColumn="67"/>
+            |                </MethodCallExpression>
+            |                <MethodCallExpression line="10" column="72" lastLine="10" lastColumn="78">
+            |                  <VariableExpression line="10" column="72" lastLine="10" lastColumn="74" name="p2"/>
+            |                  <ConstantExpression line="10" column="75" lastLine="10" lastColumn="76" value="y"/>
+            |                  <ArgumentListExpression line="10" column="76" lastLine="10" lastColumn="78"/>
+            |                </MethodCallExpression>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <default>
+            |          <BlockStatement line="11" column="49" lastLine="11" lastColumn="56">
+            |            <ExpressionStatement line="11" column="49" lastLine="11" lastColumn="56">
+            |              <ConstantExpression line="11" column="49" lastLine="11" lastColumn="56" value="other"/>
+            |            </ExpressionStatement>
+            |          </BlockStatement>
+            |        </default>
+            |      </SwitchStatement>
+            |    </BlockStatement>
+            |  </MethodNode>
+            |  <MethodNode line="44" column="1" lastLine="44" lastColumn="33" name="lower" returnType="java.lang.Object">
+            |    <Parameter line="44" column="11" lastLine="44" lastColumn="12" name="s"/>
+            |    <BlockStatement line="44" column="14" lastLine="44" lastColumn="33">
+            |      <ExpressionStatement line="44" column="16" lastLine="44" lastColumn="31">
+            |        <MethodCallExpression line="44" column="16" lastLine="44" lastColumn="31">
+            |          <VariableExpression line="44" column="16" lastLine="44" lastColumn="17" name="s"/>
+            |          <ConstantExpression line="44" column="18" lastLine="44" lastColumn="29" value="toLowerCase"/>
+            |          <ArgumentListExpression line="44" column="29" lastLine="44" lastColumn="31"/>
+            |        </MethodCallExpression>
+            |      </ExpressionStatement>
+            |    </BlockStatement>
+            |  </MethodNode>
+            |  <MethodNode line="45" column="1" lastLine="45" lastColumn="19" name="noArg" returnType="java.lang.Object">
+            |    <BlockStatement line="45" column="13" lastLine="45" lastColumn="19">
+            |      <ExpressionStatement line="45" column="15" lastLine="45" lastColumn="17">
+            |        <ConstantExpression line="45" column="15" lastLine="45" lastColumn="17" value="42"/>
+            |      </ExpressionStatement>
+            |    </BlockStatement>
+            |  </MethodNode>
+            |</Module>
+            |'''.stripMargin())
+    }
+
+    // GROOVY-12641
+    @Test
+    void 'list patterns in a switch'() {
+        expectAst('''\
+            |// GEP-19: list patterns in switch expressions
+            |
+            |def describe(x) {
+            |    switch (x) {
+            |        case []                                   -> 'empty'
+            |        case [var only]                           -> "single: $only"
+            |        case [Integer h, var... t] when h > 0     -> "positive head $h, ${t.size()} more"
+            |        case [var first, var... middle, var last] -> "$first .. $last"
+            |        case [...]                                -> 'other non-empty list'
+            |        default                                   -> 'not a list'
+            |    }
+            |}
+            |
+            |assert describe([]) == 'empty'
+            |assert describe(['x']) == 'single: x'
+            |assert describe([1, 2, 3]) == 'positive head 1, 2 more'
+            |assert describe([-1, 2, 3]) == '-1 .. 3'
+            |assert describe(new int[] {5, 6}) == 'positive head 5, 1 more'
+            |assert describe('hello') == 'not a list'
+            |
+            |// literal elements are matched by equality
+            |def starts = switch ([1, 9, 8]) {
+            |    case [1, var x, ...] -> "starts with 1, then $x"
+            |    default              -> 'no'
+            |}
+            |assert starts == 'starts with 1, then 9'
+            |
+            |// typed rest binding checks every element
+            |def total = switch ([1, 2, 3]) {
+            |    case [Integer... nums] -> nums.sum()
+            |    default                -> 'not all ints'
+            |}
+            |assert total == 6
+            |
+            |// nested record and list patterns
+            |record Point(int x, int y) {}
+            |def nested = switch ([new Point(3, 4), [5]]) {
+            |    case [Point(var x, _), [var tail]] -> "$x-$tail"
+            |    default                            -> 'no'
+            |}
+            |assert nested == '3-5'
+            |
+            |// a list literal without a binding form keeps its legacy containment semantics
+            |def legacy = switch (2) {
+            |    case [1, 2, 3] -> 'contained'
+            |    default        -> 'no'
+            |}
+            |assert legacy == 'contained'
+            |'''.stripMargin(), '''\
+            |<Module line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |  <BlockStatement line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |    <AssertStatement line="14" column="1" lastLine="14" lastColumn="31">
+            |      <BooleanExpression line="14" column="8" lastLine="14" lastColumn="31">
+            |        <BinaryExpression line="14" column="8" lastLine="14" lastColumn="31" token="==">
+            |          <MethodCallExpression line="14" column="8" lastLine="14" lastColumn="20" implicitThis="true">
+            |            <ConstantExpression line="14" column="8" lastLine="14" lastColumn="16" value="describe"/>
+            |            <ListExpression line="14" column="17" lastLine="14" lastColumn="19"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="14" column="24" lastLine="14" lastColumn="31" value="empty"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="15" column="1" lastLine="15" lastColumn="38">
+            |      <BooleanExpression line="15" column="8" lastLine="15" lastColumn="38">
+            |        <BinaryExpression line="15" column="8" lastLine="15" lastColumn="38" token="==">
+            |          <MethodCallExpression line="15" column="8" lastLine="15" lastColumn="23" implicitThis="true">
+            |            <ConstantExpression line="15" column="8" lastLine="15" lastColumn="16" value="describe"/>
+            |            <ListExpression line="15" column="17" lastLine="15" lastColumn="22">
+            |              <ConstantExpression line="15" column="18" lastLine="15" lastColumn="21" value="x"/>
+            |            </ListExpression>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="15" column="27" lastLine="15" lastColumn="38" value="single: x"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="16" column="1" lastLine="16" lastColumn="56">
+            |      <BooleanExpression line="16" column="8" lastLine="16" lastColumn="56">
+            |        <BinaryExpression line="16" column="8" lastLine="16" lastColumn="56" token="==">
+            |          <MethodCallExpression line="16" column="8" lastLine="16" lastColumn="27" implicitThis="true">
+            |            <ConstantExpression line="16" column="8" lastLine="16" lastColumn="16" value="describe"/>
+            |            <ListExpression line="16" column="17" lastLine="16" lastColumn="26">
+            |              <ConstantExpression line="16" column="18" lastLine="16" lastColumn="19" value="1"/>
+            |              <ConstantExpression line="16" column="21" lastLine="16" lastColumn="22" value="2"/>
+            |              <ConstantExpression line="16" column="24" lastLine="16" lastColumn="25" value="3"/>
+            |            </ListExpression>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="16" column="31" lastLine="16" lastColumn="56" value="positive head 1, 2 more"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="17" column="1" lastLine="17" lastColumn="41">
+            |      <BooleanExpression line="17" column="8" lastLine="17" lastColumn="41">
+            |        <BinaryExpression line="17" column="8" lastLine="17" lastColumn="41" token="==">
+            |          <MethodCallExpression line="17" column="8" lastLine="17" lastColumn="28" implicitThis="true">
+            |            <ConstantExpression line="17" column="8" lastLine="17" lastColumn="16" value="describe"/>
+            |            <ListExpression line="17" column="17" lastLine="17" lastColumn="27">
+            |              <ConstantExpression line="17" column="18" lastLine="17" lastColumn="20" value="-1"/>
+            |              <ConstantExpression line="17" column="22" lastLine="17" lastColumn="23" value="2"/>
+            |              <ConstantExpression line="17" column="25" lastLine="17" lastColumn="26" value="3"/>
+            |            </ListExpression>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="17" column="32" lastLine="17" lastColumn="41" value="-1 .. 3"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="18" column="1" lastLine="18" lastColumn="63">
+            |      <BooleanExpression line="18" column="8" lastLine="18" lastColumn="63">
+            |        <BinaryExpression line="18" column="8" lastLine="18" lastColumn="63" token="==">
+            |          <MethodCallExpression line="18" column="8" lastLine="18" lastColumn="34" implicitThis="true">
+            |            <ConstantExpression line="18" column="8" lastLine="18" lastColumn="16" value="describe"/>
+            |            <ArrayExpression line="18" column="17" lastLine="18" lastColumn="33" elementType="int">
+            |              <ConstantExpression line="18" column="28" lastLine="18" lastColumn="29" value="5"/>
+            |              <ConstantExpression line="18" column="31" lastLine="18" lastColumn="32" value="6"/>
+            |            </ArrayExpression>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="18" column="38" lastLine="18" lastColumn="63" value="positive head 5, 1 more"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="19" column="1" lastLine="19" lastColumn="41">
+            |      <BooleanExpression line="19" column="8" lastLine="19" lastColumn="41">
+            |        <BinaryExpression line="19" column="8" lastLine="19" lastColumn="41" token="==">
+            |          <MethodCallExpression line="19" column="8" lastLine="19" lastColumn="25" implicitThis="true">
+            |            <ConstantExpression line="19" column="8" lastLine="19" lastColumn="16" value="describe"/>
+            |            <ConstantExpression line="19" column="17" lastLine="19" lastColumn="24" value="hello"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="19" column="29" lastLine="19" lastColumn="41" value="not a list"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <ExpressionStatement line="22" column="1" lastLine="25" lastColumn="2">
+            |      <DeclarationExpression line="22" column="1" lastLine="25" lastColumn="2" token="=">
+            |        <VariableExpression line="22" column="5" lastLine="22" lastColumn="11" name="starts"/>
+            |        <SwitchExpression line="22" column="14" lastLine="25" lastColumn="2">
+            |          <ListExpression line="22" column="22" lastLine="22" lastColumn="31">
+            |            <ConstantExpression line="22" column="23" lastLine="22" lastColumn="24" value="1"/>
+            |            <ConstantExpression line="22" column="26" lastLine="22" lastColumn="27" value="9"/>
+            |            <ConstantExpression line="22" column="29" lastLine="22" lastColumn="30" value="8"/>
+            |          </ListExpression>
+            |          <CaseStatement line="23" column="5" lastLine="23" lastColumn="9">
+            |            <PatternExpression line="23" column="10" lastLine="23" lastColumn="25">
+            |              <ListPattern>
+            |                <ConstantPattern>
+            |                  <ConstantExpression line="23" column="11" lastLine="23" lastColumn="12" value="1"/>
+            |                </ConstantPattern>
+            |                <BindingPattern line="23" column="18" lastLine="23" lastColumn="19" name="x"/>
+            |                <RestPattern/>
+            |              </ListPattern>
+            |            </PatternExpression>
+            |            <BlockStatement line="23" column="29" lastLine="23" lastColumn="53">
+            |              <YieldStatement line="23" column="29" lastLine="23" lastColumn="53">
+            |                <GStringExpression line="23" column="29" lastLine="23" lastColumn="53" text="starts with 1, then $x">
+            |                  <VariableExpression line="23" column="51" lastLine="23" lastColumn="52" name="x"/>
+            |                </GStringExpression>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <default>
+            |            <BlockStatement line="24" column="29" lastLine="24" lastColumn="33">
+            |              <YieldStatement line="24" column="29" lastLine="24" lastColumn="33">
+            |                <ConstantExpression line="24" column="29" lastLine="24" lastColumn="33" value="no"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </default>
+            |        </SwitchExpression>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <AssertStatement line="26" column="1" lastLine="26" lastColumn="41">
+            |      <BooleanExpression line="26" column="8" lastLine="26" lastColumn="41">
+            |        <BinaryExpression line="26" column="8" lastLine="26" lastColumn="41" token="==">
+            |          <VariableExpression line="26" column="8" lastLine="26" lastColumn="14" name="starts"/>
+            |          <ConstantExpression line="26" column="18" lastLine="26" lastColumn="41" value="starts with 1, then 9"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <ExpressionStatement line="29" column="1" lastLine="32" lastColumn="2">
+            |      <DeclarationExpression line="29" column="1" lastLine="32" lastColumn="2" token="=">
+            |        <VariableExpression line="29" column="5" lastLine="29" lastColumn="10" name="total"/>
+            |        <SwitchExpression line="29" column="13" lastLine="32" lastColumn="2">
+            |          <ListExpression line="29" column="21" lastLine="29" lastColumn="30">
+            |            <ConstantExpression line="29" column="22" lastLine="29" lastColumn="23" value="1"/>
+            |            <ConstantExpression line="29" column="25" lastLine="29" lastColumn="26" value="2"/>
+            |            <ConstantExpression line="29" column="28" lastLine="29" lastColumn="29" value="3"/>
+            |          </ListExpression>
+            |          <CaseStatement line="30" column="5" lastLine="30" lastColumn="9">
+            |            <PatternExpression line="30" column="10" lastLine="30" lastColumn="27">
+            |              <ListPattern>
+            |                <RestPattern line="30" column="22" lastLine="30" lastColumn="26" type="Integer" name="nums"/>
+            |              </ListPattern>
+            |            </PatternExpression>
+            |            <BlockStatement line="30" column="31" lastLine="30" lastColumn="41">
+            |              <YieldStatement line="30" column="31" lastLine="30" lastColumn="41">
+            |                <MethodCallExpression line="30" column="31" lastLine="30" lastColumn="41">
+            |                  <VariableExpression line="30" column="31" lastLine="30" lastColumn="35" name="nums"/>
+            |                  <ConstantExpression line="30" column="36" lastLine="30" lastColumn="39" value="sum"/>
+            |                  <ArgumentListExpression line="30" column="39" lastLine="30" lastColumn="41"/>
+            |                </MethodCallExpression>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <default>
+            |            <BlockStatement line="31" column="31" lastLine="31" lastColumn="45">
+            |              <YieldStatement line="31" column="31" lastLine="31" lastColumn="45">
+            |                <ConstantExpression line="31" column="31" lastLine="31" lastColumn="45" value="not all ints"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </default>
+            |        </SwitchExpression>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <AssertStatement line="33" column="1" lastLine="33" lastColumn="18">
+            |      <BooleanExpression line="33" column="8" lastLine="33" lastColumn="18">
+            |        <BinaryExpression line="33" column="8" lastLine="33" lastColumn="18" token="==">
+            |          <VariableExpression line="33" column="8" lastLine="33" lastColumn="13" name="total"/>
+            |          <ConstantExpression line="33" column="17" lastLine="33" lastColumn="18" value="6"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <ExpressionStatement line="37" column="1" lastLine="40" lastColumn="2">
+            |      <DeclarationExpression line="37" column="1" lastLine="40" lastColumn="2" token="=">
+            |        <VariableExpression line="37" column="5" lastLine="37" lastColumn="11" name="nested"/>
+            |        <SwitchExpression line="37" column="14" lastLine="40" lastColumn="2">
+            |          <ListExpression line="37" column="22" lastLine="37" lastColumn="44">
+            |            <ConstructorCallExpression line="37" column="23" lastLine="37" lastColumn="38" type="Point">
+            |              <ArgumentListExpression line="37" column="32" lastLine="37" lastColumn="38">
+            |                <ConstantExpression line="37" column="33" lastLine="37" lastColumn="34" value="3"/>
+            |                <ConstantExpression line="37" column="36" lastLine="37" lastColumn="37" value="4"/>
+            |              </ArgumentListExpression>
+            |            </ConstructorCallExpression>
+            |            <ListExpression line="37" column="40" lastLine="37" lastColumn="43">
+            |              <ConstantExpression line="37" column="41" lastLine="37" lastColumn="42" value="5"/>
+            |            </ListExpression>
+            |          </ListExpression>
+            |          <CaseStatement line="38" column="5" lastLine="38" lastColumn="9">
+            |            <PatternExpression line="38" column="10" lastLine="38" lastColumn="39">
+            |              <ListPattern>
+            |                <RecordPattern type="Point">
+            |                  <BindingPattern line="38" column="21" lastLine="38" lastColumn="22" name="x"/>
+            |                  <WildcardPattern/>
+            |                </RecordPattern>
+            |                <ListPattern>
+            |                  <BindingPattern line="38" column="33" lastLine="38" lastColumn="37" name="tail"/>
+            |                </ListPattern>
+            |              </ListPattern>
+            |            </PatternExpression>
+            |            <BlockStatement line="38" column="43" lastLine="38" lastColumn="53">
+            |              <YieldStatement line="38" column="43" lastLine="38" lastColumn="53">
+            |                <GStringExpression line="38" column="43" lastLine="38" lastColumn="53" text="$x-$tail">
+            |                  <VariableExpression line="38" column="45" lastLine="38" lastColumn="46" name="x"/>
+            |                  <VariableExpression line="38" column="48" lastLine="38" lastColumn="52" name="tail"/>
+            |                </GStringExpression>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <default>
+            |            <BlockStatement line="39" column="43" lastLine="39" lastColumn="47">
+            |              <YieldStatement line="39" column="43" lastLine="39" lastColumn="47">
+            |                <ConstantExpression line="39" column="43" lastLine="39" lastColumn="47" value="no"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </default>
+            |        </SwitchExpression>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <AssertStatement line="41" column="1" lastLine="41" lastColumn="23">
+            |      <BooleanExpression line="41" column="8" lastLine="41" lastColumn="23">
+            |        <BinaryExpression line="41" column="8" lastLine="41" lastColumn="23" token="==">
+            |          <VariableExpression line="41" column="8" lastLine="41" lastColumn="14" name="nested"/>
+            |          <ConstantExpression line="41" column="18" lastLine="41" lastColumn="23" value="3-5"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <ExpressionStatement line="44" column="1" lastLine="47" lastColumn="2">
+            |      <DeclarationExpression line="44" column="1" lastLine="47" lastColumn="2" token="=">
+            |        <VariableExpression line="44" column="5" lastLine="44" lastColumn="11" name="legacy"/>
+            |        <SwitchExpression line="44" column="14" lastLine="47" lastColumn="2">
+            |          <ConstantExpression line="44" column="22" lastLine="44" lastColumn="23" value="2"/>
+            |          <CaseStatement line="45" column="5" lastLine="45" lastColumn="9">
+            |            <ListExpression line="45" column="10" lastLine="45" lastColumn="19">
+            |              <ConstantExpression line="45" column="11" lastLine="45" lastColumn="12" value="1"/>
+            |              <ConstantExpression line="45" column="14" lastLine="45" lastColumn="15" value="2"/>
+            |              <ConstantExpression line="45" column="17" lastLine="45" lastColumn="18" value="3"/>
+            |            </ListExpression>
+            |            <BlockStatement line="45" column="23" lastLine="45" lastColumn="34">
+            |              <YieldStatement line="45" column="23" lastLine="45" lastColumn="34">
+            |                <ConstantExpression line="45" column="23" lastLine="45" lastColumn="34" value="contained"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <default>
+            |            <BlockStatement line="46" column="23" lastLine="46" lastColumn="27">
+            |              <YieldStatement line="46" column="23" lastLine="46" lastColumn="27">
+            |                <ConstantExpression line="46" column="23" lastLine="46" lastColumn="27" value="no"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </default>
+            |        </SwitchExpression>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <AssertStatement line="48" column="1" lastLine="48" lastColumn="29">
+            |      <BooleanExpression line="48" column="8" lastLine="48" lastColumn="29">
+            |        <BinaryExpression line="48" column="8" lastLine="48" lastColumn="29" token="==">
+            |          <VariableExpression line="48" column="8" lastLine="48" lastColumn="14" name="legacy"/>
+            |          <ConstantExpression line="48" column="18" lastLine="48" lastColumn="29" value="contained"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |  </BlockStatement>
+            |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
+            |  <ClassNode line="36" column="1" lastLine="36" lastColumn="30" kind="record" name="Point">
+            |    <PropertyNode line="36" column="14" lastLine="36" lastColumn="19" name="x" type="int" modifiers="public final"/>
+            |    <PropertyNode line="36" column="21" lastLine="36" lastColumn="26" name="y" type="int" modifiers="public final"/>
+            |  </ClassNode>
+            |  <MethodNode line="3" column="1" lastLine="12" lastColumn="2" name="describe" returnType="java.lang.Object">
+            |    <Parameter line="3" column="14" lastLine="3" lastColumn="15" name="x"/>
+            |    <BlockStatement line="3" column="17" lastLine="12" lastColumn="2">
+            |      <SwitchStatement line="4" column="5" lastLine="11" lastColumn="6">
+            |        <VariableExpression line="4" column="13" lastLine="4" lastColumn="14" name="x"/>
+            |        <CaseStatement line="5" column="9" lastLine="5" lastColumn="13">
+            |          <PatternExpression line="5" column="14" lastLine="5" lastColumn="16">
+            |            <ListPattern/>
+            |          </PatternExpression>
+            |          <BlockStatement line="5" column="54" lastLine="5" lastColumn="61">
+            |            <ExpressionStatement line="5" column="54" lastLine="5" lastColumn="61">
+            |              <ConstantExpression line="5" column="54" lastLine="5" lastColumn="61" value="empty"/>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="6" column="9" lastLine="6" lastColumn="13">
+            |          <PatternExpression line="6" column="14" lastLine="6" lastColumn="24">
+            |            <ListPattern>
+            |              <BindingPattern line="6" column="19" lastLine="6" lastColumn="23" name="only"/>
+            |            </ListPattern>
+            |          </PatternExpression>
+            |          <BlockStatement line="6" column="54" lastLine="6" lastColumn="69">
+            |            <ExpressionStatement line="6" column="54" lastLine="6" lastColumn="69">
+            |              <GStringExpression line="6" column="54" lastLine="6" lastColumn="69" text="single: $only">
+            |                <VariableExpression line="6" column="64" lastLine="6" lastColumn="68" name="only"/>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="7" column="9" lastLine="7" lastColumn="13">
+            |          <PatternExpression line="7" column="14" lastLine="7" lastColumn="46">
+            |            <ListPattern>
+            |              <TypePattern line="7" column="23" lastLine="7" lastColumn="24" type="Integer" name="h"/>
+            |              <RestPattern line="7" column="33" lastLine="7" lastColumn="34" name="t"/>
+            |            </ListPattern>
+            |            <guard>
+            |              <BinaryExpression line="7" column="41" lastLine="7" lastColumn="46" token="&gt;">
+            |                <VariableExpression line="7" column="41" lastLine="7" lastColumn="42" name="h"/>
+            |                <ConstantExpression line="7" column="45" lastLine="7" lastColumn="46" value="0"/>
+            |              </BinaryExpression>
+            |            </guard>
+            |          </PatternExpression>
+            |          <BlockStatement line="7" column="54" lastLine="7" lastColumn="90">
+            |            <ExpressionStatement line="7" column="54" lastLine="7" lastColumn="90">
+            |              <GStringExpression line="7" column="54" lastLine="7" lastColumn="90" text="positive head $h, ${t.size()} more">
+            |                <VariableExpression line="7" column="70" lastLine="7" lastColumn="71" name="h"/>
+            |                <MethodCallExpression line="7" column="75" lastLine="7" lastColumn="83">
+            |                  <VariableExpression line="7" column="75" lastLine="7" lastColumn="76" name="t"/>
+            |                  <ConstantExpression line="7" column="77" lastLine="7" lastColumn="81" value="size"/>
+            |                  <ArgumentListExpression line="7" column="81" lastLine="7" lastColumn="83"/>
+            |                </MethodCallExpression>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="8" column="9" lastLine="8" lastColumn="13">
+            |          <PatternExpression line="8" column="14" lastLine="8" lastColumn="50">
+            |            <ListPattern>
+            |              <BindingPattern line="8" column="19" lastLine="8" lastColumn="24" name="first"/>
+            |              <RestPattern line="8" column="33" lastLine="8" lastColumn="39" name="middle"/>
+            |              <BindingPattern line="8" column="45" lastLine="8" lastColumn="49" name="last"/>
+            |            </ListPattern>
+            |          </PatternExpression>
+            |          <BlockStatement line="8" column="54" lastLine="8" lastColumn="71">
+            |            <ExpressionStatement line="8" column="54" lastLine="8" lastColumn="71">
+            |              <GStringExpression line="8" column="54" lastLine="8" lastColumn="71" text="$first .. $last">
+            |                <VariableExpression line="8" column="56" lastLine="8" lastColumn="61" name="first"/>
+            |                <VariableExpression line="8" column="66" lastLine="8" lastColumn="70" name="last"/>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="9" column="9" lastLine="9" lastColumn="13">
+            |          <PatternExpression line="9" column="14" lastLine="9" lastColumn="19">
+            |            <ListPattern>
+            |              <RestPattern/>
+            |            </ListPattern>
+            |          </PatternExpression>
+            |          <BlockStatement line="9" column="54" lastLine="9" lastColumn="76">
+            |            <ExpressionStatement line="9" column="54" lastLine="9" lastColumn="76">
+            |              <ConstantExpression line="9" column="54" lastLine="9" lastColumn="76" value="other non-empty list"/>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <default>
+            |          <BlockStatement line="10" column="54" lastLine="10" lastColumn="66">
+            |            <ExpressionStatement line="10" column="54" lastLine="10" lastColumn="66">
+            |              <ConstantExpression line="10" column="54" lastLine="10" lastColumn="66" value="not a list"/>
+            |            </ExpressionStatement>
+            |          </BlockStatement>
+            |        </default>
+            |      </SwitchStatement>
+            |    </BlockStatement>
+            |  </MethodNode>
+            |</Module>
+            |'''.stripMargin())
+    }
+
+    // GROOVY-12641
+    @Test
+    void 'map patterns in a switch'() {
+        expectAst('''\
+            |// GEP-19: map patterns in switch expressions
+            |
+            |def describe(x) {
+            |    switch (x) {
+            |        case [:]                                  -> 'empty map'
+            |        case [type: 'circle', radius: var r]      -> "circle r=$r"
+            |        case [name: String n, ... rest]           -> "named $n; others=${rest.size()}"
+            |        case [id: var i, ...] when i > 0          -> "id $i"
+            |        default                                   -> 'other'
+            |    }
+            |}
+            |
+            |assert describe([:]) == 'empty map'
+            |assert describe([type: 'circle', radius: 5]) == 'circle r=5'
+            |assert describe([name: 'sam', age: 42]) == 'named sam; others=1'
+            |assert describe([id: 7, x: 0]) == 'id 7'
+            |assert describe([id: -1]) == 'other'
+            |assert describe('hello') == 'other'
+            |
+            |// nested patterns as entry values and map patterns within list patterns
+            |record Point(int x, int y) {}
+            |def nested = switch ([origin: new Point(3, 4), tags: ['a', 'b']]) {
+            |    case [origin: Point(var x, _), tags: [var first, ...]] -> "$x-$first"
+            |    default                                                -> 'other'
+            |}
+            |assert nested == '3-a'
+            |def inList = switch ([[a: 1], 'x']) {
+            |    case [[a: var v], var tag] -> "$v-$tag"
+            |    default                    -> 'other'
+            |}
+            |assert inList == '1-x'
+            |
+            |// a map literal without a binding form keeps its legacy lookup semantics
+            |def legacy = switch ('a') {
+            |    case [a: true, b: false] -> 'truthy value'
+            |    default                  -> 'no'
+            |}
+            |assert legacy == 'truthy value'
+            |'''.stripMargin(), '''\
+            |<Module line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |  <BlockStatement line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |    <AssertStatement line="13" column="1" lastLine="13" lastColumn="36">
+            |      <BooleanExpression line="13" column="8" lastLine="13" lastColumn="36">
+            |        <BinaryExpression line="13" column="8" lastLine="13" lastColumn="36" token="==">
+            |          <MethodCallExpression line="13" column="8" lastLine="13" lastColumn="21" implicitThis="true">
+            |            <ConstantExpression line="13" column="8" lastLine="13" lastColumn="16" value="describe"/>
+            |            <MapExpression line="13" column="17" lastLine="13" lastColumn="20"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="13" column="25" lastLine="13" lastColumn="36" value="empty map"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="14" column="1" lastLine="14" lastColumn="61">
+            |      <BooleanExpression line="14" column="8" lastLine="14" lastColumn="61">
+            |        <BinaryExpression line="14" column="8" lastLine="14" lastColumn="61" token="==">
+            |          <MethodCallExpression line="14" column="8" lastLine="14" lastColumn="45" implicitThis="true">
+            |            <ConstantExpression line="14" column="8" lastLine="14" lastColumn="16" value="describe"/>
+            |            <MapExpression line="14" column="17" lastLine="14" lastColumn="44">
+            |              <MapEntryExpression line="14" column="18" lastLine="14" lastColumn="32">
+            |                <ConstantExpression line="14" column="18" lastLine="14" lastColumn="22" value="type"/>
+            |                <ConstantExpression line="14" column="24" lastLine="14" lastColumn="32" value="circle"/>
+            |              </MapEntryExpression>
+            |              <MapEntryExpression line="14" column="34" lastLine="14" lastColumn="43">
+            |                <ConstantExpression line="14" column="34" lastLine="14" lastColumn="40" value="radius"/>
+            |                <ConstantExpression line="14" column="42" lastLine="14" lastColumn="43" value="5"/>
+            |              </MapEntryExpression>
+            |            </MapExpression>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="14" column="49" lastLine="14" lastColumn="61" value="circle r=5"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="15" column="1" lastLine="15" lastColumn="65">
+            |      <BooleanExpression line="15" column="8" lastLine="15" lastColumn="65">
+            |        <BinaryExpression line="15" column="8" lastLine="15" lastColumn="65" token="==">
+            |          <MethodCallExpression line="15" column="8" lastLine="15" lastColumn="40" implicitThis="true">
+            |            <ConstantExpression line="15" column="8" lastLine="15" lastColumn="16" value="describe"/>
+            |            <MapExpression line="15" column="17" lastLine="15" lastColumn="39">
+            |              <MapEntryExpression line="15" column="18" lastLine="15" lastColumn="29">
+            |                <ConstantExpression line="15" column="18" lastLine="15" lastColumn="22" value="name"/>
+            |                <ConstantExpression line="15" column="24" lastLine="15" lastColumn="29" value="sam"/>
+            |              </MapEntryExpression>
+            |              <MapEntryExpression line="15" column="31" lastLine="15" lastColumn="38">
+            |                <ConstantExpression line="15" column="31" lastLine="15" lastColumn="34" value="age"/>
+            |                <ConstantExpression line="15" column="36" lastLine="15" lastColumn="38" value="42"/>
+            |              </MapEntryExpression>
+            |            </MapExpression>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="15" column="44" lastLine="15" lastColumn="65" value="named sam; others=1"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="16" column="1" lastLine="16" lastColumn="41">
+            |      <BooleanExpression line="16" column="8" lastLine="16" lastColumn="41">
+            |        <BinaryExpression line="16" column="8" lastLine="16" lastColumn="41" token="==">
+            |          <MethodCallExpression line="16" column="8" lastLine="16" lastColumn="31" implicitThis="true">
+            |            <ConstantExpression line="16" column="8" lastLine="16" lastColumn="16" value="describe"/>
+            |            <MapExpression line="16" column="17" lastLine="16" lastColumn="30">
+            |              <MapEntryExpression line="16" column="18" lastLine="16" lastColumn="23">
+            |                <ConstantExpression line="16" column="18" lastLine="16" lastColumn="20" value="id"/>
+            |                <ConstantExpression line="16" column="22" lastLine="16" lastColumn="23" value="7"/>
+            |              </MapEntryExpression>
+            |              <MapEntryExpression line="16" column="25" lastLine="16" lastColumn="29">
+            |                <ConstantExpression line="16" column="25" lastLine="16" lastColumn="26" value="x"/>
+            |                <ConstantExpression line="16" column="28" lastLine="16" lastColumn="29" value="0"/>
+            |              </MapEntryExpression>
+            |            </MapExpression>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="16" column="35" lastLine="16" lastColumn="41" value="id 7"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="17" column="1" lastLine="17" lastColumn="37">
+            |      <BooleanExpression line="17" column="8" lastLine="17" lastColumn="37">
+            |        <BinaryExpression line="17" column="8" lastLine="17" lastColumn="37" token="==">
+            |          <MethodCallExpression line="17" column="8" lastLine="17" lastColumn="26" implicitThis="true">
+            |            <ConstantExpression line="17" column="8" lastLine="17" lastColumn="16" value="describe"/>
+            |            <MapExpression line="17" column="17" lastLine="17" lastColumn="25">
+            |              <MapEntryExpression line="17" column="18" lastLine="17" lastColumn="24">
+            |                <ConstantExpression line="17" column="18" lastLine="17" lastColumn="20" value="id"/>
+            |                <ConstantExpression line="17" column="22" lastLine="17" lastColumn="24" value="-1"/>
+            |              </MapEntryExpression>
+            |            </MapExpression>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="17" column="30" lastLine="17" lastColumn="37" value="other"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="18" column="1" lastLine="18" lastColumn="36">
+            |      <BooleanExpression line="18" column="8" lastLine="18" lastColumn="36">
+            |        <BinaryExpression line="18" column="8" lastLine="18" lastColumn="36" token="==">
+            |          <MethodCallExpression line="18" column="8" lastLine="18" lastColumn="25" implicitThis="true">
+            |            <ConstantExpression line="18" column="8" lastLine="18" lastColumn="16" value="describe"/>
+            |            <ConstantExpression line="18" column="17" lastLine="18" lastColumn="24" value="hello"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="18" column="29" lastLine="18" lastColumn="36" value="other"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <ExpressionStatement line="22" column="1" lastLine="25" lastColumn="2">
+            |      <DeclarationExpression line="22" column="1" lastLine="25" lastColumn="2" token="=">
+            |        <VariableExpression line="22" column="5" lastLine="22" lastColumn="11" name="nested"/>
+            |        <SwitchExpression line="22" column="14" lastLine="25" lastColumn="2">
+            |          <MapExpression line="22" column="22" lastLine="22" lastColumn="65">
+            |            <MapEntryExpression line="22" column="23" lastLine="22" lastColumn="46">
+            |              <ConstantExpression line="22" column="23" lastLine="22" lastColumn="29" value="origin"/>
+            |              <ConstructorCallExpression line="22" column="31" lastLine="22" lastColumn="46" type="Point">
+            |                <ArgumentListExpression line="22" column="40" lastLine="22" lastColumn="46">
+            |                  <ConstantExpression line="22" column="41" lastLine="22" lastColumn="42" value="3"/>
+            |                  <ConstantExpression line="22" column="44" lastLine="22" lastColumn="45" value="4"/>
+            |                </ArgumentListExpression>
+            |              </ConstructorCallExpression>
+            |            </MapEntryExpression>
+            |            <MapEntryExpression line="22" column="48" lastLine="22" lastColumn="64">
+            |              <ConstantExpression line="22" column="48" lastLine="22" lastColumn="52" value="tags"/>
+            |              <ListExpression line="22" column="54" lastLine="22" lastColumn="64">
+            |                <ConstantExpression line="22" column="55" lastLine="22" lastColumn="58" value="a"/>
+            |                <ConstantExpression line="22" column="60" lastLine="22" lastColumn="63" value="b"/>
+            |              </ListExpression>
+            |            </MapEntryExpression>
+            |          </MapExpression>
+            |          <CaseStatement line="23" column="5" lastLine="23" lastColumn="9">
+            |            <PatternExpression line="23" column="10" lastLine="23" lastColumn="59">
+            |              <MapPattern>
+            |                <Entry key="origin">
+            |                  <RecordPattern type="Point">
+            |                    <BindingPattern line="23" column="29" lastLine="23" lastColumn="30" name="x"/>
+            |                    <WildcardPattern/>
+            |                  </RecordPattern>
+            |                </Entry>
+            |                <Entry key="tags">
+            |                  <ListPattern>
+            |                    <BindingPattern line="23" column="47" lastLine="23" lastColumn="52" name="first"/>
+            |                    <RestPattern/>
+            |                  </ListPattern>
+            |                </Entry>
+            |              </MapPattern>
+            |            </PatternExpression>
+            |            <BlockStatement line="23" column="63" lastLine="23" lastColumn="74">
+            |              <YieldStatement line="23" column="63" lastLine="23" lastColumn="74">
+            |                <GStringExpression line="23" column="63" lastLine="23" lastColumn="74" text="$x-$first">
+            |                  <VariableExpression line="23" column="65" lastLine="23" lastColumn="66" name="x"/>
+            |                  <VariableExpression line="23" column="68" lastLine="23" lastColumn="73" name="first"/>
+            |                </GStringExpression>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <default>
+            |            <BlockStatement line="24" column="63" lastLine="24" lastColumn="70">
+            |              <YieldStatement line="24" column="63" lastLine="24" lastColumn="70">
+            |                <ConstantExpression line="24" column="63" lastLine="24" lastColumn="70" value="other"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </default>
+            |        </SwitchExpression>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <AssertStatement line="26" column="1" lastLine="26" lastColumn="23">
+            |      <BooleanExpression line="26" column="8" lastLine="26" lastColumn="23">
+            |        <BinaryExpression line="26" column="8" lastLine="26" lastColumn="23" token="==">
+            |          <VariableExpression line="26" column="8" lastLine="26" lastColumn="14" name="nested"/>
+            |          <ConstantExpression line="26" column="18" lastLine="26" lastColumn="23" value="3-a"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <ExpressionStatement line="27" column="1" lastLine="30" lastColumn="2">
+            |      <DeclarationExpression line="27" column="1" lastLine="30" lastColumn="2" token="=">
+            |        <VariableExpression line="27" column="5" lastLine="27" lastColumn="11" name="inList"/>
+            |        <SwitchExpression line="27" column="14" lastLine="30" lastColumn="2">
+            |          <ListExpression line="27" column="22" lastLine="27" lastColumn="35">
+            |            <MapExpression line="27" column="23" lastLine="27" lastColumn="29">
+            |              <MapEntryExpression line="27" column="24" lastLine="27" lastColumn="28">
+            |                <ConstantExpression line="27" column="24" lastLine="27" lastColumn="25" value="a"/>
+            |                <ConstantExpression line="27" column="27" lastLine="27" lastColumn="28" value="1"/>
+            |              </MapEntryExpression>
+            |            </MapExpression>
+            |            <ConstantExpression line="27" column="31" lastLine="27" lastColumn="34" value="x"/>
+            |          </ListExpression>
+            |          <CaseStatement line="28" column="5" lastLine="28" lastColumn="9">
+            |            <PatternExpression line="28" column="10" lastLine="28" lastColumn="31">
+            |              <ListPattern>
+            |                <MapPattern>
+            |                  <Entry key="a">
+            |                    <BindingPattern line="28" column="19" lastLine="28" lastColumn="20" name="v"/>
+            |                  </Entry>
+            |                </MapPattern>
+            |                <BindingPattern line="28" column="27" lastLine="28" lastColumn="30" name="tag"/>
+            |              </ListPattern>
+            |            </PatternExpression>
+            |            <BlockStatement line="28" column="35" lastLine="28" lastColumn="44">
+            |              <YieldStatement line="28" column="35" lastLine="28" lastColumn="44">
+            |                <GStringExpression line="28" column="35" lastLine="28" lastColumn="44" text="$v-$tag">
+            |                  <VariableExpression line="28" column="37" lastLine="28" lastColumn="38" name="v"/>
+            |                  <VariableExpression line="28" column="40" lastLine="28" lastColumn="43" name="tag"/>
+            |                </GStringExpression>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <default>
+            |            <BlockStatement line="29" column="35" lastLine="29" lastColumn="42">
+            |              <YieldStatement line="29" column="35" lastLine="29" lastColumn="42">
+            |                <ConstantExpression line="29" column="35" lastLine="29" lastColumn="42" value="other"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </default>
+            |        </SwitchExpression>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <AssertStatement line="31" column="1" lastLine="31" lastColumn="23">
+            |      <BooleanExpression line="31" column="8" lastLine="31" lastColumn="23">
+            |        <BinaryExpression line="31" column="8" lastLine="31" lastColumn="23" token="==">
+            |          <VariableExpression line="31" column="8" lastLine="31" lastColumn="14" name="inList"/>
+            |          <ConstantExpression line="31" column="18" lastLine="31" lastColumn="23" value="1-x"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <ExpressionStatement line="34" column="1" lastLine="37" lastColumn="2">
+            |      <DeclarationExpression line="34" column="1" lastLine="37" lastColumn="2" token="=">
+            |        <VariableExpression line="34" column="5" lastLine="34" lastColumn="11" name="legacy"/>
+            |        <SwitchExpression line="34" column="14" lastLine="37" lastColumn="2">
+            |          <ConstantExpression line="34" column="22" lastLine="34" lastColumn="25" value="a"/>
+            |          <CaseStatement line="35" column="5" lastLine="35" lastColumn="9">
+            |            <MapExpression line="35" column="10" lastLine="35" lastColumn="29">
+            |              <MapEntryExpression line="35" column="11" lastLine="35" lastColumn="18">
+            |                <ConstantExpression line="35" column="11" lastLine="35" lastColumn="12" value="a"/>
+            |                <ConstantExpression line="35" column="14" lastLine="35" lastColumn="18" value="true"/>
+            |              </MapEntryExpression>
+            |              <MapEntryExpression line="35" column="20" lastLine="35" lastColumn="28">
+            |                <ConstantExpression line="35" column="20" lastLine="35" lastColumn="21" value="b"/>
+            |                <ConstantExpression line="35" column="23" lastLine="35" lastColumn="28" value="false"/>
+            |              </MapEntryExpression>
+            |            </MapExpression>
+            |            <BlockStatement line="35" column="33" lastLine="35" lastColumn="47">
+            |              <YieldStatement line="35" column="33" lastLine="35" lastColumn="47">
+            |                <ConstantExpression line="35" column="33" lastLine="35" lastColumn="47" value="truthy value"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </CaseStatement>
+            |          <default>
+            |            <BlockStatement line="36" column="33" lastLine="36" lastColumn="37">
+            |              <YieldStatement line="36" column="33" lastLine="36" lastColumn="37">
+            |                <ConstantExpression line="36" column="33" lastLine="36" lastColumn="37" value="no"/>
+            |              </YieldStatement>
+            |            </BlockStatement>
+            |          </default>
+            |        </SwitchExpression>
+            |      </DeclarationExpression>
+            |    </ExpressionStatement>
+            |    <AssertStatement line="38" column="1" lastLine="38" lastColumn="32">
+            |      <BooleanExpression line="38" column="8" lastLine="38" lastColumn="32">
+            |        <BinaryExpression line="38" column="8" lastLine="38" lastColumn="32" token="==">
+            |          <VariableExpression line="38" column="8" lastLine="38" lastColumn="14" name="legacy"/>
+            |          <ConstantExpression line="38" column="18" lastLine="38" lastColumn="32" value="truthy value"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |  </BlockStatement>
+            |  <AnnotationNode line="-1" column="-1" lastLine="-1" lastColumn="-1" class="groovy.transform.RecordType"/>
+            |  <ClassNode line="21" column="1" lastLine="21" lastColumn="30" kind="record" name="Point">
+            |    <PropertyNode line="21" column="14" lastLine="21" lastColumn="19" name="x" type="int" modifiers="public final"/>
+            |    <PropertyNode line="21" column="21" lastLine="21" lastColumn="26" name="y" type="int" modifiers="public final"/>
+            |  </ClassNode>
+            |  <MethodNode line="3" column="1" lastLine="11" lastColumn="2" name="describe" returnType="java.lang.Object">
+            |    <Parameter line="3" column="14" lastLine="3" lastColumn="15" name="x"/>
+            |    <BlockStatement line="3" column="17" lastLine="11" lastColumn="2">
+            |      <SwitchStatement line="4" column="5" lastLine="10" lastColumn="6">
+            |        <VariableExpression line="4" column="13" lastLine="4" lastColumn="14" name="x"/>
+            |        <CaseStatement line="5" column="9" lastLine="5" lastColumn="13">
+            |          <PatternExpression line="5" column="14" lastLine="5" lastColumn="17">
+            |            <MapPattern/>
+            |          </PatternExpression>
+            |          <BlockStatement line="5" column="54" lastLine="5" lastColumn="65">
+            |            <ExpressionStatement line="5" column="54" lastLine="5" lastColumn="65">
+            |              <ConstantExpression line="5" column="54" lastLine="5" lastColumn="65" value="empty map"/>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="6" column="9" lastLine="6" lastColumn="13">
+            |          <PatternExpression line="6" column="14" lastLine="6" lastColumn="45">
+            |            <MapPattern>
+            |              <Entry key="type">
+            |                <ConstantPattern>
+            |                  <ConstantExpression line="6" column="21" lastLine="6" lastColumn="29" value="circle"/>
+            |                </ConstantPattern>
+            |              </Entry>
+            |              <Entry key="radius">
+            |                <BindingPattern line="6" column="43" lastLine="6" lastColumn="44" name="r"/>
+            |              </Entry>
+            |            </MapPattern>
+            |          </PatternExpression>
+            |          <BlockStatement line="6" column="54" lastLine="6" lastColumn="67">
+            |            <ExpressionStatement line="6" column="54" lastLine="6" lastColumn="67">
+            |              <GStringExpression line="6" column="54" lastLine="6" lastColumn="67" text="circle r=$r">
+            |                <VariableExpression line="6" column="65" lastLine="6" lastColumn="66" name="r"/>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="7" column="9" lastLine="7" lastColumn="13">
+            |          <PatternExpression line="7" column="14" lastLine="7" lastColumn="40">
+            |            <MapPattern>
+            |              <Entry key="name">
+            |                <TypePattern line="7" column="28" lastLine="7" lastColumn="29" type="String" name="n"/>
+            |              </Entry>
+            |              <RestPattern line="7" column="35" lastLine="7" lastColumn="39" name="rest"/>
+            |            </MapPattern>
+            |          </PatternExpression>
+            |          <BlockStatement line="7" column="54" lastLine="7" lastColumn="87">
+            |            <ExpressionStatement line="7" column="54" lastLine="7" lastColumn="87">
+            |              <GStringExpression line="7" column="54" lastLine="7" lastColumn="87" text="named $n; others=${rest.size()}">
+            |                <VariableExpression line="7" column="62" lastLine="7" lastColumn="63" name="n"/>
+            |                <MethodCallExpression line="7" column="74" lastLine="7" lastColumn="85">
+            |                  <VariableExpression line="7" column="74" lastLine="7" lastColumn="78" name="rest"/>
+            |                  <ConstantExpression line="7" column="79" lastLine="7" lastColumn="83" value="size"/>
+            |                  <ArgumentListExpression line="7" column="83" lastLine="7" lastColumn="85"/>
+            |                </MethodCallExpression>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="8" column="9" lastLine="8" lastColumn="13">
+            |          <PatternExpression line="8" column="14" lastLine="8" lastColumn="41">
+            |            <MapPattern>
+            |              <Entry key="id">
+            |                <BindingPattern line="8" column="23" lastLine="8" lastColumn="24" name="i"/>
+            |              </Entry>
+            |              <RestPattern/>
+            |            </MapPattern>
+            |            <guard>
+            |              <BinaryExpression line="8" column="36" lastLine="8" lastColumn="41" token="&gt;">
+            |                <VariableExpression line="8" column="36" lastLine="8" lastColumn="37" name="i"/>
+            |                <ConstantExpression line="8" column="40" lastLine="8" lastColumn="41" value="0"/>
+            |              </BinaryExpression>
+            |            </guard>
+            |          </PatternExpression>
+            |          <BlockStatement line="8" column="54" lastLine="8" lastColumn="61">
+            |            <ExpressionStatement line="8" column="54" lastLine="8" lastColumn="61">
+            |              <GStringExpression line="8" column="54" lastLine="8" lastColumn="61" text="id $i">
+            |                <VariableExpression line="8" column="59" lastLine="8" lastColumn="60" name="i"/>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <default>
+            |          <BlockStatement line="9" column="54" lastLine="9" lastColumn="61">
+            |            <ExpressionStatement line="9" column="54" lastLine="9" lastColumn="61">
+            |              <ConstantExpression line="9" column="54" lastLine="9" lastColumn="61" value="other"/>
+            |            </ExpressionStatement>
+            |          </BlockStatement>
+            |        </default>
+            |      </SwitchStatement>
+            |    </BlockStatement>
+            |  </MethodNode>
+            |</Module>
+            |'''.stripMargin())
+    }
+
+    // GROOVY-12641
+    @Test
+    void 'primitive type patterns in a switch'() {
+        expectAst('''\
+            |// GEP-19: primitive type patterns (JEP 507 alignment): the pattern tests the
+            |// wrapper type and binds the primitive; there is no widening or narrowing
+            |def describe(subject) {
+            |    switch (subject) {
+            |        case int i when i < 0 -> "negative int $i"
+            |        case int i -> "int $i"
+            |        case long l -> "long $l"
+            |        case double d -> "double $d"
+            |        case boolean b -> "boolean $b"
+            |        case char c -> "char $c"
+            |        default -> 'other'
+            |    }
+            |}
+            |
+            |assert describe(42) == 'int 42'
+            |assert describe(-7) == 'negative int -7'
+            |assert describe(42L) == 'long 42'
+            |assert describe(3.5d) == 'double 3.5'
+            |assert describe(true) == 'boolean true'
+            |assert describe('x' as char) == 'char x'
+            |assert describe(42 as byte) == 'other'
+            |assert describe(3.5) == 'other' // BigDecimal is not a double
+            |assert describe(null) == 'other'
+            |
+            |// mixed with a legacy label (closure-label lowering)
+            |def area(shape) {
+            |    switch (shape) {
+            |        case int side when side > 0 -> side * side
+            |        case ~/circle:\\d+/ -> 'circle'
+            |        default -> 'unknown'
+            |    }
+            |}
+            |
+            |assert area(3) == 9
+            |assert area('circle:4') == 'circle'
+            |assert area(-3) == 'unknown'
+            |'''.stripMargin(), '''\
+            |<Module line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |  <BlockStatement line="-1" column="-1" lastLine="-1" lastColumn="-1">
+            |    <AssertStatement line="15" column="1" lastLine="15" lastColumn="32">
+            |      <BooleanExpression line="15" column="8" lastLine="15" lastColumn="32">
+            |        <BinaryExpression line="15" column="8" lastLine="15" lastColumn="32" token="==">
+            |          <MethodCallExpression line="15" column="8" lastLine="15" lastColumn="20" implicitThis="true">
+            |            <ConstantExpression line="15" column="8" lastLine="15" lastColumn="16" value="describe"/>
+            |            <ConstantExpression line="15" column="17" lastLine="15" lastColumn="19" value="42"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="15" column="24" lastLine="15" lastColumn="32" value="int 42"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="16" column="1" lastLine="16" lastColumn="41">
+            |      <BooleanExpression line="16" column="8" lastLine="16" lastColumn="41">
+            |        <BinaryExpression line="16" column="8" lastLine="16" lastColumn="41" token="==">
+            |          <MethodCallExpression line="16" column="8" lastLine="16" lastColumn="20" implicitThis="true">
+            |            <ConstantExpression line="16" column="8" lastLine="16" lastColumn="16" value="describe"/>
+            |            <ConstantExpression line="16" column="17" lastLine="16" lastColumn="19" value="-7"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="16" column="24" lastLine="16" lastColumn="41" value="negative int -7"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="17" column="1" lastLine="17" lastColumn="34">
+            |      <BooleanExpression line="17" column="8" lastLine="17" lastColumn="34">
+            |        <BinaryExpression line="17" column="8" lastLine="17" lastColumn="34" token="==">
+            |          <MethodCallExpression line="17" column="8" lastLine="17" lastColumn="21" implicitThis="true">
+            |            <ConstantExpression line="17" column="8" lastLine="17" lastColumn="16" value="describe"/>
+            |            <ConstantExpression line="17" column="17" lastLine="17" lastColumn="20" value="42"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="17" column="25" lastLine="17" lastColumn="34" value="long 42"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="18" column="1" lastLine="18" lastColumn="38">
+            |      <BooleanExpression line="18" column="8" lastLine="18" lastColumn="38">
+            |        <BinaryExpression line="18" column="8" lastLine="18" lastColumn="38" token="==">
+            |          <MethodCallExpression line="18" column="8" lastLine="18" lastColumn="22" implicitThis="true">
+            |            <ConstantExpression line="18" column="8" lastLine="18" lastColumn="16" value="describe"/>
+            |            <ConstantExpression line="18" column="17" lastLine="18" lastColumn="21" value="3.5"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="18" column="26" lastLine="18" lastColumn="38" value="double 3.5"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="19" column="1" lastLine="19" lastColumn="40">
+            |      <BooleanExpression line="19" column="8" lastLine="19" lastColumn="40">
+            |        <BinaryExpression line="19" column="8" lastLine="19" lastColumn="40" token="==">
+            |          <MethodCallExpression line="19" column="8" lastLine="19" lastColumn="22" implicitThis="true">
+            |            <ConstantExpression line="19" column="8" lastLine="19" lastColumn="16" value="describe"/>
+            |            <ConstantExpression line="19" column="17" lastLine="19" lastColumn="21" value="true"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="19" column="26" lastLine="19" lastColumn="40" value="boolean true"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="20" column="1" lastLine="20" lastColumn="41">
+            |      <BooleanExpression line="20" column="8" lastLine="20" lastColumn="41">
+            |        <BinaryExpression line="20" column="8" lastLine="20" lastColumn="41" token="==">
+            |          <MethodCallExpression line="20" column="8" lastLine="20" lastColumn="29" implicitThis="true">
+            |            <ConstantExpression line="20" column="8" lastLine="20" lastColumn="16" value="describe"/>
+            |            <CastExpression line="20" column="17" lastLine="20" lastColumn="28" kind="as" type="char">
+            |              <ConstantExpression line="20" column="17" lastLine="20" lastColumn="20" value="x"/>
+            |            </CastExpression>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="20" column="33" lastLine="20" lastColumn="41" value="char x"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="21" column="1" lastLine="21" lastColumn="39">
+            |      <BooleanExpression line="21" column="8" lastLine="21" lastColumn="39">
+            |        <BinaryExpression line="21" column="8" lastLine="21" lastColumn="39" token="==">
+            |          <MethodCallExpression line="21" column="8" lastLine="21" lastColumn="28" implicitThis="true">
+            |            <ConstantExpression line="21" column="8" lastLine="21" lastColumn="16" value="describe"/>
+            |            <CastExpression line="21" column="17" lastLine="21" lastColumn="27" kind="as" type="byte">
+            |              <ConstantExpression line="21" column="17" lastLine="21" lastColumn="19" value="42"/>
+            |            </CastExpression>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="21" column="32" lastLine="21" lastColumn="39" value="other"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="22" column="1" lastLine="22" lastColumn="32">
+            |      <BooleanExpression line="22" column="8" lastLine="22" lastColumn="32">
+            |        <BinaryExpression line="22" column="8" lastLine="22" lastColumn="32" token="==">
+            |          <MethodCallExpression line="22" column="8" lastLine="22" lastColumn="21" implicitThis="true">
+            |            <ConstantExpression line="22" column="8" lastLine="22" lastColumn="16" value="describe"/>
+            |            <ConstantExpression line="22" column="17" lastLine="22" lastColumn="20" value="3.5"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="22" column="25" lastLine="22" lastColumn="32" value="other"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="23" column="1" lastLine="23" lastColumn="33">
+            |      <BooleanExpression line="23" column="8" lastLine="23" lastColumn="33">
+            |        <BinaryExpression line="23" column="8" lastLine="23" lastColumn="33" token="==">
+            |          <MethodCallExpression line="23" column="8" lastLine="23" lastColumn="22" implicitThis="true">
+            |            <ConstantExpression line="23" column="8" lastLine="23" lastColumn="16" value="describe"/>
+            |            <ConstantExpression line="23" column="17" lastLine="23" lastColumn="21" value="null"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="23" column="26" lastLine="23" lastColumn="33" value="other"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="34" column="1" lastLine="34" lastColumn="20">
+            |      <BooleanExpression line="34" column="8" lastLine="34" lastColumn="20">
+            |        <BinaryExpression line="34" column="8" lastLine="34" lastColumn="20" token="==">
+            |          <MethodCallExpression line="34" column="8" lastLine="34" lastColumn="15" implicitThis="true">
+            |            <ConstantExpression line="34" column="8" lastLine="34" lastColumn="12" value="area"/>
+            |            <ConstantExpression line="34" column="13" lastLine="34" lastColumn="14" value="3"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="34" column="19" lastLine="34" lastColumn="20" value="9"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="35" column="1" lastLine="35" lastColumn="36">
+            |      <BooleanExpression line="35" column="8" lastLine="35" lastColumn="36">
+            |        <BinaryExpression line="35" column="8" lastLine="35" lastColumn="36" token="==">
+            |          <MethodCallExpression line="35" column="8" lastLine="35" lastColumn="24" implicitThis="true">
+            |            <ConstantExpression line="35" column="8" lastLine="35" lastColumn="12" value="area"/>
+            |            <ConstantExpression line="35" column="13" lastLine="35" lastColumn="23" value="circle:4"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="35" column="28" lastLine="35" lastColumn="36" value="circle"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |    <AssertStatement line="36" column="1" lastLine="36" lastColumn="29">
+            |      <BooleanExpression line="36" column="8" lastLine="36" lastColumn="29">
+            |        <BinaryExpression line="36" column="8" lastLine="36" lastColumn="29" token="==">
+            |          <MethodCallExpression line="36" column="8" lastLine="36" lastColumn="16" implicitThis="true">
+            |            <ConstantExpression line="36" column="8" lastLine="36" lastColumn="12" value="area"/>
+            |            <ConstantExpression line="36" column="13" lastLine="36" lastColumn="15" value="-3"/>
+            |          </MethodCallExpression>
+            |          <ConstantExpression line="36" column="20" lastLine="36" lastColumn="29" value="unknown"/>
+            |        </BinaryExpression>
+            |      </BooleanExpression>
+            |    </AssertStatement>
+            |  </BlockStatement>
+            |  <MethodNode line="3" column="1" lastLine="13" lastColumn="2" name="describe" returnType="java.lang.Object">
+            |    <Parameter line="3" column="14" lastLine="3" lastColumn="21" name="subject"/>
+            |    <BlockStatement line="3" column="23" lastLine="13" lastColumn="2">
+            |      <SwitchStatement line="4" column="5" lastLine="12" lastColumn="6">
+            |        <VariableExpression line="4" column="13" lastLine="4" lastColumn="20" name="subject"/>
+            |        <CaseStatement line="5" column="9" lastLine="5" lastColumn="13">
+            |          <PatternExpression line="5" column="14" lastLine="5" lastColumn="30">
+            |            <TypePattern line="5" column="18" lastLine="5" lastColumn="19" type="int" name="i"/>
+            |            <guard>
+            |              <BinaryExpression line="5" column="25" lastLine="5" lastColumn="30" token="&lt;">
+            |                <VariableExpression line="5" column="25" lastLine="5" lastColumn="26" name="i"/>
+            |                <ConstantExpression line="5" column="29" lastLine="5" lastColumn="30" value="0"/>
+            |              </BinaryExpression>
+            |            </guard>
+            |          </PatternExpression>
+            |          <BlockStatement line="5" column="34" lastLine="5" lastColumn="51">
+            |            <ExpressionStatement line="5" column="34" lastLine="5" lastColumn="51">
+            |              <GStringExpression line="5" column="34" lastLine="5" lastColumn="51" text="negative int $i">
+            |                <VariableExpression line="5" column="49" lastLine="5" lastColumn="50" name="i"/>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="6" column="9" lastLine="6" lastColumn="13">
+            |          <PatternExpression line="6" column="14" lastLine="6" lastColumn="19">
+            |            <TypePattern line="6" column="18" lastLine="6" lastColumn="19" type="int" name="i"/>
+            |          </PatternExpression>
+            |          <BlockStatement line="6" column="23" lastLine="6" lastColumn="31">
+            |            <ExpressionStatement line="6" column="23" lastLine="6" lastColumn="31">
+            |              <GStringExpression line="6" column="23" lastLine="6" lastColumn="31" text="int $i">
+            |                <VariableExpression line="6" column="29" lastLine="6" lastColumn="30" name="i"/>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="7" column="9" lastLine="7" lastColumn="13">
+            |          <PatternExpression line="7" column="14" lastLine="7" lastColumn="20">
+            |            <TypePattern line="7" column="19" lastLine="7" lastColumn="20" type="long" name="l"/>
+            |          </PatternExpression>
+            |          <BlockStatement line="7" column="24" lastLine="7" lastColumn="33">
+            |            <ExpressionStatement line="7" column="24" lastLine="7" lastColumn="33">
+            |              <GStringExpression line="7" column="24" lastLine="7" lastColumn="33" text="long $l">
+            |                <VariableExpression line="7" column="31" lastLine="7" lastColumn="32" name="l"/>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="8" column="9" lastLine="8" lastColumn="13">
+            |          <PatternExpression line="8" column="14" lastLine="8" lastColumn="22">
+            |            <TypePattern line="8" column="21" lastLine="8" lastColumn="22" type="double" name="d"/>
+            |          </PatternExpression>
+            |          <BlockStatement line="8" column="26" lastLine="8" lastColumn="37">
+            |            <ExpressionStatement line="8" column="26" lastLine="8" lastColumn="37">
+            |              <GStringExpression line="8" column="26" lastLine="8" lastColumn="37" text="double $d">
+            |                <VariableExpression line="8" column="35" lastLine="8" lastColumn="36" name="d"/>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="9" column="9" lastLine="9" lastColumn="13">
+            |          <PatternExpression line="9" column="14" lastLine="9" lastColumn="23">
+            |            <TypePattern line="9" column="22" lastLine="9" lastColumn="23" type="boolean" name="b"/>
+            |          </PatternExpression>
+            |          <BlockStatement line="9" column="27" lastLine="9" lastColumn="39">
+            |            <ExpressionStatement line="9" column="27" lastLine="9" lastColumn="39">
+            |              <GStringExpression line="9" column="27" lastLine="9" lastColumn="39" text="boolean $b">
+            |                <VariableExpression line="9" column="37" lastLine="9" lastColumn="38" name="b"/>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="10" column="9" lastLine="10" lastColumn="13">
+            |          <PatternExpression line="10" column="14" lastLine="10" lastColumn="20">
+            |            <TypePattern line="10" column="19" lastLine="10" lastColumn="20" type="char" name="c"/>
+            |          </PatternExpression>
+            |          <BlockStatement line="10" column="24" lastLine="10" lastColumn="33">
+            |            <ExpressionStatement line="10" column="24" lastLine="10" lastColumn="33">
+            |              <GStringExpression line="10" column="24" lastLine="10" lastColumn="33" text="char $c">
+            |                <VariableExpression line="10" column="31" lastLine="10" lastColumn="32" name="c"/>
+            |              </GStringExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <default>
+            |          <BlockStatement line="11" column="20" lastLine="11" lastColumn="27">
+            |            <ExpressionStatement line="11" column="20" lastLine="11" lastColumn="27">
+            |              <ConstantExpression line="11" column="20" lastLine="11" lastColumn="27" value="other"/>
+            |            </ExpressionStatement>
+            |          </BlockStatement>
+            |        </default>
+            |      </SwitchStatement>
+            |    </BlockStatement>
+            |  </MethodNode>
+            |  <MethodNode line="26" column="1" lastLine="32" lastColumn="2" name="area" returnType="java.lang.Object">
+            |    <Parameter line="26" column="10" lastLine="26" lastColumn="15" name="shape"/>
+            |    <BlockStatement line="26" column="17" lastLine="32" lastColumn="2">
+            |      <SwitchStatement line="27" column="5" lastLine="31" lastColumn="6">
+            |        <VariableExpression line="27" column="13" lastLine="27" lastColumn="18" name="shape"/>
+            |        <CaseStatement line="28" column="9" lastLine="28" lastColumn="13">
+            |          <PatternExpression line="28" column="14" lastLine="28" lastColumn="36">
+            |            <TypePattern line="28" column="18" lastLine="28" lastColumn="22" type="int" name="side"/>
+            |            <guard>
+            |              <BinaryExpression line="28" column="28" lastLine="28" lastColumn="36" token="&gt;">
+            |                <VariableExpression line="28" column="28" lastLine="28" lastColumn="32" name="side"/>
+            |                <ConstantExpression line="28" column="35" lastLine="28" lastColumn="36" value="0"/>
+            |              </BinaryExpression>
+            |            </guard>
+            |          </PatternExpression>
+            |          <BlockStatement line="28" column="40" lastLine="28" lastColumn="51">
+            |            <ExpressionStatement line="28" column="40" lastLine="28" lastColumn="51">
+            |              <BinaryExpression line="28" column="40" lastLine="28" lastColumn="51" token="*">
+            |                <VariableExpression line="28" column="40" lastLine="28" lastColumn="44" name="side"/>
+            |                <VariableExpression line="28" column="47" lastLine="28" lastColumn="51" name="side"/>
+            |              </BinaryExpression>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <CaseStatement line="29" column="9" lastLine="29" lastColumn="13">
+            |          <BitwiseNegationExpression line="29" column="14" lastLine="29" lastColumn="27">
+            |            <ConstantExpression line="29" column="15" lastLine="29" lastColumn="27" value="circle:\\d+"/>
+            |          </BitwiseNegationExpression>
+            |          <BlockStatement line="29" column="31" lastLine="29" lastColumn="39">
+            |            <ExpressionStatement line="29" column="31" lastLine="29" lastColumn="39">
+            |              <ConstantExpression line="29" column="31" lastLine="29" lastColumn="39" value="circle"/>
+            |            </ExpressionStatement>
+            |            <BreakStatement line="-1" column="-1" lastLine="-1" lastColumn="-1"/>
+            |          </BlockStatement>
+            |        </CaseStatement>
+            |        <default>
+            |          <BlockStatement line="30" column="20" lastLine="30" lastColumn="29">
+            |            <ExpressionStatement line="30" column="20" lastLine="30" lastColumn="29">
+            |              <ConstantExpression line="30" column="20" lastLine="30" lastColumn="29" value="unknown"/>
+            |            </ExpressionStatement>
+            |          </BlockStatement>
+            |        </default>
+            |      </SwitchStatement>
+            |    </BlockStatement>
+            |  </MethodNode>
+            |</Module>
+            |'''.stripMargin())
+    }
 }
