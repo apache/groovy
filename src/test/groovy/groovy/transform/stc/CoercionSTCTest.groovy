@@ -1021,7 +1021,7 @@ import static groovy.test.GroovyAssert.shouldFail
                 Closure<String> c = { 'a' }
                 c
             }
-            Function<Integer,Integer> ten() { Math.&abs }
+            Function<Integer,Integer> ten() { Integer.&bitCount }
 
             assert one().get() == 'x'
             assert two().get().toLowerCase() == 'y'
@@ -1032,7 +1032,7 @@ import static groovy.test.GroovyAssert.shouldFail
             assert seven(true).get() == 'y'
             assert eight().get() == ['z']
             assert nine().get() == 'a'
-            assert ten().apply(-1) == 1
+            assert ten().apply(3) == 2
         '''
     }
 
