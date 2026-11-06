@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.ast.Variable;
+import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -41,16 +42,19 @@ import org.codehaus.groovy.classgen.asm.CallSiteWriter;
 import org.codehaus.groovy.classgen.asm.ClosureWriter;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
+import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
+import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
@@ -58,6 +62,8 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getMethod;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isOuterSuperExpression;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.mayHaveSideEffects;
 import static org.apache.groovy.util.BeanUtils.capitalize;
@@ -76,6 +82,7 @@ import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isBigDecimalType;
 import static org.codehaus.groovy.ast.ClassHelper.isBigIntegerType;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperInteger;
@@ -90,7 +97,9 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CLASSNODE;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor.inferLoopElementType;
 import static org.objectweb.asm.Opcodes.AALOAD;
@@ -782,6 +791,19 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
 
+        if (name != null && !(expression instanceof AttributeExpression) && !expression.isSpreadSafe()
+                && makeSuperPropertySite(expression, objectExpression, name, compileStack.isLHS())) {
+            return;
+        }
+        if (name != null && expression instanceof AttributeExpression && !expression.isSpreadSafe()
+                && isOuterSuperExpression(objectExpression)) { // "Outer.super.@name" is a field of Outer's superclass
+            ClassNode receiverType = getPropertyOwnerType(objectExpression);
+            if (compileStack.isLHS() ? setField(expression, objectExpression, receiverType, name)
+                    : makeGetField(objectExpression, receiverType, name, expression.isSafe(), false)) {
+                return;
+            }
+        }
+
         if (name != null && compileStack.isLHS()) {
             boolean[] isClassReceiver = new boolean[1];
             ClassNode receiverType = getPropertyOwnerType(objectExpression, isClassReceiver);
@@ -828,6 +850,102 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         super.fallbackAttributeOrPropertySite(expression, objectExpression, name, adapter);
     }
 
+    /**
+     * Reads or writes "super.name", as the operand of "++" or "--" or the target
+     * of a compound assignment, through the accessor of the superclass. Within a
+     * closure or lambda, and for "Outer.super.name", the accessor is called through
+     * the super$ helper the type checker asked the enclosing class for. An accessor
+     * that is an extension method is called directly, as it needs no helper.
+     */
+    private boolean makeSuperPropertySite(final PropertyExpression expression, final Expression objectExpression, final String name, final boolean lhs) {
+        ClassNode helperType = expression.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);
+        MethodNode target = findSuperPropertyExtension(expression, objectExpression, name, lhs);
+        Expression receiver;
+        if (target != null) {
+            helperType = null;
+            receiver = objectExpression;
+        } else if (helperType != null) {
+            MethodNode accessor = findSuperPropertyAccessor(expression, helperType.getSuperClass(), name, lhs);
+            List<MethodNode> helpers = helperType.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);
+            if (accessor == null || helpers == null || helpers.stream().noneMatch(mn -> isSameSuperMopMethod(mn, accessor))) {
+                return false;
+            }
+            target = StaticCompilationMopWriter.getSuperMopMethod(helperType, accessor);
+            receiver = varX("this");
+        } else if (isSuperExpression(objectExpression) && !controller.isInGeneratedFunction()) {
+            target = findSuperPropertyAccessor(expression, controller.getClassNode().getSuperClass(), name, lhs);
+            if (target == null) {
+                return false;
+            }
+            receiver = objectExpression;
+        } else {
+            return false;
+        }
+
+        CompileStack compileStack = controller.getCompileStack();
+        OperandStack operandStack = controller.getOperandStack();
+        MethodCallExpression call;
+        int value = 0;
+        if (lhs) { // the value to store is on the operand stack
+            ClassNode valueType = operandStack.getTopOperand();
+            value = compileStack.defineTemporaryVariable("$value", valueType, true);
+            call = callX(receiver, target.getName(), args(new VariableSlotLoader(valueType, value, operandStack)));
+        } else {
+            call = callX(receiver, target.getName());
+        }
+        call.setImplicitThis(helperType != null);
+        call.setMethodTarget(target);
+        call.setSourcePosition(expression);
+        compileStack.pushLHS(false);
+        call.visit(controller.getAcg());
+        compileStack.popLHS();
+        if (lhs) {
+            operandStack.pop();
+            compileStack.removeVar(value);
+        }
+        return true;
+    }
+
+    private static MethodNode findSuperPropertyAccessor(final PropertyExpression expression, final ClassNode superType, final String name, final boolean setter) {
+        MethodNode accessor;
+        if (setter) { // the setter the type checker selected for the value (and requested the super$ helper for)
+            accessor = expression.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+            if (accessor != null && (accessor.getParameters().length != 1 || accessor instanceof ExtensionMethodNode)) accessor = null;
+        } else {
+            String suffix = capitalize(name);
+            accessor = superType.getGetterMethod("is" + suffix);
+            if (accessor == null) accessor = superType.getGetterMethod("get" + suffix);
+        }
+        return accessor == null || accessor.isStatic() ? null : accessor;
+    }
+
+    private MethodNode findSuperPropertyExtension(final PropertyExpression expression, final Expression objectExpression, final String name, final boolean setter) {
+        if (!isSuperExpression(objectExpression) && !isOuterSuperExpression(objectExpression)) {
+            return null;
+        }
+        MethodNode accessor;
+        if (setter) { // the setter the type checker selected for the value
+            accessor = expression.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+            if (!(accessor instanceof ExtensionMethodNode) || accessor.getParameters().length != 1) accessor = null;
+        } else { // the getter, if the superclass declares none (as the type checker selects it)
+            ClassNode superType = controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode());
+            String suffix = capitalize(name);
+            if (superType.getGetterMethod("is" + suffix) != null || superType.getGetterMethod("get" + suffix) != null) return null;
+            ClassLoader loader = controller.getSourceUnit().getClassLoader();
+            Set<MethodNode> getters = findDGMMethodsForClassNode(loader, superType, "get" + suffix);
+            for (MethodNode isser : findDGMMethodsForClassNode(loader, superType, "is" + suffix)) {
+                if (isPrimitiveBoolean(isser.getReturnType())) getters.add(isser);
+            }
+            List<MethodNode> bestGetters = chooseBestMethod(superType, getters, ClassNode.EMPTY_ARRAY);
+            accessor = bestGetters.size() == 1 ? bestGetters.get(0) : null;
+        }
+        return accessor == null || ((ExtensionMethodNode) accessor).isStaticExtension() ? null : accessor;
+    }
+
+    private static boolean isSameSuperMopMethod(final MethodNode one, final MethodNode two) {
+        return MopWriter.getMopMethodName(one, false).equals(MopWriter.getMopMethodName(two, false))
+            && BytecodeHelper.getMethodDescriptor(one.getReturnType(), one.getParameters()).equals(BytecodeHelper.getMethodDescriptor(two.getReturnType(), two.getParameters()));
+    }
 
     private ClassNode getPropertyOwnerType(final Expression receiver, final boolean... isClassReceiver) {
         var inferredType = receiver.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
