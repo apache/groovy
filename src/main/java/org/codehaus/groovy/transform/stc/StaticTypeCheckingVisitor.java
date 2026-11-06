@@ -861,6 +861,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
+            if (resolveCopyWithBlockVariable(vexp, name)) return; // GROOVY-12713
+
             if (tryVariableExpressionAsProperty(vexp, name)) return;
 
             if (!extension.handleUnresolvedVariableExpression(vexp)) {
@@ -962,6 +964,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitPropertyExpression(final PropertyExpression expression) {
         boolean readOnly = !typeCheckingContext.isTargetOfEnclosingAssignment(expression);
+        if (resolveCopyWithBlockPath(expression)) return; // GROOVY-12713
         if (existsProperty(expression, readOnly)
                 || extension.handleUnresolvedProperty(expression)) {
             if (readOnly) { // GROOVY-12305: record narrowed type of instanceof-guarded receiver for later use
@@ -4809,6 +4812,99 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
     }
 
+    /** Metadata of a closure that is the block of nested {@code copyWith}: the record or immutable type copied. */
+    private static final String COPY_WITH_BLOCK = "copyWith block";
+    /** Metadata of a variable or property expression that names a component path inside such a block. */
+    private static final String COPY_WITH_PATH = "copyWith path";
+
+    /**
+     * The block form of nested {@code copyWith} (GROOVY-12015): {@code copyWith { address.city = 'x' }} on a type
+     * whose {@code copyWith(Map)} declares its components as named parameters. The closure runs against a recorder
+     * that turns the assignments into the map form, so the type checker types its names as the components they
+     * stand for and leaves their dispatch to the runtime (GROOVY-12713).
+     */
+    private static boolean isCopyWithBlock(final MethodNode mn, final Parameter[] params, final ClassNode receiver) {
+        return "copyWith".equals(mn.getName()) && params.length == 1 && CLOSURE_TYPE.equals(params[0].getType())
+                && copyWithNamedParams(receiver) != null;
+    }
+
+    /** The type copied by the innermost enclosing {@code copyWith} block, or null outside one. */
+    private ClassNode copyWithBlockType() {
+        TypeCheckingContext.EnclosingClosure enclosing = typeCheckingContext.getEnclosingClosure();
+        return enclosing == null ? null : enclosing.getClosureExpression().getNodeMetaData(COPY_WITH_BLOCK);
+    }
+
+    /**
+     * Inside a {@code copyWith} block, a bare name is a component of the copied type ({@code name = 'x'},
+     * {@code address.city = 'y'}) and {@code old} is the original object. Components are read and written through
+     * the block's recorder at run time, so they are marked for dynamic dispatch and typed as declared; {@code old}
+     * is the real object and only its lookup is dynamic.
+     */
+    private boolean resolveCopyWithBlockVariable(final VariableExpression vexp, final String name) {
+        ClassNode blockType = copyWithBlockType();
+        if (blockType == null) return false;
+        if ("old".equals(name)) {
+            vexp.putNodeMetaData(DYNAMIC_RESOLUTION, blockType);
+            storeType(vexp, blockType);
+            return true;
+        }
+        Map<String, ClassNode> components = copyWithNamedParams(blockType);
+        if (components == null || !components.containsKey(name)) return false;
+        ClassNode type = components.get(name) != null ? components.get(name) : OBJECT_TYPE;
+        vexp.putNodeMetaData(DYNAMIC_RESOLUTION, type);
+        vexp.putNodeMetaData(COPY_WITH_PATH, Boolean.TRUE);
+        storeType(vexp, type);
+        return true;
+    }
+
+    /**
+     * Inside a {@code copyWith} block, a property of a component path ({@code address.city}) is a component of
+     * that path's type, readable and writable, when the type's {@code copyWith(Map)} declares it; the path stays
+     * dynamic, since the recorder answers it at run time.
+     */
+    private boolean resolveCopyWithBlockPath(final PropertyExpression expression) {
+        ClassNode blockType = copyWithBlockType();
+        String name = expression.getPropertyAsString();
+        if (blockType == null || name == null || !isCopyWithComponentPath(expression.getObjectExpression(), blockType)) return false;
+        Expression object = expression.getObjectExpression();
+        if (object.getNodeMetaData(COPY_WITH_PATH) == null) {
+            object.visit(this); // types and marks the path up to here, as existsProperty would have
+            if (object.getNodeMetaData(COPY_WITH_PATH) == null) return false;
+        }
+        Map<String, ClassNode> components = copyWithNamedParams(getType(object));
+        if (components == null || !components.containsKey(name)) return false;
+        ClassNode type = components.get(name) != null ? components.get(name) : OBJECT_TYPE;
+        expression.putNodeMetaData(DYNAMIC_RESOLUTION, type);
+        expression.putNodeMetaData(COPY_WITH_PATH, Boolean.TRUE);
+        storeType(expression, type);
+        return true;
+    }
+
+    /** Whether a bare name or a chain of properties starts at a component of the block's type (not at {@code old}). */
+    private static boolean isCopyWithComponentPath(Expression expression, final ClassNode blockType) {
+        while (expression instanceof PropertyExpression pexp) expression = pexp.getObjectExpression();
+        if (!(expression instanceof VariableExpression vexp) || !(vexp.getAccessedVariable() instanceof DynamicVariable)) return false;
+        Map<String, ClassNode> components = copyWithNamedParams(blockType);
+        return components != null && components.containsKey(vexp.getName());
+    }
+
+    /**
+     * Inside a {@code copyWith} block, {@code path.modify { it... }} computes a component's new value from its
+     * current one: the closure's parameter is the component's type and the call is answered by the recorder.
+     */
+    private List<MethodNode> resolveCopyWithBlockModify(final MethodCallExpression call, final String name, final ArgumentListExpression arguments) {
+        if (!"modify".equals(name) || copyWithBlockType() == null || call.getObjectExpression().getNodeMetaData(COPY_WITH_PATH) == null) return Collections.emptyList();
+        List<Expression> expressions = arguments.getExpressions();
+        if (expressions.size() != 1 || !(expressions.get(0) instanceof ClosureExpression closure)) return Collections.emptyList();
+        ClassNode componentType = getType(call.getObjectExpression());
+        closure.putNodeMetaData(CLOSURE_ARGUMENTS, new ClassNode[]{componentType});
+        call.putNodeMetaData(DYNAMIC_RESOLUTION, OBJECT_TYPE);
+        Parameter block = new Parameter(CLOSURE_TYPE.getPlainNodeReference(), "block");
+        MethodNode modify = new MethodNode("modify", 0, OBJECT_TYPE, new Parameter[]{block}, ClassNode.EMPTY_ARRAY, null);
+        modify.setDeclaringClass(getWrapper(componentType)); // a virtual method, as a type checking extension's makeDynamic would return
+        return List.of(modify);
+    }
+
     /**
      * The named parameters, by name, of {@code type}'s one-argument {@code copyWith(Map)}; null when the type is
      * unknown or declares no such method with {@code @NamedParam}s.
@@ -5170,6 +5266,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private void checkClosureWithDelegatesTo(final ClassNode receiver, final MethodNode mn, final ArgumentListExpression arguments, final Parameter[] params, final Expression expression, final Parameter param) {
+        if (isCopyWithBlock(mn, params, receiver)) { // GROOVY-12713
+            expression.putNodeMetaData(DELEGATION_METADATA, newDelegationMetadata(receiver, Closure.DELEGATE_FIRST));
+            expression.putNodeMetaData(COPY_WITH_BLOCK, receiver);
+            return;
+        }
         List<AnnotationNode> annotations = param.getAnnotations(DELEGATES_TO);
         if (annotations != null && !annotations.isEmpty()) {
             for (AnnotationNode annotation : annotations) {
@@ -5507,6 +5608,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             int nArgs = list.stream().noneMatch(e -> e instanceof SpreadExpression) ? list.size() : -1;
                             mn = List.of(nArgs == 0 ? CLOSURE_CALL_NO_ARG : nArgs == 1 ? CLOSURE_CALL_ONE_ARG : CLOSURE_CALL_VARGS);
                         }
+                    }
+                    if (mn.isEmpty()) {
+                        mn = resolveCopyWithBlockModify(call, name, argumentList); // GROOVY-12713
                     }
                     if (mn.isEmpty()) {
                         mn = extension.handleMissingMethod(receiver, name, argumentList, args, call);

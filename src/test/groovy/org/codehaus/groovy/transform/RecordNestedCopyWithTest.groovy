@@ -142,4 +142,54 @@ final class RecordNestedCopyWithTest {
         '''
         assert err.message.contains("argument for named param 'company.address.zip' has type 'int' but expected 'java.lang.String'")
     }
+
+    // GROOVY-12713: the block form under static type checking: the record type is the block's delegate, its
+    // components can be assigned at any depth, old is the original and modify derives a value from the current one
+    @Test
+    void record_block_form_under_static_type_checking() {
+        assertScript shell, GRAPH + '''
+            @groovy.transform.CompileStatic
+            Person moved(Person person) {
+                person.copyWith {
+                    name = old.name.toUpperCase()
+                    address.city = 'Boston'
+                    company.address.zip = '07031'
+                    company.name.modify { it + ' Inc' }
+                }
+            }
+            def q = moved(p)
+            assert q.name == 'ALICE'
+            assert q.address.city == 'Boston'
+            assert q.address.zip == '10001'
+            assert q.company.address.zip == '07031'
+            assert q.company.name == 'Acme Inc'
+            assert p.name == 'Alice'
+        '''
+    }
+
+    @Test
+    void record_block_form_type_checks_the_assigned_values() {
+        def err = shouldFail shell, '''
+            @RecordType(copyWith = true) class Dimensions { int width; int height }
+            @RecordType(copyWith = true) class Box { String label; Dimensions size }
+            @groovy.transform.CompileStatic
+            Box widened(Box box) {
+                box.copyWith { size.width = 'wide' }
+            }
+            widened(new Box('crate', new Dimensions(2, 3)))
+        '''
+        assert err.message.contains('Cannot assign value of type java.lang.String to variable of type int')
+    }
+
+    @Test
+    void record_block_form_rejects_an_unknown_component() {
+        def err = shouldFail shell, GRAPH + '''
+            @groovy.transform.CompileStatic
+            Person moved(Person person) {
+                person.copyWith { address.state = 'MA' }
+            }
+            moved(p)
+        '''
+        assert err.message.contains('No such property: state for class: Address')
+    }
 }

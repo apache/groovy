@@ -293,4 +293,23 @@ final class ImmutableNestedCopyWithTest {
         '''
         assert err.message.contains("unexpected named arg: company.address.state")
     }
+
+    // GROOVY-12713: the block form under static type checking, as for records
+    @Test
+    void immutable_block_form_under_static_type_checking() {
+        assertScript shell, GRAPH + '''
+            @groovy.transform.TypeChecked
+            Person moved(Person person) {
+                person.copyWith {
+                    name = old.name.toUpperCase()
+                    company.address.city = 'Jersey City'
+                    address.zip.modify { it + '-0001' }
+                }
+            }
+            def q = moved(p)
+            assert q.name == 'ALICE'
+            assert q.company.address.city == 'Jersey City'
+            assert q.address.zip == '10001-0001'
+        '''
+    }
 }
