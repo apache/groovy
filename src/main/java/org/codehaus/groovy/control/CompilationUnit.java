@@ -22,6 +22,7 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
 import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.GroovyBugError;
+import org.apache.groovy.classgen.ModuleInfoVerifier;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -337,6 +338,11 @@ public class CompilationUnit extends ProcessingUnit {
         ASTTransformationVisitor.addPhaseOperations(this);
 
         // post-transform operations:
+
+        // After resolution and semantic transforms (visibility, etc.). JLS §7.7.
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            ModuleInfoVerifier.check(source, classNode);
+        }, Phases.SEMANTIC_ANALYSIS);
 
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
             StaticVerifier verifier = new StaticVerifier();

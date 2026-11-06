@@ -115,7 +115,12 @@ public final class ModuleImportHelper {
      * Collects paths from both the compiler configuration classpath and
      * any URLClassLoaders in the classloader hierarchy.
      */
-    private static ModuleFinder classpathModuleFinder(final SourceUnit source) {
+    /**
+     * Classpath and class-loader entries only, without the system module finder.
+     * Resolution should use this together with the boot configuration so platform
+     * modules are not observed twice.
+     */
+    public static ModuleFinder classpathModuleFinder(final SourceUnit source) {
         Set<Path> paths = new LinkedHashSet<>();
         for (String entry : source.getConfiguration().getClasspath()) {
             Path p = Path.of(entry);
