@@ -21,6 +21,8 @@ package org.codehaus.groovy.control.customizers
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.PatternExpression
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 import org.codehaus.groovy.ast.expr.SwitchExpression
 import org.codehaus.groovy.ast.stmt.YieldStatement
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -1086,6 +1088,66 @@ final class SecureASTCustomizerTest {
         // a pure spread subscript coerces to `m as Foo` — a variable operand, the same
         // non-literal coercion residual as `var as Foo`, so it is not examined (and constructs)
         shell.evaluate("def m = [x: 1]; org.codehaus.groovy.control.customizers.SecGadget[*: m]")
+    }
+
+    private static final String PATTERN_SWITCH = '''
+        def r = switch ([1, 2]) {
+            case Integer i when i > 0 -> 'int'
+            case [var a, var b]       -> a + b
+            default                   -> 0
+        }
+        assert r == 3
+    '''
+
+    @Test // GEP-19
+    void testPatternSwitchIsCheckedAsWrittenNotAsLowered() {
+        // the compiler implements patterns with calls into its runtime support classes,
+        // but those are not part of the script and so are not what the import checks see
+        customizer.indirectImportCheckEnabled = true
+        customizer.disallowedImports = ['org.apache.groovy.runtime.ListPatternSupport', 'org.apache.groovy.runtime.RecordPatternSupport', 'org.apache.groovy.runtime.MapPatternSupport']
+        customizer.disallowedExpressions = [MethodCallExpression, StaticMethodCallExpression]
+        def shell = new GroovyShell(configuration)
+        shell.evaluate(PATTERN_SWITCH)
+        customizer.disallowedExpressions = null // the record's generated members call its accessors
+        shell.evaluate('''
+            record Point(int x, int y) {}
+            def p = new Point(1, 2)
+            assert p instanceof Point(var x, var y) && x + y == 3
+        ''')
+    }
+
+    @Test // GEP-19
+    void testDisallowedPatternExpression() {
+        customizer.disallowedExpressions = [PatternExpression]
+        def shell = new GroovyShell(configuration)
+        assert hasSecurityException {
+            shell.evaluate(PATTERN_SWITCH)
+        }
+        assert hasSecurityException {
+            shell.evaluate('assert "s" instanceof String s')
+        }
+    }
+
+    @Test // GEP-19
+    void testPatternGuardAndBindingsAreChecked() {
+        def shell = new GroovyShell(configuration)
+        customizer.disallowedExpressions = [MethodCallExpression]
+        assert hasSecurityException {
+            shell.evaluate('''
+                switch (1) {
+                    case Integer i when i.toString() -> 'int'
+                    default                         -> 0
+                }
+            ''')
+        }
+        customizer.disallowedExpressions = null
+        customizer.disallowedConstantTypes = ['java.lang.Integer']
+        assert hasSecurityException {
+            shell.evaluate(PATTERN_SWITCH)
+        }
+        assert hasSecurityException {
+            shell.evaluate('assert 1 instanceof Integer i')
+        }
     }
 }
 
