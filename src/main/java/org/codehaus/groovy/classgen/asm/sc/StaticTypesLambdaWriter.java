@@ -73,6 +73,7 @@ import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterface
 import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterfaceMetadataKey.LAMBDA_PRELOADED_RECEIVER;
 import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterfaceMetadataKey.LAMBDA_SHARED_VARIABLES;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_RETURN_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.LAMBDA_MARKERS;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -526,10 +527,16 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
             code = (code == null) ? prologue : block(prologue, code);
         }
 
+        ClassNode returnType = abstractMethod.getReturnType();
+        ClassNode inferredReturnType = expression.getNodeMetaData(INFERRED_RETURN_TYPE);
+        if (returnType.isGenericsPlaceHolder() && inferredReturnType != null && ClassHelper.isSAMType(inferredReturnType)) {
+            returnType = inferredReturnType.getPlainNodeReference(); // GROOVY-12606: coerce returned closure to the SAM type
+        }
+
         MethodNode doCallMethod = lambdaClass.addMethod(
             DO_CALL,
             ACC_PUBLIC,
-            abstractMethod.getReturnType(),
+            returnType,
             parametersWithExactType.clone(),
             ClassNode.EMPTY_ARRAY,
             code
