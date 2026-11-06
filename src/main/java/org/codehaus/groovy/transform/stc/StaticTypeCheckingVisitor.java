@@ -2214,13 +2214,36 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
     }
 
+    /**
+     * JLS 4.5.1: a concrete type argument does not contain a wildcard.
+     * {@code List<Number> = List<? extends Number>} is not a subtype, even
+     * though the wildcard's redirected bound is {@code Number}.
+     * Method inference is not this check; a type variable may capture a wildcard.
+     */
+    private static boolean concreteArgumentContainsWildcard(final ClassNode left, final ClassNode right) {
+        if (left == null || right == null) return false;
+        if (left.equals(right) && left.getGenericsTypes() == null) return false;
+        GenericsType[] leftArgs = left.getGenericsTypes();
+        GenericsType[] rightArgs = right.getGenericsTypes();
+        if (leftArgs == null || rightArgs == null || leftArgs.length != rightArgs.length) return false;
+        for (int i = 0; i < leftArgs.length; i += 1) {
+            GenericsType leftArg = leftArgs[i];
+            GenericsType rightArg = rightArgs[i];
+            if (leftArg.isWildcard() || leftArg.isPlaceholder()) continue;
+            if (rightArg.isWildcard()) return true;
+            if (concreteArgumentContainsWildcard(leftArg.getType(), rightArg.getType())) return true;
+        }
+        return false;
+    }
+
     private void checkTypeGenerics(final ClassNode leftExpressionType, final ClassNode rightExpressionType, final Expression rightExpression) {
         if (leftExpressionType.isUsingGenerics()
                 && !missesGenericsTypes(rightExpressionType)
                 && !(rightExpression instanceof ClosureExpression) // GROOVY-10277
                 && !(rightExpression instanceof ConstructorCallExpression && ((ConstructorCallExpression) rightExpression).isUsingAnonymousInnerClass()) // GROOVY-12319: AIC type is the generated class, not the diamond super type
                 && !isNullConstant(rightExpression) && !UNKNOWN_PARAMETER_TYPE.equals(rightExpressionType)
-                && !GenericsUtils.buildWildcardType(leftExpressionType).isCompatibleWith(wrapTypeIfNecessary(rightExpressionType)))
+                && (!GenericsUtils.buildWildcardType(leftExpressionType).isCompatibleWith(wrapTypeIfNecessary(rightExpressionType))
+                    || concreteArgumentContainsWildcard(leftExpressionType, wrapTypeIfNecessary(rightExpressionType))))
             addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(rightExpressionType) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
     }
 

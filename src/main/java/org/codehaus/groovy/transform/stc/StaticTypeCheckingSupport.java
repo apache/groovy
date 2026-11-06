@@ -1686,6 +1686,17 @@ public abstract class StaticTypeCheckingSupport {
                 && resolved.getLowerBound() == null) {
             return false; // GROOVY-8084, GROOVY-9074, GROOVY-10588
         }
+        // JLS 5.1.10: capture of "? super T" has lower bound T. A concrete
+        // witness is compatible only when it is a subtype of T. The upper
+        // bound is Object, which would accept every reference. Wildcard
+        // witnesses stay on the historical path so inference of "? super T"
+        // is unchanged.
+        if (resolved.isWildcard() && resolved.getLowerBound() != null
+                && !connection.isWildcard() && !connection.isPlaceholder()) {
+            ClassNode candidate = connection.getType();
+            if (candidate == null) return false;
+            return implementsInterfaceOrIsSubclassOf(getWrapper(candidate), getWrapper(resolved.getLowerBound()));
+        }
         if (resolved.isPlaceholder()
                 &&  resolved.getUpperBounds() != null
                 &&  resolved.getUpperBounds().length == 1
