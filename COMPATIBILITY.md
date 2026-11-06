@@ -744,7 +744,7 @@ returns a different object on each evaluation:
   same object. Before, the read came from one object and the write went to
   the next.
 
-### Groovy 7 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
+### Groovy 6.0.1 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
 
 For a dynamic property write or read, the runtime checks whether the receiver
 overrides the `setProperty` or `getProperty` that `GroovyObject` provides. An
@@ -785,6 +785,31 @@ trait. Also unchanged: a `setProperty` or `getProperty` contributed through
 `ExpandoMetaClass`, a per-instance metaclass or a mixin, because the metaclass is
 still consulted on each access. `GroovyObjectOverrides`, which holds the check, is
 internal, so `japicmp` does not report this change.
+
+### Groovy 6.0.1 — `>` and `>=` with a primitive NaN operand are false (GROOVY-12538)
+
+When both operands of a comparison are primitive `double` or `float` values,
+the compiler compares them with a JVM instruction. It used the variant that
+treats NaN as greater than every value for all four ordered operators, so
+`NaN > x` and `NaN >= x` were `true` while `NaN < x` and `NaN <= x` were
+`false`. All four are now `false`, as in Java (JLS 15.20.1), and as Groovy
+already gave when both operands are `Double` objects. This applies to
+variables, fields and parameters declared `double` or `float`, in dynamic code
+as well as under `@TypeChecked` and `@CompileStatic`, and to `Double.NaN` and
+`Float.NaN` under `@CompileStatic`, where they are primitive.
+
+**Who is affected.** Code that relied on a NaN comparing greater, for example
+`if (reading > limit)` treating a NaN reading as over the limit. Use
+`Double.isNaN` where NaN needs handling of its own.
+
+**What is unchanged.** Comparisons that go through Groovy's number comparison
+rather than a primitive instruction: operands of different types such as
+`Double` against `Integer` or `BigDecimal`, where NaN is still greater than
+every value as in `Double.compareTo` (GROOVY-3309); `==` on `Double` objects,
+which still treats NaN as equal to NaN as `Double.equals` does; and `<=>`,
+which follows `Double.compare` for primitives and objects alike. Classes
+compiled by an earlier release keep the old comparison until they are
+recompiled.
 
 ### Groovy 7 — Groovy Console smart highlighter and the language host
 
@@ -862,31 +887,6 @@ their declared return type, as since GROOVY-6401.
 
 The method descriptors are unchanged, so `japicmp` does not report this.
 
-### Groovy 7 — `>` and `>=` with a primitive NaN operand are false (GROOVY-12538)
-
-When both operands of a comparison are primitive `double` or `float` values,
-the compiler compares them with a JVM instruction. It used the variant that
-treats NaN as greater than every value for all four ordered operators, so
-`NaN > x` and `NaN >= x` were `true` while `NaN < x` and `NaN <= x` were
-`false`. All four are now `false`, as in Java (JLS 15.20.1), and as Groovy
-already gave when both operands are `Double` objects. This applies to
-variables, fields and parameters declared `double` or `float`, in dynamic code
-as well as under `@TypeChecked` and `@CompileStatic`, and to `Double.NaN` and
-`Float.NaN` under `@CompileStatic`, where they are primitive.
-
-**Who is affected.** Code that relied on a NaN comparing greater, for example
-`if (reading > limit)` treating a NaN reading as over the limit. Use
-`Double.isNaN` where NaN needs handling of its own.
-
-**What is unchanged.** Comparisons that go through Groovy's number comparison
-rather than a primitive instruction: operands of different types such as
-`Double` against `Integer` or `BigDecimal`, where NaN is still greater than
-every value as in `Double.compareTo` (GROOVY-3309); `==` on `Double` objects,
-which still treats NaN as equal to NaN as `Double.equals` does; and `<=>`,
-which follows `Double.compare` for primitives and objects alike. Classes
-compiled by an earlier release keep the old comparison until they are
-recompiled.
-
 ### Groovy 7 — `PlaceholderVisitor` is removed (GROOVY-11744)
 
 `org.codehaus.groovy.control.PlaceholderVisitor` marked a `_` repeated in a
@@ -900,6 +900,167 @@ The class was deprecated in Groovy 6.
 of `CompilationUnit` that adds it as a phase operation, or that calls
 `PlaceholderVisitor.isPlaceholder`. Drop the phase operation. Where code needs
 to know whether a variable is `_`, check its name.
+
+### Groovy 7 — casting and `as` share default collection and map implementations (GROOVY-12585)
+
+A collection, array, stream or map that is assigned or cast to a collection or
+map type (`T x = value`, `(T) value`) and one coerced with `as` now get the
+same result. A value that is already an instance of the target is returned
+unchanged, as before. Otherwise an interface target gets a default
+implementation:
+
+| Target | Default |
+|---|---|
+| `List`, `Collection`, `Iterable` | `ArrayList` |
+| `Set` | `LinkedHashSet` |
+| `SortedSet`, `NavigableSet` | `TreeSet` |
+| `Queue`, `Deque` | `LinkedList` |
+| `BlockingQueue` | `LinkedBlockingQueue` |
+| `SortedMap`, `NavigableMap` | `TreeMap` |
+| `ConcurrentMap` | `ConcurrentHashMap` |
+
+A concrete collection class gets its copy constructor, or else its no-arg
+constructor followed by `addAll`, before the elements are tried as
+constructor arguments.
+
+- **More assignments succeed.** `SortedSet s = list`, `Queue q = list`,
+  `Deque d = list`, `Stack s = list`, `List l = aSet`, `SortedMap m = map` and
+  `Iterable i = anArray` failed with `GroovyCastException`; they now succeed.
+- **`as` returns a real collection instead of a proxy** for `NavigableSet`,
+  `Deque`, `BlockingQueue`, `SortedMap`, `NavigableMap` and `ConcurrentMap`,
+  and for `Iterable` and `Deque` with an array source. The proxy delegated to
+  the original collection or map without providing the interface's behaviour,
+  so `([3, 1, 2, 1] as NavigableSet).size()` was 4 and
+  `([b: 2, a: 1] as SortedMap).firstKey()` threw. The result is now a copy, so
+  code relying on the proxy seeing later changes to the original sees a
+  snapshot.
+- **`anArray as Set` keeps element order**, giving a `LinkedHashSet` rather
+  than a `HashSet`, as `Set s = anArray` and `aList as Set` already did.
+- **A single-element list assigned to a collection class fills it.**
+  `Vector v = [5]`, `PriorityQueue q = [5]` and `ArrayDeque d = [5]` passed the
+  element to the class's capacity constructor and gave an empty collection.
+  They now contain the element, as `[5] as Vector` already did. For
+  `@CompileStatic` code, see GROOVY-12643 below.
+
+**What is unchanged.** Targets that already worked, such as `Set`, `List`,
+`HashSet` (still a `LinkedHashSet` on assignment), `TreeSet`, `ArrayList`,
+`LinkedList`, `TreeMap` and the JDK 21 sequenced types. A map coerced with
+`as` to a non-collection interface, such as `Runnable` or `Comparator`, is
+still a proxy that calls the map's closures. `TreeSet` and `TreeMap` defaults
+throw for incomparable or `null` elements and keys, as `as SortedSet` and
+`TreeSet t = list` already did. The method signatures are unchanged, so
+`japicmp` does not report this.
+
+### Groovy 7 — type checking of list and map literals assigned to collection types (GROOVY-12643)
+
+Under `@TypeChecked` and `@CompileStatic`, a list or map literal assigned to a
+collection or map type now follows the defaults of the runtime cast (see
+GROOVY-12585 above).
+
+- **Interface targets compile.** A list literal assigned to `SortedSet`,
+  `NavigableSet`, `Queue`, `Deque` or `BlockingQueue`, and a map literal
+  assigned to `SortedMap`, `NavigableMap` or `ConcurrentMap`, used to be a
+  compile error ("Cannot assign value of type ArrayList…" or "Cannot find
+  matching constructor"). It now compiles. The variable's inferred type is the
+  default implementation, as `Set` infers `LinkedHashSet`, and the elements
+  are checked against the declared type arguments.
+- **A collection class copies the elements.** For a list literal assigned to a
+  concrete collection class with a constructor taking a collection, or a
+  no-arg constructor, the list-constructor rule no longer passes the elements
+  as constructor arguments; the elements are copied, and checked against the
+  declared type arguments. So `LinkedList l = [3, 1]` and `Stack s = [3, 1]`
+  now compile, and under `@CompileStatic`, `Vector v = [5]`,
+  `PriorityQueue q = [5]` and `ArrayDeque d = [5]` hold the element instead of
+  being empty with that capacity.
+
+**Who is affected.** Statically compiled code that used a one-element literal
+to set a capacity, such as `Vector v = [10]`, now gets a one-element
+collection, and with type arguments, such as `ArrayDeque<String> d = [16]`, it
+is a compile error. Write `new ArrayDeque(16)` for a capacity.
+
+**What is unchanged.** Other classes still use the list-constructor rule, such
+as `Dimension d = [100, 200]`, as does a collection class whose only
+constructors take the elements. Assigning a variable of another collection
+type, such as `SortedSet s = aList`, is still an error. For a literal returned
+from a method, see GROOVY-12644 below.
+
+### Groovy 7 — type checking of list and map literals returned from a method (GROOVY-12644)
+
+Under `@TypeChecked` and `@CompileStatic`, a list or map literal returned from
+a method with a declared return type is now checked as it is when assigned to a
+variable of that type. Before, it was accepted only when the literal's own
+class (`ArrayList` or `LinkedHashMap`) was assignable to the return type, so
+`Set m() { [3, 1] }`, `TreeMap m() { [b: 2, a: 1] }` and
+`Point m() { [1, 2] }` were compile errors ("Cannot return value of type …
+for method returning …"). They now compile and return the value the
+declaration would hold, with the elements checked against the declared type
+arguments.
+
+**Who is affected.** Only code that did not compile before; a return that was
+accepted is unchanged. A closure or lambda result, a non-literal value such as
+`Set m() { aList }`, and a literal inside another expression, such as
+`b ? [1] : [2]`, are still checked as before.
+
+### Groovy 7 — values returned to a functional interface type are checked as a method's return (GROOVY-12616, GROOVY-12617, GROOVY-12623)
+
+Under `@TypeChecked` and `@CompileStatic`, a value that a closure, lambda,
+method reference (`::`) or method pointer (`.&`) returns to a functional
+interface whose method returns a primitive type is now checked as the `return`
+of a method declared with that type. A number may be widened, but not narrowed
+unless it is a constant that fits; `char` is not converted to a number type,
+and only an `int` or a one-character string constant is converted to `char`;
+and any value is accepted for `boolean`, by Groovy truth. A method reference or
+method pointer returning a number to a wrapper type, as in `Supplier<Byte>`, is
+checked for loss of precision too. Under `@CompileStatic`, the value is
+converted as that method would convert it.
+Dynamically compiled code is unaffected.
+
+**No longer rejected, or no longer failing at run time.**
+
+- A closure or lambda may return a value that widens, as in
+  `ToLongFunction<String> f = s -> s.length()`, a constant that fits, as in
+  `IntSupplier s = () -> 7L`, a `BigDecimal` for `double` or `float`, or an
+  `int` for `char`. These were rejected with "Cannot return value of type …".
+- Under `@CompileStatic`, a method reference needing Groovy truth, as in
+  `Predicate<String> p = H::str`, `BigDecimal` to `double` or `float`, or `int`
+  to `char` compiled but threw `BootstrapMethodError`, or `ClassCastException`
+  for a method returning a type parameter. It now runs.
+
+**Now rejected at compile time.** The following compiled before:
+
+- A method pointer assigned to a functional interface was not checked, and its
+  value was converted at run time as by a cast. For example, with
+  `static long longValue()` and `static String str() { 'A' }`,
+  `IntSupplier s = H.&longValue` narrowed the value, and `IntSupplier s = H.&str`
+  returned 65. It is now checked as a method reference is, in both modes. A
+  method pointer passed as an argument was already checked, but narrowing was
+  allowed. A method pointer to a method returning a type parameter, as in
+  `ToIntFunction<Long> f = H.&id`, is checked against the type argument
+  inferred from the functional interface's parameter types, as a method
+  reference is. The method pointer is still a `Closure`, and which of several
+  overloaded methods it calls is still decided at run time.
+- A method reference to a method returning a type parameter was not checked,
+  as in `ToIntFunction<Long> f = H::id` for `static <T> T id(T t)`. Under
+  `@CompileStatic`, a narrowing ran and truncated the value through
+  `Number.intValue()` and similar; under `@TypeChecked`, every conversion ran as
+  a cast, including `String` and `char` to a number. The type argument is now
+  inferred from the functional interface's parameter types and checked.
+- Under `@TypeChecked`, a method reference that narrows, as in
+  `IntSupplier s = H::longValue`, converted the value at run time. Under
+  `@CompileStatic` it threw `BootstrapMethodError`, so there it now fails
+  earlier rather than differently.
+- A method reference or method pointer whose number value would be narrowed
+  for a wrapper return type, as in `Supplier<Byte> s = H::v` or `H.&v` for
+  `static int v()`, is now reported as "Possible loss of precision", as a
+  method `Byte m() { H.v() }` already was. Before, `s.get()` returned an
+  `Integer`.
+
+To keep a narrowing, convert explicitly, as in
+`IntSupplier s = () -> (int) H.longValue()`.
+
+**What is unchanged.** A functional interface whose method returns a reference
+type, such as `Supplier<Long>`, still requires the returned value's type to be
+compatible, so `Supplier<Long> s = () -> 1` remains an error (GROOVY-11414).
 
 ### Groovy 6.0.1 — statically compiled constructor references call the constructor directly (GROOVY-12488)
 
@@ -935,6 +1096,192 @@ a protected constructor of another package, and for a protected or
 package-private constructor of a class that a `GroovyClassLoader` defined in
 another compilation, such as a class of an earlier `GroovyShell` parse. Dynamic
 and `@TypeChecked` code select the constructor at run time as before.
+
+### Groovy 7 — a final `def` field is read with the type of its value (GROOVY-12315)
+
+Within the class that declares it, a read of a final field declared without a
+type has the type of the value assigned by its initializer, its initializer
+blocks and its constructors, as a local variable does. The field keeps `Object`
+as its declared type. The flow type applies where the field itself is read: in
+a method, constructor or initializer body of the declaring class, and in a
+closure or lambda there too for a private field, a static property, or a
+property of a `final` class with a generated getter. Any other read through
+the property getter keeps the declared type, because a subclass may override
+the getter: from a closure or lambda in the class, an inner class, a subclass
+or another class. A value of no one type (`Object`, or a bound of
+several types assigned by different constructors) gives no flow type, nor does
+a field written by a compound assignment, `++`, `--` or a tuple assignment.
+
+- **More programs compile.** `final bar = 'abc'` followed by `bar.length()` in
+  a method of the class type checks without a cast.
+- **Statically compiled overload selection can change.** `m(bar)` with
+  `m(Object)` and `m(String)` overloads now selects `m(String)`. Type checked
+  (dynamically dispatched) code already selected by the runtime type.
+- **An `instanceof` that cannot be true is an error**, as for a local variable:
+  `bar instanceof Integer` when `bar` was assigned a String.
+
+The field descriptors are unchanged, so `japicmp` does not report this.
+
+### Groovy 7 — groovy-yaml, groovy-toml and groovy-csv use Jackson 3 (GROOVY-12433)
+
+The YAML, TOML and CSV modules now read and write with Jackson 3
+(`tools.jackson`) instead of Jackson 2 (`com.fasterxml.jackson`). None of them
+exposes a Jackson type, so calling code compiles unchanged and `japicmp` does
+not report this. The behaviour changes below are what users have to check.
+
+**Unquoted YAML values resolve by the JSON schema.** Jackson 3's YAML parser
+fixes its scalar resolver, and it cannot be configured. Only lowercase `true`,
+`false` and `null` and plain decimal numbers take a type. That is stricter than
+the YAML 1.2 core schema most parsers use, as well as the YAML 1.1 rules.
+`yes`/`no`/`on`/`off`, `True`/`FALSE`, `Null`/`NULL`, `~` and
+`0x1F`/`017`/`1_000` now arrive as strings, where Groovy 6 read them as
+booleans, `null` or integers. A non-empty string is truthy, so `enabled: off`
+read with `YamlSlurper.parseText` now tests as true, without any error.
+`parseAs` and `parseTextAs` instead reject such a value for a `boolean`
+property. `.inf`, `-.inf` and `.nan`, which Groovy 6 rejected, now parse: as
+`Double` values through the typed API, and as the strings `'Infinity'`,
+`'-Infinity'` and `'NaN'` through the untyped one. Quote values whose type
+matters, or load documents that rely on the older typing with SnakeYAML
+directly, as the YAML guide shows.
+
+**Jackson 2 databind annotations are ignored.** `@JsonSerialize`,
+`@JsonDeserialize`, `@JsonNaming`, `@JsonPOJOBuilder` and the other
+annotations in `com.fasterxml.jackson.databind.annotation` have no effect on
+YAML, TOML and CSV typed parsing and writing, and nothing reports it. Use the
+versions in `tools.jackson.databind.annotation`.
+
+**Typed XML parsing follows the classpath.** `XmlParser.parseAs` and
+`parseTextAs` use Jackson 3 whenever it is present, even alongside Jackson 2,
+and fall back to Jackson 2 otherwise. An application that gains Jackson 3
+transitively, for example through Spring Boot 4, moves typed XML parsing to
+Jackson 3, and the databind annotations it honours change with it.
+
+**Jackson 2 and SnakeYAML no longer arrive transitively.** groovy-yaml,
+groovy-toml and groovy-csv no longer put
+`com.fasterxml.jackson.core:jackson-databind` on the runtime classpath, and
+groovy-yaml no longer brings `org.yaml:snakeyaml`. Code that used either
+directly must declare it.
+
+**Parser limits follow Jackson 3's defaults.** YAML and TOML input nested
+deeper than 500 levels now fails, where Jackson 2 allowed 1000. A TOML string
+may be up to 100,000,000 characters, where Jackson 2 allowed 20,000,000. A YAML
+document is still limited to 3,145,728 code points, as in Groovy 6.
+
+**What is unchanged.** `@JsonProperty`, `@JsonFormat`, `@JsonCreator` and the
+rest of `com.fasterxml.jackson.annotation` work as before, because Jackson 3
+still uses that jar. YAML aliases, merge keys, tags, complex keys and
+multi-document streams behave as in Groovy 6. `JsonSlurper` and `XmlParser`
+keep their own nesting-depth caps of 1000.
+
+### Groovy 6.0.1 — `@CompileStatic` property and spread results on collections match dynamic Groovy (GROOVY-12534, GROOVY-12649)
+
+Under `@CompileStatic`, property and spread results on a `List`, `Set` or
+other `Iterable` type that declares a property, or gets one from an
+extension method, now match dynamic Groovy and `@TypeChecked`
+(GROOVY-12534, [PR #3058](https://github.com/apache/groovy/pull/3058);
+GROOVY-12649). A property the collection itself defines is read from the
+collection; an explicit spread (`people*.name`) reads it from each
+element, and a spread assignment (`people*.name = 'x'`) writes it to each
+element. The previous `@CompileStatic` results were wrong, and code that
+relied on them gets different results once recompiled with 6.0.1; the new
+results are correct.
+
+### Groovy 7 — `==` on a `Number` that is not `Comparable` compares numerically (GROOVY-12699)
+
+`==` and `!=` between two numbers, where the left one is a `Number` that does
+not implement `Comparable`, now compare the values numerically, as `<=>`,
+`<` and `>` already did. Before, they called `equals()`, so a `Number`
+subclass such as a fraction type was never `==` to an equal `BigDecimal`,
+`Double` or `Integer`, even when `<=>` returned `0`. This applies in dynamic
+code and under `@TypeChecked` and `@CompileStatic` alike.
+
+**Who is affected.** Besides custom `Number` classes, the JDK's own
+non-`Comparable` numbers: `AtomicInteger`, `AtomicLong`, `LongAdder`,
+`DoubleAdder`, `LongAccumulator` and `DoubleAccumulator`. For example,
+`new AtomicInteger(1) == 1` is now `true`, and two different
+`AtomicInteger` instances holding the same value are now `==`. Before, that
+second comparison was an identity check. Use `is()` where identity is
+meant.
+
+**What is unchanged.** Comparisons where either side is not a `Number`,
+which still use `equals()`; numbers that implement `Comparable`, such as
+`Integer` and `BigDecimal`; and Java collection methods such as
+`List.contains`, which call `equals()` and not Groovy's `==`.
+
+### Groovy 7 — `MatchException` for an exhaustive switch expression on a Java 21+ target
+
+A switch expression the type checker accepted without a `default` (a complete
+enum, an unconditional pattern, or labels covering a native sealed hierarchy)
+can match nothing at run time only when an enum constant or sealed subtype was
+added after the switch was compiled. When the target bytecode is 21 or later
+that now throws `java.lang.MatchException`, as `javac` does (JEP 441). The
+decision is made from `CompilerConfiguration.getTargetBytecode()`, so it is
+fixed per compiled class and does not depend on the JDK that later runs it; a
+class compiled for 17 keeps throwing `IncompatibleClassChangeError` (enum) or
+`IllegalStateException` on every JDK.
+
+**Who is affected.** Code compiled for a 21+ target that catches
+`IncompatibleClassChangeError` or `Error` around such a switch: the enum case
+moves from an `Error` to a `RuntimeException`. Neither exception is meant to be
+caught; write a `default` arm that throws when a defined exception is wanted.
+A `null` selector is not this case: no constant, class or pattern label
+matches it, so unless the switch has an explicit `case null` arm it throws
+`IllegalStateException` on every target. A switch *statement* still does
+nothing when unmatched.
+
+### Groovy 7 — `case Foo() ->` is a zero-component record pattern (GEP-19)
+
+An arrow-form case label made of a capitalised name and empty parentheses,
+such as `case None() ->` or `case Opt.None() ->`, is now a record pattern that
+matches an instance of the record `None` without components, as in Java
+(JEP 440). It used to call a method named `None` and use the result as an
+`isCase` label. The same applies where such a call sits inside another
+pattern-shaped label, for example `case [Foo(), 2] ->` or `case Some(None()) ->`.
+
+**Who is affected.** Code whose arrow-form case labels call a method with a
+capitalised name and no arguments. It now fails to compile with `unable to
+resolve class`, at the label, unless a class of that name exists. Quote the
+name (`case 'Evens'() ->`) or qualify the call (`case this.Evens() ->`) to keep
+calling the method. Colon-form labels (`case Evens():`), lowercase names
+(`case evens() ->`) and calls with arguments are unchanged.
+
+### Groovy 7 — `case []`, `case [:]` and `_` in a list or map label are patterns (GEP-19)
+
+A `[...]` or `[k: v]` case label is a pattern when it is empty or contains a
+binding form (`var x`, `def x`, `Type x`, `_`, a rest binding); any other list
+or map label keeps its `isCase` meaning. Three labels that were valid before
+patterns therefore change meaning: `case []` now matches an empty list, array
+or `Iterable` where `[].isCase(x)` matched nothing; `case [:]` now matches an
+empty map where `[:].isCase(x)` matched nothing; and `_`, which Groovy accepts
+as a variable name, is the wildcard pattern inside a list or map label, so
+`case [_, 1]` matches any two-element list whose second element is `1` rather
+than testing containment in the list `[_, 1]`.
+
+**Who is affected.** Code with such labels, which is rare, as the first two
+never matched. To keep the old meaning, bind the literal to a variable first
+or spell it differently: `case [].asImmutable()`, or `case [x, 1]` with the
+variable renamed.
+
+### Groovy 7 — `instanceof T name` is a `PatternExpression` in the AST (GEP-19)
+
+The parser builds `e instanceof T name` and `e !instanceof T name` as a
+`PatternExpression` holding a `TypePattern`, the same node that represents
+record patterns and the labels of pattern arms, where Groovy 6 built a
+`BinaryExpression` whose right operand was a `DeclarationExpression`. The
+Groovy 6 shape is still what the type checker and class generation see:
+`PatternLowering`, the first operation of instruction selection, derives it
+from the pattern, and a `GroovyCodeVisitor` without an interest in patterns
+traverses it from then on through the default `visitPatternExpression`.
+Compiled code is unchanged.
+
+**Who is affected.** AST transforms, compilation customizers and tools that
+run before instruction selection and look for the Groovy 6 shape, by matching
+`BinaryExpression` with `Types.KEYWORD_INSTANCEOF` or
+`Types.COMPARE_NOT_INSTANCEOF` and a `DeclarationExpression` right operand.
+They now see a `PatternExpression` with `isInstanceOf()` true; the matched
+value is `getSource()`, the type and variable are on the `TypePattern`, and
+the negated form is a `NotExpression` around it. `e instanceof T` without a
+binding is a `BinaryExpression` as before.
 
 ## The binary-compatibility check
 

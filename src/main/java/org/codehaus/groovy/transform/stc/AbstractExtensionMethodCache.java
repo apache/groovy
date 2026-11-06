@@ -42,8 +42,10 @@ import java.util.Objects;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.logging.Logger;
 
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 
@@ -56,6 +58,10 @@ import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
  * @since 3.0.0
  */
 public abstract class AbstractExtensionMethodCache {
+    private static final Logger LOG = Logger.getLogger(AbstractExtensionMethodCache.class.getName());
+    /** Every cache instance, so that all of them can be invalidated when a class loader gains extension modules. */
+    private static final List<AbstractExtensionMethodCache> INSTANCES = new CopyOnWriteArrayList<>();
+
     /** Caches extension methods per class loader. */
     private final EvictableCache<ClassLoader, Map<String, List<MethodNode>>> cache = new StampedCommonCache<>(new WeakHashMap<>());
     /** Caches, per class loader, the names of extension methods that declare {@code @ClassTag(preempt=true)} (GROOVY-12115). */
@@ -63,6 +69,24 @@ public abstract class AbstractExtensionMethodCache {
     private final String disabledString = SystemUtil.getSystemPropertySafe(getDisablePropertyName());
     private final boolean disabling = disabledString != null;
     private final Set<String> disabledNames = disabling ? new HashSet<>(Arrays.asList(disabledString.split(","))) : null;
+
+    protected AbstractExtensionMethodCache() {
+        INSTANCES.add(this);
+    }
+
+    /**
+     * Drops the cached extension methods of every cache, for every class
+     * loader. Grape calls this after it has registered extension modules
+     * from grabbed jars, so that the type checker and the macro transform
+     * see them on the next compilation.
+     *
+     * @since 7.0.0
+     */
+    public static void invalidateAllCaches() {
+        for (AbstractExtensionMethodCache instance : INSTANCES) {
+            instance.invalidateAll();
+        }
+    }
 
     /**
      * Returns the cached extension methods for the supplied class loader.
@@ -201,8 +225,17 @@ public abstract class AbstractExtensionMethodCache {
         Function<MethodNode, String> methodMapper = getMethodMapper();
 
         for (Class dgmLikeClass : allClasses) {
-            ClassNode cn = makeWithoutCaching(dgmLikeClass, true);
-            for (MethodNode methodNode : cn.getMethods()) {
+            List<MethodNode> methodNodes;
+            try {
+                methodNodes = makeWithoutCaching(dgmLikeClass, true).getMethods();
+            } catch (LinkageError e) {
+                // an extension class whose signatures mention a class that is not on the classpath, such as
+                // an optional dependency the module did not declare in requiredClasses; same tolerance as
+                // SimpleExtensionModule has at runtime, and one bad module must not stop all compilation
+                LOG.warning(() -> "Unable to scan extension class [" + dgmLikeClass.getName() + "] due to [" + e.getMessage() + "]. Its extension methods are not available for static type checking.");
+                continue;
+            }
+            for (MethodNode methodNode : methodNodes) {
                 if (!(methodNode.isStatic() && methodNode.isPublic()) || methodNode.getParameters().length == 0) continue;
                 if (methodFilter.test(methodNode)) continue;
                 if (disabling && disabledNames.contains(methodNode.getName())) continue;

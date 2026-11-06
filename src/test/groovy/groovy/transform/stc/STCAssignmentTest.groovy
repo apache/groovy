@@ -2026,6 +2026,89 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12700
+    @Test
+    void testMultiAssignValueNamesFieldNotEarlierTarget() {
+        assertScript '''
+            class C {
+                String a = 'field a'
+                static d = 'static d'
+                def untyped() {
+                    def (a, b) = [1, a]
+                    def (c, d, e) = [1, 2, d]
+                    [a, b, c, d, e]
+                }
+                def typed() {
+                    def (int a, String b) = [1, a]
+                    [a, b]
+                }
+                def closure() {
+                    def (a, b) = [1, { -> a }()]
+                    [a, b]
+                }
+            }
+            def c = new C()
+            assert c.untyped() == [1, 'field a', 1, 2, 'static d']
+            assert c.typed() == [1, 'field a']
+            assert c.closure() == [1, 'field a']
+            assert c.a == 'field a' && C.d == 'static d'
+        '''
+    }
+
+    // GROOVY-12700
+    @Test
+    void testMultiAssignValueIsTheList() {
+        assertScript '''
+            def swapLast() { def a = 1, b = 2; (a, b) = [b, a] }
+            def declarationLast() { def (a, b) = [1, 2] }
+            def swapUsed() { def a = 1, b = 2; def r = ((a, b) = [b, a]); [r, a, b] }
+            def swapInBranch(x) { def a = 1, b = 2; if (x) { (a, b) = [b, a] } else { (a, b) = [a, b] } }
+            def fibonacci() { def n = 1, r = 1; 3.times { (n, r) = [r, n + r] }; [n, r] }
+            def swapInClosure() { def a = 1, b = 2; def r = { -> (a, b) = [b, a] }(); [r, a, b] }
+
+            assert swapLast() == [2, 1]
+            assert declarationLast() == [1, 2]
+            assert swapUsed() == [[2, 1], 2, 1]
+            assert swapInBranch(true) == [2, 1]
+            assert swapInBranch(false) == [1, 2]
+            assert fibonacci() == [3, 5]
+            assert swapInClosure() == [[2, 1], 2, 1]
+        '''
+    }
+
+    // GROOVY-12700
+    @Test
+    void testMultiAssignValueIsTheListRetainsDeclaredType() {
+        assertScript '''
+            def m() {
+                String x, y
+                Long p, q
+                def r = { -> (x, y) = ["x${1}", "y${2}"] }()
+                def s = { -> (p, q) = [1, 2] }()
+                assert r == ['x1', 'y2'] && s == [1, 2]
+                assert x.class === String && y.class === String
+                assert p.class === Long && q.class === Long
+            }
+            m()
+        '''
+    }
+
+    // GROOVY-12700: a multiple assignment whose value is not used keeps its single-assignment form
+    @Test
+    void testMultiAssignStatement() {
+        assertScript '''
+            class C {
+                void m() {
+                    int a = 1, b = 2
+                    (a, b) = [b, a]
+                    def (int c, int d) = [a, b]
+                    assert a == 2 && b == 1 && c == 2 && d == 1
+                }
+            }
+            new C().m()
+        '''
+    }
+
     // GROOVY-10943
     @Test
     void testMultiAssignUnderscorePlaceholder1() {
@@ -2047,6 +2130,18 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
                 assert _ == 4
             }
 
+            m()
+        '''
+    }
+
+    // GROOVY-12698
+    @Test
+    void testMultiAssignWithAnnotation() {
+        assertScript '''
+            def m() {
+                @SuppressWarnings('unused') def (x, y) = [1, 2]
+                assert x + y == 3
+            }
             m()
         '''
     }
