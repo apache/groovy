@@ -599,7 +599,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public Function<Statement, ForStatement> visitEnhancedForControl(final EnhancedForControlContext ctx) {
         var indexParameter = asBoolean(ctx.indexVariable()) ? this.visitIndexVariable(ctx.indexVariable()) : null;
 
-        var valueParameter = configureAST(new Parameter(this.visitType(ctx.type()), this.visitIdentifier(ctx.identifier())), ctx.identifier());
+        var valueParameter = configureAST(new Parameter(this.visitType(ctx.type()), this.visitVariableDeclaratorId(ctx.variableDeclaratorId()).getName()), ctx.variableDeclaratorId());
         ModifierManager modifierManager = new ModifierManager(this, this.visitVariableModifiersOpt(ctx.variableModifiersOpt()));
         modifierManager.processParameter(valueParameter);
 
@@ -800,7 +800,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return this.visitCatchType(ctx.catchType()).stream()
                 .map(e -> configureAST(
                         new CatchStatement(
-                                new Parameter(e, this.visitIdentifier(ctx.identifier())),
+                                new Parameter(e, this.visitVariableDeclaratorId(ctx.variableDeclaratorId()).getName()),
                                 this.visitBlock(ctx.block())),
                         ctx))
                 .collect(Collectors.toList());
@@ -4003,6 +4003,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public BinaryExpression visitAssignmentExprAlt(final AssignmentExprAltContext ctx) {
         Expression leftExpr = (Expression) this.visit(ctx.left);
 
+        if (isBuiltInType(leftExpr)) { // e.g. `long = 1`, `long += 1`, `(long) = [1]`
+            throw createParsingFailedException(reservedTypeNameMessage(leftExpr.getText()), ctx.left);
+        }
+
         if (leftExpr instanceof VariableExpression
                 && isInsideParentheses(leftExpr)) { // it is a special multiple assignment whose variable count is only one, e.g. (a) = [1]
 
@@ -5044,7 +5048,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public VariableExpression visitVariableDeclaratorId(final VariableDeclaratorIdContext ctx) {
+        if (ctx.builtInType() != null) { // e.g. `def long = 1`, `def (a, long) = [1, 2]`, `def m(long) {}`
+            throw createParsingFailedException(reservedTypeNameMessage(ctx.builtInType().getText()), ctx);
+        }
         return configureAST(new VariableExpression(this.visitIdentifier(ctx.identifier())), ctx);
+    }
+
+    private static String reservedTypeNameMessage(final String name) {
+        return "'" + name + "' is a " + (VOID_STR.equals(name) ? "" : "primitive ") + "type name and cannot be used as a variable name";
     }
 
     @Override
