@@ -42,8 +42,10 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
@@ -202,7 +204,6 @@ public class ConstructorCallTransformer {
                 }
                 mv.visitMethodInsn(INVOKESPECIAL, ctorTypeName, "<init>", signature, false);
             }
-            mv.visitMethodInsn(INVOKESPECIAL, ctorTypeName, "<init>", signature, false);
             mv.visitVarInsn(ASTORE, tmpObj);
 
             if (map instanceof MapExpression mapExpression) {
