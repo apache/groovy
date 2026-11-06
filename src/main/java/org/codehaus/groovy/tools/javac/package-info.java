@@ -20,5 +20,15 @@
 /**
  * Joint-compilation support integrating Groovy compilation units with Java
  * stub generation and javac execution.
+ * <p>
+ * Stub sources may be kept in memory ({@code memStub}). When
+ * {@code memClassOutput} is enabled as well, javac class files stay on the
+ * heap too and are published on the compilation class loader, so a joint
+ * compile needs neither a stub directory nor a class-output directory.
+ * Resolution uses that class loader. A compile stages bytes and commits
+ * them only after output succeeds, so a failed or partial compile does not
+ * discard the previous classes. Disk {@code stubDir} and target-directory
+ * output remain the default. Only the default javac compiler supports
+ * in-memory class output.
  */
 package org.codehaus.groovy.tools.javac;

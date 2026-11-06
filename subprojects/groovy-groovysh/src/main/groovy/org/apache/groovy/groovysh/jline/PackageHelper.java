@@ -310,8 +310,8 @@ public class PackageHelper {
                                 packageName + " does not appear to be a valid package (Unsupported encoding)", ex);
                     }
                 } else {
-                    throw new ClassNotFoundException(
-                            packageName + " (" + url.getPath() + ") does not appear to be a valid package");
+                    // In-memory class output and other non-file URLs are not packages on disk.
+                    continue;
                 }
             } catch (final IOException ioex) {
                 throw new ClassNotFoundException(

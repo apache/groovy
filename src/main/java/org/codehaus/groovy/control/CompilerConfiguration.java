@@ -89,6 +89,34 @@ public class CompilerConfiguration {
     public static final String MEM_STUB = "memStub";
 
     /**
+     * Joint compilation option for keeping javac {@code CLASS_OUTPUT} in memory.
+     * <p>
+     * Honored only together with {@link #MEM_STUB}. Setting this option without
+     * {@code memStub} fails the compile. When both are {@link Boolean#TRUE},
+     * joint compilation does not require {@code stubDir} or a filesystem
+     * target directory: javac class bytes stay on the heap and Groovy resolves
+     * them from the compilation class loader. When this option is absent or
+     * not {@code Boolean.TRUE}, class files are written to the target directory
+     * as before (the default for Ant and Gradle joint builds).
+     * <p>
+     * Only the default javac joint compiler implements this option. A class
+     * the loader has already defined is not replaced; run recompiled code with
+     * a fresh loader. {@code getResource} is parent-first and then searches
+     * URLs in insertion order, so a parent loader or an earlier classpath
+     * entry hides these bytes. Annotation processing is disabled unless the
+     * joint options request a processor. One loader can publish only one
+     * compile at a time.
+     * <p>
+     * The {@code groovy.mem.stub} system property enables {@link #MEM_STUB} only.
+     * It does not enable in-memory class output.
+     *
+     * @see #MEM_STUB
+     * @see #isMemClassOutput()
+     * @since 7.0.0
+     */
+    public static final String MEM_CLASS_OUTPUT = "memClassOutput";
+
+    /**
      * System-property name for the GEP-27 incubating option that automatically packs provably-safe
      * {@code @CompileStatic} closures (hoisting their bodies to a shared adapter instead of a class).
      * Incubating: this switch may change or be removed until the feature graduates.
@@ -1552,6 +1580,23 @@ public class CompilerConfiguration {
      */
     public void setJointCompilationOptions(final Map<String, Object> options) {
         jointCompilationOptions = options;
+    }
+
+    /**
+     * Returns whether joint compilation keeps javac class files in memory.
+     * <p>
+     * True only when joint compilation is configured and both {@link #MEM_STUB}
+     * and {@link #MEM_CLASS_OUTPUT} are {@link Boolean#TRUE}. Disk
+     * {@code stubDir} and target-directory output stay the default otherwise.
+     *
+     * @return {@code true} when in-memory class output is enabled
+     * @since 7.0.0
+     */
+    public boolean isMemClassOutput() {
+        Map<String, Object> options = jointCompilationOptions;
+        return options != null
+                && Boolean.TRUE.equals(options.get(MEM_STUB))
+                && Boolean.TRUE.equals(options.get(MEM_CLASS_OUTPUT));
     }
 
     /**

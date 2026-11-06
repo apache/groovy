@@ -1918,7 +1918,11 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
         ClassLoader cl = shell.classLoader
         while (cl instanceof URLClassLoader) {
-            cl.getURLs().each { url -> urls << url }
+            cl.getURLs().each { url ->
+                if (url?.protocol == 'file') {
+                    urls << url
+                }
+            }
             cl = cl.parent
         }
 

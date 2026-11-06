@@ -25,6 +25,7 @@ import java.lang.module.ModuleReference;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -127,12 +128,17 @@ public final class ModuleImportHelper {
         while (cl != null) {
             if (cl instanceof URLClassLoader) {
                 for (URL url : ((URLClassLoader) cl).getURLs()) {
+                    // Module-path entries are files or directories. In-memory
+                    // class output and other non-file URLs have no NIO provider.
+                    if (url == null || !"file".equalsIgnoreCase(url.getProtocol())) {
+                        continue;
+                    }
                     try {
                         Path p = Path.of(url.toURI());
                         if (Files.exists(p)) {
                             paths.add(p);
                         }
-                    } catch (URISyntaxException ignore) {
+                    } catch (URISyntaxException | IllegalArgumentException | FileSystemNotFoundException ignore) {
                     }
                 }
             }

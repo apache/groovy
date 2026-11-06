@@ -89,7 +89,8 @@ public abstract class AsmDecompiler {
             throw new GroovyRuntimeException(e);
         }
 
-        SoftReference<ClassStub> ref = stubCache.get(uri);
+        boolean cacheable = cacheableScheme(uri);
+        SoftReference<ClassStub> ref = cacheable ? stubCache.get(uri) : null;
         ClassStub stub = (ref != null ? ref.get() : null);
         if (stub == null) {
             DecompilingVisitor visitor = new DecompilingVisitor();
@@ -99,9 +100,23 @@ public abstract class AsmDecompiler {
             }
 
             stub = visitor.result;
-            stubCache.put(uri, new SoftReference<>(stub));
+            if (cacheable) {
+                stubCache.put(uri, new SoftReference<>(stub));
+            }
         }
         return stub;
+    }
+
+    /**
+     * File, jar, and runtime-image URLs name immutable bytes.
+     * Other schemes, including in-memory class output, are parsed on every call
+     * so a replaced class file cannot be served from this cache.
+     */
+    private static boolean cacheableScheme(final URI uri) {
+        String scheme = uri.getScheme();
+        return "file".equalsIgnoreCase(scheme)
+                || "jar".equalsIgnoreCase(scheme)
+                || "jrt".equalsIgnoreCase(scheme);
     }
 
     /**
