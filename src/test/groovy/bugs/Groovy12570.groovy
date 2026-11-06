@@ -24,68 +24,23 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
 import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.jupiter.api.Assumptions.assumeFalse
 
 /**
- * A dynamic {@code new} of a protected constructor of another package, in a
- * subclass, is selected through the meta-class. When the JVM refuses access to
- * the constructor, as for an encapsulated JDK class, the call fails with the
- * same Groovy exception with and without invokedynamic.
+ * {@code super.m()} in dynamic code, for a package-private method of a superclass
+ * with the same package name but another class loader, such as a class of an
+ * earlier parse of the same GroovyShell. The JVM refuses a {@code super$} method
+ * that calls it and does not let a method of the subclass override it, so the
+ * meta-class calls the method of the superclass reflectively.
  */
-final class Groovy12568 {
+final class Groovy12570 {
 
     private static GroovyShell shell(final boolean indy) {
         def config = new CompilerConfiguration()
         config.optimizationOptions[CompilerConfiguration.INVOKEDYNAMIC] = indy
-        new GroovyShell(Groovy12568.classLoader, new Binding(), config)
+        new GroovyShell(Groovy12570.classLoader, new Binding(), config)
     }
 
-    // GROOVY-12568
-    @ParameterizedTest(name = 'indy={0}')
-    @ValueSource(booleans = [true, false])
-    void testProtectedConstructorOfEncapsulatedJdkClass(final boolean indy) {
-        assumeFalse(ObjectInputStream.module.isOpen('java.io', Groovy12568.module),
-            'the JVM opens java.base/java.io, so the constructor is reflectively reachable')
-
-        def err = shouldFail(GroovyRuntimeException) {
-            shell(indy).evaluate '''
-                class C extends ObjectInputStream {
-                    static ObjectInputStream make() {
-                        new ObjectInputStream()
-                    }
-                }
-                C.make()
-            '''
-        }
-        // was, with invokedynamic: GroovyBugError "BUG! UNCAUGHT EXCEPTION: member is protected"
-        assert err.class == GroovyRuntimeException
-        assert err.message.startsWith('could not access constructor: protected java.io.ObjectInputStream()')
-    }
-
-    // GROOVY-12568
-    @ParameterizedTest(name = 'indy={0}')
-    @ValueSource(booleans = [true, false])
-    void testProtectedConstructorOfClassOfAnotherPackage(final boolean indy) {
-        def shell = shell(indy)
-        shell.evaluate '''package p
-            class A {
-                final String value
-                protected A(String value) { this.value = value }
-            }
-            true
-        '''
-        assert shell.evaluate('''package q
-            class C extends p.A {
-                C() { super('c') }
-                static p.A make() {
-                    new p.A('x')
-                }
-            }
-            C.make().value
-        ''') == 'x'
-    }
-
-    // GROOVY-12568
+    // GROOVY-12570
     @ParameterizedTest(name = 'indy={0}')
     @ValueSource(booleans = [true, false])
     void testSuperCallOfPackagePrivateMethodOfClassOfAnotherClassLoader(final boolean indy) {
@@ -102,14 +57,8 @@ final class Groovy12568 {
                     super.pm()
                 }
             }
-            @groovy.transform.CompileStatic
-            class C extends M {
-                def test() {
-                    super.pm()
-                }
-            }
-            [new B().test(), new C().test()]
-        ''') == ['pm', 'pm']
+            new B().test()
+        ''') == 'pm'
     }
 
     // GROOVY-12570
@@ -130,15 +79,8 @@ final class Groovy12568 {
                     [super.pm(), pm()]
                 }
             }
-            @groovy.transform.CompileStatic
-            class C extends M {
-                String pm() { 'C>' + super.pm() }
-                def test() {
-                    [super.pm(), pm()]
-                }
-            }
-            new B().test() + new C().test()
-        ''') == ['M', 'B>M', 'M', 'C>M']
+            new B().test()
+        ''') == ['M', 'B>M']
     }
 
     // GROOVY-12570
@@ -173,28 +115,19 @@ final class Groovy12568 {
                 String pm() { 'D>' + super.pm() }
                 def test() { [super.pm(), pm()] }
             }
-            @groovy.transform.CompileStatic
-            class S$mid extends $mid {
-                String pm() { 'S>' + super.pm() }
-                def test() { [super.pm(), pm()] }
-            }
         """ }.join('') + '''
-            [DMidOfOtherLoader, SMidOfOtherLoader, DPublicMid, SPublicMid, DMidWithoutPm, SMidWithoutPm, DMidOfSameLoader, SMidOfSameLoader]
+            [DMidOfOtherLoader, DPublicMid, DMidWithoutPm, DMidOfSameLoader]
         ''')
         // the nearest method of the superclasses decides, so a deeper A.pm() is not reached
         def nearest = { Class c -> c.superclass.simpleName == 'MidWithoutPm' ? 'A' : c.superclass.simpleName }
         assert classes.collect { it.getDeclaredConstructor().newInstance().test() } == classes.collect {
-            [nearest(it), it.simpleName[0] + '>' + nearest(it)]
+            [nearest(it), 'D>' + nearest(it)]
         }
-        // the super method of the meta-class: a super$ method of D, if any, or the method of the superclass;
-        // S calls PublicMid.pm() and MidOfSameLoader.pm() directly, so it has no super$ method for them, and
-        // the nearest method hides A.pm() all the same
+        // the super method of the meta-class: a super$ method of D, if any, or the method of the superclass
         assert classes.collect { c ->
             def metaClass = (MetaClassImpl) GroovySystem.metaClassRegistry.getMetaClass(c)
             metaClass.getMethodWithoutCaching(c, 'pm', [] as Class[], true)?.invoke(c.getDeclaredConstructor().newInstance(), [] as Object[])
-        } == classes.collect { c ->
-            c.simpleName in ['SPublicMid', 'SMidOfSameLoader'] ? null : nearest(c)
-        }
+        } == classes.collect { nearest(it) }
     }
 
     // GROOVY-12570
@@ -251,5 +184,65 @@ final class Groovy12568 {
             assert method.invoke(object, types ? ['x'] as Object[] : [] as Object[]) == (types ? 'Mx' : 'M')
             assert metaClass.getMethodWithoutCaching(b, name - '1', types as Class[], false).declaringClass.theClass == b
         }
+    }
+
+    // GROOVY-12570: a super$ method cannot call a package-private method of another run-time package
+    @Test
+    void testNoSuperMethodForPackagePrivateMethodOfClassOfAnotherClassLoader() {
+        def shell = shell(true)
+        shell.evaluate '''package p
+            class M {
+                @groovy.transform.PackageScope String pm() { 'M' }
+                protected String qm() { 'M' }
+            }
+            true
+        '''
+        Class b = shell.evaluate '''package p
+            class B extends M {
+                def test() { [super.pm(), super.qm()] }
+            }
+            B
+        '''
+        def superMethods = b.declaredMethods*.name.findAll { it.startsWith('super$') }
+        assert superMethods.none { it.endsWith('$pm') }
+        assert superMethods.any { it.endsWith('$qm') }
+        assert b.getDeclaredConstructor().newInstance().test() == ['M', 'M']
+    }
+
+    // GROOVY-12570: the same methods within a compilation
+    @Test
+    void testSuperMethodForPackagePrivateMethodOfSameCompilation() {
+        Class b = shell(true).evaluate '''package p
+            class M {
+                @groovy.transform.PackageScope String pm() { 'M' }
+            }
+            class B extends M {
+                def test() { super.pm() }
+            }
+            B
+        '''
+        assert b.declaredMethods*.name.any { it.startsWith('super$') && it.endsWith('$pm') }
+        assert b.getDeclaredConstructor().newInstance().test() == 'M'
+    }
+
+    // GROOVY-12570: static compilation does not select a method at run time
+    @Test
+    void testStaticallyCompiledSuperCallIsNotChanged() {
+        def shell = shell(true)
+        shell.evaluate '''package p
+            class M {
+                @groovy.transform.PackageScope String pm() { 'M' }
+            }
+            true
+        '''
+        def err = shouldFail(org.codehaus.groovy.control.MultipleCompilationErrorsException) {
+            shell.evaluate '''package p
+                @groovy.transform.CompileStatic
+                class C extends M {
+                    def test() { super.pm() }
+                }
+            '''
+        }
+        assert err.message.contains('Cannot call package-private method pm of p.M from class p.C')
     }
 }

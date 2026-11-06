@@ -114,6 +114,7 @@ import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter;
 import org.codehaus.groovy.classgen.asm.PeepholeOptimizingMethodVisitor;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
+import org.codehaus.groovy.classgen.asm.sc.RuntimePackageCheck;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.IntersectionCastSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -162,6 +163,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.isVargs;
@@ -709,6 +711,8 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
                 // add call to "super()"
                 mv.visitVarInsn(ALOAD, 0);
+                ConstructorNode superCtor = controller.getClassNode().getSuperClass().getDeclaredConstructor(Parameter.EMPTY_ARRAY);
+                if (superCtor != null) RuntimePackageCheck.checkConstructor(controller, superCtor, true, node.getLineNumber() > 0 ? node : cn);
                 mv.visitMethodInsn(INVOKESPECIAL, controller.getInternalBaseClassName(), "<init>", "()V", false);
             }
         }
@@ -1338,22 +1342,9 @@ public class AsmClassGenerator extends ClassGenerator {
     /**
      * Determines if the given field can be directly accessed by the given class
      * (via {@code GETFIELD}, {@code GETSTATIC}, etc. bytecode instructions).
-     * <p>
-     * Unlike {@link #isMemberDirectlyAccessible}, the package name is not
-     * enough for a protected or package-private field; it needs the same
-     * run-time package (see {@link #isInSameRuntimePackage}).
      */
     public static boolean isFieldDirectlyAccessible(final FieldNode field, final ClassNode accessingClass) {
-        if (field == null) return false;
-        ClassNode declaringClass = field.getDeclaringClass();
-        if (field.isPublic() || field.isPrivate()) { // nestmates can access a private field
-            return isMemberDirectlyAccessible(field.getModifiers(), declaringClass, accessingClass);
-        }
-        // JVMS 5.4.4: a protected or package-private field is accessible from the run-time package of its declaring
-        // class, which includes the declaring class, and a protected field also from a subclass; access from a class
-        // of the same package name but another run-time package fails with IllegalAccessError
-        return isInSameRuntimePackage(declaringClass, accessingClass)
-            || (field.isProtected() && accessingClass.isDerivedFrom(declaringClass));
+        return field != null && isMemberDirectlyAccessible(field.getModifiers(), field.getDeclaringClass(), accessingClass);
     }
 
     /**
@@ -1562,7 +1553,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 } else {
                     fieldNode = classNode.getSuperClass().getDeclaredField(name);
                     // GROOVY-4497, GROOVY-11764: do not visit super class field if it is private or package-private
-                    if (fieldNode != null && (fieldNode.isPrivate() || !(fieldNode.isPublic() || fieldNode.isProtected() || isFieldDirectlyAccessible(fieldNode, classNode)))) {
+                    if (fieldNode != null && (fieldNode.isPrivate() || !(fieldNode.isPublic() || fieldNode.isProtected() || inSamePackage(classNode, classNode.getSuperClass())))) {
                         fieldNode = null;
                     }
                 }
@@ -1684,6 +1675,7 @@ public class AsmClassGenerator extends ClassGenerator {
      */
     @Override
     public void visitFieldExpression(final FieldExpression expression) {
+        RuntimePackageCheck.checkField(controller, expression.getField(), null, expression);
         if (expression.getField().isStatic()) {
             if (controller.getCompileStack().isLHS()) {
                 storeStaticField(expression);

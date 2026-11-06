@@ -234,27 +234,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             }
         }
 
-        if (isFieldOfAnotherRuntimePackage(receiverType, propertyName)) {
-            makeDynamicGetProperty(receiver, propertyName, safe);
-            return;
-        }
-
         addPropertyAccessError(receiver, propertyName, receiverType);
         controller.getMethodVisitor().visitInsn(ACONST_NULL);
         controller.getOperandStack().push(OBJECT_TYPE);
-    }
-
-    /**
-     * Determines if the property is a protected or package-private field of a
-     * class with the same package name but of another run-time package (see
-     * {@link AsmClassGenerator#isInSameRuntimePackage}). Such a field is read
-     * through the meta-class when the current class cannot access it directly.
-     */
-    private boolean isFieldOfAnotherRuntimePackage(final ClassNode receiverType, final String propertyName) {
-        FieldNode field = getField(receiverType, propertyName);
-        return field != null && !field.isPublic() && !field.isPrivate()
-            && samePackageName(field.getDeclaringClass(), controller.getClassNode())
-            && !AsmClassGenerator.isInSameRuntimePackage(field.getDeclaringClass(), controller.getClassNode());
     }
 
     private void makeDynamicGetProperty(final Expression receiver, final String propertyName, final boolean safe) {
@@ -424,11 +406,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             return;
         }
 
-        if (isFieldOfAnotherRuntimePackage(receiverType, propertyName)) {
-            makeDynamicGetProperty(receiver, propertyName, safe);
-            return;
-        }
-
         boolean isScriptVariable = (receiverType.isScript() && receiver instanceof VariableExpression && ((VariableExpression) receiver).getAccessedVariable() == null);
         // a packed closure's hoisted body keeps the closure-context contract: like the inner
         // closure class it replaces, it falls through to the dynamic property sequence (e.g.
@@ -538,6 +515,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
     boolean makeGetField(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean safe, final boolean implicitThis) {
         FieldNode field = getField(receiverType, fieldName); // GROOVY-7039: include interface constants
         if (field != null && AsmClassGenerator.isFieldDirectlyAccessible(field, controller.getClassNode())) {
+            RuntimePackageCheck.checkField(controller, field, implicitThis ? null : controller.getTypeChooser().resolveType(receiver, controller.getClassNode()), receiver);
             CompileStack compileStack = controller.getCompileStack();
             OperandStack operandStack = controller.getOperandStack();
             MethodVisitor mv = controller.getMethodVisitor();
@@ -560,7 +538,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                 ClassNode currentClass = controller.getClassNode();
                 ClassNode castType = field.getOwner();
                 if (field.isProtected() && !currentClass.equals(field.getOwner())
-                        && !AsmClassGenerator.isInSameRuntimePackage(field.getOwner(), currentClass)) {
+                        && !samePackageName(currentClass, field.getOwner())) {
                     if (receiverType.isDerivedFrom(currentClass)) castType = currentClass;
                     else return false;
                 }
@@ -885,13 +863,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
 
         FieldNode fn = AsmClassGenerator.getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(controller.getClassNode(), receiverType, name, false);
         if (fn == null) return false;
-        ClassNode currentClass = controller.getClassNode();
-        if (!fn.isStatic() && fn.isProtected() && !currentClass.equals(fn.getOwner())
-                && !AsmClassGenerator.isInSameRuntimePackage(fn.getOwner(), currentClass)
-                && !receiverType.isDerivedFrom(currentClass)) {
-            return false; // JVMS 4.10.1.8: in another run-time package, the receiver must be of the current class
-        }
 
+        RuntimePackageCheck.checkField(controller, fn, controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode()), expression);
         OperandStack os = controller.getOperandStack();
         os.doGroovyCast(fn.getType());
 
