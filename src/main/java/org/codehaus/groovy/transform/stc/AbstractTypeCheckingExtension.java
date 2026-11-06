@@ -39,6 +39,7 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.objectweb.asm.Opcodes;
 
@@ -247,11 +248,17 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
 
     /**
      * Invokes the supplied closure and reports any failure to the source unit.
+     * A failure thrown by the source unit's own error collector, as when the error
+     * tolerance is reached, is rethrown instead: its errors are already reported there.
      */
     protected Object safeCall(Closure closure, Object... args) {
         try {
             return closure.call(args);
         } catch (Exception err) {
+            if (err instanceof MultipleCompilationErrorsException mcee
+                    && mcee.getErrorCollector() == typeCheckingVisitor.getSourceUnit().getErrorCollector()) {
+                throw mcee;
+            }
             typeCheckingVisitor.getSourceUnit().addException(err);
             return null;
         }

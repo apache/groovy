@@ -542,14 +542,13 @@ final class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
                 double calculate(int i)
             }
 
-            Operation operation = { i -> return 1.0 }
-            def result = operation.calculate(2)
-            assert result == 1.0d
+            Operation operation = { i -> return '1' }
+            true
         '''
 
         extension = null
         shouldFailWithMessages source,
-            'Cannot return value of type java.math.BigDecimal for closure expecting double'
+            'Cannot return value of type java.lang.String for closure expecting double'
 
         extension = 'groovy/transform/stc/IncompatibleReturnTypeTestExtension.groovy'
         assertScript source

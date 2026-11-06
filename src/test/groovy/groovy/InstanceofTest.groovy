@@ -21,12 +21,13 @@ package groovy
 import groovy.transform.TypeChecked
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.assertScript
+
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 import java.util.List
 import java.util.Map
 
-import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 final class InstanceofTest {
@@ -1166,6 +1167,258 @@ final class InstanceofTest {
                 out
             }
             assert m(['a', 'b', 1, 'c']) == ['A', 'B']
+        '''
+    }
+
+    // GEP-19: record patterns in instanceof
+
+    @Test
+    void testRecordPattern() {
+        assertScript '''
+            record Point(int x, int y) {}
+            def p = new Point(3, 4)
+            if (p instanceof Point(int x, int y)) {
+                assert x == 3 && y == 4
+            } else {
+                assert false : 'expected match'
+            }
+            assert !('s' instanceof Point(int x, int y))
+        '''
+    }
+
+    @Test
+    void testRecordPatternInCondition() {
+        assertScript '''
+            record Point(int x, int y) {}
+            def p = new Point(3, 4)
+            assert p instanceof Point(int x, _) && x == 3
+            def r = p instanceof Point(var a, var b) ? a + b : -1
+            assert r == 7
+        '''
+    }
+
+    @Test
+    void testNestedRecordPattern() {
+        assertScript '''
+            record Point(int x, int y) {}
+            record Line(Point start, Point end) {}
+            def l = new Line(new Point(0, 1), new Point(4, 5))
+            if (l instanceof Line(Point(_, var y1), Point p2)) {
+                assert y1 == 1
+                assert p2.x() == 4
+            } else {
+                assert false : 'expected match'
+            }
+        '''
+    }
+
+    @Test
+    void testRecordPatternComponentTypeAndArity() {
+        assertScript '''
+            record Box(Object value) {}
+            assert new Box('t') instanceof Box(String s) && s == 't'
+            assert !(new Box(42) instanceof Box(String s2))
+            record Point(int x, int y) {}
+            assert !(new Point(1, 2) instanceof Point(var a))       // arity mismatch
+        '''
+    }
+
+    @Test
+    void testRecordPatternVarBindsNullComponent() {
+        assertScript '''
+            record Box(Object value) {}
+            def b = new Box(null)
+            if (b instanceof Box(var v)) {
+                assert v == null
+            } else {
+                assert false : 'var component should match null'
+            }
+            assert !(b instanceof Box(String s)) // typed component does not match null
+        '''
+    }
+
+    @Test
+    void testRecordPatternInWhileLoop() {
+        assertScript '''
+            record Cons(Object head, Object tail) {}
+            def list = new Cons(1, new Cons(2, new Cons(3, null)))
+            def sum = 0
+            while (list instanceof Cons(Integer h, var t)) {
+                sum += h
+                list = t
+            }
+            assert sum == 6
+        '''
+    }
+
+    @Test
+    void testRecordPatternCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            record Point(int x, int y) {}
+            @CompileStatic
+            def m(Object o) {
+                if (o instanceof Point(int x, int y)) {
+                    return x + y
+                }
+                return -1
+            }
+            assert m(new Point(3, 4)) == 7
+            assert m('s') == -1
+        '''
+    }
+
+    @Test
+    void testRecordPatternVarComponentTypeCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            record Point(int x, int y) {}
+            record Named(String name, Point at) {}
+            @CompileStatic
+            int m(Object o) {
+                if (o instanceof Point(var x, var y)) return x + y
+                if (o instanceof Named(var n, Point(var x, _))) return n.length() + x
+                return -1
+            }
+            assert m(new Point(3, 4)) == 7
+            assert m(new Named('abc', new Point(10, 0))) == 13
+            assert m('s') == -1
+        '''
+    }
+
+    @Test
+    void testRecordPatternInfersTypeArgumentsCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            sealed interface Opt<T> permits Some, None {}
+            record Some<T>(T value) implements Opt<T> {}
+            record None<T>(String why) implements Opt<T> {}
+            record Box<T>(T value) {}
+            record NumBox<N extends Number>(N value) {}
+            @CompileStatic
+            int box(Box<String> b) {
+                b instanceof Box(var s) ? s.length() : -1
+            }
+            @CompileStatic
+            int opt(Opt<String> o) {
+                if (o instanceof Some(var v)) return v.length()
+                return -1
+            }
+            @CompileStatic
+            int nested(Box<Box<String>> b) {
+                b instanceof Box(Box(var s)) ? s.length() : -1
+            }
+            @CompileStatic
+            int bound(Object o) { // nothing to infer from: the type parameter erases to its bound
+                o instanceof NumBox(var n) ? n.intValue() : -1
+            }
+            assert box(new Box<>('abc')) == 3
+            assert opt(new Some<String>('abcd')) == 4
+            assert opt(new None<String>('no')) == -1
+            assert nested(new Box<>(new Box<>('ab'))) == 2
+            assert bound(new NumBox<>(5)) == 5
+        '''
+    }
+
+    @Test
+    void testRecordPatternExplicitTypeArgumentsCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            record Box<T>(T value) {}
+            @CompileStatic
+            int m(Object o) {
+                o instanceof Box<String>(var s) ? s.length() : -1
+            }
+            assert m(new Box<>('abc')) == 3
+        '''
+    }
+
+    @Test
+    void testRecordPatternInferredTypeArgumentIsCheckedTypeChecked() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            record Box<T>(T value) {}
+            @TypeChecked
+            int m(Box<String> b) {
+                b instanceof Box(var s) ? s.intValue() : -1
+            }
+        '''
+        assert err.message.contains('Cannot find matching method java.lang.String#intValue()')
+    }
+
+    @Test
+    void testZeroComponentRecordPattern() {
+        assertScript '''
+            record None() {}
+            record Pair(Object left, Object right) {}
+            class Opt { record Empty() {} }
+            assert new None() instanceof None()
+            assert !('s' instanceof None())
+            assert !(null instanceof None())
+            assert 's' !instanceof None()
+            assert new Opt.Empty() instanceof Opt.Empty()
+            def p = new Pair(new None(), 2)
+            assert p instanceof Pair(None(), var r) && r == 2
+            assert !(new Pair(1, 2) instanceof Pair(None(), var r2))
+        '''
+    }
+
+    @Test
+    void testZeroComponentRecordPatternCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            record None() {}
+            record Pair(Object left, Object right) {}
+            @CompileStatic
+            int m(Object o) {
+                if (o instanceof None()) return 0
+                if (o instanceof Pair(None(), var r)) return r.hashCode()
+                return -1
+            }
+            assert m(new None()) == 0
+            assert m(new Pair(new None(), 7)) == 7
+            assert m('s') == -1
+        '''
+    }
+
+    @Test
+    void testNotInstanceofRecordPattern() {
+        assertScript '''
+            record Point(int x, int y) {}
+            def f(o) {
+                if (o !instanceof Point(int x, int y)) return 'no'
+                x + y
+            }
+            assert f(new Point(1, 2)) == 3
+            assert f('s') == 'no'
+            assert f(null) == 'no'
+            def p = new Point(3, 4)
+            if (p !instanceof Point(var a, _)) {
+                assert false : 'expected match'
+            } else {
+                assert a == 3
+            }
+            assert !(p !instanceof Point(int c, int d)) && c + d == 7
+            assert 's' !instanceof Point(int e, int g)
+        '''
+    }
+
+    @Test
+    void testNotInstanceofNestedRecordPatternCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            record Point(int x, int y) {}
+            record Line(Point start, Point end) {}
+            @CompileStatic
+            int m(Object o) {
+                if (o !instanceof Line(Point(var x1, _), Point p2)) {
+                    return -1
+                }
+                return (x1 as int) + p2.x()
+            }
+            assert m(new Line(new Point(1, 2), new Point(3, 4))) == 4
+            assert m(new Line(new Point(1, 2), null)) == -1
+            assert m('s') == -1
         '''
     }
 }
