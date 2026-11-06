@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793863129702,
+  "lastUpdate": 1793948437089,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -9190,6 +9190,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 382.6666666666667,
             "range": "±23.54",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "c7a4b2ae4ef019e3680e5f7ee07d90bd460de9cd",
+          "message": "groovysh: suppress deprecation warnings for the JLine command-description API in GroovyshLanguageSession\n\nThe script-description hook on SystemRegistryImpl is still typed on the\ndeprecated org.jline.console CmdDesc/CmdLine (true through JLine 4.5.0),\nso the two methods keep those signatures and get the same suppression\nGroovyEngine already carries.",
+          "timestamp": "2026-11-06T06:38:52Z",
+          "url": "https://github.com/apache/groovy/commit/c7a4b2ae4ef019e3680e5f7ee07d90bd460de9cd"
+        },
+        "date": 1793948429011,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 531.9466666666667,
+            "range": "±19.62",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 660.66,
+            "range": "±213.55",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 582.1866666666667,
+            "range": "±146.17",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 462.77,
+            "range": "±21.24",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 472.26,
+            "range": "±23.17",
             "unit": "ms",
             "extra": "6.0.0"
           }
