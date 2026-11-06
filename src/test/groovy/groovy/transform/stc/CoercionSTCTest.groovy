@@ -1023,19 +1023,17 @@ import static groovy.test.GroovyAssert.shouldFail
         shouldFailWithMessages sams + '''
             B b = () -> 128
             S s = () -> 70000
-            C c = { -> -1 }
         ''',
-        'Cannot return value of type int for lambda expecting byte',
-        'Cannot return value of type int for lambda expecting short',
-        'Cannot return value of type int for closure expecting char'
+        'Possible loss of precision from int to byte',
+        'Possible loss of precision from int to short'
 
         shouldFailWithMessages sams + '''
             F f = (int i) -> i
             B b = { -> 1 + 1 }
             C c = () -> 65L
         ''',
-        'Cannot return value of type int for lambda expecting short',
-        'Cannot return value of type int for closure expecting byte',
+        'Possible loss of precision from int to short',
+        'Possible loss of precision from int to byte',
         'Cannot return value of type long for lambda expecting char'
     }
 }

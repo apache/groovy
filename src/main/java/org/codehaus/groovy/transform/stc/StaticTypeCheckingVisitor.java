@@ -1565,17 +1565,6 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
     }
 
-    // JLS 5.2: an int constant whose value fits a byte, short or char target
-    private static boolean isNarrowingConstant(final Expression expression, final ClassNode source, final ClassNode target) {
-        if (!isPrimitiveInt(source) || !(expression instanceof ConstantExpression constant)
-                || !(constant.getValue() instanceof Integer value)) return false;
-        int i = value;
-        if (isPrimitiveByte(target)) return i == (byte) i;
-        if (isPrimitiveShort(target)) return i == (short) i;
-        if (isPrimitiveChar(target)) return i == (char) i;
-        return false;
-    }
-
     private static boolean isClosureWithType(final ClassNode type) {
         if (!CLOSURE_TYPE.equals(type)) return false;
         GenericsType[] gts = type.getGenericsTypes();
@@ -3586,8 +3575,6 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 } else if (!statement.isReturningNullOrVoid() && isPrimitiveType(inferredReturnType)
                         && checkReturnValue(inferredReturnType, type, expression, statement)) {
                     type = inferredReturnType; // GROOVY-12616: the value is converted to a primitive return type as by a method's return
-                } else if (isNarrowingConstant(expression, type, inferredReturnType)) {
-                    type = inferredReturnType; // GROOVY-12620: allow narrowing of a constant that fits
                 } else if ((statement.isReturningNullOrVoid() || !isPrimitiveVoid(type)) && !extension.handleIncompatibleReturnType(statement, type)) {
                     // GROOVY-10277, GROOVY-11490: incompatible return statement (null for primitive or inconvertible type)
                     String value = (statement.isReturningNullOrVoid() ? "null" : "value of type " + prettyPrintType(type));
