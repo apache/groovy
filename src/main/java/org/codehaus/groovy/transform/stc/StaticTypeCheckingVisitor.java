@@ -3931,8 +3931,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 // selected at run time; they are used only to resolve a returned type parameter
                 ClassNode[] samArguments = arguments != null || expression instanceof MethodReferenceExpression
                         || !isSAMType(targetSAM) ? arguments : GenericsUtils.parameterizeSAM(targetSAM).getV1();
+                // GROOVY-12716: only the methods that these parameter types can select are returned from
+                List<MethodNode> selectable = samArguments != arguments ? findSelectableMethods(expression, ownerType, candidates, samArguments) : candidates;
                 candidates.stream()
                         .peek(candidate -> checkOrMarkPrivateAccess(expression, candidate)) // GROOVY-11365
+                        .filter(selectable::contains)
                         .map (candidate -> {
                             ClassNode returnType = candidate.getReturnType();
                             if (!isStaticInContext(candidate) // GROOVY-11683
@@ -3975,6 +3978,37 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 addStaticTypeError("Cannot find matching method " + prettyPrintTypeName(type) + "#" + nameText + ". Please check if the declared type is correct and if the method exists.", nameExpr);
             }
         }
+    }
+
+    /**
+     * Finds the methods that a method pointer can call for values of the parameter types of the
+     * functional interface it implements. It selects its method at run time from the argument
+     * values, so these are the best match for the parameter types and any method with narrower
+     * parameter types, which a value of a subtype selects. A method that takes the arguments only
+     * by converting them, such as {@code abs(long)} for an {@code Integer}, is not selected while
+     * {@code abs(int)} exists.
+     *
+     * @return the methods, or all the candidates if the parameter types select none of them
+     *         or an instance method referenced through its class takes the first as its receiver
+     */
+    private static List<MethodNode> findSelectableMethods(final MethodPointerExpression expression, final ClassNode receiverType,
+                                                          final List<MethodNode> candidates, final ClassNode[] arguments) {
+        if (expression.getExpression() instanceof ClassExpression && candidates.stream().anyMatch(candidate -> !candidate.isStatic())) {
+            return candidates;
+        }
+        List<MethodNode> bestMatches = chooseBestMethod(receiverType, candidates, arguments);
+        List<MethodNode> selectable = candidates.stream()
+                .filter(candidate -> bestMatches.contains(candidate) || takesSubtypesOf(candidate.getParameters(), arguments))
+                .collect(Collectors.toList());
+        return selectable.isEmpty() ? candidates : selectable;
+    }
+
+    private static boolean takesSubtypesOf(final Parameter[] parameters, final ClassNode[] types) {
+        if (parameters.length != types.length) return false;
+        for (int i = 0, n = parameters.length; i < n; i += 1) {
+            if (!implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(parameters[i].getType()), wrapTypeIfNecessary(types[i]))) return false;
+        }
+        return true;
     }
 
     /**
