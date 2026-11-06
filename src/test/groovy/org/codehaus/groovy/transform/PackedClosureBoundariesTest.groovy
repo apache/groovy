@@ -95,6 +95,38 @@ final class PackedClosureBoundariesTest {
     }
 
     @Test
+    void constructorAndInitializerEscapesDecline() {
+        // GROOVY-12652: a constructor, and an instance initializer block (inlined into every
+        // constructor), is a method to the escape and serialization gates; [description, class body]
+        [
+            ['field store in a constructor',        'Closure f\nC() { f = { x -> x } }'],
+            ['property store in a constructor',     'C(Map m) { m.handler = { x -> x } }'],
+            ['setter store in a constructor',       'C(H h) { h.handler = { x -> x } }'],
+            ['appended in a constructor',           'C(List<Closure> s) { s << { x -> x } }'],
+            ['Serializable cast in a constructor',  'C() { assert ({ x -> x } as Serializable) != null }'],
+            ['field store in an initializer',       'Closure f; { f = { x -> x } }'],
+            ['property store in an initializer',    'Map m = [:]; { m.handler = { x -> x } }'],
+            ['setter store in an initializer',      'H h = new H(); { h.handler = { x -> x } }'],
+            ['appended in an initializer',          'List<Closure> s = []; { s << { x -> x } }'],
+        ].each { desc, body ->
+            // under @CompileStatic the setter store and the append are rewritten to method calls
+            // before class generation; the escape walk runs ahead of that rewrite (GROOVY-12650)
+            ['', '@groovy.transform.TypeChecked\n', '@groovy.transform.CompileStatic\n'].each { annotation ->
+                assert !packs("${annotation}class C {\n${body}\n}\nclass H { Closure handler }"),
+                        "${annotation.trim() ?: 'dynamic'}: '$desc' should NOT pack"
+            }
+        }
+    }
+
+    @Test
+    void constructorAndInitializerLocalClosuresPack() {
+        ['', '@groovy.transform.TypeChecked\n', '@groovy.transform.CompileStatic\n'].each { annotation ->
+            assert packs("${annotation}class C { C(List<Integer> xs) { xs.each { x -> x } } }")
+            assert packs("${annotation}class C { List<Integer> xs = [1]; { xs.each { x -> x } } }")
+        }
+    }
+
+    @Test
     void traitBodyDeclines() {
         assert !packs('trait T { def m(List<Integer> xs) { xs.collect { it * 2 } } }\nclass C implements T {}')
     }
