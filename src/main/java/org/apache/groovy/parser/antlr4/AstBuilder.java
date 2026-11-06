@@ -2548,9 +2548,19 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         org.codehaus.groovy.syntax.Token token;
         if (asBoolean(ctx.ASSIGN())) {
-            token = createGroovyTokenByType(ctx.ASSIGN().getSymbol(), Types.ASSIGN);
+            token = this.createGroovyTokenByType(ctx.ASSIGN().getSymbol(), Types.ASSIGN);
         } else {
             token = new org.codehaus.groovy.syntax.Token(Types.ASSIGN, ASSIGN_STR, ctx.start.getLine(), 1);
+        }
+
+        Expression init;
+        if (ctx.arrayInitializer() != null) { // GROOVY-11492
+            ClassNode elementType = variableType.getComponentType();
+            ctx.arrayInitializer().putNodeMetaData("elementType", elementType);
+            init = configureAST(new ArrayExpression(elementType, this.visitArrayInitializer(ctx.arrayInitializer())), ctx.arrayInitializer());
+            checkArrayInitEdgeCase(init); // Type[] a = {b} used to be coerced closure with array being implicit
+        } else {
+            init = this.visitVariableInitializer(ctx.variableInitializer());
         }
 
         return configureAST(
@@ -2562,8 +2572,28 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                                 ),
                                 ctx.variableDeclaratorId()),
                         token,
-                        this.visitVariableInitializer(ctx.variableInitializer())),
+                        init),
                 ctx);
+    }
+
+    private void checkArrayInitEdgeCase(final Expression expr) {
+        if (expr instanceof ArrayExpression array && array.hasInitializer()) {
+            ClassNode elementType = array.getElementType();
+
+            ClassNode baseType = elementType;
+            while (baseType.isArray()) baseType = baseType.getComponentType();
+            if (isPrimitiveType(baseType)) {
+                return; // closure coerced to boolean or integer is not likely
+            }
+
+            if (!elementType.isArray()) {
+                if (array.getExpressions().size() == 1 && !(array.getExpression(0) instanceof ClosureExpression)) {
+                    sourceUnit.addWarning("Parsed as array initializer, not closure. If a closure is intended then add arrow to disambiguate.", array);
+                }
+            } else {
+                array.getExpressions().forEach(this::checkArrayInitEdgeCase);
+            }
+        }
     }
 
     @Override
@@ -4258,14 +4288,22 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 var c = ctx.getChild(i);
                 if (c instanceof ArrayInitializerContext arrayInitializer) {
                     ClassNode subType = elementType.getComponentType();
-                    //if (subType == null) produce closure or throw exception
-                    arrayInitializer.putNodeMetaData("elementType", subType);
-                    var arrayExpression = configureAST(new ArrayExpression(subType,
-                            this.visitArrayInitializer(arrayInitializer)), arrayInitializer);
-                    arrayExpression.setType(elementType);
-                    initExpressions.add(arrayExpression);
-                } else if (c instanceof VariableInitializerContext) {
-                    initExpressions.add(this.visitVariableInitializer((VariableInitializerContext) c));
+                    if (subType != null) {
+                        arrayInitializer.putNodeMetaData("elementType", subType);
+                        var arrayExpression = configureAST(new ArrayExpression(subType,
+                                this.visitArrayInitializer(arrayInitializer)), arrayInitializer);
+                        arrayExpression.setType(elementType);
+                        initExpressions.add(arrayExpression);
+                    } else { // 0..1 expressions is a closure
+                        List<Expression> emptyOrValue = this.visitArrayInitializer(arrayInitializer);
+                        var block = configureAST(new BlockStatement(), arrayInitializer);
+                        if (!emptyOrValue.isEmpty()) { var expr = emptyOrValue.get(0);
+                            block.addStatement(configureAST(stmt(expr), expr));
+                        }
+                        initExpressions.add(configureAST(new ClosureExpression(Parameter.EMPTY_ARRAY, block), arrayInitializer));
+                    }
+                } else if (c instanceof VariableInitializerContext variableInitializer) {
+                    initExpressions.add(this.visitVariableInitializer(variableInitializer));
                 }
             }
             return initExpressions;
@@ -4732,7 +4770,31 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public Parameter visitFormalParameter(final FormalParameterContext ctx) {
-        return this.processFormalParameter(ctx, ctx.variableModifiersOpt(), ctx.type(), ctx.ELLIPSIS(), ctx.variableDeclaratorId(), ctx.expression());
+        ClassNode parameterType = this.visitType(ctx.type());
+        var init = (Expression) this.visit(ctx.expression());
+
+        if (ctx.arrayInitializer() != null) {
+            ClassNode elementType = parameterType.getComponentType();
+            ctx.arrayInitializer().putNodeMetaData("elementType", elementType);
+            init = configureAST(
+                    new ArrayExpression(elementType, this.visitArrayInitializer(ctx.arrayInitializer())),
+                    ctx.arrayInitializer());
+        } else if (ctx.ELLIPSIS() != null) {
+            parameterType = this.createArrayType(parameterType);
+            if (ctx.type() == null) {
+                configureAST(parameterType, ctx.ELLIPSIS());
+            } else {
+                configureAST(parameterType, ctx.type(), configureAST(new ConstantExpression("..."), ctx.ELLIPSIS()));
+            }
+        }
+
+        var parameter = new Parameter(parameterType, this.visitVariableDeclaratorId(ctx.variableDeclaratorId()).getName());
+        var modifiers = new ModifierManager(this, this.visitVariableModifiersOpt(ctx.variableModifiersOpt()));
+        parameter.putNodeMetaData(PARAMETER_MODIFIER_MANAGER, modifiers);
+        parameter.putNodeMetaData(PARAMETER_CONTEXT, ctx);
+        modifiers.processParameter(parameter);
+        parameter.setInitialExpression(init);
+        return configureAST(parameter, ctx);
     }
 
     @Override
@@ -5341,40 +5403,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
                 arguments
         );
-    }
-
-    private Parameter processFormalParameter(final GroovyParserRuleContext ctx, final VariableModifiersOptContext variableModifiersOptContext, final TypeContext typeContext, final TerminalNode ellipsis, final VariableDeclaratorIdContext variableDeclaratorIdContext, final ExpressionContext expressionContext) {
-        ClassNode classNode = this.visitType(typeContext);
-
-        if (asBoolean(ellipsis)) {
-            classNode = this.createArrayType(classNode);
-            if (!asBoolean(typeContext)) {
-                configureAST(classNode, ellipsis);
-            } else {
-                configureAST(classNode, typeContext, configureAST(new ConstantExpression("..."), ellipsis));
-            }
-        }
-
-        ModifierManager modifierManager = new ModifierManager(this, this.visitVariableModifiersOpt(variableModifiersOptContext));
-        Parameter parameter =
-                modifierManager
-                        .processParameter(
-                                configureAST(
-                                        new Parameter(
-                                                classNode,
-                                                this.visitVariableDeclaratorId(variableDeclaratorIdContext).getName()
-                                        ),
-                                        ctx
-                                )
-                        );
-        parameter.putNodeMetaData(PARAMETER_MODIFIER_MANAGER, modifierManager);
-        parameter.putNodeMetaData(PARAMETER_CONTEXT, ctx);
-
-        if (asBoolean(expressionContext)) {
-            parameter.setInitialExpression((Expression) this.visit(expressionContext));
-        }
-
-        return parameter;
     }
 
     private Expression createPathExpression(final Expression primaryExpr, final List<? extends PathElementContext> pathElementContextList) {
