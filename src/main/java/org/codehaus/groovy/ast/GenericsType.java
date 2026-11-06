@@ -643,8 +643,10 @@ public class GenericsType extends ASTNode {
                                             } else if (classNodeType.getUpperBounds() != null) {
                                                 match = gt.checkGenerics(classNodeType.getUpperBounds()[0]);
                                             } else {
-                                                // unbounded "?" is a witness for "? extends B" (diamond, capture)
-                                                match = true;
+                                                // GROOVY-9338: unbounded "?" is "? extends Object".
+                                                // It is contained in "? extends B" only when B is Object,
+                                                // which is handled above. "? extends B" does not contain "?".
+                                                match = false;
                                             }
                                         } else {
                                             match = implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType());
