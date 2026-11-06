@@ -82,6 +82,17 @@ public class MetaInfExtensionModule extends SimpleExtensionModule {
     public static final String MODULE_STATIC_CLASSES_KEY   = "staticExtensionClasses";
 
     /**
+     * Property key in META-INF configuration file for listing classes that must be
+     * loadable before the module's extension classes are loaded, typically from an
+     * optional dependency that the extension method signatures mention. While one of
+     * them is missing, the scanner defers the module instead of loading it; see
+     * {@link ExtensionModuleScanner#claimSatisfiedDeferredModules()}.
+     *
+     * @since 7.0.0
+     */
+    public static final String MODULE_REQUIRED_CLASSES_KEY = "requiredClasses";
+
+    /**
      * Creates a new MetaInfExtensionModule from the given properties and class loader.
      * The properties should contain the module name and version, as well as class names
      * for instance and static extension methods.

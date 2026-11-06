@@ -138,6 +138,7 @@ final class GroovyshLanguageSession implements AutoCloseable, Completer {
      * @param line JLine command line
      * @return description, or {@code null}
      */
+    @SuppressWarnings('deprecation') // org.jline.console command-description API
     CmdDesc scriptDescription(CmdLine line) {
         if (line != null && line.descriptionType == CmdLine.DescriptionType.SYNTAX) {
             def hits = query({ diagnosticsFor(line.line ?: '') } as Callable<List<Diagnostic>>, Collections.<Diagnostic>emptyList())
@@ -217,6 +218,7 @@ final class GroovyshLanguageSession implements AutoCloseable, Completer {
      * @return description, or {@code null} when there are none
      */
     @PackageScope
+    @SuppressWarnings('deprecation') // org.jline.console command-description API
     static CmdDesc describeSignatures(List<SignatureInformation> signatures) {
         if (!signatures) {
             return null
