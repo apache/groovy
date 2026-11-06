@@ -404,10 +404,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     private Object resolveGetProperty(final String property) {
         switch (resolveStrategy) {
             case DELEGATE_FIRST:
-                final Object delegate = getDelegate();
-                final Object owner = getOwner();
-                if (delegate == null) return getProperty(owner, property);
-                return getPropertyTryThese(delegate, owner, property);
+                return getPropertyTryThese(getDelegate(), getOwner(), property);
             case DELEGATE_ONLY:
                 return getProperty(getDelegate(), property);
             case OWNER_ONLY:
@@ -422,10 +419,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     private void resolveSetProperty(final String property, final Object newValue) {
         switch (resolveStrategy) {
             case DELEGATE_FIRST:
-                final Object delegate = getDelegate();
-                final Object owner = getOwner();
-                if (delegate == null) setProperty(owner, property, newValue);
-                else setPropertyTryThese(delegate, owner, property, newValue);
+                setPropertyTryThese(getDelegate(), getOwner(), property, newValue);
                 break;
             case DELEGATE_ONLY:
                 setProperty(getDelegate(), property, newValue);
@@ -443,6 +437,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
 
 
     private Object getProperty(final Object receiver, final String property) {
+        if (receiver == null) throw new MissingPropertyException(property, getClass());
         try {
             return InvokerHelper.getProperty(receiver, property);
         } catch (GroovyRuntimeException e1) {
@@ -461,6 +456,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     }
 
     private Object getPropertyTryThese(final Object o1, final Object o2, final String property) {
+        if (o1 == null) return getProperty(o2, property);
         try {
             return getProperty(o1, property);
         } catch (MissingPropertyException | MissingFieldException e1) {
@@ -476,6 +472,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     }
 
     private void setProperty(final Object receiver, final String property, final Object newValue) {
+        if (receiver == null) throw new MissingPropertyException(property, getClass());
         try {
             InvokerHelper.setProperty(receiver, property, newValue);
         } catch (GroovyRuntimeException e1) {
@@ -495,10 +492,14 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     }
 
     private void setPropertyTryThese(final Object o1, final Object o2, final String property, final Object newValue) {
+        if (o1 == null) {
+            setProperty(o2, property, newValue);
+            return;
+        }
         try {
             setProperty(o1, property, newValue);
         } catch (GroovyRuntimeException e1) {
-            if (o1 != null && o1 != this && o1 != o2) {
+            if (o2 != null && o1 != this && o1 != o2) {
                 try {
                     setProperty(o2, property, newValue);
                     return;
