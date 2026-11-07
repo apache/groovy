@@ -272,6 +272,18 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
      * @return true if property change support should be added
      */
     protected boolean needsPropertyChangeSupport(ClassNode declaringClass, SourceUnit sourceUnit) {
+        List<MethodNode> stubs = new ArrayList<>();
+        for (MethodNode m : declaringClass.getMethods()) {
+            if (StubberSupport.isStub(m) && switch (m.getName()) {
+                case "addPropertyChangeListener", "removePropertyChangeListener",
+                     "firePropertyChange", "getPropertyChangeListeners" -> true;
+                default -> false;
+            }) {
+                stubs.add(m);
+            }
+        }
+        stubs.forEach(declaringClass::removeMethod);
+
         boolean foundAdd = false, foundRemove = false, foundFire = false;
         ClassNode consideredClass = declaringClass;
         while (consideredClass!= null) {

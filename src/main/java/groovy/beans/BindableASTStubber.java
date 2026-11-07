@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.control.CompilePhase;
@@ -70,7 +71,16 @@ public class BindableASTStubber extends AbstractASTTransformation {
         AnnotationNode annotation = (AnnotationNode) nodes[0];
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         if (!MY_TYPE.equals(annotation.getClassNode())) return;
-        if (!(parent instanceof ClassNode classNode) || classNode.isInterface()) return;
+        ClassNode classNode;
+        if (parent instanceof ClassNode cn) {
+            classNode = cn;
+        } else if (parent instanceof FieldNode fn && !fn.isStatic() && !fn.isFinal()
+                && fn.getDeclaringClass() != null && fn.getDeclaringClass().getProperty(fn.getName()) != null) {
+            classNode = fn.getDeclaringClass();
+        } else {
+            return;
+        }
+        if (classNode.isInterface()) return;
 
         Parameter listener = param(PCL_TYPE, "listener");
         Parameter name = param(ClassHelper.STRING_TYPE, "name");

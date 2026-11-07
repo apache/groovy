@@ -77,10 +77,18 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
             // explicit call to Collections.unmodifiableList(). But currently that is processed one stage too early.
             boolean immutable = Boolean.TRUE.equals(fNode.getNodeMetaData(IMMUTABLE_BREADCRUMB));
             if (fType.isArray()) {
-                if (!immutable) addArraySetter(fNode);
+                if (!immutable) {
+                    addArraySetter(fNode);
+                } else {
+                    removeStubSetter(fNode, fType.getComponentType());
+                }
                 addArrayGetter(fNode);
             } else if (fType.isDerivedFrom(LIST_TYPE)) {
-                if (!immutable) addListSetter(fNode);
+                if (!immutable) {
+                    addListSetter(fNode);
+                } else {
+                    removeStubSetter(fNode, getComponentTypeForList(fType));
+                }
                 addListGetter(fNode);
             } else {
                 addError("Error during " + MY_TYPE_NAME + " processing. Non-Indexable property '" + fNode.getName() +
@@ -135,6 +143,17 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
             StubberSupport.clearStub(existing);
         } else {
             addGeneratedMethod(cNode, getSetterName(fNode.getName()), getModifiers(fNode), ClassHelper.VOID_TYPE, theParams, null, body);
+        }
+    }
+
+    private static void removeStubSetter(FieldNode fNode, ClassNode componentType) {
+        ClassNode cNode = fNode.getDeclaringClass();
+        Parameter[] theParams = params(
+                new Parameter(ClassHelper.int_TYPE, "index"),
+                new Parameter(componentType, "value"));
+        MethodNode existing = cNode.getDeclaredMethod(getSetterName(fNode.getName()), theParams);
+        if (StubberSupport.isStub(existing)) {
+            cNode.removeMethod(existing);
         }
     }
 

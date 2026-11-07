@@ -267,6 +267,18 @@ public class VetoableASTTransformation extends BindableASTTransformation {
      * @return true if vetoable change support should be added
      */
     protected boolean needsVetoableChangeSupport(ClassNode declaringClass, SourceUnit sourceUnit) {
+        List<MethodNode> stubs = new ArrayList<>();
+        for (MethodNode m : declaringClass.getMethods()) {
+            if (StubberSupport.isStub(m) && switch (m.getName()) {
+                case "addVetoableChangeListener", "removeVetoableChangeListener",
+                     "fireVetoableChange", "getVetoableChangeListeners" -> true;
+                default -> false;
+            }) {
+                stubs.add(m);
+            }
+        }
+        stubs.forEach(declaringClass::removeMethod);
+
         boolean foundAdd = false, foundRemove = false, foundFire = false;
         ClassNode consideredClass = declaringClass;
         while (consideredClass!= null) {
