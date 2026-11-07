@@ -26,11 +26,15 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import groovy.transform.CompileStatic;
+import groovy.transform.TypeChecked;
+import groovy.transform.TypeCheckingMode;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilePhase;
@@ -47,11 +51,14 @@ import static org.apache.groovy.ginq.GinqGroovyMethods.CONF_LIST;
 import static org.apache.groovy.ginq.GinqGroovyMethods.transformGinqCode;
 import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.codehaus.groovy.ast.ClassHelper.isDynamicTyped;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 
 /**
@@ -104,9 +111,93 @@ public class GinqASTTransformation extends AbstractASTTransformation {
             BlockStatement newCode = block(stmt(resultExpression));
             newCode.setSourcePosition(origCode);
             methodNode.setCode(newCode);
+            // The lowered query uses dynamic property access, operators, and aggregate calls.
+            // When the enclosing scope is statically checked, skip that checking for this
+            // method so the query keeps its runtime behaviour and callers still see its type.
+            if (staticallyChecked(methodNode)) {
+                // Both checkers only honour SKIP on their own annotation.
+                methodNode.addAnnotation(skipAnnotation(make(CompileStatic.class)));
+                methodNode.addAnnotation(skipAnnotation(make(TypeChecked.class)));
+            }
+            widenDynamicReturn(methodNode, targetType);
             VariableScopeVisitor variableScopeVisitor = new VariableScopeVisitor(sourceUnit);
             variableScopeVisitor.visitClass(methodNode.getDeclaringClass());
         }
+    }
+
+    private static boolean staticallyChecked(MethodNode methodNode) {
+        Boolean mode = explicitMode(methodNode);
+        if (mode != null) return mode;
+        for (ClassNode current = methodNode.getDeclaringClass(); current != null; current = current.getOuterClass()) {
+            mode = explicitMode(current);
+            if (mode != null) return mode;
+        }
+        return false;
+    }
+
+    /**
+     * @return {@code TRUE} for static checking, {@code FALSE} for an explicit skip, or {@code null} when unspecified
+     */
+    private static Boolean explicitMode(AnnotatedNode node) {
+        Boolean mode = null;
+        for (AnnotationNode annotation : node.getAnnotations()) {
+            String raw = annotation.getClassNode().getName();
+            int dot = raw.lastIndexOf('.');
+            String simple = dot < 0 ? raw : raw.substring(dot + 1);
+            if ("CompileDynamic".equals(simple)) {
+                return Boolean.FALSE;
+            }
+            if (!"CompileStatic".equals(simple) && !"TypeChecked".equals(simple)) {
+                continue;
+            }
+            Expression value = annotation.getMember("value");
+            if (value instanceof PropertyExpression property && "SKIP".equals(property.getPropertyAsString())) {
+                return Boolean.FALSE;
+            }
+            mode = Boolean.TRUE;
+        }
+        return mode;
+    }
+
+    private static AnnotationNode skipAnnotation(ClassNode annotationType) {
+        AnnotationNode annotation = new AnnotationNode(annotationType);
+        annotation.addMember("value", propX(classX(make(TypeCheckingMode.class)), "SKIP"));
+        return annotation;
+    }
+
+    /**
+     * A {@code def} query method is widened to the declared GINQ result type so callers
+     * compiled statically can use the result. An explicit return type is left alone.
+     * A superclass method with a more specific return type is also left alone.
+     */
+    private static void widenDynamicReturn(MethodNode methodNode, ClassNode targetType) {
+        if (!isDynamicTyped(methodNode.getReturnType()) || targetType == null) {
+            return;
+        }
+        ClassNode widened = targetType.getPlainNodeReference();
+        widened.setGenericsTypes(null);
+        if (incompatibleSuperReturn(methodNode, widened)) {
+            return;
+        }
+        methodNode.setReturnType(widened);
+    }
+
+    private static boolean incompatibleSuperReturn(MethodNode methodNode, ClassNode widened) {
+        String name = methodNode.getName();
+        int arity = methodNode.getParameters().length;
+        for (ClassNode current = methodNode.getDeclaringClass().getSuperClass(); current != null; current = current.getSuperClass()) {
+            for (MethodNode candidate : current.getDeclaredMethods(name)) {
+                if (candidate.getParameters().length != arity) continue;
+                ClassNode returned = candidate.getReturnType();
+                if (returned == null || isDynamicTyped(returned) || ClassHelper.OBJECT_TYPE.equals(returned)) {
+                    continue;
+                }
+                if (!widened.equals(returned) && !widened.isDerivedFrom(returned) && !widened.implementsInterface(returned)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private MapExpression makeGinqConfigurationMapExpression(AnnotationNode annotationNode) {

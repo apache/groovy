@@ -39,6 +39,7 @@ import org.apache.groovy.ginq.dsl.expression.SelectExpression
 import org.apache.groovy.ginq.dsl.expression.SetOperationExpression
 import org.apache.groovy.ginq.dsl.expression.ShutdownExpression
 import org.apache.groovy.ginq.dsl.expression.WhereExpression
+import org.apache.groovy.ginq.provider.GinqAggregates
 import org.apache.groovy.ginq.provider.collection.runtime.NamedRecord
 import org.apache.groovy.ginq.provider.collection.runtime.Queryable
 import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper
@@ -239,6 +240,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         def result = parallelEnabled
                         ? callX(callX(QUERYABLE_HELPER_TYPE, 'submit', args(resultLambda)), "get")
                         : callX(resultLambda, "call")
+        result.setType(QUERYABLE_TYPE)
 
         ginqExpressionStack.pop()
         return result
@@ -269,7 +271,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return useWindowFunction
     }
 
-    private static boolean isAggregateFunction(Expression expression) {
+    private boolean isAggregateFunction(Expression expression) {
         Expression expr = expression
         if (expression instanceof CastExpression) {
             expr = expression.expression
@@ -277,15 +279,29 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
         if (expr instanceof MethodCallExpression) {
             MethodCallExpression call = (MethodCallExpression) expr
-            if (call.implicitThis && AGG_FUNCTION_NAME_SET.contains(call.methodAsString)) {
-                def argumentCnt = ((ArgumentListExpression) call.getArguments()).getExpressions().size()
-                if (1 == argumentCnt || (FUNCTION_COUNT == call.methodAsString && 0 == argumentCnt)) {
+            if (call.implicitThis) {
+                String name = call.methodAsString
+                // Not every call stores its arguments as an ArgumentListExpression; GString and
+                // some transformed calls use a plain TupleExpression.
+                int argumentCnt = call.arguments instanceof TupleExpression
+                        ? ((TupleExpression) call.arguments).expressions.size()
+                        : 1
+                if (AGG_FUNCTION_NAME_SET.contains(name)) {
+                    if (1 == argumentCnt || (FUNCTION_COUNT == name && 0 == argumentCnt)) {
+                        return true
+                    }
+                } else if ((0 == argumentCnt || 1 == argumentCnt) && customAggregate(name) != null) {
                     return true
                 }
             }
         }
 
         return false
+    }
+
+    private Class customAggregate(String name) {
+        ClassLoader loader = sourceUnit == null ? null : sourceUnit.classLoader
+        GinqAggregates.find(name, loader)
     }
 
     private static boolean isOverMethodCall(Expression expression) {
@@ -953,7 +969,9 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             default: throw new GroovyBugError("Unknown set operation: ${setOperationExpression.operation}")
         }
 
-        return callX(leftExpr, methodName, args(rightExpr))
+        MethodCallExpression result = callX(leftExpr, methodName, args(rightExpr))
+        result.setType(QUERYABLE_TYPE)
+        return result
     }
 
     /**
@@ -1439,6 +1457,21 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                                 callXWithLambda(
                                         varX(__GROUP), methodName,
                                         dataSourceExpression, lambdaCode)
+                    } else {
+                        Class aggregateClass = customAggregate(methodName)
+                        if (aggregateClass != null) {
+                            List<Expression> aggregateArgs = ((TupleExpression) expression.arguments).getExpressions()
+                            Expression selector = nullX()
+                            if (!aggregateArgs.isEmpty()) {
+                                Expression lambdaCode = aggregateArgs.get(0)
+                                lambdaCode.putNodeMetaData(__LAMBDA_PARAM_NAME, findRootObjectExpression(lambdaCode).text)
+                                selector = constructLambdaExpression(dataSourceExpression, false, lambdaCode)
+                            }
+                            transformedExpression = callX(
+                                    classX(GINQ_AGGREGATES_TYPE),
+                                    'apply',
+                                    args(classX(makeWithoutCaching(aggregateClass)), varX(__GROUP), selector))
+                        }
                     }
                     visitingAggregateFunctionStack.pop()
                 }
@@ -1694,6 +1727,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final ClassNode ORDER_TYPE = makeWithoutCaching(Queryable.Order.class)
     private static final ClassNode NAMED_RECORD_TYPE = makeWithoutCaching(NamedRecord.class)
     private static final ClassNode QUERYABLE_HELPER_TYPE = makeWithoutCaching(QueryableHelper.class)
+    private static final ClassNode GINQ_AGGREGATES_TYPE = makeWithoutCaching(GinqAggregates.class)
     private static final ClassNode WINDOW_DEFINITION_TYPE = makeWithoutCaching(WindowDefinition.class)
     private static final ClassNode ROWBOUND_TYPE = makeCached(RowBound.class)
     private static final ClassNode VALUEBOUND_TYPE = makeWithoutCaching(ValueBound.class)
