@@ -252,6 +252,183 @@ final class PackedClosuresTransformTest {
         assertEquals([101], b.bar())
     }
 
+    // GROOVY-12666
+    @Test
+    void compileStaticRehydrateDispatchesToTheNewThisObject() {
+        // a @CompileStatic closure class runs its body against getThisObject(), so a copy rehydrated
+        // with another this object reads that object's members, and throws ClassCastException when
+        // called if the object is not an instance of the enclosing class; the packed body kept
+        // running against the receiver it was created with. Each shape is compared with the
+        // closure class compiled from the same literal.
+        String src = '''
+            import groovy.transform.CompileStatic
+            import groovy.transform.PackedClosures
+            class D { String toString() { 'D' } }
+            @CompileStatic
+            @PackedClosures
+            class O {
+                static final String CONST = 'const'
+                String name
+                String foo() { 'foo ' + name }
+                static String sfoo() { 'sfoo' }
+                String toString() { 'O:' + name }
+                class Inner { String toString() { 'inner ' + O.this.name } }
+                static Object attempt(Closure c, Object t, List args) {
+                    Closure r = c.rehydrate(null, t, t)
+                    try {
+                        switch (args.size()) {
+                            case 0: return r.call()
+                            case 1: return r.call(args[0])
+                            case 2: return r.call(args[0], args[1])
+                            default: return r.call(args[0], args[1], args[2])
+                        }
+                    } catch (ClassCastException e) {
+                        'CCE'
+                    }
+                }
+                Map<String, Closure> packed() {
+                    int n = 0
+                    Closure c1 = { -> foo() }, c2 = { -> name }, c3 = { -> this }, c4 = { -> n++; foo() + n }
+                    Closure c5 = { String x -> x + foo() }, c6 = { String x, String y -> x + y + name }
+                    Closure c7 = { String x, String y, String z -> x + y + z + name }, c8 = { it.toString() + name }
+                    Closure c9 = { -> [1].collect { Integer i -> name } }, c10 = { -> new Inner().toString() }
+                    Closure c11 = { -> toString() }, c12 = { -> inspect() }, c13 = { -> sfoo() }, c14 = { -> CONST + 42 }
+                    Closure c15 = { -> [1, 2].collect { Integer i -> i * 2 } }, c16 = { -> sprintf('%s', 'x') }
+                    [foo: c1, name: c2, self: c3, written: c4, one: c5, two: c6, three: c7, it: c8, nested: c9,
+                     inner: c10, objectMethod: c11, extension: c12, staticCall: c13, constant: c14, nestedFree: c15,
+                     printf: c16]
+                }
+                @PackedClosures(mode = PackedClosures.PackMode.DISABLED)
+                Map<String, Closure> unpacked() {
+                    int n = 0
+                    Closure c1 = { -> foo() }, c2 = { -> name }, c3 = { -> this }, c4 = { -> n++; foo() + n }
+                    Closure c5 = { String x -> x + foo() }, c6 = { String x, String y -> x + y + name }
+                    Closure c7 = { String x, String y, String z -> x + y + z + name }, c8 = { it.toString() + name }
+                    Closure c9 = { -> [1].collect { Integer i -> name } }, c10 = { -> new Inner().toString() }
+                    Closure c11 = { -> toString() }, c12 = { -> inspect() }, c13 = { -> sfoo() }, c14 = { -> CONST + 42 }
+                    Closure c15 = { -> [1, 2].collect { Integer i -> i * 2 } }, c16 = { -> sprintf('%s', 'x') }
+                    [foo: c1, name: c2, self: c3, written: c4, one: c5, two: c6, three: c7, it: c8, nested: c9,
+                     inner: c10, objectMethod: c11, extension: c12, staticCall: c13, constant: c14, nestedFree: c15,
+                     printf: c16]
+                }
+            }
+            class P extends O {}
+            def a = new O(name: 'a')
+            def targets = [new O(name: 'b'), new P(name: 'p'), new D()]
+            def args = [one: ['x'], two: ['x', 'y'], three: ['x', 'y', 'z'], it: ['i']]
+            def packed = a.packed(), unpacked = a.unpacked()
+            assert packed.values().every { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+            assert !unpacked.values().any { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+            def results = { Map<String, Closure> cs -> cs.collectEntries { k, c -> [k, targets.collect { O.attempt(c, it, args[k] ?: []) }] } }
+            [results(packed), results(unpacked)]
+        '''
+        def (packed, unpacked) = instance(src)
+        assertEquals(['foo b', 'foo p', 'CCE'], packed.foo)
+        assertEquals(['b', 'p', 'CCE'], packed.name)
+        assertEquals(['const42', 'const42', 'const42'], packed.constant)
+        assertEquals(['O:b', 'O:p', 'D'], unpacked.extension)
+        unpacked.each { k, v ->
+            if (k == 'objectMethod') {
+                // the closure class calls a method of Object on a foreign this object uncast; the
+                // hoisted body can only call it on an instance of the enclosing class, so it fails
+                assertEquals(v[0..1] + 'CCE', packed[k], k)
+            } else if (k == 'extension') {
+                // an extension method also takes the this object uncast; for a foreign one the
+                // hoisted body keeps its receiver, as the println family must keep working
+                assertEquals(v[0..1] + 'O:a', packed[k], k)
+            } else {
+                assertEquals(v, packed[k], k)
+            }
+        }
+    }
+
+    // GROOVY-12666
+    @Test
+    void rehydratedCompileStaticPackedClosureKeepsItsReceiverForNullThisObject() {
+        // dehydrate() and a null this object disconnect the closure without making it uncallable;
+        // the round trip back onto the original owner restores it
+        String src = '''
+            @groovy.transform.CompileStatic
+            @groovy.transform.PackedClosures
+            class O {
+                String name
+                String foo() { 'foo ' + name }
+                List run(O b) {
+                    Closure c = { -> foo() }
+                    assert c instanceof org.codehaus.groovy.runtime.PackedClosure
+                    Closure r = c.rehydrate(null, b, b)
+                    [c(), r(), r.dehydrate()(), c.rehydrate(null, b, null)(), r.rehydrate(null, this, this)(),
+                     r.thisObject.is(b), r.owner.is(b), c.thisObject.is(this)]
+                }
+            }
+            new O(name: 'a').run(new O(name: 'b'))
+        '''
+        assertEquals(['foo a', 'foo b', 'foo b', 'foo a', 'foo a', true, true, true], instance(src))
+    }
+
+    // GROOVY-12666
+    @Test
+    void packedClosureFromTheEarlierFactoryRehydratesOntoAnInstanceOfItsReceiverClass() {
+        // class files compiled before the compiler passed usesReceiver call the nine-argument
+        // factory: their copy takes a new this object as its receiver only when that is an instance
+        // of the receiver's class, which is always sound, and keeps the receiver otherwise
+        String src = '''
+            import org.codehaus.groovy.runtime.GeneratedDispatcher
+            import org.codehaus.groovy.runtime.ScriptBytecodeAdapter
+            class O { String name }
+            def table = { int id, Object[] all -> ((O) all[0]).name }
+            def bundle = new GeneratedDispatcher.Bundle(table as GeneratedDispatcher, null, null)
+            def make = { boolean usesReceiver ->
+                usesReceiver
+                    ? ScriptBytecodeAdapter.packedClosure(new O(name: 'a'), bundle, 0, 'm', null, new Class[0], false, false, false, true)
+                    : ScriptBytecodeAdapter.packedClosure(new O(name: 'a'), bundle, 0, 'm', null, new Class[0], false, false, false)
+            }
+            def b = new O(name: 'b'), d = new Object()
+            def attempt = { Closure c, Object t -> try { c.rehydrate(null, t, t)() } catch (ClassCastException e) { 'CCE' } }
+            [attempt(make(false), b), attempt(make(false), d), attempt(make(true), b), attempt(make(true), d)]
+        '''
+        assertEquals(['b', 'a', 'b', 'CCE'], instance(src))
+    }
+
+    // GROOVY-12666
+    @Test
+    void closureCreatedOnASubclassInstanceRehydratesOntoAnInstanceOfTheEnclosingClass() {
+        // a closure created by an inherited method of a subclass instance has that instance as its
+        // receiver; rehydrated onto an instance of the enclosing class that is not a subclass
+        // instance, the closure class uses the new this object, so the copy must take it even where
+        // the body is not marked as using its receiver (an extension method on the implicit this)
+        String src = '''
+            import groovy.transform.CompileStatic
+            import groovy.transform.PackedClosures
+            @CompileStatic
+            @PackedClosures
+            class O {
+                String name
+                String foo() { 'foo ' + name }
+                String toString() { 'O:' + name }
+                Map<String, Closure> packed() {
+                    Closure c1 = { -> foo() }, c2 = { -> name }, c3 = { -> inspect() }
+                    [foo: c1, name: c2, extension: c3]
+                }
+                @PackedClosures(mode = PackedClosures.PackMode.DISABLED)
+                Map<String, Closure> unpacked() {
+                    Closure c1 = { -> foo() }, c2 = { -> name }, c3 = { -> inspect() }
+                    [foo: c1, name: c2, extension: c3]
+                }
+            }
+            class P extends O {}
+            def a = new P(name: 'a'), b = new O(name: 'b')
+            def packed = a.packed(), unpacked = a.unpacked()
+            assert packed.values().every { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+            assert !unpacked.values().any { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+            def results = { Map<String, Closure> cs -> cs.collectEntries { k, c -> [k, c.rehydrate(null, b, b)()] } }
+            [results(packed), results(unpacked)]
+        '''
+        def (packed, unpacked) = instance(src)
+        assertEquals([foo: 'foo b', name: 'b', extension: 'O:b'], unpacked)
+        assertEquals(unpacked, packed)
+    }
+
     @Test
     void capturedLocalShadowingAFieldIsReboundToTheLocalNotTheField() {
         // The captured 'base' is a local that shadows the field of the same name (the one form of

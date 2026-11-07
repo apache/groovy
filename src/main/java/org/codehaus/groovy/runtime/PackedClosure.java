@@ -53,9 +53,10 @@ import java.util.List;
  * <p>
  * Dispatch goes through the hosting class's {@link GeneratedDispatcher} tables: the adapter
  * holds the class's shared dispatchers, the hoisted method's compile-time id, and its own
- * dispatch receiver (captured at construction, so {@code dehydrate()}/{@code rehydrate()}
- * leave the closure callable). A target taking one or two values beyond the receiver — the
- * overwhelmingly common closure shapes — dispatches through the array-free per-arity tables,
+ * dispatch receiver (captured at construction, so {@code dehydrate()} leaves the closure
+ * callable; {@code rehydrate()} can hand a new this object on as the copy's receiver). A target
+ * taking one or two values beyond the receiver — the overwhelmingly common closure shapes —
+ * dispatches through the array-free per-arity tables,
  * passing the receiver, captured values and arguments as plain parameters; anything else
  * packs {@code [receiver, captured..., args...]} into one array for the general table.
  * Either way the chain is ordinary, JIT-friendly bytecode — no reflection, and no
@@ -179,6 +180,24 @@ public abstract class PackedClosure extends Closure<Object> {
     public static PackedClosure create(final Object owner, final GeneratedDispatcher.Bundle dispatchers,
             final int id, final String method, final Object[] captured, final Class[] visibleTypes,
             final boolean strict, final boolean implicit, final boolean vararg) {
+        return create(owner, dispatchers, id, method, captured, visibleTypes, strict, implicit, vararg, false);
+    }
+
+    /**
+     * As {@link #create(Object, GeneratedDispatcher.Bundle, int, String, Object[], Class[], boolean, boolean, boolean)},
+     * with {@code usesReceiver} marking a hoisted body that uses its receiver (see {@link #rehydrate}).
+     */
+    public static PackedClosure create(final Object owner, final GeneratedDispatcher.Bundle dispatchers,
+            final int id, final String method, final Object[] captured, final Class[] visibleTypes,
+            final boolean strict, final boolean implicit, final boolean vararg, final boolean usesReceiver) {
+        PackedClosure closure = member(owner, dispatchers, id, method, captured, visibleTypes, strict, implicit, vararg);
+        closure.usesReceiver = usesReceiver;
+        return closure;
+    }
+
+    private static PackedClosure member(final Object owner, final GeneratedDispatcher.Bundle dispatchers,
+            final int id, final String method, final Object[] captured, final Class[] visibleTypes,
+            final boolean strict, final boolean implicit, final boolean vararg) {
         if (implicit) return new FixedIt(owner, dispatchers, id, method, captured, visibleTypes, strict);
         if (!vararg) {
             switch (visibleTypes.length) {
@@ -196,11 +215,18 @@ public abstract class PackedClosure extends Closure<Object> {
     /**
      * The hoisted method's receiver, captured at construction. Dispatch uses this — never
      * {@code getOwner()} — so {@code dehydrate()} (which nulls the visible owner for its
-     * disconnect contract) and {@code rehydrate(...)} (which installs a different one) leave the
-     * closure callable, exactly as a generated closure class whose body never touches the owner.
+     * disconnect contract) leaves the closure callable, exactly as a generated closure class whose
+     * body never touches the owner. Only {@link #rehydrate} replaces it, on the copy it returns.
      * Serialization stays blocked either way ({@link #writeObject}).
      */
-    private final Object receiver;
+    private Object receiver;
+    /**
+     * Whether the compiler found that the hoisted body uses its receiver, which it can only use as
+     * an instance of the enclosing class ({@code this}, an instance member, an inner class
+     * creation). {@code false} for a body that does not, and for classes compiled before the
+     * compiler passed it.
+     */
+    private boolean usesReceiver;
     private final GeneratedDispatcher dispatcher;
     private final GeneratedDispatcher.Arity1 arity1;
     private final GeneratedDispatcher.Arity2 arity2;
@@ -257,6 +283,42 @@ public abstract class PackedClosure extends Closure<Object> {
                     + "exclude this closure, if it relies on delegate-based resolution.");
         }
         super.setDelegate(delegate);
+    }
+
+    // GROOVY-12666: a @CompileStatic closure class runs its body against getThisObject(), so a copy
+    // rehydrated with another this object calls that object's members, or throws
+    // ClassCastException when called if the object is not an instance of the enclosing class. The
+    // hoisted body runs against the receiver, so the copy takes the new this object as its receiver
+    // when that is sound or the body needs it: always for a body that uses its receiver (the
+    // dispatch table's checkcast then throws the same ClassCastException for a foreign object), and
+    // for any other body only when the object is an instance of the receiver's class or of the
+    // enclosing class (the receiver may be a subclass instance running an inherited method). A body
+    // that does not use its receiver keeps the old one for a foreign object, so rehydrating it onto a
+    // builder or other unrelated this object (the DSL idiom) keeps working. A null this object, the
+    // dehydrate() disconnect, keeps the receiver too.
+    @Override
+    public Closure<Object> rehydrate(final Object delegate, final Object owner, final Object thisObject) {
+        PackedClosure result = (PackedClosure) super.rehydrate(delegate, owner, thisObject);
+        if (!strict && thisObject != null && thisObject != receiver
+                && (usesReceiver || receiver.getClass().isInstance(thisObject) || isEnclosingClassInstance(thisObject))) {
+            result.receiver = thisObject;
+        }
+        return result;
+    }
+
+    /**
+     * Whether the object is an instance of the class hosting the hoisted method. The dispatch
+     * tables are lambdas spun in that class, so it is their nest host. Where the lambdas are
+     * ordinary classes (native images) they are their own nest host, which no this object is an
+     * instance of; that, or a failed lookup, leaves only the receiver's class to count.
+     */
+    private boolean isEnclosingClassInstance(final Object thisObject) {
+        if (dispatcher == null) return false;
+        try {
+            return dispatcher.getClass().getNestHost().isInstance(thisObject);
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     @Override
