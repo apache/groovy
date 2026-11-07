@@ -37,13 +37,15 @@ import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * In-memory {@link Query} backed by {@link Queryable}. Each operator returns a
- * new query; ordering keys are held until the next operator so {@code thenBy}
- * becomes one comparator.
+ * In-memory {@link Query} backed by {@link Queryable}. Operators record work and
+ * do not read the source. {@link #materialize()} runs that work, and the terminal
+ * methods are what call it. Ordering keys stay on the query so {@code thenBy}
+ * is one comparison. Grouping runs at that same point, not when {@code groupBy} is called.
  *
  * @param <T> the element type
  * @since 7.0.0
@@ -51,11 +53,16 @@ import java.util.stream.StreamSupport;
 @Internal
 public class GinqQuery<T> implements Query<T> {
 
-    private final Queryable<T> source;
+    private final Supplier<Queryable<T>> sourceSupplier;
     private final List<Queryable.Order<T, ?>> orders;
+    private Queryable<T> resolved;
 
-    GinqQuery(Queryable<T> source, List<Queryable.Order<T, ?>> orders) {
-        this.source = source;
+    GinqQuery(Queryable<T> ready, List<Queryable.Order<T, ?>> orders) {
+        this(() -> ready, orders);
+    }
+
+    GinqQuery(Supplier<Queryable<T>> sourceSupplier, List<Queryable.Order<T, ?>> orders) {
+        this.sourceSupplier = sourceSupplier;
         this.orders = orders;
     }
 
@@ -73,7 +80,7 @@ public class GinqQuery<T> implements Query<T> {
             Query<T> typed = (Query<T>) query;
             return typed;
         }
-        return new GinqQuery<>(Queryable.from(source), null);
+        return new GinqQuery<>(() -> Queryable.from(source), null);
     }
 
     /**
@@ -85,7 +92,7 @@ public class GinqQuery<T> implements Query<T> {
      */
     public static <T> Query<T> from(T[] source) {
         Objects.requireNonNull(source, "source");
-        return new GinqQuery<>(Queryable.from(source), null);
+        return new GinqQuery<>(() -> Queryable.from(source), null);
     }
 
     /**
@@ -97,7 +104,7 @@ public class GinqQuery<T> implements Query<T> {
      */
     public static <T> Query<T> from(Stream<T> source) {
         Objects.requireNonNull(source, "source");
-        return new GinqQuery<>(Queryable.from(source), null);
+        return new GinqQuery<>(() -> Queryable.from(source), null);
     }
 
     /**
@@ -139,37 +146,43 @@ public class GinqQuery<T> implements Query<T> {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     Queryable<T> materialize() {
-        if (orders == null || orders.isEmpty()) {
-            return source;
+        if (resolved != null) {
+            return resolved;
         }
-        Queryable.Order[] array = orders.toArray(Queryable.Order.EMPTY_ARRAY);
-        return source.orderBy(array);
+        Queryable<T> base = sourceSupplier.get();
+        if (orders != null && !orders.isEmpty()) {
+            Queryable.Order[] array = orders.toArray(Queryable.Order.EMPTY_ARRAY);
+            base = base.orderBy(array);
+        }
+        resolved = base;
+        return resolved;
     }
 
     @Override
     public Query<T> where(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate");
-        return chain(materialize().where(predicate));
+        return new GinqQuery<>(() -> materialize().where(predicate), null);
     }
 
     @Override
     public <R> Query<R> select(Function<? super T, ? extends R> selector) {
         Objects.requireNonNull(selector, "selector");
-        Queryable<R> projected = materialize().select((item, rows) -> selector.apply(item));
-        return new GinqQuery<>(projected, null);
+        return new GinqQuery<>(() -> materialize().select((item, rows) -> selector.apply(item)), null);
     }
 
     @Override
     public <R> Query<R> selectMany(Function<? super T, ? extends Iterable<? extends R>> selector) {
         Objects.requireNonNull(selector, "selector");
-        Stream<R> flattened = materialize().stream().flatMap(item -> {
-            Iterable<? extends R> inner = selector.apply(item);
-            if (inner == null) {
-                return Stream.<R>empty();
-            }
-            return StreamSupport.stream(inner.spliterator(), false).map(value -> value);
-        });
-        return new GinqQuery<>(Queryable.from(flattened), null);
+        return new GinqQuery<>(() -> {
+            Stream<R> flattened = materialize().stream().flatMap(item -> {
+                Iterable<? extends R> inner = selector.apply(item);
+                if (inner == null) {
+                    return Stream.<R>empty();
+                }
+                return StreamSupport.stream(inner.spliterator(), false).map(value -> value);
+            });
+            return Queryable.from(flattened);
+        }, null);
     }
 
     @Override
@@ -221,10 +234,11 @@ public class GinqQuery<T> implements Query<T> {
     public <K> Query<Grouping<K, T>> groupBy(Function<? super T, ? extends K> keySelector,
                                              Predicate<? super Grouping<K, T>> having) {
         Objects.requireNonNull(keySelector, "keySelector");
-        Queryable<GroupResult<K, T>> grouped = materialize().groupByInto(keySelector);
-        Queryable<Grouping<K, T>> wrapped = grouped.select((group, rows) -> new GinqGrouping<>(group));
-        Query<Grouping<K, T>> query = new GinqQuery<>(wrapped, null);
-        return having == null ? query : query.where(having);
+        return new GinqQuery<>(() -> {
+            Queryable<GroupResult<K, T>> grouped = materialize().groupByInto(keySelector);
+            Queryable<Grouping<K, T>> wrapped = grouped.select((group, rows) -> new GinqGrouping<>(group));
+            return having == null ? wrapped : wrapped.where(having);
+        }, null);
     }
 
     @Override
@@ -233,7 +247,7 @@ public class GinqQuery<T> implements Query<T> {
                                    Function<? super U, ? extends K> innerKey,
                                    BiFunction<? super T, ? super U, ? extends R> resultSelector) {
         requireJoinKeys(outerKey, innerKey, resultSelector);
-        return project(materialize().innerHashJoin(queryableOf(inner), outerKey, innerKey), resultSelector);
+        return project(() -> materialize().innerHashJoin(queryableOf(inner), outerKey, innerKey), resultSelector);
     }
 
     @Override
@@ -242,7 +256,7 @@ public class GinqQuery<T> implements Query<T> {
                                 BiFunction<? super T, ? super U, ? extends R> resultSelector) {
         Objects.requireNonNull(on, "on");
         Objects.requireNonNull(resultSelector, "resultSelector");
-        return project(materialize().innerJoin(queryableOf(inner), on), resultSelector);
+        return project(() -> materialize().innerJoin(queryableOf(inner), on), resultSelector);
     }
 
     @Override
@@ -251,7 +265,7 @@ public class GinqQuery<T> implements Query<T> {
                                        Function<? super U, ? extends K> innerKey,
                                        BiFunction<? super T, ? super U, ? extends R> resultSelector) {
         requireJoinKeys(outerKey, innerKey, resultSelector);
-        return project(materialize().leftHashJoin(queryableOf(inner), outerKey, innerKey), resultSelector);
+        return project(() -> materialize().leftHashJoin(queryableOf(inner), outerKey, innerKey), resultSelector);
     }
 
     @Override
@@ -260,7 +274,7 @@ public class GinqQuery<T> implements Query<T> {
                                     BiFunction<? super T, ? super U, ? extends R> resultSelector) {
         Objects.requireNonNull(on, "on");
         Objects.requireNonNull(resultSelector, "resultSelector");
-        return project(materialize().leftJoin(queryableOf(inner), on), resultSelector);
+        return project(() -> materialize().leftJoin(queryableOf(inner), on), resultSelector);
     }
 
     @Override
@@ -269,7 +283,7 @@ public class GinqQuery<T> implements Query<T> {
                                         Function<? super U, ? extends K> innerKey,
                                         BiFunction<? super T, ? super U, ? extends R> resultSelector) {
         requireJoinKeys(outerKey, innerKey, resultSelector);
-        return project(materialize().rightHashJoin(queryableOf(inner), outerKey, innerKey), resultSelector);
+        return project(() -> materialize().rightHashJoin(queryableOf(inner), outerKey, innerKey), resultSelector);
     }
 
     @Override
@@ -278,7 +292,7 @@ public class GinqQuery<T> implements Query<T> {
                                      BiFunction<? super T, ? super U, ? extends R> resultSelector) {
         Objects.requireNonNull(on, "on");
         Objects.requireNonNull(resultSelector, "resultSelector");
-        return project(materialize().rightJoin(queryableOf(inner), on), resultSelector);
+        return project(() -> materialize().rightJoin(queryableOf(inner), on), resultSelector);
     }
 
     @Override
@@ -287,7 +301,7 @@ public class GinqQuery<T> implements Query<T> {
                                        Function<? super U, ? extends K> innerKey,
                                        BiFunction<? super T, ? super U, ? extends R> resultSelector) {
         requireJoinKeys(outerKey, innerKey, resultSelector);
-        return project(materialize().fullHashJoin(queryableOf(inner), outerKey, innerKey), resultSelector);
+        return project(() -> materialize().fullHashJoin(queryableOf(inner), outerKey, innerKey), resultSelector);
     }
 
     @Override
@@ -296,63 +310,63 @@ public class GinqQuery<T> implements Query<T> {
                                     BiFunction<? super T, ? super U, ? extends R> resultSelector) {
         Objects.requireNonNull(on, "on");
         Objects.requireNonNull(resultSelector, "resultSelector");
-        return project(materialize().fullJoin(queryableOf(inner), on), resultSelector);
+        return project(() -> materialize().fullJoin(queryableOf(inner), on), resultSelector);
     }
 
     @Override
     public <U, R> Query<R> crossJoin(Iterable<U> inner, BiFunction<? super T, ? super U, ? extends R> resultSelector) {
         Objects.requireNonNull(resultSelector, "resultSelector");
-        return project(materialize().crossJoin(queryableOf(inner)), resultSelector);
+        return project(() -> materialize().crossJoin(queryableOf(inner)), resultSelector);
     }
 
     @Override
     public Query<T> distinct() {
-        return chain(materialize().distinct());
+        return later(base -> base.distinct());
     }
 
     @Override
     public Query<T> union(Iterable<? extends T> other) {
-        return chain(materialize().union(queryableOf(other)));
+        return later(base -> base.union(queryableOf(other)));
     }
 
     @Override
     public Query<T> union(Query<? extends T> other) {
-        return chain(materialize().union(queryableOf(other)));
+        return later(base -> base.union(queryableOf(other)));
     }
 
     @Override
     public Query<T> unionAll(Iterable<? extends T> other) {
-        return chain(materialize().unionAll(queryableOf(other)));
+        return later(base -> base.unionAll(queryableOf(other)));
     }
 
     @Override
     public Query<T> unionAll(Query<? extends T> other) {
-        return chain(materialize().unionAll(queryableOf(other)));
+        return later(base -> base.unionAll(queryableOf(other)));
     }
 
     @Override
     public Query<T> intersect(Iterable<? extends T> other) {
-        return chain(materialize().intersect(queryableOf(other)));
+        return later(base -> base.intersect(queryableOf(other)));
     }
 
     @Override
     public Query<T> intersect(Query<? extends T> other) {
-        return chain(materialize().intersect(queryableOf(other)));
+        return later(base -> base.intersect(queryableOf(other)));
     }
 
     @Override
     public Query<T> minus(Iterable<? extends T> other) {
-        return chain(materialize().minus(queryableOf(other)));
+        return later(base -> base.minus(queryableOf(other)));
     }
 
     @Override
     public Query<T> minus(Query<? extends T> other) {
-        return chain(materialize().minus(queryableOf(other)));
+        return later(base -> base.minus(queryableOf(other)));
     }
 
     @Override
     public Query<T> limit(long offset, long size) {
-        return chain(materialize().limit(offset, size));
+        return later(base -> base.limit(offset, size));
     }
 
     @Override
@@ -443,8 +457,8 @@ public class GinqQuery<T> implements Query<T> {
         return current;
     }
 
-    private Query<T> chain(Queryable<T> next) {
-        return new GinqQuery<>(next, null);
+    private Query<T> later(Function<Queryable<T>, Queryable<T>> operator) {
+        return new GinqQuery<>(() -> operator.apply(materialize()), null);
     }
 
     private void requireOrder() {
@@ -461,13 +475,12 @@ public class GinqQuery<T> implements Query<T> {
             next.addAll(orders);
         }
         next.add(new Queryable.Order(keySelector, ascending));
-        return new GinqQuery<>(source, Collections.unmodifiableList(next));
+        return new GinqQuery<>(sourceSupplier, Collections.unmodifiableList(next));
     }
 
-    private <U, R> Query<R> project(Queryable<Tuple2<T, U>> joined,
+    private <U, R> Query<R> project(Supplier<Queryable<Tuple2<T, U>>> joined,
                                     BiFunction<? super T, ? super U, ? extends R> resultSelector) {
-        Queryable<R> projected = joined.select((pair, rows) -> resultSelector.apply(pair.getV1(), pair.getV2()));
-        return new GinqQuery<>(projected, null);
+        return new GinqQuery<>(() -> joined.get().select((pair, rows) -> resultSelector.apply(pair.getV1(), pair.getV2())), null);
     }
 
     private static <K> void requireJoinKeys(Function<?, ? extends K> outerKey,

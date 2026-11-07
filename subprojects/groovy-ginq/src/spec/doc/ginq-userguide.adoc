@@ -1408,10 +1408,14 @@ The query expression's static type is `Queryable` (`List` for `GQL`). A `@GQ` me
 whose return type is `def` is widened to the annotation's result type when that does
 not conflict with a superclass method.
 
-Locals used by the query are read when the query expression is evaluated. A later
-assignment to that local is not visible to the query. Fields are read when the query
-runs. Under dynamic compilation the query is lowered inline and follows ordinary
-Groovy closure capture.
+Under static checking the lowered query is not run when the `GQ` expression is
+evaluated. It runs the first time the `Queryable` is read (`toList`, `count`,
+and the other terminals). Locals and fields are read at that point, so a value
+changed after the expression and before the read is the value the query sees.
+`GQL` reads immediately because it is the terminal `toList`. Under dynamic
+compilation the pipeline is still built when the expression is evaluated;
+`where` and `select` do not pull elements until a terminal, which is the
+existing behaviour.
 
 === Fluent queries
 

@@ -71,7 +71,7 @@ final class GinqCompileStaticTest {
             select n
         }
         extra = 3
-        // The helper receives the local's value when the query expression runs.
+        // Locals are copied when the expression is evaluated. The copy is what runs later.
         assert [2, 3, 4] == query.toList()
     }
 

@@ -20,6 +20,7 @@ package org.apache.groovy.ginq;
 
 import groovy.transform.CompileStatic;
 import groovy.transform.TypeCheckingMode;
+import org.apache.groovy.ginq.provider.collection.runtime.LazyQueryable;
 import org.apache.groovy.ginq.provider.collection.runtime.Queryable;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -31,6 +32,8 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -47,6 +50,7 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.IdentityHashMap;
@@ -61,6 +65,10 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.lambdaX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
@@ -77,10 +85,12 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  * behaviour and gives the call site a real return type ({@link Queryable}, or
  * {@code Object} for {@code shutdown}).
  * <p>
- * Locals in scope at the query are passed into the helper. Fields are read from
- * the helper, so a later field assignment is still visible when the query runs.
- * Rebinding a local after the query expression has been evaluated is not visible
- * to that query: the value was read when the query was built.
+ * The helper is not called at the query expression. {@link LazyQueryable} calls it
+ * the first time the query is read, so sources are not opened and grouping does
+ * not run until then. Locals are copied when the expression is evaluated and that
+ * copy is what the helper receives, matching a dynamic {@code GQ} expression.
+ * Fields are read when the helper runs. {@code GQL} calls {@code toList}
+ * immediately, so it still materializes at the expression.
  */
 final class GinqStaticBridge {
 
@@ -138,13 +148,42 @@ final class GinqStaticBridge {
         schedule(unit, host.owner, helper);
 
         Expression receiver = host.staticContext ? classX(host.owner) : varX("this");
-        MethodCallExpression invocation = arguments.length == 0
-                ? callX(receiver, helper.getName())
-                : callX(receiver, helper.getName(), args(arguments));
-        invocation.setImplicitThis(false);
-        invocation.setSourcePosition(call);
+        if (!isQueryable(returnType)) {
+            MethodCallExpression immediate = helperCall(receiver, helper.getName(), arguments);
+            immediate.setSourcePosition(call);
+            immediate.setType(returnType);
+            return immediate;
+        }
+        // The array is evaluated now, so locals keep the values from this expression.
+        // The lambda, and therefore the helper, runs on the first read of the query.
+        ClassNode objectArray = ClassHelper.OBJECT_TYPE.makeArray();
+        CastExpression snapshot = castX(objectArray, listX(Arrays.asList(arguments)));
+        snapshot.setCoerce(true);
+        Expression[] delayed = new Expression[arguments.length];
+        for (int i = 0; i < arguments.length; i++) {
+            delayed[i] = callX(varX("args"), "getAt", constX(i));
+        }
+        MethodCallExpression invocation = helperCall(receiver, helper.getName(), delayed);
         invocation.setType(returnType);
+        LambdaExpression body = lambdaX(new Parameter[]{param(objectArray, "args")}, returnS(invocation));
+        body.setSourcePosition(call);
+        MethodCallExpression deferred = callX(classX(makeWithoutCaching(LazyQueryable.class, false)), "defer", args(snapshot, body));
+        deferred.setImplicitThis(false);
+        deferred.setSourcePosition(call);
+        deferred.setType(returnType);
+        return deferred;
+    }
+
+    private static MethodCallExpression helperCall(Expression receiver, String name, Expression[] arguments) {
+        MethodCallExpression invocation = arguments.length == 0
+                ? callX(receiver, name)
+                : callX(receiver, name, args(arguments));
+        invocation.setImplicitThis(false);
         return invocation;
+    }
+
+    private static boolean isQueryable(ClassNode type) {
+        return type != null && Queryable.class.getName().equals(type.getName());
     }
 
     private static void schedule(CompilationUnit unit, ClassNode owner, MethodNode helper) {
