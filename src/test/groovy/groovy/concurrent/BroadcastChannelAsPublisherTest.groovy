@@ -238,6 +238,56 @@ final class BroadcastChannelAsPublisherTest {
         assert broadcast.closeCause.is(failure)
     }
 
+    // GROOVY-12571
+    @Test
+    void subscriberArrivingAfterANormalCloseCompletes() {
+        def broadcast = BroadcastChannel.create()
+        broadcast.close()
+        def signals = [].asSynchronized()
+        def done = new CountDownLatch(1)
+        broadcast.asPublisher().subscribe(new Flow.Subscriber<String>() {
+            @Override void onSubscribe(Flow.Subscription s) { signals << 'onSubscribe'; s.request(Long.MAX_VALUE) }
+            @Override void onNext(String item) { signals << 'onNext' }
+            @Override void onError(Throwable t) { signals << 'onError'; done.countDown() }
+            @Override void onComplete() { signals << 'onComplete'; done.countDown() }
+        })
+        assert done.await(2, TimeUnit.SECONDS)
+        assert signals == ['onSubscribe', 'onComplete']
+
+        def seen = []
+        for await (item in broadcast.asPublisher()) {
+            seen << item
+        }
+        assert seen.isEmpty()
+        assert await(broadcast.asPublisher()) == null
+    }
+
+    // GROOVY-12571
+    @Test
+    void subscriberArrivingAfterAFailedCloseReceivesTheFailure() {
+        def broadcast = BroadcastChannel.create()
+        def failure = new IllegalStateException('closed-before-subscribe')
+        assert broadcast.close(failure)
+        def signals = [].asSynchronized()
+        def error = new AtomicReference<Throwable>()
+        def done = new CountDownLatch(1)
+        broadcast.asPublisher().subscribe(new Flow.Subscriber<String>() {
+            @Override void onSubscribe(Flow.Subscription s) { signals << 'onSubscribe'; s.request(Long.MAX_VALUE) }
+            @Override void onNext(String item) { signals << 'onNext' }
+            @Override void onError(Throwable t) { signals << 'onError'; error.set(t); done.countDown() }
+            @Override void onComplete() { signals << 'onComplete'; done.countDown() }
+        })
+        assert done.await(2, TimeUnit.SECONDS)
+        assert signals == ['onSubscribe', 'onError']
+        assert error.get().is(failure)
+
+        def thrown = assertThrows(IllegalStateException) {
+            for await (item in broadcast.asPublisher()) {
+            }
+        }
+        assert thrown.is(failure)
+    }
+
     @Test
     void drainReceivesTheFailureFromTheClosedChannel() {
         // The drain task is blocked in receive() when the broadcast fails,
