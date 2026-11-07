@@ -332,6 +332,49 @@ class ModifiesTests extends BaseTestClass {
             ''')
         }
         assert message.contains('@Modifies requires a closure listing the modifiable targets')
-        assert message.contains('found [this.count]')
+        assert message.contains("found a list ['this.count']")
+    }
+
+    @Test
+    void modifies_with_a_string_is_rejected_like_a_bare_modifies() {
+        def message = shouldFail MultipleCompilationErrorsException, {
+            add_class_to_classpath('''
+                import groovy.contracts.*
+
+                class A {
+                    int count = 0
+
+                    @Modifies('this.count')
+                    void increment() {
+                        count++
+                    }
+                }
+            ''')
+        }
+        assert message.contains('@Modifies requires a closure listing the modifiable targets')
+        assert message.contains("found a string 'this.count'")
+    }
+
+    @Test
+    void repeated_modifies_rejects_a_list_beside_a_closure() {
+        def message = shouldFail MultipleCompilationErrorsException, {
+            add_class_to_classpath('''
+                import groovy.contracts.*
+
+                class A {
+                    int count = 0
+                    int other = 0
+
+                    @Modifies({ this.count })
+                    @Modifies(['this.other'])
+                    void increment() {
+                        count++
+                        other++
+                    }
+                }
+            ''')
+        }
+        assert message.contains('@Modifies requires a closure listing the modifiable targets')
+        assert message.contains("found a list ['this.other']")
     }
 }
