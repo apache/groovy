@@ -1118,8 +1118,8 @@ public abstract class StaticTypeCheckingSupport {
 
     /**
      * Node metadata key for the type of a functional argument (a method reference or
-     * pointer): an {@link IntPredicate} telling whether it can be called with a given
-     * number of arguments.
+     * pointer, or a closure or lambda with declared parameters): an {@link IntPredicate}
+     * telling whether it can be called with a given number of arguments.
      */
     static final Object FUNCTOR_ARITY = new Object();
 
