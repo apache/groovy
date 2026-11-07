@@ -1996,6 +1996,32 @@ final class AsyncAwaitTest {
         '''
     }
 
+    @Test // GROOVY-12721
+    void testCombinatorsTakeOneListOfSources() {
+        assertScript '''
+            import groovy.concurrent.Awaitable
+            import static groovy.test.GroovyAssert.shouldFail
+
+            def tasks = ['a', 'b', 'c'].collect { m -> async { m * 2 } }
+            assert await(Awaitable.all(tasks)) == ['aa', 'bb', 'cc']
+            assert await(Awaitable.all(tasks as Set)) == ['aa', 'bb', 'cc']
+            assert await(Awaitable.all([])) == []
+
+            def settled = await Awaitable.allSettled(tasks + [async { throw new IllegalStateException('down') }])
+            assert settled*.success == [true, true, true, false]
+            assert settled[0..2]*.value == ['aa', 'bb', 'cc']
+            assert settled[3].error.message == 'down'
+
+            assert await(Awaitable.any([async { 'only' }])) == 'only'
+            assert await(Awaitable.first([async { throw new IllegalStateException('x') }, async { 'ok' }])) == 'ok'
+
+            def e = shouldFail(IllegalArgumentException) { Awaitable.any([]) }
+            assert e.message == 'sources must not be empty'
+            e = shouldFail(IllegalArgumentException) { Awaitable.first([async { 1 }, null]) }
+            assert e.message == 'sources must not contain null elements'
+        '''
+    }
+
     @Test
     void testWithScopeNestedDeep() {
         assertScript '''

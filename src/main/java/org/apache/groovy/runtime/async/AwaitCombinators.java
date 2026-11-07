@@ -23,6 +23,7 @@ import groovy.concurrent.Awaitable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CancellationException;
@@ -68,7 +69,7 @@ final class AwaitCombinators {
     // ---- non-blocking ---------------------------------------------------
 
     static Awaitable<List<Object>> allAsync(Object... sources) {
-        CompletableFuture<?>[] futures = toFutures(sources);
+        CompletableFuture<?>[] futures = toFutures(expand(sources));
 
         // allOf is fail-fast but does not guarantee which exception propagates
         // when several futures fail; track the temporally-first error ourselves.
@@ -98,12 +99,14 @@ final class AwaitCombinators {
     static <T> Awaitable<T> anyAsync(Object... sources) {
         // Guard against empty sources: CompletableFuture.anyOf() over an empty
         // array returns a future that never completes, which would hang await().
+        sources = expand(sources);
         validateNonEmptySources(sources);
         return (Awaitable<T>) GroovyPromise.of(CompletableFuture.anyOf(toFutures(sources)));
     }
 
     @SuppressWarnings("unchecked")
     static <T> Awaitable<T> firstAsync(Object... sources) {
+        sources = expand(sources);
         validateNonEmptySources(sources);
         CompletableFuture<T>[] futures = (CompletableFuture<T>[]) toFutures(sources);
         CompletableFuture<T> result = new CompletableFuture<>();
@@ -125,7 +128,7 @@ final class AwaitCombinators {
     }
 
     static Awaitable<List<AwaitResult<Object>>> allSettledAsync(Object... sources) {
-        CompletableFuture<?>[] futures = toFutures(sources);
+        CompletableFuture<?>[] futures = toFutures(expand(sources));
         CompletableFuture<List<AwaitResult<Object>>> combined = CompletableFuture.allOf(
                         Arrays.stream(futures)
                                 .map(future -> future.handle((value, error) -> null))
@@ -135,6 +138,19 @@ final class AwaitCombinators {
     }
 
     // ---- helpers --------------------------------------------------------
+
+    /**
+     * The sources a combinator was given: the arguments themselves, or, when the only argument is a
+     * {@link Collection} (a list of tasks built with {@code collect}; the {@code Promise.all(iterable)}
+     * shape), that collection's elements. A collection is never awaitable, so the call has no other
+     * meaning (GROOVY-12721).
+     */
+    static Object[] expand(Object[] sources) {
+        if (sources != null && sources.length == 1 && sources[0] instanceof Collection) {
+            return ((Collection<?>) sources[0]).toArray();
+        }
+        return sources;
+    }
 
     private static CompletableFuture<?>[] toFutures(Object... sources) {
         if (sources == null) {
