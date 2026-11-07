@@ -169,6 +169,8 @@ public class GroovyShell extends GroovyObjectSupport {
           this.loader = (GroovyClassLoader) parentLoader;
         } else {
           this.loader = new GroovyClassLoader(parentLoader, config);
+          // each script is defined by a class loader of its own, and what the JVM refuses across them is known here
+          this.loader.enableRuntimePackageCheck();
         }
         this.context = binding;
         this.config = config;
