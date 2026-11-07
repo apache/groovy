@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -149,6 +150,22 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
         }
 
         return Collections.emptyList();
+    }
+
+    /**
+     * Keeps a call that the trait transformation marked for dynamic dispatch dynamic
+     * when the receiver type declares a method that matches it.
+     */
+    @Override
+    public void onMethodSelection(final Expression expression, final MethodNode target) {
+        // GROOVY-12601: $static$self.getName() for a @Virtual static getName() must not bind to Class#getName()
+        if (expression instanceof MethodCallExpression mce && mce.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) == null) {
+            ClassNode returnType = mce.getNodeMetaData(TraitASTTransformation.DO_DYNAMIC);
+            if (returnType != null) {
+                mce.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, makeDynamic(mce, returnType));
+                storeType(mce, returnType);
+            }
+        }
     }
 
     /**
