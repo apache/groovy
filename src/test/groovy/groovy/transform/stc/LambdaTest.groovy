@@ -1067,6 +1067,79 @@ final class LambdaTest {
         }
     }
 
+    // GROOVY-12678
+    @Test
+    void testNestedLambdaOwnerDelegateThisObject() {
+        for (prop in ['owner', 'delegate', 'thisObject', 'getOwner()', 'getDelegate()', 'getThisObject()']) {
+            assertScript shell, """
+                class C {
+                    String name = 'n'
+                    def lambdaInLambda() {
+                        Supplier<Supplier<String>> s = () -> { name; (Supplier<String>) (() -> { name; ${prop}.name }) }
+                        s.get().get()
+                    }
+                    def lambdaInClosure() {
+                        def c = { -> Supplier<String> s = () -> { name; ${prop}.name }; s.get() }
+                        c()
+                    }
+                    def lambdaInLambdaInClosure() {
+                        def c = { -> Supplier<Supplier<String>> s = () -> { name; (Supplier<String>) (() -> { name; ${prop}.name }) }; s.get().get() }
+                        c()
+                    }
+                    def lambdaInClosureInLambda() {
+                        Supplier<String> s = () -> { name; def c = { -> Supplier<String> t = () -> { name; ${prop}.name }; t.get() }; c() }
+                        s.get()
+                    }
+                    def lambdaInClosureReference() {
+                        def c = { -> Supplier<Object> s = () -> { name; ${prop} }; s.get() }
+                        c()
+                    }
+                }
+
+                def c = new C()
+                assert c.lambdaInLambda() == 'n'
+                assert c.lambdaInClosure() == 'n'
+                assert c.lambdaInLambdaInClosure() == 'n'
+                assert c.lambdaInClosureInLambda() == 'n'
+                assert c.lambdaInClosureReference().is(c)
+            """
+        }
+    }
+
+    // GROOVY-12678
+    @Test
+    void testClosureOwnerInNestedFunction() {
+        for (prop in ['owner', 'getOwner()']) {
+            assertScript shell, """
+                class C {
+                    String name = 'n'
+                    def closureInLambda() {
+                        Supplier<Object> s = () -> { name; def c = { -> ${prop}.maximumNumberOfParameters }; c() }
+                        s.get()
+                    }
+                    def closureInClosure() {
+                        def c = { x, y -> def d = { -> ${prop}.maximumNumberOfParameters }; d() }
+                        c(1, 2)
+                    }
+                    def closureLambdaInClosure() {
+                        def c = { x -> def l = () -> ${prop}.maximumNumberOfParameters; l() }
+                        c(1)
+                    }
+                    def closureLambdaInLambda() {
+                        Supplier<Object> s = () -> { name; Closure<Integer> l = () -> ${prop}.maximumNumberOfParameters; l() }
+                        s.get()
+                    }
+                }
+
+                def c = new C()
+                assert c.closureInLambda() == 0
+                assert c.closureInClosure() == 2
+                assert c.closureLambdaInClosure() == 1
+                assert c.closureLambdaInLambda() == 0
+            """
+        }
+    }
+
     // GROOVY-11480
     @Test
     void testNestedLambdaAccessingInstanceFields3() {
