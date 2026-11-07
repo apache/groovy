@@ -73,6 +73,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.function.IntPredicate;
 import java.util.regex.Matcher;
 import java.util.stream.BaseStream;
 
@@ -1115,8 +1116,46 @@ public abstract class StaticTypeCheckingSupport {
         return new LinkedList<>(bestMethods); // assumes caller wants remove to be inexpensive
     }
 
+    /**
+     * Node metadata key for the type of a functional argument (a method reference or
+     * pointer): an {@link IntPredicate} telling whether it can be called with a given
+     * number of arguments.
+     */
+    static final Object FUNCTOR_ARITY = new Object();
+
+    /**
+     * Drops the candidates with a functional-interface parameter whose abstract method
+     * takes a number of arguments the functional argument given for it cannot be called
+     * with, as only a functor of fitting arity is compatible with the interface (cf. JLS
+     * 15.12.2.1); keeps every candidate if none fits.
+     */
+    private static Collection<MethodNode> filterByFunctorArity(final Collection<MethodNode> methods, final ClassNode[] argumentTypes) {
+        if (Arrays.stream(argumentTypes).noneMatch(t -> t != null && t.getNodeMetaData(FUNCTOR_ARITY) != null)) {
+            return methods;
+        }
+        List<MethodNode> fitting = new ArrayList<>(methods.size());
+        for (MethodNode method : methods) {
+            Parameter[] parameters = parametersForDistance(method);
+            boolean fits = true;
+            for (int i = 0, n = Math.min(argumentTypes.length, parameters.length); i < n && fits; i += 1) {
+                IntPredicate arity = argumentTypes[i] == null ? null : argumentTypes[i].getNodeMetaData(FUNCTOR_ARITY);
+                if (arity != null) {
+                    MethodNode sam = findSAM(parameters[i].getType());
+                    fits = (sam == null || arity.test(sam.getParameters().length));
+                }
+            }
+            if (fits) fitting.add(method);
+        }
+        return fitting.isEmpty() ? methods : fitting;
+    }
+
     private static List<MethodNode> chooseBestMethods(final ClassNode receiver, Collection<MethodNode> methods, final ClassNode[] argumentTypes) {
         List<MethodNode> bestMethods = new ArrayList<>();
+
+        // phase 0: functional-argument arity classifier
+        if (methods.size() > 1) {
+            methods = filterByFunctorArity(methods, argumentTypes);
+        }
 
         // phase 1: argument-parameter distance classifier
         int bestDist = Integer.MAX_VALUE;
