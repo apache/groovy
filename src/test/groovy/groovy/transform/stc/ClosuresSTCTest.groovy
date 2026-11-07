@@ -1507,6 +1507,24 @@ ${' ' * 46}value.prop += 1
         '''
     }
 
+    // GROOVY-12581
+    @Test
+    void testClosureDelegateInInstanceInitializer() {
+        assertScript '''
+            class C {
+                List<String> log = [];
+                {
+                    log << new StringBuilder('a').with { append('b') }.toString()
+                    log << new ArrayList<String>().tap { add('c') }.toString()
+                    log << new ArrayList<String>(['d']).with { get(0) }
+                    log << new StringBuilder('e').with { length().toString() }
+                }
+            }
+
+            assert new C().log == ['ab', '[c]', 'd', '1']
+        '''
+    }
+
     // GROOVY-12576
     @Test
     void testClosureObjectMethodPrecedence() {
