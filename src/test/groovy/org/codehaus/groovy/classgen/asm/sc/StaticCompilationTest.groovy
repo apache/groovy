@@ -251,6 +251,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
 
     // GROOVY-11288
     // GROOVY-12097: receiver and index are evaluated before the right-hand side
+    // GROOVY-10657: the RHS is evaluated as the store argument, and the receiver temporary is cleared
     @Test
     void testSubscriptAssignment1() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
@@ -264,12 +265,12 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
                 'ASTORE 2',
                 'ICONST_0',
                 'ISTORE 3',
-                'ICONST_1',
-                'ISTORE 4',
                 'ALOAD 2',
                 'ILOAD 3',
-                'ILOAD 4',
+                'ICONST_1',
                 'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArraySet ([III)V',
+                'ACONST_NULL',
+                'ASTORE 2',
                 'L1',
                 'LINENUMBER 4',
                 'RETURN'
