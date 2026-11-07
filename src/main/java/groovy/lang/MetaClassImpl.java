@@ -1389,6 +1389,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
+     * A call site in a closure has the closure class as its sender; the call
+     * site is nested in the class that declares the closure.
+     */
+    private static Class<?> getNonClosureSender(Class<?> c) {
+        while (c != null && GeneratedClosure.class.isAssignableFrom(c)) {
+            c = c.getEnclosingClass();
+        }
+        return c;
+    }
+
+    /**
      * @since 6.0.0
      */
     protected static Class<?> getNonClosureOuter(Class<?> c) {
@@ -2212,7 +2223,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private Object getOuterProperty(final Class<?> sender, final Object object, final String name, final MissingPropertyException mpe) {
+    private Object getOuterProperty(Class<?> sender, final Object object, final String name, final MissingPropertyException mpe) {
+        sender = getNonClosureSender(sender); // GROOVY-12627
         if (sender == theClass ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
             var outerClass = getNonClosureOuter(sender); // check outer class nesting of call site
             if (outerClass != null && (sender == theClass || sender.isAssignableFrom(theClass))) {
@@ -3185,6 +3197,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private void setOuterProperty(Class<?> sender, final Object object, final String name, final Object newValue, final MissingPropertyException mpe) {
         if (sender == null) sender = theClass; // GROOVY-11745
+        sender = getNonClosureSender(sender); // GROOVY-12627
         if (sender == theClass ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
             var outerClass = getNonClosureOuter(sender); // check outer class nesting of call site
             if (outerClass != null && (sender == theClass || sender.isAssignableFrom(theClass))) {
