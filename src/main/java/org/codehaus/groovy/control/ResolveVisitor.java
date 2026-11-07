@@ -754,7 +754,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             // WARNING: This code does not expect a class that has a static
             //          inner class in DEFAULT_IMPORTS
             ConstructedClassWithPackage tmp = new ConstructedClassWithPackage(packagePrefix, typeName);
-            if (resolve(tmp, false, false, false)) {
+            if (resolve(tmp, false, false, false) && isStarImportAccessible(tmp, null)) {
                 type.setRedirect(tmp.redirect());
 
                 if (DEFAULT_IMPORTS == packagePrefixes) { // Only the non-cached type and packages should be cached
@@ -931,7 +931,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
             for (ImportNode importNode : module.getStaticStarImports().values()) {
                 ClassNode tmp = new ConstructedNestedClass(importNode.getType(), name);
-                if (resolve(tmp, false, false, true) && Modifier.isStatic(tmp.getModifiers())) {
+                if (resolve(tmp, false, false, true) && Modifier.isStatic(tmp.getModifiers())
+                        && isStarImportAccessible(tmp, importNode.getType())) {
                     ambiguousClass(type, tmp, name);
                     return true;
                 }
@@ -940,13 +941,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             for (ImportNode importNode : module.getStarImports()) {
                 if (importNode.getType() != null) {
                     ClassNode tmp = new ConstructedNestedClass(importNode.getType(), name);
-                    if (resolve(tmp, false, false, true) && Modifier.isStatic(tmp.getModifiers())) {
+                    if (resolve(tmp, false, false, true) && Modifier.isStatic(tmp.getModifiers())
+                            && isStarImportAccessible(tmp, importNode.getType())) {
                         ambiguousClass(type, tmp, name);
                         return true;
                     }
                 } else {
                     ClassNode tmp = new ConstructedClassWithPackage(importNode.getPackageName(), name);
-                    if (resolve(tmp, false, false, true)) {
+                    if (resolve(tmp, false, false, true) && isStarImportAccessible(tmp, null)) {
                         ambiguousClass(type, tmp, name);
                         return true;
                     }
@@ -960,7 +962,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             String moduleMatchPkg = null;
             for (ImportNode importNode : module.getModuleStarImports()) {
                 ClassNode tmp = new ConstructedClassWithPackage(importNode.getPackageName(), name);
-                if (resolve(tmp, false, false, true)) {
+                if (resolve(tmp, false, false, true) && isStarImportAccessible(tmp, null)) {
                     ClassNode resolved = tmp.redirect();
                     if (moduleMatch != null && !moduleMatch.getName().equals(resolved.getName())) {
                         addError("reference to " + name + " is ambiguous, both "
@@ -1199,6 +1201,72 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         checkThisAndSuperAsPropertyAccess(xe);
         return isTopLevelProperty ? correctClassClassChain(xe) : xe;
+    }
+
+    /**
+     * Whether a type found through a star import or a default import is accessible
+     * from {@link #currentClass} (JLS 7.5.2 and 6.6.1).
+     * <p>
+     * Public types are visible. A package-private type stays visible in its own
+     * package, a protected member type stays visible to subclasses of its enclosing
+     * type, and a private member type stays visible inside the enclosing nest. A
+     * public member of an inaccessible enclosing type is not visible, so a star
+     * import cannot bind it.
+     * <p>
+     * Single-type imports are not filtered. An explicit {@code import p.Hidden}
+     * or a fully-qualified name still resolves, matching long-standing Groovy
+     * behaviour, and {@code Class.forName} is unaffected. Static field imports
+     * already apply an access check ({@link StaticImportVisitor}, since Groovy 5).
+     *
+     * @param type a resolved candidate
+     * @param knownOuter the type named by {@code import some.Type.*} when
+     *                   {@code type} is a binary member type that does not expose
+     *                   {@link ClassNode#getOuterClass()}
+     * @return {@code true} if the star import may bind {@code type}
+     */
+    private boolean isStarImportAccessible(final ClassNode type, final ClassNode knownOuter) {
+        ClassNode outer = type.getOuterClass();
+        if (outer == null) {
+            outer = knownOuter;
+        }
+        if (outer == null) {
+            outer = binaryEnclosing(type);
+        }
+        if (outer != null && outer != type && !isStarImportAccessible(outer, null)) {
+            return false;
+        }
+        ClassNode owner = outer != null ? outer : type;
+        int modifiers = type.getModifiers();
+        if (Modifier.isPublic(modifiers)) {
+            return true;
+        }
+        if (currentClass == null) {
+            return false;
+        }
+        if (currentClass.equals(owner) || currentClass.getOuterClasses().contains(owner)) {
+            return true;
+        }
+        if (!Modifier.isPrivate(modifiers) && Objects.equals(type.getPackageName(), currentClass.getPackageName())) {
+            return true;
+        }
+        return Modifier.isProtected(modifiers) && currentClass.isDerivedFrom(owner);
+    }
+
+    /**
+     * Enclosing binary type of a member type whose {@link ClassNode#getOuterClass()}
+     * is unset. Source inner classes carry that link; classes read from bytecode do not.
+     */
+    private ClassNode binaryEnclosing(final ClassNode type) {
+        String name = type.getName();
+        int dollar = name.lastIndexOf('$');
+        if (dollar <= 0 || classNodeResolver == null) {
+            return null;
+        }
+        ClassNodeResolver.LookupResult lr = classNodeResolver.resolveName(name.substring(0, dollar), compilationUnit);
+        if (lr != null && lr.isClassNode()) {
+            return lr.getClassNode();
+        }
+        return null;
     }
 
     private static boolean isVisibleNestedClass(final ClassNode innerType, final ClassNode outerType) {
