@@ -21,6 +21,7 @@ package bugs
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 final class Groovy7204 {
 
@@ -580,6 +581,66 @@ final class Groovy7204 {
                 Repository<Integer, Long> r2 = new Repository<Integer, Long>()
                 assert r2.shadowed('bar') == 'M:bar'
                 assert r2.shadowed(99L) == 'C:99'
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testCompileStatic11() {
+        def err = shouldFail shell, '''
+            class Box<T> {
+                String accept(T arg) { 'T' }
+                String accept(List<T> arg) { 'L' }
+            }
+
+            @CompileStatic
+            void test() {
+                Box<String> box = new Box<String>()
+                box.accept(1)
+            }
+
+            test()
+        '''
+        assert err.message.contains('Cannot call Box#accept(java.lang.String) with arguments [int]')
+    }
+
+    @Test
+    void testCompileStatic12() {
+        def err = shouldFail shell, '''
+            class Box<A extends CharSequence, B extends Serializable> {
+                void accept(A arg) {}
+                void accept(B arg) {}
+            }
+
+            @CompileStatic
+            void test() {
+                Box<StringBuilder, Long> box = new Box<StringBuilder, Long>()
+                box.accept('x')
+            }
+
+            test()
+        '''
+        assert err.message.contains('Reference to method is ambiguous')
+        assert err.message.contains('accept(A)')
+        assert err.message.contains('accept(B)')
+    }
+
+    @Test
+    void testCompileStatic13() {
+        assertScript shell, '''
+            class Outer<T> {
+                class Inner {
+                    String pick(T arg) { 'T:' + arg }
+                    String pick(CharSequence arg) { 'C:' + arg }
+                }
+            }
+
+            @CompileStatic
+            void test() {
+                Outer<String>.Inner inner = new Outer<String>().new Inner()
+                assert inner.pick('foo') == 'T:foo'
             }
 
             test()
