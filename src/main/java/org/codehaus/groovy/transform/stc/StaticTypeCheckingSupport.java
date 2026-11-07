@@ -1675,7 +1675,7 @@ public abstract class StaticTypeCheckingSupport {
             ClassNode lower = source.getLowerBound();
             if (lower != null && isInferencePlaceholder(lower)) return false;
             if (lower != null && (lower.isGenericsPlaceHolder() || GenericsUtils.hasUnresolvedGenerics(lower))) {
-                return !targetAdmitsLowerVariable(target);
+                return !targetAdmitsLowerVariable(target, lower);
             }
             return false;
         }
@@ -1718,11 +1718,31 @@ public abstract class StaticTypeCheckingSupport {
         return false;
     }
 
-    /** {@code ? super T <= ?} and {@code ? super T <= ? extends Object}. */
-    private static boolean targetAdmitsLowerVariable(final GenericsType target) {
-        if (!target.isWildcard() || target.getLowerBound() != null) return false;
-        ClassNode upper = firstBound(target.getUpperBounds());
-        return upper == null || isUnboundedUpper(upper);
+    /**
+     * {@code ? super A <= ?}, {@code ? super A <= ? extends Object}, and
+     * {@code ? super A <= ? super S} when {@code S} and {@code A} are the same
+     * type. A method reference is typed as the target, so {@code Predicate<? super T>}
+     * must be assignable to itself.
+     */
+    private static boolean targetAdmitsLowerVariable(final GenericsType target, final ClassNode sourceLower) {
+        if (!target.isWildcard()) return false;
+        ClassNode targetLower = target.getLowerBound();
+        if (targetLower == null) {
+            ClassNode upper = firstBound(target.getUpperBounds());
+            return upper == null || isUnboundedUpper(upper);
+        }
+        return sameLowerBound(targetLower, sourceLower);
+    }
+
+    private static boolean sameLowerBound(final ClassNode targetLower, final ClassNode sourceLower) {
+        if (targetLower == null || sourceLower == null) return false;
+        if (targetLower.isGenericsPlaceHolder() || sourceLower.isGenericsPlaceHolder()) {
+            if (!targetLower.isGenericsPlaceHolder() || !sourceLower.isGenericsPlaceHolder()) return false;
+            String targetName = targetLower.getUnresolvedName();
+            String sourceName = sourceLower.getUnresolvedName();
+            return targetName != null && targetName.equals(sourceName);
+        }
+        return sameTypeArgument(targetLower, sourceLower);
     }
 
     private static boolean boundWithin(final ClassNode sourceBound, final ClassNode targetBound) {
