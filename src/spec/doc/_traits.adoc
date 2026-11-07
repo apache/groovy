@@ -686,7 +686,9 @@ of the trait's static members. A static member declared on a trait belongs to th
 single copy shared across all implementers.
 * Public static methods are _declarer-bound_ by default and are promoted onto the generated trait interface as
 JVM-native static methods, so both `Trait.m(...)` and `Impl.m(...)` resolve. A private static method stays internal
-to the trait and is not promoted.
+to the trait and is not promoted. Called as `Trait.m(...)`, the method runs without an implementing class, so it has
+no static state to use: reading or writing a static field or property of the trait throws a `MissingFieldException`.
+Call methods that use the trait's static state on an implementing class.
 * Static methods may be declared in, and called from, `@CompileStatic` and `@TypeChecked` code; they are not
 restricted to dynamic Groovy.
 * You should typically not mix static and instance methods of the same signature. The normal trait method-selection
