@@ -384,6 +384,10 @@ public class StaticInvocationWriter extends InvocationWriter {
                             && !isSubtype(ClassHelper.CLOSURE_TYPE, receiverType)))) {
                 if (target.isStatic()) {
                     theReceiver = classX(declaringClass);
+                } else if (!controller.isInGeneratedFunction() && controller.isStaticMethod()
+                        && isSubtype(declaringClass, ClassHelper.CLASS_Type)) {
+                    // in a static method or initializer this is the class, e.g. getName() is called on it
+                    theReceiver = classX(enclosingClass);
                 } else if (!controller.isInGeneratedFunction()) {
                     ClassNode outerType = getImplicitReceiverType(enclosingClass, declaringClass);
                     theReceiver = propX(classX(outerType != null ? outerType : declaringClass), "this");
