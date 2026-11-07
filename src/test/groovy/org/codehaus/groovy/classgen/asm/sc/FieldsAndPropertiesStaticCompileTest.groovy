@@ -534,6 +534,32 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    // GROOVY-12610: static compilation accesses the field directly from a nest-mate
+    @Override @Test
+    void testPrivateFieldOfSuperclassViaStaticNestedSubclass() {
+        assertScript '''
+            class Base {
+                private String z = 'x'
+                static class Sub extends Base {
+                    def m1() { this.z }
+                    def m2() { super.z }
+                    def m3() { def c = { -> this.z }; c() }
+                    def m4() { java.util.function.Supplier<String> s = () -> this.z; s.get() }
+                    def m5() { this.z = 'y'; this.z }
+                    def m6() { super.z = 'z'; super.z }
+                    def m7(Sub that) { that.z += '!'; that.z }
+                }
+                static class Other {
+                    def m(Sub sub) { sub.z }
+                }
+            }
+            def sub = new Base.Sub()
+            assert [sub.m1(), sub.m2(), sub.m3(), sub.m4()] == ['x', 'x', 'x', 'x']
+            assert [sub.m5(), sub.m6(), sub.m7(sub)] == ['y', 'z', 'z!']
+            assert new Base.Other().m(sub) == 'z!'
+        '''
+    }
+
     @Override @Test
     void testPropertyWithMultipleSetters() {
         // we need to override the test because the AST is going to be changed

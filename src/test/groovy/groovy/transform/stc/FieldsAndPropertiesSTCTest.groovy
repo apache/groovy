@@ -2044,6 +2044,74 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12610: dynamic dispatch does not find a private field of a superclass on the subclass
+    @Test
+    void testPrivateFieldOfSuperclassViaStaticNestedSubclass() {
+        shouldFailWithMessages '''
+            class Base {
+                private String z = 'x'
+                static class Sub extends Base {
+                    def m1() { this.z }
+                    def m2() { z }
+                    def m3() { def c = { -> this.z }; c() }
+                    def m4() { java.util.function.Supplier<String> s = () -> z; s.get() }
+                    void m5() { this.z = 'y' }
+                    void m6() { z += 'y' }
+                    def m7(Sub that) { that.z }
+                }
+                static class Other {
+                    def m(Sub sub) { sub.z }
+                }
+            }
+        ''',
+        'No such property: z for class: Base$Sub', 'No such property: z for class: Base$Sub',
+        'No such property: z for class: Base$Sub', 'No such property: z for class: Base$Sub',
+        'No such property: z for class: Base$Sub', 'No such property: z for class: Base$Sub',
+        'No such property: z for class: Base$Sub', 'No such property: z for class: Base$Sub'
+
+        shouldFailWithMessages '''
+            class Base {
+                private String z = 'x'
+                static class Sub extends Base {
+                    def m1() { super.z }
+                    void m2() { super.z = 'y' }
+                }
+            }
+        ''',
+        'No such property: z for class: Base', 'No such property: z for class: Base'
+    }
+
+    // GROOVY-12610: an inner class reaches the field through its enclosing instance,
+    // and the declaring class reaches it on any subclass instance
+    @Test
+    void testPrivateFieldOfSuperclassViaInnerSubclassOrDeclaringClass() {
+        assertScript '''
+            class Base {
+                private String z = 'x'
+                class Sub extends Base {
+                    def m1() { this.z }
+                    def m2() { z }
+                    def m3() { super.z }
+                    def m4() { def c = { -> z }; c() }
+                    def m5() { java.util.function.Supplier<String> s = () -> this.z; s.get() }
+                    def m6() { z = 'y'; z }
+                }
+                static class Nested extends Base {
+                }
+                static List test(Nested nested) {
+                    def c = { -> nested.z }
+                    [nested.z, c()]
+                }
+                List test() {
+                    def sub = new Sub()
+                    [sub.m1(), sub.m2(), sub.m3(), sub.m4(), sub.m5(), sub.m6()]
+                }
+            }
+            assert new Base().test() == ['x', 'x', 'x', 'x', 'x', 'y']
+            assert Base.test(new Base.Nested()) == ['x', 'x']
+        '''
+    }
+
     // GROOVY-12509: a regression in 6.0.0, from GROOVY-12310
     @Test
     void testFieldOfPrivateNestedTypeOfNestMate() {
