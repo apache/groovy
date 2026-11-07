@@ -82,9 +82,13 @@ public class ModifiesASTTransformation implements ASTTransformation {
             modifiesSet = new LinkedHashSet<>();
         }
 
-        if (annotation.getMember("value") == null) {
+        Expression value = annotation.getMember("value");
+        if (!(value instanceof ClosureExpression)) {
+            // GROOVY-12723: a list of strings or any other value was taken as an empty frame and then reported
+            // as a violation of it by ModifiesChecker; say what is required and what was found
             source.addError(new SyntaxException(
-                    "@Modifies requires a closure listing the modifiable targets; use @Modifies({}) to declare that nothing is modified",
+                    "@Modifies requires a closure listing the modifiable targets; use @Modifies({}) to declare that nothing is modified"
+                            + (value == null ? "" : "; found " + value.getText()),
                     annotation.getLineNumber(), annotation.getColumnNumber()));
             return;
         }

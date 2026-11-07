@@ -314,4 +314,24 @@ class ModifiesTests extends BaseTestClass {
         }
         assert message.contains('@Modifies requires a closure listing the modifiable targets')
     }
+
+    @Test
+    void modifies_with_a_list_of_strings_is_rejected_like_a_bare_modifies() {
+        def message = shouldFail MultipleCompilationErrorsException, {
+            add_class_to_classpath('''
+                import groovy.contracts.*
+
+                class A {
+                    int count = 0
+
+                    @Modifies(['this.count']) // GROOVY-12723: not a closure
+                    void increment() {
+                        count++
+                    }
+                }
+            ''')
+        }
+        assert message.contains('@Modifies requires a closure listing the modifiable targets')
+        assert message.contains('found [this.count]')
+    }
 }
