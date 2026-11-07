@@ -19,6 +19,7 @@
 package bugs
 
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
@@ -235,7 +236,7 @@ final class Groovy12570 {
             }
             true
         '''
-        def err = shouldFail(org.codehaus.groovy.control.MultipleCompilationErrorsException) {
+        def err = shouldFail(MultipleCompilationErrorsException) {
             shell.evaluate '''package p
                 @groovy.transform.CompileStatic
                 class C extends M {
