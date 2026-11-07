@@ -35,6 +35,7 @@ import org.codehaus.groovy.runtime.memoize.ConcurrentCommonCache;
 import org.codehaus.groovy.runtime.memoize.ConcurrentSoftCache;
 import org.codehaus.groovy.runtime.memoize.LRUCache;
 import org.codehaus.groovy.runtime.memoize.Memoize;
+import org.codehaus.groovy.runtime.memoize.MemoizeCache;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass;
 import org.codehaus.groovy.runtime.metaclass.PackedClosureMetaClass;
 
@@ -48,6 +49,7 @@ import java.io.Writer;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -65,6 +67,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Represents any closure object in Groovy.
@@ -1021,11 +1024,16 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * the performance trade-off still makes concurrent use of memoized functions safe and highly recommended.
      *
      * The cache gets garbage-collected together with the memoized closure.
+     * A copy made by {@link #dehydrate()} or {@link #rehydrate(Object, Object, Object)} calls the dehydrated or
+     * rehydrated closure and starts with an empty cache with the same limits.
+     * The memoizing closure calls this closure and reports and takes its delegate and resolve strategy, so
+     * setting them on either affects both; {@link #clone()} of the memoizing closure makes an independent copy
+     * sharing the cache.
      *
      * @return A new closure forwarding to the original one while caching the results
      */
     public Closure<V> memoize() {
-        return Memoize.buildMemoizeFunction(new ConcurrentCommonCache(), this);
+        return Memoize.buildMemoizeFunction(new CommonCacheFactory(), this);
     }
 
     /**
@@ -1040,6 +1048,11 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * the performance trade-off still makes concurrent use of memoized functions safe and highly recommended.
      *
      * The cache gets garbage-collected together with the memoized closure.
+     * A copy made by {@link #dehydrate()} or {@link #rehydrate(Object, Object, Object)} calls the dehydrated or
+     * rehydrated closure and starts with an empty cache with the same limits.
+     * The memoizing closure calls this closure and reports and takes its delegate and resolve strategy, so
+     * setting them on either affects both; {@link #clone()} of the memoizing closure makes an independent copy
+     * sharing the cache.
      *
      * @param maxCacheSize The maximum size the cache can grow to
      * @return A new function forwarding to the original one while caching the results
@@ -1047,7 +1060,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     public Closure<V> memoizeAtMost(final int maxCacheSize) {
         if (maxCacheSize < 0) throw new IllegalArgumentException("A non-negative number is required as the maxCacheSize parameter for memoizeAtMost.");
 
-        return Memoize.buildMemoizeFunction(new LRUCache(maxCacheSize), this);
+        return Memoize.buildMemoizeFunction(new LRUCacheFactory(maxCacheSize), this);
     }
 
     /**
@@ -1068,13 +1081,20 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * the performance trade-off still makes concurrent use of memoized functions safe and highly recommended.
      *
      * The cache gets garbage-collected together with the memoized closure.
+     * A copy made by {@link #dehydrate()} or {@link #rehydrate(Object, Object, Object)} calls the dehydrated or
+     * rehydrated closure and starts with an empty cache with the same limits.
+     * The memoizing closure calls this closure and reports and takes its delegate and resolve strategy, so
+     * setting them on either affects both; {@link #clone()} of the memoizing closure makes an independent copy
+     * sharing the cache.
+     * A serialized memoized closure does not carry its softly referenced cached values: it is deserialized with an
+     * empty cache with the same limits.
      * @param protectedCacheSize Number of cached return values to protect from garbage collection
      * @return A new function forwarding to the original one while caching the results
      */
     public Closure<V> memoizeAtLeast(final int protectedCacheSize) {
         if (protectedCacheSize < 0) throw new IllegalArgumentException("A non-negative number is required as the protectedCacheSize parameter for memoizeAtLeast.");
 
-        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, new ConcurrentSoftCache<Object, Object>(), this);
+        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, new SoftCacheFactory(), this);
     }
 
     /**
@@ -1097,6 +1117,13 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * the performance trade-off still makes concurrent use of memoized functions safe and highly recommended.
      *
      * The cache gets garbage-collected together with the memoized closure.
+     * A copy made by {@link #dehydrate()} or {@link #rehydrate(Object, Object, Object)} calls the dehydrated or
+     * rehydrated closure and starts with an empty cache with the same limits.
+     * The memoizing closure calls this closure and reports and takes its delegate and resolve strategy, so
+     * setting them on either affects both; {@link #clone()} of the memoizing closure makes an independent copy
+     * sharing the cache.
+     * A serialized memoized closure does not carry its softly referenced cached values: it is deserialized with an
+     * empty cache with the same limits.
      * @param protectedCacheSize Number of cached return values to protect from garbage collection
      * @param maxCacheSize The maximum size the cache can grow to
      * @return A new function forwarding to the original one while caching the results
@@ -1106,7 +1133,71 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         if (maxCacheSize < 0) throw new IllegalArgumentException("A non-negative number is required as the maxCacheSize parameter for memoizeBetween.");
         if (protectedCacheSize > maxCacheSize) throw new IllegalArgumentException("The maxCacheSize parameter to memoizeBetween is required to be greater or equal to the protectedCacheSize parameter.");
 
-        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, new ConcurrentSoftCache<Object, Object>(maxCacheSize), this);
+        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, new LRUSoftCacheFactory(maxCacheSize), this);
+    }
+
+    /*
+     * The cache factories of the memoize variants are named classes rather than serializable lambdas: a lambda
+     * serializes as a SerializedLambda naming a compiler-generated method of this class, which a reader on
+     * another version or build of Groovy cannot resolve, whereas a class has a fixed serialVersionUID.
+     */
+
+    /**
+     * Creates the unlimited cache of {@link #memoize()}.
+     */
+    private static final class CommonCacheFactory implements Supplier<MemoizeCache<Object, Object>>, Serializable {
+        @Serial private static final long serialVersionUID = 6116480301574367289L;
+
+        @Override
+        public MemoizeCache<Object, Object> get() {
+            return new ConcurrentCommonCache<>();
+        }
+    }
+
+    /**
+     * Creates the size-limited cache of {@link #memoizeAtMost(int)}.
+     */
+    private static final class LRUCacheFactory implements Supplier<MemoizeCache<Object, Object>>, Serializable {
+        @Serial private static final long serialVersionUID = -8012874337951012233L;
+        private final int maxCacheSize;
+
+        LRUCacheFactory(final int maxCacheSize) {
+            this.maxCacheSize = maxCacheSize;
+        }
+
+        @Override
+        public MemoizeCache<Object, Object> get() {
+            return new LRUCache<>(maxCacheSize);
+        }
+    }
+
+    /**
+     * Creates the softly referencing cache of {@link #memoizeAtLeast(int)}.
+     */
+    private static final class SoftCacheFactory implements Supplier<MemoizeCache<Object, SoftReference<Object>>>, Serializable {
+        @Serial private static final long serialVersionUID = 3317720119265043152L;
+
+        @Override
+        public MemoizeCache<Object, SoftReference<Object>> get() {
+            return new ConcurrentSoftCache<>();
+        }
+    }
+
+    /**
+     * Creates the size-limited, softly referencing cache of {@link #memoizeBetween(int, int)}.
+     */
+    private static final class LRUSoftCacheFactory implements Supplier<MemoizeCache<Object, SoftReference<Object>>>, Serializable {
+        @Serial private static final long serialVersionUID = -1963503275018435307L;
+        private final int maxCacheSize;
+
+        LRUSoftCacheFactory(final int maxCacheSize) {
+            this.maxCacheSize = maxCacheSize;
+        }
+
+        @Override
+        public MemoizeCache<Object, SoftReference<Object>> get() {
+            return new ConcurrentSoftCache<>(maxCacheSize);
+        }
     }
 
     /**
@@ -1125,6 +1216,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * def factorial = { n {@code ->} fact(n, 1G)}
      * println factorial(20) // {@code =>} 2432902008176640000
      * </pre>
+     * The trampolined closure calls a copy of this closure curried with the parameters, and reports and takes
+     * the copy's delegate and resolve strategy; {@link #clone()} of the trampolined closure makes an independent copy.
      *
      * @param args Parameters to the closure, so as the trampoline mechanism can call it
      * @return A closure, which will execute the original closure on a trampoline.
@@ -1140,6 +1233,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * the calculation and, instead of a recursive call to itself or another function, it returns a new closure,
      * which will be executed by the trampoline as the next step.
      * Once a non-closure value is returned, the trampoline stops and returns the value as the final result.
+     * The trampolined closure calls this closure and reports and takes its delegate and resolve strategy, so
+     * setting them on either affects both; {@link #clone()} of the trampolined closure makes an independent copy.
      * @return A closure, which will execute the original closure on a trampoline.
      * @see #trampoline(Object...)
      */
@@ -1273,6 +1368,14 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
          * {@inheritDoc}
          */
         @Override
+        public Object getThisObject() {
+            return Closure.this.getThisObject();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
         public Class[] getParameterTypes() {
             return Closure.this.getParameterTypes();
         }
@@ -1307,6 +1410,24 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         @Override
         public Object clone() {
             return ((Closure) Closure.this.clone()).asWritable();
+        }
+
+        /**
+         * Dehydrates the enclosing closure and wraps the copy: the owner of a writable closure is
+         * the closure it wraps, so clearing it would leave nothing to call.
+         */
+        @Override
+        public Closure dehydrate() {
+            return Closure.this.dehydrate().asWritable();
+        }
+
+        /**
+         * Rehydrates the enclosing closure and wraps the copy: the owner of a writable closure is
+         * the closure it wraps, so replacing it would leave nothing to call.
+         */
+        @Override
+        public Closure rehydrate(Object delegate, Object owner, Object thisObject) {
+            return Closure.this.rehydrate(delegate, owner, thisObject).asWritable();
         }
 
         /**

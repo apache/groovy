@@ -351,6 +351,48 @@ final class FormatStringCheckerTest {
         assert err.message =~ /MissingFormatArgument: Format specifier '%\d[$]s'/
     }
 
+    // GROOVY-12692
+    @Test
+    void testPercentAndLineSeparatorTakeNoArgumentForInferredArgs() {
+        assertScript shell, '''
+            String s = 'some string' + ''
+            String n = System.lineSeparator()
+            assert String.format('100%% %s', s) == '100% some string'
+            assert String.format('%s %%', s) == 'some string %'
+            assert String.format('%s%n', s) == "some string$n"
+            assert String.format('%n%s', s) == "${n}some string"
+            assert String.format('%s %% %s', s, s) == 'some string % some string'
+            assert String.format('%s %% %<s', s) == 'some string % some string'
+            assert String.format('%s%n%<s', s) == "some string${n}some string"
+            assert String.format('%-3%|%s', s) == '%  |some string'
+        '''
+    }
+
+    // GROOVY-12692
+    @Test
+    void testFormatErrorsAfterPercentAndLineSeparatorForInferredArgs() {
+        def err = shouldFail shell, '''
+            String.format('100%% %d', 'some string' + '')
+        '''
+        assert err.message =~ /IllegalFormatConversion: d != java\.lang\.String/
+        err = shouldFail shell, '''
+            String.format('%s %% %s', 'some string' + '')
+        '''
+        assert err.message =~ "MissingFormatArgument: Format specifier '%s'"
+        err = shouldFail shell, '''
+            String.format('%s%n%s', 'some string' + '')
+        '''
+        assert err.message =~ "MissingFormatArgument: Format specifier '%s'"
+        err = shouldFail shell, '''
+            String.format('%% %<s', 'some string' + '')
+        '''
+        assert err.message =~ /MissingFormatArgument: Format specifier '%<s'/
+        err = shouldFail shell, '''
+            String.format('%--3% %s', 'some string' + '')
+        '''
+        assert err.message =~ /DuplicateFormatFlags: Flags = '-'/
+    }
+
     @Test
     void testValidFormatStringsConstantArgs() {
         assertScript shell, '''
@@ -453,5 +495,112 @@ final class FormatStringCheckerTest {
         '''
         assert err.message =~ /IllegalFormatConversion: d != java\.lang\.String/
         assert !err.message.contains('General error')
+    }
+
+    // GROOVY-12696
+    @Test
+    void testExplicitArgumentIndexForInferredArgs() {
+        assertScript shell, '''
+            String s = 'some string' + ''
+            Integer i = 7 + 0
+            assert String.format('%1$s', s) == 'some string'
+            assert String.format('%1$s %1$s', s) == 'some string some string'
+            assert String.format('%2$s', s, i) == '7'
+            assert String.format('%2$d %1$s', s, i) == '7 some string'
+            assert String.format('%1$s %2$d', s, i) == 'some string 7'
+            assert String.format('%1$d', i, s) == '7'
+            assert String.format('%2$s %s %<s %1$s', s, i) == '7 some string some string some string'
+            assert String.format('%2$d %<d %s %s', s, i) == '7 7 some string 7'
+            assert sprintf('%2$d %1$s', s, i) == '7 some string'
+        '''
+    }
+
+    // GROOVY-12696
+    @Test
+    void testExplicitArgumentIndexErrorsForInferredArgs() {
+        def err = shouldFail shell, '''
+            String.format('%1$d', 'some string' + '', 7)
+        '''
+        assert err.message =~ /IllegalFormatConversion: d != java\.lang\.String/
+        err = shouldFail shell, '''
+            String.format('%2$d', 7 + 0, 'some string')
+        '''
+        assert err.message =~ /IllegalFormatConversion: d != java\.lang\.String/
+        err = shouldFail shell, '''
+            String.format('%1$s %<d', 'some string' + '', 7)
+        '''
+        assert err.message =~ /IllegalFormatConversion: d != java\.lang\.String/
+        err = shouldFail shell, '''
+            String.format('%3$s', 'some string' + '', 7)
+        '''
+        assert err.message =~ /MissingFormatArgument: Format specifier '%3[$]s'/
+        err = shouldFail shell, '''
+            sprintf('%2$d %1$s', 'some string' + '')
+        '''
+        assert err.message =~ /MissingFormatArgument: Format specifier '%2[$]d'/
+    }
+
+    @Test
+    void testIllegalArgumentIndexConstantArgs() {
+        def err = shouldFail shell, '''
+            String.format('%0$s', 'some string')
+        '''
+        assert err.message =~ /IllegalFormatArgumentIndex: Illegal format argument index = 0/
+        err = shouldFail shell, '''
+            String.format('%99999999999$s', 'some string')
+        '''
+        assert err.message =~ /IllegalFormatArgumentIndex: Format argument index: \(not representable as int\)/
+    }
+
+    @Test
+    void testIllegalArgumentIndexForInferredArgs() {
+        ['%0$s', '%0$d', '%s %0$<s', '%0$%', '%0$n'].each { fmt ->
+            def err = shouldFail shell, """
+                String.format('$fmt', 'some string' + '', 7)
+            """
+            assert err.message =~ /IllegalFormatArgumentIndex: Illegal format argument index = 0/
+            assert !err.message.contains('IllegalFormatConversion')
+        }
+        ['%99999999999$s', '%2147483648$s', '%s %99999999999$<s', '%99999999999$%'].each { fmt ->
+            def err = shouldFail shell, """
+                String.format('$fmt', 'some string' + '', 7)
+            """
+            assert err.message =~ /IllegalFormatArgumentIndex: Format argument index: \(not representable as int\)/
+            assert !err.message.contains('General error')
+        }
+        assertScript shell, '''
+            String s = 'some string' + ''
+            assert String.format('%s %1$<s %1$s%%%n', s) == 'some string some string some string%' + System.lineSeparator()
+        '''
+    }
+
+    // GROOVY-12709: fields whose initializers refer to each other have no constant value
+    @Test
+    void testFieldInitializerCycle() {
+        assertScript shell, '''
+            class Cycle {
+                static final String F = G
+                static final String G = F
+                static String format() { String.format(F, 1) }
+            }
+            assert Cycle.F == null
+        '''
+        assertScript shell, '''
+            class Cycle {
+                static String F = G
+                static String G = F
+                static String format() { String.format(F, 1) }
+            }
+            assert Cycle.F == null
+        '''
+        // a chain of fields that ends in a constant is still followed
+        def err = shouldFail shell, '''
+            class Chain {
+                static final String F = G
+                static final String G = '%d'
+                static String format() { String.format(F, 'x') }
+            }
+        '''
+        assert err.message =~ /IllegalFormatConversion @ line 4, column \d+: d != java\.lang\.String/
     }
 }
