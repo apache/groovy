@@ -101,6 +101,8 @@ class GrapeIvy implements GrapeEngine {
     private static final Logger LOGGER = Logger.getLogger('groovy.grape.ivy')
 
     private static final List<String> DEFAULT_CONF = Collections.singletonList('default')
+    /** Name of the timeout constraint, if the Ivy settings define one, used by resolvers added with addResolver. */
+    private static final String GRAPE_TIMEOUT_CONSTRAINT = 'grape'
     private static final Map<String, Set<String>> MUTUALLY_EXCLUSIVE_KEYS = processGrabArgs([
             ['group', 'groupId', 'organisation', 'organization', 'org'],
             ['module', 'artifactId', 'artifact'],
@@ -980,6 +982,11 @@ class GrapeIvy implements GrapeEngine {
             settings: (ResolverSettings) settings,
             m2compatible: (boolean) args.getOrDefault('m2Compatible', Boolean.TRUE)
         )
+        // GROOVY-12640: use the timeouts of the configured resolvers, if any
+        if (settings.getTimeoutConstraint(GRAPE_TIMEOUT_CONSTRAINT) != null) {
+            resolver.setTimeoutConstraint(GRAPE_TIMEOUT_CONSTRAINT)
+            resolver.validate()
+        }
 
         def chainResolver = (ChainResolver) settings.getResolver('downloadGrapes')
         chainResolver.resolvers.add(0, resolver)
