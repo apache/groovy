@@ -411,4 +411,252 @@ final class TraitWithClosureOrLambda {
             assert C.one() == 'good bad ugly'
         '''
     }
+
+    // GROOVY-12563
+    @Test
+    void testOwnerAndThisObjectOfTraitClosure() {
+        String script = '''
+            trait T {
+                String name() { 't' }
+                Closure field = { owner }
+                def ownerProperty() { def c = { owner }; c() }
+                def thisObjectProperty() { def c = { thisObject }; c() }
+                def delegateProperty() { def c = { delegate }; c() }
+                def ownerGetter() { def c = { getOwner() }; c() }
+                def thisObjectGetter() { def c = { getThisObject() }; c() }
+                def nested() { def c = { def inner = { thisObject }; inner() }; c() }
+                def nestedOwner() { def c = { def inner = { owner }; inner() }; c() }
+                String ownerMethod() { def c = { owner.name() }; c() }
+                static staticOwner() { def c = { owner }; c() }
+            }
+            class C implements T {
+                String name() { 'c' }
+            }
+
+            def c = new C()
+            // a closure written in a trait method is rehydrated to the instance the trait is applied to
+            [c.ownerProperty(), c.thisObjectProperty(), c.delegateProperty(), c.ownerGetter(), c.thisObjectGetter(), c.nested(), c.field()].each {
+                assert it.is(c)
+            }
+            assert c.nestedOwner() instanceof Closure
+            assert c.ownerMethod() == 'c'
+            assert C.staticOwner() == C
+        '''
+        assertScript shell, script
+        assertScript script.replace('trait T', '@groovy.transform.TypeChecked trait T')
+
+        assertScript shell, '''
+            class Base {
+                String base() { 'base' }
+            }
+            @groovy.transform.SelfType(Base)
+            trait T {
+                String bases() { def c = { owner.base() + ' ' + thisObject.base() }; c() }
+            }
+            class C extends Base implements T {
+            }
+
+            assert new C().bases() == 'base base'
+        '''
+    }
+
+    // GROOVY-12563
+    @Test
+    void testClosureInTraitLambda() {
+        String script = '''
+            import java.util.function.Supplier
+            trait T {
+                String name = 'n'
+                String helper() { 'h-' + name }
+                static String staticHelper() { 'sh' }
+                Supplier<List> field = () -> { def c = { [thisObject, owner] }; c() }
+                List objects() { Supplier<List> s = () -> { def c = { [thisObject, owner, delegate] }; c() }; s.get() }
+                def ownerAlone() { Supplier<Object> s = () -> { def c = { owner }; c() }; s.get() }
+                String calls() { Supplier<String> s = () -> { def c = { helper() + ' ' + name }; c() }; s.get() }
+                String lambdaCalls() { Supplier<String> s = () -> helper(); s.get() }
+                def inClosure() { def outer = { Supplier<Object> s = () -> { def c = { thisObject }; c() }; s.get() }; outer() }
+                def inLambda() { Supplier<Object> s = () -> { Supplier<Object> t = () -> { def c = { thisObject }; c() }; t.get() }; s.get() }
+                static List staticObjects() { Supplier<List> s = () -> { def c = { [thisObject, staticHelper()] }; c() }; s.get() }
+            }
+            class C implements T {
+            }
+
+            def c = new C()
+            // a closure in a lambda gets the instance the trait is applied to as its this object, and the lambda as its owner
+            def (thisObject, owner, delegate) = c.objects()
+            assert thisObject.is(c) && owner instanceof Closure && delegate.is(owner)
+            assert c.ownerAlone() instanceof Closure
+            assert c.field.get()[0].is(c)
+            assert c.calls() == 'h-n n'
+            assert c.lambdaCalls() == 'h-n'
+            assert c.inClosure().is(c)
+            assert c.inLambda().is(c)
+            assert C.staticObjects() == [C, 'sh']
+        '''
+        assertScript shell, script
+        assertScript script.replace('trait T', '@groovy.transform.TypeChecked trait T')
+    }
+
+    // GROOVY-12563
+    @Test
+    void testExplicitThisMethodCallInTraitClosure() {
+        String script = '''
+            import java.util.function.Supplier
+            class Base {
+                String base() { 'base' }
+            }
+            @groovy.transform.SelfType(Base)
+            trait T {
+                String name = 'n'
+                String helper(String s = '') { 'h' + s + name }
+                abstract String impl()
+                Closure field = { this.helper('-field-') }
+                String noArgument() { def c = { this.helper() }; c() }
+                String argument() { def c = { this.helper('-') }; c() }
+                String implemented() { def c = { this.impl() + this.base() }; c() }
+                String objectMethods() { def c = { this.toString() + ' ' + this.getClass().simpleName }; c() }
+                String nested() { def c = { def inner = { this.helper('-nested-') }; inner() }; c() }
+                String inLambda() { Supplier<String> s = () -> this.helper('-lambda-'); s.get() }
+                static String staticMethod() { def c = { this.getSimpleName() }; c() }
+            }
+            class C extends Base implements T {
+                String impl() { 'impl ' }
+                String toString() { 'C!' }
+            }
+
+            def c = new C()
+            // this in a trait closure is the instance the trait is applied to, also as the receiver of a call
+            assert c.field() == 'h-field-n'
+            assert c.noArgument() == 'hn'
+            assert c.argument() == 'h-n'
+            assert c.implemented() == 'impl base'
+            assert c.objectMethods() == 'C! C'
+            assert c.nested() == 'h-nested-n'
+            assert c.inLambda() == 'h-lambda-n'
+            assert C.staticMethod() == 'C'
+        '''
+        assertScript shell, script
+        assertScript script.replace('trait T', '@groovy.transform.TypeChecked trait T')
+        assertScript script
+    }
+
+    // GROOVY-12563
+    @Test
+    void testStaticClosureFieldCalledAsMethod() {
+        String script = '''
+            import java.util.function.Supplier
+            trait T {
+                static Closure<String> f = { 'f' }
+                static Closure<String> g = { String s -> s * 2 }
+                static Closure<String> field = { f() + '!' }
+                Closure<String> instanceField = { f() + '?' }
+                static String staticMethod() { f() + g('x') }
+                static String explicitThis() { this.f() }
+                String instanceMethod() { f() + g('y') }
+                static String inClosure() { def c = { def inner = { f() }; inner() }; c() }
+                String inInstanceClosure() { def c = { f() }; c() }
+                static String inLambda() { Supplier<String> s = () -> f(); s.get() }
+            }
+            class C implements T {
+            }
+
+            // a static closure field of a trait is the field of the class the trait is applied to
+            assert C.staticMethod() == 'fxx'
+            assert C.explicitThis() == 'f'
+            assert new C().instanceMethod() == 'fyy'
+            assert C.inClosure() == 'f'
+            assert new C().inInstanceClosure() == 'f'
+            assert C.inLambda() == 'f'
+            assert C.field() == 'f!'
+            assert new C().instanceField() == 'f?'
+        '''
+        assertScript shell, script
+        assertScript script.replace('trait T', '@groovy.transform.TypeChecked trait T')
+        assertScript script
+    }
+
+    // GROOVY-12563
+    @Test
+    void testExplicitThisInDynamicTraitClosure() {
+        assertScript '''
+            class Base {
+                String base() { 'base' }
+            }
+            class Other {
+                String m() { 'other' }
+            }
+            @groovy.transform.SelfType(Base)
+            trait T {
+                String name = 'n'
+                String m() { 'T.m ' + name }
+                String over() { 'T.over' }
+                static String sm(String s) { 'T.sm' + s }
+                def out(o) { o }
+                def explicitThis() { def c = { [this.m(), this.over(), this.base(), this.name, this.getClass().simpleName, this.toString()] }; c() }
+                def implicitThis() { def c = { [m(), over(), base(), name] }; c() }
+                def nested() { def c = { def d = { [this.m(), this.over(), this, out(this), this.out(this)] }; d() }; c() }
+                def delegateFirst() { def c = { [this.m(), m()] }; c.resolveStrategy = Closure.DELEGATE_FIRST; c.delegate = new Other(); c() }
+                static staticThis() { def c = { [this.sm('!'), this.getSimpleName(), this, this.toString()] }; c() }
+                static staticNested() { def c = { def d = { [this.sm('?'), this.getSimpleName(), this] }; d() }; c() }
+            }
+            class C extends Base implements T {
+                String over() { 'C.over' }
+                String toString() { 'C!' }
+            }
+
+            def c = new C()
+            // explicit this in a closure of a trait method is the instance or class the trait is applied to, as this alone and an implicit this are
+            assert c.explicitThis() == ['T.m n', 'C.over', 'base', 'n', 'C', 'C!']
+            assert c.implicitThis() == ['T.m n', 'C.over', 'base', 'n']
+            def (m, over, self, out, explicitOut) = c.nested()
+            assert m == 'T.m n' && over == 'C.over' && self.is(c) && out.is(c) && explicitOut.is(c)
+            // the delegate does not take part in an explicit this
+            assert c.delegateFirst() == ['T.m n', 'other']
+            assert C.staticThis() == ['T.sm!', 'C', C, 'class C']
+            assert C.staticNested() == ['T.sm?', 'C', C]
+        '''
+    }
+
+    // GROOVY-12563
+    @Test
+    void testStaticBooleanPropertyAndExplicitAccessorsInTraitClosure() {
+        String script = '''
+            import java.util.function.Supplier
+            trait S {
+                static Closure<String> s = { 's' }
+            }
+            trait T extends S {
+                static boolean flag
+                static Closure<String> aB = { 'aB' }
+                static boolean isReady() { flag }
+                static Closure<String> getG() { { -> 'g' + flag } }
+                static boolean inClosure() { def c = { flag }; c() }
+                static boolean inNestedClosure() { def c = { def d = { flag }; d() }; c() }
+                static boolean inLambda() { Supplier<Boolean> s = () -> flag; s.get() }
+                static boolean accessors() { def c = { isFlag() && getFlag() && isReady() }; c() }
+                static String callG() { g() }
+                static String callGInClosure() { def c = { g() }; c() }
+                static String callAB() { def c = { aB() }; c() }
+                static String callS() { def c = { s() }; c() }
+                boolean instanceFlag() { def c = { flag }; c() }
+            }
+            class C implements T {
+            }
+            class D implements T {
+            }
+
+            // a static boolean property of a trait, which has an isser, is that of the class the trait is applied to
+            C.flag = true
+            assert C.inClosure() && C.inNestedClosure() && C.inLambda() && C.accessors() && new C().instanceFlag()
+            assert !D.inClosure() && !D.inNestedClosure() && !D.inLambda() && !D.accessors() && !new D().instanceFlag()
+            // a static closure property with an explicit getter only, or declared in a super trait
+            assert C.callG() == 'gtrue' && C.callGInClosure() == 'gtrue' && D.callGInClosure() == 'gfalse'
+            assert C.callAB() == 'aB'
+            C.s = { 'c' }
+            assert C.callS() == 'c' && D.callS() == 's'
+        '''
+        assertScript shell, script
+        assertScript script.replace('trait T', '@groovy.transform.TypeChecked trait T')
+        assertScript script
+    }
 }
