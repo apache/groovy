@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.apache.groovy.ast.pattern.MatchPattern.RecordPattern;
 import org.apache.groovy.ast.pattern.MatchPattern.RestPattern;
 import org.apache.groovy.ast.pattern.MatchPattern.TypePattern;
+import org.apache.groovy.vmplugin.internal.DefaultImportPackages;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.DynamicVariable;
@@ -67,7 +68,6 @@ import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
-import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
@@ -86,6 +86,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static groovy.lang.Tuple.tuple;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoEnclosingInstance;
@@ -696,6 +697,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     /**
      * Resolves a type through Groovy's default imports.
+     * <p>
+     * {@link #DEFAULT_IMPORT_INDEX} is the startup scan of every default-import
+     * package, in {@link #DEFAULT_IMPORTS} order. While the cache still holds
+     * that snapshot, trying it in order matches a full walk and skips packages
+     * that do not contain the name. A cache value that is not that snapshot can
+     * be only the packages seen so far. Prefixes above a cached package that
+     * are not themselves cached are checked before the lower package is accepted.
      *
      * @param type the type to resolve
      * @return {@code true} if the type was resolved
@@ -707,11 +715,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (!(type instanceof LowerCaseClass)) {
             String typeName = type.getName();
 
-            Set<String> packagePrefixSet = DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.get(typeName);
-            if (packagePrefixSet != null) {
-                // if the type name was resolved before, we can try the successfully resolved packages first, which are much less and very likely successful to resolve.
-                // As a result, we can avoid trying other default import packages and further resolving, which can improve the resolving performance to some extent.
-                if (resolveFromDefaultImports(type, packagePrefixSet.toArray(EMPTY_STRING_ARRAY))) {
+            Set<String> known = DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.get(typeName);
+            if (known != null) {
+                Set<String> indexed = DEFAULT_IMPORT_INDEX.get(typeName);
+                if (known == indexed) {
+                    if (resolveFromDefaultImports(type, known.toArray(EMPTY_STRING_ARRAY))) {
+                        return true;
+                    }
+                } else if (resolvePartialDefaultImports(type, typeName, known)) {
                     return true;
                 }
             }
@@ -731,13 +742,60 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
-    private static final Map<String, Set<String>> DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE = new UnlimitedConcurrentCache<>();
+    /**
+     * Startup scan of default-import packages. Values are the immutable sets
+     * returned by {@code getDefaultImportClasses}, shared with the cache until
+     * a later resolution replaces a cache entry.
+     */
+    private static final Map<String, Set<String>> DEFAULT_IMPORT_INDEX;
+    /**
+     * Simple name to the default-import packages known to contain it.
+     * Values are immutable. Replacing an entry, rather than mutating the set,
+     * keeps a concurrent reader from observing a half-updated package list.
+     */
+    private static final Map<String, Set<String>> DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE = new ConcurrentHashMap<>();
     static {
-        DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.putAll(VMPluginFactory.getPlugin().getDefaultImportClasses(DEFAULT_IMPORTS));
+        Map<String, Set<String>> indexed = VMPluginFactory.getPlugin().getDefaultImportClasses(DEFAULT_IMPORTS);
+        DEFAULT_IMPORT_INDEX = Collections.unmodifiableMap(indexed);
+        DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.putAll(indexed);
+    }
+
+    /**
+     * Tries default imports up through the last package in {@code known}.
+     * A prefix that is not in {@code known} is still resolved, and a hit is
+     * recorded, so a higher-precedence class found later wins over a stale
+     * lower one. Prefixes after every cached package are left to the full scan.
+     *
+     * @param type the type to resolve
+     * @param typeName the simple name being resolved
+     * @param known packages already recorded for {@code typeName}
+     * @return {@code true} if the type was resolved
+     */
+    private boolean resolvePartialDefaultImports(final ClassNode type, final String typeName, final Set<String> known) {
+        int lastKnown = -1;
+        for (int i = 0; i < DEFAULT_IMPORTS.length; i++) {
+            if (known.contains(DEFAULT_IMPORTS[i])) {
+                lastKnown = i;
+            }
+        }
+        if (lastKnown < 0) {
+            return false;
+        }
+        for (int i = 0; i <= lastKnown; i++) {
+            String prefix = DEFAULT_IMPORTS[i];
+            if (resolveOneDefaultImport(type, typeName, prefix, !known.contains(prefix))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
      * Resolves a type against the supplied import prefixes.
+     * <p>
+     * Hits are recorded only when {@code packagePrefixes} is {@link #DEFAULT_IMPORTS}.
+     * A cached prefix list is a different array; recording it would rewrite the
+     * set currently being read.
      *
      * @param type the type to resolve
      * @param packagePrefixes the package prefixes to test
@@ -745,28 +803,32 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      */
     protected boolean resolveFromDefaultImports(final ClassNode type, final String[] packagePrefixes) {
         String typeName = type.getName();
-
+        boolean recordHit = packagePrefixes == DEFAULT_IMPORTS;
         for (String packagePrefix : packagePrefixes) {
-            // We limit the inner class lookups here by using ConstructedClassWithPackage.
-            // This way only the name will change, the packagePrefix will
-            // not be included in the lookup. The case where the
-            // packagePrefix is really a class is handled elsewhere.
-            // WARNING: This code does not expect a class that has a static
-            //          inner class in DEFAULT_IMPORTS
-            ConstructedClassWithPackage tmp = new ConstructedClassWithPackage(packagePrefix, typeName);
-            if (resolve(tmp, false, false, false)) {
-                type.setRedirect(tmp.redirect());
-
-                if (DEFAULT_IMPORTS == packagePrefixes) { // Only the non-cached type and packages should be cached
-                    Set<String> packagePrefixSet = DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.computeIfAbsent(typeName, key -> new HashSet<>(2));
-                    packagePrefixSet.add(packagePrefix);
-                }
-
+            if (resolveOneDefaultImport(type, typeName, packagePrefix, recordHit)) {
                 return true;
             }
         }
-
         return false;
+    }
+
+    private boolean resolveOneDefaultImport(final ClassNode type, final String typeName, final String packagePrefix, final boolean recordHit) {
+        // We limit the inner class lookups here by using ConstructedClassWithPackage.
+        // This way only the name will change, the packagePrefix will
+        // not be included in the lookup. The case where the
+        // packagePrefix is really a class is handled elsewhere.
+        // WARNING: This code does not expect a class that has a static
+        //          inner class in DEFAULT_IMPORTS
+        ConstructedClassWithPackage tmp = new ConstructedClassWithPackage(packagePrefix, typeName);
+        if (!resolve(tmp, false, false, false)) {
+            return false;
+        }
+        type.setRedirect(tmp.redirect());
+        if (recordHit) {
+            DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.compute(typeName, (key, existing) ->
+                    DefaultImportPackages.including(existing, packagePrefix, DEFAULT_IMPORTS));
+        }
+        return true;
     }
 
     /**
