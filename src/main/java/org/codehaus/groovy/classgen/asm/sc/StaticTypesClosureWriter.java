@@ -82,6 +82,7 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         // IMPLICIT_RECEIVER expressions against Closure.getDelegate(), which a hoisted method cannot honour.
         return (annotated || SystemUtil.getBooleanSafe(CompilerConfiguration.CLOSURE_PACKING))
                 && isDelegateIndependent(expression)
+                && !callsClosureMethod(expression)
                 && !touchesMapOwnerProperties(expression);
     }
 
@@ -89,6 +90,10 @@ public class StaticTypesClosureWriter extends ClosureWriter {
     protected String triggerDeclineReason(final ClosureExpression expression) {
         if (!isDelegateIndependent(expression)) {
             return "it resolves a name against a delegate (e.g. via @DelegatesTo or with{})";
+        }
+        if (callsClosureMethod(expression)) {
+            return "it calls a method on a closure object (a Closure method such as memoize(), an Object method "
+                    + "such as toString() under TO_SELF, or one in a nested closure, whose owner is the closure)";
         }
         if (touchesMapOwnerProperties(expression)) {
             return "it accesses properties of a Map owner, whose closure-context resolution "
@@ -151,6 +156,37 @@ public class StaticTypesClosureWriter extends ClosureWriter {
     @Override
     protected boolean packedClosureUsesDelegateGuard() {
         return false; // the type checker proved delegate-independence, so no runtime guard is needed
+    }
+
+    /**
+     * True when an implicit-this call in the closure (or a nested closure) was resolved against a
+     * closure object rather than the owner class: a method that {@code Closure} declares, such as
+     * {@code memoize()}; a method of {@code Object} under {@code TO_SELF}, whose receiver STC types as
+     * {@code Closure}; or a method of {@code Object} in a nested closure, which STC resolves against
+     * the enclosing closure (receiver path {@code "owner"}). A hoisted body is a method of the owner
+     * class, where the same call would reach the owner's method, and a nested closure constructed in
+     * it has the owner instance, not the packed closure, as its owner.
+     */
+    private static boolean callsClosureMethod(final ClosureExpression expression) {
+        Statement code = expression.getCode();
+        if (code == null) return false;
+        boolean[] closureResolved = {false};
+        code.visit(new CodeVisitorSupport() {
+            @Override public void visitMethodCallExpression(final MethodCallExpression call) {
+                if (call.isImplicitThis()) {
+                    MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+                    Object receiverType = call.getObjectExpression().getNodeMetaData(INFERRED_TYPE);
+                    if ((target != null && !ClassHelper.isObjectType(target.getDeclaringClass())
+                                && ClassHelper.CLOSURE_TYPE.isDerivedFrom(target.getDeclaringClass()))
+                            || ClassHelper.CLOSURE_TYPE.equals(receiverType)
+                            || "owner".equals(call.getNodeMetaData(IMPLICIT_RECEIVER))) {
+                        closureResolved[0] = true;
+                    }
+                }
+                super.visitMethodCallExpression(call);
+            }
+        });
+        return closureResolved[0];
     }
 
     /**
