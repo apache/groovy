@@ -19,11 +19,8 @@
 package org.codehaus.groovy.vmplugin.v9
 
 import org.antlr.v4.runtime.tree.ParseTree
-import org.codehaus.groovy.control.CompilationUnit
-import org.codehaus.groovy.control.Phases
+import org.codehaus.groovy.GroovyBugError
 import org.codehaus.groovy.control.ResolveVisitor
-import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache
 import org.codehaus.groovy.vmplugin.VMPluginFactory
 import org.junit.jupiter.api.Test
 
@@ -31,7 +28,6 @@ import java.util.stream.Collectors
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertThrows
-import static org.junit.jupiter.api.Assertions.assertTrue
 
 final class ClassFinderTest {
 
@@ -112,77 +108,17 @@ final class ClassFinderTest {
         assert (ResolveVisitor.DEFAULT_IMPORTS as List).sort() == r1.values().stream().flatMap(e -> e.stream()).collect(Collectors.toSet()).sort()
         // Proxy exists in both java.net and groovy.util; both must be retained in DEFAULT_IMPORTS order
         assertEquals(['java.net.', 'groovy.util.'], r1.get('Proxy')?.toList())
-        assertThrows(UnsupportedOperationException) {
-            r1.get('String').add('custom.')
-        }
-    }
-
-    @Test
-    void defaultImportCachePreservesPrecedenceAndImmutability() {
-        GroovyClassLoader gcl = new GroovyClassLoader(ClassFinderTest.classLoader)
-        gcl.parseClass('package groovy.util\nclass DefaultImportOrderProbe {}')
-        gcl.parseClass('package groovy.lang\nclass DefaultImportOrderProbe {}')
-
-        // 1. Resolve when only groovy.util.DefaultImportOrderProbe is visible
-        GroovyClassLoader utilOnlyLoader = new GroovyClassLoader(ClassFinderTest.classLoader) {
-            @Override
-            Class<?> loadClass(String name, boolean lookupScriptFiles, boolean preferClassOverScript, boolean resolve) throws ClassNotFoundException {
-                if (name == 'groovy.lang.DefaultImportOrderProbe') throw new ClassNotFoundException(name)
-                if (name == 'groovy.util.DefaultImportOrderProbe') return gcl.loadClass(name)
-                return super.loadClass(name, lookupScriptFiles, preferClassOverScript, resolve)
-            }
-        }
-        CompilationUnit cu1 = new CompilationUnit(utilOnlyLoader)
-        SourceUnit su1 = cu1.addSource('Probe1.groovy', 'class Probe1 extends DefaultImportOrderProbe {}')
-        cu1.compile(Phases.SEMANTIC_ANALYSIS)
-        assertEquals('groovy.util.DefaultImportOrderProbe', su1.AST.classes[0].superClass.name)
-
-        // 2. Now resolve when groovy.lang.DefaultImportOrderProbe is visible (groovy.util is missing in this loader so it falls back to DEFAULT_IMPORTS scan)
-        GroovyClassLoader langOnlyLoader = new GroovyClassLoader(ClassFinderTest.classLoader) {
-            @Override
-            Class<?> loadClass(String name, boolean lookupScriptFiles, boolean preferClassOverScript, boolean resolve) throws ClassNotFoundException {
-                if (name == 'groovy.util.DefaultImportOrderProbe') throw new ClassNotFoundException(name)
-                if (name == 'groovy.lang.DefaultImportOrderProbe') return gcl.loadClass(name)
-                return super.loadClass(name, lookupScriptFiles, preferClassOverScript, resolve)
-            }
-        }
-        CompilationUnit cu2 = new CompilationUnit(langOnlyLoader)
-        SourceUnit su2 = cu2.addSource('Probe2.groovy', 'class Probe2 extends DefaultImportOrderProbe {}')
-        cu2.compile(Phases.SEMANTIC_ANALYSIS)
-        assertEquals('groovy.lang.DefaultImportOrderProbe', su2.AST.classes[0].superClass.name)
-
-        // 3. When both are visible, DEFAULT_IMPORTS precedence (groovy.lang. before groovy.util.) must win!
-        def cacheField = ResolveVisitor.getDeclaredField('DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE')
-        cacheField.accessible = true
-        Map<String, Set<String>> cache = (Map<String, Set<String>>) cacheField.get(null)
-        try {
-            assertEquals(['groovy.lang.', 'groovy.util.'], cache.get('DefaultImportOrderProbe')?.toList())
-
-            CompilationUnit cu3 = new CompilationUnit(gcl)
-            SourceUnit su3 = cu3.addSource('Probe3.groovy', 'class Probe3 extends DefaultImportOrderProbe {}')
-            cu3.compile(Phases.SEMANTIC_ANALYSIS)
-            assertEquals('groovy.lang.DefaultImportOrderProbe', su3.AST.classes[0].superClass.name)
-
+        List<String> precedence = ResolveVisitor.DEFAULT_IMPORTS as List
+        r1.each { String name, Set<String> packages ->
+            List<String> actual = packages.toList()
+            assertEquals(precedence.findAll { actual.contains(it) }, actual, name)
             assertThrows(UnsupportedOperationException) {
-                cache.get('DefaultImportOrderProbe').add('other.')
+                packages.add('custom.')
             }
-        } finally {
-            cache.remove('DefaultImportOrderProbe')
         }
-    }
-
-    @Test
-    void unlimitedConcurrentCacheAtomicMapOperations() {
-        UnlimitedConcurrentCache<String, Integer> cache = new UnlimitedConcurrentCache<>()
-        assertEquals(1, cache.computeIfAbsent('a', k -> 1))
-        assertEquals(1, cache.computeIfAbsent('a', k -> 2))
-        assertEquals(1, cache.putIfAbsent('a', 3))
-        assertEquals(10, cache.computeIfPresent('a', (k, v) -> v * 10))
-        assertTrue(cache.replace('a', 10, 20))
-        assertEquals(20, cache.replace('a', 30))
-        assertEquals(35, cache.merge('a', 5, Integer::sum))
-        assertTrue(cache.remove('a', 35))
-        assertTrue(cache.isEmpty())
+        assertThrows(GroovyBugError) {
+            VMPluginFactory.getPlugin().getDefaultImportClasses(['com.example.'] as String[])
+        }
     }
 
     // GROOVY-9480

@@ -196,7 +196,11 @@ public interface VMPlugin {
     MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod);
 
     /**
-     * Returns the default import classes: class name -&gt; the relevant package names
+     * Returns classes visible through the default imports.
+     * Keys are simple class names. Each value is an unmodifiable set of the
+     * {@code packageNames} entries that contain that class, iterated in
+     * {@code packageNames} order. A name found in more than one of those
+     * packages keeps every match.
      *
      * @param packageNames the default import package names, e.g. java.lang.
      * @return the default import classes

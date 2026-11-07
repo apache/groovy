@@ -21,6 +21,7 @@ package org.codehaus.groovy.vmplugin.v9;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
+import org.apache.groovy.vmplugin.internal.DefaultImportPackages;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -43,11 +44,9 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -125,16 +124,16 @@ public class Java9 extends Java8 {
             try {
                 // groovy-core (Java source)
                 URI gcjLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.lang.GroovySystem")).toURI();
-                mergeDefaultImportClasses(result, doFindClasses(gcjLocation, "groovy", groovyPackages), packageNames);
+                DefaultImportPackages.merge(result, doFindClasses(gcjLocation, "groovy", groovyPackages), packageNames);
 
                 // in production environment, groovy-core classes, e.g. `GroovySystem`(java class) and `ListenerLister`(groovy class) are all packaged in the groovy-core jar file,
                 // but in Groovy development environment, groovy-core classes are distributed in different directories
                 URI gcgLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.beans.ListenerList")).toURI();
                 if (!gcjLocation.equals(gcgLocation)) {
-                    mergeDefaultImportClasses(result, doFindClasses(gcgLocation, "groovy", groovyPackages), packageNames);
+                    DefaultImportPackages.merge(result, doFindClasses(gcgLocation, "groovy", groovyPackages), packageNames);
                 }
             } finally {
-                mergeDefaultImportClasses(result, doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPackages), packageNames);
+                DefaultImportPackages.merge(result, doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPackages), packageNames);
             }
         } catch (Throwable ignore) {
             Logger logger = Logger.getLogger(getClass().getName());
@@ -144,30 +143,6 @@ public class Java9 extends Java8 {
         }
 
         return result;
-    }
-
-    private static void mergeDefaultImportClasses(final Map<String, Set<String>> target, final Map<String, Set<String>> additions, final String[] packageNames) {
-        for (Map.Entry<String, Set<String>> entry : additions.entrySet()) {
-            target.merge(entry.getKey(), toOrderedUnmodifiableSet(entry.getValue(), packageNames), (existing, incoming) -> {
-                Set<String> combined = new HashSet<>(existing);
-                combined.addAll(incoming);
-                return toOrderedUnmodifiableSet(combined, packageNames);
-            });
-        }
-    }
-
-    private static Set<String> toOrderedUnmodifiableSet(final Set<String> packages, final String[] packageNames) {
-        if (packages.size() == 1) {
-            return Collections.singleton(packages.iterator().next());
-        }
-        Set<String> ordered = new LinkedHashSet<>(packages.size());
-        for (String prefix : packageNames) {
-            if (packages.contains(prefix)) {
-                ordered.add(prefix);
-            }
-        }
-        ordered.addAll(packages);
-        return Collections.unmodifiableSet(ordered);
     }
 
     private static Map<String, Set<String>> doFindClasses(final URI uri, final String packageName, final List<String> defaultPackageNames) {
