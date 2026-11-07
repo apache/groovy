@@ -424,6 +424,34 @@ final class ThisAndSuperTest {
         '''
     }
 
+    // GROOVY-12592: the class neither overrides the methods nor calls them on super outside the closure
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testSuperDotMethodInClosure(String mode) {
+        assertScript """
+            class Base {
+                String m(x) { 'base:' + x }
+            }
+            class Root extends Base {
+                String toString() { 'root' }
+                String m(x) { 'root:' + x }
+            }
+            $mode
+            class Outer extends Root {
+                String test() {
+                    def c = { -> super.toString() + ',' + super.m(1) }
+                    c()
+                }
+            }
+            class Sub extends Outer {
+                String toString() { 'sub' }
+                String m(x) { 'sub:' + x }
+            }
+            assert new Outer().test() == 'root,root:1'
+            assert new Sub().test() == 'root,root:1'
+        """
+    }
+
     // GROOVY-10302
     @Test
     void testSuperDotMethod5() {

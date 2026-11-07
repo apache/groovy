@@ -611,10 +611,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 boolean bridge = isBridge(method);
                 while (distance > 0) {
                     int index = mopArrayIndex(method, "super$" + distance + "$" + method.getName());
-                    if (index >= 0 && (!bridge || mopMethods[index].getDeclaringClass().getTheClass() == c)) return index;
+                    if (index >= 0 && (bridge ? mopMethods[index].getDeclaringClass().getTheClass() == c
+                                              : !skipsLevel(mopMethods[index], method, c))) return index;
                     distance -= 1;
                 }
                 return -1;
+            }
+
+            /**
+             * GROOVY-12592: A MOP method calls the super method of the class that declares it. If class
+             * {@code c} inherits {@code method}, a MOP method of its declaring class, or of a super class
+             * of that, calls a method further up. This is the only match when {@code c} has no MOP method
+             * for the name, like when the super call is made from a closure or an inner class.
+             */
+            private boolean skipsLevel(final MetaMethod mopMethod, final MetaMethod method, final Class<?> c) {
+                Class<?> declaringClass = method.getDeclaringClass().getTheClass();
+                return declaringClass != c && mopMethod.getDeclaringClass().getTheClass().isAssignableFrom(declaringClass);
             }
 
             private int mopArrayIndex(final MetaMethod method, final String mopName) {
