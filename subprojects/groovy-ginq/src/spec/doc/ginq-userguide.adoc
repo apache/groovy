@@ -1409,19 +1409,23 @@ whose return type is `def` is widened to the annotation's result type when that 
 not conflict with a superclass method.
 
 Under static checking the lowered query is not run when the `GQ` expression is
-evaluated. It runs the first time the `Queryable` is read (`toList`, `count`,
-and the other terminals). Locals and fields are read at that point, so a value
-changed after the expression and before the read is the value the query sees.
-`GQL` reads immediately because it is the terminal `toList`. Under dynamic
+evaluated. It is built the first time the `Queryable` is read (`toList`, `count`,
+and the other terminals). Locals in scope are copied when the expression is
+evaluated, so a later assignment is not visible. Fields are read when the query
+runs. `GQL` reads immediately because it is the terminal `toList`. Under dynamic
 compilation the pipeline is still built when the expression is evaluated;
 `where` and `select` do not pull elements until a terminal, which is the
-existing behaviour.
+existing behaviour. `@CompileStatic` and `@TypeChecked` both leave the lowered
+query on that dynamic path.
 
 === Fluent queries
 
 `Ginq.from` is the method-call syntax. It runs on the same in-memory runtime as `GQ`
 and is deferred until a terminal operation such as `toList()`. Operators are generic,
-so `@CompileStatic` knows the element type. Database providers still use the `GQ`
+so `@CompileStatic` and `@TypeChecked` know the element type. Closure parameters are
+inferred from that type: `{ p -> p.name }` is enough, and the same inference applies
+to `where`, `select`, `selectMany`, ordering, `groupBy`, joins, and the aggregates.
+Database providers still use the `GQ`
 syntax, which keeps an expression tree they can translate. A custom reduction is a
 lambda passed to `aggregate`. A named aggregate used from `GQ` implements
 `org.apache.groovy.ginq.provider.GinqAggregate` and is listed in

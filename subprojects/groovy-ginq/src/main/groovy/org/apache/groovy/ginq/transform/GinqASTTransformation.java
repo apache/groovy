@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import groovy.transform.CompileStatic;
+import groovy.transform.TypeChecked;
 import groovy.transform.TypeCheckingMode;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -113,7 +114,9 @@ public class GinqASTTransformation extends AbstractASTTransformation {
             // When the enclosing scope is statically checked, skip that checking for this
             // method so the query keeps its runtime behaviour and callers still see its type.
             if (staticallyChecked(methodNode)) {
-                methodNode.addAnnotation(skipStaticCompilation());
+                // Both checkers only honour SKIP on their own annotation.
+                methodNode.addAnnotation(skipAnnotation(make(CompileStatic.class)));
+                methodNode.addAnnotation(skipAnnotation(make(TypeChecked.class)));
             }
             widenDynamicReturn(methodNode, targetType);
             VariableScopeVisitor variableScopeVisitor = new VariableScopeVisitor(sourceUnit);
@@ -155,8 +158,8 @@ public class GinqASTTransformation extends AbstractASTTransformation {
         return mode;
     }
 
-    private static AnnotationNode skipStaticCompilation() {
-        AnnotationNode annotation = new AnnotationNode(make(CompileStatic.class));
+    private static AnnotationNode skipAnnotation(ClassNode annotationType) {
+        AnnotationNode annotation = new AnnotationNode(annotationType);
         annotation.addMember("value", propX(classX(make(TypeCheckingMode.class)), "SKIP"));
         return annotation;
     }

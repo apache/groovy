@@ -40,9 +40,9 @@ final class GinqFluentTest {
                 new Person(3, 'Cyd', 30)
         ]
         List<String> names = Ginq.from(people)
-                .where { Person p -> p.age >= 18 }
-                .orderBy { Person p -> p.name }
-                .select { Person p -> p.name }
+                .where { p -> p.age >= 18 }
+                .orderBy { p -> p.name }
+                .select { p -> p.name }
                 .toList()
         assert names == ['Ann', 'Cyd']
     }
@@ -66,8 +66,8 @@ final class GinqFluentTest {
                 new Person(1, 'Zoe', 20),
                 new Person(2, 'Ann', 20),
                 new Person(3, 'Bob', 15)
-        ]).orderBy { Person p -> p.age }.thenBy { Person p -> p.name }
-                .select { Person p -> p.name }
+        ]).orderBy { p -> p.age }.thenBy { p -> p.name }
+                .select { p -> p.name }
                 .toList()
         assert names == ['Bob', 'Ann', 'Zoe']
 
@@ -75,8 +75,8 @@ final class GinqFluentTest {
                 new Person(1, 'Ann', 20),
                 new Person(2, 'Bob', 15),
                 new Person(3, 'Cyd', 30)
-        ]).groupBy { Person p -> p.age >= 18 }
-                .select { Grouping<Boolean, Person> g -> g.count() }
+        ]).groupBy { p -> p.age >= 18 }
+                .select { g -> g.count() }
                 .toList()
         assert sizes.toSorted() == [1L, 2L]
 
@@ -84,7 +84,7 @@ final class GinqFluentTest {
         List<Integer> amounts = Ginq.from([
                 new Person(1, 'Ann', 20),
                 new Person(2, 'Bob', 15)
-        ]).join(orders) { Person p -> p.id } { Order o -> o.personId } { Person p, Order o -> o.amount }
+        ]).join(orders) { p -> p.id } { o -> o.personId } { p, o -> o.amount }
                 .orderBy { it }
                 .toList()
         assert amounts == [5, 7]
@@ -92,7 +92,7 @@ final class GinqFluentTest {
 
     @Test
     void selectManySetOperatorsAndTerminalAggregates() {
-        assert [1, 2, 3, 4] == Ginq.from([[1, 2], [3, 4]]).selectMany { List<Integer> row -> row }.toList()
+        assert [1, 2, 3, 4] == Ginq.from([[1, 2], [3, 4]]).selectMany { row -> row }.toList()
         assert [1, 2, 3] == Ginq.of(1, 2).concat(Ginq.of(2, 3)).distinct().orderBy { it }.toList()
         assert [1] == Ginq.of(1, 2).intersect(Ginq.of(1, 3)).toList()
         assert [2] == Ginq.of(1, 2).except(Ginq.of(1)).toList()
@@ -100,14 +100,14 @@ final class GinqFluentTest {
         assert Ginq.empty().toList().isEmpty()
 
         assert Ginq.of(1, 2, 3).sum { it } == 6
-        assert Ginq.of(1, 2, 3).aggregate(0) { int acc, int n -> acc + n } == 6
-        assert Ginq.of(1, 2, 3).aggregate { Query<Integer> rows -> rows.max { it } } == 3
+        assert Ginq.of(1, 2, 3).aggregate(0) { acc, n -> acc + n } == 6
+        assert Ginq.of(1, 2, 3).aggregate { rows -> rows.max { it } } == 3
     }
 
     @Test
     void operatorsWaitUntilTheQueryIsRead() {
         List<Integer> seen = []
-        Query<Integer> query = Ginq.from([1, 2, 3]).where { Integer n ->
+        Query<Integer> query = Ginq.from([1, 2, 3]).where { n ->
             seen.add(n)
             return n > 1
         }
@@ -125,7 +125,7 @@ final class GinqFluentTest {
 
     @Test
     void leftJoinKeepsUnmatchedOuterElements() {
-        List<String> labels = Ginq.of(1, 2).leftJoin([new Order(1, 9)]) { int id -> id } { Order o -> o.personId } { int id, Order o ->
+        List<String> labels = Ginq.of(1, 2).leftJoin([new Order(1, 9)]) { id -> id } { o -> o.personId } { id, o ->
             o == null ? 'none' : o.amount.toString()
         }.toList()
         assert labels == ['9', 'none']

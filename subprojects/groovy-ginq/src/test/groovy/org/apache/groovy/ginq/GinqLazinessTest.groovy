@@ -118,8 +118,8 @@ final class GinqLazinessTest {
         Gate gate = new Gate([1, 2, 3, 4])
         int keys = 0
         def grouped = Ginq.from(gate)
-                .where { Integer n -> n > 0 }
-                .groupBy { Integer n ->
+                .where { n -> n > 0 }
+                .groupBy { n ->
                     keys++
                     n % 2
                 }
@@ -131,10 +131,10 @@ final class GinqLazinessTest {
 
         Gate ordered = new Gate([3, 1, 2])
         int comparisons = 0
-        def query = Ginq.from(ordered).orderBy { Integer n ->
+        def query = Ginq.from(ordered).orderBy { n ->
             comparisons++
             n
-        }.select { Integer n -> n * 10 }
+        }.select { n -> n * 10 }
         assert ordered.opened == 0
         assert comparisons == 0
         assert query.toList() == [10, 20, 30]

@@ -19,6 +19,7 @@
 package org.apache.groovy.ginq;
 
 import groovy.transform.CompileStatic;
+import groovy.transform.TypeChecked;
 import groovy.transform.TypeCheckingMode;
 import org.apache.groovy.ginq.provider.collection.runtime.LazyQueryable;
 import org.apache.groovy.ginq.provider.collection.runtime.Queryable;
@@ -102,6 +103,7 @@ final class GinqStaticBridge {
         return type;
     }
     private static final ClassNode COMPILE_STATIC_TYPE = make(CompileStatic.class);
+    private static final ClassNode TYPE_CHECKED_TYPE = make(TypeChecked.class);
     private static final ClassNode TYPE_CHECKING_MODE_TYPE = make(TypeCheckingMode.class);
     private static final String SEQ = "ginqQuerySeq";
     private static final Map<CompilationUnit, List<Pending>> PENDING =
@@ -144,7 +146,9 @@ final class GinqStaticBridge {
         int modifiers = Opcodes.ACC_PRIVATE | (host.staticContext ? Opcodes.ACC_STATIC : 0);
         MethodNode helper = new MethodNode(nextName(host.owner), modifiers, returnType, parameters, ClassNode.EMPTY_ARRAY, block(returnS(query)));
         helper.setSourcePosition(call);
-        helper.addAnnotation(skipStaticCompilation());
+        helper.addAnnotation(skipAnnotation(COMPILE_STATIC_TYPE));
+        // @TypeChecked looks at its own annotation, not @CompileStatic, when deciding to skip.
+        helper.addAnnotation(skipAnnotation(TYPE_CHECKED_TYPE));
         schedule(unit, host.owner, helper);
 
         Expression receiver = host.staticContext ? classX(host.owner) : varX("this");
@@ -214,8 +218,8 @@ final class GinqStaticBridge {
         }
     }
 
-    private static AnnotationNode skipStaticCompilation() {
-        AnnotationNode annotation = new AnnotationNode(COMPILE_STATIC_TYPE);
+    private static AnnotationNode skipAnnotation(ClassNode annotationType) {
+        AnnotationNode annotation = new AnnotationNode(annotationType);
         annotation.addMember("value", propX(classX(TYPE_CHECKING_MODE_TYPE), "SKIP"));
         return annotation;
     }
