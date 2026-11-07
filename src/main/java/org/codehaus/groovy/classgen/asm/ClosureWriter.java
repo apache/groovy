@@ -280,7 +280,17 @@ public class ClosureWriter {
         // we may need to pass in some other constructors
         //cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", prototype + ")V");
         mv.visitMethodInsn(INVOKESPECIAL, closureClassinternalName, "<init>", BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, localVariableParams), false);
-        controller.getOperandStack().replace(ClassHelper.CLOSURE_TYPE, localVariableParams.length);
+        controller.getOperandStack().replace(getClosureInstanceType(closureClass), localVariableParams.length);
+    }
+
+    /**
+     * Returns the operand stack type of a newly created instance of the given closure class.
+     *
+     * @param closureClass the generated closure class
+     * @return {@link ClassHelper#CLOSURE_TYPE} unless a subclass knows a more precise type
+     */
+    protected ClassNode getClosureInstanceType(final ClassNode closureClass) {
+        return ClassHelper.CLOSURE_TYPE;
     }
 
     /**

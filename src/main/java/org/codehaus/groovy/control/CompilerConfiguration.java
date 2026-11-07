@@ -110,6 +110,25 @@ public class CompilerConfiguration {
     @Incubating
     public static final String LAMBDA_HOISTING = "groovy.target.lambda.hoist";
 
+    /**
+     * System-property name for the incubating option that converts a {@code @CompileStatic} closure literal
+     * to the functional interface it is passed, assigned, returned or cast to with a class generated at
+     * compile time, instead of a {@code java.lang.reflect.Proxy} created at run time. The generated class
+     * behaves as the proxy does, apart from the differences the invokedynamic chapter of the Groovy
+     * documentation lists, along with the conversions that still happen at run time. Among them: where the
+     * generated class calls the {@code doCall} method of the closure directly, a metaclass that intercepts
+     * {@code doCall} is not consulted; and a converted value serializes as an instance of the generated
+     * class, so values serialized with this option may not deserialize once the generated class changes.
+     * <p>
+     * Like {@link #CLOSURE_PACKING}, the option is read from the system properties of the compiling JVM
+     * whenever a closure is compiled; there is no {@code CompilerConfiguration} setting for it.
+     * Incubating: this switch may change or be removed until the feature graduates.
+     *
+     * @since 7.0.0
+     */
+    @Incubating
+    public static final String CLOSURE_SAM_CONVERSION = "groovy.target.closure.sam";
+
     /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. */
     @Deprecated public static final String JDK4 = "1.4";
     /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5. */
