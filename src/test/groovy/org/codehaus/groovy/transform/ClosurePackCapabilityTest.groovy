@@ -340,6 +340,22 @@ final class ClosurePackCapabilityTest {
         assertEquals(42, result)
     }
 
+    // GROOVY-12661
+    @Test
+    void syntacticallyPackedClosureCanBeRehydratedElsewhere() {
+        // the rehydrate guard is the strict one only: a closure with no free name does not depend on
+        // its owner, so rehydrating it onto another delegate, owner and this object (the DSL
+        // builder idiom) keeps working
+        Object result = eval('', '''
+            Closure c = { x -> x + 1 }
+            assert c.getClass().name.startsWith('org.codehaus.groovy.runtime.PackedClosure')
+            def other = new Object()
+            Closure r = c.rehydrate(other, other, other)
+            [r.owner.is(other), r(41)]
+        ''', true)
+        assertEquals([true, 42], result)
+    }
+
     @Test
     void dynamicLambdaOfTheSubsetIsPackedToo() {
         // a dynamically compiled lambda is compiled as a closure, so the same syntactic path

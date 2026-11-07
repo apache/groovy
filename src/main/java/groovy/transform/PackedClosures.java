@@ -59,7 +59,8 @@ import java.lang.annotation.Target;
  * </ul>
  * Under dynamic compilation the annotation is a trust assertion the compiler cannot verify; the
  * {@code PackedClosure} adapter then fails fast if a delegate, or a delegate-consulting
- * {@code resolveStrategy}, is later set on a packed closure.
+ * {@code resolveStrategy}, is later set on a packed closure, or if it is rehydrated with a delegate,
+ * owner or this object other than its original owner.
  * Automatic packing of provably-safe {@code @CompileStatic} closures — without this annotation — is
  * available behind the {@code groovy.target.closure.pack} flag. Use {@link #mode()} to have declines
  * reported (or to opt a scope out); on the un-annotated flag path,
