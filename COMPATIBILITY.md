@@ -1344,6 +1344,59 @@ value is `getSource()`, the type and variable are on the `TypePattern`, and
 the negated form is a `NotExpression` around it. `e instanceof T` without a
 binding is a `BinaryExpression` as before.
 
+### Groovy 7 — a functional argument selects a functional-interface overload it can be called as (GROOVY-11010, GROOVY-10714)
+
+When overloads take functional interfaces whose abstract methods have
+different numbers of parameters, such as `Function` and `BinaryOperator`,
+`Function` and `Supplier`, or `Consumer` and `Runnable`, method selection now
+first drops the candidates whose interface method the functional argument
+cannot be called with, as Java does. This applies to method references and
+method pointers, and to closures and lambdas with declared parameters,
+counting parameters with a default value and a trailing array. It applies
+under `@TypeChecked` and `@CompileStatic`, and at run time for dynamic code
+and for `@TypeChecked` calls, which are dispatched at run time. When no
+candidate fits, all are kept and selection proceeds as before.
+
+Before, such calls failed or picked the wrong overload:
+
+- `red(numbers, Integer::sum)` with `red(Collection, BinaryOperator)` and
+  `red(Collection, Function)`, or `from(Main::m)` with `Function` and
+  `Supplier` overloads, was ambiguous: `Reference to method is ambiguous`
+  under static type checking, `Ambiguous method overloading` at run time.
+- A method reference, or a closure or lambda with declared parameters,
+  passed where `Runnable` or `Callable` competed with an interface that takes
+  arguments, such as `Consumer` or `Function`, matched `Runnable` or
+  `Callable`, because `Closure` implements them. Static type checking then
+  rejected the call (for a closure, `Wrong number of parameters`); at run
+  time the closure was called with `null` arguments, and the method
+  reference failed when run, as no method of its name takes no arguments.
+
+**Who is affected (runtime behaviour).** Dynamic code that passes a closure
+with declared parameters, such as `{ String s -> ... }`, or a method
+reference, to overloads where `Runnable` or `Callable` competes with an
+interface of matching arity. Such a call now selects that interface, so the
+closure receives the arguments it declares instead of `null`. Code that
+relied on `Runnable` or `Callable` being chosen, and on the closure being
+called without arguments, should pass a closure without parameters
+(`{ -> ... }`).
+
+**What is unchanged.** A closure with an implicit parameter (`{ ... }`,
+`{ it }`) and `{ -> ... }` still prefer `Runnable` and `Callable`, and
+interfaces of the same arity, such as `Runnable` and `Callable`, are chosen
+between as before. Parameters of type `Closure`, `Object` and interfaces
+without a single abstract method, such as `Serializable`, are not affected.
+A method reference whose methods accept both arities, such as
+`Integer::valueOf`, is still ambiguous. The wrappers `memoize()`, `curry()`
+and `trampoline()` return, and a dehydrated method closure, are selected for
+as before.
+
+**Who is not affected (binary).** There is no change to public API apart
+from two static helpers on the internal `MetaClassHelper`, and the serial
+form of `MethodClosure` is unchanged. A dynamic selection that depends on
+which method a reference names, rather than on argument classes alone, is
+not cached; this arises only for calls that were ambiguous or chose the
+wrong overload before.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)

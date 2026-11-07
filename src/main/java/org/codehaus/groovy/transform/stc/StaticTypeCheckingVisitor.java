@@ -138,6 +138,7 @@ import java.lang.reflect.Modifier;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
@@ -170,6 +171,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntPredicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -3790,8 +3792,76 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 // which would otherwise win the distance tie-break and then fail to coerce
                 type.putNodeMetaData(StaticTypesMarker.METHOD_REFERENCE_TYPE, Boolean.TRUE);
             }
+            IntPredicate arity = null;
+            if (type != null && exp instanceof MethodPointerExpression) {
+                arity = functorArity((MethodPointerExpression) exp);
+            } else if (type != null && exp instanceof ClosureExpression) {
+                arity = functorArity((ClosureExpression) exp);
+            }
+            if (arity != null) type.putNodeMetaData(StaticTypeCheckingSupport.FUNCTOR_ARITY, arity);
             return type;
         }).toArray(ClassNode[]::new);
+    }
+
+    /**
+     * Returns the numbers of arguments a closure or lambda with declared parameters can be
+     * called with, allowing for parameters with a default value and a trailing array, or
+     * {@code null} for one with an implicit parameter, which can be called with none or one.
+     */
+    private static IntPredicate functorArity(final ClosureExpression closure) {
+        Parameter[] parameters = closure.getParameters();
+        if (parameters == null) return n -> n == 0; // "{ -> }"
+        if (parameters.length == 0) return null;   // implicit "it"
+        int max = parameters.length, min = 0;
+        for (Parameter parameter : parameters) {
+            if (!parameter.hasInitialExpression()) min += 1;
+        }
+        if (parameters[max - 1].getType().isArray()) {
+            int least = Math.min(min, max - 1);
+            return n -> n >= least;
+        }
+        int least = min;
+        return n -> n >= least && n <= max;
+    }
+
+    /**
+     * Returns the numbers of arguments a method reference or pointer can be called with,
+     * as the methods of its name allow: their own parameters for a static method or a
+     * bound receiver, one more (the receiver) for {@code Type::instanceMethod}; or
+     * {@code null} if no method is known.
+     */
+    private IntPredicate functorArity(final MethodPointerExpression pointer) {
+        if (!(pointer.getMethodName() instanceof ConstantExpression)) return null;
+        String name = pointer.getMethodName().getText();
+        Expression receiver = pointer.getExpression();
+        boolean typeReceiver = receiver instanceof ClassExpression;
+        ClassNode receiverType = typeReceiver ? receiver.getType() : getType(receiver);
+        if (receiverType == null) return null;
+        receiverType = wrapTypeIfNecessary(receiverType);
+
+        List<MethodNode> methods = new ArrayList<>();
+        if ("new".equals(name)) {
+            if (receiverType.isArray()) return n -> n == 1;
+            methods.addAll(receiverType.getDeclaredConstructors());
+            typeReceiver = false;
+        } else {
+            methods.addAll(findMethodsWithGenerated(receiverType, name));
+            methods.addAll(findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), receiverType, name));
+        }
+        if (methods.isEmpty()) return null;
+
+        BitSet counts = new BitSet();
+        int varargsFrom = Integer.MAX_VALUE;
+        for (MethodNode method : methods) {
+            Parameter[] parameters = method.getParameters();
+            int count = parameters.length + (typeReceiver && !method.isStatic() ? 1 : 0);
+            counts.set(count);
+            if (parameters.length > 0 && parameters[parameters.length - 1].getType().isArray()) {
+                varargsFrom = Math.min(varargsFrom, count - 1);
+            }
+        }
+        int fromVarargs = varargsFrom;
+        return n -> n >= fromVarargs || counts.get(n);
     }
 
     private Map<VariableExpression, ClassNode> scanVars(final ClosureExpression expr) {
