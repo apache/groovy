@@ -47,6 +47,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.ATHROW;
@@ -224,6 +226,10 @@ public class ConstructorCallTransformer {
                 if (keyExpression instanceof ConstantExpression) { // a dynamic key's target is its own (GROOVY-12456)
                     varExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET,
                             keyExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
+                }
+                ClassNode functionalType = keyExpression.getNodeMetaData(PARAMETER_TYPE);
+                if (functionalType != null) { // the assignment converts a closure value to the type of the property
+                    varExpression.putNodeMetaData(INFERRED_TYPE, functionalType);
                 }
 
                 Expression setExpression = staticCompilationTransformer.transform(
