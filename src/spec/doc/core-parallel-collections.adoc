@@ -229,6 +229,8 @@ def errorCount = logs.countParallel { it.level == 'ERROR' }
 |===
 |Method |Description
 
+|`sumParallel()` |Sum of the elements, as `sum()`
+|`sumParallel { }` |Sum of the transformed elements, as `sum(Closure)`
 |`sumParallel { a, b -> }` |Reduce with binary operator
 |`injectParallel(seed) { a, b -> }` |Reduce with seed (accumulator must be associative)
 |`minParallel { a, b -> }` |Minimum by comparator
@@ -238,7 +240,9 @@ def errorCount = logs.countParallel { it.level == 'ERROR' }
 
 [source,groovy]
 ----
-def total = amounts.sumParallel { a, b -> a + b }
+def total = amounts.sumParallel()
+def totalPrice = items.sumParallel { it.price }
+def joined = words.sumParallel { a, b -> a + b }
 def product = numbers.injectParallel(1) { a, b -> a * b }
 def youngest = people.minParallel { a, b -> a.age <=> b.age }
 def byDept = employees.groupByParallel { it.department }

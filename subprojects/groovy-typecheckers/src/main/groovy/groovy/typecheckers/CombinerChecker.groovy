@@ -199,6 +199,9 @@ class CombinerChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL
                 boolean seeded = isGdk ? (name in SEEDED_REDUCTIONS) : (args.size() >= 2)
 
                 Expression combiner = args[-1]
+                // sumParallel { it.price } is a transform, as in sum(Closure), not a combiner (GROOVY-12722)
+                if (isGdk && !seeded && combiner instanceof ClosureExpression &&
+                        (((ClosureExpression) combiner).parameters ?: []).size() != 2) return
                 Expression seed = seeded ? args[0] : null
 
                 MethodNode refMethod = (combiner instanceof MethodPointerExpression) ?

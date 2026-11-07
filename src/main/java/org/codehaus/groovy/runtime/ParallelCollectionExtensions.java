@@ -20,6 +20,9 @@ package org.codehaus.groovy.runtime;
 
 import groovy.concurrent.ParallelScope;
 import groovy.concurrent.Pool;
+import groovy.lang.Closure;
+import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.FromString;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.util.ArrayList;
@@ -267,6 +270,46 @@ public class ParallelCollectionExtensions {
                 pool -> ParallelExecutorTasks.reduce(pool, self, accumulator)
         );
     }
+
+    /**
+     * Adds up the elements in parallel, as {@code sum()} does: each addition
+     * calls the left operand's {@code plus} method, so numbers promote as in
+     * the sequential {@code sum()} and strings and lists concatenate. The
+     * addition must be associative, which holds for all of these. An empty
+     * collection returns {@code null}.
+     *
+     * @since 6.0.1
+     */
+    public static Object sumParallel(Collection<?> self) {
+        Objects.requireNonNull(self, "self must not be null");
+        @SuppressWarnings("unchecked")
+        Collection<Object> elements = (Collection<Object>) self;
+        return sumParallel(elements, PLUS);
+    }
+
+    /**
+     * With a one-parameter closure, adds up the transformed elements in
+     * parallel, as {@code sum(Closure)} does: {@code items.sumParallel { it.price }}.
+     * With a two-parameter closure, the closure is the combiner of
+     * {@link #sumParallel(Collection, BinaryOperator)} and must be associative.
+     * An empty collection returns {@code null}.
+     *
+     * @since 6.0.1
+     */
+    @SuppressWarnings("unchecked")
+    public static <T, R> R sumParallel(Collection<T> self, @ClosureParams(value = FromString.class, options = {"T", "T,T"}) Closure<R> closure) {
+        require(self, closure);
+        if (closure.getMaximumNumberOfParameters() == 2) {
+            BinaryOperator<T> combiner = (left, right) -> (T) closure.call(left, right);
+            return (R) sumParallel(self, combiner);
+        }
+        Function<T, R> transform = element -> closure.call(element);
+        return (R) sumParallel(collectParallel(self, transform));
+    }
+
+    /** The addition of {@code sum()}: the left operand's {@code plus}. */
+    private static final BinaryOperator<Object> PLUS = (left, right) ->
+            InvokerHelper.getMetaClass(left).invokeMethod(left, "plus", new Object[]{right});
 
     /**
      * Groups elements by the classifier function in parallel.

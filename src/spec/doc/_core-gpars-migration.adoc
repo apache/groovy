@@ -56,7 +56,7 @@ of calling `get()` or `getVal()`. `await` also accepts any
 | Same names, on any `Collection`
 
 | `sumParallel()`
-| `sumParallel { a, b -> a + b }`. The accumulator is required
+| `sumParallel()`, and `sumParallel { it.price }` for a transform; `sumParallel { a, b -> a + b }` names the combiner
 
 | `minParallel { it.age }`, `maxParallel()`
 | `minParallel { a, b -> a.age <=> b.age }`. A two-argument comparator is required
