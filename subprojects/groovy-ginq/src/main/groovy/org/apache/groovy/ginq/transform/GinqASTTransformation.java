@@ -34,6 +34,7 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilePhase;
@@ -150,7 +151,7 @@ public class GinqASTTransformation extends AbstractASTTransformation {
                 continue;
             }
             Expression value = annotation.getMember("value");
-            if (value instanceof org.codehaus.groovy.ast.expr.PropertyExpression property && "SKIP".equals(property.getPropertyAsString())) {
+            if (value instanceof PropertyExpression property && "SKIP".equals(property.getPropertyAsString())) {
                 return Boolean.FALSE;
             }
             mode = Boolean.TRUE;

@@ -19,7 +19,6 @@
 package org.apache.groovy.ginq
 
 import groovy.ginq.Ginq
-import groovy.ginq.Grouping
 import groovy.ginq.Query
 import groovy.transform.CompileStatic
 import org.junit.jupiter.api.Test

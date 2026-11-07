@@ -18,6 +18,7 @@
  */
 package groovy.ginq.transform;
 
+import groovy.ginq.Ginq;
 import org.apache.groovy.ginq.dsl.GinqAstVisitor;
 import org.apache.groovy.ginq.provider.GinqProvider;
 import org.apache.groovy.ginq.provider.collection.runtime.Queryable;
@@ -37,7 +38,7 @@ import java.lang.annotation.Target;
  * {@code @CompileStatic} class: the generated query stays dynamically dispatched,
  * and a {@code def} method is given the result type of {@link #value()} when that
  * does not conflict with a superclass method. For a statically typed chain of
- * operators, use {@link groovy.ginq.Ginq} instead of this annotation.
+ * operators, use {@link Ginq} instead of this annotation.
  *
  * @since 4.0.0
  */

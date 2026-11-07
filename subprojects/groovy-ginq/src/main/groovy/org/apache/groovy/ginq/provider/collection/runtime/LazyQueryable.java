@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -158,7 +159,7 @@ public final class LazyQueryable<T> implements Queryable<T> {
     }
 
     @Override
-    public <U> Queryable<U> select(java.util.function.BiFunction<? super T, ? super Queryable<? extends T>, ? extends U> mapper) {
+    public <U> Queryable<U> select(BiFunction<? super T, ? super Queryable<? extends T>, ? extends U> mapper) {
         return unwrap().select(mapper);
     }
 
