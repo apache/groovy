@@ -28,6 +28,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
 import java.io.Serial;
 import java.util.Arrays;
+import java.util.BitSet;
 
 /**
  * Represents a method on an object using a closure, which can be invoked at any
@@ -163,6 +164,60 @@ public class MethodClosure extends Closure {
             case ANY_INSTANCE_METHOD_EXISTS -> anyInstanceMethodExists;
             default -> super.getProperty(property);
         };
+    }
+
+    /**
+     * The numbers of arguments the methods of this closure's name accept, for the owner
+     * class they were found on. Worked out when first needed and again when the owner
+     * changes class (as {@link #rehydrate} may do), and not serialized, so the serial form
+     * is unchanged and a deserialized method closure works them out afresh.
+     */
+    private transient volatile ArgumentCounts argumentCounts;
+
+    private record ArgumentCounts(Class<?> ownerClass, BitSet counts, int varargsFrom) {
+        boolean accepts(final int n) {
+            return n >= varargsFrom || counts.get(n);
+        }
+    }
+
+    /**
+     * Tells whether a method of this closure's name can be called with {@code n} arguments,
+     * counting the receiver of a {@code Type::instanceMethod} reference. Answers
+     * {@code true} when that is not known, for instance once the closure is dehydrated.
+     */
+    boolean acceptsArgumentCount(final int n) {
+        Object owner = getOwner();
+        if (owner == null) return true;
+        Class<?> ownerClass = getOwnerClass();
+        ArgumentCounts known = argumentCounts;
+        if (known == null || known.ownerClass() != ownerClass) {
+            argumentCounts = known = findArgumentCounts(owner, ownerClass);
+        }
+        return known.accepts(n);
+    }
+
+    private ArgumentCounts findArgumentCounts(final Object owner, final Class<?> ownerClass) {
+        BitSet counts = new BitSet();
+        int varargsFrom = Integer.MAX_VALUE;
+        if (method.equals(NEW)) {
+            if (ownerClass.isArray()) {
+                counts.set(ArrayTypeUtils.dimension(ownerClass));
+            } else {
+                for (var c : ReflectionCache.getCachedClass(ownerClass).getConstructors()) {
+                    int count = c.getNativeParameterTypes().length;
+                    counts.set(count);
+                    if (c.isVargsMethod()) varargsFrom = Math.min(varargsFrom, count - 1);
+                }
+            }
+        } else {
+            for (var m : InvokerHelper.getMetaClass(ownerClass).respondsTo(owner, method)) {
+                int count = makeParameterTypes(owner, m).length;
+                counts.set(count);
+                if (m.isVargsMethod()) varargsFrom = Math.min(varargsFrom, count - 1);
+            }
+        }
+        if (counts.isEmpty()) varargsFrom = 0; // no method known: accept any count
+        return new ArgumentCounts(ownerClass, counts, varargsFrom);
     }
 
     // TODO: This method seems to be never called..., because MetaClassImpl.invokeMethod will intercept calls and return the result.
