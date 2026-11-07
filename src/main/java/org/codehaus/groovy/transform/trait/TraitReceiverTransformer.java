@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
@@ -37,6 +38,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
@@ -51,6 +53,7 @@ import java.util.Collection;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
+import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -81,6 +84,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
     private final Collection<String> knownFields;
 
     private boolean inClosure;
+    private boolean inLambdaOnly; // in a lambda that is not in a closure
 
     /**
      * Creates a transformer that rewrites trait receiver access against the woven receiver.
@@ -179,7 +183,10 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     propertyExpression.getProperty().setSourcePosition(exp);
                     return propertyExpression;
                 }
-            } else if (accessedVariable instanceof DynamicVariable && !inClosure) { // GROOVY-8049, GROOVY-9386
+            } else if (accessedVariable instanceof DynamicVariable && (!inClosure // GROOVY-8049, GROOVY-9386
+                    // GROOVY-12608: a lambda has no delegate or thisObject to resolve a static
+                    // accessor of a super trait through, so it captures $self or $static$self
+                    || (inLambdaOnly && isSuperTraitStaticProperty(vexp.getName())))) {
                 PropertyExpression propertyExpression = propX(varX(weaved), vexp.getName());
                 propertyExpression.getProperty().setSourcePosition(exp);
                 return propertyExpression;
@@ -218,10 +225,12 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             mce.setImplicitThis(false);
             mce.setMethodTarget(ClassHelper.CLOSURE_TYPE.getMethods("rehydrate").get(0));
             mce.setSourcePosition(exp);
-            boolean oldInClosure = inClosure;
+            boolean oldInClosure = inClosure, oldInLambdaOnly = inLambdaOnly;
+            inLambdaOnly = exp instanceof LambdaExpression && (!inClosure || inLambdaOnly);
             inClosure = true;
             ((ClosureExpression) exp).getCode().visit(this);
             inClosure = oldInClosure;
+            inLambdaOnly = oldInLambdaOnly;
             // The rewrite we do is causing some troubles with type checking, which will
             // not be able to perform closure parameter type inference
             // so we store the replacement, which will be done *after* type checking.
@@ -423,6 +432,32 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         }
 
         return null;
+    }
+
+    /**
+     * Indicates whether a super trait has a public static getter or setter for the
+     * named property.
+     */
+    private boolean isSuperTraitStaticProperty(final String name) {
+        String suffix = capitalize(name);
+        var traits = Traits.findTraits(traitClass); traits.remove(traitClass);
+
+        for (ClassNode superTrait : traits) {
+            for (MethodNode methodNode : Traits.findHelper(superTrait).getMethods()) {
+                Parameter[] parameters = methodNode.getParameters();
+                if (methodNode.isPublic() && methodNode.isStatic() && parameters.length > 0
+                        && ClassHelper.isClassType(parameters[0].getType())) {
+                    String methodName = methodNode.getName();
+                    if (parameters.length == 1 ? methodName.equals("get" + suffix)
+                            || (methodName.equals("is" + suffix) && ClassHelper.isPrimitiveBoolean(methodNode.getReturnType()))
+                            : parameters.length == 2 && methodName.equals("set" + suffix)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     private ArgumentListExpression createArgumentList(final Expression self, final Expression arguments) {
