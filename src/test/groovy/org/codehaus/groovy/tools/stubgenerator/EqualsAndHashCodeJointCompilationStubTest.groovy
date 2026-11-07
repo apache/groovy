@@ -42,6 +42,13 @@ final class EqualsAndHashCodeJointCompilationStubTest extends StringSourcesStubT
                     int x
                     int y
                 }
+
+                @groovy.transform.EqualsAndHashCode
+                class PointWithUnderMethods {
+                    int x
+                    private int _hashCode() { 0 }
+                    private boolean _equals(Object o) { false }
+                }
             ''',
             'foo/JavaUser.java': '''
                 package foo;
@@ -97,5 +104,11 @@ final class EqualsAndHashCodeJointCompilationStubTest extends StringSourcesStubT
         assert u1.equals(u2)
         assert !u1.equals(u3)
         assert u1.hashCode() == u2.hashCode()
+
+        Class underPointClass = loader.loadClass('foo.PointWithUnderMethods')
+        def up1 = underPointClass.newInstance(x: 7)
+        def up2 = underPointClass.newInstance(x: 7)
+        assert up1.equals(up2)
+        assert up1.hashCode() != 0
     }
 }

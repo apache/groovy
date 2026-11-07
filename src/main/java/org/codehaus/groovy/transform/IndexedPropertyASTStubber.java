@@ -127,7 +127,9 @@ public class IndexedPropertyASTStubber extends AbstractASTTransformation {
             String name = a.getClassNode().getName();
             if ("groovy.transform.Immutable".equals(name)
                     || "groovy.transform.ImmutableBase".equals(name)
-                    || "groovy.transform.KnownImmutable".equals(name)) {
+                    || "groovy.transform.KnownImmutable".equals(name)
+                    || "groovy.transform.RecordType".equals(name)
+                    || "groovy.transform.RecordBase".equals(name)) {
                 return true;
             }
         }

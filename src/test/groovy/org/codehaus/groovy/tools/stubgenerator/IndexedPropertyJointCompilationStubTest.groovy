@@ -48,6 +48,19 @@ final class IndexedPropertyJointCompilationStubTest extends StringSourcesStubTes
                     @groovy.transform.IndexedProperty
                     List<Integer> scores = [0, 0, 0]
                 }
+
+                @groovy.transform.AnnotationCollector([
+                    groovy.transform.ImmutableBase,
+                    groovy.transform.TupleConstructor,
+                    groovy.transform.PropertyOptions
+                ])
+                @interface MyImmutable {}
+
+                @MyImmutable(defaults = false, propertyHandler = groovy.transform.options.ImmutablePropertyHandler)
+                class ImmutableBox {
+                    @groovy.transform.IndexedProperty
+                    List<String> items
+                }
             ''',
             'foo/JavaUser.java': '''
                 package foo;
@@ -83,5 +96,10 @@ final class IndexedPropertyJointCompilationStubTest extends StringSourcesStubTes
 
         boxClass.getMethod('setScores', int.class, Integer).invoke(box, 0, 42)
         assert boxClass.getMethod('getScores', int.class).invoke(box, 0) == 42
+
+        Class immutableBoxClass = loader.loadClass('foo.ImmutableBox')
+        assert immutableBoxClass.declaredMethods.every { it.name != 'setItems' }
+        def ibox = immutableBoxClass.getConstructor(List).newInstance(['x', 'y'])
+        assert immutableBoxClass.getMethod('getItems', int.class).invoke(ibox, 1) == 'y'
     }
 }
