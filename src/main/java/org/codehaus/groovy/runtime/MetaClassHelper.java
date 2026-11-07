@@ -38,6 +38,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -314,6 +315,56 @@ public class MetaClassHelper {
             }
         }
         return parameterCount;
+    }
+
+    /**
+     * Tells whether choosing among {@code methodOrList} for these arguments depends on the
+     * method closures among them, beyond their class: whether a method closure is passed
+     * where the valid candidates take functional interfaces of different arity, as a method
+     * reference can implement only an interface whose abstract method it can be called with.
+     * Such a choice must not be cached by argument classes.
+     *
+     * @since 6.0.1
+     */
+    public static boolean dependsOnMethodClosureArity(final Object methodOrList, final Class[] types, final Object[] arguments) {
+        if (!(methodOrList instanceof FastArray methods) || arguments == null || types == null) return false;
+        for (int i = 0; i < arguments.length; i += 1) {
+            if (!(arguments[i] instanceof MethodClosure)) continue;
+            int arity = -1;
+            for (int j = 0, n = methods.size(); j < n; j += 1) {
+                var candidate = (ParameterTypes) methods.get(j);
+                if (!candidate.isValidMethod(types)) continue;
+                Class<?>[] parameters = candidate.getNativeParameterTypes();
+                Method sam = i < parameters.length && parameters[i].isInterface() ? getSAMMethod(parameters[i]) : null;
+                if (sam == null) continue;
+                if (arity == -1) arity = sam.getParameterCount();
+                else if (arity != sam.getParameterCount()) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Drops the candidates with a functional-interface parameter whose abstract method takes
+     * a number of arguments the method closure passed there cannot be called with; keeps
+     * every candidate if none fits.
+     *
+     * @since 6.0.1
+     */
+    public static <M> List<M> filterByMethodClosureArity(final List<M> candidates, final Object[] arguments) {
+        List<M> fitting = new ArrayList<>(candidates.size());
+        for (M candidate : candidates) {
+            Class<?>[] parameters = ((ParameterTypes) candidate).getNativeParameterTypes();
+            boolean fits = true;
+            for (int i = 0, n = Math.min(arguments.length, parameters.length); i < n && fits; i += 1) {
+                if (arguments[i] instanceof MethodClosure mc && parameters[i].isInterface()) {
+                    Method sam = getSAMMethod(parameters[i]);
+                    fits = (sam == null || mc.acceptsArgumentCount(sam.getParameterCount()));
+                }
+            }
+            if (fits) fitting.add(candidate);
+        }
+        return fitting.isEmpty() ? candidates : fitting;
     }
 
     private static boolean isClosureLiteral(final Class<?> candidate) {
