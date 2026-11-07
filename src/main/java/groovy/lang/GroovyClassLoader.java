@@ -104,6 +104,7 @@ public class GroovyClassLoader extends URLClassLoader {
     protected final FlexibleCache<String, Class> sourceCache;
 
     private final CompilerConfiguration config;
+    private boolean runtimePackageCheck;
     private final String sourceEncoding;
     private Boolean recompile;
 
@@ -289,6 +290,14 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     /**
+     * Applies {@link CompilerConfiguration#RUNTIME_PACKAGE_CHECK} to the classes
+     * this class loader compiles, unless the configuration sets the option.
+     */
+    void enableRuntimePackageCheck() {
+        runtimePackageCheck = true;
+    }
+
+    /**
      * Checks if this class loader has compatible {@link CompilerConfiguration}
      * with the provided one.
      * @param config the compiler configuration to test for compatibility
@@ -462,8 +471,9 @@ public class GroovyClassLoader extends URLClassLoader {
      * of its other compilations through the meta-class where a direct access
      * would also work; that is slower, but not wrong.
      */
-    private static void markDefinedInMemory(final CompilationUnit unit) {
+    private void markDefinedInMemory(final CompilationUnit unit) {
         unit.getAST().putNodeMetaData(InnerLoader.class, Boolean.TRUE);
+        if (runtimePackageCheck) unit.getAST().putNodeMetaData(CompilerConfiguration.RUNTIME_PACKAGE_CHECK, Boolean.TRUE);
     }
 
     private static void validate(final GroovyCodeSource codeSource) {

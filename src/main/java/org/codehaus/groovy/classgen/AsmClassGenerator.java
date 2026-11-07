@@ -114,6 +114,7 @@ import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter;
 import org.codehaus.groovy.classgen.asm.PeepholeOptimizingMethodVisitor;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
+import org.codehaus.groovy.classgen.asm.sc.RuntimePackageCheck;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.IntersectionCastSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -370,6 +371,7 @@ public class AsmClassGenerator extends ClassGenerator {
             controller = factory.makeController(controller);
         }
         controller.init(this, context, classVisitor, classNode);
+        RuntimePackageCheck.checkSuperTypes(controller);
         if (controller.shouldOptimizeForInt() || factory != null) {
             OptimizingStatementWriter.setNodeMeta(controller.getTypeChooser(), classNode);
         }
@@ -599,7 +601,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 BytecodeHelper.getGenericsMethodSignature(node),
                 buildExceptions(node.getExceptions()));
 
-        controller.setMethodVisitor(mv);
+        controller.setMethodVisitor(RuntimePackageCheck.checkNamedClasses(controller, mv));
         controller.resetLineNumber();
 
         visitAnnotations(node, mv);
@@ -710,6 +712,8 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
                 // add call to "super()"
                 mv.visitVarInsn(ALOAD, 0);
+                ConstructorNode superCtor = controller.getClassNode().getSuperClass().getDeclaredConstructor(Parameter.EMPTY_ARRAY);
+                if (superCtor != null) RuntimePackageCheck.checkConstructor(controller, superCtor, true, node.getLineNumber() > 0 ? node : cn);
                 mv.visitMethodInsn(INVOKESPECIAL, controller.getInternalBaseClassName(), "<init>", "()V", false);
             }
         }
@@ -1672,6 +1676,7 @@ public class AsmClassGenerator extends ClassGenerator {
      */
     @Override
     public void visitFieldExpression(final FieldExpression expression) {
+        RuntimePackageCheck.checkField(controller, expression.getField(), null, expression);
         if (expression.getField().isStatic()) {
             if (controller.getCompileStack().isLHS()) {
                 storeStaticField(expression);
