@@ -83,7 +83,8 @@ class GinqGroovyMethods {
      */
     @Macro
     static Expression GQ(final MacroContext ctx, final MapExpression ginqConfigurationMapExpression, final ClosureExpression ginqClosureExpression) {
-        transformGinqCode(ctx.sourceUnit, ginqConfigurationMapExpression, ginqClosureExpression.code)
+        Expression query = transformGinqCode(ctx.sourceUnit, ginqConfigurationMapExpression, ginqClosureExpression.code)
+        GinqStaticBridge.embed(ctx.compilationUnit, ctx.sourceUnit, ctx.call, query)
     }
 
     /**

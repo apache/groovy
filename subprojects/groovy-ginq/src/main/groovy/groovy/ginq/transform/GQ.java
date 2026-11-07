@@ -31,7 +31,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Method annotation to make a method call returning GINQ result
+ * Method annotation to make a method call returning GINQ result.
+ * <p>
+ * The method body is GINQ syntax, not a Groovy block. It can be used from a
+ * {@code @CompileStatic} class: the generated query stays dynamically dispatched,
+ * and a {@code def} method is given the result type of {@link #value()} when that
+ * does not conflict with a superclass method. For a statically typed chain of
+ * operators, use {@link groovy.ginq.Ginq} instead of this annotation.
  *
  * @since 4.0.0
  */
