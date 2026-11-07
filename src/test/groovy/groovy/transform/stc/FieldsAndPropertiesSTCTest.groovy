@@ -2044,6 +2044,191 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12610: dynamic dispatch does not find a private field of a superclass on the subclass
+    @Test
+    void testPrivateFieldOfSuperclassViaStaticNestedSubclass() {
+        shouldFailWithMessages '''
+            class Base {
+                private String z = 'x'
+                static class Sub extends Base {
+                    def m1() { this.z }
+                    def m2() { z }
+                    def m3() { def c = { -> this.z }; c() }
+                    def m4() { java.util.function.Supplier<String> s = () -> z; s.get() }
+                    void m5() { this.z = 'y' }
+                    void m6() { z += 'y' }
+                    def m7(Sub that) { that.z }
+                }
+                static class Other {
+                    def m(Sub sub) { sub.z }
+                }
+            }
+        ''',
+        'No such property: z for class: Base$Sub', 'No such property: z for class: Base$Sub',
+        'No such property: z for class: Base$Sub', 'No such property: z for class: Base$Sub',
+        'No such property: z for class: Base$Sub', 'No such property: z for class: Base$Sub',
+        'No such property: z for class: Base$Sub', 'No such property: z for class: Base$Sub'
+
+        shouldFailWithMessages '''
+            class Base {
+                private String z = 'x'
+                static class Sub extends Base {
+                    def m1() { super.z }
+                    void m2() { super.z = 'y' }
+                }
+            }
+        ''',
+        'No such property: z for class: Base', 'No such property: z for class: Base'
+    }
+
+    // GROOVY-12610: an inner class reaches the field through its enclosing instance,
+    // and the declaring class reaches it on any subclass instance
+    @Test
+    void testPrivateFieldOfSuperclassViaInnerSubclassOrDeclaringClass() {
+        assertScript '''
+            class Base {
+                private String z = 'x'
+                class Sub extends Base {
+                    def m1() { this.z }
+                    def m2() { z }
+                    def m3() { super.z }
+                    def m4() { def c = { -> z }; c() }
+                    def m5() { java.util.function.Supplier<String> s = () -> this.z; s.get() }
+                    def m6() { z = 'y'; z }
+                }
+                static class Nested extends Base {
+                }
+                static List test(Nested nested) {
+                    def c = { -> nested.z }
+                    [nested.z, c()]
+                }
+                List test() {
+                    def sub = new Sub()
+                    [sub.m1(), sub.m2(), sub.m3(), sub.m4(), sub.m5(), sub.m6()]
+                }
+            }
+            assert new Base().test() == ['x', 'x', 'x', 'x', 'x', 'y']
+            assert Base.test(new Base.Nested()) == ['x', 'x']
+        '''
+    }
+
+    // GROOVY-12621: an enum constant body has no enclosing instance to fall back to
+    @Test
+    void testPrivateFieldOfEnumViaConstantBody() {
+        shouldFailWithMessages '''
+            enum E {
+                A {
+                    def m1() { z }
+                    def m2() { this.z }
+                    def m3() { super.z }
+                    void m4() { z = 'y' }
+                    def m5() { def c = { -> z }; c() }
+                    def m6() { java.util.function.Supplier<String> s = () -> this.z; s.get() }
+                }
+                private String z = 'x'
+            }
+        ''',
+        'No such property: z for class: E$1', 'No such property: z for class: E$1',
+        'No such property: z for class: E', 'No such property: z for class: E$1',
+        'No such property: z for class: E$1', 'No such property: z for class: E$1'
+
+        assertScript '''
+            enum E {
+                A {
+                    List m() { [s, p(), z] }
+                }
+                abstract List m()
+                private static String s = 's'
+                private String p() { 'p' }
+                String getZ() { 'z' }
+            }
+            assert E.A.m() == ['s', 'p', 'z']
+        '''
+    }
+
+    // GROOVY-12621: the runtime does not fall back to the enclosing instance for a write through super
+    @Test
+    void testPrivateFieldOfSuperclassWrittenThroughSuperInInnerSubclass() {
+        shouldFailWithMessages '''
+            class Base {
+                private String z = 'x'
+                class Sub extends Base {
+                    void m1() { super.z = 'y' }
+                    void m2() { super.z += 'y' }
+                    void m3() { super.z++ }
+                    void m4() { def c = { -> super.z = 'y' }; c() }
+                }
+            }
+        ''',
+        'No such property: z for class: Base', 'No such property: z for class: Base',
+        'No such property: z for class: Base', 'No such property: z for class: Base'
+    }
+
+    // GROOVY-12621: the runtime falls back to the enclosing instance only for a receiver of the calling class
+    @Test
+    void testPrivateFieldOfSuperclassViaReceiverOfOtherClass() {
+        shouldFailWithMessages '''
+            class Base {
+                private String z = 'x'
+                static class Nested extends Base {
+                }
+                class Sub extends Base {
+                    def m1(Nested that) { that.z }
+                    def m2(Sub2 that) { that.z }
+                    def m3() { new Object() { def get() { Sub.this.z } }.get() }
+                    def m4(Sub that) { new Object() { def get() { that.z } }.get() }
+                }
+                class Sub2 extends Base {
+                }
+                class Inner {
+                    def m1(Nested that) { that.z }
+                    def m2(Sub that) { that.z }
+                    def m3(Nested that) { def c = { -> that.z }; c() }
+                    void m4(Sub that) { that.z = 'y' }
+                }
+            }
+        ''',
+        'No such property: z for class: Base$Nested', 'No such property: z for class: Base$Sub2',
+        'No such property: z for class: Base$Sub', 'No such property: z for class: Base$Sub',
+        'No such property: z for class: Base$Nested', 'No such property: z for class: Base$Sub',
+        'No such property: z for class: Base$Nested', 'No such property: z for class: Base$Sub'
+    }
+
+    // GROOVY-12621: a receiver of the calling class, or of an enclosing class through
+    // implicit "this", reaches the field through the enclosing instance
+    @Test
+    void testPrivateFieldOfSuperclassViaReceiverOfCallingClass() {
+        assertScript '''
+            class Base {
+                private String z = 'x'
+                static class Nested extends Base {
+                }
+                class Sub extends Base {
+                    def m1(Sub that) { that.z }
+                    def m2(SubSub that) { def c = { -> that.z }; c() }
+                    def m3() { def c = { -> super.z }; c() }
+                    def m4(Nested that) { that.with { z } }
+                    def m5() { new Object() { def get() { z } }.get() }
+                    def m6() { new Inner().get() }
+                    class Inner {
+                        def get() { z }
+                    }
+                }
+                class SubSub extends Sub {
+                }
+                class Other {
+                    def m1(Sub that) { that.with { z } }
+                    def m2() { new Object() { def get() { z } }.get() }
+                }
+                List test() {
+                    def sub = new Sub(), other = new Other()
+                    [sub.m1(sub), sub.m2(new SubSub()), sub.m3(), sub.m4(new Nested()), sub.m5(), sub.m6(), other.m1(sub), other.m2()]
+                }
+            }
+            assert new Base().test() == ['x'] * 8
+        '''
+    }
+
     // GROOVY-12509: a regression in 6.0.0, from GROOVY-12310
     @Test
     void testFieldOfPrivateNestedTypeOfNestMate() {
