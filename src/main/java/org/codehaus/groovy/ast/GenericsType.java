@@ -468,6 +468,18 @@ public class GenericsType extends ASTNode {
     }
 
     /**
+     * Subtype test that includes type arguments when both types are parameterized
+     * and falls back to a raw subtype test otherwise.
+     */
+    private static boolean genericSubtype(final ClassNode specific, final ClassNode general) {
+        if (specific != null && general != null
+                && specific.getGenericsTypes() != null && general.getGenericsTypes() != null) {
+            return containedByBound(specific, general);
+        }
+        return implementsInterfaceOrIsSubclassOf(specific, general);
+    }
+
+    /**
      * Given a parameterized type (List&lt;String&gt; for example), checks that its
      * generic types are compatible with those from a bound.
      * @param classNode the classnode from which we will compare generics types
@@ -608,7 +620,9 @@ public class GenericsType extends ASTNode {
                                             match = false;
                                         }
                                     } else {
-                                        match = implementsInterfaceOrIsSubclassOf(gt.getType(), classNodeType.getType());
+                                        // "T <= ? super S" iff S <: T. Raw types stay on the
+                                        // historical subtype test so diamond inference is unchanged.
+                                        match = genericSubtype(gt.getType(), classNodeType.getType());
                                     }
                                 } else if (redirectBoundType.getUpperBounds() != null) {
                                     // ex: class Comparable<Integer> <=> bound Comparable<? extends T & I>
@@ -639,8 +653,11 @@ public class GenericsType extends ASTNode {
                                                 match = false;
                                             } else if (classNodeType.getUpperBounds() != null
                                                     && !classNodeType.getUpperBounds()[0].isGenericsPlaceHolder()) {
+                                                // "? extends A <= ? extends B" iff A <: B.
                                                 match = containedByBound(classNodeType.getUpperBounds()[0], gt.getType());
                                             } else if (classNodeType.getUpperBounds() != null) {
+                                                // A type variable is witnessed through its own bounds.
+                                                // Substituting it here would reject a diamond that is still "? extends T".
                                                 match = gt.checkGenerics(classNodeType.getUpperBounds()[0]);
                                             } else {
                                                 // GROOVY-9338: unbounded "?" is "? extends Object".
@@ -649,7 +666,9 @@ public class GenericsType extends ASTNode {
                                                 match = false;
                                             }
                                         } else {
-                                            match = implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType());
+                                            // "T <= ? extends B" iff T <: B. Raw types stay on the
+                                            // historical subtype test so diamond inference is unchanged.
+                                            match = genericSubtype(classNodeType.getType(), gt.getType());
                                         }
                                         if (!match) break;
                                     }

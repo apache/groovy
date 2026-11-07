@@ -1975,6 +1975,288 @@ final class GenericsJavaCompatibilityTest {
         assertNegativeCompile(className, javaSrc, "cannot be applied", "Cannot call")
     }
 
+    /**
+     * JLS 4.5.1: unbounded {@code ?} is {@code ? extends Object}. It is not
+     * contained in {@code ? extends CharSequence}, so {@code Class<?>} is not
+     * a {@code Class<? extends CharSequence>}. The opposite direction is
+     * {@link #testPecsAssignClassExtendsToUnbounded()}.
+     */
+    @Test
+    void testPecsNegativeAssignClassUnboundedToExtends() {
+        final String className = 'gls.generics.test.ClassUnboundedToExtends'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class ClassUnboundedToExtends {
+                public static void test(Class<?> src) {
+                    Class<? extends CharSequence> dst = src;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+    }
+
+    /**
+     * JLS 4.5.1: {@code ? extends CharSequence <= ?}, so
+     * {@code Class<? extends CharSequence>} is a {@code Class<?>}.
+     */
+    @Test
+    void testPecsAssignClassExtendsToUnbounded() {
+        final String className = 'gls.generics.test.ClassExtendsToUnbounded'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class ClassExtendsToUnbounded {
+                public static String test() {
+                    Class<? extends CharSequence> src = String.class;
+                    Class<?> dst = src;
+                    return dst.getSimpleName();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'String')
+    }
+
+    /**
+     * JLS 4.5.1: {@code ?} is not contained in {@code ? super CharSequence}.
+     */
+    @Test
+    void testPecsNegativeAssignClassUnboundedToSuper() {
+        final String className = 'gls.generics.test.ClassUnboundedToSuper'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class ClassUnboundedToSuper {
+                public static void test(Class<?> src) {
+                    Class<? super CharSequence> dst = src;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+    }
+
+    /**
+     * JLS 4.5.1: non-wildcard type arguments are invariant.
+     * {@code List<String>} is not the same type argument as {@code List<?>},
+     * so {@code List<List<String>>} is not a {@code List<List<?>>}.
+     * {@code List<String> <: List<?>} does not lift into containment.
+     */
+    @Test
+    void testPecsNegativeAssignNestedListToListOfWildcard() {
+        final String className = 'gls.generics.test.NestedListToListOfWildcard'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class NestedListToListOfWildcard {
+                public static void test(List<List<String>> src) {
+                    List<List<?>> dst = src;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+    }
+
+    /**
+     * JLS 4.5.1: {@code T <= ? extends S} only when {@code T <: S}.
+     * {@code List<? extends Number>} is not a subtype of {@code List<Number>},
+     * so it is not contained in {@code ? extends List<Number>}.
+     */
+    @Test
+    void testPecsNegativeAssignListOfExtendsToExtendsList() {
+        final String className = 'gls.generics.test.ListOfExtendsToExtendsList'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class ListOfExtendsToExtendsList {
+                public static void test(List<List<? extends Number>> src) {
+                    List<? extends List<Number>> dst = src;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+    }
+
+    /**
+     * JLS 4.5.1: {@code ArrayList<Integer> <: List<String>} is false, so
+     * {@code List<ArrayList<Integer>>} is not a {@code List<? extends List<String>>}.
+     */
+    @Test
+    void testPecsNegativeAssignWrongListToExtendsList() {
+        final String className = 'gls.generics.test.WrongListToExtendsList'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.ArrayList;
+            import java.util.List;
+            public class WrongListToExtendsList {
+                public static void test(List<ArrayList<Integer>> src) {
+                    List<? extends List<String>> dst = src;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+    }
+
+    /**
+     * JLS 4.5.1: {@code T <= ? super S} only when {@code S <: T}.
+     * {@code Collection<String>} is not a subtype of {@code Collection<Object>}.
+     */
+    @Test
+    void testPecsNegativeAssignCollectionToSuperCollection() {
+        final String className = 'gls.generics.test.CollectionToSuperCollection'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.Collection;
+            import java.util.List;
+            public class CollectionToSuperCollection {
+                public static void test(List<Collection<Object>> src) {
+                    List<? super Collection<String>> dst = src;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+    }
+
+    /**
+     * JLS 5.1.10: capture of {@code ? super List<String>} has lower bound
+     * {@code List<String>}. {@code ArrayList<Integer>} is not a subtype of that bound.
+     */
+    @Test
+    void testPecsNegativeAddWrongListToSuperList() {
+        final String className = 'gls.generics.test.AddWrongListToSuperList'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.ArrayList;
+            import java.util.List;
+            public class AddWrongListToSuperList {
+                public static void test(List<? super List<String>> dst) {
+                    dst.add(new ArrayList<Integer>());
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call")
+    }
+
+    /**
+     * JLS 4.5.1 applied independently to each type argument:
+     * {@code Object <= ? super String} and {@code Integer <= ? extends Number}.
+     */
+    @Test
+    void testPecsMapDualWildcards() {
+        final String className = 'gls.generics.test.MapDualWildcards'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.HashMap;
+            import java.util.Map;
+            public class MapDualWildcards {
+                public static int test() {
+                    Map<Object, Integer> src = new HashMap<Object, Integer>();
+                    src.put("k", Integer.valueOf(4));
+                    Map<? super String, ? extends Number> dst = src;
+                    return dst.get("k").intValue();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 4)
+    }
+
+    /**
+     * JLS 4.5.1: unbounded {@code ?} is not contained in {@code ? extends Number}.
+     */
+    @Test
+    void testPecsNegativeUnboundedToExtendsNumber() {
+        final String className = 'gls.generics.test.UnboundedToExtendsNumber'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class UnboundedToExtendsNumber {
+                public static void test(List<?> src) {
+                    List<? extends Number> dst = src;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+    }
+
+    /**
+     * JLS 4.5.1: unbounded {@code ?} is not contained in {@code ? super Integer}.
+     */
+    @Test
+    void testPecsNegativeUnboundedToSuper() {
+        final String className = 'gls.generics.test.UnboundedToSuper'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class UnboundedToSuper {
+                public static void test(List<?> src) {
+                    List<? super Integer> dst = src;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+    }
+
+    /**
+     * JLS 4.5.1: {@code String <= ? super CharSequence} is false because
+     * {@code CharSequence} is not a subtype of {@code String}. The positive
+     * direction is {@link #testPecsContravariantPredicateAndConsumer()}.
+     */
+    @Test
+    void testPecsNegativePredicateWrongWay() {
+        final String className = 'gls.generics.test.PredicateWrongWay'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.function.Predicate;
+            public class PredicateWrongWay {
+                public static void test(Predicate<String> src) {
+                    Predicate<? super CharSequence> dst = src;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+    }
+
+    /**
+     * JLS 4.4, 4.5.1: {@code T extends Comparable<? super T>} is the F-bounded
+     * consumer bound used by {@code Collections.max}. {@code Integer} implements
+     * {@code Comparable<Integer>}, and {@code Integer <= ? super Integer}.
+     */
+    @Test
+    void testPecsFBoundComparableSuper() {
+        final String className = 'gls.generics.test.FBoundComparableSuper'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class FBoundComparableSuper {
+                public static <T extends Comparable<? super T>> T max(T a, T b) {
+                    return a.compareTo(b) >= 0 ? a : b;
+                }
+                public static int test() {
+                    return max(Integer.valueOf(1), Integer.valueOf(2)).intValue();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 2)
+    }
+
+    /**
+     * JLS 4.5.1: {@code ?} and {@code ? extends Object} are the same wildcard,
+     * so nesting them under an invariant type argument still matches.
+     * A different upper bound does not ({@link #testPecsNegativeAssignNestedListToListOfWildcard()}).
+     */
+    @Test
+    void testPecsNestedUnboundedEquivalentToExtendsObject() {
+        final String className = 'gls.generics.test.NestedUnboundedEquiv'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class NestedUnboundedEquiv {
+                public static int test() {
+                    List<List<?>> src = null;
+                    List<List<? extends Object>> dst = src;
+                    List<List<?>> back = dst;
+                    return back == null ? 0 : back.size();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 0)
+    }
+
     // =========================================================================
     // Category 12: Invocation-context diamond, unchecked casts, nested members (JLS 15.9.3, 5.1.9, 4.5)
     // =========================================================================

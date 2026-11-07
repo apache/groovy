@@ -1523,6 +1523,110 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
+     * JLS 4.5.1: a concrete type argument does not contain a wildcard or a
+     * different parameterization. {@code List<Number> = List<? extends Number>}
+     * and {@code List<List<?>> = List<List<String>>} are both rejected.
+     * A type variable may still capture a wildcard, so placeholders are skipped.
+     * Inference of free type variables is not this check.
+     */
+    static boolean concreteArgumentContainsWildcard(final ClassNode left, final ClassNode right) {
+        if (left == null || right == null || !left.equals(right)) return false;
+        GenericsType[] leftArgs = left.getGenericsTypes();
+        GenericsType[] rightArgs = right.getGenericsTypes();
+        if (leftArgs == null || rightArgs == null || leftArgs.length != rightArgs.length) return false;
+        for (int i = 0; i < leftArgs.length; i += 1) {
+            GenericsType leftArg = leftArgs[i];
+            GenericsType rightArg = rightArgs[i];
+            if (leftArg.isPlaceholder() || rightArg.isPlaceholder()) continue;
+            if (leftArg.isWildcard()) {
+                // "? extends List<Number>" does not contain "List<? extends Number>".
+                ClassNode[] upper = leftArg.getUpperBounds();
+                if (leftArg.getLowerBound() == null && upper != null && upper.length == 1
+                        && !upper[0].isGenericsPlaceHolder()
+                        && !rightArg.isWildcard()
+                        && nestedConcreteVersusWildcard(upper[0], rightArg.getType())) {
+                    return true;
+                }
+                continue;
+            }
+            if (rightArg.isWildcard()) return true;
+            if (!sameTypeArgument(leftArg.getType(), rightArg.getType())) return true;
+        }
+        return false;
+    }
+
+    /**
+     * True when {@code target} has a concrete type argument in a position where
+     * {@code source} has a wildcard, so {@code source} is not a subtype of {@code target}.
+     */
+    private static boolean nestedConcreteVersusWildcard(final ClassNode target, final ClassNode source) {
+        if (target == null || source == null || !target.equals(source)) return false;
+        GenericsType[] targetArgs = target.getGenericsTypes();
+        GenericsType[] sourceArgs = source.getGenericsTypes();
+        if (targetArgs == null || sourceArgs == null || targetArgs.length != sourceArgs.length) return false;
+        for (int i = 0; i < targetArgs.length; i += 1) {
+            if (targetArgs[i].isWildcard() || targetArgs[i].isPlaceholder()) continue;
+            if (sourceArgs[i].isWildcard()) return true;
+            if (nestedConcreteVersusWildcard(targetArgs[i].getType(), sourceArgs[i].getType())) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Non-wildcard type arguments match only when they are the same type.
+     * {@code ?} and {@code ? extends Object} are the same wildcard.
+     * A raw type argument stays an unchecked conversion.
+     */
+    private static boolean sameTypeArgument(final ClassNode left, final ClassNode right) {
+        if (left == right) return true;
+        if (left == null || right == null) return false;
+        if (left.isArray() || right.isArray()) {
+            return left.isArray() && right.isArray()
+                    && sameTypeArgument(left.getComponentType(), right.getComponentType());
+        }
+        if (!left.equals(right)) return false;
+        GenericsType[] leftArgs = left.getGenericsTypes();
+        GenericsType[] rightArgs = right.getGenericsTypes();
+        // Null or empty arguments are a raw type or an uninferred diamond.
+        if (leftArgs == null || rightArgs == null || leftArgs.length == 0 || rightArgs.length == 0) return true;
+        if (leftArgs.length != rightArgs.length) return false;
+        for (int i = 0; i < leftArgs.length; i += 1) {
+            if (!sameGenericsArgument(leftArgs[i], rightArgs[i])) return false;
+        }
+        return true;
+    }
+
+    private static boolean sameGenericsArgument(final GenericsType left, final GenericsType right) {
+        if (left.isWildcard() != right.isWildcard() || left.isPlaceholder() != right.isPlaceholder()) return false;
+        if (left.isPlaceholder()) return left.getName().equals(right.getName());
+        if (left.isWildcard()) {
+            ClassNode leftLower = left.getLowerBound();
+            ClassNode rightLower = right.getLowerBound();
+            if ((leftLower == null) != (rightLower == null)) return false;
+            if (leftLower != null) return sameTypeArgument(leftLower, rightLower);
+            boolean leftUnbounded = unboundedOrObject(left);
+            boolean rightUnbounded = unboundedOrObject(right);
+            if (leftUnbounded || rightUnbounded) return leftUnbounded && rightUnbounded;
+            return sameUpperBounds(left.getUpperBounds(), right.getUpperBounds());
+        }
+        return sameTypeArgument(left.getType(), right.getType());
+    }
+
+    private static boolean unboundedOrObject(final GenericsType wildcard) {
+        ClassNode[] upper = wildcard.getUpperBounds();
+        return upper == null || upper.length == 0
+                || (upper.length == 1 && isObjectType(upper[0]) && !upper[0].isGenericsPlaceHolder());
+    }
+
+    private static boolean sameUpperBounds(final ClassNode[] left, final ClassNode[] right) {
+        if (left == null || right == null || left.length != right.length) return false;
+        for (int i = 0; i < left.length; i += 1) {
+            if (!sameTypeArgument(left[i], right[i])) return false;
+        }
+        return true;
+    }
+
+    /**
      * Checks whether the candidate method remains compatible after applying generics.
      */
     protected static boolean typeCheckMethodsWithGenerics(final ClassNode receiver, final ClassNode[] argumentTypes, final MethodNode candidateMethod) {
@@ -1694,8 +1798,16 @@ public abstract class StaticTypeCheckingSupport {
         if (resolved.isWildcard() && resolved.getLowerBound() != null
                 && !connection.isWildcard() && !connection.isPlaceholder()) {
             ClassNode candidate = connection.getType();
-            if (candidate == null) return false;
-            return implementsInterfaceOrIsSubclassOf(getWrapper(candidate), getWrapper(resolved.getLowerBound()));
+            ClassNode lowerBound = resolved.getLowerBound();
+            if (candidate == null || lowerBound == null) return false;
+            // A raw witness keeps the historical raw subtype test. A parameterized
+            // witness must be a subtype of T, including its own type arguments.
+            if (isPrimitiveType(candidate)) candidate = getWrapper(candidate);
+            if (isPrimitiveType(lowerBound)) lowerBound = getWrapper(lowerBound);
+            if (candidate.getGenericsTypes() == null || lowerBound.getGenericsTypes() == null) {
+                return implementsInterfaceOrIsSubclassOf(candidate, lowerBound);
+            }
+            return GenericsUtils.buildWildcardType(lowerBound).isCompatibleWith(candidate);
         }
         if (resolved.isPlaceholder()
                 &&  resolved.getUpperBounds() != null

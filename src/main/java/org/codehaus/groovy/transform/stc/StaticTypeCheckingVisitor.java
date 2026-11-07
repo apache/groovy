@@ -329,6 +329,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.boundU
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkCompatibleAssignmentTypes;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkPossibleLossOfPrecision;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.concreteArgumentContainsWildcard;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.evaluateExpression;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsConnections;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsParameterMapOfThis;
@@ -2212,28 +2213,6 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             // perform additional type checking on arguments
             checkGroovyConstructorMap(leftExpression, leftRedirect, rightExpression);
         }
-    }
-
-    /**
-     * JLS 4.5.1: a concrete type argument does not contain a wildcard.
-     * {@code List<Number> = List<? extends Number>} is not a subtype, even
-     * though the wildcard's redirected bound is {@code Number}.
-     * Method inference is not this check; a type variable may capture a wildcard.
-     */
-    private static boolean concreteArgumentContainsWildcard(final ClassNode left, final ClassNode right) {
-        if (left == null || right == null) return false;
-        if (left.equals(right) && left.getGenericsTypes() == null) return false;
-        GenericsType[] leftArgs = left.getGenericsTypes();
-        GenericsType[] rightArgs = right.getGenericsTypes();
-        if (leftArgs == null || rightArgs == null || leftArgs.length != rightArgs.length) return false;
-        for (int i = 0; i < leftArgs.length; i += 1) {
-            GenericsType leftArg = leftArgs[i];
-            GenericsType rightArg = rightArgs[i];
-            if (leftArg.isWildcard() || leftArg.isPlaceholder()) continue;
-            if (rightArg.isWildcard()) return true;
-            if (concreteArgumentContainsWildcard(leftArg.getType(), rightArg.getType())) return true;
-        }
-        return false;
     }
 
     private void checkTypeGenerics(final ClassNode leftExpressionType, final ClassNode rightExpressionType, final Expression rightExpression) {
@@ -7135,8 +7114,11 @@ trying: for (ClassNode[] signature : signatures) {
                     return getUnwrapper(right);
                 }
 
-                // as anything can be assigned to a String, Class or [Bb]oolean, return the left type instead
-                if (isWildcardLeftHandSide(initialType) && !isObjectType(initialType)) {
+                // as anything can be assigned to a String, Class or [Bb]oolean, return the left type instead.
+                // A parameterized Class must keep the right-hand type: substituting the target
+                // would make Class<?> assignable to Class<? extends CharSequence>.
+                if (isWildcardLeftHandSide(initialType) && !isObjectType(initialType)
+                        && !(isClassType(initialType) && initialType.isUsingGenerics())) {
                     return initialType;
                 }
             }
