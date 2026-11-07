@@ -2257,6 +2257,91 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 0)
     }
 
+    /**
+     * JLS 4.5.1: {@code ? extends T <= ? extends Number} only when {@code T <: Number}.
+     * An unbounded {@code T} erases to {@code Object}.
+     */
+    @Test
+    void testPecsNegativeUnboundedTypeVariableToExtendsNumber() {
+        final String className = 'gls.generics.test.UnboundedTypeVarToExtendsNumber'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class UnboundedTypeVarToExtendsNumber {
+                public static <T> void test(List<? extends T> src) {
+                    List<? extends Number> dst = src;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+    }
+
+    /**
+     * JLS 4.5.1: {@code T extends Number} makes {@code ? extends T} contained in
+     * {@code ? extends Number}. {@code List<Integer>} is a {@code List<? extends Integer>}.
+     */
+    @Test
+    void testPecsBoundedTypeVariableToExtendsNumber() {
+        final String className = 'gls.generics.test.BoundedTypeVarToExtendsNumber'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.ArrayList;
+            import java.util.List;
+            public class BoundedTypeVarToExtendsNumber {
+                public static <T extends Number> List<? extends Number> widen(List<? extends T> src) {
+                    return src;
+                }
+                public static int test() {
+                    List<Integer> src = new ArrayList<Integer>();
+                    src.add(Integer.valueOf(1));
+                    return widen(src).get(0).intValue();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 1)
+    }
+
+    /**
+     * JLS 4.5.1: a type variable is not a concrete type argument.
+     * {@code List<T>} is not a {@code List<Number>} even when {@code T extends Number}.
+     */
+    @Test
+    void testPecsNegativeTypeVariableToInvariantNumber() {
+        final String className = 'gls.generics.test.TypeVarToInvariantNumber'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class TypeVarToInvariantNumber {
+                public static <T extends Number> void test(List<T> src) {
+                    List<Number> dst = src;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+    }
+
+    /**
+     * JLS 4.5.1: {@code List<String>} is not contained in {@code List<?>} as a
+     * type argument, so a call {@code take(List<List<?>>)} rejects
+     * {@code List<List<String>>}. The assignment form is
+     * {@link #testPecsNegativeAssignNestedListToListOfWildcard()}.
+     */
+    @Test
+    void testPecsNegativeCallNestedListOfWildcard() {
+        final String className = 'gls.generics.test.CallNestedListOfWildcard'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class CallNestedListOfWildcard {
+                public static void take(List<List<?>> dst) {}
+                public static void test(List<List<String>> src) {
+                    take(src);
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call")
+    }
+
     // =========================================================================
     // Category 12: Invocation-context diamond, unchecked casts, nested members (JLS 15.9.3, 5.1.9, 4.5)
     // =========================================================================

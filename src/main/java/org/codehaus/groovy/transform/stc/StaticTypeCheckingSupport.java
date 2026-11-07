@@ -1550,6 +1550,11 @@ public abstract class StaticTypeCheckingSupport {
                 continue;
             }
             if (rightArg.isWildcard()) return true;
+            // ArrayList<#E> versus List<Element> is subtyping, not a failed identity.
+            if (leftArg.getType() == null || rightArg.getType() == null
+                    || !leftArg.getType().equals(rightArg.getType())) {
+                continue;
+            }
             if (!sameTypeArgument(leftArg.getType(), rightArg.getType())) return true;
         }
         return false;
@@ -1627,6 +1632,144 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
+     * {@code List<? extends T>} assigned to {@code List<? extends Number}} is
+     * legal only when {@code T}'s bound is a subtype of {@code Number}.
+     * Raw types and diamonds (no type arguments yet) are not this check.
+     * Two type variables are left to inference.
+     *
+     * @return {@code true} when the assignment should be rejected
+     */
+    static boolean typeVariableBoundEscapes(final ClassNode target, final ClassNode source) {
+        if (target == null || source == null) return false;
+        if (!target.equals(source)) {
+            if (!implementsInterfaceOrIsSubclassOf(source, target)) return false;
+            ClassNode viewed = GenericsUtils.parameterizeType(source, target);
+            if (viewed == null || viewed == source) return false;
+            return typeVariableBoundEscapes(target, viewed);
+        }
+        GenericsType[] targetArgs = target.getGenericsTypes();
+        GenericsType[] sourceArgs = source.getGenericsTypes();
+        if (targetArgs == null || sourceArgs == null || targetArgs.length == 0 || sourceArgs.length == 0
+                || targetArgs.length != sourceArgs.length) {
+            return false;
+        }
+        for (int i = 0; i < targetArgs.length; i += 1) {
+            if (typeVariableArgumentEscapes(targetArgs[i], sourceArgs[i])) return true;
+        }
+        return false;
+    }
+
+    private static boolean typeVariableArgumentEscapes(final GenericsType target, final GenericsType source) {
+        if (target == null || source == null || !mentionsTypeVariable(source)) return false;
+        // "#T" is an inference variable (diamond, literal), not a declared bound.
+        if (isInferencePlaceholder(source)) return false;
+        if (source.isPlaceholder() || (source.getType() != null && source.getType().isGenericsPlaceHolder() && !source.isWildcard())) {
+            return !targetAdmitsTypeVariable(target, typeVariableBound(source.getType()));
+        }
+        if (source.isWildcard()) {
+            ClassNode upper = firstBound(source.getUpperBounds());
+            if (upper != null && isInferencePlaceholder(upper)) return false;
+            if (upper != null && (upper.isGenericsPlaceHolder() || GenericsUtils.hasUnresolvedGenerics(upper))) {
+                return !targetAdmitsUpperVariable(target, typeVariableBound(upper));
+            }
+            ClassNode lower = source.getLowerBound();
+            if (lower != null && isInferencePlaceholder(lower)) return false;
+            if (lower != null && (lower.isGenericsPlaceHolder() || GenericsUtils.hasUnresolvedGenerics(lower))) {
+                return !targetAdmitsLowerVariable(target);
+            }
+            return false;
+        }
+        return typeVariableBoundEscapes(target.getType(), source.getType());
+    }
+
+    private static boolean isInferencePlaceholder(final GenericsType type) {
+        if (type == null) return false;
+        if (type.isPlaceholder() && type.getName() != null && type.getName().startsWith("#")) return true;
+        return isInferencePlaceholder(type.getType());
+    }
+
+    private static boolean isInferencePlaceholder(final ClassNode type) {
+        if (type == null || !type.isGenericsPlaceHolder()) return false;
+        String name = type.getUnresolvedName();
+        return name != null && name.startsWith("#");
+    }
+
+    /** {@code T <= ? extends B} when {@code bound(T) <: B}. A concrete target does not contain {@code T}. */
+    private static boolean targetAdmitsTypeVariable(final GenericsType target, final ClassNode sourceBound) {
+        if (target.isPlaceholder()) return true;
+        if (!target.isWildcard()) return false;
+        if (target.getLowerBound() != null) return false;
+        ClassNode upper = firstBound(target.getUpperBounds());
+        if (upper == null || isUnboundedUpper(upper)) return true;
+        if (upper.isGenericsPlaceHolder()) return true;
+        return boundWithin(sourceBound, upper);
+    }
+
+    /** {@code ? extends T <= ? extends B} iff {@code bound(T) <: B}. */
+    private static boolean targetAdmitsUpperVariable(final GenericsType target, final ClassNode sourceBound) {
+        if (target.isPlaceholder()) return true;
+        if (target.isWildcard()) {
+            if (target.getLowerBound() != null) return false;
+            ClassNode upper = firstBound(target.getUpperBounds());
+            if (upper == null || isUnboundedUpper(upper)) return true;
+            if (upper.isGenericsPlaceHolder()) return true;
+            return boundWithin(sourceBound, upper);
+        }
+        return false;
+    }
+
+    /** {@code ? super T <= ?} and {@code ? super T <= ? extends Object}. */
+    private static boolean targetAdmitsLowerVariable(final GenericsType target) {
+        if (!target.isWildcard() || target.getLowerBound() != null) return false;
+        ClassNode upper = firstBound(target.getUpperBounds());
+        return upper == null || isUnboundedUpper(upper);
+    }
+
+    private static boolean boundWithin(final ClassNode sourceBound, final ClassNode targetBound) {
+        if (sourceBound == null || targetBound == null) return false;
+        if (isUnboundedUpper(targetBound)) return true;
+        return GenericsUtils.buildWildcardType(targetBound).isCompatibleWith(sourceBound);
+    }
+
+    private static ClassNode typeVariableBound(final ClassNode placeholder) {
+        if (placeholder == null) return OBJECT_TYPE;
+        if (!placeholder.isGenericsPlaceHolder()) return placeholder;
+        GenericsType declared = placeholder.asGenericsType();
+        ClassNode upper = firstBound(declared.getUpperBounds());
+        if (upper != null && upper != placeholder) {
+            if (upper.isGenericsPlaceHolder()) return typeVariableBound(upper);
+            if (!isObjectType(upper)) return upper;
+        }
+        ClassNode redirect = placeholder.redirect();
+        if (redirect != null && redirect != placeholder && !redirect.isGenericsPlaceHolder() && !isObjectType(redirect)) {
+            return redirect;
+        }
+        return OBJECT_TYPE;
+    }
+
+    private static boolean mentionsTypeVariable(final GenericsType type) {
+        if (type.isPlaceholder()) return true;
+        if (type.getType() != null && type.getType().isGenericsPlaceHolder()) return true;
+        if (type.getLowerBound() != null && (type.getLowerBound().isGenericsPlaceHolder()
+                || GenericsUtils.hasUnresolvedGenerics(type.getLowerBound()))) return true;
+        ClassNode[] upper = type.getUpperBounds();
+        if (upper != null) {
+            for (ClassNode bound : upper) {
+                if (bound != null && (bound.isGenericsPlaceHolder() || GenericsUtils.hasUnresolvedGenerics(bound))) return true;
+            }
+        }
+        return !type.isWildcard() && type.getType() != null && GenericsUtils.hasUnresolvedGenerics(type.getType());
+    }
+
+    private static ClassNode firstBound(final ClassNode[] bounds) {
+        return bounds == null || bounds.length == 0 ? null : bounds[0];
+    }
+
+    private static boolean isUnboundedUpper(final ClassNode upper) {
+        return upper == null || (isObjectType(upper) && !upper.isGenericsPlaceHolder());
+    }
+
+    /**
      * Checks whether the candidate method remains compatible after applying generics.
      */
     protected static boolean typeCheckMethodsWithGenerics(final ClassNode receiver, final ClassNode[] argumentTypes, final MethodNode candidateMethod) {
@@ -1696,6 +1839,14 @@ public abstract class StaticTypeCheckingSupport {
         for (int i = 0, n = argumentTypes.length; i < n; i += 1) {
             ClassNode parameterType = parameters[Math.min(i, lastParamIndex)].getOriginType();
             ClassNode argumentType = StaticTypeCheckingVisitor.wrapTypeIfNecessary(argumentTypes[i]);
+            // Declared parameters only. The resolved type inside inferenceCheck
+            // is where diamonds and Collectors.toList() still carry wildcards
+            // that are not containment errors.
+            if (!GenericsUtils.hasUnresolvedGenerics(parameterType)
+                    && !GenericsUtils.hasUnresolvedGenerics(argumentType)
+                    && concreteArgumentContainsWildcard(parameterType, argumentType)) {
+                failure = true;
+            }
             failure |= inferenceCheck(fixedPlaceHolders, candidateGenerics, parameterType, argumentType, i >= lastParamIndex);
 
             if (i == 0 && isExtensionMethod) { // re-load fixed names for extension
