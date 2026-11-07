@@ -1438,9 +1438,25 @@ include::../../test/groovy/org/apache/groovy/ginq/GinqFluentTest.groovy[tags=gin
 
 === Known limitations
 
-The SQL-like syntax does not give element types to names bound by `from`. Use
-`Ginq.from` when the caller needs those types. `orderBy` keys are compared with
-their natural order when the fluent query runs.
+A closure written at a fluent call infers its parameter types. A closure stored
+in a `Predicate`, `Function`, `BiPredicate`, or `BiFunction` infers them from
+that target type, and the variable can then be passed to the query. An untyped
+`Closure` or `def` closure has no parameter target type when it is created, so
+the parameter stays `Object`. The type has to be known where the closure is
+written. A later call cannot reach back into it. Java and C# type a lambda the
+same way.
+
+A local `def` or raw `Query` keeps the element type of the expression assigned
+to it, including a later assignment. A `Query` parameter or field has no element
+type unless it is declared as `Query<Person>` (or whatever the element is).
+Inventing one would accept a property that belongs to a different element type.
+
+Names bound by `from` inside `GQ`, `GQL`, and `@GQ` stay dynamic. The lowered
+query is not type-checked, so `from r in rows where r.a` still works when `rows`
+is a list of maps. Checking those names would reject that access. A nested
+closure in the query is dynamic for the same reason. Use `Ginq.from` when the
+element type should be checked. `orderBy` keys are compared with their natural
+order when the fluent query runs.
 
 == GINQ Examples
 

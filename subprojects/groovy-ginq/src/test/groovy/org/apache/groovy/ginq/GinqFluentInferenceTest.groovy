@@ -22,12 +22,19 @@ import groovy.ginq.Ginq
 import groovy.ginq.Query
 import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.jupiter.api.Test
+
+import java.util.function.BiFunction
+import java.util.function.BiPredicate
+import java.util.function.Function
+import java.util.function.Predicate
 
 import static org.apache.groovy.ginq.GinqFluentInferenceTest.Order
 import static org.apache.groovy.ginq.GinqFluentInferenceTest.Person
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Closure parameters of the fluent operators are inferred from the query element
@@ -51,6 +58,60 @@ final class GinqFluentInferenceTest {
     void untypedClosuresUnderDynamicCompilation() {
         assert new DynamicQueries().labels() == ['9', 'none']
         assert new DynamicQueries().projected() == ['Ann', 'Cyd']
+    }
+
+    @Test
+    void samVariableAndDefQueryInferParameters() {
+        assert new CompileStaticQueries().storedSam() == ['Ann', 'Ann:9']
+        assert new CompileStaticQueries().defQuery() == ['Ann']
+        assert new CompileStaticQueries().rawQuery() == ['Ann']
+        assert new CompileStaticQueries().reassignedQuery() == ['9']
+        assert new TypeCheckedQueries().storedSam() == ['Ann', 'Ann:9']
+    }
+
+    @Test
+    void untypedClosureVariableIsCheckedWhereItIsWritten() {
+        def message = shouldFail(MultipleCompilationErrorsException) {
+            assertScript '''
+                import groovy.ginq.Ginq
+                import groovy.transform.CompileStatic
+                import org.apache.groovy.ginq.GinqFluentInferenceTest.Person
+
+                @CompileStatic
+                class Probe {
+                    static Object run() {
+                        List<Person> people = [new Person(1, 'Ann', 20, [])]
+                        Closure adults = { p -> p.age >= 18 }
+                        Ginq.from(people).where(adults)
+                    }
+                }
+            '''
+        }.message
+        assert message.contains('No such property: age for class: java.lang.Object')
+    }
+
+    @Test
+    void rawQueryParameterHasNoElementType() {
+        def message = shouldFail(MultipleCompilationErrorsException) {
+            assertScript '''
+                import groovy.ginq.Ginq
+                import groovy.ginq.Query
+                import groovy.transform.CompileStatic
+
+                @CompileStatic
+                class Probe {
+                    static Object run(Query query) {
+                        query.where { p -> p.age >= 18 }
+                    }
+                }
+            '''
+        }.message
+        assert message.contains('No such property: age for class: java.lang.Object')
+    }
+
+    @Test
+    void gqNestedClosureStaysDynamic() {
+        assert new CompileStaticQueries().nestedClosureInsideGq() == ['Ann']
     }
 
     @Test
@@ -193,6 +254,53 @@ final class CompileStaticQueries {
                 .toList()
         assert amounts == [9, 8, 4]
     }
+
+    List<String> storedSam() {
+        List<Person> people = [
+                new Person(1, 'Ann', 20, []),
+                new Person(2, 'Bob', 15, [])
+        ]
+        List<Order> orders = [new Order(1, 9)]
+        Predicate<Person> adults = { p -> p.age >= 18 }
+        Function<Person, String> names = { p -> p.name }
+        BiPredicate<Person, Order> same = { p, o -> p.id == o.personId }
+        BiFunction<Person, Order, String> label = { p, o -> p.name + ':' + o.amount }
+        List<String> projected = Ginq.from(people).where(adults).select(names).toList()
+        List<String> joined = Ginq.from(people).join(orders, same, label).toList()
+        return projected + joined
+    }
+
+    List<String> defQuery() {
+        List<Person> people = [
+                new Person(1, 'Ann', 20, []),
+                new Person(2, 'Bob', 15, [])
+        ]
+        def query = Ginq.from(people)
+        return query.where { p -> p.age >= 18 }.select { p -> p.name }.toList()
+    }
+
+    List rawQuery() {
+        List<Person> people = [new Person(1, 'Ann', 20, [])]
+        Query query = Ginq.from(people)
+        return query.where { p -> p.age >= 18 }.select { p -> p.name }.toList()
+    }
+
+    List reassignedQuery() {
+        List<Person> people = [new Person(1, 'Ann', 20, [])]
+        List<Order> orders = [new Order(1, 9)]
+        Query query = Ginq.from(people)
+        query = Ginq.from(orders)
+        return query.select { o -> o.amount.toString() }.toList()
+    }
+
+    List<String> nestedClosureInsideGq() {
+        List<Person> people = [new Person(1, 'Ann', 20, [new Order(1, 9)]), new Person(2, 'Bob', 15, [])]
+        GQ {
+            from p in people
+            where p.orders.any { o -> o.amount > 0 }
+            select p.name
+        }.toList()
+    }
 }
 
 @TypeChecked
@@ -215,6 +323,17 @@ final class TypeCheckedQueries {
                 .orderBy { p -> p.name }
                 .select { p -> p.name }
                 .toList()
+    }
+
+    List<String> storedSam() {
+        List<Person> people = [new Person(1, 'Ann', 20, []), new Person(2, 'Bob', 15, [])]
+        List<Order> orders = [new Order(1, 9)]
+        Predicate<Person> adults = { p -> p.age >= 18 }
+        Function<Person, String> names = { p -> p.name }
+        BiPredicate<Person, Order> same = { p, o -> p.id == o.personId }
+        BiFunction<Person, Order, String> label = { p, o -> p.name + ':' + o.amount }
+        Ginq.from(people).where(adults).select(names).toList() +
+                Ginq.from(people).join(orders, same, label).toList()
     }
 }
 
