@@ -656,6 +656,22 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     private boolean hasClassResource(final String name) {
+        // A class file path is formed only from a binary name. Any other
+        // spelling is not a miss this probe can decide, so the caller keeps
+        // the normal load path (parent-defined helpers, hidden classes).
+        if (name == null || name.isEmpty() || name.contains("/") || name.contains("\\") || name.contains("..")) {
+            return true;
+        }
+        for (String part : name.split("\\.", -1)) {
+            if (part.isEmpty() || !Character.isJavaIdentifierStart(part.charAt(0))) {
+                return true;
+            }
+            for (int i = 1; i < part.length(); i += 1) {
+                if (!Character.isJavaIdentifierPart(part.charAt(i))) {
+                    return true;
+                }
+            }
+        }
         try {
             return getResource(name.replace('.', '/') + ".class") != null;
         } catch (Error error) {

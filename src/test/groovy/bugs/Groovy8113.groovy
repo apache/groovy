@@ -87,6 +87,16 @@ final class Groovy8113 {
     }
 
     @Test
+    void presentBinaryInnerNameStillLoads() {
+        // GROOVY-8113
+        // A binary inner name that has a class file must still load. The
+        // known-miss probe only skips names it can show are absent.
+        GroovyShell shell = new GroovyShell()
+        assertEquals(Thread.State, shell.classLoader.loadClass('java.lang.Thread$State'))
+        assertEquals(Map.Entry, shell.classLoader.loadClass('java.util.Map$Entry'))
+    }
+
+    @Test
     void parentDefinedJavaLangDollarNameStillLoads() {
         // GROOVY-8113
         // Names such as java.lang.$JaCoCo are defined by a parent loader and
