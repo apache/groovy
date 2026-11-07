@@ -1120,25 +1120,43 @@ public abstract class StaticTypeCheckingSupport {
 
         // phase 1: argument-parameter distance classifier
         int bestDist = Integer.MAX_VALUE;
-        for (MethodNode method : methods) {
-            int dist = measureParametersAndArgumentsDistance(parametersForDistance(method), argumentTypes);
-            if (dist >= 0 && dist <= bestDist) {
-                if (dist < bestDist) {
-                    bestDist = dist;
-                    bestMethods.clear();
+        if (methods.size() > 1 && receiver != null) {
+            for (MethodNode method : methods) {
+                int dist = measureParametersAndArgumentsDistance(parametersForDistance(receiver, method), argumentTypes);
+                if (dist >= 0 && dist <= bestDist) {
+                    if (dist < bestDist) {
+                        bestDist = dist;
+                        bestMethods.clear();
+                    }
+                    bestMethods.add(method);
                 }
-                bestMethods.add(method);
+            }
+        }
+        if (bestMethods.isEmpty()) {
+            bestDist = Integer.MAX_VALUE;
+            for (MethodNode method : methods) {
+                int dist = measureParametersAndArgumentsDistance(parametersForDistance(method), argumentTypes);
+                if (dist >= 0 && dist <= bestDist) {
+                    if (dist < bestDist) {
+                        bestDist = dist;
+                        bestMethods.clear();
+                    }
+                    bestMethods.add(method);
+                }
             }
         }
         if (bestMethods.size() > 1) { // GROOVY-11258
             for (var iter = bestMethods.iterator(); iter.hasNext(); ) {
                 MethodNode outer = iter.next(); // if redundant, remove
+                Parameter[] outerParams = receiver != null ? parametersForDistance(receiver, outer) : outer.getParameters();
                 for (MethodNode inner : bestMethods) {
-                    if (inner != outer
-                            && !ParameterUtils.parametersEqual(inner.getParameters(), outer.getParameters())
-                            &&  ParameterUtils.parametersCompatible(inner.getParameters(), outer.getParameters())) {
-                        iter.remove(); // for the given argument type(s), inner can accept everything that outer can
-                        break;
+                    if (inner != outer) {
+                        Parameter[] innerParams = receiver != null ? parametersForDistance(receiver, inner) : inner.getParameters();
+                        if (!ParameterUtils.parametersEqual(innerParams, outerParams)
+                                && ParameterUtils.parametersCompatible(innerParams, outerParams)) {
+                            iter.remove(); // for the given argument type(s), inner can accept everything that outer can
+                            break;
+                        }
                     }
                 }
             }
@@ -1207,6 +1225,44 @@ public abstract class StaticTypeCheckingSupport {
         // WARNING: Returning the un-cloned `parameters` array here is safe ONLY because all callers
         // in the distance-measurement chain treat the array as strictly read-only.
         return erased == null ? parameters : erased;
+    }
+
+    private static Parameter[] parametersForDistance(final ClassNode receiver, final MethodNode method) {
+        Parameter[] parameters = method.getParameters();
+        Parameter[] erased = null;
+        Map<GenericsTypeName, GenericsType> spec = null;
+        for (int i = 0, n = parameters.length; i < n; i += 1) {
+            ClassNode t = parameters[i].getOriginType();
+            if (t.isGenericsPlaceHolder() || isUsingGenericsOrIsArrayUsingGenerics(t)) {
+                if (erased == null) {
+                    erased = parameters.clone();
+                }
+                if (isGenericsPlaceHolderOrArrayOf(t) && !method.isStatic() && !(method instanceof ExtensionMethodNode)) {
+                    if (spec == null) {
+                        spec = new HashMap<>();
+                        extractGenericsConnections(spec, StaticTypeCheckingVisitor.wrapTypeIfNecessary(receiver), method.getDeclaringClass());
+                        if (!spec.isEmpty()) {
+                            if (method.getGenericsTypes() != null) {
+                                for (GenericsType gt : method.getGenericsTypes()) {
+                                    spec.remove(new GenericsTypeName(gt.getName()));
+                                }
+                            }
+                            spec.replaceAll((name, gt) -> gt.isWildcard() && gt.getLowerBound() != null ? new GenericsType(gt.getLowerBound()) : gt);
+                        }
+                    }
+                    if (!spec.isEmpty()) {
+                        t = applyGenericsContext(spec, t);
+                    }
+                }
+                erased[i] = new Parameter(GenericsUtils.nonGeneric(t), parameters[i].getName());
+            }
+        }
+        return erased == null ? parameters : erased;
+    }
+
+    private static boolean isGenericsPlaceHolderOrArrayOf(ClassNode cn) {
+        while (cn.isArray()) cn = cn.getComponentType();
+        return cn.isGenericsPlaceHolder();
     }
 
     /**

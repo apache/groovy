@@ -18,7 +18,6 @@
  */
 package bugs
 
-import groovy.test.NotYetImplemented
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -29,7 +28,7 @@ final class Groovy7204 {
         imports { star 'groovy.transform' }
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testTypeChecked1() {
         assertScript shell, '''
             @TypeChecked
@@ -69,7 +68,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testTypeChecked2() {
         assertScript shell, '''
             @TypeChecked
@@ -109,7 +108,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testTypeChecked3() {
         assertScript shell, '''
             @TypeChecked
@@ -153,7 +152,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testTypeChecked4() {
         assertScript shell, '''
             @TypeChecked
@@ -197,7 +196,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testTypeChecked5() {
         assertScript shell, '''
             @TypeChecked
@@ -241,18 +240,19 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testTypeChecked6() {
         assertScript shell, '''
             class Repository<T, S extends Serializable> {
-                void delete(T arg) { assert true }
-                void delete(S arg) { assert false: 'wrong method invoked' }
+                T delete(T arg) { arg }
+                S delete(S arg) { arg }
             }
 
             @TypeChecked
             def test() {
                 Repository<String, Long> r = new Repository<String, Long>()
-                r.delete('foo')
+                String deleted = r.delete('foo')
+                assert deleted == 'foo'
             }
 
             test()
@@ -261,7 +261,7 @@ final class Groovy7204 {
 
     //
 
-    @NotYetImplemented @Test
+    @Test
     void testCompileStatic1() {
         assertScript shell, '''
             @CompileStatic
@@ -301,7 +301,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testCompileStatic2() {
         assertScript shell, '''
             @CompileStatic
@@ -341,7 +341,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testCompileStatic3() {
         assertScript shell, '''
             @CompileStatic
@@ -385,7 +385,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testCompileStatic4() {
         assertScript shell, '''
             @CompileStatic
@@ -429,7 +429,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testCompileStatic5() {
         assertScript shell, '''
             @CompileStatic
@@ -473,7 +473,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testCompileStatic6() {
         assertScript shell, '''
             class Repository<T, S extends Serializable> {
@@ -491,7 +491,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test // GROOVY-8059
+    @Test // GROOVY-8059
     void testCompileStatic7() {
         assertScript shell, '''
             abstract class A<K extends Serializable, V> {
@@ -558,6 +558,31 @@ final class Groovy7204 {
             }
 
             assert new Test().firstElement instanceof Trie
+        '''
+    }
+
+    @Test
+    void testCompileStatic10() {
+        assertScript shell, '''
+            class Repository<T, S extends Serializable> {
+                String delete(T arg) { 'T:' + arg }
+                String delete(S arg) { 'S:' + arg }
+                <T extends CharSequence> String shadowed(T arg) { 'M:' + arg }
+                String shadowed(S arg) { 'C:' + arg }
+            }
+
+            @CompileStatic
+            void test() {
+                Repository<? super String, Long> r1 = new Repository<CharSequence, Long>()
+                assert r1.delete('foo') == 'T:foo'
+                assert r1.delete(42L) == 'S:42'
+
+                Repository<Integer, Long> r2 = new Repository<Integer, Long>()
+                assert r2.shadowed('bar') == 'M:bar'
+                assert r2.shadowed(99L) == 'C:99'
+            }
+
+            test()
         '''
     }
 }

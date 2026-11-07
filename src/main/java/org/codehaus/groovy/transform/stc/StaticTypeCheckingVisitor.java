@@ -5399,7 +5399,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
                     MethodNode first = null;
                     for (Receiver<String> currentReceiver : receivers) {
-                        mn = findMethod(currentReceiver.getType().getPlainNodeReference(), name, args);
+                        ClassNode receiverType = currentReceiver.getType();
+                        if (isClassType(receiverType)) receiverType = receiverType.getPlainNodeReference();
+                        mn = findMethod(receiverType, name, args);
                         if (!mn.isEmpty()) {
                             first = mn.get(0); // capture for error reporting
                             chosenReceiver = currentReceiver;
@@ -5427,7 +5429,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                                 : ClassTagSupport.matchPreemption(this, chosenReceiver, mn, name, args);
                         if (tagged != null) {
                             ClassNode[] taggedArgs = tagged.expandArgumentTypes(args);
-                            List<MethodNode> taggedMn = findMethod(tagged.receiver.getType().getPlainNodeReference(), name, taggedArgs);
+                            ClassNode taggedReceiverType = tagged.receiver.getType();
+                            if (isClassType(taggedReceiverType)) taggedReceiverType = taggedReceiverType.getPlainNodeReference();
+                            List<MethodNode> taggedMn = findMethod(taggedReceiverType, name, taggedArgs);
                             if (!taggedMn.isEmpty()) {
                                 MethodNode taggedFirst = taggedMn.get(0);
                                 taggedMn = allowStaticAccessToMember(taggedMn, !tagged.receiver.isObject());
