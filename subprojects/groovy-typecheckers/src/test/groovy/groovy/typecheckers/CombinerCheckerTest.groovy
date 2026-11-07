@@ -68,6 +68,15 @@ final class CombinerCheckerTest {
         '''
     }
 
+    @Test // GROOVY-12722
+    void transform_closure_is_not_a_combiner() {
+        assertScript strictShell, '''
+            assert [1, 2, 3, 4].sumParallel { int n -> n * 2 } == 20
+            assert [1, 2, 3, 4].sumParallel { it * 2 } == 20
+            assert [1, 2, 3, 4].sumParallel() == 10
+        '''
+    }
+
     @Test
     void subtraction_inline_closure_fails() {
         def err = shouldFail lenientShell, '''

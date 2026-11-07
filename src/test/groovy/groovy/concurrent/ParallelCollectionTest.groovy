@@ -337,6 +337,36 @@ final class ParallelCollectionTest {
         '''
     }
 
+    @Test // GROOVY-12722
+    void testSumParallelAddsUpLikeSum() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+
+            assert [1, 2, 3, 4].sumParallel() == 10
+            assert [1, 2.5, 3].sumParallel() == 6.5
+            assert ['a', 'b', 'c'].sumParallel() == 'abc'
+            assert [[1], [2, 3]].sumParallel() == [1, 2, 3]
+            assert [].sumParallel() == null
+            assert [7].sumParallel() == 7
+
+            assert [1, 2, 3, 4].sumParallel { it * 2 } == 20
+            assert ['a', 'bb', 'ccc'].sumParallel { it.size() } == 6
+            assert [[price: 1.5], [price: 2.5]].sumParallel { it.price } == 4.0
+            assert [].sumParallel { it } == null
+            assert [1, 2, 3, 4].sumParallel { a, b -> a + b } == 10
+            assert [1, 2, 3, 4].sumParallel(Integer::sum) == 10
+
+            @CompileStatic
+            int typed(List<Integer> numbers) {
+                int transformed = numbers.sumParallel { Integer n -> n * n }
+                int combined = numbers.sumParallel { int a, int b -> a + b }
+                int inferred = numbers.sumParallel { it + 1 }
+                transformed * 1000 + combined * 100 + inferred
+            }
+            assert typed([1, 2, 3]) == 14 * 1000 + 6 * 100 + 9
+        '''
+    }
+
     @Test
     void testCommonPoolRunsEveryCallbackShape() {
         assertScript '''
