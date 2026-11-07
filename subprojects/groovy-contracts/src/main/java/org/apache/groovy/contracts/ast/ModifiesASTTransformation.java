@@ -25,7 +25,9 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -42,6 +44,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformation;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Handles {@link Modifies} annotations placed on methods.
@@ -88,7 +91,7 @@ public class ModifiesASTTransformation implements ASTTransformation {
             // as a violation of it by ModifiesChecker; say what is required and what was found
             source.addError(new SyntaxException(
                     "@Modifies requires a closure listing the modifiable targets; use @Modifies({}) to declare that nothing is modified"
-                            + (value == null ? "" : "; found " + value.getText()),
+                            + (value == null ? "" : "; found " + describe(value)),
                     annotation.getLineNumber(), annotation.getColumnNumber()));
             return;
         }
@@ -101,6 +104,24 @@ public class ModifiesASTTransformation implements ASTTransformation {
 
         // stored even when empty: an empty frame (nothing modified) differs from no @Modifies
         methodNode.putNodeMetaData(MODIFIES_FIELDS_KEY, modifiesSet);
+    }
+
+    private static String describe(final Expression value) {
+        if (value instanceof ListExpression list) {
+            return "a list " + list.getExpressions().stream()
+                    .map(ModifiesASTTransformation::render)
+                    .collect(Collectors.joining(", ", "[", "]"));
+        }
+        if (value instanceof ClassExpression) return "a class " + value.getText();
+        if (value instanceof ConstantExpression constant && constant.getValue() instanceof String) {
+            return "a string " + render(value);
+        }
+        return value.getText();
+    }
+
+    private static String render(final Expression expr) {
+        return expr instanceof ConstantExpression constant && constant.getValue() instanceof String string
+                ? "'" + string + "'" : expr.getText();
     }
 
     private static void extractFromAnnotation(AnnotationNode annotation, MethodNode methodNode, Set<String> modifiesSet, SourceUnit source) {
