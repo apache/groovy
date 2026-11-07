@@ -1246,7 +1246,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     break;
 
                 case Closure.OWNER_ONLY:
-                    if (method == null && owner != closure) {
+                    if (method == null && owner != closure && owner != null) {
                         MetaClass ownerMetaClass = lookupObjectMetaClass(owner);
                         return ownerMetaClass.invokeMethod(owner, methodName, originalArguments);
                     }
@@ -4291,7 +4291,7 @@ out:    if (metaClass instanceof MetaClassImpl metaClassImpl) {
             if (method != null)
                 return tuple(delegateMetaClass.invokeMethod(delegate, methodName, originalArguments), method);
         }
-        if (method == null && owner != closure) {
+        if (method == null && owner != closure && owner != null) {
             MetaClass ownerMetaClass = lookupObjectMetaClass(owner);
             method = ownerMetaClass.pickMethod(methodName, argClasses);
             if (method != null)

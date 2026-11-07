@@ -1158,6 +1158,41 @@ package-private constructor of a class that a `GroovyClassLoader` defined in
 another compilation, such as a class of an earlier `GroovyShell` parse. Dynamic
 and `@TypeChecked` code select the constructor at run time as before.
 
+### Groovy 6.0.1 — `@CompileStatic` property and spread results on collections match dynamic Groovy (GROOVY-12534, GROOVY-12649)
+
+Under `@CompileStatic`, property and spread results on a `List`, `Set` or
+other `Iterable` type that declares a property, or gets one from an
+extension method, now match dynamic Groovy and `@TypeChecked`
+(GROOVY-12534, [PR #3058](https://github.com/apache/groovy/pull/3058);
+GROOVY-12649). A property the collection itself defines is read from the
+collection; an explicit spread (`people*.name`) reads it from each
+element, and a spread assignment (`people*.name = 'x'`) writes it to each
+element. The previous `@CompileStatic` results were wrong, and code that
+relied on them gets different results once recompiled with 6.0.1; the new
+results are correct.
+
+### Groovy 7 — `==` on a `Number` that is not `Comparable` compares numerically (GROOVY-12699)
+
+`==` and `!=` between two numbers, where the left one is a `Number` that does
+not implement `Comparable`, now compare the values numerically, as `<=>`,
+`<` and `>` already did. Before, they called `equals()`, so a `Number`
+subclass such as a fraction type was never `==` to an equal `BigDecimal`,
+`Double` or `Integer`, even when `<=>` returned `0`. This applies in dynamic
+code and under `@TypeChecked` and `@CompileStatic` alike.
+
+**Who is affected.** Besides custom `Number` classes, the JDK's own
+non-`Comparable` numbers: `AtomicInteger`, `AtomicLong`, `LongAdder`,
+`DoubleAdder`, `LongAccumulator` and `DoubleAccumulator`. For example,
+`new AtomicInteger(1) == 1` is now `true`, and two different
+`AtomicInteger` instances holding the same value are now `==`. Before, that
+second comparison was an identity check. Use `is()` where identity is
+meant.
+
+**What is unchanged.** Comparisons where either side is not a `Number`,
+which still use `equals()`; numbers that implement `Comparable`, such as
+`Integer` and `BigDecimal`; and Java collection methods such as
+`List.contains`, which call `equals()` and not Groovy's `==`.
+
 ### Groovy 7 — a final `def` field is read with the type of its value (GROOVY-12315)
 
 Within the class that declares it, a read of a final field declared without a
@@ -1234,40 +1269,57 @@ still uses that jar. YAML aliases, merge keys, tags, complex keys and
 multi-document streams behave as in Groovy 6. `JsonSlurper` and `XmlParser`
 keep their own nesting-depth caps of 1000.
 
-### Groovy 6.0.1 — `@CompileStatic` property and spread results on collections match dynamic Groovy (GROOVY-12534, GROOVY-12649)
+### Groovy 7 — a closure skips a null owner or delegate (GROOVY-12667, GROOVY-12671)
 
-Under `@CompileStatic`, property and spread results on a `List`, `Set` or
-other `Iterable` type that declares a property, or gets one from an
-extension method, now match dynamic Groovy and `@TypeChecked`
-(GROOVY-12534, [PR #3058](https://github.com/apache/groovy/pull/3058);
-GROOVY-12649). A property the collection itself defines is read from the
-collection; an explicit spread (`people*.name`) reads it from each
-element, and a spread assignment (`people*.name = 'x'`) writes it to each
-element. The previous `@CompileStatic` results were wrong, and code that
-relied on them gets different results once recompiled with 6.0.1; the new
-results are correct.
+A closure's owner or delegate can be null: after `dehydrate()`, after
+`rehydrate` with a null argument, or after `delegate = null`. A method call or
+property access in the closure body that resolves through the owner and
+delegate now skips a null one instead of calling or reading on null:
 
-### Groovy 7 — `==` on a `Number` that is not `Comparable` compares numerically (GROOVY-12699)
+- **The other candidate answers.** With `OWNER_FIRST` (the default) and a null
+  owner, the delegate's method or property is used. Earlier versions threw
+  `NullPointerException` for a property in every version, and for a method
+  from Groovy 4 on (Groovy 3 skipped the null for methods). With
+  `DELEGATE_FIRST` and a null delegate, methods now use the owner as
+  properties already did.
+- **With no candidate, the error is a missing member.** When both are null, or
+  the one target of `OWNER_ONLY` or `DELEGATE_ONLY` is null, a method of the
+  closure itself (`toString()`, `with`, `tap` and the like) runs on the
+  closure. Any other method throws `MissingMethodException`, and a property
+  throws `MissingPropertyException`, where `NullPointerException` was thrown
+  before. In Groovy 6, `toString()` and `with` instead ran against `null`.
 
-`==` and `!=` between two numbers, where the left one is a `Number` that does
-not implement `Comparable`, now compare the values numerically, as `<=>`,
-`<` and `>` already did. Before, they called `equals()`, so a `Number`
-subclass such as a fraction type was never `==` to an equal `BigDecimal`,
-`Double` or `Integer`, even when `<=>` returned `0`. This applies in dynamic
-code and under `@TypeChecked` and `@CompileStatic` alike.
+The rules are the same whether the closure dispatches through its own
+metaclass or, once it has an `ExpandoMetaClass` (after
+`ExpandoMetaClass.enableGlobally()` or after adding to a closure's metaclass),
+through `MetaClassImpl`. In a `@CompileStatic` closure, a property write
+resolves this way too. A method call or property read compiled against the
+owner is unchanged.
 
-**Who is affected.** Besides custom `Number` classes, the JDK's own
-non-`Comparable` numbers: `AtomicInteger`, `AtomicLong`, `LongAdder`,
-`DoubleAdder`, `LongAccumulator` and `DoubleAccumulator`. For example,
-`new AtomicInteger(1) == 1` is now `true`, and two different
-`AtomicInteger` instances holding the same value are now `==`. Before, that
-second comparison was an identity check. Use `is()` where identity is
-meant.
+**Who is affected.** Code that catches `NullPointerException` around a call
+in a closure with a null owner or delegate, and code that relied on
+`toString()` or `with` receiving `null` there. Nothing that ran without an
+exception before behaves differently, apart from those methods of the closure.
+No public API changes, so `japicmp` does not report this.
 
-**What is unchanged.** Comparisons where either side is not a `Number`,
-which still use `equals()`; numbers that implement `Comparable`, such as
-`Integer` and `BigDecimal`; and Java collection methods such as
-`List.contains`, which call `equals()` and not Groovy's `==`.
+### Groovy 7 — a closure's metaclass does not expose the private fields of `Closure` (GROOVY-12675, GROOVY-12680)
+
+A closure class does not inherit the private fields of `groovy.lang.Closure`
+(`bcw`, `thisType`, `mopPerturbed`, `serialVersionUID` and others), and its
+metaclass now treats them as any metaclass treats a superclass's private
+fields: `getProperties()` does not list them, `getMetaProperty` and
+`hasProperty` return null, and `getProperty` and `setProperty` throw
+`MissingPropertyException`. Earlier versions returned `bcw` and
+`serialVersionUID` through the metaclass. From Groovy 5 they also found and
+overwrote `thisType`, through the metaclass or through `closure.thisType = ...`
+under `TO_SELF`, and overwriting it broke the closure's access to private
+fields of its enclosing class. A `MissingPropertyException` for a closure no
+longer suggests these fields ("Possible solutions: bcw").
+
+**Who is affected.** Only code reading these fields through a closure's
+metaclass. `closure.properties` and the public properties of `Closure`
+(`owner`, `delegate`, `resolveStrategy`, `maximumNumberOfParameters` and the
+rest) are unchanged.
 
 ### Groovy 7 — `MatchException` for an exhaustive switch expression on a Java 21+ target
 
