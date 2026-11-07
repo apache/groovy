@@ -163,6 +163,65 @@ final class Groovy10714 {
         assert err.message.contains('Ambiguous method overloading')
     }
 
+    private static final String TRY = '''
+        import java.util.function.Consumer
+        class Try<T> {
+            final T value
+            Try(T value) { this.value = value }
+            String andThenTry(Consumer<? super T> consumer) { consumer.accept(value); 'Consumer' }
+            String andThenTry(Runnable runnable) { runnable.run(); 'Runnable' }
+        }
+    '''
+
+    @ParameterizedTest
+    @ValueSource(strings = ['', '@groovy.transform.PackedClosures'])
+    void testClosureWithDeclaredParameters(String mode) {
+        assertScript TRY + """
+            $mode
+            class Usage {
+                static String kind(Object o) { o.getClass().simpleName }
+
+                List results() {
+                    def attempt = new Try<String>('x')
+                    [attempt.andThenTry { String s -> assert s == 'x' },
+                     attempt.andThenTry { String s, int n = 1 -> assert s == 'x' && n == 1 },
+                     attempt.andThenTry((String s) -> { assert s == 'x' }),
+                     attempt.andThenTry { -> },
+                     attempt.andThenTry { it },
+                     kind { String s -> s }]
+                }
+            }
+
+            def (consumer, withDefault, lambda, none, implicit, kind) = new Usage().results()
+            assert [consumer, withDefault, lambda] == ['Consumer'] * 3
+            assert [none, implicit] == ['Runnable'] * 2
+            assert ('$mode' as boolean) == kind.startsWith('Fixed') // packed, through a fixed-arity class
+        """
+    }
+
+    @Test
+    void testRehydratedClosure() {
+        assertScript TRY + '''
+            def attempt = new Try<String>('x')
+            def closure = { String s -> assert s == 'x' }
+            assert attempt.andThenTry(closure.rehydrate(null, null, null)) == 'Consumer'
+            assert attempt.andThenTry(closure.dehydrate()) == 'Consumer'
+        '''
+    }
+
+    @Test
+    void testOneCallSiteGivenClosuresOfDifferentArity() {
+        assertScript TRY + '''
+            def site(Try attempt, functor) { attempt.andThenTry(functor) }
+
+            def attempt = new Try<String>('x')
+            def results = (1..20).collect { i ->
+                site(attempt, i % 2 ? { String s -> assert s == 'x' } : { -> })
+            }
+            assert results.unique() == ['Consumer', 'Runnable']
+        '''
+    }
+
     // what a method closure accepts is worked out when needed, so its serial form stays as it was
     @Test
     void testSerialFormOfMethodClosureUnchanged() {

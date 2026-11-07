@@ -3792,12 +3792,36 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 // which would otherwise win the distance tie-break and then fail to coerce
                 type.putNodeMetaData(StaticTypesMarker.METHOD_REFERENCE_TYPE, Boolean.TRUE);
             }
+            IntPredicate arity = null;
             if (type != null && exp instanceof MethodPointerExpression) {
-                IntPredicate arity = functorArity((MethodPointerExpression) exp);
-                if (arity != null) type.putNodeMetaData(StaticTypeCheckingSupport.FUNCTOR_ARITY, arity);
+                arity = functorArity((MethodPointerExpression) exp);
+            } else if (type != null && exp instanceof ClosureExpression) {
+                arity = functorArity((ClosureExpression) exp);
             }
+            if (arity != null) type.putNodeMetaData(StaticTypeCheckingSupport.FUNCTOR_ARITY, arity);
             return type;
         }).toArray(ClassNode[]::new);
+    }
+
+    /**
+     * Returns the numbers of arguments a closure or lambda with declared parameters can be
+     * called with, allowing for parameters with a default value and a trailing array, or
+     * {@code null} for one with an implicit parameter, which can be called with none or one.
+     */
+    private static IntPredicate functorArity(final ClosureExpression closure) {
+        Parameter[] parameters = closure.getParameters();
+        if (parameters == null) return n -> n == 0; // "{ -> }"
+        if (parameters.length == 0) return null;   // implicit "it"
+        int max = parameters.length, min = 0;
+        for (Parameter parameter : parameters) {
+            if (!parameter.hasInitialExpression()) min += 1;
+        }
+        if (parameters[max - 1].getType().isArray()) {
+            int least = Math.min(min, max - 1);
+            return n -> n >= least;
+        }
+        int least = min;
+        return n -> n >= least && n <= max;
     }
 
     /**

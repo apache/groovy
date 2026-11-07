@@ -3650,11 +3650,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         } else if (methodCount == 1) {
             return matchingMethods.get(0);
         }
+        matchingMethods = MetaClassHelper.filterByClosureArity(matchingMethods, arguments);
         if (values != null) {
             matchingMethods = MetaClassHelper.filterByMethodClosureArity(matchingMethods, values);
-            if (matchingMethods.size() == 1) {
-                return matchingMethods.get(0);
-            }
+        }
+        if (matchingMethods.size() == 1) {
+            return matchingMethods.get(0);
         }
         return doChooseMostSpecificParams(theClass.getName(), methodName, matchingMethods, arguments, false);
     }
