@@ -34,6 +34,7 @@ import org.codehaus.groovy.control.messages.SimpleMessage
 import org.codehaus.groovy.transform.StubberSupport
 import org.junit.jupiter.api.Test
 
+import java.beans.PropertyChangeListener
 import java.beans.VetoableChangeListener
 
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE
@@ -51,6 +52,7 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC
 final class VetoableASTStubberTest {
 
     private static final ClassNode LISTENER = ClassHelper.make(VetoableChangeListener)
+    private static final ClassNode PROPERTY_LISTENER = ClassHelper.make(PropertyChangeListener)
 
     @Test
     void testClassAndPropertyGainListenerStubsOnce() {
@@ -135,6 +137,38 @@ final class VetoableASTStubberTest {
 
     // GROOVY-12726
     @Test
+    void testUnboundClassKeepsPropertyChangePlaceholders() {
+        ClassNode type = vetoableClassWithForeignStubs('Bean')
+        type.addProperty('amount', ACC_PUBLIC, ClassHelper.int_TYPE, null, null, null)
+        SourceUnit source = sourceUnit()
+        new VetoableASTTransformation().visit([new AnnotationNode(ClassHelper.make(Vetoable)), type] as ASTNode[], source)
+
+        assert !StubberSupport.isStub(type.getDeclaredMethod('addVetoableChangeListener', params(param(LISTENER, 'listener'))))
+        assert StubberSupport.isStub(type.getDeclaredMethod('addPropertyChangeListener', params(param(PROPERTY_LISTENER, 'listener'))))
+        assert StubberSupport.isStub(type.getDeclaredMethod('toString', Parameter.EMPTY_ARRAY))
+        assert type.getDeclaredField('this$propertyChangeSupport') == null
+        assert !source.errorCollector.hasErrors()
+
+        ClassNode empty = vetoableClassWithForeignStubs('Empty')
+        SourceUnit emptySource = sourceUnit()
+        new VetoableASTTransformation().visit([new AnnotationNode(ClassHelper.make(Vetoable)), empty] as ASTNode[], emptySource)
+        assert empty.getDeclaredMethod('addVetoableChangeListener', params(param(LISTENER, 'listener'))) == null
+        assert StubberSupport.isStub(empty.getDeclaredMethod('addPropertyChangeListener', params(param(PROPERTY_LISTENER, 'listener'))))
+        assert StubberSupport.isStub(empty.getDeclaredMethod('toString', Parameter.EMPTY_ARRAY))
+        assert empty.getDeclaredField('this$propertyChangeSupport') == null
+
+        ClassNode bound = vetoableClassWithForeignStubs('Bound')
+        bound.addAnnotation(new AnnotationNode(ClassHelper.make(Bindable)))
+        bound.addProperty('amount', ACC_PUBLIC, ClassHelper.int_TYPE, null, null, null)
+        SourceUnit boundSource = sourceUnit()
+        new VetoableASTTransformation().visit([new AnnotationNode(ClassHelper.make(Vetoable)), bound] as ASTNode[], boundSource)
+        assert !StubberSupport.isStub(bound.getDeclaredMethod('addPropertyChangeListener', params(param(PROPERTY_LISTENER, 'listener'))))
+        assert bound.getDeclaredField('this$propertyChangeSupport') != null
+        assert StubberSupport.isStub(bound.getDeclaredMethod('toString', Parameter.EMPTY_ARRAY))
+    }
+
+    // GROOVY-12726
+    @Test
     void testHandWrittenListenerMethodIsKept() {
         ClassNode type = new ClassNode('Bean', ACC_PUBLIC, OBJECT_TYPE)
         Parameter[] parameters = params(param(LISTENER, 'listener'))
@@ -159,6 +193,18 @@ final class VetoableASTStubberTest {
 
     private static List<String> listenerMethods(ClassNode type) {
         type.methods*.name.findAll { it.contains('VetoableChange') }
+    }
+
+    private static ClassNode vetoableClassWithForeignStubs(String name) {
+        ClassNode type = new ClassNode(name, ACC_PUBLIC, OBJECT_TYPE)
+        addListenerStub(type, 'addVetoableChangeListener', params(param(LISTENER, 'listener')), VOID_TYPE)
+        addListenerStub(type, 'removeVetoableChangeListener', params(param(LISTENER, 'listener')), VOID_TYPE)
+        addListenerStub(type, 'fireVetoableChange', params(
+                param(STRING_TYPE, 'name'), param(OBJECT_TYPE, 'oldValue'), param(OBJECT_TYPE, 'newValue')), VOID_TYPE)
+        addListenerStub(type, 'addPropertyChangeListener', params(param(PROPERTY_LISTENER, 'listener')), VOID_TYPE)
+        StubberSupport.addStubMethod(type, 'toString', ACC_PUBLIC, STRING_TYPE, Parameter.EMPTY_ARRAY,
+                ClassNode.EMPTY_ARRAY, returnS(constX('stub')))
+        type
     }
 
     private static void addListenerStub(ClassNode type, String name, Parameter[] parameters, ClassNode returnType) {

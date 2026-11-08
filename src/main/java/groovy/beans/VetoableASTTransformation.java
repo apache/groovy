@@ -149,12 +149,15 @@ public class VetoableASTTransformation extends BindableASTTransformation {
 
 
     private void addListenerToClass(SourceUnit source, ClassNode classNode) {
-        // Listener placeholders only, including @Bindable ones when this
-        // class is also bound. Other stub-tagged methods stay for their
-        // own transforms.
-        removeVetoableChangeStubs(classNode);
-        removePropertyChangeStubs(classNode);
+        // Listener placeholders only. Property-change placeholders belong
+        // to @Bindable, so drop them only when this class is also bound.
+        // A field-level @Bindable is handled in createListenerSetter.
+        // Other stub-tagged methods stay for their own transforms.
         boolean bindable = BindableASTTransformation.hasBindableAnnotation(classNode);
+        removeVetoableChangeStubs(classNode);
+        if (bindable) {
+            removePropertyChangeStubs(classNode);
+        }
         for (PropertyNode propertyNode : classNode.getProperties()) {
             if (!hasVetoableAnnotation(propertyNode.getField())
                 && !propertyNode.getField().isFinal()
