@@ -281,6 +281,33 @@ final class VirtualAnnotationTest {
         }
     }
 
+    // GROOVY-12604
+    @Test
+    void virtualStatic_calledFromPromotedStatic_traitDeclaresClassMethodName() {
+        for (mode in ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            assertScript """
+                import groovy.transform.Virtual
+
+                $mode
+                trait T {
+                    @Virtual
+                    static boolean isInterface() { true }
+                    @Virtual
+                    static String setting() { 'default' }
+                    static String describe() { 'setting=' + setting() }
+                }
+                $mode
+                class C implements T { }
+                $mode
+                class Over implements T { static String setting() { 'over' } }
+
+                assert T.describe() == 'setting=default'
+                assert C.describe() == 'setting=default'
+                assert Over.describe() == 'setting=over'
+            """
+        }
+    }
+
     // ============ Validation ============
 
     /** {@code @Virtual} on an instance method → compile error. */

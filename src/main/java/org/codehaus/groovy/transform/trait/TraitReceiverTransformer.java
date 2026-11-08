@@ -73,6 +73,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
     private static final ClassNode VIRTUAL_TYPE = ClassHelper.make(Virtual.class);
+    private static final ClassNode TRAITS_TYPE = ClassHelper.make(Traits.class);
 
     private final VariableExpression weaved;
     private final SourceUnit unit;
@@ -404,8 +405,9 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 newCall.setSpreadSafe(call.isSpreadSafe());
                 newCall.setSourcePosition(call);
                 if (helperCall != null) {
-                    // ($static$self.isInterface() ? T$Trait$Helper.m($static$self, x) : $static$self.m(x))
-                    Expression dispatch = ternaryX(callX(varX(weaved), "isInterface"), helperCall, newCall);
+                    // (Traits.isTrait($static$self) ? T$Trait$Helper.m($static$self, x) : $static$self.m(x));
+                    // a dynamic $static$self.isInterface() would call a static isInterface() of the class
+                    Expression dispatch = ternaryX(callX(TRAITS_TYPE, "isTrait", args(varX(weaved))), helperCall, newCall);
                     dispatch.setSourcePosition(call);
                     return dispatch;
                 }
