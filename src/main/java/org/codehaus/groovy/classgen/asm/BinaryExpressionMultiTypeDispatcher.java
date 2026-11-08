@@ -20,7 +20,6 @@
 package org.codehaus.groovy.classgen.asm;
 
 import org.apache.groovy.util.Maps;
-import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.Variable;
@@ -34,8 +33,6 @@ import org.codehaus.groovy.runtime.BytecodeInterface8;
 import java.util.Map;
 
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
 import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
@@ -54,10 +51,6 @@ import static org.codehaus.groovy.syntax.Types.LEFT_SHIFT;
 import static org.codehaus.groovy.syntax.Types.LEFT_SQUARE_BRACKET;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
-import static org.objectweb.asm.Opcodes.DUP2_X1;
-import static org.objectweb.asm.Opcodes.DUP2_X2;
-import static org.objectweb.asm.Opcodes.DUP_X1;
-import static org.objectweb.asm.Opcodes.DUP_X2;
 
 /**
  * This class is for internal use only!
@@ -371,9 +364,10 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         // load return value
         operandStack.load(rightType, resultValueId);
 
-        // cleanup
-        compileStack.removeVar(resultValueId);
-        compileStack.removeVar(subscriptValueId);
+        // The subscript slot is an int. Clear a reference result now that its
+        // value has been reloaded; a primitive result keeps no heap object.
+        releaseTemporary(rightType, resultValueId);
+        releaseTemporary(int_TYPE, subscriptValueId);
         return true;
     }
 
@@ -445,7 +439,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             // original value without a local variable. The copy is taken before the
             // component cast, which applies to the consumed value only.
             if (!Boolean.TRUE.equals(orig.getNodeMetaData(AsmClassGenerator.ELIDE_EXPRESSION_VALUE))) {
-                duplicateTopBeneath(operandStack, 2);
+                operandStack.dupUnderTwo();
             }
             operandStack.doGroovyCast(arrayType.getComponentType());
 
@@ -457,38 +451,6 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         } else {
             super.assignToArray(orig, receiver, index, rhsValueLoader, safe);
         }
-    }
-
-    /**
-     * Duplicates the top operand beneath {@code operandsBelow} tracked operands.
-     * An array store has an array reference and an int index below the value,
-     * two words in total; the value is one word, or two for long and double.
-     */
-    private void duplicateTopBeneath(final OperandStack operandStack, final int operandsBelow) {
-        ClassNode top = operandStack.getTopOperand();
-        operandStack.remove(1);
-        ClassNode[] below = new ClassNode[operandsBelow];
-        int wordsBelow = 0;
-        for (int i = operandsBelow - 1; i >= 0; i -= 1) {
-            below[i] = operandStack.getTopOperand();
-            wordsBelow += isTwoWord(below[i]) ? 2 : 1;
-            operandStack.remove(1);
-        }
-        int wordsTop = isTwoWord(top) ? 2 : 1;
-        int opcode;
-        if (wordsTop == 1 && wordsBelow == 1) opcode = DUP_X1;
-        else if (wordsTop == 1 && wordsBelow == 2) opcode = DUP_X2;
-        else if (wordsTop == 2 && wordsBelow == 1) opcode = DUP2_X1;
-        else if (wordsTop == 2 && wordsBelow == 2) opcode = DUP2_X2;
-        else throw new GroovyBugError("cannot duplicate subscript value (" + wordsTop + " words) under " + wordsBelow + " words");
-        controller.getMethodVisitor().visitInsn(opcode);
-        operandStack.push(top);
-        for (ClassNode type : below) operandStack.push(type);
-        operandStack.push(top);
-    }
-
-    private static boolean isTwoWord(final ClassNode type) {
-        return isPrimitiveLong(type) || isPrimitiveDouble(type);
     }
 
     /**
