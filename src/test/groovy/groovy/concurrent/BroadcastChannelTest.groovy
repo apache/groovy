@@ -78,8 +78,7 @@ final class BroadcastChannelTest {
             def broadcast = BroadcastChannel.create()
             def early = broadcast.subscribe()
 
-            async { broadcast.send('first') }
-            Thread.sleep(100)
+            await broadcast.send('first') // accepted by every subscriber so far
 
             def late = broadcast.subscribe()
 

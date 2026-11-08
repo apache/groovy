@@ -548,6 +548,13 @@ include::../test/OperatorsTest.groovy[tags=constructor_refs,indent=0]
 <1> class constructor reference
 <2> array constructor reference
 
+Under static compilation, a constructor reference calls the constructor that `new` would call with the parameter
+types of the functional interface, selected at compile time among the constructors visible from the enclosing class.
+It is selected at run time instead, through the meta-class, when no single constructor matches those types, for an
+enum, for a protected constructor of another package, and for a protected or package-private constructor of a class
+that a `GroovyClassLoader` defined in another compilation, such as a class of an earlier `GroovyShell` parse. In a
+GraalVM native image, these run-time cases still need reflection metadata for the constructors.
+
 == Regular expression operators
 
 === Pattern operator

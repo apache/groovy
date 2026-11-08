@@ -41,5 +41,7 @@ public enum StaticCompilationMetadataKeys {
     /** For list.property expressions, we need the inferred component type. */
     COMPONENT_TYPE,
     /** If a receiver is the receiver of a dynamic property (for mixed-mode compilation). */
-    RECEIVER_OF_DYNAMIC_PROPERTY
+    RECEIVER_OF_DYNAMIC_PROPERTY,
+    /** Extension getter for the read half of a compound assignment to an extension property. */
+    EXTENSION_PROPERTY_GETTER
 }

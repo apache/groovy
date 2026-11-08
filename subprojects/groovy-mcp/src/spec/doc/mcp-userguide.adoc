@@ -1,0 +1,173 @@
+//////////////////////////////////////////
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+//////////////////////////////////////////
+
+[[mcp-user-guide]]
+= The Groovy MCP server
+
+`groovymcp` is the Model Context Protocol server shipped with Apache Groovy, from the `groovy-mcp` module.
+An agent starts that process and speaks newline-delimited JSON-RPC 2.0 on stdin and stdout.
+The server answers from the same compiler as the Groovy release it ships in.
+It does not run the source it is shown.
+
+You can pass a workspace jail and a compile classpath on the command line.
+The model cannot change either one through a tool.
+<<mcp-tools,Tools>> is the list of questions the compiler will answer.
+<<mcp-in-process,In-process use>> is the same session without a subprocess.
+
+****
+*How a request is answered.*
+The server keeps the buffers the client opened, compiles them with `GroovyLanguageEngine`, and reads that snapshot.
+The Groovy compile stops at semantic analysis and does not emit classes.
+`@Grab` and `@ASTTest` stay disabled, so a query compile does not download dependencies or run an `ASTTest` closure.
+Rename, format, and organize-imports return edits. They do not write files.
+****
+
+[[mcp-launch]]
+== Launching
+
+[source,shell]
+----
+groovymcp [--stdio] [--root <dir>] [--classpath <path>] [--version] [--help]
+----
+
+`--stdio` is accepted and changes nothing. Stdio is the only transport.
+`--root` confines every `path` argument to that directory. The directory is not scanned.
+Without `--root`, `path` is rejected and in-memory `text` still works.
+`--classpath` is a compile classpath, separated by the platform path separator. It is not a list of sources.
+`--help` prints usage and exits 0, including when other arguments are present.
+`--version` prints `groovy-mcp` and the implementation version.
+
+Stdout is the protocol. Diagnostics from the server itself go to stderr.
+One JSON-RPC message is one line. A message must not contain a raw newline.
+CRLF counts as that newline, and the CR is not part of the message and not part of the size cap.
+The server accepts protocol versions `2025-11-25`, `2025-06-18`, `2025-03-26`, and `2024-11-05` on `initialize`.
+A different version there is answered as `2025-11-25`.
+
+`server/discover` can be sent before `initialize`. It reports those versions and `2026-07-28`.
+A request that sets `_meta` `io.modelcontextprotocol/protocolVersion` to `2026-07-28` may call tools, resources, and prompts without the handshake.
+Any other value of that field is an error, and the error names the versions the server can speak.
+`ping` belongs to the handshake mode.
+
+List results stay fresh for one hour and are marked safe for a shared cache, because the lists do not depend on who asked.
+Resources and prompts are annotated for the assistant.
+
+A session that uses `initialize` has to send `notifications/initialized` before tools, resources, or prompts will answer.
+`ping` is allowed earlier. A second `initialize` is an error.
+
+[[mcp-tools]]
+== Tools
+
+Positions are 0-based UTF-16 code units.
+Pass source in one of three ways:
+
+* `text` — Groovy source kept in a `groovy-buffer` URI. The default URI is `groovy-buffer:snippet`. This is not a file on disk.
+* `path` — a file under `--root`. The server reads it and does not write it back.
+* `uri` — a buffer that is already open.
+
+Do not pass `text` and `path` together, or `path` and `uri` together.
+`text` may include a `uri` that names the buffer. The published schema accepts that pair and rejects the other combinations.
+A `text` buffer uses the `groovy-buffer` scheme only.
+`groovy_rename` requires `newName` in addition to the position.
+
+[cols="1,2"]
+|===
+|Tool |What it returns
+
+|`groovy_diagnostics`
+|Compiler diagnostics for one buffer.
+
+|`groovy_describe`
+|Hover markdown at `line` and `character`.
+
+|`groovy_definition`
+|Definition sites at a position.
+
+|`groovy_implementations`
+|Implementation sites at a position.
+
+|`groovy_references`
+|References at a position. `maxResults` is 1 to 200 and defaults to 50.
+
+|`groovy_symbols`
+|Symbols in open buffers. `query` is a substring or a CamelHumps pattern. An empty query lists symbols. The source arguments are optional.
+
+|`groovy_complete`
+|Completion candidates at a position.
+
+|`groovy_signatures`
+|Signature help at a position.
+
+|`groovy_tokens`
+|Semantic tokens as absolute spans.
+
+|`groovy_format`
+|Indent edits. `tabSize` is 1 to 16 and defaults to 4. `insertSpaces` defaults to true.
+
+|`groovy_organize_imports`
+|Import edits.
+
+|`groovy_rename`
+|Edits when the compiler can prove the binding. An empty edit list means the binding is not proven. `newName` has to be an identifier.
+
+|`groovy_close`
+|Drops an open buffer. Does not delete a file.
+|===
+
+Each tool result has `content` (a text item whose text is the same JSON), `isError`, and `structuredContent`.
+A bad argument, and an unknown tool name, are `isError: true`. The JSON-RPC call itself still succeeds, which is what a model reads.
+The tool name from the request is not repeated.
+`tools/list` publishes a JSON Schema 2020-12 `inputSchema` and `outputSchema` for each tool.
+A failed call's `structuredContent` is an `error` string. A successful call matches the tool's `outputSchema`.
+
+[[mcp-resources]]
+== Resources and prompts
+
+`resources/list` returns three resources, all `application/json`:
+
+* `groovy://language/keywords` — lexer keywords and primitive type names, from the compiler.
+* `groovy://language/default-imports` — default import prefixes, each with a trailing dot.
+* `groovy://server/limits` — the caps for this process, the classpath size (not the paths), and confirmation that execution, `@Grab`, and `@ASTTest` are off.
+
+`resources/templates/list` is empty.
+List methods reject a cursor other than empty or null.
+
+`explain-groovy` takes `code` and an optional `question`.
+`review-groovy` takes `code`.
+Both tell the model to use the tools above and not to run the source.
+The server does not treat the code inside a prompt as instructions to itself.
+
+[[mcp-limits]]
+== Limits
+
+Defaults are 2 MiB for one message, 512 Ki characters of source, and 512 Ki characters of tool JSON.
+A source `text` longer than the source cap is rejected.
+A file larger than the source cap is rejected.
+A tool payload over the result cap is replaced with an error.
+A resource body over the result cap is a protocol error.
+
+[[mcp-in-process]]
+== In-process use
+
+Hosts that already run inside the Groovy JVM can construct `McpServerConfig` and `GroovyMcpServer` and call `exchange` with one JSON line.
+The returned line has no trailing newline. The caller writes that newline when it owns the socket or the pipe.
+`close` closes the engine. Calling `exchange` after `close` fails.
+One thread should own the session. The server takes the engine's compile thread.
+
+The types are not a covenanted extension SPI. Binary compatibility for this module is not checked until a release has published a baseline jar.
+Do not import `org.apache.groovy.mcp.internal` or `org.apache.groovy.lsp.internal` from outside the project.

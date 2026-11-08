@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
@@ -38,8 +39,8 @@ import static org.codehaus.groovy.syntax.Types.EQUAL;
 
 
 /**
- * Rewrites some expressions found in traits so that they are compatible. For example, x++ will be rewritten into x = x
- * + 1 and x += y into x = x + y
+ * Rewrites some expressions found in traits so that they are compatible. For example, if x is a trait field, x += y
+ * will be rewritten into x = x + y, and x++ is rejected
  */
 class NAryOperationRewriter extends ClassCodeExpressionTransformer {
     private final SourceUnit sourceUnit;
@@ -82,6 +83,10 @@ class NAryOperationRewriter extends ClassCodeExpressionTransformer {
         }
         if (exp instanceof PostfixExpression) {
             return transformPostfixExpression((PostfixExpression) exp);
+        }
+        if (exp instanceof ClosureExpression) { // GROOVY-12603: closure or lambda in trait code
+            ((ClosureExpression) exp).getCode().visit(this);
+            return exp;
         }
         return super.transform(exp);
     }
@@ -128,10 +133,14 @@ class NAryOperationRewriter extends ClassCodeExpressionTransformer {
             // no transform needed
             return super.transform(exp);
         }
+        if (!isInternalFieldAccess(exp.getLeftExpression())) {
+            // GROOVY-12613: only a trait field needs the rewrite; others keep single evaluation of the target
+            return super.transform(exp);
+        }
         BinaryExpression operation = new BinaryExpression(
                 exp.getLeftExpression(),
                 Token.newSymbol(token, -1, -1),
-                exp.getRightExpression()
+                transform(exp.getRightExpression()) // GROOVY-12615: rewrite nested compound assignments too
         );
         operation.setSourcePosition(exp);
         BinaryExpression result = new BinaryExpression(
