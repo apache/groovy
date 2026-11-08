@@ -19,12 +19,15 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.codehaus.groovy.classgen.asm.InstructionSequence
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.jupiter.api.Test
+
+import java.security.CodeSource
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -105,6 +108,9 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
 
     private static final String SC = '@groovy.transform.CompileStatic'
 
+    /** Dynamic code calls a super constructor without the meta-class too, so @CompileDynamic does not help. */
+    private static final String SUPER_CALL_FAILS = 'A super constructor call fails at run time in dynamic code too'
+
     /** Compiles {@code body} as a method of a class C, with the options shell, clause and annotation, and runs it. */
     private Object evaluate(final Map options = [:], final String body) {
         (options.shell ?: shell).evaluate """package p
@@ -122,7 +128,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         }
         assert err.message.contains(member) : body
         assert err.message.contains('is defined by another class loader, so the JVM refuses this access') : body
-        assert err.message.contains('Use @CompileDynamic to reach it through the meta-class') : body
+        assert err.message.contains(options.advice ?: 'Use @CompileDynamic to reach it through the meta-class') : body
     }
 
     private static void assertRefusedAtRunTime(final Closure<?> run) {
@@ -177,10 +183,11 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
                 shell.evaluate "package p\n$SC\n$type"
             }
             assert err.message.contains('Cannot call package-private constructor of p.A from class p.D') : type
+            assert err.message.contains(SUPER_CALL_FAILS) && !err.message.contains('@CompileDynamic') : type
         }
-        assertReported('package-private constructor of p.A', 'new A(1) { }')
-        assertReported('package-private constructor of p.A', 'new A() { }')
-        assertReported('package-private constructor of p.A', 'int i = 1; new A(i) { int shared() { i } }')
+        assertReported(advice: SUPER_CALL_FAILS, 'package-private constructor of p.A', 'new A(1) { }')
+        assertReported(advice: SUPER_CALL_FAILS, 'package-private constructor of p.A', 'new A() { }')
+        assertReported(advice: SUPER_CALL_FAILS, 'package-private constructor of p.A', 'int i = 1; new A(i) { int shared() { i } }')
 
         // a subclass can call a protected constructor with super(...)
         assert shell.evaluate('''package p
@@ -190,6 +197,27 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         ''') == 'prot:x'
         assert evaluate("new A('y') { }.value") == 'prot:y'
         assert evaluate("String s = 'z'; new A(s) { String shared() { s } }.value") == 'prot:z'
+    }
+
+    // GROOVY-12568
+    @Test
+    void testSuperConstructorsOfAnotherRuntimePackageInDynamicCode() {
+        shell.evaluate LIBRARY
+        assertRefusedAtRunTime { shell.evaluate 'package p\nclass D extends A { D() { super(1) } }\nnew D()' }
+        assertRefusedAtRunTime { shell.evaluate 'package p\nclass D extends A { }\nnew D()' }
+        assertRefusedAtRunTime { evaluate(annotation: '', 'new A(1) { }') }
+    }
+
+    // GROOVY-12568: a constructor that @InheritConstructors generates is not reported, as it fails only if it is called
+    @Test
+    void testConstructorsGeneratedByInheritConstructors() {
+        shell.evaluate LIBRARY
+        assert shell.evaluate('''package p
+            @groovy.transform.CompileStatic @groovy.transform.InheritConstructors
+            class D extends A { }
+            new D('x').value
+        ''') == 'prot:x'
+        assertRefusedAtRunTime { shell.evaluate 'package p\nnew D(1)' }
     }
 
     // GROOVY-12568
@@ -620,7 +648,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
     // GROOVY-12568
     @Test
     void testProtectedAndPackagePrivateConstructorsOfSameCompilationUnitAreCalledDirectly() {
-        def bytecode = compile(method: 'make', classNamePattern: 'p.C', '''package p
+        def bytecode = compileInMemory('make', '''package p
             class A {
                 protected A(String s) { }
                 @groovy.transform.PackageScope A(Integer i) { }
@@ -639,7 +667,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
     // GROOVY-12568
     @Test
     void testProtectedAndPackagePrivateMethodsOfSameCompilationUnitAreCalledDirectly() {
-        def bytecode = compile(method: 'test', classNamePattern: 'p.C', MEMBERS + '''
+        def bytecode = compileInMemory('test', MEMBERS + '''
             @groovy.transform.CompileStatic
             class C {
                 static List test(M m) {
@@ -656,7 +684,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
     // GROOVY-12568
     @Test
     void testMethodReferenceToPackagePrivateMethodOfSameCompilationUnitIsDirect() {
-        def bytecode = compile(method: 'test', classNamePattern: 'p.C', MEMBERS + '''
+        def bytecode = compileInMemory('test', MEMBERS + '''
             @groovy.transform.CompileStatic
             class C {
                 static java.util.function.Supplier<String> test(M m) {
@@ -671,7 +699,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
     // GROOVY-12568
     @Test
     void testProtectedAndPackagePrivateFieldsOfSameCompilationUnitAreAccessedDirectly() {
-        def bytecode = compile(method: 'test', classNamePattern: 'p.C', FIELDS + '''
+        def bytecode = compileInMemory('test', FIELDS + '''
             @groovy.transform.CompileStatic
             class C {
                 static List test(F f) {
@@ -788,6 +816,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
                 }
             '''
             def config = new CompilerConfiguration(targetDirectory: dir, jointCompilationOptions: [memStub: true])
+            config.optimizationOptions[CompilerConfiguration.RUNTIME_PACKAGE_CHECK] = true
             def unit = new JavaAwareCompilationUnit(config, new GroovyClassLoader(this.class.classLoader))
             unit.addSources(j, g)
             unit.compile()
@@ -806,6 +835,23 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
             dir.deleteDir()
             src.deleteDir()
         }
+    }
+
+    /**
+     * Compiles the script in memory with the check, as the class loader of a
+     * GroovyShell does, and returns the instructions of {@code method} of class p.C.
+     */
+    private InstructionSequence compileInMemory(final String method, final String script) {
+        def config = new CompilerConfiguration()
+        config.optimizationOptions[CompilerConfiguration.RUNTIME_PACKAGE_CHECK] = true
+        CompilationUnit unit = null
+        new GroovyClassLoader(this.class.classLoader, config) {
+            @Override
+            protected CompilationUnit createCompilationUnit(final CompilerConfiguration cc, final CodeSource source) {
+                unit = super.createCompilationUnit(cc, source)
+            }
+        }.parseClass(script)
+        extractMethodSequence(unit.classes.find { it.name == 'p.C' }.bytes, method)
     }
 
     /**
