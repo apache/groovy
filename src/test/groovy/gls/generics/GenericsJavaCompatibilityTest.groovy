@@ -1780,7 +1780,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign value of type capture-of ? super java.lang.Integer to variable of type java.lang.Integer")
     }
 
     /**
@@ -1799,7 +1799,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign value of type capture-of ? extends java.lang.Number to variable of type java.lang.Integer")
     }
 
     /**
@@ -1820,7 +1820,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call java.util.List#add(capture-of ? super java.lang.Integer) with arguments [java.lang.Double]")
     }
 
     /**
@@ -1842,7 +1842,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<? extends java.lang.Number> to: java.util.List<java.lang.Number>")
     }
 
     /**
@@ -1863,7 +1863,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.ArrayList<java.lang.String> to: java.util.List<? extends java.lang.Number>")
     }
 
     /**
@@ -1883,7 +1883,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<? extends java.lang.Number> to: java.util.List<? extends java.lang.Integer>")
     }
 
     /**
@@ -1903,7 +1903,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<? super java.lang.Integer> to: java.util.List<? super java.lang.Number>")
     }
 
     /**
@@ -1924,7 +1924,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<? super java.lang.Integer> to: java.util.List<? extends java.lang.Number>")
     }
 
     /**
@@ -1943,7 +1943,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<? extends java.lang.Number> to: java.util.List<? super java.lang.Integer>")
     }
 
     /**
@@ -1972,7 +1972,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "cannot be applied", "Cannot call")
+        assertNegativeCompile(className, javaSrc, "cannot be applied", "Cannot call <E> gls.generics.test.PecsTransferWrongPolarity#transfer(java.util.List<? extends E>, java.util.List<? super E>) with arguments [java.util.ArrayList<java.lang.Number>, java.util.ArrayList<java.lang.Integer>]")
     }
 
     /**
@@ -1992,7 +1992,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.CharSequence>")
     }
 
     /**
@@ -2029,7 +2029,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? super java.lang.CharSequence>")
     }
 
     /**
@@ -2050,7 +2050,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<java.util.List<java.lang.String>> to: java.util.List<java.util.List<?>>")
     }
 
     /**
@@ -2070,7 +2070,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<java.util.List<? extends java.lang.Number>> to: java.util.List<? extends java.util.List<java.lang.Number>>")
     }
 
     /**
@@ -2090,7 +2090,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<java.util.ArrayList<java.lang.Integer>> to: java.util.List<? extends java.util.List<java.lang.String>>")
     }
 
     /**
@@ -2110,7 +2110,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<java.util.Collection<java.lang.Object>> to: java.util.List<? super java.util.Collection<java.lang.String>>")
     }
 
     /**
@@ -2130,7 +2130,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call java.util.List#add(capture-of ? super java.util.List<java.lang.String>) with arguments [java.util.ArrayList<java.lang.Integer>]")
     }
 
     /**
@@ -2171,7 +2171,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<?> to: java.util.List<? extends java.lang.Number>")
     }
 
     /**
@@ -2189,7 +2189,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<?> to: java.util.List<? super java.lang.Integer>")
     }
 
     /**
@@ -2209,7 +2209,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.function.Predicate<java.lang.String> to: java.util.function.Predicate<? super java.lang.CharSequence>")
     }
 
     /**
@@ -2273,7 +2273,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<? extends T> to: java.util.List<? extends java.lang.Number>")
     }
 
     /**
@@ -2317,7 +2317,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<T> to: java.util.List<java.lang.Number>")
     }
 
     /**
@@ -2339,7 +2339,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call gls.generics.test.CallNestedListOfWildcard#take(java.util.List<java.util.List<?>>) with arguments [java.util.List<java.util.List<java.lang.String>>]")
     }
 
     /**
@@ -2358,7 +2358,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.lang.Comparable<?> to: java.lang.Comparable<? super T>")
     }
 
     /**
@@ -2377,7 +2377,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<?> to: java.util.List<? extends T>")
     }
 
     /**
@@ -2421,7 +2421,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<? extends T> to: java.util.List<java.lang.Number>")
     }
 
     /**
@@ -2465,7 +2465,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<? super T> to: java.util.List<? extends java.lang.Number>")
     }
 
     /**
@@ -2485,7 +2485,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<? extends java.util.List<java.lang.String>> to: java.util.List<? extends java.util.Map<java.lang.String, java.lang.String>>")
     }
 
     /**
@@ -2505,7 +2505,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<java.util.List<java.util.List<? extends java.lang.String>>> to: java.util.List<? extends java.util.List<java.util.List<java.lang.Number>>>")
     }
 
     /**
@@ -2547,7 +2547,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<java.lang.String[]> to: java.util.List<java.lang.Object[]>")
     }
 
     /**
@@ -2566,7 +2566,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<java.util.List<? extends java.lang.Integer>> to: java.util.List<java.util.List<? extends java.lang.Number>>")
     }
 
     /**
@@ -2694,7 +2694,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<java.util.List<? super java.lang.Integer>> to: java.util.List<java.util.List<? super java.lang.Number>>")
     }
 
     /**
@@ -2863,7 +2863,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.function.Predicate<? super T> to: java.util.function.Predicate<? super S>")
     }
 
     /**
@@ -2882,7 +2882,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<? super T> to: java.util.List<? super java.lang.Number>")
     }
 
     /**
@@ -2900,7 +2900,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<? super T> to: java.util.List<java.lang.Object>")
     }
 
     /**
@@ -2944,7 +2944,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<? super java.util.List<T>> to: java.util.List<? super java.util.List<S>>")
     }
 
     /**
@@ -2965,7 +2965,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot assign")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Incompatible generic argument types. Cannot assign java.util.List<java.util.Map<java.lang.String, java.util.List<? extends java.lang.Number>>> to: java.util.List<? extends java.util.Map<java.lang.String, java.util.List<java.lang.Number>>>")
     }
 
     /**
@@ -3731,7 +3731,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call java.util.List#add(capture-of ? extends java.lang.Number) with arguments [java.lang.Integer]")
     }
 
     // =========================================================================
@@ -4894,7 +4894,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call java.util.Collection#add(capture-of ?) with arguments [java.lang.String]")
     }
 
     // =========================================================================
@@ -4981,7 +4981,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call java.util.List#set(int, capture-of ?) with arguments [int, java.lang.Object]")
     }
 
     /**
@@ -5001,7 +5001,7 @@ final class GenericsJavaCompatibilityTest {
                 }
             }
         '''
-        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call")
+        assertNegativeCompile(className, javaSrc, "incompatible types", "Cannot call java.util.List#set(int, capture-of ? extends java.lang.Number) with arguments [int, java.lang.Number]")
     }
 
     /**

@@ -363,6 +363,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isTrai
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isUsingGenericsOrIsArrayUsingGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isWildcardLeftHandSide;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.missesGenericsTypes;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.prettyPrintCapture;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.prettyPrintType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.prettyPrintTypeName;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.resolveClassNodeGenerics;
@@ -3593,7 +3594,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     type = inferredReturnType; // GROOVY-12616: the value is converted to a primitive return type as by a method's return
                 } else if ((statement.isReturningNullOrVoid() || !isPrimitiveVoid(type)) && !extension.handleIncompatibleReturnType(statement, type)) {
                     // GROOVY-10277, GROOVY-11490: incompatible return statement (null for primitive or inconvertible type)
-                    String value = (statement.isReturningNullOrVoid() ? "null" : "value of type " + prettyPrintType(type));
+                    String value = (statement.isReturningNullOrVoid() ? "null" : "value of type " + prettyPrintValueType(type, expression));
                     String which = (enclosingClosure.getClosureExpression() instanceof LambdaExpression ? "lambda" : "closure");
                     addStaticTypeError("Cannot return " + value + " for " + which + " expecting " + prettyPrintType(inferredReturnType), expression);
                 }
@@ -3606,7 +3607,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             ClassNode returnType = enclosingMethod.getReturnType();
             if (!isPrimitiveVoid(getUnwrapper(type)) && !checkReturnValue(returnType, type, expression, statement)) {
                 if (!extension.handleIncompatibleReturnType(statement, type)) {
-                    addStaticTypeError("Cannot return value of type " + prettyPrintType(type) + " for method returning " + prettyPrintType(returnType), expression);
+                    addStaticTypeError("Cannot return value of type " + prettyPrintValueType(type, expression) + " for method returning " + prettyPrintType(returnType), expression);
                 }
             }
         }
@@ -8786,7 +8787,47 @@ out:    for (ClassNode type : todo) {
      * Reports an incompatible assignment between the supplied types.
      */
     protected void addAssignmentError(final ClassNode leftType, final ClassNode rightType, final Expression expression) {
-        addStaticTypeError("Cannot assign value of type " + prettyPrintType(rightType) + " to variable of type " + prettyPrintType(leftType), expression);
+        addStaticTypeError("Cannot assign value of type " + prettyPrintValueType(rightType, expression) + " to variable of type " + prettyPrintType(leftType), expression);
+    }
+
+    /**
+     * Prints {@code type}. When {@code expression} is a call whose return type
+     * is a type variable instantiated by a wildcard, names that capture
+     * ({@code capture-of ? super java.lang.Integer}) instead of the upper
+     * bound the checker uses. The bound stays the type that was checked.
+     */
+    private String prettyPrintValueType(final ClassNode type, final Expression expression) {
+        String capture = captureOfReturnType(expression);
+        return capture != null ? capture : prettyPrintType(type);
+    }
+
+    private String captureOfReturnType(final Expression expression) {
+        Expression value = expression;
+        if (value instanceof BinaryExpression binary && isAssignment(binary.getOperation().getType())) {
+            value = binary.getRightExpression();
+        }
+        Expression receiverExpression = null;
+        if (value instanceof MethodCallExpression call) {
+            receiverExpression = call.getObjectExpression();
+        } else if (value instanceof PropertyExpression property) {
+            receiverExpression = property.getObjectExpression();
+        }
+        if (receiverExpression == null) return null;
+
+        MethodNode target = value.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (target == null || target instanceof ExtensionMethodNode || target.isStatic()) return null;
+        ClassNode declaredReturn = target.getReturnType();
+        if (declaredReturn == null || !declaredReturn.isGenericsPlaceHolder()) return null;
+        ClassNode receiver = getType(receiverExpression);
+        ClassNode declaring = target.getDeclaringClass();
+        if (receiver == null || declaring == null) return null;
+        if (!receiver.equals(declaring) && !implementsInterfaceOrIsSubclassOf(receiver, declaring)) return null;
+
+        Map<GenericsTypeName, GenericsType> spec = extractPlaceHoldersVisibleToDeclaration(receiver, target, null);
+        if (spec == null) return null;
+        GenericsType witness = spec.get(new GenericsTypeName(declaredReturn.getUnresolvedName()));
+        if (witness == null || !witness.isWildcard()) return null;
+        return prettyPrintCapture(witness);
     }
 
     /**

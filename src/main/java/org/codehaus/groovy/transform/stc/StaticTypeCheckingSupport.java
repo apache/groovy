@@ -877,9 +877,56 @@ public abstract class StaticTypeCheckingSupport {
             return joiner.toString();
         }
         if (type.getUnresolvedName().charAt(0) == '#') {
-            return type.redirect().toString(false);
+            return normalizeUnboundedWildcard(type.redirect().toString(false));
         }
-        return type.toString(false);
+        return normalizeUnboundedWildcard(type.toString(false));
+    }
+
+    /**
+     * JLS 4.5.1: {@code ?} and {@code ? extends Object} are the same wildcard.
+     * Diagnostics use the short form. A longer bound ({@code Object[]},
+     * {@code Object<V>}, an intersection) is left as written.
+     */
+    static String normalizeUnboundedWildcard(final String printed) {
+        if (printed == null || printed.isEmpty()) return printed;
+        final String token = "? extends java.lang.Object";
+        StringBuilder sb = null;
+        int i = 0;
+        while (i < printed.length()) {
+            int j = printed.indexOf(token, i);
+            if (j < 0) {
+                if (sb == null) return printed;
+                sb.append(printed, i, printed.length());
+                break;
+            }
+            int end = j + token.length();
+            if (!isSoleObjectBound(printed, end)) {
+                if (sb == null) sb = new StringBuilder(printed.length());
+                sb.append(printed, i, end);
+                i = end;
+                continue;
+            }
+            if (sb == null) sb = new StringBuilder(printed.length());
+            sb.append(printed, i, j).append('?');
+            i = end;
+        }
+        return sb == null ? printed : sb.toString();
+    }
+
+    private static boolean isSoleObjectBound(final String printed, final int end) {
+        int k = end;
+        while (k < printed.length() && printed.charAt(k) == ' ') k += 1;
+        if (k >= printed.length()) return true;
+        char c = printed.charAt(k);
+        return c != '&' && c != '<' && c != '[' && c != '.' && !Character.isJavaIdentifierPart(c);
+    }
+
+    /**
+     * Diagnostic name of a wildcard capture, for example
+     * {@code capture-of ? super java.lang.Integer}.
+     */
+    static String prettyPrintCapture(final GenericsType wildcard) {
+        return normalizeUnboundedWildcard("capture-of " + wildcard);
     }
 
     /**
