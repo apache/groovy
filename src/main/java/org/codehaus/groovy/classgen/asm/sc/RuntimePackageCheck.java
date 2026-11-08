@@ -44,6 +44,7 @@ import org.objectweb.asm.Type;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -151,7 +152,8 @@ public final class RuntimePackageCheck {
 
     /**
      * Checks the superclass and interfaces of a statically compiled class. The JVM
-     * refuses to load a class whose superclass or interface it cannot access.
+     * refuses to load a class whose superclass or interface it cannot access, in
+     * dynamic code too, so the report does not advise {@code @CompileDynamic}.
      *
      * @param controller the writer of the class
      */
@@ -163,7 +165,7 @@ public final class RuntimePackageCheck {
         for (ClassNode superType : superTypes) {
             if ((superType.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0 && samePackageName(superType, classNode)
                     && !AsmClassGenerator.isInSameRuntimePackage(superType, classNode)) {
-                reportClass(controller, superType.getName(), classNode);
+                reportClass(controller, superType.getName(), classNode, "A class that extends or implements it fails to load in dynamic code too");
             }
         }
     }
@@ -218,8 +220,8 @@ public final class RuntimePackageCheck {
                 declaringClass.getNameWithoutPackage(), node, advice);
     }
 
-    private static void reportClass(final WriterController controller, final String className, final ASTNode node) {
-        report(controller, "Cannot use package-private class " + className, className.substring(className.lastIndexOf('.') + 1), node, USE_COMPILE_DYNAMIC);
+    private static void reportClass(final WriterController controller, final String className, final ASTNode node, final String advice) {
+        report(controller, "Cannot use package-private class " + className, className.substring(className.lastIndexOf('.') + 1), node, advice);
     }
 
     private static void report(final WriterController controller, final String problem, final String simpleName, final ASTNode node, final String advice) {
@@ -275,8 +277,19 @@ public final class RuntimePackageCheck {
             if (!Objects.equals(packageName, classNode.getPackageName()) || !checked.add(internalName)) return;
             if (controller.getInvocationWriter() instanceof StaticInvocationWriter) {
                 String className = internalName.replace('/', '.');
-                if (isClassOfAnotherRuntimePackage(className)) reportClass(controller, className, null);
+                if (!isCheckedSuperType(className) && isClassOfAnotherRuntimePackage(className)) reportClass(controller, className, null, USE_COMPILE_DYNAMIC);
             }
+        }
+
+        /**
+         * Determines if {@link #checkSuperTypes} checks the class, as a superclass
+         * or interface of the current class, so it is not reported again.
+         */
+        private boolean isCheckedSuperType(final String className) {
+            ClassNode classNode = controller.getClassNode(), superClass = classNode.getSuperClass();
+            return StaticCompilationVisitor.isStaticallyCompiled(classNode)
+                && ((superClass != null && superClass.getName().equals(className))
+                    || Arrays.stream(classNode.getInterfaces()).anyMatch(type -> type.getName().equals(className)));
         }
 
         private boolean isClassOfAnotherRuntimePackage(final String className) {

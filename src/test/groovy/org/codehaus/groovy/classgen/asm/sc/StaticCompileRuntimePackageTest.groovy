@@ -111,6 +111,9 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
     /** Dynamic code calls a super constructor without the meta-class too, so @CompileDynamic does not help. */
     private static final String SUPER_CALL_FAILS = 'A super constructor call fails at run time in dynamic code too'
 
+    /** The JVM refuses to load a dynamic class with such a superclass or interface too. */
+    private static final String SUPER_TYPE_FAILS = 'A class that extends or implements it fails to load in dynamic code too'
+
     /** Compiles {@code body} as a method of a class C, with the options shell, clause and annotation, and runs it. */
     private Object evaluate(final Map options = [:], final String body) {
         (options.shell ?: shell).evaluate """package p
@@ -577,7 +580,17 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
                 shell.evaluate "package p\n$SC\n$type"
             }
             assert err.message.contains("Cannot use package-private class $name from class p.D")
+            assert err.message.contains(SUPER_TYPE_FAILS) && !err.message.contains('@CompileDynamic') : type
         }
+    }
+
+    // GROOVY-12569
+    @Test
+    void testSuperTypesOfAnotherRuntimePackageInDynamicCode() {
+        shell.evaluate HIDDEN
+        assertRefusedAtRunTime { shell.evaluate 'package p\nclass D extends Hidden { }\nnew D()' }
+        assertRefusedAtRunTime { shell.evaluate 'package p\nclass D implements HiddenI { }\nnew D()' }
+        assertRefusedAtRunTime { evaluate(annotation: '', 'new Hidden() { }') }
     }
 
     // GROOVY-12569
