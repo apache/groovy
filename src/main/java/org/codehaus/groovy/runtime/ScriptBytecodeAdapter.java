@@ -480,12 +480,15 @@ public class ScriptBytecodeAdapter {
 
     public static Object getProperty(Class senderClass, Object receiver, String messageName) throws Throwable {
         try {
-            // overridesGetProperty, not the hasCustomGetProperty of the property-read call sites:
-            // a synthetic or @Internal getProperty receives the read here, and the two criteria
-            // differ on purpose (see GroovyObjectOverrides). As in setProperty, a class that
-            // cannot be inspected counts as overriding, so the read reaches its own getProperty
-            if (receiver instanceof GroovyObject groovyObject && (senderClass == null || GroovyObjectOverrides.overridesGetProperty(receiver.getClass()))) {
+            if (receiver == null) {
+                return NullObject.getNullObject().getProperty(messageName);
+            } else if (receiver instanceof GroovyObject groovyObject && (senderClass == null
+                        || GroovyObjectOverrides.overridesGetProperty(receiver.getClass()))) {
                 // TODO: instead of checking for no getProperty specialization, pass senderClass in ThreadLocal or something
+                // overridesGetProperty, not the hasCustomGetProperty of the property-read call sites:
+                // a synthetic or @Internal getProperty receives the read here, and the two criteria
+                // differ on purpose (see GroovyObjectOverrides). As in setProperty, a class that
+                // cannot be inspected counts as overriding, so the read reaches its own getProperty
                 return groovyObject.getProperty(messageName);
             } else {
                 MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
@@ -516,13 +519,16 @@ public class ScriptBytecodeAdapter {
 
     public static void setProperty(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
         try {
-            // an override of setProperty receives the write; for the GroovyObject default, which
-            // would pass it on without the sender, the metaclass is called here instead (with no
-            // sender there is nothing to pass on, so the object's setProperty takes it). A class
-            // that cannot be inspected counts as overriding, so its own setProperty is reached
-            // either way, at the cost of the sender if that is the GroovyObject default (see
-            // GroovyObjectOverrides)
-            if (receiver instanceof GroovyObject groovyObject && (senderClass == null || GroovyObjectOverrides.overridesSetProperty(receiver.getClass()))) {
+            if (receiver == null) {
+                NullObject.getNullObject().setProperty(messageName, messageArgument);
+            } else if (receiver instanceof GroovyObject groovyObject && (senderClass == null
+                        || GroovyObjectOverrides.overridesSetProperty(receiver.getClass()))) {
+                // an override of setProperty receives the write; for the GroovyObject default, which
+                // would pass it on without the sender, the metaclass is called here instead (with no
+                // sender there is nothing to pass on, so the object's setProperty takes it). A class
+                // that cannot be inspected counts as overriding, so its own setProperty is reached
+                // either way, at the cost of the sender if that is the GroovyObject default (see
+                // GroovyObjectOverrides)
                 groovyObject.setProperty(messageName, messageArgument);
             } else {
                 MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
@@ -982,7 +988,7 @@ public class ScriptBytecodeAdapter {
     }
 
     public static Pattern regexPattern(final Object regex) {
-        return StringGroovyMethods.bitwiseNegate((CharSequence)regex.toString());
+        return StringGroovyMethods.bitwiseNegate(regex.toString());
     }
 
     //spread
@@ -1096,5 +1102,4 @@ public class ScriptBytecodeAdapter {
         return PackedClosure.create(owner, (GeneratedDispatcher.Bundle) dispatchers, id, method,
                 captured, paramTypes, strict, implicit, vararg);
     }
-
 }

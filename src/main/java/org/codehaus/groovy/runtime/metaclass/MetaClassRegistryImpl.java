@@ -374,7 +374,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
      * @return the metaclass for the object
      */
     public MetaClass getMetaClass(Object obj) {
-        Class theClass = obj instanceof Class ? (Class) obj : obj.getClass();
+        Class theClass = obj instanceof Class c ? c : obj.getClass();
         return ClassInfo.getClassInfo(theClass).getMetaClass(obj);
     }
 
@@ -427,7 +427,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
      * @param theMetaClass the new metaclass for this instance
      */
     public void setMetaClass(Object obj, MetaClass theMetaClass) {
-        Class theClass = obj instanceof Class ? (Class)obj : obj.getClass();
+        Class theClass = obj instanceof Class c ? c : obj.getClass();
         ClassInfo info = ClassInfo.getClassInfo(theClass);
         MetaClass mc;
         info.lock();
