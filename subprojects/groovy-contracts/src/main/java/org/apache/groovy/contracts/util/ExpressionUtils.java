@@ -32,6 +32,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.andX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
@@ -46,7 +47,9 @@ public final class ExpressionUtils {
     private ExpressionUtils() { }
 
     /**
-     * Returns all {@link BooleanExpression} instances found in the given {@link ClosureExpression}.
+     * Returns all {@link BooleanExpression} instances found in the given {@link ClosureExpression}. A statement
+     * that is not an expression statement holds no condition and is left out; callers report such a statement
+     * before asking for the conditions.
      */
     public static List<BooleanExpression> getBooleanExpression(ClosureExpression closureExpression) {
         if (closureExpression == null) return null;
@@ -74,6 +77,9 @@ public final class ExpressionUtils {
                 tmp = boolX(expression);
                 tmp.setSourcePosition(expression);
                 saveLabel(tmp, stmt);
+            } else {
+                // e.g. a return or assert statement: no condition to extract (reported by the caller)
+                continue;
             }
 
             booleanExpressions.add(tmp);
@@ -85,6 +91,20 @@ public final class ExpressionUtils {
     private static void saveLabel(BooleanExpression tmp, Statement stmt) {
         List<String> labels = stmt.getStatementLabels();
         tmp.setNodeMetaData("statementLabel", labels != null && !labels.isEmpty() ? labels.get(0) : null);
+    }
+
+    /**
+     * Names the kind of the given statement for an error message, in the plural: {@code "return statements"}
+     * for a {@code return} statement, {@code "try-catch statements"} for a {@code try} statement.
+     *
+     * @param statement the statement to describe
+     * @return the kind of statement, derived from the statement's class name
+     */
+    public static String describeStatementKind(Statement statement) {
+        String kind = statement.getClass().getSimpleName();
+        if (kind.endsWith("Statement")) kind = kind.substring(0, kind.length() - "Statement".length());
+        // TryCatch -> try-catch
+        return kind.replaceAll("(?<=[a-z])(?=[A-Z])", "-").toLowerCase(Locale.ROOT) + " statements";
     }
 
     /**

@@ -62,7 +62,9 @@ import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.io.ReaderSource;
@@ -80,6 +82,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
@@ -159,7 +162,7 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
                 );
                 newClosureBlockStatement.setSourcePosition(closureExpression.getCode());
 
-                ClosureExpression rewrittenClosureExpression = new ClosureExpression(closureExpression.getParameters(), newClosureBlockStatement);
+                ClosureExpression rewrittenClosureExpression = new ClosureExpression(getParametersSafe(closureExpression), newClosureBlockStatement);
                 rewrittenClosureExpression.setDeclaringClass(closureExpression.getDeclaringClass());
                 rewrittenClosureExpression.setSourcePosition(closureExpression);
                 rewrittenClosureExpression.setSynthetic(true);
@@ -233,7 +236,7 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
         validator.visitClosureExpression(closureExpression);
         validator.secondPass(closureExpression);
 
-        List<Parameter> parameters = new ArrayList<>(Arrays.asList(closureExpression.getParameters()));
+        List<Parameter> parameters = new ArrayList<>(Arrays.asList(getParametersSafe(closureExpression)));
         parameters.addAll(Arrays.asList(methodNode.getParameters()));
 
         List<BooleanExpression> booleanExpressions = ExpressionUtils.getBooleanExpression(closureExpression);
@@ -521,6 +524,18 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
                 if (expression.getCode() instanceof BlockStatement &&
                         ((BlockStatement) expression.getCode()).getStatements().isEmpty()) {
                     addError("[groovy-contracts] Annotation does not contain any expressions (e.g. use '@Requires({ argument1 })').", expression);
+                }
+
+                if (expression.getCode() instanceof BlockStatement block) {
+                    // each statement becomes one assertion, so a statement that is not an expression
+                    // (e.g. 'return x > 0' or 'assert x > 0') holds no condition to assert
+                    for (Statement statement : block.getStatements()) {
+                        if (!(statement instanceof ExpressionStatement)) {
+                            addError("[groovy-contracts] Annotation closure may only contain boolean expressions; "
+                                    + ExpressionUtils.describeStatementKind(statement) + " are not supported (e.g. use '@"
+                                    + annotationNode.getClassNode().getNameWithoutPackage() + "({ argument1 > 0 })').", statement);
+                        }
+                    }
                 }
 
                 if (expression.isParameterSpecified() && !AnnotationUtils.hasAnnotationOfType(annotationNode.getClassNode(), POSTCONDITION_TYPE_NAME)) {
