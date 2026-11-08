@@ -94,9 +94,10 @@ final class PackedClosureBoundariesTest {
         assert !packs('@groovy.transform.CompileStatic\nclass C { def action = { 42 } }')
     }
 
+    // GROOVY-12652
     @Test
     void constructorAndInitializerEscapesDecline() {
-        // GROOVY-12652: a constructor, and an instance initializer block (inlined into every
+        // a constructor, and an instance initializer block (inlined into every
         // constructor), is a method to the escape and serialization gates; [description, class body]
         [
             ['field store in a constructor',        'Closure f\nC() { f = { x -> x } }'],
@@ -118,6 +119,7 @@ final class PackedClosureBoundariesTest {
         }
     }
 
+    // GROOVY-12652
     @Test
     void constructorAndInitializerLocalClosuresPack() {
         ['', '@groovy.transform.TypeChecked\n', '@groovy.transform.CompileStatic\n'].each { annotation ->
