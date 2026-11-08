@@ -127,7 +127,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         if (gstringAdaptation != null) {
             invocationReadyMethodReference = invocationReadyMethodReference.with(invocationReadyMethodReference.referenceTarget(), gstringAdaptation.method());
             invocation = new MethodReferenceInvocation(Opcodes.H_INVOKESTATIC, invocation.invokedTypeDescriptor(), invocation.capturing());
-            instantiatedParameters = gstringAdaptation.instantiatedParameters();
+            instantiatedParameters = gstringAdaptation.instantiatedParameters().toArray(Parameter.EMPTY_ARRAY);
         }
 
         if (functionalInterface.serializable()) {
@@ -746,7 +746,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             body);
         adapter.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
         adapter.setSourcePosition(source);
-        return new GStringAdaptation(adapter, samParams);
+        return new GStringAdaptation(adapter, List.copyOf(Arrays.asList(samParams)));
     }
 
     private static Parameter[] prependParameter(final Parameter first, final Parameter[] rest) {
@@ -928,8 +928,8 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
     /**
      * Synthetic adapter that accepts an erased {@code String} parameter and the SAM parameters
-     * the metafactory should see.
+     * the metafactory should see. The parameters are a list so equality follows their contents.
      */
-    private record GStringAdaptation(MethodNode method, Parameter[] instantiatedParameters) {
+    private record GStringAdaptation(MethodNode method, List<Parameter> instantiatedParameters) {
     }
 }

@@ -2272,6 +2272,78 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // A nested switch expression keeps its own case list when an outer
+    // switch statement is still on the stack. The next label is not a class,
+    // so the selector narrowing does not fall through.
+    @Test
+    void testNestedSwitchExpressionFallThroughDropsSelectorNarrowing() {
+        shouldFailWithMessages '''
+            void check(Object x) {
+                switch (x) {
+                  case 'outer':
+                    def n = switch (x) {
+                      case 'a':
+                        assert x instanceof String
+                      case 1:
+                        x.toUpperCase()
+                        yield 0
+                      default:
+                        yield 1
+                    }
+                    n
+                }
+            }
+        ''',
+        'Cannot find matching method java.lang.Object#toUpperCase()'
+    }
+
+    // A nested switch statement keeps its own case list when it is inside a
+    // switch expression. The outer expression must not supply the next label.
+    @Test
+    void testNestedSwitchStatementFallThroughDropsSelectorNarrowing() {
+        shouldFailWithMessages '''
+            void check(Object x) {
+                def n = switch (x) {
+                  case 'outer':
+                    switch (x) {
+                      case 'a':
+                        assert x instanceof String
+                      case 1:
+                        x.toUpperCase()
+                        break
+                    }
+                    yield 0
+                  default:
+                    yield 1
+                }
+                n
+            }
+        ''',
+        'Cannot find matching method java.lang.Object#toUpperCase()'
+    }
+
+    @Test
+    void testNestedSwitchExpressionInsideStatement() {
+        assertScript '''
+            int check(Object x) {
+                switch (x) {
+                  case CharSequence:
+                    int n = switch (x) {
+                      case String:
+                        yield x.length()
+                      default:
+                        yield -1
+                    }
+                    return n
+                }
+                return -2
+            }
+            assert check('abcd') == 4
+            assert check(new StringBuilder('ab')) == -1
+            assert check(1) == -2
+        '''
+    }
+
     // GROOVY-12355
     @Test
     void testDivisionInference() {

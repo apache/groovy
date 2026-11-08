@@ -5594,19 +5594,33 @@ trying: for (ClassNode[] signature : signatures) {
     /**
      * Returns the label of the case following the given one in the enclosing
      * switch, or {@code null} if it is the last case (the default statement,
-     * if any, has no label).
+     * if any, has no label) or the enclosing switch cannot be identified.
      */
     private Expression nextCaseLabel(final CaseStatement statement, final Expression selectable) {
-        List<CaseStatement> caseStatements;
-        SwitchStatement switchStatement = typeCheckingContext.getEnclosingSwitchStatement();
-        if (switchStatement != null && switchStatement.getExpression() == selectable) {
-            caseStatements = switchStatement.getCaseStatements();
-        } else {
-            caseStatements = typeCheckingContext.getEnclosingSwitchExpression().getCaseStatements();
-        }
+        List<CaseStatement> caseStatements = enclosingCaseStatements(selectable);
+        if (caseStatements == null) return null;
         int index = caseStatements.indexOf(statement);
         if (index < 0 || index + 1 == caseStatements.size()) return null;
         return caseStatements.get(index + 1).getExpression();
+    }
+
+    /**
+     * Case list of the switch that owns {@code selectable}. A nested switch
+     * expression and an enclosing switch statement are both on the stacks, so
+     * the statement is used only when its selector is {@code selectable};
+     * otherwise the enclosing switch expression is used when it owns the
+     * selector. Returns {@code null} when neither does.
+     */
+    private List<CaseStatement> enclosingCaseStatements(final Expression selectable) {
+        SwitchStatement switchStatement = typeCheckingContext.getEnclosingSwitchStatement();
+        if (switchStatement != null && switchStatement.getExpression() == selectable) {
+            return switchStatement.getCaseStatements();
+        }
+        SwitchExpression switchExpression = typeCheckingContext.getEnclosingSwitchExpression();
+        if (switchExpression != null && switchExpression.getExpression() == selectable) {
+            return switchExpression.getCaseStatements();
+        }
+        return null;
     }
 
     private void recordAssignment(final VariableExpression lhsExpr, final ClassNode rhsType) {

@@ -1101,11 +1101,17 @@ public class CompileStack {
      * read has the slot initialised: the right operand of {@code &&} / {@code ||}
      * is skipped when the left operand decides the result, and a slot first
      * stored inside that operand would be undefined at the join otherwise.
+     * <p>
+     * A {@code null} variable is ignored, as with {@link #recordPatternVariable}.
      *
+     * @param variable the pattern local; ignored if {@code null}
      * @see #takePredeclaredPatternVariable(String)
      * @since 7.0.0
      */
     public void predeclarePatternVariable(final BytecodeVariable variable) {
+        if (variable == null) {
+            return;
+        }
         recordPatternVariable(variable);
         predeclaredPatternVariables.add(variable.getName());
     }
