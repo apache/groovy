@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform.stc;
 
 import groovy.lang.GroovyClassLoader;
+import groovy.transform.Internal;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
@@ -2374,6 +2375,7 @@ public abstract class StaticTypeCheckingSupport {
      * @return {@code true} if the method is private and declared by another class
      * @since 7.0.0
      */
+    @Internal
     public static boolean isInheritedPrivateMethod(final MethodNode method, final ClassNode receiverType) {
         return method.isPrivate() && !(method instanceof ExtensionMethodNode)
                 && !method.getDeclaringClass().equals(receiverType);
