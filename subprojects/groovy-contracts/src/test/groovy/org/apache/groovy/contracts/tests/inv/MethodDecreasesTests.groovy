@@ -352,4 +352,25 @@ class MethodDecreasesTests extends BaseTestClass {
         unit.compile(Phases.CLASS_GENERATION)
         unit.errorCollector.warnings*.message
     }
+
+    // GROOVY-12741: the measure is woven into the trait's helper class after the trait transform has rewritten
+    // the body, so a measure that refers to trait state had no receiver there; the forwarder generation
+    // failed earlier still with an UnsupportedOperationException
+    @Test
+    void measureOnTraitMethodWithBodyIsRejected() {
+        def message = shouldFail(MultipleCompilationErrorsException) {
+            assertScript '''
+                import groovy.contracts.Decreases
+
+                trait Counting {
+                    @Decreases({ n })
+                    int sumUp(int n) { n == 0 ? 0 : sumUp(n - 1) + n }
+                }
+                class C implements Counting {
+                }
+                assert new C().sumUp(5) == 15
+            '''
+        }.message
+        assert message.contains('[groovy-contracts] @Decreases is not supported on a trait method with a body (Counting.sumUp).')
+    }
 }
