@@ -983,4 +983,39 @@ final class PackedClosuresTransformTest {
         assertEquals(7, r(3))
         assertEquals(7, s.local(twice, 3))
     }
+
+    // GROOVY-12656
+    @Test
+    void namedCompositionMethodsEscapeWhereTheCompositionDoes() {
+        // andThen and compose are the named forms of >> and <<, and andThenSelf and composeSelf
+        // compose the receiver with itself; each result keeps the literal, so the literal escapes
+        // wherever the result does. The same composition only called in the method still packs.
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { mode ->
+            String src = """class Holder { Closure handler }
+                @groovy.transform.PackedClosures $mode
+                class E {
+                    void andThen(Holder h, Closure c) { h.handler = c.andThen { Integer x -> x + 1 } }  // property, argument
+                    Closure compose(Closure c)        { { Integer x -> x + 1 }.compose(c) }             // implicit return, receiver
+                    Closure andThenSelf()             { return { Integer x -> x + 1 }.andThenSelf() }   // returned
+                    List composeSelf()                { [{ Integer x -> x + 1 }.composeSelf(2)] }       // list literal
+                    int local(Closure c, int n)       { (int) c.andThen({ Integer x -> x + 1 })(n) }    // -> packs
+                }"""
+            String name = mode ?: 'dynamic'
+            def names = generatedClassNames(src)
+            assertEquals(4, closureClassCount(names), "[$name] named composition escapes should be declined: $names")
+
+            def (e, h) = instance(src + '\n [new E(), new Holder()]')
+            Closure twice = { x -> x * 2 }
+            e.andThen(h, twice)
+            [h.handler, e.compose(twice)].each {
+                it.delegate = 'd'                        // no packed-adapter guard
+                assertEquals(7, it(3))                   // twice, then + 1
+            }
+            def r = e.andThenSelf(); r.delegate = 'd'
+            assertEquals(5, r(3))
+            r = e.composeSelf()[0]; r.delegate = 'd'
+            assertEquals(6, r(3))                        // + 1 three times
+            assertEquals(7, e.local(twice, 3))
+        }
+    }
 }
