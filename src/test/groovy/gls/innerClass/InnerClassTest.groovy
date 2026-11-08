@@ -2681,7 +2681,7 @@ final class InnerClassTest {
                     def nested() { { -> { -> Sub.this.z = 'w' }() }(); Base.this.z }
                     def lambda() { (() -> Sub.this.z = 'w')(); Base.this.z }
                     def spread() { { -> [Sub.this]*.z = 'w' }(); { -> [Sub.this]*.z }() }
-                    def read() { { -> Sub.this.z }() }
+                    def read() { Base.this.z = 'enclosing'; { -> Sub.this.z }() }
                 }
                 class Inner {
                     def write() { { -> Inner.this.z = 'w' }(); Base.this.z }
@@ -2691,7 +2691,7 @@ final class InnerClassTest {
                 def sub() { new Sub() }
                 def inner() { new Inner() }
             }
-            assert new Base().sub().read() == 'outer'
+            assert new Base().sub().read() == 'enclosing'
             assert new Base().sub().write() == 'w'
             assert new Base().sub().plusEq() == 'outerw'
             assert new Base().sub().increment() == 2
@@ -2716,11 +2716,11 @@ final class InnerClassTest {
                 @$mode
                 class Sub extends Base {
                     def write() { def s = this; { -> s.z = 'w' }(); Base.this.z }
-                    def read() { def s = this; { -> s.z }() }
+                    def read() { Base.this.z = 'enclosing'; def s = this; { -> s.z }() }
                 }
                 def sub() { new Sub() }
             }
-            assert new Base().sub().read() == 'outer'
+            assert new Base().sub().read() == 'enclosing'
             assert new Base().sub().write() == 'w'
         """
     }
