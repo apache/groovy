@@ -1969,16 +1969,22 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 boolean f
                 boolean isF() { true }
                 boolean getF() { false }
-            }
-            class Sub extends Base {
-                boolean isF() { false }
-                boolean getF() { true }
-                List read() {
-                    Supplier<Boolean> lambda = () -> super.f
-                    [super.f, { -> super.f }(), lambda.get(), f, this.f, { -> f }(), { -> this.f }()]
+
+                static class Sub extends Base {
+                    boolean isF() { false }
+                    boolean getF() { true }
+                    List read() {
+                        Supplier<Boolean> lambda = () -> super.f
+                        [super.f, { -> super.f }(), lambda.get(), f, this.f, { -> f }(), { -> this.f }(), new In().read()]
+                    }
+                    class In {
+                        List read() {
+                            [Sub.super.f, { -> Sub.super.f }()]
+                        }
+                    }
                 }
             }
-            assert new Sub().read() == [true, true, true, false, false, false, false]
+            assert new Base.Sub().read() == [true, true, true, false, false, false, false, [true, true]]
         '''
     }
 
