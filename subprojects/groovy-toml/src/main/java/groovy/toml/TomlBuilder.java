@@ -24,6 +24,7 @@ import groovy.lang.GroovyObjectSupport;
 import groovy.lang.Writable;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.apache.groovy.toml.util.TomlConverter;
+import org.apache.groovy.toml.util.TomlRootValues;
 import tools.jackson.core.JacksonException;
 
 import java.io.IOException;
@@ -59,7 +60,7 @@ public class TomlBuilder extends GroovyObjectSupport implements Writable {
      */
     public static String toToml(Object object) {
         try {
-            return TomlSlurper.mapper().writeValueAsString(object);
+            return TomlRootValues.write(TomlSlurper.mapper(), object);
         } catch (JacksonException e) {
             throw new TomlRuntimeException(e);
         }
