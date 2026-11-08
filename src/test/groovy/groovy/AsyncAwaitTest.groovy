@@ -3622,6 +3622,153 @@ final class AsyncAwaitTest {
         ''')
     }
 
+    // GROOVY-12679
+    @Test
+    void testWrapAsyncSetDelegateAndResolveStrategy() {
+        assertScript '''
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
+
+            class Ctx { String greet(String s) { 'hi ' + s } }
+            def ctx = new Ctx()
+            Closure wrapped = AsyncClosureUtils.wrapAsync { String s -> greet(s) }
+            wrapped.delegate = ctx
+            wrapped.resolveStrategy = Closure.DELEGATE_ONLY
+
+            assert wrapped.delegate === ctx
+            assert wrapped.resolveStrategy == Closure.DELEGATE_ONLY
+            assert await(wrapped('there')) == 'hi there'
+        '''
+    }
+
+    // GROOVY-12679
+    @Test
+    void testWrapAsyncReportsDelegateAndThisObject() {
+        assertScript '''
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
+
+            class Ctx { String greet() { 'hi' } }
+            def ctx = new Ctx()
+            Closure cl = { -> greet() }
+            cl.delegate = ctx
+            cl.resolveStrategy = Closure.DELEGATE_FIRST
+            Closure wrapped = AsyncClosureUtils.wrapAsync(cl)
+
+            assert wrapped.owner === this
+            assert wrapped.thisObject === this
+            assert wrapped.delegate === ctx
+            assert wrapped.resolveStrategy == Closure.DELEGATE_FIRST
+            assert await(wrapped()) == 'hi'
+        '''
+    }
+
+    // GROOVY-12679
+    @Test
+    void testWrapAsyncWith() {
+        assertScript '''
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
+
+            class Ctx { String greet() { 'hi' } }
+            Closure wrapped = AsyncClosureUtils.wrapAsync { greet() }
+
+            assert await(new Ctx().with(wrapped)) == 'hi'
+            assert wrapped.delegate === this
+            assert wrapped.resolveStrategy == Closure.OWNER_FIRST
+        '''
+    }
+
+    // GROOVY-12679
+    @Test
+    void testWrapAsyncDehydrateAndRehydrate() {
+        assertScript '''
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
+
+            class Ctx { String greet() { 'hi' } }
+            def ctx = new Ctx()
+            Closure wrapped = AsyncClosureUtils.wrapAsync { greet() }
+
+            Closure dry = wrapped.dehydrate()
+            assert dry.owner == null && dry.delegate == null && dry.thisObject == null
+
+            Closure wet = dry.rehydrate(ctx, ctx, ctx)
+            assert wet.owner === ctx && wet.delegate === ctx && wet.thisObject === ctx
+            assert await(wet()) == 'hi'
+            assert wrapped.delegate === this
+        '''
+    }
+
+    // GROOVY-12679
+    @Test
+    void testWrapAsyncReportsParameters() {
+        assertScript '''
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
+
+            Closure wrapped = AsyncClosureUtils.wrapAsync { String k, Integer v -> k * v }
+
+            assert wrapped.maximumNumberOfParameters == 2
+            assert wrapped.parameterTypes == [String, Integer] as Class[]
+            assert [a: 1, b: 2].collect(wrapped).collect { await(it) } == ['a', 'bb']
+            assert wrapped.clone().parameterTypes == [String, Integer] as Class[]
+        '''
+    }
+
+    // GROOVY-12679
+    @Test
+    void testWrapAsyncGeneratorSetDelegateAndResolveStrategy() {
+        assertScript '''
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
+            import org.apache.groovy.runtime.async.GeneratorBridge
+
+            class Ctx { List values() { [1, 2] } }
+            def ctx = new Ctx()
+            Closure wrapped = AsyncClosureUtils.wrapAsyncGenerator { GeneratorBridge bridge ->
+                values().each { bridge.yield(it) }
+            }
+            wrapped.delegate = ctx
+            wrapped.resolveStrategy = Closure.DELEGATE_FIRST
+
+            assert wrapped.owner === this
+            assert wrapped.thisObject === this
+            assert wrapped.delegate === ctx
+            assert wrapped.resolveStrategy == Closure.DELEGATE_FIRST
+            assert wrapped().toList() == [1, 2]
+        '''
+    }
+
+    // GROOVY-12679
+    @Test
+    void testWrapAsyncGeneratorWith() {
+        assertScript '''
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
+            import org.apache.groovy.runtime.async.GeneratorBridge
+
+            class Ctx { List values() { [1, 2] } }
+            Closure wrapped = AsyncClosureUtils.wrapAsyncGenerator { GeneratorBridge bridge, Ctx c ->
+                values().each { bridge.yield(it) }
+            }
+
+            assert new Ctx().with(wrapped).toList() == [1, 2]
+            assert wrapped.delegate === this
+            assert wrapped.resolveStrategy == Closure.OWNER_FIRST
+        '''
+    }
+
+    // GROOVY-12679
+    @Test
+    void testWrapAsyncGeneratorReportsParametersAfterBridge() {
+        assertScript '''
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
+            import org.apache.groovy.runtime.async.GeneratorBridge
+
+            Closure wrapped = AsyncClosureUtils.wrapAsyncGenerator { GeneratorBridge bridge, String k, Integer v ->
+                v.times { bridge.yield(k) }
+            }
+
+            assert wrapped.maximumNumberOfParameters == 2
+            assert wrapped.parameterTypes == [String, Integer] as Class[]
+            assert [a: 1, b: 2].collect(wrapped)*.toList() == [['a'], ['b', 'b']]
+        '''
+    }
+
     @Test
     void testAdapterRegistryToIterableWithAdapter() {
         assertScript '''
