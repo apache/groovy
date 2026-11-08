@@ -42,15 +42,20 @@ import static org.codehaus.groovy.transform.StubberSupport.addStubMethod;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
 /**
- * Joint-compilation stubber for {@link Vetoable} (class-level use).
- * Symmetric to {@link BindableASTStubber}: emits placeholder
+ * Joint-compilation stubber for {@link Vetoable}. Symmetric to
+ * {@link BindableASTStubber}: emits placeholder
  * {@code add/removeVetoableChangeListener},
  * {@code fireVetoableChange} (with {@code throws PropertyVetoException}),
  * and {@code getVetoableChangeListeners} methods.
  *
+ * <p>Both class-level {@code @Vetoable} and field-level {@code @Vetoable}
+ * on a non-static, non-final property contribute those methods. The same
+ * sites {@link BindableASTStubber} skips are skipped here.
+ *
  * <p>The full {@link VetoableASTTransformation} at CANONICALIZATION
- * removes any stubber-tagged methods before installing the
+ * removes these listener placeholders before installing the
  * {@code vetoableChangeSupport} field and the real method bodies.
+ * Unrelated stubber placeholders on the same class are left in place.
  *
  * @since 6.0.0
  */
@@ -67,7 +72,8 @@ public class VetoableASTStubber extends AbstractASTTransformation {
         AnnotationNode annotation = (AnnotationNode) nodes[0];
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         if (!MY_TYPE.equals(annotation.getClassNode())) return;
-        if (!(parent instanceof ClassNode classNode) || classNode.isInterface()) return;
+        ClassNode classNode = BindableASTStubber.classReceivingListenerStubs(parent);
+        if (classNode == null || classNode.isInterface()) return;
 
         Parameter listener = param(VCL_TYPE, "listener");
         Parameter name = param(ClassHelper.STRING_TYPE, "name");

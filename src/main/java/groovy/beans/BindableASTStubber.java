@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.control.CompilePhase;
@@ -41,20 +42,21 @@ import static org.codehaus.groovy.transform.StubberSupport.addStubMethod;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
 /**
- * Joint-compilation stubber for {@link Bindable} (class-level use). Emits
- * placeholder {@code add/removePropertyChangeListener},
- * {@code firePropertyChange}, and {@code getPropertyChangeListeners}
- * methods so Java consumers can attach listeners and fire events against
- * the joint-compilation stub.
+ * Joint-compilation stubber for {@link Bindable}. Emits placeholder
+ * {@code add/removePropertyChangeListener}, {@code firePropertyChange},
+ * and {@code getPropertyChangeListeners} methods so Java consumers can
+ * attach listeners and fire events against the joint-compilation stub.
+ *
+ * <p>Both class-level {@code @Bindable} and field-level {@code @Bindable}
+ * on a non-static, non-final property contribute those methods. Static
+ * fields, final fields, fields that are not properties, and interfaces
+ * are skipped: the full transform rejects them or has no listener API
+ * to expose.
  *
  * <p>The full {@link BindableASTTransformation} at CANONICALIZATION
- * removes any stubber-tagged methods before installing the
+ * removes these listener placeholders before installing the
  * {@code propertyChangeSupport} field and the real method bodies.
- *
- * <p>Field-level {@code @Bindable} on individual properties is not
- * stubbed: the visible API (the property's accessors) is unchanged, and
- * the property-write rewriting is body-internal to the generated setter
- * — invisible to the stub.
+ * Unrelated stubber placeholders on the same class are left in place.
  *
  * @since 6.0.0
  */
@@ -70,7 +72,8 @@ public class BindableASTStubber extends AbstractASTTransformation {
         AnnotationNode annotation = (AnnotationNode) nodes[0];
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         if (!MY_TYPE.equals(annotation.getClassNode())) return;
-        if (!(parent instanceof ClassNode classNode) || classNode.isInterface()) return;
+        ClassNode classNode = classReceivingListenerStubs(parent);
+        if (classNode == null || classNode.isInterface()) return;
 
         Parameter listener = param(PCL_TYPE, "listener");
         Parameter name = param(ClassHelper.STRING_TYPE, "name");
@@ -123,5 +126,27 @@ public class BindableASTStubber extends AbstractASTTransformation {
                     params(param(ClassHelper.STRING_TYPE, "name")),
                     ClassNode.EMPTY_ARRAY, returnS(constX(null)));
         }
+    }
+
+    /**
+     * Class that should receive listener-registration stubs, or {@code null}
+     * when this annotation site has no joint-compilation surface.
+     *
+     * <p>An interface is returned as-is; the caller skips it. A field
+     * contributes its declaring class only when the full transform would
+     * accept that field.
+     */
+    static ClassNode classReceivingListenerStubs(AnnotatedNode parent) {
+        if (parent instanceof ClassNode classNode) {
+            return classNode;
+        }
+        if (!(parent instanceof FieldNode field) || field.isStatic() || field.isFinal()) {
+            return null;
+        }
+        ClassNode declaringClass = field.getDeclaringClass();
+        if (declaringClass == null || declaringClass.getProperty(field.getName()) == null) {
+            return null;
+        }
+        return declaringClass;
     }
 }

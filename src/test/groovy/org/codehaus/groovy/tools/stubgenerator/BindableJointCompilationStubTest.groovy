@@ -42,6 +42,11 @@ final class BindableJointCompilationStubTest extends StringSourcesStubTestCase {
                     String name
                     int count
                 }
+
+                class FieldWatched {
+                    @groovy.beans.Bindable
+                    String label
+                }
             ''',
             'foo/JavaUser.java': '''
                 package foo;
@@ -50,6 +55,9 @@ final class BindableJointCompilationStubTest extends StringSourcesStubTestCase {
 
                 public class JavaUser {
                     public static void attach(Watched w, PropertyChangeListener l) {
+                        w.addPropertyChangeListener(l);
+                    }
+                    public static void attachField(FieldWatched w, PropertyChangeListener l) {
                         w.addPropertyChangeListener(l);
                     }
                     public static void detach(Watched w, PropertyChangeListener l) {
@@ -95,5 +103,14 @@ final class BindableJointCompilationStubTest extends StringSourcesStubTestCase {
 
         watched.removePropertyChangeListener(listener)
         assert watched.propertyChangeListeners.length == 0
+
+        Class fieldWatchedClass = loader.loadClass('foo.FieldWatched')
+        def fw = fieldWatchedClass.newInstance()
+        events.clear()
+        fw.addPropertyChangeListener(listener)
+        fw.label = 'updated'
+        assert events.size() == 1
+        assert events[0].propertyName == 'label'
+        assert events[0].newValue == 'updated'
     }
 }

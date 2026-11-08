@@ -142,18 +142,12 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         source.getErrorCollector().addErrorAndContinue("@groovy.beans.Vetoable must be on a property, not a field.  Try removing the private, protected, or public modifier.", node, source);
     }
 
-
     private void addListenerToClass(SourceUnit source, ClassNode classNode) {
-        // GEP-21 Shape C: discard any stubber-emitted placeholder methods so
-        // needsVetoableChangeSupport() correctly detects "no existing
-        // user-written support" and the real bodies get installed.
-        // Use removeMethod() rather than removeIf() on the list, since
-        // ClassNode keeps a parallel name->methods map.
-        List<MethodNode> stubs = new ArrayList<>();
-        for (MethodNode m : classNode.getMethods()) {
-            if (StubberSupport.isStub(m)) stubs.add(m);
-        }
-        stubs.forEach(classNode::removeMethod);
+        // Listener placeholders only, including @Bindable ones when this
+        // class is also bound. Other stub-tagged methods stay for their
+        // own transforms.
+        removeVetoableChangeStubs(classNode);
+        removePropertyChangeStubs(classNode);
         boolean bindable = BindableASTTransformation.hasBindableAnnotation(classNode);
         for (PropertyNode propertyNode : classNode.getProperties()) {
             if (!hasVetoableAnnotation(propertyNode.getField())
@@ -208,9 +202,13 @@ public class VetoableASTTransformation extends BindableASTTransformation {
     }
 
     private void createListenerSetter(SourceUnit source, boolean bindable, ClassNode declaringClass, PropertyNode propertyNode) {
-        if (bindable && needsPropertyChangeSupport(declaringClass, source)) {
-            addPropertyChangeSupport(declaringClass);
+        if (bindable) {
+            removePropertyChangeStubs(declaringClass);
+            if (needsPropertyChangeSupport(declaringClass, source)) {
+                addPropertyChangeSupport(declaringClass);
+            }
         }
+        removeVetoableChangeStubs(declaringClass);
         if (needsVetoableChangeSupport(declaringClass, source)) {
             addVetoableChangeSupport(declaringClass);
         }
@@ -300,6 +298,28 @@ public class VetoableASTTransformation extends BindableASTTransformation {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Drops listener placeholders emitted by {@link VetoableASTStubber}.
+     * Other stubber placeholders on the same class are left alone.
+     */
+    private static void removeVetoableChangeStubs(ClassNode declaringClass) {
+        List<MethodNode> stubs = new ArrayList<>();
+        for (MethodNode method : declaringClass.getMethods()) {
+            if (StubberSupport.isStub(method) && isVetoableChangeStub(method.getName())) {
+                stubs.add(method);
+            }
+        }
+        stubs.forEach(declaringClass::removeMethod);
+    }
+
+    private static boolean isVetoableChangeStub(String methodName) {
+        return switch (methodName) {
+            case "addVetoableChangeListener", "removeVetoableChangeListener",
+                 "fireVetoableChange", "getVetoableChangeListeners" -> true;
+            default -> false;
+        };
     }
 
     /**

@@ -60,13 +60,16 @@ import static org.codehaus.groovy.transform.StubberSupport.addStubMethod;
  *
  * <p>Setter emission is suppressed when the enclosing class carries an
  * Immutable-family annotation ({@code @Immutable},
- * {@code groovy.transform.ImmutableBase}, or
- * {@code groovy.transform.KnownImmutable}). The full transform's
- * runtime guard uses field-level {@code IMMUTABLE_BREADCRUMB} metadata
- * which isn't set until CANONICALIZATION; the class-level annotation
- * check is a CONVERSION-time approximation that matches the typical
- * usage pattern. Less common configurations may produce a stub that
- * over-claims the setter — flagged in the GEP-21 spike notes.
+ * {@code groovy.transform.ImmutableBase},
+ * {@code groovy.transform.KnownImmutable}, {@code groovy.transform.RecordType},
+ * or {@code groovy.transform.RecordBase}). Record types are immutable,
+ * so an indexed setter would not belong on the joint-compilation stub.
+ * The full transform's runtime guard uses field-level
+ * {@code IMMUTABLE_BREADCRUMB} metadata which isn't set until
+ * CANONICALIZATION; the class-level annotation check is a
+ * CONVERSION-time approximation that matches the typical usage pattern.
+ * Less common configurations may produce a stub that over-claims the
+ * setter — flagged in the GEP-21 spike notes.
  *
  * @since 6.0.0
  */
@@ -127,7 +130,9 @@ public class IndexedPropertyASTStubber extends AbstractASTTransformation {
             String name = a.getClassNode().getName();
             if ("groovy.transform.Immutable".equals(name)
                     || "groovy.transform.ImmutableBase".equals(name)
-                    || "groovy.transform.KnownImmutable".equals(name)) {
+                    || "groovy.transform.KnownImmutable".equals(name)
+                    || "groovy.transform.RecordType".equals(name)
+                    || "groovy.transform.RecordBase".equals(name)) {
                 return true;
             }
         }

@@ -43,6 +43,11 @@ final class VetoableJointCompilationStubTest extends StringSourcesStubTestCase {
                 class Constrained {
                     int value
                 }
+
+                class FieldConstrained {
+                    @groovy.beans.Vetoable
+                    int amount
+                }
             ''',
             'foo/JavaUser.java': '''
                 package foo;
@@ -52,6 +57,9 @@ final class VetoableJointCompilationStubTest extends StringSourcesStubTestCase {
 
                 public class JavaUser {
                     public static void attach(Constrained c, VetoableChangeListener l) {
+                        c.addVetoableChangeListener(l);
+                    }
+                    public static void attachField(FieldConstrained c, VetoableChangeListener l) {
                         c.addVetoableChangeListener(l);
                     }
                     public static int listenerCount(Constrained c) {
@@ -101,5 +109,18 @@ final class VetoableJointCompilationStubTest extends StringSourcesStubTestCase {
             // expected
         }
         assert constrained.value == 10
+
+        Class fieldConstrainedClass = loader.loadClass('foo.FieldConstrained')
+        def fc = fieldConstrainedClass.newInstance()
+        fc.addVetoableChangeListener(vetoer)
+        fc.amount = 5
+        assert fc.amount == 5
+        try {
+            fc.amount = -2
+            assert false : 'expected PropertyVetoException'
+        } catch (PropertyVetoException ignore) {
+            // expected
+        }
+        assert fc.amount == 5
     }
 }

@@ -138,6 +138,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                     //noinspection ThrowableInstanceNeverThrown
                     source.getErrorCollector().addErrorAndContinue("@groovy.beans.Bindable cannot annotate a static property.", node, source);
                 } else {
+                    removePropertyChangeStubs(declaringClass);
                     if (needsPropertyChangeSupport(declaringClass, source)) {
                         addPropertyChangeSupport(declaringClass);
                     }
@@ -151,16 +152,10 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private void addListenerToClass(SourceUnit source, ClassNode classNode) {
-        // GEP-21 Shape C: discard any stubber-emitted placeholder methods so
-        // needsPropertyChangeSupport() correctly detects "no existing
-        // user-written support" and the field + real bodies get installed.
-        // Use removeMethod() rather than removeIf() on the list, since
-        // ClassNode keeps a parallel name->methods map.
-        List<MethodNode> stubs = new ArrayList<>();
-        for (MethodNode m : classNode.getMethods()) {
-            if (StubberSupport.isStub(m)) stubs.add(m);
-        }
-        stubs.forEach(classNode::removeMethod);
+        // Listener placeholders only. Other stub-tagged methods stay for
+        // their own transforms. Removal happens here, not inside
+        // needsPropertyChangeSupport(), so that query has no side effects.
+        removePropertyChangeStubs(classNode);
         if (needsPropertyChangeSupport(classNode, source)) {
             addPropertyChangeSupport(classNode);
         }
@@ -305,6 +300,30 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Drops listener placeholders emitted by {@link BindableASTStubber}.
+     * Other stubber placeholders on the same class are left alone.
+     * Package-visible so {@link VetoableASTTransformation} can drop the
+     * same placeholders before {@link #needsPropertyChangeSupport}.
+     */
+    static void removePropertyChangeStubs(ClassNode declaringClass) {
+        List<MethodNode> stubs = new ArrayList<>();
+        for (MethodNode method : declaringClass.getMethods()) {
+            if (StubberSupport.isStub(method) && isPropertyChangeStub(method.getName())) {
+                stubs.add(method);
+            }
+        }
+        stubs.forEach(declaringClass::removeMethod);
+    }
+
+    private static boolean isPropertyChangeStub(String methodName) {
+        return switch (methodName) {
+            case "addPropertyChangeListener", "removePropertyChangeListener",
+                 "firePropertyChange", "getPropertyChangeListeners" -> true;
+            default -> false;
+        };
     }
 
     /**
