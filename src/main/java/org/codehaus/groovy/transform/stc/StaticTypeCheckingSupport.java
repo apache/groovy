@@ -1514,35 +1514,41 @@ public abstract class StaticTypeCheckingSupport {
             // (otherwise, we face a type checker bug)
             return typeCheckMethodArgumentWithGenerics(parameterType.getComponentType(), argumentType, lastArg);
 
+        } else if (argumentType.isDerivedFrom(CLOSURE_TYPE) && isSAMType(parameterType)
+                && !implementsInterfaceOrIsSubclassOf(argumentType, parameterType)) {
+            return isClosureCoercibleToSAM(parameterType, argumentType); // GROOVY-12599: Closure<R> value for SAM type
         } else if (parameterType.isUsingGenerics() && argumentType.isUsingGenerics()) {
             if (!GenericsUtils.buildWildcardType(parameterType).isCompatibleWith(argumentType)) {
-                boolean samCoercion = argumentType.equals(CLOSURE_TYPE) && isSAMType(parameterType);
-                if (!samCoercion) return false; // else assume parameters checked earlier
-                return isClosureCoercibleToSAM(parameterType, argumentType); // GROOVY-12599
+                return false;
             }
-        } else if (parameterType.isUsingGenerics() && argumentType.isDerivedFrom(CLOSURE_TYPE) && isSAMType(parameterType)) {
-            return isClosureCoercibleToSAM(parameterType, argumentType); // GROOVY-12599: Closure subclass
         }
         return true;
     }
 
     /**
      * Checks if a value of type {@code Closure<R>} can be coerced to the given
-     * SAM type: its abstract method returns void or a type that accepts {@code R}.
-     * A raw {@code Closure}, {@code Closure<Object>} or unresolved {@code R} is
-     * accepted, as is {@code GString} for {@code String}.
+     * SAM type: its abstract method accepts {@code R} as it would accept the
+     * return type of a closure for that SAM type. It returns void, {@code boolean},
+     * a type compatible with {@code R}, {@code String} for {@code GString}, or a
+     * primitive type that {@code R} converts to without loss of precision. A raw
+     * {@code Closure}, {@code Closure<Object>} or unresolved {@code R} is accepted.
      */
     static boolean isClosureCoercibleToSAM(final ClassNode samType, final ClassNode closureType) {
         ClassNode returnType = GenericsUtils.parameterizeSAM(samType).getV2();
-        if (isPrimitiveVoid(returnType) || GenericsUtils.hasUnresolvedGenerics(returnType)) return true;
+        if (isPrimitiveVoid(returnType) || isPrimitiveBoolean(returnType) // Groovy truth
+                || GenericsUtils.hasUnresolvedGenerics(returnType)) return true;
         ClassNode closure = GenericsUtils.findParameterizedType(CLOSURE_TYPE, closureType);
         GenericsType[] closureGenerics = (closure != null ? closure.getGenericsTypes() : null);
         if (closureGenerics == null) return true; // raw Closure
         ClassNode closureReturnType = getCombinedBoundType(closureGenerics[0]);
         if (isObjectType(closureReturnType) || GenericsUtils.hasUnresolvedGenerics(closureReturnType)) return true;
         if (isStringType(returnType) && isGStringOrGStringStringLUB(closureReturnType)) return true; // converted on return
-        return GenericsUtils.buildWildcardType(StaticTypeCheckingVisitor.wrapTypeIfNecessary(returnType))
-                .isCompatibleWith(StaticTypeCheckingVisitor.wrapTypeIfNecessary(closureReturnType));
+        if (GenericsUtils.buildWildcardType(StaticTypeCheckingVisitor.wrapTypeIfNecessary(returnType))
+                .isCompatibleWith(StaticTypeCheckingVisitor.wrapTypeIfNecessary(closureReturnType))) return true;
+        // GROOVY-12616: converted to a primitive return type, as by a method's return
+        return isPrimitiveType(returnType) && checkCompatibleAssignmentTypes(returnType, closureReturnType)
+                && !(isNumberType(returnType) && isNumberType(closureReturnType)
+                        && checkPossibleLossOfPrecision(returnType, closureReturnType, null));
     }
 
     /**

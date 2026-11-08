@@ -25,7 +25,8 @@ import org.junit.jupiter.params.provider.ValueSource
 /**
  * Checks that every way of returning a value to a primitive return type accepts and converts the
  * same values: a method's {@code return}, and a lambda, closure, method reference, method reference
- * to a generic method, method pointer and method pointer to a generic method implementing a functional interface. The return of a
+ * to a generic method, method pointer and method pointer to a generic method implementing a functional interface,
+ * and a {@code Closure} value passed or returned as a functional interface. The return of a
  * method is the reference; any other result must be listed in {@link #EXCEPTIONS} with its reason.
  * <p>
  * A difference found here usually means that one of these places has its own rule instead of
@@ -60,6 +61,8 @@ final class ReturnConversionConsistencyTest {
         'genmref' : { String target, String boxed -> ['', "G<$boxed> g = H::id; g.apply(H.v())"] },
         'mpointer': { String target, String boxed -> ['', 'S s = H.&v; s.get()'] },
         'genmpointer': { String target, String boxed -> ['', "G<$boxed> g = H.&id; g.apply(H.v())"] },
+        'closurearg': { String target, String boxed -> ['static r(S s) { s.get() }', "Closure<$boxed> c = { -> H.v() }; r(c)"] },
+        'closureret': { String target, String boxed -> ["static S r(Closure<$boxed> c) { c }", 'r({ -> H.v() }).get()'] },
     ]
 
     /**
@@ -69,6 +72,8 @@ final class ReturnConversionConsistencyTest {
     private static final Map<String, String> EXCEPTIONS = [
         'genmref int->char': 'the type argument is Integer, which a method cannot return as char either',
         'genmpointer int->char': 'the type argument is Integer, which a method cannot return as char either',
+        'closurearg int->char': 'the type argument is Integer, which a method cannot return as char either',
+        'closureret int->char': 'the type argument is Integer, which a method cannot return as char either',
     ]
 
     @ParameterizedTest
