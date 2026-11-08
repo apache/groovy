@@ -282,6 +282,7 @@ final class ImmutableNestedCopyWithTest {
         '''
     }
 
+    // GROOVY-12713
     @Test
     void immutable_nested_key_with_unknown_segment_is_a_static_type_error() {
         def err = shouldFail shell, GRAPH + '''
