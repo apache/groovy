@@ -4402,6 +4402,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     private void publishInferredReturnType(final MethodNode node) {
         List<ClassNode> types = node.getNodeMetaData(RETURN_TYPES);
         node.removeNodeMetaData(RETURN_TYPES);
+        if (types == null) return; // nothing was recorded for this method
         ClassNode inferred = null;
         for (ClassNode type : types) {
             inferred = (inferred == null ? type : lowestUpperBound(inferred, type));
@@ -6415,7 +6416,15 @@ trying: for (ClassNode[] signature : signatures) {
 
     private void addPatternSwitchWarning(final String text, final ASTNode node) {
         Token token = new Token(0, "", node.getLineNumber(), node.getColumnNumber()); // ASTNode to CSTNode
-        typeCheckingContext.getErrorCollector().addWarning(new WarningMessage(WarningMessage.LIKELY_ERRORS, text, token, getSourceUnit()));
+        SourceUnit source = getSourceUnit();
+        ErrorCollector collector = typeCheckingContext.getErrorCollector();
+        if (collector == null) {
+            collector = source.getErrorCollector();
+        }
+        if (collector == null) {
+            return;
+        }
+        collector.addWarning(new WarningMessage(WarningMessage.LIKELY_ERRORS, text, token, source));
     }
 
     private static boolean provablyDisjoint(final ClassNode subjectType, final ClassNode patternType) {
@@ -6581,8 +6590,8 @@ trying: for (ClassNode[] signature : signatures) {
 
     /**
      * Returns the label of the case following the given one in the enclosing
-     * switch, or {@code null} if it is the last case (the default statement,
-     * if any, has no label).
+     * switch, or {@code null} if it is the last case or the enclosing switch
+     * cannot be found (the default statement, if any, has no label).
      */
     private Expression nextCaseLabel(final CaseStatement statement, final Expression selectable) {
         List<CaseStatement> caseStatements;
@@ -6590,7 +6599,9 @@ trying: for (ClassNode[] signature : signatures) {
         if (switchStatement != null && switchStatement.getExpression() == selectable) {
             caseStatements = switchStatement.getCaseStatements();
         } else {
-            caseStatements = typeCheckingContext.getEnclosingSwitchExpression().getCaseStatements();
+            SwitchExpression switchExpression = typeCheckingContext.getEnclosingSwitchExpression();
+            if (switchExpression == null) return null;
+            caseStatements = switchExpression.getCaseStatements();
         }
         int index = caseStatements.indexOf(statement);
         if (index < 0 || index + 1 == caseStatements.size()) return null;
