@@ -156,15 +156,15 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
     /**
      * Checks a call to a private or static trait method from a closure against the
      * delegate of the enclosing closure, if the delegate would be selected for a
-     * method of a class. Statically compiled code keeps the call to the trait helper
-     * otherwise. Dynamically compiled code selects the delegate or the trait helper
-     * at runtime.
+     * method of a class or the resolve strategy excludes the owner. Statically
+     * compiled code keeps the call to the trait helper otherwise. Dynamically
+     * compiled code selects the delegate or the trait helper at runtime.
      */
     @Override
     public void afterMethodCall(final MethodCall call) {
         if (call instanceof MethodCallExpression mce
                 && mce.getNodeMetaData(TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT) instanceof MethodCallExpression closureCall) { // GROOVY-12611
-            if (isDelegateMethod(closureCall)) {
+            if (isDelegateCall(closureCall)) {
                 typeCheckingVisitor.visitMethodCallExpression(closureCall);
                 storeType(mce, getType(closureCall));
             } else if (typeCheckingVisitor.isStaticDispatchScope()) {
@@ -174,10 +174,11 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
     }
 
     /**
-     * Indicates whether a delegate of the enclosing closures declares the method of
-     * the implicit-this call and precedes the owner according to the resolve strategy.
+     * Indicates whether the implicit-this call is resolved against a delegate of the
+     * enclosing closures: a delegate declares the method and precedes the owner
+     * according to the resolve strategy, or the resolve strategy excludes the owner.
      */
-    private boolean isDelegateMethod(final MethodCallExpression call) {
+    private boolean isDelegateCall(final MethodCallExpression call) {
         List<Expression> arguments = ((ArgumentListExpression) call.getArguments()).getExpressions();
         ClassNode[] argumentTypes = new ClassNode[arguments.size()];
         for (int i = 0; i < argumentTypes.length; i += 1) {
@@ -188,12 +189,12 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
         List<Receiver<String>> receivers = new ArrayList<>();
         typeCheckingVisitor.addReceivers(receivers, List.of(owner), true);
         for (Receiver<String> receiver : receivers) {
-            if (receiver == owner) break; // the trait declares the method
+            if (receiver == owner) return false; // the trait declares the method
             for (MethodNode method : typeCheckingVisitor.findMethod(receiver.getType(), call.getMethodAsString(), argumentTypes)) {
                 if (receiver.isObject() || method.isStatic()) return true;
             }
         }
-        return false;
+        return true; // DELEGATE_ONLY: the trait method is not a candidate, as for a method of a class
     }
 
     /**

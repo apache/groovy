@@ -457,8 +457,10 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
-     * Checks if a class node is assignable to another. This is used for example in
-     * assignment checks where you want to verify that the assignment is valid.
+     * Checks if a value of one type can be passed for a parameter of another: a subtype, or a
+     * number type that converts without narrowing, ignoring boxing. This is the rule for method
+     * arguments. An assignment or a return of a value uses
+     * {@link #checkCompatibleAssignmentTypes(ClassNode, ClassNode, Expression, boolean)} instead.
      *
      * @return true if the class node is assignable to the other class node, false otherwise
      */
@@ -638,6 +640,12 @@ public abstract class StaticTypeCheckingSupport {
     /**
      * Returns true or false depending on whether the right classnode can be assigned to the left classnode. This method
      * should not add errors by itself: we let the caller decide what to do if an incompatible assignment is found.
+     * <p>
+     * This is the rule for an assignment and for the return of a value by a method, closure, lambda or method
+     * reference, where a conversion between number types is then checked for loss of precision. Method arguments
+     * use {@link #isAssignableTo(ClassNode, ClassNode)}, and casts use {@code StaticTypeCheckingVisitor#checkCast}.
+     * A new check of a value against a type should use the one of these that matches, rather than rules of its own,
+     * so that the same value is accepted in the same context everywhere.
      *
      * @param left  the class to be assigned to
      * @param right the assignee class
