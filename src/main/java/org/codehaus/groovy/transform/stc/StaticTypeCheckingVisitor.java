@@ -4818,10 +4818,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     private static final String COPY_WITH_PATH = "copyWith path";
 
     /**
-     * The block form of nested {@code copyWith} (GROOVY-12015): {@code copyWith { address.city = 'x' }} on a type
+     * The block form of nested {@code copyWith}: {@code copyWith { address.city = 'x' }} on a type
      * whose {@code copyWith(Map)} declares its components as named parameters. The closure runs against a recorder
      * that turns the assignments into the map form, so the type checker types its names as the components they
-     * stand for and leaves their dispatch to the runtime (GROOVY-12713).
+     * stand for and leaves their dispatch to the runtime.
      */
     private static boolean isCopyWithBlock(final MethodNode mn, final Parameter[] params, final ClassNode receiver) {
         return "copyWith".equals(mn.getName()) && params.length == 1 && CLOSURE_TYPE.equals(params[0].getType())
