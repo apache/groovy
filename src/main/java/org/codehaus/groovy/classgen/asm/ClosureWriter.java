@@ -649,6 +649,7 @@ public class ClosureWriter {
      *
      * @param classNode the class whose initializer blocks are about to be transformed
      */
+    @Internal
     public static void markEscapingClosures(final ClassNode classNode) {
         boolean requested = packingRequested(null, classNode);
         for (ConstructorNode constructor : classNode.getDeclaredConstructors()) {
