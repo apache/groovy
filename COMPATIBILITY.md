@@ -744,6 +744,67 @@ returns a different object on each evaluation:
   same object. Before, the read came from one object and the write went to
   the next.
 
+### Groovy 6.0.1 — closure wrappers report and take the delegation settings of the closure they wrap (GROOVY-12673)
+
+The closures returned by `memoize()` and its variants, `trampoline()`,
+`curry()` and its relatives, `>>`/`<<` composition and `asWritable()` wrap
+another closure and call through to it. They reported a `thisObject` of
+their own, `null` or the owner, and the memoize and trampoline wrappers
+also kept a `delegate` and `resolveStrategy` of their own that nothing
+consulted: a delegate set on a memoized or trampolined closure never
+reached the closure that ran, so
+such a closure could not be handed to a builder, or to `with()` and `tap()`,
+without a `MissingMethodException` on the delegate's methods. This was so in
+4.0.x, 5.x and 6.0.0.
+
+A wrapper now reports the `thisObject` of the closure it wraps. The memoize,
+trampoline and async wrappers (GROOVY-12679) also report and take its
+`delegate` and `resolveStrategy`: setting either on the wrapper sets it on
+the wrapped closure, which is, as before, the very closure that was wrapped,
+so a setting made on the original after wrapping is seen by the wrapper too.
+`clone()` of a memoize or trampoline wrapper copies the wrapped closure, so
+`with()`, `tap()` and builders that bind a clone leave the original alone. An
+async wrapper, and a trampolined writable or composed closure, report the
+parameter count and types of the closure they wrap, where they reported a
+single `Object[]` parameter.
+
+The same release also changes these related behaviours:
+
+- `dehydrate()` and `rehydrate()` on a wrapper return a wrapper over the
+  dehydrated or rehydrated copy, where they returned a copy of the wrapper
+  still calling the old closure (GROOVY-12665, GROOVY-12669). A rehydrated
+  memoized closure starts with an empty cache.
+- `memoizeAtMost`, `memoizeAtLeast` and `memoizeBetween` closures, and a
+  memoized closure that has cached a `null` result, are serializable
+  (GROOVY-12674, GROOVY-12677). Softly referenced cached values are not
+  carried in the stream. The serialized form of a memoized closure now
+  holds a cache factory, a named class with a fixed `serialVersionUID`: a
+  plain `memoize()` closure written by 6.0.1 still reads in 6.0.0 and 5.x,
+  and one written by those versions reads in 6.0.1.
+- An `ObjectInputStream` created with a class loader, through
+  `newObjectInputStream` or `withObjectInputStream` on a stream, file or
+  path, resolves primitive classes such as `int.class` and the interfaces
+  of a serialized `Proxy` through that loader, where it threw
+  `ClassNotFoundException` (GROOVY-12676, GROOVY-12681).
+
+**Who is affected (runtime behaviour).**
+
+- Code that read `thisObject` from a wrapper and compared it to the owner
+  now gets the wrapped closure's `thisObject`, which is what the closure
+  itself reports.
+- Code that set the delegate or resolve strategy of a memoized or
+  trampolined closure now has that setting take effect, on the wrapped
+  closure as well. Call `clone()` first for a copy whose settings are
+  independent of the original.
+- A `wrapAsync` or `wrapAsyncGenerator` closure (async/await, incubating)
+  serialized by 6.0.0 does not deserialize in 6.0.1: the anonymous wrapper
+  classes are now named classes with their own serialized form.
+
+**Who is not affected (binary).** `Memoize` gains two public overloads of
+`buildMemoizeFunction` and `buildSoftReferenceMemoizeFunction` that take a
+`Supplier` of the cache; the overloads taking a cache instance are
+unchanged. `japicmp` sees only additions.
+
 ### Groovy 6.0.1 — a `setProperty` or `getProperty` from another interface's default method receives every access (GROOVY-12489)
 
 For a dynamic property write or read, the runtime checks whether the receiver

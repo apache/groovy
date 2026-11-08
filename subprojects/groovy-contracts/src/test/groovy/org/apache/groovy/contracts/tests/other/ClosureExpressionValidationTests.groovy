@@ -20,6 +20,8 @@ package org.apache.groovy.contracts.tests.other
 
 import groovy.test.GroovyShellTestCase
 import org.codehaus.groovy.control.CompilationFailedException
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.Phases
 
 class ClosureExpressionValidationTests extends GroovyShellTestCase {
 
@@ -284,5 +286,120 @@ class ClosureExpressionValidationTests extends GroovyShellTestCase {
         }
 
         assertTrue msg.contains("'old' in a postcondition of a static method may only reference a method parameter")
+    }
+
+    // GROOVY-12728: the value is declared as a Class, so a class literal passed the annotation checks
+    // but was then taken for the generated condition class and never checked
+    void testClassLiteralPrecondition() {
+
+        def msg = shouldFail CompilationFailedException, {
+            evaluate """
+                import groovy.contracts.*
+
+                class A {
+                    @Requires(Object)
+                    def op(int x) {}
+                }
+
+                new A().op(-1)
+                """
+        }
+
+        assertTrue msg.contains("@Requires requires a closure containing the condition, e.g. @Requires({ ... }); found a class java.lang.Object")
+    }
+
+    // GROOVY-12728
+    void testClassLiteralPostcondition() {
+
+        def msg = shouldFail CompilationFailedException, {
+            evaluate """
+                import groovy.contracts.*
+
+                class A {
+                    @Ensures(String)
+                    int op(int x) { x }
+                }
+
+                new A().op(-1)
+                """
+        }
+
+        assertTrue msg.contains("@Ensures requires a closure containing the condition, e.g. @Ensures({ ... }); found a class java.lang.String")
+    }
+
+    // GROOVY-12728
+    void testClassLiteralClassInvariant() {
+
+        def msg = shouldFail CompilationFailedException, {
+            evaluate """
+                import groovy.contracts.*
+
+                @Invariant(Object.class)
+                class A {
+                    int count
+                    void dec() { count-- }
+                }
+
+                new A().dec()
+                """
+        }
+
+        assertTrue msg.contains("@Invariant requires a closure containing the condition, e.g. @Invariant({ ... }); found a class java.lang.Object")
+    }
+
+    // GROOVY-12728: with an inherited contract, a class literal failed compilation with an internal error
+    void testClassLiteralBesideInheritedContracts() {
+
+        def msg = shouldFail CompilationFailedException, {
+            evaluate """
+                import groovy.contracts.*
+
+                @Invariant({ count >= 0 })
+                class B {
+                    int count
+                    @Requires({ x > 0 }) void m(int x) {}
+                    @Ensures({ result > 0 }) int n(int x) { x }
+                }
+
+                @Invariant(Object)
+                class C extends B {
+                    @Requires(Object) void m(int x) {}
+                    @Ensures(Object) int n(int x) { x }
+                }
+                """
+        }
+
+        assertTrue msg.contains("@Invariant requires a closure")
+        assertTrue msg.contains("@Requires requires a closure")
+        assertTrue msg.contains("@Ensures requires a closure")
+        assertFalse msg.contains("BUG!")
+    }
+
+    // GROOVY-12728: a supertype in another source unit may have its conditions replaced first
+    void testContractsOfSupertypeInLaterSourceUnit() {
+
+        def unit = new CompilationUnit()
+        unit.addSource("C.groovy", """
+            import groovy.contracts.*
+
+            @Invariant({ count < 10 })
+            class C extends B {
+                @Requires({ x < 10 }) void m(int x) {}
+                @Ensures({ result < 10 }) int n(int x) { x }
+            }
+            """)
+        unit.addSource("B.groovy", """
+            import groovy.contracts.*
+
+            @Invariant({ count >= 0 })
+            class B {
+                int count
+                @Requires({ x > 0 }) void m(int x) {}
+                @Ensures({ result > 0 }) int n(int x) { x }
+            }
+            """)
+        unit.compile(Phases.CLASS_GENERATION)
+
+        assertTrue unit.classes*.name.containsAll(['B', 'C'])
     }
 }
