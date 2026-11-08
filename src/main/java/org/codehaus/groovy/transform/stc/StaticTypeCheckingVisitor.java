@@ -1583,8 +1583,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
     }
 
-    // GROOVY-12594: the target of a compound assignment is also its read; if the read was resolved
-    // dynamically and no setter was selected for the write, resolve the target dynamically as well
+    // GROOVY-12594: the target of a compound assignment, or the operand of ++ or --, is also its read; if
+    // the read was resolved dynamically and no setter was selected for the write, resolve the target dynamically as well
     private static void rememberDynamicRead(final Expression target, final Expression read) {
         Object dynamic = read.getNodeMetaData(DYNAMIC_RESOLUTION);
         if (dynamic != null && target instanceof PropertyExpression
@@ -3449,6 +3449,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 if (ensureValidSetter(rewrite, operand, rewrite.getRightExpression(), setterInfo)) {
                     return;
                 }
+            } else if (operand instanceof PropertyExpression pexp && operand.getNodeMetaData(READONLY_PROPERTY) != null) {
+                // GROOVY-12594: "x++" also reads x; as for "x op= y", if the read resolves dynamically, so does x
+                PropertyExpression read = propX(pexp.getObjectExpression(), pexp.getProperty(), pexp.isSafe());
+                read.setImplicitThis(pexp.isImplicitThis());
+                read.setSourcePosition(pexp);
+                read.visit(this);
+                rememberDynamicRead(operand, read);
+                if (operand.getNodeMetaData(DYNAMIC_RESOLUTION) != null) storeType(operand, getType(read));
             }
 
             ClassNode operandType = getType(operand);

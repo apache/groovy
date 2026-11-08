@@ -387,6 +387,50 @@ final class VirtualAnnotationTest {
     // GROOVY-12594
     @ParameterizedTest
     @ValueSource(strings=['@groovy.transform.CompileDynamic','@groovy.transform.TypeChecked','@groovy.transform.CompileStatic'])
+    void virtualStaticAccessor_namedLikeClassProperty_incrementedAsProperty(String mode) {
+        assertScript """
+            import groovy.transform.Virtual
+
+            $mode
+            trait V {
+                static String store = ''
+                @Virtual
+                static String getName() { store }
+                @Virtual
+                static void setName(String n) { store = n }
+                static String postInc() { store = 'b'; String old = name++; old + ':' + store }
+                static String preInc()  { store = 'b'; String now = ++name; now + ':' + store }
+                static String postDec() { store = 'b'; String old = name--; old + ':' + store }
+                static String preDec()  { store = 'b'; String now = --name; now + ':' + store }
+                String ipostInc() { store = 'b'; String old = name++; old + ':' + store }
+            }
+            $mode
+            class Over implements V {
+                static String getName() { store.toUpperCase() }
+            }
+            $mode
+            class Def implements V {
+            }
+
+            $mode void m() {
+                assert Def.postInc() == 'b:c'
+                assert Def.preInc()  == 'c:c'
+                assert Def.postDec() == 'b:a'
+                assert Def.preDec()  == 'a:a'
+                assert new Def().ipostInc() == 'b:c'
+                assert Over.postInc() == 'B:C'
+                assert Over.preInc()  == 'C:C'
+                assert Over.postDec() == 'B:A'
+                assert Over.preDec()  == 'A:A'
+                assert new Over().ipostInc() == 'B:C'
+            }
+            m()
+        """
+    }
+
+    // GROOVY-12594
+    @ParameterizedTest
+    @ValueSource(strings=['@groovy.transform.CompileDynamic','@groovy.transform.TypeChecked','@groovy.transform.CompileStatic'])
     void virtualStaticAccessor_ofSuperTrait_namedLikeClassProperty(String mode) {
         assertScript """
             import groovy.transform.Virtual
