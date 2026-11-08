@@ -52,13 +52,11 @@ of calling `get()` or `getVal()`. `await` also accepts any
 | `eachParallel`, `eachWithIndexParallel`, `collectParallel`,
   `collectManyParallel`, `findAllParallel`, `findParallel`,
   `findAnyParallel`, `grepParallel`, `splitParallel`, `anyParallel`,
-  `everyParallel`, `countParallel`, `groupByParallel`, `injectParallel`
+  `everyParallel`, `countParallel`, `groupByParallel`, `injectParallel`,
+  `sumParallel()`, `minParallel()`, `maxParallel()`
 | Same names, on any `Collection`
 
-| `sumParallel()`
-| `sumParallel { a, b -> a + b }`. The accumulator is required
-
-| `minParallel { it.age }`, `maxParallel()`
+| `minParallel { it.age }`, `maxParallel { it.age }`
 | `minParallel { a, b -> a.age <=> b.age }`. A two-argument comparator is required
 
 | `foldParallel`
@@ -90,7 +88,8 @@ objects as well. Groovy 6 adds them to `Collection` only, so call
 The closures passed to the Groovy 6 methods are converted to
 `java.util.function` types, so their parameter count is fixed. For example,
 `minParallel` and `maxParallel` take a two-argument comparator and do not
-accept GPars' one-argument form.
+accept GPars' one-argument form. Without an argument, they use natural
+ordering, as GPars did.
 
 [[gpars-migration-async]]
 === Asynchronous functions
