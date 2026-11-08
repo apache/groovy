@@ -1693,9 +1693,10 @@ final class InnerClassTest {
     }
 
     // GROOVY-12592: the override of a subclass of Outer is not called either
-    @Test
-    void testUsageOfOuterSuperMethodInherited6() {
-        assertScript '''
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.CompileStatic'])
+    void testUsageOfOuterSuperMethodInherited6(String mode) {
+        assertScript """
             class Root {
                 String toString() { 'root' }
             }
@@ -1704,11 +1705,12 @@ final class InnerClassTest {
                     String test() { Outer.super.toString() }
                 }
             }
+            $mode
             class Sub extends Outer {
                 String toString() { 'sub' }
             }
             assert new Outer.Inner(new Sub()).test() == 'root'
-        '''
+        """
     }
 
     @Test

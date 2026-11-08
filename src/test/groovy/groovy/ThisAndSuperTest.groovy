@@ -452,6 +452,34 @@ final class ThisAndSuperTest {
         """
     }
 
+    // GROOVY-12592: a statically compiled subclass has no super$ methods, so the closure calls those of the class
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked'])
+    void testSuperDotMethodInClosureWithStaticallyCompiledSubclass(String mode) {
+        assertScript """
+            class Root {
+                String toString() { 'root' }
+                String m(x) { 'root:' + x }
+                String getP() { 'p:root' }
+            }
+            $mode
+            class Outer extends Root {
+                String test() {
+                    def c = { -> super.toString() + ',' + super.m(1) + ',' + super.p }
+                    c()
+                }
+            }
+            @groovy.transform.CompileStatic
+            class Sub extends Outer {
+                String toString() { 'sub:' + test() }
+                String m(x) { 'sub:' + x }
+                String getP() { 'p:sub' }
+            }
+            assert new Sub().test() == 'root,root:1,p:root'
+            assert new Sub().toString() == 'sub:root,root:1,p:root'
+        """
+    }
+
     // GROOVY-10302
     @Test
     void testSuperDotMethod5() {
