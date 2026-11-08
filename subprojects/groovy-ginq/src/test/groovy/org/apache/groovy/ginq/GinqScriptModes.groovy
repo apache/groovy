@@ -78,6 +78,17 @@ final class GinqScriptModes {
     }
 
     /**
+     * Compiles and runs {@code script} in one mode. Used for paths that are
+     * reached while the script is compiled, such as a query in a field.
+     *
+     * @param kind the checking mode
+     * @param script the script to compile and run
+     */
+    static void runOne(Kind kind, String script) {
+        run(kind, script)
+    }
+
+    /**
      * Runs the script in the two dynamic modes. Used when static checking
      * rejects the script for a reason the dynamic assertions do not have.
      *
