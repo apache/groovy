@@ -108,6 +108,13 @@ import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
+import org.apache.groovy.ast.ModuleInfoNode;
+import org.apache.groovy.ast.ModuleInfoNode.Directive;
+import org.apache.groovy.ast.ModuleInfoNode.Exports;
+import org.apache.groovy.ast.ModuleInfoNode.Opens;
+import org.apache.groovy.ast.ModuleInfoNode.Provides;
+import org.apache.groovy.ast.ModuleInfoNode.Requires;
+import org.apache.groovy.ast.ModuleInfoNode.Uses;
 import org.codehaus.groovy.ast.expr.SpreadMapExpression;
 import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
@@ -210,6 +217,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         // Multi-error truth for hosts is ErrorCollector; recovery may still yield a partial tree.
         this.errorRecovery = sourceUnit.getConfiguration().isErrorRecoveryEnabled();
         this.parser.setErrorHandler(DescriptiveErrorStrategy.create(charStream, this.errorRecovery));
+        // JLS 7.3: only module-info is a modular compilation unit. Elsewhere
+        // `module` / `requires` / `exports` / … stay ordinary identifiers.
+        if (ModuleInfoNode.isModuleInfoSource(sourceUnit.getName())) {
+            this.parser.setModuleDescriptor(true);
+        }
 
         this.groovydocManager = new GroovydocManager(groovydocEnabled, runtimeGroovydocEnabled);
         this.tryWithResourcesASTTransformation = new TryWithResourcesASTTransformation(this);
@@ -332,6 +344,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public ModuleNode visitCompilationUnit(final CompilationUnitContext ctx) {
+        if (ctx.modularCompilationUnit() != null) {
+            this.visitModularCompilationUnit(ctx.modularCompilationUnit());
+            if (this.numberFormatError != null) {
+                throw createParsingFailedException(this.numberFormatError.getV2().getMessage(), this.numberFormatError.getV1());
+            }
+            return this.moduleNode;
+        }
+
         this.visit(ctx.packageDeclaration());
 
         for (ASTNode node : this.visitScriptStatements(ctx.scriptStatements())) {
@@ -449,6 +469,122 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
 
         return configureAST(importNode, ctx);
+    }
+
+    @Override
+    public ModuleNode visitModularCompilationUnit(final ModularCompilationUnitContext ctx) {
+        for (ImportDeclarationContext importDeclaration : ctx.importDeclaration()) {
+            this.visitImportDeclaration(importDeclaration);
+        }
+        return this.visitModuleDeclaration(ctx.moduleDeclaration());
+    }
+
+    @Override
+    public ModuleNode visitModuleDeclaration(final ModuleDeclarationContext ctx) {
+        ModuleHeaderContext header = ctx.moduleHeader();
+        boolean open = header.identifier() != null;
+        String name = this.visitQualifiedName(header.qualifiedName());
+        List<Directive> directives = new ArrayList<>();
+        if (ctx.moduleDirectives() != null) {
+            for (ModuleDirectiveContext directive : ctx.moduleDirectives().moduleDirective()) {
+                directives.add(this.visitModuleDirective(directive));
+            }
+        }
+        ModuleInfoNode declaration = new ModuleInfoNode(name, open, directives);
+        declaration.addAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
+        configureAST(declaration, ctx);
+
+        // Carrier class so the existing pipeline resolves annotations and writes a class file.
+        // Bytecode emission replaces this interface shape with a real ACC_MODULE class.
+        ClassNode moduleInfo = new ClassNode("module-info", Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
+        moduleInfo.addAnnotations(declaration.getAnnotations());
+        moduleInfo.putNodeMetaData(ModuleInfoNode.class, declaration);
+        configureAST(moduleInfo, ctx);
+        this.moduleNode.addClass(moduleInfo);
+        return this.moduleNode;
+    }
+
+    @Override
+    public Directive visitModuleDirective(final ModuleDirectiveContext ctx) {
+        if (ctx.requiresDirective() != null) {
+            return this.visitRequiresDirective(ctx.requiresDirective());
+        }
+        if (ctx.exportsDirective() != null) {
+            return this.visitExportsDirective(ctx.exportsDirective());
+        }
+        if (ctx.opensDirective() != null) {
+            return this.visitOpensDirective(ctx.opensDirective());
+        }
+        if (ctx.usesDirective() != null) {
+            return this.visitUsesDirective(ctx.usesDirective());
+        }
+        if (ctx.providesDirective() != null) {
+            return this.visitProvidesDirective(ctx.providesDirective());
+        }
+        throw createParsingFailedException("unsupported module directive: " + ctx.getText(), ctx);
+    }
+
+    @Override
+    public Requires visitRequiresDirective(final RequiresDirectiveContext ctx) {
+        boolean transitive = false;
+        boolean staticPhase = false;
+        for (RequiresModifierContext modifier : ctx.requiresModifier()) {
+            if (modifier.STATIC() != null) {
+                if (staticPhase) {
+                    throw createParsingFailedException("modifier 'static' appears more than once", modifier);
+                }
+                staticPhase = true;
+            } else {
+                if (transitive) {
+                    throw createParsingFailedException("modifier 'transitive' appears more than once", modifier);
+                }
+                transitive = true;
+            }
+        }
+        Requires requires = new Requires(this.visitQualifiedName(ctx.qualifiedName()), transitive, staticPhase);
+        return configureAST(requires, ctx);
+    }
+
+    @Override
+    public Exports visitExportsDirective(final ExportsDirectiveContext ctx) {
+        Exports exports = new Exports(this.visitQualifiedName(ctx.qualifiedName()), targetModules(ctx.toClause()));
+        return configureAST(exports, ctx);
+    }
+
+    @Override
+    public Opens visitOpensDirective(final OpensDirectiveContext ctx) {
+        Opens opens = new Opens(this.visitQualifiedName(ctx.qualifiedName()), targetModules(ctx.toClause()));
+        return configureAST(opens, ctx);
+    }
+
+    @Override
+    public Uses visitUsesDirective(final UsesDirectiveContext ctx) {
+        return configureAST(new Uses(this.visitQualifiedName(ctx.qualifiedName())), ctx);
+    }
+
+    @Override
+    public Provides visitProvidesDirective(final ProvidesDirectiveContext ctx) {
+        List<String> providers = new ArrayList<>();
+        for (QualifiedNameContext name : ctx.qualifiedName()) {
+            // qualifiedName() also returns the service= label; that name is not a provider.
+            if (name == ctx.service) {
+                continue;
+            }
+            providers.add(this.visitQualifiedName(name));
+        }
+        Provides provides = new Provides(this.visitQualifiedName(ctx.service), providers);
+        return configureAST(provides, ctx);
+    }
+
+    private List<String> targetModules(final ToClauseContext toClause) {
+        if (toClause == null) {
+            return List.of();
+        }
+        List<String> targets = new ArrayList<>();
+        for (QualifiedNameContext name : toClause.qualifiedName()) {
+            targets.add(this.visitQualifiedName(name));
+        }
+        return targets;
     }
 
     /**

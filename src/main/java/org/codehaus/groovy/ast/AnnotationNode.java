@@ -56,6 +56,8 @@ public class AnnotationNode extends ASTNode {
     public static final int STATEMENT_TARGET        = 1 << 11;
     /** Groovy-only target for annotations on import statements. */
     public static final int IMPORT_TARGET           = 1 << 12;
+    /** JLS 9.6.4.1 {@code ElementType.MODULE} — annotations on a module declaration. */
+    public static final int MODULE_TARGET           = 1 << 13;
     public static final int TYPE_TARGET             = ANNOTATION_TARGET | 1; // GROOVY-7151
 
     private final ClassNode classNode;
@@ -151,7 +153,7 @@ public class AnnotationNode extends ASTNode {
                                 case PACKAGE          -> PACKAGE_TARGET;
                                 case TYPE_PARAMETER   -> TYPE_PARAMETER_TARGET;
                                 case TYPE_USE         -> TYPE_USE_TARGET;
-                                case MODULE           -> TYPE_TARGET; //TODO
+                                case MODULE           -> MODULE_TARGET;
                                 case RECORD_COMPONENT -> RECORD_COMPONENT_TARGET;
                                 default -> throw new GroovyBugError("unsupported Target " + name);
                             };
@@ -160,7 +162,7 @@ public class AnnotationNode extends ASTNode {
                     return bits;
                 }
             }
-            return 0x4FF; // GROOVY-11838: JLS 9.6.4.1
+            return 0x4FF | MODULE_TARGET; // GROOVY-11838: JLS 9.6.4.1, including modules
         });
 
         // check @ExtendedTarget for Groovy-specific element types
@@ -304,6 +306,7 @@ public class AnnotationNode extends ASTNode {
             case RECORD_COMPONENT_TARGET -> "RECORD_COMPONENT";
             case STATEMENT_TARGET        -> "STATEMENT";
             case IMPORT_TARGET           -> "IMPORT";
+            case MODULE_TARGET           -> "MODULE";
             default -> "unknown target";
         };
     }
