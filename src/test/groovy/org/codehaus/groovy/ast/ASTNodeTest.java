@@ -20,6 +20,8 @@ package org.codehaus.groovy.ast;
 
 import junit.framework.TestCase;
 
+import java.util.Map;
+
 public class ASTNodeTest extends TestCase {
 
     ASTNode astNode = new ASTNode();
@@ -29,5 +31,27 @@ public class ASTNodeTest extends TestCase {
 
         astNode.setLineNumber(astNode.getLineNumber() + 10);
         assertEquals("hashCode is consistent", hashcode, astNode.hashCode());
+    }
+
+    // GROOVY-12744
+    public void testMetaDataSnapshotsAndCopiesSeeLaterChanges() {
+        astNode.putNodeMetaData("a", 1);
+        assertEquals(Map.of("a", 1), astNode.getNodeMetaData());
+        new ASTNode().copyNodeMetaData(astNode);
+
+        astNode.putNodeMetaData("a", 2);
+        astNode.putNodeMetaData("b", 3);
+        assertEquals(Map.of("a", 2, "b", 3), astNode.getNodeMetaData());
+        ASTNode copy = new ASTNode();
+        copy.copyNodeMetaData(astNode);
+        assertEquals(Map.of("a", 2, "b", 3), copy.getNodeMetaData());
+
+        astNode.putNodeMetaData("c", 4);
+        astNode.putNodeMetaData("d", 5);
+        astNode.removeNodeMetaData("a");
+        assertEquals(Map.of("b", 3, "c", 4, "d", 5), astNode.getNodeMetaData());
+        copy = new ASTNode();
+        copy.copyNodeMetaData(astNode);
+        assertEquals(Map.of("b", 3, "c", 4, "d", 5), copy.getNodeMetaData());
     }
 }
