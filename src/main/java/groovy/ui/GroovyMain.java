@@ -457,8 +457,7 @@ public class GroovyMain {
             if (e instanceof InvokerInvocationException iie) {
                 e = iie.getCause();
             }
-            // the text only: log(Level, String, Throwable) would leave {0} unfilled and print a second,
-            // unsanitized stack trace; the trace is printed once below, sanitized unless -d is given
+            // log the text only; the stack trace is printed once below, sanitized unless -d is given
             LOGGER.log(ERROR, "Caught: " + e);
             if (!debug) {
                 StackTraceUtils.deepSanitize(e);
