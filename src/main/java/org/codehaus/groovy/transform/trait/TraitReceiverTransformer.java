@@ -299,7 +299,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
     }
 
     /**
-     * GROOVY-12609: checks if a name is the remapped name ("pack_Type__name") of
+     * Checks if a name is the remapped name ("pack_Type__name") of
      * a field of a super trait, which refers to the implementing class also in a
      * closure.
      */
