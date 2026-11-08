@@ -48,7 +48,29 @@ final class Groovy12720 {
             }
         '''
         assert err.message.contains('[Static type checking] - Cannot assign value of type java.lang.String to variable of type int')
-        assert !err.message.contains('not allowed on element TYPE')
+
+        assert new GroovyShell().evaluate('''
+            @Override
+            @groovy.transform.CompileStatic
+            Object run() {
+                helper()
+            }
+
+            def helper() {
+                'done'
+            }
+        ''') == 'done'
+    }
+
+    @Test
+    void testAnotherMethodOnlyAnnotationStaysOnTheScriptRunMethod() {
+        assert new GroovyShell().evaluate('''
+            @java.beans.Transient
+            Object run() {
+                getClass().getMethod('run').isAnnotationPresent(java.beans.Transient)
+                    && !getClass().isAnnotationPresent(java.beans.Transient)
+            }
+        ''')
     }
 
     @Test
