@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import groovy.transform.Internal;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -51,6 +52,7 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
  * @see AsmClassGenerator#isInSameRuntimePackage(ClassNode, ClassNode)
  * @since 7.0.0
  */
+@Internal
 public final class RuntimePackageCheck {
 
     private static final String USE_COMPILE_DYNAMIC = "Use @CompileDynamic to reach it through the meta-class";
