@@ -234,9 +234,10 @@ final class PackedClosuresTransformTest {
         assertEquals(12, s.local(4))
     }
 
+    // GROOVY-12652
     @Test
     void escapingClosuresInConstructorsAndInitializersAreDeclined() {
-        // GROOVY-12652: the escape gate also covers constructors and instance initializer blocks
+        // the escape gate also covers constructors and instance initializer blocks
         // (inlined into every constructor); a declined closure keeps its class, so setting a
         // delegate on it works instead of failing the packed adapter's runtime guard
         String src = '''@groovy.transform.PackedClosures
@@ -256,9 +257,10 @@ final class PackedClosuresTransformTest {
         assertEquals([9, 11, 10, 30], [k.fromCtor(10), k.fromInit(10), sink[0](5), attrs.handler(10)])
     }
 
+    // GROOVY-12650, GROOVY-12652
     @Test
     void compileStaticConstructorAndInitializerEscapesHiddenByARewriteAreDeclined() {
-        // GROOVY-12650, GROOVY-12652: under @CompileStatic an append and a setter-backed store in a
+        // under @CompileStatic an append and a setter-backed store in a
         // constructor or an instance initializer block are rewritten to method calls before class
         // generation; the escape walk runs ahead of that rewrite there too, whether the scope comes
         // from the class or from a constructor
@@ -733,9 +735,10 @@ final class PackedClosuresTransformTest {
         }
     }
 
+    // GROOVY-12652
     @Test
     void modeOnAConstructorGovernsItsBodyAndInitializers() {
-        // GROOVY-12652: a constructor is a scope of its own, like a method (most specific wins),
+        // a constructor is a scope of its own, like a method (most specific wins),
         // and its scope includes the instance initializer blocks inlined into it
         ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { annotation ->
             String src = """import groovy.transform.PackedClosures
@@ -946,15 +949,16 @@ final class PackedClosuresTransformTest {
         // curry/rcurry/ncurry, asWritable, trampoline and the memoize family wrap it and may pass a
         // delegate set on the wrapper on to it; clone, dehydrate and rehydrate copy it, and a copy of
         // a packed closure is still packed. So the literal escapes wherever the conditional or the
-        // call result does. A SAM coercion is not a closure, so it still packs, as does a conditional
-        // or curried literal that is only called in the method.
+        // call result does. A coercion to a SAM type that Closure does not implement yields a proxy,
+        // not a closure, so it still packs, as does a conditional or curried literal that is only
+        // called in the method.
         ['', '@groovy.transform.TypeChecked'].each { mode ->
             String src = """class Holder { Closure handler; List<Closure> list = [] }
                 @groovy.transform.PackedClosures $mode
                 class E {
                     Closure field
                     Object any
-                    Runnable task
+                    Comparator order
                     void ternary(Holder h, boolean b) { h.handler = b ? { Integer x -> x + 1 } : null }           // property
                     void elvis(Holder h, Closure c)   { h.handler = c ?: { Integer x -> x + 1 } }                 // property
                     Closure returned(boolean b)       { return b ? { Integer x -> x + 1 } : null }               // returned
@@ -975,7 +979,7 @@ final class PackedClosuresTransformTest {
                     Closure trampolined()             { { Integer x -> x + 1 }.trampoline() }                     // implicit return
                     Closure memoized()                { { Integer x -> x + 1 }.memoize() }
                     Closure memoizedAtMost()          { { Integer x -> x + 1 }.memoizeAtMost(2) }
-                    void coerced()                    { task = { -> } as Runnable }                               // -> packs
+                    void coerced()                    { order = { a, b -> 0 } as Comparator }                     // -> packs
                     def local(boolean b)              { (b ? { Integer x -> x + 1 } : { Integer x -> x - 1 })(1) } // -> both pack
                     def localCurry()                  { { Integer x, Integer y -> x + y }.curry(1)(2) }          // -> packs
                 }"""
@@ -1087,9 +1091,51 @@ final class PackedClosuresTransformTest {
         }
     }
 
+    // GROOVY-12659
+    @Test
+    void closuresKeptByACoercionOrAnAssignmentValueEscapeWhereTheValueDoes() {
+        // as or a cast to a type the closure already is, such as Runnable or Callable (interfaces
+        // Closure implements), yields the closure itself, and the value of an assignment is its right
+        // operand. Either keeps the literal, so the literal escapes wherever the value does. A
+        // coercion to another SAM type wraps the closure in a proxy, which is not a closure, so it
+        // still packs, as does an assignment chained through locals only.
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { mode ->
+            String src = """import java.util.concurrent.Callable
+                class Holder { Closure handler }
+                @groovy.transform.PackedClosures $mode
+                class E {
+                    Runnable task
+                    Callable<Object> job
+                    Comparator<Integer> order
+                    void coerced()         { task = { -> 'ran' } as Runnable }                            // field
+                    void cast()            { job = (Callable<Object>) { -> 'done' } }                      // field
+                    void chained(Holder h) { Closure c; h.handler = c = { Integer x -> x + 1 } }           // property
+                    Closure returned()     { Closure c; return c = { Integer x -> x + 1 } }                // returned
+                    void sam()             { order = { Integer a, Integer b -> b <=> a } as Comparator<Integer> } // -> packs
+                    int locals(int n)      { Closure c; Closure d = c = { Integer x -> x + 1 }; (int) d(n) } // -> packs
+                }"""
+            String name = mode ?: 'dynamic'
+            def names = generatedClassNames(src)
+            assertEquals(4, closureClassCount(names), "[$name] kept closures should be declined: $names")
+
+            def (e, h) = instance(src + '\n [new E(), new Holder()]')
+            e.coerced(); e.cast(); e.chained(h); e.sam()
+            assertTrue(e.task instanceof Closure && e.job instanceof Closure, "[$name] the closure itself is stored")
+            [e.task, e.job].each { it.delegate = 'd' }   // no packed-adapter guard
+            assertEquals(['ran', 'done'], [e.task.call(), e.job.call()])
+            [h.handler, e.returned()].each {
+                it.delegate = 'd'
+                assertEquals(4, it(3))
+            }
+            assertEquals([3, 2, 1], [1, 2, 3].sort(false, e.order))
+            assertEquals(4, e.locals(3))
+        }
+    }
+
+    // GROOVY-12653
     @Test
     void captureWrittenAfterTheLiteralInAConstructorOrInitializerIsShared() {
-        // GROOVY-12653: a capture written anywhere in the constructor -- here after the literal --
+        // a capture written anywhere in the constructor -- here after the literal --
         // is threaded as the shared Reference, not copied by value when the literal is created
         ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { annotation ->
             def r = instance("""$annotation
@@ -1214,5 +1260,40 @@ final class PackedClosuresTransformTest {
         r = s.inList(twice)[0]; r.delegate = 'd'
         assertEquals(7, r(3))
         assertEquals(7, s.local(twice, 3))
+    }
+
+    // GROOVY-12656
+    @Test
+    void namedCompositionMethodsEscapeWhereTheCompositionDoes() {
+        // andThen and compose are the named forms of >> and <<, and andThenSelf and composeSelf
+        // compose the receiver with itself; each result keeps the literal, so the literal escapes
+        // wherever the result does. The same composition only called in the method still packs.
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { mode ->
+            String src = """class Holder { Closure handler }
+                @groovy.transform.PackedClosures $mode
+                class E {
+                    void andThen(Holder h, Closure c) { h.handler = c.andThen { Integer x -> x + 1 } }  // property, argument
+                    Closure compose(Closure c)        { { Integer x -> x + 1 }.compose(c) }             // implicit return, receiver
+                    Closure andThenSelf()             { return { Integer x -> x + 1 }.andThenSelf() }   // returned
+                    List composeSelf()                { [{ Integer x -> x + 1 }.composeSelf(2)] }       // list literal
+                    int local(Closure c, int n)       { (int) c.andThen({ Integer x -> x + 1 })(n) }    // -> packs
+                }"""
+            String name = mode ?: 'dynamic'
+            def names = generatedClassNames(src)
+            assertEquals(4, closureClassCount(names), "[$name] named composition escapes should be declined: $names")
+
+            def (e, h) = instance(src + '\n [new E(), new Holder()]')
+            Closure twice = { x -> x * 2 }
+            e.andThen(h, twice)
+            [h.handler, e.compose(twice)].each {
+                it.delegate = 'd'                        // no packed-adapter guard
+                assertEquals(7, it(3))                   // twice, then + 1
+            }
+            def r = e.andThenSelf(); r.delegate = 'd'
+            assertEquals(5, r(3))
+            r = e.composeSelf()[0]; r.delegate = 'd'
+            assertEquals(6, r(3))                        // + 1 three times
+            assertEquals(7, e.local(twice, 3))
+        }
     }
 }

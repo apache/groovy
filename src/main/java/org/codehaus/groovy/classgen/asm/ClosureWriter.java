@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm;
 
 import groovy.lang.Closure;
+import groovy.transform.Internal;
 import groovy.transform.PackedClosures.PackMode;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -673,7 +674,8 @@ public class ClosureWriter {
      * (via a local that is later returned) are intentionally not chased here; the runtime guard remains
      * the backstop for those.
      * <p>
-     * A literal composed with {@code >>} or {@code <<} escapes wherever the composition does, e.g.
+     * A literal composed with {@code >>} or {@code <<}, or by {@code andThen}, {@code compose},
+     * {@code andThenSelf} or {@code composeSelf}, escapes wherever the composition does, e.g.
      * {@code h.handler = c >> { ... }}; the same composition used only in the method still packs.
      */
     private boolean escapesEnclosingMethod(final ClosureExpression expression) {
@@ -697,6 +699,7 @@ public class ClosureWriter {
      *
      * @param method the method or constructor whose body is about to be transformed
      */
+    @Internal
     public static void markEscapingClosures(final MethodNode method) {
         if (method.getCode() == null || !packingRequested(method, method.getDeclaringClass())) return;
         markEscapingClosures(method.getCode());
@@ -710,6 +713,7 @@ public class ClosureWriter {
      *
      * @param classNode the class whose initializer blocks are about to be transformed
      */
+    @Internal
     public static void markEscapingClosures(final ClassNode classNode) {
         boolean requested = packingRequested(null, classNode);
         for (ConstructorNode constructor : classNode.getDeclaredConstructors()) {
@@ -741,8 +745,9 @@ public class ClosureWriter {
             /**
              * Marks every literal the escaping value {@code e} can be or keep: both branches of a
              * ternary or elvis, the operand of a cast that keeps the closure, the receiver of a
-             * call whose result keeps it (see {@link #isWrappingCall}), and both operands of a
-             * composition, each followed the same way.
+             * call whose result keeps it (see {@link #isWrappingCall}), both operands of a
+             * composition, and the right operand of an assignment used as a value, each followed
+             * the same way.
              */
             private void markValue(final Expression e) {
                 if (e instanceof TernaryExpression) {
@@ -758,7 +763,10 @@ public class ClosureWriter {
                 } else if (e instanceof MethodCallExpression && isCompositionCall((MethodCallExpression) e)) {
                     MethodCallExpression call = (MethodCallExpression) e;      // c.rightShift({ ... }), also how SC compiles c >> { ... }
                     markValue(call.getObjectExpression());
-                    markValue(((TupleExpression) call.getArguments()).getExpression(0));
+                    ((TupleExpression) call.getArguments()).getExpressions().forEach(this::markValue); // none for andThenSelf()
+                } else if (e instanceof BinaryExpression && (storesRightOperand(((BinaryExpression) e).getOperation().getType())
+                        || ((BinaryExpression) e).getOperation().getType() == Types.LEFT_SHIFT_EQUAL)) {
+                    markValue(((BinaryExpression) e).getRightExpression());    // an assignment's value, e.g. h.handler = c = { ... }
                 } else {
                     mark(e);
                 }
@@ -825,12 +833,19 @@ public class ClosureWriter {
         return op == Types.RIGHT_SHIFT || op == Types.LEFT_SHIFT;
     }
 
-    /** True for a one-argument {@code rightShift} or {@code leftShift} call, the method form of {@link #isComposition}. */
+    /**
+     * True for a composing call: a one-argument {@code rightShift} or {@code leftShift}, the method form
+     * of {@link #isComposition}, or its alias {@code andThen} or {@code compose}; or {@code andThenSelf}
+     * or {@code composeSelf}, which compose the receiver with itself. The result keeps the receiver and
+     * any closure argument.
+     */
     private static boolean isCompositionCall(final MethodCallExpression call) {
+        if (!(call.getArguments() instanceof TupleExpression)) return false;
         String name = call.getMethodAsString();
-        return ("rightShift".equals(name) || "leftShift".equals(name))
-                && call.getArguments() instanceof TupleExpression
-                && ((TupleExpression) call.getArguments()).getExpressions().size() == 1;
+        int arity = ((TupleExpression) call.getArguments()).getExpressions().size();
+        return (arity == 1 && ("rightShift".equals(name) || "leftShift".equals(name)
+                        || "andThen".equals(name) || "compose".equals(name)))
+                || (arity <= 1 && ("andThenSelf".equals(name) || "composeSelf".equals(name)));
     }
 
     /**
@@ -1071,9 +1086,14 @@ public class ClosureWriter {
         return WRAPPING_CALLS.contains(call.getMethodAsString());
     }
 
-    /** True when a cast to {@code type} yields the closure itself rather than a coerced proxy. */
+    /**
+     * True when a cast to {@code type} yields the closure itself rather than a coerced proxy: a
+     * {@code Closure} type, or a type every closure already is, such as {@code Object}, {@code Runnable}
+     * or {@code Callable}.
+     */
     private static boolean keepsClosure(final ClassNode type) {
-        return ClassHelper.isObjectType(type) || type.isDerivedFrom(ClassHelper.CLOSURE_TYPE);
+        return type.isDerivedFrom(ClassHelper.CLOSURE_TYPE)
+                || StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(ClassHelper.CLOSURE_TYPE, type);
     }
 
     /**
