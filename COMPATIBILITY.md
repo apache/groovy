@@ -1344,6 +1344,20 @@ value is `getSource()`, the type and variable are on the `TypePattern`, and
 the negated form is a `NotExpression` around it. `e instanceof T` without a
 binding is a `BinaryExpression` as before.
 
+### Groovy 7 — `@IndexedProperty` adds no indexed setter to a record (GROOVY-12730)
+
+An `@IndexedProperty` component of a record, or property of a `@RecordType` or
+`@RecordBase` class, gets only the indexed getter `getX(int)`, as an
+`@Immutable` class's property already did. Groovy 6 also generated the indexed
+setter `setX(int, V)`, although a record has no other setters. A record is
+only shallowly immutable, so its list or array can still be changed through
+the value the accessor returns.
+
+**Who is affected.** Code that calls `setX(int, V)` on such a record no longer
+compiles under static compilation or Java, and fails with a
+`MissingMethodException` in dynamic Groovy. `japicmp` reports the method as
+removed from the affected classes.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
