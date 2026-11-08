@@ -1233,6 +1233,31 @@ final class LambdaTest {
         }
     }
 
+    // GROOVY-12668: a lambda without a functional interface type is a closure at run time, also in statically compiled code
+    @Test
+    void testClosureLambdaCallsClosureMethodBeforeEnclosingClassMethod() {
+        assertScript shell, '''
+            class C {
+                String getDelegate() { 'delegate' }
+                String memoizeAtMost(int i) { 'memoizeAtMost' + i }
+                List<Object> m() {
+                    def a = () -> getDelegate()
+                    def b = () -> memoizeAtMost(1)
+                    Supplier<Object> s = () -> getDelegate()
+                    Supplier<Object> t = () -> memoizeAtMost(2)
+                    [a(), b(), s.get(), t.get()]
+                }
+            }
+
+            def c = new C()
+            def result = c.m()
+            assert result[0].is(c)
+            assert result[1] instanceof Closure
+            assert result[2] == 'delegate'
+            assert result[3] == 'memoizeAtMost2'
+        '''
+    }
+
     @Test
     void testInitializeBlocks() {
         assertScript shell, '''

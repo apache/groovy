@@ -5223,13 +5223,16 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     /**
-     * Tells whether the given enclosing closure is a lambda in statically compiled
-     * code. In such a lambda, as in Java, a method of the enclosing class comes
-     * before one of {@code Closure}. A lambda in dynamic or type-checked code is
-     * a closure at run time, where the closure's own methods come first.
+     * Tells whether the given enclosing closure is a lambda that is statically
+     * compiled to a native lambda. In such a lambda, as in Java, a method of the
+     * enclosing class comes before one of {@code Closure}. A lambda in dynamic or
+     * type-checked code, or one without a functional interface type, is a closure
+     * at run time, where the closure's own methods come first.
      */
     private boolean isNativeLambda(final TypeCheckingContext.EnclosingClosure enclosingClosure) {
-        return enclosingClosure.getClosureExpression() instanceof LambdaExpression && isStaticDispatchScope();
+        ClosureExpression closure = enclosingClosure.getClosureExpression();
+        return closure instanceof LambdaExpression && isStaticDispatchScope()
+                && isFunctionalInterface(closure.getNodeMetaData(PARAMETER_TYPE));
     }
 
     /**
