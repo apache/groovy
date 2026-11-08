@@ -122,8 +122,29 @@ final class Groovy10657 {
 
             def log = []
             def receiver = null
-            receiver?[0] = { log << "rhs"; "v" }()
+            assert (receiver?[0] = { log << "rhs"; "v" }()) == "v"
             assert log == ["rhs"]
+        '''
+    }
+
+    @Test
+    void testMapAndListAssignmentValueIsRhs() {
+        assertScript '''
+            def map = [a: "old"]
+            assert (map["a"] = "new") == "new"
+            assert map.a == "new"
+
+            def list = ["old"]
+            assert (list[0] = "rhs") == "rhs"
+            assert list == ["rhs"]
+
+            @groovy.transform.CompileStatic
+            String statically(List<String> values) {
+                (values[0] = "rhs")
+            }
+            def typed = ["old"]
+            assert statically(typed) == "rhs"
+            assert typed == ["rhs"]
         '''
     }
 }

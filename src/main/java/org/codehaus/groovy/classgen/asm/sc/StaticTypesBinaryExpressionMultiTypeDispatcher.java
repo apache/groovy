@@ -357,21 +357,23 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         if (!safe && receiverType.isArray() && binExpWriter[getOperandType(receiverType.getComponentType())].arraySet(true)) {
             super.assignToArray(enclosing, receiver, subscript, rhsValueLoader, false);
         } else { // handle safe subscript and other cases by calling the "putAt" method
-            if (rhsValueLoader instanceof VariableSlotLoader && enclosing instanceof BinaryExpression) { // GROOVY-6061
-                rhsValueLoader.putNodeMetaData(INFERRED_TYPE, controller.getTypeChooser().resolveType(enclosing, controller.getClassNode()));
+            boolean keepValue = !Boolean.TRUE.equals(enclosing.getNodeMetaData(ELIDE_EXPRESSION_VALUE));
+            int[] slot = { -1 };
+            ClassNode[] keptType = { null };
+            Expression value = preserveSubscriptRhs(rhsValueLoader, keepValue, slot, keptType);
+            if (value instanceof VariableSlotLoader && enclosing instanceof BinaryExpression) { // GROOVY-6061
+                value.putNodeMetaData(INFERRED_TYPE, controller.getTypeChooser().resolveType(enclosing, controller.getClassNode()));
             }
 
             // replace assignment to a subscript operator with a method call
             // e.g. x[5] = 10 --> x.putAt(5, 10)
-            MethodCallExpression call = callX(receiver, "putAt", args(subscript, rhsValueLoader));
+            MethodCallExpression call = callX(receiver, "putAt", args(subscript, value));
             call.setSafe(safe);
             call.setSourcePosition(enclosing);
 
             call.visit(controller.getAcg());
             controller.getOperandStack().pop(); // method return value
-
-            if (!Boolean.TRUE.equals(enclosing.getNodeMetaData(ELIDE_EXPRESSION_VALUE)))
-                rhsValueLoader.visit(controller.getAcg()); // assignment expression value
+            finishPreservedRhs(rhsValueLoader, keepValue, slot, keptType);
         }
     }
 }
