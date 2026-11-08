@@ -1127,6 +1127,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 visitBinaryExpression(assignX(leftExpression, rightExpression, expression));
                 // GROOVY-12524: the write of leftExpression records the setter; keep the getter too
                 rememberExtensionPropertyGetter(leftExpression, readClone);
+                rememberDynamicRead(leftExpression, readClone);
                 expression.copyNodeMetaData(rightExpression);
                 return;
             }
@@ -1579,6 +1580,17 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         MethodNode getter = read.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
         if (getter instanceof ExtensionMethodNode && getter.getParameters().length == 0) {
             target.putNodeMetaData(StaticCompilationMetadataKeys.EXTENSION_PROPERTY_GETTER, getter);
+        }
+    }
+
+    // GROOVY-12594: the target of a compound assignment is also its read; if the read was resolved
+    // dynamically and no setter was selected for the write, resolve the target dynamically as well
+    private static void rememberDynamicRead(final Expression target, final Expression read) {
+        Object dynamic = read.getNodeMetaData(DYNAMIC_RESOLUTION);
+        if (dynamic != null && target instanceof PropertyExpression
+                && target.getNodeMetaData(DYNAMIC_RESOLUTION) == null
+                && target.getNodeMetaData(DIRECT_METHOD_CALL_TARGET) == null) {
+            target.putNodeMetaData(DYNAMIC_RESOLUTION, dynamic);
         }
     }
 
