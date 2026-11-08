@@ -84,6 +84,9 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
 
     private static final String SC = '@groovy.transform.CompileStatic'
 
+    /** Dynamic code calls a super constructor without the meta-class too, so @CompileDynamic does not help. */
+    private static final String SUPER_CALL_FAILS = 'A super constructor call fails at run time in dynamic code too'
+
     /** Compiles {@code body} as a method of a class C, with the options shell, clause and annotation, and runs it. */
     private Object evaluate(final Map options = [:], final String body) {
         (options.shell ?: shell).evaluate """package p
@@ -101,7 +104,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         }
         assert err.message.contains(member) : body
         assert err.message.contains('is defined by another class loader, so the JVM refuses this access') : body
-        assert err.message.contains('Use @CompileDynamic to reach it through the meta-class') : body
+        assert err.message.contains(options.advice ?: 'Use @CompileDynamic to reach it through the meta-class') : body
     }
 
     private static void assertRefusedAtRunTime(final Closure<?> run) {
@@ -156,10 +159,11 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
                 shell.evaluate "package p\n$SC\n$type"
             }
             assert err.message.contains('Cannot call package-private constructor of p.A from class p.D') : type
+            assert err.message.contains(SUPER_CALL_FAILS) && !err.message.contains('@CompileDynamic') : type
         }
-        assertReported('package-private constructor of p.A', 'new A(1) { }')
-        assertReported('package-private constructor of p.A', 'new A() { }')
-        assertReported('package-private constructor of p.A', 'int i = 1; new A(i) { int shared() { i } }')
+        assertReported(advice: SUPER_CALL_FAILS, 'package-private constructor of p.A', 'new A(1) { }')
+        assertReported(advice: SUPER_CALL_FAILS, 'package-private constructor of p.A', 'new A() { }')
+        assertReported(advice: SUPER_CALL_FAILS, 'package-private constructor of p.A', 'int i = 1; new A(i) { int shared() { i } }')
 
         // a subclass can call a protected constructor with super(...)
         assert shell.evaluate('''package p
@@ -169,6 +173,15 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         ''') == 'prot:x'
         assert evaluate("new A('y') { }.value") == 'prot:y'
         assert evaluate("String s = 'z'; new A(s) { String shared() { s } }.value") == 'prot:z'
+    }
+
+    // GROOVY-12568
+    @Test
+    void testSuperConstructorsOfAnotherRuntimePackageInDynamicCode() {
+        shell.evaluate LIBRARY
+        assertRefusedAtRunTime { shell.evaluate 'package p\nclass D extends A { D() { super(1) } }\nnew D()' }
+        assertRefusedAtRunTime { shell.evaluate 'package p\nclass D extends A { }\nnew D()' }
+        assertRefusedAtRunTime { evaluate(annotation: '', 'new A(1) { }') }
     }
 
     // GROOVY-12568: a constructor that @InheritConstructors generates is not reported, as it fails only if it is called
