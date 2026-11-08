@@ -111,6 +111,49 @@ final class Groovy12533 {
         '''
     }
 
+    // this.name and a bare name resolve to the enclosing instance, as in dynamic code;
+    // this.@name is the field of this instance
+    @Test
+    void testInnerSubclassReadsEnclosingInstanceByNameAndItsOwnFieldByAttribute() {
+        for (String annotation : ['', '@groovy.transform.CompileStatic']) {
+            assertScript """
+                $annotation
+                class Outer {
+                    private String f = 'enclosing'
+                    class Sub extends Outer {
+                        def byName() { [this.f, f, { -> this.f }(), { -> f }()] }
+                        def byAttribute() { [this.@f, { -> this.@f }()] }
+                    }
+                    void mutate() { this.@f = 'changed' }
+                }
+                def outer = new Outer()
+                def sub = outer.new Outer.Sub()
+                outer.mutate()
+                assert sub.byName() == ['changed'] * 4
+                assert sub.byAttribute() == ['enclosing'] * 2
+            """
+        }
+    }
+
+    // a static nested subclass has the field but no enclosing instance
+    @Test
+    void testCompileStaticStaticNestedSubclassReadsItsOwnFieldByName() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Outer {
+                private String f = 'outer'
+                static class Sub extends Outer {
+                    def byName() { [this.f, f, { -> this.f }(), { -> f }()] }
+                    def write(String value) { f = value; this.f }
+                }
+            }
+            def sub = new Outer.Sub()
+            assert sub.byName() == ['outer'] * 4
+            assert sub.write('updated') == 'updated'
+            assert sub.byName() == ['updated'] * 4
+        '''
+    }
+
     @Test
     void testInnerSubclassClosureReadsItsOwnInheritedField() {
         assertScript '''
