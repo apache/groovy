@@ -355,6 +355,28 @@ public class ParallelCollectionExtensions {
     }
 
     /**
+     * Finds the element with the minimum key, as sequential {@code min} does with a
+     * one-parameter closure. Keys compare as Groovy's {@code <} does, and a {@code null} key
+     * is the least. When several elements have the minimum key, the earliest in encounter
+     * order is returned. Each key is computed once. An empty collection returns {@code null}.
+     * <p>
+     * A closure or lambda with one parameter selects this method and one with two parameters
+     * selects {@link #minParallel(Collection, Comparator)}, as does a method reference by the
+     * number of arguments its method takes.
+     * <pre class="language-groovy groovyTestCase">
+     * assert ['hello', 'hi', 'hey'].minParallel { it.size() } == 'hi'
+     * assert ['hello', 'hi', 'hey'].minParallel(String::size) == 'hi'
+     * </pre>
+     *
+     * @param keyExtractor computes the key an element is compared by
+     * @since 7.0.0
+     */
+    public static <T> T minParallel(Collection<T> self, Function<? super T, ?> keyExtractor) {
+        require(self, keyExtractor);
+        return extremeByKey(self, keyExtractor, true);
+    }
+
+    /**
      * Finds the maximum element by natural ordering, as sequential {@code max()} does:
      * null elements are skipped, elements compare as Groovy's {@code >} does (so numbers of
      * different types compare by value), and the earliest of equal elements is returned.
@@ -391,6 +413,29 @@ public class ParallelCollectionExtensions {
     }
 
     /**
+     * Finds the element with the maximum key, as sequential {@code max} does with a
+     * one-parameter closure. Keys compare as Groovy's {@code >} does, and a {@code null} key
+     * is the least, so it is chosen only when every key is {@code null}. When several elements
+     * have the maximum key, the earliest in encounter order is returned. Each key is computed
+     * once. An empty collection returns {@code null}.
+     * <p>
+     * A closure or lambda with one parameter selects this method and one with two parameters
+     * selects {@link #maxParallel(Collection, Comparator)}, as does a method reference by the
+     * number of arguments its method takes.
+     * <pre class="language-groovy groovyTestCase">
+     * assert ['hello', 'hi', 'hey'].maxParallel { it.size() } == 'hello'
+     * assert ['hello', 'hi', 'hey'].maxParallel(String::size) == 'hello'
+     * </pre>
+     *
+     * @param keyExtractor computes the key an element is compared by
+     * @since 7.0.0
+     */
+    public static <T> T maxParallel(Collection<T> self, Function<? super T, ?> keyExtractor) {
+        require(self, keyExtractor);
+        return extremeByKey(self, keyExtractor, false);
+    }
+
+    /**
      * Reduces the collection in parallel using the given operator.
      * The operator must be associative. An empty collection returns {@code null}.
      * A one-element collection returns that element, including {@code null},
@@ -422,6 +467,31 @@ public class ParallelCollectionExtensions {
     public static Object sumParallel(Collection<?> self) {
         Objects.requireNonNull(self, "self must not be null");
         return reduce((Collection<Object>) self, PLUS);
+    }
+
+    /**
+     * Adds the results of applying {@code transform} to each element, in parallel, as
+     * sequential {@code sum} does with a closure: each addition calls {@code plus} on the left
+     * operand. The elements are transformed and added in one pass. An empty collection returns
+     * {@code null}, and a one-element collection returns its transformed value without calling
+     * {@code plus}. As for {@link #sumParallel(Collection)}, the result matches the sequential
+     * sum only when {@code plus} is associative for the transformed values.
+     * <p>
+     * A closure or lambda with one parameter selects this method and one with two parameters
+     * selects {@link #sumParallel(Collection, BinaryOperator)}, as does a method reference by
+     * the number of arguments its method takes.
+     * <pre class="language-groovy groovyTestCase">
+     * assert ['a', 'bb', 'ccc'].sumParallel { it.size() } == 6
+     * assert ['a', 'bb', 'ccc'].sumParallel(String::size) == 6
+     * assert [1, 2, 3].sumParallel { a, b -&gt; a * b } == 6
+     * </pre>
+     *
+     * @param transform computes the value added for each element
+     * @since 7.0.0
+     */
+    public static <T> Object sumParallel(Collection<T> self, Function<? super T, ?> transform) {
+        require(self, transform);
+        return mapReduce(self, transform, PLUS);
     }
 
     /**
@@ -566,6 +636,30 @@ public class ParallelCollectionExtensions {
         );
     }
 
+    /** Maps each element and reduces the results in one ordered, null-preserving pass on the current pool. */
+    private static <T, R> R mapReduce(Collection<T> self, Function<? super T, ? extends R> fn, BinaryOperator<R> operator) {
+        return withPool(
+                (pool, fjp) -> fjp.submit(() -> self.parallelStream().<R>map(fn).collect(
+                        Fold<R>::new,
+                        (fold, element) -> fold.absorb(element, operator),
+                        (left, right) -> left.combine(right, operator)
+                ).finish()).join(),
+                pool -> ParallelExecutorTasks.mapReduce(pool, self, fn, operator)
+        );
+    }
+
+    /**
+     * The element with the least ({@code min}) or greatest key, comparing keys as sequential
+     * {@code min} and {@code max} with a one-parameter closure do. Replacing only on a strict
+     * comparison keeps the earliest of equal keys in an encounter-order reduction.
+     */
+    private static <T> T extremeByKey(Collection<T> self, Function<? super T, ?> keyExtractor, boolean min) {
+        Keyed<T> found = mapReduce(self, element -> new Keyed<>(element, keyExtractor.apply(element)),
+                (left, right) -> (min ? ScriptBytecodeAdapter.compareLessThan(right.key, left.key)
+                        : ScriptBytecodeAdapter.compareLessThan(left.key, right.key)) ? right : left);
+        return found == null ? null : found.element;
+    }
+
     /**
      * Runs {@code forkJoin} on the current fork-join pool, or on the common
      * pool when no pool is bound. The pool passed to {@code forkJoin} is
@@ -623,6 +717,17 @@ public class ParallelCollectionExtensions {
                 (fold, element) -> fold.absorb(element, operator),
                 (left, right) -> left.combine(right, operator)
         ).finish()).join();
+    }
+
+    /** An element with its computed key. */
+    private static final class Keyed<T> {
+        private final T element;
+        private final Object key;
+
+        private Keyed(T element, Object key) {
+            this.element = element;
+            this.key = key;
+        }
     }
 
     /** A non-null holder so a matching null element survives {@code Optional.of}. */

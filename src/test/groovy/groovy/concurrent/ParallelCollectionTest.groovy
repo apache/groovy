@@ -401,6 +401,88 @@ final class ParallelCollectionTest {
     }
 
     @Test
+    void testFunctionFormsMatchSequential() {
+        // sumParallel(transform), minParallel(key) and maxParallel(key) against sequential sum, min and
+        // max with a one-parameter closure, on the common pool, a fork-join pool and an executor pool
+        assertScript '''
+            import groovy.concurrent.Pool
+            import java.util.concurrent.atomic.AtomicInteger
+
+            def random = new Random(7)
+            // many words of each length, so minimum and maximum keys tie and the earliest must win
+            def words = (1..1000).collect { i -> ('a'..'z')[i % 26] * (random.nextInt(8) + 1) + i }
+            def numbers = (1..1000).toList()
+
+            def check = { Pool pool ->
+                def run = { Closure body -> pool == null ? body() : Pool.withCurrent(pool, body) }
+                run {
+                    assert words.sumParallel { it.size() } == words.sum { it.size() }
+                    assert words.sumParallel(String::length) == words.sum { it.size() }
+                    assert words.sumParallel { w -> [w[0]] } == words.sum { w -> [w[0]] }
+                    assert numbers.sumParallel { a, b -> a + b } == 500500
+
+                    assert words.minParallel { it.size() } == words.min { it.size() }
+                    assert words.maxParallel { it.size() } == words.max { it.size() }
+                    assert words.minParallel(String::length) == words.min { it.size() }
+                    assert words.maxParallel { -it.size() } == words.min { it.size() }
+                    // two parameters still select the comparator overload
+                    assert words.minParallel { a, b -> b.size() <=> a.size() } == words.max { a, b -> a.size() <=> b.size() }
+
+                    // a null key is the least, as in sequential min and max
+                    assert ['bb', null, 'a'].minParallel { it?.size() } == ['bb', null, 'a'].min { it?.size() }
+                    assert ['bb', null, 'a'].maxParallel { it?.size() } == 'bb'
+                    assert [null, null].maxParallel { it } == null
+
+                    def keys = new AtomicInteger()
+                    words.minParallel { keys.incrementAndGet(); it.size() }
+                    assert keys.get() == words.size()
+                    keys.set(0)
+                    words.sumParallel { keys.incrementAndGet(); it.size() }
+                    assert keys.get() == words.size()
+
+                    assert [].sumParallel { it } == null
+                    assert [].minParallel { it } == null
+                    assert [].maxParallel { it } == null
+                    assert ['x'].sumParallel { it * 2 } == 'xx'
+                }
+            }
+
+            check(null)
+            [Pool.cpu(), Pool.virtual()].each { pool ->
+                try {
+                    check(pool)
+                } finally {
+                    pool.close()
+                }
+            }
+        '''
+    }
+
+    @Test
+    void testFunctionFormsUnderCompileStatic() {
+        assertScript '''
+            import java.util.function.Function
+
+            @groovy.transform.CompileStatic
+            void test() {
+                List<String> words = ['hello', 'hi', 'hey', 'ho']
+                Object total = words.sumParallel { it.size() }
+                String shortest = words.minParallel { it.size() }
+                String longest = words.maxParallel { w -> w.size() }
+                String byLambda = words.minParallel((String w) -> w.size())
+                String byReference = words.maxParallel(String::length)
+                Function<String, Integer> size = String::length
+                Object byFunction = words.sumParallel(size)
+                Object combined = [1, 2, 3].sumParallel { a, b -> a + b }
+                String byComparator = words.minParallel { a, b -> a <=> b }
+                assert [total, shortest, longest, byLambda, byReference, byFunction, combined, byComparator] ==
+                        [12, 'hi', 'hello', 'hi', 'hello', 12, 6, 'hello']
+            }
+            test()
+        '''
+    }
+
+    @Test
     void testGroupByParallel() {
         assertScript '''
             import groovy.concurrent.ParallelScope
