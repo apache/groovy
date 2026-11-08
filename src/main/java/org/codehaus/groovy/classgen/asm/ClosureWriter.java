@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import groovy.transform.Internal;
 import groovy.transform.PackedClosures.PackMode;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -634,6 +635,7 @@ public class ClosureWriter {
      *
      * @param method the method or constructor whose body is about to be transformed
      */
+    @Internal
     public static void markEscapingClosures(final MethodNode method) {
         if (method.getCode() == null || !packingRequested(method, method.getDeclaringClass())) return;
         markEscapingClosures(method.getCode());
