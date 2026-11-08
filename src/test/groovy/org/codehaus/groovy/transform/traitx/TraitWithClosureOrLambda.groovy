@@ -529,4 +529,26 @@ final class TraitWithClosureOrLambda {
             """
         }
     }
+
+    // GROOVY-12602
+    @Test
+    void testInvokeClassMethodFromTraitLambdaInStaticMethod() {
+        assertScript shell, '''import java.util.function.Supplier
+            trait T {
+                static String m1() { Supplier<String> s = () -> getSimpleName(); s.get() }
+                static String m2() { Supplier<String> s = () -> simpleName; s.get() }
+                static String m3() { Supplier<String> s = () -> { Closure<String> c = { -> getSimpleName() }; c() }; s.get() }
+                static String m4() { Supplier<String> s = () -> { Supplier<String> t = () -> getSimpleName(); t.get() }; s.get() }
+                static String m5() { Closure<String> c = { -> getSimpleName() }; c() }
+            }
+            class C implements T {
+            }
+
+            assert C.m1() == 'C'
+            assert C.m2() == 'C'
+            assert C.m3() == 'C'
+            assert C.m4() == 'C'
+            assert C.m5() == 'C'
+        '''
+    }
 }

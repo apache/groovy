@@ -264,14 +264,14 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
     }
 
     /**
-     * Returns the {@code $self} parameter of the trait helper method that encloses the lambda, if any.
+     * Returns the {@code $self} or {@code $static$self} parameter of the trait helper method that encloses the lambda, if any.
      */
     private BytecodeVariable getTraitSelf() {
         MethodNode methodNode = controller.getMethodNode();
         if (methodNode != null && !controller.isInGeneratedFunction() && Traits.isTrait(controller.getClassNode().getOuterClass())) {
             Parameter[] parameters = methodNode.getParameters();
-            if (parameters.length > 0 && Traits.THIS_OBJECT.equals(parameters[0].getName())) {
-                return controller.getCompileStack().getVariable(Traits.THIS_OBJECT, false);
+            if (parameters.length > 0 && (Traits.THIS_OBJECT.equals(parameters[0].getName()) || Traits.STATIC_THIS_OBJECT.equals(parameters[0].getName()))) {
+                return controller.getCompileStack().getVariable(parameters[0].getName(), false);
             }
         }
         return null;
