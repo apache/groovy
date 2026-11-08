@@ -327,6 +327,63 @@ final class Groovy12441 {
     }
 
     @Test
+    void testSharedThisMethodReferenceInsideClosureUnderCompileStatic() {
+        assertEquals('C', eval('''
+            @groovy.transform.CompileStatic
+            class C {
+                String tag() { 'C' }
+                String run() {
+                    def inner = { ->
+                        java.util.function.Supplier<String> supplier = this::tag
+                        supplier.get()
+                    }
+                    inner.call()
+                }
+            }
+            new C().run()
+        '''))
+    }
+
+    @Test
+    void testSharedThisInSwitchInsideClosureUnderCompileStatic() {
+        assertEquals('C', eval('''
+            @groovy.transform.CompileStatic
+            class C {
+                String tag() { 'C' }
+                String run() {
+                    def inner = { ->
+                        switch (1) {
+                            case 1 -> this.tag()
+                            default -> 'z'
+                        }
+                    }
+                    inner.call()
+                }
+            }
+            new C().run()
+        '''))
+    }
+
+    @Test
+    void testSharedThisWithClassicForLoopInsideClosureUnderCompileStatic() {
+        assertEquals('C6', eval('''
+            @groovy.transform.CompileStatic
+            class C {
+                String tag() { 'C' }
+                String run() {
+                    def inner = { ->
+                        int sum = 0
+                        for (int i = 1; i <= 3; i++) sum = sum + i
+                        this.tag() + sum
+                    }
+                    inner.call()
+                }
+            }
+            new C().run()
+        '''))
+    }
+
+    @Test
     void testSequentialCompilationsDoNotShareThisType() {
         assertEquals('A', eval('''
             @groovy.transform.CompileStatic
