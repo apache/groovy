@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.v8
+package bugs
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.jupiter.params.ParameterizedTest
@@ -31,19 +31,19 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse
  * the constructor, as for an encapsulated JDK class, the call fails with the
  * same Groovy exception with and without invokedynamic.
  */
-final class IndyRefusedConstructorTest {
+final class Groovy12719 {
 
     private static GroovyShell shell(final boolean indy) {
         def config = new CompilerConfiguration()
         config.optimizationOptions[CompilerConfiguration.INVOKEDYNAMIC] = indy
-        new GroovyShell(IndyRefusedConstructorTest.classLoader, new Binding(), config)
+        new GroovyShell(Groovy12719.classLoader, new Binding(), config)
     }
 
     // GROOVY-12719
     @ParameterizedTest(name = 'indy={0}')
     @ValueSource(booleans = [true, false])
     void testProtectedConstructorOfEncapsulatedJdkClass(final boolean indy) {
-        assumeFalse(ObjectInputStream.module.isOpen('java.io', IndyRefusedConstructorTest.module),
+        assumeFalse(ObjectInputStream.module.isOpen('java.io', Groovy12719.module),
             'the JVM opens java.base/java.io, so the constructor is reflectively reachable')
 
         def err = shouldFail(GroovyRuntimeException) {
