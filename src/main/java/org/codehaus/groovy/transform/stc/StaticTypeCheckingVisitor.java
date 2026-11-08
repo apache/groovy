@@ -1049,8 +1049,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     /**
      * Records the instanceof checks of a condition or logical expression that guard what is evaluated after
-     * them: those reached through logical operators, {@code &} and {@code !}, a comparison with a boolean
-     * literal, a cast to {@code boolean} and the value of an assignment only. A check that is an operand of any
+     * them: those reached through logical operators, {@code &}, {@code |} and {@code !}, a comparison with a
+     * boolean literal, a cast to {@code boolean}, the value of an assignment and an instanceof pattern only,
+     * which checks its value as {@code instanceof} does. A check that is an operand of any
      * other operator, an argument or an element, such as {@code x instanceof T} in {@code foo(x instanceof T, x)},
      * does not tell anything about the expressions evaluated after it.
      */
@@ -1058,7 +1059,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         Expression expr = stripParentheses(expression);
         if (expr instanceof BooleanExpression be) { // includes NotExpression
             addInstanceOfGuards(be.getExpression());
-        } else if (isBinaryOperation(expr, LOGICAL_AND, LOGICAL_OR, BITWISE_AND)) {
+        } else if (isBinaryOperation(expr, LOGICAL_AND, LOGICAL_OR, BITWISE_AND, BITWISE_OR)) {
             addInstanceOfGuards(((BinaryExpression) expr).getLeftExpression());
             addInstanceOfGuards(((BinaryExpression) expr).getRightExpression());
         } else if (isBinaryOperation(expr, KEYWORD_INSTANCEOF, COMPARE_NOT_INSTANCEOF)) {
@@ -1070,6 +1071,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             addInstanceOfGuards(((BinaryExpression) expr).getRightExpression());
         } else if (expr instanceof CastExpression ce && (isPrimitiveBoolean(ce.getType()) || isWrapperBoolean(ce.getType()))) {
             addInstanceOfGuards(ce.getExpression());
+        } else if (expr instanceof PatternExpression pe && pe.isInstanceOf() && pe.getLowered() != null) {
+            addInstanceOfGuards(pe.getLowered()); // "x instanceof T t" is checked as "x instanceof T"
         }
     }
 
@@ -1145,7 +1148,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // smart-cast when the operand is itself a single negated check, or an "||" whose operands
         // pin their negatives down; "!(L && R)" only guarantees "!L || !R", so drop them there
         Expression operand = stripTrueComparisons(expression);
-        if (getNegatedOperand(operand) == null && !isBinaryOperation(operand, COMPARE_NOT_INSTANCEOF, LOGICAL_OR)) {
+        if (getNegatedOperand(operand) == null && !isBinaryOperation(operand, COMPARE_NOT_INSTANCEOF, LOGICAL_OR, BITWISE_OR)) {
             List<ClassNode> types = new ArrayList<>();
             Object key = negatedInstanceOfConjunctionKey(operand, types);
             if (key != null) { // !(x !instanceof A && x !instanceof B) is (x instanceof A || x instanceof B)
@@ -1238,12 +1241,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             // GROOVY-7971, GROOVY-8965, GROOVY-10096, GROOVY-10702, et al.
             boolean negation = instanceOfGuards.contains(expression) && isNegatingComparison(expression);
-            if (op == LOGICAL_OR || op == BITWISE_AND || negation) typeCheckingContext.pushTemporaryTypeInfo();
+            if (op == LOGICAL_OR || op == BITWISE_OR || op == BITWISE_AND || negation) typeCheckingContext.pushTemporaryTypeInfo();
 
             ClassNode lType;
             leftExpression.visit(this);
             var setterInfo = removeSetterInfo(leftExpression);
-            if (setterInfo != null) { assert op != LOGICAL_OR && op != BITWISE_AND && !negation;
+            if (setterInfo != null) { assert op != LOGICAL_OR && op != BITWISE_OR && op != BITWISE_AND && !negation;
                 if (ensureValidSetter(expression, leftExpression, rightExpression, setterInfo)) {
                     return;
                 }
@@ -1262,7 +1265,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     var rhs = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
                     lhs.forEach((key, types) -> typeCheckingContext.peekTemporaryTypeInfo(key).addAll(types));
                     rhs.forEach((key, types) -> typeCheckingContext.peekTemporaryTypeInfo(key).addAll(types));
-                } else if (op != LOGICAL_OR) {
+                } else if (op != LOGICAL_OR && op != BITWISE_OR) { // "|" narrows like "||", see propagateTemporaryTypeInfo
                     rightExpression.visit(this);
                     if (op == EQUAL) typePatternBinding(expression, leftExpression, rightExpression); // GEP-19
                     if (negation) { // "c == false" tells what "!c" does

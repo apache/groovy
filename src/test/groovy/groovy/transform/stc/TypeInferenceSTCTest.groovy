@@ -773,6 +773,55 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12562: an instanceof pattern narrows the value it checks as an instanceof check does
+    @Test
+    void testInstanceOf34() {
+        assertScript '''
+            def test(o) { if (o instanceof String s) o.toUpperCase() else 'no' }
+            def negated(o) { if (!(o instanceof String s)) return 'no'; o.toUpperCase() }
+            def operand(o) { o instanceof String s && o.length() > 1 }
+            def conditional(o) { o instanceof String s ? o.toUpperCase() : 'no' }
+            def loop(o) { while (o instanceof String s) return o.toUpperCase(); 'no' }
+
+            assert test('ab') == 'AB' && test(42) == 'no'
+            assert negated('ab') == 'AB' && negated(42) == 'no'
+            assert operand('ab') && !operand('a') && !operand(42)
+            assert conditional('ab') == 'AB' && conditional(42) == 'no'
+            assert loop('ab') == 'AB' && loop(42) == 'no'
+        '''
+
+        shouldFailWithMessages '''
+            def test(o) { [o instanceof String s, o.toUpperCase()] }
+        ''',
+        'Cannot find matching method java.lang.Object#toUpperCase()'
+    }
+
+    // GROOVY-12562: the checks of a boolean | narrow as those of || do
+    @Test
+    void testInstanceOf35() {
+        assertScript '''
+            int test(x, y) { if (x !instanceof String | y !instanceof Integer) return -1; x.length() + y.intValue() }
+            int orElse(x, y) { if (x !instanceof String | y !instanceof Integer) -1 else x.length() + y.intValue() }
+            int negated(x, y) { if (!(x !instanceof String | y !instanceof Integer)) x.length() + y.intValue() else -1 }
+            int either(x) { if (x instanceof String | x instanceof StringBuilder) x.length() else -1 }
+
+            assert test('ab', 3) == 5 && test('ab', 'c') == -1 && test(1, 3) == -1
+            assert orElse('ab', 3) == 5 && orElse(1, 3) == -1
+            assert negated('ab', 3) == 5 && negated(1, 3) == -1
+            assert either('ab') == 2 && either(new StringBuilder('abc')) == 3 && either(42) == -1
+        '''
+
+        shouldFailWithMessages '''
+            def test(x, y) { if (x instanceof String | y instanceof Integer) x.length() }
+        ''',
+        'Cannot find matching method (java.lang.String | java.lang.Object)#length()'
+
+        shouldFailWithMessages '''
+            def test(x) { x instanceof String | x.length() > 0 }
+        ''',
+        'Cannot find matching method java.lang.Object#length()'
+    }
+
     // GROOVY-5226
     @Test
     void testNestedInstanceOf1() {
