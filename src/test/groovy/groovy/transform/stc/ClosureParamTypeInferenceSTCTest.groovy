@@ -1990,6 +1990,69 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12746: a functional-interface parameter of an extension method is typed from the receiver
+    @Test
+    void testExtensionMethodFunctionalParameterTypedFromReceiver1() {
+        assertScript '''
+            List<Integer> numbers = [1, 2, 3]
+            assert numbers.collectParallel { it * 2 } == [2, 4, 6]
+            assert numbers.collectParallel { n -> n * 2 } == [2, 4, 6]
+            assert numbers.collectParallel(n -> n * 2) == [2, 4, 6]
+            assert numbers.findAllParallel { it > 1 } == [2, 3]
+            assert numbers.groupByParallel { it % 2 } == [1: [1, 3], 0: [2]]
+        '''
+    }
+
+    @Test
+    void testExtensionMethodFunctionalParameterTypedFromReceiver2() {
+        assertScript '''
+            List<Integer> numbers = [1, 2, 3]
+            assert numbers.sumParallel { a, b -> a + b } == 6
+            assert numbers.sumParallel((a, b) -> a + b) == 6
+            assert ['b', 'c', 'a'].minParallel { a, b -> a <=> b } == 'a'
+        '''
+    }
+
+    @Test
+    void testExtensionMethodFunctionalParameterTypedFromReceiver3() {
+        // the receiver's type arguments reach the self parameter through its supertypes
+        assertScript '''
+            Set<String> words = ['a', 'b'] as LinkedHashSet
+            assert words.collectParallel { it.toUpperCase() } == ['A', 'B']
+            Collection<String> more = ['c']
+            assert more.collectParallel { it.toUpperCase() } == ['C']
+        '''
+    }
+
+    @Test
+    void testExtensionMethodFunctionalParameterTypedFromReceiver4() {
+        assertScript '''
+            List<? extends Number> numbers = [1, 2.5]
+            assert numbers.collectParallel { it.intValue() } == [1, 2]
+        '''
+    }
+
+    @Test
+    void testExtensionMethodFunctionalParameterTypedFromReceiver5() {
+        shouldFailWithMessages '''
+            List<Integer> numbers = [1, 2, 3]
+            numbers.collectParallel { it.toUpperCase() }
+        ''',
+        'Cannot find matching method java.lang.Integer#toUpperCase()'
+    }
+
+    @Test
+    void testExtensionMethodFunctionalParameterTypedFromReceiver6() {
+        // the parameter's type selects the overload, as in dynamic Groovy
+        assertScript '''
+            String helper(Object o) { 'Object' }
+            String helper(Integer i) { 'Integer' }
+
+            List<Integer> numbers = [1, 2]
+            assert numbers.collectParallel { helper(it) } == ['Integer', 'Integer']
+        '''
+    }
+
     @Test
     void testDGM_with0() { // GROOVY-11090: edge case
         assertScript '''

@@ -1411,6 +1411,35 @@ which method a reference names, rather than on argument classes alone, is
 not cached; this arises only for calls that were ambiguous or chose the
 wrong overload before.
 
+### Groovy 7 — closure parameters for an extension method's functional parameter are typed from the receiver (GROOVY-12746)
+
+Under `@TypeChecked` and `@CompileStatic`, a closure or lambda passed for a
+functional-interface parameter of an extension method now gets parameter
+types from the receiver's type arguments. Before, a type parameter that
+only the extension method's `self` parameter mentions fell back to its
+bound, usually `Object`, so `List<Integer>` with
+`numbers.collectParallel { it * 2 }` or `numbers.sumParallel { a, b -> a + b }`
+did not compile. Type arguments inferred from the call's arguments still
+take precedence.
+
+**Who is affected.** Code that compiled before, with parameters typed as
+the bound, now has them typed as the receiver's element type, as for any
+other functional-interface parameter such as `Stream.map`'s:
+
+- Under static compilation, a call in the closure that passes such a
+  parameter to an overloaded method can select a more specific overload,
+  such as `helper(Integer)` instead of `helper(Object)`, as dynamic Groovy
+  already does.
+- A body that is invalid for the element type is reported with that type.
+  For example, `it instanceof String` for an `Integer` element no longer
+  compiles, as with DGM `collect`.
+- A closure that assigns a value of another type to its own parameter now
+  converts the value to the parameter's type, so
+  `numbers.collectParallel { n -> n = n.toString(); n }` gives `[49, 50]`
+  for `[1, 2]`, where dynamic Groovy gives `[1, 2]`. `Stream.map` and other
+  functional-interface parameters already behave this way (GROOVY-12747).
+  Assign to a new local variable instead.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)

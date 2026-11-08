@@ -4975,6 +4975,21 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         });
                     }
 
+                    // an extension method's receiver is its self argument, which is not in arguments
+                    if (method instanceof ExtensionMethodNode extension && !extension.isStaticExtension()) {
+                        Map<GenericsTypeName, GenericsType> gc = new HashMap<>();
+                        extractGenericsConnections(gc, wrapTypeIfNecessary(receiver),
+                                extension.getExtensionMethodNode().getParameters()[0].getType());
+                        gc.forEach((key, gt) -> {
+                            for (GenericsType tp : typeParameters) {
+                                if (tp.getName().equals(key.getName())) {
+                                    context.putIfAbsent(key, gt);
+                                    break;
+                                }
+                            }
+                        });
+                    }
+
                     for (GenericsType tp : typeParameters) {
                         GenericsTypeName name = new GenericsTypeName(tp.getName());
                         context.computeIfAbsent(name, x -> fullyResolve(tp, context));
