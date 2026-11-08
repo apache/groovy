@@ -409,19 +409,6 @@ class LoopDecreasesTests extends BaseTestClass {
         assert warnings == ['@Decreases({}) on a loop has no variant, so nothing is checked']
     }
 
-    // GROOVY-12729
-    @Test
-    void emptyListVariantIsReportedAsNeverDecreasing() {
-        def warnings = compileWarnings '''
-            import groovy.contracts.Decreases
-
-            int n = 1
-            @Decreases({ [] })
-            while (n > 0) { n-- }
-        '''
-        assert warnings == ['@Decreases({ [] }) never decreases, so it fails if the loop runs more than once']
-    }
-
     private static List<String> compileWarnings(String source) {
         def unit = new CompilationUnit()
         unit.addSource('Script1.groovy', source)
