@@ -1097,7 +1097,7 @@ public class ScriptBytecodeAdapter {
     }
 
     /**
-     * The packed-closure factory the compiler emits (GROOVY-12666): as
+     * The packed-closure factory the compiler emits: as
      * {@link #packedClosure(Object, Object, int, String, Object[], Class[], boolean, boolean, boolean)},
      * which stays for class files compiled before it, plus whether the hoisted body uses its
      * receiver, so {@code rehydrate} hands the copy's body a new this object wherever a

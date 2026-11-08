@@ -478,7 +478,7 @@ public class ClosureWriter {
      * Whether the hoisted body uses its receiver where a closure class would use its this object
      * as an instance of the enclosing class, so the packed adapter's {@code rehydrate} hands the
      * copy's body a new this object even when it is not such an instance, failing as the closure
-     * class does (GROOVY-12666). A dynamic closure class dispatches against an untyped this
+     * class does. A dynamic closure class dispatches against an untyped this
      * object, so the dynamic writer answers {@code false}; the static writer overrides it.
      */
     protected boolean hoistedBodyUsesReceiver(final ClosureExpression expression) {
