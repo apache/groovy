@@ -272,11 +272,15 @@ public class ParallelCollectionExtensions {
     }
 
     /**
-     * Adds up the elements in parallel, as {@code sum()} does: each addition
-     * calls the left operand's {@code plus} method, so numbers promote as in
-     * the sequential {@code sum()} and strings and lists concatenate. The
-     * addition must be associative, which holds for all of these. An empty
-     * collection returns {@code null}.
+     * Adds up the elements in parallel. Each addition calls the left operand's
+     * {@code plus} method, as {@code sum()} does, so numbers promote and
+     * strings and lists concatenate. Unlike {@code sum()}, which adds from left
+     * to right, the additions may be grouped differently, so the result is
+     * that of {@code sum()} only when the addition is associative. It is for
+     * numbers, strings or lists, though floating-point totals can differ in
+     * rounding; it is not for a mix of numbers and strings:
+     * {@code [1, 2, 'a'].sum()} is {@code '3a'}, while {@code sumParallel()}
+     * can give {@code '12a'}. An empty collection returns {@code null}.
      *
      * @since 6.0.1
      */
@@ -289,8 +293,10 @@ public class ParallelCollectionExtensions {
 
     /**
      * With a one-parameter closure, adds up the transformed elements in
-     * parallel, as {@code sum(Closure)} does: {@code items.sumParallel { it.price }}.
-     * With a two-parameter closure, the closure is the combiner of
+     * parallel, as {@link #sumParallel(Collection)} adds up elements:
+     * {@code items.sumParallel { it.price }}. The result is that of
+     * {@code sum(Closure)} only when the addition of the transformed values is
+     * associative. With a two-parameter closure, the closure is the combiner of
      * {@link #sumParallel(Collection, BinaryOperator)} and must be associative.
      * An empty collection returns {@code null}.
      *
