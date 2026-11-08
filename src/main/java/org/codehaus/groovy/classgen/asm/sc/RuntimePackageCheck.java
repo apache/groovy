@@ -274,11 +274,22 @@ public final class RuntimePackageCheck {
             ClassNode classNode = controller.getClassNode();
             int end = internalName.lastIndexOf('/');
             String packageName = end < 0 ? null : internalName.substring(0, end).replace('/', '.');
-            if (!Objects.equals(packageName, classNode.getPackageName()) || !checked.add(internalName)) return;
+            if (!Objects.equals(packageName, classNode.getPackageName()) || isGeneratedCode() || !checked.add(internalName)) return;
             if (controller.getInvocationWriter() instanceof StaticInvocationWriter) {
                 String className = internalName.replace('/', '.');
                 if (!isCheckedSuperType(className) && isClassOfAnotherRuntimePackage(className)) reportClass(controller, className, null, USE_COMPILE_DYNAMIC);
             }
+        }
+
+        /**
+         * Determines if the instruction is code without a source position in a
+         * generated constructor, like the one {@code @InheritConstructors} adds for
+         * each constructor of the superclass. Such code fails only if that
+         * constructor is called.
+         */
+        private boolean isGeneratedCode() {
+            ConstructorNode ctor = controller.getConstructorNode();
+            return controller.getLineNumber() < 1 && ctor != null && isGenerated(ctor);
         }
 
         /**

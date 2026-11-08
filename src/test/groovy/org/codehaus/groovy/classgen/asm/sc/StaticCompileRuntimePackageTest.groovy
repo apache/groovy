@@ -593,6 +593,36 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         assertRefusedAtRunTime { evaluate(annotation: '', 'new Hidden() { }') }
     }
 
+    // GROOVY-12569: a constructor that @InheritConstructors generates is not reported, as it fails only if it is called
+    @Test
+    void testConstructorGeneratedByInheritConstructorsForParameterOfPackagePrivateClass() {
+        shell.evaluate '''package p
+            @groovy.transform.PackageScope class Hidden { }
+            class B {
+                final String value
+                B(String s) { value = s }
+                B(Hidden h) { value = 'hidden' }
+            }
+            true
+        '''
+        assert shell.evaluate('''package p
+            @groovy.transform.CompileStatic @groovy.transform.InheritConstructors
+            class D extends B { }
+            new D('x').value
+        ''') == 'x'
+
+        // code with a source position in such a constructor is still reported
+        def err = shouldFail(MultipleCompilationErrorsException) {
+            shell.evaluate '''package p
+                @groovy.transform.CompileStatic @groovy.transform.InheritConstructors
+                class E extends B {
+                    Object h = new Hidden()
+                }
+            '''
+        }
+        assert err.message.contains('Cannot use package-private class p.Hidden from class p.E')
+    }
+
     // GROOVY-12569
     @Test
     void testPackagePrivateClassInDynamicAndTypeCheckedCode() {
