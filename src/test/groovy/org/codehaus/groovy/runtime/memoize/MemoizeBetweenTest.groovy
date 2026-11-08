@@ -89,6 +89,30 @@ class MemoizeBetweenTest extends AbstractMemoizeTestCase {
         assert flag
     }
 
+    // GROOVY-12669
+    @Test
+    void testRehydratedCopyKeepsTheCacheSizes() {
+        def o = new Named('o')
+        def p = new Named('p')
+        Closure mem = o.closure().memoizeBetween(2, 3)
+        [1, 2, 3].each { mem(it) }
+
+        Closure copy = mem.rehydrate(null, p, p)
+        assert copy.@protectedCacheSize == 2
+        assert copy.@lruProtectionStorage.@maxSize == 2
+        assert !copy.@lruProtectionStorage.is(mem.@lruProtectionStorage)
+        assert !copy.@queue.is(mem.@queue)
+        [1, 2, 3].each { assert copy(it) == "p$it" }
+        [1, 2, 3].each { assert copy(it) == "p$it" }
+        assert p.calls == 3
+        assert copy(4) == 'p4'
+        assert copy(1) == 'p1'
+        assert p.calls == 5
+
+        [1, 2, 3].each { assert mem(it) == "o$it" }
+        assert o.calls == 3
+    }
+
     @Test
     void testMemoizeBetweenConcurrently() {
         AtomicInteger cnt = new AtomicInteger(0)
@@ -100,5 +124,27 @@ class MemoizeBetweenTest extends AbstractMemoizeTestCase {
         [4, 5, 6, 4, 5, 6, 4, 5, 6, 4, 5, 6].collect { num -> Thread.start { mem(num) } }*.join()
 
         assert 3 == cnt.get()
+    }
+
+    // GROOVY-12674
+    @Test
+    void testSerializedCopyDropsCachedValuesAndKeepsLimits() {
+        Closure mem = new Counting().closure().memoizeBetween(1, 2)
+        assert mem(1) == 2
+        assert mem(null) == null
+
+        Closure copy = roundTrip(mem)
+        Counting owner = copy.owner
+        assert owner.calls == 2
+        assert copy(1) == 2
+        assert copy(2) == 4
+        assert owner.calls == 4
+        assert copy(1) == 2
+        assert copy(2) == 4
+        assert owner.calls == 4
+        assert copy.@lruProtectionStorage.size() == 1
+        assert copy(3) == 6
+        assert copy(1) == 2
+        assert owner.calls == 6
     }
 }
