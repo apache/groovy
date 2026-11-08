@@ -2677,6 +2677,25 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-12608
+    @ParameterizedTest
+    @ValueSource(strings=['@TypeChecked','@CompileStatic'])
+    void testSuperTraitStaticSetterNotInheritedThroughOtherReceiver(String mode) {
+        def err = shouldFail shell, """
+            $mode
+            trait T {
+                private static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+            }
+            $mode
+            trait U extends T {
+                void copyTo(U other) { other.cnt = 5 }
+            }
+        """
+        assert err.message.contains('Cannot set read-only property: cnt')
+    }
+
     // GROOVY-12587
     @CompileModesTest
     void testTraitStaticPropertyThroughThis(String mode) {

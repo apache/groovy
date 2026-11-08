@@ -2499,7 +2499,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 PropertyNode property = current.getProperty(propertyName);
                 property = allowStaticAccessToMember(property, staticOnly);
                 ClassNode setterReceiverType = receiverType;
-                if (!readMode && setters.isEmpty() && current != receiverType && isInTraitCode() && Traits.isTrait(current)) {
+                if (!readMode && setters.isEmpty() && current != receiverType && isInTraitCode() && Traits.isTrait(current) && isTraitReceiver(pexp)) {
                     // GROOVY-12608: trait code inherits the static setter of a super trait
                     for (MethodNode method : current.getDeclaredMethods(setterName)) {
                         if (method.isStatic() && method.isPublic() && method.getParameters().length == 1) {
@@ -5725,6 +5725,15 @@ out:                if (mn.size() != 1) {
     private boolean isInTraitCode() {
         ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
         return Traits.isTrait(enclosingType.getOuterClass()) && enclosingType.getName().endsWith("$Helper");
+    }
+
+    /**
+     * Indicates whether the property is accessed through the receiver of trait code: implicit
+     * {@code this}, or the trait helper's {@code $self} or {@code $static$self} parameter.
+     */
+    private static boolean isTraitReceiver(final PropertyExpression pexp) {
+        return pexp.isImplicitThis() || (pexp.getObjectExpression() instanceof VariableExpression ve && ve.getAccessedVariable() instanceof Parameter
+                && (Traits.THIS_OBJECT.equals(ve.getName()) || Traits.STATIC_THIS_OBJECT.equals(ve.getName())));
     }
 
     private static void addTraitType(final ClassNode receiver, final List<Receiver<String>> owners) {
