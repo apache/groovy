@@ -2696,6 +2696,32 @@ final class TraitASTTransformationTest {
         assert err.message.contains('Cannot set read-only property: cnt')
     }
 
+    // GROOVY-12608
+    @ParameterizedTest
+    @ValueSource(strings=['@CompileDynamic','@TypeChecked'])
+    void testSuperTraitStaticAccessorAsPropertyInLambdaWithDelegate(String mode) {
+        assertScript shell, """
+            class P {
+                int cnt = 42
+            }
+            $mode
+            trait T {
+                private static int count = 1
+                static int getCnt() { count }
+                static void setCnt(int n) { count = n }
+            }
+            $mode
+            trait U extends T {
+                int get(P p) { p.with((x) -> cnt) }
+            }
+            $mode
+            class C implements U {
+            }
+
+            assert new C().get(new P()) == 42
+        """
+    }
+
     // GROOVY-12587
     @CompileModesTest
     void testTraitStaticPropertyThroughThis(String mode) {

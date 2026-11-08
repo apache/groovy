@@ -82,6 +82,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
     private final ClassNode traitHelper;
     private final ClassNode fieldHelper;
     private final Collection<String> knownFields;
+    private final boolean staticallyCompiled;
 
     private boolean inClosure;
     private boolean inLambdaOnly; // in a lambda that is not in a closure
@@ -95,15 +96,18 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
      * @param traitHelper the helper class generated for the trait
      * @param fieldHelper the helper class generated for trait field access
      * @param knownFields the trait field names that require remapping
+     * @param staticallyCompiled whether the code is statically compiled
      */
     public TraitReceiverTransformer(final VariableExpression thisObject, final SourceUnit unit, final ClassNode traitClass,
-                                    final ClassNode traitHelper, final ClassNode fieldHelper, final Collection<String> knownFields) {
+                                    final ClassNode traitHelper, final ClassNode fieldHelper, final Collection<String> knownFields,
+                                    final boolean staticallyCompiled) {
         this.weaved = thisObject;
         this.unit = unit;
         this.traitClass = traitClass;
         this.traitHelper = traitHelper;
         this.fieldHelper = fieldHelper;
         this.knownFields = knownFields;
+        this.staticallyCompiled = staticallyCompiled;
     }
 
     /**
@@ -184,9 +188,10 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     return propertyExpression;
                 }
             } else if (accessedVariable instanceof DynamicVariable && (!inClosure // GROOVY-8049, GROOVY-9386
-                    // GROOVY-12608: a lambda has no delegate or thisObject to resolve a static
-                    // accessor of a super trait through, so it captures $self or $static$self
-                    || (inLambdaOnly && isSuperTraitStaticProperty(vexp.getName())))) {
+                    // GROOVY-12608: a statically compiled lambda has no delegate or thisObject to resolve
+                    // a static accessor of a super trait through, so it captures $self or $static$self;
+                    // otherwise a lambda is a closure, whose delegate may provide the name
+                    || (inLambdaOnly && staticallyCompiled && isSuperTraitStaticProperty(vexp.getName())))) {
                 PropertyExpression propertyExpression = propX(varX(weaved), vexp.getName());
                 propertyExpression.getProperty().setSourcePosition(exp);
                 return propertyExpression;
