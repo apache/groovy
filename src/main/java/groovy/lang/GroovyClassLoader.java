@@ -365,17 +365,32 @@ public class GroovyClassLoader extends URLClassLoader {
     /**
      * Parses the given code source into a Java class. If there is a class file
      * for the given code source, then no parsing is done, instead the cached class is returned.
+     * <p>
+     * Distinct sources are compiled outside the source-cache lock, so several
+     * threads may call this method on the same loader at once. The cache is
+     * consulted again after compilation and only the first result for a key is kept.
      *
      * @param shouldCacheSource if true then the generated class will be stored in the source cache
      * @return the main class defined in the given script
      */
     public Class parseClass(final GroovyCodeSource codeSource, final boolean shouldCacheSource) throws CompilationFailedException {
-        // it's better to cache class instances by the source code
-        // GCL will load the unique class instance for the same source code
-        // and avoid occupying Permanent Area/Metaspace repeatedly
+        // Cache by source text so the same script is not defined again
+        // and does not occupy Metaspace repeatedly.
         String cacheKey = genSourceCacheKey(codeSource);
+        Class<?> cached = sourceCache.get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
 
-        return sourceCache.getAndPut(cacheKey, key -> doParseClass(codeSource), shouldCacheSource);
+        // FlexibleCache.getAndPut holds its write lock for the whole provider
+        // call. Compiling there made every parseClass on this loader wait for
+        // every other one, including sources that do not share a cache key.
+        Class<?> parsed = doParseClass(codeSource);
+        if (!shouldCacheSource || parsed == null) {
+            return parsed;
+        }
+        Class<?> published = sourceCache.getAndPut(cacheKey, key -> parsed, true);
+        return published != null ? published : parsed;
     }
 
     /**
@@ -476,11 +491,19 @@ public class GroovyClassLoader extends URLClassLoader {
 
     private void definePackageInternal(final String className) {
         int i = className.lastIndexOf('.');
-        if (i != -1) {
-            String packageName = className.substring(0, i);
-            Package packageDef = getDefinedPackage(packageName);
-            if (packageDef == null) {
-                definePackage(packageName, null, null, null, null, null, null, null);
+        if (i == -1) {
+            return;
+        }
+        String packageName = className.substring(0, i);
+        if (getDefinedPackage(packageName) != null) {
+            return;
+        }
+        try {
+            definePackage(packageName, null, null, null, null, null, null, null);
+        } catch (IllegalArgumentException alreadyDefined) {
+            // Concurrent parseClass calls can define the same package.
+            if (getDefinedPackage(packageName) == null) {
+                throw alreadyDefined;
             }
         }
     }
