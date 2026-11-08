@@ -703,11 +703,7 @@ public class ModuleNode extends ASTNode {
             .visit(statementBlock);
         } else {
             fields.forEach(classNode::addField);
-            // the method's annotations apply to the script class; @Override cannot, and it is
-            // correct on the method, which overrides Script#run() (GROOVY-12720)
-            for (AnnotationNode annotation : existingRun.getAnnotations()) {
-                if (!isOverride(annotation)) classNode.addAnnotation(annotation);
-            }
+            classNode.addAnnotations(existingRun.getAnnotations());
             classNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
             existingRun.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
         }
@@ -735,11 +731,6 @@ public class ModuleNode extends ASTNode {
             classNode.addMethod(method);
         }
         return classNode;
-    }
-
-    private static boolean isOverride(final AnnotationNode annotation) {
-        ClassNode type = annotation.getClassNode();
-        return ClassHelper.OVERRIDE_TYPE.equals(type) || "Override".equals(type.getName()) || "java.lang.Override".equals(type.getName());
     }
 
     private MethodNode findRun() {
