@@ -1494,7 +1494,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     /**
-     * GROOVY-12658: a packed closure's body is hoisted into a method of the owner class, but it
+     * A packed closure's body is hoisted into a method of the owner class, but it
      * keeps the closure-context contract: "name" and "this.name" go through the owner's accessors
      * (or MOP), as in the closure class it replaces, not straight to the declared field.
      */
