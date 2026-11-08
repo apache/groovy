@@ -124,6 +124,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.runtime.StringGroovyMethods.isAtLeast;
+import static org.codehaus.groovy.transform.ImmutableASTTransformation.IMMUTABLE_BREADCRUMB;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -636,6 +637,8 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
     private static void adjustPropertyForShallowImmutability(ClassNode cNode, PropertyNode pNode, PropertyHandler handler) {
         final FieldNode fNode = pNode.getField();
         fNode.setModifiers((pNode.getModifiers() & (~ACC_PUBLIC)) | ACC_FINAL | ACC_PRIVATE);
+        // records have no setters, so other transforms (e.g. @IndexedProperty) shouldn't add any
+        fNode.setNodeMetaData(IMMUTABLE_BREADCRUMB, Boolean.TRUE);
         boolean isGetterDefined = cNode.getDeclaredMethods(pNode.getName()).stream()
                 .anyMatch(MethodNodeUtils::isGetterCandidate);
         pNode.setGetterName(pNode.getName());
