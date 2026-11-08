@@ -560,6 +560,39 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    // GROOVY-12610: static compilation reads super.z from this instance, not the enclosing instance
+    @Override @Test
+    void testPrivateFieldOfSuperclassViaInnerSubclassOrDeclaringClass() {
+        assertScript '''
+            class Base {
+                private String z
+                Base(String z) { this.z = z }
+                class Sub extends Base {
+                    Sub() { super('sub') }
+                    def m1() { this.z }
+                    def m2() { z }
+                    def m3() { super.z }
+                    def m4() { def c = { -> z }; c() }
+                    def m5() { java.util.function.Supplier<String> s = () -> this.z; s.get() }
+                    def m6() { z = 'y'; z }
+                }
+                static class Nested extends Base {
+                    Nested() { super('nested') }
+                }
+                static List test(Nested nested) {
+                    def c = { -> nested.z }
+                    [nested.z, c()]
+                }
+                List test() {
+                    def sub = new Sub()
+                    [sub.m1(), sub.m2(), sub.m3(), sub.m4(), sub.m5(), sub.m6(), z]
+                }
+            }
+            assert new Base('outer').test() == ['outer', 'outer', 'sub', 'outer', 'outer', 'y', 'y']
+            assert Base.test(new Base.Nested()) == ['nested', 'nested']
+        '''
+    }
+
     // GROOVY-12621: static compilation accesses the field directly from an enum constant body;
     // this.z and a bare z there are GROOVY-12626
     @Override @Test
