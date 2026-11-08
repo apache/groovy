@@ -34,7 +34,6 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -158,10 +157,12 @@ public class StaticTypesClosureWriter extends ClosureWriter {
     /**
      * Whether the body, nested closures included, uses its this object: {@code this}, an instance
      * field or property, an implicit-this call of an instance method, or the creation of an inner
-     * class instance. A closure class casts {@code getThisObject()} to the enclosing class for
-     * these, except for the methods of {@code Object}, which it calls on the uncast this object;
-     * those count too, as the hoisted body can only call them on an instance of the enclosing
-     * class. Static members and extension methods (the {@code println} family) do not count.
+     * class instance, which passes {@code this} as its enclosing instance (an instance of a static
+     * nested class takes none). A closure class casts {@code getThisObject()} to the enclosing
+     * class for these, except for the methods of {@code Object}, which it calls on the uncast this
+     * object; those count too, as the hoisted body can only call them on an instance of the
+     * enclosing class. Static members and extension methods (the {@code println} family) do not
+     * count.
      */
     @Override
     protected boolean hoistedBodyUsesReceiver(final ClosureExpression expression) {
@@ -191,10 +192,6 @@ public class StaticTypesClosureWriter extends ClosureWriter {
                         || ((av instanceof FieldNode || av instanceof PropertyNode) && !av.isStatic())) {
                     uses[0] = true;
                 }
-            }
-            @Override public void visitConstructorCallExpression(final ConstructorCallExpression cce) {
-                if (cce.getType().getOuterClass() != null && !cce.getType().isStaticClass()) uses[0] = true;
-                super.visitConstructorCallExpression(cce);
             }
         });
         return uses[0];

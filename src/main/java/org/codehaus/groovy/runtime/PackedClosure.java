@@ -308,14 +308,21 @@ public abstract class PackedClosure extends Closure<Object> {
 
     /**
      * Whether the object is an instance of the class hosting the hoisted method. The dispatch
-     * tables are lambdas spun in that class, so it is their nest host. Where the lambdas are
-     * ordinary classes (native images) they are their own nest host, which no this object is an
-     * instance of; that, or a failed lookup, leaves only the receiver's class to count.
+     * tables are lambdas spun in that class, so they are its nestmates, but their nest host is the
+     * top-level class, not a nested hosting class. The receiver is an instance of the hosting
+     * class, so the first nestmate among the receiver's class and its superclasses is the hosting
+     * class or a subclass of it, and an instance of that is always one of the hosting class. Where
+     * the lambdas are ordinary classes (native images) they are their own nest host and have no
+     * such nestmate; that, or a failed lookup, leaves only the receiver's class to count.
      */
     private boolean isEnclosingClassInstance(final Object thisObject) {
         if (dispatcher == null) return false;
         try {
-            return dispatcher.getClass().getNestHost().isInstance(thisObject);
+            Class<?> table = dispatcher.getClass();
+            for (Class<?> c = receiver.getClass(); c != null; c = c.getSuperclass()) {
+                if (c.isNestmateOf(table)) return c.isInstance(thisObject);
+            }
+            return false;
         } catch (RuntimeException e) {
             return false;
         }

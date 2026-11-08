@@ -429,6 +429,44 @@ final class PackedClosuresTransformTest {
         assertEquals(unpacked, packed)
     }
 
+    // GROOVY-12666
+    @Test
+    void rehydrateKeepsTheReceiverForAThisObjectThatIsNotAnInstanceOfTheHostingClass() {
+        // the class hosting the hoisted method is the nested class, not its top-level class, so an
+        // instance of the top-level class is not one of it; and creating an instance of a static
+        // nested class does not use the receiver. Rehydrated onto either object, the closure class
+        // never touches its this object, so the copy must keep running against its receiver
+        String src = '''
+            import groovy.transform.CompileStatic
+            import groovy.transform.PackedClosures
+            class Outer {
+                @CompileStatic
+                @PackedClosures
+                static class N {
+                    static class S { String toString() { 'S' } }
+                    Map<String, Closure> packed() {
+                        Closure c1 = { -> [1, 2].collect { Integer i -> i * 2 } }, c2 = { -> new S().toString() }
+                        [free: c1, staticNested: c2]
+                    }
+                    @PackedClosures(mode = PackedClosures.PackMode.DISABLED)
+                    Map<String, Closure> unpacked() {
+                        Closure c1 = { -> [1, 2].collect { Integer i -> i * 2 } }, c2 = { -> new S().toString() }
+                        [free: c1, staticNested: c2]
+                    }
+                }
+            }
+            def n = new Outer.N(), targets = [new Outer(), new Object()]
+            def packed = n.packed(), unpacked = n.unpacked()
+            assert packed.values().every { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+            assert !unpacked.values().any { it instanceof org.codehaus.groovy.runtime.PackedClosure }
+            def results = { Map<String, Closure> cs -> cs.collectEntries { k, c -> [k, targets.collect { c.rehydrate(it, it, it)() }] } }
+            [results(packed), results(unpacked)]
+        '''
+        def (packed, unpacked) = instance(src)
+        assertEquals([free: [[2, 4], [2, 4]], staticNested: ['S', 'S']], unpacked)
+        assertEquals(unpacked, packed)
+    }
+
     @Test
     void capturedLocalShadowingAFieldIsReboundToTheLocalNotTheField() {
         // The captured 'base' is a local that shadows the field of the same name (the one form of
