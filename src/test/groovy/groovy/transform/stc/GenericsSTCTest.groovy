@@ -5434,6 +5434,278 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-12727: the only type witness for T is the target type of the call
+    @Test
+    void testReturnTypeInferenceWithClosure5() {
+        String types = '''import java.util.function.Function
+
+            class Ctx<T> {}
+            class Beh<T> {}
+            class Behaviors {
+                static <T> Beh<T> setup(Function<Ctx<T>, Beh<T>> factory) { factory.apply(new Ctx<T>()) }
+            }
+            class Bot extends Beh<String> {
+                Bot(Ctx<String> c, int max) {}
+            }
+        '''
+        for (factory in ['(c -> new Bot(c, max))', '{ c -> new Bot(c, max) }']) {
+            assertScript types + """
+                Beh<String> implicitReturn(int max) { Behaviors.setup $factory }
+                Beh<String> explicitReturn(int max) { return Behaviors.setup $factory }
+
+                assert implicitReturn(1) instanceof Bot
+                assert explicitReturn(1) instanceof Bot
+            """
+            assertScript types + """
+                int max = 1
+                Beh<String> declared = Behaviors.setup $factory
+                assert declared instanceof Bot
+
+                Beh<String> assigned
+                assigned = Behaviors.setup $factory
+                assert assigned instanceof Bot
+            """
+            assertScript types + """
+                class Holder {
+                    static int max = 1
+                    Beh<String> field = Behaviors.setup $factory
+                }
+                assert new Holder().field instanceof Bot
+            """
+        }
+    }
+
+    // GROOVY-12727: a target type that is a supertype of the return type, or determines the return type itself
+    @Test
+    void testReturnTypeInferenceWithClosure6() {
+        assertScript '''import java.util.function.Function
+
+            class Ctx<T> {}
+            String name(Ctx<String> c) { 'x' }
+            def <T> ArrayList<T> many(Function<Ctx<T>, T> f) { [f.apply(new Ctx<T>())] as ArrayList<T> }
+            def <T> T one(Function<Ctx<T>, T> f) { f.apply(new Ctx<T>()) }
+
+            List<String> list = many(c -> name(c))
+            assert list == ['x']
+            String string = one(c -> name(c))
+            assert string == 'x'
+        '''
+    }
+
+    // GROOVY-12727: a wildcard target type argument is not a witness for T
+    @Test
+    void testReturnTypeInferenceWithClosure7() {
+        shouldFailWithMessages '''import java.util.function.Function
+
+            class Ctx<T> {}
+            class Beh<T> {}
+            class Behaviors {
+                static <T> Beh<T> setup(Function<Ctx<T>, Beh<T>> factory) { factory.apply(new Ctx<T>()) }
+            }
+            class Bot extends Beh<String> {
+                Bot(Ctx<String> c) {}
+            }
+
+            Beh<? extends Object> b = Behaviors.setup(c -> new Bot(c))
+        ''',
+        'Cannot call Bot#<init>(Ctx<java.lang.String>) with arguments [Ctx<?>]'
+    }
+
+    // GROOVY-12727: a call to a static method of the same class
+    @Test
+    void testReturnTypeInferenceWithClosure8() {
+        for (factory in ['(c -> new Bot(c, max))', '{ c -> new Bot(c, max) }']) {
+            assertScript """import java.util.function.Function
+
+                class Ctx<T> {}
+                class Beh<T> {}
+                class Behaviors {
+                    static <T> Beh<T> setup(Function<Ctx<T>, Beh<T>> factory) { factory.apply(new Ctx<T>()) }
+                    static Beh<String> implicitReturn(int max) { setup $factory }
+                    static Beh<String> explicitReturn(int max) { return setup $factory }
+                    static Beh<String> declared(int max) {
+                        Beh<String> b = setup $factory
+                        b
+                    }
+                }
+                class Bot extends Beh<String> {
+                    Bot(Ctx<String> c, int max) {}
+                }
+
+                assert Behaviors.implicitReturn(1) instanceof Bot
+                assert Behaviors.explicitReturn(1) instanceof Bot
+                assert Behaviors.declared(1) instanceof Bot
+            """
+        }
+    }
+
+    // GROOVY-12727: a call to a statically imported method
+    @Test
+    void testReturnTypeInferenceWithClosure9() {
+        for (keyExtractor in ['(s -> s.length())', '{ s -> s.length() }']) {
+            assertScript """import static java.util.Comparator.comparing
+
+                Comparator<String> c = comparing $keyExtractor
+                assert c.compare('a', 'bb') < 0
+
+                Comparator<String> m() { comparing $keyExtractor }
+                assert m().compare('bb', 'a') > 0
+            """
+        }
+    }
+
+    // GROOVY-12727: the bound of a wildcard target type argument is a witness for T
+    @Test
+    void testReturnTypeInferenceWithClosure10() {
+        for (bound in ['? super String', '? extends String']) {
+            assertScript """import java.util.function.Function
+
+                class Ctx<T> {}
+                class Beh<T> {}
+                class Behaviors {
+                    static <T> Beh<T> setup(Function<Ctx<T>, Beh<T>> factory) { factory.apply(new Ctx<T>()) }
+                }
+                class Bot extends Beh<String> {
+                    Bot(Ctx<String> c) {}
+                }
+
+                Beh<$bound> b = Behaviors.setup(c -> new Bot(c))
+                assert b instanceof Bot
+            """
+        }
+    }
+
+    // GROOVY-12727: the target type is a witness for T only within the bounds of T
+    @Test
+    void testReturnTypeInferenceWithClosure11() {
+        assertScript '''import java.util.function.Function
+
+            def <T extends CharSequence> List<T> ids(Function<T,T> f) { [f.apply((T) 'xy')] }
+
+            List<String> list = ids(s -> s.substring(1))
+            assert list == ['y']
+        '''
+
+        shouldFailWithMessages '''import java.util.function.Function
+
+            def <T extends Number> List<T> ids(Function<T,T> f) { [] }
+
+            List<String> list = ids(n -> n.toUpperCase())
+        ''',
+        'Cannot find matching method java.lang.Number#toUpperCase()',
+        'Cannot assign java.util.List<T extends java.lang.Number> to: java.util.List<java.lang.String>'
+    }
+
+    // GROOVY-12727: target type arguments that disagree about T
+    @Test
+    void testReturnTypeInferenceWithClosure12() {
+        shouldFailWithMessages '''import java.util.function.Function
+
+            def <T> Map<T,T> same(Function<T,T> f) { [:] }
+
+            Map<String,Integer> map = same(x -> x)
+        ''',
+        'Cannot assign java.util.Map<java.lang.Integer, java.lang.Integer> to: java.util.Map<java.lang.String, java.lang.Integer>'
+    }
+
+    // GROOVY-12727: the target type of a conditional expression is the target type of its branches
+    @Test
+    void testReturnTypeInferenceWithClosure13() {
+        String types = '''import java.util.function.Function
+
+            class Ctx<T> {}
+            class Beh<T> {}
+            class Behaviors {
+                static <T> Beh<T> setup(Function<Ctx<T>, Beh<T>> factory) { factory.apply(new Ctx<T>()) }
+            }
+            class Bot extends Beh<String> {
+                Bot(Ctx<String> c, int max) {}
+            }
+        '''
+        for (factory in ['(c -> new Bot(c, max))', '{ c -> new Bot(c, max) }']) {
+            assertScript types + """
+                Beh<String> implicitReturn(int max) { max > 0 ? Behaviors.setup $factory : Behaviors.setup $factory }
+                Beh<String> explicitReturn(int max) { return max > 0 ? Behaviors.setup $factory : null }
+                Beh<String> nested(int max) { max > 0 ? (max > 1 ? null : Behaviors.setup $factory) : null }
+                Beh<String> elvis(Beh<String> b, int max) { b ?: Behaviors.setup $factory }
+
+                assert implicitReturn(1) instanceof Bot
+                assert implicitReturn(0) instanceof Bot
+                assert explicitReturn(1) instanceof Bot
+                assert nested(1) instanceof Bot
+                assert elvis(null, 1) instanceof Bot
+            """
+            assertScript types + """
+                int max = 1
+                Beh<String> declared = max > 0 ? Behaviors.setup $factory : Behaviors.setup $factory
+                assert declared instanceof Bot
+
+                Beh<String> assigned
+                assigned = max > 0 ? null : Behaviors.setup $factory
+                assert assigned == null
+            """
+        }
+
+        shouldFailWithMessages types + '''
+            int max = 1
+            Beh<? extends Object> b = max > 0 ? Behaviors.setup(c -> new Bot(c, 1)) : null
+        ''',
+        'Cannot call Bot#<init>(Ctx<java.lang.String>, int) with arguments [Ctx<?>, int]'
+    }
+
+    // GROOVY-12727: a type parameter of the enclosing method or class as the target type
+    @Test
+    void testReturnTypeInferenceWithClosure14() {
+        String types = '''import java.util.function.Function
+
+            class Ctx<T> { T value }
+            class Beh<T> { T payload }
+            class Behaviors {
+                static <T> T conv(Function<Ctx<T>, T> f) { f.apply(new Ctx<T>()) }
+                static <N extends Number> N num(Function<Ctx<N>, N> f) { f.apply(new Ctx<N>()) }
+                static <T> Beh<T> setup(Function<Ctx<T>, Beh<T>> factory) { factory.apply(new Ctx<T>()) }
+            }
+        '''
+        for (form in ['(c -> { %s })', '{ c -> %s }']) {
+            String value = String.format(form, 'c.value = x; assert c.value.length() == 1; c.value')
+            String number = String.format(form, 'c.value = x; assert c.value.intValue() == 1; c.value')
+            String wrapper = String.format(form, 'c.value = x; assert c.value.length() == 1; new Beh<T>(payload: c.value)')
+            assertScript types + """
+                class C<E extends CharSequence> {
+                    E x
+                    E classParameter() { Behaviors.conv $value }
+                    static <T extends CharSequence> T implicitReturn(T x) { Behaviors.conv $value }
+                    static <T extends CharSequence> T explicitReturn(T x) { return Behaviors.conv $value }
+                    static <U extends CharSequence> U anotherName(U x) { Behaviors.conv $value }
+                    static <T extends CharSequence> T conditional(T x) { x ? Behaviors.conv $value : null }
+                    static <T extends Integer> T withinBounds(T x) { Behaviors.num $number }
+                    def <T extends CharSequence> Beh<T> parameterized(T x) { Behaviors.setup $wrapper }
+                }
+
+                String s = new C<String>(x: 'a').classParameter()
+                assert s == 'a'
+                s = C.implicitReturn('b')
+                assert s == 'b'
+                s = C.explicitReturn('c')
+                assert s == 'c'
+                s = C.anotherName('d')
+                assert s == 'd'
+                s = C.conditional('e')
+                assert s == 'e'
+                Integer i = C.withinBounds(1)
+                assert i == 1
+                Beh<String> b = new C<String>().parameterized('f')
+                assert b.payload == 'f'
+            """
+        }
+
+        shouldFailWithMessages types + '''
+            def <T extends CharSequence> T outOfBounds(T x) { Behaviors.num(c -> { c.value = x; c.value }) }
+        ''',
+        'Cannot assign value of type T to variable of type java.lang.Number',
+        'Cannot return value of type java.lang.Number for method returning T'
+    }
+
     // GROOVY-6129
     @Test
     void testShouldNotThrowNPE() {
