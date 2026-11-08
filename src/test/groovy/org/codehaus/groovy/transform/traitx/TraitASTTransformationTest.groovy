@@ -4770,6 +4770,76 @@ final class TraitASTTransformationTest {
         }
     }
 
+    // GROOVY-12618
+    @CompileModesTest
+    void testSuperTraitStaticMethodInDelegateOnlyClosure(String mode) {
+        assertScript shell, """
+            class Dg {
+                int size() { 2 }
+            }
+            class H {
+                static <V> V only(@DelegatesTo(value=Dg, strategy=Closure.DELEGATE_ONLY) Closure<V> block) {
+                    block.resolveStrategy = Closure.DELEGATE_ONLY
+                    block.delegate = new Dg()
+                    block()
+                }
+            }
+            $mode
+            trait T {
+                static int size() { 1 }
+            }
+            $mode
+            trait U extends T {
+                def m() { H.only { size() } }
+                static sm() { H.only { size() } }
+            }
+            $mode
+            class C implements U {
+            }
+
+            assert new C().m() == 2
+            assert C.sm() == 2
+        """
+    }
+
+    // GROOVY-12618
+    @CompileModesTest
+    void testSuperTraitStaticMethodInDelegateOnlyClosureNotOnDelegate(String mode) {
+        for (method in ['def m() { H.only { size() } }', 'static m() { H.only { size() } }']) {
+            def err = shouldFail shell, """
+                class Dg {
+                }
+                class H {
+                    static <V> V only(@DelegatesTo(value=Dg, strategy=Closure.DELEGATE_ONLY) Closure<V> block) {
+                        block.resolveStrategy = Closure.DELEGATE_ONLY
+                        block.delegate = new Dg()
+                        block()
+                    }
+                }
+                $mode
+                trait T {
+                    static int size() { 1 }
+                }
+                $mode
+                trait U extends T {
+                    $method
+                }
+                $mode
+                class C implements U {
+                }
+
+                new C().m()
+            """
+            // as in a class, the closure does not fall back to the owner
+            if (mode == '@CompileDynamic') {
+                assert err instanceof MissingMethodException
+                assert err.message.contains('No signature of method: size for class: Dg')
+            } else {
+                assert err.message =~ /Cannot find matching method .*#size\(\)/
+            }
+        }
+    }
+
     // GROOVY-12613
     @CompileModesTest
     void testCompoundAssignmentEvaluatesTargetOnce(String mode) {
