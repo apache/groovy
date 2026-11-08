@@ -19,12 +19,15 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.codehaus.groovy.classgen.asm.InstructionSequence
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.jupiter.api.Test
+
+import java.security.CodeSource
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -479,7 +482,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
     // GROOVY-12568
     @Test
     void testProtectedAndPackagePrivateConstructorsOfSameCompilationUnitAreCalledDirectly() {
-        def bytecode = compile(method: 'make', classNamePattern: 'p.C', '''package p
+        def bytecode = compileInMemory('make', '''package p
             class A {
                 protected A(String s) { }
                 @groovy.transform.PackageScope A(Integer i) { }
@@ -498,7 +501,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
     // GROOVY-12568
     @Test
     void testProtectedAndPackagePrivateMethodsOfSameCompilationUnitAreCalledDirectly() {
-        def bytecode = compile(method: 'test', classNamePattern: 'p.C', MEMBERS + '''
+        def bytecode = compileInMemory('test', MEMBERS + '''
             @groovy.transform.CompileStatic
             class C {
                 static List test(M m) {
@@ -515,7 +518,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
     // GROOVY-12568
     @Test
     void testMethodReferenceToPackagePrivateMethodOfSameCompilationUnitIsDirect() {
-        def bytecode = compile(method: 'test', classNamePattern: 'p.C', MEMBERS + '''
+        def bytecode = compileInMemory('test', MEMBERS + '''
             @groovy.transform.CompileStatic
             class C {
                 static java.util.function.Supplier<String> test(M m) {
@@ -530,7 +533,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
     // GROOVY-12568
     @Test
     void testProtectedAndPackagePrivateFieldsOfSameCompilationUnitAreAccessedDirectly() {
-        def bytecode = compile(method: 'test', classNamePattern: 'p.C', FIELDS + '''
+        def bytecode = compileInMemory('test', FIELDS + '''
             @groovy.transform.CompileStatic
             class C {
                 static List test(F f) {
@@ -647,6 +650,7 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
                 }
             '''
             def config = new CompilerConfiguration(targetDirectory: dir, jointCompilationOptions: [memStub: true])
+            config.optimizationOptions[CompilerConfiguration.RUNTIME_PACKAGE_CHECK] = true
             def unit = new JavaAwareCompilationUnit(config, new GroovyClassLoader(this.class.classLoader))
             unit.addSources(j, g)
             unit.compile()
@@ -665,6 +669,23 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
             dir.deleteDir()
             src.deleteDir()
         }
+    }
+
+    /**
+     * Compiles the script in memory with the check, as the class loader of a
+     * GroovyShell does, and returns the instructions of {@code method} of class p.C.
+     */
+    private InstructionSequence compileInMemory(final String method, final String script) {
+        def config = new CompilerConfiguration()
+        config.optimizationOptions[CompilerConfiguration.RUNTIME_PACKAGE_CHECK] = true
+        CompilationUnit unit = null
+        new GroovyClassLoader(this.class.classLoader, config) {
+            @Override
+            protected CompilationUnit createCompilationUnit(final CompilerConfiguration cc, final CodeSource source) {
+                unit = super.createCompilationUnit(cc, source)
+            }
+        }.parseClass(script)
+        extractMethodSequence(unit.classes.find { it.name == 'p.C' }.bytes, method)
     }
 
     /**
