@@ -80,7 +80,7 @@ final class LoopContractSupport {
     }
 
     /**
-     * Warns, at the default warning level, that a loop or method contract will not be checked or cannot pass.
+     * Warns, at the default warning level, that a loop or method contract will not be checked.
      */
     static void warn(final AnnotationNode annotation, final SourceUnit source, final String text) {
         source.addWarning(WarningMessage.LIKELY_ERRORS,

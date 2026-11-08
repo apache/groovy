@@ -26,7 +26,6 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.LoopingStatement;
@@ -121,9 +120,6 @@ public class LoopVariantASTTransformation implements ASTTransformation, Compilat
 
         Expression variantExpression = extractExpression(closureExpression);
         if (variantExpression == null) return;
-        if (variantExpression instanceof ListExpression list && list.getExpressions().isEmpty()) {
-            LoopContractSupport.warn(annotation, source, "({ [] }) never decreases, so it fails if the loop runs more than once");
-        }
 
         String suffix = Long.toString(COUNTER.getAndIncrement());
         String prevVarName = "$_gc_decreases_prev_" + suffix;
