@@ -415,6 +415,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final Object RETURN_TYPES = new Object();
     /** Metadata key for the return type of a method inferred from the values its body returns. */
     private static final Object BODY_RETURN_TYPE = new Object();
+    /** Metadata key for the type a method call's value is assigned or returned to, a witness for its type arguments. */
+    private static final Object CALL_TARGET_TYPE = new Object();
     /** Cached {@code Closure#getDelegate()} method. */
     protected static final MethodNode GET_DELEGATE = CLOSURE_TYPE.getGetterMethod("getDelegate");
     /** Cached {@code Closure#getOwner()} method. */
@@ -1410,6 +1412,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else if (source instanceof MethodPointerExpression) { // as for a method pointer argument
                 source.putNodeMetaData(PARAMETER_TYPE, target);
             }
+        }
+        if ((source instanceof MethodCallExpression || source instanceof StaticMethodCallExpression)
+                && target != null && !isDynamicTyped(target) && !isObjectType(target) && !isPrimitiveVoid(target)) {
+            source.putNodeMetaData(CALL_TARGET_TYPE, target); // GROOVY-12727
         }
     }
 
@@ -4197,7 +4203,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         // cannot leak into members visited later
         typeCheckingContext.pushTemporaryTypeInfo();
         final ClassNode returnType = node.getReturnType(); // GROOVY-10660: implicit return case
-        if (!isConstructor && (isClosureWithType(returnType) || isFunctionalInterface(returnType))) {
+        if (!isConstructor && !node.isVoidMethod() && !node.isDynamicReturnType() && !isObjectType(returnType)) { // GROOVY-12727: not only functional types
             new ReturnAdder(returnStmt -> applyTargetType(returnType, returnStmt.getExpression())).visitMethod(node);
         }
         readClosureParameterAnnotation(node); // GROOVY-6603
@@ -4904,6 +4910,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         });
                     }
 
+                    if (!isConstructor) { // GROOVY-12727: the type the call's value is assigned or returned to
+                        extractGenericsConnectionsFromCallTarget(arguments, method.getReturnType(), typeParameters, context);
+                    }
+
                     for (GenericsType tp : typeParameters) {
                         GenericsTypeName name = new GenericsTypeName(tp.getName());
                         context.computeIfAbsent(name, x -> fullyResolve(tp, context));
@@ -4920,6 +4930,36 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 inferParameterAndReturnTypesOfClosureOnRHS(targetType, expression);
             }
         }
+    }
+
+    /**
+     * Adds to {@code context} the type parameters that the call's target type determines through the method's
+     * return type, for those the arguments left unresolved; a wildcard target type argument determines nothing.
+     */
+    private void extractGenericsConnectionsFromCallTarget(final Expression arguments, final ClassNode returnType,
+            final GenericsType[] typeParameters, final Map<GenericsTypeName, GenericsType> context) {
+        Expression call = typeCheckingContext.getEnclosingMethodCall();
+        if (!(call instanceof MethodCall) || ((MethodCall) call).getArguments() != arguments) return;
+        ClassNode targetType = call.getNodeMetaData(CALL_TARGET_TYPE);
+        if (targetType == null) return;
+        targetType = wrapTypeIfNecessary(targetType);
+
+        ClassNode declaredType = returnType;
+        if (!declaredType.isGenericsPlaceHolder() && !declaredType.equals(targetType)) {
+            if (!implementsInterfaceOrIsSubclassOf(declaredType, targetType)) return;
+            declaredType = GenericsUtils.parameterizeType(declaredType, targetType);
+        }
+        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
+        extractGenericsConnections(connections, targetType, declaredType);
+        connections.forEach((key, gt) -> {
+            if (gt.isWildcard()) return;
+            for (GenericsType tp : typeParameters) {
+                if (tp.getName().equals(key.getName())) {
+                    context.putIfAbsent(key, gt);
+                    break;
+                }
+            }
+        });
     }
 
     private void processClosureParams(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, final Expression resolverClass, final Expression options) {
