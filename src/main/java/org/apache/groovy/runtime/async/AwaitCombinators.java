@@ -143,7 +143,7 @@ final class AwaitCombinators {
      * The sources a combinator was given: the arguments themselves, or, when the only argument is a
      * {@link Collection} (a list of tasks built with {@code collect}; the {@code Promise.all(iterable)}
      * shape), that collection's elements. A collection is never awaitable, so the call has no other
-     * meaning (GROOVY-12721).
+     * meaning.
      */
     static Object[] expand(Object[] sources) {
         if (sources != null && sources.length == 1 && sources[0] instanceof Collection) {
