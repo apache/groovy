@@ -313,4 +313,20 @@ final class ImmutableNestedCopyWithTest {
             assert q.address.zip == '10001-0001'
         '''
     }
+
+    // GROOVY-12713
+    @Test
+    void immutable_block_form_modify_of_a_component_whose_type_has_its_own_modify() {
+        for (mode in ['TypeChecked', 'CompileStatic']) {
+            assertScript shell, """
+                @Immutable class Money { int cents; Money modify(Closure c) { new Money((int) c(cents)) } }
+                @Immutable(copyWith = true) class Account { String owner; Money balance }
+                @groovy.transform.$mode
+                Account top(Account a) {
+                    a.copyWith { balance.modify { Money m -> new Money(m.cents + 50) } }
+                }
+                assert top(new Account('A', new Money(100))).balance.cents == 150
+            """
+        }
+    }
 }

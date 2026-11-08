@@ -169,6 +169,7 @@ final class RecordNestedCopyWithTest {
         '''
     }
 
+    // GROOVY-12713
     @Test
     void record_block_form_type_checks_the_assigned_values() {
         def err = shouldFail shell, '''
@@ -183,6 +184,7 @@ final class RecordNestedCopyWithTest {
         assert err.message.contains('Cannot assign value of type java.lang.String to variable of type int')
     }
 
+    // GROOVY-12713
     @Test
     void record_block_form_rejects_an_unknown_component() {
         def err = shouldFail shell, GRAPH + '''
@@ -207,5 +209,127 @@ final class RecordNestedCopyWithTest {
             test()
         '''
         assert err.message.contains('unexpected named arg: a.b')
+    }
+
+    // GROOVY-12713
+    @Test
+    void record_block_form_reads_a_component_as_its_path() {
+        for (mode in ['TypeChecked', 'CompileStatic']) {
+            def err = shouldFail shell, """
+                @RecordType(copyWith = true) class P { String name }
+                @groovy.transform.$mode
+                P up(P p) {
+                    p.copyWith { name = name.toUpperCase() }
+                }
+                up(new P('al'))
+            """
+            assert err.message.contains('CopyWithRecorder#toUpperCase()')
+        }
+    }
+
+    // GROOVY-12713
+    @Test
+    void record_block_form_calls_a_method_of_the_enclosing_class() {
+        for (mode in ['TypeChecked', 'CompileStatic']) {
+            assertScript shell, """
+                @RecordType(copyWith = true) class P { String name; String label() { name } }
+                class Service {
+                    String label() { 'service' }
+                    @groovy.transform.$mode
+                    P rename(P p) {
+                        p.copyWith { name = label() }
+                    }
+                }
+                assert new Service().rename(new P('al')).name == 'service'
+            """
+        }
+    }
+
+    // GROOVY-12713
+    @Test
+    void record_block_form_bare_names_are_components_not_members_of_the_enclosing_class() {
+        for (mode in ['TypeChecked', 'CompileStatic']) {
+            def err = shouldFail shell, """
+                @RecordType(copyWith = true) class P { String name }
+                class Service {
+                    String prefix = 'service'
+                    @groovy.transform.$mode
+                    P rename(P p) {
+                        p.copyWith { name = prefix }
+                    }
+                }
+                new Service().rename(new P('al'))
+            """
+            assert err.message.contains('No such property: prefix for class: P')
+
+            err = shouldFail shell, """
+                @RecordType(copyWith = true) class P { String name }
+                class Service {
+                    String suffix = '!'
+                    @groovy.transform.$mode
+                    P shout(P p) {
+                        p.copyWith { name.modify { it + suffix } }
+                    }
+                }
+                new Service().shout(new P('al'))
+            """
+            assert err.message.contains('No such property: suffix for class: P')
+
+            err = shouldFail shell, """
+                @RecordType(copyWith = true) class P { String name }
+                class Service {
+                    String prefix = 'service'
+                    @groovy.transform.$mode
+                    P rename(P p) {
+                        p.copyWith { name = 'x'.with { prefix } }
+                    }
+                }
+                new Service().rename(new P('al'))
+            """
+            assert err.message.contains('No such property: prefix for class: Service')
+
+            assertScript shell, """
+                @RecordType(copyWith = true) class P { String name }
+                class Service {
+                    String prefix = 'service'
+                    @groovy.transform.$mode
+                    P rename(P p) {
+                        p.copyWith { name = this.prefix }
+                    }
+                }
+                assert new Service().rename(new P('al')).name == 'service'
+            """
+
+            assertScript shell, """
+                @RecordType(copyWith = true) class P { String name }
+                class Service {
+                    String name = 'service'
+                    @groovy.transform.$mode
+                    P rename(P p) {
+                        p.copyWith { name = 'x' }
+                    }
+                }
+                def service = new Service()
+                assert service.rename(new P('al')).name == 'x'
+                assert service.name == 'service'
+            """
+        }
+    }
+
+    // GROOVY-12713
+    @Test
+    void record_block_form_inside_a_nested_closure() {
+        assertScript shell, GRAPH + '''
+            @groovy.transform.CompileStatic
+            Person moved(Person person) {
+                person.copyWith {
+                    [1].each { address.city = 'Boston' }
+                    name.modify { it + old.address.zip }
+                }
+            }
+            def q = moved(p)
+            assert q.address.city == 'Boston'
+            assert q.name == 'Alice10001'
+        '''
     }
 }
