@@ -119,6 +119,7 @@ final class RecordNestedCopyWithTest {
         '''
     }
 
+    // GROOVY-12713
     @Test
     void record_nested_key_with_unknown_segment_is_a_static_type_error() {
         def err = shouldFail shell, GRAPH + '''
@@ -131,6 +132,7 @@ final class RecordNestedCopyWithTest {
         assert err.message.contains("unexpected named arg: address.state")
     }
 
+    // GROOVY-12713
     @Test
     void record_nested_key_value_is_type_checked_against_the_last_segment() {
         def err = shouldFail shell, GRAPH + '''
@@ -141,5 +143,19 @@ final class RecordNestedCopyWithTest {
             moved(p)
         '''
         assert err.message.contains("argument for named param 'company.address.zip' has type 'int' but expected 'java.lang.String'")
+    }
+
+    // GROOVY-12713
+    @Test
+    void dotted_key_is_not_a_path_for_other_named_param_methods() {
+        def err = shouldFail shell, '''
+            def opts(@NamedParam(value = 'a', type = String) Map m) { m }
+            @groovy.transform.CompileStatic
+            def test() {
+                opts('a.b': 1)
+            }
+            test()
+        '''
+        assert err.message.contains('unexpected named arg: a.b')
     }
 }

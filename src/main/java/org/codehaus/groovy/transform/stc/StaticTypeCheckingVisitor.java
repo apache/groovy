@@ -174,6 +174,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoEnclosingInstance;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
@@ -4705,7 +4706,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 expression.removeNodeMetaData(DELEGATION_METADATA);
             }
             if (i == 0 && parameters.length > 0 && expression instanceof MapExpression) {
-                checkNamedParamsAnnotation(parameters[0], (MapExpression) expression);
+                checkNamedParamsAnnotation(parameters[0], (MapExpression) expression, isNestedCopyWith(selectedMethod));
             }
         }
     }
@@ -4721,7 +4722,15 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         return new LambdaExpression(parameters, GENERATED_EMPTY_STATEMENT);
     }
 
-    private void checkNamedParamsAnnotation(final Parameter param, final MapExpression args) {
+    /**
+     * Whether {@code method} is the {@code copyWith(Map)} generated for a record or immutable class, which accepts
+     * dotted keys as nested paths.
+     */
+    private static boolean isNestedCopyWith(final MethodNode method) {
+        return method != null && "copyWith".equals(method.getName()) && isGenerated(method);
+    }
+
+    private void checkNamedParamsAnnotation(final Parameter param, final MapExpression args, final boolean nestedKeys) {
         if (!isOrImplements(param.getType(), MAP_TYPE)) return;
         List<MapEntryExpression> entryExpressions = args.getMapEntryExpressions();
         Map<Object, MapEntryExpression> entries = new LinkedHashMap<>();
@@ -4740,7 +4749,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             for (Map.Entry<Object, MapEntryExpression> entry : entries.entrySet()) {
                 Object name = entry.getKey();
                 if (collectedNames.containsKey(name)) continue;
-                if (name instanceof String && ((String) name).indexOf('.') > 0) {
+                if (nestedKeys && name instanceof String && ((String) name).indexOf('.') > 0) {
                     checkNestedNamedParam((String) name, entry.getValue(), collectedNames); // GROOVY-12713
                 } else {
                     addStaticTypeError("unexpected named arg: " + name, entry.getValue());
