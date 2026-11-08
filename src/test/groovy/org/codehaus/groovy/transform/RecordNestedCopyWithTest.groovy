@@ -186,6 +186,21 @@ final class RecordNestedCopyWithTest {
 
     // GROOVY-12713
     @Test
+    void record_block_form_type_checks_the_modified_values() {
+        def err = shouldFail shell, '''
+            @RecordType(copyWith = true) class Dimensions { int width; int height }
+            @RecordType(copyWith = true) class Box { String label; Dimensions size }
+            @groovy.transform.CompileStatic
+            Box widened(Box box) {
+                box.copyWith { size.width.modify { 'wide' } }
+            }
+            widened(new Box('crate', new Dimensions(2, 3)))
+        '''
+        assert err.message.contains('Cannot return value of type java.lang.String for closure expecting java.lang.Integer')
+    }
+
+    // GROOVY-12713
+    @Test
     void record_block_form_rejects_an_unknown_component() {
         def err = shouldFail shell, GRAPH + '''
             @groovy.transform.CompileStatic

@@ -4946,8 +4946,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
     /**
      * Inside a {@code copyWith} block, {@code path.modify { it... }} computes a component's new value from its
-     * current one: the closure's parameter is the component's type and the call is answered by the recorder, even
-     * when the component's type has a {@code modify} method of its own.
+     * current one: the closure's parameter and result are of the component's type and the call is answered by the
+     * recorder, even when the component's type has a {@code modify} method of its own.
      */
     private List<MethodNode> resolveCopyWithBlockModify(final MethodCallExpression call, final String name, final ArgumentListExpression arguments) {
         ClassNode componentType = call.getObjectExpression().getNodeMetaData(COPY_WITH_PATH);
@@ -4956,7 +4956,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (expressions.size() != 1 || !(expressions.get(0) instanceof ClosureExpression closure)) return Collections.emptyList();
         closure.putNodeMetaData(CLOSURE_ARGUMENTS, new ClassNode[]{componentType});
         call.putNodeMetaData(DYNAMIC_RESOLUTION, OBJECT_TYPE);
-        Parameter block = new Parameter(CLOSURE_TYPE.getPlainNodeReference(), "block");
+        Parameter block = new Parameter(GenericsUtils.makeClassSafeWithGenerics(CLOSURE_TYPE, new GenericsType(getWrapper(componentType))), "block");
         MethodNode modify = new MethodNode("modify", 0, OBJECT_TYPE, new Parameter[]{block}, ClassNode.EMPTY_ARRAY, null);
         modify.setDeclaringClass(COPY_WITH_RECORDER_TYPE); // a virtual method, as a type checking extension's makeDynamic would return
         return List.of(modify);
