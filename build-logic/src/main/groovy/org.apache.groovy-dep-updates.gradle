@@ -16,6 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
 
 // Dependency-update workflow enhancements for `./gradlew depUp`:
 //   * reject candidate versions that aren't stable
@@ -90,6 +92,63 @@ def pomRequiredJdk = { String group, String name, String version ->
     } catch (ignored) {
         return 0  // fail-safe: network/parse errors never reject
     }
+}
+
+// The versions plugin exempts each of its lookup configurations from dependency
+// verification (the candidate versions it probes are not in verification-metadata.xml),
+// and Gradle logs "Dependency verification has been disabled." for every one of them,
+// with no switch to turn that off. While depUp runs, drop just that message from Gradle's
+// log output, restoring the original listener when the build ends (the daemon keeps it).
+// Uses Gradle's internal logging classes, looked up reflectively: if they change, the
+// filter is skipped and the warnings come back, but the build is unaffected.
+abstract class VerificationWarningFilter implements BuildService<BuildServiceParameters.None>, AutoCloseable {
+    private static final String LOG_EVENT = 'org.gradle.internal.logging.events.LogEvent'
+    private static final String CATEGORY = 'org.gradle.api.internal.artifacts.ivyservice.ivyresolve.ExternalModuleComponentResolverFactory'
+    private static final String MESSAGE = 'Dependency verification has been disabled.'
+    private context
+    private original
+
+    synchronized void install() {
+        if (context != null) return
+        try {
+            // Gradle's own SLF4J, not the slf4j-api that build-logic depends on
+            def ctx = Class.forName('org.slf4j.LoggerFactory', true, Logging.classLoader).ILoggerFactory
+            def orig = ctx.outputEventListener
+            def listenerType = Class.forName('org.gradle.internal.logging.events.OutputEventListener', false, ctx.getClass().classLoader)
+            def filter = java.lang.reflect.Proxy.newProxyInstance(listenerType.classLoader, [listenerType] as Class[]) { proxy, method, args ->
+                if (method.name == 'onOutput') {
+                    def event = args[0]
+                    if (!(event.getClass().name == LOG_EVENT && event.category == CATEGORY && event.message == MESSAGE)) {
+                        orig.onOutput(event)
+                    }
+                    return null
+                }
+                method.invoke(orig, args)
+            }
+            ctx.outputEventListener = filter
+            context = ctx
+            original = orig
+        } catch (ignored) {
+            // internal API changed: leave logging as it is
+        }
+    }
+
+    @Override
+    synchronized void close() {
+        if (context == null) return
+        try {
+            context.outputEventListener = original
+        } finally {
+            context = null
+            original = null
+        }
+    }
+}
+
+def verificationWarningFilter = gradle.sharedServices.registerIfAbsent('depUpVerificationWarningFilter', VerificationWarningFilter) {}
+// before any task runs: the per-project partialDependencyUpdates tasks do the lookups
+gradle.taskGraph.whenReady { graph ->
+    if (graph.hasTask(':dependencyUpdates')) verificationWarningFilter.get().install()
 }
 
 tasks.named('dependencyUpdates')?.configure {

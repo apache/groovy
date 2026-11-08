@@ -497,10 +497,77 @@ final class AstXmlDumper {
                     }
                 }
                 break
+            case 'PatternExpression':
+                // A pattern is not an expression tree. Dump the match and its
+                // guard so a covering-set assertion locks what was written.
+                elem(n, attrs) {
+                    if (e.source) dumpExpression(e.source)
+                    dumpPattern(e.pattern)
+                    if (e.guard) {
+                        elem('guard', [:]) { dumpExpression(e.guard) }
+                    }
+                }
+                break
             default:
                 elem(n, attrs)
                 break
         }
+    }
+
+    /** A {@code MatchPattern} record. Positions come from the binding it declares, when it has one. */
+    private void dumpPattern(Object pattern) {
+        if (pattern == null) return
+        String n = pattern.class.simpleName
+        switch (n) {
+            case 'TypePattern':
+                Map attrs = bindingPos(pattern.variable())
+                attrs.type = typeName(pattern.type())
+                if (pattern.name() != null) attrs.name = pattern.name()
+                elem(n, attrs)
+                break
+            case 'RecordPattern':
+                elem(n, [type: typeName(pattern.type())]) {
+                    pattern.components().each { dumpPattern(it) }
+                }
+                break
+            case 'ListPattern':
+                elem(n, [:]) {
+                    pattern.elements().each { dumpPattern(it) }
+                }
+                break
+            case 'MapPattern':
+                elem(n, [:]) {
+                    pattern.entries().each { entry ->
+                        elem('Entry', [key: fmtValue(entry.key())]) {
+                            dumpPattern(entry.value())
+                        }
+                    }
+                    if (pattern.rest()) dumpPattern(pattern.rest())
+                }
+                break
+            case 'BindingPattern':
+                elem(n, bindingPos(pattern.variable()) + [name: pattern.name()])
+                break
+            case 'WildcardPattern':
+                elem(n, [:])
+                break
+            case 'ConstantPattern':
+                elem(n, [:]) { dumpExpression(pattern.value()) }
+                break
+            case 'RestPattern':
+                Map attrs = bindingPos(pattern.variable())
+                if (pattern.type()) attrs.type = typeName(pattern.type())
+                if (pattern.name() != null) attrs.name = pattern.name()
+                elem(n, attrs)
+                break
+            default:
+                elem(n, [:])
+                break
+        }
+    }
+
+    private static Map bindingPos(Object variable) {
+        variable != null && variable.lineNumber > 0 ? pos(variable) : [:]
     }
 
     private void dumpAnnotations(AnnotatedNode node) {
