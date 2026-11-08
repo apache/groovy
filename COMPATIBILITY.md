@@ -1440,6 +1440,27 @@ other functional-interface parameter such as `Stream.map`'s:
   functional-interface parameters already behave this way (GROOVY-12747).
   Assign to a new local variable instead.
 
+### Groovy 7 — `sumParallel`, `minParallel` and `maxParallel` accept a transform or key (GROOVY-12722)
+
+`sumParallel(Function)`, `minParallel(Function)` and `maxParallel(Function)`
+sit beside the existing `BinaryOperator` and `Comparator` overloads. A closure
+or lambda literal, or a method reference, selects between them by the number
+of parameters it takes (GROOVY-11010, GROOVY-10714), so existing calls keep
+their meaning.
+
+**Who is affected (source).** Under `@TypeChecked` and `@CompileStatic`, a
+variable or expression of type `Closure` passed to these methods is now
+ambiguous, because its parameter count is not known statically:
+`Closure<Integer> c = { Integer a, Integer b -> a + b }; numbers.sumParallel(c)`
+compiled before and now reports `Reference to method is ambiguous`. Declare the
+variable with the functional interface instead (`BinaryOperator<Integer>`,
+`Comparator<T>`, `Function<T, R>`), cast with `as`, or pass the closure literal
+directly. Dynamic code, where the closure's parameter count is known at run
+time, is unaffected.
+
+**Who is not affected (binary).** Existing call sites are compiled against
+the unchanged existing overloads.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
