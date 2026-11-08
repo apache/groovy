@@ -413,6 +413,9 @@ public class ClosureWriter {
      * captured variables, constants and explicit/parameter receivers remain, none of which a
      * delegate can touch, so such a closure is delegate-independent by construction regardless of
      * types. Nested closures are walked too (a free name anywhere carries the delegate chain).
+     * A body that names {@code this} (or {@code Outer.this}/{@code Outer.super}) is declined as
+     * well: a closure class reads it from {@code getThisObject()}, which {@code rehydrate} changes,
+     * while the hoisted body would keep the original instance.
      * Conservative: any doubt returns {@code false} (keep the closure as a class).
      */
     private boolean isSyntacticallyDelegateIndependent(final ClosureExpression expression) {
@@ -434,6 +437,11 @@ public class ClosureWriter {
                         || (obj instanceof VariableExpression && ((VariableExpression) obj).isThisExpression())) {
                     dependent[0] = true;
                 }
+                // Outer.this/Outer.super read the closure's this object (GROOVY-12670)
+                String name = pexp.getPropertyAsString();
+                if (obj instanceof ClassExpression && ("this".equals(name) || "super".equals(name))) {
+                    dependent[0] = true;
+                }
                 super.visitPropertyExpression(pexp);
             }
             @Override public void visitVariableExpression(final VariableExpression ve) {
@@ -445,6 +453,9 @@ public class ClosureWriter {
                 if (av instanceof DynamicVariable || av instanceof FieldNode || av instanceof PropertyNode) {
                     dependent[0] = true;
                 }
+                // explicit this (this, this.m(), this.@f, this.&m) is the closure's this object,
+                // which rehydrate replaces; the hoisted body's receiver cannot follow (GROOVY-12670)
+                if (ve.isThisExpression()) dependent[0] = true;
                 super.visitVariableExpression(ve);
             }
         });

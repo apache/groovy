@@ -398,6 +398,7 @@ final class Groovy12399 {
 
     @Test
     void implicitReturnCompleteEnumYieldsNullForConstantAddedLater() {
+        // compiled for a 17 target: a 21+ target throws MatchException instead (SwitchMatchExceptionTest)
         File v1 = File.createTempDir()
         File v2 = File.createTempDir()
         try {
@@ -472,7 +473,7 @@ final class Groovy12399 {
     }
 
     private static void compileTo(final File dir, final String... sources) {
-        def unit = new CompilationUnit(new CompilerConfiguration(targetDirectory: dir))
+        def unit = new CompilationUnit(new CompilerConfiguration(targetDirectory: dir, targetBytecode: CompilerConfiguration.JDK17))
         sources.eachWithIndex { String source, int i -> unit.addSource("Source${i}.groovy", source) }
         unit.compile()
     }
