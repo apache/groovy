@@ -62,6 +62,7 @@ import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.control.messages.WarningMessage;
 import org.codehaus.groovy.runtime.GeneratedDispatcher;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.ClassVisitor;
@@ -687,8 +688,9 @@ public class ClosureWriter {
             /**
              * Marks every literal the escaping value {@code e} can be or keep: both branches of a
              * ternary or elvis, the operand of a cast that keeps the closure, the receiver of a
-             * call whose result keeps it (see {@link #isWrappingCall}), and both operands of a
-             * composition, each followed the same way.
+             * call whose result keeps it (see {@link #isWrappingCall}), both operands of a
+             * composition, and the right operand of an assignment used as a value, each followed
+             * the same way.
              */
             private void markValue(final Expression e) {
                 if (e instanceof TernaryExpression) {
@@ -705,6 +707,9 @@ public class ClosureWriter {
                     MethodCallExpression call = (MethodCallExpression) e;      // c.rightShift({ ... }), also how SC compiles c >> { ... }
                     markValue(call.getObjectExpression());
                     ((TupleExpression) call.getArguments()).getExpressions().forEach(this::markValue); // none for andThenSelf()
+                } else if (e instanceof BinaryExpression && (storesRightOperand(((BinaryExpression) e).getOperation().getType())
+                        || ((BinaryExpression) e).getOperation().getType() == Types.LEFT_SHIFT_EQUAL)) {
+                    markValue(((BinaryExpression) e).getRightExpression());    // an assignment's value, e.g. h.handler = c = { ... }
                 } else {
                     mark(e);
                 }
@@ -999,9 +1004,14 @@ public class ClosureWriter {
         return WRAPPING_CALLS.contains(call.getMethodAsString());
     }
 
-    /** True when a cast to {@code type} yields the closure itself rather than a coerced proxy. */
+    /**
+     * True when a cast to {@code type} yields the closure itself rather than a coerced proxy: a
+     * {@code Closure} type, or a type every closure already is, such as {@code Object}, {@code Runnable}
+     * or {@code Callable}.
+     */
     private static boolean keepsClosure(final ClassNode type) {
-        return ClassHelper.isObjectType(type) || type.isDerivedFrom(ClassHelper.CLOSURE_TYPE);
+        return type.isDerivedFrom(ClassHelper.CLOSURE_TYPE)
+                || StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(ClassHelper.CLOSURE_TYPE, type);
     }
 
     /**

@@ -861,15 +861,16 @@ final class PackedClosuresTransformTest {
         // curry/rcurry/ncurry, asWritable, trampoline and the memoize family wrap it and may pass a
         // delegate set on the wrapper on to it; clone, dehydrate and rehydrate copy it, and a copy of
         // a packed closure is still packed. So the literal escapes wherever the conditional or the
-        // call result does. A SAM coercion is not a closure, so it still packs, as does a conditional
-        // or curried literal that is only called in the method.
+        // call result does. A coercion to a SAM type that Closure does not implement yields a proxy,
+        // not a closure, so it still packs, as does a conditional or curried literal that is only
+        // called in the method.
         ['', '@groovy.transform.TypeChecked'].each { mode ->
             String src = """class Holder { Closure handler; List<Closure> list = [] }
                 @groovy.transform.PackedClosures $mode
                 class E {
                     Closure field
                     Object any
-                    Runnable task
+                    Comparator order
                     void ternary(Holder h, boolean b) { h.handler = b ? { Integer x -> x + 1 } : null }           // property
                     void elvis(Holder h, Closure c)   { h.handler = c ?: { Integer x -> x + 1 } }                 // property
                     Closure returned(boolean b)       { return b ? { Integer x -> x + 1 } : null }               // returned
@@ -890,7 +891,7 @@ final class PackedClosuresTransformTest {
                     Closure trampolined()             { { Integer x -> x + 1 }.trampoline() }                     // implicit return
                     Closure memoized()                { { Integer x -> x + 1 }.memoize() }
                     Closure memoizedAtMost()          { { Integer x -> x + 1 }.memoizeAtMost(2) }
-                    void coerced()                    { task = { -> } as Runnable }                               // -> packs
+                    void coerced()                    { order = { a, b -> 0 } as Comparator }                     // -> packs
                     def local(boolean b)              { (b ? { Integer x -> x + 1 } : { Integer x -> x - 1 })(1) } // -> both pack
                     def localCurry()                  { { Integer x, Integer y -> x + y }.curry(1)(2) }          // -> packs
                 }"""
@@ -999,6 +1000,47 @@ final class PackedClosuresTransformTest {
                 assertEquals(7, it(3))
             }
             assertEquals(3, e.local(twice, true))
+        }
+    }
+
+    // GROOVY-12659
+    @Test
+    void closuresKeptByACoercionOrAnAssignmentValueEscapeWhereTheValueDoes() {
+        // as or a cast to a type the closure already is, such as Runnable or Callable (interfaces
+        // Closure implements), yields the closure itself, and the value of an assignment is its right
+        // operand. Either keeps the literal, so the literal escapes wherever the value does. A
+        // coercion to another SAM type wraps the closure in a proxy, which is not a closure, so it
+        // still packs, as does an assignment chained through locals only.
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { mode ->
+            String src = """import java.util.concurrent.Callable
+                class Holder { Closure handler }
+                @groovy.transform.PackedClosures $mode
+                class E {
+                    Runnable task
+                    Callable<Object> job
+                    Comparator<Integer> order
+                    void coerced()         { task = { -> 'ran' } as Runnable }                            // field
+                    void cast()            { job = (Callable<Object>) { -> 'done' } }                      // field
+                    void chained(Holder h) { Closure c; h.handler = c = { Integer x -> x + 1 } }           // property
+                    Closure returned()     { Closure c; return c = { Integer x -> x + 1 } }                // returned
+                    void sam()             { order = { Integer a, Integer b -> b <=> a } as Comparator<Integer> } // -> packs
+                    int locals(int n)      { Closure c; Closure d = c = { Integer x -> x + 1 }; (int) d(n) } // -> packs
+                }"""
+            String name = mode ?: 'dynamic'
+            def names = generatedClassNames(src)
+            assertEquals(4, closureClassCount(names), "[$name] kept closures should be declined: $names")
+
+            def (e, h) = instance(src + '\n [new E(), new Holder()]')
+            e.coerced(); e.cast(); e.chained(h); e.sam()
+            assertTrue(e.task instanceof Closure && e.job instanceof Closure, "[$name] the closure itself is stored")
+            [e.task, e.job].each { it.delegate = 'd' }   // no packed-adapter guard
+            assertEquals(['ran', 'done'], [e.task.call(), e.job.call()])
+            [h.handler, e.returned()].each {
+                it.delegate = 'd'
+                assertEquals(4, it(3))
+            }
+            assertEquals([3, 2, 1], [1, 2, 3].sort(false, e.order))
+            assertEquals(4, e.locals(3))
         }
     }
 
