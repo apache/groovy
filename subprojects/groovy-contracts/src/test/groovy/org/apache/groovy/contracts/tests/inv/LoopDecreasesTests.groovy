@@ -19,6 +19,9 @@
 package org.apache.groovy.contracts.tests.inv
 
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -375,5 +378,54 @@ class LoopDecreasesTests extends BaseTestClass {
         String output = proc.inputStream.text
         proc.waitFor()
         [code: proc.exitValue(), output: output]
+    }
+
+    // GROOVY-12729: the value is declared as a Class, so a class literal passed the annotation checks
+    // and the variant was silently not checked
+    @Test
+    void classLiteralIsRejected() {
+        def message = shouldFail(MultipleCompilationErrorsException) {
+            assertScript '''
+                import groovy.contracts.Decreases
+
+                int n = 3
+                @Decreases(java.lang.Object)
+                while (n > 0) { n-- }
+            '''
+        }.message
+        assert message.contains('@Decreases requires a closure containing the condition, e.g. @Decreases({ ... }); found a class java.lang.Object')
+    }
+
+    // GROOVY-12729
+    @Test
+    void emptyVariantIsReportedAsNotChecked() {
+        def warnings = compileWarnings '''
+            import groovy.contracts.Decreases
+
+            int i = 0
+            @Decreases({})
+            while (i < 3) { i++ }
+        '''
+        assert warnings == ['@Decreases({}) on a loop has no variant, so nothing is checked']
+    }
+
+    // GROOVY-12729
+    @Test
+    void emptyListVariantIsReportedAsNeverDecreasing() {
+        def warnings = compileWarnings '''
+            import groovy.contracts.Decreases
+
+            int n = 1
+            @Decreases({ [] })
+            while (n > 0) { n-- }
+        '''
+        assert warnings == ['@Decreases({ [] }) never decreases, so it fails if the loop runs more than once']
+    }
+
+    private static List<String> compileWarnings(String source) {
+        def unit = new CompilationUnit()
+        unit.addSource('Script1.groovy', source)
+        unit.compile(Phases.CLASS_GENERATION)
+        unit.errorCollector.warnings*.message
     }
 }
