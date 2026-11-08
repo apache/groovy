@@ -56,7 +56,7 @@ final class Groovy7325Bug extends StaticTypeCheckingTestCase implements StaticCo
         'Cannot access method: clone() of class: java.lang.Object'
     }
 
-    // GROOVY-12568
+    // GROOVY-12717
     @Test
     void testProtectedMethodOfAnotherPackageThroughReceiverOfSuperclass() {
         assertScript '''package p
@@ -113,7 +113,7 @@ final class Groovy7325Bug extends StaticTypeCheckingTestCase implements StaticCo
         'Cannot access method: im of class: p.A'
     }
 
-    // GROOVY-12568
+    // GROOVY-12717
     @Test
     void testProtectedMembersOfAnotherPackageThroughReceiverOfSubclass() {
         assertScript '''package p

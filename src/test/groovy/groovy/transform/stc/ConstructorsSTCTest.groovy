@@ -307,7 +307,7 @@ import static groovy.test.GroovyAssert.shouldFail
         'Dynamic keys in map-style constructors are unsupported'
     }
 
-    // GROOVY-12568
+    // GROOVY-12717
     @Test
     void testProtectedConstructorOfAnotherPackage() {
         assertScript '''package p
@@ -328,7 +328,7 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
-    // GROOVY-12568
+    // GROOVY-12717
     @Test
     void testProtectedConstructorOfAnotherPackageThroughSuperOrAnonymousInnerClass() {
         assertScript '''

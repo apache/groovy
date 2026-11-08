@@ -61,7 +61,7 @@ final class StaticCompileConstructorsTest extends ConstructorsSTCTest implements
         assert method.count('ACONST_NULL') == 0
     }
 
-    // GROOVY-12568
+    // GROOVY-12717
     @Override
     @Test
     void testProtectedConstructorOfAnotherPackage() {
@@ -92,7 +92,7 @@ final class StaticCompileConstructorsTest extends ConstructorsSTCTest implements
         'Cannot call protected constructor for java.io.ObjectInputStream from class C'
     }
 
-    // GROOVY-12568
+    // GROOVY-12717
     @Test
     void testMapStyleConstructionWithProtectedConstructorOfAnotherPackage() {
         shouldFailWithMessages '''
@@ -106,7 +106,7 @@ final class StaticCompileConstructorsTest extends ConstructorsSTCTest implements
         'Cannot call protected constructor for java.io.ObjectOutputStream from class C'
     }
 
-    // GROOVY-12568
+    // GROOVY-12717
     @Test
     void testProtectedConstructorOfAnotherPackageIsCalledDirectlyThroughSuperOrAnonymousInnerClass() {
         testProtectedConstructorOfAnotherPackageThroughSuperOrAnonymousInnerClass()
