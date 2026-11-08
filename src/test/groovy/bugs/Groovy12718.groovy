@@ -19,9 +19,14 @@
 package bugs
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.codehaus.groovy.classgen.asm.InstructionSequence
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+
+import java.security.CodeSource
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -52,6 +57,23 @@ final class Groovy12718 extends AbstractBytecodeTestCase {
             }
             new C().test()
         """
+    }
+
+    /**
+     * Compiles the sources one after another with a GroovyClassLoader, which
+     * defines the classes of each compilation with a class loader of their own,
+     * and returns the instructions of method test of class p.C.
+     */
+    private InstructionSequence compileInMemory(final String... sources) {
+        CompilationUnit unit = null
+        def loader = new GroovyClassLoader(this.class.classLoader) {
+            @Override
+            protected CompilationUnit createCompilationUnit(final CompilerConfiguration config, final CodeSource source) {
+                unit = super.createCompilationUnit(config, source)
+            }
+        }
+        sources.each { loader.parseClass(it) }
+        extractMethodSequence(unit.classes.find { it.name == 'p.C' }.bytes, 'test')
     }
 
     // GROOVY-12718
@@ -85,10 +107,10 @@ final class Groovy12718 extends AbstractBytecodeTestCase {
         assert evaluate(annotation, '[1].collect { super.pf }') == ['pf']
     }
 
-    // a subclass can use a protected field directly
+    // a subclass can use a protected field of another run-time package directly
     @Test
     void testProtectedFieldOfSuperclassIsStillDirect() {
-        def bytecode = compile(method: 'test', classNamePattern: 'p.C', FIELDS + '''
+        def bytecode = compileInMemory(FIELDS, '''package p
             class C extends F {
                 def test() { [super.qf, this.@qf, super.@qf] }
             }
@@ -99,7 +121,7 @@ final class Groovy12718 extends AbstractBytecodeTestCase {
     // a field of the same compilation is in the same run-time package
     @Test
     void testPackagePrivateFieldOfSameCompilationIsStillDirect() {
-        def bytecode = compile(method: 'test', classNamePattern: 'p.C', FIELDS + '''
+        def bytecode = compileInMemory(FIELDS + '''
             class C extends F {
                 def test() { [super.pf, this.@pf, super.@pf] }
             }
