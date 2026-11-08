@@ -132,10 +132,17 @@ final class Groovy12718 extends AbstractBytecodeTestCase {
     // static compilation does not select a member at run time
     @Test
     void testStaticCompilationIsUnchanged() {
-        shell.evaluate FIELDS
+        // not created by a GroovyShell, so no compile-time check of the run-time package applies
+        def loader = new GroovyClassLoader(this.class.classLoader)
+        loader.parseClass(FIELDS)
         ['super.pf', 'super.@pf', 'this.@pf', "this.@pf = 'w'"].each { body ->
             def err = shouldFail(IllegalAccessError) {
-                evaluate('@groovy.transform.CompileStatic', body)
+                loader.parseClass("""package p
+                    @groovy.transform.CompileStatic
+                    class C extends F {
+                        def test() { $body }
+                    }
+                """).getDeclaredConstructor().newInstance().test()
             }
             assert err.message.contains('tried to access field p.F.pf')
         }
