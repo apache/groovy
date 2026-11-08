@@ -2198,15 +2198,18 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-12621: a receiver of the calling class, or of an enclosing class through
-    // implicit "this", reaches the field through the enclosing instance
+    // implicit "this", reaches the field through its enclosing instance
     @Test
     void testPrivateFieldOfSuperclassViaReceiverOfCallingClass() {
         assertScript '''
             class Base {
-                private String z = 'x'
+                private String z
+                Base(String z) { this.z = z }
                 static class Nested extends Base {
+                    Nested() { super('nested') }
                 }
                 class Sub extends Base {
+                    Sub(String z) { super(z) }
                     def m1(Sub that) { that.z }
                     def m2(SubSub that) { def c = { -> that.z }; c() }
                     def m3() { def c = { -> super.z }; c() }
@@ -2218,17 +2221,20 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     }
                 }
                 class SubSub extends Sub {
+                    SubSub() { super('subsub') }
                 }
                 class Other {
                     def m1(Sub that) { that.with { z } }
                     def m2() { new Object() { def get() { z } }.get() }
                 }
-                List test() {
-                    def sub = new Sub(), other = new Other()
-                    [sub.m1(sub), sub.m2(new SubSub()), sub.m3(), sub.m4(new Nested()), sub.m5(), sub.m6(), other.m1(sub), other.m2()]
+                Sub newSub(String z) { new Sub(z) }
+                List test(Sub that) {
+                    def sub = new Sub('sub'), other = new Other()
+                    [sub.m1(that), sub.m2(new SubSub()), sub.m3(), sub.m4(new Nested()), sub.m5(), sub.m6(), other.m1(that), other.m2()]
                 }
             }
-            assert new Base().test() == ['x'] * 8
+            def that = new Base('far').newSub('that')
+            assert new Base('outer').test(that) == ['far', 'outer', 'outer', 'outer', 'outer', 'outer', 'far', 'outer']
         '''
     }
 
