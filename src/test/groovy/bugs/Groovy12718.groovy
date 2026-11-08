@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package gls.classes
+package bugs
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 import org.junit.jupiter.api.Test
@@ -31,7 +31,7 @@ import static groovy.test.GroovyAssert.shouldFail
  * is: the JVM refuses direct access, so dynamic and {@code @TypeChecked} code
  * use it through the meta-class, as they do for a plain reference to the field.
  */
-final class DynamicFieldOfAnotherRuntimePackageTest extends AbstractBytecodeTestCase {
+final class Groovy12718 extends AbstractBytecodeTestCase {
 
     private final GroovyShell shell = new GroovyShell()
 
