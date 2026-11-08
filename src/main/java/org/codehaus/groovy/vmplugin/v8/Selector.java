@@ -66,24 +66,21 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.ARRAYLIST_CONSTRUCTOR;
+import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.asCallSiteType;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.BEAN_CONSTRUCTOR_PROPERTY_SETTER;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.CLASS_FOR_NAME;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.INVOKE_REFLECTIVELY;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.DTT_CAST_TO_TYPE;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.EQUALS;
+import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.explicitCastToCallSiteType;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.GROOVY_CAST_EXCEPTION;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.GROOVY_OBJECT_GET_PROPERTY;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.GROOVY_OBJECT_INVOKER;
-import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.HASHSET_CONSTRUCTOR;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.HAS_CATEGORY_IN_CURRENT_THREAD_GUARD;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.INTERCEPTABLE_INVOKER;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.IS_NULL;
@@ -104,6 +101,7 @@ import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAM
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_MC;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAM_CONVERSION;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SET_PROPERTY;
+import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.STRONG_AS_TYPE_CACHE;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.UNWRAP_EXCEPTION;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.UNWRAP_METHOD;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.unwrap;
@@ -282,11 +280,10 @@ public abstract class Selector {
             // NOTE: !! from here on if handle is null, args[0] is always not null !!
 
             if (handle == null) handleIsAnInstance();
-            if (handle == null) handleCollections();
             if (handle == null) handleSAM();
 
             // will handle :
-            //      * collection case where argument is an array
+            //      * collection conversion
             //      * array transformation (staticTargetType.isArray())
             //      * constructor invocation
             //      * throw GroovyCastException
@@ -300,7 +297,7 @@ public abstract class Selector {
         }
 
         private void castAndSetGuards() {
-            handle = MethodHandles.explicitCastArguments(handle, targetType);
+            handle = explicitCastToCallSiteType(handle, targetType);
             setGuards(args[0]);
             doCallSiteTargetSet();
         }
@@ -350,7 +347,7 @@ public abstract class Selector {
             // boolean->boolean, Boolean->boolean, boolean->Boolean are handled by the compiler
             // which leaves (T)Z and (T)Boolean, where T is the static type but runtime type of T might be Boolean
 
-            MethodHandle ifNull = IS_NULL.asType(MethodType.methodType(boolean.class, staticSourceType));
+            MethodHandle ifNull = asCallSiteType(IS_NULL, MethodType.methodType(boolean.class, staticSourceType));
 
             MethodHandle thenZero;
             if (primitive) { // false
@@ -365,24 +362,6 @@ public abstract class Selector {
             MethodHandle elseCallAsBoolean = handle;
 
             handle = MethodHandles.guardWithTest(ifNull, thenZero, elseCallAsBoolean);
-        }
-
-        /**
-         * Sets handle if object is Collection and target type is an abstract
-         * type fitting for HashSet or ArrayList.
-         */
-        private void handleCollections() {
-            if (args[0] instanceof Collection) {
-                if (isAbstractClassOf(HashSet.class, staticTargetType)) {
-                    handle = HASHSET_CONSTRUCTOR;
-                } else if (isAbstractClassOf(ArrayList.class, staticTargetType)) {
-                    handle = ARRAYLIST_CONSTRUCTOR;
-                }
-            }
-        }
-
-        private static boolean isAbstractClassOf(final Class<?> type, final Class<?> callSiteType) {
-            return (callSiteType.isInterface() || Modifier.isAbstract(callSiteType.getModifiers())) && type.isAssignableFrom(callSiteType);
         }
     }
 
@@ -1197,7 +1176,7 @@ public abstract class Selector {
                 if (args[i] instanceof Wrapper) {
                     Class<?> type = pt[i];
                     MethodType mt = MethodType.methodType(type, Wrapper.class);
-                    handle = MethodHandles.filterArguments(handle, i, UNWRAP_METHOD.asType(mt));
+                    handle = MethodHandles.filterArguments(handle, i, asCallSiteType(UNWRAP_METHOD, mt));
                     if (LOG_ENABLED) LOG.info("added filter for Wrapper for argument at pos " + i);
                 }
             }
@@ -1329,13 +1308,20 @@ public abstract class Selector {
             if (AndroidSupport.isRunningAndroid()) {
                 handle = IndyCatchCompat.unwrapping(handle); // GROOVY-12387
             } else {
-                Class<?> returnType = handle.type().returnType();
-                if (returnType != Object.class) {
-                    MethodType mtype = MethodType.methodType(returnType, GroovyRuntimeException.class);
-                    handle = MethodHandles.catchException(handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION.asType(mtype));
-                } else {
-                    handle = MethodHandles.catchException(handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION);
-                }
+                // Where asType caches strongly (JDK 17), catchException is applied with the
+                // reference types erased: it converts the JDK's shared argument-array collector to
+                // the type of its target, and a type of some class loader cached there would keep
+                // that loader reachable after it was discarded. The handle is made fixed arity
+                // first, as catchException makes it, so that erasing its trailing array type
+                // does not turn the conversion into collecting arguments.
+                MethodType type = handle.type();
+                MethodType guarded = STRONG_AS_TYPE_CACHE ? type.erase() : type;
+                Class<?> returnType = guarded.returnType();
+                MethodHandle unwrap = returnType != Object.class
+                        ? UNWRAP_EXCEPTION.asType(MethodType.methodType(returnType, GroovyRuntimeException.class))
+                        : UNWRAP_EXCEPTION;
+                MethodHandle target = handle.asFixedArity().asType(guarded);
+                handle = MethodHandles.catchException(target, GroovyRuntimeException.class, unwrap).asType(type);
             }
             if (LOG_ENABLED) LOG.info("added GroovyRuntimeException unwrapper");
         }
@@ -1408,7 +1394,7 @@ public abstract class Selector {
                     MethodHandle test;
                     var arg = args[i];
                     if (arg == null) {
-                        test = IS_NULL.asType(MethodType.methodType(boolean.class, pt[i]));
+                        test = asCallSiteType(IS_NULL, MethodType.methodType(boolean.class, pt[i]));
                         if (LOG_ENABLED) LOG.info("added null argument check at pos " + i);
                     } else {
                         if (nonFinalOrNullUnsafe.negate().test(pt[i])) continue; // null-safe type that cannot change
@@ -1428,7 +1414,7 @@ public abstract class Selector {
                         Selector.sameClassesGuard(args, handle.type()), handle, fallback);
                 if (LOG_ENABLED) LOG.info("added same-class argument check");
             } else if (safeNavigationOrig) { // GROOVY-11126
-                MethodHandle test = NON_NULL.asType(MethodType.methodType(boolean.class, pt[0]));
+                MethodHandle test = asCallSiteType(NON_NULL, MethodType.methodType(boolean.class, pt[0]));
                 handle = MethodHandles.guardWithTest(test, handle, fallback);
                 if (LOG_ENABLED) LOG.info("added null receiver check");
             }
@@ -1508,7 +1494,7 @@ public abstract class Selector {
                 correctSpreading();
 
                 if (LOG_ENABLED) LOG.info("casting explicit from " + handle.type() + " to " + targetType);
-                handle = MethodHandles.explicitCastArguments(handle, targetType);
+                handle = explicitCastToCallSiteType(handle, targetType);
 
                 addExceptionHandler();
             }

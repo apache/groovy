@@ -73,8 +73,9 @@ final class Groovy12524 {
         '''
     }
 
+    // GROOVY-12619
     @Test
-    void testCompoundAssignEvaluatesReceiverTwice() {
+    void testCompoundAssignEvaluatesReceiverOnce() {
         assertScript '''
             @groovy.transform.CompileStatic
             class C {
@@ -96,6 +97,7 @@ final class Groovy12524 {
                 file.text = 'a'
 
                 C c = new C(file: file)
+                assert dynamicCalls == 1
                 assert c.test() == dynamicCalls
                 assert file.text == 'aZ'
             } finally {

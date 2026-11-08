@@ -79,8 +79,12 @@ public class MethodVariantASTTransformation implements ASTTransformation {
         // Only the method case here; the loop case is LoopVariantASTTransformation.
         if (!(nodes[1] instanceof MethodNode method)) return;
 
-        Expression value = annotation.getMember("value");
-        if (!(value instanceof ClosureExpression closureExpression)) return;
+        ClosureExpression closureExpression = LoopContractSupport.contractClosure(annotation, source);
+        if (closureExpression == null) return;
+        if (closureExpression.getCode().isEmpty()) {
+            LoopContractSupport.warn(annotation, source, "({}) on a method has no measure, so nothing is checked");
+            return;
+        }
 
         weaveMeasure(method, extractExpression(closureExpression), source);
     }

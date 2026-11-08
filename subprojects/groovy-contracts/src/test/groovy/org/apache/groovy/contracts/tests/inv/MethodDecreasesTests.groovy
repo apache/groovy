@@ -19,6 +19,9 @@
 package org.apache.groovy.contracts.tests.inv
 
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -314,5 +317,39 @@ class MethodDecreasesTests extends BaseTestClass {
             }
             assert C.sumUp(5) == 15
         '''
+    }
+
+    // GROOVY-12729: the value is declared as a Class, so a class literal passed the annotation checks
+    // and the measure was silently not checked
+    @Test
+    void classLiteralIsRejected() {
+        def message = shouldFail(MultipleCompilationErrorsException) {
+            assertScript '''
+                import groovy.contracts.Decreases
+
+                @Decreases(Object)
+                int sumUp(int n) { n == 0 ? 0 : sumUp(n - 1) + n }
+            '''
+        }.message
+        assert message.contains('@Decreases requires a closure containing the condition, e.g. @Decreases({ ... }); found a class java.lang.Object')
+    }
+
+    // GROOVY-12729
+    @Test
+    void emptyMeasureIsReportedAsNotChecked() {
+        def warnings = compileWarnings '''
+            import groovy.contracts.Decreases
+
+            @Decreases({})
+            int sumUp(int n) { n == 0 ? 0 : sumUp(n - 1) + n }
+        '''
+        assert warnings == ['@Decreases({}) on a method has no measure, so nothing is checked']
+    }
+
+    private static List<String> compileWarnings(String source) {
+        def unit = new CompilationUnit()
+        unit.addSource('Script1.groovy', source)
+        unit.compile(Phases.CLASS_GENERATION)
+        unit.errorCollector.warnings*.message
     }
 }

@@ -20,6 +20,7 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
+import org.apache.groovy.ast.pattern.PatternLowering;
 import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.GroovyBugError;
@@ -42,6 +43,7 @@ import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RecordComponentNode;
+import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
@@ -68,6 +70,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PatternExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -358,6 +361,7 @@ public class AsmClassGenerator extends ClassGenerator {
      */
     @Override
     public void visitClass(final ClassNode classNode) {
+        if (classNode.isEnum()) EnumConstantInit.substitute(classNode); // before any visitor reads the static initializer
         referencedClasses.clear();
 
         WriterControllerFactory factory = classNode.getNodeMetaData(WriterControllerFactory.class);
@@ -489,7 +493,21 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void maybeInnerClassEntry(final ClassNode classNode) {
-        if (classNode.getOuterClass() != null) makeInnerClassEntry(classNode);
+        if (classNode.getOuterClass() != null) {
+            makeInnerClassEntry(classNode);
+        } else if (classNode.redirect() instanceof DecompiledClassNode decompiled) { // GROOVY-12544
+            decompiled.visitInnerClassEntries(classVisitor);
+        } else if (!classNode.isPrimaryClassNode() && !classNode.isArray() && classNode.isResolved()) {
+            makeInnerClassEntry(classNode.getTypeClass());
+        }
+    }
+
+    private void makeInnerClassEntry(final Class<?> innerClass) {
+        Class<?> outerClass = innerClass.getDeclaringClass();
+        if (outerClass == null) return; // top-level, local or anonymous
+        makeInnerClassEntry(outerClass);
+        classVisitor.visitInnerClass(BytecodeHelper.getClassInternalName(innerClass),
+                BytecodeHelper.getClassInternalName(outerClass), innerClass.getSimpleName(), innerClass.getModifiers());
     }
 
     private void makeInnerClassEntry(final ClassNode innerClass) {
@@ -998,6 +1016,19 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitSwitchExpression(final SwitchExpression expression) {
         controller.getSwitchExpressionWriter().writeSwitchExpression(expression);
         doPostVisit(expression);
+    }
+
+    /**
+     * Generates bytecode for a pattern match (GEP-19) from the code that
+     * {@link PatternLowering} derived for it.
+     */
+    @Override
+    public void visitPatternExpression(final PatternExpression expression) {
+        if (expression.getLowered() == null) {
+            throw new GroovyBugError("The pattern `" + expression.getText() + "` was not lowered before class generation;"
+                    + " a transform that creates a pattern from instruction selection on lowers it with PatternLowering.lower(ClassNode, SourceUnit)");
+        }
+        expression.getLowered().visit(this);
     }
 
     /**
