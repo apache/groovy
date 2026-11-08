@@ -234,9 +234,10 @@ final class PackedClosuresTransformTest {
         assertEquals(12, s.local(4))
     }
 
+    // GROOVY-12652
     @Test
     void escapingClosuresInConstructorsAndInitializersAreDeclined() {
-        // GROOVY-12652: the escape gate also covers constructors and instance initializer blocks
+        // the escape gate also covers constructors and instance initializer blocks
         // (inlined into every constructor); a declined closure keeps its class, so setting a
         // delegate on it works instead of failing the packed adapter's runtime guard
         String src = '''@groovy.transform.PackedClosures
@@ -256,9 +257,10 @@ final class PackedClosuresTransformTest {
         assertEquals([9, 11, 10, 30], [k.fromCtor(10), k.fromInit(10), sink[0](5), attrs.handler(10)])
     }
 
+    // GROOVY-12650, GROOVY-12652
     @Test
     void compileStaticConstructorAndInitializerEscapesHiddenByARewriteAreDeclined() {
-        // GROOVY-12650, GROOVY-12652: under @CompileStatic an append and a setter-backed store in a
+        // under @CompileStatic an append and a setter-backed store in a
         // constructor or an instance initializer block are rewritten to method calls before class
         // generation; the escape walk runs ahead of that rewrite there too, whether the scope comes
         // from the class or from a constructor
@@ -645,9 +647,10 @@ final class PackedClosuresTransformTest {
         }
     }
 
+    // GROOVY-12652
     @Test
     void modeOnAConstructorGovernsItsBodyAndInitializers() {
-        // GROOVY-12652: a constructor is a scope of its own, like a method (most specific wins),
+        // a constructor is a scope of its own, like a method (most specific wins),
         // and its scope includes the instance initializer blocks inlined into it
         ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { annotation ->
             String src = """import groovy.transform.PackedClosures
@@ -999,9 +1002,10 @@ final class PackedClosuresTransformTest {
         }
     }
 
+    // GROOVY-12653
     @Test
     void captureWrittenAfterTheLiteralInAConstructorOrInitializerIsShared() {
-        // GROOVY-12653: a capture written anywhere in the constructor -- here after the literal --
+        // a capture written anywhere in the constructor -- here after the literal --
         // is threaded as the shared Reference, not copied by value when the literal is created
         ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { annotation ->
             def r = instance("""$annotation
@@ -1126,5 +1130,40 @@ final class PackedClosuresTransformTest {
         r = s.inList(twice)[0]; r.delegate = 'd'
         assertEquals(7, r(3))
         assertEquals(7, s.local(twice, 3))
+    }
+
+    // GROOVY-12656
+    @Test
+    void namedCompositionMethodsEscapeWhereTheCompositionDoes() {
+        // andThen and compose are the named forms of >> and <<, and andThenSelf and composeSelf
+        // compose the receiver with itself; each result keeps the literal, so the literal escapes
+        // wherever the result does. The same composition only called in the method still packs.
+        ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { mode ->
+            String src = """class Holder { Closure handler }
+                @groovy.transform.PackedClosures $mode
+                class E {
+                    void andThen(Holder h, Closure c) { h.handler = c.andThen { Integer x -> x + 1 } }  // property, argument
+                    Closure compose(Closure c)        { { Integer x -> x + 1 }.compose(c) }             // implicit return, receiver
+                    Closure andThenSelf()             { return { Integer x -> x + 1 }.andThenSelf() }   // returned
+                    List composeSelf()                { [{ Integer x -> x + 1 }.composeSelf(2)] }       // list literal
+                    int local(Closure c, int n)       { (int) c.andThen({ Integer x -> x + 1 })(n) }    // -> packs
+                }"""
+            String name = mode ?: 'dynamic'
+            def names = generatedClassNames(src)
+            assertEquals(4, closureClassCount(names), "[$name] named composition escapes should be declined: $names")
+
+            def (e, h) = instance(src + '\n [new E(), new Holder()]')
+            Closure twice = { x -> x * 2 }
+            e.andThen(h, twice)
+            [h.handler, e.compose(twice)].each {
+                it.delegate = 'd'                        // no packed-adapter guard
+                assertEquals(7, it(3))                   // twice, then + 1
+            }
+            def r = e.andThenSelf(); r.delegate = 'd'
+            assertEquals(5, r(3))
+            r = e.composeSelf()[0]; r.delegate = 'd'
+            assertEquals(6, r(3))                        // + 1 three times
+            assertEquals(7, e.local(twice, 3))
+        }
     }
 }
