@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import groovy.transform.Internal;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -38,6 +39,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 
 /**
@@ -50,7 +52,10 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
  * @see AsmClassGenerator#isInSameRuntimePackage(ClassNode, ClassNode)
  * @since 7.0.0
  */
+@Internal
 public final class RuntimePackageCheck {
+
+    private static final String USE_COMPILE_DYNAMIC = "Use @CompileDynamic to reach it through the meta-class";
 
     private RuntimePackageCheck() {
     }
@@ -58,6 +63,12 @@ public final class RuntimePackageCheck {
     /**
      * Checks a call of a constructor. There is no subclass rule for {@code new}:
      * only {@code super(...)} can call a protected constructor from a subclass.
+     * <p>
+     * A {@code super(...)} call without a source position in a generated
+     * constructor, as {@code @InheritConstructors} adds for each constructor of
+     * the superclass, is not reported: it fails only if that constructor is called.
+     * Dynamic code calls a super constructor without the meta-class too, so the
+     * report of such a call does not advise {@code @CompileDynamic}.
      *
      * @param controller the writer of the current class
      * @param ctor       the constructor that is called
@@ -65,9 +76,15 @@ public final class RuntimePackageCheck {
      * @param call       where to report it
      */
     public static void checkConstructor(final WriterController controller, final ConstructorNode ctor, final boolean superCall, final ASTNode call) {
-        if (isRefused(controller, ctor.getModifiers(), ctor.getDeclaringClass()) && !(superCall && ctor.isProtected())) {
-            report(controller, "call", ctor.isProtected(), "constructor", ctor.getDeclaringClass(), call);
+        if (isRefused(controller, ctor.getModifiers(), ctor.getDeclaringClass()) && !(superCall && (ctor.isProtected() || isGeneratedCall(controller, call)))) {
+            report(controller, "call", ctor.isProtected(), "constructor", ctor.getDeclaringClass(), call,
+                    superCall ? "A super constructor call fails at run time in dynamic code too" : USE_COMPILE_DYNAMIC);
         }
+    }
+
+    private static boolean isGeneratedCall(final WriterController controller, final ASTNode call) {
+        ConstructorNode current = controller.getConstructorNode();
+        return call.getLineNumber() < 1 && current != null && isGenerated(current);
     }
 
     /**
@@ -103,7 +120,7 @@ public final class RuntimePackageCheck {
     public static void checkMethod(final WriterController controller, final MethodNode method, final ClassNode receiverType, final ASTNode call) {
         if (isRefused(controller, method.getModifiers(), method.getDeclaringClass())
                 && !isProtectedAccessOfSubclass(controller, method.isProtected(), method.isStatic(), method.getDeclaringClass(), receiverType)) {
-            report(controller, "call", method.isProtected(), "method " + method.getName(), method.getDeclaringClass(), call);
+            report(controller, "call", method.isProtected(), "method " + method.getName(), method.getDeclaringClass(), call, USE_COMPILE_DYNAMIC);
         }
     }
 
@@ -118,7 +135,7 @@ public final class RuntimePackageCheck {
     public static void checkField(final WriterController controller, final FieldNode field, final ClassNode receiverType, final ASTNode expression) {
         if (isRefused(controller, field.getModifiers(), field.getDeclaringClass())
                 && !isProtectedAccessOfSubclass(controller, field.isProtected(), field.isStatic(), field.getDeclaringClass(), receiverType)) {
-            report(controller, "access", field.isProtected(), "field " + field.getName(), field.getDeclaringClass(), expression);
+            report(controller, "access", field.isProtected(), "field " + field.getName(), field.getDeclaringClass(), expression, USE_COMPILE_DYNAMIC);
         }
     }
 
@@ -148,10 +165,10 @@ public final class RuntimePackageCheck {
             : Boolean.TRUE.equals(sourceUnit.getAST().getUnit().getNodeMetaData(CompilerConfiguration.RUNTIME_PACKAGE_CHECK));
     }
 
-    private static void report(final WriterController controller, final String action, final boolean isProtected, final String member, final ClassNode declaringClass, final ASTNode node) {
+    private static void report(final WriterController controller, final String action, final boolean isProtected, final String member, final ClassNode declaringClass, final ASTNode node, final String advice) {
         String message = "Cannot " + action + " " + (isProtected ? "protected" : "package-private") + " " + member + " of " + declaringClass.toString(false)
                 + " from class " + controller.getClassNode().toString(false) + ": " + declaringClass.getNameWithoutPackage() + " is defined by another class loader,"
-                + " so the JVM refuses this access. Use @CompileDynamic to reach it through the meta-class";
+                + " so the JVM refuses this access. " + advice;
         int line = node.getLineNumber(), column = node.getColumnNumber();
         if (line < 1) { // a synthetic node: fall back to the current statement
             line = controller.getLineNumber();
