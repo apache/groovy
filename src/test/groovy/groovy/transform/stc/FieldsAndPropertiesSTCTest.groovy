@@ -2087,8 +2087,10 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     void testPrivateFieldOfSuperclassViaInnerSubclassOrDeclaringClass() {
         assertScript '''
             class Base {
-                private String z = 'x'
+                private String z
+                Base(String z) { this.z = z }
                 class Sub extends Base {
+                    Sub() { super('sub') }
                     def m1() { this.z }
                     def m2() { z }
                     def m3() { super.z }
@@ -2097,6 +2099,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     def m6() { z = 'y'; z }
                 }
                 static class Nested extends Base {
+                    Nested() { super('nested') }
                 }
                 static List test(Nested nested) {
                     def c = { -> nested.z }
@@ -2104,11 +2107,11 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
                 List test() {
                     def sub = new Sub()
-                    [sub.m1(), sub.m2(), sub.m3(), sub.m4(), sub.m5(), sub.m6()]
+                    [sub.m1(), sub.m2(), sub.m3(), sub.m4(), sub.m5(), sub.m6(), z]
                 }
             }
-            assert new Base().test() == ['x', 'x', 'x', 'x', 'x', 'y']
-            assert Base.test(new Base.Nested()) == ['x', 'x']
+            assert new Base('outer').test() == ['outer', 'outer', 'outer', 'outer', 'outer', 'y', 'y']
+            assert Base.test(new Base.Nested()) == ['nested', 'nested']
         '''
     }
 
