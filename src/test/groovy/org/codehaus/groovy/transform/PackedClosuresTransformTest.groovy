@@ -708,9 +708,10 @@ final class PackedClosuresTransformTest {
         assertEquals(42, instance(src + '\n new C()').result)
     }
 
+    // GROOVY-12653
     @Test
     void captureWrittenAfterTheLiteralInAConstructorOrInitializerIsShared() {
-        // GROOVY-12653: a capture written anywhere in the constructor -- here after the literal --
+        // a capture written anywhere in the constructor -- here after the literal --
         // is threaded as the shared Reference, not copied by value when the literal is created
         ['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'].each { annotation ->
             def r = instance("""$annotation
