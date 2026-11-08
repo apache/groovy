@@ -147,4 +147,91 @@ final class Groovy10657 {
             assert typed == ["rhs"]
         '''
     }
+
+    @Test
+    void testElvisSubscriptReleasesReceiver() {
+        assertScript HARNESS + '''
+            boolean releases() {
+                byte[] payload = new byte[1 << 20]
+                def ref = new WeakReference(payload)
+                def list = [payload]
+                list[0] ?= "kept"
+                list = null
+                payload = null
+                return awaitCollected(ref)
+            }
+            assert releases()
+        '''
+    }
+
+    @Test
+    void testCompoundSubscriptReleasesResult() {
+        assertScript HARNESS + '''
+            class Cell {
+                Object plus(Object other) { other }
+            }
+            class Box {
+                Cell cell = new Cell()
+                Object stored
+                Object getAt(int i) { cell }
+                void putAt(int i, Object value) { stored = value }
+            }
+
+            boolean releases() {
+                byte[] payload = new byte[1 << 20]
+                def ref = new WeakReference(payload)
+                def box = new Box()
+                assert (box[0] += payload) === payload
+                assert box.stored === payload
+                payload = null
+                box.stored = null
+                return awaitCollected(ref)
+            }
+            assert releases()
+        '''
+    }
+
+    @Test
+    void testPostfixSubscriptReleasesReceiver() {
+        assertScript HARNESS + '''
+            class Item {
+                byte[] payload
+                Item next() { this }
+            }
+            class Box {
+                Object value
+                Object getAt(int i) { value }
+                void putAt(int i, Object v) { value = v }
+            }
+
+            boolean releases() {
+                byte[] payload = new byte[1 << 20]
+                def ref = new WeakReference(payload)
+                def box = new Box(value: new Item(payload: payload))
+                payload = null
+                box[0]++
+                box = null
+                return awaitCollected(ref)
+            }
+            assert releases()
+        '''
+    }
+
+    @Test
+    void testArrayExpressionAssignmentReleasesRhs() {
+        assertScript HARNESS + '''
+            boolean releases() {
+                Object[] array = new Object[1]
+                byte[] payload = new byte[1 << 20]
+                def ref = new WeakReference(payload)
+                def kept = (array[0] = payload)
+                assert kept === payload
+                payload = null
+                kept = null
+                array[0] = null
+                return awaitCollected(ref)
+            }
+            assert releases()
+        '''
+    }
 }
