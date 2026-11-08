@@ -55,8 +55,10 @@ public final class LazyQueryable<T> implements Queryable<T> {
     /**
      * Returns a query that calls {@code body} the first time it is used.
      * {@code captured} is copied immediately, so later changes to the caller's
-     * locals are not visible. That matches a dynamic {@code GQ} expression, which
-     * binds those locals when the pipeline is built.
+     * locals are not visible. A local that the query itself writes is passed
+     * in that array as a one-element holder, so the write stays visible.
+     * That matches a dynamic {@code GQ} expression, which binds read-only
+     * locals when the pipeline is built.
      *
      * @param captured values read at the query expression; may be null or empty
      * @param body builds the pipeline from those values; invoked at most once
@@ -271,6 +273,71 @@ public final class LazyQueryable<T> implements Queryable<T> {
      */
     public Iterator<T> iterator() {
         return toList().iterator();
+    }
+
+    /**
+     * Same coercions as {@link QueryableCollection#asType(Class)}.
+     *
+     * @param type the requested type
+     * @return the coerced value
+     */
+    public Object asType(Class<?> type) {
+        if (type == LazyQueryable.class || type == Queryable.class) {
+            return this;
+        }
+        Queryable<T> built = unwrap();
+        if (built instanceof QueryableCollection<?> collection) {
+            return collection.asType(type);
+        }
+        return built;
+    }
+
+    /**
+     * Returns one materialized element.
+     *
+     * @param index the element index
+     * @return the element at that index
+     */
+    public T getAt(int index) {
+        return toList().get(index);
+    }
+
+    /**
+     * Compares the materialized elements with another query or collection.
+     *
+     * @param other the object to compare
+     * @return {@code true} when the materialized elements are equal
+     */
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+        Queryable<T> built = unwrap();
+        if (other instanceof LazyQueryable<?> lazy) {
+            return built.equals(lazy.unwrap());
+        }
+        return built.equals(other);
+    }
+
+    /**
+     * Returns the hash code of the materialized query.
+     *
+     * @return the hash code
+     */
+    @Override
+    public int hashCode() {
+        return unwrap().hashCode();
+    }
+
+    /**
+     * Returns the same text as the materialized query.
+     *
+     * @return the string form
+     */
+    @Override
+    public String toString() {
+        return String.valueOf(unwrap());
     }
 
     @Override

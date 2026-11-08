@@ -24,6 +24,8 @@ import org.apache.groovy.lang.annotation.GroovyABI;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -515,6 +517,42 @@ public interface Queryable<T> {
      * @since 4.0.0
      */
     List<T> toList();
+
+    /**
+     * Iterates the materialized elements. A static {@code for} loop calls this
+     * rather than wrapping the query as a single value.
+     *
+     * @return an iterator over the elements
+     * @since 7.0.0
+     */
+    default Iterator<T> iterator() {
+        return toList().iterator();
+    }
+
+    /**
+     * Coerces this query. Implementations that know the target type override it.
+     *
+     * @param type the requested type
+     * @return the coerced value
+     * @since 7.0.0
+     */
+    default Object asType(Class<?> type) {
+        if (type == Queryable.class || List.class == type || Collection.class == type || Iterable.class == type) {
+            return type == Queryable.class ? this : toList();
+        }
+        return this;
+    }
+
+    /**
+     * Returns one materialized element.
+     *
+     * @param index the element index
+     * @return the element at that index
+     * @since 7.0.0
+     */
+    default T getAt(int index) {
+        return toList().get(index);
+    }
 
     /**
      * Returns the count of elements of the {@link Queryable} instance

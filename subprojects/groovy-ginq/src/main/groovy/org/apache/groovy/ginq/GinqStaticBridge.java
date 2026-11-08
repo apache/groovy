@@ -26,19 +26,25 @@ import org.apache.groovy.ginq.provider.collection.runtime.Queryable;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PostfixExpression;
+import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
@@ -47,6 +53,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayDeque;
@@ -54,6 +61,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -70,6 +78,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.lambdaX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.indexX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
@@ -88,10 +97,11 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  * <p>
  * The helper is not called at the query expression. {@link LazyQueryable} calls it
  * the first time the query is read, so sources are not opened and grouping does
- * not run until then. Locals are copied when the expression is evaluated and that
- * copy is what the helper receives, matching a dynamic {@code GQ} expression.
- * Fields are read when the helper runs. {@code GQL} calls {@code toList}
- * immediately, so it still materializes at the expression.
+ * not run until then. A local that is only read is copied when the expression is
+ * evaluated. A local that the query writes is stored in a one-element array so
+ * the write updates the caller's variable. Fields are read when the helper runs.
+ * {@code GQL} calls {@code toList} immediately, so it still materializes at the
+ * expression.
  */
 final class GinqStaticBridge {
 
@@ -105,6 +115,7 @@ final class GinqStaticBridge {
     private static final ClassNode COMPILE_STATIC_TYPE = make(CompileStatic.class);
     private static final ClassNode TYPE_CHECKED_TYPE = make(TypeChecked.class);
     private static final ClassNode TYPE_CHECKING_MODE_TYPE = make(TypeCheckingMode.class);
+    private static final String ROW_CHECKS = "org.apache.groovy.ginq.GinqRowChecks";
     private static final String SEQ = "ginqQuerySeq";
     private static final Map<CompilationUnit, List<Pending>> PENDING =
             Collections.synchronizedMap(new IdentityHashMap<>());
@@ -134,12 +145,21 @@ final class GinqStaticBridge {
         }
 
         List<String> captured = capturedLocals(query, visibleLocals(host, call));
+        attachRowChecks(host);
+        Map<String, ClassNode> boxed = host.executable == null
+                ? Map.of()
+                : boxMutatedLocals(host.executable, query, captured);
         Parameter[] parameters = new Parameter[captured.size()];
         Expression[] arguments = new Expression[captured.size()];
         for (int i = 0; i < captured.size(); i++) {
             String name = captured.get(i);
-            parameters[i] = param(ClassHelper.dynamicType(), name);
-            arguments[i] = varX(name);
+            ClassNode boxedType = boxed.get(name);
+            parameters[i] = param(boxedType == null ? ClassHelper.dynamicType() : boxedType, name);
+            VariableExpression argument = varX(name);
+            if (boxedType != null) {
+                argument.setType(boxedType);
+            }
+            arguments[i] = argument;
         }
 
         ClassNode returnType = returnType(query);
@@ -188,6 +208,206 @@ final class GinqStaticBridge {
 
     private static boolean isQueryable(ClassNode type) {
         return type != null && Queryable.class.getName().equals(type.getName());
+    }
+
+    /**
+     * A class that contains a query needs dynamic access to an untyped row
+     * ({@code row.powerOfN}, {@code row[0]}, {@code it.toList()}). The extension
+     * is attached to that class only.
+     */
+    private static void attachRowChecks(Host host) {
+        // Class-level annotation: the type checker activates those extensions for
+        // every method of this class. A method-only annotation is not consulted
+        // when the class annotation already selects static checking.
+        AnnotatedNode carrier = host.owner != null ? host.owner : host.executable;
+        if (carrier == null) {
+            return;
+        }
+        AnnotationNode checking = checkingAnnotation(carrier);
+        if (checking == null && host.executable != null) {
+            carrier = host.executable;
+            checking = checkingAnnotation(carrier);
+        }
+        if (checking == null || isSkip(checking)) {
+            return;
+        }
+        Expression existing = checking.getMember("extensions");
+        if (existing == null) {
+            checking.addMember("extensions", constX(ROW_CHECKS));
+            return;
+        }
+        if (existing instanceof ConstantExpression constant) {
+            if (ROW_CHECKS.equals(String.valueOf(constant.getValue()))) {
+                return;
+            }
+            ListExpression list = new ListExpression();
+            list.addExpression(constant);
+            list.addExpression(constX(ROW_CHECKS));
+            checking.setMember("extensions", list);
+            return;
+        }
+        if (existing instanceof ListExpression list) {
+            List<Expression> copy = new ArrayList<>(list.getExpressions());
+            for (Expression item : copy) {
+                if (item instanceof ConstantExpression constant && ROW_CHECKS.equals(String.valueOf(constant.getValue()))) {
+                    return;
+                }
+            }
+            copy.add(constX(ROW_CHECKS));
+            checking.setMember("extensions", new ListExpression(copy));
+        }
+    }
+
+    private static AnnotationNode checkingAnnotation(AnnotatedNode node) {
+        if (node == null) {
+            return null;
+        }
+        for (AnnotationNode annotation : node.getAnnotations()) {
+            String simple = simpleName(annotation.getClassNode());
+            if ("CompileStatic".equals(simple) || "TypeChecked".equals(simple) || "CompileDynamic".equals(simple)) {
+                return annotation;
+            }
+        }
+        return null;
+    }
+
+    private static String simpleName(ClassNode type) {
+        String raw = type.getName();
+        int dot = raw.lastIndexOf('.');
+        return dot < 0 ? raw : raw.substring(dot + 1);
+    }
+
+    /**
+     * Locals written by the query ({@code cnt++}) are rewritten to a one-element
+     * array so the helper and the caller share the value. Read-only locals are
+     * left as value copies. Queries that have not been lowered yet are not rewritten.
+     *
+     * @return the array type of each boxed local
+     */
+    private static Map<String, ClassNode> boxMutatedLocals(MethodNode method, Expression query, List<String> captured) {
+        Map<String, ClassNode> boxed = new HashMap<>();
+        if (method.getCode() == null) {
+            return boxed;
+        }
+        Set<String> mutated = new LinkedHashSet<>();
+        query.visit(new CodeVisitorSupport() {
+            private void consider(Expression expression) {
+                if (expression instanceof VariableExpression variable && captured.contains(variable.getName())) {
+                    mutated.add(variable.getName());
+                }
+            }
+
+            @Override
+            public void visitPostfixExpression(PostfixExpression expression) {
+                consider(expression.getExpression());
+                super.visitPostfixExpression(expression);
+            }
+
+            @Override
+            public void visitPrefixExpression(PrefixExpression expression) {
+                consider(expression.getExpression());
+                super.visitPrefixExpression(expression);
+            }
+
+            @Override
+            public void visitBinaryExpression(BinaryExpression expression) {
+                if (Types.isAssignment(expression.getOperation().getType())) {
+                    consider(expression.getLeftExpression());
+                }
+                super.visitBinaryExpression(expression);
+            }
+        });
+        if (mutated.isEmpty()) {
+            return boxed;
+        }
+        ClassCodeExpressionTransformer transformer = new ClassCodeExpressionTransformer() {
+            @Override
+            protected SourceUnit getSourceUnit() {
+                return null;
+            }
+
+            private Expression cell(String name) {
+                VariableExpression base = varX(name);
+                ClassNode array = boxed.get(name);
+                if (array != null) {
+                    base.setType(array);
+                }
+                base.putNodeMetaData("ginq.boxBase", Boolean.TRUE);
+                return indexX(base, constX(0));
+            }
+
+            private boolean boxedBase(Expression expression) {
+                return expression instanceof VariableExpression variable
+                        && Boolean.TRUE.equals(variable.getNodeMetaData("ginq.boxBase"));
+            }
+
+            @Override
+            public Expression transform(Expression expression) {
+                if (expression instanceof ClosureExpression closure) {
+                    // ClosureExpression.transformExpression does not walk the body.
+                    closure.visit(this);
+                    return closure;
+                }
+                if (expression instanceof MethodCallExpression call) {
+                    String called = call.getMethodAsString();
+                    if ("GQ".equals(called) || "GQL".equals(called)) {
+                        // A query that has not been lowered yet still has to be parsed by the macro.
+                        call.setObjectExpression(transform(call.getObjectExpression()));
+                        return call;
+                    }
+                }
+                if (expression instanceof DeclarationExpression declaration) {
+                    VariableExpression variable = declaration.getVariableExpression();
+                    if (variable != null && mutated.contains(variable.getName()) && !variable.getOriginType().isArray()) {
+                        ClassNode component = arrayComponent(variable.getOriginType());
+                        ClassNode array = component.makeArray();
+                        VariableExpression declared = new VariableExpression(variable.getName(), array);
+                        declared.setModifiers(variable.getModifiers());
+                        declared.setSourcePosition(variable);
+                        declaration.setLeftExpression(declared);
+                        boxed.put(variable.getName(), array);
+                        Expression init = transform(declaration.getRightExpression());
+                        declaration.setRightExpression(new ArrayExpression(component, new ArrayList<>(List.of(init == null ? constX(0) : init))));
+                        return declaration;
+                    }
+                }
+                if (expression instanceof PostfixExpression postfix && !boxedBase(postfix.getExpression())
+                        && postfix.getExpression() instanceof VariableExpression variable && mutated.contains(variable.getName())) {
+                    return new PostfixExpression(cell(variable.getName()), postfix.getOperation());
+                }
+                if (expression instanceof PrefixExpression prefix && !boxedBase(prefix.getExpression())
+                        && prefix.getExpression() instanceof VariableExpression variable && mutated.contains(variable.getName())) {
+                    return new PrefixExpression(prefix.getOperation(), cell(variable.getName()));
+                }
+                if (expression instanceof BinaryExpression binary && Types.isAssignment(binary.getOperation().getType())
+                        && !(binary instanceof DeclarationExpression)
+                        && binary.getLeftExpression() instanceof VariableExpression variable && mutated.contains(variable.getName())) {
+                    binary.setLeftExpression(cell(variable.getName()));
+                    binary.setRightExpression(transform(binary.getRightExpression()));
+                    return binary;
+                }
+                if (expression instanceof VariableExpression variable && mutated.contains(variable.getName()) && !boxedBase(variable)) {
+                    return cell(variable.getName());
+                }
+                return super.transform(expression);
+            }
+        };
+        transformer.visitMethod(method);
+        // The lowered query is not attached to the method yet. Closure bodies
+        // are visited explicitly because ClosureExpression.transformExpression
+        // does not walk them.
+        transformer.transform(query);
+        return boxed;
+    }
+
+    private static ClassNode arrayComponent(ClassNode type) {
+        if (type != null && ClassHelper.isPrimitiveType(type)) {
+            return type;
+        }
+        if (type != null && ClassHelper.isNumberType(type)) {
+            return ClassHelper.getUnwrapper(type);
+        }
+        return ClassHelper.int_TYPE;
     }
 
     private static void schedule(CompilationUnit unit, ClassNode owner, MethodNode helper) {
