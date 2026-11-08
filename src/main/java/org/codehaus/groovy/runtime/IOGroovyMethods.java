@@ -49,11 +49,14 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.Formatter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -78,6 +81,11 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.callClosureForLin
 public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static final Logger LOG = Logger.getLogger(IOGroovyMethods.class.getName());
+
+    private static final Map<String, Class<?>> PRIMITIVE_CLASSES = Map.of(
+            "boolean", boolean.class, "byte", byte.class, "char", char.class, "short", short.class,
+            "int", int.class, "long", long.class, "float", float.class, "double", double.class,
+            "void", void.class);
 
     /**
      * Overloads the leftShift operator for Writer to allow an object to be written
@@ -270,10 +278,12 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Create an object input stream for this input stream using the given class loader.
+     * The class loader also resolves the interfaces of a serialized {@link Proxy}.
      * <p>
      * Classes named in the stream are resolved without running their static initializers,
      * matching how {@link ObjectInputStream} resolves them itself. A class that is actually
-     * deserialized is still initialized when its instance is created.
+     * deserialized is still initialized when its instance is created. Primitive types
+     * such as {@code int.class} resolve as they do for {@link ObjectInputStream}.
      *
      * @param inputStream an input stream
      * @param classLoader the class loader to use when loading the class
@@ -284,10 +294,53 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
     public static ObjectInputStream newObjectInputStream(InputStream inputStream, final ClassLoader classLoader) throws IOException {
         return new ObjectInputStream(inputStream) {
             @Override
+            protected Class<?> resolveProxyClass(String[] interfaces) throws IOException, ClassNotFoundException {
+                return loadProxyClass(interfaces, classLoader);
+            }
+
+            @Override
             protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
-                return Class.forName(desc.getName(), false, classLoader);
+                String name = desc.getName();
+                try {
+                    return Class.forName(name, false, classLoader);
+                } catch (ClassNotFoundException e) {
+                    // GROOVY-12676: Class.forName cannot load primitive types; ObjectInputStream maps them itself
+                    Class<?> primitive = PRIMITIVE_CLASSES.get(name);
+                    if (primitive == null) throw e;
+                    return primitive;
+                }
             }
         };
+    }
+
+    /**
+     * Mirrors {@link ObjectInputStream}'s own proxy class resolution, but loads the
+     * interfaces through the given class loader instead of the latest user-defined one.
+     */
+    private static Class<?> loadProxyClass(String[] interfaces, ClassLoader classLoader) throws ClassNotFoundException {
+        // GROOVY-12681: a proxy class must be defined where its non-public interfaces live
+        ClassLoader nonPublicLoader = null;
+        boolean hasNonPublicInterface = false;
+        Class<?>[] classes = new Class<?>[interfaces.length];
+        for (int i = 0; i < interfaces.length; i += 1) {
+            Class<?> c = Class.forName(interfaces[i], false, classLoader);
+            if (!Modifier.isPublic(c.getModifiers())) {
+                if (!hasNonPublicInterface) {
+                    nonPublicLoader = c.getClassLoader();
+                    hasNonPublicInterface = true;
+                } else if (nonPublicLoader != c.getClassLoader()) {
+                    throw new IllegalAccessError("conflicting non-public interface class loaders");
+                }
+            }
+            classes[i] = c;
+        }
+        try {
+            @SuppressWarnings("deprecation") // Proxy.getProxyClass is what ObjectInputStream itself uses
+            Class<?> proxyClass = Proxy.getProxyClass(hasNonPublicInterface ? nonPublicLoader : classLoader, classes);
+            return proxyClass;
+        } catch (IllegalArgumentException e) {
+            throw new ClassNotFoundException(null, e);
+        }
     }
 
     /**

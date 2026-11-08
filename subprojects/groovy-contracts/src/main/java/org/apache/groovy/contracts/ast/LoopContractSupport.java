@@ -20,9 +20,13 @@ package org.apache.groovy.contracts.ast;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.DynamicVariable;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
@@ -33,6 +37,8 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.StaticImportVisitor;
+import org.codehaus.groovy.control.messages.WarningMessage;
+import org.codehaus.groovy.syntax.SyntaxException;
 
 /**
  * Shared helper for the loop-level contract transforms ({@link LoopInvariantASTTransformation}
@@ -53,6 +59,32 @@ import org.codehaus.groovy.control.StaticImportVisitor;
 final class LoopContractSupport {
 
     private LoopContractSupport() {
+    }
+
+    /**
+     * Returns the closure given as a loop or method contract's value, or reports an error and returns {@code null} when
+     * the value is not a closure. The annotation type declares its value as a {@code Class}, so a class literal
+     * passes the annotation checks and the contract would otherwise be silently skipped.
+     */
+    static ClosureExpression contractClosure(final AnnotationNode annotation, final SourceUnit source) {
+        Expression value = annotation.getMember("value");
+        if (value instanceof ClosureExpression closure) return closure;
+        if (value != null) {
+            String name = annotation.getClassNode().getNameWithoutPackage();
+            source.addError(new SyntaxException(
+                    "@" + name + " requires a closure containing the condition, e.g. @" + name + "({ ... }); found "
+                            + (value instanceof ClassExpression ? "a class " : "") + value.getText(),
+                    annotation.getLineNumber(), annotation.getColumnNumber()));
+        }
+        return null;
+    }
+
+    /**
+     * Warns, at the default warning level, that a loop or method contract will not be checked.
+     */
+    static void warn(final AnnotationNode annotation, final SourceUnit source, final String text) {
+        source.addWarning(WarningMessage.LIKELY_ERRORS,
+                "@" + annotation.getClassNode().getNameWithoutPackage() + text, annotation);
     }
 
     /**

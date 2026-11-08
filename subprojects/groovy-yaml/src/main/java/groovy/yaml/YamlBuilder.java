@@ -18,13 +18,14 @@
  */
 package groovy.yaml;
 
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import groovy.json.JsonBuilder;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.Writable;
 import org.apache.groovy.yaml.util.YamlConverter;
+import tools.jackson.core.JacksonException;
+import tools.jackson.dataformat.yaml.YAMLMapper;
+import tools.jackson.dataformat.yaml.YAMLWriteFeature;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -39,6 +40,11 @@ import java.util.Map;
  *  @since 3.0.0
  */
 public class YamlBuilder extends GroovyObjectSupport implements Writable {
+    // YAMLMapper is thread-safe once built, so a single shared instance is reused
+    private static final YAMLMapper MAPPER = YamlSlurper.mapperBuilder()
+            .disable(YAMLWriteFeature.WRITE_DOC_START_MARKER)
+            .build();
+
     private final JsonBuilder jsonBuilder;
 
     /**
@@ -58,10 +64,8 @@ public class YamlBuilder extends GroovyObjectSupport implements Writable {
      */
     public static String toYaml(Object object) {
         try {
-            return YamlSlurper.mapper(new YAMLFactory()
-                            .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER))
-                    .writeValueAsString(object);
-        } catch (IOException e) {
+            return MAPPER.writeValueAsString(object);
+        } catch (JacksonException e) {
             throw new YamlRuntimeException(e);
         }
     }
