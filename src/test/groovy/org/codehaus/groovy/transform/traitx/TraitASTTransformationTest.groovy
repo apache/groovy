@@ -4340,6 +4340,104 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-12598
+    @CompileModesTest
+    void testTraitPropertyInDelegateOnlyClosure(String mode) {
+        assertScript shell, """
+            class H {
+                static <V> V only(Map map, @DelegatesTo(value=Map, strategy=Closure.DELEGATE_ONLY) Closure<V> block) {
+                    block.resolveStrategy = Closure.DELEGATE_ONLY
+                    block.delegate = map
+                    block()
+                }
+            }
+            $mode
+            trait T {
+                def cnt = 1
+                def read() {
+                    H.only([cnt: 42]) { cnt }
+                }
+                def write() {
+                    def map = [cnt: 42]
+                    H.only(map) { cnt = 5 }
+                    [map.cnt, cnt]
+                }
+            }
+            $mode
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.read() == 42
+            assert c.write() == [5, 1]
+        """
+    }
+
+    // GROOVY-12598
+    @CompileModesTest
+    void testTraitPropertyInDelegateOnlyClosureNotOnDelegate(String mode) {
+        def err = shouldFail shell, """
+            class H {
+                static <V> V only(@DelegatesTo(value=Object, strategy=Closure.DELEGATE_ONLY) Closure<V> block) {
+                    block.resolveStrategy = Closure.DELEGATE_ONLY
+                    block.delegate = new Object()
+                    block()
+                }
+            }
+            $mode
+            trait T {
+                def cnt = 1
+                def read() {
+                    H.only { cnt }
+                }
+            }
+            $mode
+            class C implements T {
+            }
+
+            new C().read()
+        """
+        if (mode == '@CompileDynamic') {
+            assert err instanceof MissingPropertyException
+            assert err.message.contains('No such property: cnt for class: java.lang.Object')
+        } else {
+            assert err.message.contains('The variable [cnt] is undeclared')
+        }
+    }
+
+    // GROOVY-12598
+    @CompileModesTest
+    void testTraitPropertyInOwnerOnlyClosure(String mode) {
+        assertScript shell, """
+            class H {
+                static <V> V only(Map map, @DelegatesTo(value=Map, strategy=Closure.OWNER_ONLY) Closure<V> block) {
+                    block.resolveStrategy = Closure.OWNER_ONLY
+                    block.delegate = map
+                    block()
+                }
+            }
+            $mode
+            trait T {
+                def cnt = 1
+                def read() {
+                    H.only([cnt: 42]) { cnt }
+                }
+                def write() {
+                    def map = [cnt: 42]
+                    H.only(map) { cnt = 5 }
+                    [map.cnt, cnt]
+                }
+            }
+            $mode
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.read() == 1
+            assert c.write() == [42, 5]
+        """
+    }
+
     // GROOVY-8000
     @Test
     void testTraitMultiLevelGenerics() {
