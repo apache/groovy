@@ -111,8 +111,12 @@ public class LoopVariantASTTransformation implements ASTTransformation, Compilat
         if (!(nodes[0] instanceof AnnotationNode annotation)) return;
         if (!(nodes[1] instanceof LoopingStatement loopStatement)) return;
 
-        Expression value = annotation.getMember("value");
-        if (!(value instanceof ClosureExpression closureExpression)) return;
+        ClosureExpression closureExpression = LoopContractSupport.contractClosure(annotation, source);
+        if (closureExpression == null) return;
+        if (closureExpression.getCode().isEmpty()) {
+            LoopContractSupport.warn(annotation, source, "({}) on a loop has no variant, so nothing is checked");
+            return;
+        }
 
         Expression variantExpression = extractExpression(closureExpression);
         if (variantExpression == null) return;
