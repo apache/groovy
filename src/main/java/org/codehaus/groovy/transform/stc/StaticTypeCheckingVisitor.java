@@ -3570,7 +3570,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 if (isStringType(inferredReturnType) && isGStringOrGStringStringLUB(type)) {
                     type = STRING_TYPE; // GROOVY-9971: convert GString to String at point of return
                 } else if (statement.isReturningNullOrVoid() ? !isPrimitiveType(inferredReturnType) // GROOVY-7713, GROOVY-8202
-                     : GenericsUtils.buildWildcardType(wrapTypeIfNecessary(inferredReturnType)).isCompatibleWith(wrapTypeIfNecessary(type))) {
+                     : isCovariantReturn(inferredReturnType, type)) {
                     type = inferredReturnType; // GROOVY-8310, GROOVY-10082, GROOVY-10091, GROOVY-10128, GROOVY-10306: allow simple covariance
                 } else if (!statement.isReturningNullOrVoid() && isPrimitiveType(inferredReturnType)
                         && checkReturnValue(inferredReturnType, type, expression, statement)) {
@@ -3634,6 +3634,16 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             addPrecisionErrors(target.redirect(), target, type, value);
         }
         return true;
+    }
+
+    /**
+     * Checks that a value fits a target type without conversion: the (boxed) type of the value must
+     * be the target type or a subtype of it, with compatible type arguments. Closures and lambdas use
+     * this for the type of their return statements; method pointers and method references use it for
+     * the return type of the referenced method when the functional interface returns a reference type.
+     */
+    private static boolean isCovariantReturn(final ClassNode target, final ClassNode type) {
+        return GenericsUtils.buildWildcardType(wrapTypeIfNecessary(target)).isCompatibleWith(wrapTypeIfNecessary(type));
     }
 
     /**
@@ -3955,9 +3965,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 // GROOVY-10858: check method return type
                 if (isSAMType(targetSAM)) {
                     ClassNode samReturnType = GenericsUtils.parameterizeSAM(targetSAM).getV2();
-                    // GROOVY-12607: a reference type takes the value unconverted, from any overload that returns a compatible type
+                    // GROOVY-12607: a reference type takes the value unconverted, from any overload that returns a compatible type;
+                    // not its type arguments, which for an argument of a generic method may be bounds standing in for type parameters
                     if (isPrimitiveType(samReturnType) ? !isPrimitiveVoid(samReturnType) && !returnType.isGenericsPlaceHolder() && !checkReturnValue(samReturnType, returnType, expression, null)
-                            : returnTypes.stream().noneMatch(type -> type.isGenericsPlaceHolder() || isCompatibleReturnType(samReturnType, type))) { // TODO: ext.handleIncompatibleReturnType
+                            : returnTypes.stream().noneMatch(type -> type.isGenericsPlaceHolder() || isCovariantReturn(samReturnType.getPlainNodeReference(), type))) { // TODO: ext.handleIncompatibleReturnType
                         addStaticTypeError("Invalid return type: " + prettyPrintType(returnType) + " is not convertible to " + prettyPrintType(samReturnType), expression);
                     }
                 }
@@ -4043,17 +4054,6 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
         ClassNode resolved = applyGenericsContext(spec, returnType);
         return resolved.isGenericsPlaceHolder() ? returnType : resolved;
-    }
-
-    /**
-     * Checks the return type of a method referenced by a method pointer or method
-     * reference against the return type of the target functional interface. The
-     * value is not converted, so a reference type must be a supertype of the
-     * (boxed) return type; for example, {@code int} does not fit {@code String}.
-     */
-    private static boolean isCompatibleReturnType(final ClassNode samReturnType, final ClassNode returnType) {
-        if (!checkCompatibleAssignmentTypes(samReturnType, returnType, null, false)) return false;
-        return samReturnType.isGenericsPlaceHolder() || implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(returnType), samReturnType);
     }
 
     private static Expression typedValueExpression(final ClassNode type) {
