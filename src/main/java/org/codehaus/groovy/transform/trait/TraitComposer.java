@@ -355,7 +355,9 @@ public abstract class TraitComposer {
                 stmt(castRequired ? castX(returnType, mce) : mce)
         );
         List<AnnotationNode> copied = new LinkedList<>();
-        List<AnnotationNode> notCopied = Collections.emptyList(); // at this point, should *always* stay empty
+        // an annotation with a closure member is not copied: the closure is still a ClosureExpression here (the
+        // compiler turns it into a class only at class generation), so the list must accept it
+        List<AnnotationNode> notCopied = new LinkedList<>();
         GeneralUtils.copyAnnotatedNodeAnnotations(helperMethod, copied, notCopied);
         if (!copied.isEmpty()) {
             forwarder.addAnnotations(copied);
