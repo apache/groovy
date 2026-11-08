@@ -205,8 +205,8 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             if (pexp.isImplicitThis() || "this".equals(obj)) {
                 String propName = pexp.getPropertyAsString();
                 if (knownFields.contains(propName)) {
-                    FieldNode fn = new FieldNode(propName, 0, ClassHelper.OBJECT_TYPE, weaved.getOriginType(), null);
-                    return transformFieldReference(exp, fn, null);
+                    // GROOVY-12587: use the declared field, so a static one is read through the implementing class
+                    return transformFieldReference(exp, traitClass.getDeclaredField(propName), null);
                 }
             }
         } else if (exp instanceof ClosureExpression) {
