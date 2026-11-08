@@ -3151,6 +3151,65 @@ final class InnerClassTest {
         """
     }
 
+    // GROOVY-12517: Outer inherits the members, and the statically compiled subclass has no super$ methods for them
+    @ParameterizedTest
+    @ValueSource(strings=['', '@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic'])
+    void testQualifiedSuperOfOuterClassWithInstanceOfStaticallyCompiledSubclass(String mode) {
+        assertScript """
+            class Base {
+                String p = 'p:base'
+                String m() { 'm:base' }
+            }
+            $mode
+            class Outer extends Base {
+                class In {
+                    List test() {
+                        List read = [Outer.super.m(), Outer.super.p, { -> Outer.super.m() + ',' + Outer.super.p }()]
+                        read << new Object() { String toString() { Outer.super.m() } }.toString()
+                        Outer.super.p = 'p:w'
+                        read + [Outer.super.p]
+                    }
+                }
+            }
+            @groovy.transform.CompileStatic
+            class Sub extends Outer {
+                String m() { 'm:sub' }
+                String getP() { 'p:sub' }
+                void setP(String p) { super.setP('p:sub') }
+            }
+            assert new Outer.In(new Sub()).test() == ['m:base', 'p:base', 'm:base,p:base', 'm:base', 'p:w']
+        """
+    }
+
+    // GROOVY-12517: a dynamic Outer has the super$ methods that a statically compiled inner class calls
+    @Test
+    void testQualifiedSuperOfDynamicOuterClassFromStaticallyCompiledInnerClass() {
+        assertScript '''
+            class Base {
+                String p = 'p:base'
+                String m(String x) { 'm:base:' + x }
+            }
+            class Outer extends Base {
+                @groovy.transform.CompileStatic
+                class In {
+                    List test() {
+                        List read = [Outer.super.p, Outer.super.m('a'), { -> Outer.super.m('b') }()]
+                        Outer.super.p = 'p:w'
+                        read + [Outer.super.p]
+                    }
+                }
+            }
+            @groovy.transform.CompileStatic
+            class Sub extends Outer {
+                String m(String x) { 'm:sub' }
+                String getP() { 'p:sub' }
+                void setP(String p) { super.setP('p:sub') }
+            }
+            assert new Outer.In(new Outer()).test() == ['p:base', 'm:base:a', 'm:base:b', 'p:w']
+            assert new Outer.In(new Sub()).test() == ['p:base', 'm:base:a', 'm:base:b', 'p:w']
+        '''
+    }
+
     // GROOVY-12517
     @Test
     void testQualifiedSuperOfOuterClassWithoutEnclosingInstance() {
