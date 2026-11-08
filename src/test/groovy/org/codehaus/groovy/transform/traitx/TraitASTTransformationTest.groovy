@@ -2420,6 +2420,88 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-12587
+    @CompileModesTest
+    void testTraitStaticPropertyThroughThis(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static boolean flag = true
+                static boolean sm() { this.flag }
+                boolean im() { this.flag }
+            }
+            $mode
+            class C implements T {
+            }
+
+            $mode void m() {
+                assert C.sm()
+                assert new C().im()
+            }
+            m()
+        """
+
+        assertScript shell, """
+            $mode
+            trait T {
+                static boolean flag = true
+                static int count = 0
+                static String label = 'x'
+                static void update() {
+                    this.flag = false
+                    this.count += 1
+                    this.label = this.label + 'y'
+                }
+                void instanceUpdate() {
+                    this.count = this.count + 10
+                    this.label += 'z'
+                }
+                static int labelLength() { this.label.length() }
+                int instanceLabelLength() { this.label.size() }
+            }
+            $mode
+            class C implements T {
+            }
+            $mode
+            class D implements T {
+            }
+
+            $mode void m() {
+                C.update()
+                assert !C.flag && C.count == 1 && C.label == 'xy'
+                new C().instanceUpdate()
+                assert C.count == 11 && C.label == 'xyz'
+                assert C.labelLength() == 3 && new C().instanceLabelLength() == 3
+                assert D.flag && D.count == 0 && D.label == 'x'
+                assert D.labelLength() == 1 && new D().instanceLabelLength() == 1
+            }
+            m()
+        """
+
+        assertScript shell, """
+            $mode
+            trait T {
+                private static int count = 1
+                public static int VAL = 2
+                static int sumInClosure() { def c = { -> this.count + this.VAL }; c() }
+                int instanceSumInClosure() { def c = { -> this.count + this.VAL }; c() }
+                static int sumInLambda() { java.util.function.IntSupplier s = () -> this.count + this.VAL; s.getAsInt() }
+                int instanceSumInLambda() { java.util.function.IntSupplier s = () -> this.count + this.VAL; s.getAsInt() }
+            }
+            $mode
+            class C implements T {
+            }
+
+            $mode void m() {
+                assert C.sumInClosure() == 3
+                assert new C().instanceSumInClosure() == 3
+                assert C.sumInLambda() == 3
+                assert new C().instanceSumInLambda() == 3
+            }
+            m()
+        """
+    }
+
     @Test
     void testTraitMethodShouldBeDefaultImplementationUsingReflection() {
         assertScript shell, '''
@@ -2671,6 +2753,64 @@ final class TraitASTTransformationTest {
         '''
 
         assert err.message =~ 'Prefix expressions on trait fields/properties are not supported in traits'
+    }
+
+    // GROOVY-12603
+    @CompileModesTest
+    void testCompoundAssignmentOfTraitFieldInClosure(String mode) {
+        assertScript shell, """
+            import java.util.function.Consumer
+
+            $mode
+            trait T {
+                private int a = 1
+                public  int b = 1
+                static  int c = 1
+                def m() {
+                    [1].each { a += 2 }
+                    [1].each { b *= 3 }
+                    [1].each { c -= 1 }
+                    Consumer<Integer> f = (Integer i) -> { a += i; b -= i; c += i }
+                    f.accept(10)
+                    [1].each { a = a + 1 }
+                    [a, b, c]
+                }
+                static sm() {
+                    [1].each { c += 2 }
+                    Consumer<Integer> f = (Integer i) -> { c *= i }
+                    f.accept(3)
+                    c
+                }
+            }
+            class C implements T {
+            }
+
+            assert new C().m() == [14, -7, 10]
+            assert C.sm() == 36
+        """
+    }
+
+    // GROOVY-12603
+    @ParameterizedTest
+    @ValueSource(strings=['x++','x--','++x','--x'])
+    void testPrefixOrPostfixOfTraitFieldInClosure(String op) {
+        String kind = op.startsWith('x') ? 'Postfix' : 'Prefix'
+        for (decl in [['private int x', ''], ['public int x', ''], ['static int x', ''], ['static int x', 'static']]) {
+            def err = shouldFail shell, """
+                import java.util.function.Consumer
+
+                trait T {
+                    ${decl[0]}
+                    ${decl[1]} def m() {
+                        [1].each { $op }
+                        Consumer<Integer> f = (Integer i) -> { $op }
+                        f.accept(1)
+                        x
+                    }
+                }
+            """
+            assert err.message.count("$kind expressions on trait fields/properties are not supported in traits") == 2
+        }
     }
 
     // GROOVY-6691
@@ -4433,5 +4573,190 @@ final class TraitASTTransformationTest {
             def c = new C(); c.bump(); c.bump()
             assert c.count == 2
         '''
+    }
+
+    // GROOVY-12613
+    @CompileModesTest
+    void testCompoundAssignmentEvaluatesTargetOnce(String mode) {
+        assertScript shell, """
+            class Box { int v }
+            $mode
+            trait T {
+                int calls
+                Box box = new Box()
+                Box obj() { box }
+                String key() { calls += 1; 'k' }
+                def m() {
+                    List<Integer> list = [0, 0]
+                    int i = 0
+                    list[i++] += 1
+                    obj().v += 2
+                    obj().v -= 1
+                    Map<String, Integer> map = [k: 1]
+                    map[key()] += 3
+                    int x = 1
+                    x += 4
+                    Box other = new Box(v: 5)
+                    other.v *= 2
+                    [i, list, box.v, map, x, other.v, calls]
+                }
+                static sm() {
+                    List<Integer> list = [0, 0]
+                    int i = 0
+                    list[i++] += 1
+                    [i, list]
+                }
+            }
+            class C implements T {
+            }
+
+            assert new C().m() == [1, [1, 0], 1, [k: 4], 5, 10, 1]
+            assert C.sm() == [1, [1, 0]]
+        """
+    }
+
+    // GROOVY-12613
+    @CompileModesTest
+    void testCompoundAssignmentOfTraitFieldOrProperty(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                private int a = 1
+                public  int b = 1
+                static  int c = 1
+                int p = 1
+                def m() {
+                    a += 1
+                    b *= 3
+                    c -= 1
+                    p += 4
+                    this.a += 10
+                    this.b -= 1
+                    this.p *= 2
+                    [a, b, c, p]
+                }
+                static sm() {
+                    c += 5
+                    c
+                }
+            }
+            class C implements T {
+            }
+
+            assert new C().m() == [12, 2, 0, 10]
+            assert C.sm() == 5
+        """
+    }
+
+    @CompileModesTest
+    void testCompoundAssignmentOperatorsOnTraitFields(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                int i = 7
+                private long l = 1
+                public double d = 1
+                boolean f = false, g = true
+                String s = 'a'
+                List<Integer> list = [1]
+                BigDecimal bd = 1.5
+                static int si = 5
+                def m() {
+                    i %= 4; i *= 3; i >>= 1; i ^= 3; i &= 6; i |= 1; i <<= 2; i >>>= 1; i -= 4
+                    l += 2; l *= 4
+                    d /= 4
+                    f |= true; g &= false; f ^= true
+                    s += 'b'; s *= 2
+                    list += [2, 3]; list -= [1]
+                    bd += 1; bd /= 2
+                    si += 1
+                    [i, l, d, f, g, s, list, bd, si]
+                }
+                def mc() {
+                    [1].each { i %= 4; i <<= 2; l *= 4; d /= 4; f |= true; s *= 2; list += [2]; bd /= 2; si -= 1 }
+                    [i, l, d, f, s, list, bd, si]
+                }
+                static sm() {
+                    si *= 3; si %= 4; si <<= 3; si |= 1
+                    si
+                }
+            }
+            class C1 implements T {
+            }
+            class C2 implements T {
+            }
+            class C3 implements T {
+            }
+
+            assert new C1().m() == [10, 12, 0.25d, false, false, 'abab', [2, 3], 1.25, 6]
+            assert new C2().mc() == [12, 4, 0.25d, true, 'aa', [1, 2], 0.75, 4]
+            assert C3.sm() == 25
+        """
+    }
+
+    // GROOVY-12615
+    @CompileModesTest
+    void testNestedCompoundAssignmentOnTraitFields(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                int a = 1, b = 1
+                private int c = 1, d = 1
+                public int e = 1, f = 1
+                def m1() { a += (b += 1); [a, b] }
+                def m2() { c += (d += 1); [c, d] }
+                def m3() { e += (f += 1); [e, f] }
+                def m4() { this.a += (this.b += 1); [a, b] }
+                def m5() { a -= (b *= (c += 2)); [a, b, c] }
+                def m6() { a = (b += 1); [a, b] }
+                def m7() { a += Math.max(b += 1, 0); [a, b] }
+                def m8() { int x = 1; x += (b += 1); [x, b] }
+            }
+            $mode
+            class C implements T {
+            }
+
+            assert new C().m1() == [3, 2]
+            assert new C().m2() == [3, 2]
+            assert new C().m3() == [3, 2]
+            assert new C().m4() == [3, 2]
+            assert new C().m5() == [-2, 3, 3]
+            assert new C().m6() == [2, 2]
+            assert new C().m7() == [3, 2]
+            assert new C().m8() == [3, 2]
+        """
+    }
+
+    // GROOVY-12615
+    @CompileModesTest
+    void testNestedCompoundAssignmentOnStaticTraitFields(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static int a = 1, b = 1
+                private static int c = 1, d = 1
+                static m1() { a += (b += 1); [a, b] }
+                static m2() { c += (d += 1); [c, d] }
+            }
+            $mode
+            class C implements T {
+            }
+
+            assert C.m1() == [3, 2]
+            assert C.m2() == [3, 2]
+        """
+    }
+
+    // GROOVY-12615
+    @Test
+    void testPostfixInRightOperandOfCompoundAssignmentOnTraitFieldRejected() {
+        def err = shouldFail(MultipleCompilationErrorsException) {
+            assertScript shell, '''
+                trait T { int a = 1, b = 1; def m() { a += (b++) } }
+                class C implements T { }
+                new C().m()
+            '''
+        }
+        assert err.message.contains('Postfix expressions on trait fields/properties are not supported in traits')
     }
 }

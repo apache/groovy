@@ -35,9 +35,19 @@ import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
 
 import java.time.temporal.TemporalAccessor
 
+import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE
+import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE
+import static org.codehaus.groovy.ast.ClassHelper.Byte_TYPE
+import static org.codehaus.groovy.ast.ClassHelper.Character_TYPE
+import static org.codehaus.groovy.ast.ClassHelper.Double_TYPE
+import static org.codehaus.groovy.ast.ClassHelper.Float_TYPE
+import static org.codehaus.groovy.ast.ClassHelper.Integer_TYPE
+import static org.codehaus.groovy.ast.ClassHelper.Long_TYPE
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE
+import static org.codehaus.groovy.ast.ClassHelper.Short_TYPE
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper
 import static org.codehaus.groovy.ast.ClassHelper.makeCached
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf
 
 /**
  * Checks at compile-time for incorrect format strings in format methods such as {@code printf} and {@code String.format}.
@@ -71,6 +81,9 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
 
     private static final ClassNode LOCALE_TYPE = makeCached(Locale)
     private static final ClassNode FORMATTER_TYPE = makeCached(Formatter)
+    private static final ClassNode CALENDAR_TYPE = makeCached(Calendar)
+    private static final ClassNode DATE_TYPE = makeCached(Date)
+    private static final ClassNode TEMPORAL_ACCESSOR_TYPE = makeCached(TemporalAccessor)
 
     /**
      * Pattern used to extract {@link Formatter} conversion specifiers from constant format strings.
@@ -97,6 +110,7 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
     Object run() {
         afterMethodCall { call ->
             def method = getTargetMethod(call)
+            if (method == null) return
             def annoNames = method.annotations*.classNode*.name
             if (annoNames.any { name ->
                 name in [
@@ -109,7 +123,7 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
         }
 
         afterVisitMethod { MethodNode method ->
-            method.code.visit(makeVisitor())
+            method.code?.visit(makeVisitor())
         }
     }
 
@@ -163,11 +177,23 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
                 expression.value.eachMatch(formatSpecifier) { spec ->
                     def (all, argIndex, flags, width, precision, tgroup, conversion) = spec
                     def flagList = flags?.toList()
-                    if (argIndex) {
+                    if (argIndex) { // Formatter rejects a bad index before looking at anything else
                         argIndex -= '$'
+                        if (!argIndex.isInteger()) {
+                            addStaticTypeError('IllegalFormatArgumentIndex: Format argument index: (not representable as int)', target)
+                            return
+                        }
                         argIndex = argIndex.toInteger()
+                        if (argIndex == 0) {
+                            addStaticTypeError('IllegalFormatArgumentIndex: Illegal format argument index = 0', target)
+                            return
+                        }
                     }
-                    int indexToUse = argIndex ?: next
+                    if (!tgroup && conversion in ['%', 'n']) { // %% and %n take no argument
+                        checkDupFlags(flagList, target)
+                        return
+                    }
+                    int indexToUse = argIndex ? argIndex - 1 : next // explicit indices are 1-based
                     if (flagList.contains('<')) {
                         if (prevIndex == -1) {
                             addStaticTypeError("MissingFormatArgument: Format specifier '$all'", target)
@@ -181,7 +207,7 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
                         return
                     }
                     def arg = args[indexToUse]
-                    Object type = getWrapper(getType(arg)).typeClass
+                    ClassNode type = getWrapper(getType(arg))
                     if (tgroup) {
                         if (!'HIklMSLNpzZsQBbhAaCYyjmdeRTrDFc'.contains(conversion)) {
                             addStaticTypeError("UnknownFormatConversion: Conversion = 't${conversion}'", target)
@@ -189,7 +215,7 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
                         if (precision) {
                             addStaticTypeError("IllegalFormatPrecision: ${precision - '.'}", target)
                         }
-                        if (!([Long, Calendar, Date, TemporalAccessor].any { it.isAssignableFrom(type) })) {
+                        if (!([Long_TYPE, CALENDAR_TYPE, DATE_TYPE, TEMPORAL_ACCESSOR_TYPE].any { implementsInterfaceOrIsSubclassOf(type, it) })) {
                             addStaticTypeError("IllegalFormatConversion: $conversion != $type.name", target)
                         }
                         checkBadFlags(flagList, conversion, target, '#+ 0,(')
@@ -197,16 +223,10 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
                             addStaticTypeError("MissingFormatWidth: $all", target)
                         }
                     } else {
-                        def dupFlag = flagList.countBy().find { flag, count -> count > 1 }?.key
-                        if (dupFlag) {
-                            addStaticTypeError("DuplicateFormatFlags: Flags = '$dupFlag'", target)
-                        }
+                        checkDupFlags(flagList, target)
                         switch (conversion) {
-                            case '%':
-                            case 'n':
-                                break
                             case ['c', 'C']: // char type
-                                if (type !in [Character, Byte, Short, Integer]) {
+                                if (type !in [Character_TYPE, Byte_TYPE, Short_TYPE, Integer_TYPE]) {
                                     addStaticTypeError("IllegalFormatConversion: $conversion != $type.name", target)
                                 }
                                 checkBadFlags(flagList, conversion, target, '#+ 0,(')
@@ -219,7 +239,7 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
                                     checkBadFlags(flagList, conversion, target, ',')
                                 }
                                 checkBadWidth(flagList, width, all, target)
-                                if (type !in [Byte, Short, Integer, Long, BigInteger]) {
+                                if (type !in [Byte_TYPE, Short_TYPE, Integer_TYPE, Long_TYPE, BigInteger_TYPE]) {
                                     addStaticTypeError("IllegalFormatConversion: $conversion != $type.name", target)
                                 }
                                 if (precision) {
@@ -239,7 +259,7 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
                                     checkBadFlags(flagList, conversion, target, '#')
                                 }
                                 checkBadWidth(flagList, width, all, target)
-                                if (type !in [Float, Double, BigDecimal]) {
+                                if (type !in [Float_TYPE, Double_TYPE, BigDecimal_TYPE]) {
                                     addStaticTypeError("IllegalFormatConversion: $conversion != $type.name", target)
                                 }
                                 break
@@ -257,6 +277,13 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
                     if (!argIndex && !flagList.contains('<')) {
                         next++
                     }
+                }
+            }
+
+            private void checkDupFlags(flagList, Expression target) {
+                def dupFlag = flagList.countBy().find { flag, count -> count > 1 }?.key
+                if (dupFlag) {
+                    addStaticTypeError("DuplicateFormatFlags: Flags = '$dupFlag'", target)
                 }
             }
 
