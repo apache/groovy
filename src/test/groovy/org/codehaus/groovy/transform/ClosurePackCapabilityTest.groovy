@@ -277,7 +277,8 @@ final class ClosurePackCapabilityTest {
     void syntacticallyPackedClosureTreatsDelegateAsHarmlessNoOp() {
         // the non-strict guard: a syntactically-packed closure has no free name, so a caller-set
         // delegate must be IGNORED, not rejected -- exactly as a normal closure behaves. (The
-        // annotation trust path, by contrast, throws, since it cannot prove independence.)
+        // annotation trust path, by contrast, throws for a body with a free name, since it cannot
+        // prove independence.)
         Object result = eval('', '''
             Closure c = { x -> x + 1 }
             assert c.getClass().name.startsWith('org.codehaus.groovy.runtime.PackedClosure')

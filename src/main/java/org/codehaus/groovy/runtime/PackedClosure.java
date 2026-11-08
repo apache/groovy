@@ -228,7 +228,8 @@ public abstract class PackedClosure extends Closure<Object> {
      *                     exactly as with a generated closure class
      * @param strict       whether the delegate guard throws. {@code true} for the dynamic trust path
      *                     (an unverifiable {@code @PackedClosures} assertion must fail fast on misuse);
-     *                     {@code false} when the type checker PROVED every free name owner-resolved.
+     *                     {@code false} when the type checker PROVED every free name owner-resolved,
+     *                     or the body has no free name at all.
      */
     public PackedClosure(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
         super(owner, owner);
@@ -260,7 +261,8 @@ public abstract class PackedClosure extends Closure<Object> {
     // past setDelegate, while the hoisted body keeps calling the receiver captured at construction.
     // So the same guard applies here: on the dynamic trust path refuse a delegate, owner or this
     // object other than that receiver. null (the dehydrate() disconnect) and the receiver itself
-    // stay allowed, so rehydrating onto the original owner keeps working.
+    // stay allowed, so rehydrating onto the original owner keeps working. A body with no free name
+    // is not strict: it cannot observe the new objects, so rehydrating it anywhere keeps working.
     @Override
     public Closure<Object> rehydrate(final Object delegate, final Object owner, final Object thisObject) {
         if (strict) {

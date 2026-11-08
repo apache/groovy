@@ -307,6 +307,29 @@ final class PackedClosuresTransformTest {
         assertEquals([true, 'owner'], instance(src))
     }
 
+    // GROOVY-12661
+    @Test
+    void closureWithNoFreeNameCanBeRehydratedElsewhere() {
+        // a body with no free name cannot observe a new delegate, owner or this object, so on the
+        // dynamic trust path, as on the flag's syntactic path, rehydrating it onto another object
+        // (the DSL builder idiom) keeps working and a set delegate is stored and ignored
+        String src = '''
+            @groovy.transform.PackedClosures
+            class O {
+                List run() {
+                    def c = { x -> x + 1 }
+                    assert c instanceof org.codehaus.groovy.runtime.PackedClosure
+                    def other = new Object()
+                    Closure r = c.rehydrate(other, other, other)
+                    c.delegate = other
+                    [r(41), r.owner.is(other), r.thisObject.is(other), c(1), c.delegate.is(other)]
+                }
+            }
+            new O().run()
+        '''
+        assertEquals([42, true, true, 2, true], instance(src))
+    }
+
     @Test
     void inheritedPackedClosureResolvesToItsOwnDeclaringClass() {
         // A superclass's packed closure must not dispatch to a same-named hoisted method that a
