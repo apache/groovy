@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794034636052,
+  "lastUpdate": 1794121141388,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -9304,6 +9304,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 448.8666666666666,
             "range": "±16.61",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "committer": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "realbluesun@hotmail.com"
+          },
+          "id": "f8ae9211117ee5304e0ff334885b796c3de78132",
+          "message": "STC: guard null collector, return types and switch expression\n\nPattern-switch warnings used the type-checking error collector without\nthe fallback addError already has, so a popped collector aborted the\nvisit. Fall-through analysis dereferenced a missing enclosing switch\nexpression. Inferred return types are published only when a list was\nrecorded. The static-compilation method-reference adapter compares its\nparameter array by content.\n\nSonar keys:\nAaGyaIdoscRIFX8Ad1JO javabugs:S2259 StaticTypeCheckingVisitor.addPatternSwitchWarning\nAaGHUGExkiEQWtpRQeFb javabugs:S2259 StaticTypeCheckingVisitor.publishInferredReturnType\nAaGGaMYw77HhxD8zwabf javabugs:S2259 StaticTypeCheckingVisitor.nextCaseLabel\nAaGwPANy8T2UUTamq79s java:S6218 StaticTypesMethodReferenceExpressionWriter.Adaptation",
+          "timestamp": "2026-11-08T05:12:37Z",
+          "url": "https://github.com/apache/groovy/commit/f8ae9211117ee5304e0ff334885b796c3de78132"
+        },
+        "date": 1794121134870,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 523.4533333333334,
+            "range": "±19.93",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 665.4233333333333,
+            "range": "±227.17",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 591.6166666666666,
+            "range": "±148.7",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 470.7266666666667,
+            "range": "±18.67",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 470.71,
+            "range": "±22.13",
             "unit": "ms",
             "extra": "6.0.0"
           }
