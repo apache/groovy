@@ -508,8 +508,9 @@ final class AsyncAwaitTest {
         '''
     }
 
-    // === casts (GROOVY-12715) ===
+    // === casts ===
 
+    // GROOVY-12715
     @Test
     void testCastAppliedToAwait() {
         assertScript '''
@@ -526,9 +527,11 @@ final class AsyncAwaitTest {
         '''
     }
 
+    // GROOVY-12715
     @Test
     void testCastAppliedToAwaitInsideAsyncTask() {
         assertScript '''
+            import groovy.concurrent.Awaitable
             import groovy.concurrent.DataflowVariable
 
             DataflowVariable<BigDecimal> price = new DataflowVariable<BigDecimal>()
@@ -541,10 +544,11 @@ final class AsyncAwaitTest {
             }
             async { quantity << 4 }
             async { price << 2.50 }
-            assert await(total) == 10.00
+            assert await(Awaitable.orTimeoutMillis(total, 5000)) == 10.00
         '''
     }
 
+    // GROOVY-12715
     @Test
     void testCastAppliedToAsyncClosure() {
         assertScript '''
