@@ -4782,7 +4782,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
     /**
      * Checks a dotted key such as {@code 'address.city'}, which the nested {@code copyWith(Map)} of records and
-     * immutable classes accepts as a path (GROOVY-12713). Each segment must be a named parameter of the type
+     * immutable classes accepts as a path. Each segment must be a named parameter of the type
      * reached so far, and the value must suit the last segment's declared type. The walk stops, accepting the
      * key, at a segment whose type is unknown or whose {@code copyWith(Map)} declares no named parameters; the
      * runtime then checks the rest.
