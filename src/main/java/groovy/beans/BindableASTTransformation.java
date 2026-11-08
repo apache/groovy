@@ -82,6 +82,11 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
      */
     protected static final ClassNode boundClassNode = ClassHelper.make(Bindable.class);
 
+    private static final String ADD_PROPERTY_CHANGE_LISTENER = "addPropertyChangeListener";
+    private static final String REMOVE_PROPERTY_CHANGE_LISTENER = "removePropertyChangeListener";
+    private static final String FIRE_PROPERTY_CHANGE = "firePropertyChange";
+    private static final String GET_PROPERTY_CHANGE_LISTENERS = "getPropertyChangeListeners";
+
     /**
      * Convenience method to see if an annotated node is {@code @Bindable}.
      *
@@ -202,7 +207,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
             block.addStatement(declS(newValue, callThisX(getterName)));
 
             // add the firePropertyChange method call
-            block.addStatement(stmt(callThisX("firePropertyChange", args(constX(propertyNode.getName()), oldValue, newValue))));
+            block.addStatement(stmt(callThisX(FIRE_PROPERTY_CHANGE, args(constX(propertyNode.getName()), oldValue, newValue))));
 
             // replace the existing code block with our new one
             setter.setCode(block);
@@ -231,7 +236,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
      */
     protected Statement createBindableStatement(PropertyNode propertyNode, Expression fieldExpression) {
         // create statementBody
-        return stmt(callThisX("firePropertyChange", args(constX(propertyNode.getName()), fieldExpression, assignX(fieldExpression, varX("value")))));
+        return stmt(callThisX(FIRE_PROPERTY_CHANGE, args(constX(propertyNode.getName()), fieldExpression, assignX(fieldExpression, varX("value")))));
     }
 
     /**
@@ -272,9 +277,9 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         while (consideredClass!= null) {
             for (MethodNode method : consideredClass.getMethods()) {
                 // just check length, MOP will match it up
-                foundAdd = foundAdd || "addPropertyChangeListener".equals(method.getName()) && method.getParameters().length == 1;
-                foundRemove = foundRemove || "removePropertyChangeListener".equals(method.getName()) && method.getParameters().length == 1;
-                foundFire = foundFire || "firePropertyChange".equals(method.getName()) && method.getParameters().length == 3;
+                foundAdd = foundAdd || ADD_PROPERTY_CHANGE_LISTENER.equals(method.getName()) && method.getParameters().length == 1;
+                foundRemove = foundRemove || REMOVE_PROPERTY_CHANGE_LISTENER.equals(method.getName()) && method.getParameters().length == 1;
+                foundFire = foundFire || FIRE_PROPERTY_CHANGE.equals(method.getName()) && method.getParameters().length == 3;
                 if (foundAdd && foundRemove && foundFire) {
                     return false;
                 }
@@ -320,8 +325,8 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
 
     private static boolean isPropertyChangeStub(String methodName) {
         return switch (methodName) {
-            case "addPropertyChangeListener", "removePropertyChangeListener",
-                 "firePropertyChange", "getPropertyChangeListeners" -> true;
+            case ADD_PROPERTY_CHANGE_LISTENER, REMOVE_PROPERTY_CHANGE_LISTENER,
+                 FIRE_PROPERTY_CHANGE, GET_PROPERTY_CHANGE_LISTENERS -> true;
             default -> false;
         };
     }
@@ -364,12 +369,12 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         //  }
         addGeneratedMethod(declaringClass,
                 new MethodNode(
-                        "addPropertyChangeListener",
+                        ADD_PROPERTY_CHANGE_LISTENER,
                         ACC_PUBLIC,
                         ClassHelper.VOID_TYPE,
                         params(param(pclClassNode, "listener")),
                         ClassNode.EMPTY_ARRAY,
-                        stmt(callX(fieldX(pcsField), "addPropertyChangeListener", args(varX("listener", pclClassNode))))));
+                        stmt(callX(fieldX(pcsField), ADD_PROPERTY_CHANGE_LISTENER, args(varX("listener", pclClassNode))))));
 
         // add method:
         // void addPropertyChangeListener(name, listener) {
@@ -377,12 +382,12 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         //  }
         addGeneratedMethod(declaringClass,
                 new MethodNode(
-                        "addPropertyChangeListener",
+                        ADD_PROPERTY_CHANGE_LISTENER,
                         ACC_PUBLIC,
                         ClassHelper.VOID_TYPE,
                         params(param(ClassHelper.STRING_TYPE, "name"), param(pclClassNode, "listener")),
                         ClassNode.EMPTY_ARRAY,
-                        stmt(callX(fieldX(pcsField), "addPropertyChangeListener", args(varX("name", ClassHelper.STRING_TYPE), varX("listener", pclClassNode))))));
+                        stmt(callX(fieldX(pcsField), ADD_PROPERTY_CHANGE_LISTENER, args(varX("name", ClassHelper.STRING_TYPE), varX("listener", pclClassNode))))));
 
         // add method:
         // boolean removePropertyChangeListener(listener) {
@@ -390,22 +395,22 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         // }
         addGeneratedMethod(declaringClass,
                 new MethodNode(
-                        "removePropertyChangeListener",
+                        REMOVE_PROPERTY_CHANGE_LISTENER,
                         ACC_PUBLIC,
                         ClassHelper.VOID_TYPE,
                         params(param(pclClassNode, "listener")),
                         ClassNode.EMPTY_ARRAY,
-                        stmt(callX(fieldX(pcsField), "removePropertyChangeListener", args(varX("listener", pclClassNode))))));
+                        stmt(callX(fieldX(pcsField), REMOVE_PROPERTY_CHANGE_LISTENER, args(varX("listener", pclClassNode))))));
 
         // add method: void removePropertyChangeListener(name, listener)
         addGeneratedMethod(declaringClass,
                 new MethodNode(
-                        "removePropertyChangeListener",
+                        REMOVE_PROPERTY_CHANGE_LISTENER,
                         ACC_PUBLIC,
                         ClassHelper.VOID_TYPE,
                         params(param(ClassHelper.STRING_TYPE, "name"), param(pclClassNode, "listener")),
                         ClassNode.EMPTY_ARRAY,
-                        stmt(callX(fieldX(pcsField), "removePropertyChangeListener", args(varX("name", ClassHelper.STRING_TYPE), varX("listener", pclClassNode))))));
+                        stmt(callX(fieldX(pcsField), REMOVE_PROPERTY_CHANGE_LISTENER, args(varX("name", ClassHelper.STRING_TYPE), varX("listener", pclClassNode))))));
 
         // add method:
         // void firePropertyChange(String name, Object oldValue, Object newValue) {
@@ -413,12 +418,12 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         //  }
         addGeneratedMethod(declaringClass,
                 new MethodNode(
-                        "firePropertyChange",
+                        FIRE_PROPERTY_CHANGE,
                         ACC_PUBLIC,
                         ClassHelper.VOID_TYPE,
                         params(param(ClassHelper.STRING_TYPE, "name"), param(ClassHelper.OBJECT_TYPE, "oldValue"), param(ClassHelper.OBJECT_TYPE, "newValue")),
                         ClassNode.EMPTY_ARRAY,
-                        stmt(callX(fieldX(pcsField), "firePropertyChange", args(varX("name", ClassHelper.STRING_TYPE), varX("oldValue"), varX("newValue"))))));
+                        stmt(callX(fieldX(pcsField), FIRE_PROPERTY_CHANGE, args(varX("name", ClassHelper.STRING_TYPE), varX("oldValue"), varX("newValue"))))));
 
         // add method:
         // PropertyChangeListener[] getPropertyChangeListeners() {
@@ -426,12 +431,12 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         // }
         addGeneratedMethod(declaringClass,
                 new MethodNode(
-                        "getPropertyChangeListeners",
+                        GET_PROPERTY_CHANGE_LISTENERS,
                         ACC_PUBLIC,
                         pclClassNode.makeArray(),
                         Parameter.EMPTY_ARRAY,
                         ClassNode.EMPTY_ARRAY,
-                        returnS(callX(fieldX(pcsField), "getPropertyChangeListeners"))));
+                        returnS(callX(fieldX(pcsField), GET_PROPERTY_CHANGE_LISTENERS))));
 
         // add method:
         // PropertyChangeListener[] getPropertyChangeListeners(String name) {
@@ -439,11 +444,11 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         // }
         addGeneratedMethod(declaringClass,
                 new MethodNode(
-                        "getPropertyChangeListeners",
+                        GET_PROPERTY_CHANGE_LISTENERS,
                         ACC_PUBLIC,
                         pclClassNode.makeArray(),
                         params(param(ClassHelper.STRING_TYPE, "name")),
                         ClassNode.EMPTY_ARRAY,
-                        returnS(callX(fieldX(pcsField), "getPropertyChangeListeners", args(varX("name", ClassHelper.STRING_TYPE))))));
+                        returnS(callX(fieldX(pcsField), GET_PROPERTY_CHANGE_LISTENERS, args(varX("name", ClassHelper.STRING_TYPE))))));
     }
 }

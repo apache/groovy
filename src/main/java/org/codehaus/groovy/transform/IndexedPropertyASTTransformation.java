@@ -57,6 +57,7 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
     private static final ClassNode MY_TYPE = make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode LIST_TYPE = makeWithoutCaching(List.class, false);
+    private static final String INDEX = "index";
 
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -66,29 +67,48 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         if (!MY_TYPE.equals(node.getClassNode())) return;
 
         if (parent instanceof FieldNode fNode) {
-            ClassNode cNode = fNode.getDeclaringClass();
-            if (cNode.getProperty(fNode.getName()) == null) {
-                addError("Error during " + MY_TYPE_NAME + " processing. Field '" + fNode.getName() +
-                        "' doesn't appear to be a property; incorrect visibility?", fNode);
-                return;
-            }
-            ClassNode fType = fNode.getType();
-            // TODO consider looking for an initial value expression that is a call to asUnmodifiable() or an
-            // explicit call to Collections.unmodifiableList(). But currently that is processed one stage too early.
-            boolean immutable = Boolean.TRUE.equals(fNode.getNodeMetaData(IMMUTABLE_BREADCRUMB));
-            if (fType.isArray()) {
-                if (immutable) removeStubSetter(fNode, fType.getComponentType());
-                else addArraySetter(fNode);
-                addArrayGetter(fNode);
-            } else if (fType.isDerivedFrom(LIST_TYPE)) {
-                if (immutable) removeStubSetter(fNode, getComponentTypeForList(fType));
-                else addListSetter(fNode);
-                addListGetter(fNode);
-            } else {
-                addError("Error during " + MY_TYPE_NAME + " processing. Non-Indexable property '" + fNode.getName() +
-                        "' found. Type must be array or list but found " + fType.getName(), fNode);
-            }
+            addIndexedAccessors(fNode);
         }
+    }
+
+    private void addIndexedAccessors(FieldNode fNode) {
+        ClassNode cNode = fNode.getDeclaringClass();
+        if (cNode.getProperty(fNode.getName()) == null) {
+            addError("Error during " + MY_TYPE_NAME + " processing. Field '" + fNode.getName() +
+                    "' doesn't appear to be a property; incorrect visibility?", fNode);
+            return;
+        }
+        ClassNode fType = fNode.getType();
+        // TODO consider looking for an initial value expression that is a call to asUnmodifiable() or an
+        // explicit call to Collections.unmodifiableList(). But currently that is processed one stage too early.
+        boolean immutable = Boolean.TRUE.equals(fNode.getNodeMetaData(IMMUTABLE_BREADCRUMB));
+        if (fType.isArray()) {
+            addIndexedArrayAccessors(fNode, fType.getComponentType(), immutable);
+        } else if (fType.isDerivedFrom(LIST_TYPE)) {
+            addIndexedListAccessors(fNode, immutable);
+        } else {
+            addError("Error during " + MY_TYPE_NAME + " processing. Non-Indexable property '" + fNode.getName() +
+                    "' found. Type must be array or list but found " + fType.getName(), fNode);
+        }
+    }
+
+    private static void addIndexedArrayAccessors(FieldNode fNode, ClassNode componentType, boolean immutable) {
+        if (immutable) {
+            removeStubSetter(fNode, componentType);
+        } else {
+            addArraySetter(fNode);
+        }
+        addArrayGetter(fNode);
+    }
+
+    private static void addIndexedListAccessors(FieldNode fNode, boolean immutable) {
+        ClassNode componentType = getComponentTypeForList(fNode.getType());
+        if (immutable) {
+            removeStubSetter(fNode, componentType);
+        } else {
+            addListSetter(fNode);
+        }
+        addListGetter(fNode);
     }
 
     private static void addListGetter(FieldNode fNode) {
@@ -111,7 +131,7 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         ClassNode cNode = fNode.getDeclaringClass();
         BlockStatement body = new BlockStatement();
         Parameter[] params = new Parameter[1];
-        params[0] = new Parameter(ClassHelper.int_TYPE, "index");
+        params[0] = new Parameter(ClassHelper.int_TYPE, INDEX);
         body.addStatement(stmt(indexX(varX(fNode), varX(params[0]))));
         // GEP-21 Shape C: replace the stubber's placeholder body if present.
         MethodNode existing = cNode.getDeclaredMethod(makeName(fNode, "get"), params);
@@ -127,7 +147,7 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         ClassNode cNode = fNode.getDeclaringClass();
         BlockStatement body = new BlockStatement();
         Parameter[] theParams = params(
-                new Parameter(ClassHelper.int_TYPE, "index"),
+                new Parameter(ClassHelper.int_TYPE, INDEX),
                 new Parameter(componentType, "value"));
         body.addStatement(assignS(indexX(varX(fNode), varX(theParams[0])), varX(theParams[1])));
         // GEP-21 Shape C: replace the stubber's placeholder body if present.
@@ -143,7 +163,7 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
     private static void removeStubSetter(FieldNode fNode, ClassNode componentType) {
         ClassNode cNode = fNode.getDeclaringClass();
         Parameter[] theParams = params(
-                new Parameter(ClassHelper.int_TYPE, "index"),
+                new Parameter(ClassHelper.int_TYPE, INDEX),
                 new Parameter(componentType, "value"));
         MethodNode existing = cNode.getDeclaredMethod(getSetterName(fNode.getName()), theParams);
         if (StubberSupport.isStub(existing)) {
