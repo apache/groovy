@@ -619,7 +619,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
 
             /**
-             * GROOVY-12592: A MOP method calls the super method of the class that declares it. If class
+             * A MOP method calls the super method of the class that declares it. If class
              * {@code c} inherits {@code method}, a MOP method of its declaring class, or of a super class
              * of that, calls a method further up. This is the only match when {@code c} has no MOP method
              * for the name, like when the super call is made from a closure or an inner class.
