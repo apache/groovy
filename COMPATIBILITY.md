@@ -1615,12 +1615,30 @@ other functional-interface parameter such as `Stream.map`'s:
 - A body that is invalid for the element type is reported with that type.
   For example, `it instanceof String` for an `Integer` element no longer
   compiles, as with DGM `collect`.
-- A closure that assigns a value of another type to its own parameter now
-  converts the value to the parameter's type, so
-  `numbers.collectParallel { n -> n = n.toString(); n }` gives `[49, 50]`
-  for `[1, 2]`, where dynamic Groovy gives `[1, 2]`. `Stream.map` and other
-  functional-interface parameters already behave this way (GROOVY-12747).
+- A closure that assigns a value of another type to its own parameter, such
+  as `numbers.collectParallel { n -> n = n.toString(); n }`, no longer
+  compiles, as for any other functional-interface parameter (GROOVY-12747).
   Assign to a new local variable instead.
+
+### Groovy 7 — assigning a value of another type to a closure parameter typed from a functional interface is an error (GROOVY-12747)
+
+Under `@TypeChecked` and `@CompileStatic`, an untyped closure or lambda
+parameter whose type comes from a functional interface is declared with
+that type. Assigning it a value of another type used to compile, and the
+value was then converted to the parameter's type when the closure ran:
+`List<Integer> numbers; numbers.stream().map { n -> n = n.toString(); n }`
+gave `[49, 50]` for `[1, 2]` (the character codes of `"1"` and `"2"`),
+`n = n + 0.5` dropped the fraction, and `n = 'ab'` failed with a
+`GroovyCastException`. Such an assignment is now reported:
+`Cannot assign value of type java.lang.String to variable of type java.lang.Integer`.
+
+**Who is affected.** Code that compiled before and assigns a value of
+another type to such a parameter. It gave a converted value or failed at
+run time; assign to a new local variable instead. Assigning a value of the
+parameter's type, such as `n = n * 2` or `n += 1`, is unchanged. So are an
+implicit `it`, which is declared `Object`, and parameters typed through
+`@ClosureParams`, as for DGM `collect`, which keep the assigned value as
+dynamic Groovy does.
 
 ### Groovy 7 — `sumParallel`, `minParallel` and `maxParallel` accept a transform or key (GROOVY-12722)
 
