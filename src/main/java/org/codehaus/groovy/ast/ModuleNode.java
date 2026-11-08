@@ -703,7 +703,13 @@ public class ModuleNode extends ASTNode {
             .visit(statementBlock);
         } else {
             fields.forEach(classNode::addField);
-            classNode.addAnnotations(existingRun.getAnnotations());
+            // the method's annotations apply to the script class; @Override cannot, and it is
+            // correct on the method, which overrides Script#run() (GROOVY-12720); it is left off
+            // here, before any Java stub is generated, and ExtendedVerifier skips the other
+            // method-only annotations on the script class
+            for (AnnotationNode annotation : existingRun.getAnnotations()) {
+                if (!isOverride(annotation)) classNode.addAnnotation(annotation);
+            }
             classNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
             existingRun.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
         }
@@ -731,6 +737,11 @@ public class ModuleNode extends ASTNode {
             classNode.addMethod(method);
         }
         return classNode;
+    }
+
+    private static boolean isOverride(final AnnotationNode annotation) {
+        ClassNode type = annotation.getClassNode();
+        return ClassHelper.OVERRIDE_TYPE.equals(type) || "Override".equals(type.getName()) || "java.lang.Override".equals(type.getName());
     }
 
     private MethodNode findRun() {
