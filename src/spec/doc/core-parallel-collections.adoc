@@ -229,8 +229,8 @@ def errorCount = logs.countParallel { it.level == 'ERROR' }
 |===
 |Method |Description
 
-|`sumParallel()` |Sum of the elements, as `sum()`
-|`sumParallel { }` |Sum of the transformed elements, as `sum(Closure)`
+|`sumParallel()` |Sum of the elements, as `sum()` when the addition is associative
+|`sumParallel { }` |Sum of the transformed elements, as `sum(Closure)` when the addition is associative
 |`sumParallel { a, b -> }` |Reduce with binary operator
 |`injectParallel(seed) { a, b -> }` |Reduce with seed (accumulator must be associative)
 |`minParallel { a, b -> }` |Minimum by comparator
