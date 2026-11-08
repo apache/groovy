@@ -56,6 +56,10 @@ import static groovy.ginq.Ginq.from
  * <li>{@code schedule} with a null compilation unit, a null bridge host,
  * and {@code findHost} missing the call. The macro only calls
  * {@code embed} with the live compilation unit and the call it is visiting.</li>
+ * <li>The non-tuple arm of the aggregate argument count.
+ * {@code MethodCallExpression} always wraps arguments in a {@code TupleExpression}.</li>
+ * <li>{@code customAggregate} with a null source unit. The macro always
+ * passes the live {@code SourceUnit}.</li>
  * </ul>
  */
 class GinqEdgePathTest {
@@ -95,11 +99,116 @@ class GinqEdgePathTest {
         assert from([1]).union([2]).toList() == [1, 2]
         assert from([1, 2, 2]).intersect(from([2, 9])).toList() == [2]
         assert from([1, 2, 2]).intersect([2, 9]).toList() == [2]
-        assert from([3, 1, 2]).orderBy { it }.thenByDescending { it }.toList() == [1, 2, 3]
+        def calls = 0
+        def ordered = from([[k: 1, v: 1], [k: 1, v: 3], [k: 1, v: 2]])
+                .orderBy { it.k }
+                .thenByDescending { row -> calls++; row.v }
+                .toList()
+        assert ordered*.v == [3, 2, 1]
+        assert calls > 0
         assert from([1, 2, 3]).stream().count() == 3
         assert from([1, 2]).iterator().toList() == [1, 2]
         assert from([1, 2, 3]).all { it > 0 }
         assert !from([1, -1]).all { it > 0 }
+    }
+
+    @Test
+    void aggregateArgumentShapes() {
+        GinqScriptModes.runOne(GinqScriptModes.Kind.DYNAMIC, '''
+            assert GQ {
+                from n in [1, 1, 2]
+                groupby n
+                select count()
+            }.toList().sum() == 3
+
+            assert GQ {
+                from n in [1, 1, 2]
+                groupby n
+                select count(n)
+            }.toList().sum() == 3
+
+            assert GQ {
+                from n in [1, 2, 3]
+                groupby n % 2
+                select total()
+            }.toList()*.toString().toSet() == ['2', '4'] as Set
+
+            assert GQ {
+                from n in [1, 2, 3]
+                groupby n % 2
+                select total(n)
+            }.toList().toSet() == [new BigDecimal('2'), new BigDecimal('4')].toSet()
+        ''')
+
+        def zeroSum = null
+        try {
+            GinqScriptModes.runOne(GinqScriptModes.Kind.DYNAMIC, '''
+                GQ {
+                    from n in [1, 2, 3]
+                    groupby n % 2
+                    select sum()
+                }.toList()
+            ''')
+        } catch (AssertionError caught) {
+            zeroSum = caught
+        }
+        assert zeroSum != null
+
+        def twoCount = null
+        try {
+            GinqScriptModes.runOne(GinqScriptModes.Kind.DYNAMIC, '''
+                GQ {
+                    from n in [1, 2, 3]
+                    groupby n % 2
+                    select count(n, n)
+                }.toList()
+            ''')
+        } catch (AssertionError caught) {
+            twoCount = caught
+        }
+        assert twoCount != null
+
+        def unknown = null
+        try {
+            GinqScriptModes.runOne(GinqScriptModes.Kind.DYNAMIC, '''
+                GQ {
+                    from n in [1, 2]
+                    groupby n
+                    select notAnAggregate(n)
+                }.toList()
+            ''')
+        } catch (AssertionError caught) {
+            unknown = caught
+        }
+        assert unknown != null
+
+        def unknownNone = null
+        try {
+            GinqScriptModes.runOne(GinqScriptModes.Kind.DYNAMIC, '''
+                GQ {
+                    from n in [1, 2]
+                    groupby n
+                    select notAnAggregate()
+                }.toList()
+            ''')
+        } catch (AssertionError caught) {
+            unknownNone = caught
+        }
+        assert unknownNone != null
+
+        def unknownTwo = null
+        try {
+            GinqScriptModes.runOne(GinqScriptModes.Kind.DYNAMIC, '''
+                GQ {
+                    from n in [1, 2]
+                    groupby n
+                    select notAnAggregate(n, n)
+                }.toList()
+            ''')
+        } catch (AssertionError caught) {
+            unknownTwo = caught
+        }
+        assert unknownTwo != null
     }
 
     @Test
