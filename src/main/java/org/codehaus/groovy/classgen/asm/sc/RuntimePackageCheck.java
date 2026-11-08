@@ -38,6 +38,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 
 /**
@@ -58,6 +59,10 @@ public final class RuntimePackageCheck {
     /**
      * Checks a call of a constructor. There is no subclass rule for {@code new}:
      * only {@code super(...)} can call a protected constructor from a subclass.
+     * <p>
+     * A {@code super(...)} call without a source position in a generated
+     * constructor, as {@code @InheritConstructors} adds for each constructor of
+     * the superclass, is not reported: it fails only if that constructor is called.
      *
      * @param controller the writer of the current class
      * @param ctor       the constructor that is called
@@ -65,9 +70,14 @@ public final class RuntimePackageCheck {
      * @param call       where to report it
      */
     public static void checkConstructor(final WriterController controller, final ConstructorNode ctor, final boolean superCall, final ASTNode call) {
-        if (isRefused(controller, ctor.getModifiers(), ctor.getDeclaringClass()) && !(superCall && ctor.isProtected())) {
+        if (isRefused(controller, ctor.getModifiers(), ctor.getDeclaringClass()) && !(superCall && (ctor.isProtected() || isGeneratedCall(controller, call)))) {
             report(controller, "call", ctor.isProtected(), "constructor", ctor.getDeclaringClass(), call);
         }
+    }
+
+    private static boolean isGeneratedCall(final WriterController controller, final ASTNode call) {
+        ConstructorNode current = controller.getConstructorNode();
+        return call.getLineNumber() < 1 && current != null && isGenerated(current);
     }
 
     /**

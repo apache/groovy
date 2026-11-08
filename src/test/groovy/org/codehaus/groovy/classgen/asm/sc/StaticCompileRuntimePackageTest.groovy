@@ -171,6 +171,18 @@ final class StaticCompileRuntimePackageTest extends AbstractBytecodeTestCase {
         assert evaluate("String s = 'z'; new A(s) { String shared() { s } }.value") == 'prot:z'
     }
 
+    // GROOVY-12568: a constructor that @InheritConstructors generates is not reported, as it fails only if it is called
+    @Test
+    void testConstructorsGeneratedByInheritConstructors() {
+        shell.evaluate LIBRARY
+        assert shell.evaluate('''package p
+            @groovy.transform.CompileStatic @groovy.transform.InheritConstructors
+            class D extends A { }
+            new D('x').value
+        ''') == 'prot:x'
+        assertRefusedAtRunTime { shell.evaluate 'package p\nnew D(1)' }
+    }
+
     // GROOVY-12568
     @Test
     void testMethodsOfAnotherRuntimePackage() {
