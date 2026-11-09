@@ -117,7 +117,8 @@ public class JavacJavaCompiler implements JavaCompiler {
                 if (!(cu instanceof JavaAwareCompilationUnit jacu) || jacu.memClassOutputBytes() == null) {
                     throw new IllegalStateException("memClassOutput requires JavaAwareCompilationUnit");
                 }
-                memManager = new InMemoryJavaFileManager(standard, jacu.memClassOutputBytes(), cu.getJavaCompilationUnitSet());
+                memManager = new InMemoryJavaFileManager(standard, jacu.memClassOutputBytes(),
+                        cu.getJavaCompilationUnitSet(), jacu.memClassOutputStore());
                 fileManager = memManager;
             }
 
@@ -236,7 +237,8 @@ public class JavacJavaCompiler implements JavaCompiler {
             for (ClassLoader loader = classLoader; loader != null; loader = loader.getParent()) {
                 if (loader instanceof URLClassLoader ucl) {
                     for (URL u : ucl.getURLs()) {
-                        // In-memory class output is not a directory or jar javac can read.
+                        // Not a directory or jar. The file manager serves these
+                        // bytes on CLASS_PATH; javac cannot open the URL itself.
                         if (MemClassOutputClasspath.isInMemory(u)) {
                             continue;
                         }

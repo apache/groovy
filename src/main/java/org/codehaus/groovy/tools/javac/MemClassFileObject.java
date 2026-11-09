@@ -56,6 +56,20 @@ final class MemClassFileObject extends SimpleJavaFileObject {
     }
 
     /**
+     * A class file javac can read and must not publish again.
+     * The bytes are copied.
+     *
+     * @param binaryName the JVMS binary name
+     * @param bytes the class bytes; not empty
+     * @return a file object whose input stream returns {@code bytes}
+     */
+    static MemClassFileObject forReading(final String binaryName, final byte[] bytes) {
+        MemClassFileObject file = new MemClassFileObject(binaryName, null);
+        file.buffer.writeBytes(bytes);
+        return file;
+    }
+
+    /**
      * Creates an in-memory file whose resource name is used as stored.
      *
      * @param binaryName name returned by {@link #getBinaryName()}

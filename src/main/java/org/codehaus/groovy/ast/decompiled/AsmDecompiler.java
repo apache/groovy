@@ -108,15 +108,14 @@ public abstract class AsmDecompiler {
     }
 
     /**
-     * File, jar, and runtime-image URLs name immutable bytes.
-     * Other schemes, including in-memory class output, are parsed on every call
-     * so a replaced class file cannot be served from this cache.
+     * In-memory class output ({@code x-groovy-mem}) can replace the bytes
+     * behind one URL, so those URLs are parsed on every call. Every other
+     * scheme is cached, including {@code file}, {@code jar}, {@code jrt},
+     * and container schemes such as {@code bundleresource}, {@code vfs},
+     * and {@code wsjar}.
      */
     private static boolean cacheableScheme(final URI uri) {
-        String scheme = uri.getScheme();
-        return "file".equalsIgnoreCase(scheme)
-                || "jar".equalsIgnoreCase(scheme)
-                || "jrt".equalsIgnoreCase(scheme);
+        return !"x-groovy-mem".equalsIgnoreCase(uri.getScheme());
     }
 
     /**

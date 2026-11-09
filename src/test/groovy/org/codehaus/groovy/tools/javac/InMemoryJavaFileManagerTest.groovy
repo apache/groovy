@@ -21,6 +21,8 @@ package org.codehaus.groovy.tools.javac
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
+import javax.tools.ForwardingJavaFileManager
+import javax.tools.JavaFileManager
 import javax.tools.JavaFileObject
 import javax.tools.StandardLocation
 import javax.tools.ToolProvider
@@ -214,6 +216,139 @@ final class InMemoryJavaFileManagerTest {
             new InMemoryJavaFileManager(null)
         }
         assert thrown.message.contains('fileManager')
+    }
+
+    // GROOVY-12751
+    @Test
+    void testClasspathListsPublishedClassesAndPrefersAnEarlierEntry() {
+        def compiler = ToolProvider.systemJavaCompiler
+        assert compiler != null
+        def standard = compiler.getStandardFileManager(null, Locale.ENGLISH, Charset.forName('UTF-8'))
+        def root = File.createTempDir('mem-cp', '')
+        def parent = new GroovyClassLoader(this.class.classLoader)
+        try {
+            def disk = new File(root, 'p/A.class')
+            disk.parentFile.mkdirs()
+            disk.bytes = [1, 2, 3, 4] as byte[]
+            new File(root, 'p/readme.txt').text = 'note'
+            standard.setLocation(StandardLocation.CLASS_PATH, List.of(root))
+
+            def publication = new MemClassOutputPublication(parent)
+            def first = publication.newCompilationLoader()
+            try {
+                def published = MemClassOutputClasspath.open(first)
+                def stage = published.begin()
+                stage.put('p/A.class', MARKER)
+                stage.put('p/Only.class', MARKER)
+                stage.put('p/A$Inner.class', MARKER)
+                stage.put('p/sub/B.class', MARKER)
+                stage.put('Top.class', MARKER)
+                published.commit()
+                publication.publish(first)
+
+                def second = publication.newCompilationLoader()
+                try {
+                    def store = MemClassOutputClasspath.open(second)
+                    store.begin().put('p/Only.class', [9] as byte[])
+                    store.commit()
+                    def committedOnly = new InMemoryJavaFileManager(standard, [:], null, store)
+                    assert committedOnly.getJavaFileForInput(StandardLocation.CLASS_PATH, 'p.Only', JavaFileObject.Kind.CLASS)
+                            .openInputStream().bytes == [9] as byte[]
+
+                    def again = store.begin()
+                    again.put('p/Only.class', MARKER)
+                    again.put('p/Empty.class', new byte[0])
+                    again.put('../Evil.class', MARKER)
+                    again.put('a\\b.class', MARKER)
+                    again.put('p//Odd.class', MARKER)
+                    again.put('p/notes.txt', MARKER)
+                    def sink = new LinkedHashMap<String, byte[]>()
+                    def manager = new InMemoryJavaFileManager(standard, sink, null, store)
+
+                    assert manager.hasLocation(StandardLocation.CLASS_PATH)
+                    def listed = names(manager, 'p', false)
+                    assert listed.containsAll(['p.A', 'p.Only', 'p.A$Inner'])
+                    assert !listed.contains('p.sub.B')
+                    assert !listed.contains('p.Empty')
+                    assert listed.count { it == 'p.A' } == 1
+                    assert names(manager, 'p', true).containsAll(['p.A', 'p.Only', 'p.A$Inner', 'p.sub.B'])
+                    assert names(manager, '', false) == ['Top']
+                    assert names(manager, null, false) == ['Top']
+                    assert names(manager, 'other', false).empty
+                    assert manager.list(StandardLocation.CLASS_PATH, 'p', EnumSet.allOf(JavaFileObject.Kind), false)
+                            .any { it.kind == JavaFileObject.Kind.OTHER }
+                    assert manager.list(StandardLocation.CLASS_PATH, 'p', EnumSet.of(JavaFileObject.Kind.SOURCE), false)
+                            .every { it.kind != JavaFileObject.Kind.CLASS }
+
+                    def fromDisk = manager.getJavaFileForInput(StandardLocation.CLASS_PATH, 'p.A', JavaFileObject.Kind.CLASS)
+                    assert !(fromDisk instanceof MemClassFileObject)
+                    assert fromDisk.openInputStream().bytes == [1, 2, 3, 4] as byte[]
+                    def only = manager.getJavaFileForInput(StandardLocation.CLASS_PATH, 'p.Only', JavaFileObject.Kind.CLASS)
+                    assert only instanceof MemClassFileObject
+                    assert only.openInputStream().bytes == MARKER
+                    assert manager.inferBinaryName(StandardLocation.CLASS_PATH, only) == 'p.Only'
+                    assert manager.getJavaFileForInput(StandardLocation.CLASS_PATH, 'missing.Type', JavaFileObject.Kind.CLASS) == null
+                    assert manager.getJavaFileForInput(StandardLocation.CLASS_PATH, '..', JavaFileObject.Kind.CLASS) == null
+                    assert manager.getJavaFileForInput(StandardLocation.CLASS_PATH, 'a\\b', JavaFileObject.Kind.CLASS) == null
+                    assert manager.getJavaFileForInput(StandardLocation.CLASS_PATH, 'p.Only', JavaFileObject.Kind.SOURCE) == null
+
+                    assert manager.getFileForInput(StandardLocation.CLASS_PATH, 'p', 'Only.class').openInputStream().bytes == MARKER
+                    assert !(manager.getFileForInput(StandardLocation.CLASS_PATH, 'p', 'A.class') instanceof MemClassFileObject)
+                    assert manager.getFileForInput(StandardLocation.CLASS_PATH, 'p', 'notes.txt') == null
+                    shouldFail(IllegalArgumentException) {
+                        manager.getFileForInput(StandardLocation.CLASS_PATH, 'p', '../Evil.class')
+                    }
+
+                    assert manager.contains(StandardLocation.CLASS_PATH, only)
+                    assert !manager.contains(StandardLocation.CLASS_PATH, new MemClassFileObject('p.Missing', null))
+                    assert !manager.contains(StandardLocation.CLASS_PATH, new MemClassFileObject('p.A', null))
+                    assert manager.contains(StandardLocation.CLASS_PATH, fromDisk)
+                    assert manager.isSameFile(only, manager.getJavaFileForInput(StandardLocation.CLASS_PATH, 'p.Only', JavaFileObject.Kind.CLASS))
+
+                    def hiding = new ForwardingJavaFileManager<JavaFileManager>(standard) {
+                        @Override
+                        boolean hasLocation(JavaFileManager.Location location) {
+                            location == StandardLocation.CLASS_PATH ? false : super.hasLocation(location)
+                        }
+                    }
+                    def hiddenClasspath = new InMemoryJavaFileManager(hiding, [:], null, store)
+                    assert names(hiddenClasspath, 'p', false).contains('p.Only')
+
+                    standard.setLocation(StandardLocation.CLASS_PATH, List.of())
+                    def emptyClasspath = new InMemoryJavaFileManager(standard, sink, null, store)
+                    assert emptyClasspath.hasLocation(StandardLocation.CLASS_PATH)
+                    assert names(emptyClasspath, 'p', false).contains('p.Only')
+
+                    def plain = new GroovyClassLoader(this.class.classLoader)
+                    try {
+                        def alone = MemClassOutputClasspath.open(plain)
+                        alone.begin().put('q/Z.class', MARKER)
+                        def plainManager = new InMemoryJavaFileManager(standard, [:], null, alone)
+                        assert plainManager.getJavaFileForInput(
+                                StandardLocation.CLASS_PATH, 'q.Z', JavaFileObject.Kind.CLASS)
+                                .openInputStream().bytes == MARKER
+                    } finally {
+                        plain.close()
+                    }
+
+                    manager.close()
+                    assert sink.isEmpty()
+                } finally {
+                    second.close()
+                }
+            } finally {
+                first.close()
+            }
+        } finally {
+            parent.close()
+            root.deleteDir()
+            standard.close()
+        }
+    }
+
+    private static List<String> names(InMemoryJavaFileManager manager, String packageName, boolean recurse) {
+        manager.list(StandardLocation.CLASS_PATH, packageName, EnumSet.of(JavaFileObject.Kind.CLASS), recurse)
+                .collect { manager.inferBinaryName(StandardLocation.CLASS_PATH, it) }
     }
 
     private static JavaFileObject write(InMemoryJavaFileManager manager, String binaryName) {
