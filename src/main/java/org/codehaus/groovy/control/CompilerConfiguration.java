@@ -103,7 +103,10 @@ public class CompilerConfiguration {
      * compilation unit publishes on the loader it is given. A later unit
      * does not see those bytes unless the loader came from
      * {@code MemClassOutputPublication} and the earlier output was published
-     * to it. That publication does not append a URL to the long-lived parent,
+     * to it. Java sources in that later unit then resolve the classes on
+     * javac's classpath. {@code memStub} and this option are both read at
+     * the start of each compile. The publication does not append a URL to
+     * the long-lived parent,
      * and the parent does not define the compiled classes. A class a loader
      * has already defined is not replaced.
      * {@code getResource} is parent-first and then searches URLs in insertion

@@ -518,6 +518,133 @@ final class MemClassOutputPublicationTest {
 
     // GROOVY-12751
     @Test
+    void testLaterJavaSourceResolvesPublishedClasses() {
+        def sources = File.createTempDir('mem-pub-javac', '')
+        def parent = new GroovyClassLoader(this.class.classLoader)
+        try {
+            def config = memConfig()
+            def publication = new MemClassOutputPublication(parent, config)
+            def first = publication.newCompilationLoader()
+            try {
+                compile(sources, first, [
+                        'p/Lib.java': P_LIB,
+                        'p/G.groovy': P_G,
+                ])
+                publication.publish(first)
+                assert first.loadClass('p.G').getDeclaredMethod('g').invoke(null) == 3
+
+                def second = publication.newCompilationLoader()
+                try {
+                    compile(sources, second, [
+                            'q/Use.java' : Q_USE,
+                            'q/Also.groovy': Q_ALSO,
+                    ])
+                    assert second.loadClass('q.Use').getDeclaredMethod('n').invoke(null) == 5
+                    assert second.loadClass('q.Also').getDeclaredMethod('n').invoke(null) == 5
+                    assert second.loadClass('p.G').getDeclaredMethod('g').invoke(null) == 3
+                    assertNoClassFiles(sources)
+                } finally {
+                    second.close()
+                }
+            } finally {
+                first.close()
+            }
+        } finally {
+            parent.close()
+            sources.deleteDir()
+        }
+    }
+
+    // GROOVY-12751
+    @Test
+    void testOverlappingJavaClassUsesTheNewCompilation() {
+        def sources = File.createTempDir('mem-pub-overlap-java', '')
+        def parent = new GroovyClassLoader(this.class.classLoader)
+        try {
+            def config = memConfig()
+            def publication = new MemClassOutputPublication(parent, config)
+            def first = publication.newCompilationLoader()
+            try {
+                compile(sources, first, [
+                        'p/Lib.java': P_LIB,
+                        'p/G.groovy': P_G,
+                ])
+                publication.publish(first)
+
+                def second = publication.newCompilationLoader()
+                try {
+                    compile(sources, second, [
+                            'p/Lib.java': P_LIB_TEXT,
+                            'q/Use.java': Q_USE_TEXT,
+                    ])
+                    assert second.loadClass('q.Use').getDeclaredMethod('n').invoke(null) == 'five3'
+                    publication.publish(second)
+                } finally {
+                    second.close()
+                }
+
+                def third = publication.newCompilationLoader()
+                try {
+                    compile(sources, third, ['q/Later.java': Q_LATER])
+                    assert third.loadClass('q.Later').getDeclaredMethod('n').invoke(null) == 'five3'
+                    assert third.loadClass('p.G').getDeclaredMethod('g').invoke(null) == 3
+                } finally {
+                    third.close()
+                }
+            } finally {
+                first.close()
+            }
+        } finally {
+            parent.close()
+            sources.deleteDir()
+        }
+    }
+
+    // GROOVY-12751
+    @Test
+    void testFailedPublishDoesNotLeakIntoLaterJava() {
+        def sources = File.createTempDir('mem-pub-leak', '')
+        def parent = new GroovyClassLoader(this.class.classLoader)
+        try {
+            def config = memConfig()
+            def publication = new MemClassOutputPublication(parent, config)
+            def first = publication.newCompilationLoader()
+            try {
+                compile(sources, first, [
+                        'p/Lib.java': P_LIB,
+                        'p/G.groovy': P_G,
+                ])
+                publication.publish(first)
+
+                def second = publication.newCompilationLoader()
+                try {
+                    def thrown = shouldFail(CompilationFailedException) {
+                        compile(sources, second, ['p/Lib.java': P_LIB_BROKEN])
+                    }
+                    assert thrown.message.contains('incompatible')
+                    publication.publish(second)
+                } finally {
+                    second.close()
+                }
+
+                def third = publication.newCompilationLoader()
+                try {
+                    compile(sources, third, ['q/Use.java': Q_USE])
+                    assert third.loadClass('q.Use').getDeclaredMethod('n').invoke(null) == 5
+                } finally {
+                    third.close()
+                }
+            } finally {
+                first.close()
+            }
+        } finally {
+            parent.close()
+            sources.deleteDir()
+        }
+    }
+
+    // GROOVY-12751
+    @Test
     void testOrdinaryLoaderStillAppendsAUrlPerOpen() {
         def loader = new GroovyClassLoader(this.class.classLoader)
         try {
@@ -528,6 +655,73 @@ final class MemClassOutputPublicationTest {
             loader.close()
         }
     }
+
+    private static final String P_LIB = '''\
+        package p;
+
+        public class Lib {
+            public static int n() { return 2; }
+        }
+        '''.stripIndent()
+
+    private static final String P_LIB_TEXT = '''\
+        package p;
+
+        public class Lib {
+            public static String n() { return "five"; }
+        }
+        '''.stripIndent()
+
+    private static final String P_LIB_BROKEN = '''\
+        package p;
+
+        public class Lib {
+            public static int n() { return "no"; }
+        }
+        '''.stripIndent()
+
+    private static final String P_G = '''\
+        package p
+
+        class G {
+            static int g() { 3 }
+        }
+        '''.stripIndent()
+
+    private static final String Q_USE = '''\
+        package q;
+
+        public class Use {
+            public static int n() { return p.Lib.n() + p.G.g(); }
+        }
+        '''.stripIndent()
+
+    private static final String Q_ALSO = '''\
+        package q
+
+        import groovy.transform.CompileStatic
+
+        @CompileStatic
+        class Also {
+            static int n() { p.Lib.n() + p.G.g() }
+        }
+        '''.stripIndent()
+
+    private static final String Q_USE_TEXT = '''\
+        package q;
+
+        public class Use {
+            public static String n() { return p.Lib.n() + p.G.g(); }
+        }
+        '''.stripIndent()
+
+    private static final String Q_LATER = '''\
+        package q;
+
+        public class Later {
+            public static String n() { return p.Lib.n() + p.G.g(); }
+        }
+        '''.stripIndent()
 
     private static CompilerConfiguration memConfig() {
         def config = new CompilerConfiguration()

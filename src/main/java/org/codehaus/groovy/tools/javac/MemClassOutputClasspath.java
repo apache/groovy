@@ -230,6 +230,30 @@ final class MemClassOutputClasspath {
             }
             return prior.get(resourceName);
         }
+
+        /**
+         * Classes a reader of this store can see. The open stage hides a
+         * committed class of the same name, and a committed class hides one
+         * published by an earlier compilation. The arrays are the live map
+         * entries and must not be modified.
+         *
+         * @return a snapshot of resource name to class bytes
+         */
+        Map<String, byte[]> visible() {
+            Map<String, byte[]> view = new HashMap<>();
+            PublishedOutput prior = published;
+            if (prior != null) {
+                view.putAll(prior.snapshot());
+            }
+            synchronized (this) {
+                view.putAll(committed);
+                ConcurrentHashMap<String, byte[]> stage = staged;
+                if (stage != null) {
+                    view.putAll(stage);
+                }
+            }
+            return view;
+        }
     }
 
     /**
@@ -246,6 +270,14 @@ final class MemClassOutputClasspath {
 
         byte[] get(final String resourceName) {
             return bytes.get(resourceName);
+        }
+
+        /**
+         * The map readers currently see. The map is not modified again;
+         * {@link #merge} replaces it.
+         */
+        Map<String, byte[]> snapshot() {
+            return bytes;
         }
 
         void merge(final Map<String, byte[]> incoming) {
@@ -335,7 +367,7 @@ final class MemClassOutputClasspath {
             }
             data = store.read(resourcePath(url, store.id));
             if (data == null) {
-                throw new FileNotFoundException(String.valueOf(url));
+                throw missing(String.valueOf(url));
             }
             connected = true;
         }
@@ -371,22 +403,42 @@ final class MemClassOutputClasspath {
         try {
             path = url.toURI().getPath();
         } catch (URISyntaxException e) {
-            throw new FileNotFoundException(String.valueOf(url));
+            throw missing(String.valueOf(url));
         }
         if (path == null || path.isEmpty()) {
-            throw new FileNotFoundException(String.valueOf(url));
+            throw missing(String.valueOf(url));
         }
         if (path.startsWith("/")) {
             path = path.substring(1);
         }
         String prefix = id + "/";
         if (!path.startsWith(prefix)) {
-            throw new FileNotFoundException(path);
+            throw missing(path);
         }
         path = path.substring(prefix.length());
         if (path.isEmpty() || path.charAt(0) == '/' || path.indexOf('\\') >= 0 || path.contains("..")) {
-            throw new FileNotFoundException(path);
+            throw missing(path);
         }
         return path;
+    }
+
+    /**
+     * A miss during a speculative lookup. Resolvers ask for many names that
+     * are not present, and filling in the stack is the expensive part.
+     * Callers only need the exception type and the path.
+     */
+    private static final class NotFound extends FileNotFoundException {
+        private NotFound(final String message) {
+            super(message);
+        }
+
+        @Override
+        public synchronized Throwable fillInStackTrace() {
+            return this;
+        }
+    }
+
+    private static FileNotFoundException missing(final String path) {
+        return new NotFound(path);
     }
 }

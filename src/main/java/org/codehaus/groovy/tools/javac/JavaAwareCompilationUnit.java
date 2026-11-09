@@ -63,17 +63,18 @@ import static org.codehaus.groovy.control.CompilerConfiguration.MEM_STUB;
  * directory the class loader is not using. Each unit publishes on the loader
  * it is given. A later unit sees those bytes only when that loader was
  * created by {@link MemClassOutputPublication} and the host published the
- * earlier unit. A class the loader has already defined is not replaced.
+ * earlier unit. Java sources in that later unit resolve the published classes
+ * on javac's classpath. A class the loader has already defined is not replaced.
  * An earlier classpath entry or a parent loader hides the in-memory bytes.
+ * {@code memStub} is read at the start of each {@link #compile(int)}, as is
+ * in-memory class output.
  */
 public class JavaAwareCompilationUnit extends CompilationUnit {
 
-    private final JavaStubGenerator stubGenerator;
     private final Set<String> javaSources = new HashSet<>();
     private JavaCompilerFactory compilerFactory = new JavacCompilerFactory();
-    private final File generationGoal;
     private final boolean keepStubs;
-    private final boolean memStubEnabled;
+    private JavaStubGenerator stubGenerator;
     private MemClassOutputClasspath.Store memOutput;
     private Map<String, byte[]> memClassBytes;
 
@@ -120,9 +121,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
             String sourceEncoding = this.configuration.getSourceEncoding();
 
             this.keepStubs = Boolean.TRUE.equals(options.get("keepStubs"));
-            this.memStubEnabled = Boolean.TRUE.equals(options.get(MEM_STUB));
-            this.generationGoal = memStubEnabled ? null : (File) options.get("stubDir");
-            this.stubGenerator = new JavaStubGenerator(generationGoal, false, sourceEncoding);
+            this.stubGenerator = newStubGenerator(options, sourceEncoding);
         }
 
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
@@ -216,6 +215,9 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
      * removed. A class the loader has already defined is not replaced.
      * Another compilation unit sees this output only through a
      * {@link MemClassOutputPublication} the host has published to.
+     * {@code memStub} and in-memory class output are read from the
+     * configuration here, so a change made since the previous compile takes
+     * effect.
      *
      * @param throughPhase the last phase to run
      * @throws CompilationFailedException if compilation fails
@@ -223,6 +225,10 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     @Override
     public void compile(final int throughPhase) throws CompilationFailedException {
         rejectMemClassOutputWithoutMemStub();
+        Map<String, Object> options = getConfiguration().getJointCompilationOptions();
+        if (options != null) {
+            this.stubGenerator = newStubGenerator(options, getConfiguration().getSourceEncoding());
+        }
         boolean staging = bindMemOutput();
         boolean ok = false;
         try {
@@ -273,20 +279,37 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     }
 
     /**
-     * Warns when a class just published is hidden by an earlier classpath entry.
-     * {@code getResource} is parent-first and then searches URLs in order, and
-     * the in-memory URL is appended last.
+     * Creates the stub generator for the options in force at this compile.
+     * {@code memStub} selects in-memory stubs. Otherwise stubs are written
+     * under {@code stubDir}.
+     */
+    private static JavaStubGenerator newStubGenerator(final Map<String, Object> options, final String encoding) {
+        boolean memStub = Boolean.TRUE.equals(options.get(MEM_STUB));
+        File goal = memStub ? null : (File) options.get("stubDir");
+        return new JavaStubGenerator(goal, false, encoding);
+    }
+
+    /**
+     * Warns when a class this compile published is hidden by an earlier
+     * classpath entry. {@code getResource} is parent-first and then searches
+     * URLs in order, and the in-memory URL is appended last. Javac's classes
+     * are checked when javac returns. Groovy's own classes are checked as
+     * they are written, which is later.
      */
     private void warnIfShadowed() {
         if (memClassBytes == null) {
             return;
         }
         for (String name : memClassBytes.keySet()) {
-            URL url = getClassLoader().getResource(name);
-            if (url != null && !MemClassOutputClasspath.isInMemory(url)) {
-                getErrorCollector().addWarning(WarningMessage.LIKELY_ERRORS,
-                        "in-memory class " + name + " is hidden by " + url, null, null);
-            }
+            warnIfShadowed(name);
+        }
+    }
+
+    private void warnIfShadowed(final String name) {
+        URL url = getClassLoader().getResource(name);
+        if (url != null && !MemClassOutputClasspath.isInMemory(url)) {
+            getErrorCollector().addWarning(WarningMessage.LIKELY_ERRORS,
+                    "in-memory class " + name + " is hidden by " + url, null, null);
         }
     }
 
@@ -298,6 +321,16 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
      */
     Map<String, byte[]> memClassOutputBytes() {
         return memClassBytes;
+    }
+
+    /**
+     * The store javac should read when it searches the classpath, or
+     * {@code null} when this compile writes class files to disk.
+     *
+     * @return this unit's in-memory store
+     */
+    MemClassOutputClasspath.Store memClassOutputStore() {
+        return memOutput;
     }
 
     /**
@@ -336,7 +369,9 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         if (memClassBytes != null) {
             byte[] bytes = groovyClass.getBytes();
             if (bytes != null && bytes.length > 0) {
-                memClassBytes.put(InMemoryJavaFileManager.resourceName(groovyClass.getName()), bytes.clone());
+                String name = InMemoryJavaFileManager.resourceName(groovyClass.getName());
+                memClassBytes.put(name, bytes.clone());
+                warnIfShadowed(name);
             }
             return;
         }

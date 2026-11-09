@@ -31,7 +31,10 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -43,10 +46,16 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * File manager that keeps javac {@code CLASS_OUTPUT} on the heap.
  * <p>
- * Classpath, source path, and other input locations are forwarded to the
- * wrapped manager. Class files are never opened on the filesystem: {@code -d}
- * is ignored, and {@link StandardLocation#CLASS_OUTPUT} always resolves to an
- * in-memory class file. The manager does not perform network I/O.
+ * Source path and other input locations are forwarded to the wrapped manager.
+ * {@link StandardLocation#CLASS_PATH} is forwarded as well, and classes already
+ * visible from this compilation's in-memory store are listed and opened after
+ * the delegated classpath misses. An earlier classpath entry hides a class of
+ * the same name, which is the same order the compilation class loader uses.
+ * Class files are never opened on the filesystem: {@code -d} is ignored, and
+ * {@link StandardLocation#CLASS_OUTPUT} always resolves to an in-memory class
+ * file. The manager does not perform network I/O. Platform and module locations
+ * are left to the wrapped manager, so these classes are not presented as
+ * platform classes.
  * <p>
  * On JDKs whose file manager asks for output with originating files, the
  * platform default forwards that call to {@link #getJavaFileForOutput}, which
@@ -73,6 +82,13 @@ class InMemoryJavaFileManager extends ForwardingJavaFileManager<JavaFileManager>
     private final Map<String, MemSourceFileObject> sources = new ConcurrentHashMap<>();
     private final Map<String, byte[]> resourceSink;
     private final Set<FileObject> discardedSiblings;
+    private final MemClassOutputClasspath.Store classpathStore;
+    /**
+     * Classes the store could see when the classpath was first queried.
+     * Built once: javac asks for many packages, and classes written later in
+     * this javac run are already visible as {@link StandardLocation#CLASS_OUTPUT}.
+     */
+    private Map<String, List<MemClassFileObject>> publishedByPackage;
 
     /**
      * Creates a manager that records class files only in this instance.
@@ -81,7 +97,7 @@ class InMemoryJavaFileManager extends ForwardingJavaFileManager<JavaFileManager>
      *        typically the platform's standard file manager
      */
     InMemoryJavaFileManager(final JavaFileManager fileManager) {
-        this(fileManager, null, null);
+        this(fileManager, null, null, null);
     }
 
     /**
@@ -97,7 +113,7 @@ class InMemoryJavaFileManager extends ForwardingJavaFileManager<JavaFileManager>
      * @param resourceSink optional mutable map that receives class bytes; may be {@code null}
      */
     InMemoryJavaFileManager(final JavaFileManager fileManager, final Map<String, byte[]> resourceSink) {
-        this(fileManager, resourceSink, null);
+        this(fileManager, resourceSink, null, null);
     }
 
     /**
@@ -112,6 +128,23 @@ class InMemoryJavaFileManager extends ForwardingJavaFileManager<JavaFileManager>
      */
     InMemoryJavaFileManager(final JavaFileManager fileManager, final Map<String, byte[]> resourceSink,
             final Set<? extends FileObject> discardedSiblings) {
+        this(fileManager, resourceSink, discardedSiblings, null);
+    }
+
+    /**
+     * Creates a manager that publishes class files and also serves
+     * {@code classpathStore} on {@link StandardLocation#CLASS_PATH}.
+     * {@code classpathStore} may be {@code null} when nothing has been
+     * published in memory. The view is taken on the first classpath query.
+     *
+     * @param fileManager the manager that resolves inputs and the classpath
+     * @param resourceSink optional mutable map that receives published bytes; may be {@code null}
+     * @param discardedSiblings stub sources whose class files must not be published; may be {@code null}
+     * @param classpathStore classes an earlier compilation published, plus this
+     *        compilation's committed and staged bytes; may be {@code null}
+     */
+    InMemoryJavaFileManager(final JavaFileManager fileManager, final Map<String, byte[]> resourceSink,
+            final Set<? extends FileObject> discardedSiblings, final MemClassOutputClasspath.Store classpathStore) {
         super(Objects.requireNonNull(fileManager, "fileManager"));
         this.resourceSink = resourceSink;
         Set<FileObject> stubs = Collections.newSetFromMap(new IdentityHashMap<>());
@@ -119,6 +152,7 @@ class InMemoryJavaFileManager extends ForwardingJavaFileManager<JavaFileManager>
             stubs.addAll(discardedSiblings);
         }
         this.discardedSiblings = stubs;
+        this.classpathStore = classpathStore;
     }
 
     /**
@@ -180,6 +214,9 @@ class InMemoryJavaFileManager extends ForwardingJavaFileManager<JavaFileManager>
         if (location == StandardLocation.CLASS_OUTPUT) {
             return true;
         }
+        if (location == StandardLocation.CLASS_PATH && !publishedByPackage().isEmpty()) {
+            return true;
+        }
         return super.hasLocation(location);
     }
 
@@ -214,7 +251,8 @@ class InMemoryJavaFileManager extends ForwardingJavaFileManager<JavaFileManager>
     }
 
     /**
-     * Lists class files captured in memory when {@code location} is class output.
+     * Lists class files captured in memory when {@code location} is class output,
+     * and appends classes from the in-memory store when {@code location} is the classpath.
      *
      * @param location the location to search
      * @param packageName the package to list, or {@code ""} for the default package
@@ -226,17 +264,48 @@ class InMemoryJavaFileManager extends ForwardingJavaFileManager<JavaFileManager>
     @Override
     public Iterable<JavaFileObject> list(final Location location, final String packageName,
             final Set<JavaFileObject.Kind> kinds, final boolean recurse) throws IOException {
+        // A missing package name is the default package. The platform manager rejects null.
+        String pkg = packageName == null ? "" : packageName;
         if (location == StandardLocation.CLASS_OUTPUT) {
             if (kinds == null || !kinds.contains(JavaFileObject.Kind.CLASS)) {
                 return List.of();
             }
-            String pkg = packageName == null ? "" : packageName;
             return files.values().stream()
                     .filter(file -> !file.isEmpty() && inPackage(file.getBinaryName(), pkg, recurse))
                     .map(file -> (JavaFileObject) file)
                     .toList();
         }
-        return super.list(location, packageName, kinds, recurse);
+        Iterable<JavaFileObject> delegated = delegated(location, pkg, kinds, recurse);
+        if (location != StandardLocation.CLASS_PATH || kinds == null || !kinds.contains(JavaFileObject.Kind.CLASS)) {
+            return delegated;
+        }
+        List<MemClassFileObject> extras = classesIn(pkg, recurse);
+        if (extras.isEmpty()) {
+            return delegated;
+        }
+        Set<String> hidden = new HashSet<>();
+        List<JavaFileObject> all = new ArrayList<>();
+        for (JavaFileObject file : delegated) {
+            all.add(file);
+            if (file.getKind() != JavaFileObject.Kind.CLASS) {
+                continue;
+            }
+            try {
+                String name = super.inferBinaryName(location, file);
+                if (name != null) {
+                    hidden.add(name);
+                }
+            } catch (IllegalArgumentException | UnsupportedOperationException ignored) {
+                // A classpath entry javac can still open. Do not drop a published
+                // class because this entry has no binary name.
+            }
+        }
+        for (MemClassFileObject file : extras) {
+            if (!hidden.contains(file.getBinaryName())) {
+                all.add(file);
+            }
+        }
+        return all;
     }
 
     /**
@@ -291,6 +360,15 @@ class InMemoryJavaFileManager extends ForwardingJavaFileManager<JavaFileManager>
         if (location == StandardLocation.SOURCE_OUTPUT && kind == JavaFileObject.Kind.SOURCE) {
             MemSourceFileObject source = sources.get(className);
             return source == null || source.isEmpty() ? null : source;
+        }
+        if (location == StandardLocation.CLASS_PATH && kind == JavaFileObject.Kind.CLASS && classpathStore != null) {
+            if (super.hasLocation(location)) {
+                JavaFileObject delegated = super.getJavaFileForInput(location, className, kind);
+                if (delegated != null) {
+                    return delegated;
+                }
+            }
+            return classpathClass(className);
         }
         return super.getJavaFileForInput(location, className, kind);
     }
@@ -366,6 +444,16 @@ class InMemoryJavaFileManager extends ForwardingJavaFileManager<JavaFileManager>
             file.openOutputStream().write(bytes);
             return file;
         }
+        if (location == StandardLocation.CLASS_PATH && classpathStore != null && relativeName != null
+                && relativeName.endsWith(JavaFileObject.Kind.CLASS.extension)) {
+            if (super.hasLocation(location)) {
+                FileObject delegated = super.getFileForInput(location, packageName, relativeName);
+                if (delegated != null) {
+                    return delegated;
+                }
+            }
+            return classpathClass(binaryName(packageName, relativeName));
+        }
         return super.getFileForInput(location, packageName, relativeName);
     }
 
@@ -380,7 +468,21 @@ class InMemoryJavaFileManager extends ForwardingJavaFileManager<JavaFileManager>
     @Override
     public boolean contains(final Location location, final FileObject fileObject) throws IOException {
         if (fileObject instanceof MemClassFileObject memClass) {
-            return location == StandardLocation.CLASS_OUTPUT && files.get(memClass.getBinaryName()) == memClass;
+            if (location == StandardLocation.CLASS_OUTPUT) {
+                return files.get(memClass.getBinaryName()) == memClass;
+            }
+            if (location == StandardLocation.CLASS_PATH) {
+                if (super.hasLocation(location)) {
+                    JavaFileObject delegated = super.getJavaFileForInput(
+                            location, memClass.getBinaryName(), JavaFileObject.Kind.CLASS);
+                    if (delegated != null) {
+                        return false;
+                    }
+                }
+                MemClassFileObject served = classpathClass(memClass.getBinaryName());
+                return served != null && served.equals(memClass);
+            }
+            return false;
         }
         if (location == StandardLocation.CLASS_OUTPUT) {
             return false;
@@ -411,6 +513,94 @@ class InMemoryJavaFileManager extends ForwardingJavaFileManager<JavaFileManager>
     public void close() throws IOException {
         flush();
         super.close();
+    }
+
+    /**
+     * The wrapped manager's listing, or an empty listing when the classpath
+     * has no paths. An empty classpath is not an error: the in-memory classes
+     * are still served.
+     */
+    private Iterable<JavaFileObject> delegated(final Location location, final String packageName,
+            final Set<JavaFileObject.Kind> kinds, final boolean recurse) throws IOException {
+        if (location == StandardLocation.CLASS_PATH && !super.hasLocation(location)) {
+            return List.of();
+        }
+        return super.list(location, packageName, kinds, recurse);
+    }
+
+    private Map<String, List<MemClassFileObject>> publishedByPackage() {
+        Map<String, List<MemClassFileObject>> index = publishedByPackage;
+        if (index != null) {
+            return index;
+        }
+        Map<String, List<MemClassFileObject>> built = new HashMap<>();
+        if (classpathStore != null) {
+            for (Map.Entry<String, byte[]> entry : classpathStore.visible().entrySet()) {
+                byte[] bytes = entry.getValue();
+                String binary = binaryNameOfClassResource(entry.getKey());
+                if (binary == null || bytes == null || bytes.length == 0) {
+                    continue;
+                }
+                built.computeIfAbsent(packageOf(binary), key -> new ArrayList<>()).add(MemClassFileObject.forReading(binary, bytes));
+            }
+        }
+        publishedByPackage = built;
+        return built;
+    }
+
+    private List<MemClassFileObject> classesIn(final String packageName, final boolean recurse) {
+        List<MemClassFileObject> found = new ArrayList<>();
+        for (Map.Entry<String, List<MemClassFileObject>> entry : publishedByPackage().entrySet()) {
+            if (packageMatches(entry.getKey(), packageName, recurse)) {
+                found.addAll(entry.getValue());
+            }
+        }
+        return found;
+    }
+
+    private MemClassFileObject classpathClass(final String binaryName) {
+        if (binaryName == null || binaryName.isEmpty()
+                || binaryName.indexOf('\\') >= 0 || binaryName.contains("..")) {
+            return null;
+        }
+        List<MemClassFileObject> candidates = publishedByPackage().get(packageOf(binaryName));
+        if (candidates == null) {
+            return null;
+        }
+        for (MemClassFileObject file : candidates) {
+            if (binaryName.equals(file.getBinaryName())) {
+                return file;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Binary name for a class resource, or {@code null} when {@code resource}
+     * is not a class file that can be named on the classpath. Paths that
+     * escape the map are rejected.
+     */
+    private static String binaryNameOfClassResource(final String resource) {
+        String extension = JavaFileObject.Kind.CLASS.extension;
+        if (resource == null || resource.length() <= extension.length()
+                || !resource.endsWith(extension)
+                || resource.charAt(0) == '/'
+                || resource.indexOf('\\') >= 0
+                || resource.contains("..")) {
+            return null;
+        }
+        String binary = resource.substring(0, resource.length() - extension.length()).replace('/', '.');
+        if (binary.isEmpty() || binary.charAt(0) == '.' || binary.endsWith(".") || binary.contains("..")) {
+            return null;
+        }
+        return binary;
+    }
+
+    private static boolean packageMatches(final String candidate, final String requested, final boolean recurse) {
+        if (!recurse) {
+            return candidate.equals(requested);
+        }
+        return requested.isEmpty() || candidate.equals(requested) || candidate.startsWith(requested + ".");
     }
 
     private static boolean inPackage(final String binaryName, final String packageName, final boolean recurse) {

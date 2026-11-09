@@ -359,6 +359,8 @@ public class CompilationUnit extends ProcessingUnit {
      * Writes one generated class file to {@link CompilerConfiguration#getTargetDirectory()}.
      * Called during {@link Phases#OUTPUT} for each generated class.
      * Joint compilation overrides this when class files are kept in memory.
+     * An override that keeps the bytes itself should not call this method,
+     * or the class file is written into the target directory as well.
      *
      * @param groovyClass the generated class
      * @throws IOException if the class file cannot be written

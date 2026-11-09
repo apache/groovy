@@ -371,6 +371,7 @@ final class MemClassOutputTest {
             assert rejected(new URL(url, "/${id}//nested"))
             assert rejected(new URL(url, "/${id}/p/%2e%2e/secret.class"))
             assert rejected(new URL(url, "/${id}/p/%5csecret.class"))
+            assert rejected(new URL(url, "/${id}/missing.class"))
             assert new URL(url, '/%zz').openConnection().contentLengthLong == -1L
         } finally {
             loader.close()
@@ -878,6 +879,145 @@ final class MemClassOutputTest {
         assert after == before
     }
 
+    // GROOVY-12751
+    @Test
+    void testDecompilerCachesSchemesOtherThanInMemoryOutput() {
+        byte[] bytes = classBytes(CacheOne)
+        def handler = new URLStreamHandler() {
+            @Override
+            protected URLConnection openConnection(URL u) {
+                return new URLConnection(u) {
+                    @Override
+                    void connect() {
+                    }
+
+                    @Override
+                    InputStream getInputStream() {
+                        new ByteArrayInputStream(bytes)
+                    }
+                }
+            }
+        }
+        def field = AsmDecompiler.getDeclaredField('stubCache')
+        field.accessible = true
+        Map cache = field.get(null) as Map
+        ['vfs', 'bundleresource', 'wsjar'].each { String scheme ->
+            def url = new URL(scheme, '', -1, '/p/T.class', handler)
+            def first = AsmDecompiler.parseClass(url)
+            assert AsmDecompiler.parseClass(url).is(first)
+            assert cache.keySet().any { it.scheme == scheme }
+        }
+
+        def file = File.createTempFile('decompiler-cache', '.class')
+        try {
+            file.bytes = bytes
+            def fileUrl = file.toURI().toURL()
+            def parsed = AsmDecompiler.parseClass(fileUrl)
+            assert AsmDecompiler.parseClass(fileUrl).is(parsed)
+            assert cache.keySet().any { it.scheme == 'file' }
+        } finally {
+            file.delete()
+        }
+    }
+
+    // GROOVY-12751
+    @Test
+    void testMemStubIsReadOnEachCompile() {
+        def sources = File.createTempDir('mem-stub-toggle', '')
+        def stubs = File.createTempDir('mem-stub-dir', '')
+        def classes = File.createTempDir('mem-stub-out', '')
+        try {
+            def javaFile = write(sources, 'only/JavaSide.java', '''\
+                package only;
+
+                public class JavaSide {
+                    public static int n() { return 1; }
+                }
+                '''.stripIndent())
+            def groovyFile = write(sources, 'only/Main.groovy', '''\
+                package only
+
+                class Main {
+                    static int n() { JavaSide.n() }
+                }
+                '''.stripIndent())
+            def config = new CompilerConfiguration()
+            config.targetDirectory = classes
+            config.jointCompilationOptions = [memStub: true, memClassOutput: true, keepStubs: true]
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            try {
+                def unit = new JavaAwareCompilationUnit(config, loader)
+                unit.addSources(javaFile, groovyFile)
+                unit.compile()
+                assert stubJavaFiles(stubs).empty
+                assert !new File(classes, 'only/Main.class').exists()
+                assert !new File(classes, 'only/JavaSide.class').exists()
+
+                def extra = write(sources, 'only/Extra.groovy', '''\
+                    package only
+
+                    class Extra {
+                        static int n() { JavaSide.n() }
+                    }
+                    '''.stripIndent())
+                config.jointCompilationOptions = [memStub: false, stubDir: stubs, keepStubs: true]
+                // A source that has not been compiled yet is what the next compile runs.
+                // Java paths are cleared after javac, so they are given again too.
+                unit.addSources(javaFile, extra)
+                unit.compile()
+                assert stubJavaFiles(stubs).any { it.name == 'Extra.java' }
+                assert new File(classes, 'only/Extra.class').isFile()
+                assert new File(classes, 'only/JavaSide.class').isFile()
+                loader.addClasspath(classes.absolutePath)
+                assert loader.loadClass('only.Extra').getDeclaredMethod('n').invoke(null) == 1
+            } finally {
+                loader.close()
+            }
+        } finally {
+            sources.deleteDir()
+            stubs.deleteDir()
+            classes.deleteDir()
+        }
+    }
+
+    // GROOVY-12751
+    @Test
+    void testGroovyOutputShadowIsReported() {
+        def sources = File.createTempDir('mem-groovy-shadow-src', '')
+        def stale = File.createTempDir('mem-groovy-shadow-out', '')
+        try {
+            def javaFile = write(sources, 'probe/JavaSide.java', STRING_KIND_JAVA.replace('memclassoutput.reload', 'probe'))
+            def mainFile = write(sources, 'probe/Main.groovy', STRING_KIND_GROOVY.replace('memclassoutput.reload', 'probe'))
+            def disk = new CompilerConfiguration()
+            disk.targetDirectory = stale
+            disk.jointCompilationOptions = [memStub: true]
+            def diskLoader = new GroovyClassLoader(this.class.classLoader)
+            try {
+                def unit = new JavaAwareCompilationUnit(disk, diskLoader)
+                unit.addSources(javaFile, mainFile)
+                unit.compile()
+            } finally {
+                diskLoader.close()
+            }
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            loader.addClasspath(stale.absolutePath)
+            try {
+                def unit = memUnit(loader)
+                unit.addSources(javaFile, mainFile)
+                unit.compile()
+                def messages = unit.errorCollector.warnings*.message
+                assert messages.any { it.contains('probe/JavaSide.class') && it.contains('hidden by') }
+                assert messages.any { it.contains('probe/Main.class') && it.contains('hidden by') }
+            } finally {
+                loader.close()
+            }
+        } finally {
+            sources.deleteDir()
+            stale.deleteDir()
+        }
+    }
+
     private static JavaAwareCompilationUnit memUnit(GroovyClassLoader loader) {
         def config = new CompilerConfiguration()
         config.setTargetDirectory((File) null)
@@ -939,6 +1079,7 @@ final class MemClassOutputTest {
             url.openStream().close()
             return false
         } catch (FileNotFoundException e) {
+            assert e.stackTrace.length == 0
             return true
         }
     }
