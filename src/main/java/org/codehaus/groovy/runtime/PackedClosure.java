@@ -208,6 +208,11 @@ public abstract class PackedClosure extends Closure<Object> {
     private final String method;
     private final Object[] captured;
     private final boolean strict;
+    // GEP-27 open closures: the live resolver an open closure's free names go through (also
+    // its captured[0]), attached by OpenClosure#create; null for an ordinary packed closure.
+    // It replaces the strict guard rather than coexisting with it: OpenClosure#create, the only
+    // caller of openOver, always passes strict=false, so classic and strict exclude each other.
+    private OpenClosure.ClassicResolver classic;
     // Lazy: only the adapted (arity-mismatch) path needs it, and building it in the constructor
     // would put an allocation on every closure creation and push <init> past the JIT's inline budget.
     private ParameterTypes paramInfo;
@@ -243,6 +248,12 @@ public abstract class PackedClosure extends Closure<Object> {
         this.parameterTypes = visibleTypes;
     }
 
+    /** Attaches the open body's resolver, so delegate/strategy changes reconfigure name resolution. */
+    void openOver(final OpenClosure.ClassicResolver resolver) {
+        this.classic = resolver;
+        resolver.bind(this);
+    }
+
     // GEP-27 runtime guard: a hoisted body binds free names to the owner at compile time, so it
     // cannot honour a caller-set delegate. Rather than silently mis-resolve (returning the owner's
     // member where a normal closure would reach the delegate), fail fast at the point of misuse.
@@ -256,6 +267,8 @@ public abstract class PackedClosure extends Closure<Object> {
                     + "delegate cannot be honoured. Remove @PackedClosures from this scope, or "
                     + "exclude this closure, if it relies on delegate-based resolution.");
         }
+        // checked first, so a rejected delegate changes nothing (classic is null when strict)
+        if (classic != null) classic.setDelegate(delegate);
         super.setDelegate(delegate);
     }
 
@@ -272,6 +285,8 @@ public abstract class PackedClosure extends Closure<Object> {
                     + "OWNER_FIRST/OWNER_ONLY are supported. Remove @PackedClosures from this "
                     + "scope, or exclude this closure.");
         }
+        // checked first, so a rejected strategy changes nothing (classic is null when strict)
+        if (classic != null) classic.setResolveStrategy(resolveStrategy);
         super.setResolveStrategy(resolveStrategy);
     }
 
