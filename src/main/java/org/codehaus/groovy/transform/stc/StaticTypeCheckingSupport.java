@@ -64,6 +64,7 @@ import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -1182,7 +1183,7 @@ public abstract class StaticTypeCheckingSupport {
         }
         List<MethodNode> fitting = new ArrayList<>(methods.size());
         for (MethodNode method : methods) {
-            Parameter[] parameters = parametersForDistance(method);
+            Parameter[] parameters = parametersForDistance(method, null);
             boolean fits = true;
             for (int i = 0, n = Math.min(argumentTypes.length, parameters.length); i < n && fits; i += 1) {
                 IntPredicate arity = argumentTypes[i] == null ? null : argumentTypes[i].getNodeMetaData(FUNCTOR_ARITY);
@@ -1197,43 +1198,29 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     private static List<MethodNode> chooseBestMethods(final ClassNode receiver, Collection<MethodNode> methods, final ClassNode[] argumentTypes) {
-        List<MethodNode> bestMethods = new ArrayList<>();
-
         // phase 0: functional-argument arity classifier
         if (methods.size() > 1) {
             methods = filterByFunctorArity(methods, argumentTypes);
         }
 
-        // phase 1: argument-parameter distance classifier
-        int bestDist = Integer.MAX_VALUE;
-        for (MethodNode method : methods) {
-            int dist = measureParametersAndArgumentsDistance(parametersForDistance(method), argumentTypes);
-            if (dist >= 0 && dist <= bestDist) {
-                if (dist < bestDist) {
-                    bestDist = dist;
-                    bestMethods.clear();
-                }
-                bestMethods.add(method);
-            }
+        // Prefer parameters instantiated from the receiver. A total miss falls back to the
+        // erased signatures so a later mismatch diagnostic still names a method. The
+        // redundancy filter consumes whichever of those two views won.
+        boolean instantiate = methods.size() > 1 && receiver != null;
+        ParameterDistance distance = distanceParameters(methods, instantiate ? receiver : null);
+        List<MethodNode> bestMethods = closestMethods(methods, argumentTypes, distance.parameters);
+        if (bestMethods.isEmpty() && distance.instantiated) {
+            distance = distanceParameters(methods, null);
+            bestMethods = closestMethods(methods, argumentTypes, distance.parameters);
         }
         if (bestMethods.size() > 1) { // GROOVY-11258
-            for (var iter = bestMethods.iterator(); iter.hasNext(); ) {
-                MethodNode outer = iter.next(); // if redundant, remove
-                for (MethodNode inner : bestMethods) {
-                    if (inner != outer
-                            && !ParameterUtils.parametersEqual(inner.getParameters(), outer.getParameters())
-                            &&  ParameterUtils.parametersCompatible(inner.getParameters(), outer.getParameters())) {
-                        iter.remove(); // for the given argument type(s), inner can accept everything that outer can
-                        break;
-                    }
-                }
-            }
+            removeLessSpecific(bestMethods, distance.parameters);
         }
 
         // phase 2: receiver-provider distance classifier
         if (bestMethods.size() > 1 && receiver != null) {
             methods = bestMethods;
-            bestDist = Integer.MAX_VALUE;
+            int bestDist = Integer.MAX_VALUE;
             bestMethods = new ArrayList<>();
             for (MethodNode method : methods) {
                 int dist = getClassDistance(method.getDeclaringClass(), receiver);
@@ -1264,8 +1251,87 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
+     * Parameter arrays used to rank one overload set, plus whether any of them
+     * was instantiated from the receiver. The erased pass is a different view.
+     */
+    private static final class ParameterDistance {
+        final Map<MethodNode, Parameter[]> parameters;
+        final boolean instantiated;
+
+        private ParameterDistance(final Map<MethodNode, Parameter[]> parameters, final boolean instantiated) {
+            this.parameters = parameters;
+            this.instantiated = instantiated;
+        }
+    }
+
+    private static ParameterDistance distanceParameters(final Collection<MethodNode> methods, final ClassNode receiver) {
+        Map<MethodNode, Parameter[]> params = new IdentityHashMap<>();
+        Map<ClassNode, Map<GenericsTypeName, GenericsType>> specs = null;
+        boolean instantiated = false;
+        for (MethodNode method : methods) {
+            Map<GenericsTypeName, GenericsType> spec = null;
+            // List<T> erases to List either way. Only a bare placeholder, or an array of one, changes the distance.
+            if (receiver != null && declaresBarePlaceholder(method)) {
+                if (specs == null) {
+                    specs = new IdentityHashMap<>();
+                }
+                spec = classGenericsForDistance(receiver, method, specs);
+                instantiated |= spec != null && !spec.isEmpty();
+            }
+            params.put(method, parametersForDistance(method, spec));
+        }
+        return new ParameterDistance(params, instantiated);
+    }
+
+    private static boolean declaresBarePlaceholder(final MethodNode method) {
+        for (Parameter parameter : method.getParameters()) {
+            if (isGenericsPlaceHolderOrArrayOf(parameter.getOriginType())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static List<MethodNode> closestMethods(final Collection<MethodNode> methods, final ClassNode[] argumentTypes, final Map<MethodNode, Parameter[]> distanceParams) {
+        List<MethodNode> bestMethods = new ArrayList<>();
+        int bestDist = Integer.MAX_VALUE;
+        for (MethodNode method : methods) {
+            int dist = measureParametersAndArgumentsDistance(distanceParams.get(method), argumentTypes);
+            if (dist >= 0 && dist <= bestDist) {
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestMethods.clear();
+                }
+                bestMethods.add(method);
+            }
+        }
+        return bestMethods;
+    }
+
+    private static void removeLessSpecific(final List<MethodNode> bestMethods, final Map<MethodNode, Parameter[]> distanceParams) {
+        for (var iter = bestMethods.iterator(); iter.hasNext(); ) {
+            MethodNode outer = iter.next(); // if redundant, remove
+            Parameter[] outerParams = distanceParams.get(outer);
+            for (MethodNode inner : bestMethods) {
+                if (inner != outer) {
+                    Parameter[] innerParams = distanceParams.get(inner);
+                    if (!ParameterUtils.parametersEqual(innerParams, outerParams)
+                            && ParameterUtils.parametersCompatible(innerParams, outerParams)) {
+                        iter.remove(); // for the given argument type(s), inner can accept everything that outer can
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Distance measurement treats generic parameters as their erasure so a
      * {@code List<T>} parameter does not reject a {@code List} argument.
+     * A bare class type parameter is instantiated from {@code classSpec} first,
+     * so {@code T} on {@code Box<String>} is measured as {@code String}. The spec
+     * is not rewritten: a contravariant argument ({@code ? super X}) erases to
+     * {@code X} only for this measurement, which is what a caller may pass.
      * <p>
      * <b>PERFORMANCE &amp; SAFETY CONTRACT:</b> To avoid redundant array allocations during
      * overload resolution, this method reuses and returns {@link MethodNode#getParameters()}
@@ -1278,14 +1344,18 @@ public abstract class StaticTypeCheckingSupport {
      * In-place mutation would silently corrupt the {@link MethodNode}'s parameter definitions
      * for all subsequent compilation phases across the compiler.
      */
-    private static Parameter[] parametersForDistance(final MethodNode method) {
+    private static Parameter[] parametersForDistance(final MethodNode method, final Map<GenericsTypeName, GenericsType> classSpec) {
         Parameter[] parameters = method.getParameters();
         Parameter[] erased = null;
+        boolean instantiate = classSpec != null && !classSpec.isEmpty();
         for (int i = 0, n = parameters.length; i < n; i += 1) {
             ClassNode t = parameters[i].getOriginType();
             if (t.isGenericsPlaceHolder() || isUsingGenericsOrIsArrayUsingGenerics(t)) {
                 if (erased == null) {
                     erased = parameters.clone();
+                }
+                if (instantiate && isGenericsPlaceHolderOrArrayOf(t)) {
+                    t = instantiateForDistance(t, classSpec);
                 }
                 erased[i] = new Parameter(GenericsUtils.nonGeneric(t), parameters[i].getName());
             }
@@ -1296,8 +1366,159 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
+     * Instantiates a placeholder (or an array of one) from {@code spec}. A {@code ? super X}
+     * argument contributes {@code X}; {@link #applyGenericsContext} would collapse that
+     * wildcard to {@code Object} via {@link #getCombinedBoundType}.
+     */
+    private static ClassNode instantiateForDistance(final ClassNode type, final Map<GenericsTypeName, GenericsType> spec) {
+        int dims = 0;
+        ClassNode cn = type;
+        while (cn.isArray()) {
+            dims += 1;
+            cn = cn.getComponentType();
+        }
+        GenericsType replacement = spec.get(new GenericsTypeName(cn.getUnresolvedName()));
+        if (replacement == null) return type;
+        ClassNode bound = replacement.isWildcard() && replacement.getLowerBound() != null
+                ? replacement.getLowerBound() : getCombinedBoundType(replacement);
+        while (dims > 0) {
+            dims -= 1;
+            bound = bound.makeArray();
+        }
+        return bound;
+    }
+
+    /**
+     * Receiver type arguments visible to {@code method}, or {@code null} when the method
+     * cannot see them (static, extension, or declared off the receiver). The base spec is
+     * shared by methods of one declaring class; method type parameters are removed from a copy.
+     */
+    private static Map<GenericsTypeName, GenericsType> classGenericsForDistance(final ClassNode receiver, final MethodNode method, final Map<ClassNode, Map<GenericsTypeName, GenericsType>> cache) {
+        if (method.isStatic() || method instanceof ExtensionMethodNode || method.getDeclaringClass() == null) {
+            return null;
+        }
+        if (method.isConstructor() && !ArrayGroovyMethods.asBoolean(receiver.getGenericsTypes())) {
+            return null;
+        }
+        ClassNode declaring = method.getDeclaringClass();
+        ClassNode wrapped = StaticTypeCheckingVisitor.wrapTypeIfNecessary(receiver);
+        if (!wrapped.equals(declaring)
+                && !implementsInterfaceOrIsSubclassOf(wrapped, declaring)
+                && !isGenericsPlaceHolderOrArrayOf(declaring)) {
+            return null;
+        }
+        Map<GenericsTypeName, GenericsType> base = cache.computeIfAbsent(declaring, d ->
+                classPlaceHolders(receiver, d, receiver.getOuterClassType()));
+        return withoutMethodTypeParameters(base, method);
+    }
+
+    /**
+     * Class type parameters of {@code declaringClass} as seen from {@code receiver}.
+     * {@code outerClass}, when supplied, contributes type parameters the receiver's
+     * own class does not declare, walking outward so a nested inner class still
+     * sees the outermost arguments. Callers may mutate the returned map.
+     */
+    static Map<GenericsTypeName, GenericsType> extractPlaceHoldersVisibleToDeclaration(final ClassNode receiver, final MethodNode method, final ClassNode declaringClass, final ClassNode outerClass) {
+        return withoutMethodTypeParameters(classPlaceHolders(receiver, declaringClass, outerClass), method);
+    }
+
+    private static Map<GenericsTypeName, GenericsType> classPlaceHolders(final ClassNode receiver, final ClassNode declaringClass, final ClassNode outerClass) {
+        Map<GenericsTypeName, GenericsType> spec = extractPlaceHolders(receiver, declaringClass);
+        if (outerClass != null) {
+            // The nearer enclosing type is recorded first, so its parameters hide outer ones of the same name.
+            Set<ClassNode> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+            for (ClassNode outer = outerClass; outer != null && seen.add(outer); outer = outer.getOuterClassType()) {
+                extractPlaceHolders(outer, outer.redirect()).forEach(spec::putIfAbsent);
+            }
+        }
+        return spec;
+    }
+
+    private static Map<GenericsTypeName, GenericsType> withoutMethodTypeParameters(final Map<GenericsTypeName, GenericsType> spec, final MethodNode method) {
+        GenericsType[] methodGenerics = method.getGenericsTypes(); // GROOVY-10322: method type parameters hide class ones
+        if (methodGenerics == null || methodGenerics.length == 0 || spec.isEmpty()) {
+            return spec;
+        }
+        Map<GenericsTypeName, GenericsType> copy = new HashMap<>(spec);
+        for (GenericsType gt : methodGenerics) {
+            copy.remove(new GenericsTypeName(gt.getName()));
+        }
+        return copy;
+    }
+
+    /**
+     * Binds {@code declaringClass}'s type parameters from {@code receiver}, walking the
+     * super/interface chain. A raw or diamond receiver is bound to the declared bounds.
+     */
+    static Map<GenericsTypeName, GenericsType> extractPlaceHolders(final ClassNode receiver, final ClassNode declaringClass) {
+        Map<GenericsTypeName, GenericsType> result = null;
+        ClassNode[] todo;
+        if (receiver instanceof UnionTypeClassNode) {
+            todo = ((UnionTypeClassNode) receiver).getDelegates(); // GROOVY-7275
+        } else {
+            todo = new ClassNode[] {!isPrimitiveType(declaringClass) ? StaticTypeCheckingVisitor.wrapTypeIfNecessary(receiver) : receiver};
+        }
+out:    for (ClassNode type : todo) {
+            for (ClassNode current = type; current != null; ) {
+                Map<GenericsTypeName, GenericsType> placeHolders = new HashMap<>();
+                if (current.isGenericsPlaceHolder())
+                    // GROOVY-10622: type param bound "T extends Set<Type>"
+                    current = current.asGenericsType().getUpperBounds()[0];
+                // GROOVY-10055: handle diamond or raw type
+                else if (current.getGenericsTypes() != null
+                        ? current.getGenericsTypes().length == 0
+                        : current.redirect().getGenericsTypes() != null) {
+                    for (GenericsType gt : current.redirect().getGenericsTypes()) {
+                        ClassNode cn = gt.getUpperBounds() != null ? gt.getUpperBounds()[0] : gt.getType().redirect();
+                        placeHolders.put(new GenericsTypeName(gt.getName()), cn.getPlainNodeReference().asGenericsType());
+                    }
+                }
+
+                boolean currentIsDeclaring = current.equals(declaringClass) || isGenericsPlaceHolderOrArrayOf(declaringClass);
+                if (currentIsDeclaring) {
+                    extractGenericsConnections(placeHolders, current, declaringClass);
+                } else {
+                    GenericsUtils.extractPlaceholders(current, placeHolders);
+                }
+
+                if (result != null) { // merge maps
+                    for (Map.Entry<GenericsTypeName, GenericsType> entry : placeHolders.entrySet()) {
+                        GenericsType gt = entry.getValue();
+                        if (!gt.isPlaceholder()) continue;
+                        GenericsType referenced = result.get(new GenericsTypeName(gt.getName()));
+                        if (referenced == null) continue;
+                        entry.setValue(referenced);
+                    }
+                }
+                result = placeHolders;
+
+                // we are done if we are now in the declaring class
+                if (currentIsDeclaring) break out;
+
+                current = getNextSuperClass(current, declaringClass);
+                if (current == null && isClassType(declaringClass)) {
+                    // this can happen if the receiver is Class<Foo>, then
+                    // the actual receiver is Foo and declaringClass is Class
+                    current = declaringClass;
+                } else {
+                    current = applyGenericsContext(placeHolders, current);
+                }
+            }
+        }
+        if (result == null) {
+            throw new GroovyBugError("Declaring class " + prettyPrintTypeName(declaringClass) + " was not matched with receiver " + prettyPrintTypeName(receiver) + ". This should not have happened!");
+        }
+        return result;
+    }
+
+    static boolean isGenericsPlaceHolderOrArrayOf(ClassNode cn) {
+        while (cn.isArray()) cn = cn.getComponentType();
+        return cn.isGenericsPlaceHolder();
+    }
+
+    /**
      * Measures parameter-to-argument distance. Note: The supplied {@code parameters} array
-     * may be the internal backing array of a {@link MethodNode} (see {@link #parametersForDistance(MethodNode)});
+     * may be the internal backing array of a {@link MethodNode} (see {@link #parametersForDistance(MethodNode, Map)});
      * this method and all helper methods it calls must treat {@code parameters} as strictly read-only.
      */
     @SuppressWarnings("removal")

@@ -18,10 +18,10 @@
  */
 package bugs
 
-import groovy.test.NotYetImplemented
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 final class Groovy7204 {
 
@@ -29,7 +29,7 @@ final class Groovy7204 {
         imports { star 'groovy.transform' }
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testTypeChecked1() {
         assertScript shell, '''
             @TypeChecked
@@ -69,7 +69,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testTypeChecked2() {
         assertScript shell, '''
             @TypeChecked
@@ -109,7 +109,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testTypeChecked3() {
         assertScript shell, '''
             @TypeChecked
@@ -153,7 +153,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testTypeChecked4() {
         assertScript shell, '''
             @TypeChecked
@@ -197,7 +197,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testTypeChecked5() {
         assertScript shell, '''
             @TypeChecked
@@ -241,18 +241,19 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testTypeChecked6() {
         assertScript shell, '''
             class Repository<T, S extends Serializable> {
-                void delete(T arg) { assert true }
-                void delete(S arg) { assert false: 'wrong method invoked' }
+                T delete(T arg) { arg }
+                S delete(S arg) { arg }
             }
 
             @TypeChecked
             def test() {
                 Repository<String, Long> r = new Repository<String, Long>()
-                r.delete('foo')
+                String deleted = r.delete('foo')
+                assert deleted == 'foo'
             }
 
             test()
@@ -261,7 +262,7 @@ final class Groovy7204 {
 
     //
 
-    @NotYetImplemented @Test
+    @Test
     void testCompileStatic1() {
         assertScript shell, '''
             @CompileStatic
@@ -301,7 +302,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testCompileStatic2() {
         assertScript shell, '''
             @CompileStatic
@@ -341,7 +342,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testCompileStatic3() {
         assertScript shell, '''
             @CompileStatic
@@ -385,7 +386,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testCompileStatic4() {
         assertScript shell, '''
             @CompileStatic
@@ -429,7 +430,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testCompileStatic5() {
         assertScript shell, '''
             @CompileStatic
@@ -473,7 +474,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testCompileStatic6() {
         assertScript shell, '''
             class Repository<T, S extends Serializable> {
@@ -491,7 +492,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test // GROOVY-8059
+    @Test // GROOVY-8059
     void testCompileStatic7() {
         assertScript shell, '''
             abstract class A<K extends Serializable, V> {
@@ -558,6 +559,185 @@ final class Groovy7204 {
             }
 
             assert new Test().firstElement instanceof Trie
+        '''
+    }
+
+    @Test
+    void testCompileStatic10() {
+        assertScript shell, '''
+            class Repository<T, S extends Serializable> {
+                String delete(T arg) { 'T:' + arg }
+                String delete(S arg) { 'S:' + arg }
+                <T extends CharSequence> String shadowed(T arg) { 'M:' + arg }
+                String shadowed(S arg) { 'C:' + arg }
+            }
+
+            @CompileStatic
+            void test() {
+                Repository<? super String, Long> r1 = new Repository<CharSequence, Long>()
+                assert r1.delete('foo') == 'T:foo'
+                assert r1.delete(42L) == 'S:42'
+
+                Repository<Integer, Long> r2 = new Repository<Integer, Long>()
+                assert r2.shadowed('bar') == 'M:bar'
+                assert r2.shadowed(99L) == 'C:99'
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testCompileStatic11() {
+        def err = shouldFail shell, '''
+            class Box<T> {
+                String accept(T arg) { 'T' }
+                String accept(List<T> arg) { 'L' }
+            }
+
+            @CompileStatic
+            void test() {
+                Box<String> box = new Box<String>()
+                box.accept(1)
+            }
+
+            test()
+        '''
+        assert err.message.contains('Cannot call Box#accept(java.lang.String) with arguments [int]')
+    }
+
+    @Test
+    void testCompileStatic12() {
+        def err = shouldFail shell, '''
+            class Box<A extends CharSequence, B extends Serializable> {
+                void accept(A arg) {}
+                void accept(B arg) {}
+            }
+
+            @CompileStatic
+            void test() {
+                Box<StringBuilder, Long> box = new Box<StringBuilder, Long>()
+                box.accept('x')
+            }
+
+            test()
+        '''
+        assert err.message.contains('Reference to method is ambiguous')
+        assert err.message.contains('accept(A)')
+        assert err.message.contains('accept(B)')
+    }
+
+    @Test
+    void testCompileStatic13() {
+        assertScript shell, '''
+            class Outer<T> {
+                class Inner {
+                    String pick(T arg) { 'T:' + arg }
+                    String pick(CharSequence arg) { 'C:' + arg }
+                }
+            }
+
+            @CompileStatic
+            void test() {
+                Outer<String>.Inner inner = new Outer<String>().new Inner()
+                assert inner.pick('foo') == 'T:foo'
+            }
+
+            test()
+        '''
+    }
+
+    @Test // GROOVY-7204
+    void testCompileStatic14() {
+        assertScript shell, '''
+            class Outer<T> {
+                class Mid {
+                    class Inner {
+                        String pick(T arg) { 'T:' + arg }
+                        String pick(CharSequence arg) { 'C:' + arg }
+                    }
+                }
+            }
+
+            @CompileStatic
+            void test() {
+                Outer<String>.Mid.Inner inner = new Outer<String>().new Mid().new Inner()
+                assert inner.pick('foo') == 'T:foo'
+            }
+
+            test()
+        '''
+    }
+
+    @Test // GROOVY-7204
+    void testCompileStatic15() {
+        assertScript shell, '''
+            class Box<T extends CharSequence> {
+                String pick(T[] arg) { 'T:' + arg[0] }
+                String pick(Serializable[] arg) { 'S:' + arg[0] }
+            }
+
+            @CompileStatic
+            void test() {
+                Box<String> box = new Box<String>()
+                assert box.pick(new String[]{'foo'}) == 'T:foo'
+            }
+
+            test()
+        '''
+    }
+
+    @Test // GROOVY-7204
+    void testCompileStatic16() {
+        assertScript shell, '''
+            class Box<T> {
+                String pick(T arg) { 'T:' + arg }
+                String pick(Serializable arg) { 'S:' + arg }
+            }
+
+            @CompileStatic
+            void test() {
+                Box<? extends String> box = new Box<String>()
+                assert box.pick('foo') == 'T:foo'
+            }
+
+            test()
+        '''
+    }
+
+    @Test // GROOVY-7204
+    void testCompileStatic17() {
+        assertScript shell, '''
+            class Box<T extends CharSequence> {
+                final String which
+                Box(T arg) { which = 'T' }
+                Box(Serializable arg) { which = 'S' }
+            }
+
+            @CompileStatic
+            void test() {
+                assert new Box<String>('x').which == 'T'
+            }
+
+            test()
+        '''
+    }
+
+    @Test // GROOVY-7204
+    void testCompileStatic18() {
+        assertScript shell, '''
+            class Box<T> {
+                String pick(T... arg) { 'T:' + arg.length }
+                String pick(CharSequence... arg) { 'C:' + arg.length }
+            }
+
+            @CompileStatic
+            void test() {
+                Box<String> box = new Box<String>()
+                assert box.pick('a', 'b') == 'T:2'
+            }
+
+            test()
         '''
     }
 }
