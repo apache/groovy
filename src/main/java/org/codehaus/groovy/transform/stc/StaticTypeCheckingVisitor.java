@@ -307,6 +307,8 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.boundU
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkCompatibleAssignmentTypes;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkPossibleLossOfPrecision;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.concreteArgumentContainsWildcard;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeVariableBoundEscapes;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.evaluateExpression;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsConnections;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsParameterMapOfThis;
@@ -339,6 +341,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isTrai
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isUsingGenericsOrIsArrayUsingGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isWildcardLeftHandSide;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.missesGenericsTypes;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.prettyPrintCapture;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.prettyPrintType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.prettyPrintTypeName;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.resolveClassNodeGenerics;
@@ -2119,13 +2122,24 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private void checkTypeGenerics(final ClassNode leftExpressionType, final ClassNode rightExpressionType, final Expression rightExpression) {
-        if (leftExpressionType.isUsingGenerics()
-                && !missesGenericsTypes(rightExpressionType)
-                && !(rightExpression instanceof ClosureExpression) // GROOVY-10277
-                && !(rightExpression instanceof ConstructorCallExpression && ((ConstructorCallExpression) rightExpression).isUsingAnonymousInnerClass()) // GROOVY-12319: AIC type is the generated class, not the diamond super type
-                && !isNullConstant(rightExpression) && !UNKNOWN_PARAMETER_TYPE.equals(rightExpressionType)
-                && !GenericsUtils.buildWildcardType(leftExpressionType).isCompatibleWith(wrapTypeIfNecessary(rightExpressionType)))
+        if (!leftExpressionType.isUsingGenerics()
+                || rightExpression instanceof ClosureExpression // GROOVY-10277
+                || (rightExpression instanceof ConstructorCallExpression && ((ConstructorCallExpression) rightExpression).isUsingAnonymousInnerClass()) // GROOVY-12319
+                || isNullConstant(rightExpression) || UNKNOWN_PARAMETER_TYPE.equals(rightExpressionType)) {
+            return;
+        }
+        ClassNode right = wrapTypeIfNecessary(rightExpressionType);
+        // A type variable is not "missing" generics: its bound is known.
+        // Raw types and uninferred diamonds still skip the check.
+        boolean unresolved = missesGenericsTypes(right);
+        boolean incompatible = !unresolved && (
+                !GenericsUtils.buildWildcardType(leftExpressionType).isCompatibleWith(right)
+                || concreteArgumentContainsWildcard(leftExpressionType, right));
+        boolean typeVariableEscapes = unresolved && (typeVariableBoundEscapes(leftExpressionType, right)
+                || concreteArgumentContainsWildcard(leftExpressionType, right));
+        if (incompatible || typeVariableEscapes) {
             addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(rightExpressionType) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
+        }
     }
 
     private boolean hasGStringStringError(final ClassNode leftExpressionType, final ClassNode wrappedRHS, final Expression rightExpression) {
@@ -3375,7 +3389,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     type = inferredReturnType; // GROOVY-8310, GROOVY-10082, GROOVY-10091, GROOVY-10128, GROOVY-10306: allow simple covariance
                 } else if ((statement.isReturningNullOrVoid() || !isPrimitiveVoid(type)) && !extension.handleIncompatibleReturnType(statement, type)) {
                     // GROOVY-10277, GROOVY-11490: incompatible return statement (null for primitive or inconvertible type)
-                    String value = (statement.isReturningNullOrVoid() ? "null" : "value of type " + prettyPrintType(type));
+                    String value = (statement.isReturningNullOrVoid() ? "null" : "value of type " + prettyPrintValueType(type, expression));
                     String which = (enclosingClosure.getClosureExpression() instanceof LambdaExpression ? "lambda" : "closure");
                     addStaticTypeError("Cannot return " + value + " for " + which + " expecting " + prettyPrintType(inferredReturnType), expression);
                 }
@@ -3388,7 +3402,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             ClassNode returnType = enclosingMethod.getReturnType();
             if (!isPrimitiveVoid(getUnwrapper(type)) && !checkCompatibleAssignmentTypes(returnType, type, expression, false)) {
                 if (!extension.handleIncompatibleReturnType(statement, type)) {
-                    addStaticTypeError("Cannot return value of type " + prettyPrintType(type) + " for method returning " + prettyPrintType(returnType), expression);
+                    addStaticTypeError("Cannot return value of type " + prettyPrintValueType(type, expression) + " for method returning " + prettyPrintType(returnType), expression);
                 }
             } else if (implementsInterfaceOrIsSubclassOf(type, returnType)) {
                 BinaryExpression dummy = assignX(varX("{target}", returnType), expression, statement);
@@ -5969,7 +5983,10 @@ trying: for (ClassNode[] signature : signatures) {
         if (targetType.isUsingGenerics()
                 && missesGenericsTypes(resultType)
                 // GROOVY-10324, GROOVY-10342, et al.
-                && !resultType.isGenericsPlaceHolder()) {
+                && !resultType.isGenericsPlaceHolder()
+            // A declared type variable has a bound. Do not paint the target
+            // over "? extends T"; inference placeholders ("#E") still may.
+            && !containsDeclaredTypeVariable(resultType)) {
             // unchecked assignment
             // List<Type> list = new LinkedList()
             // Iterable<Type> iter = new LinkedList()
@@ -6007,6 +6024,33 @@ trying: for (ClassNode[] signature : signatures) {
         }
 
         return resultType;
+    }
+
+    /** A type variable declared by the program, not an inference placeholder ({@code #T}). */
+    private static boolean containsDeclaredTypeVariable(final ClassNode type) {
+        if (type == null) return false;
+        if (type.isArray()) return containsDeclaredTypeVariable(type.getComponentType());
+        if (type.isGenericsPlaceHolder()) {
+            String name = type.getUnresolvedName();
+            return name != null && !name.startsWith("#");
+        }
+        GenericsType[] args = type.getGenericsTypes();
+        if (args == null) return false;
+        for (GenericsType arg : args) {
+            if (arg.isPlaceholder()) {
+                String name = arg.getName();
+                if (name != null && !name.startsWith("#")) return true;
+            }
+            if (containsDeclaredTypeVariable(arg.getType())) return true;
+            if (containsDeclaredTypeVariable(arg.getLowerBound())) return true;
+            ClassNode[] upper = arg.getUpperBounds();
+            if (upper != null) {
+                for (ClassNode bound : upper) {
+                    if (containsDeclaredTypeVariable(bound)) return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static boolean isTypeSource(final Expression expr, final Expression right) {
@@ -6189,8 +6233,11 @@ trying: for (ClassNode[] signature : signatures) {
                     return getUnwrapper(right);
                 }
 
-                // as anything can be assigned to a String, Class or [Bb]oolean, return the left type instead
-                if (isWildcardLeftHandSide(initialType) && !isObjectType(initialType)) {
+                // as anything can be assigned to a String, Class or [Bb]oolean, return the left type instead.
+                // A parameterized Class must keep the right-hand type: substituting the target
+                // would make Class<?> assignable to Class<? extends CharSequence>.
+                if (isWildcardLeftHandSide(initialType) && !isObjectType(initialType)
+                        && !(isClassType(initialType) && initialType.isUsingGenerics())) {
                     return initialType;
                 }
             }
@@ -7806,7 +7853,47 @@ out:    for (ClassNode type : todo) {
      * Reports an incompatible assignment between the supplied types.
      */
     protected void addAssignmentError(final ClassNode leftType, final ClassNode rightType, final Expression expression) {
-        addStaticTypeError("Cannot assign value of type " + prettyPrintType(rightType) + " to variable of type " + prettyPrintType(leftType), expression);
+        addStaticTypeError("Cannot assign value of type " + prettyPrintValueType(rightType, expression) + " to variable of type " + prettyPrintType(leftType), expression);
+    }
+
+    /**
+     * Prints {@code type}. When {@code expression} is a call whose return type
+     * is a type variable instantiated by a wildcard, names that capture
+     * ({@code capture-of ? super java.lang.Integer}) instead of the upper
+     * bound the checker uses. The bound stays the type that was checked.
+     */
+    private String prettyPrintValueType(final ClassNode type, final Expression expression) {
+        String capture = captureOfReturnType(expression);
+        return capture != null ? capture : prettyPrintType(type);
+    }
+
+    private String captureOfReturnType(final Expression expression) {
+        Expression value = expression;
+        if (value instanceof BinaryExpression binary && isAssignment(binary.getOperation().getType())) {
+            value = binary.getRightExpression();
+        }
+        Expression receiverExpression = null;
+        if (value instanceof MethodCallExpression call) {
+            receiverExpression = call.getObjectExpression();
+        } else if (value instanceof PropertyExpression property) {
+            receiverExpression = property.getObjectExpression();
+        }
+        if (receiverExpression == null) return null;
+
+        MethodNode target = value.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (target == null || target instanceof ExtensionMethodNode || target.isStatic()) return null;
+        ClassNode declaredReturn = target.getReturnType();
+        if (declaredReturn == null || !declaredReturn.isGenericsPlaceHolder()) return null;
+        ClassNode receiver = getType(receiverExpression);
+        ClassNode declaring = target.getDeclaringClass();
+        if (receiver == null || declaring == null) return null;
+        if (!receiver.equals(declaring) && !implementsInterfaceOrIsSubclassOf(receiver, declaring)) return null;
+
+        Map<GenericsTypeName, GenericsType> spec = extractPlaceHoldersVisibleToDeclaration(receiver, target, null);
+        if (spec == null) return null;
+        GenericsType witness = spec.get(new GenericsTypeName(declaredReturn.getUnresolvedName()));
+        if (witness == null || !witness.isWildcard()) return null;
+        return prettyPrintCapture(witness);
     }
 
     /**
