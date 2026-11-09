@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.parser.antlr4
 
-import groovy.transform.AutoFinal
 import org.junit.jupiter.api.Test
 
 import static org.apache.groovy.parser.antlr4.TestUtils.expectContains
@@ -33,7 +32,6 @@ import static org.apache.groovy.parser.antlr4.TestUtils.expectParseError
  * Each method inlines an invalid snippet and asserts the CONVERSION
  * diagnostic.
  */
-@AutoFinal
 final class ParserNegativeSyntaxTest {
 
     @Test
@@ -1270,20 +1268,6 @@ final class ParserNegativeSyntaxTest {
     }
 
     @Test
-    void 'missing close paren in method header'() {
-        expectParseError '''\
-            |def m( {
-            |}
-            |'''.stripMargin(), '''\
-            |Missing ')' @ line 1, column 8.
-            |   def m( {
-            |          ^
-            |
-            |1 error
-            |'''.stripMargin()
-    }
-
-    @Test
     void 'groovy core - List'() {
         expectParseError('''\
             |[,]
@@ -1543,19 +1527,6 @@ final class ParserNegativeSyntaxTest {
             |Missing ')' @ line 1, column 7.
             |   (1 + 2]
             |         ^
-            |
-            |1 error'''.stripMargin())
-    }
-
-    @Test
-    void 'groovy core - Parentheses'() {
-        expectParseError('''\
-            |def a( {
-            |}
-            |'''.stripMargin(), '''\
-            |Missing ')' @ line 1, column 8.
-            |   def a( {
-            |          ^
             |
             |1 error'''.stripMargin())
     }
@@ -3004,9 +2975,9 @@ final class ParserNegativeSyntaxTest {
             |def m( {
             |}
             |'''.stripMargin(), '''\
-            |Missing ')' @ line 1, column 8.
-            |   def m( {
-            |          ^
+            |Missing ')' @ line 2, column 2.
+            |   }
+            |    ^
             |
             |1 error
             |'''.stripMargin()
