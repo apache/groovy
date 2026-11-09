@@ -102,7 +102,7 @@ public abstract class PackedClosure extends Closure<Object> {
         public Fixed1(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
             super(owner, dispatchers, id, method, captured, visibleTypes, strict);
         }
-        public Object doCall(final Object a) { return dispatchAll(new Object[]{a}); }
+        public Object doCall(final Object a) { return dispatchOne(coerceArg(a, parameterTypes[0])); }
     }
 
     /**
@@ -118,7 +118,7 @@ public abstract class PackedClosure extends Closure<Object> {
             super(owner, dispatchers, id, method, captured, visibleTypes, strict);
         }
         public Object doCall() { return dispatchAll(EMPTY); }
-        public Object doCall(final Object a) { return dispatchAll(new Object[]{a}); }
+        public Object doCall(final Object a) { return dispatchOne(coerceArg(a, parameterTypes[0])); }
     }
 
     public static final class Fixed2 extends PackedClosure implements GeneratedClosure {
@@ -127,7 +127,7 @@ public abstract class PackedClosure extends Closure<Object> {
         public Fixed2(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
             super(owner, dispatchers, id, method, captured, visibleTypes, strict);
         }
-        public Object doCall(final Object a, final Object b) { return dispatchAll(new Object[]{a, b}); }
+        public Object doCall(final Object a, final Object b) { return dispatchTwo(a, b); }
     }
 
     public static final class Fixed3 extends PackedClosure implements GeneratedClosure {
@@ -319,17 +319,13 @@ public abstract class PackedClosure extends Closure<Object> {
     // Dispatch call() straight to dispatchAll: a varargs doCall would be vararg-ambiguous
     // through the metaclass when a single argument is itself an Object[] (the metaclass would treat
     // the element as the whole argument list and spread it) — which is exactly why dispatchAll is
-    // NOT named doCall. Unwrap invoker exceptions exactly as Closure.call does, so user exceptions
-    // surface unwrapped.
+    // NOT named doCall. No reflective step lies between this lane and the hoisted body, so there is
+    // no invoker wrapping to undo: body exceptions propagate as-is, as on Closure.call's cached
+    // handle path (only mopCall, which goes through the metaclass, unwraps).
     @Override
     public final Object call(final Object... args) {
         if (!mopUnperturbed()) return mopCall((args != null) ? args : EMPTY);
-        try {
-            return dispatchAll((args != null) ? args : EMPTY);
-        } catch (InvokerInvocationException e) {
-            UncheckedThrow.rethrow(e.getCause());
-            return null; // unreachable
-        }
+        return dispatchAll((args != null) ? args : EMPTY);
     }
 
     // Fast lane for the ubiquitous one-argument call (each/collect on an arity-1 closure): the base
@@ -343,12 +339,7 @@ public abstract class PackedClosure extends Closure<Object> {
         // cool call sites (and its own standalone compilation lean): the argument-wrapping
         // fallbacks allocate, so they live out-of-line in callGeneral
         if (maximumNumberOfParameters != 1 || !mopUnperturbed()) return callGeneral(arguments);
-        try {
-            return dispatchOne(coerceArg(arguments, parameterTypes[0]));
-        } catch (InvokerInvocationException e) {
-            UncheckedThrow.rethrow(e.getCause());
-            return null; // unreachable
-        }
+        return dispatchOne(coerceArg(arguments, parameterTypes[0]));
     }
 
     private Object callGeneral(final Object arguments) {
@@ -400,7 +391,7 @@ public abstract class PackedClosure extends Closure<Object> {
      * ({@code dispatch1} for none, {@code dispatch2} for one — together the overwhelmingly
      * common closure shapes), else through the general array table.
      */
-    private Object dispatchOne(final Object arg) {
+    final Object dispatchOne(final Object arg) {
         Object[] captured = this.captured;
         int caps = captured.length;
         if (caps == 0) return arity1.dispatch1(id, receiver, arg);
@@ -410,6 +401,13 @@ public abstract class PackedClosure extends Closure<Object> {
         System.arraycopy(captured, 0, all, 1, caps);
         all[1 + caps] = arg;
         return dispatcher.dispatch(id, all);
+    }
+
+    /** Two values: the array-free table when nothing is captured, else the general array table. */
+    final Object dispatchTwo(final Object a, final Object b) {
+        Class<?>[] types = parameterTypes;
+        if (captured.length == 0) return arity2.dispatch2(id, receiver, coerceArg(a, types[0]), coerceArg(b, types[1]));
+        return dispatchArray(new Object[]{a, b}, 2);
     }
 
     /** The general shape: coerce and pack {@code [owner, captured..., args...]} for the array table. */
@@ -432,7 +430,7 @@ public abstract class PackedClosure extends Closure<Object> {
     // implicit-it and untyped param) exit on one comparison. Primitive parameters are checked
     // against their wrapper, exactly as metaclass selection autoboxes ({ int x -> } accepts an
     // Integer, coerces a compatible number shape, and rejects a Long with MME).
-    private Object coerceArg(final Object arg, final Class<?> t) {
+    final Object coerceArg(final Object arg, final Class<?> t) {
         // hot-path shape matters: this inlines into the call lanes, so it is three cheap tests
         // with everything rare out-of-line (a primitive parameter fails isInstance and re-checks
         // against its wrapper in the tail, exactly as metaclass selection autoboxes)

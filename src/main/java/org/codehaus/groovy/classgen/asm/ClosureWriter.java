@@ -163,10 +163,12 @@ public class ClosureWriter {
     // StaticTypesWriterController#getClosureWriter), and both must share one id space. The end-of-class
     // hook (writePackedDispatcher) turns the list into the class's GeneratedDispatcher table.
     private static final String PACKED_TARGETS = "org.codehaus.groovy.classgen.asm.ClosureWriter.packedTargets";
-    // Emitted bytecode references only the central bytecode-facing surface (GROOVY-12151 review):
-    // bootstraps live on IndyInterface, the adapter factory on ScriptBytecodeAdapter, and the
-    // linked dispatcher bundle travels as Object -- GeneratedDispatcher, its Bundle and
-    // PackedClosure never appear in generated class files.
+    // Emitted bytecode reaches the runtime only through a small @GroovyABI-tracked surface:
+    // bootstraps live on IndyInterface, the closure factories on ScriptBytecodeAdapter, and the
+    // linked dispatcher bundle travels as Object. The one exception is the hosting class's
+    // dispatcher factory (writeDispatchersFactory): its bytecode-level LambdaMetafactory sites must
+    // name the GeneratedDispatcher functional interfaces, and it constructs the Bundle. PackedClosure
+    // never appears in generated class files.
     private static final String INDY_INTERFACE_TYPE = "org/codehaus/groovy/vmplugin/v8/IndyInterface";
     private static final String SBA_TYPE = "org/codehaus/groovy/runtime/ScriptBytecodeAdapter";
     // The general table covers every target via a packed argument array; the per-arity tables
@@ -179,8 +181,8 @@ public class ClosureWriter {
     private static final String DISPATCH2_DESC = "(ILjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;";
     // The accessor's single invokedynamic site links all three tables through
     // IndyInterface.packedDispatchers (delegating to GeneratedDispatcher.bootstrap) into one
-    // constant bundle, lazily on first adapter creation; typed Object to keep the Bundle type
-    // off the emitted-bytecode surface.
+    // constant bundle, lazily on first adapter creation; typed Object so the creation sites need
+    // not name the Bundle type (only the dispatcher factory does).
     private static final String DISPATCHERS_GETTER = "$getPackedDispatchers$";
     private static final String DISPATCHERS_GETTER_DESC = "()Ljava/lang/Object;";
     // The factory emitted into the hosting class that adapts its three tables to their functional
@@ -1080,7 +1082,7 @@ public class ClosureWriter {
         // one factory call on ScriptBytecodeAdapter, not a hard-wired NEW of the arity-specific
         // subclass (GROOVY-12151 review): the Fixed* family is chosen inside PackedClosure.create,
         // and routing through the central adapter class (bundle as Object, result as Closure)
-        // keeps PackedClosure and the Bundle type off the emitted-bytecode surface too.
+        // keeps PackedClosure and the Bundle type out of the creation site too.
         mv.visitMethodInsn(INVOKESTATIC, SBA_TYPE, "packedClosure",
                 "(Ljava/lang/Object;Ljava/lang/Object;ILjava/lang/String;[Ljava/lang/Object;[Ljava/lang/Class;ZZZ)Lgroovy/lang/Closure;", false);
         os.replace(ClassHelper.CLOSURE_TYPE, 9); // owner, dispatchers, id, name, captured[], paramTypes[], strict, implicit, vararg -> Closure
