@@ -20,6 +20,8 @@ package org.codehaus.groovy.tools.javac;
 
 import groovy.lang.GroovyClassLoader;
 
+import org.codehaus.groovy.control.CompilerConfiguration;
+
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -31,6 +33,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -40,20 +43,28 @@ import java.util.concurrent.ConcurrentHashMap;
  * Publishes in-memory class bytes through a {@link GroovyClassLoader} so
  * one joint compilation unit can resolve them without a class-output directory.
  * <p>
- * {@link #open} always creates a new store and appends one URL. The
- * compilation unit keeps that store. A compile writes a private stage. The
- * stage becomes visible to {@code getResource} immediately, so later phases
- * can resolve classes javac just produced, and it is copied into the
- * committed map only after that unit reaches output without error. A failed
- * compile discards the stage and leaves classes this store already committed.
+ * {@link #open} on an ordinary loader always creates a new store and appends
+ * one URL. The compilation unit keeps that store. A compile writes a private
+ * stage. The stage becomes visible to {@code getResource} immediately, so
+ * later phases can resolve classes javac just produced, and it is copied into
+ * the committed map only after that unit reaches output without error. A
+ * failed compile discards the stage and leaves classes this store already
+ * committed. Calling {@link #open} again on that loader appends another URL.
+ * Which URL {@code getResource} returns is then the platform's search order.
+ * Bytes are also hidden when the same resource is already visible from a
+ * parent loader or from an earlier URL.
  * <p>
- * Stores are not retained across compilation units. {@code groovyc} and the
- * Ant task already build a new loader for each run, and compiling the same
- * classes again needs a new loader: a class the loader has already defined
- * cannot be replaced. Calling {@link #open} again on a loader appends another
- * URL. Which URL {@code getResource} returns is then the platform's search
- * order, not a cache defined here. Bytes are also hidden when the same
- * resource is already visible from a parent loader or from an earlier URL.
+ * A loader from {@link MemClassOutputPublication} is different. Its store is
+ * still appended when the unit compiles, after the unit has had a chance to
+ * put dependency URLs on the loader, and it is not appended to the long-lived
+ * parent. A name this compilation produced is read from its stage, then from
+ * its committed map. A miss falls through to bytes the host has published,
+ * so an overlapping name uses this compilation and a name it did not produce
+ * stays visible. A second {@link #open} on that loader is rejected: two units
+ * must not share one stage. There is no loader-identity cache.
+ * <p>
+ * {@code groovyc} and the Ant task build a new ordinary loader per run and do
+ * not publish. A class a loader has already defined cannot be replaced.
  * <p>
  * The protocol is not registered with the JVM. Only URLs created here can
  * be opened. Paths that escape the map are rejected. Building the URL does
@@ -80,17 +91,50 @@ final class MemClassOutputClasspath {
 
     /**
      * Appends an in-memory classpath URL to {@code loader} and returns the
-     * store behind it. A later call appends another URL; it does not return
-     * the previous store.
+     * store behind it.
+     * <p>
+     * On an ordinary loader a later call appends another URL and returns that
+     * new store. On a {@link CompilationLoader} the first call appends one URL
+     * whose reads fall through to the publication, and a later call is rejected.
      *
      * @param loader the compilation unit's class loader
-     * @return the new store
+     * @return the store for this compilation
      */
-    @SuppressWarnings("deprecation") // custom handler; URL.of(URI, handler) is not on the Java 17 baseline
     static Store open(final GroovyClassLoader loader) {
         Objects.requireNonNull(loader, "loader");
+        if (loader instanceof CompilationLoader compilation) {
+            synchronized (compilation) {
+                if (compilation.ownStore() != null) {
+                    throw new IllegalStateException("this compilation loader is already in use");
+                }
+                Store created = install(loader, compilation.publishedOutput());
+                compilation.remember(created);
+                return created;
+            }
+        }
+        return install(loader, null);
+    }
+
+    static PublishedOutput newPublishedOutput() {
+        return new PublishedOutput();
+    }
+
+    /**
+     * One compilation loader. The long-lived parent is {@code parent}.
+     * In-memory bytes are appended to this loader, not to {@code parent}.
+     */
+    static GroovyClassLoader newCompilationLoader(final ClassLoader parent, final CompilerConfiguration configuration,
+                                                  final PublishedOutput published) {
+        return new CompilationLoader(parent, configuration, published);
+    }
+
+    /**
+     * Appends one URL. {@code published} is consulted only after this store misses.
+     */
+    @SuppressWarnings("deprecation") // custom handler; URL.of(URI, handler) is not on the Java 17 baseline
+    private static Store install(final GroovyClassLoader loader, final PublishedOutput published) {
         String id = UUID.randomUUID().toString();
-        Store created = new Store(id);
+        Store created = new Store(id, published);
         try {
             // No host: a host would make URL.equals/hashCode resolve it as a DNS name.
             URL base = new URL(PROTOCOL, "", -1, "/" + id + "/", new Handler(created));
@@ -103,14 +147,18 @@ final class MemClassOutputClasspath {
 
     /**
      * Committed class bytes for one compilation unit, plus at most one open stage.
+     * {@code published} is the host's earlier output, or {@code null} when this
+     * store stands alone.
      */
     static final class Store {
         private final String id;
+        private final PublishedOutput published;
         private final ConcurrentHashMap<String, byte[]> committed = new ConcurrentHashMap<>();
         private volatile ConcurrentHashMap<String, byte[]> staged;
 
-        private Store(final String id) {
+        private Store(final String id, final PublishedOutput published) {
             this.id = id;
+            this.published = published;
         }
 
         /**
@@ -146,6 +194,24 @@ final class MemClassOutputClasspath {
             staged = null;
         }
 
+        /**
+         * Copies committed bytes into {@code target}. The open stage is not
+         * copied. Each array is cloned so a later compile on this store cannot
+         * change bytes already published.
+         *
+         * @param target the publication that later compilation loaders read
+         */
+        void copyCommittedInto(final PublishedOutput target) {
+            Map<String, byte[]> snapshot;
+            synchronized (this) {
+                snapshot = new HashMap<>(committed.size());
+                for (Map.Entry<String, byte[]> entry : committed.entrySet()) {
+                    snapshot.put(entry.getKey(), entry.getValue().clone());
+                }
+            }
+            target.merge(snapshot);
+        }
+
         private byte[] read(final String resourceName) {
             ConcurrentHashMap<String, byte[]> stage = staged;
             if (stage != null) {
@@ -154,7 +220,71 @@ final class MemClassOutputClasspath {
                     return stagedBytes;
                 }
             }
-            return committed.get(resourceName);
+            byte[] committedBytes = committed.get(resourceName);
+            if (committedBytes != null) {
+                return committedBytes;
+            }
+            PublishedOutput prior = published;
+            if (prior == null) {
+                return null;
+            }
+            return prior.get(resourceName);
+        }
+    }
+
+    /**
+     * Bytes a host has published for later compilations. Readers see the map
+     * from before a {@link #merge} or the map from after it, not a mix of the
+     * two. The map is not installed as a URL on the long-lived parent, so
+     * that parent does not define these classes.
+     */
+    static final class PublishedOutput {
+        private volatile Map<String, byte[]> bytes = Map.of();
+
+        private PublishedOutput() {
+        }
+
+        byte[] get(final String resourceName) {
+            return bytes.get(resourceName);
+        }
+
+        void merge(final Map<String, byte[]> incoming) {
+            if (incoming.isEmpty()) {
+                return;
+            }
+            synchronized (this) {
+                Map<String, byte[]> next = new HashMap<>(bytes);
+                next.putAll(incoming);
+                bytes = Map.copyOf(next);
+            }
+        }
+    }
+
+    /**
+     * Defines one compilation's classes. {@link #addURL} stays on this loader,
+     * unlike {@link GroovyClassLoader.InnerLoader}, whose {@code addURL} and
+     * {@code getResource} delegate to the outer loader.
+     */
+    static final class CompilationLoader extends GroovyClassLoader {
+        private final PublishedOutput published;
+        private volatile Store own;
+
+        private CompilationLoader(final ClassLoader parent, final CompilerConfiguration configuration,
+                                  final PublishedOutput published) {
+            super(parent, configuration, true);
+            this.published = published;
+        }
+
+        PublishedOutput publishedOutput() {
+            return published;
+        }
+
+        Store ownStore() {
+            return own;
+        }
+
+        void remember(final Store store) {
+            own = store;
         }
     }
 

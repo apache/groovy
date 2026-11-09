@@ -100,9 +100,12 @@ public class CompilerConfiguration {
      * as before (the default for Ant and Gradle joint builds).
      * <p>
      * Only the default javac joint compiler implements this option. Each
-     * compilation unit publishes on the loader it is given and does not share
-     * that publication with a later unit. A class the loader has already
-     * defined is not replaced; compile again with a fresh loader.
+     * compilation unit publishes on the loader it is given. A later unit
+     * does not see those bytes unless the loader came from
+     * {@code MemClassOutputPublication} and the earlier output was published
+     * to it. That publication does not append a URL to the long-lived parent,
+     * and the parent does not define the compiled classes. A class a loader
+     * has already defined is not replaced.
      * {@code getResource} is parent-first and then searches URLs in insertion
      * order, so a parent loader or an earlier classpath entry hides these
      * bytes. Annotation processing is disabled unless the joint options
