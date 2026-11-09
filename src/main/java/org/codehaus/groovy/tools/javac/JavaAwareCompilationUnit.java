@@ -61,10 +61,10 @@ import static org.codehaus.groovy.control.CompilerConfiguration.MEM_STUB;
  * Only {@link JavacJavaCompiler} supports that option. Another
  * {@link JavaCompiler} fails the compile instead of writing class files to a
  * directory the class loader is not using. Each unit publishes on the loader
- * it is given; a later unit does not share that publication. A class the
- * loader has already defined is not replaced; run recompiled code with a
- * fresh loader. An earlier classpath entry or a parent loader hides the
- * in-memory bytes.
+ * it is given. A later unit sees those bytes only when that loader was
+ * created by {@link MemClassOutputPublication} and the host published the
+ * earlier unit. A class the loader has already defined is not replaced.
+ * An earlier classpath entry or a parent loader hides the in-memory bytes.
  */
 public class JavaAwareCompilationUnit extends CompilationUnit {
 
@@ -214,7 +214,8 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
      * A failed compile discards the stage and leaves classes this unit
      * already committed. Classes this compile does not produce again are not
      * removed. A class the loader has already defined is not replaced.
-     * Another compilation unit does not share this publication.
+     * Another compilation unit sees this output only through a
+     * {@link MemClassOutputPublication} the host has published to.
      *
      * @param throughPhase the last phase to run
      * @throws CompilationFailedException if compilation fails
