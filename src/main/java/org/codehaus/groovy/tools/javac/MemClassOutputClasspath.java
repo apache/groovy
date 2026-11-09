@@ -34,37 +34,36 @@ import java.net.URLStreamHandler;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Publishes in-memory class bytes through a {@link GroovyClassLoader} so
- * joint compilation can resolve them without a class-output directory.
+ * one joint compilation unit can resolve them without a class-output directory.
  * <p>
- * One store is attached to each loader. A compile writes a private stage.
- * The stage becomes visible to {@code getResource} immediately, so later
- * phases can resolve classes javac just produced, and it is copied into the
- * committed map only after the compilation unit reaches output without error.
- * A failed compile discards the stage and leaves the previous committed
- * classes in place. A second unit on the same loader is rejected while a
- * stage is open, because one loader has one classpath URL and that URL
- * cannot be removed.
+ * {@link #open} always creates a new store and appends one URL. The
+ * compilation unit keeps that store. A compile writes a private stage. The
+ * stage becomes visible to {@code getResource} immediately, so later phases
+ * can resolve classes javac just produced, and it is copied into the
+ * committed map only after that unit reaches output without error. A failed
+ * compile discards the stage and leaves classes this store already committed.
+ * <p>
+ * Stores are not retained across compilation units. {@code groovyc} and the
+ * Ant task already build a new loader for each run, and compiling the same
+ * classes again needs a new loader: a class the loader has already defined
+ * cannot be replaced. Calling {@link #open} again on a loader appends another
+ * URL. Which URL {@code getResource} returns is then the platform's search
+ * order, not a cache defined here. Bytes are also hidden when the same
+ * resource is already visible from a parent loader or from an earlier URL.
  * <p>
  * The protocol is not registered with the JVM. Only URLs created here can
  * be opened. Paths that escape the map are rejected. Building the URL does
  * not touch the filesystem or the network. A {@code SecurityManager}, still
  * possible on the Java 17 baseline, may require
  * {@code NetPermission("specifyStreamHandler")} for the handler.
- * <p>
- * A class the loader has already defined is not replaced. Callers that run
- * recompiled code need a fresh loader. Bytes are also hidden when the same
- * resource is already visible from a parent loader or from an earlier URL.
  */
 final class MemClassOutputClasspath {
 
     static final String PROTOCOL = "x-groovy-mem";
-
-    private static final Map<GroovyClassLoader, Store> INSTALLED = new WeakHashMap<>();
 
     private MemClassOutputClasspath() {
     }
@@ -80,62 +79,48 @@ final class MemClassOutputClasspath {
     }
 
     /**
-     * Attaches an in-memory classpath to {@code loader}, or returns the store
-     * already attached to that loader.
+     * Appends an in-memory classpath URL to {@code loader} and returns the
+     * store behind it. A later call appends another URL; it does not return
+     * the previous store.
      *
-     * @param loader the compilation class loader
-     * @return the store for {@code loader}
+     * @param loader the compilation unit's class loader
+     * @return the new store
      */
     @SuppressWarnings("deprecation") // custom handler; URL.of(URI, handler) is not on the Java 17 baseline
-    static Store install(final GroovyClassLoader loader) {
+    static Store open(final GroovyClassLoader loader) {
         Objects.requireNonNull(loader, "loader");
-        synchronized (INSTALLED) {
-            Store existing = INSTALLED.get(loader);
-            if (existing != null) {
-                return existing;
-            }
-            String id = UUID.randomUUID().toString();
-            Store created = new Store(id);
-            try {
-                // No host: a host would make URL.equals/hashCode resolve it as a DNS name.
-                URL base = new URL(PROTOCOL, "", -1, "/" + id + "/", new Handler(created));
-                loader.addURL(base);
-            } catch (MalformedURLException e) {
-                throw new IllegalStateException("Could not install in-memory class output", e);
-            }
-            INSTALLED.put(loader, created);
-            return created;
+        String id = UUID.randomUUID().toString();
+        Store created = new Store(id);
+        try {
+            // No host: a host would make URL.equals/hashCode resolve it as a DNS name.
+            URL base = new URL(PROTOCOL, "", -1, "/" + id + "/", new Handler(created));
+            loader.addURL(base);
+        } catch (MalformedURLException e) {
+            throw new IllegalStateException("Could not install in-memory class output", e);
         }
+        return created;
     }
 
     /**
-     * Committed class bytes for one loader, plus at most one open stage.
+     * Committed class bytes for one compilation unit, plus at most one open stage.
      */
     static final class Store {
         private final String id;
         private final ConcurrentHashMap<String, byte[]> committed = new ConcurrentHashMap<>();
         private volatile ConcurrentHashMap<String, byte[]> staged;
-        private Object writer;
 
         private Store(final String id) {
             this.id = id;
         }
 
         /**
-         * Opens the stage for {@code unit}, or returns the stage already
-         * opened by that unit. A different unit is rejected until the stage
-         * is committed or aborted.
+         * Opens the stage, or returns the stage already open on this store.
          *
-         * @param unit the compilation unit publishing bytes
          * @return the stage map, keyed by {@code com/example/Type.class}
          */
-        synchronized Map<String, byte[]> begin(final Object unit) {
-            Objects.requireNonNull(unit, "unit");
-            if (writer == null) {
-                writer = unit;
+        synchronized Map<String, byte[]> begin() {
+            if (staged == null) {
                 staged = new ConcurrentHashMap<>();
-            } else if (writer != unit) {
-                throw new IllegalStateException("another compilation is publishing to this class loader");
             }
             return staged;
         }
@@ -143,36 +128,22 @@ final class MemClassOutputClasspath {
         /**
          * Copies the open stage into the committed map.
          * Names this compile did not produce are left as they were.
-         *
-         * @param unit the unit that opened the stage
+         * Does nothing when no stage is open.
          */
-        synchronized void commit(final Object unit) {
-            if (writer != unit) {
-                return;
-            }
+        synchronized void commit() {
             ConcurrentHashMap<String, byte[]> stage = staged;
             if (stage != null) {
                 committed.putAll(stage);
             }
             staged = null;
-            writer = null;
         }
 
         /**
          * Drops the open stage. Committed classes are unchanged.
-         *
-         * @param unit the unit that opened the stage
+         * Does nothing when no stage is open.
          */
-        synchronized void abort(final Object unit) {
-            if (writer != unit) {
-                return;
-            }
+        synchronized void abort() {
             staged = null;
-            writer = null;
-        }
-
-        synchronized boolean isContinuation(final Object unit) {
-            return writer == unit && staged != null;
         }
 
         private byte[] read(final String resourceName) {

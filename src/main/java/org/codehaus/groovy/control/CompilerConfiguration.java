@@ -99,13 +99,14 @@ public class CompilerConfiguration {
      * not {@code Boolean.TRUE}, class files are written to the target directory
      * as before (the default for Ant and Gradle joint builds).
      * <p>
-     * Only the default javac joint compiler implements this option. A class
-     * the loader has already defined is not replaced; run recompiled code with
-     * a fresh loader. {@code getResource} is parent-first and then searches
-     * URLs in insertion order, so a parent loader or an earlier classpath
-     * entry hides these bytes. Annotation processing is disabled unless the
-     * joint options request a processor. One loader can publish only one
-     * compile at a time.
+     * Only the default javac joint compiler implements this option. Each
+     * compilation unit publishes on the loader it is given and does not share
+     * that publication with a later unit. A class the loader has already
+     * defined is not replaced; compile again with a fresh loader.
+     * {@code getResource} is parent-first and then searches URLs in insertion
+     * order, so a parent loader or an earlier classpath entry hides these
+     * bytes. Annotation processing is disabled unless the joint options
+     * request a processor.
      * <p>
      * The {@code groovy.mem.stub} system property enables {@link #MEM_STUB} only.
      * It does not enable in-memory class output.
