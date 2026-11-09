@@ -162,6 +162,9 @@ final class MemClassOutputTest {
                 }
                 assert thrown.message.contains('incompatible types')
                 assert thrown.message.contains('JavaSide.java')
+                assert loader.getResource("${PACKAGE.replace('.', '/')}/JavaSide.class") == null
+                assert loader.getResource("${PACKAGE.replace('.', '/')}/Greet.class") == null
+                assert loader.getResource("${PACKAGE.replace('.', '/')}/Main.class") == null
                 assertNoClassFiles(sources)
                 assert !new File('memclassoutput').exists()
             } finally {
@@ -270,21 +273,31 @@ final class MemClassOutputTest {
 
     // GROOVY-12711
     @Test
-    void testSecondCompileOnTheSameLoaderSeesTheNewJavaApi() {
+    void testRecompileUsesANewLoader() {
         def sources = File.createTempDir('mem-class-reload', '')
         try {
-            def loader = new GroovyClassLoader(this.class.classLoader)
+            def parent = this.class.classLoader
+            def first = new GroovyClassLoader(parent)
+            Class<?> firstType
             try {
-                compileReload(sources, loader, STRING_KIND_JAVA, STRING_KIND_GROOVY)
-                compileReload(sources, loader, INT_KIND_JAVA, INT_KIND_GROOVY)
+                compileSources(sources, first, STRING_KIND_JAVA, STRING_KIND_GROOVY)
+                firstType = first.loadClass('memclassoutput.reload.Main')
+                assert firstType.getDeclaredMethod('kind').invoke(null) == 'text'
+            } finally {
+                first.close()
+            }
 
-                def type = loader.loadClass('memclassoutput.reload.Main')
+            def second = new GroovyClassLoader(parent)
+            try {
+                compileSources(sources, second, INT_KIND_JAVA, INT_KIND_GROOVY)
+                def type = second.loadClass('memclassoutput.reload.Main')
+                assert type != firstType
                 assert type.getDeclaredMethod('kind').invoke(null) == 2
-                def resource = loader.getResource('memclassoutput/reload/JavaSide.class')
+                def resource = second.getResource('memclassoutput/reload/JavaSide.class')
                 assert resource != null && resource.protocol != 'file'
                 assertNoClassFiles(sources)
             } finally {
-                loader.close()
+                second.close()
             }
         } finally {
             sources.deleteDir()
@@ -296,7 +309,7 @@ final class MemClassOutputTest {
     void testReplacedBytesAreReadAgain() {
         def loader = new GroovyClassLoader(this.class.classLoader)
         try {
-            def stage = MemClassOutputClasspath.install(loader).begin(this)
+            def stage = MemClassOutputClasspath.open(loader).begin()
             def resourceName = 'mem/cache/ex\u00e4mple/Foo$Bar.class'
             stage.put(resourceName, classBytes(CacheOne))
             def url = loader.getResource(resourceName)
@@ -304,11 +317,16 @@ final class MemClassOutputTest {
             assert url.protocol == 'x-groovy-mem'
             assert !MemClassOutputClasspath.isInMemory(null)
             assert !MemClassOutputClasspath.isInMemory(new File('.').toURI().toURL())
-            assert url.openConnection().lastModified == 0L
-            assert url.openConnection().contentLengthLong == classBytes(CacheOne).length
+            def connection = url.openConnection()
+            assert connection.lastModified == 0L
+            assert connection.contentLengthLong == classBytes(CacheOne).length
+            assert connection.inputStream.bytes == classBytes(CacheOne)
+            assert connection.inputStream.bytes == classBytes(CacheOne)
             assert AsmDecompiler.parseClass(url).className == CacheOne.name
             assert url.hashCode() == url.hashCode()
-            assert url.equals(url)
+            def same = new URL(url, url.file)
+            assert url == same
+            assert url != new URL(url, '//other' + url.path)
 
             stage.put(resourceName, classBytes(CacheTwo))
             assert AsmDecompiler.parseClass(url).className == CacheTwo.name
@@ -322,10 +340,9 @@ final class MemClassOutputTest {
     void testPlusInResourceNameIsRetrievable() {
         def loader = new GroovyClassLoader(this.class.classLoader)
         try {
-            def store = MemClassOutputClasspath.install(loader)
-            def stage = store.begin(this)
-            store.commit(new Object())
-            store.abort(new Object())
+            def store = MemClassOutputClasspath.open(loader)
+            def stage = store.begin()
+            assert store.begin().is(stage)
             stage.put('p/a+b.class', [1, 2, 3] as byte[])
             stage.put('p/a$b.class', [4] as byte[])
             assert loader.getResource('p/a+b.class').bytes == [1, 2, 3] as byte[]
@@ -340,14 +357,20 @@ final class MemClassOutputTest {
     void testEscapingResourcePathsAreRejected() {
         def loader = new GroovyClassLoader(this.class.classLoader)
         try {
-            def stage = MemClassOutputClasspath.install(loader).begin(this)
+            def stage = MemClassOutputClasspath.open(loader).begin()
             stage.put('p/A.class', [1] as byte[])
             def url = loader.getResource('p/A.class')
+            def id = url.path.split('/')[1]
             assert rejected(new URL(url, '/%2e%2e/secret.class'))
             assert rejected(new URL(url, '/%5csecret.class'))
             assert rejected(new URL(url, '/%zz'))
             assert rejected(new URL(url, '//x'))
+            assert rejected(new URL(url, '/'))
             assert rejected(new URL(url, '/other-id/p/A.class'))
+            assert rejected(new URL(url, "/${id}/"))
+            assert rejected(new URL(url, "/${id}//nested"))
+            assert rejected(new URL(url, "/${id}/p/%2e%2e/secret.class"))
+            assert rejected(new URL(url, "/${id}/p/%5csecret.class"))
             assert new URL(url, '/%zz').openConnection().contentLengthLong == -1L
         } finally {
             loader.close()
@@ -547,7 +570,7 @@ final class MemClassOutputTest {
 
     // GROOVY-12711
     @Test
-    void testSecondUnitDoesNotRemoveFirstUnitsClasses() {
+    void testLaterSourcesOnTheSameUnitSeeEarlierClasses() {
         def sources = File.createTempDir('mem-shared', '')
         try {
             def javaFile = write(sources, 'probe/JavaSide.java', STRING_KIND_JAVA.replace('memclassoutput.reload', 'probe'))
@@ -563,14 +586,14 @@ final class MemClassOutputTest {
                 '''.stripIndent())
             def loader = new GroovyClassLoader(this.class.classLoader)
             try {
-                def first = memUnit(loader)
-                first.addSources(javaFile, mainFile)
-                first.compile()
+                def unit = memUnit(loader)
+                unit.addSources(javaFile, mainFile)
+                unit.compile()
 
-                def second = memUnit(loader)
-                second.addSources(userFile)
-                second.compile()
+                unit.addSources(userFile)
+                unit.compile()
                 assert loader.getResource('probe/JavaSide.class') != null
+                assert loader.getResource('probe/JavaSide.class').protocol != 'file'
                 assert loader.loadClass('other.User').getDeclaredMethod('go').invoke(null) == 'text'
             } finally {
                 loader.close()
@@ -582,28 +605,40 @@ final class MemClassOutputTest {
 
     // GROOVY-12711
     @Test
-    void testFailedRecompileKeepsLastGoodOutput() {
+    void testFailedLaterSourceKeepsCommittedClasses() {
         def sources = File.createTempDir('mem-fail', '')
         try {
             def javaFile = write(sources, 'probe/JavaSide.java', STRING_KIND_JAVA.replace('memclassoutput.reload', 'probe'))
             def mainFile = write(sources, 'probe/Main.groovy', STRING_KIND_GROOVY.replace('memclassoutput.reload', 'probe'))
+            def userFile = write(sources, 'other/User.groovy', '''\
+                package other
+
+                import groovy.transform.CompileStatic
+                import probe.JavaSide
+
+                @CompileStatic
+                class User {
+                    static int go() { JavaSide.missing() }
+                }
+                '''.stripIndent())
             def loader = new GroovyClassLoader(this.class.classLoader)
             try {
-                def first = memUnit(loader)
-                first.addSources(javaFile, mainFile)
-                first.compile()
+                def unit = memUnit(loader)
+                unit.addSources(javaFile, mainFile)
+                unit.compile()
                 def javaBefore = loader.getResource('probe/JavaSide.class').bytes
                 def mainBefore = loader.getResource('probe/Main.class').bytes
+                assert loader.loadClass('probe.Main').getDeclaredMethod('kind').invoke(null) == 'text'
 
-                javaFile.text = 'package probe; public class JavaSide { public static int kind() { return "no"; } }'
-                def second = memUnit(loader)
-                second.addSources(javaFile, mainFile)
+                unit.addSources(userFile)
                 def thrown = shouldFail(CompilationFailedException) {
-                    second.compile()
+                    unit.compile()
                 }
-                assert thrown.message.contains('incompatible types')
+                assert thrown.message.contains('missing')
                 assert Arrays.equals(javaBefore, loader.getResource('probe/JavaSide.class').bytes)
                 assert Arrays.equals(mainBefore, loader.getResource('probe/Main.class').bytes)
+                assert loader.getResource('other/User.class') == null
+                assert loader.loadClass('probe.Main').getDeclaredMethod('kind').invoke(null) == 'text'
             } finally {
                 loader.close()
             }
@@ -667,35 +702,6 @@ final class MemClassOutputTest {
 
     // GROOVY-12711
     @Test
-    void testLoadedClassIsNotReplaced() {
-        def sources = File.createTempDir('mem-pinned', '')
-        try {
-            def javaFile = write(sources, 'probe/JavaSide.java', STRING_KIND_JAVA.replace('memclassoutput.reload', 'probe'))
-            def mainFile = write(sources, 'probe/Main.groovy', STRING_KIND_GROOVY.replace('memclassoutput.reload', 'probe'))
-            def loader = new GroovyClassLoader(this.class.classLoader)
-            try {
-                def first = memUnit(loader)
-                first.addSources(javaFile, mainFile)
-                first.compile()
-                assert loader.loadClass('probe.Main').getDeclaredMethod('kind').invoke(null) == 'text'
-
-                javaFile.text = INT_KIND_JAVA.replace('memclassoutput.reload', 'probe')
-                mainFile.text = INT_KIND_GROOVY.replace('memclassoutput.reload', 'probe')
-                def second = memUnit(loader)
-                second.addSources(javaFile, mainFile)
-                second.compile()
-                def again = loader.loadClass('probe.Main').getDeclaredMethod('kind').invoke(null)
-                assert again == 'text'
-            } finally {
-                loader.close()
-            }
-        } finally {
-            sources.deleteDir()
-        }
-    }
-
-    // GROOVY-12711
-    @Test
     void testShadowedOutputIsReported() {
         def sources = File.createTempDir('mem-shadow-src', '')
         def stale = File.createTempDir('mem-shadow-stale', '')
@@ -737,28 +743,115 @@ final class MemClassOutputTest {
 
     // GROOVY-12711
     @Test
-    void testAnotherUnitCannotPublishWhileAStageIsOpen() {
-        def sources = File.createTempDir('mem-busy', '')
+    void testOpenRequiresALoader() {
+        def thrown = shouldFail(NullPointerException) {
+            MemClassOutputClasspath.open(null)
+        }
+        assert thrown.message == 'loader'
+    }
+
+    // GROOVY-12711
+    @Test
+    void testStageCommitAndAbort() {
+        def loader = new GroovyClassLoader(this.class.classLoader)
+        try {
+            def store = MemClassOutputClasspath.open(loader)
+            def stage = store.begin()
+            stage.put('p/A.class', [1, 2] as byte[])
+            store.commit()
+            store.commit()
+
+            def again = store.begin()
+            assert loader.getResource('p/A.class').bytes == [1, 2] as byte[]
+            again.put('p/A.class', [9] as byte[])
+            again.put('p/B.class', [3] as byte[])
+            assert loader.getResource('p/A.class').bytes == [9] as byte[]
+            assert loader.getResource('p/B.class').bytes == [3] as byte[]
+
+            store.abort()
+            store.abort()
+            assert loader.getResource('p/A.class').bytes == [1, 2] as byte[]
+            assert loader.getResource('p/B.class') == null
+        } finally {
+            loader.close()
+        }
+    }
+
+    // GROOVY-12711
+    @Test
+    void testTargetDirectoryDoesNotHideInMemoryClasses() {
+        def sources = File.createTempDir('mem-target-src', '')
+        def stale = File.createTempDir('mem-target-stale', '')
         try {
             def javaFile = write(sources, 'probe/JavaSide.java', STRING_KIND_JAVA.replace('memclassoutput.reload', 'probe'))
             def mainFile = write(sources, 'probe/Main.groovy', STRING_KIND_GROOVY.replace('memclassoutput.reload', 'probe'))
+            def disk = new CompilerConfiguration()
+            disk.targetDirectory = stale
+            disk.jointCompilationOptions = [memStub: true]
+            def diskLoader = new GroovyClassLoader(this.class.classLoader)
+            try {
+                def unit = new JavaAwareCompilationUnit(disk, diskLoader)
+                unit.addSources(javaFile, mainFile)
+                unit.compile()
+            } finally {
+                diskLoader.close()
+            }
+
+            javaFile.text = INT_KIND_JAVA.replace('memclassoutput.reload', 'probe')
+            mainFile.text = INT_KIND_GROOVY.replace('memclassoutput.reload', 'probe')
+            def config = new CompilerConfiguration()
+            config.targetDirectory = stale
+            config.jointCompilationOptions = [memStub: true, memClassOutput: true]
             def loader = new GroovyClassLoader(this.class.classLoader)
             try {
-                def held = memUnit(loader)
-                held.addSources(javaFile, mainFile)
-                held.compile(Phases.SEMANTIC_ANALYSIS)
-
-                def other = memUnit(loader)
-                other.addSources(mainFile)
-                shouldFail(IllegalStateException) {
-                    other.compile()
-                }
-                held.compile()
+                def unit = new JavaAwareCompilationUnit(config, loader)
+                unit.addSources(javaFile, mainFile)
+                unit.compile()
+                def resource = loader.getResource('probe/JavaSide.class')
+                assert resource != null && resource.protocol != 'file'
+                assert loader.loadClass('probe.Main').getDeclaredMethod('kind').invoke(null) == 2
             } finally {
                 loader.close()
             }
         } finally {
             sources.deleteDir()
+            stale.deleteDir()
+        }
+    }
+
+    // GROOVY-12711
+    @Test
+    void testDisablingMemClassOutputWritesTheRestToTheTargetDirectory() {
+        def sources = File.createTempDir('mem-disable-src', '')
+        def classes = File.createTempDir('mem-disable-out', '')
+        try {
+            def groovyFile = write(sources, 'only/Main.groovy', '''\
+                package only
+
+                class Main {
+                    static int n() { 1 }
+                }
+                '''.stripIndent())
+            def config = new CompilerConfiguration()
+            config.targetDirectory = classes
+            config.jointCompilationOptions = [memStub: true, memClassOutput: true]
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            try {
+                def unit = new JavaAwareCompilationUnit(config, loader)
+                unit.addSources(groovyFile)
+                unit.compile(Phases.SEMANTIC_ANALYSIS)
+                assert !new File(classes, 'only/Main.class').exists()
+
+                config.jointCompilationOptions = [memStub: true]
+                unit.compile()
+                assert new File(classes, 'only/Main.class').isFile()
+                assert loader.getResource('only/Main.class') == null
+            } finally {
+                loader.close()
+            }
+        } finally {
+            sources.deleteDir()
+            classes.deleteDir()
         }
     }
 
@@ -772,11 +865,11 @@ final class MemClassOutputTest {
         8.times {
             def loader = new GroovyClassLoader(this.class.classLoader)
             try {
-                def store = MemClassOutputClasspath.install(loader)
-                def stage = store.begin(loader)
+                def store = MemClassOutputClasspath.open(loader)
+                def stage = store.begin()
                 stage.put('p/T.class', classBytes(CacheOne))
                 AsmDecompiler.parseClass(loader.getResource('p/T.class'))
-                store.commit(loader)
+                store.commit()
             } finally {
                 loader.close()
             }
@@ -830,7 +923,7 @@ final class MemClassOutputTest {
         }
         '''.stripIndent()
 
-    private static void compileReload(File root, GroovyClassLoader loader, String javaSource, String groovySource) {
+    private static void compileSources(File root, GroovyClassLoader loader, String javaSource, String groovySource) {
         def javaFile = write(root, 'memclassoutput/reload/JavaSide.java', javaSource)
         def groovyFile = write(root, 'memclassoutput/reload/Main.groovy', groovySource)
         def config = new CompilerConfiguration()

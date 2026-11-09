@@ -60,9 +60,11 @@ import static org.codehaus.groovy.control.CompilerConfiguration.MEM_STUB;
  * <p>
  * Only {@link JavacJavaCompiler} supports that option. Another
  * {@link JavaCompiler} fails the compile instead of writing class files to a
- * directory the class loader is not using. A class the loader has already
- * defined is not replaced; run recompiled code with a fresh loader. An
- * earlier classpath entry or a parent loader hides the in-memory bytes.
+ * directory the class loader is not using. Each unit publishes on the loader
+ * it is given; a later unit does not share that publication. A class the
+ * loader has already defined is not replaced; run recompiled code with a
+ * fresh loader. An earlier classpath entry or a parent loader hides the
+ * in-memory bytes.
  */
 public class JavaAwareCompilationUnit extends CompilationUnit {
 
@@ -206,12 +208,13 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
      * Compiles this unit.
      * <p>
      * With in-memory class output, bytes produced by this compile are staged
-     * until output completes. A later {@code compile} on this unit keeps that
-     * stage, so a compile that stopped at semantic analysis does not discard
-     * the classes javac already produced. A failed compile discards the stage
-     * and leaves the last committed classes in place. Classes this compile
-     * does not produce again are not removed. A class the loader has already
-     * defined is not replaced.
+     * until output completes. A later {@code compile} on this unit that has
+     * not reached output keeps that stage, so a compile that stopped at
+     * semantic analysis does not discard the classes javac already produced.
+     * A failed compile discards the stage and leaves classes this unit
+     * already committed. Classes this compile does not produce again are not
+     * removed. A class the loader has already defined is not replaced.
+     * Another compilation unit does not share this publication.
      *
      * @param throughPhase the last phase to run
      * @throws CompilationFailedException if compilation fails
@@ -227,9 +230,9 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         } finally {
             if (staging) {
                 if (!ok) {
-                    memOutput.abort(this);
+                    memOutput.abort();
                 } else if (getPhase() > Phases.OUTPUT) {
-                    memOutput.commit(this);
+                    memOutput.commit();
                 }
             }
         }
@@ -245,24 +248,26 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     }
 
     /**
-     * Opens this unit's stage on the current loader when the option is on.
-     * A compile that stopped before output reuses the stage it already opened.
+     * Opens this unit's store on its class loader, then the stage for this
+     * compile. The store stays with this unit. A compile that has not reached
+     * output reopens the same stage. Turning the option off discards an open
+     * stage and stops this unit publishing further classes there.
      *
      * @return {@code true} when this compile is publishing in memory
      */
     private boolean bindMemOutput() {
         if (!getConfiguration().isMemClassOutput()) {
             if (memOutput != null) {
-                memOutput.abort(this);
+                memOutput.abort();
                 memOutput = null;
                 memClassBytes = null;
             }
             return false;
         }
-        if (memOutput == null || !memOutput.isContinuation(this)) {
-            memOutput = MemClassOutputClasspath.install(getClassLoader());
+        if (memOutput == null) {
+            memOutput = MemClassOutputClasspath.open(getClassLoader());
         }
-        memClassBytes = memOutput.begin(this);
+        memClassBytes = memOutput.begin();
         return true;
     }
 
