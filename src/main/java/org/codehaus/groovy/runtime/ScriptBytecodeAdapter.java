@@ -1079,8 +1079,9 @@ public class ScriptBytecodeAdapter {
      * GROOVY-12151: the bytecode-facing factory for the shared packed-closure adapter. The compiler
      * emits one {@code INVOKESTATIC} of this method per packed closure literal; hosting the factory
      * here (with the dispatcher bundle travelling as {@code Object} and the result as
-     * {@code Closure}) keeps {@code PackedClosure} and {@code GeneratedDispatcher.Bundle} off the
-     * emitted-bytecode surface entirely. The cast is negligible against the object-creation cost.
+     * {@code Closure}) keeps {@code PackedClosure} off the emitted-bytecode surface and
+     * {@code GeneratedDispatcher.Bundle} out of every creation site (only the hosting class's
+     * dispatcher factory names it). The cast is negligible against the object-creation cost.
      *
      * @param owner       the enclosing instance (or the enclosing {@code Class} in a static context)
      * @param dispatchers the hosting class's linked {@link GeneratedDispatcher.Bundle}
