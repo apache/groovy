@@ -1457,7 +1457,9 @@ resolved before the default imports for a unit of the same package, and the
 Java Language Specification (§6.4.1) has a type of the same package, the
 unnamed package included, shadow a type imported on demand. An explicit star
 import still takes precedence over a class of the default package, as
-elsewhere in Groovy.
+elsewhere in Groovy. A compiled nested class named through its outer class
+is looked up the same way: with a compiled default-package `Proxy` that has
+a nested `Type`, `Proxy.Type` is that class and not `java.net.Proxy.Type`.
 
 **Who is affected.** Default-package code whose class path has a class, or a
 `.groovy` source, of the default package with the simple name of a

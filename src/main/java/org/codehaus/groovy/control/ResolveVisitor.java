@@ -574,7 +574,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             resolved = (!type.hasPackageName() && resolveNestedClass(type))
                     || resolveFromModule(type, testModuleImports)
                     || resolveFromCompileUnit(type)
-                    || (testModuleImports && !type.hasPackageName() && resolveFromDefaultPackage(type))
+                    || (testDefaultImports && !type.hasPackageName() && resolveFromDefaultPackage(type))
                     || (testDefaultImports && !type.hasPackageName() && resolveFromDefaultImports(type))
                     || resolveToOuter(type)
                     || (testStaticInnerClasses && type.hasPackageName() && resolveFromStaticInnerClasses(type));
