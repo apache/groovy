@@ -541,11 +541,16 @@ public class ClosureWriter {
         return true;
     }
 
-    /** The closure's inferred return type, normalised the same way {@code createClosureClass} does for doCall. */
+    /**
+     * The closure's inferred return type, normalised for the declaration of its doCall method (or of the method a
+     * packed closure is hoisted to): a reference type without unresolved generics.
+     */
     private static ClassNode inferredClosureReturnType(final ClosureExpression expression) {
         ClassNode returnType = expression.getNodeMetaData(INFERRED_RETURN_TYPE);
-        if (returnType == null) returnType = ClassHelper.OBJECT_TYPE;
-        else if (returnType.isPrimaryClassNode()) returnType = returnType.getPlainNodeReference();
+        if (returnType == null) returnType = ClassHelper.OBJECT_TYPE; // not STC or unknown path
+        // the class node itself carries the declared type parameters; a parameterized reference to a class of the
+        // compilation unit keeps its type arguments, as a reference to a class read from bytecode does
+        else if (returnType.isPrimaryClassNode() && !returnType.isRedirectNode()) returnType = returnType.getPlainNodeReference();
         else if (ClassHelper.isPrimitiveType(returnType)) returnType = ClassHelper.getWrapper(returnType);
         else if (GenericsUtils.hasUnresolvedGenerics(returnType)) returnType = GenericsUtils.nonGeneric(returnType);
         return returnType;
@@ -1700,11 +1705,7 @@ public class ClosureWriter {
         removeInitialValues(localVariableParams);
 
         // GROOVY-9971: closure return type is mapped to Groovy cast by classgen
-        ClassNode returnType = expression.getNodeMetaData(INFERRED_RETURN_TYPE);
-        if (returnType == null) returnType = ClassHelper.OBJECT_TYPE; // not STC or unknown path
-        else if (returnType.isPrimaryClassNode()) returnType = returnType.getPlainNodeReference();
-        else if (ClassHelper.isPrimitiveType(returnType)) returnType = ClassHelper.getWrapper(returnType);
-        else if (GenericsUtils.hasUnresolvedGenerics(returnType)) returnType = GenericsUtils.nonGeneric(returnType);
+        ClassNode returnType = inferredClosureReturnType(expression);
 
         var answer = new InnerClassNode(classNode, name, modifiers, ClassHelper.CLOSURE_TYPE.getPlainNodeReference());
         answer.addInterface(ClassHelper.GENERATED_CLOSURE_Type.getPlainNodeReference());
