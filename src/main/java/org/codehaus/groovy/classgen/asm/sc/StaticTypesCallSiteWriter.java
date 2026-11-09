@@ -515,6 +515,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
     boolean makeGetField(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean safe, final boolean implicitThis) {
         FieldNode field = getField(receiverType, fieldName); // GROOVY-7039: include interface constants
         if (field != null && AsmClassGenerator.isFieldDirectlyAccessible(field, controller.getClassNode())) {
+            RuntimePackageCheck.checkField(controller, field, implicitThis ? null : controller.getTypeChooser().resolveType(receiver, controller.getClassNode()), receiver);
             CompileStack compileStack = controller.getCompileStack();
             OperandStack operandStack = controller.getOperandStack();
             MethodVisitor mv = controller.getMethodVisitor();
@@ -863,6 +864,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         FieldNode fn = AsmClassGenerator.getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(controller.getClassNode(), receiverType, name, false);
         if (fn == null) return false;
 
+        RuntimePackageCheck.checkField(controller, fn, controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode()), expression);
         OperandStack os = controller.getOperandStack();
         os.doGroovyCast(fn.getType());
 
