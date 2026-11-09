@@ -168,6 +168,28 @@ class QueryableHelper {
      *
      * @param mode 0: immediate, 1: abort
      */
+    /**
+     * Reports whether {@link #shutdown(int)} has been requested.
+     *
+     * @return {@code true} after shutdown
+     * @since 7.0.0
+     */
+    @GroovyABI(since = "7.0.0")
+    static boolean isShutdown() {
+        ThreadPoolHolder.THREAD_POOL.isShutdown()
+    }
+
+    /**
+     * Reports whether the worker pool has finished shutting down.
+     *
+     * @return {@code true} when the pool is terminated
+     * @since 7.0.0
+     */
+    @GroovyABI(since = "7.0.0")
+    static boolean isTerminated() {
+        ThreadPoolHolder.THREAD_POOL.isTerminated()
+    }
+
     @GroovyABI(since = "4.0.0")
     static void shutdown(int mode) {
         if (0 == mode) {

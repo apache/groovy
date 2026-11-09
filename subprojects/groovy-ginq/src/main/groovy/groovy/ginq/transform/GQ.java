@@ -18,6 +18,7 @@
  */
 package groovy.ginq.transform;
 
+import groovy.ginq.Ginq;
 import org.apache.groovy.ginq.dsl.GinqAstVisitor;
 import org.apache.groovy.ginq.provider.collection.runtime.Queryable;
 import org.apache.groovy.lang.annotation.Incubating;
@@ -30,7 +31,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Method annotation to make a method call returning GINQ result
+ * Method annotation to make a method call returning GINQ result.
+ * <p>
+ * The method body is GINQ syntax, not a Groovy block. It can be used from a
+ * {@code @CompileStatic} or {@code @TypeChecked} class: the method is checked
+ * with the enclosing annotation, and the lowered query closure stays dynamically
+ * dispatched. A {@code def} method is given the result type of {@link #value()}
+ * when that does not conflict with a superclass method. For a statically typed
+ * chain of operators, use {@link Ginq} instead of this annotation.
  *
  * @since 4.0.0
  */

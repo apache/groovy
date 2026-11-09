@@ -57,6 +57,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLUTION;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLUTION;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.IMPLICIT_RECEIVER;
@@ -239,7 +240,17 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         // runtime proxy. Markers are only added when they are true marker
         // interfaces (no abstract methods we'd be obliged to implement).
         addIntersectionMarkers(closureClass, expression);
-        closureClass.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
+        // A closure marked DYNAMIC_RESOLUTION is emitted with the dynamic writer.
+        // The enclosing method stays static. The marker is how a type-checking
+        // extension leaves one closure dynamic (GINQ's lowered query is the user).
+        boolean dynamic = Boolean.TRUE.equals(expression.getNodeMetaData(DYNAMIC_RESOLUTION));
+        Boolean mode = dynamic ? Boolean.FALSE : Boolean.TRUE;
+        closureClass.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, mode);
+        for (MethodNode method : closureClass.getMethods()) {
+            if (method.getDeclaringClass() == closureClass) {
+                method.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, mode);
+            }
+        }
         return closureClass;
     }
 

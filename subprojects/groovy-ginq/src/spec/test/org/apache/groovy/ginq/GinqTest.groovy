@@ -36,7 +36,6 @@ import org.codehaus.groovy.syntax.Types
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
 import static org.junit.jupiter.api.Assumptions.assumeTrue
 
@@ -3624,7 +3623,10 @@ class GinqTest {
 
     @Test
     void "testGinq - complex example transformed"() {
-        assertScript '''
+        // The maps mix strings and ints. Static checking resolves s.amount to
+        // that shared type and rejects comparing it with an int, and the group
+        // key is erased to Object. Dynamic execution is unchanged.
+        String script = '''
             import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from
             import org.apache.groovy.ginq.provider.collection.runtime.Queryable.Order
 
@@ -3648,6 +3650,9 @@ class GinqTest {
             assert result[0].toList() == ['Alice', 2, 1280]
             assert result[1].toList() == ['Bob', 2, 1950]
         '''
+        GinqScriptModes.expectUnchecked(script)
+        GinqScriptModes.expectCheckedRejection(script,
+                'compareTo', 'No such property: key', 'lambda expecting java.lang.Number')
     }
 
     @Test
@@ -7321,7 +7326,7 @@ class GinqTest {
                 shutdown
             }
 // end::ginq_tips_09[]
-            assert QueryableHelper.ThreadPoolHolder.THREAD_POOL.isShutdown() && QueryableHelper.ThreadPoolHolder.THREAD_POOL.isTerminated()
+            assert QueryableHelper.isShutdown() && QueryableHelper.isTerminated()
         '''
     }
 
@@ -7334,7 +7339,7 @@ class GinqTest {
                 shutdown immediate
             }
 // end::ginq_tips_10[]
-            assert QueryableHelper.ThreadPoolHolder.THREAD_POOL.isShutdown() && QueryableHelper.ThreadPoolHolder.THREAD_POOL.isTerminated()
+            assert QueryableHelper.isShutdown() && QueryableHelper.isTerminated()
         '''
     }
 
@@ -7347,7 +7352,7 @@ class GinqTest {
                 shutdown abort
             }
 // end::ginq_tips_11[]
-            assert QueryableHelper.ThreadPoolHolder.THREAD_POOL.isShutdown()
+            assert QueryableHelper.isShutdown()
         '''
     }
 
@@ -7387,5 +7392,14 @@ class GinqTest {
         scriptList.each { String c ->
             assertScript(c)
         }
+    }
+
+    /**
+     * Every script in this class, including the optimize and smart-join
+     * variants, runs under default dynamic, {@code @CompileDynamic},
+     * {@code @TypeChecked} and {@code @CompileStatic}.
+     */
+    private static void assertScript(String script) {
+        GinqScriptModes.runAll(script)
     }
 }

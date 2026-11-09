@@ -21,9 +21,13 @@ package org.apache.groovy.ginq.provider.collection.runtime;
 import groovy.lang.Tuple2;
 import groovy.transform.Internal;
 import org.apache.groovy.lang.annotation.GroovyABI;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -515,6 +519,52 @@ public interface Queryable<T> {
      * @since 4.0.0
      */
     List<T> toList();
+
+    /**
+     * Iterates the materialized elements. A static {@code for} loop calls this
+     * rather than wrapping the query as a single value.
+     *
+     * @return an iterator over the elements
+     * @since 7.0.0
+     */
+    default Iterator<T> iterator() {
+        return toList().iterator();
+    }
+
+    /**
+     * Coerces this query. {@link Queryable}, {@link List}, {@link Collection} and
+     * {@link Iterable} are answered here. Every other target is delegated to
+     * {@link DefaultGroovyMethods#asType(Object, Class)}, which throws
+     * {@link GroovyCastException} when the value is not compatible with the target.
+     *
+     * @param type the requested type
+     * @return the coerced value
+     * @throws GroovyCastException when {@code type} is null or the value cannot be coerced
+     * @since 7.0.0
+     */
+    default Object asType(Class<?> type) {
+        if (type == null) {
+            throw new GroovyCastException("Cannot cast '" + getClass().getName() + "' to null");
+        }
+        if (type == Queryable.class) {
+            return this;
+        }
+        if (List.class == type || Collection.class == type || Iterable.class == type) {
+            return toList();
+        }
+        return DefaultGroovyMethods.asType((Object) this, type);
+    }
+
+    /**
+     * Returns one materialized element.
+     *
+     * @param index the element index
+     * @return the element at that index
+     * @since 7.0.0
+     */
+    default T getAt(int index) {
+        return toList().get(index);
+    }
 
     /**
      * Returns the count of elements of the {@link Queryable} instance
