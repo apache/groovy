@@ -81,6 +81,15 @@ import java.math.BigDecimal
 
 This is done because the classes from these packages are most commonly used. By importing these boilerplate code is reduced.
 
+NOTE: As in Java, a type of the same package shadows a default import, and that includes the default package:
+a default-package class on the class path, or a `.groovy` source on the source path of the class loader, with the
+simple name of a default-import type is used in place of that type by default-package code. The `groovy` command
+uses the current directory as the class path when none is given, so a `Timer.groovy` next to a script stands for
+`Timer` in that script, where `java.util.Timer` otherwise would. Use the fully qualified name where the default
+import is meant, or set the optimization option `defaultPackageFirst` to `false` (system property
+`groovy.resolve.default.package.first`), which restores the order of versions before 7.0, where a default import
+came before a class of the default package found on the class path.
+
 === Simple import
 
 A simple import is an import statement where you fully define the class name along with the package. For example the import statement `import groovy.xml.MarkupBuilder` in the code below is a simple import which directly refers to a class inside a package.
