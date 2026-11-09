@@ -35,6 +35,11 @@ final class Groovy12555 {
         'Caller.groovy': 'class Caller { def run() { Factory.hello() } }'
     ]
 
+    private static final Map<String, String> NESTED_SOURCES = [
+        'Proxy.groovy': 'class Proxy { static class Type { } }',
+        'Caller.groovy': 'class Caller { Proxy.Type type }'
+    ]
+
     private File dir
 
     @BeforeEach
@@ -48,19 +53,20 @@ final class Groovy12555 {
     }
 
     /**
-     * Compiles the sources together, then compiles {@code Caller} alone against {@code Factory}, either compiled,
+     * Compiles the sources together, then compiles {@code Caller} alone against the other source, either compiled,
      * as an incremental build has it, or as a source on the class path, and returns the text of {@code Caller}
      * from both compilations.
      */
-    private List<String> compileCallerBothWays(Map<String, Boolean> options, boolean factoryCompiled) {
+    private List<String> compileCallerBothWays(Map<String, Boolean> options, boolean factoryCompiled, Map<String, String> sources = SOURCES) {
         File sourceDir = new File(dir, 'src')
-        Map<String, File> files = SOURCES.collectEntries { name, text -> [name, write(new File(sourceDir, name), text)] }
+        Map<String, File> files = sources.collectEntries { name, text -> [name, write(new File(sourceDir, name), text)] }
         CompilationUnit together = compile(new File(dir, 'together'), files.values() as List, null, options)
+        String factory = sources.keySet().find { it != 'Caller.groovy' }
         File first = new File(dir, 'first')
         if (factoryCompiled) {
-            compile(first, [files['Factory.groovy']], null, options)
+            compile(first, [files[factory]], null, options)
         } else {
-            write(new File(first, 'Factory.groovy'), SOURCES['Factory.groovy'])
+            write(new File(first, factory), sources[factory])
         }
         CompilationUnit separate = compile(new File(dir, 'separate'), [files['Caller.groovy']], first, options)
         [text(together, 'Caller'), text(separate, 'Caller')]
@@ -128,5 +134,30 @@ final class Groovy12555 {
         def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_FIRST): false], false)
         assert !together.contains('groovy/util/Factory')
         assert separate.contains('groovy/util/Factory')
+    }
+
+    // a qualified name refers to a nested class of a compiled class of the default package
+    // rather than to a nested class of a default import of the same name
+    @Test
+    void testCompiledDefaultPackageNestedClassBeforeDefaultImports() {
+        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_FIRST): true], true, NESTED_SOURCES)
+        assert together == separate
+        assert !separate.contains('java/net/Proxy$Type')
+    }
+
+    // java.net.Proxy.Type is an enum, so this did not compile when it was taken for the nested class
+    @Test
+    void testNewOfCompiledDefaultPackageNestedClass() {
+        def sources = NESTED_SOURCES + ['Caller.groovy': 'class Caller { def run() { new Proxy.Type() } }']
+        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_FIRST): true], true, sources)
+        assert together == separate
+        assert !separate.contains('java/net/Proxy$Type')
+    }
+
+    @Test
+    void testCompiledDefaultPackageNestedClassAfterDefaultImportsWhenOff() {
+        def (together, separate) = compileCallerBothWays([(DEFAULT_PACKAGE_FIRST): false], true, NESTED_SOURCES)
+        assert !together.contains('java/net/Proxy$Type')
+        assert separate.contains('java/net/Proxy$Type')
     }
 }
