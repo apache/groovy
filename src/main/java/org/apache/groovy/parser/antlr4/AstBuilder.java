@@ -5094,8 +5094,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         var parameter = new Parameter(parameterType, this.visitVariableDeclaratorId(ctx.variableDeclaratorId()).getName());
         var modifiers = new ModifierManager(this, this.visitVariableModifiersOpt(ctx.variableModifiersOpt()));
-        parameter.putNodeMetaData(PARAMETER_MODIFIER_MANAGER, modifiers);
-        parameter.putNodeMetaData(PARAMETER_CONTEXT, ctx);
+        // kept by the builder, not on the parameter: a parse context's parent chain is the whole CST
+        parameterModifierManagers.put(parameter, modifiers);
+        parameterContexts.put(parameter, ctx);
         modifiers.processParameter(parameter);
         parameter.setInitialExpression(init);
         return configureAST(parameter, ctx);
