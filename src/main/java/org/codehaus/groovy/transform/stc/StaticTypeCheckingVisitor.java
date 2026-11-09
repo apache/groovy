@@ -3913,7 +3913,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (!enclosingClosure.getReturnTypes().isEmpty()) { // populated by ReturnAdder
             ClassNode returnType = lowestUpperBound(enclosingClosure.getReturnTypes());
             storeInferredReturnType(expression, wrapTypeIfNecessary(returnType));
-            storeType(expression, wrapClosureType(returnType));
+            ClassNode closureType = wrapClosureType(returnType);
+            // keep the parameter count for overload selection when the closure is checked again
+            closureType.putNodeMetaData(CLOSURE_ARGUMENTS, closureParameterCount(expression));
+            storeType(expression, closureType);
         }
 
         // check types of closure shared variables for change
@@ -4088,6 +4091,15 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             return nullX(); // GROOVY-10971: unknown argument type
         }
         return castX(type, defaultValueX(type));
+    }
+
+    /**
+     * Returns the number of parameters a closure declares: 0 for "{ -> }" and -1 for
+     * an implicit parameter, which can be called with none or one.
+     */
+    private static int closureParameterCount(final ClosureExpression closure) {
+        Parameter[] parameters = closure.getParameters();
+        return parameters == null ? 0 : parameters.length == 0 ? -1 : parameters.length;
     }
 
     private static ClassNode wrapClosureType(final ClassNode returnType) {
@@ -7953,10 +7965,7 @@ trying: for (ClassNode[] signature : signatures) {
                     new GenericsType(wrapTypeIfNecessary(returnType))
                 });
             }
-            Parameter[] parameters = ((ClosureExpression) node).getParameters();
-            int nParameters = parameters == null ? 0
-               : parameters.length == 0 ? -1 : parameters.length;
-            type.putNodeMetaData(CLOSURE_ARGUMENTS, nParameters);
+            type.putNodeMetaData(CLOSURE_ARGUMENTS, closureParameterCount((ClosureExpression) node));
             return type;
         }
 
