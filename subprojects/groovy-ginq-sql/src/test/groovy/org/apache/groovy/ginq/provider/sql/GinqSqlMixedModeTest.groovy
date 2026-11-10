@@ -160,7 +160,7 @@ class GinqSqlMixedModeTest {
             select e.name, (rowNumber() over(orderby e.name)) as rn
         }
         assert db.sqlText.contains('ROW_NUMBER() OVER (ORDER BY e.name ASC NULLS LAST) - 1')
-        assert db.sqlText.contains('WHERE e.deptId = ?')
+        assert db.sqlText.contains('WHERE e.deptId IS NOT DISTINCT FROM ?')
         assert !db.sqlText.contains('e.*')
         assert [1] == db.params
         assert [['Alice', 0], ['Bob', 1]] == result.collect { [it.name, it.rn] }

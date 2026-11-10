@@ -1370,7 +1370,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
     private SqlExpr translateAggregate(MethodCallExpression call, List<Expression> args, boolean lambdaStyle) {
         SqlExpr function = translateAggregateCall(call, args, lambdaStyle)
         if (function == null) return null
-        return finishAggregate(call.methodAsString, function)
+        return finishAggregate(call.methodAsString, function, call)
     }
 
     // The function alone, without the null-as-zero coalesce. A window sum applies
@@ -1412,7 +1412,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
             if (inner == null) return null
             return emitFunction(functionName, [translateExpr(inner)], true, call)
         }
-        return finishAggregate(method, emitFunction(functionName, [translateExpr(arg)], call), call)
+        return emitFunction(functionName, [translateExpr(arg)], call)
     }
 
     private SqlExpr translateLambdaAggregate(MethodCallExpression call, String method, String functionName, Expression arg) {
@@ -1448,7 +1448,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         String previousParam = aggregateLambdaParam
         aggregateLambdaParam = param
         try {
-            return finishAggregate(method, emitFunction(functionName, [translateExpr(body)], countDistinct, call), call)
+            return emitFunction(functionName, [translateExpr(body)], countDistinct, call)
         } finally {
             aggregateLambdaParam = previousParam
         }
