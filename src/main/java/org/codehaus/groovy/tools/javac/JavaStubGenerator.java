@@ -23,6 +23,7 @@ import groovy.transform.PackageScope;
 import groovy.transform.PackageScopeTarget;
 import groovy.transform.Sealed;
 import groovy.transform.SealedOptions;
+import org.apache.groovy.ast.ModuleInfoNode;
 import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -182,6 +183,14 @@ public class JavaStubGenerator {
      * @throws FileNotFoundException if a file-based stub cannot be created
      */
     public void generateClass(final ClassNode classNode) throws FileNotFoundException {
+        // GROOVY-9273: the module-info carrier is not a type (JLS §7.7). Joint
+        // compilation puts stubs on javac's source path, and a type declaration
+        // in module-info.java is not a modular compilation unit. Sibling .java
+        // files are compiled from the classpath, so they do not need a stub.
+        // Class generation still writes module-info.class.
+        if (ModuleInfoNode.of(classNode) != null) {
+            return;
+        }
         // only attempt to render if super-class is resolved; else wait for it
         if (requireSuperResolved && !classNode.getSuperClass().isResolved()) {
             return;
