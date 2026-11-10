@@ -312,6 +312,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkP
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.concreteArgumentContainsWildcard;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeVariableBoundEscapes;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.upperBoundEscapes;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.evaluateExpression;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsConnections;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsParameterMapOfThis;
@@ -2160,12 +2161,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         boolean unresolved = missesGenericsTypes(right);
         boolean incompatible = !unresolved && (
                 !GenericsUtils.buildWildcardType(leftExpressionType).isCompatibleWith(right)
-                || concreteArgumentContainsWildcard(leftExpressionType, right));
+                || concreteArgumentContainsWildcard(leftExpressionType, right)
+                || upperBoundEscapes(leftExpressionType, right));
         // a type variable that is not in scope is a type parameter of a called method that the
         // arguments left open; it has no type yet to check against the target
         boolean typeVariableEscapes = unresolved && !mentionsTypeVariableOutOfScope(right)
                 && (typeVariableBoundEscapes(leftExpressionType, right)
-                    || concreteArgumentContainsWildcard(leftExpressionType, right));
+                    || concreteArgumentContainsWildcard(leftExpressionType, right)
+                    || upperBoundEscapes(leftExpressionType, right));
         if (incompatible || typeVariableEscapes) {
             addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(rightExpressionType) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
         }
@@ -7516,6 +7519,10 @@ trying: for (ClassNode[] signature : signatures) {
      * @param explicitTypeHints type arguments (optional), for example {@code Collections.<String>emptyList()}
      */
     protected ClassNode inferReturnTypeGenerics(final ClassNode receiver, final MethodNode method, final Expression arguments, final GenericsType[] explicitTypeHints) {
+        if (receiver != null && isObjectGetClass(method)) {
+            return getClassType(receiver);
+        }
+
         ClassNode returnType = method.isConstructor() ? method.getDeclaringClass() : method.getReturnType();
         if (!GenericsUtils.hasUnresolvedGenerics(returnType)) {
             // GROOVY-7538: replace "Type<?>" with "Type<? extends/super X>" for any "Type<T extends/super X>"
@@ -7561,6 +7568,37 @@ trying: for (ClassNode[] signature : signatures) {
         returnType = applyGenericsContext(extractGenericsParameterMapOfThis(typeCheckingContext), returnType);
 
         return returnType;
+    }
+
+    private static boolean isObjectGetClass(final MethodNode method) {
+        return "getClass".equals(method.getName()) && method.getParameters().length == 0 && isObjectType(method.getDeclaringClass());
+    }
+
+    /**
+     * JLS 4.3.2: the type of {@code e.getClass()} is {@code Class<? extends |T|>}, where
+     * {@code T} is the static type of {@code e}.
+     */
+    private static ClassNode getClassType(final ClassNode receiver) {
+        ClassNode erasure = erasureOf(receiver);
+        if (isPrimitiveType(erasure)) erasure = getWrapper(erasure); // the value is boxed
+        return GenericsUtils.makeClassSafe0(CLASS_Type, GenericsUtils.buildWildcardType(erasure));
+    }
+
+    /**
+     * The erasure of a type (JLS 4.6): a type variable or an intersection is replaced by its
+     * leftmost bound and type arguments are dropped, including those of an enclosing type and
+     * of an array's component type. The result is a raw type, as if written without type
+     * arguments in source.
+     */
+    private static ClassNode erasureOf(final ClassNode type) {
+        if (type.isArray()) return erasureOf(type.getComponentType()).makeArray();
+        if (type instanceof IntersectionTypeClassNode intersection) return erasureOf(intersection.getComponents()[0]);
+        ClassNode erasure = GenericsUtils.erasure(type);
+        if (!isPrimitiveType(erasure)) {
+            erasure.setUsingGenerics(false);
+            erasure.setOuterClassType(null); // Outer<T>.Inner erases to Outer.Inner
+        }
+        return erasure;
     }
 
     /**
@@ -8593,7 +8631,11 @@ out:    for (ClassNode type : todo) {
 
         @Override
         public void visitMethod(final MethodNode node) {
-            reportPropertyType(node.getReturnType(), node.isStatic() ? null : node.getDeclaringClass());
+            if (isObjectGetClass(node)) { // "x.class" has the type of "x.getClass()"
+                propertyType.accept(getClassType(receiverType));
+            } else {
+                reportPropertyType(node.getReturnType(), node.isStatic() ? null : node.getDeclaringClass());
+            }
         }
 
         @Override
