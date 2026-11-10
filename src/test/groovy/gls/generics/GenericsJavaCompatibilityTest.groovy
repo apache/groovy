@@ -573,6 +573,51 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'second-first')
     }
 
+    /**
+     * JLS 5.1.10, 18.5.1: the capture of {@code ? extends B} is a subtype of {@code B}, so
+     * an argument such as {@code List<? extends Integer>} infers a type parameter bounded
+     * by {@code Number}, and {@code Class<? extends String>} one bounded by {@code CharSequence}.
+     */
+    @Test
+    void testUpperBoundedWildcardArgumentForBoundedTypeParameter() {
+        final String className = 'gls.generics.test.ExtendsWildcardArgument'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class ExtendsWildcardArgument {
+                static <T extends Number> T first(List<T> list) { return list.get(0); }
+                static <T extends CharSequence> String named(Class<T> type) { return type.getSimpleName(); }
+                static String check(List<? extends Integer> ints, Class<? extends String> type) {
+                    Integer i = first(ints);
+                    Number n = first(ints);
+                    return i + ":" + n + ":" + named(type);
+                }
+                public static String test() {
+                    return check(Arrays.asList(4, 2), String.class);
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, '4:4:String')
+    }
+
+    /**
+     * JLS 18.5.1: the capture of {@code ? extends Number} is not known to be a subtype of
+     * {@code Integer}, so it does not infer a type parameter bounded by {@code Integer}.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardArgumentOutsideTypeParameterBound() {
+        final String className = 'gls.generics.test.ExtendsWildcardArgumentOutOfBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class ExtendsWildcardArgumentOutOfBound {
+                static <T extends Integer> T narrow(List<T> list) { return list.get(0); }
+                static Object check(List<? extends Number> numbers) { return narrow(numbers); }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "incompatible bounds", "Cannot call <T extends java.lang.Integer>")
+    }
+
     // =========================================================================
     // Category 4: Diamond and target-type inference (JLS 15.9.3, 18.5.2)
     // =========================================================================

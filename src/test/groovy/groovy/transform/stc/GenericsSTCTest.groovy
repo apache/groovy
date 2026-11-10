@@ -4935,6 +4935,38 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12754
+    @Test
+    void testUpperBoundedWildcardArgumentForBoundedTypeParameter() {
+        assertScript '''
+            public <T extends Number> T first(List<T> list) { list.get(0) }
+            public <T extends CharSequence> String named(Class<T> type) { type.simpleName }
+            public <T extends List<Integer>> T cast(Class<T> type, def value) { type.cast(value) }
+
+            void test(List<? extends Integer> ints, Class<? extends String> type, Class<? extends ArrayList> listType) {
+                Integer i = first(ints)
+                Number n = first(ints)
+                assert i == 4 && n == 4
+                assert named(type) == 'String'
+                def list = [1, 2]
+                assert cast(listType, list).is(list)
+            }
+            test([4, 2], String, ArrayList)
+        '''
+    }
+
+    // GROOVY-12754
+    @Test
+    void testUpperBoundedWildcardArgumentOutsideTypeParameterBound() {
+        shouldFailWithMessages '''
+            public <T extends Integer> T narrow(List<T> list) { list.get(0) }
+            void test(List<? extends Number> numbers) {
+                narrow(numbers)
+            }
+        ''',
+            '#narrow(java.util.List<T>) with arguments [java.util.List<? extends java.lang.Number>]'
+    }
+
     // GROOVY-5885
     @Test
     void testMethodLevelGenericsForMethodCall2() {
