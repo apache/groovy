@@ -401,6 +401,131 @@ In this example, even though our instance of the `Thing` class (our delegate for
 the fact that it handles the missing property via its `propertyMissing` hook,
 means that `age` will be `-1`.
 
+[[closure-resolution-rules]]
+==== Resolution rules
+
+The sections above introduce the delegation strategies by example. This section states the rules in full.
+They apply to a name used in a closure body without an explicit receiver: a property read such as `name`,
+a property write such as `name = 'x'`, or a method call such as `greet()`. The first step that applies decides the outcome:
+
+. *A local variable or parameter in the lexical scope of the closure.* This is decided at compile time,
+whatever the resolve strategy.
+. *A member of the closure itself.* The properties `owner`, `delegate`, `thisObject`, `resolveStrategy`, `directive`,
+`maximumNumberOfParameters`, `parameterTypes`, `metaClass` and `class`, and the methods that `Closure` declares, such as
+`call`, `curry` or `getDelegate`, belong to the closure. A property or method of the same name on the owner or the
+delegate is not consulted. Only `delegate`, `resolveStrategy`, `directive` and `metaClass` can be assigned; a write to
+one of the other names continues with the next step. With `Closure.DELEGATE_ONLY`, the methods `curry`, `ncurry`,
+`rcurry`, `leftShift` and `rightShift` are the exception: they are left to the delegate, so that a DSL can give
+them its own meaning.
+. *The candidates named by the resolve strategy*, in order, as shown in the table below. A candidate is used if
+it <<_delegation_strategy_in_the_presence_of_metaprogramming,handles>> the property or method. A candidate that is `null`
+is skipped. A candidate that is itself a closure, which is the case for the owner of a nested closure, applies these same
+rules with its own owner, delegate and resolve strategy.
+. *For a method call only, any other method of the closure*, such as those inherited from `Object` or added by the
+Groovy development kit (`toString()`, `with`, `tap`).
+. Otherwise a `MissingMethodException` or a `MissingPropertyException` is thrown.
+
+[cols="1,2" options="header"]
+|===
+|Resolve strategy
+|Candidates, in order
+
+|`Closure.OWNER_FIRST` (the default)
+|owner, then delegate
+
+|`Closure.DELEGATE_FIRST`
+|delegate, then owner
+
+|`Closure.OWNER_ONLY`
+|owner
+
+|`Closure.DELEGATE_ONLY`
+|delegate
+
+|`Closure.TO_SELF`
+|none
+|===
+
+Steps 1 and 2 mean that a local variable hides every property of the same name, and that the closure's own
+properties hide those of the owner and the delegate:
+
+[source,groovy]
+----
+include::../test/ClosuresSpecTest.groovy[tags=resolution_locals_and_closure_members,indent=0]
+----
+<1> the local variable `title` wins over the `title` of the owner and of the delegate
+<2> `delegate` is a property of the closure, so the `delegate` property of the owner is not read
+
+The same holds for the methods that `Closure` declares:
+
+[source,groovy]
+----
+include::../test/ClosuresSpecTest.groovy[tags=resolution_closure_methods,indent=0]
+----
+<1> `curry` is a method of `Closure`, so the closure is curried and the `curry` method of the owner is not called
+
+A property of the closure that cannot be assigned is still read from the closure, but a write goes to the candidates:
+
+[source,groovy]
+----
+include::../test/ClosuresSpecTest.groovy[tags=resolution_closure_readonly_property,indent=0]
+----
+<1> reading `owner` returns the owner of the closure, here the `Holder` instance
+<2> writing `owner` sets the `owner` property of that instance
+
+With "delegate only", the currying and composition methods are resolved on the delegate and not on the closure:
+
+[source,groovy]
+----
+include::../test/ClosuresSpecTest.groovy[tags=resolution_delegate_only_curry,indent=0]
+----
+<1> with any other strategy `curry` is the method of the closure
+<2> with "delegate only" it is the method of the delegate
+
+The owner of a nested closure is the enclosing closure, which resolves the name in turn:
+
+[source,groovy]
+----
+include::../test/ClosuresSpecTest.groovy[tags=resolution_nested,indent=0]
+----
+<1> `inner` asks its owner, the `outer` closure, for `name`
+<2> `outer` does not find `name` on its own owner, the script, and so reads it from its delegate
+
+The owner or the delegate of a closure can be `null`: after `dehydrate()`, after `rehydrate` with a `null` argument,
+or after assigning `null` to `delegate`. A `null` candidate is skipped, and when no candidate remains
+the failure is a missing property or method, not a `NullPointerException`:
+
+[source,groovy]
+----
+include::../test/ClosuresSpecTest.groovy[tags=resolution_null_owner,indent=0]
+----
+<1> `dehydrate` returns a copy of the closure whose owner, delegate and `this` are `null`
+<2> with the default "owner first" strategy the `null` owner is skipped and the delegate is used
+<3> with "owner only" the delegate is not a candidate, so the property is missing
+
+Step 4 is rarely reached, because a candidate that is not `null` already handles methods such as `toString()`.
+It matters when there is no candidate:
+
+[source,groovy]
+----
+include::../test/ClosuresSpecTest.groovy[tags=resolution_closure_fallback,indent=0]
+----
+<1> the owner of the closure, here the script, handles `toString()`
+<2> with no owner and no delegate, the `toString()` method of the closure itself is called
+<3> a method which the closure does not have either is missing
+
+With `Closure.TO_SELF` there are no candidates at all, so only steps 1, 2, 4 and 5 apply:
+
+[source,groovy]
+----
+include::../test/ClosuresSpecTest.groovy[tags=resolution_to_self,indent=0]
+----
+<1> the delegate is not consulted, and a closure has no `name` property of its own
+
+NOTE: These rules describe dynamic Groovy, where resolution happens when the closure runs. In statically compiled
+or type checked code the receiver of a name is determined at compile time from the declared types, with the help of
+link:core-domain-specific-languages.html#section-delegatesto[`@DelegatesTo`].
+
 == Closures in GStrings
 
 Take the following code:
