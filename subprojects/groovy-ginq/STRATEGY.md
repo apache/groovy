@@ -87,6 +87,20 @@ per-expression calls was tried and dropped: it broke `orderby ... in desc`,
 join predicates, and parallel clause lambdas. The enclosing method stays on
 the static writer. The marker is not applied to every expression in the method.
 
+The marker is on the closure, so it is not limited to GINQ operators. Every
+expression in that closure is compiled dynamically, including a user call in
+`where` or `select` and a call whose target another type-checking extension
+has already chosen. For example, an extension that selects `choose(CharSequence)`
+for a `String` argument is honoured in the enclosing method and ignored inside
+the query: the call is dispatched at runtime and hits `choose(String)`.
+Compiling the clause bodies with the static writer, and leaving only the
+unprovable row operators dynamic, was tried again. It keeps that extension
+target, and then breaks calls the dynamic query already accepted: an owner
+method such as `note(n)` is emitted as `invokevirtual` of a method `Object`
+does not have, a join alias is resolved against the query object, and parallel
+joins stop returning rows. The closure marker stays until the static writer
+can emit those calls without changing them.
+
 `GinqRowChecks` is still a normal type-checking extension, appended after
 extensions already on the annotation. Inside the marked closure every call is
 `makeDynamic`, so the dynamic writer does not invoke a stand-in target. The
@@ -157,12 +171,16 @@ therefore copies those read-only locals into an array when the expression
 runs, and the deferred closure reads the array.
 
 Which locals those are is `VariableScopeVisitor`'s answer, not a set of names.
-The visitor links each reference to the declaration in scope, so a shadowing
-local, a closure parameter, and a name that is not a local are distinct. A
-name that resolves to nothing is a `DynamicVariable` (an import alias or a
-class name the resolver has not rewritten yet) and is not copied. A field is
-not copied; it is read when the closure runs. The bridge does not rewrite the
-caller's declarations, box the variables, or emit stores.
+The visitor links each reference to the declaration in scope. A field or a
+property and a local of the same name are distinct, as are a closure parameter,
+a local declared in a nested closure, and a name that is not a local. A name
+that resolves to nothing is a `DynamicVariable` (an import alias, including one
+written in lower case, or a class name the resolver has not rewritten yet) and
+is not copied. A field or a property is not copied; it is read when the closure
+runs, so an assignment after the expression and before a deferred terminal is
+visible. `GQL` and `@GQ(List)` have already read it. The bridge does not
+rewrite the caller's declarations, box the variables, or emit stores. Two
+locals of the same name in nested scopes are still rejected.
 
 ## `asType`
 

@@ -487,4 +487,157 @@ final class GinqStaticModeTest {
         '''
         assert parameter.message.contains('toList') || parameter.message.contains('value')
     }
+
+    // GROOVY-12724
+    @Test
+    void fieldAndPropertyAreNotShadowedByASameNamedLocal() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            class Example {
+                int threshold = 10
+                List mixed() {
+                    def query = GQ {
+                        from n in [1, 2, 6, 12]
+                        where n > threshold
+                        select ({ int threshold -> n + threshold }(5))
+                    }
+                    this.threshold = 4
+                    return query.toList()
+                }
+            }
+            assert new Example().mixed() == [11, 17]
+        '''
+
+        assertScript '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            class Example {
+                private int stored = 1
+                int getThreshold() { stored }
+                void setThreshold(int value) { stored = value }
+                List later() {
+                    def query = GQ {
+                        from n in [1, 2, 3]
+                        where n > threshold
+                        select n
+                    }
+                    this.threshold = 2
+                    return query.toList()
+                }
+            }
+            assert new Example().later() == [3]
+        '''
+
+        assertScript '''
+            import groovy.transform.TypeChecked
+            @TypeChecked
+            class Example {
+                int threshold = 1
+                List later() {
+                    def query = GQ {
+                        from n in [1, 2, 3]
+                        where n > threshold
+                        select n
+                    }
+                    this.threshold = 2
+                    return query.toList()
+                }
+            }
+            assert new Example().later() == [3]
+        '''
+
+        assertScript '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            class Example {
+                int threshold = 1
+                List immediate() {
+                    def listed = GQL {
+                        from n in [1, 2, 3]
+                        where n > threshold
+                        select n
+                    }
+                    this.threshold = 2
+                    return listed
+                }
+            }
+            assert new Example().immediate() == [2, 3]
+        '''
+    }
+
+    // GROOVY-12724
+    @Test
+    void closureParameterShadowsTheFieldAndAnAliasIsNotALocal() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            class Example {
+                int threshold = 10
+                List parameterWins(int ignored) {
+                    def filtered = { int threshold ->
+                        def query = GQ {
+                            from n in [1, 2, 6]
+                            where n > threshold
+                            select n
+                        }
+                        this.threshold = 100
+                        return query.toList()
+                    }
+                    return filtered(4)
+                }
+            }
+            assert new Example().parameterWins(0) == [6]
+        '''
+
+        assertScript '''
+            import java.util.concurrent.TimeUnit as threshold
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            class Example {
+                static List run() {
+                    return GQ {
+                        from n in [1]
+                        select threshold
+                    }.toList()
+                }
+            }
+            assert Example.run()[0] == java.util.concurrent.TimeUnit
+        '''
+
+        def err = shouldFail '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            class Example {
+                List<Integer> run() {
+                    int threshold = 10
+                    return GQ {
+                        from n in [1, 2, 3]
+                        where ({ -> int threshold = 5; n > threshold }())
+                        select n
+                    }.toList()
+                }
+            }
+        '''
+        assert err.message.contains('threshold')
+    }
+
+    // GROOVY-12724
+    @Test
+    void unknownRowPropertyStaysDynamic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            class Example {
+                static List run() {
+                    def rows = [[a: 1], [a: 2]]
+                    return GQ {
+                        from r in rows
+                        select r.vlue
+                    }.toList()
+                }
+            }
+            assert Example.run() == [null, null]
+        '''
+    }
 }

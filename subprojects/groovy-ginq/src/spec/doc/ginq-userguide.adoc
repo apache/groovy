@@ -1228,7 +1228,10 @@ the query with a checker of its own.
 The `GQ` macro lowers the SQL-like syntax at conversion, before either checker.
 The lowered tree is a closure. On a checked class that closure is marked so the
 static compiler emits it with the dynamic writer: property access, operators, and
-aggregate calls inside the query keep their current behaviour. The enclosing method
+aggregate calls inside the query keep their current behaviour. The same marker
+compiles every expression in the closure dynamically, including a user call in
+`where` or `select`. A method another transform selected for that call is not
+what runs; the call is dispatched at runtime. The enclosing method
 is still type-checked, and under `@CompileStatic` it is statically compiled.
 `GinqRowChecks` is added to the enclosing annotation's extension list, which is how
 a caller writes `row.powerOfN`, `row[0]`, and `it.toList()` on a result whose static
@@ -1246,7 +1249,8 @@ the `Queryable` is read (`toList`, `count`, and the other terminals). The source
 not opened until that read. A local the query only reads keeps the value from the
 expression, because that is when the closure is built. A local the query writes is
 shared with the caller through ordinary closure capture. Fields are read when the
-closure runs. `GQL` and `@GQ(List)` call `toList` immediately, so they still
+closure runs. A field and a local, or a closure parameter, of the same name are
+different declarations: the one in scope is the one the query uses. `GQL` and `@GQ(List)` call `toList` immediately, so they still
 materialize at the expression. Under dynamic compilation the pipeline is built when
 the expression is evaluated; `where` and `select` do not pull elements until a
 terminal, which is the existing behaviour.

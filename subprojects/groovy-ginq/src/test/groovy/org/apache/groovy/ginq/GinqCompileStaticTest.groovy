@@ -134,6 +134,30 @@ final class GinqCompileStaticTest {
     }
 
     @Test
+    void orderByDescendingAndMembership() {
+        assert [3, 2, 1] == GQ {
+            from n in [1, 2, 3]
+            orderby n in desc
+            select n
+        }.toList()
+
+        assert [1, 3] == GQ {
+            from n in [1, 2, 3]
+            where n in [1, 3]
+            select n
+        }.toList()
+    }
+
+    @Test
+    void parallelClauseKeepsRowValues() {
+        assert [3, 2, 1] == GQ(parallel: true) {
+            from n in [1, 2, 3]
+            orderby n in desc
+            select n
+        }.toList()
+    }
+
+    @Test
     void staticMethodAndAnnotation() {
         assert [1, 2, 3] == staticNumbers()
         assert [2, 3] == above([1, 2, 3], 2).toList()
