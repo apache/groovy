@@ -1,0 +1,470 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+package org.apache.groovy.ginq.provider.sql.render
+
+import groovy.transform.CompileStatic
+import org.apache.groovy.ginq.provider.sql.ir.SqlBinary
+import org.apache.groovy.ginq.provider.sql.ir.SqlCaseWhen
+import org.apache.groovy.ginq.provider.sql.ir.SqlCast
+import org.apache.groovy.ginq.provider.sql.ir.SqlColumn
+import org.apache.groovy.ginq.provider.sql.ir.SqlCountStar
+import org.apache.groovy.ginq.provider.sql.ir.SqlDerivedTable
+import org.apache.groovy.ginq.provider.sql.ir.SqlExists
+import org.apache.groovy.ginq.provider.sql.ir.SqlExpr
+import org.apache.groovy.ginq.provider.sql.ir.SqlFunction
+import org.apache.groovy.ginq.provider.sql.ir.SqlIn
+import org.apache.groovy.ginq.provider.sql.ir.SqlInQuery
+import org.apache.groovy.ginq.provider.sql.ir.SqlIsNull
+import org.apache.groovy.ginq.provider.sql.ir.SqlJoin
+import org.apache.groovy.ginq.provider.sql.ir.SqlLike
+import org.apache.groovy.ginq.provider.sql.ir.SqlLiteral
+import org.apache.groovy.ginq.provider.sql.ir.SqlOrderSpec
+import org.apache.groovy.ginq.provider.sql.ir.SqlOrdinal
+import org.apache.groovy.ginq.provider.sql.ir.SqlParam
+import org.apache.groovy.ginq.provider.sql.ir.SqlProjection
+import org.apache.groovy.ginq.provider.sql.ir.SqlQuery
+import org.apache.groovy.ginq.provider.sql.ir.SqlQueryNode
+import org.apache.groovy.ginq.provider.sql.ir.SqlScalarQuery
+import org.apache.groovy.ginq.provider.sql.ir.SqlSetQuery
+import org.apache.groovy.ginq.provider.sql.ir.SqlStar
+import org.apache.groovy.ginq.provider.sql.ir.SqlTableRef
+import org.apache.groovy.ginq.provider.sql.ir.SqlTableSource
+import org.apache.groovy.ginq.provider.sql.ir.SqlUnary
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindow
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindowBound
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindowCall
+import org.apache.groovy.ginq.provider.sql.ir.SqlWindowFrame
+import org.apache.groovy.lang.annotation.Incubating
+import org.codehaus.groovy.GroovyBugError
+import org.codehaus.groovy.ast.expr.Expression
+
+/**
+ * Renders the SQL IR to SQL text with positional {@code ?} placeholders,
+ * collecting the parameter value expressions in emission order so they are
+ * guaranteed to match the placeholders.
+ *
+ * @since 7.0.0
+ */
+@Incubating
+@CompileStatic
+class SqlRenderer {
+    private final Dialect dialect
+
+    SqlRenderer(Dialect dialect) {
+        this.dialect = dialect
+    }
+
+    RenderedSql render(SqlQueryNode queryNode) {
+        StringBuilder sb = new StringBuilder()
+        List<Expression> parameters = []
+        renderQueryNode(queryNode, sb, parameters)
+        return new RenderedSql(sb.toString(), parameters)
+    }
+
+    private void renderQueryNode(SqlQueryNode queryNode, StringBuilder sb, List<Expression> parameters) {
+        if (queryNode instanceof SqlSetQuery) {
+            // parenthesize a set-query left operand to preserve GINQ's left-to-right
+            // chaining, since INTERSECT binds tighter than UNION/EXCEPT in SQL
+            boolean parenthesizeLeft = queryNode.left instanceof SqlSetQuery
+            if (parenthesizeLeft) sb.append('(')
+            renderQueryNode(queryNode.left, sb, parameters)
+            if (parenthesizeLeft) sb.append(')')
+            sb.append(' ').append(setOperator(queryNode.op)).append(' ')
+            renderQuery(queryNode.right, sb, parameters)
+            renderOrderAndLimit(queryNode.orderBy, queryNode.offset, queryNode.fetch, sb, parameters)
+        } else {
+            renderQuery((SqlQuery) queryNode, sb, parameters)
+        }
+    }
+
+    private String setOperator(SqlSetQuery.SetOp op) {
+        switch (op) {
+            case SqlSetQuery.SetOp.UNION: return 'UNION'
+            case SqlSetQuery.SetOp.UNION_ALL: return 'UNION ALL'
+            case SqlSetQuery.SetOp.INTERSECT: return 'INTERSECT'
+            case SqlSetQuery.SetOp.MINUS: return dialect.minusOperator()
+            default: throw new GroovyBugError("Unknown set operation: ${op}")
+        }
+    }
+
+    private void renderQuery(SqlQuery query, StringBuilder sb, List<Expression> parameters) {
+        sb.append('SELECT ')
+        if (query.distinct) sb.append('DISTINCT ')
+        query.projections.eachWithIndex { SqlProjection projection, int i ->
+            if (i > 0) sb.append(', ')
+            renderExpr(projection.expr, sb, parameters)
+            if (projection.alias) sb.append(' AS ').append(dialect.identifier(projection.alias))
+        }
+
+        sb.append(' FROM ')
+        renderTableSource(query.from, sb, parameters)
+
+        for (SqlJoin join : query.joins) {
+            sb.append(' ').append(join.type.sqlText).append(' ')
+            renderTableSource(join.table, sb, parameters)
+            if (join.on != null) {
+                sb.append(' ON ')
+                renderExpr(join.on, sb, parameters)
+            }
+        }
+
+        if (query.where != null) {
+            sb.append(' WHERE ')
+            renderExpr(query.where, sb, parameters)
+        }
+
+        if (query.groupBy) {
+            sb.append(' GROUP BY ')
+            query.groupBy.eachWithIndex { SqlExpr keyExpr, int i ->
+                if (i > 0) sb.append(', ')
+                renderExpr(keyExpr, sb, parameters)
+            }
+        }
+
+        if (query.having != null) {
+            sb.append(' HAVING ')
+            renderExpr(query.having, sb, parameters)
+        }
+
+        renderOrderAndLimit(query.orderBy, query.offset, query.fetch, sb, parameters)
+    }
+
+    private void renderOrderAndLimit(List<SqlOrderSpec> orderBy, SqlExpr offset, SqlExpr fetch, StringBuilder sb, List<Expression> parameters) {
+        if (orderBy) {
+            sb.append(' ORDER BY ')
+            orderBy.eachWithIndex { SqlOrderSpec orderSpec, int i ->
+                if (i > 0) sb.append(', ')
+                renderOrderItem(orderSpec, sb, parameters)
+            }
+        }
+
+        if (offset != null || fetch != null) {
+            dialect.renderLimit(offset, fetch, new Dialect.LimitRender() {
+                @Override
+                void text(String text) {
+                    sb.append(text)
+                }
+
+                @Override
+                void expr(SqlExpr expr) {
+                    renderExpr(expr, sb, parameters)
+                }
+            })
+        }
+    }
+
+    private void renderExpr(SqlExpr expr, StringBuilder sb, List<Expression> parameters) {
+        if (expr instanceof SqlColumn) {
+            if (expr.tableAlias) sb.append(dialect.identifier(expr.tableAlias)).append('.')
+            sb.append(dialect.identifier(expr.column))
+        } else if (expr instanceof SqlParam) {
+            sb.append('?')
+            parameters.add(expr.valueExpr)
+        } else if (expr instanceof SqlLiteral) {
+            renderLiteral(expr.value, sb)
+        } else if (expr instanceof SqlBinary) {
+            if ('IS NOT DISTINCT FROM' == expr.op || 'IS DISTINCT FROM' == expr.op) {
+                dialect.renderNullSafeEqual('IS DISTINCT FROM' == expr.op, expr.left, expr.right, new Dialect.NullSafeRender() {
+                    @Override
+                    void text(String text) {
+                        sb.append(text)
+                    }
+
+                    @Override
+                    void expr(SqlExpr child) {
+                        renderOperand(child, 4, sb, parameters)
+                    }
+                })
+                return
+            }
+            if ('/' == expr.op) {
+                // Groovy divides in real arithmetic; SQL integer division would truncate
+                renderDivision(expr, dialect.realTypeName(), sb, parameters)
+                return
+            }
+            if ('IDIV' == expr.op) {
+                // Truncating division. ntile uses this so the buckets match GINQ
+                // and dialects without FLOOR can still render it.
+                renderDivision(expr, dialect.integerTypeName(), sb, parameters)
+                return
+            }
+            int prec = precedence(expr.op)
+            renderOperand(expr.left, prec, sb, parameters)
+            sb.append(' ').append(expr.op).append(' ')
+            // at equal precedence, the right operand of a non-associative operator needs parentheses
+            int rightPrec = expr.op in NON_ASSOCIATIVE_OPS ? prec + 1 : prec
+            renderOperand(expr.right, rightPrec, sb, parameters)
+        } else if (expr instanceof SqlUnary) {
+            sb.append(expr.op == 'NOT' ? 'NOT ' : expr.op)
+            renderOperand(expr.operand, PREC_UNARY, sb, parameters)
+        } else if (expr instanceof SqlIsNull) {
+            renderOperand(expr.expr, PREC_UNARY, sb, parameters)
+            sb.append(expr.negated ? ' IS NOT NULL' : ' IS NULL')
+        } else if (expr instanceof SqlIn) {
+            renderOperand(expr.expr, PREC_UNARY, sb, parameters)
+            sb.append(expr.negated ? ' NOT IN (' : ' IN (')
+            expr.values.eachWithIndex { SqlExpr valueExpr, int i ->
+                if (i > 0) sb.append(', ')
+                renderExpr(valueExpr, sb, parameters)
+            }
+            sb.append(')')
+        } else if (expr instanceof SqlExists) {
+            sb.append('EXISTS (')
+            renderQuery(expr.query, sb, parameters)
+            sb.append(')')
+        } else if (expr instanceof SqlInQuery) {
+            renderOperand(expr.expr, PREC_UNARY, sb, parameters)
+            sb.append(expr.negated ? ' NOT IN (' : ' IN (')
+            renderQuery(expr.query, sb, parameters)
+            sb.append(')')
+        } else if (expr instanceof SqlScalarQuery) {
+            sb.append('(')
+            renderQuery(expr.query, sb, parameters)
+            sb.append(')')
+        } else if (expr instanceof SqlLike) {
+            renderOperand(expr.expr, PREC_UNARY, sb, parameters)
+            sb.append(' LIKE ')
+            renderExpr(expr.pattern, sb, parameters)
+            // pattern values are escaped with '!' at runtime, see SqlGinqRuntime#likePattern
+            sb.append(" ESCAPE '!'")
+        } else if (expr instanceof SqlCaseWhen) {
+            sb.append('CASE WHEN ')
+            renderExpr(expr.condition, sb, parameters)
+            sb.append(' THEN ')
+            renderExpr(expr.thenExpr, sb, parameters)
+            sb.append(' ELSE ')
+            renderExpr(expr.elseExpr, sb, parameters)
+            sb.append(' END')
+        } else if (expr instanceof SqlOrdinal) {
+            sb.append(expr.position)
+        } else if (expr instanceof SqlCast) {
+            sb.append('CAST(')
+            renderExpr(expr.expr, sb, parameters)
+            sb.append(' AS ').append(expr.sqlType).append(')')
+        } else if (expr instanceof SqlFunction) {
+            if (!dialect.supportsFunction(expr.name)) {
+                throw new IllegalArgumentException(expr.name
+                        + ' is not supported by the ' + dialect.name()
+                        + ' dialect. Rewrite the query without it, or use a dialect that provides it')
+            }
+            if ('POSITION' == expr.name && expr.args.size() == 2) {
+                renderSearchPosition(expr.args[0], expr.args[1], sb, parameters)
+                return
+            }
+            if ('MOD' == expr.name && expr.args.size() == 2 && !dialect.moduloFunction()) {
+                renderOperand(expr.args[0], precedence('%'), sb, parameters)
+                sb.append(' % ')
+                renderOperand(expr.args[1], precedence('%') + 1, sb, parameters)
+                return
+            }
+            if ('SUBSTRING' == expr.name && expr.args.size() > 1 && dialect.substringFromFor()) {
+                // ANSI form: SUBSTRING(x FROM start [FOR length])
+                sb.append(dialect.functionName(expr.name)).append('(')
+                renderExpr(expr.args[0], sb, parameters)
+                sb.append(' FROM ')
+                renderExpr(expr.args[1], sb, parameters)
+                if (expr.args.size() > 2) {
+                    sb.append(' FOR ')
+                    renderExpr(expr.args[2], sb, parameters)
+                }
+                sb.append(')')
+                return
+            }
+            sb.append(dialect.functionName(expr.name)).append('(')
+            if (expr.distinct) sb.append('DISTINCT ')
+            expr.args.eachWithIndex { SqlExpr argExpr, int i ->
+                if (i > 0) sb.append(', ')
+                renderExpr(argExpr, sb, parameters)
+            }
+            sb.append(')')
+        } else if (expr instanceof SqlWindowCall) {
+            Dialect.rejectCountDistinctOver(expr.function, dialect.countDistinctOver(), dialect.name())
+            renderExpr(expr.function, sb, parameters)
+            sb.append(' OVER (')
+            renderWindow(expr.window, sb, parameters)
+            sb.append(')')
+        } else if (expr instanceof SqlCountStar) {
+            sb.append('COUNT(*)')
+        } else if (expr instanceof SqlStar) {
+            if (expr.tableAlias) sb.append(dialect.identifier(expr.tableAlias)).append('.')
+            sb.append('*')
+        } else {
+            throw new GroovyBugError("Unknown SQL expression: ${expr?.getClass()?.name}")
+        }
+    }
+
+    // needle is args[0] and haystack is args[1], the ANSI POSITION argument order
+    private void renderSearchPosition(SqlExpr needle, SqlExpr haystack, StringBuilder sb, List<Expression> parameters) {
+        switch (dialect.searchPosition()) {
+            case Dialect.SearchPosition.LOCATE:
+                sb.append('LOCATE(')
+                renderExpr(needle, sb, parameters)
+                sb.append(', ')
+                renderExpr(haystack, sb, parameters)
+                sb.append(')')
+                return
+            case Dialect.SearchPosition.INSTR:
+                sb.append('INSTR(')
+                renderExpr(haystack, sb, parameters)
+                sb.append(', ')
+                renderExpr(needle, sb, parameters)
+                sb.append(')')
+                return
+            default:
+                sb.append('POSITION(')
+                renderExpr(needle, sb, parameters)
+                sb.append(' IN ')
+                renderExpr(haystack, sb, parameters)
+                sb.append(')')
+        }
+    }
+
+    private void renderTableSource(SqlTableSource tableSource, StringBuilder sb, List<Expression> parameters) {
+        if (tableSource instanceof SqlTableRef) {
+            renderQualifiedName(tableSource.tableName, sb)
+        } else if (tableSource instanceof SqlDerivedTable) {
+            sb.append('(')
+            renderQuery(tableSource.query, sb, parameters)
+            sb.append(')')
+        } else {
+            throw new GroovyBugError("Unknown table source: ${tableSource?.getClass()?.name}")
+        }
+        sb.append(' ').append(dialect.identifier(tableSource.alias))
+    }
+
+    private void renderWindow(SqlWindow window, StringBuilder sb, List<Expression> parameters) {
+        boolean wrote = false
+        if (window.partitionBy) {
+            sb.append('PARTITION BY ')
+            window.partitionBy.eachWithIndex { SqlExpr part, int i ->
+                if (i > 0) sb.append(', ')
+                renderExpr(part, sb, parameters)
+            }
+            wrote = true
+        }
+        if (window.orderBy) {
+            if (wrote) sb.append(' ')
+            sb.append('ORDER BY ')
+            window.orderBy.eachWithIndex { SqlOrderSpec orderSpec, int i ->
+                if (i > 0) sb.append(', ')
+                renderOrderItem(orderSpec, sb, parameters)
+            }
+            wrote = true
+        }
+        if (window.frame != null) {
+            if (wrote) sb.append(' ')
+            renderFrame(window.frame, sb, parameters)
+        }
+    }
+
+    private void renderFrame(SqlWindowFrame frame, StringBuilder sb, List<Expression> parameters) {
+        Dialect.rejectRangeOffset(frame, dialect.numericRangeOffset(), dialect.explicitNullOrdering(), dialect.name())
+        sb.append(frame.unit.name()).append(' BETWEEN ')
+        renderBound(frame.lower, sb, parameters)
+        sb.append(' AND ')
+        renderBound(frame.upper, sb, parameters)
+    }
+
+    private void renderDivision(SqlBinary expr, String typeName, StringBuilder sb, List<Expression> parameters) {
+        sb.append('(CAST(')
+        renderExpr(expr.left, sb, parameters)
+        sb.append(' AS ').append(typeName).append(') / CAST(')
+        renderExpr(expr.right, sb, parameters)
+        sb.append(' AS ').append(typeName).append('))')
+    }
+
+    private void renderBound(SqlWindowBound bound, StringBuilder sb, List<Expression> parameters) {
+        switch (bound.kind) {
+            case SqlWindowBound.Kind.UNBOUNDED_PRECEDING:
+                sb.append('UNBOUNDED PRECEDING')
+                return
+            case SqlWindowBound.Kind.UNBOUNDED_FOLLOWING:
+                sb.append('UNBOUNDED FOLLOWING')
+                return
+            case SqlWindowBound.Kind.CURRENT_ROW:
+                sb.append('CURRENT ROW')
+                return
+            case SqlWindowBound.Kind.PRECEDING:
+                renderExpr(bound.offset, sb, parameters)
+                sb.append(' PRECEDING')
+                return
+            case SqlWindowBound.Kind.FOLLOWING:
+                renderExpr(bound.offset, sb, parameters)
+                sb.append(' FOLLOWING')
+                return
+            default:
+                throw new GroovyBugError("Unknown window bound: ${bound.kind}")
+        }
+    }
+
+    private void renderOrderItem(SqlOrderSpec orderSpec, StringBuilder sb, List<Expression> parameters) {
+        if (dialect.explicitNullOrdering()) {
+            renderExpr(orderSpec.expr, sb, parameters)
+            sb.append(orderSpec.asc ? ' ASC' : ' DESC')
+            sb.append(orderSpec.nullsLast ? ' NULLS LAST' : ' NULLS FIRST')
+            return
+        }
+        // (expr IS NULL) is 0 for values and 1 for nulls, so ASC puts nulls last
+        sb.append('(')
+        renderExpr(orderSpec.expr, sb, parameters)
+        sb.append(' IS NULL) ').append(orderSpec.nullsLast ? 'ASC' : 'DESC').append(', ')
+        renderExpr(orderSpec.expr, sb, parameters)
+        sb.append(orderSpec.asc ? ' ASC' : ' DESC')
+    }
+
+    private void renderQualifiedName(String name, StringBuilder sb) {
+        sb.append(dialect.qualifiedName(name))
+    }
+
+    private static void renderLiteral(Object value, StringBuilder sb) {
+        if (value == null) {
+            sb.append('NULL')
+        } else if (value instanceof String || value instanceof Character) {
+            sb.append("'").append(value.toString().replace("'", "''")).append("'")
+        } else if (value instanceof Boolean) {
+            sb.append(value ? 'TRUE' : 'FALSE')
+        } else if (value instanceof Number) {
+            sb.append(value)
+        } else {
+            throw new GroovyBugError("Unsupported SQL literal: ${value.getClass().name}")
+        }
+    }
+
+    private void renderOperand(SqlExpr operand, int parentPrecedence, StringBuilder sb, List<Expression> parameters) {
+        boolean parenthesize = operand instanceof SqlBinary && precedence(operand.op) < parentPrecedence
+        if (parenthesize) sb.append('(')
+        renderExpr(operand, sb, parameters)
+        if (parenthesize) sb.append(')')
+    }
+
+    private static int precedence(String op) {
+        switch (op) {
+            case 'OR': return 1
+            case 'AND': return 2
+            case '=': case '<>': case '<': case '<=': case '>': case '>=':
+            case 'IS NOT DISTINCT FROM': case 'IS DISTINCT FROM': return 4
+            case '+': case '-': case '||': return 5
+            case '*': case '/': case '%': return 6
+            default: return PREC_UNARY
+        }
+    }
+
+    private static final List<String> NON_ASSOCIATIVE_OPS = ['-', '/']
+    private static final int PREC_UNARY = 7
+}

@@ -1166,8 +1166,8 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_async_await,in
 === Customize GINQ
 
 NOTE: *INCUBATING*: the custom code-generator (provider) extension point described here -- the
-`astWalker` option and the `GinqAstVisitor` SPI it selects -- is still incubating and may change
-in a future release, even though the rest of GINQ is stable.
+`provider` and `astWalker` options, the `GinqProvider` registry and the `GinqAstVisitor` SPI --
+is still incubating and may change in a future release, even though the rest of GINQ is stable.
 
 For advanced users, you could customize GINQ behaviour by specifying your own target code generator.
 For example, we could specify the qualified class name `org.apache.groovy.ginq.provider.collection.GinqAstWalker` as the target code generator to generate GINQ method calls for querying collections,
@@ -1176,6 +1176,251 @@ which is the default behaviour of GINQ:
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_customize_01,indent=0]
 ----
+
+Alternatively, a code generator can be selected by short name through the `provider` option.
+The name is resolved through the `org.apache.groovy.ginq.provider.GinqProvider` SPI, so provider
+modules on the compile classpath register themselves automatically. The built-in provider is
+`collection`, the default, which executes queries in memory.
+
+=== Executing GINQ against a database
+
+NOTE: *INCUBATING*: the SQL backend described here is provided by the optional `groovy-ginq-sql`
+module (GEP-26) and is still incubating.
+
+With the `groovy-ginq-sql` module on the classpath, the same query syntax can be executed against
+a relational database by selecting the `native-sql` provider and supplying a `dataSource`, which
+may be a `groovy.sql.Sql`, a `javax.sql.DataSource` or a `java.sql.Connection`. Table references
+are string literals naming the tables:
+[source, groovy]
+----
+def threshold = 2500
+def result = GQL(provider: 'native-sql', dataSource: db) {
+    from e in 'employees'
+    join d in 'departments' on e.deptId == d.id
+    where e.salary > threshold
+    select e.name, d.name as deptName
+}
+----
+
+Rather than loading rows into memory, the query is translated at compile time into ANSI SQL, e.g.
+`SELECT e.name, d.name AS deptName FROM employees e INNER JOIN departments d ON e.deptId = d.id
+WHERE e.salary > ?`, and filtering, joining and aggregating are pushed down to the database.
+The result rows are `groovy.sql.GroovyRowResult` instances.
+
+Aggregate and expression values keep the types the database returns, so they can differ
+from an in-memory query. The collection provider returns `BigDecimal` for `avg` (and for
+`sum` and the other numeric aggregates). H2 returns `AVG` as a `Double`. In mixed mode the
+in-memory tail sees those database types on the columns the pushed prefix projected.
+
+Every literal and captured variable in the query becomes a positional bound parameter, so the SQL
+text never contains user-supplied values and SQL injection is structurally impossible.
+
+The SQL backend operates in strict mode by default: an expression either translates cleanly to SQL,
+or the query is rejected at compile time with an error explaining the untranslatable construct.
+Opt in to mixed mode with `mixedMode: true` (the same option on `native-sql` and `jooq-sql`) when
+a query also needs something SQL cannot express, such as an arbitrary Groovy method or a join to
+an in-memory collection:
+[source, groovy]
+----
+def result = GQL(provider: 'native-sql', mixedMode: true, dataSource: db) {
+    from e in 'employees'
+    where e.salary > threshold
+    select e.name.reverse()
+}
+----
+
+Mixed mode splits the query at the first clause that does not translate (`from`, each `join`,
+`where`, then `orderby` and `limit`). The translatable prefix is executed on the database and
+comes back as `GroovyRowResult` rows; the remaining clauses run in memory through the collection
+provider. A single-table prefix is one row per result. A join prefix is planned as `alias.*`
+for each alias, then each source is probed and the prefix is re-run with those columns named
+explicitly (`alias.col AS __ginqN_M`) and read back by ordinal. The in-memory tail still sees
+`e.name` and `d.name`, including when both sources have a column called `name`. Duplicate labels
+within one source are rejected rather than dropping a value: JDBC drivers differ on labels,
+duplicates, case folding and quoting, and a label map is not treated as a faithful copy of the
+table. The ordinal that re-aligns the join is not stored under a column name, so a real column
+called `__ginq_mixed_key` stays readable. A `where` clause is kept together: if any part of it cannot be translated, the whole
+predicate runs in memory and only the preceding `from`/`join` clauses are pushed.
+`groupby` and its `having` clause are not pushed when a later clause falls back to memory, so
+grouped results keep collection-provider semantics. `orderby` and `limit` are pushed only when
+they apply to the source rows (there is no `groupby`), the preceding `where` translated, and they
+themselves translate. An `orderby` that stays in memory keeps the following `limit` in memory too,
+so the limit is applied to the filtered rows rather than to an unordered prefix. Set operations
+are not split; one that does not translate entirely is still a compile error. `mixedMode: false`,
+or omitting the option, keeps the strict default. The `from` source itself must still be a string
+table name or a subquery that translates to SQL. Strict-mode errors name the construct that failed
+and say how to rewrite it or how to enable `mixedMode`. This split follows the same boundary as
+LINQ's `AsEnumerable`: a translatable prefix runs in the database and the rest of the query
+continues in memory. It is never the default.
+
+Portable GINQ window functions translate in strict mode under `native-sql` and `jooq-sql`:
+`fn(...) over(...)` becomes ANSI `OVER`. That covers `rowNumber`, `rank`, `denseRank`,
+`percentRank`, `cumeDist`, `ntile`, `lead`, `lag`, `firstValue`, `lastValue` and `nthValue`,
+and the window aggregates `count`, `sum`, `avg`, `min` and `max`. The window forms of
+`median`, `stdev`, `stdevp`, `var`, `varp` and `agg` remain deferred and are not translated;
+strict mode rejects them, and `mixedMode: true` still evaluates that clause in memory.
+`rows` offsets count rows in window order. `range` offsets are added to the current
+order value in either sort direction, so `range -2, 0` runs from two below the current
+value through the current value. A descending `orderby` keeps that value interval, and
+the generated `RANGE` frame is rewritten so `PRECEDING` and `FOLLOWING` still point
+along the sort. `rank`, `denseRank`, `percentRank`, `cumeDist` and `ntile` accept
+several `orderby` keys. `rank` and its relatives need `orderby`: without it the
+collection provider returns null, and strict SQL rejects the query. `rows` and `range`
+on `rowNumber`, `rank`, `denseRank`, `percentRank`, `cumeDist`, `ntile`, `lead` and
+`lag` are rejected, because SQL defines those functions without a frame. In memory,
+`rank` and its relatives still honor a frame, and the others ignore it. `ntile` is
+GINQ's 0-based formula, rendered with integer division, so it does not depend on
+`FLOOR`. SQLite accepts a `RANGE` frame only when every bound is `UNBOUNDED` or
+`CURRENT ROW`. MySQL and MariaDB cannot combine a numeric `RANGE` offset with GINQ's
+null ordering, which those dialects emulate with a second sort key; use `rows`, or
+`h2` or `postgres`. `COUNT(DISTINCT) OVER` is not available on SQLite.
+Aggregation is supported both in
+the classic form, e.g. `groupby e.deptId` with `select e.deptId, count(), sum(e.salary)`, and the
+`groupby ... into g` form, e.g. `g.count()`, `g.sum(e -> e.salary)`.
+`count(distinct(e.deptId))` and `g.count(distinct(e -> e.deptId))` (or
+`g.count(e -> distinct(e.deptId))`) translate to `COUNT(DISTINCT ...)`. Other aggregates do not
+take `distinct`.
+
+Nested queries translate to SQL subqueries: a nested query as a data source becomes a derived
+table, `(...).exists()` becomes `EXISTS (...)`, `in` against a nested query becomes `IN (subquery)`,
+and a nested query in an expression position becomes a scalar subquery. Subqueries in expression
+positions may be correlated, i.e. reference the aliases of enclosing queries; derived tables
+cannot, matching standard SQL.
+
+A set of common methods and operators maps to SQL. Where the mapping cannot be decided safely
+it is rejected at compile time, or left in memory when `mixedMode: true` is set. It is not
+emitted as a guess. The exact SQL behaviour of a mapped function still depends on the database.
+
+.Groovy operations and the SQL they become
+[cols="2,2,3"]
+|===
+|Groovy |SQL |Constraints
+
+|`==` / `!=` and a null literal
+|`IS NULL` / `IS NOT NULL`
+|Same result as Groovy for that literal.
+
+|`==` / `!=` otherwise
+|`IS NOT DISTINCT FROM` / `IS DISTINCT FROM`
+|Null-safe, like Groovy `==`. A bound parameter that is null matches a null column (`deptId == wanted` selects null departments when `wanted` is null). MySQL and MariaDB spell equality as `<=>`; SQLite spells it `IS` / `IS NOT`. Numeric equality still follows the database when the types differ (`1` and `1.0`).
+
+|`<` `<=` `>` `>=`
+|the same operator
+|SQL three-valued logic, not Groovy's ordering. A null does not compare as less than every other value, so `deptId < 1` does not select a null `deptId`.
+
+|`in` / `!in` on a list
+|`IN`, or `IS NULL OR NOT IN` when `!in` has no null member
+|`null in [1, 2]` is false and `null !in [1, 2]` is true. A null member of the list is `IS NULL` (and `IS NOT NULL` for `!in`), matching Groovy. `in []` matches nothing and `!in []` matches every row.
+
+|`in` / `!in` on a constant range
+|a pair of comparisons
+|`1..3` and `3..1` are the same bounds, and an exclusive end uses `<` or `>`. `!in` is `value IS NULL OR value` outside the bounds, so a null value matches Groovy. A range whose bounds are not compile-time constants is rejected, because a descending Groovy range still contains the values between its endpoints; write `x >= low && x <= high` when the order is known.
+
+|`+`
+|string concatenation, or numeric `+`
+|Concatenation when the left operand is text, or a column stands beside a string literal (`e.name + '!'`, `'!' + e.name`). Addition when a number stands beside a column or both sides are numbers (`e.salary + 1`). A captured variable is pushed down only when its declared type is text or numeric, or it is cast, for example `e.name + (suffix as String)`. Two columns are not pushed down (`e.first.concat(e.last)`, or a numeric cast). Anything else is a compile error in strict mode and runs in memory in mixed mode. A number beside a string literal is rejected: Groovy does not concatenate that way.
+
+|`length()` / `size()`
+|`CHAR_LENGTH`
+|Character count, not bytes. Null stays null; Groovy would throw on a null receiver. The receiver must be a column or a value known to be text. A captured variable is not pushed down, because it might be a list or some other value whose `size()` is not a character length.
+
+|`toUpperCase` / `toLowerCase` / `trim` / `substring` / `replace` / `concat` / `isEmpty`
+|`UPPER` / `LOWER` / `TRIM` / `SUBSTRING` / `REPLACE` / string concatenation / `CHAR_LENGTH(...) = 0`
+|Same receiver rule as `length()`. `substring` uses Groovy's 0-based, exclusive indexes; a column index is shifted in SQL. `concat` is the explicit string form of `+`.
+
+|`contains` / `startsWith` / `endsWith`
+|`LIKE ... ESCAPE '!'`
+|`%`, `_` and `!` in the runtime value are escaped, so the value matches literally. `contains(null)` does not match the text `null`. The argument must be a literal or a captured variable.
+
+|`indexOf(text)`
+|`POSITION(text IN value) - 1`
+|Groovy's 0-based result, and `-1` when the text is absent. MySQL and MariaDB spell `LOCATE`; SQLite spells `INSTR`. A from-index is not translated.
+
+|`abs` / `floor` / `ceil` / `round`
+|`ABS` / `FLOOR` / `CEILING` / `ROUND`
+|Pushed only when the dialect can render the function. See the dialect note below.
+
+|`-` `*` `/` `%`
+|`-` `*` real division `MOD`
+|Numeric operators, not overloaded the way `+` is. `/` is `CAST(... AS DOUBLE)` so it does not truncate. SQLite spells `%` as the `%` operator.
+
+|`&&` / `\|\|` / `!`
+|`AND` / `OR` / `NOT`
+|SQL three-valued logic, not Groovy truthiness. `UNKNOWN` stays `UNKNOWN`.
+
+|ternary
+|`CASE WHEN ... END`
+|The condition uses SQL truth. The Elvis operator is rejected: Groovy truthiness is not SQL null. Use `coalesce(...)` or an explicit `== null` ternary.
+
+|`coalesce(a, b, ...)`
+|`COALESCE`
+|The first non-null argument.
+
+|`sum`
+|`COALESCE(SUM(...), 0)`
+|An all-null group is 0, matching the collection provider. Other aggregates can return SQL null.
+
+|`Math.max` / `Math.min`
+|`GREATEST` / `LEAST`
+|Two arguments. SQLite spells these as scalar `MAX` / `MIN`. Aggregate `min` and `max` are a different translation.
+
+|`cast(expr, 'TYPE')`
+|`CAST(expr AS TYPE)`
+|`TYPE` is a string literal from a fixed list, for example `INTEGER`, `DECIMAL`, `DECIMAL(10,2)`, `VARCHAR`, `VARCHAR(20)` or `DOUBLE PRECISION`. Any other type is rejected. `select expr as alias` is a column alias, not this cast. A Groovy cast used to fix the type of `+`, such as `(suffix as String)`, casts a captured value before it is bound and casts a column in SQL.
+|===
+
+SQL nulls propagate where Groovy would throw, for example `null.toUpperCase()` on a column.
+
+Table names are simple identifiers or `schema.table`. Anything else, including quotes and
+spaces, is rejected. A quoting `table()` helper is not part of this backend yet.
+
+The native provider accepts a small `dialect` option for the points that vary among common
+open-source databases: `ansi` (the default), `h2` (ANSI; H2 uppercases unquoted names, so they
+are left unquoted), `postgres`, `mysql`, `mariadb`, and `sqlite`. MySQL, MariaDB and SQLite use
+`LIMIT`/`OFFSET` and emulate `NULLS FIRST`/`NULLS LAST`, which they do not spell. SQLite spells
+`LENGTH`, `SUBSTR`, `%` and `INSTR` instead of `CHAR_LENGTH`, `SUBSTRING`, `MOD` and `POSITION`,
+and scalar `MAX`/`MIN` instead of `GREATEST`/`LEAST`. MySQL and MariaDB spell `LOCATE` instead of
+`POSITION`. Whether a function can be pushed down is a dialect capability, shared by the
+translator and the renderer, not a special case written beside one function. `FLOOR` and
+`CEILING` are not in the SQLite set: `dialect: 'sqlite'` rejects `floor()` and `ceil()` in
+strict mode, and with `mixedMode: true` the clause that uses them runs in memory while the
+rest of the query can still be pushed. A function the dialect only spells differently, such as
+`CHAR_LENGTH` as SQLite `LENGTH`, is still pushed. Other databases belong on `jooq-sql`, which
+uses the same capability check.
+
+A trailing `orderby`/`limit` on the final operand of a set operation applies to the combined
+result, matching SQL semantics; the order keys must match columns of the final `select` clause.
+(Note that the collection provider instead applies such an `orderby` to the final operand before
+combining.) `orderby`/`limit` within earlier operands are rejected.
+
+Because a `dataSource` is a runtime value, it cannot be supplied via the `@GQ` annotation;
+use the `GQ`/`GQL` macro form for database-backed queries.
+
+==== The jooq-sql provider
+
+When `org.jooq:jooq` is also on the compile classpath, the `jooq-sql` provider becomes available.
+It supports everything the `native-sql` provider supports but uses jOOQ as a compile-time,
+dialect-aware SQL renderer: the `dialect` option names one of jOOQ's `SQLDialect` values and the
+generated SQL uses that dialect's syntax and function spellings, e.g. HSQLDB's `limit ? offset ?`
+in place of the ANSI `OFFSET ? ROWS FETCH NEXT ? ROWS ONLY`:
+[source, groovy]
+----
+def result = GQL(provider: 'jooq-sql', dialect: 'POSTGRES', dataSource: db) {
+    from e in 'employees'
+    where e.salary > threshold
+    orderby e.salary in desc
+    limit 10
+    select e.name, e.salary
+}
+----
+
+jOOQ is used at compile time only: execution and results are identical to the `native-sql`
+provider (bound positional parameters, `GroovyRowResult` rows), and jOOQ does not need to be
+on the runtime classpath. With no `dialect` option, jOOQ's `DEFAULT` dialect is used.
+`mixedMode: true` is available here as well and uses the same split as `native-sql`; only the
+pushed prefix is rendered by jOOQ.
+Selecting `provider: 'sql'` auto-detects, preferring `jooq-sql` when jOOQ is on the compile
+classpath and otherwise using `native-sql`.
 
 === Optimize GINQ
 

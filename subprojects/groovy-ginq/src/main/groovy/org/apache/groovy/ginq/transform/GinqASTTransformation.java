@@ -129,11 +129,23 @@ public class GinqASTTransformation extends AbstractASTTransformation {
         }
     }
 
+    private static boolean hasOptionMember(String optionName) {
+        try {
+            GQ_CLASS_NODE.getTypeClass().getMethod(optionName);
+            return true;
+        } catch (NoSuchMethodException e) {
+            // some options, e.g. `dataSource`, hold runtime values and have no annotation counterpart
+            return false;
+        }
+    }
+
     private static final String VALUE = "value";
     private static final ClassNode GQ_CLASS_NODE = make(GQ.class);
     private static final ClassNode DEFAULT_RESULT_TYPE = ClassHelper.makeWithoutCaching((Class<?>) getDefaultOptionValue(VALUE));
-    private static final Map<String, Expression> DEFAULT_OPTION_MAP = unmodifiableMap(CONF_LIST.stream().collect(Collectors.toMap(
-            c -> c,
-            c -> constX(getDefaultOptionValue(c))
+    private static final Map<String, Expression> DEFAULT_OPTION_MAP = unmodifiableMap(CONF_LIST.stream()
+            .filter(GinqASTTransformation::hasOptionMember)
+            .collect(Collectors.toMap(
+                c -> c,
+                c -> constX(getDefaultOptionValue(c))
     )));
 }

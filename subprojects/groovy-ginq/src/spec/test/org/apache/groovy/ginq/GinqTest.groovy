@@ -3769,6 +3769,16 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - customize GINQ target - 1"() {
+        assertGinqScript '''
+            assert [0, 1, 2] == GQ(provider: 'collection') {
+                from n in [0, 1, 2]
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - GINQ tips - 0"() {
         assertGinqScript '''
 // tag::ginq_tips_01[]
@@ -6805,6 +6815,97 @@ class GinqTest {
                 join m in [1, 2, 3] on m == n
                 select n,
                        (agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add)) over(partitionby n % 2))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 92"() {
+        assertGinqScript '''
+            def employees = [
+                    [name: 'a', salary: 100],
+                    [name: 'b', salary: 300],
+                    [name: 'c', salary: 100],
+                    [name: 'd', salary: 200],
+                    [name: 'e', salary: null]
+            ]
+            // denseRank without partitionby, ordered by a property of the row
+            assert [['a', 1], ['b', 3], ['c', 1], ['d', 2], ['e', 4]] == GQ {
+                from e in employees
+                select e.name, (denseRank() over(orderby e.salary))
+            }.toList()
+
+            assert [[1, 'a', 1], [1, 'b', 2], [2, 'c', 1]] == GQ {
+                from e in [[dept: 1, name: 'a', salary: 10], [dept: 1, name: 'b', salary: 20], [dept: 2, name: 'c', salary: 10]]
+                select e.dept, e.name, (denseRank() over(partitionby e.dept orderby e.salary))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 93"() {
+        assertGinqScript '''
+            // range frame with a null order key (nulls last by default)
+            assert [[1, 2, 3], [2, 3, 6], [null, 1, 0], [3, 2, 5]] == GQ {
+                from n in [1, 2, null, 3]
+                select n,
+                       (count() over(orderby n range -1, 1)),
+                       (sum(n) over(orderby n range -1, 1))
+            }.toList()
+
+            assert [[1, 1, 1], [null, 2, 0], [null, 2, 0]] == GQ {
+                from n in [1, null, null]
+                select n,
+                       (count() over(orderby n range -1, 1)),
+                       (sum(n) over(orderby n range -1, 1))
+            }.toList()
+
+            // unbounded range still covers the whole partition, including null keys
+            assert [[1, 3, 4], [null, 3, 4], [3, 3, 4]] == GQ {
+                from n in [1, null, 3]
+                select n,
+                       (count() over(orderby n range null, null)),
+                       (sum(n) over(orderby n range null, null))
+            }.toList()
+
+            // nulls first: an unbounded preceding bound includes the leading null peers
+            assert [[1, 2, 1], [null, 1, 0], [2, 3, 3]] == GQ {
+                from n in [1, null, 2]
+                select n,
+                       (count() over(orderby n in asc(nullsfirst) range null, 0)),
+                       (sum(n) over(orderby n in asc(nullsfirst) range null, 0))
+            }.toList()
+
+            // a finite range does not pull in null keys on either side
+            assert [[1, 2, 3], [null, 1, 0], [2, 2, 3]] == GQ {
+                from n in [1, null, 2]
+                select n,
+                       (count() over(orderby n in asc(nullsfirst) range -1, 1)),
+                       (sum(n) over(orderby n in asc(nullsfirst) range -1, 1))
+            }.toList()
+
+            // descending order uses the same value interval; nulls stay out of it
+            assert [[1, 1, 1], [null, 1, 0], [3, 1, 3]] == GQ {
+                from n in [1, null, 3]
+                select n,
+                       (count() over(orderby n in desc range -1, 1)),
+                       (sum(n) over(orderby n in desc range -1, 1))
+            }.toList()
+
+            // unbounded following includes a trailing null peer group
+            assert [[1, 3, 4], [3, 2, 3], [null, 1, 0]] == GQ {
+                from n in [1, 3, null]
+                select n,
+                       (count() over(orderby n range 0, null)),
+                       (sum(n) over(orderby n range 0, null))
+            }.toList()
+
+            // the null key may be a property, not the row itself
+            assert [[1, 2, 3], [null, 1, 0], [2, 2, 3]] == GQ {
+                from e in [[v: 1], [v: null], [v: 2]]
+                select e.v,
+                       (count() over(orderby e.v range -1, 1)),
+                       (sum(e.v) over(orderby e.v range -1, 1))
             }.toList()
         '''
     }
