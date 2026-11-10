@@ -50,7 +50,7 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
  * at run time with {@code IllegalAccessError}.
  *
  * @see AsmClassGenerator#isInSameRuntimePackage(ClassNode, ClassNode)
- * @since 7.0.0
+ * @since 6.0.1
  */
 @Internal
 public final class RuntimePackageCheck {

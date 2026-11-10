@@ -104,7 +104,7 @@ public class CompilerConfiguration {
      * {@link #getOptimizationOptions()} or the {@code groovy.runtime.package.check}
      * system property.
      *
-     * @since 7.0.0
+     * @since 6.0.1
      */
     @Incubating
     public static final String RUNTIME_PACKAGE_CHECK = "runtimePackageCheck";
@@ -665,7 +665,6 @@ public class CompilerConfiguration {
         handleOptimizationOption(RUNTIME_GROOVYDOC, getSystemPropertySafe("groovy.attach.runtime.groovydoc"));
         handleOptimizationOption(PARALLEL_PARSE, getSystemPropertySafe("groovy.parallel.parse", "true"));
         handleOptimizationOption(ERROR_RECOVERY, getSystemPropertySafe("groovy.parser.error.recovery"));
-        handleOptimizationOption(RUNTIME_PACKAGE_CHECK, getSystemPropertySafe("groovy.runtime.package.check"));
 
         if (getBooleanSafe("groovy.mem.stub")) {
             jointCompilationOptions = new HashMap<>(2);

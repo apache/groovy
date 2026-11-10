@@ -1158,6 +1158,47 @@ package-private constructor of a class that a `GroovyClassLoader` defined in
 another compilation, such as a class of an earlier `GroovyShell` parse. Dynamic
 and `@TypeChecked` code select the constructor at run time as before.
 
+### Groovy 6.0.1 — statically compiled code in a `GroovyShell` reports what the JVM refuses across class loaders (GROOVY-12568)
+
+The JVM allows access to a protected or package-private member only within
+the same run-time package, which is the package name and the class loader. A
+`GroovyClassLoader` defines each compilation in memory with a class loader of
+its own, so a class of an earlier `GroovyShell` parse, or a precompiled class
+used by a script, is in another run-time package even when the package name is
+the same. Statically compiled code that calls such a constructor or method, or
+reads or writes such a field, compiled and then failed with
+`IllegalAccessError` when it ran.
+
+With the new option `CompilerConfiguration.RUNTIME_PACKAGE_CHECK`, such an
+access is a compile error, reported when the class is generated:
+
+```
+Cannot call package-private method pm of p.M from class p.C: M is defined by
+another class loader, so the JVM refuses this access. Use @CompileDynamic to
+reach it through the meta-class
+```
+
+**Who is affected.** `@CompileStatic` code compiled by a `GroovyShell`,
+including scripts run with the `groovy` command: a shell turns the option on
+for the class loader it creates, unless the configuration sets it. Such code that used to fail at run time now fails
+to compile, and so does such code on a path that never ran. Mark the method or
+class `@CompileDynamic`, or make the member public. A protected member that a
+subclass reaches through `this`, `super` or a receiver of the subclass type is
+not reported, as the JVM allows it.
+
+**What is unchanged.** Code compiled to class files (groovyc, Gradle, Maven,
+Ant, joint compilation), dynamic and `@TypeChecked` code, members of classes
+of the same compilation, and constructor references, which already go through
+the meta-class (GROOVY-12488). A `GroovyClassLoader` that a shell did not
+create, as used by `parseClass` or JSR-223, has the option off. The bytecode
+is the same as before.
+
+**Opting out.** Set `RUNTIME_PACKAGE_CHECK` to `false` in the configuration's
+optimization options, or the system property
+`groovy.runtime.package.check=false`, to keep the failure at run time.
+`CompilerConfiguration.RUNTIME_PACKAGE_CHECK` is a new `@Incubating` constant;
+`japicmp` sees only the addition.
+
 ### Groovy 7 — a final `def` field is read with the type of its value (GROOVY-12315)
 
 Within the class that declares it, a read of a final field declared without a
