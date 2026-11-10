@@ -2085,7 +2085,13 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         GenericsType gt;
-        if (connection.isWildcard()) {
+        ClassNode extendsBound = extendsBoundOf(connection);
+        if (extendsBound != null) {
+            // JLS 5.1.10: the capture of "? extends B" is a subtype of B, so it is within the bound of the
+            // type parameter when B is; test compatibility with "? super B", as for a type argument B
+            gt = new GenericsType(makeWithoutCaching("?"), null, extendsBound.getPlainNodeReference());
+            gt.setWildcard(true);
+        } else if (connection.isWildcard()) {
             gt = connection;
         } else if (!connection.isPlaceholder() && connection.getType().equals(CLOSURE_TYPE) && isSAMType(resolvedType)) {
             return true; // GROOVY-10270: SAM-type (placeholder) accepts closure
@@ -2098,6 +2104,19 @@ public abstract class StaticTypeCheckingSupport {
             gt.setWildcard(true);
         }
         return gt.isCompatibleWith(resolvedType);
+    }
+
+    /**
+     * Returns {@code B} for a wildcard {@code ? extends B} whose bound is a type other than
+     * {@code Object} or a type variable, otherwise {@code null}.
+     */
+    private static ClassNode extendsBoundOf(final GenericsType type) {
+        if (!type.isWildcard() || type.getLowerBound() != null) return null;
+        ClassNode[] upperBounds = type.getUpperBounds();
+        if (upperBounds == null || upperBounds.length != 1) return null;
+        ClassNode bound = upperBounds[0];
+        if (bound.isGenericsPlaceHolder() || isObjectType(bound)) return null;
+        return bound;
     }
 
     private static void addMissingEntries(final Map<GenericsTypeName, GenericsType> connections, final Map<GenericsTypeName, GenericsType> resolved) {
