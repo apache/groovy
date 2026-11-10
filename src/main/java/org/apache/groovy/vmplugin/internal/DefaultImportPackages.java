@@ -20,12 +20,10 @@ package org.apache.groovy.vmplugin.internal;
 
 import groovy.transform.Internal;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,7 +43,11 @@ public final class DefaultImportPackages {
 
     /**
      * Returns the members of {@code packages} that occur in {@code precedence},
-     * iterated in {@code precedence} order. The result is unmodifiable.
+     * iterated in {@code precedence} order. Matches are inserted into a
+     * {@link LinkedHashSet} while walking {@code precedence}, then wrapped.
+     * The wrapper stays: callers publish the set to concurrent readers and
+     * share it with the startup index, so a later update replaces the map
+     * entry instead of mutating this set.
      * An empty result is {@link Collections#emptySet()}. A single match is
      * {@link Collections#singleton(Object)}.
      *
@@ -57,7 +59,7 @@ public final class DefaultImportPackages {
         if (packages == null || packages.isEmpty() || precedence == null || precedence.length == 0) {
             return Collections.emptySet();
         }
-        List<String> matches = new ArrayList<>(Math.min(packages.size(), precedence.length));
+        Set<String> matches = new LinkedHashSet<>();
         for (String candidate : precedence) {
             if (packages.contains(candidate)) {
                 matches.add(candidate);
@@ -67,9 +69,9 @@ public final class DefaultImportPackages {
             return Collections.emptySet();
         }
         if (matches.size() == 1) {
-            return Collections.singleton(matches.get(0));
+            return Collections.singleton(matches.iterator().next());
         }
-        return Collections.unmodifiableSet(new LinkedHashSet<>(matches));
+        return Collections.unmodifiableSet(matches);
     }
 
     /**
@@ -86,7 +88,7 @@ public final class DefaultImportPackages {
         if (existing != null && existing.contains(packagePrefix)) {
             return existing;
         }
-        Set<String> combined = new HashSet<>(existing == null ? 2 : existing.size() + 1);
+        Set<String> combined = new HashSet<>(existing == null ? 1 : existing.size() + 1);
         if (existing != null) {
             combined.addAll(existing);
         }
