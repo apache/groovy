@@ -112,6 +112,39 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12756
+    @Test
+    void testAssignmentToParameterizedClass() {
+        assertScript '''
+            import java.lang.reflect.ParameterizedType
+            import java.lang.reflect.Type
+
+            abstract class Editor<T> {
+                final Class<T> targetType
+                Editor() {
+                    Type[] types = ((ParameterizedType) getClass().genericSuperclass).actualTypeArguments
+                    targetType = types[0]
+                }
+            }
+            class StringEditor extends Editor<String> {}
+            assert new StringEditor().targetType == String
+
+            Class<String> c = 'java.lang.String'
+            assert c == String
+
+            Object o = Integer
+            Class<? extends Number> n = o
+            assert n == Integer
+        '''
+
+        shouldFailWithMessages '''
+            void test(Class<?> type) {
+                Class<? extends CharSequence> c = type
+            }
+        ''',
+        'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.CharSequence>'
+    }
+
     @Test
     void testAssignmentToString() {
         assertScript '''
