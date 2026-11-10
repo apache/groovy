@@ -2820,6 +2820,90 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-12755
     @Test
+    void testGetClassIsClassOfReceiverErasure4() {
+        assertScript '''
+            class Outer<T> {
+                class Inner {
+                    Class<? extends Outer.Inner> self() { getClass() }
+                }
+                Inner inner() { new Inner() }
+            }
+            Class<? extends Outer.Inner> typeOf(Outer<String>.Inner inner) {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    def bound = node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].upperBounds[0]
+                    assert bound.name == 'Outer$Inner' && bound.outerClassType == null
+                })
+                def type = inner.getClass()
+                type
+            }
+
+            def inner = new Outer<String>().inner()
+            assert typeOf(inner) == Outer.Inner
+            assert inner.self() == Outer.Inner
+        '''
+
+        shouldFailWithMessages '''
+            class Outer<T> {
+                class Inner {}
+            }
+            Class<? extends Outer<String>.Inner> typeOf(Outer<String>.Inner inner) { inner.getClass() }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends Outer<T>.Inner> to: java.lang.Class<? extends Outer<java.lang.String>.Inner>'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGetClassIsClassOfReceiverErasure5() {
+        assertScript '''
+            abstract class Task extends Number implements Runnable {}
+
+            Class<? extends Number> typeOf(Object value) {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.lang.Class<? extends java.lang.Number>'
+                })
+                def type = ((Number & Runnable) value).getClass()
+                type
+            }
+
+            Task task = new Task() {
+                void run() {}
+                int intValue() { 1 }
+                long longValue() { 1L }
+                float floatValue() { 1f }
+                double doubleValue() { 1d }
+            }
+            assert Task.isAssignableFrom(typeOf(task))
+        '''
+
+        shouldFailWithMessages '''
+            Class<? extends Runnable> typeOf(Object value) { ((Number & Runnable) value).getClass() }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends java.lang.Number> to: java.lang.Class<? extends java.lang.Runnable>'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGetClassIsClassOfReceiverErasure6() {
+        assertScript '''
+            List<String> strings = ['x']
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.util.List<java.lang.Class<? extends java.lang.String>>'
+            })
+            def viaMethod = strings*.getClass()
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.util.List<java.lang.Class<? extends java.lang.String>>'
+            })
+            def viaProperty = strings*.class
+
+            List<Class<? extends String>> declared = strings*.class
+            assert viaMethod == [String] && viaProperty == [String] && declared == [String]
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
     void testGetClassIsNotClassOfParameterizedReceiverType() {
         shouldFailWithMessages '''
             Class<? extends List<String>> test(List<String> strings) {
