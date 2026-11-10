@@ -7470,10 +7470,10 @@ trying: for (ClassNode[] signature : signatures) {
                 }
 
                 // as anything can be assigned to a String, Class or [Bb]oolean, return the left type instead.
-                // A parameterized Class must keep the right-hand type: substituting the target
-                // would make Class<?> assignable to Class<? extends CharSequence>.
+                // A parameterized Class must keep the right-hand type when that is a Class: substituting
+                // the target would make Class<?> assignable to Class<? extends CharSequence>.
                 if (isWildcardLeftHandSide(initialType) && !isObjectType(initialType)
-                        && !(isClassType(initialType) && initialType.isUsingGenerics())) {
+                        && !(isClassType(initialType) && initialType.isUsingGenerics() && isClassType(right))) {
                     return initialType;
                 }
             }
