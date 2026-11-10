@@ -8341,10 +8341,7 @@ trying: for (ClassNode[] signature : signatures) {
      */
     protected ClassNode inferReturnTypeGenerics(final ClassNode receiver, final MethodNode method, final Expression arguments, final GenericsType[] explicitTypeHints) {
         if (receiver != null && isObjectGetClass(method)) {
-            // JLS 4.3.2: the type of "e.getClass()" is "Class<? extends |T|>", where T is the static type of "e"
-            ClassNode erasure = erasureOf(receiver);
-            if (isPrimitiveType(erasure)) erasure = getWrapper(erasure); // the value is boxed
-            return GenericsUtils.makeClassSafe0(CLASS_Type, GenericsUtils.buildWildcardType(erasure));
+            return getClassType(receiver);
         }
 
         ClassNode returnType = method.isConstructor() ? method.getDeclaringClass() : method.getReturnType();
@@ -8400,14 +8397,29 @@ trying: for (ClassNode[] signature : signatures) {
     }
 
     /**
-     * The erasure of a type (JLS 4.6): a type variable is replaced by its leftmost bound and
-     * type arguments are dropped, including those of an array's component type. The result
-     * is a raw type, as if written without type arguments in source.
+     * JLS 4.3.2: the type of {@code e.getClass()} is {@code Class<? extends |T|>}, where
+     * {@code T} is the static type of {@code e}.
+     */
+    private static ClassNode getClassType(final ClassNode receiver) {
+        ClassNode erasure = erasureOf(receiver);
+        if (isPrimitiveType(erasure)) erasure = getWrapper(erasure); // the value is boxed
+        return GenericsUtils.makeClassSafe0(CLASS_Type, GenericsUtils.buildWildcardType(erasure));
+    }
+
+    /**
+     * The erasure of a type (JLS 4.6): a type variable or an intersection is replaced by its
+     * leftmost bound and type arguments are dropped, including those of an enclosing type and
+     * of an array's component type. The result is a raw type, as if written without type
+     * arguments in source.
      */
     private static ClassNode erasureOf(final ClassNode type) {
         if (type.isArray()) return erasureOf(type.getComponentType()).makeArray();
+        if (type instanceof IntersectionTypeClassNode intersection) return erasureOf(intersection.getComponents()[0]);
         ClassNode erasure = GenericsUtils.erasure(type);
-        if (!isPrimitiveType(erasure)) erasure.setUsingGenerics(false);
+        if (!isPrimitiveType(erasure)) {
+            erasure.setUsingGenerics(false);
+            erasure.setOuterClassType(null); // Outer<T>.Inner erases to Outer.Inner
+        }
         return erasure;
     }
 
@@ -9464,7 +9476,11 @@ out:    for (ClassNode type : todo) {
 
         @Override
         public void visitMethod(final MethodNode node) {
-            reportPropertyType(node.getReturnType(), node.isStatic() ? null : node.getDeclaringClass());
+            if (isObjectGetClass(node)) { // "x.class" has the type of "x.getClass()"
+                propertyType.accept(getClassType(receiverType));
+            } else {
+                reportPropertyType(node.getReturnType(), node.isStatic() ? null : node.getDeclaringClass());
+            }
         }
 
         @Override

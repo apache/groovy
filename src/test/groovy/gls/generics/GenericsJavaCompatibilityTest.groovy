@@ -3939,6 +3939,76 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 4.6: the erasure of a nested type {@code T.C} is {@code |T|.C}, so for an
+     * {@code Outer<String>.Inner} the type of {@code getClass()} is
+     * {@code Class<? extends Outer.Inner>}.
+     */
+    @Test
+    void testGetClassOfInnerClassOfParameterizedType() {
+        final String className = 'gls.generics.test.GetClassNested'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassNested<T> {
+                public class Inner {
+                    @SuppressWarnings({"rawtypes"})
+                    Class<? extends GetClassNested.Inner> self() { return getClass(); }
+                }
+                @SuppressWarnings({"rawtypes"})
+                static Class<? extends GetClassNested.Inner> typeOf(GetClassNested<String>.Inner inner) {
+                    return inner.getClass();
+                }
+                public static String test() {
+                    GetClassNested<String>.Inner inner = new GetClassNested<String>().new Inner();
+                    return typeOf(inner).getSimpleName() + ":" + inner.self().getSimpleName();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'Inner:Inner')
+    }
+
+    @Test
+    void testNegativeGetClassOfInnerClassOfParameterizedType() {
+        final String className = 'gls.generics.test.GetClassNestedParameterized'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassNestedParameterized<T> {
+                public class Inner {}
+                static Class<? extends GetClassNestedParameterized<String>.Inner> typeOf(GetClassNestedParameterized<String>.Inner inner) {
+                    return inner.getClass();
+                }
+                public static void test() {
+                    typeOf(new GetClassNestedParameterized<String>().new Inner());
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "to: java.lang.Class<? extends gls.generics.test.GetClassNestedParameterized<java.lang.String>.Inner>")
+    }
+
+    /**
+     * JLS 4.9: an intersection type has the members of a class that extends its leftmost
+     * bound, so for a {@code (Number & Runnable)} the type of {@code getClass()} is
+     * {@code Class<? extends Number>}.
+     */
+    @Test
+    void testNegativeGetClassOfIntersectionType() {
+        final String className = 'gls.generics.test.GetClassIntersection'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassIntersection {
+                static Class<? extends Runnable> typeOf(Object value) {
+                    return ((Number & Runnable) value).getClass();
+                }
+                public static void test() {
+                    typeOf(null);
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends java.lang.Number> to: java.lang.Class<? extends java.lang.Runnable>")
+    }
+
+    /**
      * JLS 4.5.1, 4.10.2: {@code ? extends A} is contained by {@code ? extends B} only when
      * {@code A} is a subtype of {@code B}, and a type that is not a type variable is not a
      * subtype of one. So {@code Class<? extends Number>} is not a {@code Class<? extends T>}.
