@@ -414,7 +414,9 @@ whatever the resolve strategy.
 `maximumNumberOfParameters`, `parameterTypes`, `metaClass` and `class`, and the methods that `Closure` declares, such as
 `call`, `curry` or `getDelegate`, belong to the closure. A property or method of the same name on the owner or the
 delegate is not consulted. Only `delegate`, `resolveStrategy`, `directive` and `metaClass` can be assigned; a write to
-one of the other names continues with the next step.
+one of the other names continues with the next step. With `Closure.DELEGATE_ONLY`, the methods `curry`, `ncurry`,
+`rcurry`, `leftShift` and `rightShift` are the exception: they are left to the delegate, so that a DSL can give
+them its own meaning.
 . *The candidates named by the resolve strategy*, in order, as shown in the table below. A candidate is used if
 it <<_delegation_strategy_in_the_presence_of_metaprogramming,handles>> the property or method. A candidate that is `null`
 is skipped. A candidate that is itself a closure, which is the case for the owner of a nested closure, applies these same
@@ -444,9 +446,6 @@ Groovy development kit (`toString()`, `with`, `tap`).
 |none
 |===
 
-The outcome does not depend on how the closure is dispatched internally: a closure whose metaclass has been replaced
-or extended, for instance through `ExpandoMetaClass`, follows the same rules.
-
 Steps 1 and 2 mean that a local variable hides every property of the same name, and that the closure's own
 properties hide those of the owner and the delegate:
 
@@ -464,6 +463,24 @@ The same holds for the methods that `Closure` declares:
 include::../test/ClosuresSpecTest.groovy[tags=resolution_closure_methods,indent=0]
 ----
 <1> `curry` is a method of `Closure`, so the closure is curried and the `curry` method of the owner is not called
+
+A property of the closure that cannot be assigned is still read from the closure, but a write goes to the candidates:
+
+[source,groovy]
+----
+include::../test/ClosuresSpecTest.groovy[tags=resolution_closure_readonly_property,indent=0]
+----
+<1> reading `owner` returns the owner of the closure, here the `Holder` instance
+<2> writing `owner` sets the `owner` property of that instance
+
+With "delegate only", the currying and composition methods are resolved on the delegate and not on the closure:
+
+[source,groovy]
+----
+include::../test/ClosuresSpecTest.groovy[tags=resolution_delegate_only_curry,indent=0]
+----
+<1> with any other strategy `curry` is the method of the closure
+<2> with "delegate only" it is the method of the delegate
 
 The owner of a nested closure is the enclosing closure, which resolves the name in turn:
 

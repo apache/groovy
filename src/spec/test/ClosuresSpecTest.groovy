@@ -471,6 +471,49 @@ final class ClosuresSpecTest {
     }
 
     @Test
+    void testResolutionOfReadOnlyClosureProperty() {
+        assertScript '''
+            // tag::resolution_closure_readonly_property[]
+            class Holder {
+                String owner = 'initial'
+
+                def run() {
+                    def cl = { ->
+                        owner = 'changed'
+                        owner
+                    }
+                    cl()
+                }
+            }
+
+            def holder = new Holder()
+            assert holder.run().is(holder)                      // <1>
+            assert holder.owner == 'changed'                    // <2>
+            // end::resolution_closure_readonly_property[]
+        '''
+    }
+
+    @Test
+    void testResolutionOfCurryWithDelegateOnly() {
+        assertScript '''
+            // tag::resolution_delegate_only_curry[]
+            class Recipe {
+                def curry(String spice) { "curry with $spice" }
+            }
+
+            def cl = { String unused -> curry('cumin') }
+            cl.delegate = new Recipe()
+
+            cl.resolveStrategy = Closure.DELEGATE_FIRST
+            assert cl('x') instanceof Closure                   // <1>
+
+            cl.resolveStrategy = Closure.DELEGATE_ONLY
+            assert cl('x') == 'curry with cumin'                // <2>
+            // end::resolution_delegate_only_curry[]
+        '''
+    }
+
+    @Test
     void testResolutionThroughNestedClosures() {
         assertScript '''
             // tag::resolution_nested[]
