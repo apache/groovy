@@ -1508,6 +1508,9 @@ through `MetaClassImpl`. In a `@CompileStatic` closure, a property write
 resolves this way too. A method call or property read compiled against the
 owner is unchanged.
 
+The resulting rules are stated in full under "Resolution rules" in
+[`src/spec/doc/core-closures.adoc`](src/spec/doc/core-closures.adoc).
+
 **Who is affected.** Code that catches `NullPointerException` around a call
 in a closure with a null owner or delegate, and code that relied on
 `toString()` or `with` receiving `null` there. Nothing that ran without an
