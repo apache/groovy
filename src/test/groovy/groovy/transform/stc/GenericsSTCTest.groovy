@@ -2732,7 +2732,90 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
         new ClassB()
         ''',
-            'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA#bar(java.lang.Class<java.lang.Long>) with arguments [java.lang.Class<?>]'
+            'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA#bar(java.lang.Class<java.lang.Long>) with arguments [java.lang.Class<? extends ClassB>]'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGetClassIsClassOfReceiverErasure1() {
+        assertScript '''
+            interface Store {}
+            class Impl implements Store {}
+            class Adapter {
+                final String name
+                Adapter(Class<? extends Store> type) { name = type.simpleName }
+            }
+            String named(Class<? extends Store> type) { type.simpleName }
+            Class<? extends Store> typeOf(Store store) { store.class }
+
+            Store store = new Impl()
+            assert named(store.getClass()) == 'Impl'
+            assert named(store.class) == 'Impl'
+            assert new Adapter(store.getClass()).name == 'Impl'
+            assert typeOf(store) == Impl
+            Class<? extends Store> local = store.getClass()
+            assert local == Impl
+
+            Impl made = new Impl().getClass().getDeclaredConstructor().newInstance()
+            assert made instanceof Impl
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGetClassIsClassOfReceiverErasure2() {
+        assertScript '''
+            class C {
+                Class<? extends C> implicitThis() { getClass() }
+                Class<? extends C> thisProperty() { this.class }
+                Class<? extends C> inClosure() { Class<? extends C> result = null; [1].each { result = getClass() }; result }
+                static Class<? extends Class> staticThis() { this.getClass() }
+            }
+            def c = new C()
+            assert c.implicitThis() == C
+            assert c.thisProperty() == C
+            assert c.inClosure() == C
+            assert C.staticThis() == Class
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.lang.Class<? extends java.lang.Integer>'
+            })
+            def boxed = 1.getClass()
+            assert boxed == Integer
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.lang.Class<? extends java.lang.Class>'
+            })
+            def ofClass = String.getClass()
+            assert ofClass == Class
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.lang.Class<? extends java.util.List>'
+            })
+            def ofList = (['x'] as List<String>).getClass()
+            assert ofList == ArrayList
+
+            Class<? extends int[]> ofPrimitiveArray = new int[0].getClass()
+            Class<? extends String[]> ofArray = new String[0].class
+            assert ofPrimitiveArray == int[] && ofArray == String[]
+
+            static <N extends Number> Class<? extends Number> numberType(N value) { value.getClass() }
+            assert numberType(1L) == Long
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGetClassIsClassOfReceiverErasure3() {
+        shouldFailWithMessages '''
+            interface Store {}
+            void test(Object value, Store store) {
+                Class<? extends Store> a = value.getClass()
+                Class<? extends String> b = store.class
+            }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends Store>',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends Store> to: java.lang.Class<? extends java.lang.String>'
     }
 
     // GROOVY-8961, GROOVY-9915

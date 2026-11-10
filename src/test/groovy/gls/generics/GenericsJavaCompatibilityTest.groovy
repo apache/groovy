@@ -3808,6 +3808,67 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 4.3.2, 4.6: the type of {@code e.getClass()} is {@code Class<? extends |T|>},
+     * where {@code |T|} is the erasure of the static type of {@code e}: a type variable
+     * becomes its bound, type arguments are dropped and an array keeps its dimensions.
+     * So it may be passed, returned or assigned where a {@code Class<? extends T>} is expected.
+     */
+    @Test
+    void testGetClassIsClassOfErasureOfReceiverType() {
+        final String className = 'gls.generics.test.GetClassType'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.ArrayList;
+            import java.util.List;
+            public class GetClassType {
+                public interface Store {}
+                public static class Impl implements Store {}
+                public static class Adapter {
+                    public final String name;
+                    public Adapter(Class<? extends Store> type) { this.name = type.getSimpleName(); }
+                }
+                static <R> R named(Class<? extends Store> type, R result) { return result; }
+                static Class<? extends Store> typeOf(Store store) { return store.getClass(); }
+                static <N extends Number> Class<? extends Number> numberType(N value) { return value.getClass(); }
+                @SuppressWarnings({"rawtypes"})
+                public static String test() {
+                    Store store = new Impl();
+                    Class<? extends Store> local = store.getClass();
+                    List<String> strings = new ArrayList<>();
+                    Class<? extends List> list = strings.getClass();
+                    Class<? extends String[]> array = new String[0].getClass();
+                    return named(store.getClass(), "named") + ":" + new Adapter(store.getClass()).name + ":" +
+                        typeOf(store).getSimpleName() + ":" + local.getSimpleName() + ":" + list.getSimpleName() + ":" +
+                        array.getSimpleName() + ":" + numberType(Long.valueOf(1)).getSimpleName();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'named:Impl:Impl:Impl:ArrayList:String[]:Long', true)
+    }
+
+    /**
+     * JLS 4.3.2: {@code getClass()} gives the erasure of the receiver's static type and
+     * nothing narrower, so on an {@code Object} it is not a {@code Class<? extends Store>}.
+     */
+    @Test
+    void testNegativeGetClassOfWiderReceiverType() {
+        final String className = 'gls.generics.test.GetClassWiderReceiver'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassWiderReceiver {
+                public interface Store {}
+                static void check(Object value) {
+                    Class<? extends Store> type = value.getClass();
+                }
+                public static void test() {
+                    check(new Store() {});
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted", "Incompatible generic argument types")
+    }
+
+    /**
      * JLS 4.5.1 containment and 4.10.2: {@code List<Integer>} is a subtype of
      * {@code List<? extends Number>} even though it is not a subtype of
      * {@code List<Number>} (invariance is covered by

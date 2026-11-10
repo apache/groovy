@@ -8337,6 +8337,13 @@ trying: for (ClassNode[] signature : signatures) {
      * @param explicitTypeHints type arguments (optional), for example {@code Collections.<String>emptyList()}
      */
     protected ClassNode inferReturnTypeGenerics(final ClassNode receiver, final MethodNode method, final Expression arguments, final GenericsType[] explicitTypeHints) {
+        if (receiver != null && isObjectGetClass(method)) {
+            // JLS 4.3.2: the type of "e.getClass()" is "Class<? extends |T|>", where T is the static type of "e"
+            ClassNode erasure = erasureOf(receiver);
+            if (isPrimitiveType(erasure)) erasure = getWrapper(erasure); // the value is boxed
+            return GenericsUtils.makeClassSafe0(CLASS_Type, GenericsUtils.buildWildcardType(erasure));
+        }
+
         ClassNode returnType = method.isConstructor() ? method.getDeclaringClass() : method.getReturnType();
         if (!GenericsUtils.hasUnresolvedGenerics(returnType)) {
             // GROOVY-7538: replace "Type<?>" with "Type<? extends/super X>" for any "Type<T extends/super X>"
@@ -8383,6 +8390,22 @@ trying: for (ClassNode[] signature : signatures) {
         returnType = applyGenericsContext(extractGenericsParameterMapOfThis(typeCheckingContext), returnType);
 
         return returnType;
+    }
+
+    private static boolean isObjectGetClass(final MethodNode method) {
+        return "getClass".equals(method.getName()) && method.getParameters().length == 0 && isObjectType(method.getDeclaringClass());
+    }
+
+    /**
+     * The erasure of a type (JLS 4.6): a type variable is replaced by its leftmost bound and
+     * type arguments are dropped, including those of an array's component type. The result
+     * is a raw type, as if written without type arguments in source.
+     */
+    private static ClassNode erasureOf(final ClassNode type) {
+        if (type.isArray()) return erasureOf(type.getComponentType()).makeArray();
+        ClassNode erasure = GenericsUtils.erasure(type);
+        if (!isPrimitiveType(erasure)) erasure.setUsingGenerics(false);
+        return erasure;
     }
 
     /**
