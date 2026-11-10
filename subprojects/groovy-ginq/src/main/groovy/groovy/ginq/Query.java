@@ -781,17 +781,20 @@ public interface Query<T> {
     }
 
     /**
-     * Reads the query into a list. A second call returns the same list.
+     * Reads the query into a list. An iterable source is read again on every call,
+     * so a change made after the previous call is visible. A stream source is read
+     * on the first call and later calls replay that read.
      *
      * @return the elements
      */
     List<T> toList();
 
     /**
-     * Returns a stream over the elements. Applying a terminal stream operation
-     * consumes a source that cannot be replayed.
+     * Returns a new stream over the elements. The stream has not been consumed.
+     * An iterable source is read when the returned stream is consumed, and a
+     * second call reads it again.
      *
-     * @return the element stream
+     * @return a stream that has not been consumed
      */
     Stream<T> stream();
 

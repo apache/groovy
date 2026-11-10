@@ -20,6 +20,8 @@ package org.apache.groovy.ginq.provider.collection.runtime;
 
 import groovy.lang.Closure;
 import groovy.lang.Tuple2;
+import groovy.transform.Internal;
+import org.apache.groovy.lang.annotation.GroovyABI;
 
 import java.math.BigDecimal;
 import java.util.Iterator;
@@ -48,6 +50,7 @@ import java.util.stream.Stream;
  * @param <T> the element type
  * @since 7.0.0
  */
+@Internal
 public final class LazyQueryable<T> implements Queryable<T> {
 
     private Supplier<? extends Queryable<? extends T>> supplier;
@@ -67,6 +70,7 @@ public final class LazyQueryable<T> implements Queryable<T> {
      * @return the deferred query
      * @throws NullPointerException when {@code body} is null
      */
+    @GroovyABI(since = "7.0.0")
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static Queryable defer(Closure<?> body) {
         Objects.requireNonNull(body, "body");

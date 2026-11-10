@@ -49,52 +49,60 @@ visitor of its own.
 | Enclosing scope | What the compiler does |
 | --- | --- |
 | No checking annotation | The macro's lowered tree is left as it is. The whole method is dynamic. The pipeline is built when the expression is evaluated. |
-| `@CompileDynamic`, or `@CompileStatic` / `@TypeChecked` with `TypeCheckingMode.SKIP` | Same as no checking annotation. |
-| `@TypeChecked` | The enclosing method is type-checked. The lowered query closure is dynamic (below). |
-| `@CompileStatic` | The enclosing method is type-checked and statically compiled. The lowered query closure is dynamic (below). |
+| `@TypeChecked(SKIP)`, or `@CompileStatic` / `@CompileDynamic` on a class or method the static-compilation visitor skips | Same as no checking annotation. |
+| `@TypeChecked` class, method `@CompileDynamic` or `@CompileStatic(SKIP)` | The method is still type-checked. `@CompileDynamic` is not `@TypeChecked(SKIP)`. The row extension is installed on the class annotation the type-checked visitor reads. |
+| `@TypeChecked` | The enclosing method is type-checked. Row access inside the query is dynamic per expression (below). |
+| `@CompileStatic` | The enclosing method is type-checked and statically compiled. Row access inside the query is dynamic per expression (below). |
 
 `@TypeChecked` does not static-compile. The same extension is registered for
-both annotations because both need the row rules.
+both annotations because both need the row rules. Which annotation counts is
+the same decision `StaticTypeCheckingVisitor.isSkipMode` makes: the
+type-checked visitor looks only at `@TypeChecked`, and the static-compilation
+visitor looks at `@TypeChecked` and `@CompileStatic`. `@CompileDynamic` is
+`@CompileStatic(SKIP)` and skips only that second visitor.
 
 The extension is `GinqRowChecks`. The macro, or the `@GQ` transform, appends
 its name to the `extensions` member of the annotation that the checker will
 actually read: the class annotation, or an outer class annotation when the
-query is in an inner class, or the method annotation when only the method is
-checked. That member is the existing registration point. Nothing is appended
-for a dynamic scope.
+query is in an inner class, or the method annotation when the method carries
+its own non-skip checking annotation. That member is the existing registration
+point. A string, a class literal, or a list or array of those is updated. Any
+other shape is a compile error and is left unchanged, so a value the bridge
+does not understand is never dropped silently. Nothing is appended for a scope
+the checker will not visit.
 
-## The query closure is dynamic; the method is not
+## Row access is dynamic; the method is not
 
-The lowered clause bodies are not Java. An operator on a row, a property of a
-map, and an aggregate call do not have a static target the checker can prove.
-Feeding that tree to the static call-site writer fails, because that writer
-only emits operators it can prove (`StaticTypesCallSiteWriter` rejects the
-rest).
+The lowered clause bodies are not Java. An operator on a row and a property of
+a map do not have a static target the checker can prove. The static call-site
+writer throws when it is asked to emit an operator it cannot prove
+(`StaticTypesCallSiteWriter.makeSingleArgumentCall`).
 
-The static compiler already has the switch for this. A closure whose expression
-carries `StaticTypesMarker.DYNAMIC_RESOLUTION` is emitted by
-`StaticTypesClosureWriter` with `STATIC_COMPILE_NODE` false, so its `doCall`
-uses the dynamic writer. The enclosing method keeps the static writer. Nested
-closures created from that dynamic `doCall` are dynamic as well, which is why
-the clause lambdas do not need a checker of their own.
+The query closure is emitted by the dynamic writer
+(`DYNAMIC_RESOLUTION` set to `Boolean.TRUE` on that closure only). A static
+lambda cannot capture a local of an enclosing closure, which is what the
+read-only snapshot array is, and a statically inferred clause lambda rejects a
+row comparison whose types are not provable. Rewriting those operators into
+per-expression calls was tried and dropped: it broke `orderby ... in desc`,
+join predicates, and parallel clause lambdas. The enclosing method stays on
+the static writer. The marker is not applied to every expression in the method.
 
-`GinqRowChecks.beforeMethodCall` leaves the calls directly inside that closure
-dynamic and does not walk into the clause bodies. Those bodies are compiled by
-the dynamic writer; checking them as Java would reject `from r in rows where
-r.a` on a list of maps. Outside the closure, an unresolved row property or
-`toList` / `getAt` is still resolved by the same extension, and a resolved
-member is still checked. A missing method on a `String`, or on an `Object`
-that is not a query closure, is still an error.
+`GinqRowChecks` is still a normal type-checking extension, appended after
+extensions already on the annotation. Inside the marked closure every call is
+`makeDynamic`, so the dynamic writer does not invoke a stand-in target. The
+checker does not infer the clause-lambda parameter types. Extensions registered
+ahead of `GinqRowChecks` still see the calls the visitor delivers; what those
+calls are named is up to that visitor (`toList`, the macro call, `defer`), not
+a guarantee that `where` and `select` are visible as those names.
 
-This replaces the previous synthetic `ginqQuery$` method, the
-`CompilationUnit.addNewPhaseOperation` that appended it, and the hand-written
-local-variable walk. Those three existed only because the query had been moved
-into another method: the phase hook papered over adding a method while the
-macro visitor walked the method list, and the local walk reimplemented the
-capture the closure writer already does. `ClassNode.visitMethods` can accept a
-method added during a visit, but a second method is the wrong place for this
-work. The closure is the compiler's capture and the compiler's dynamic-method
-switch.
+Outside the marked closure the extension has an opinion only for a query result
+used as the receiver of `toList`, `get`, `getAt`, or a subscript. That is the
+row value the macro leaves typed as `Object`. A field, an enclosing-method
+parameter, and `value[0]` on that parameter stay compile errors. A local that
+holds the query, such as `result[0].toList()`, is accepted.
+
+There is no synthetic method and no `CompilationUnit.addNewPhaseOperation`.
+The closure the macro already builds is the compiler's capture.
 
 ## Why execution is lazy, and which lazy
 
@@ -128,9 +136,11 @@ not wrap it, and the pipeline is built when the expression is evaluated.
 Changing that would change every existing dynamic query.
 
 `LazyQueryable` is only that thunk. It is not a type checker, not a capture
-analysis, and not the fluent implementation. Joining, grouping, and the
-aggregates are forwarded to the pipeline built on first use, and that pipeline
-is cached, matching `QueryableCollection.toList`.
+analysis, and not the fluent implementation. It is public because compiled
+code calls `LazyQueryable.defer`, and that method is part of the binary ABI
+(`@GroovyABI`). The class is `@Internal`: callers program to `Queryable`.
+Joining, grouping, and the aggregates are forwarded to the pipeline built on
+first use, and that pipeline is cached, matching `QueryableCollection.toList`.
 
 ## Locals
 
@@ -138,16 +148,21 @@ The deferred closure is a normal Groovy closure in the enclosing method, and
 the closure writer captures it. A local the query assigns is a closure-shared
 variable, so the write is visible to the caller. That is the compiler's rule.
 
-A local the query only reads is different, and this is the one place the macro
-records names. Dynamic `GQ` creates the clause lambdas when the expression
-runs, so a later assignment is not what those lambdas read. A static `GQ`
-creates the closure at the expression and calls it on the first read. If the
-caller assigns the local again, the closure writer treats it as shared and the
-deferred call would see the new value. The macro therefore copies those
-read-only names into an array when the expression runs, and the deferred
-closure reads the array. It does not rewrite the caller's declarations, box
-the variables, or emit stores. Fields are not copied; they are read when the
-closure runs.
+A local the query only reads is different. Dynamic `GQ` creates the clause
+lambdas when the expression runs, so a later assignment is not what those
+lambdas read. A static `GQ` creates the closure at the expression and calls it
+on the first read. If the caller assigns the local again, the closure writer
+treats it as shared and the deferred call would see the new value. The bridge
+therefore copies those read-only locals into an array when the expression
+runs, and the deferred closure reads the array.
+
+Which locals those are is `VariableScopeVisitor`'s answer, not a set of names.
+The visitor links each reference to the declaration in scope, so a shadowing
+local, a closure parameter, and a name that is not a local are distinct. A
+name that resolves to nothing is a `DynamicVariable` (an import alias or a
+class name the resolver has not rewritten yet) and is not copied. A field is
+not copied; it is read when the closure runs. The bridge does not rewrite the
+caller's declarations, box the variables, or emit stores.
 
 ## `asType`
 
@@ -163,18 +178,41 @@ for an arbitrary target is not a coercion.
 ## What stays out of the static compiler
 
 GINQ does not subclass `StaticTypeCheckingVisitor` or
-`StaticCompilationVisitor`, does not add a compile phase, and does not emit
-bytecode. The one compiler change is the closure-writer switch above: a marker
-the type checker already uses for dynamic calls, honoured on a closure so the
-existing dynamic writer can compile that closure. The static call-site writer
-is not taught GINQ operators.
+`StaticCompilationVisitor`, does not add a compile phase, and does not teach
+the static call-site writer about GINQ operators. The one compiler change is
+the existing dynamic-call marker honoured on a closure: `StaticTypesClosureWriter`
+emits that closure with the dynamic writer. A type-checking extension already
+uses the same marker, with a type as its value, for one expression. `Boolean.TRUE`
+on the closure is the switch for the whole closure, and only the lowered query
+closure sets it. Row properties that the checker cannot resolve are still
+`makeDynamic` on that expression.
+
+## Re-enumeration
+
+Two sources, two rules.
+
+* `Ginq.from` on an `Iterable` or array re-reads that source on every terminal.
+  `where`, `select`, and the other operators record the work; they do not copy
+  the elements. Adding to the list between two `toList()` calls is visible.
+  This is the LINQ-to-Objects rule.
+* `Ginq.from` on a `Stream` reads that stream on the first terminal and replays
+  the buffered elements after that. A stream cannot be read twice.
+* `Queryable.stream()` and a fluent `stream()` return a new stream every time.
+  Creating the stream does not pull. A one-shot pipeline is buffered as its
+  elements are pulled, and a later `stream()` reads that buffer from the start
+  before pulling anything still unread. A sized pipeline can be counted without
+  pulling, so a projection with a side effect is not run merely because
+  `exists` asks for `count`. After the one-shot source has been read to the
+  end, later calls stream the buffer. A caller is never handed a stream that
+  has already been consumed.
+* A `GQ` / `QueryableCollection` terminal still materializes once and then
+  reuses that list. Building the pipeline does not iterate. That is the
+  behaviour dynamic `GQ` already had.
 
 ## Intentional limits
 
 * Names bound by `from` inside `GQ` are dynamic. A list of maps keeps working.
   `Ginq.from` is the front end that checks element types.
-* An extension value that is neither a string nor a list of strings is left
-  alone. The supported annotation forms are the string and the list.
 * When the checker runs, a `GQ` call is still `MacroStub.macroMethod(query)`.
   `toList()` on that call is typed as a raw `List`, so assigning it to
   `List<String>` is the unchecked conversion a dynamic query already allowed.

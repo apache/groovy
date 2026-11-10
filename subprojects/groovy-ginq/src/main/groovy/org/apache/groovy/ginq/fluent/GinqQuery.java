@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
@@ -43,9 +44,12 @@ import java.util.stream.StreamSupport;
 
 /**
  * In-memory {@link Query} backed by {@link Queryable}. Operators record work and
- * do not read the source. {@link #materialize()} runs that work, and the terminal
- * methods are what call it. Ordering keys stay on the query so {@code thenBy}
- * is one comparison. Grouping runs at that same point, not when {@code groupBy} is called.
+ * do not read the source. Each terminal calls {@link #materialize()} again, so an
+ * {@link Iterable} source is re-read and a change made after the previous terminal
+ * is visible. A {@link Stream} source can be read only once; the first terminal
+ * buffers it and later terminals replay that buffer. Ordering keys stay on the
+ * query so {@code thenBy} is one comparison. Grouping runs at the terminal, not
+ * when {@code groupBy} is called.
  *
  * @param <T> the element type
  * @since 7.0.0
@@ -55,7 +59,6 @@ public class GinqQuery<T> implements Query<T> {
 
     private final Supplier<Queryable<T>> sourceSupplier;
     private final List<Queryable.Order<T, ?>> orders;
-    private Queryable<T> resolved;
 
     GinqQuery(Queryable<T> ready, List<Queryable.Order<T, ?>> orders) {
         this(() -> ready, orders);
@@ -104,7 +107,21 @@ public class GinqQuery<T> implements Query<T> {
      */
     public static <T> Query<T> from(Stream<T> source) {
         Objects.requireNonNull(source, "source");
-        return new GinqQuery<>(() -> Queryable.from(source), null);
+        List<T> buffered = new ArrayList<>();
+        return new GinqQuery<>(new Supplier<Queryable<T>>() {
+            private boolean read;
+
+            @Override
+            public Queryable<T> get() {
+                synchronized (buffered) {
+                    if (!read) {
+                        read = true;
+                        buffered.addAll(source.collect(Collectors.toList()));
+                    }
+                }
+                return Queryable.from(buffered);
+            }
+        }, null);
     }
 
     /**
@@ -146,16 +163,12 @@ public class GinqQuery<T> implements Query<T> {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     Queryable<T> materialize() {
-        if (resolved != null) {
-            return resolved;
-        }
         Queryable<T> base = sourceSupplier.get();
         if (orders != null && !orders.isEmpty()) {
             Queryable.Order[] array = orders.toArray(Queryable.Order.EMPTY_ARRAY);
             base = base.orderBy(array);
         }
-        resolved = base;
-        return resolved;
+        return base;
     }
 
     @Override

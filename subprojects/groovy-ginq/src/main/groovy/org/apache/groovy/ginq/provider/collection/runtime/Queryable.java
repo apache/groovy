@@ -575,9 +575,10 @@ public interface Queryable<T> {
     long size();
 
     /**
-     * Create {@link Stream<T>} object for the {@link Queryable} instance
+     * Returns a new stream over the elements. The stream has not been consumed.
+     * The default implementation streams the list from {@link #toList()}.
      *
-     * @return the result stream
+     * @return a stream that has not been consumed
      * @since 4.0.0
      */
     default Stream<T> stream() {

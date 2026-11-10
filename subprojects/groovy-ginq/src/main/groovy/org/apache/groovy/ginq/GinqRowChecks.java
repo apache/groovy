@@ -19,9 +19,13 @@
 package org.apache.groovy.ginq;
 
 import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
@@ -30,6 +34,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.stc.AbstractTypeCheckingExtension;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
@@ -42,22 +47,27 @@ import java.util.List;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 
 /**
- * Type-checking extension for GINQ under {@code @CompileStatic} and {@code @TypeChecked}.
+ * Type-checking extension for a GINQ query under {@code @CompileStatic} and {@code @TypeChecked}.
  * <p>
- * The lowered query is a closure marked {@link StaticTypesMarker#DYNAMIC_RESOLUTION}.
- * Calls directly in that closure are left dynamic, and the static closure writer
- * emits the closure with the dynamic writer, so the clause bodies keep Groovy's
- * object protocol. The enclosing method is still type-checked and, under
- * {@code @CompileStatic}, statically compiled.
+ * The extension is registered on the checking annotation, so it is present for the whole
+ * class. Every hook returns immediately unless the expression is inside a closure marked
+ * {@link #QUERY}. Code outside that closure is left to the ordinary checker.
  * <p>
- * A projection may also be a scalar, a named record, or a group. Callers still
- * write {@code row.powerOfN}, {@code row[0]} and {@code it.toList()} on the
- * result. A resolved property or method is still checked. Classes that do not
- * contain a query are not given this extension.
+ * The lowered query closure is emitted by the dynamic writer. Inside it, calls are
+ * {@code makeDynamic} so a stand-in target is not invoked directly. Outside it, only a
+ * query result used as the receiver of {@code toList}, {@code get}, {@code getAt}, or a
+ * subscript is treated as a row. A field or an enclosing-method parameter is left to the
+ * ordinary checker.
  *
  * @since 7.0.0
  */
 public class GinqRowChecks extends AbstractTypeCheckingExtension {
+
+    /**
+     * Metadata key on a closure that was lowered from a GINQ query.
+     * The value is {@link Boolean#TRUE}.
+     */
+    static final Object QUERY = GinqRowChecks.class;
 
     /**
      * Creates the extension for one type-checking visitor.
@@ -70,11 +80,11 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
 
     @Override
     public boolean beforeMethodCall(MethodCall call) {
-        if (!insideDynamicQuery() || !(call instanceof Expression expression)) {
+        if (!insideQuery() || !(call instanceof Expression expression)) {
             return false;
         }
-        // The clause bodies are compiled by the dynamic writer. Skipping them
-        // here is what keeps an unresolved row property from failing the method.
+        // Clause calls stay dynamic. Returning true here is after any extension
+        // registered ahead of this one has already seen the call.
         makeDynamic(call, ClassHelper.OBJECT_TYPE);
         storeType(expression, ClassHelper.OBJECT_TYPE);
         return true;
@@ -82,40 +92,43 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
 
     @Override
     public boolean handleUnresolvedProperty(PropertyExpression expression) {
-        if (insideDynamicQuery()) {
+        if (insideQuery() || resultReceiver(expression.getObjectExpression())) {
             makeDynamic(expression);
             return true;
         }
-        if (!rowOrUntyped(typeOf(expression.getObjectExpression()))) {
-            return false;
-        }
-        makeDynamic(expression);
-        return true;
+        return false;
     }
 
     @Override
     public List<MethodNode> handleMissingMethod(ClassNode receiver, String name, ArgumentListExpression argumentList, ClassNode[] argumentTypes, MethodCall call) {
-        if (insideDynamicQuery() && call != null) {
-            return Collections.singletonList(makeDynamic(call, ClassHelper.OBJECT_TYPE));
-        }
-        if (!rowOrUntyped(receiver)) {
+        if (call == null) {
             return Collections.emptyList();
         }
-        if (!"toList".equals(name) && !"get".equals(name) && !"getAt".equals(name)) {
+        boolean query = insideQuery();
+        boolean result = !query && call instanceof MethodCallExpression methodCall && resultReceiver(methodCall.getObjectExpression());
+        if (!query && !result) {
             return Collections.emptyList();
         }
-        ClassNode result = "toList".equals(name) ? ClassHelper.LIST_TYPE : ClassHelper.OBJECT_TYPE;
-        return Collections.singletonList(makeDynamic(call, result));
+        if (result && !"toList".equals(name) && !"get".equals(name) && !"getAt".equals(name)) {
+            return Collections.emptyList();
+        }
+        ClassNode type = "toList".equals(name) ? ClassHelper.LIST_TYPE : ClassHelper.OBJECT_TYPE;
+        return Collections.singletonList(makeDynamic(call, type));
     }
 
-    /**
-     * Static compilation cannot emit {@code Object#getAt}. A GINQ row is a list,
-     * so an untyped subscript is coerced to {@code List} and uses the real method.
-     */
     @Override
     public void afterMethodCall(MethodCall call) {
         if (!(call instanceof MethodCallExpression methodCall)) {
             return;
+        }
+        // makeDynamic stores a stand-in method. A direct invokevirtual of that
+        // stand-in fails at runtime. The call site is what the dynamic writer should emit.
+        // Inside the dynamic query closure a stand-in target is invoked directly and
+        // fails. Outside it, static compilation still requires a target and uses the
+        // DYNAMIC_RESOLUTION marker to emit a call site.
+        if (insideQuery() && methodCall.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) != null) {
+            methodCall.setMethodTarget(null);
+            methodCall.removeNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
         }
         if (!"toList".equals(methodCall.getMethodAsString())) {
             return;
@@ -125,41 +138,44 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
             return;
         }
         // The macro result is still MacroStub.macroMethod(query) when the checker
-        // runs. toList() on that call is a raw List, so List<String> x = GQ { ... }.toList()
-        // is the same unchecked conversion as a dynamic query.
+        // runs. toList() on that call is a raw List.
         ClassNode list = ClassHelper.LIST_TYPE.getPlainNodeReference();
         list.setGenericsTypes(null);
         list.setUsingGenerics(false);
         storeType(methodCall, list);
     }
 
+    /**
+     * A subscript on a query result is coerced to {@code List} so static compilation
+     * can emit {@code getAt}. The coercion stays outside the query closure: inside it
+     * the dynamic writer handles the subscript, and a method parameter or field is
+     * left alone so {@code value[0]} on an unrelated {@code Object} is still an error.
+     */
     @Override
     public void afterVisitMethod(MethodNode node) {
         if (node.getCode() == null) {
             return;
         }
         node.getCode().visit(new CodeVisitorSupport() {
-            private int dynamicDepth;
+            private int queryDepth;
 
             @Override
             public void visitClosureExpression(ClosureExpression expression) {
-                boolean dynamic = Boolean.TRUE.equals(expression.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION));
-                if (dynamic) {
-                    dynamicDepth++;
+                boolean query = Boolean.TRUE.equals(expression.getNodeMetaData(QUERY));
+                if (query) {
+                    queryDepth++;
                 }
                 super.visitClosureExpression(expression);
-                if (dynamic) {
-                    dynamicDepth--;
+                if (query) {
+                    queryDepth--;
                 }
             }
 
             @Override
             public void visitBinaryExpression(BinaryExpression expression) {
-                // A subscript inside the lowered query is already dynamic. Coercing
-                // it to List changes group-key subscripts.
-                if (dynamicDepth == 0
+                if (queryDepth == 0
                         && expression.getOperation().getType() == Types.LEFT_SQUARE_BRACKET
-                        && rowOrUntyped(typeOf(expression.getLeftExpression()))) {
+                        && resultReceiver(expression.getLeftExpression())) {
                     CastExpression cast = castX(ClassHelper.LIST_TYPE, expression.getLeftExpression());
                     cast.setCoerce(true);
                     cast.setSourcePosition(expression.getLeftExpression());
@@ -170,10 +186,85 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
         });
     }
 
-    private boolean insideDynamicQuery() {
+    /**
+     * A closure or lambda parameter that holds a query row. A field or a parameter
+     * of the enclosing method is not a row, so a typo on it stays an error.
+     */
+    private boolean resultReceiver(Expression receiver) {
+        ClassNode type = typeOf(receiver);
+        if (namedRow(type)) {
+            return true;
+        }
+        if (receiver instanceof BinaryExpression binary
+                && binary.getOperation().getType() == Types.LEFT_SQUARE_BRACKET
+                && heldLocal(binary.getLeftExpression())) {
+            return true;
+        }
+        if (receiver instanceof MethodCallExpression call) {
+            String name = call.getMethodAsString();
+            if (("getAt".equals(name) || "get".equals(name)) && heldLocal(call.getObjectExpression())) {
+                return true;
+            }
+        }
+        if (!(receiver instanceof VariableExpression variable)) {
+            return false;
+        }
+        Variable accessed = variable.getAccessedVariable();
+        if (accessed instanceof FieldNode || accessed instanceof PropertyNode) {
+            return false;
+        }
+        if (accessed instanceof Parameter parameter) {
+            MethodNode method = typeCheckingVisitor.getTypeCheckingContext().getEnclosingMethod();
+            if (method != null) {
+                for (Parameter declared : method.getParameters()) {
+                    if (declared == parameter) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        return "it".equals(variable.getName())
+                && !typeCheckingVisitor.getTypeCheckingContext().getEnclosingClosureStack().isEmpty();
+    }
+
+    /**
+     * A local or nested row holder. A field and an enclosing-method parameter are excluded,
+     * so {@code value[0]} on those stays a static error. A local such as the {@code GQ}
+     * result is included, so {@code result[0].toList()} still type-checks.
+     */
+    private boolean heldLocal(Expression receiver) {
+        if (resultReceiver(receiver)) {
+            return true;
+        }
+        if (receiver instanceof BinaryExpression binary
+                && binary.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
+            return heldLocal(binary.getLeftExpression());
+        }
+        if (!(receiver instanceof VariableExpression variable)) {
+            return false;
+        }
+        Variable accessed = variable.getAccessedVariable();
+        if (accessed instanceof FieldNode || accessed instanceof PropertyNode) {
+            return false;
+        }
+        if (accessed instanceof Parameter parameter) {
+            MethodNode method = typeCheckingVisitor.getTypeCheckingContext().getEnclosingMethod();
+            if (method != null) {
+                for (Parameter declared : method.getParameters()) {
+                    if (declared == parameter) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean insideQuery() {
         List<TypeCheckingContext.EnclosingClosure> stack = typeCheckingVisitor.getTypeCheckingContext().getEnclosingClosureStack();
         for (TypeCheckingContext.EnclosingClosure enclosing : stack) {
-            if (Boolean.TRUE.equals(enclosing.getClosureExpression().getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION))) {
+            if (Boolean.TRUE.equals(enclosing.getClosureExpression().getNodeMetaData(QUERY))) {
                 return true;
             }
         }
@@ -185,13 +276,12 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
         return inferred != null ? inferred : expression.getType();
     }
 
-    private static boolean rowOrUntyped(ClassNode type) {
-        if (type == null || ClassHelper.isDynamicTyped(type)) {
-            return true;
+    private static boolean namedRow(ClassNode type) {
+        if (type == null) {
+            return false;
         }
         String name = type.getName();
-        return "java.lang.Object".equals(name)
-                || "org.apache.groovy.ginq.provider.collection.runtime.NamedRecord".equals(name)
+        return "org.apache.groovy.ginq.provider.collection.runtime.NamedRecord".equals(name)
                 || "org.apache.groovy.ginq.provider.collection.runtime.NamedTuple".equals(name)
                 || "org.apache.groovy.ginq.provider.collection.runtime.SourceRecord".equals(name)
                 || "org.apache.groovy.ginq.provider.collection.runtime.GroupResult".equals(name);

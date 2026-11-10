@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -119,7 +120,8 @@ public class GinqASTTransformation extends AbstractASTTransformation {
     /**
      * A {@code def} query method is widened to the declared GINQ result type so callers
      * compiled statically can use the result. An explicit return type is left alone.
-     * A superclass method with a more specific return type is also left alone.
+     * A method that actually overrides a superclass or interface method is left alone
+     * when the widened type is not a legal covariant return.
      */
     private static void widenDynamicReturn(MethodNode methodNode, ClassNode targetType) {
         if (!isDynamicTyped(methodNode.getReturnType()) || targetType == null) {
@@ -133,20 +135,43 @@ public class GinqASTTransformation extends AbstractASTTransformation {
         methodNode.setReturnType(widened);
     }
 
+    /**
+     * True when {@code methodNode} overrides a method whose return type cannot be
+     * widened. The override must be the same method: name, static-ness, and parameter
+     * types including generics ({@link ParameterUtils#parametersEqual}). Interface
+     * methods count, as do methods inherited through the superclass chain.
+     */
     private static boolean incompatibleSuperReturn(MethodNode methodNode, ClassNode widened) {
-        String name = methodNode.getName();
-        int arity = methodNode.getParameters().length;
-        for (ClassNode current = methodNode.getDeclaringClass().getSuperClass(); current != null; current = current.getSuperClass()) {
-            for (MethodNode candidate : current.getDeclaredMethods(name)) {
-                if (candidate.getParameters().length != arity) continue;
-                ClassNode returned = candidate.getReturnType();
-                if (returned == null || isDynamicTyped(returned) || ClassHelper.OBJECT_TYPE.equals(returned)) {
-                    continue;
-                }
-                if (!widened.equals(returned) && !widened.isDerivedFrom(returned) && !widened.implementsInterface(returned)) {
-                    return true;
-                }
+        ClassNode type = methodNode.getDeclaringClass();
+        for (ClassNode current = type.getSuperClass(); current != null; current = current.getSuperClass()) {
+            if (incompatibleDeclared(current, methodNode, widened)) {
+                return true;
             }
+        }
+        for (ClassNode face : type.getAllInterfaces()) {
+            if (incompatibleDeclared(face, methodNode, widened)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean incompatibleDeclared(ClassNode owner, MethodNode methodNode, ClassNode widened) {
+        for (MethodNode candidate : owner.getDeclaredMethods(methodNode.getName())) {
+            if (candidate.isPrivate() || candidate.isStatic() != methodNode.isStatic()) {
+                continue;
+            }
+            if (!ParameterUtils.parametersEqual(methodNode.getParameters(), candidate.getParameters())) {
+                continue;
+            }
+            ClassNode returned = candidate.getReturnType();
+            if (returned == null || isDynamicTyped(returned) || ClassHelper.OBJECT_TYPE.equals(returned)) {
+                continue;
+            }
+            if (widened.equals(returned) || widened.isDerivedFrom(returned) || widened.implementsInterface(returned)) {
+                continue;
+            }
+            return true;
         }
         return false;
     }

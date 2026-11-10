@@ -74,8 +74,8 @@ public final class Ginq {
     }
 
     /**
-     * Queries {@code source}. The stream is read when the query runs, and a stream
-     * can be read only once.
+     * Queries {@code source}. The stream is read on the first terminal operation
+     * and later terminals replay that read, because a stream can be read only once.
      *
      * @param source the elements
      * @param <T> the element type
