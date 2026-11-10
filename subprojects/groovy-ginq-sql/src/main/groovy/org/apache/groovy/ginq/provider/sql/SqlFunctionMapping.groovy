@@ -24,7 +24,6 @@ import org.apache.groovy.ginq.provider.sql.ir.SqlBinary
 import org.apache.groovy.ginq.provider.sql.ir.SqlCast
 import org.apache.groovy.ginq.provider.sql.ir.SqlCastTypes
 import org.apache.groovy.ginq.provider.sql.ir.SqlExpr
-import org.apache.groovy.ginq.provider.sql.ir.SqlFunction
 import org.apache.groovy.ginq.provider.sql.ir.SqlLiteral
 import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.ast.expr.ConstantExpression
@@ -246,7 +245,7 @@ final class SqlFunctionMapping {
         for (Expression arg : args) {
             sqlArgs.add(site.expr(arg))
         }
-        return new SqlFunction(sqlName, sqlArgs)
+        return site.function(sqlName, sqlArgs, call)
     }
 
     private SqlExpr concat(MethodCallExpression call, List<Expression> args, SqlFunctionSite site) {
@@ -262,7 +261,9 @@ final class SqlFunctionMapping {
             site.fail('`isEmpty` takes no arguments', call)
             return null
         }
-        return new SqlBinary('=', new SqlFunction('CHAR_LENGTH', [site.expr(call.objectExpression)]), new SqlLiteral(0))
+        SqlExpr length = site.function('CHAR_LENGTH', [site.expr(call.objectExpression)], call)
+        if (length == null) return null
+        return new SqlBinary('=', length, new SqlLiteral(0))
     }
 
     // POSITION/LOCATE/INSTR are 1-based and return 0 when absent. Subtracting 1
@@ -274,7 +275,9 @@ final class SqlFunctionMapping {
         }
         SqlExpr needle = site.expr(args.get(0))
         SqlExpr haystack = site.expr(call.objectExpression)
-        return new SqlBinary('-', new SqlFunction('POSITION', [needle, haystack]), new SqlLiteral(1))
+        SqlExpr position = site.function('POSITION', [needle, haystack], call)
+        if (position == null) return null
+        return new SqlBinary('-', position, new SqlLiteral(1))
     }
 
     private SqlExpr cast(MethodCallExpression call, List<Expression> args, SqlFunctionSite site) {

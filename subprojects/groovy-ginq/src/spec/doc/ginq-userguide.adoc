@@ -1232,9 +1232,14 @@ def result = GQL(provider: 'native-sql', mixedMode: true, dataSource: db) {
 Mixed mode splits the query at the first clause that does not translate (`from`, each `join`,
 `where`, then `orderby` and `limit`). The translatable prefix is executed on the database and
 comes back as `GroovyRowResult` rows; the remaining clauses run in memory through the collection
-provider. A single-table prefix is one row per result. A join prefix projects `alias.*` for each
-alias and is zipped back into one row per alias, so the in-memory tail still sees `e.name` and
-`d.name`. A `where` clause is kept together: if any part of it cannot be translated, the whole
+provider. A single-table prefix is one row per result. A join prefix is planned as `alias.*`
+for each alias, then each source is probed and the prefix is re-run with those columns named
+explicitly (`alias.col AS __ginqN_M`) and read back by ordinal. The in-memory tail still sees
+`e.name` and `d.name`, including when both sources have a column called `name`. Duplicate labels
+within one source are rejected rather than dropping a value: JDBC drivers differ on labels,
+duplicates, case folding and quoting, and a label map is not treated as a faithful copy of the
+table. The ordinal that re-aligns the join is not stored under a column name, so a real column
+called `__ginq_mixed_key` stays readable. A `where` clause is kept together: if any part of it cannot be translated, the whole
 predicate runs in memory and only the preceding `from`/`join` clauses are pushed.
 `groupby` and its `having` clause are not pushed when a later clause falls back to memory, so
 grouped results keep collection-provider semantics. `orderby` and `limit` are pushed only when
@@ -1261,35 +1266,89 @@ and a nested query in an expression position becomes a scalar subquery. Subqueri
 positions may be correlated, i.e. reference the aliases of enclosing queries; derived tables
 cannot, matching standard SQL.
 
-A set of common methods and operators maps to SQL: `toUpperCase()`/`toLowerCase()` to
-`UPPER(...)`/`LOWER(...)`, `trim()` to `TRIM(...)`, `length()` to `CHAR_LENGTH(...)`,
-`isEmpty()` to `CHAR_LENGTH(...) = 0`, `contains(...)`/`startsWith(...)`/`endsWith(...)` to
-`LIKE` (with wildcard characters in the runtime value escaped, so it always matches literally),
-`substring(...)` to `SUBSTRING(...)` (Groovy's 0-based, exclusive indexes; a column index is
-shifted in SQL), `replace(a, b)` to `REPLACE(...)`, `concat(other)` and string `+` to `||`,
-`abs()`/`floor()`/`ceil()`/`round()`/`round(scale)` to the same-named SQL functions (`ceil` is
-`CEILING`), `%` to `MOD`, `/` to real division (`CAST(... AS DOUBLE)`), `&&`/`||`/`!` to `AND`/`OR`/`NOT`,
-and ternary expressions to `CASE WHEN ... END`. `coalesce(a, b, ...)` translates to SQL `COALESCE`
-(the first non-null argument). The Elvis operator is not mapped to `COALESCE`: Groovy truthiness
-is not SQL null, so write `coalesce(...)` or an explicit `== null` ternary.
-`Math.max(a, b)` and `Math.min(a, b)` translate to `GREATEST` and `LEAST`.
-`cast(expr, 'TYPE')` translates to `CAST(expr AS TYPE)`. `TYPE` is a string literal from a fixed
-list, for example `INTEGER`, `DECIMAL`, `DECIMAL(10,2)`, `VARCHAR`, `VARCHAR(20)` or
-`DOUBLE PRECISION`. Any other type is rejected at translation time. `select expr as alias` remains
-a column alias and is not a cast.
-`name.indexOf(text)` is Groovy's 0-based search: `POSITION(text IN name) - 1`, which is `-1` when
-the text is absent. MySQL and MariaDB spell that `LOCATE`, and SQLite spells it `INSTR`. A
-from-index is not translated.
-A constant range on the right of `in`, including a
-descending or exclusive range, becomes a pair of comparisons (`1..3` and `3..1` are the same
-bounds). A range whose bounds are not compile-time constants is rejected, because a descending
-Groovy range still contains the values between its endpoints; write `x >= low && x <= high` when
-the order is known. `in []` matches nothing and `!in []` matches every row. A null member of a
-list literal is tested with `IS NULL` (and `IS NOT NULL` for `!in`), so a null value matches the
-way it does in Groovy. `contains(null)`
-(and `startsWith`/`endsWith`) does not match the text `null`. `sum` of an all-null group is 0,
-matching the collection provider. SQL nulls propagate where Groovy would throw, for example
-`null.toUpperCase()`.
+A set of common methods and operators maps to SQL. Where the mapping cannot be decided safely
+it is rejected at compile time, or left in memory when `mixedMode: true` is set. It is not
+emitted as a guess. The exact SQL behaviour of a mapped function still depends on the database.
+
+.Groovy operations and the SQL they become
+[cols="2,2,3"]
+|===
+|Groovy |SQL |Constraints
+
+|`==` / `!=` and a null literal
+|`IS NULL` / `IS NOT NULL`
+|Same result as Groovy for that literal.
+
+|`==` / `!=` otherwise
+|`IS NOT DISTINCT FROM` / `IS DISTINCT FROM`
+|Null-safe, like Groovy `==`. A bound parameter that is null matches a null column (`deptId == wanted` selects null departments when `wanted` is null). MySQL and MariaDB spell equality as `<=>`; SQLite spells it `IS` / `IS NOT`. Numeric equality still follows the database when the types differ (`1` and `1.0`).
+
+|`<` `<=` `>` `>=`
+|the same operator
+|SQL three-valued logic, not Groovy's ordering. A null does not compare as less than every other value, so `deptId < 1` does not select a null `deptId`.
+
+|`in` / `!in` on a list
+|`IN`, or `IS NULL OR NOT IN` when `!in` has no null member
+|`null in [1, 2]` is false and `null !in [1, 2]` is true. A null member of the list is `IS NULL` (and `IS NOT NULL` for `!in`), matching Groovy. `in []` matches nothing and `!in []` matches every row.
+
+|`in` / `!in` on a constant range
+|a pair of comparisons
+|`1..3` and `3..1` are the same bounds, and an exclusive end uses `<` or `>`. `!in` is `value IS NULL OR value` outside the bounds, so a null value matches Groovy. A range whose bounds are not compile-time constants is rejected, because a descending Groovy range still contains the values between its endpoints; write `x >= low && x <= high` when the order is known.
+
+|`+`
+|string concatenation, or numeric `+`
+|Concatenation when the left operand is text, or a column stands beside a string literal (`e.name + '!'`, `'!' + e.name`). Addition when a number stands beside a column or both sides are numbers (`e.salary + 1`). A captured variable is pushed down only when its declared type is text or numeric, or it is cast, for example `e.name + (suffix as String)`. Two columns are not pushed down (`e.first.concat(e.last)`, or a numeric cast). Anything else is a compile error in strict mode and runs in memory in mixed mode. A number beside a string literal is rejected: Groovy does not concatenate that way.
+
+|`length()` / `size()`
+|`CHAR_LENGTH`
+|Character count, not bytes. Null stays null; Groovy would throw on a null receiver. The receiver must be a column or a value known to be text. A captured variable is not pushed down, because it might be a list or some other value whose `size()` is not a character length.
+
+|`toUpperCase` / `toLowerCase` / `trim` / `substring` / `replace` / `concat` / `isEmpty`
+|`UPPER` / `LOWER` / `TRIM` / `SUBSTRING` / `REPLACE` / string concatenation / `CHAR_LENGTH(...) = 0`
+|Same receiver rule as `length()`. `substring` uses Groovy's 0-based, exclusive indexes; a column index is shifted in SQL. `concat` is the explicit string form of `+`.
+
+|`contains` / `startsWith` / `endsWith`
+|`LIKE ... ESCAPE '!'`
+|`%`, `_` and `!` in the runtime value are escaped, so the value matches literally. `contains(null)` does not match the text `null`. The argument must be a literal or a captured variable.
+
+|`indexOf(text)`
+|`POSITION(text IN value) - 1`
+|Groovy's 0-based result, and `-1` when the text is absent. MySQL and MariaDB spell `LOCATE`; SQLite spells `INSTR`. A from-index is not translated.
+
+|`abs` / `floor` / `ceil` / `round`
+|`ABS` / `FLOOR` / `CEILING` / `ROUND`
+|Pushed only when the dialect can render the function. See the dialect note below.
+
+|`-` `*` `/` `%`
+|`-` `*` real division `MOD`
+|Numeric operators, not overloaded the way `+` is. `/` is `CAST(... AS DOUBLE)` so it does not truncate. SQLite spells `%` as the `%` operator.
+
+|`&&` / `\|\|` / `!`
+|`AND` / `OR` / `NOT`
+|SQL three-valued logic, not Groovy truthiness. `UNKNOWN` stays `UNKNOWN`.
+
+|ternary
+|`CASE WHEN ... END`
+|The condition uses SQL truth. The Elvis operator is rejected: Groovy truthiness is not SQL null. Use `coalesce(...)` or an explicit `== null` ternary.
+
+|`coalesce(a, b, ...)`
+|`COALESCE`
+|The first non-null argument.
+
+|`sum`
+|`COALESCE(SUM(...), 0)`
+|An all-null group is 0, matching the collection provider. Other aggregates can return SQL null.
+
+|`Math.max` / `Math.min`
+|`GREATEST` / `LEAST`
+|Two arguments. SQLite spells these as scalar `MAX` / `MIN`. Aggregate `min` and `max` are a different translation.
+
+|`cast(expr, 'TYPE')`
+|`CAST(expr AS TYPE)`
+|`TYPE` is a string literal from a fixed list, for example `INTEGER`, `DECIMAL`, `DECIMAL(10,2)`, `VARCHAR`, `VARCHAR(20)` or `DOUBLE PRECISION`. Any other type is rejected. `select expr as alias` is a column alias, not this cast. A Groovy cast used to fix the type of `+`, such as `(suffix as String)`, casts a captured value before it is bound and casts a column in SQL.
+|===
+
+SQL nulls propagate where Groovy would throw, for example `null.toUpperCase()` on a column.
 
 Table names are simple identifiers or `schema.table`. Anything else, including quotes and
 spaces, is rejected. A quoting `table()` helper is not part of this backend yet.
@@ -1300,8 +1359,13 @@ are left unquoted), `postgres`, `mysql`, `mariadb`, and `sqlite`. MySQL, MariaDB
 `LIMIT`/`OFFSET` and emulate `NULLS FIRST`/`NULLS LAST`, which they do not spell. SQLite spells
 `LENGTH`, `SUBSTR`, `%` and `INSTR` instead of `CHAR_LENGTH`, `SUBSTRING`, `MOD` and `POSITION`,
 and scalar `MAX`/`MIN` instead of `GREATEST`/`LEAST`. MySQL and MariaDB spell `LOCATE` instead of
-`POSITION`. `FLOOR`/`CEILING` are not available on SQLite, so `dialect: 'sqlite'` rejects
-`floor()` and `ceil()` at translation time. Other databases belong on `jooq-sql`.
+`POSITION`. Whether a function can be pushed down is a dialect capability, shared by the
+translator and the renderer, not a special case written beside one function. `FLOOR` and
+`CEILING` are not in the SQLite set: `dialect: 'sqlite'` rejects `floor()` and `ceil()` in
+strict mode, and with `mixedMode: true` the clause that uses them runs in memory while the
+rest of the query can still be pushed. A function the dialect only spells differently, such as
+`CHAR_LENGTH` as SQLite `LENGTH`, is still pushed. Other databases belong on `jooq-sql`, which
+uses the same capability check.
 
 A trailing `orderby`/`limit` on the final operand of a set operation applies to the combined
 result, matching SQL semantics; the order keys must match columns of the final `select` clause.

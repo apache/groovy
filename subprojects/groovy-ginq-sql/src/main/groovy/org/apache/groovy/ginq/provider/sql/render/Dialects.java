@@ -94,6 +94,11 @@ public final class Dialects {
 
     private static final class PostgresDialect implements Dialect {
         @Override
+        public String name() {
+            return "postgres";
+        }
+
+        @Override
         public String identifier(String identifier) {
             return quote(identifier, '"');
         }
@@ -106,8 +111,34 @@ public final class Dialects {
 
     private static final class MySqlDialect implements Dialect {
         @Override
+        public String name() {
+            return "mysql";
+        }
+
+        @Override
         public String identifier(String identifier) {
             return quote(identifier, '`');
+        }
+
+        @Override
+        public char identifierQuote() {
+            return '`';
+        }
+
+        @Override
+        public void renderNullSafeEqual(boolean negated, SqlExpr left, SqlExpr right, NullSafeRender out) {
+            // <=> is null-safe and yields true or false, so NOT of it is not UNKNOWN.
+            if (negated) {
+                out.text("NOT (");
+                out.expr(left);
+                out.text(" <=> ");
+                out.expr(right);
+                out.text(")");
+            } else {
+                out.expr(left);
+                out.text(" <=> ");
+                out.expr(right);
+            }
         }
 
         @Override
@@ -128,8 +159,21 @@ public final class Dialects {
 
     private static final class SqliteDialect implements Dialect {
         @Override
+        public String name() {
+            return "sqlite";
+        }
+
+        @Override
         public String identifier(String identifier) {
             return quote(identifier, '"');
+        }
+
+        @Override
+        public void renderNullSafeEqual(boolean negated, SqlExpr left, SqlExpr right, NullSafeRender out) {
+            // SQLite IS / IS NOT are null-safe. IS NOT DISTINCT FROM arrived later.
+            out.expr(left);
+            out.text(negated ? " IS NOT " : " IS ");
+            out.expr(right);
         }
 
         @Override
@@ -149,11 +193,6 @@ public final class Dialects {
                     return "MAX";
                 case "LEAST":
                     return "MIN";
-                case "FLOOR":
-                case "CEILING":
-                    throw new IllegalArgumentException(ansiName
-                            + " is not supported by the sqlite dialect. Rewrite the query without floor() or ceil(),"
-                            + " or use a dialect that provides those functions");
                 default:
                     return ansiName;
             }

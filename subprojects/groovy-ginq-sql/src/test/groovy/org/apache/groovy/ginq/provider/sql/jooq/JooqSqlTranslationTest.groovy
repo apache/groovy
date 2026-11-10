@@ -82,8 +82,8 @@ class JooqSqlTranslationTest {
             limit 1, 2
             select b.name, b.salary
         }
-        assert 'select a.name, a.salary from employees a where a.deptId = ? ' +
-                'union select b.name, b.salary from employees b where b.deptId = ? ' +
+        assert 'select a.name, a.salary from employees a where a.deptId is not distinct from ? ' +
+                'union select b.name, b.salary from employees b where b.deptId is not distinct from ? ' +
                 'order by 2 desc nulls last, 1 asc nulls last offset ? rows fetch next ? rows only' == db.sqlText
         assert [1, 2, 1, 2] == db.params
     }
@@ -132,7 +132,7 @@ class JooqSqlTranslationTest {
             select e.name as label, cast(e.id, 'DECIMAL') / 2 as half, e.name.indexOf(needle) as at
         }
         assert 'select e.name label, (cast(cast(e.id as decimal) as double) / cast(? as double)) half, ' +
-                '(position(? in e.name) - 1) at from employees e where e.id = ?' == db.sqlText
+                '(position(? in e.name) - 1) at from employees e where e.id is not distinct from ?' == db.sqlText
         assert [2, 'li', 1] == db.params
     }
 

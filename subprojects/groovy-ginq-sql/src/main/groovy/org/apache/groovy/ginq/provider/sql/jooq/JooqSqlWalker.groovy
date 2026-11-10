@@ -21,6 +21,7 @@ package org.apache.groovy.ginq.provider.sql.jooq
 import groovy.transform.CompileStatic
 import org.apache.groovy.ginq.dsl.expression.AbstractGinqExpression
 import org.apache.groovy.ginq.provider.sql.GinqSqlWalker
+import org.apache.groovy.ginq.provider.sql.SqlCapabilities
 import org.apache.groovy.ginq.provider.sql.ir.SqlQueryNode
 import org.apache.groovy.ginq.provider.sql.render.RenderedSql
 import org.apache.groovy.lang.annotation.Incubating
@@ -52,6 +53,11 @@ class JooqSqlWalker extends GinqSqlWalker {
     protected void validateOptions(AbstractGinqExpression expression) {
         // `dialect` is supported by this provider
         validateMixedMode(expression)
+    }
+
+    @Override
+    protected SqlCapabilities capabilities() {
+        return SqlCapabilities.of(getConfiguration().get(JooqSqlGinqProvider.CONF_DIALECT))
     }
 
     @Override

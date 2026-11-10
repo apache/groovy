@@ -72,4 +72,16 @@ interface SqlFunctionSite {
      * @return the {@code SUBSTRING} expression, or {@code null} when rejected
      */
     SqlExpr substring(MethodCallExpression call, List<Expression> args)
+
+    /**
+     * A plain SQL function. The site checks that the active dialect can
+     * render {@code ansiName} and rejects the call when it cannot, so mixed
+     * mode can keep the clause in memory.
+     *
+     * @param ansiName the ANSI function name
+     * @param args the already translated arguments, receiver first when there is one
+     * @param node the call to highlight
+     * @return the function, or {@code null} when the dialect cannot render it
+     */
+    SqlExpr function(String ansiName, List<SqlExpr> args, ASTNode node)
 }

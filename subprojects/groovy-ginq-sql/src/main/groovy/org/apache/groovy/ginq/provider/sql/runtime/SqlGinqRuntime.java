@@ -32,6 +32,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -44,9 +45,9 @@ import java.util.Map;
 @Incubating
 public final class SqlGinqRuntime {
     /**
-     * Column added to each alias row when mixed mode re-zips a pushed join.
-     * The value is the output-row index, so an in-memory equijoin on this
-     * column reproduces the database join without re-evaluating it.
+     * Historical name of the mixed-mode join ordinal. The ordinal is no longer
+     * stored under this name: a real column could collide with it. Rows expose
+     * it through {@link #mixedOrdinal(Object)} instead.
      */
     public static final String MIXED_KEY = "__ginq_mixed_key";
 
@@ -83,8 +84,7 @@ public final class SqlGinqRuntime {
     }
 
     /**
-     * Returns the number of columns the supplied query produces. Used to split
-     * a mixed-mode {@code alias.*} select list back into one row per alias.
+     * Returns the number of columns the supplied query produces.
      * The SQL text is a compile-time constant; values are bound as parameters.
      *
      * @param dataSource the data source to query
@@ -94,65 +94,115 @@ public final class SqlGinqRuntime {
      * @throws SQLException if the query fails
      */
     public static int columnCount(Object dataSource, String sqlText, List<Object> params) throws SQLException {
+        return columnLabels(dataSource, sqlText, params).size();
+    }
+
+    /**
+     * Column labels of one mixed-mode source, in ordinal order. The label is
+     * preferred over the base column name so a derived column {@code expr as label}
+     * is exposed as {@code label}. A blank name becomes {@code __ginq_cN}.
+     * Callers still have to reject duplicate labels; this method does not drop
+     * any of them.
+     *
+     * @param dataSource the data source to query
+     * @param sqlText the SQL text with {@code ?} placeholders
+     * @param params the parameter values in placeholder order
+     * @return the labels, one per column
+     * @throws SQLException if the query fails
+     */
+    public static List<String> columnLabels(Object dataSource, String sqlText, List<Object> params) throws SQLException {
         return withConnection(dataSource, connection -> {
             try (PreparedStatement statement = connection.prepareStatement(sqlText)) {
                 bind(statement, params);
                 try (ResultSet rs = statement.executeQuery()) {
-                    return rs.getMetaData().getColumnCount();
+                    ResultSetMetaData metaData = rs.getMetaData();
+                    List<String> names = new ArrayList<>();
+                    int count = metaData.getColumnCount();
+                    for (int i = 1; i <= count; i++) {
+                        String name = metaData.getColumnLabel(i);
+                        if (name == null || name.isEmpty()) {
+                            name = metaData.getColumnName(i);
+                        }
+                        if (name == null || name.isEmpty()) {
+                            name = freshName(names, "__ginq_c" + (i - 1));
+                        }
+                        names.add(name);
+                    }
+                    return names;
                 }
             }
         });
     }
 
     /**
-     * Runs a mixed-mode prefix that projects {@code alias.*} for each alias,
-     * in alias order, and splits every output row into one {@link GroovyRowResult}
-     * per alias. Rows of each alias stay aligned by {@link #MIXED_KEY}.
+     * The join ordinal of a row produced by {@link #zipAliases}. The value is
+     * not stored as a column.
+     *
+     * @param row a mixed-mode source row
+     * @return the output-row index
+     */
+    public static int mixedOrdinal(Object row) {
+        if (row instanceof MixedSourceRow) {
+            return ((MixedSourceRow) row).mixedOrdinal();
+        }
+        throw new IllegalArgumentException("mixed-mode join row has no ordinal: "
+                + (row == null ? "null" : row.getClass().getName()));
+    }
+
+    /**
+     * Runs a mixed-mode prefix that projects {@code alias.*} for each alias
+     * and splits every output row into one {@link MixedSourceRow} per alias.
+     * <p>
+     * The stars are rewritten to explicitly named columns
+     * ({@code alias.col AS __ginqA_C}) before the query runs. Values are then
+     * read by ordinal and stored under the source's own column labels, so a
+     * duplicate label in the joined projection cannot drop a column and the
+     * driver is not asked to invent labels for {@code alias.*}. Duplicate
+     * labels within one source are rejected. Rows of each alias stay aligned
+     * by {@link #mixedOrdinal(Object)}.
      *
      * @param dataSource the data source to query
-     * @param sqlText the SQL text with {@code ?} placeholders
+     * @param sqlText the SQL text with {@code ?} placeholders, projecting {@code alias.*}
      * @param params the parameter values in placeholder order
-     * @param columnCounts the column count of each {@code alias.*}, in select-list order
+     * @param columnsByAlias the column labels of each alias, in select-list order
+     * @param identifierQuote the dialect's identifier quote, one character, or empty to leave simple names unquoted
      * @return one list of rows per alias
-     * @throws SQLException if the query fails or the column layout does not match
+     * @throws SQLException if the query fails, labels collide, or the column layout does not match
      */
     public static List<List<GroovyRowResult>> zipAliases(Object dataSource, String sqlText, List<Object> params,
-                                                         List<Integer> columnCounts) throws SQLException {
-        int expected = 0;
-        for (int count : columnCounts) {
-            expected += count;
+                                                         List<List<String>> columnsByAlias, String identifierQuote) throws SQLException {
+        char quote = quoteChar(identifierQuote);
+        String rewritten = rewriteStarSelect(sqlText, columnsByAlias, quote);
+        int aliasCount = columnsByAlias.size();
+        int columnTotal = 0;
+        for (List<String> names : columnsByAlias) {
+            columnTotal += names.size();
         }
-        int aliasCount = columnCounts.size();
         List<List<GroovyRowResult>> byAlias = new ArrayList<>(aliasCount);
         for (int i = 0; i < aliasCount; i++) {
             byAlias.add(new ArrayList<>());
         }
-        int columnTotal = expected;
+        int expected = columnTotal;
         withConnection(dataSource, connection -> {
-            try (PreparedStatement statement = connection.prepareStatement(sqlText)) {
+            try (PreparedStatement statement = connection.prepareStatement(rewritten)) {
                 bind(statement, params);
                 try (ResultSet rs = statement.executeQuery()) {
                     ResultSetMetaData metaData = rs.getMetaData();
-                    if (metaData.getColumnCount() != columnTotal) {
+                    if (metaData.getColumnCount() != expected) {
                         throw new SQLException("mixed-mode result has " + metaData.getColumnCount()
-                                + " columns but the alias layout expected " + columnTotal);
+                                + " columns but the alias layout expected " + expected);
                     }
                     int rowIndex = 0;
                     while (rs.next()) {
                         int column = 1;
                         for (int alias = 0; alias < aliasCount; alias++) {
                             Map<String, Object> values = new LinkedHashMap<>();
-                            int count = columnCounts.get(alias);
-                            for (int c = 0; c < count; c++) {
-                                String label = metaData.getColumnLabel(column);
-                                if (label == null || label.isEmpty()) {
-                                    label = metaData.getColumnName(column);
-                                }
-                                values.put(label, rs.getObject(column));
+                            List<String> names = columnsByAlias.get(alias);
+                            for (int c = 0; c < names.size(); c++) {
+                                values.put(names.get(c), rs.getObject(column));
                                 column++;
                             }
-                            values.put(MIXED_KEY, rowIndex);
-                            byAlias.get(alias).add(new GroovyRowResult(values));
+                            byAlias.get(alias).add(new MixedSourceRow(values, rowIndex));
                         }
                         rowIndex++;
                     }
@@ -161,6 +211,179 @@ public final class SqlGinqRuntime {
             return null;
         });
         return byAlias;
+    }
+
+    /**
+     * Replaces a mixed-mode {@code SELECT alias.*, ...} list with one named
+     * column per source label. The {@code FROM} clause, including its
+     * placeholders, is kept as rendered.
+     *
+     * @param sql the rendered prefix, projecting {@code alias.*}
+     * @param columnsByAlias column labels for each star, in select-list order
+     * @param quote the identifier quote, or {@code 0} for simple unquoted names
+     * @return the rewritten SQL
+     * @throws SQLException when a label is duplicated or the select list is not {@code alias.*}
+     */
+    public static String rewriteStarSelect(String sql, List<List<String>> columnsByAlias, char quote) throws SQLException {
+        int fromAt = indexOfTopLevelKeyword(sql, "from");
+        int selectAt = indexOfTopLevelKeyword(sql, "select");
+        if (selectAt < 0 || fromAt < 0 || selectAt > fromAt) {
+            throw new SQLException("mixed-mode SQL has no SELECT ... FROM shape");
+        }
+        String selectList = sql.substring(selectAt + "select".length(), fromAt).trim();
+        List<String> aliases = new ArrayList<>();
+        for (String item : splitTopLevel(selectList, ',')) {
+            String trimmed = item.trim();
+            if (trimmed.length() < 3 || !trimmed.endsWith(".*")) {
+                throw new SQLException("mixed-mode prefix projection is not alias.* (" + trimmed + ")");
+            }
+            aliases.add(trimmed.substring(0, trimmed.length() - 2).trim());
+        }
+        if (aliases.size() != columnsByAlias.size()) {
+            throw new SQLException("mixed-mode SQL projects " + aliases.size()
+                    + " aliases but " + columnsByAlias.size() + " column layouts were supplied");
+        }
+        StringBuilder select = new StringBuilder("SELECT ");
+        boolean any = false;
+        for (int alias = 0; alias < aliases.size(); alias++) {
+            List<String> names = columnsByAlias.get(alias);
+            requireDistinctLabels(names);
+            if (names.isEmpty()) {
+                throw new SQLException("mixed-mode source has no columns to reconstruct");
+            }
+            for (int c = 0; c < names.size(); c++) {
+                if (any) {
+                    select.append(", ");
+                }
+                any = true;
+                select.append(aliases.get(alias)).append('.').append(quoteIdentifier(names.get(c), quote));
+                select.append(" AS ").append(quoteIdentifier("__ginq" + alias + "_" + c, quote));
+            }
+        }
+        return select.append(' ').append(sql.substring(fromAt)).toString();
+    }
+
+    private static void requireDistinctLabels(List<String> names) throws SQLException {
+        Map<String, String> seen = new LinkedHashMap<>();
+        List<String> duplicates = new ArrayList<>();
+        for (String name : names) {
+            String folded = name.toLowerCase(Locale.ROOT);
+            String first = seen.put(folded, name);
+            if (first != null) {
+                duplicates.add(name);
+            }
+        }
+        if (!duplicates.isEmpty()) {
+            throw new SQLException("mixed mode cannot reconstruct a source row because JDBC returned duplicate column labels "
+                    + duplicates + " within one alias. Drivers differ on labels, case folding and quoting, "
+                    + "and a duplicate label would drop a value. Project that source with distinct column names.");
+        }
+    }
+
+    static String quoteIdentifier(String name, char quote) throws SQLException {
+        if (name == null || name.isEmpty()) {
+            throw new SQLException("mixed-mode column name is blank");
+        }
+        if (quote == 0) {
+            if (!simpleIdentifier(name)) {
+                throw new SQLException("mixed-mode column `" + name + "` needs quoting and this dialect does not quote identifiers");
+            }
+            return name;
+        }
+        String mark = String.valueOf(quote);
+        return mark + name.replace(mark, mark + mark) + mark;
+    }
+
+    private static boolean simpleIdentifier(String name) {
+        for (int i = 0; i < name.length(); i++) {
+            char ch = name.charAt(i);
+            boolean letter = (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || ch == '_';
+            boolean digit = ch >= '0' && ch <= '9';
+            if (i == 0 ? !letter : !(letter || digit)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static String freshName(List<String> existing, String base) {
+        String candidate = base;
+        int n = 0;
+        while (containsIgnoreCase(existing, candidate)) {
+            candidate = base + "_" + (++n);
+        }
+        return candidate;
+    }
+
+    private static boolean containsIgnoreCase(List<String> names, String candidate) {
+        for (String name : names) {
+            if (name.equalsIgnoreCase(candidate)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static char quoteChar(String identifierQuote) throws SQLException {
+        if (identifierQuote == null || identifierQuote.isEmpty()) {
+            return 0;
+        }
+        if (identifierQuote.length() != 1) {
+            throw new SQLException("mixed-mode identifier quote must be one character");
+        }
+        return identifierQuote.charAt(0);
+    }
+
+    private static int indexOfTopLevelKeyword(String sql, String keyword) {
+        if (sql == null) {
+            return -1;
+        }
+        int depth = 0;
+        for (int i = 0; i < sql.length(); i++) {
+            char ch = sql.charAt(i);
+            if (ch == '(') {
+                depth++;
+            } else if (ch == ')') {
+                depth--;
+            } else if (depth == 0 && isKeywordAt(sql, i, keyword)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static boolean isKeywordAt(String sql, int i, String keyword) {
+        int end = i + keyword.length();
+        if (end > sql.length() || !sql.regionMatches(true, i, keyword, 0, keyword.length())) {
+            return false;
+        }
+        if (i > 0 && isIdent(sql.charAt(i - 1))) {
+            return false;
+        }
+        return end >= sql.length() || !isIdent(sql.charAt(end));
+    }
+
+    private static boolean isIdent(char ch) {
+        return (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_';
+    }
+
+    private static List<String> splitTopLevel(String text, char separator) {
+        List<String> parts = new ArrayList<>();
+        int depth = 0;
+        int start = 0;
+        for (int i = 0; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (ch == '(') {
+                depth++;
+            } else if (ch == ')') {
+                depth--;
+            } else if (ch == separator && depth == 0) {
+                parts.add(text.substring(start, i));
+                start = i + 1;
+            }
+        }
+        parts.add(text.substring(start));
+        return parts;
     }
 
     private static void bind(PreparedStatement statement, List<Object> params) throws SQLException {

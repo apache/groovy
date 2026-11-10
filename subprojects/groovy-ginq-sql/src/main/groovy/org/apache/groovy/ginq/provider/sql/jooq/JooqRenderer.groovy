@@ -19,6 +19,7 @@
 package org.apache.groovy.ginq.provider.sql.jooq
 
 import groovy.transform.CompileStatic
+import org.apache.groovy.ginq.provider.sql.FunctionSupport
 import org.apache.groovy.ginq.provider.sql.ir.SqlBinary
 import org.apache.groovy.ginq.provider.sql.ir.SqlCaseWhen
 import org.apache.groovy.ginq.provider.sql.ir.SqlCast
@@ -225,6 +226,8 @@ class JooqRenderer {
                 case 'OR': return buildCondition(ctx, expr.left).or(buildCondition(ctx, expr.right))
                 case '=': return buildField(ctx, expr.left).eq(buildField(ctx, expr.right))
                 case '<>': return buildField(ctx, expr.left).ne(buildField(ctx, expr.right))
+                case 'IS NOT DISTINCT FROM': return buildField(ctx, expr.left).isNotDistinctFrom(buildField(ctx, expr.right))
+                case 'IS DISTINCT FROM': return buildField(ctx, expr.left).isDistinctFrom(buildField(ctx, expr.right))
                 case '<': return buildField(ctx, expr.left).lt(buildField(ctx, expr.right))
                 case '<=': return buildField(ctx, expr.left).le(buildField(ctx, expr.right))
                 case '>': return buildField(ctx, expr.left).gt(buildField(ctx, expr.right))
@@ -313,6 +316,11 @@ class JooqRenderer {
     }
 
     private Field buildFunction(DSLContext ctx, SqlFunction function) {
+        if (!FunctionSupport.supports(dialect.name(), function.name)) {
+            throw new IllegalArgumentException(function.name
+                    + " is not supported by the " + FunctionSupport.canonical(dialect.name())
+                    + " dialect. Rewrite the query without it, or use a dialect that provides it")
+        }
         List<Field> fields = function.args.collect { SqlExpr e -> buildField(ctx, e) }
         switch (function.name) {
             case 'UPPER': return DSL.upper(fields[0])

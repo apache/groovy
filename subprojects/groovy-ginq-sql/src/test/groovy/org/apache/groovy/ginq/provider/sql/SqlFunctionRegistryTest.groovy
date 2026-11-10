@@ -162,6 +162,11 @@ class SqlFunctionRegistryTest {
             SqlExpr substring(MethodCallExpression call, List<Expression> args) {
                 return null
             }
+
+            @Override
+            SqlExpr function(String ansiName, List<SqlExpr> args, ASTNode node) {
+                return new SqlFunction(ansiName, args)
+            }
         }
     }
 }

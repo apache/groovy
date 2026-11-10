@@ -175,6 +175,20 @@ class SqlRenderer {
         } else if (expr instanceof SqlLiteral) {
             renderLiteral(expr.value, sb)
         } else if (expr instanceof SqlBinary) {
+            if ('IS NOT DISTINCT FROM' == expr.op || 'IS DISTINCT FROM' == expr.op) {
+                dialect.renderNullSafeEqual('IS DISTINCT FROM' == expr.op, expr.left, expr.right, new Dialect.NullSafeRender() {
+                    @Override
+                    void text(String text) {
+                        sb.append(text)
+                    }
+
+                    @Override
+                    void expr(SqlExpr child) {
+                        renderOperand(child, 4, sb, parameters)
+                    }
+                })
+                return
+            }
             if ('/' == expr.op) {
                 // Groovy divides in real arithmetic; SQL integer division would truncate
                 String realType = dialect.realTypeName()
@@ -239,6 +253,11 @@ class SqlRenderer {
             renderExpr(expr.expr, sb, parameters)
             sb.append(' AS ').append(expr.sqlType).append(')')
         } else if (expr instanceof SqlFunction) {
+            if (!dialect.supportsFunction(expr.name)) {
+                throw new IllegalArgumentException(expr.name
+                        + ' is not supported by the ' + dialect.name()
+                        + ' dialect. Rewrite the query without it, or use a dialect that provides it')
+            }
             if ('POSITION' == expr.name && expr.args.size() == 2) {
                 renderSearchPosition(expr.args[0], expr.args[1], sb, parameters)
                 return
@@ -362,7 +381,8 @@ class SqlRenderer {
         switch (op) {
             case 'OR': return 1
             case 'AND': return 2
-            case '=': case '<>': case '<': case '<=': case '>': case '>=': return 4
+            case '=': case '<>': case '<': case '<=': case '>': case '>=':
+            case 'IS NOT DISTINCT FROM': case 'IS DISTINCT FROM': return 4
             case '+': case '-': case '||': return 5
             case '*': case '/': case '%': return 6
             default: return PREC_UNARY

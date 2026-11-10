@@ -54,7 +54,7 @@ class GinqSqlTranslationTest {
             where e.salary > threshold && e.active == true
             select e.name
         }
-        assert 'SELECT e.name FROM employees e WHERE e.salary > ? AND e.active = ?' == db.sqlText
+        assert 'SELECT e.name FROM employees e WHERE e.salary > ? AND e.active IS NOT DISTINCT FROM ?' == db.sqlText
         assert [2500, true] == db.params
     }
 
@@ -67,7 +67,7 @@ class GinqSqlTranslationTest {
             select e.name, d.name as deptName
         }
         assert 'SELECT e.name, d.name AS deptName FROM employees e ' +
-                'INNER JOIN departments d ON e.deptId = d.id WHERE e.salary >= ?' == db.sqlText
+                'INNER JOIN departments d ON e.deptId IS NOT DISTINCT FROM d.id WHERE e.salary >= ?' == db.sqlText
         assert [3000] == db.params
     }
 
@@ -79,7 +79,7 @@ class GinqSqlTranslationTest {
             select e.name
         }
         assert 'SELECT e.name FROM employees e WHERE e.deptId IS NULL ' +
-                'OR e.salary IN (?, ?) OR UPPER(e.name) = ?' == db.sqlText
+                'OR e.salary IN (?, ?) OR UPPER(e.name) IS NOT DISTINCT FROM ?' == db.sqlText
         assert [3000, 4000, 'EVE'] == db.params
     }
 
@@ -151,7 +151,7 @@ class GinqSqlTranslationTest {
             select e.name.replace('A', 'X') + '!' as decorated
         }
         assert "SELECT REPLACE(e.name, ?, ?) || ? AS decorated FROM employees e " +
-                'WHERE SUBSTRING(e.name FROM ? FOR ?) = ?' == db.sqlText
+                'WHERE SUBSTRING(e.name FROM ? FOR ?) IS NOT DISTINCT FROM ?' == db.sqlText
         assert ['A', 'X', '!', 1, 3, 'Ali'] == db.params
     }
 
@@ -191,8 +191,8 @@ class GinqSqlTranslationTest {
             limit 1, 2
             select b.name, b.salary
         }
-        assert 'SELECT a.name, a.salary FROM employees a WHERE a.deptId = ? ' +
-                'UNION SELECT b.name, b.salary FROM employees b WHERE b.deptId = ? ' +
+        assert 'SELECT a.name, a.salary FROM employees a WHERE a.deptId IS NOT DISTINCT FROM ? ' +
+                'UNION SELECT b.name, b.salary FROM employees b WHERE b.deptId IS NOT DISTINCT FROM ? ' +
                 'ORDER BY 2 DESC NULLS LAST, 1 ASC NULLS LAST OFFSET ? ROWS FETCH NEXT ? ROWS ONLY' == db.sqlText
         assert [1, 2, 1, 2] == db.params
     }
@@ -217,7 +217,7 @@ class GinqSqlTranslationTest {
             select e.name
         }
         assert 'SELECT e.name FROM employees e ' +
-                'WHERE EXISTS (SELECT d.id FROM departments d WHERE d.id = e.deptId)' == db.sqlText
+                'WHERE EXISTS (SELECT d.id FROM departments d WHERE d.id IS NOT DISTINCT FROM e.deptId)' == db.sqlText
         assert [] == db.params
     }
 
@@ -229,7 +229,7 @@ class GinqSqlTranslationTest {
             select e.name
         }
         assert 'SELECT e.name FROM employees e ' +
-                'WHERE e.deptId IN (SELECT d.id FROM departments d WHERE d.name <> ?)' == db.sqlText
+                'WHERE e.deptId IN (SELECT d.id FROM departments d WHERE d.name IS DISTINCT FROM ?)' == db.sqlText
         assert ['Support'] == db.params
     }
 
@@ -241,7 +241,7 @@ class GinqSqlTranslationTest {
             select e.name
         }
         assert 'SELECT e.name FROM employees e ' +
-                'WHERE e.salary = (SELECT MAX(x.salary) FROM employees x)' == db.sqlText
+                'WHERE e.salary IS NOT DISTINCT FROM (SELECT MAX(x.salary) FROM employees x)' == db.sqlText
         assert [] == db.params
     }
 
@@ -256,8 +256,8 @@ class GinqSqlTranslationTest {
             where b.deptId == 2
             select b.salary
         }
-        assert 'SELECT a.salary FROM employees a WHERE a.deptId = ? ' +
-                'UNION SELECT b.salary FROM employees b WHERE b.deptId = ?' == db.sqlText
+        assert 'SELECT a.salary FROM employees a WHERE a.deptId IS NOT DISTINCT FROM ? ' +
+                'UNION SELECT b.salary FROM employees b WHERE b.deptId IS NOT DISTINCT FROM ?' == db.sqlText
         assert [1, 2] == db.params
     }
 
@@ -271,7 +271,7 @@ class GinqSqlTranslationTest {
         }
         assert 'SELECT CHAR_LENGTH(e.name), ABS(e.salary), ROUND(e.salary, ?), ' +
                 'SUBSTRING(e.name FROM ? FOR ?) FROM employees e ' +
-                'WHERE e.salary >= ? AND e.salary <= ? AND e.name || ? = ?' == db.sqlText
+                'WHERE e.salary >= ? AND e.salary <= ? AND e.name || ? IS NOT DISTINCT FROM ?' == db.sqlText
         assert [0, low + 1, 3 - low, 3000, 5000, '!', 'Alice!'] == db.params
 
         GQL(provider: 'native-sql', dataSource: db) {
@@ -340,7 +340,7 @@ class GinqSqlTranslationTest {
             where coalesce(e.deptId, 0) == 0
             select coalesce(e.name, fallback, 'x') as display
         }
-        assert 'SELECT COALESCE(e.name, ?, ?) AS display FROM employees e WHERE COALESCE(e.deptId, ?) = ?' == db.sqlText
+        assert 'SELECT COALESCE(e.name, ?, ?) AS display FROM employees e WHERE COALESCE(e.deptId, ?) IS NOT DISTINCT FROM ?' == db.sqlText
         assert ['n/a', 'x', 0, 0] == db.params
     }
 
@@ -388,7 +388,7 @@ class GinqSqlTranslationTest {
             select e.name as label, cast(e.id, 'DECIMAL') / 2 as half, e.name.indexOf(needle) as at
         }
         assert 'SELECT e.name AS label, (CAST(CAST(e.id AS DECIMAL) AS DOUBLE) / CAST(? AS DOUBLE)) AS half, ' +
-                'POSITION(? IN e.name) - 1 AS at FROM employees e WHERE e.id = ?' == db.sqlText
+                'POSITION(? IN e.name) - 1 AS at FROM employees e WHERE e.id IS NOT DISTINCT FROM ?' == db.sqlText
         assert [2, 'li', 1] == db.params
 
         GQL(provider: 'native-sql', dataSource: db) {

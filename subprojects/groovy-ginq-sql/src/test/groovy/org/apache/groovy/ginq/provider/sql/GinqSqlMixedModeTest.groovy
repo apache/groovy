@@ -93,7 +93,7 @@ class GinqSqlMixedModeTest {
             where e.name == name
             select e.name.reverse()
         }
-        assert 'SELECT e.* FROM employees e WHERE e.name = ?' == db.sqlText
+        assert 'SELECT e.* FROM employees e WHERE e.name IS NOT DISTINCT FROM ?' == db.sqlText
         assert ["Alice' OR '1'='1"] == db.params
         assert [] == result.toList()
     }
@@ -146,7 +146,7 @@ class GinqSqlMixedModeTest {
             orderby e.name
             select e.name, (rowNumber() over(orderby e.name))
         }
-        assert 'SELECT e.* FROM employees e WHERE e.deptId = ? ORDER BY e.name ASC NULLS LAST' == db.sqlText
+        assert 'SELECT e.* FROM employees e WHERE e.deptId IS NOT DISTINCT FROM ? ORDER BY e.name ASC NULLS LAST' == db.sqlText
         assert [1] == db.params
         assert [['Alice', 0], ['Bob', 1]] == result.toList()
     }

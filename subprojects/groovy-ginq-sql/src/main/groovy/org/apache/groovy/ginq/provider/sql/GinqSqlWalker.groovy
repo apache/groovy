@@ -168,13 +168,13 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
         String rowsName = "__ginqRows${mixedSeq++}"
         VariableExpression rowsVar = varX(rowsName)
-        List<Expression> counts = []
+        List<Expression> layouts = []
         for (SqlQuery countQuery : plan.columnCountQueries) {
             RenderedSql rendered = renderSql(countQuery, expression)
             if (rendered == null) {
                 return constX(null)
             }
-            counts << callX(classX(SQL_GINQ_RUNTIME_TYPE), 'columnCount',
+            layouts << callX(classX(SQL_GINQ_RUNTIME_TYPE), 'columnLabels',
                     args(dataSourceExpr, constX(rendered.sql), new ListExpression(rendered.parameters)))
         }
         RenderedSql prefixSql = renderSql(plan.prefix, expression)
@@ -185,7 +185,8 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                 dataSourceExpr,
                 constX(prefixSql.sql),
                 new ListExpression(prefixSql.parameters),
-                new ListExpression(counts)))
+                new ListExpression(layouts),
+                constX(String.valueOf(dialect.identifierQuote()))))
         tail.fromExpression.dataSourceExpr = callX(rowsVar, 'get', constX(0))
         for (int i = 0; i < plan.pushedJoins; i++) {
             tail.joinExpressionList[i].dataSourceExpr = callX(rowsVar, 'get', constX(i + 1))
@@ -270,7 +271,16 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     }
 
     private GinqToSqlTranslator translator() {
-        return new GinqToSqlTranslator(sourceUnit, providerName)
+        return new GinqToSqlTranslator(sourceUnit, providerName, capabilities())
+    }
+
+    /**
+     * Dialect facts the translator uses while deciding what can be pushed down.
+     * The jOOQ walker supplies the jOOQ dialect name; both share
+     * {@link SqlCapabilities}.
+     */
+    protected SqlCapabilities capabilities() {
+        return SqlCapabilities.of(configuration.get(NativeSqlGinqProvider.CONF_DIALECT))
     }
 
     @Override

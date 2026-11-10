@@ -64,6 +64,7 @@ import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.Variable
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.BooleanExpression
@@ -90,12 +91,12 @@ import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.syntax.Types
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.eqX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.minusX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.plusX
-import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
 
 /**
@@ -117,12 +118,18 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
     private final Map<String, SqlExpr> groupKeysByName = [:]
     private String aggregateLambdaParam
     private boolean recoverUntranslatable
+    private final SqlCapabilities capabilities
     private final SqlFunctionSite calls = new CallSite()
 
     GinqToSqlTranslator(SourceUnit sourceUnit, String providerName = 'native-sql') {
+        this(sourceUnit, providerName, null)
+    }
+
+    GinqToSqlTranslator(SourceUnit sourceUnit, String providerName, SqlCapabilities capabilities) {
         this.sourceUnit = sourceUnit
         this.outerScope = null
         this.providerName = providerName
+        this.capabilities = capabilities == null ? SqlCapabilities.of(null) : capabilities
     }
 
     private GinqToSqlTranslator(SourceUnit sourceUnit, GinqToSqlTranslator outerScope) {
@@ -130,12 +137,13 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         this.outerScope = outerScope
         this.providerName = outerScope.providerName
         this.recoverUntranslatable = outerScope.recoverUntranslatable
+        this.capabilities = outerScope.capabilities
     }
 
     private GinqToSqlTranslator nest(boolean correlated) {
         GinqToSqlTranslator child = correlated
                 ? new GinqToSqlTranslator(sourceUnit, this)
-                : new GinqToSqlTranslator(sourceUnit, providerName)
+                : new GinqToSqlTranslator(sourceUnit, providerName, capabilities)
         child.recoverUntranslatable = recoverUntranslatable
         return child
     }
@@ -474,6 +482,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         if (expr instanceof TernaryExpression) return translateTernary(expr)
         if (expr instanceof BinaryExpression) return translateBinary(expr)
         if (expr instanceof UnaryMinusExpression) return new SqlUnary('-', translateExpr(expr.expression))
+        if (expr instanceof CastExpression) return translateGroovyCast((CastExpression) expr)
         if (expr instanceof PropertyExpression) return translateProperty(expr)
         if (expr instanceof MethodCallExpression) return translateMethodCall(expr)
         if (expr instanceof ConstantExpression) return new SqlParam(expr)
@@ -533,12 +542,12 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
                 boolean negated = '!=' == op
                 if (isNullLiteral(right)) return new SqlIsNull(translateExpr(left), negated)
                 if (isNullLiteral(left)) return new SqlIsNull(translateExpr(right), negated)
-                return new SqlBinary(negated ? '<>' : '=', translateExpr(left), translateExpr(right))
+                // Groovy == is null-safe. SQL = yields UNKNOWN when either side is null,
+                // including a bound parameter that happens to be null.
+                return new SqlBinary(negated ? 'IS DISTINCT FROM' : 'IS NOT DISTINCT FROM',
+                        translateExpr(left), translateExpr(right))
             case '+':
-                if (isStringy(left) || isStringy(right)) {
-                    return new SqlBinary('||', translateExpr(left), translateExpr(right))
-                }
-                return new SqlBinary(op, translateExpr(left), translateExpr(right))
+                return translatePlus(left, right, expr)
             case '<':
             case '<=':
             case '>':
@@ -552,7 +561,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
             case '||':
                 return new SqlBinary('OR', translateExpr(left), translateExpr(right))
             case '%':
-                return new SqlFunction('MOD', [translateExpr(left), translateExpr(right)])
+                return emitFunction('MOD', [translateExpr(left), translateExpr(right)], expr)
             default:
                 reject("Operator `${op}` cannot be translated to SQL by the ${providerName} provider", expr)
                 return null
@@ -578,7 +587,9 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         }
         SqlIn inList = new SqlIn(member, values, negated)
         if (!includesNull) {
-            return inList
+            if (!negated) return inList
+            // Groovy `null !in [1, 2]` is true. SQL NOT IN is UNKNOWN for a null member.
+            return new SqlBinary('OR', new SqlIsNull(member, false), inList)
         }
         return new SqlBinary(negated ? 'AND' : 'OR', new SqlIsNull(member, negated), inList)
     }
@@ -587,13 +598,35 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         return expr instanceof ConstantExpression && null == expr.value
     }
 
-    // best-effort compile-time check that `+` denotes string concatenation
-    private static boolean isStringy(Expression expr) {
-        if (expr instanceof ConstantExpression && expr.value instanceof String) return true
-        if (expr instanceof BinaryExpression && '+' == expr.operation.text) {
-            return isStringy(expr.leftExpression) || isStringy(expr.rightExpression)
+    private SqlExpr translatePlus(Expression left, Expression right, Expression reported) {
+        OperandKind leftKind = operandKind(left)
+        OperandKind rightKind = operandKind(right)
+        if (plusIsText(leftKind, rightKind)) {
+            return new SqlBinary('||', translateExpr(left), translateExpr(right))
         }
-        return false
+        if (plusIsNumber(leftKind, rightKind)) {
+            return new SqlBinary('+', translateExpr(left), translateExpr(right))
+        }
+        reject('Operator `+` is not translated when it could be numeric addition or string concatenation. ' +
+                'A number beside a column is addition (`e.salary + 1`); text on the left, or a string literal beside a column, is concatenation (`e.name + \'!\'`). ' +
+                'A captured variable is pushed down only when its declared type is numeric or text, for example `e.name + (suffix as String)`. ' +
+                'Two columns are not pushed down; use `concat` or a numeric cast', reported)
+        return null
+    }
+
+    // Groovy concatenates when the left operand is text (`'!' + x`, `'!' + 1`).
+    // `column + '!'` is the other form this backend already promised; a number
+    // beside a string literal is not concatenation in Groovy, so it is rejected.
+    private static boolean plusIsText(OperandKind left, OperandKind right) {
+        if (left == OperandKind.TEXT) return true
+        return right == OperandKind.TEXT && left == OperandKind.COLUMN
+    }
+
+    private static boolean plusIsNumber(OperandKind left, OperandKind right) {
+        if (left == OperandKind.TEXT || right == OperandKind.TEXT) return false
+        if (left == OperandKind.OTHER || right == OperandKind.OTHER) return false
+        if (left == OperandKind.COLUMN && right == OperandKind.COLUMN) return false
+        return left == OperandKind.NUMBER || right == OperandKind.NUMBER
     }
 
     private SqlExpr translateProperty(PropertyExpression expr) {
@@ -667,6 +700,14 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         if (call.implicitThis && AGGREGATE_FUNCTION_MAP.containsKey(method)) {
             return translateAggregate(call, args, false)
         }
+        if (method != null && !call.implicitThis && TEXT_INPUT_METHODS.contains(method)) {
+            OperandKind receiver = operandKind(call.objectExpression)
+            if (receiver != OperandKind.TEXT && receiver != OperandKind.COLUMN) {
+                reject("`${method}()` is translated to SQL only when the receiver is a column or a value known to be text. " +
+                        'The type of a captured variable is not known at compile time', call)
+                return null
+            }
+        }
         SqlFunctionMapping mapping = method == null ? null : SqlFunctionRegistry.standard().find(method, functionKind(call))
         if (mapping != null) {
             return mapping.translate(call, args, calls)
@@ -710,7 +751,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         if (2 == argList.size()) {
             functionArgs << substringLength(argList[0], argList[1])
         }
-        return new SqlFunction('SUBSTRING', functionArgs)
+        return emitFunction('SUBSTRING', functionArgs, call)
     }
 
     // Groovy's 0-based begin index becomes SQL's 1-based FROM position.
@@ -769,10 +810,27 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
                 lowOp = '>'
             }
         }
-        SqlExpr predicate = new SqlBinary('AND',
-                new SqlBinary(lowOp, value, low),
-                new SqlBinary(highOp, value, high))
-        return negated ? new SqlUnary('NOT', predicate) : predicate
+        if (!negated) {
+            return new SqlBinary('AND',
+                    new SqlBinary(lowOp, value, low),
+                    new SqlBinary(highOp, value, high))
+        }
+        // Groovy `null !in 1..3` is true. NOT (comparisons) stays UNKNOWN for null.
+        return new SqlBinary('OR',
+                new SqlIsNull(value, false),
+                new SqlBinary('OR',
+                        new SqlBinary(invertCompare(lowOp), value, low),
+                        new SqlBinary(invertCompare(highOp), value, high)))
+    }
+
+    private static String invertCompare(String op) {
+        switch (op) {
+            case '>=': return '<'
+            case '>': return '<='
+            case '<=': return '>'
+            case '<': return '>='
+            default: throw new IllegalArgumentException(op)
+        }
     }
 
     private Expression requireParamValue(Expression expr, String method) {
@@ -821,9 +879,9 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         if (distinct != null) {
             Expression inner = countDistinctArgument(call, method, distinct)
             if (inner == null) return null
-            return new SqlFunction(functionName, [translateExpr(inner)], true)
+            return emitFunction(functionName, [translateExpr(inner)], true, call)
         }
-        return finishAggregate(method, new SqlFunction(functionName, [translateExpr(arg)]))
+        return finishAggregate(method, emitFunction(functionName, [translateExpr(arg)], call), call)
     }
 
     private SqlExpr translateLambdaAggregate(MethodCallExpression call, String method, String functionName, Expression arg) {
@@ -859,7 +917,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         String previousParam = aggregateLambdaParam
         aggregateLambdaParam = param
         try {
-            return finishAggregate(method, new SqlFunction(functionName, [translateExpr(body)], countDistinct))
+            return finishAggregate(method, emitFunction(functionName, [translateExpr(body)], countDistinct, call), call)
         } finally {
             aggregateLambdaParam = previousParam
         }
@@ -887,9 +945,9 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
     }
 
     // Groovy sum treats null as zero, so an all-null group is 0 rather than SQL null
-    private static SqlExpr finishAggregate(String method, SqlExpr call) {
+    private SqlExpr finishAggregate(String method, SqlExpr call, ASTNode node) {
         if ('sum' == method) {
-            return new SqlFunction('COALESCE', [call, new SqlLiteral(0)])
+            return emitFunction('COALESCE', [call, new SqlLiteral(0)], node)
         }
         return call
     }
@@ -950,7 +1008,7 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
                 error(untranslatable.message, untranslatable.node ?: expression)
                 return null
             }
-            GinqToSqlTranslator splitter = new GinqToSqlTranslator(sourceUnit, providerName)
+            GinqToSqlTranslator splitter = new GinqToSqlTranslator(sourceUnit, providerName, capabilities)
             splitter.recoverUntranslatable = true
             return splitter.planSplit((GinqExpression) expression)
         } finally {
@@ -1089,8 +1147,8 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
             if (i < pushedJoins) {
                 JoinExpression zipped = new JoinExpression('join', original.aliasExpr, original.dataSourceExpr)
                 zipped.onExpression = new OnExpression(eqX(
-                        propX(varX(previousAlias), SqlGinqRuntime.MIXED_KEY),
-                        propX(varX(original.aliasExpr.text), SqlGinqRuntime.MIXED_KEY)))
+                        callX(classX(SQL_GINQ_RUNTIME_TYPE), 'mixedOrdinal', varX(previousAlias)),
+                        callX(classX(SQL_GINQ_RUNTIME_TYPE), 'mixedOrdinal', varX(original.aliasExpr.text))))
                 tail.addJoinExpression(zipped)
             } else {
                 tail.addJoinExpression(original)
@@ -1208,6 +1266,169 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
     private static final String MIXED_HINT =
             '. Rewrite it in supported SQL, or set `mixedMode: true` to evaluate that clause in memory.'
 
+    private static final Set<String> TEXT_INPUT_METHODS = Set.of(
+            'toUpperCase', 'toLowerCase', 'trim', 'substring', 'replace', 'concat',
+            'length', 'size', 'isEmpty', 'contains', 'startsWith', 'endsWith', 'indexOf')
+    private static final Set<String> TEXT_RESULT_METHODS = Set.of(
+            'toUpperCase', 'toLowerCase', 'trim', 'substring', 'replace', 'concat')
+
+    private SqlExpr emitFunction(String name, List<SqlExpr> args, ASTNode node) {
+        return emitFunction(name, args, false, node)
+    }
+
+    private SqlExpr emitFunction(String name, List<SqlExpr> args, boolean distinct, ASTNode node) {
+        if (!capabilities.supportsFunction(name)) {
+            reject("`${groovyName(node, name)}` maps to ${name}, which is not supported by the ${capabilities.dialectName()} dialect. " +
+                    'Rewrite the query without it, or use a dialect that provides it', node)
+            return null
+        }
+        return new SqlFunction(name, args, distinct)
+    }
+
+    private static String groovyName(ASTNode node, String sqlName) {
+        if (node instanceof MethodCallExpression) {
+            String method = ((MethodCallExpression) node).methodAsString
+            if (method != null) return method + '()'
+        }
+        return sqlName
+    }
+
+    private SqlExpr translateGroovyCast(CastExpression expr) {
+        OperandKind kind = typeKind(expr.type)
+        if (kind != OperandKind.TEXT && kind != OperandKind.NUMBER) {
+            reject('a cast is translated only for a numeric or text type, for example `(suffix as String)` or `(bonus as int)`. ' +
+                    "For an explicit SQL type use `cast(expr, 'VARCHAR')`", expr)
+            return null
+        }
+        SqlExpr inner = translateExpr(expr.expression)
+        if (inner == null) return null
+        if (inner instanceof SqlParam) {
+            return new SqlParam(castX(expr.type, ((SqlParam) inner).valueExpr))
+        }
+        String sqlType = kind == OperandKind.TEXT ? 'VARCHAR' : sqlNumericType(expr.type)
+        return new SqlCast(inner, sqlType)
+    }
+
+    private static String sqlNumericType(ClassNode type) {
+        String name = simpleName(type)
+        if ('long' == name || 'Long' == name) return 'BIGINT'
+        if ('double' == name || 'float' == name || 'Double' == name || 'Float' == name) return 'DOUBLE'
+        if ('BigDecimal' == name || 'BigInteger' == name) return 'DECIMAL'
+        return 'INTEGER'
+    }
+
+    private OperandKind operandKind(Expression expr) {
+        if (expr == null) return OperandKind.OTHER
+        if (expr instanceof ConstantExpression) return constantKind((ConstantExpression) expr)
+        if (expr instanceof CastExpression) {
+            OperandKind castKind = typeKind(((CastExpression) expr).type)
+            if (castKind != OperandKind.OTHER) return castKind
+            return operandKind(((CastExpression) expr).expression)
+        }
+        if (expr instanceof UnaryMinusExpression) {
+            return operandKind(((UnaryMinusExpression) expr).expression) == OperandKind.NUMBER
+                    ? OperandKind.NUMBER : OperandKind.OTHER
+        }
+        if (expr instanceof NotExpression) return operandKind(((NotExpression) expr).expression)
+        if (expr instanceof BooleanExpression) return operandKind(((BooleanExpression) expr).expression)
+        if (expr instanceof BinaryExpression) return binaryKind((BinaryExpression) expr)
+        if (expr instanceof VariableExpression) return typeKind(variableType((VariableExpression) expr))
+        if (expr instanceof PropertyExpression) return OperandKind.COLUMN
+        if (expr instanceof MethodCallExpression) return methodKind((MethodCallExpression) expr)
+        return OperandKind.OTHER
+    }
+
+    private static OperandKind constantKind(ConstantExpression expr) {
+        Object value = expr.value
+        if (value instanceof CharSequence || value instanceof Character) return OperandKind.TEXT
+        if (value instanceof Number) return OperandKind.NUMBER
+        return OperandKind.OTHER
+    }
+
+    private OperandKind binaryKind(BinaryExpression expr) {
+        OperandKind left = operandKind(expr.leftExpression)
+        OperandKind right = operandKind(expr.rightExpression)
+        String op = expr.operation.text
+        if ('+' == op) {
+            if (plusIsText(left, right)) return OperandKind.TEXT
+            if (plusIsNumber(left, right)) return OperandKind.NUMBER
+            return OperandKind.OTHER
+        }
+        if (op in ['-', '*', '/', '%']) {
+            if (left == OperandKind.TEXT || right == OperandKind.TEXT) return OperandKind.OTHER
+            if (left == OperandKind.NUMBER || right == OperandKind.NUMBER || left == OperandKind.COLUMN || right == OperandKind.COLUMN) {
+                return OperandKind.NUMBER
+            }
+        }
+        return OperandKind.OTHER
+    }
+
+    private OperandKind methodKind(MethodCallExpression call) {
+        String method = call.methodAsString
+        if (method == null) return OperandKind.OTHER
+        if ('count' == method || 'sum' == method || 'avg' == method) return OperandKind.NUMBER
+        if (!call.implicitThis && isMathReceiver(call.objectExpression) && ('max' == method || 'min' == method)) {
+            return OperandKind.NUMBER
+        }
+        if (TEXT_RESULT_METHODS.contains(method)) {
+            OperandKind receiver = operandKind(call.objectExpression)
+            if (receiver == OperandKind.TEXT || receiver == OperandKind.COLUMN) return OperandKind.TEXT
+            return OperandKind.OTHER
+        }
+        if ('length' == method || 'size' == method || 'indexOf' == method) {
+            OperandKind receiver = operandKind(call.objectExpression)
+            if (receiver == OperandKind.TEXT || receiver == OperandKind.COLUMN) return OperandKind.NUMBER
+            return OperandKind.OTHER
+        }
+        if ('abs' == method || 'floor' == method || 'ceil' == method || 'round' == method) return OperandKind.NUMBER
+        return OperandKind.OTHER
+    }
+
+    private static OperandKind typeKind(ClassNode type) {
+        if (type == null || ClassHelper.isDynamicTyped(type) || ClassHelper.isObjectType(type)) return OperandKind.OTHER
+        if (isTextType(type)) return OperandKind.TEXT
+        if (isNumericType(type)) return OperandKind.NUMBER
+        return OperandKind.OTHER
+    }
+
+    private static boolean isTextType(ClassNode type) {
+        if (type == null) return false
+        if (ClassHelper.isPrimitiveChar(type)) return true
+        String name = simpleName(type)
+        return 'String' == name || 'GString' == name || 'Character' == name
+    }
+
+    private static boolean isNumericType(ClassNode type) {
+        if (type == null) return false
+        if (ClassHelper.isNumberType(type)) return true
+        if (type.isResolved() && type.isDerivedFrom(ClassHelper.Number_TYPE)) return true
+        // A cast written in source may still be an unresolved ClassNode when the
+        // query is translated, so the simple name has to count too.
+        String name = simpleName(type)
+        return name in ['byte', 'Byte', 'short', 'Short', 'int', 'Integer', 'long', 'Long',
+                        'float', 'Float', 'double', 'Double', 'BigDecimal', 'BigInteger', 'Number']
+    }
+
+    private static String simpleName(ClassNode type) {
+        String name = type.name
+        int dot = name.lastIndexOf('.')
+        return dot < 0 ? name : name.substring(dot + 1)
+    }
+
+    private static ClassNode variableType(VariableExpression expr) {
+        Variable accessed = expr.accessedVariable
+        if (accessed != null) {
+            OperandKind accessedKind = typeKind(accessed.type)
+            if (accessedKind != OperandKind.OTHER) return accessed.type
+        }
+        if (typeKind(expr.originType) != OperandKind.OTHER) return expr.originType
+        return expr.type
+    }
+
+    private static enum OperandKind {
+        TEXT, NUMBER, COLUMN, OTHER
+    }
+
     @CompileStatic
     private class CallSite implements SqlFunctionSite {
         @Override
@@ -1228,6 +1449,11 @@ class GinqToSqlTranslator implements SyntaxErrorReportable {
         @Override
         SqlExpr substring(MethodCallExpression call, List<Expression> args) {
             return translateSubstring(call, args)
+        }
+
+        @Override
+        SqlExpr function(String ansiName, List<SqlExpr> args, ASTNode node) {
+            return emitFunction(ansiName, args, node)
         }
     }
 }

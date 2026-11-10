@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ginq.provider.sql.render;
 
+import org.apache.groovy.ginq.provider.sql.FunctionSupport;
 import org.apache.groovy.ginq.provider.sql.ir.SqlExpr;
 import org.apache.groovy.lang.annotation.Incubating;
 
@@ -63,16 +64,100 @@ public interface Dialect {
     }
 
     /**
+     * Name used in diagnostics and in {@link #supportsFunction(String)}.
+     * Dialects that share an implementation override this so a message names
+     * the dialect the caller asked for.
+     *
+     * @return the dialect family name
+     * @since 7.0.0
+     */
+    default String name() {
+        return "ansi";
+    }
+
+    /**
+     * Whether {@code ansiName} can be rendered, including under a dialect
+     * spelling from {@link #functionName(String)}. The translator treats a
+     * {@code false} result as not translatable, so mixed mode leaves that
+     * clause in memory and strict mode rejects the query. The renderer
+     * refuses the same names, so the decision does not depend on which
+     * function is being mapped.
+     *
+     * @param ansiName the ANSI function name
+     * @return {@code false} when this dialect has no rendering of the function
+     * @since 7.0.0
+     */
+    default boolean supportsFunction(String ansiName) {
+        return FunctionSupport.supports(name(), ansiName);
+    }
+
+    /**
+     * Quote character used when mixed mode names source columns explicitly.
+     * {@code 0} means identifiers are left unquoted, which is only safe for
+     * simple names. Quoting is independent of {@link #identifier(String)}:
+     * H2 leaves ordinary names unquoted so they follow case folding, and
+     * still quotes the names read back from JDBC metadata.
+     *
+     * @return the quote character, or {@code 0}
+     * @since 7.0.0
+     */
+    default char identifierQuote() {
+        return '"';
+    }
+
+    /**
      * Maps an ANSI function name, e.g. {@code UPPER} or {@code SUM},
      * to its dialect-specific counterpart. {@code GREATEST} and {@code LEAST}
      * are included; a dialect that spells those as scalar {@code MAX} and
-     * {@code MIN} overrides this method.
+     * {@code MIN} overrides this method. Callers check
+     * {@link #supportsFunction(String)} first; this method is not the place
+     * that decides a function is unavailable.
      *
      * @param ansiName the ANSI function name
      * @return the dialect-specific function name
      */
     default String functionName(String ansiName) {
         return ansiName;
+    }
+
+    /**
+     * Renders null-safe equality, the SQL form of Groovy {@code ==} and
+     * {@code !=} when neither side is a null literal. The default is ANSI
+     * {@code IS NOT DISTINCT FROM} / {@code IS DISTINCT FROM}. Each operand
+     * is passed to {@link NullSafeRender#expr(SqlExpr)} once, in the order
+     * the text consumes it.
+     *
+     * @param negated {@code true} for Groovy {@code !=}
+     * @param left the left operand
+     * @param right the right operand
+     * @param out receives clause text and operands
+     * @since 7.0.0
+     */
+    default void renderNullSafeEqual(boolean negated, SqlExpr left, SqlExpr right, NullSafeRender out) {
+        out.expr(left);
+        out.text(negated ? " IS DISTINCT FROM " : " IS NOT DISTINCT FROM ");
+        out.expr(right);
+    }
+
+    /**
+     * Receives the text and operands of a null-safe comparison.
+     *
+     * @since 7.0.0
+     */
+    interface NullSafeRender {
+        /**
+         * Appends literal SQL text that contains no placeholders.
+         *
+         * @param text the text to append
+         */
+        void text(String text);
+
+        /**
+         * Renders one operand, including its placeholders.
+         *
+         * @param expr the operand
+         */
+        void expr(SqlExpr expr);
     }
 
     /**
