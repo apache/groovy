@@ -144,11 +144,14 @@ public interface MetaClassRegistry {
         private MetaClass createWithCustomLookup(Class theClass, MetaClassRegistry registry) {
             try {
                 final String customName = "groovy.runtime.metaclass." + theClass.getName() + "MetaClass";
-                // Class.forName records a missing name in every parallel-capable
-                // loader it asks, and the entry is never removed. The lookup can
-                // only succeed for a class already defined by this runtime's
-                // loader or present as a classpath resource.
-                if (!customMetaClassVisible(customName)) {
+                // Class.forName keeps every name it is asked for in parallelLockMap,
+                // and the entry is never removed. The names that grow without bound
+                // are the companions of generated script and template classes
+                // (groovy.runtime.metaclass.<generated>MetaClass): no parent can
+                // define that fresh name, and there is no .class resource. Skip
+                // only those. A custom MetaClass defined with no .class resource,
+                // and the companion of any other class, still goes through Class.forName.
+                if (!customMetaClassVisible(theClass, customName)) {
                     return createNormalMetaClass(theClass, registry);
                 }
                 final Class customMetaClass = Class.forName(customName);
@@ -169,9 +172,13 @@ public interface MetaClassRegistry {
             }
         }
 
-        private static boolean customMetaClassVisible(String customName) {
+        private static boolean customMetaClassVisible(Class theClass, String customName) {
             ClassLoader loader = MetaClassRegistry.class.getClassLoader();
             if (loader == null) {
+                // Class.forName(String) uses the bootstrap loader that defined this class.
+                return true;
+            }
+            if (!isGeneratedScriptOrTemplate(theClass)) {
                 return true;
             }
             for (ClassLoader current = loader; current != null; current = current.getParent()) {
@@ -181,6 +188,21 @@ public interface MetaClassRegistry {
                 }
             }
             return classResourcePresent(loader, customName);
+        }
+
+        /**
+         * True for a script or template class, and for a class compiled with
+         * one. Each of those compilations chooses a new name.
+         */
+        private static boolean isGeneratedScriptOrTemplate(Class theClass) {
+            for (Class current = theClass; current != null; current = current.getEnclosingClass()) {
+                ClassLoader defining = current.getClassLoader();
+                if (defining instanceof GroovyClassLoader.InnerLoader
+                        && ((GroovyClassLoader.InnerLoader) defining).isScriptClassDefined()) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /**

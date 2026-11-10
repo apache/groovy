@@ -253,6 +253,7 @@ public class GroovyClassLoader extends URLClassLoader {
             unit.setClassgenCallback((cv, cn) -> generatedClasses.put(cn, cv));
             unit.compile(Phases.CLASS_GENERATION);
             collect(collector, generatedClasses);
+            markScriptCompilation(collector.getLoadedClasses());
             definePackageInternal(collector.generatedClass.getName());
             return collector.generatedClass;
         } catch (CompilationFailedException e) {
@@ -446,6 +447,9 @@ public class GroovyClassLoader extends URLClassLoader {
         unit.compile(config == null || config.getTargetDirectory() == null ? Phases.CLASS_GENERATION : Phases.OUTPUT);
 
         collect(collector, generatedClasses);
+        // Mark before the classes are published. A reader can otherwise
+        // observe a class whose loader is not yet known to have defined a script.
+        markScriptCompilation(collector.getLoadedClasses());
 
         Class<?> answer = collector.generatedClass;
         String mainName = su.getAST().getMainClassName();
@@ -472,6 +476,21 @@ public class GroovyClassLoader extends URLClassLoader {
      */
     private static void markDefinedInMemory(final CompilationUnit unit) {
         unit.getAST().putNodeMetaData(InnerLoader.class, Boolean.TRUE);
+    }
+
+    /**
+     * Records that this compilation defined a script or template class.
+     * Those classes, and the classes compiled with them, are the ones whose
+     * custom MetaClass companion names grow without bound.
+     */
+    private static void markScriptCompilation(final Collection<?> defined) {
+        for (Object item : defined) {
+            Class<?> type = (Class<?>) item;
+            if (Script.class.isAssignableFrom(type) && type.getClassLoader() instanceof InnerLoader) {
+                ((InnerLoader) type.getClassLoader()).noteScriptClassDefined();
+                return;
+            }
+        }
     }
 
     private static void validate(final GroovyCodeSource codeSource) {
@@ -1218,6 +1237,8 @@ public class GroovyClassLoader extends URLClassLoader {
     public static class InnerLoader extends GroovyClassLoader {
         private final GroovyClassLoader delegate;
         private final long timeStamp;
+        /** True once this compilation has defined a script or template class. */
+        private volatile boolean scriptClassDefined;
 
         /**
          * Creates an inner loader delegating to the supplied outer Groovy class loader.
@@ -1331,6 +1352,19 @@ public class GroovyClassLoader extends URLClassLoader {
          */
         public long getTimeStamp() {
             return timeStamp;
+        }
+
+        /**
+         * True when the compilation that created this loader defined a script
+         * or template class. Checked when resolving a custom MetaClass so a
+         * generated companion name is not recorded on a long-lived loader.
+         */
+        boolean isScriptClassDefined() {
+            return scriptClassDefined;
+        }
+
+        private void noteScriptClassDefined() {
+            scriptClassDefined = true;
         }
 
         /** {@inheritDoc} */
