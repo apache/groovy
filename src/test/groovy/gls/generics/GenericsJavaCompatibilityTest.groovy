@@ -573,6 +573,44 @@ final class GenericsJavaCompatibilityTest {
         assertPositive(className, javaSrc, 'second-first')
     }
 
+    /**
+     * JLS 18.5.2: the result of a generic method of a generic receiver is inferred from its
+     * arguments. When a lambda's result names a type parameter of the calling method that has
+     * the same name as one of the receiver's, as {@code T} of {@code <T> m()} and {@code T} of
+     * {@code Optional<T>}, it is the calling method's.
+     */
+    @Test
+    void testLambdaResultNamingCallerTypeParameterOfReceiverName() {
+        final String className = 'gls.generics.test.ReceiverTypeParameterNamesake'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            import java.util.concurrent.CompletableFuture;
+            import java.util.function.Function;
+            public class ReceiverTypeParameterNamesake {
+                static <T> Optional<List<T>> wrap(Optional<String> value, T item) {
+                    return value.map((String s) -> Collections.singletonList(item));
+                }
+                static <T> CompletableFuture<List<T>> each(CompletableFuture<List<Object>> future, Function<Object, T> fn) {
+                    CompletableFuture<List<T>> result = future.thenApply((List<Object> values) -> {
+                        List<T> out = new ArrayList<>();
+                        for (Object value : values) {
+                            out.add(fn.apply(value));
+                        }
+                        return out;
+                    });
+                    return result;
+                }
+                public static String test() throws Exception {
+                    Function<Object, String> name = String::valueOf;
+                    return String.valueOf(wrap(Optional.of("x"), 3).get()) + ":" +
+                        String.valueOf(each(CompletableFuture.completedFuture(Arrays.<Object>asList(1, 2)), name).get());
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, '[3]:[1, 2]')
+    }
+
     // =========================================================================
     // Category 4: Diamond and target-type inference (JLS 15.9.3, 18.5.2)
     // =========================================================================
