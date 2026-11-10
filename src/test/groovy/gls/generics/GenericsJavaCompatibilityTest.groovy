@@ -3869,6 +3869,99 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 4.6, 4.8: the erasure in the type of {@code getClass()} is a raw type, which is
+     * not a subtype of a parameterization of the same generic type (JLS 4.10.2). So
+     * {@code Class<? extends List>} is not a {@code Class<? extends List<String>>}.
+     */
+    @Test
+    void testNegativeGetClassOfParameterizedReceiverType() {
+        final String className = 'gls.generics.test.GetClassParameterizedReceiver'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.ArrayList;
+            import java.util.List;
+            public class GetClassParameterizedReceiver {
+                static Class<? extends List<String>> typeOf(List<String> strings) {
+                    return strings.getClass();
+                }
+                public static void test() {
+                    typeOf(new ArrayList<>());
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends java.util.List> to: java.lang.Class<? extends java.util.List<java.lang.String>>")
+    }
+
+    /**
+     * JLS 4.6: the erasure of a type variable is the erasure of its leftmost bound, so for
+     * {@code T extends Comparable<T>} the type of {@code getClass()} is
+     * {@code Class<? extends Comparable>} and not a {@code Class<? extends Comparable<T>>}.
+     */
+    @Test
+    void testNegativeGetClassOfTypeVariableWithParameterizedBound() {
+        final String className = 'gls.generics.test.GetClassParameterizedBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassParameterizedBound {
+                static <T extends Comparable<T>> Class<? extends Comparable<T>> typeOf(T value) {
+                    return value.getClass();
+                }
+                public static void test() {
+                    typeOf("x");
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends java.lang.Comparable> to: java.lang.Class<? extends java.lang.Comparable<T>>")
+    }
+
+    /**
+     * JLS 4.6: within a generic class the type of {@code getClass()} is the {@code Class}
+     * of the raw type, which is not a {@code Class<? extends Outer<T>>}.
+     */
+    @Test
+    void testNegativeGetClassOfThisInGenericClass() {
+        final String className = 'gls.generics.test.GetClassGenericThis'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassGenericThis<T> {
+                Class<? extends GetClassGenericThis<T>> type() {
+                    return getClass();
+                }
+                public static void test() {
+                    new GetClassGenericThis<String>().type();
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends gls.generics.test.GetClassGenericThis> to: java.lang.Class<? extends gls.generics.test.GetClassGenericThis<T>>")
+    }
+
+    /**
+     * JLS 4.5.1, 4.10.2: {@code ? extends A} is contained by {@code ? extends B} only when
+     * {@code A} is a subtype of {@code B}, and a type that is not a type variable is not a
+     * subtype of one. So {@code Class<? extends Number>} is not a {@code Class<? extends T>}.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardForTypeVariableBound() {
+        final String className = 'gls.generics.test.WildcardForTypeVariableBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class WildcardForTypeVariableBound {
+                static <T extends Number> Class<? extends T> narrow(Class<? extends Number> type) {
+                    return type;
+                }
+                public static void test() {
+                    Class<? extends Integer> type = narrow(Integer.class);
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends java.lang.Number> to: java.lang.Class<? extends T>")
+    }
+
+    /**
      * JLS 4.5.1 containment and 4.10.2: {@code List<Integer>} is a subtype of
      * {@code List<? extends Number>} even though it is not a subtype of
      * {@code List<Number>} (invariance is covered by

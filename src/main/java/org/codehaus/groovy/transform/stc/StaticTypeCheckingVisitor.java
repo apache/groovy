@@ -333,6 +333,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkP
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.concreteArgumentContainsWildcard;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeVariableBoundEscapes;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.upperBoundEscapes;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.evaluateExpression;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsConnections;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsParameterMapOfThis;
@@ -2249,9 +2250,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         boolean unresolved = missesGenericsTypes(right);
         boolean incompatible = !unresolved && (
                 !GenericsUtils.buildWildcardType(leftExpressionType).isCompatibleWith(right)
-                || concreteArgumentContainsWildcard(leftExpressionType, right));
+                || concreteArgumentContainsWildcard(leftExpressionType, right)
+                || upperBoundEscapes(leftExpressionType, right));
         boolean typeVariableEscapes = unresolved && (typeVariableBoundEscapes(leftExpressionType, right)
-                || concreteArgumentContainsWildcard(leftExpressionType, right));
+                || concreteArgumentContainsWildcard(leftExpressionType, right)
+                || upperBoundEscapes(leftExpressionType, right));
         if (incompatible || typeVariableEscapes) {
             addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(rightExpressionType) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
         }

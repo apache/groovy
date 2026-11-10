@@ -1768,6 +1768,65 @@ public abstract class StaticTypeCheckingSupport {
         return typeVariableBoundEscapes(target.getType(), source.getType());
     }
 
+    /**
+     * JLS 4.5.1: {@code ? extends A} is contained by {@code ? extends B} only when
+     * {@code A} is a subtype of {@code B}. A raw type is not a subtype of a
+     * parameterization of a generic type (JLS 4.8, 4.10.2), and a type that is not
+     * a type variable is not a subtype of one. So {@code Class<? extends List>} is
+     * not a {@code Class<? extends List<String>>}, and {@code Class<? extends Number>}
+     * is not a {@code Class<? extends T>} for {@code T extends Number}.
+     * A raw type that is not the bound of a wildcard stays an unchecked conversion.
+     *
+     * @return {@code true} when the assignment should be rejected
+     */
+    static boolean upperBoundEscapes(final ClassNode target, final ClassNode source) {
+        if (target == null || source == null) return false;
+        if (!target.equals(source)) {
+            if (source.getGenericsTypes() == null || !implementsInterfaceOrIsSubclassOf(source, target)) return false;
+            ClassNode viewed = GenericsUtils.parameterizeType(source, target);
+            if (viewed == null || viewed == source || !target.equals(viewed)) return false;
+            return upperBoundEscapes(target, viewed);
+        }
+        GenericsType[] targetArgs = target.getGenericsTypes();
+        GenericsType[] sourceArgs = source.getGenericsTypes();
+        if (targetArgs == null || sourceArgs == null || targetArgs.length != sourceArgs.length) return false;
+        for (int i = 0; i < targetArgs.length; i += 1) {
+            ClassNode targetBound = soleUpperBound(targetArgs[i]);
+            ClassNode sourceBound = soleUpperBound(sourceArgs[i]);
+            if (targetBound != null && sourceBound != null && upperBoundNotWithin(sourceBound, targetBound)) return true;
+        }
+        return false;
+    }
+
+    /** {@code B} for a wildcard {@code ? extends B}, otherwise {@code null}. */
+    private static ClassNode soleUpperBound(final GenericsType type) {
+        if (type.isPlaceholder() || !type.isWildcard() || type.getLowerBound() != null) return null;
+        ClassNode[] upper = type.getUpperBounds();
+        return upper != null && upper.length == 1 ? upper[0] : null;
+    }
+
+    private static boolean upperBoundNotWithin(ClassNode source, ClassNode target) {
+        while (source.isArray() && target.isArray()) {
+            source = source.getComponentType();
+            target = target.getComponentType();
+        }
+        // a type variable is checked through its bound and "#T" is still to be inferred
+        if (source.isGenericsPlaceHolder() || isInferencePlaceholder(target)) return false;
+        if (target.isGenericsPlaceHolder()) return true;
+        boolean rareType = isParameterized(target.getOuterClassType()); // Outer<T>.Inner
+        if ((rareType || isParameterized(target)) && isRawType(source)) return true;
+        if (rareType && source.equals(target) && source.getOuterClassType() == null) return true;
+        return upperBoundEscapes(target, source);
+    }
+
+    private static boolean isParameterized(final ClassNode type) {
+        return type != null && ArrayGroovyMethods.asBoolean(type.getGenericsTypes());
+    }
+
+    private static boolean isRawType(final ClassNode type) {
+        return type.getGenericsTypes() == null && type.redirect().getGenericsTypes() != null;
+    }
+
     private static boolean isInferencePlaceholder(final GenericsType type) {
         if (type == null) return false;
         if (type.isPlaceholder() && type.getName() != null && type.getName().startsWith("#")) return true;
@@ -1950,7 +2009,8 @@ public abstract class StaticTypeCheckingSupport {
             // that are not containment errors.
             if (!GenericsUtils.hasUnresolvedGenerics(parameterType)
                     && !GenericsUtils.hasUnresolvedGenerics(argumentType)
-                    && concreteArgumentContainsWildcard(parameterType, argumentType)) {
+                    && (concreteArgumentContainsWildcard(parameterType, argumentType)
+                        || upperBoundEscapes(parameterType, argumentType))) {
                 failure = true;
             }
             failure |= inferenceCheck(fixedPlaceHolders, candidateGenerics, parameterType, argumentType, i >= lastParamIndex);
