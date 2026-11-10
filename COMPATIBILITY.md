@@ -1158,6 +1158,47 @@ package-private constructor of a class that a `GroovyClassLoader` defined in
 another compilation, such as a class of an earlier `GroovyShell` parse. Dynamic
 and `@TypeChecked` code select the constructor at run time as before.
 
+### Groovy 6.0.1 — statically compiled code in a `GroovyShell` reports what the JVM refuses across class loaders (GROOVY-12568)
+
+The JVM allows access to a protected or package-private member only within
+the same run-time package, which is the package name and the class loader. A
+`GroovyClassLoader` defines each compilation in memory with a class loader of
+its own, so a class of an earlier `GroovyShell` parse, or a precompiled class
+used by a script, is in another run-time package even when the package name is
+the same. Statically compiled code that calls such a constructor or method, or
+reads or writes such a field, compiled and then failed with
+`IllegalAccessError` when it ran.
+
+With the new option `CompilerConfiguration.RUNTIME_PACKAGE_CHECK`, such an
+access is a compile error, reported when the class is generated:
+
+```
+Cannot call package-private method pm of p.M from class p.C: M is defined by
+another class loader, so the JVM refuses this access. Use @CompileDynamic to
+reach it through the meta-class
+```
+
+**Who is affected.** `@CompileStatic` code compiled by a `GroovyShell`,
+including scripts run with the `groovy` command: a shell turns the option on
+for the class loader it creates, unless the configuration sets it. Such code that used to fail at run time now fails
+to compile, and so does such code on a path that never ran. Mark the method or
+class `@CompileDynamic`, or make the member public. A protected member that a
+subclass reaches through `this`, `super` or a receiver of the subclass type is
+not reported, as the JVM allows it.
+
+**What is unchanged.** Code compiled to class files (groovyc, Gradle, Maven,
+Ant, joint compilation), dynamic and `@TypeChecked` code, members of classes
+of the same compilation, and constructor references, which already go through
+the meta-class (GROOVY-12488). A `GroovyClassLoader` that a shell did not
+create, as used by `parseClass` or JSR-223, has the option off. The bytecode
+is the same as before.
+
+**Opting out.** Set `RUNTIME_PACKAGE_CHECK` to `false` in the configuration's
+optimization options, or the system property
+`groovy.runtime.package.check=false`, to keep the failure at run time.
+`CompilerConfiguration.RUNTIME_PACKAGE_CHECK` is a new `@Incubating` constant;
+`japicmp` sees only the addition.
+
 ### Groovy 7 — a final `def` field is read with the type of its value (GROOVY-12315)
 
 Within the class that declares it, a read of a final field declared without a
@@ -1439,6 +1480,61 @@ is still rejected.
 `groovy.classtag.preemption.disable` (or
 `CompilerConfiguration.setClassTagPreemptionDisabled`) keeps the previous
 behaviour.
+
+### Groovy 7 — a closure skips a null owner or delegate (GROOVY-12667, GROOVY-12671)
+
+A closure's owner or delegate can be null: after `dehydrate()`, after
+`rehydrate` with a null argument, or after `delegate = null`. A method call or
+property access in the closure body that resolves through the owner and
+delegate now skips a null one instead of calling or reading on null:
+
+- **The other candidate answers.** With `OWNER_FIRST` (the default) and a null
+  owner, the delegate's method or property is used. Earlier versions threw
+  `NullPointerException` for a property in every version, and for a method
+  from Groovy 4 on (Groovy 3 skipped the null for methods). With
+  `DELEGATE_FIRST` and a null delegate, methods now use the owner as
+  properties already did.
+- **With no candidate, the error is a missing member.** When both are null, or
+  the one target of `OWNER_ONLY` or `DELEGATE_ONLY` is null, a method of the
+  closure itself (`toString()`, `with`, `tap` and the like) runs on the
+  closure. Any other method throws `MissingMethodException`, and a property
+  throws `MissingPropertyException`, where `NullPointerException` was thrown
+  before. In Groovy 6, `toString()` and `with` instead ran against `null`.
+
+The rules are the same whether the closure dispatches through its own
+metaclass or, once it has an `ExpandoMetaClass` (after
+`ExpandoMetaClass.enableGlobally()` or after adding to a closure's metaclass),
+through `MetaClassImpl`. In a `@CompileStatic` closure, a property write
+resolves this way too. A method call or property read compiled against the
+owner is unchanged.
+
+The resulting rules are stated in full under "Resolution rules" in
+[`src/spec/doc/core-closures.adoc`](src/spec/doc/core-closures.adoc).
+
+**Who is affected.** Code that catches `NullPointerException` around a call
+in a closure with a null owner or delegate, and code that relied on
+`toString()` or `with` receiving `null` there. Nothing that ran without an
+exception before behaves differently, apart from those methods of the closure.
+No public API changes, so `japicmp` does not report this.
+
+### Groovy 7 — a closure's metaclass does not expose the private fields of `Closure` (GROOVY-12675, GROOVY-12680)
+
+A closure class does not inherit the private fields of `groovy.lang.Closure`
+(`bcw`, `thisType`, `mopPerturbed`, `serialVersionUID` and others), and its
+metaclass now treats them as any metaclass treats a superclass's private
+fields: `getProperties()` does not list them, `getMetaProperty` and
+`hasProperty` return null, and `getProperty` and `setProperty` throw
+`MissingPropertyException`. Earlier versions returned `bcw` and
+`serialVersionUID` through the metaclass. From Groovy 5 they also found and
+overwrote `thisType`, through the metaclass or through `closure.thisType = ...`
+under `TO_SELF`, and overwriting it broke the closure's access to private
+fields of its enclosing class. A `MissingPropertyException` for a closure no
+longer suggests these fields ("Possible solutions: bcw").
+
+**Who is affected.** Only code reading these fields through a closure's
+metaclass. `closure.properties` and the public properties of `Closure`
+(`owner`, `delegate`, `resolveStrategy`, `maximumNumberOfParameters` and the
+rest) are unchanged.
 
 ## The binary-compatibility check
 
