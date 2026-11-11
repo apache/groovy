@@ -1707,16 +1707,24 @@ type arguments included.
   `Class<? extends List<String>>` for `<T extends List<Integer>>`,
   `Enum.valueOf(type, name)` for a `Class<? extends Enum<?>>` and
   `Collections.sort(list)` for a `List<? extends Comparable<?>>`.
+- **A wildcard with no upper bound is checked too.** `?` and `? super B`
+  stand for a type with the upper bound that the generic type declares for
+  that type argument: `Object` for a `List<?>` or a `Class<?>`, and `Number`
+  for a `NumBox<?>` declared as `NumBox<N extends Number>`. So a `List<?>` and
+  a `List<? super Integer>` are rejected for `<T extends Number>`, while an
+  `EnumSet<?>` is accepted for `<T extends Enum<T>>`. `Enum.valueOf(type, name)`
+  and `method.getAnnotation(type)` for a `Class<?>`, and
+  `Collections.sort(list)` for a `List<?>`, were accepted and are now compile
+  errors, as in Java.
 
 **Who is affected.** Statically checked code that makes such a call. Declare
-the wildcard with a bound that is within the bounds of the type parameter, or
-use a raw type, which is still an unchecked conversion: a
-`Class<? extends Enum>` or `(Class) type` for `Enum.valueOf`, and
-`(List) list` for `Collections.sort`.
+the wildcard with a bound that is within the bounds of the type parameter,
+such as a `Class<? extends Annotation>` for `getAnnotation`, or use a raw
+type, which is still an unchecked conversion: a `Class<? extends Enum>` or
+`(Class) type` for `Enum.valueOf`, and `(List) list` for `Collections.sort`.
 
-**What is unchanged.** Dynamic code, an argument without a wildcard, a
-wildcard with no upper bound (`?` or `? super B`) and a method whose type
-parameter has no bound.
+**What is unchanged.** Dynamic code, an argument without a wildcard and a
+method whose type parameter has no bound.
 
 ### Groovy 7 — type checking types `getClass()` by its receiver (GROOVY-12755)
 
