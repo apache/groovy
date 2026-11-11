@@ -2904,6 +2904,34 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-12755
     @Test
+    void testGetClassIsClassOfReceiverErasure7() {
+        assertScript '''
+            Class<? extends String> typeOf(Object value) {
+                if (value instanceof String) {
+                    assert value.substring(1) == 'y' // the receiver is a String here
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.lang.Class<? extends java.lang.String>'
+                    })
+                    def type = value.getClass()
+                    return type
+                }
+                String
+            }
+            assert typeOf('xy') == String
+        '''
+
+        shouldFailWithMessages '''
+            Class<? extends String> typeOf(Object value) {
+                if (value instanceof String) {
+                }
+                value.getClass()
+            }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.String>'
+    }
+
+    // GROOVY-12755
+    @Test
     void testGetClassIsNotClassOfInnerClassSimpleName() {
         shouldFailWithMessages '''
             class Outer<T> {
