@@ -5548,6 +5548,48 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12754
+    @Test
+    void testWildcardArgumentWithoutUpperBoundForBoundedTypeParameter() {
+        for (type in ['List<?>', 'List<? extends Object>', 'List<? super Integer>', 'List<? super Number>']) {
+            shouldFailWithMessages """
+                public <T extends Number> T first(List<T> list) { list.get(0) }
+                void test($type list) {
+                    first(list)
+                }
+            """,
+                '#first(java.util.List<T>) with arguments [java.util.List<?'
+        }
+
+        for (type in ['Class<?>', 'Class<? extends Object>']) {
+            shouldFailWithMessages """
+                public <T extends List<Integer>> T cast(Class<T> type, value) { type.cast(value) }
+                void test($type type) {
+                    cast(type, [1])
+                }
+            """,
+                '#cast(java.lang.Class<T>, java.lang.Object) with arguments [java.lang.Class<?>, '
+        }
+
+        assertScript '''
+            class NumBox<N extends Number> {
+                N value
+            }
+            public <T extends Number> T valueOf(NumBox<T> box) { box.value }
+            public <T extends Enum<T>> int sizeOf(EnumSet<T> set) { set.size() }
+            public <T> T first(List<T> list) { list.get(0) }
+
+            void test(NumBox<?> one, NumBox<? super Integer> two, EnumSet<?> set, List<?> list) {
+                Number n = valueOf(one)
+                assert n == 1
+                assert valueOf(two) == 2
+                assert sizeOf(set) == 1
+                assert first(list) == 'x'
+            }
+            test(new NumBox<Integer>(value: 1), new NumBox<Number>(value: 2), EnumSet.of(Thread.State.NEW), ['x'])
+        '''
+    }
+
     // GROOVY-5885
     @Test
     void testMethodLevelGenericsForMethodCall2() {
