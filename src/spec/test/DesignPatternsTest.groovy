@@ -1825,7 +1825,7 @@ final class DesignPatternsTest extends CompilableTestSupport {
                 [configure: { binding ->
                     binding.bind(Calculator)
                            .to(CalculatorImpl)
-                           .asEagerSingleton() } ] as com.google.inject.Module
+                           .asEagerSingleton() } ] as Module
             )
 
             def client = injector.getInstance(Client)
