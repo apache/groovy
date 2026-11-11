@@ -19,6 +19,8 @@
 package groovy
 
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.ModuleImportHelper
+import org.codehaus.groovy.control.ResolveVisitor
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -274,29 +276,38 @@ final class ImportTest {
         '''
     }
 
-    // GROOVY-11896: JLS 7.5.5 Example 7.5.5-3 — when a module import exposes
-    // two packages that both contain a public type with the same simple name,
-    // using that simple name must be a compile-time error, not a silent pick.
-    // Here, java.desktop exports both javax.swing.text (with Element interface)
-    // and javax.swing.text.html.parser (with Element class).
+    // A module import is a star import of each exported package. The first
+    // accessible type in that expansion supplies the simple name. A later
+    // single-type import is how a program picks a different one.
     @Test
-    void testImportModuleAmbiguousSimpleName() {
-        def err = shouldFail '''
+    void testImportModuleUsesFirstExportedPackage() {
+        def finder = java.lang.module.ModuleFinder.ofSystem()
+        def names = []
+        ModuleImportHelper.collectModuleExports(
+                finder.find('java.desktop').orElseThrow(), finder, names, new LinkedHashSet<>())
+        String expected = null
+        for (String pkg : names) {
+            if (ResolveVisitor.DEFAULT_IMPORTS.contains(pkg + '.')) continue
+            try {
+                def type = Class.forName(pkg + '.Element')
+                if (java.lang.reflect.Modifier.isPublic(type.modifiers)) {
+                    expected = type.name
+                    break
+                }
+            } catch (ClassNotFoundException ignored) {
+            }
+        }
+        assert expected != null
+        assertScript """
             import module java.desktop
-            Element e = null
-        '''
-        assert err.message.contains('ambiguous'),
-                "expected ambiguity error, got: ${err.message}"
+            assert Element.name == '${expected}'
+        """
     }
 
-    // GROOVY-11896: JLS 6.4.1 — a type-import-on-demand declaration shadows
-    // types imported by a single-module-import declaration. The `import module`
-    // is written FIRST so that without proper tier separation, the module-
-    // expanded java.awt.* would win by list ordering. With correct shadowing,
-    // the user's `import java.util.*` wins regardless of source order, and
-    // List resolves to java.util.List rather than java.awt.List.
+    // Source order decides between a module import and a star import.
+    // The module import is not a separate tier that a later star always hides.
     @Test
-    void testImportModuleShadowedByStarImport() {
+    void testImportModuleAndStarImportUseSourceOrder() {
         assertScript '''
             import module java.desktop
             assert List.name == 'java.awt.List'
@@ -304,6 +315,11 @@ final class ImportTest {
         assertScript '''
             import module java.desktop
             import java.util.*
+            assert List.name == 'java.awt.List'
+        '''
+        assertScript '''
+            import java.util.*
+            import module java.desktop
             assert List.name == 'java.util.List'
         '''
     }

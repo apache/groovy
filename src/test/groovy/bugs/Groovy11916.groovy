@@ -20,7 +20,9 @@ package bugs
 
 import groovy.lang.GroovyClassLoader
 import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.Phases
+import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
@@ -30,9 +32,10 @@ import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 /**
- * Star imports and the implicit {@code java.lang} import resolve only accessible
- * types. Two or more distinct accessible types imported on demand make the simple
- * name ambiguous. An explicit single-type import, a fully qualified name, and
+ * Star imports, module imports, and default imports resolve only accessible
+ * types. A source import shadows those defaults, including {@code java.lang}.
+ * Two source star imports bind the first accessible type in source order.
+ * An explicit single-type import, a fully qualified name, and
  * {@code Class.forName} still name a type that is not public.
  */
 final class Groovy11916 {
@@ -77,9 +80,9 @@ final class Groovy11916 {
         assert Modifier.isPrivate(types.loadClass('p.Priv$Secret').modifiers)
     }
 
-    private static GroovyClassLoader compile(ClassLoader parent, Map<String, String> sources) {
-        def loader = new GroovyClassLoader(parent)
-        def unit = new CompilationUnit(null, null, loader)
+    private static GroovyClassLoader compile(ClassLoader parent, Map<String, String> sources, CompilerConfiguration config = null) {
+        def loader = new GroovyClassLoader(parent, config)
+        def unit = new CompilationUnit(config, null, loader)
         sources.each { name, text -> unit.addSource(name + '.groovy', text) }
         unit.compile(Phases.CLASS_GENERATION)
         unit.classes.sort { it.name }.each { groovyClass ->
@@ -108,22 +111,22 @@ class Use {
 """
     }
 
-    private static String expectedOnDemand(String a, String b, String c) {
-        List<String> hits = []
-        if (a == 'p') hits << 'pa.X'
-        if (b == 'p') hits << 'pb.X'
-        if (c == 'p') hits << 'pc.X'
-        return hits.isEmpty() ? 'unresolved' : hits.size() == 1 ? hits[0] : 'ambiguous'
+    /** First public type in source order. {@code p} public, {@code k} package-private, {@code m} missing. */
+    private static String firstStar(String a, String b, String c) {
+        if (a == 'p') return 'pa.X'
+        if (b == 'p') return 'pb.X'
+        if (c == 'p') return 'pc.X'
+        return 'unresolved'
     }
 
-    private static String classifyUse(Map<String, String> sources, String className) {
+    private static String classifyUse(Map<String, String> sources, String className, CompilerConfiguration config = null) {
         // Dependency types are compiled first so package-private modifiers are
         // already on the bytecode when the importing compilation unit is resolved.
         def deps = sources.findAll { name, text -> !name.endsWith('/Use') }
         def use = sources.findAll { name, text -> name.endsWith('/Use') }
         try {
             def parent = deps ? compile(Groovy11916.classLoader, deps) : Groovy11916.classLoader
-            def loader = compile(parent, use)
+            def loader = compile(parent, use, config)
             return loader.loadClass(className).getDeclaredMethod('which').invoke(null).name
         } catch (Exception e) {
             String text = ''
@@ -370,7 +373,7 @@ class Use {
 
     // GROOVY-11916
     @Test
-    void testExplicitStarImportMatrixMatchesJavac() {
+    void testStarImportsBindFirstAccessibleType() {
         def failures = []
         for (String a : ['m', 'p', 'k']) {
             for (String b : ['m', 'p', 'k']) {
@@ -381,7 +384,7 @@ class Use {
                     putType(sources, 'pc', 'X', c)
                     sources['user/Use'] = useSource('user', 'import pa.*\nimport pb.*\nimport pc.*', 'X')
                     def actual = classifyUse(sources, 'user.Use')
-                    def expected = expectedOnDemand(a, b, c)
+                    def expected = firstStar(a, b, c)
                     if (actual != expected) {
                         failures << "pa=$a pb=$b pc=$c expected $expected but was $actual"
                     }
@@ -403,8 +406,8 @@ class Use {
         putType(sources, 'pc', 'X', 'p')
         sources['user/Use'] = useSource('user', 'import pc.*\nimport pb.*\nimport pa.*', 'X')
         def reversed = classifyUse(sources, 'user.Use')
-        if (reversed != 'ambiguous') {
-            failures << "reversed import order expected ambiguous but was $reversed"
+        if (reversed != 'pc.X') {
+            failures << "reversed import order expected pc.X but was $reversed"
         }
         assert failures.isEmpty() : failures.join('\n')
     }
@@ -422,7 +425,7 @@ class Use {
                     putType(sources, 'pc', 'X', c)
                     sources['pa/Use'] = useSource('pa', 'import pa.*\nimport pb.*\nimport pc.*', 'X')
                     def actual = classifyUse(sources, 'pa.Use')
-                    def expected = a == 'm' ? expectedOnDemand('m', b, c) : 'pa.X'
+                    def expected = a == 'm' ? firstStar('m', b, c) : 'pa.X'
                     if (actual != expected) {
                         failures << "pa=$a pb=$b pc=$c expected $expected but was $actual"
                     }
@@ -434,7 +437,7 @@ class Use {
 
     // GROOVY-11916
     @Test
-    void testJavaLangOnDemandTiesWithExplicitStars() {
+    void testDeclaredStarShadowsLanguageDefaults() {
         def failures = []
         for (String b : ['m', 'p', 'k']) {
             for (String c : ['m', 'p', 'k']) {
@@ -443,7 +446,7 @@ class Use {
                 putType(sources, 'pc', 'String', c)
                 sources['user/Use'] = useSource('user', 'import pb.*\nimport pc.*', 'String')
                 def actual = classifyUse(sources, 'user.Use')
-                def expected = (b == 'p' || c == 'p') ? 'ambiguous' : 'java.lang.String'
+                def expected = b == 'p' ? 'pb.String' : c == 'p' ? 'pc.String' : 'java.lang.String'
                 if (actual != expected) {
                     failures << "pb=$b pc=$c expected $expected but was $actual"
                 }
@@ -453,8 +456,15 @@ class Use {
         putType(sources, 'pb', 'String', 'p')
         sources['user/Use'] = useSource('user', 'import java.lang.*\nimport pb.*', 'String')
         def explicitLang = classifyUse(sources, 'user.Use')
-        if (explicitLang != 'ambiguous') {
-            failures << "explicit java.lang.* plus pb.String expected ambiguous but was $explicitLang"
+        if (explicitLang != 'java.lang.String') {
+            failures << "source java.lang.* before pb.* expected java.lang.String but was $explicitLang"
+        }
+        sources = [:]
+        putType(sources, 'pb', 'String', 'p')
+        sources['user/Use'] = useSource('user', 'import pb.*\nimport java.lang.*', 'String')
+        def userFirst = classifyUse(sources, 'user.Use')
+        if (userFirst != 'pb.String') {
+            failures << "pb.* before source java.lang.* expected pb.String but was $userFirst"
         }
         sources = ['user/Use': useSource('user', 'import java.lang.*', 'String')]
         def onlyLang = classifyUse(sources, 'user.Use')
@@ -466,7 +476,7 @@ class Use {
 
     // GROOVY-11916
     @Test
-    void testStaticOnDemandImportsAreAmbiguous() {
+    void testStaticOnDemandUsesSourceOrder() {
         def holder = '''
             package pb
             class Holder {
@@ -489,20 +499,34 @@ class Use {
             'pc/Other' : other,
             'user/Use' : useSource('user', 'import static pb.Holder.*\nimport static pc.Other.*', 'X')
         ], 'user.Use')
-        assert two == 'ambiguous' : two
+        assert two == 'pb.Holder$X' : two
+
+        def reversed = classifyUse([
+            'pb/Holder': holder,
+            'pc/Other' : other,
+            'user/Use' : useSource('user', 'import static pc.Other.*\nimport static pb.Holder.*', 'X')
+        ], 'user.Use')
+        assert reversed == 'pc.Other$X' : reversed
 
         def withTop = classifyUse([
             'pb/Holder': holder,
             'pc/Other' : other,
             'user/Use' : useSource('user', 'import static pb.Holder.*\nimport pc.*', 'X')
         ], 'user.Use')
-        assert withTop == 'ambiguous' : withTop
+        assert withTop == 'pb.Holder$X' : withTop
+
+        def typeFirst = classifyUse([
+            'pb/Holder': holder,
+            'pc/Other' : other,
+            'user/Use' : useSource('user', 'import pc.*\nimport static pb.Holder.*', 'X')
+        ], 'user.Use')
+        assert typeFirst == 'pc.X' : typeFirst
 
         def withLang = classifyUse([
             'pb/Holder': holder,
             'user/Use' : useSource('user', 'import static pb.Holder.*', 'String')
         ], 'user.Use')
-        assert withLang == 'ambiguous' : withLang
+        assert withLang == 'pb.Holder$String' : withLang
 
         def hidden = classifyUse([
             'pb/Holder': holder,
@@ -525,7 +549,7 @@ class Use {
 
     // GROOVY-11916
     @Test
-    void testExtraDefaultImportsDoNotTieWithExplicitStars() {
+    void testExtraDefaultImportsStayBelowDeclaredStars() {
         def sql = classifyUse([
             'user/Use': useSource('user', 'import java.sql.*', 'Date')
         ], 'user.Use')
@@ -539,12 +563,12 @@ class Use {
         def both = classifyUse([
             'user/Use': useSource('user', 'import java.util.*\nimport java.sql.*', 'Date')
         ], 'user.Use')
-        assert both == 'ambiguous' : both
+        assert both == 'java.util.Date' : both
 
         def bothRev = classifyUse([
             'user/Use': useSource('user', 'import java.sql.*\nimport java.util.*', 'Date')
         ], 'user.Use')
-        assert bothRev == 'ambiguous' : bothRev
+        assert bothRev == 'java.sql.Date' : bothRev
 
         def tim = classifyUse([
             'pb/TimSort': 'package pb\nclass TimSort {}',
@@ -582,7 +606,7 @@ class Use {
 
     // GROOVY-11916
     @Test
-    void testJavaLangShadowsModuleImports() {
+    void testModuleImportFollowsSourceOrder() {
         def string = classifyUse([
             'user/Use': '''
                 package user
@@ -619,7 +643,8 @@ class Use {
         ], 'user.Use')
         assert awt == 'java.awt.List' : awt
 
-        def shadowed = classifyUse([
+        // The module import is earlier, so java.awt.List wins over the later star.
+        def moduleFirst = classifyUse([
             'user/Use': '''
                 package user
                 import module java.desktop
@@ -630,6 +655,73 @@ class Use {
                 }
             '''
         ], 'user.Use')
-        assert shadowed == 'java.util.List' : shadowed
+        assert moduleFirst == 'java.awt.List' : moduleFirst
+
+        def starFirst = classifyUse([
+            'user/Use': '''
+                package user
+                import java.util.*
+                import module java.desktop
+                class Use {
+                    List field
+                    static Class which() { List }
+                }
+            '''
+        ], 'user.Use')
+        assert starFirst == 'java.util.List' : starFirst
+    }
+
+    // GROOVY-11916
+    @Test
+    void testImportCustomizerStarStaysBelowDeclaredImports() {
+        def strings = [
+            'pb/String': 'package pb\nclass String {}',
+            'pc/String': 'package pc\nclass String {}'
+        ]
+        def config = new CompilerConfiguration()
+        config.addCompilationCustomizers(new ImportCustomizer().addStarImports('pb'))
+
+        def fromCustomizer = classifyUse(strings + [
+            'user/Use': useSource('user', '', 'String')
+        ], 'user.Use', config)
+        assert fromCustomizer == 'pb.String' : fromCustomizer
+
+        def userStar = classifyUse(strings + [
+            'user/Use': useSource('user', 'import pc.*', 'String')
+        ], 'user.Use', config)
+        assert userStar == 'pc.String' : userStar
+
+        def userSingle = classifyUse(strings + [
+            'user/Use': useSource('user', 'import pc.String', 'String')
+        ], 'user.Use', config)
+        assert userSingle == 'pc.String' : userSingle
+
+        def hidden = classifyUse([
+            'pb/Hidden': 'package pb\n@groovy.transform.PackageScope\nclass Hidden {}',
+            'user/Use' : useSource('user', '', 'Hidden')
+        ], 'user.Use', config)
+        assert hidden == 'unresolved' : hidden
+
+        def visible = classifyUse([
+            'pb/Visible': 'package pb\nclass Visible {}',
+            'user/Use'  : useSource('user', '', 'Visible')
+        ], 'user.Use', config)
+        assert visible == 'pb.Visible' : visible
+
+        def sqlFirst = new CompilerConfiguration()
+        sqlFirst.addCompilationCustomizers(new ImportCustomizer().addStarImports('java.sql', 'java.util'))
+        def sqlDate = classifyUse([
+            'user/Use': useSource('user', '', 'Date')
+        ], 'user.Use', sqlFirst)
+        assert sqlDate == 'java.sql.Date' : sqlDate
+
+        def qStar = new CompilerConfiguration()
+        qStar.addCompilationCustomizers(new ImportCustomizer().addStarImports('q'))
+        def userHidesInaccessible = classifyUse([
+            'p/Collision': 'package p\n@groovy.transform.PackageScope\nclass Collision {}',
+            'q/Collision': 'package q\nclass Collision {}',
+            'user/Use'   : useSource('user', 'import p.*', 'Collision')
+        ], 'user.Use', qStar)
+        assert userHidesInaccessible == 'q.Collision' : userHidesInaccessible
     }
 }
