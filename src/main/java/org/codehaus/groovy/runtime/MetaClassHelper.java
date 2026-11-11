@@ -403,7 +403,7 @@ public class MetaClassHelper {
      * from its class; keeps every candidate if none fits. The choice is still determined by
      * the argument classes.
      *
-     * @since 6.0.1
+     * @since 7.0.0
      */
     public static <M> List<M> filterByClosureArity(final List<M> candidates, final Class[] arguments) {
         boolean anyClosure = false;

@@ -1399,7 +1399,40 @@ compiles under static compilation or Java, and fails with a
 `MissingMethodException` in dynamic Groovy. `japicmp` reports the method as
 removed from the affected classes.
 
-### Groovy 7 — a functional argument selects a functional-interface overload it can be called as (GROOVY-11010, GROOVY-10714)
+### Groovy 6.0.1 — a method reference selects a functional-interface overload it can be called as at run time (GROOVY-12758)
+
+When overloads take functional interfaces whose abstract methods have
+different numbers of parameters, such as `Function` and `BinaryOperator`,
+`Function` and `Supplier`, or `Consumer` and `Runnable`, run-time method
+selection now first drops the candidates whose interface method a method
+reference or method pointer cannot be called with, as Java does. This applies
+to dynamic code; under `@TypeChecked` and `@CompileStatic` such calls are
+still rejected as ambiguous. When no candidate fits, all are kept and
+selection proceeds as before.
+
+Before, such calls failed:
+
+- `red(numbers, Integer::sum)` with `red(Collection, BinaryOperator)` and
+  `red(Collection, Function)` was ambiguous: `Ambiguous method overloading`.
+- A method reference passed where `Runnable` or `Callable` competed with an
+  interface that takes arguments, such as `Consumer`, matched `Runnable` or
+  `Callable`, because `Closure` implements them, and failed when run, as no
+  method of its name takes no arguments.
+
+**Who is affected.** Only calls that were ambiguous, or that chose an
+overload whose call then failed. A method reference whose methods accept both
+arities, such as `Integer::valueOf`, is still ambiguous, and a dehydrated
+method closure is selected for as before. Closures and lambdas are chosen for
+as before.
+
+**Who is not affected (binary).** There is no change to public API apart
+from two static helpers on the internal `MetaClassHelper`, and the serial
+form of `MethodClosure` is unchanged. A dynamic selection that depends on
+which method a reference names, rather than on argument classes alone, is
+not cached; this arises only for calls that were ambiguous or chose the
+wrong overload before.
+
+### Groovy 7 — a functional argument selects a functional-interface overload it can be called as (GROOVY-11010, GROOVY-12759)
 
 When overloads take functional interfaces whose abstract methods have
 different numbers of parameters, such as `Function` and `BinaryOperator`,
@@ -1410,7 +1443,10 @@ method pointers, and to closures and lambdas with declared parameters,
 counting parameters with a default value and a trailing array. It applies
 under `@TypeChecked` and `@CompileStatic`, and at run time for dynamic code
 and for `@TypeChecked` calls, which are dispatched at run time. When no
-candidate fits, all are kept and selection proceeds as before.
+candidate fits, all are kept and selection proceeds as before. Run-time
+selection for method references and method pointers does this from Groovy
+6.0.1 (see the entry above); Groovy 7 adds static type checking, and
+closures and lambdas.
 
 Before, such calls failed or picked the wrong overload:
 
@@ -1427,9 +1463,8 @@ Before, such calls failed or picked the wrong overload:
   reference failed when run, as no method of its name takes no arguments.
 
 **Who is affected (runtime behaviour).** Dynamic code that passes a closure
-with declared parameters, such as `{ String s -> ... }`, or a method
-reference, to overloads where `Runnable` or `Callable` competes with an
-interface of matching arity. Such a call now selects that interface, so the
+with declared parameters, such as `{ String s -> ... }`, to overloads where
+`Runnable` or `Callable` competes with an interface of matching arity. Such a call now selects that interface, so the
 closure receives the arguments it declares instead of `null`. Code that
 relied on `Runnable` or `Callable` being chosen, and on the closure being
 called without arguments, should pass a closure without parameters
@@ -1446,11 +1481,7 @@ and `trampoline()` return, and a dehydrated method closure, are selected for
 as before.
 
 **Who is not affected (binary).** There is no change to public API apart
-from two static helpers on the internal `MetaClassHelper`, and the serial
-form of `MethodClosure` is unchanged. A dynamic selection that depends on
-which method a reference names, rather than on argument classes alone, is
-not cached; this arises only for calls that were ambiguous or chose the
-wrong overload before.
+from a static helper on the internal `MetaClassHelper`.
 
 ### Groovy 7 — a value written to a typed map is converted to the map's value type (GROOVY-12535)
 
