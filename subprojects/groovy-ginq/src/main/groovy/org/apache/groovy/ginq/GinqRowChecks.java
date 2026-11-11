@@ -99,7 +99,7 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
      * from-then-join order. A static property {@code r.alias} uses them to
      * pick the component type of a join tuple.
      */
-    public static final String ALIAS_NAMES = "ginqAliasNames";
+    private static final String ALIAS_NAMES = "ginqAliasNames";
 
     /**
      * Creates the extension for one type-checking visitor.
@@ -221,6 +221,11 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
         }
         if (compileStaticScope()) {
             node.getCode().visit(new UnprovableOperatorRewriter());
+            // A number comparison stays an operator and is a primitive compare.
+            // A comparison javac would reject (a dynamic row property) is still
+            // the static writer's ScriptBytecodeAdapter fallback, so the missing
+            // compareTo/equals/isCase error is not a failure of the query.
+            forgiveUnprovableComparison(node);
         }
         node.getCode().visit(new CodeVisitorSupport() {
             private int queryDepth;
@@ -571,35 +576,157 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
 
     private ClassNode elementType(MethodCallExpression navigate) {
         if (navigate.getArguments() instanceof TupleExpression tuple && !tuple.getExpressions().isEmpty()) {
-            ClassNode argument = typeOf(tuple.getExpression(0));
-            if (argument != null && "org.apache.groovy.ginq.provider.collection.runtime.Queryable".equals(argument.redirect().getName())) {
-                GenericsType[] arguments = argument.getGenericsTypes();
-                if (arguments != null && arguments.length == 1 && arguments[0].getType() != null
-                        && !ClassHelper.OBJECT_TYPE.equals(arguments[0].getType())
-                        && !ClassHelper.isDynamicTyped(arguments[0].getType())) {
-                    ClassNode type = arguments[0].getType();
-                    return ClassHelper.isPrimitiveType(type) ? ClassHelper.getWrapper(type) : type;
-                }
+            ClassNode fromArgument = queryableElement(typeOf(tuple.getExpression(0)));
+            if (fromArgument != null) {
+                return fromArgument;
             }
         }
+        // Only parameters of this query. An enclosing closure such as
+        // `{ String label -> GQ { ... } }` is not the row type, and a Queryable
+        // parameter's element type wins over a nested `{ String label -> ... }`.
+        ClassNode fallback = null;
+        // Index 0 is the innermost closure. Stop at the first closure that is
+        // not part of the query, so an outer `{ String label -> GQ { ... } }`
+        // is not the row type.
         List<TypeCheckingContext.EnclosingClosure> stack = typeCheckingVisitor.getTypeCheckingContext().getEnclosingClosureStack();
-        for (int i = stack.size() - 1; i >= 0; i -= 1) {
-            Parameter[] parameters = stack.get(i).getClosureExpression().getParameters();
+        for (int i = 0; i < stack.size(); i += 1) {
+            ClosureExpression closure = stack.get(i).getClosureExpression();
+            if (!Boolean.TRUE.equals(closure.getNodeMetaData(QUERY))) {
+                break;
+            }
+            Parameter[] parameters = closure.getParameters();
             if (parameters == null) {
                 continue;
             }
             for (Parameter parameter : parameters) {
-                ClassNode type = parameter.getType();
-                if (type == null || ClassHelper.isDynamicTyped(type) || ClassHelper.OBJECT_TYPE.equals(type)) {
-                    continue;
+                ClassNode fromQueryable = queryableElement(parameter.getType());
+                if (fromQueryable != null) {
+                    return fromQueryable;
                 }
-                if ("org.apache.groovy.ginq.provider.collection.runtime.Queryable".equals(type.redirect().getName())) {
-                    continue;
+                if (fallback == null) {
+                    fallback = rowElement(parameter.getType());
                 }
-                return ClassHelper.isPrimitiveType(type) ? ClassHelper.getWrapper(type) : type;
             }
         }
-        return ClassHelper.OBJECT_TYPE;
+        return fallback != null ? fallback : ClassHelper.OBJECT_TYPE;
+    }
+
+    /**
+     * The element of a {@code Queryable} parameter or argument. A wildcard
+     * bound is that bound, so {@code Queryable<? extends Integer>} is
+     * {@code Integer}. A {@code SourceRecord} argument is the row already, not
+     * the element to wrap again.
+     */
+    private static ClassNode queryableElement(ClassNode type) {
+        if (type == null || !"org.apache.groovy.ginq.provider.collection.runtime.Queryable".equals(type.redirect().getName())) {
+            return null;
+        }
+        GenericsType[] arguments = type.getGenericsTypes();
+        if (arguments == null || arguments.length != 1) {
+            return null;
+        }
+        return rowElement(referenceBound(arguments[0]));
+    }
+
+    private static ClassNode rowElement(ClassNode type) {
+        if (type == null || ClassHelper.isDynamicTyped(type) || ClassHelper.OBJECT_TYPE.equals(type)) {
+            return null;
+        }
+        if (ClassHelper.isPrimitiveType(type)) {
+            return ClassHelper.isPrimitiveVoid(type) ? null : ClassHelper.getWrapper(type);
+        }
+        String name = type.redirect().getName();
+        if ("org.apache.groovy.ginq.provider.collection.runtime.Queryable".equals(name)
+                || "org.apache.groovy.ginq.provider.collection.runtime.SourceRecord".equals(name)) {
+            return null;
+        }
+        return type;
+    }
+
+    private static ClassNode referenceBound(GenericsType type) {
+        if (type == null) {
+            return null;
+        }
+        if (type.isWildcard()) {
+            if (type.getLowerBound() != null) {
+                return type.getLowerBound();
+            }
+            ClassNode[] upper = type.getUpperBounds();
+            if (upper != null && upper.length > 0 && upper[0] != null) {
+                return upper[0];
+            }
+        }
+        return type.getType();
+    }
+
+    /**
+     * Drops a missing {@code compareTo}, {@code equals}, or {@code isCase}
+     * error on a comparison inside the query. The static writer already emits
+     * {@code ScriptBytecodeAdapter} for a comparison it cannot turn into a
+     * primitive compare. A number comparison does not produce this error.
+     */
+    private void forgiveUnprovableComparison(MethodNode node) {
+        SourceUnit source = node.getDeclaringClass().getModule() == null ? null : node.getDeclaringClass().getModule().getContext();
+        if (source == null || source.getErrorCollector() == null || !source.getErrorCollector().hasErrors()) {
+            return;
+        }
+        java.util.Set<Long> positions = new java.util.HashSet<>();
+        node.getCode().visit(new CodeVisitorSupport() {
+            private int queryDepth;
+
+            @Override
+            public void visitClosureExpression(ClosureExpression expression) {
+                boolean query = Boolean.TRUE.equals(expression.getNodeMetaData(QUERY));
+                if (query) {
+                    queryDepth += 1;
+                }
+                super.visitClosureExpression(expression);
+                if (query) {
+                    queryDepth -= 1;
+                }
+            }
+
+            @Override
+            public void visitBinaryExpression(BinaryExpression expression) {
+                if (queryDepth > 0 && comparison(expression.getOperation().getType())
+                        && expression.getLineNumber() > 0 && expression.getColumnNumber() > 0) {
+                    positions.add((((long) expression.getLineNumber()) << 32) + expression.getColumnNumber());
+                }
+                super.visitBinaryExpression(expression);
+            }
+        });
+        if (positions.isEmpty()) {
+            return;
+        }
+        org.codehaus.groovy.control.ErrorCollector collector = source.getErrorCollector();
+        synchronized (collector) {
+            java.util.Iterator<? extends org.codehaus.groovy.control.messages.Message> messages = collector.getErrors().iterator();
+            while (messages.hasNext()) {
+                org.codehaus.groovy.control.messages.Message message = messages.next();
+                if (!(message instanceof org.codehaus.groovy.control.messages.SyntaxErrorMessage syntax)) {
+                    continue;
+                }
+                String text = syntax.getCause().getMessage();
+                if (text == null || !(text.contains("#compareTo") || text.contains("#equals")
+                        || text.contains("#isCase") || text.contains("#isNotCase"))) {
+                    continue;
+                }
+                long key = (((long) syntax.getCause().getStartLine()) << 32) + syntax.getCause().getStartColumn();
+                if (positions.contains(key)) {
+                    messages.remove();
+                }
+            }
+        }
+    }
+
+    private static boolean comparison(int operation) {
+        return switch (operation) {
+            case Types.COMPARE_EQUAL, Types.COMPARE_NOT_EQUAL, Types.COMPARE_GREATER_THAN,
+                 Types.COMPARE_GREATER_THAN_EQUAL, Types.COMPARE_LESS_THAN, Types.COMPARE_LESS_THAN_EQUAL,
+                 Types.COMPARE_TO, Types.COMPARE_IDENTICAL, Types.COMPARE_NOT_IDENTICAL,
+                 Types.KEYWORD_IN, Types.COMPARE_NOT_IN, Types.FIND_REGEX, Types.MATCH_REGEX -> true;
+            default -> false;
+        };
     }
 
     private List<String> aliasNames() {

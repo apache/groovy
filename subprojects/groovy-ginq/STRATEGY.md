@@ -82,14 +82,17 @@ enclosing method.
 
 What stays dynamic is the part the static writer cannot prove, and nothing else:
 
-* A comparison (`==`, `>`, `in`, a regex match) is rewritten to
-  `ScriptBytecodeAdapter` before type checking, so a row compared with a
-  subquery still type-checks. Arithmetic and a subscript stay operators
-  through type checking: a number added to a number is a static add, and
-  only an operator the checker cannot prove is rewritten to
-  `invokeMethodN` afterwards. `orderby n in desc` is already an `Order`
-  value and is not rewritten. The snapshot index `ginqCaptured$[i]` stays
-  an array load.
+* A comparison of two numbers (`n > 1`, `n == m`) stays the operator, and
+  static compilation emits the primitive comparison. `in` and a regex match
+  are the same operators the static writer already lowers. A comparison the
+  checker cannot prove, such as a map row's missing property compared with
+  a number, is not a legal Java comparison; the static writer still emits
+  `ScriptBytecodeAdapter` for that operator and the type error is not
+  reported, because a list of maps is a normal GINQ source. Arithmetic and
+  a subscript stay operators through type checking: a number added to a
+  number is a static add, and only an operator the checker cannot prove is
+  rewritten to `invokeMethodN` afterwards. `orderby n in desc` is already
+  an `Order` value. The snapshot index `ginqCaptured$[i]` stays an array load.
 * A call the checker cannot resolve is rewritten to
   `ScriptBytecodeAdapter.invokeMethodN`. That is a real public method. It is
   not `invokevirtual` of a stand-in, and the stand-in's declaring class is

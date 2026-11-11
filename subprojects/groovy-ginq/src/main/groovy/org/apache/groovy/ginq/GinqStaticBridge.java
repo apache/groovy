@@ -53,7 +53,6 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.codehaus.groovy.syntax.Types;
@@ -85,8 +84,9 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  * asks, registers {@link GinqRowChecks} on the annotation that visitor will read, and
  * marks the lowered closures so the extension can see them. The lowered query closure
  * stays on the static writer. A call the checker selects is emitted as that target.
- * Operators the static writer cannot prove, stream pipelines, and method pointers
- * are rewritten or marked before type checking. The enclosing method stays static.
+ * A comparison or arithmetic operator the checker can prove stays an operator, so
+ * a number compared with a number is the static comparison. The enclosing method
+ * stays static.
  * <p>
  * A {@link Queryable} result is handed to {@link LazyQueryable#defer}. Read-only locals
  * are copied when the expression runs. Which names those are comes from
@@ -151,7 +151,6 @@ public final class GinqStaticBridge {
     private static Expression wrap(Expression query, ASTNode position, boolean defer, List<Variable> readOnly) {
         boolean queryable = returnsQueryable(query);
         Expression body = readOnly.isEmpty() ? query : rewriteReadOnly(query, readOnly);
-        body = rewriteStaticHoles(body);
         ClosureExpression shell = closureX(Parameter.EMPTY_ARRAY, returnS(body));
         shell.setSourcePosition(position);
         // The closure stays on the static writer. Row checks use the QUERY mark.
@@ -637,90 +636,6 @@ public final class GinqStaticBridge {
                 return super.transform(expression);
             }
         }.transform(query);
-    }
-
-    /**
-     * Comparisons the static writer types as {@code compareTo} become
-     * {@link ScriptBytecodeAdapter} calls, so a row compared with a subquery
-     * still type-checks. Arithmetic stays an operator until type checking:
-     * a number added to a number is a static add, and only an unprovable
-     * operator is rewritten afterwards. Order-by {@code in desc} is already
-     * an {@code Order} value. The snapshot index stays an array load.
-     */
-    private static Expression rewriteStaticHoles(Expression query) {
-        return new ClassCodeExpressionTransformer() {
-            @Override
-            protected SourceUnit getSourceUnit() {
-                return null;
-            }
-
-            @Override
-            public Expression transform(Expression expression) {
-                if (expression instanceof ClosureExpression closure) {
-                    closure.visit(this);
-                    return closure;
-                }
-                if (expression instanceof BinaryExpression binary
-                        && Types.isAssignment(binary.getOperation().getType())) {
-                    Expression left = binary.getLeftExpression();
-                    if (left instanceof BinaryExpression index
-                            && index.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
-                        index.setLeftExpression(transform(index.getLeftExpression()));
-                        index.setRightExpression(transform(index.getRightExpression()));
-                    } else {
-                        binary.setLeftExpression(transform(left));
-                    }
-                    binary.setRightExpression(transform(binary.getRightExpression()));
-                    return binary;
-                }
-                Expression transformed = super.transform(expression);
-                if (transformed instanceof BinaryExpression binary) {
-                    Expression rewritten = rewriteOperator(binary);
-                    if (rewritten != null) {
-                        return rewritten;
-                    }
-                }
-                return transformed;
-            }
-        }.transform(query);
-    }
-
-    private static Expression rewriteOperator(BinaryExpression binary) {
-        int type = binary.getOperation().getType();
-        if (type == Types.LEFT_SQUARE_BRACKET && snapshotIndex(binary.getLeftExpression())) {
-            return null;
-        }
-        String compare = switch (type) {
-            case Types.COMPARE_EQUAL -> "compareEqual";
-            case Types.COMPARE_NOT_EQUAL -> "compareNotEqual";
-            case Types.COMPARE_GREATER_THAN -> "compareGreaterThan";
-            case Types.COMPARE_GREATER_THAN_EQUAL -> "compareGreaterThanEqual";
-            case Types.COMPARE_LESS_THAN -> "compareLessThan";
-            case Types.COMPARE_LESS_THAN_EQUAL -> "compareLessThanEqual";
-            case Types.COMPARE_TO -> "compareTo";
-            case Types.COMPARE_IDENTICAL -> "compareIdentical";
-            case Types.COMPARE_NOT_IDENTICAL -> "compareNotIdentical";
-            case Types.KEYWORD_IN -> "isIn";
-            case Types.COMPARE_NOT_IN -> "isNotIn";
-            case Types.FIND_REGEX -> "findRegex";
-            case Types.MATCH_REGEX -> "matchRegex";
-            default -> null;
-        };
-        if (compare != null) {
-            return adapterCall(compare, binary.getLeftExpression(), binary.getRightExpression(), binary);
-        }
-        return null;
-    }
-
-    private static boolean snapshotIndex(Expression left) {
-        return left instanceof VariableExpression variable && CAPTURED.equals(variable.getName());
-    }
-
-    private static Expression adapterCall(String name, Expression left, Expression right, Expression source) {
-        MethodCallExpression call = callX(classX(ClassHelper.make(ScriptBytecodeAdapter.class)), name, args(left, right));
-        call.setImplicitThis(false);
-        call.setSourcePosition(source);
-        return call;
     }
 
     private static boolean containsSame(List<Variable> variables, Variable target) {

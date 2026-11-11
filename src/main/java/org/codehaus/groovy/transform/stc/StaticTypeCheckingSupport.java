@@ -1568,7 +1568,9 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         ClassNode cn = type.getPlainNodeReference();
-        cn.setGenericsTypes(gts);
+        // JLS 4.5: a resolved type argument is a reference type, and a class
+        // that declares no type parameters does not receive any.
+        cn.setGenericsTypes(GenericsUtils.legalTypeArguments(type, gts));
         return cn;
     }
 

@@ -688,4 +688,27 @@ final class GinqStaticModeTest {
             assert Example.joined() == [[1, 'a'], [2, 'bc'], [3, 'def']]
         '''
     }
+
+    @Test
+    void staticRowTypeIgnoresAnEnclosingClosureParameter() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            class Example {
+                static List run() {
+                    def query = { String label ->
+                        GQ {
+                            from n in [1, 1, 3, 3, 6, 6, 6]
+                            groupby n
+                            select n, agg({ String ignored ->
+                                _g.stream().map(r -> r.n).reduce(0, Integer::sum)
+                            }.call(label))
+                        }.toList()
+                    }
+                    query.call('unused')
+                }
+            }
+            assert Example.run() == [[1, 2], [3, 6], [6, 18]]
+        '''
+    }
 }
