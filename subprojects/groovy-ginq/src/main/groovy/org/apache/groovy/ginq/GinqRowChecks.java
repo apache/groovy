@@ -36,7 +36,9 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -47,7 +49,10 @@ import org.apache.groovy.ginq.provider.collection.runtime.Queryable;
 import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper;
 import org.apache.groovy.ginq.provider.collection.runtime.SourceRecord;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
+import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.Message;
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.stc.AbstractTypeCheckingExtension;
@@ -58,7 +63,10 @@ import org.codehaus.groovy.transform.stc.TypeCheckingContext;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -548,7 +556,7 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
     /**
      * {@code navigate} is {@code Queryable<SourceRecord<T>>}. When the argument
      * is still {@code Object}, method selection fails and {@code stream()} binds
-     * to the single-element DGM instead of {@link org.apache.groovy.ginq.provider.collection.runtime.Queryable#stream()}.
+     * to the single-element DGM instead of {@link Queryable#stream()}.
      * Restore the return type from the argument, or from the clause row parameter.
      */
     private void repairNavigateType(MethodCallExpression call) {
@@ -670,7 +678,7 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
         if (source == null || source.getErrorCollector() == null || !source.getErrorCollector().hasErrors()) {
             return;
         }
-        java.util.Set<Long> positions = new java.util.HashSet<>();
+        Set<Long> positions = new HashSet<>();
         node.getCode().visit(new CodeVisitorSupport() {
             private int queryDepth;
 
@@ -698,12 +706,12 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
         if (positions.isEmpty()) {
             return;
         }
-        org.codehaus.groovy.control.ErrorCollector collector = source.getErrorCollector();
+        ErrorCollector collector = source.getErrorCollector();
         synchronized (collector) {
-            java.util.Iterator<? extends org.codehaus.groovy.control.messages.Message> messages = collector.getErrors().iterator();
+            Iterator<? extends Message> messages = collector.getErrors().iterator();
             while (messages.hasNext()) {
-                org.codehaus.groovy.control.messages.Message message = messages.next();
-                if (!(message instanceof org.codehaus.groovy.control.messages.SyntaxErrorMessage syntax)) {
+                Message message = messages.next();
+                if (!(message instanceof SyntaxErrorMessage syntax)) {
                     continue;
                 }
                 String text = syntax.getCause().getMessage();
@@ -768,12 +776,12 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
     }
 
     private static List<String> constantStrings(Expression expression) {
-        if (!(expression instanceof org.codehaus.groovy.ast.expr.ListExpression list)) {
+        if (!(expression instanceof ListExpression list)) {
             return null;
         }
         List<String> names = new ArrayList<>();
         for (Expression element : list.getExpressions()) {
-            if (!(element instanceof org.codehaus.groovy.ast.expr.ConstantExpression constant) || !(constant.getValue() instanceof String text)) {
+            if (!(element instanceof ConstantExpression constant) || !(constant.getValue() instanceof String text)) {
                 return null;
             }
             names.add(text);

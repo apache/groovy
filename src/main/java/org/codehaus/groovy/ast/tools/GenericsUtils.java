@@ -389,7 +389,7 @@ public class GenericsUtils {
     }
 
     private static boolean declaresNoTypeParameters(final ClassNode type) {
-        if (type == null) return false;
+        if (type == null || type.isGenericsPlaceHolder()) return false;
         ClassNode declared = type.redirect();
         if (declared == null || !declared.isResolved() || declared.isArray()) return false;
         if (declared == type && declared.getGenericsTypes() != null) return false;

@@ -54,7 +54,6 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Opcodes;
 
