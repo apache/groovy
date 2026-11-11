@@ -82,4 +82,29 @@ final class Groovy12720 {
         '''
         assert err.message.contains("Method 'other' from class ") && err.message.contains(" does not override method from its superclass or interfaces but is annotated with @Override.")
     }
+
+    @Test
+    void testMethodOnlyAnnotationStaysOnTheMainMethod() {
+        def loader = new GroovyClassLoader()
+        ['void main() {}', 'static void main(String[] args) {}'].each { main ->
+            def c = loader.parseClass("@java.beans.Transient\n$main")
+            assert !c.isAnnotationPresent(java.beans.Transient)
+            assert c.declaredMethods.find { it.name == 'main' }.isAnnotationPresent(java.beans.Transient)
+        }
+    }
+
+    @Test
+    void testImportedMethodOnlyAnnotationStaysOnTheScriptRunMethod() {
+        ['import java.beans.Transient', 'import java.beans.Transient as Tr'].each { imp ->
+            def anno = imp.endsWith('Tr') ? 'Tr' : 'Transient'
+            assert new GroovyShell().evaluate("""
+                $imp
+                @$anno
+                Object run() {
+                    getClass().getMethod('run').isAnnotationPresent(java.beans.Transient)
+                        && !getClass().isAnnotationPresent(java.beans.Transient)
+                }
+            """)
+        }
+    }
 }
