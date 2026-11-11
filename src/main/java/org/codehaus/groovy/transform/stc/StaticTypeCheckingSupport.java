@@ -1774,18 +1774,27 @@ public abstract class StaticTypeCheckingSupport {
      * parameterization of a generic type (JLS 4.8, 4.10.2), and a type that is not
      * a type variable is not a subtype of one. So {@code Class<? extends List>} is
      * not a {@code Class<? extends List<String>>}, and {@code Class<? extends Number>}
-     * is not a {@code Class<? extends T>} for {@code T extends Number}.
-     * A raw type that is not the bound of a wildcard stays an unchecked conversion.
+     * is not a {@code Class<? extends T>} for {@code T extends Number}. A type variable
+     * is taken as its bound, and within the bounds a raw type argument is not a
+     * parameterized one: {@code List<List>} is not a {@code List<List<String>>}.
+     * A raw type that is not within the bound of a wildcard stays an unchecked conversion.
      *
      * @return {@code true} when the assignment should be rejected
      */
     static boolean upperBoundEscapes(final ClassNode target, final ClassNode source) {
+        return upperBoundEscapes(target, source, false);
+    }
+
+    /**
+     * @param withinBound {@code target} and {@code source} are the bounds of two wildcards, or type arguments of those bounds
+     */
+    private static boolean upperBoundEscapes(final ClassNode target, final ClassNode source, final boolean withinBound) {
         if (target == null || source == null) return false;
         if (!target.equals(source)) {
             if (source.getGenericsTypes() == null || !implementsInterfaceOrIsSubclassOf(source, target)) return false;
             ClassNode viewed = GenericsUtils.parameterizeType(source, target);
             if (viewed == null || viewed == source || !target.equals(viewed)) return false;
-            return upperBoundEscapes(target, viewed);
+            return upperBoundEscapes(target, viewed, withinBound);
         }
         GenericsType[] targetArgs = target.getGenericsTypes();
         GenericsType[] sourceArgs = source.getGenericsTypes();
@@ -1793,7 +1802,11 @@ public abstract class StaticTypeCheckingSupport {
         for (int i = 0; i < targetArgs.length; i += 1) {
             ClassNode targetBound = soleUpperBound(targetArgs[i]);
             ClassNode sourceBound = soleUpperBound(sourceArgs[i]);
-            if (targetBound != null && sourceBound != null && upperBoundNotWithin(sourceBound, targetBound)) return true;
+            if (targetBound != null && sourceBound != null) {
+                if (upperBoundNotWithin(sourceBound, targetBound)) return true;
+            } else if (withinBound && rawTypeArgument(sourceArgs[i], targetArgs[i])) {
+                return true;
+            }
         }
         return false;
     }
@@ -1810,13 +1823,35 @@ public abstract class StaticTypeCheckingSupport {
             source = source.getComponentType();
             target = target.getComponentType();
         }
-        // a type variable is checked through its bound and "#T" is still to be inferred
-        if (source.isGenericsPlaceHolder() || isInferencePlaceholder(target)) return false;
-        if (target.isGenericsPlaceHolder()) return true;
+        // "#T" is still to be inferred
+        if (isInferencePlaceholder(source) || isInferencePlaceholder(target)) return false;
+        if (source.isGenericsPlaceHolder()) {
+            if (target.isGenericsPlaceHolder()) return false; // two type variables are checked through their bounds
+            source = typeVariableBound(source); // JLS 4.10.2: a type variable is a subtype of its bound
+        } else if (target.isGenericsPlaceHolder()) {
+            return true;
+        }
         boolean rareType = isParameterized(target.getOuterClassType()); // Outer<T>.Inner
         if ((rareType || isParameterized(target)) && isRawType(source)) return true;
         if (rareType && source.equals(target) && source.getOuterClassType() == null) return true;
-        return upperBoundEscapes(target, source);
+        return upperBoundEscapes(target, source, true);
+    }
+
+    /**
+     * True when {@code source} is a raw type and {@code target} is a parameterization
+     * of the same generic type, for two type arguments that are not wildcards, or
+     * when that holds for a type argument of theirs.
+     */
+    private static boolean rawTypeArgument(final GenericsType source, final GenericsType target) {
+        if (source.isWildcard() || source.isPlaceholder() || target.isWildcard() || target.isPlaceholder()) return false;
+        ClassNode sourceType = source.getType(), targetType = target.getType();
+        while (sourceType.isArray() && targetType.isArray()) {
+            sourceType = sourceType.getComponentType();
+            targetType = targetType.getComponentType();
+        }
+        if (!targetType.equals(sourceType)) return false;
+        if (isParameterized(targetType) && isRawType(sourceType)) return true;
+        return upperBoundEscapes(targetType, sourceType, true);
     }
 
     private static boolean isParameterized(final ClassNode type) {

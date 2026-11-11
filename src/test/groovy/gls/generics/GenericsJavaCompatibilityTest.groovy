@@ -4147,6 +4147,56 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 4.5.1, 4.10.2: {@code List<List>} is not a subtype of {@code List<List<String>>},
+     * because the type argument {@code List} is not {@code List<String>}. So
+     * {@code Class<? extends List<List>>} is not a {@code Class<? extends List<List<String>>>}.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardWithRawTypeArgumentInBound() {
+        final String className = 'gls.generics.test.WildcardRawTypeArgumentInBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class WildcardRawTypeArgumentInBound {
+                @SuppressWarnings({"rawtypes"})
+                static Class<? extends List<List<String>>> narrow(Class<? extends List<List>> type) {
+                    return type;
+                }
+                public static void test() {
+                    narrow(null);
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends java.util.List<java.util.List>> to: java.lang.Class<? extends java.util.List<java.util.List<java.lang.String>>>")
+    }
+
+    /**
+     * JLS 4.5.1, 4.10.2: a type variable is a subtype of its bound, and the raw bound
+     * {@code List} is not a subtype of {@code List<String>}. So for {@code T extends List}
+     * a {@code Class<? extends T>} is not a {@code Class<? extends List<String>>}.
+     */
+    @Test
+    void testNegativeUpperBoundedWildcardOfTypeVariableWithRawBound() {
+        final String className = 'gls.generics.test.WildcardOfTypeVariableWithRawBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.List;
+            public class WildcardOfTypeVariableWithRawBound {
+                @SuppressWarnings({"rawtypes"})
+                static <T extends List> Class<? extends List<String>> narrow(Class<? extends T> type) {
+                    return type;
+                }
+                public static void test() {
+                    narrow(null);
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends T> to: java.lang.Class<? extends java.util.List<java.lang.String>>")
+    }
+
+    /**
      * JLS 4.5.1 containment and 4.10.2: {@code List<Integer>} is a subtype of
      * {@code List<? extends Number>} even though it is not a subtype of
      * {@code List<Number>} (invariance is covered by

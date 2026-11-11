@@ -3055,6 +3055,16 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''',
             'Incompatible generic argument types. Cannot assign java.lang.Class<? extends java.lang.Number> to: java.lang.Class<? extends T>'
 
+        shouldFailWithMessages '''
+            Class<? extends List<List<String>>> test(Class<? extends List<List>> type) { type }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends java.util.List<java.util.List>> to: java.lang.Class<? extends java.util.List<java.util.List<java.lang.String>>>'
+
+        shouldFailWithMessages '''
+            <T extends List> Class<? extends List<String>> test(Class<? extends T> type) { type }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends T> to: java.lang.Class<? extends java.util.List<java.lang.String>>'
+
         assertScript '''
             class Strings extends ArrayList<String> {}
             class Holder<T> { Class<? extends T> type }
@@ -3064,14 +3074,22 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Class<? extends List<String>> sub(Class<? extends Strings> type) { type }
             <T extends Number> Class<? extends T> bound(Class<? extends T> type) { type }
             <T extends Number, U extends T> Class<? extends T> chain(Class<? extends U> type) { type }
+            <T extends List<String>> Class<? extends List<String>> ofBound(Class<? extends T> type) { type }
+            <T extends ArrayList> Class<? extends List> ofRawBound(Class<? extends T> type) { type }
+            Class<? extends List<List<String>>> nested(Class<? extends ArrayList<List<String>>> type) { type }
             void set(Holder holder, Class<? extends Integer> type) { holder.type = type }
             List<String> unchecked(List list) { list }
+            List<? extends List<String>> literal() { [new ArrayList()] }
 
             assert raw(ArrayList) == ArrayList
             assert same(ArrayList) == ArrayList
             assert sub(Strings) == Strings
             assert bound(Integer) == Integer
             assert chain(Integer) == Integer
+            assert ofBound(ArrayList) == ArrayList
+            assert ofRawBound(ArrayList) == ArrayList
+            assert nested(ArrayList) == ArrayList
+            assert literal() == [[]]
             def holder = new Holder<Number>()
             set(holder, Integer)
             assert holder.type == Integer
