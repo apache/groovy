@@ -4813,6 +4813,83 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-12727: the only type witness for T is the target type of the call
+    @Test
+    void testReturnTypeInferenceWithClosure5() {
+        String types = '''import java.util.function.Function
+
+            class Ctx<T> {}
+            class Beh<T> {}
+            class Behaviors {
+                static <T> Beh<T> setup(Function<Ctx<T>, Beh<T>> factory) { factory.apply(new Ctx<T>()) }
+            }
+            class Bot extends Beh<String> {
+                Bot(Ctx<String> c, int max) {}
+            }
+        '''
+        for (factory in ['(c -> new Bot(c, max))', '{ c -> new Bot(c, max) }']) {
+            assertScript types + """
+                Beh<String> implicitReturn(int max) { Behaviors.setup $factory }
+                Beh<String> explicitReturn(int max) { return Behaviors.setup $factory }
+
+                assert implicitReturn(1) instanceof Bot
+                assert explicitReturn(1) instanceof Bot
+            """
+            assertScript types + """
+                int max = 1
+                Beh<String> declared = Behaviors.setup $factory
+                assert declared instanceof Bot
+
+                Beh<String> assigned
+                assigned = Behaviors.setup $factory
+                assert assigned instanceof Bot
+            """
+            assertScript types + """
+                class Holder {
+                    static int max = 1
+                    Beh<String> field = Behaviors.setup $factory
+                }
+                assert new Holder().field instanceof Bot
+            """
+        }
+    }
+
+    // GROOVY-12727: a target type that is a supertype of the return type, or determines the return type itself
+    @Test
+    void testReturnTypeInferenceWithClosure6() {
+        assertScript '''import java.util.function.Function
+
+            class Ctx<T> {}
+            String name(Ctx<String> c) { 'x' }
+            def <T> ArrayList<T> many(Function<Ctx<T>, T> f) { [f.apply(new Ctx<T>())] as ArrayList<T> }
+            def <T> T one(Function<Ctx<T>, T> f) { f.apply(new Ctx<T>()) }
+
+            List<String> list = many(c -> name(c))
+            assert list == ['x']
+            String string = one(c -> name(c))
+            assert string == 'x'
+        '''
+    }
+
+    // GROOVY-12727: a wildcard target type argument is not a witness for T
+    @Test
+    void testReturnTypeInferenceWithClosure7() {
+        shouldFailWithMessages '''import java.util.function.Function
+
+            class Ctx<T> {}
+            class Beh<T> {}
+            class Behaviors {
+                static <T> Beh<T> setup(Function<Ctx<T>, Beh<T>> factory) { factory.apply(new Ctx<T>()) }
+            }
+            class Bot extends Beh<String> {
+                Bot(Ctx<String> c) {}
+            }
+
+            Beh<? extends Object> b = Behaviors.setup(c -> new Bot(c))
+        ''',
+        'Cannot call Bot#<init>(Ctx<java.lang.String>) with arguments [Ctx<? extends java.lang.Object>]'
+    }
+
     // GROOVY-6129
     @Test
     void testShouldNotThrowNPE() {
