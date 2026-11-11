@@ -654,7 +654,9 @@ public class ModuleNode extends ASTNode {
 
         if (existingMain != null && !hasUncontainedStatements) { // JEP 445 main
             ClassNode result = new ClassNode(classNode.getName(), 0, ClassHelper.OBJECT_TYPE);
-            result.addAnnotations(existingMain.getAnnotations());
+            for (AnnotationNode annotation : existingMain.getAnnotations()) {
+                if (!isKnownMethodOnly(annotation)) result.addAnnotation(annotation);
+            }
             result.setScriptBody(false);
             result.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
             existingMain.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
@@ -703,12 +705,11 @@ public class ModuleNode extends ASTNode {
             .visit(statementBlock);
         } else {
             fields.forEach(classNode::addField);
-            // the method's annotations apply to the script class; @Override cannot, and it is
-            // correct on the method, which overrides Script#run() (GROOVY-12720); it is left off
-            // here, before any Java stub is generated, and ExtendedVerifier skips the other
-            // method-only annotations on the script class
+            // the method's annotations apply to the script class, except those that may go on a
+            // method but not on a type, which stay on run() only (GROOVY-12720); the known ones are
+            // left off here, before any Java stub is generated, and ExtendedVerifier skips the rest
             for (AnnotationNode annotation : existingRun.getAnnotations()) {
-                if (!isOverride(annotation)) classNode.addAnnotation(annotation);
+                if (!isKnownMethodOnly(annotation)) classNode.addAnnotation(annotation);
             }
             classNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
             existingRun.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
@@ -739,9 +740,24 @@ public class ModuleNode extends ASTNode {
         return classNode;
     }
 
-    private static boolean isOverride(final AnnotationNode annotation) {
-        ClassNode type = annotation.getClassNode();
-        return ClassHelper.OVERRIDE_TYPE.equals(type) || "Override".equals(type.getName()) || "java.lang.Override".equals(type.getName());
+    /**
+     * Best effort: annotation types are not resolved yet in this phase, so the check is by name.
+     * It covers fully-qualified names, {@code Override} via the default {@code java.lang} import,
+     * and single-type imports including aliased ones, but not star imports or same-named types
+     * that shadow them. ExtendedVerifier still skips anything missed here on the class, but a
+     * missed annotation is copied to the class in any Java stub.
+     */
+    private boolean isKnownMethodOnly(final AnnotationNode annotation) {
+        String name = annotation.getClassNode().getName();
+        if (name.indexOf('.') < 0) {
+            ImportNode importNode = getImport(name);
+            if (importNode != null) {
+                name = importNode.getType().getName();
+            } else if ("Override".equals(name)) {
+                name = "java.lang.Override";
+            }
+        }
+        return "java.lang.Override".equals(name) || "java.beans.Transient".equals(name);
     }
 
     private MethodNode findRun() {
