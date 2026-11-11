@@ -1018,6 +1018,39 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12595
+    @Test
+    void testArrayCloneOfFlowTypedVariable() {
+        assertScript '''
+            float[][] f = [[1f, 2f] as float[], [3f] as float[]]
+            float[][] copies = f.collect { it.clone() } as float[][]
+            assert copies == f
+            assert !copies[0].is(f[0])
+
+            def g = f[1]
+            float[] h = g.clone()
+            assert h == [3f] as float[]
+            assert !h.is(f[1])
+        '''
+    }
+
+    // GROOVY-12595
+    @Test
+    void testProtectedMethodOfFlowTypedVariable() {
+        assertScript '''
+            class MyList extends ArrayList<String> {
+                MyList(Collection<String> c) { super(c) }
+                void dropFirst(ArrayList<String> other) {
+                    if (other instanceof MyList) other.removeRange(0, 1)
+                }
+            }
+
+            def list = new MyList(['a', 'b', 'c'])
+            list.dropFirst(list)
+            assert list == ['b', 'c']
+        '''
+    }
+
     // GROOVY-5793
     @Test
     void testShouldNotForceAsTypeWhenListOfNullAssignedToArray() {
