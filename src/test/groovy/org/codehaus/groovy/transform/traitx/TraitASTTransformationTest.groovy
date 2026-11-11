@@ -4635,4 +4635,30 @@ final class TraitASTTransformationTest {
         }
         assert err.message.contains('Postfix expressions on trait fields/properties are not supported in traits')
     }
+
+    // GROOVY-12743: an annotation with a closure member on a trait method failed with
+    // UnsupportedOperationException: the forwarder's "not copied" list was an unmodifiable empty list
+    @Test
+    void testClosureMemberAnnotationOnTraitMethod() {
+        assertScript shell, '''
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.METHOD)
+            @interface Check {
+                Class value()
+            }
+
+            trait T {
+                @Check({ it > 0 })
+                int m() { 1 }
+            }
+            class C implements T {
+            }
+
+            assert new C().m() == 1
+            def check = T.getMethod('m').getAnnotation(Check)
+            assert check != null && Closure.isAssignableFrom(check.value())
+        '''
+    }
 }
