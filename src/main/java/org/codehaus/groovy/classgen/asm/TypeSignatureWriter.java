@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.GenericsType;
 
 /**
  * Writes the JVMS 4.7.9.1 nested form of a parameterized type for a Signature
@@ -46,7 +47,46 @@ final class TypeSignatureWriter {
             return;
         }
         ret.append(BytecodeHelper.getTypeDescription(printType, false));
-        BytecodeHelper.addSubTypes(ret, printType.getGenericsTypes(), "<", ">");
+        BytecodeHelper.addSubTypes(ret, typeArguments(printType), "<", ">");
+    }
+
+    /**
+     * Type arguments written for {@code printType}. A use site that names
+     * arguments a non-generic class does not declare (for example
+     * {@code Serializable<T>}) is an illegal signature and the class fails
+     * to load, so those arguments are left off.
+     */
+    private static GenericsType[] typeArguments(final ClassNode printType) {
+        GenericsType[] useSite = printType.getGenericsTypes();
+        if (useSite == null || useSite.length == 0) {
+            return useSite;
+        }
+        int declared = declaredTypeParameters(printType);
+        if (declared >= 0 && declared != useSite.length) {
+            return null;
+        }
+        return useSite;
+    }
+
+    /**
+     * Number of type parameters the class actually declares, or {@code -1}
+     * when that is not known yet. An unresolved {@code java.*} name is loaded
+     * so a use site cannot attach arguments to {@code Serializable}.
+     */
+    private static int declaredTypeParameters(final ClassNode printType) {
+        ClassNode resolved = printType.isResolved() ? printType : printType.redirect();
+        if (resolved != null && resolved.isResolved() && !resolved.isArray()) {
+            return resolved.getTypeClass().getTypeParameters().length;
+        }
+        String name = printType.getName();
+        if (name != null && (name.startsWith("java.") || name.startsWith("javax.") || name.startsWith("groovy."))) {
+            try {
+                return Class.forName(name, false, TypeSignatureWriter.class.getClassLoader()).getTypeParameters().length;
+            } catch (ClassNotFoundException ignored) {
+                return -1;
+            }
+        }
+        return -1;
     }
 
     /**

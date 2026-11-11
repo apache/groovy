@@ -1226,17 +1226,18 @@ instruction selection. GINQ does not add a compilation phase and does not type-c
 the query with a checker of its own.
 
 The `GQ` macro lowers the SQL-like syntax at conversion, before either checker.
-The lowered tree is a closure. On a checked class that closure is marked so the
-static compiler emits it with the dynamic writer: property access, operators, and
-aggregate calls inside the query keep their current behaviour. The same marker
-compiles every expression in the closure dynamically, including a user call in
-`where` or `select`. A method another transform selected for that call is not
-what runs; the call is dispatched at runtime. The enclosing method
-is still type-checked, and under `@CompileStatic` it is statically compiled.
+The lowered tree is a closure. Under `@CompileStatic` that closure stays on the
+static writer. A call the checker selects is the call that runs, including a
+target another transform already chose. An operator on a row, a call the checker
+cannot resolve, and a stream pipeline (`stream`, `map`, `collect`, `reduce`)
+stay dynamic, through `ScriptBytecodeAdapter` rather than a stand-in method.
+A method pointer such as `BigDecimal::add` coerces its arguments the way a
+dynamic query does. The enclosing method is type-checked, and under
+`@CompileStatic` it is statically compiled.
 `GinqRowChecks` is added to the enclosing annotation's extension list, which is how
 a caller writes `row.powerOfN`, `row[0]`, and `it.toList()` on a result whose static
-type is not a bean. `@TypeChecked` uses the same extension and does not static-compile.
-No annotation, `@CompileDynamic`, and `TypeCheckingMode.SKIP` leave the lowered query
+type is not a bean. `@TypeChecked` uses the same extension and does not static-compile;
+clause calls stay dynamic there. No annotation, `@CompileDynamic`, and `TypeCheckingMode.SKIP` leave the lowered query
 on the fully dynamic path.
 
 The query expression's static type is `Queryable` (`List` for `GQL`). A `@GQ` method

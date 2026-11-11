@@ -493,6 +493,12 @@ public class BytecodeHelper {
             if (type.getType().isArray()) {
                 ret.append("[");
                 addSubTypes(ret, new GenericsType[]{new GenericsType(type.getType().getComponentType())}, "", "");
+            } else if ("<".equals(start) && isPrimitiveType(type.getType()) && !isPrimitiveVoid(type.getType())) {
+                // A type argument cannot be a primitive (JVMS 4.7.9.1). Queryable<int>
+                // from an int[] source would otherwise be written as LQueryable<I; and
+                // the class fails to load. Parameters and return types use a different
+                // start marker and stay primitive.
+                writeGenericsBoundType(ret, ClassHelper.getWrapper(type.getType()), false);
             } else {
                 if (type.isPlaceholder()) {
                     ret.append('T');
@@ -500,12 +506,13 @@ public class BytecodeHelper {
                     ret.append(name);
                     ret.append(';');
                 } else if (type.isWildcard()) {
-                    if (type.getUpperBounds() != null) {
+                    GenericsType bound = boxPrimitiveWildcard(type);
+                    if (bound.getUpperBounds() != null) {
                         ret.append('+');
-                        writeGenericsBounds(ret, type, false);
-                    } else if (type.getLowerBound() != null) {
+                        writeGenericsBounds(ret, bound, false);
+                    } else if (bound.getLowerBound() != null) {
                         ret.append('-');
-                        writeGenericsBounds(ret, type, false);
+                        writeGenericsBounds(ret, bound, false);
                     } else {
                         ret.append('*');
                     }
@@ -515,6 +522,37 @@ public class BytecodeHelper {
             }
         }
         ret.append(end);
+    }
+
+    /**
+     * A wildcard bound cannot be a primitive. {@code ? extends int} is written
+     * as {@code +Ljava/lang/Integer;}.
+     */
+    private static GenericsType boxPrimitiveWildcard(GenericsType type) {
+        ClassNode[] upper = type.getUpperBounds();
+        if (upper != null) {
+            ClassNode[] boxed = new ClassNode[upper.length];
+            boolean changed = false;
+            for (int i = 0; i < upper.length; i += 1) {
+                if (isPrimitiveType(upper[i]) && !isPrimitiveVoid(upper[i])) {
+                    boxed[i] = ClassHelper.getWrapper(upper[i]);
+                    changed = true;
+                } else {
+                    boxed[i] = upper[i];
+                }
+            }
+            if (!changed) return type;
+            GenericsType result = new GenericsType(type.getType(), boxed, type.getLowerBound());
+            result.setWildcard(true);
+            return result;
+        }
+        ClassNode lower = type.getLowerBound();
+        if (lower != null && isPrimitiveType(lower) && !isPrimitiveVoid(lower)) {
+            GenericsType result = new GenericsType(type.getType(), null, ClassHelper.getWrapper(lower));
+            result.setWildcard(true);
+            return result;
+        }
+        return type;
     }
 
     /**

@@ -112,6 +112,36 @@ class QueryableHelper {
     }
 
     /**
+     * Runs one clause body on the shared pool. The declared type is {@code Object}
+     * so static inference never sees {@code CompletableFuture}: a parallel row
+     * was being typed as that future, and the generated bridge then cast the row.
+     * The value returned to the runtime is still the future {@code select} unwraps.
+     *
+     * @param supplier the clause body
+     * @return the asynchronous result
+     * @since 7.0.0
+     */
+    @GroovyABI(since = "7.0.0")
+    static Object supplyClause(Supplier<Object> supplier) {
+        return CompletableFuture.supplyAsync(supplier, ThreadPoolHolder.THREAD_POOL)
+    }
+
+    /**
+     * Runs one clause body on the shared pool. The function types and the
+     * declared result are {@code Object}, so a row number is not inferred as
+     * {@code CompletableFuture}.
+     *
+     * @param function the clause body
+     * @param param the row number, or another value the body reads
+     * @return the asynchronous result
+     * @since 7.0.0
+     */
+    @GroovyABI(since = "7.0.0")
+    static Object supplyClause(Function<Object, Object> function, Object param) {
+        return CompletableFuture.supplyAsync(() -> function.apply(param), ThreadPoolHolder.THREAD_POOL)
+    }
+
+    /**
      * Submits work to the shared fork-join pool.
      *
      * @param callable the task to submit

@@ -45,6 +45,7 @@ import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -53,6 +54,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.codehaus.groovy.syntax.Types;
@@ -72,6 +74,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.closureX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.indexX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -83,7 +86,9 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  * or emit bytecode. It asks the same question {@code StaticTypeCheckingVisitor.isSkipMode}
  * asks, registers {@link GinqRowChecks} on the annotation that visitor will read, and
  * marks the lowered closures so the extension can see them. The lowered query closure
- * is emitted by the dynamic writer. The enclosing method stays on the static writer.
+ * stays on the static writer. A call the checker selects is emitted as that target.
+ * Operators the static writer cannot prove, stream pipelines, and method pointers
+ * are rewritten or marked before type checking. The enclosing method stays static.
  * <p>
  * A {@link Queryable} result is handed to {@link LazyQueryable#defer}. Read-only locals
  * are copied when the expression runs. Which names those are comes from
@@ -148,12 +153,12 @@ public final class GinqStaticBridge {
     private static Expression wrap(Expression query, ASTNode position, boolean defer, List<Variable> readOnly) {
         boolean queryable = returnsQueryable(query);
         Expression body = readOnly.isEmpty() ? query : rewriteReadOnly(query, readOnly);
+        body = rewriteStaticHoles(body);
         ClosureExpression shell = closureX(Parameter.EMPTY_ARRAY, returnS(body));
         shell.setSourcePosition(position);
-        // Codegen of this closure is dynamic so a nested lambda can capture the
-        // snapshot array. Type checking still visits it; row checks are limited
-        // to the QUERY mark, not to this codegen switch.
-        shell.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, Boolean.TRUE);
+        // The closure stays on the static writer. Row checks use the QUERY mark.
+        // A Boolean.TRUE DYNAMIC_RESOLUTION on this closure would compile every
+        // call inside it dynamically, including one another extension selected.
         markQuery(shell);
         if (!defer) {
             MethodCallExpression call = callX(shell, "call");
@@ -634,6 +639,161 @@ public final class GinqStaticBridge {
                 return super.transform(expression);
             }
         }.transform(query);
+    }
+
+    /**
+     * Operators the static writer cannot prove become {@link ScriptBytecodeAdapter}
+     * calls. Stream pipelines become {@code invokeMethodN} so a method pointer
+     * stays a Groovy pointer and a mismatched generic stream call still runs.
+     * The snapshot index stays an array load. Order-by {@code in desc} is already
+     * an {@code Order} value by the time this runs.
+     */
+    private static Expression rewriteStaticHoles(Expression query) {
+        return new ClassCodeExpressionTransformer() {
+            @Override
+            protected SourceUnit getSourceUnit() {
+                return null;
+            }
+
+            @Override
+            public Expression transform(Expression expression) {
+                if (expression instanceof ClosureExpression closure) {
+                    closure.visit(this);
+                    return closure;
+                }
+                if (expression instanceof MethodPointerExpression pointer) {
+                    pointer.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, ClassHelper.OBJECT_TYPE);
+                    return super.transform(pointer);
+                }
+                if (expression instanceof BinaryExpression binary
+                        && Types.isAssignment(binary.getOperation().getType())) {
+                    Expression left = binary.getLeftExpression();
+                    if (left instanceof BinaryExpression index
+                            && index.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
+                        index.setLeftExpression(transform(index.getLeftExpression()));
+                        index.setRightExpression(transform(index.getRightExpression()));
+                    } else {
+                        binary.setLeftExpression(transform(left));
+                    }
+                    binary.setRightExpression(transform(binary.getRightExpression()));
+                    return binary;
+                }
+                Expression transformed = super.transform(expression);
+                if (transformed instanceof BinaryExpression binary) {
+                    Expression rewritten = rewriteOperator(binary);
+                    if (rewritten != null) {
+                        return rewritten;
+                    }
+                }
+                if (transformed instanceof MethodCallExpression call && streamPipeline(call)) {
+                    return rewriteStreamCall(call);
+                }
+                return transformed;
+            }
+        }.transform(query);
+    }
+
+    private static boolean streamPipeline(MethodCallExpression call) {
+        String name = call.getMethodAsString();
+        if (name == null) {
+            return false;
+        }
+        Expression receiver = call.getObjectExpression();
+        if (receiver instanceof ClassExpression classExpression
+                && ScriptBytecodeAdapter.class.getName().equals(classExpression.getType().getName())) {
+            return false;
+        }
+        return switch (name) {
+            case "stream", "map", "collect", "reduce", "filter", "flatMap" -> true;
+            default -> false;
+        };
+    }
+
+    private static Expression rewriteStreamCall(MethodCallExpression call) {
+        String name = call.getMethodAsString();
+        Expression receiver = call.getObjectExpression();
+        List<Expression> original = argumentList(call.getArguments());
+        ArrayExpression array = new ArrayExpression(ClassHelper.OBJECT_TYPE, new ArrayList<>(original));
+        MethodCallExpression rewritten = callX(classX(ClassHelper.make(ScriptBytecodeAdapter.class)), "invokeMethodN",
+                args(nullX(), receiver, constX(name), array));
+        rewritten.setImplicitThis(false);
+        rewritten.setSourcePosition(call);
+        return rewritten;
+    }
+
+    private static Expression rewriteOperator(BinaryExpression binary) {
+        int type = binary.getOperation().getType();
+        if (type == Types.LEFT_SQUARE_BRACKET && snapshotIndex(binary.getLeftExpression())) {
+            return null;
+        }
+        String compare = switch (type) {
+            case Types.COMPARE_EQUAL -> "compareEqual";
+            case Types.COMPARE_NOT_EQUAL -> "compareNotEqual";
+            case Types.COMPARE_GREATER_THAN -> "compareGreaterThan";
+            case Types.COMPARE_GREATER_THAN_EQUAL -> "compareGreaterThanEqual";
+            case Types.COMPARE_LESS_THAN -> "compareLessThan";
+            case Types.COMPARE_LESS_THAN_EQUAL -> "compareLessThanEqual";
+            case Types.COMPARE_TO -> "compareTo";
+            case Types.COMPARE_IDENTICAL -> "compareIdentical";
+            case Types.COMPARE_NOT_IDENTICAL -> "compareNotIdentical";
+            case Types.KEYWORD_IN -> "isIn";
+            case Types.COMPARE_NOT_IN -> "isNotIn";
+            case Types.FIND_REGEX -> "findRegex";
+            case Types.MATCH_REGEX -> "matchRegex";
+            default -> null;
+        };
+        if (compare != null) {
+            return adapterCall(compare, binary.getLeftExpression(), binary.getRightExpression(), binary);
+        }
+        String operator = switch (type) {
+            case Types.PLUS -> "plus";
+            case Types.MINUS -> "minus";
+            case Types.MULTIPLY -> "multiply";
+            case Types.DIVIDE -> "div";
+            case Types.INTDIV -> "intdiv";
+            case Types.MOD -> "mod";
+            case Types.REMAINDER -> "remainder";
+            case Types.POWER -> "power";
+            case Types.LEFT_SQUARE_BRACKET -> "getAt";
+            case Types.LEFT_SHIFT -> "leftShift";
+            case Types.RIGHT_SHIFT -> "rightShift";
+            case Types.RIGHT_SHIFT_UNSIGNED -> "rightShiftUnsigned";
+            case Types.BITWISE_AND -> "and";
+            case Types.BITWISE_OR -> "or";
+            case Types.BITWISE_XOR -> "xor";
+            default -> null;
+        };
+        if (operator == null) {
+            return null;
+        }
+        ArrayExpression array = new ArrayExpression(ClassHelper.OBJECT_TYPE, new ArrayList<>(List.of(binary.getRightExpression())));
+        MethodCallExpression call = callX(classX(ClassHelper.make(ScriptBytecodeAdapter.class)), "invokeMethodN",
+                args(nullX(), binary.getLeftExpression(), constX(operator), array));
+        call.setImplicitThis(false);
+        call.setSourcePosition(binary);
+        return call;
+    }
+
+    private static boolean snapshotIndex(Expression left) {
+        return left instanceof VariableExpression variable && CAPTURED.equals(variable.getName());
+    }
+
+    private static Expression adapterCall(String name, Expression left, Expression right, Expression source) {
+        MethodCallExpression call = callX(classX(ClassHelper.make(ScriptBytecodeAdapter.class)), name, args(left, right));
+        call.setImplicitThis(false);
+        call.setSourcePosition(source);
+        return call;
+    }
+
+    private static List<Expression> argumentList(Expression arguments) {
+        if (arguments instanceof TupleExpression tuple) {
+            return new ArrayList<>(tuple.getExpressions());
+        }
+        List<Expression> one = new ArrayList<>();
+        if (arguments != null) {
+            one.add(arguments);
+        }
+        return one;
     }
 
     private static boolean containsSame(List<Variable> variables, Variable target) {

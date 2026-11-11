@@ -51,8 +51,8 @@ visitor of its own.
 | No checking annotation | The macro's lowered tree is left as it is. The whole method is dynamic. The pipeline is built when the expression is evaluated. |
 | `@TypeChecked(SKIP)`, or `@CompileStatic` / `@CompileDynamic` on a class or method the static-compilation visitor skips | Same as no checking annotation. |
 | `@TypeChecked` class, method `@CompileDynamic` or `@CompileStatic(SKIP)` | The method is still type-checked. `@CompileDynamic` is not `@TypeChecked(SKIP)`. The row extension is installed on the class annotation the type-checked visitor reads. |
-| `@TypeChecked` | The enclosing method is type-checked. Row access inside the query is dynamic per expression (below). |
-| `@CompileStatic` | The enclosing method is type-checked and statically compiled. Row access inside the query is dynamic per expression (below). |
+| `@TypeChecked` | The enclosing method is type-checked. Clause calls stay dynamic. The checker does not infer clause-lambda parameter types. |
+| `@CompileStatic` | The enclosing method and the lowered query closure are statically compiled. A call the checker selects is emitted as that target. |
 
 `@TypeChecked` does not static-compile. The same extension is registered for
 both annotations because both need the row rules. Which annotation counts is
@@ -71,43 +71,48 @@ other shape is a compile error and is left unchanged, so a value the bridge
 does not understand is never dropped silently. Nothing is appended for a scope
 the checker will not visit.
 
-## Row access is dynamic; the method is not
+## The query closure stays on the static writer
 
-The lowered clause bodies are not Java. An operator on a row and a property of
-a map do not have a static target the checker can prove. The static call-site
-writer throws when it is asked to emit an operator it cannot prove
-(`StaticTypesCallSiteWriter.makeSingleArgumentCall`).
+Under `@CompileStatic` the lowered query closure is not marked
+`DYNAMIC_RESOLUTION`. The static writer emits it. A call the checker selects,
+including a target another extension replaced in `onMethodSelection`, is that
+call. An extension that selects `choose(CharSequence)` for a `String` argument
+is honoured inside `where` and `select` the same way it is honoured in the
+enclosing method.
 
-The query closure is emitted by the dynamic writer
-(`DYNAMIC_RESOLUTION` set to `Boolean.TRUE` on that closure only). A static
-lambda cannot capture a local of an enclosing closure, which is what the
-read-only snapshot array is, and a statically inferred clause lambda rejects a
-row comparison whose types are not provable. Rewriting those operators into
-per-expression calls was tried and dropped: it broke `orderby ... in desc`,
-join predicates, and parallel clause lambdas. The enclosing method stays on
-the static writer. The marker is not applied to every expression in the method.
+What stays dynamic is the part the static writer cannot prove, and nothing else:
 
-The marker is on the closure, so it is not limited to GINQ operators. Every
-expression in that closure is compiled dynamically, including a user call in
-`where` or `select` and a call whose target another type-checking extension
-has already chosen. For example, an extension that selects `choose(CharSequence)`
-for a `String` argument is honoured in the enclosing method and ignored inside
-the query: the call is dispatched at runtime and hits `choose(String)`.
-Compiling the clause bodies with the static writer, and leaving only the
-unprovable row operators dynamic, was tried again. It keeps that extension
-target, and then breaks calls the dynamic query already accepted: an owner
-method such as `note(n)` is emitted as `invokevirtual` of a method `Object`
-does not have, a join alias is resolved against the query object, and parallel
-joins stop returning rows. The closure marker stays until the static writer
-can emit those calls without changing them.
+* An operator on a row (`==`, `>`, `%`, `+`, a subscript that is not the
+  read-only snapshot) is rewritten to `ScriptBytecodeAdapter` before type
+  checking. `orderby n in desc` is already an `Order` value by then and is
+  not rewritten. The snapshot index `ginqCaptured$[i]` stays an array load.
+* A call the checker cannot resolve is rewritten to
+  `ScriptBytecodeAdapter.invokeMethodN`. That is a real public method. It is
+  not `invokevirtual` of a stand-in, and the stand-in's declaring class is
+  not `Object`.
+* `Queryable.from` stays dynamic when the chosen parameter is an array and
+  the argument is not, so a list is not wrapped as one row.
+* A target whose declaring class is not public stays dynamic.
+  `SourceRecord` is public because `navigate` returns it and a caller in
+  another package has to be able to name the row.
+* `stream`, `map`, `collect`, `reduce`, `filter`, and `flatMap` are rewritten
+  to `invokeMethodN`. A method pointer in the query (`BigDecimal::add`) is
+  marked dynamic, so it is a Groovy pointer that coerces. A SAM bridge would
+  cast an `Integer` row to `BigDecimal`.
+* A parallel clause body is `QueryableHelper.supplyClause`, whose declared
+  type is `Object`. `supplyAsync`'s type parameters inferred the row as
+  `CompletableFuture`.
 
-`GinqRowChecks` is still a normal type-checking extension, appended after
-extensions already on the annotation. Inside the marked closure every call is
-`makeDynamic`, so the dynamic writer does not invoke a stand-in target. The
-checker does not infer the clause-lambda parameter types. Extensions registered
-ahead of `GinqRowChecks` still see the calls the visitor delivers; what those
-calls are named is up to that visitor (`toList`, the macro call, `defer`), not
-a guarantee that `where` and `select` are visible as those names.
+Under `@TypeChecked` the same closure is not statically compiled. Clause calls
+stay dynamic and the checker does not infer clause-lambda parameter types.
+Inferring them writes a generic signature the dynamic closure cannot load.
+The enclosing method is still type-checked.
+
+`GinqRowChecks` is a normal type-checking extension, appended after extensions
+already on the annotation. Under `@CompileStatic` it does not skip the call,
+so those extensions still see it and `onMethodSelection` still runs. Under
+`@TypeChecked` it marks the call dynamic. Extensions registered ahead of
+`GinqRowChecks` still see the calls the visitor delivers.
 
 Outside the marked closure the extension has an opinion only for a query result
 used as the receiver of `toList`, `get`, `getAt`, or a subscript. That is the

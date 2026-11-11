@@ -19,15 +19,15 @@
 package org.apache.groovy.ginq.provider.collection.runtime
 
 import groovy.transform.CompileStatic
-import groovy.transform.PackageScope
 import groovy.transform.stc.POJO
 
 /**
- * Represents source record, which is constructed by {@code from}/joins clauses
+ * Represents source record, which is constructed by {@code from}/joins clauses.
+ * Public because {@code navigate} returns it and a statically compiled caller
+ * in another package has to be able to name the row.
  *
  * @since 4.0.0
  */
-@PackageScope
 @POJO
 @CompileStatic
 class SourceRecord<T> implements Serializable {

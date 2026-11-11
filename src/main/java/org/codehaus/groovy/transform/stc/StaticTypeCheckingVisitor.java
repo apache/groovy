@@ -3997,6 +3997,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     @Override
     public void visitMethodPointerExpression(final MethodPointerExpression expression) {
         super.visitMethodPointerExpression(expression);
+        // A query marks a method pointer so it stays a Groovy pointer. The
+        // pointer coerces its arguments. A SAM bridge would cast them.
+        if (expression.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) != null) {
+            storeType(expression, CLOSURE_TYPE);
+            return;
+        }
         Expression nameExpr = expression.getMethodName();
         if (nameExpr instanceof ConstantExpression
                 && isStringType(getType(nameExpr))) {

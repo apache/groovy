@@ -301,8 +301,8 @@ final class GinqStaticModeTest {
             }
             assert Example.run() == [2, 4]
         '''
-        // Clause calls sit in the dynamic query closure. The extension on the
-        // enclosing method still sees the wrapper the macro leaves behind.
+        // The extension on the enclosing method sees the wrapper the macro leaves
+        // behind, and the clause calls the static writer type-checks.
         assert RecordingChecks.NAMES.contains('toList')
         assert RecordingChecks.NAMES.contains('defer') || RecordingChecks.NAMES.contains('call')
     }
@@ -638,6 +638,27 @@ final class GinqStaticModeTest {
                 }
             }
             assert Example.run() == [null, null]
+        '''
+    }
+
+    @Test
+    void clauseCallKeepsTheMethodAnotherExtensionSelected() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            @CompileStatic(extensions = 'org.apache.groovy.ginq.ChooseChecks')
+            class Example {
+                static String choose(CharSequence value) { 'seq' }
+                static String choose(String value) { 'str' }
+                static List run() {
+                    String outside = choose('x')
+                    List inside = GQ {
+                        from n in [1]
+                        select choose('x')
+                    }.toList()
+                    return [outside, inside[0]]
+                }
+            }
+            assert Example.run() == ['seq', 'seq']
         '''
     }
 }

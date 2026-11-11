@@ -18,6 +18,8 @@
  */
 package org.apache.groovy.ginq;
 
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
@@ -27,6 +29,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
@@ -34,17 +37,28 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.stc.AbstractTypeCheckingExtension;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.codehaus.groovy.transform.stc.TypeCheckingContext;
 
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Type-checking extension for a GINQ query under {@code @CompileStatic} and {@code @TypeChecked}.
@@ -53,11 +67,14 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
  * class. Every hook returns immediately unless the expression is inside a closure marked
  * {@link #QUERY}. Code outside that closure is left to the ordinary checker.
  * <p>
- * The lowered query closure is emitted by the dynamic writer. Inside it, calls are
- * {@code makeDynamic} so a stand-in target is not invoked directly. Outside it, only a
- * query result used as the receiver of {@code toList}, {@code get}, {@code getAt}, or a
- * subscript is treated as a row. A field or an enclosing-method parameter is left to the
- * ordinary checker.
+ * The lowered query closure stays on the static writer. A call the checker selects,
+ * including a target another extension replaced, is kept. An unresolved call is
+ * rewritten to {@link ScriptBytecodeAdapter} so the stand-in is not invoked.
+ * {@code from} stays dynamic when the chosen parameter is an array and the
+ * argument is not. A target whose declaring class is not public stays dynamic.
+ * Outside the query, only a query result used as the receiver of {@code toList},
+ * {@code get}, {@code getAt}, or a subscript is treated as a row. A field or an
+ * enclosing-method parameter is left to the ordinary checker.
  *
  * @since 7.0.0
  */
@@ -80,11 +97,13 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
 
     @Override
     public boolean beforeMethodCall(MethodCall call) {
-        if (!insideQuery() || !(call instanceof Expression expression)) {
+        if (!insideQuery() || !(call instanceof Expression expression) || compileStaticScope()) {
+            // Static compilation has to visit the arguments so a method another
+            // extension selects is still the target that is emitted.
             return false;
         }
-        // Clause calls stay dynamic. Returning true here is after any extension
-        // registered ahead of this one has already seen the call.
+        // @TypeChecked does not emit that target. Inferring clause SAM types
+        // here writes a generic signature the dynamic closure cannot load.
         makeDynamic(call, ClassHelper.OBJECT_TYPE);
         storeType(expression, ClassHelper.OBJECT_TYPE);
         return true;
@@ -113,7 +132,21 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
             return Collections.emptyList();
         }
         ClassNode type = "toList".equals(name) ? ClassHelper.LIST_TYPE : ClassHelper.OBJECT_TYPE;
-        return Collections.singletonList(makeDynamic(call, type));
+        MethodNode standIn = makeDynamic(call, type);
+        // A null declaring class fails later when the target is stored. Object
+        // is only the stand-in's owner: the call is rewritten to a real adapter
+        // method before bytecode, so this is not invokevirtual Object.name().
+        if (standIn.getDeclaringClass() == null) {
+            standIn.setDeclaringClass(ClassHelper.OBJECT_TYPE);
+        }
+        return Collections.singletonList(standIn);
+    }
+
+    @Override
+    public boolean handleIncompatibleReturnType(ReturnStatement statement, ClassNode inferredReturnType) {
+        // A clause lambda's row value is dynamic. The SAM type is what a
+        // typed aggregate asked for; the value is coerced when the lambda runs.
+        return insideQuery();
     }
 
     @Override
@@ -121,14 +154,22 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
         if (!(call instanceof MethodCallExpression methodCall)) {
             return;
         }
-        // makeDynamic stores a stand-in method. A direct invokevirtual of that
-        // stand-in fails at runtime. The call site is what the dynamic writer should emit.
-        // Inside the dynamic query closure a stand-in target is invoked directly and
-        // fails. Outside it, static compilation still requires a target and uses the
-        // DYNAMIC_RESOLUTION marker to emit a call site.
-        if (insideQuery() && methodCall.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) != null) {
-            methodCall.setMethodTarget(null);
-            methodCall.removeNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        if (insideQuery()) {
+            if (!compileStaticScope()) {
+                if (methodCall.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) != null) {
+                    methodCall.setMethodTarget(null);
+                    methodCall.removeNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+                }
+            } else {
+                MethodNode target = methodCall.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+                if (standIn(methodCall, target)) {
+                    rewriteUnresolved(methodCall);
+                } else if (target != null && arrayFromMismatch(methodCall, target)) {
+                    methodCall.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, ClassHelper.OBJECT_TYPE);
+                } else if (target != null && hiddenType(target.getDeclaringClass())) {
+                    methodCall.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, ClassHelper.OBJECT_TYPE);
+                }
+            }
         }
         if (!"toList".equals(methodCall.getMethodAsString())) {
             return;
@@ -261,6 +302,44 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
         return true;
     }
 
+    /**
+     * {@code @CompileStatic} emits the method the checker selected.
+     * {@code @TypeChecked} only checks, and the clause stays a dynamic closure.
+     */
+    private boolean compileStaticScope() {
+        TypeCheckingContext context = typeCheckingVisitor.getTypeCheckingContext();
+        if (annotated(context.getEnclosingMethod(), "groovy.transform.CompileDynamic")) {
+            return false;
+        }
+        if (annotated(context.getEnclosingMethod(), "groovy.transform.CompileStatic")) {
+            return true;
+        }
+        ClassNode type = context.getEnclosingClassNode();
+        while (type != null) {
+            if (annotated(type, "groovy.transform.CompileDynamic")) {
+                return false;
+            }
+            if (annotated(type, "groovy.transform.CompileStatic")) {
+                return true;
+            }
+            type = type.getOuterClass();
+        }
+        return false;
+    }
+
+    private static boolean annotated(AnnotatedNode node, String name) {
+        if (node == null) {
+            return false;
+        }
+        for (AnnotationNode annotation : node.getAnnotations()) {
+            ClassNode type = annotation.getClassNode();
+            if (type != null && name.equals(type.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean insideQuery() {
         List<TypeCheckingContext.EnclosingClosure> stack = typeCheckingVisitor.getTypeCheckingContext().getEnclosingClosureStack();
         for (TypeCheckingContext.EnclosingClosure enclosing : stack) {
@@ -285,5 +364,111 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
                 || "org.apache.groovy.ginq.provider.collection.runtime.NamedTuple".equals(name)
                 || "org.apache.groovy.ginq.provider.collection.runtime.SourceRecord".equals(name)
                 || "org.apache.groovy.ginq.provider.collection.runtime.GroupResult".equals(name);
+    }
+
+    /**
+     * A {@code makeDynamic} stand-in has no real parameter list. A selected
+     * method, including one another extension stored, is not a stand-in.
+     */
+    private static boolean standIn(MethodCallExpression call, MethodNode target) {
+        if (call.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) == null) {
+            return false;
+        }
+        String name = call.getMethodAsString();
+        if ("invokeMethodN".equals(name) || "invokeMethodNSafe".equals(name)) {
+            return false;
+        }
+        if (target == null || target.getDeclaringClass() == null) {
+            return true;
+        }
+        return target.getParameters().length == 0 && target.getName().equals(name);
+    }
+
+    private static boolean arrayFromMismatch(MethodCallExpression call, MethodNode target) {
+        if (!"from".equals(target.getName()) || target.getParameters().length != 1) {
+            return false;
+        }
+        if (!target.getParameters()[0].getType().isArray()) {
+            return false;
+        }
+        List<Expression> arguments = argumentList(call.getArguments());
+        if (arguments.size() != 1) {
+            return false;
+        }
+        ClassNode argumentType = arguments.get(0).getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        if (argumentType == null) {
+            argumentType = arguments.get(0).getType();
+        }
+        return argumentType == null || !argumentType.isArray();
+    }
+
+    private static boolean hiddenType(ClassNode type) {
+        if (type == null || !type.isResolved()) {
+            return false;
+        }
+        return !Modifier.isPublic(type.redirect().getModifiers());
+    }
+
+    /**
+     * Replaces an unresolved call with {@code ScriptBytecodeAdapter.invokeMethodN}.
+     * The adapter method is a real public target. The original receiver and
+     * arguments are the values it dispatches.
+     */
+    private void rewriteUnresolved(MethodCallExpression call) {
+        String name = call.getMethodAsString();
+        if (name == null) {
+            return;
+        }
+        Expression object = call.getObjectExpression();
+        // implicitThis stays true on calls the walker built with an explicit
+        // receiver. Only a real this-call uses the enclosing instance.
+        boolean implicit = call.isImplicitThis() && thisReceiver(object);
+        Expression receiver = implicit ? implicitReceiver() : object;
+        List<Expression> original = argumentList(call.getArguments());
+        ArrayExpression array = new ArrayExpression(ClassHelper.OBJECT_TYPE, new ArrayList<>(original));
+        String adapter = call.isSafe() ? "invokeMethodNSafe" : "invokeMethodN";
+        call.setObjectExpression(classX(ClassHelper.make(ScriptBytecodeAdapter.class)));
+        call.setMethod(constX(adapter));
+        call.setArguments(args(nullX(), receiver, constX(name), array));
+        call.setImplicitThis(false);
+        call.setSafe(false);
+        MethodNode target = adapterMethod(adapter);
+        call.setMethodTarget(target);
+        call.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, target);
+        call.removeNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION);
+        storeType(call, ClassHelper.OBJECT_TYPE);
+    }
+
+    private static boolean thisReceiver(Expression object) {
+        return object instanceof VariableExpression variable && "this".equals(variable.getName());
+    }
+
+    private Expression implicitReceiver() {
+        MethodNode enclosing = typeCheckingVisitor.getTypeCheckingContext().getEnclosingMethod();
+        if (enclosing != null && enclosing.isStatic()) {
+            return classX(typeCheckingVisitor.getTypeCheckingContext().getEnclosingClassNode());
+        }
+        return varX("this");
+    }
+
+    private static MethodNode adapterMethod(String name) {
+        ClassNode type = ClassHelper.make(ScriptBytecodeAdapter.class);
+        for (MethodNode method : type.getDeclaredMethods(name)) {
+            if (method.getParameters().length == 4) {
+                return method;
+            }
+        }
+        throw new IllegalStateException(name);
+    }
+
+    private static List<Expression> argumentList(Expression arguments) {
+        if (arguments instanceof TupleExpression tuple) {
+            return new ArrayList<>(tuple.getExpressions());
+        }
+        List<Expression> one = new ArrayList<>();
+        if (arguments != null) {
+            one.add(arguments);
+        }
+        return one;
     }
 }

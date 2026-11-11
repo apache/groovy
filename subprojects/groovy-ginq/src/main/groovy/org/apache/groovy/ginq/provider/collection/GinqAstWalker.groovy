@@ -1579,7 +1579,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
             transformedLambdCode = callX(
                     classX(QUERYABLE_HELPER_TYPE),
-                    "supplyAsync",
+                    "supplyClause",
                     argumentListExpression
             )
         }
