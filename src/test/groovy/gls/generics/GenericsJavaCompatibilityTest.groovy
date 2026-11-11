@@ -3986,6 +3986,121 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 6.5.5.1, 8.1.3: within {@code Outer<T>} the simple name {@code Inner} is the type
+     * {@code Outer<T>.Inner}. The type of {@code getClass()} is the {@code Class} of the raw
+     * type {@code Outer.Inner}, which is not a {@code Class<? extends Inner>}.
+     */
+    @Test
+    void testNegativeGetClassForSimpleNameOfInnerClass() {
+        final String className = 'gls.generics.test.GetClassInnerSimpleName'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassInnerSimpleName<T> {
+                public class Inner {
+                    Class<? extends Inner> self() { return getClass(); }
+                }
+                public static void test() {
+                    new GetClassInnerSimpleName<String>().new Inner().self();
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends gls.generics.test.GetClassInnerSimpleName.Inner> to: java.lang.Class<? extends gls.generics.test.GetClassInnerSimpleName<T>.Inner>")
+    }
+
+    /**
+     * JLS 6.5.5.1, 4.8: the qualified name {@code Outer.Inner} is the raw type, which is
+     * not a subtype of the {@code Outer<T>.Inner} that the simple name {@code Inner} denotes.
+     */
+    @Test
+    void testNegativeRawInnerClassForSimpleNameOfInnerClass() {
+        final String className = 'gls.generics.test.RawInnerForSimpleName'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class RawInnerForSimpleName<T> {
+                public class Inner {
+                    @SuppressWarnings({"rawtypes"})
+                    void check(Class<? extends RawInnerForSimpleName.Inner> raw) {
+                        Class<? extends Inner> type = raw;
+                    }
+                }
+                public static void test() {
+                    new RawInnerForSimpleName<String>().new Inner().check(null);
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends gls.generics.test.RawInnerForSimpleName.Inner> to: java.lang.Class<? extends gls.generics.test.RawInnerForSimpleName<T>.Inner>")
+    }
+
+    /**
+     * JLS 8.5: an inner class inherited from {@code Outer<String>} is the member
+     * {@code Outer<String>.Inner}, which the raw type {@code Outer.Inner} is not.
+     */
+    @Test
+    void testNegativeRawInnerClassForSimpleNameOfInheritedInnerClass() {
+        final String className = 'gls.generics.test.RawInnerForInheritedName'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class RawInnerForInheritedName<T> {
+                public class Inner {}
+                public static class Sub extends RawInnerForInheritedName<String> {
+                    void check(Inner inner) {
+                        Class<? extends Inner> type = inner.getClass();
+                    }
+                }
+                public static void test() {
+                    new Sub().check(null);
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, "cannot be converted",
+            "Cannot assign java.lang.Class<? extends gls.generics.test.RawInnerForInheritedName.Inner> to: java.lang.Class<? extends gls.generics.test.RawInnerForInheritedName<java.lang.String>.Inner>")
+    }
+
+    /**
+     * JLS 6.5.5.1, 8.1.3, 8.5: the simple name of an inner class is the member of the
+     * current parameterization of its enclosing class, so {@code Inner} and
+     * {@code Outer<T>.Inner} are the same type within {@code Outer<T>}, and so are
+     * {@code Inner} and {@code Outer<String>.Inner} within a subclass of {@code Outer<String>}.
+     */
+    @Test
+    void testSimpleNameOfInnerClassIsMemberOfParameterizedType() {
+        final String className = 'gls.generics.test.InnerSimpleName'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.ArrayList;
+            import java.util.List;
+            public class InnerSimpleName<T> {
+                public class Inner {
+                    public Class<? extends InnerSimpleName<T>.Inner> same(Class<? extends Inner> type) { return type; }
+                    @SuppressWarnings({"rawtypes"})
+                    public Class<? extends InnerSimpleName.Inner> erased(Class<? extends Inner> type) { return type; }
+                    @SuppressWarnings({"unchecked"})
+                    public Class<? extends Inner> self() { return (Class<? extends Inner>) getClass(); }
+                }
+                public Inner inner() { return new Inner(); }
+                public List<Inner> inners() {
+                    List<Inner> inners = new ArrayList<>();
+                    inners.add(inner());
+                    return inners;
+                }
+                public static class Sub extends InnerSimpleName<String> {
+                    public Class<? extends InnerSimpleName<String>.Inner> same(Class<? extends Inner> type) { return type; }
+                    public Inner first(List<? extends Inner> inners) { return inners.get(0); }
+                }
+                public static String test() {
+                    Sub outer = new Sub();
+                    InnerSimpleName<String>.Inner inner = outer.inner();
+                    return inner.same(inner.self()).getSimpleName() + ":" + inner.erased(inner.self()).getSimpleName() + ":" +
+                        outer.same(inner.self()).getSimpleName() + ":" + (outer.first(outer.inners()) != null);
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'Inner:Inner:Inner:true', true)
+    }
+
+    /**
      * JLS 4.9: an intersection type has the members of a class that extends its leftmost
      * bound, so for a {@code (Number & Runnable)} the type of {@code getClass()} is
      * {@code Class<? extends Number>}.

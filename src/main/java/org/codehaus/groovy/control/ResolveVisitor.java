@@ -45,6 +45,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -66,6 +67,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
 import org.codehaus.groovy.syntax.Types;
@@ -91,6 +93,7 @@ import static groovy.lang.Tuple.tuple;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoEnclosingInstance;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
 import static org.apache.groovy.ast.tools.TypeUseUtils.isParameterizedTypeUsage;
+import static org.apache.groovy.ast.tools.TypeUseUtils.isStaticMemberType;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 
 /**
@@ -443,7 +446,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             resolveGenericsTypes(type.getGenericsTypes());
             if (resolveAliasFromModule(type)) return;
         }
-        if (resolve(type)) return;
+        if (resolve(type)) {
+            // a class literal and an array creation name the class, not a parameterization of it
+            if (!(node instanceof ClassExpression) && !(node instanceof ArrayExpression)) {
+                setOuterClassTypeOfSimpleName(type);
+            }
+            return;
+        }
         if (resolveToInner(type)) return;
 
         if (!type.hasPackageName() && isTypeParameterHiddenByStatic(type.getUnresolvedName())) {
@@ -451,6 +460,102 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             return;
         }
         addError("unable to resolve class " + type.toString(false) + msg, node);
+    }
+
+    /**
+     * JLS 6.5.5.1, 8.1.3, 8.5: within {@code Outer<T>}, the simple name {@code Inner}
+     * of an inner class is the type {@code Outer<T>.Inner}, and within a subclass that
+     * extends {@code Outer<String>} it is {@code Outer<String>.Inner}. Neither is the
+     * raw type {@code Outer.Inner}. Records the enclosing type for such a name. A name
+     * used where the type variables are out of scope, as in a static method, stays raw.
+     */
+    private void setOuterClassTypeOfSimpleName(ClassNode type) {
+        while (type.isArray()) type = type.getComponentType();
+        if (!type.isRedirectNode() || type.isGenericsPlaceHolder() || type.getOuterClassType() != null) return;
+        String name = type.getUnresolvedName();
+        if (name.indexOf('.') != -1 || name.indexOf('$') != -1) return; // Outer.Inner is the raw type
+        ClassNode inner = type.redirect(), outer = inner.getOuterClass();
+        if (outer == null || isStaticMember(inner)) return;
+        if (type.getGenericsTypes() == null && inner.getGenericsTypes() != null) return; // raw type
+
+        for (ClassNode cn = currentClass; cn != null; cn = cn.getOuterClass()) {
+            boolean declares = cn.equals(outer);
+            if (declares || inherits(cn, outer)) {
+                ClassNode outerType = typeOfThis(cn);
+                if (outerType != null && !declares) {
+                    outerType = GenericsUtils.parameterizeType(outerType, outer);
+                }
+                if (outerType != null && (outerType.getOuterClassType() != null
+                        || (outerType.isRedirectNode() && outerType.getGenericsTypes() != null))) {
+                    type.setOuterClassType(outerType);
+                }
+                return;
+            }
+            if (isRecord(cn)) return; // the type variables of its enclosing classes are out of scope
+        }
+    }
+
+    private static boolean isStaticMember(final ClassNode cn) {
+        return isStaticMemberType(cn) || isRecord(cn);
+    }
+
+    /**
+     * A nested record is implicitly static (JLS 8.10), which its declaration does not
+     * show until {@code RecordTypeASTTransformation} has run.
+     */
+    private static boolean isRecord(final ClassNode cn) {
+        for (AnnotationNode annotation : cn.getAnnotations()) {
+            String name = annotation.getClassNode().getName();
+            if (name.endsWith("RecordType") || name.endsWith("RecordBase")) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns {@code C<T>} for the generic class {@code C<T>} and {@code Outer<T>.C}
+     * for an inner class of it, {@code C} itself if no type variable is involved,
+     * or {@code null} if one of the type variables is not in scope.
+     */
+    private ClassNode typeOfThis(final ClassNode cn) {
+        ClassNode outer = cn.getOuterClass(), outerType = null;
+        if (outer != null && !isStaticMember(cn)) {
+            outerType = typeOfThis(outer);
+            if (outerType == null) return null;
+            if (outerType == outer) outerType = null;
+        }
+        GenericsType[] typeParameters = cn.getGenericsTypes();
+        if (typeParameters == null && outerType == null) return cn;
+
+        ClassNode type = ClassHelper.makeWithoutCaching(cn.getName());
+        type.setRedirect(cn);
+        if (typeParameters != null) {
+            GenericsType[] typeArguments = new GenericsType[typeParameters.length];
+            for (int i = 0; i < typeParameters.length; i += 1) {
+                String name = typeParameters[i].getName();
+                // not in a static context and not hidden by a type parameter of a method or an inner class
+                if (genericParameterNames.get(new GenericsTypeName(name)) != typeParameters[i]) return null;
+                typeArguments[i] = new GenericsType(ClassHelper.makeWithoutCaching(name));
+            }
+            type.setGenericsTypes(typeArguments);
+            resolveGenericsTypes(typeArguments);
+        }
+        type.setOuterClassType(outerType);
+        return type;
+    }
+
+    /**
+     * True when {@code cn} is a subclass of {@code target} and no class between
+     * them extends a raw type, whose members are erased (JLS 4.8).
+     */
+    private boolean inherits(final ClassNode cn, final ClassNode target) {
+        if (phase == 1) return false; // the head of another class may not be resolved yet
+        Set<ClassNode> seen = new HashSet<>();
+        for (ClassNode sc = cn.getUnresolvedSuperClass(); sc != null && seen.add(sc.redirect()); sc = sc.redirect().getUnresolvedSuperClass()) {
+            if (!sc.isResolved() && !sc.isPrimaryClassNode()) return false;
+            if (sc.getGenericsTypes() == null && sc.redirect().getGenericsTypes() != null) return false;
+            if (sc.equals(target)) return true;
+        }
+        return false;
     }
 
     /**
