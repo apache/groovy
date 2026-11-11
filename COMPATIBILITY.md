@@ -1683,6 +1683,41 @@ time, is unaffected.
 **Who is not affected (binary).** Existing call sites are compiled against
 the unchanged existing overloads.
 
+### Groovy 7 — type checking compares a wildcard argument with every bound of a type parameter (GROOVY-12754)
+
+Under `@TypeChecked` and `@CompileStatic`, an argument with an upper-bounded
+wildcard, such as a `List<? extends B>` passed to `<T extends U> m(List<T>)`,
+was compared with the bound of `T` the wrong way round, and only with the
+erasure of its first bound. The wildcard is now checked as Java checks it: it
+stands for an unknown subtype of `B`, which must be within every bound of `T`,
+type arguments included.
+
+- **Calls that were rejected compile.** A `List<? extends Integer>` for
+  `<T extends Number>`, a `Class<? extends String>` for
+  `<T extends CharSequence>` and `Collections.sort(list)` for a
+  `List<? extends Integer>` were compile errors ("Cannot call <T extends …>")
+  and now compile.
+- **Calls that were accepted are rejected.** A wildcard whose bound is not
+  within a bound of the type parameter was accepted, and the call could then
+  return a wrong value: statically compiled,
+  `<T extends Integer> T narrow(List<T>)` returned `1` for a
+  `List<? extends Number>` holding `1.5`. Such a call is now a compile error,
+  `Cannot call <T extends …> … with arguments […]`. Other examples are a
+  `List<? extends Serializable>` for `<T extends Number>`, a
+  `Class<? extends List<String>>` for `<T extends List<Integer>>`,
+  `Enum.valueOf(type, name)` for a `Class<? extends Enum<?>>` and
+  `Collections.sort(list)` for a `List<? extends Comparable<?>>`.
+
+**Who is affected.** Statically checked code that makes such a call. Declare
+the wildcard with a bound that is within the bounds of the type parameter, or
+use a raw type, which is still an unchecked conversion: a
+`Class<? extends Enum>` or `(Class) type` for `Enum.valueOf`, and
+`(List) list` for `Collections.sort`.
+
+**What is unchanged.** Dynamic code, an argument without a wildcard, a
+wildcard with no upper bound (`?` or `? super B`) and a method whose type
+parameter has no bound.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
