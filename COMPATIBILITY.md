@@ -1512,41 +1512,67 @@ is still rejected.
 `CompilerConfiguration.setClassTagPreemptionDisabled`) keeps the previous
 behaviour.
 
-### Groovy 7 — a closure skips a null owner or delegate (GROOVY-12667, GROOVY-12671)
+### Groovy 6.0.1 — a closure method call skips a null owner or delegate (GROOVY-12667)
 
 A closure's owner or delegate can be null: after `dehydrate()`, after
-`rehydrate` with a null argument, or after `delegate = null`. A method call or
-property access in the closure body that resolves through the owner and
-delegate now skips a null one instead of calling or reading on null:
+`rehydrate` with a null argument, or after `delegate = null`. A method call in
+the closure body that resolves through the owner and delegate now skips a null
+one instead of calling on null:
 
 - **The other candidate answers.** With `OWNER_FIRST` (the default) and a null
-  owner, the delegate's method or property is used. Earlier versions threw
-  `NullPointerException` for a property in every version, and for a method
-  from Groovy 4 on (Groovy 3 skipped the null for methods). With
-  `DELEGATE_FIRST` and a null delegate, methods now use the owner as
-  properties already did.
-- **With no candidate, the error is a missing member.** When both are null, or
+  owner, the delegate's method is used; with `DELEGATE_FIRST` and a null
+  delegate, the owner's. Earlier versions threw `NullPointerException` (from
+  Groovy 4 on; Groovy 3 skipped the null).
+- **With no candidate, the error is a missing method.** When both are null, or
   the one target of `OWNER_ONLY` or `DELEGATE_ONLY` is null, a method of the
   closure itself (`toString()`, `with`, `tap` and the like) runs on the
-  closure. Any other method throws `MissingMethodException`, and a property
-  throws `MissingPropertyException`, where `NullPointerException` was thrown
-  before. In Groovy 6, `toString()` and `with` instead ran against `null`.
+  closure, and any other method throws `MissingMethodException`, where
+  `NullPointerException` was thrown before. In Groovy 6.0.0, `toString()` and
+  `with` instead ran against `null`, as such methods are first tried on the
+  delegate and owner (GROOVY-11858).
 
 The rules are the same whether the closure dispatches through its own
 metaclass or, once it has an `ExpandoMetaClass` (after
 `ExpandoMetaClass.enableGlobally()` or after adding to a closure's metaclass),
-through `MetaClassImpl`. In a `@CompileStatic` closure, a property write
-resolves this way too. A method call or property read compiled against the
-owner is unchanged.
+through `MetaClassImpl`. A method call compiled against the owner is
+unchanged. Property access is unchanged: with a null owner or delegate it can
+still throw `NullPointerException` (Groovy 7 skips the null there too,
+GROOVY-12671).
+
+**Who is affected.** Code that catches `NullPointerException` around a method
+call in a closure with a null owner or delegate, and code that relied on
+`toString()` or `with` receiving `null` there. Nothing that ran without an
+exception before behaves differently, apart from those methods of the
+closure. No public API changes, so `japicmp` does not report this.
+
+### Groovy 7 — a closure skips a null owner or delegate for a property (GROOVY-12671)
+
+A closure's owner or delegate can be null: after `dehydrate()`, after
+`rehydrate` with a null argument, or after `delegate = null`. A property access
+in the closure body that resolves through the owner and delegate now skips a
+null one instead of reading or writing on null, as a method call does from
+Groovy 6.0.1 (GROOVY-12667, see the entry above):
+
+- **The other candidate answers.** With `OWNER_FIRST` (the default) and a null
+  owner, the delegate's property is used. Earlier versions threw
+  `NullPointerException`. With `DELEGATE_FIRST` and a null delegate, the
+  owner's property was already used.
+- **With no candidate, the error is a missing property.** When both are null,
+  or the one target of `OWNER_ONLY` or `DELEGATE_ONLY` is null, a property
+  read or write throws `MissingPropertyException`, where
+  `NullPointerException` was thrown before. So does a write that the first
+  candidate does not take when the second is null.
+
+In a `@CompileStatic` closure, a property write resolves this way too. A
+property read compiled against the owner is unchanged.
 
 The resulting rules are stated in full under "Resolution rules" in
 [`src/spec/doc/core-closures.adoc`](src/spec/doc/core-closures.adoc).
 
-**Who is affected.** Code that catches `NullPointerException` around a call
-in a closure with a null owner or delegate, and code that relied on
-`toString()` or `with` receiving `null` there. Nothing that ran without an
-exception before behaves differently, apart from those methods of the closure.
-No public API changes, so `japicmp` does not report this.
+**Who is affected.** Code that catches `NullPointerException` around a
+property access in a closure with a null owner or delegate. Nothing that ran
+without an exception before behaves differently. No public API changes, so
+`japicmp` does not report this.
 
 ### Groovy 7 — a closure's metaclass does not expose the private fields of `Closure` (GROOVY-12675, GROOVY-12680)
 
