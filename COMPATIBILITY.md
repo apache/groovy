@@ -1012,6 +1012,39 @@ is still rejected.
 `CompilerConfiguration.setClassTagPreemptionDisabled`) keeps the previous
 behaviour.
 
+### Groovy 6.0.1 — a method reference selects a functional-interface overload it can be called as at run time (GROOVY-12758)
+
+When overloads take functional interfaces whose abstract methods have
+different numbers of parameters, such as `Function` and `BinaryOperator`,
+`Function` and `Supplier`, or `Consumer` and `Runnable`, run-time method
+selection now first drops the candidates whose interface method a method
+reference or method pointer cannot be called with, as Java does. This applies
+to dynamic code; under `@TypeChecked` and `@CompileStatic` such calls are
+still rejected as ambiguous. When no candidate fits, all are kept and
+selection proceeds as before.
+
+Before, such calls failed:
+
+- `red(numbers, Integer::sum)` with `red(Collection, BinaryOperator)` and
+  `red(Collection, Function)` was ambiguous: `Ambiguous method overloading`.
+- A method reference passed where `Runnable` or `Callable` competed with an
+  interface that takes arguments, such as `Consumer`, matched `Runnable` or
+  `Callable`, because `Closure` implements them, and failed when run, as no
+  method of its name takes no arguments.
+
+**Who is affected.** Only calls that were ambiguous, or that chose an
+overload whose call then failed. A method reference whose methods accept both
+arities, such as `Integer::valueOf`, is still ambiguous, and a dehydrated
+method closure is selected for as before. Closures and lambdas are chosen for
+as before.
+
+**Who is not affected (binary).** There is no change to public API apart
+from two static helpers on the internal `MetaClassHelper`, and the serial
+form of `MethodClosure` is unchanged. A dynamic selection that depends on
+which method a reference names, rather than on argument classes alone, is
+not cached; this arises only for calls that were ambiguous or chose the
+wrong overload before.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
