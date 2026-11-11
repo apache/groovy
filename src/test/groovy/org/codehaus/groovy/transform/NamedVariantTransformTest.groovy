@@ -29,7 +29,10 @@ import static groovy.test.GroovyAssert.shouldFail
 final class NamedVariantTransformTest {
 
     private final GroovyShell shell = GroovyShell.withConfig {
-        imports { star 'groovy.transform', 'org.codehaus.groovy.ast' }
+        imports {
+            normal 'groovy.transform.ASTTest'
+            star 'groovy.transform', 'org.codehaus.groovy.ast'
+        }
     }
 
     @Test

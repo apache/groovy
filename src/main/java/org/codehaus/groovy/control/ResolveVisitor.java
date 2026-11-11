@@ -70,6 +70,7 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -791,6 +792,75 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
     }
 
+    /**
+     * Binds a simple name imported on demand, or reports it ambiguous.
+     * <p>
+     * Static-import-on-demand, type-import-on-demand, and the implicit
+     * {@code java.lang.*} are one tier. An inaccessible type is not a member
+     * of that tier. The tier does not shadow itself, so more than one distinct
+     * accessible type is a compile-time error. Groovy's other default imports
+     * are not in the tier; they are tried only when this method returns false.
+     *
+     * @return {@code true} if the name was bound or reported ambiguous
+     */
+    private boolean resolveFromOnDemandImports(final ClassNode type, final String name, final ModuleNode module) {
+        List<ClassNode> found = new ArrayList<>();
+        for (ImportNode importNode : module.getStaticStarImports().values()) {
+            collectMemberType(found, importNode.getType(), name);
+        }
+        for (ImportNode importNode : module.getStarImports()) {
+            if (importNode.getType() != null) {
+                collectMemberType(found, importNode.getType(), name);
+            } else {
+                collectPackageType(found, importNode.getPackageName(), name, true);
+            }
+        }
+        // Probe java.lang only when some on-demand import could compete with it
+        // or a module import would otherwise hide it. A compilation unit with no
+        // such imports keeps the default-import path, including its cache.
+        if (name.indexOf('.') < 0
+                && (!module.getStaticStarImports().isEmpty()
+                || !module.getStarImports().isEmpty()
+                || !module.getModuleStarImports().isEmpty())) {
+            collectPackageType(found, "java.lang.", name, false);
+        }
+        if (found.isEmpty()) {
+            return false;
+        }
+        if (found.size() > 1) {
+            addError("reference to " + name + " is ambiguous, both class " + found.get(0).getName()
+                    + " and " + found.get(1).getName() + " match", type);
+            return true;
+        }
+        type.setRedirect(found.get(0));
+        return true;
+    }
+
+    private void collectMemberType(final List<ClassNode> found, final ClassNode outer, final String name) {
+        ClassNode tmp = new ConstructedNestedClass(outer, name);
+        if (resolve(tmp, false, false, true) && Modifier.isStatic(tmp.getModifiers())
+                && isStarImportAccessible(tmp, outer)) {
+            addDistinctOnDemand(found, tmp.redirect());
+        }
+    }
+
+    private void collectPackageType(final List<ClassNode> found, final String packagePrefix,
+                                    final String name, final boolean staticInner) {
+        ClassNode tmp = new ConstructedClassWithPackage(packagePrefix, name);
+        if (resolve(tmp, false, false, staticInner) && isStarImportAccessible(tmp, null)) {
+            addDistinctOnDemand(found, tmp.redirect());
+        }
+    }
+
+    private static void addDistinctOnDemand(final List<ClassNode> found, final ClassNode resolved) {
+        if (resolved == null) return;
+        String resolvedName = resolved.getName();
+        for (ClassNode existing : found) {
+            if (resolvedName.equals(existing.getName())) return;
+        }
+        found.add(resolved);
+    }
+
     private boolean resolveAliasFromModule(final ClassNode type) {
         // In case of getting a ConstructedClassWithPackage here we do not check
         // for partial matches with imported classes. ConstructedClassWithPackage
@@ -925,30 +995,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     }
                 }
             }
-            for (ImportNode importNode : module.getStaticStarImports().values()) {
-                ClassNode tmp = new ConstructedNestedClass(importNode.getType(), name);
-                if (resolve(tmp, false, false, true) && Modifier.isStatic(tmp.getModifiers())
-                        && isStarImportAccessible(tmp, importNode.getType())) {
-                    ambiguousClass(type, tmp, name);
-                    return true;
-                }
-            }
-            // check star imports ("import foo.*" or "import foo.Bar.*")
-            for (ImportNode importNode : module.getStarImports()) {
-                if (importNode.getType() != null) {
-                    ClassNode tmp = new ConstructedNestedClass(importNode.getType(), name);
-                    if (resolve(tmp, false, false, true) && Modifier.isStatic(tmp.getModifiers())
-                            && isStarImportAccessible(tmp, importNode.getType())) {
-                        ambiguousClass(type, tmp, name);
-                        return true;
-                    }
-                } else {
-                    ClassNode tmp = new ConstructedClassWithPackage(importNode.getPackageName(), name);
-                    if (resolve(tmp, false, false, true) && isStarImportAccessible(tmp, null)) {
-                        ambiguousClass(type, tmp, name);
-                        return true;
-                    }
-                }
+            // Type-import-on-demand and static-import-on-demand, including implicit
+            // java.lang.*. Accessible types only; two distinct types are ambiguous.
+            // These shadow module imports (JLS 6.4.1, 6.5.5.1, 7.3, 7.5.2, 7.5.4).
+            if (resolveFromOnDemandImports(type, name, module)) {
+                return true;
             }
             // Module-expanded star imports -- lowest precedence per JLS 6.4.1.
             // Only consulted if nothing above resolved the type, and ambiguity
