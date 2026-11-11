@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794294295556,
+  "lastUpdate": 1794380477400,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -9475,6 +9475,63 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-6",
             "value": 472.5733333333334,
             "range": "±21.27",
+            "unit": "ms",
+            "extra": "6.0.0"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "4b6ff44b83437933368d9f937dab41188be7b012",
+          "message": "GROOVY-12595: SC: keep the receiver cast for array clone() and protected calls on flow-typed variables\n\nA call on a variable whose stored type is wider than its inferred type is\nbound to the stored type without a cast (GROOVY-12469). That is wrong for\nan array clone(), e.g. { it.clone() } over a float[][], and for protected\nmethods called from another package: the verifier requires those receivers\nto have the array type, or the calling class, and fails with\n\"Bad access to protected data\".",
+          "timestamp": "2026-11-11T03:43:38Z",
+          "url": "https://github.com/apache/groovy/commit/4b6ff44b83437933368d9f937dab41188be7b012"
+        },
+        "date": 1794380470108,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 519.32,
+            "range": "±18",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 665.4433333333334,
+            "range": "±224.71",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 597.6466666666668,
+            "range": "±148.46",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 477.69,
+            "range": "±22",
+            "unit": "ms",
+            "extra": "5.1.3"
+          },
+          {
+            "name": "compile@groovy-6",
+            "value": 482.41666666666663,
+            "range": "±22.43",
             "unit": "ms",
             "extra": "6.0.0"
           }
