@@ -1325,6 +1325,93 @@ Code in a named package, and default-package code whose class path has no
 such class or source, resolve as before whether or not the options are on.
 The two options are the only API change.
 
+### Groovy 7 — type checking compares a wildcard argument with every bound of a type parameter (GROOVY-12754)
+
+Under `@TypeChecked` and `@CompileStatic`, an argument with an upper-bounded
+wildcard, such as a `List<? extends B>` passed to `<T extends U> m(List<T>)`,
+was compared with the bound of `T` the wrong way round, and only with the
+erasure of its first bound. The wildcard is now checked as Java checks it: it
+stands for an unknown subtype of `B`, which must be within every bound of `T`,
+type arguments included.
+
+- **Calls that were rejected compile.** A `List<? extends Integer>` for
+  `<T extends Number>`, a `Class<? extends String>` for
+  `<T extends CharSequence>` and `Collections.sort(list)` for a
+  `List<? extends Integer>` were compile errors ("Cannot call <T extends …>")
+  and now compile.
+- **Calls that were accepted are rejected.** A wildcard whose bound is not
+  within a bound of the type parameter was accepted, and the call could then
+  return a wrong value: statically compiled,
+  `<T extends Integer> T narrow(List<T>)` returned `1` for a
+  `List<? extends Number>` holding `1.5`. Such a call is now a compile error,
+  `Cannot call <T extends …> … with arguments […]`. Other examples are a
+  `List<? extends Serializable>` for `<T extends Number>`, a
+  `Class<? extends List<String>>` for `<T extends List<Integer>>`,
+  `Enum.valueOf(type, name)` for a `Class<? extends Enum<?>>` and
+  `Collections.sort(list)` for a `List<? extends Comparable<?>>`.
+- **A wildcard with no upper bound is checked too.** `?` and `? super B`
+  stand for a type with the upper bound that the generic type declares for
+  that type argument: `Object` for a `List<?>` or a `Class<?>`, and `Number`
+  for a `NumBox<?>` declared as `NumBox<N extends Number>`. So a `List<?>` and
+  a `List<? super Integer>` are rejected for `<T extends Number>`, while an
+  `EnumSet<?>` is accepted for `<T extends Enum<T>>`. `Enum.valueOf(type, name)`
+  and `method.getAnnotation(type)` for a `Class<?>`, and
+  `Collections.sort(list)` for a `List<?>`, were accepted and are now compile
+  errors, as in Java.
+
+**Who is affected.** Statically checked code that makes such a call. Declare
+the wildcard with a bound that is within the bounds of the type parameter,
+such as a `Class<? extends Annotation>` for `getAnnotation`, or use a raw
+type, which is still an unchecked conversion: a `Class<? extends Enum>` or
+`(Class) type` for `Enum.valueOf`, and `(List) list` for `Collections.sort`.
+
+**What is unchanged.** Dynamic code, an argument without a wildcard and a
+method whose type parameter has no bound.
+
+### Groovy 7 — type checking types `getClass()` by its receiver (GROOVY-12755)
+
+Under `@TypeChecked` and `@CompileStatic`, `e.getClass()` and `e.class` were
+typed `Class<?>`, the declared return type of `Object#getClass()`. They are
+now typed `Class<? extends |T|>`, where `|T|` is the erasure of the static
+type of `e`, as in Java: `Class<? extends String>` for a `String` and
+`Class<? extends List>` for a `List<String>`.
+
+- **Uses that were rejected compile.** `Class<? extends String> c = s.getClass()`,
+  and `datastore.getClass()` passed where a `Class<? extends Datastore>` is
+  expected, were compile errors ("Incompatible generic argument types") and
+  now compile.
+- **A raw bound is not within a parameterized one, and a type is not within a
+  type variable.** For an assignment, a return and a declared parameter,
+  `? extends A` is no longer accepted for `? extends B` when `B` is
+  parameterized and `A` is raw, or when `B` is a type variable and `A` is not
+  one. These were accepted and are now compile errors, as in Java:
+
+  ```groovy
+  Class<? extends List<String>> a(Class<? extends List> c) { c }
+  <T extends Number> Class<? extends T> b(Class<? extends Number> c) { c }
+  <T> Class<? extends T> c(T t) { t.getClass() }
+  ```
+
+- **The simple name of an inner class keeps the type arguments of the
+  enclosing class.** Within `Outer<T>`, `Inner` now means `Outer<T>.Inner`
+  and not the raw type `Outer.Inner`, with or without static compilation. The
+  `Signature` attribute of a member typed with such a name names the enclosing
+  type, so reflection reports the generic type `Outer<T>$Inner` where it
+  reported the class `Outer$Inner`.
+
+**Who is affected.** Statically checked code that relied on one of the
+conversions above. Add the cast that Java requires, such as
+`(Class<? extends T>) t.getClass()`, or declare the raw bound, such as
+`Class<? extends List>`. The class of a value is also now checked against the
+bound of a type parameter (see GROOVY-12754 above), so
+`Enum.valueOf(e.getClass(), name)` is a compile error; use
+`e.getDeclaringClass()`. Code that reads the generic signature of an inner
+class member by reflection sees the enclosing type.
+
+**What is unchanged.** Dynamic code, apart from the generic signatures. A raw
+type that is not the bound of a wildcard is still an unchecked conversion, as
+in `List<String> x = rawList`.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
