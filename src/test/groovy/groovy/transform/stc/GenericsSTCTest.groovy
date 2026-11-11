@@ -2848,7 +2848,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             Class<? extends Outer<String>.Inner> typeOf(Outer<String>.Inner inner) { inner.getClass() }
         ''',
-            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends Outer<T>.Inner> to: java.lang.Class<? extends Outer<java.lang.String>.Inner>'
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends Outer.Inner> to: java.lang.Class<? extends Outer<java.lang.String>.Inner>'
     }
 
     // GROOVY-12755
@@ -2899,6 +2899,95 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
             List<Class<? extends String>> declared = strings*.class
             assert viaMethod == [String] && viaProperty == [String] && declared == [String]
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGetClassIsNotClassOfInnerClassSimpleName() {
+        shouldFailWithMessages '''
+            class Outer<T> {
+                class Inner {
+                    Class<? extends Inner> self() { getClass() }
+                }
+            }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends Outer.Inner> to: java.lang.Class<? extends Outer<T>.Inner>'
+
+        shouldFailWithMessages '''
+            class Outer<T> {
+                class Inner {
+                    void test(Class<? extends Outer.Inner> raw) {
+                        Class<? extends Inner> type = raw
+                    }
+                }
+            }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends Outer.Inner> to: java.lang.Class<? extends Outer<T>.Inner>'
+
+        shouldFailWithMessages '''
+            class Outer<T> {
+                class Inner {}
+            }
+            class Sub extends Outer<String> {
+                void test(Inner inner, Class<? extends Outer.Inner> raw) {
+                    Class<? extends Inner> one = inner.getClass()
+                    Class<? extends Inner> two = raw
+                }
+            }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends Outer.Inner> to: java.lang.Class<? extends Outer<java.lang.String>.Inner>',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends Outer.Inner> to: java.lang.Class<? extends Outer<java.lang.String>.Inner>'
+
+        assertScript '''
+            class Outer<T> {
+                class Inner {
+                    Class<? extends Outer.Inner> raw() { getClass() }
+                    Class<? extends Inner> cast() { (Class<? extends Inner>) getClass() }
+                    Class<? extends Outer<T>.Inner> same(Class<? extends Inner> type) { type }
+                    Class<? extends Outer.Inner> erased(Class<? extends Inner> type) { type }
+                }
+
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.returnType.outerClassType.toString(false) == 'Outer<T>'
+                    assert node.parameters[0].type.genericsTypes[0].type.outerClassType.toString(false) == 'Outer<T>'
+                })
+                Inner first(List<Inner> inners) { inners[0] }
+
+                // the type variable is out of scope in a static method, so the name is the raw type
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.returnType.genericsTypes[0].upperBounds[0].outerClassType == null
+                })
+                static Class<? extends Inner> ofStatic(Class<? extends Outer.Inner> raw) { raw }
+
+                // a nested record is static, so its name has no enclosing type
+                record Point(int x) {}
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.returnType.outerClassType == null
+                })
+                Point point() { new Point(1) }
+
+                Inner inner() { new Inner() }
+                Inner[] array() { new Inner[1] }
+                Class literal() { Inner }
+                boolean isInner(Object value) { value instanceof Inner }
+            }
+            class Sub extends Outer<String> {
+                Class<? extends Outer<String>.Inner> same(Class<? extends Inner> type) { type }
+            }
+
+            def outer = new Outer<String>()
+            Outer<String>.Inner inner = outer.inner()
+            assert inner.raw() == Outer.Inner
+            assert inner.same(inner.cast()) == Outer.Inner
+            assert inner.erased(inner.cast()) == Outer.Inner
+            assert outer.first([inner]).is(inner)
+            assert Outer.ofStatic(Outer.Inner) == Outer.Inner
+            assert outer.array().length == 1
+            assert outer.literal() == Outer.Inner
+            assert outer.isInner(inner)
+            assert outer.point().x() == 1
+            assert new Sub().same(inner.cast()) == Outer.Inner
         '''
     }
 
