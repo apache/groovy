@@ -1718,6 +1718,50 @@ use a raw type, which is still an unchecked conversion: a
 wildcard with no upper bound (`?` or `? super B`) and a method whose type
 parameter has no bound.
 
+### Groovy 7 — type checking types `getClass()` by its receiver (GROOVY-12755)
+
+Under `@TypeChecked` and `@CompileStatic`, `e.getClass()` and `e.class` were
+typed `Class<?>`, the declared return type of `Object#getClass()`. They are
+now typed `Class<? extends |T|>`, where `|T|` is the erasure of the static
+type of `e`, as in Java: `Class<? extends String>` for a `String` and
+`Class<? extends List>` for a `List<String>`.
+
+- **Uses that were rejected compile.** `Class<? extends String> c = s.getClass()`,
+  and `datastore.getClass()` passed where a `Class<? extends Datastore>` is
+  expected, were compile errors ("Incompatible generic argument types") and
+  now compile.
+- **A raw bound is not within a parameterized one, and a type is not within a
+  type variable.** For an assignment, a return and a declared parameter,
+  `? extends A` is no longer accepted for `? extends B` when `B` is
+  parameterized and `A` is raw, or when `B` is a type variable and `A` is not
+  one. These were accepted and are now compile errors, as in Java:
+
+  ```groovy
+  Class<? extends List<String>> a(Class<? extends List> c) { c }
+  <T extends Number> Class<? extends T> b(Class<? extends Number> c) { c }
+  <T> Class<? extends T> c(T t) { t.getClass() }
+  ```
+
+- **The simple name of an inner class keeps the type arguments of the
+  enclosing class.** Within `Outer<T>`, `Inner` now means `Outer<T>.Inner`
+  and not the raw type `Outer.Inner`, with or without static compilation. The
+  `Signature` attribute of a member typed with such a name names the enclosing
+  type, so reflection reports the generic type `Outer<T>$Inner` where it
+  reported the class `Outer$Inner`.
+
+**Who is affected.** Statically checked code that relied on one of the
+conversions above. Add the cast that Java requires, such as
+`(Class<? extends T>) t.getClass()`, or declare the raw bound, such as
+`Class<? extends List>`. The class of a value is also now checked against the
+bound of a type parameter (see GROOVY-12754 above), so
+`Enum.valueOf(e.getClass(), name)` is a compile error; use
+`e.getDeclaringClass()`. Code that reads the generic signature of an inner
+class member by reflection sees the enclosing type.
+
+**What is unchanged.** Dynamic code, apart from the generic signatures. A raw
+type that is not the bound of a wildcard is still an unchecked conversion, as
+in `List<String> x = rawList`.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
