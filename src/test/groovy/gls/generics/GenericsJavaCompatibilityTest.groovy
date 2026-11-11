@@ -4452,6 +4452,118 @@ final class GenericsJavaCompatibilityTest {
     }
 
     /**
+     * JLS 18.5.2: a generic method invocation in an assignment or return context takes its type
+     * arguments from the target type as well, so {@code Collections.singletonList(x.getClass())}
+     * is a {@code List<Class<?>>} when that is the target.
+     */
+    @Test
+    void testGenericCallOfGetClassTakesTypeArgumentsFromTargetType() {
+        final String className = 'gls.generics.test.GetClassTargetTyped'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class GetClassTargetTyped {
+                static List<Class<?>> single(String x) { return Collections.singletonList(x.getClass()); }
+                static Optional<Class<?>> optional(String x) { return Optional.of(x.getClass()); }
+                static List<Number> numbers() { return Arrays.asList(1, 2); }
+                public static String test() {
+                    List<Class<?>> list = Arrays.asList("a".getClass(), Integer.valueOf(1).getClass());
+                    String name = optional("x").get().getSimpleName();
+                    return list.size() + ":" + single("x").get(0).getSimpleName() + ":" + name + ":" + numbers();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, '2:String:String:[1, 2]')
+    }
+
+    /**
+     * JLS 4.3.2: {@code e.getClass()} has the type {@code Class<? extends |T|>} for the static type
+     * {@code T} of {@code e}. An {@code instanceof} test does not change the type of {@code o},
+     * so {@code o.getClass()} stays a {@code Class<?>} for an {@code Object o}.
+     */
+    @Test
+    void testNegativeGetClassOfVariableTestedByInstanceof() {
+        final String className = 'gls.generics.test.GetClassAfterInstanceof'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassAfterInstanceof {
+                static Class<? extends String> typeOf(Object o) {
+                    if (o instanceof String) return o.getClass();
+                    return String.class;
+                }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, 'incompatible types', 'Incompatible generic argument types')
+    }
+
+    /**
+     * JLS 14.30.1, 15.16: a pattern variable and a cast have the narrower type.
+     */
+    @Test
+    void testGetClassOfPatternVariableAndCast() {
+        final String className = 'gls.generics.test.GetClassOfPatternVariable'
+        final String javaSrc = '''
+            package gls.generics.test;
+            public class GetClassOfPatternVariable {
+                static Class<? extends String> pattern(Object o) { return o instanceof String s ? s.getClass() : String.class; }
+                static Class<? extends String> cast(Object o) { return o instanceof String ? ((String) o).getClass() : String.class; }
+                public static String test() {
+                    return pattern("x").getSimpleName() + ":" + cast("x").getSimpleName();
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'String:String')
+    }
+
+    /**
+     * JLS 4.8: the type of a member of a raw type is the erasure of its type, so assigning it to
+     * a parameterized type is an unchecked conversion.
+     */
+    @Test
+    void testMemberOfRawTypeHasErasureOfItsType() {
+        final String className = 'gls.generics.test.RawMemberErasure'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class RawMemberErasure {
+                static class Holder<T extends List> {
+                    Class<? extends T> type;
+                    List<T> items = new ArrayList<>();
+                    Class<? extends T> get() { return type; }
+                }
+                @SuppressWarnings({"unchecked", "rawtypes"})
+                static Class<? extends List<String>> field(Holder holder) { return holder.type; }
+                @SuppressWarnings({"unchecked", "rawtypes"})
+                static Class<? extends List<String>> method(Holder holder) { return holder.get(); }
+                @SuppressWarnings({"unchecked", "rawtypes"})
+                static List<String> items(Holder holder) { return holder.items; }
+                @SuppressWarnings("rawtypes")
+                public static String test() {
+                    Holder holder = new Holder();
+                    return String.valueOf(field(holder)) + ":" + method(holder) + ":" + items(holder);
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, 'null:null:[]')
+    }
+
+    /**
+     * JLS 18.5.2: the target type does not widen a type argument beyond what the arguments allow.
+     */
+    @Test
+    void testNegativeGenericCallOfGetClassOutsideTargetType() {
+        final String className = 'gls.generics.test.GetClassTargetTypedNegative'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class GetClassTargetTypedNegative {
+                static List<Class<? extends Number>> single(String x) { return Collections.singletonList(x.getClass()); }
+            }
+        '''
+        assertNegativeCompile(className, javaSrc, 'incompatible types', 'Incompatible generic argument types')
+    }
+
+    /**
      * JLS 4.5.1, 4.10.2: {@code ? extends A} is contained by {@code ? extends B} only when
      * {@code A} is a subtype of {@code B}, and a type that is not a type variable is not a
      * subtype of one. So {@code Class<? extends Number>} is not a {@code Class<? extends T>}.
