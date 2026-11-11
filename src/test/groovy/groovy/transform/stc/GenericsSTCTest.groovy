@@ -5357,6 +5357,197 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             '#narrow(java.util.List<T>) with arguments [java.util.List<? extends java.lang.Number>]'
     }
 
+    // GROOVY-12754
+    @Test
+    void testUpperBoundedWildcardArgumentForTypeParameterInItsOwnBound() {
+        assertScript '''
+            public <T extends Comparable<? super T>> T first(List<T> list) { list.get(0) }
+            public <T extends Number & Comparable<? super T>> T second(List<T> list) { list.get(1) }
+            public <T extends CharSequence & Comparable<String>> T third(Collection<T> items) { items[2] }
+            public <T extends List<? extends Number>> T head(List<T> lists) { lists.get(0) }
+            public <T extends Map<String, ? extends Number>> String named(Class<T> type) { type.simpleName }
+
+            void test(List<? extends Integer> ints, List<? extends String> strings, List<? extends ArrayList<Integer>> lists,
+                    Class<? extends HashMap<String, Integer>> type) {
+                Integer i = first(ints)
+                assert i == 4
+                assert second(ints) == 2
+                assert third(strings) == 'c'
+                ArrayList<Integer> list = head(lists)
+                assert list == [1]
+                assert named(type) == 'HashMap'
+                Collections.sort(ints)
+            }
+            test([4, 2], ['a', 'b', 'c'], [[1] as ArrayList<Integer>], HashMap)
+        '''
+    }
+
+    // GROOVY-12754
+    @Test
+    void testUpperBoundedWildcardArgumentBoundedByTypeVariable() {
+        assertScript '''
+            public <T extends Number> T first(List<T> list) { list.get(0) }
+            public <E extends Integer> Number test(List<? extends E> list) {
+                first(list)
+            }
+            assert test([4, 2]) == 4
+        '''
+
+        shouldFailWithMessages '''
+            public <T extends Integer> T narrow(List<T> list) { list.get(0) }
+            public <E extends Number> void test(List<? extends E> list) {
+                narrow(list)
+            }
+        ''',
+            '#narrow(java.util.List<T>) with arguments [java.util.List<? extends E>]'
+
+        shouldFailWithMessages '''
+            public <T extends Number> T first(List<T> list) { list.get(0) }
+            public <E> void test(List<? extends E> list) {
+                first(list)
+            }
+        ''',
+            '#first(java.util.List<T>) with arguments [java.util.List<? extends E>]'
+    }
+
+    // GROOVY-12754
+    @Test
+    void testUpperBoundedWildcardArgumentOutsideBoundThatNamesTypeParameter() {
+        for (bound in ['Comparable<T>', 'Number & Comparable<T>']) {
+            shouldFailWithMessages """
+                public <T extends $bound> T id(List<T> list) { list.get(0) }
+                void test(List<? extends Integer> list) {
+                    id(list)
+                }
+            """,
+                '#id(java.util.List<T>) with arguments [java.util.List<? extends java.lang.Integer>]'
+        }
+
+        shouldFailWithMessages '''
+            public <T extends Comparable<T>> int cmp(List<T> list) { list.get(0).compareTo(list.get(1)) }
+            void test(List<? extends Integer> list) {
+                cmp(list)
+            }
+        ''',
+            '#cmp(java.util.List<T>) with arguments [java.util.List<? extends java.lang.Integer>]'
+
+        shouldFailWithMessages '''
+            public <T extends Enum<T>> T id(List<T> list) { list.get(0) }
+            void test(List<? extends Thread.State> list) {
+                id(list)
+            }
+        ''',
+            '#id(java.util.List<T>) with arguments [java.util.List<? extends java.lang.Thread$State>]'
+
+        shouldFailWithMessages '''
+            class Base implements Comparable<Base> {
+                int compareTo(Base that) { 0 }
+            }
+            class Sub extends Base {
+            }
+            public <T extends Comparable<T>> T id(List<T> list) { list.get(0) }
+            void test(List<? extends Sub> list) {
+                id(list)
+            }
+        ''',
+            '#id(java.util.List<T>) with arguments [java.util.List<? extends Sub>]'
+
+        shouldFailWithMessages '''
+            void test(Class<? extends Thread.State> type) {
+                EnumSet.allOf(type)
+            }
+        ''',
+            '#allOf(java.lang.Class<E>) with arguments [java.lang.Class<? extends java.lang.Thread$State>]'
+
+        shouldFailWithMessages '''
+            void test(Class<? extends Enum<?>> type) {
+                Enum.valueOf(type, 'NEW')
+            }
+        ''',
+            '#valueOf(java.lang.Class<T>, java.lang.String) with arguments [java.lang.Class<? extends java.lang.Enum<?>>, java.lang.String]'
+
+        shouldFailWithMessages '''
+            void test(List<? extends Comparable<?>> list) {
+                Collections.sort(list)
+            }
+        ''',
+            '#sort(java.util.List<T>) with arguments [java.util.List<? extends java.lang.Comparable<?>>]'
+    }
+
+    // GROOVY-12754
+    @Test
+    void testUpperBoundedWildcardArgumentOutsideIntersectionBound() {
+        shouldFailWithMessages '''
+            public <T extends CharSequence & Appendable> T id(List<T> list) { list.get(0).append('x'); list.get(0) }
+            void test(List<? extends String> list) {
+                id(list)
+            }
+        ''',
+            '#id(java.util.List<T>) with arguments [java.util.List<? extends java.lang.String>]'
+    }
+
+    // GROOVY-12754
+    @Test
+    void testUpperBoundedWildcardArgumentOutsideParameterizedBound() {
+        for (type in ['ArrayList<String>', 'List<String>']) {
+            shouldFailWithMessages """
+                public <T extends List<Integer>> Integer head(Class<T> type, value) { type.cast(value).get(0) }
+                void test(Class<? extends $type> type) {
+                    head(type, ['x'])
+                }
+            """,
+                '#head(java.lang.Class<T>, java.lang.Object) with arguments [java.lang.Class<? extends java.util.'
+        }
+
+        for (bound in ['List<Integer>', 'List<? extends Integer>']) {
+            shouldFailWithMessages """
+                public <T extends $bound> T id(List<T> lists) { lists.get(0) }
+                void test(List<? extends ArrayList<String>> lists) {
+                    id(lists)
+                }
+            """,
+                '#id(java.util.List<T>) with arguments [java.util.List<? extends java.util.ArrayList<java.lang.String>>]'
+        }
+
+        shouldFailWithMessages '''
+            class ListBox<E extends List<Integer>> {
+            }
+            public <T extends List<Integer>> T id(ListBox<T> box) { null }
+            void test(ListBox<? extends ArrayList<String>> box) {
+                id(box)
+            }
+        ''',
+            '#id(ListBox<T>) with arguments [ListBox<? extends java.util.ArrayList<java.lang.String>>]'
+    }
+
+    // GROOVY-12754
+    @Test
+    void testUpperBoundedWildcardArgumentIsCapturedOnceAndNotWhenNested() {
+        shouldFailWithMessages '''
+            public <T extends Number> void take(Map<T, T> map) { }
+            void test(Map<? extends Integer, ? extends Integer> map) {
+                take(map)
+            }
+        ''',
+            '#take(java.util.Map<T, T>) with arguments [java.util.Map<? extends java.lang.Integer, ? extends java.lang.Integer>]'
+
+        shouldFailWithMessages '''
+            public <T extends Number> void take(List<List<T>> lists) { }
+            void test(List<List<? extends Integer>> lists) {
+                take(lists)
+            }
+        ''',
+            '#take(java.util.List<java.util.List<T>>) with arguments [java.util.List<java.util.List<? extends java.lang.Integer>>]'
+
+        assertScript '''
+            public <K extends Number, V extends Number> int take(Map<K, V> map) { map.size() }
+            int test(Map<? extends Integer, ? extends Integer> map) {
+                take(map)
+            }
+            assert test([(1): 2]) == 1
+        '''
+    }
+
     // GROOVY-5885
     @Test
     void testMethodLevelGenericsForMethodCall2() {
