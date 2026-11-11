@@ -2904,6 +2904,54 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-12755
     @Test
+    void testGetClassIsClassOfReceiverErasure7() {
+        // the static type of a variable that instanceof narrows is its type without the test
+        assertScript '''
+            Class<?> typeOf(Object value) {
+                if (value instanceof String) {
+                    assert value.substring(1) == 'y' // the receiver is a String here
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'java.lang.Class<? extends java.lang.Object>'
+                    })
+                    def type = value.getClass()
+                    return type
+                }
+                String
+            }
+            assert typeOf('xy') == String
+        '''
+
+        for (expr in ['value.getClass()', 'value.class']) {
+            shouldFailWithMessages """
+                Class<? extends String> typeOf(Object value) {
+                    if (value instanceof String) {
+                        return $expr
+                    }
+                    String
+                }
+            """,
+                'Incompatible generic argument types. Cannot assign java.lang.Class<?> to: java.lang.Class<? extends java.lang.String>'
+        }
+
+        // a pattern variable, a cast and a new variable have the narrower type
+        assertScript '''
+            Class<? extends String> pattern(Object value) { value instanceof String s ? s.getClass() : String }
+            Class<? extends String> cast(Object value) { value instanceof String ? ((String) value).getClass() : String }
+            Class<? extends String> local(Object value) {
+                if (value instanceof String) {
+                    String string = value
+                    return string.getClass()
+                }
+                String
+            }
+            assert pattern('x') == String
+            assert cast('x') == String
+            assert local('x') == String
+        '''
+    }
+
+    // GROOVY-12755
+    @Test
     void testGetClassIsNotClassOfInnerClassSimpleName() {
         shouldFailWithMessages '''
             class Outer<T> {
@@ -3095,6 +3143,85 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             assert holder.type == Integer
             assert unchecked(['x']) == ['x']
         '''
+    }
+
+    // GROOVY-12755
+    @Test
+    void testGenericCallTakesTypeArgumentsFromTargetType() {
+        assertScript '''
+            List<Class<?>> single(String x) { Collections.singletonList(x.getClass()) }
+            Optional<Class<?>> optional(String x) { Optional.of(x.getClass()) }
+            Map<String, Class<?>> keyed(String x) { Collections.singletonMap('k', x.getClass()) }
+            List<Class<?>> collected(List<String> strings) { strings.collect { it.getClass() } }
+            List<Number> numbers() { Arrays.asList(1, 2) }
+
+            List<Class<?>> list = Arrays.asList('a'.getClass(), 1.getClass())
+            assert list == [String, Integer]
+            assert single('x') == [String]
+            assert optional('x').get() == String
+            assert keyed('x') == [k: String]
+            assert collected(['a', 'b']) == [String, String]
+            assert numbers() == [1, 2]
+        '''
+
+        shouldFailWithMessages '''
+            List<Class<? extends Number>> test(String x) { Collections.singletonList(x.getClass()) }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Class<? extends java.lang.String>> to: java.util.List<java.lang.Class<? extends java.lang.Number>>'
+
+        shouldFailWithMessages '''
+            List<Integer> test(List<String> strings) { strings.collect { it.toUpperCase() } }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.String> to: java.util.List<java.lang.Integer>'
+
+        shouldFailWithMessages '''
+            <T extends Number> List<T> numbers(T t) { [t] }
+            List<Object> test() { numbers(1) }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Integer> to: java.util.List<java.lang.Object>'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testValueOfGenericTypeDoesNotTakeTypeArgumentsFromTargetType() {
+        // only a call of a generic method is inferred from its target
+        shouldFailWithMessages '''
+            List<Class<?>> test(List<String> strings) { strings*.getClass() }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Class<? extends java.lang.String>> to: java.util.List<java.lang.Class<?>>'
+
+        shouldFailWithMessages '''
+            List<Class<?>> test(List<Class<? extends String>> classes) { classes }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Class<? extends java.lang.String>> to: java.util.List<java.lang.Class<?>>'
+    }
+
+    // GROOVY-12755
+    @Test
+    void testMemberOfRawTypeIsErasedForRawBound() {
+        assertScript '''
+            class Holder<T extends List> {
+                Class<? extends T> type = ArrayList
+                List<T> items = []
+                Class<? extends T> get() { type }
+            }
+            Class<? extends List<String>> field(Holder holder) { holder.type }
+            Class<? extends List<String>> method(Holder holder) { holder.get() }
+            List<String> items(Holder holder) { holder.items }
+
+            def holder = new Holder()
+            assert field(holder) == ArrayList
+            assert method(holder) == ArrayList
+            assert items(holder) == []
+        '''
+
+        shouldFailWithMessages '''
+            class Holder<T extends List> {
+                Class<? extends T> type
+            }
+            Class<? extends List<String>> test(Holder<ArrayList> holder) { holder.type }
+        ''',
+            'Incompatible generic argument types. Cannot assign java.lang.Class<? extends java.util.ArrayList> to: java.lang.Class<? extends java.util.List<java.lang.String>>'
     }
 
     // GROOVY-8961, GROOVY-9915

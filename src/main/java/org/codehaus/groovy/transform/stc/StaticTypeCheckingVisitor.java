@@ -988,6 +988,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (temporaryType != null && !isObjectType(temporaryType)) {
                     expression.putNodeMetaData(INFERRED_TYPE, temporaryType);
                 }
+                if ("class".equals(expression.getPropertyAsString()) && !expression.isSpreadSafe()
+                        && isClassType(getType(expression))) { // "x.class" has the type of "x.getClass()"
+                    ClassNode staticType = typeWithoutInstanceOfNarrowing(expression.getObjectExpression());
+                    if (staticType != null) expression.putNodeMetaData(INFERRED_TYPE, getClassType(staticType));
+                }
             }
             return; // resolved or excused
         }
@@ -2278,8 +2283,148 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         boolean typeVariableEscapes = unresolved && (typeVariableBoundEscapes(leftExpressionType, right)
                 || concreteArgumentContainsWildcard(leftExpressionType, right)
                 || upperBoundEscapes(leftExpressionType, right));
-        if (incompatible || typeVariableEscapes) {
+        if ((incompatible || typeVariableEscapes) && !isApplicableForTargetType(leftExpressionType, rightExpression)) {
             addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(rightExpressionType) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
+        }
+    }
+
+    /**
+     * A call of a generic method in an assignment or return context takes its type arguments
+     * from the target type as well as from the arguments (JLS 18.5.2), so that
+     * {@code List<Class<?>> list = Collections.singletonList(x.getClass())} is accepted although
+     * the arguments alone give {@code List<Class<? extends String>>}. The call is accepted when
+     * the type parameters that the target determines keep their bounds and every argument fits
+     * its parameter with them.
+     */
+    private boolean isApplicableForTargetType(final ClassNode targetType, final Expression call) {
+        if (!(call instanceof MethodCall) || (call instanceof MethodCallExpression && ((MethodCallExpression) call).isUsingGenerics())) return false;
+        MethodNode method = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (method == null) return false;
+        List<ClassNode> argumentTypes = new ArrayList<>();
+        List<Expression> arguments = new ArrayList<>(InvocationWriter.makeArgumentList(((MethodCall) call).getArguments()).getExpressions());
+        if (method instanceof ExtensionMethodNode) {
+            if (!(call instanceof MethodCallExpression)) return false;
+            Expression receiver = ((MethodCallExpression) call).getObjectExpression();
+            method = ((ExtensionMethodNode) method).getExtensionMethodNode();
+            arguments.add(0, receiver);
+        }
+        GenericsType[] typeParameters = method.getGenericsTypes();
+        ClassNode returnType = method.getReturnType();
+        if (typeParameters == null || typeParameters.length == 0 || !GenericsUtils.hasUnresolvedGenerics(returnType)) return false;
+        Set<String> names = new HashSet<>();
+        for (GenericsType tp : typeParameters) names.add(tp.getName());
+        // only the type parameters of the method may take their type from the target
+        Set<String> used = new HashSet<>();
+        collectTypeVariableNames(returnType, used);
+        if (!names.containsAll(used)) return false;
+
+        ClassNode viewed = returnType;
+        if (!returnType.equals(targetType)) {
+            if (!implementsInterfaceOrIsSubclassOf(returnType, targetType)) return false;
+            viewed = GenericsUtils.parameterizeType(returnType, targetType);
+        }
+        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
+        extractGenericsConnections(connections, targetType, viewed);
+        connections.keySet().removeIf(name -> !names.contains(name.getName()));
+        for (Map.Entry<GenericsTypeName, GenericsType> entry : connections.entrySet()) {
+            GenericsType value = entry.getValue();
+            if (value.isWildcard()) { // take "? extends B" or "? super B" as B
+                ClassNode bound = value.getLowerBound() != null ? value.getLowerBound()
+                        : value.getUpperBounds() != null ? value.getUpperBounds()[0] : OBJECT_TYPE;
+                entry.setValue(bound.asGenericsType());
+            }
+        }
+        if (connections.isEmpty()) return false;
+
+        for (GenericsType tp : typeParameters) { // the target must keep each type parameter within its bounds
+            GenericsType value = connections.get(new GenericsTypeName(tp.getName()));
+            if (value == null || tp.getUpperBounds() == null) continue;
+            for (ClassNode bound : applyGenericsContext(connections, tp.getUpperBounds())) {
+                if (GenericsUtils.hasUnresolvedGenerics(bound) ? !isAssignableTo(value.getType(), bound)
+                        : !typeCheckMethodArgumentWithGenerics(bound, value.getType(), false)) return false;
+            }
+        }
+
+        Parameter[] parameters = method.getParameters();
+        int n = arguments.size();
+        if (parameters.length == 0 || (n != parameters.length && !isVargs(parameters))) return false;
+        for (int i = 0; i < n; i += 1) {
+            Expression argument = arguments.get(i);
+            ClassNode parameterType = parameters[Math.min(i, parameters.length - 1)].getOriginType();
+            if (!GenericsUtils.hasUnresolvedGenerics(parameterType)) continue;
+            boolean lastArg = i >= parameters.length - 1;
+            if (lastArg && parameterType.isArray() && (n != parameters.length || !getType(argument).isArray())) {
+                parameterType = parameterType.getComponentType();
+            }
+            parameterType = applyGenericsContext(connections, parameterType);
+            if (isNullConstant(argument)) continue;
+            if (argument instanceof ClosureExpression || argument instanceof LambdaExpression || argument instanceof MethodPointerExpression) {
+                // a closure or lambda must return what the parameterized target expects
+                ClassNode expected = null;
+                if (CLOSURE_TYPE.equals(parameterType)) {
+                    GenericsType[] gts = parameterType.getGenericsTypes();
+                    if (gts != null && gts.length == 1) expected = getCombinedBoundType(gts[0]);
+                } else if (isSAMType(parameterType)) {
+                    expected = GenericsUtils.parameterizeSAM(parameterType).getV2();
+                }
+                ClassNode actual = getInferredReturnType(argument);
+                if (expected == null || actual == null || GenericsUtils.hasUnresolvedGenerics(expected)) continue;
+                actual = wrapTypeIfNecessary(actual);
+                if (!isAssignableTo(actual, wrapTypeIfNecessary(expected))
+                        || (expected.isUsingGenerics() && !GenericsUtils.buildWildcardType(expected).isCompatibleWith(actual))) return false;
+                continue;
+            }
+            ClassNode argumentType = wrapTypeIfNecessary(getType(argument));
+            if (GenericsUtils.hasUnresolvedGenerics(parameterType)) {
+                // a type parameter that the target does not determine was inferred from the arguments
+                if (!isAssignableTo(argumentType, parameterType)) return false;
+            } else if (!typeCheckMethodArgumentWithGenerics(parameterType, argumentType, lastArg)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isRawType(final ClassNode type) {
+        return type.getGenericsTypes() == null && type.redirect().getGenericsTypes() != null && !type.isGenericsPlaceHolder();
+    }
+
+    /**
+     * Indicates whether {@code type} uses a type parameter of the class of {@code owner} whose
+     * bound is a raw type, such as {@code T} of {@code Holder<T extends List>}. Substituting that
+     * bound for a raw {@code owner} would give a raw bound, such as {@code Class<? extends List>},
+     * where JLS 4.8 gives the erasure, {@code Class}.
+     */
+    private static boolean mentionsTypeParameterWithRawBound(final ClassNode type, final ClassNode owner) {
+        Set<String> used = new HashSet<>();
+        collectTypeVariableNames(type, used);
+        for (GenericsType tp : owner.redirect().getGenericsTypes()) {
+            if (!used.contains(tp.getName()) || tp.getUpperBounds() == null) continue;
+            for (ClassNode bound : tp.getUpperBounds()) {
+                if (!bound.isGenericsPlaceHolder() && bound.getGenericsTypes() == null
+                        && bound.redirect().getGenericsTypes() != null) return true;
+            }
+        }
+        return false;
+    }
+
+    private static void collectTypeVariableNames(final ClassNode type, final Set<String> names) {
+        if (type == null) return;
+        if (type.isArray()) {
+            collectTypeVariableNames(type.getComponentType(), names);
+        } else if (type.isGenericsPlaceHolder()) {
+            names.add(type.getUnresolvedName());
+        } else if (type.getGenericsTypes() != null) {
+            for (GenericsType gt : type.getGenericsTypes()) {
+                if (gt.isPlaceholder()) {
+                    names.add(gt.getName());
+                } else if (gt.isWildcard()) {
+                    collectTypeVariableNames(gt.getLowerBound(), names);
+                    if (gt.getUpperBounds() != null) for (ClassNode bound : gt.getUpperBounds()) collectTypeVariableNames(bound, names);
+                } else {
+                    collectTypeVariableNames(gt.getType(), names);
+                }
+            }
         }
     }
 
@@ -3124,7 +3269,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private void storeWithResolve(ClassNode type, final ClassNode receiver, final ClassNode declaringClass, final boolean isStatic, final Expression expressionToStoreOn) {
-        if (!isStatic && GenericsUtils.hasUnresolvedGenerics(type)) {
+        if (!isStatic && !type.isGenericsPlaceHolder() && !type.isArray()
+                && isRawType(receiver) && mentionsTypeParameterWithRawBound(type, receiver)) {
+            type = type.getPlainNodeReference(); // JLS 4.8: the erasure, not a raw bound
+        } else if (!isStatic && GenericsUtils.hasUnresolvedGenerics(type)) {
             type = resolveGenericsWithContext(extractPlaceHolders(receiver, declaringClass), type);
         }
         if (expressionToStoreOn instanceof PropertyExpression) {
@@ -5799,6 +5947,10 @@ out:                if (mn.size() != 1) {
                             ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), targetMethod, callArguments, call.getGenericsTypes());
                             if (irtg != null && (returnType.isGenericsPlaceHolder() || implementsInterfaceOrIsSubclassOf(irtg, returnType)))
                                 returnType = irtg;
+                            if (isObjectGetClass(targetMethod)) {
+                                ClassNode staticType = typeWithoutInstanceOfNarrowing(call.getObjectExpression());
+                                if (staticType != null) returnType = getClassType(staticType);
+                            }
                         }
                         // GROOVY-7106, GROOVY-7274, GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, GROOVY-9915, et al.
                         Parameter[] parameters = targetMethod.getParameters();
@@ -8503,10 +8655,11 @@ trying: for (ClassNode[] signature : signatures) {
         // 2) resolve type parameters of method's enclosing context
 
         if (context != null) {
+            boolean erase = isRawType(receiver) && !returnType.isGenericsPlaceHolder() && !returnType.isArray()
+                    && mentionsTypeParameterWithRawBound(returnType, receiver); // JLS 4.8: the erasure, not a raw bound
             returnType = applyGenericsContext(context, returnType);
 
-            if (receiver.getGenericsTypes() == null && receiver.redirect().getGenericsTypes() != null
-                    && !receiver.isGenericsPlaceHolder() && GenericsUtils.hasUnresolvedGenerics(returnType)) {
+            if (erase || (isRawType(receiver) && GenericsUtils.hasUnresolvedGenerics(returnType))) {
                 returnType = returnType.getPlainNodeReference(); // GROOVY-10049: not "Stream<E>" for raw type
             }
         }
@@ -8516,6 +8669,25 @@ trying: for (ClassNode[] signature : signatures) {
         returnType = applyGenericsContext(extractGenericsParameterMapOfThis(typeCheckingContext), returnType);
 
         return returnType;
+    }
+
+    /**
+     * JLS 4.3.2 types {@code e.getClass()} by the static type of {@code e}. For a variable that an
+     * {@code instanceof} test narrows, that is the type the variable has without the test;
+     * returns {@code null} for any other expression.
+     */
+    private ClassNode typeWithoutInstanceOfNarrowing(final Expression expression) {
+        if (!(expression instanceof VariableExpression) || ((VariableExpression) expression).isThisExpression()
+                || ((VariableExpression) expression).isSuperExpression()
+                || typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()
+                || getTemporaryTypesForExpression(expression).isEmpty()) {
+            return null;
+        }
+        Variable variable = ((VariableExpression) expression).getAccessedVariable();
+        ClassNode type = null;
+        if (variable instanceof ASTNode) type = ((ASTNode) variable).getNodeMetaData(INFERRED_TYPE);
+        if (type == null && variable != null) type = variable.getOriginType();
+        return type;
     }
 
     private static boolean isObjectGetClass(final MethodNode method) {
@@ -9615,7 +9787,10 @@ out:    for (ClassNode type : todo) {
         }
 
         private void reportPropertyType(ClassNode type, final ClassNode declaringClass) {
-            if (declaringClass != null && GenericsUtils.hasUnresolvedGenerics(type)) { // GROOVY-10787
+            if (declaringClass != null && !type.isGenericsPlaceHolder() && !type.isArray()
+                    && isRawType(receiverType) && mentionsTypeParameterWithRawBound(type, receiverType)) {
+                type = type.getPlainNodeReference(); // JLS 4.8: the erasure, not a raw bound
+            } else if (declaringClass != null && GenericsUtils.hasUnresolvedGenerics(type)) { // GROOVY-10787
                 Map<GenericsTypeName, GenericsType> spec = extractPlaceHolders(receiverType, declaringClass);
                 type = applyGenericsContext(spec, type);
             }
