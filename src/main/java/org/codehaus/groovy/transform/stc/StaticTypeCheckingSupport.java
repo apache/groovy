@@ -2205,13 +2205,15 @@ public abstract class StaticTypeCheckingSupport {
 
     /**
      * Returns the position of {@code witness} among the type arguments of {@code argumentType}
-     * when it is a wildcard with an upper bound that capture conversion replaces
-     * (JLS 5.1.10), otherwise {@code -1}. A wildcard nested in a type argument is not captured.
+     * when it is a wildcard that capture conversion replaces (JLS 5.1.10), otherwise {@code -1}.
+     * A wildcard nested in a type argument is not captured.
      */
     private static int indexOfCapturedWildcard(final ClassNode argumentType, final GenericsType witness) {
-        if (!witness.isWildcard() || witness.getLowerBound() != null || isUnboundedWildcard(witness)) return -1;
-        for (ClassNode bound : witness.getUpperBounds()) {
-            if (isInferencePlaceholder(bound)) return -1; // still to be inferred
+        if (!witness.isWildcard()) return -1;
+        if (witness.getUpperBounds() != null) {
+            for (ClassNode bound : witness.getUpperBounds()) {
+                if (isInferencePlaceholder(bound)) return -1; // still to be inferred
+            }
         }
         GenericsType[] typeArguments = argumentType.getGenericsTypes();
         GenericsType[] typeParameters = argumentType.redirect().getGenericsTypes();
@@ -2228,9 +2230,9 @@ public abstract class StaticTypeCheckingSupport {
     /**
      * Checks the capture of the wildcard at {@code index} of {@code argumentType} as the witness
      * for {@code typeParameter}. The capture is a fresh type variable whose upper bounds are the
-     * bound of the wildcard and the bounds declared for that type argument (JLS 5.1.10). It must
-     * be within every bound of the type parameter, where the bound may mention the type parameter
-     * itself, and the captured argument must fit the parameter (JLS 18.5.1).
+     * upper bound of the wildcard, if it has one, and the bounds declared for that type argument
+     * (JLS 5.1.10). It must be within every bound of the type parameter, where the bound may
+     * mention the type parameter itself, and the captured argument must fit the parameter (JLS 18.5.1).
      */
     private static boolean compatibleCapture(final GenericsType typeParameter, final ClassNode parameterType, final ClassNode argumentType, final int index, final boolean lastArg) {
         GenericsType[] typeArguments = argumentType.getGenericsTypes();
@@ -2239,8 +2241,10 @@ public abstract class StaticTypeCheckingSupport {
         GenericsType witness = new GenericsType(capture);
 
         List<ClassNode> captureBounds = new ArrayList<>();
-        for (ClassNode bound : wildcard.getUpperBounds()) {
-            captureBounds.add(typeVariableBound(bound));
+        if (wildcard.getUpperBounds() != null) {
+            for (ClassNode bound : wildcard.getUpperBounds()) {
+                captureBounds.add(typeVariableBound(bound));
+            }
         }
         GenericsType[] typeParameters = argumentType.redirect().getGenericsTypes();
         if (typeParameters[index].getUpperBounds() != null) {
@@ -2250,6 +2254,7 @@ public abstract class StaticTypeCheckingSupport {
             }
             Collections.addAll(captureBounds, applyGenericsContext(spec, typeParameters[index].getUpperBounds()));
         }
+        if (captureBounds.isEmpty()) captureBounds.add(OBJECT_TYPE);
         // the capture stands in for the type parameter below, so give it supertypes
         List<ClassNode> interfaces = new ArrayList<>();
         for (ClassNode bound : captureBounds) {

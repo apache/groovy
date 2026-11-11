@@ -831,6 +831,62 @@ final class GenericsJavaCompatibilityTest {
         }
     }
 
+    /**
+     * JLS 5.1.10: the capture of {@code ?} or of {@code ? super B} has the upper bound that
+     * the type parameter of the generic type declares. For {@code List} that is {@code Object},
+     * so such an argument does not infer a type parameter bounded by {@code Number}.
+     */
+    @Test
+    void testNegativeWildcardArgumentWithoutUpperBoundForBoundedTypeParameter() {
+        [
+            Unbounded: ['<T extends Number> T first(List<T> list) { return list.get(0); }', 'List<?>', 'first'],
+            ExtendsObject: ['<T extends Number> T first(List<T> list) { return list.get(0); }', 'List<? extends Object>', 'first'],
+            SuperInteger: ['<T extends Number> T first(List<T> list) { return list.get(0); }', 'List<? super Integer>', 'first'],
+            SuperNumber: ['<T extends Number> T first(List<T> list) { return list.get(0); }', 'List<? super Number>', 'first'],
+            UnboundedClass: ['<T extends List<Integer>> T cast(Class<T> type) { return null; }', 'Class<?>', 'cast'],
+            ExtendsObjectClass: ['<T extends List<Integer>> T cast(Class<T> type) { return null; }', 'Class<? extends Object>', 'cast']
+        ].each { String name, List<String> parts ->
+            assertNegativeCompile("gls.generics.test.$name", """
+                package gls.generics.test;
+                import java.util.*;
+                public class $name {
+                    static ${parts[0]}
+                    static Object check(${parts[1]} arg) { return ${parts[2]}(arg); }
+                }
+            """, 'cannot be applied to given types', 'Cannot call <T extends')
+        }
+    }
+
+    /**
+     * JLS 5.1.10: the capture of {@code ?} takes the declared bound of the type parameter it
+     * stands for, so {@code NumBox<?>} infers a type parameter bounded by {@code Number} and
+     * {@code EnumSet<?>} one bounded by {@code Enum<T>}.
+     */
+    @Test
+    void testWildcardArgumentWithoutUpperBoundTakesDeclaredBound() {
+        final String className = 'gls.generics.test.WildcardArgumentDeclaredBound'
+        final String javaSrc = '''
+            package gls.generics.test;
+            import java.util.*;
+            public class WildcardArgumentDeclaredBound {
+                static class NumBox<N extends Number> {
+                    final N value;
+                    NumBox(N value) { this.value = value; }
+                }
+                static <T extends Number> T valueOf(NumBox<T> box) { return box.value; }
+                static <T extends Enum<T>> int sizeOf(EnumSet<T> set) { return set.size(); }
+                static String check(NumBox<?> one, NumBox<? super Integer> two, EnumSet<?> set) {
+                    Number n = valueOf(one);
+                    return n + ":" + valueOf(two) + ":" + sizeOf(set);
+                }
+                public static String test() {
+                    return check(new NumBox<Integer>(1), new NumBox<Number>(2), EnumSet.of(Thread.State.NEW));
+                }
+            }
+        '''
+        assertPositive(className, javaSrc, '1:2:1')
+    }
+
     // =========================================================================
     // Category 4: Diamond and target-type inference (JLS 15.9.3, 18.5.2)
     // =========================================================================
