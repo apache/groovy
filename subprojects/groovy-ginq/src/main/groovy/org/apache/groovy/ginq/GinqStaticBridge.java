@@ -45,7 +45,6 @@ import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -74,7 +73,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.closureX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.indexX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -642,11 +640,12 @@ public final class GinqStaticBridge {
     }
 
     /**
-     * Operators the static writer cannot prove become {@link ScriptBytecodeAdapter}
-     * calls. Stream pipelines become {@code invokeMethodN} so a method pointer
-     * stays a Groovy pointer and a mismatched generic stream call still runs.
-     * The snapshot index stays an array load. Order-by {@code in desc} is already
-     * an {@code Order} value by the time this runs.
+     * Comparisons the static writer types as {@code compareTo} become
+     * {@link ScriptBytecodeAdapter} calls, so a row compared with a subquery
+     * still type-checks. Arithmetic stays an operator until type checking:
+     * a number added to a number is a static add, and only an unprovable
+     * operator is rewritten afterwards. Order-by {@code in desc} is already
+     * an {@code Order} value. The snapshot index stays an array load.
      */
     private static Expression rewriteStaticHoles(Expression query) {
         return new ClassCodeExpressionTransformer() {
@@ -660,10 +659,6 @@ public final class GinqStaticBridge {
                 if (expression instanceof ClosureExpression closure) {
                     closure.visit(this);
                     return closure;
-                }
-                if (expression instanceof MethodPointerExpression pointer) {
-                    pointer.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, ClassHelper.OBJECT_TYPE);
-                    return super.transform(pointer);
                 }
                 if (expression instanceof BinaryExpression binary
                         && Types.isAssignment(binary.getOperation().getType())) {
@@ -685,40 +680,9 @@ public final class GinqStaticBridge {
                         return rewritten;
                     }
                 }
-                if (transformed instanceof MethodCallExpression call && streamPipeline(call)) {
-                    return rewriteStreamCall(call);
-                }
                 return transformed;
             }
         }.transform(query);
-    }
-
-    private static boolean streamPipeline(MethodCallExpression call) {
-        String name = call.getMethodAsString();
-        if (name == null) {
-            return false;
-        }
-        Expression receiver = call.getObjectExpression();
-        if (receiver instanceof ClassExpression classExpression
-                && ScriptBytecodeAdapter.class.getName().equals(classExpression.getType().getName())) {
-            return false;
-        }
-        return switch (name) {
-            case "stream", "map", "collect", "reduce", "filter", "flatMap" -> true;
-            default -> false;
-        };
-    }
-
-    private static Expression rewriteStreamCall(MethodCallExpression call) {
-        String name = call.getMethodAsString();
-        Expression receiver = call.getObjectExpression();
-        List<Expression> original = argumentList(call.getArguments());
-        ArrayExpression array = new ArrayExpression(ClassHelper.OBJECT_TYPE, new ArrayList<>(original));
-        MethodCallExpression rewritten = callX(classX(ClassHelper.make(ScriptBytecodeAdapter.class)), "invokeMethodN",
-                args(nullX(), receiver, constX(name), array));
-        rewritten.setImplicitThis(false);
-        rewritten.setSourcePosition(call);
-        return rewritten;
     }
 
     private static Expression rewriteOperator(BinaryExpression binary) {
@@ -745,33 +709,7 @@ public final class GinqStaticBridge {
         if (compare != null) {
             return adapterCall(compare, binary.getLeftExpression(), binary.getRightExpression(), binary);
         }
-        String operator = switch (type) {
-            case Types.PLUS -> "plus";
-            case Types.MINUS -> "minus";
-            case Types.MULTIPLY -> "multiply";
-            case Types.DIVIDE -> "div";
-            case Types.INTDIV -> "intdiv";
-            case Types.MOD -> "mod";
-            case Types.REMAINDER -> "remainder";
-            case Types.POWER -> "power";
-            case Types.LEFT_SQUARE_BRACKET -> "getAt";
-            case Types.LEFT_SHIFT -> "leftShift";
-            case Types.RIGHT_SHIFT -> "rightShift";
-            case Types.RIGHT_SHIFT_UNSIGNED -> "rightShiftUnsigned";
-            case Types.BITWISE_AND -> "and";
-            case Types.BITWISE_OR -> "or";
-            case Types.BITWISE_XOR -> "xor";
-            default -> null;
-        };
-        if (operator == null) {
-            return null;
-        }
-        ArrayExpression array = new ArrayExpression(ClassHelper.OBJECT_TYPE, new ArrayList<>(List.of(binary.getRightExpression())));
-        MethodCallExpression call = callX(classX(ClassHelper.make(ScriptBytecodeAdapter.class)), "invokeMethodN",
-                args(nullX(), binary.getLeftExpression(), constX(operator), array));
-        call.setImplicitThis(false);
-        call.setSourcePosition(binary);
-        return call;
+        return null;
     }
 
     private static boolean snapshotIndex(Expression left) {
@@ -783,17 +721,6 @@ public final class GinqStaticBridge {
         call.setImplicitThis(false);
         call.setSourcePosition(source);
         return call;
-    }
-
-    private static List<Expression> argumentList(Expression arguments) {
-        if (arguments instanceof TupleExpression tuple) {
-            return new ArrayList<>(tuple.getExpressions());
-        }
-        List<Expression> one = new ArrayList<>();
-        if (arguments != null) {
-            one.add(arguments);
-        }
-        return one;
     }
 
     private static boolean containsSame(List<Variable> variables, Variable target) {

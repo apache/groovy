@@ -20,9 +20,11 @@ package org.apache.groovy.ginq;
 
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -32,6 +34,7 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCall;
@@ -40,6 +43,11 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.apache.groovy.ginq.provider.collection.runtime.Queryable;
+import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper;
+import org.apache.groovy.ginq.provider.collection.runtime.SourceRecord;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
+import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.stc.AbstractTypeCheckingExtension;
@@ -87,6 +95,13 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
     static final Object QUERY = GinqRowChecks.class;
 
     /**
+     * Metadata on a {@code navigate} call: the alias names of the row, in
+     * from-then-join order. A static property {@code r.alias} uses them to
+     * pick the component type of a join tuple.
+     */
+    public static final String ALIAS_NAMES = "ginqAliasNames";
+
+    /**
      * Creates the extension for one type-checking visitor.
      *
      * @param typeCheckingVisitor the visitor compiling the class that contains the query
@@ -97,6 +112,9 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
 
     @Override
     public boolean beforeMethodCall(MethodCall call) {
+        if (insideQuery() && compileStaticScope() && call instanceof MethodCallExpression methodCall) {
+            rememberAliases(methodCall);
+        }
         if (!insideQuery() || !(call instanceof Expression expression) || compileStaticScope()) {
             // Static compilation has to visit the arguments so a method another
             // extension selects is still the target that is emitted.
@@ -112,7 +130,8 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
     @Override
     public boolean handleUnresolvedProperty(PropertyExpression expression) {
         if (insideQuery() || resultReceiver(expression.getObjectExpression())) {
-            makeDynamic(expression);
+            ClassNode value = sourceRecordValue(expression);
+            makeDynamic(expression, value != null ? value : ClassHelper.OBJECT_TYPE);
             return true;
         }
         return false;
@@ -154,6 +173,9 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
         if (!(call instanceof MethodCallExpression methodCall)) {
             return;
         }
+        if (insideQuery() && compileStaticScope() && "navigate".equals(methodCall.getMethodAsString())) {
+            repairNavigateType(methodCall);
+        }
         if (insideQuery()) {
             if (!compileStaticScope()) {
                 if (methodCall.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) != null) {
@@ -162,7 +184,7 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
                 }
             } else {
                 MethodNode target = methodCall.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-                if (standIn(methodCall, target)) {
+                if (standIn(methodCall, target) && !"navigate".equals(methodCall.getMethodAsString())) {
                     rewriteUnresolved(methodCall);
                 } else if (target != null && arrayFromMismatch(methodCall, target)) {
                     methodCall.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, ClassHelper.OBJECT_TYPE);
@@ -196,6 +218,9 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
     public void afterVisitMethod(MethodNode node) {
         if (node.getCode() == null) {
             return;
+        }
+        if (compileStaticScope()) {
+            node.getCode().visit(new UnprovableOperatorRewriter());
         }
         node.getCode().visit(new CodeVisitorSupport() {
             private int queryDepth;
@@ -470,5 +495,309 @@ public class GinqRowChecks extends AbstractTypeCheckingExtension {
             one.add(arguments);
         }
         return one;
+    }
+
+    /**
+     * The static type of {@code row.alias} when {@code row} is a
+     * {@code SourceRecord}. A single source is that element type. A join is
+     * the matching component of the nested tuple.
+     */
+    private ClassNode sourceRecordValue(PropertyExpression expression) {
+        if (!compileStaticScope()) {
+            return null;
+        }
+        String name = expression.getPropertyAsString();
+        if (name == null) {
+            return null;
+        }
+        ClassNode receiver = typeOf(expression.getObjectExpression());
+        if (receiver == null || !"org.apache.groovy.ginq.provider.collection.runtime.SourceRecord".equals(receiver.redirect().getName())) {
+            return null;
+        }
+        ClassNode element = ClassHelper.OBJECT_TYPE;
+        GenericsType[] arguments = receiver.getGenericsTypes();
+        if (arguments != null && arguments.length == 1 && arguments[0].getType() != null) {
+            element = arguments[0].getType();
+            if (ClassHelper.isPrimitiveType(element) && !ClassHelper.isPrimitiveVoid(element)) {
+                element = ClassHelper.getWrapper(element);
+            }
+        }
+        return aliasType(element, aliasNames(), name);
+    }
+
+    private void rememberAliases(MethodCallExpression call) {
+        List<String> names = aliasNames(call.getObjectExpression());
+        if (names == null) {
+            names = aliasNames(call);
+        }
+        if (names == null || !(call.getArguments() instanceof TupleExpression tuple)) {
+            return;
+        }
+        for (Expression argument : tuple.getExpressions()) {
+            if (argument instanceof ClosureExpression closure && closure.getNodeMetaData(ALIAS_NAMES) == null) {
+                closure.putNodeMetaData(ALIAS_NAMES, names);
+            }
+        }
+    }
+
+    /**
+     * {@code navigate} is {@code Queryable<SourceRecord<T>>}. When the argument
+     * is still {@code Object}, method selection fails and {@code stream()} binds
+     * to the single-element DGM instead of {@link org.apache.groovy.ginq.provider.collection.runtime.Queryable#stream()}.
+     * Restore the return type from the argument, or from the clause row parameter.
+     */
+    private void repairNavigateType(MethodCallExpression call) {
+        if (!(call.getObjectExpression() instanceof ClassExpression owner)
+                || !"org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper".equals(owner.getType().redirect().getName())) {
+            return;
+        }
+        ClassNode result = typeOf(call);
+        if (result != null && !ClassHelper.OBJECT_TYPE.equals(result) && !ClassHelper.isDynamicTyped(result)) {
+            return;
+        }
+        ClassNode element = elementType(call);
+        ClassNode record = GenericsUtils.makeClassSafeWithGenerics(SourceRecord.class, element);
+        ClassNode queryable = GenericsUtils.makeClassSafeWithGenerics(Queryable.class, record);
+        storeType(call, queryable);
+        call.removeNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION);
+        for (MethodNode method : ClassHelper.make(QueryableHelper.class).getDeclaredMethods("navigate")) {
+            if (method.getParameters().length == 2) {
+                call.setMethodTarget(method);
+                call.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, method);
+                break;
+            }
+        }
+    }
+
+    private ClassNode elementType(MethodCallExpression navigate) {
+        if (navigate.getArguments() instanceof TupleExpression tuple && !tuple.getExpressions().isEmpty()) {
+            ClassNode argument = typeOf(tuple.getExpression(0));
+            if (argument != null && "org.apache.groovy.ginq.provider.collection.runtime.Queryable".equals(argument.redirect().getName())) {
+                GenericsType[] arguments = argument.getGenericsTypes();
+                if (arguments != null && arguments.length == 1 && arguments[0].getType() != null
+                        && !ClassHelper.OBJECT_TYPE.equals(arguments[0].getType())
+                        && !ClassHelper.isDynamicTyped(arguments[0].getType())) {
+                    ClassNode type = arguments[0].getType();
+                    return ClassHelper.isPrimitiveType(type) ? ClassHelper.getWrapper(type) : type;
+                }
+            }
+        }
+        List<TypeCheckingContext.EnclosingClosure> stack = typeCheckingVisitor.getTypeCheckingContext().getEnclosingClosureStack();
+        for (int i = stack.size() - 1; i >= 0; i -= 1) {
+            Parameter[] parameters = stack.get(i).getClosureExpression().getParameters();
+            if (parameters == null) {
+                continue;
+            }
+            for (Parameter parameter : parameters) {
+                ClassNode type = parameter.getType();
+                if (type == null || ClassHelper.isDynamicTyped(type) || ClassHelper.OBJECT_TYPE.equals(type)) {
+                    continue;
+                }
+                if ("org.apache.groovy.ginq.provider.collection.runtime.Queryable".equals(type.redirect().getName())) {
+                    continue;
+                }
+                return ClassHelper.isPrimitiveType(type) ? ClassHelper.getWrapper(type) : type;
+            }
+        }
+        return ClassHelper.OBJECT_TYPE;
+    }
+
+    private List<String> aliasNames() {
+        for (Expression call : typeCheckingVisitor.getTypeCheckingContext().getEnclosingMethodCalls()) {
+            List<String> names = aliasNames(call);
+            if (names != null) {
+                return names;
+            }
+        }
+        List<TypeCheckingContext.EnclosingClosure> stack = typeCheckingVisitor.getTypeCheckingContext().getEnclosingClosureStack();
+        for (TypeCheckingContext.EnclosingClosure enclosing : stack) {
+            Object metadata = enclosing.getClosureExpression().getNodeMetaData(ALIAS_NAMES);
+            if (metadata instanceof List<?> names && !names.isEmpty() && names.get(0) instanceof String) {
+                List<String> aliases = new ArrayList<>();
+                for (Object name : names) {
+                    if (name instanceof String text) {
+                        aliases.add(text);
+                    }
+                }
+                return aliases;
+            }
+        }
+        return null;
+    }
+
+    private static List<String> aliasNames(Expression expression) {
+        Expression current = expression;
+        while (current instanceof MethodCallExpression call) {
+            if ("navigate".equals(call.getMethodAsString()) && call.getArguments() instanceof TupleExpression tuple
+                    && tuple.getExpressions().size() >= 2) {
+                List<String> names = constantStrings(tuple.getExpression(1));
+                if (names != null) {
+                    return names;
+                }
+            }
+            current = call.getObjectExpression();
+        }
+        return null;
+    }
+
+    private static List<String> constantStrings(Expression expression) {
+        if (!(expression instanceof org.codehaus.groovy.ast.expr.ListExpression list)) {
+            return null;
+        }
+        List<String> names = new ArrayList<>();
+        for (Expression element : list.getExpressions()) {
+            if (!(element instanceof org.codehaus.groovy.ast.expr.ConstantExpression constant) || !(constant.getValue() instanceof String text)) {
+                return null;
+            }
+            names.add(text);
+        }
+        return names.isEmpty() ? null : names;
+    }
+
+    private static ClassNode aliasType(ClassNode element, List<String> aliases, String name) {
+        if (element == null) {
+            return ClassHelper.OBJECT_TYPE;
+        }
+        if (aliases == null || aliases.isEmpty() || !tuple(element)) {
+            return element;
+        }
+        ClassNode current = element;
+        for (int i = aliases.size() - 1; i >= 0 && current != null; i -= 1) {
+            if (name.equals(aliases.get(i))) {
+                return tuple(current) ? tupleComponent(current, 1) : current;
+            }
+            if (!tuple(current)) {
+                break;
+            }
+            current = tupleComponent(current, 0);
+        }
+        return element;
+    }
+
+    private static boolean tuple(ClassNode type) {
+        return type != null && "groovy.lang.Tuple2".equals(type.redirect().getName());
+    }
+
+    private static ClassNode tupleComponent(ClassNode tuple, int index) {
+        GenericsType[] arguments = tuple.getGenericsTypes();
+        if (arguments == null || arguments.length <= index || arguments[index].getType() == null) {
+            return ClassHelper.OBJECT_TYPE;
+        }
+        ClassNode type = arguments[index].getType();
+        if (ClassHelper.isPrimitiveType(type) && !ClassHelper.isPrimitiveVoid(type)) {
+            return ClassHelper.getWrapper(type);
+        }
+        return type;
+    }
+
+    /**
+     * Rewrites an arithmetic operator or subscript the static writer cannot
+     * prove into {@code ScriptBytecodeAdapter.invokeMethodN}. A number, a
+     * string concatenation, a map read, and an array read stay operators.
+     */
+    private static final class UnprovableOperatorRewriter extends ClassCodeExpressionTransformer {
+        private int queryDepth;
+
+        @Override
+        protected SourceUnit getSourceUnit() {
+            return null;
+        }
+
+        @Override
+        public Expression transform(Expression expression) {
+            if (expression instanceof ClosureExpression closure) {
+                boolean query = Boolean.TRUE.equals(closure.getNodeMetaData(QUERY));
+                if (query) {
+                    queryDepth += 1;
+                }
+                closure.visit(this);
+                if (query) {
+                    queryDepth -= 1;
+                }
+                return closure;
+            }
+            if (expression instanceof BinaryExpression binary && Types.isAssignment(binary.getOperation().getType())) {
+                Expression left = binary.getLeftExpression();
+                if (left instanceof BinaryExpression index && index.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
+                    index.setLeftExpression(transform(index.getLeftExpression()));
+                    index.setRightExpression(transform(index.getRightExpression()));
+                } else {
+                    binary.setLeftExpression(transform(left));
+                }
+                binary.setRightExpression(transform(binary.getRightExpression()));
+                return binary;
+            }
+            Expression transformed = super.transform(expression);
+            if (queryDepth > 0 && transformed instanceof BinaryExpression binary) {
+                Expression rewritten = unprovable(binary);
+                if (rewritten != null) {
+                    return rewritten;
+                }
+            }
+            return transformed;
+        }
+
+        private static Expression unprovable(BinaryExpression binary) {
+            String name = operatorName(binary.getOperation().getType());
+            if (name == null || provable(binary)) {
+                return null;
+            }
+            ArrayExpression array = new ArrayExpression(ClassHelper.OBJECT_TYPE, new ArrayList<>(List.of(binary.getRightExpression())));
+            MethodCallExpression call = callX(classX(ClassHelper.make(ScriptBytecodeAdapter.class)), "invokeMethodN",
+                    args(nullX(), binary.getLeftExpression(), constX(name), array));
+            call.setImplicitThis(false);
+            call.setSourcePosition(binary);
+            return call;
+        }
+
+        private static boolean provable(BinaryExpression binary) {
+            int operation = binary.getOperation().getType();
+            ClassNode left = typeOf(binary.getLeftExpression());
+            ClassNode right = typeOf(binary.getRightExpression());
+            if (operation == Types.LEFT_SQUARE_BRACKET) {
+                if (binary.getLeftExpression() instanceof VariableExpression variable && "ginqCaptured$".equals(variable.getName())) {
+                    return true;
+                }
+                if (left != null && left.isArray() && number(right)) {
+                    return true;
+                }
+                return left != null && (left.implementsInterface(ClassHelper.MAP_TYPE) || ClassHelper.MAP_TYPE.equals(left.redirect()));
+            }
+            if (operation == Types.PLUS && left != null && ClassHelper.isStringType(left)) {
+                return true;
+            }
+            return number(left) && number(right);
+        }
+
+        private static boolean number(ClassNode type) {
+            if (type == null || ClassHelper.isDynamicTyped(type) || ClassHelper.OBJECT_TYPE.equals(type)) {
+                return false;
+            }
+            if (ClassHelper.isPrimitiveType(type)) {
+                return !ClassHelper.isPrimitiveBoolean(type) && !ClassHelper.isPrimitiveVoid(type);
+            }
+            return ClassHelper.getWrapper(type).isDerivedFrom(ClassHelper.Number_TYPE);
+        }
+
+        private static String operatorName(int operation) {
+            return switch (operation) {
+                case Types.PLUS -> "plus";
+                case Types.MINUS -> "minus";
+                case Types.MULTIPLY -> "multiply";
+                case Types.DIVIDE -> "div";
+                case Types.INTDIV -> "intdiv";
+                case Types.MOD -> "mod";
+                case Types.REMAINDER -> "remainder";
+                case Types.POWER -> "power";
+                case Types.LEFT_SQUARE_BRACKET -> "getAt";
+                case Types.LEFT_SHIFT -> "leftShift";
+                case Types.RIGHT_SHIFT -> "rightShift";
+                case Types.RIGHT_SHIFT_UNSIGNED -> "rightShiftUnsigned";
+                case Types.BITWISE_AND -> "and";
+                case Types.BITWISE_OR -> "or";
+                case Types.BITWISE_XOR -> "xor";
+                default -> null;
+            };
+        }
     }
 }

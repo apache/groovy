@@ -494,10 +494,10 @@ public class BytecodeHelper {
                 ret.append("[");
                 addSubTypes(ret, new GenericsType[]{new GenericsType(type.getType().getComponentType())}, "", "");
             } else if ("<".equals(start) && isPrimitiveType(type.getType()) && !isPrimitiveVoid(type.getType())) {
-                // A type argument cannot be a primitive (JVMS 4.7.9.1). Queryable<int>
-                // from an int[] source would otherwise be written as LQueryable<I; and
-                // the class fails to load. Parameters and return types use a different
-                // start marker and stay primitive.
+                // Last resort (JVMS 4.7.9.1): a type argument that is still a
+                // primitive is written as its wrapper, which is what javac writes
+                // for the legal reference type. Parameters and return types use a
+                // different start marker and stay primitive.
                 writeGenericsBoundType(ret, ClassHelper.getWrapper(type.getType()), false);
             } else {
                 if (type.isPlaceholder()) {

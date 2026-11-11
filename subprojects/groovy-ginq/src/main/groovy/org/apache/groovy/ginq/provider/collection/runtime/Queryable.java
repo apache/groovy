@@ -25,6 +25,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -93,6 +94,24 @@ public interface Queryable<T> {
     @GroovyABI(since = "4.0.0")
     static <T> Queryable<T> from(T[] array) {
         return new QueryableCollection<>(Arrays.asList(array));
+    }
+
+    /**
+     * Factory for a primitive {@code int} array. {@code int[]} is not a
+     * {@code T[]}, so the elements are boxed and the queryable's element
+     * type is {@code Integer}.
+     *
+     * @param array the source values
+     * @return a queryable of the boxed values
+     * @since 7.0.0
+     */
+    @GroovyABI(since = "7.0.0")
+    static Queryable<Integer> from(int[] array) {
+        List<Integer> boxed = new ArrayList<>(array.length);
+        for (int value : array) {
+            boxed.add(value);
+        }
+        return new QueryableCollection<>(boxed);
     }
 
     /**

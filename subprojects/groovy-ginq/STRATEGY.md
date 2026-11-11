@@ -82,10 +82,14 @@ enclosing method.
 
 What stays dynamic is the part the static writer cannot prove, and nothing else:
 
-* An operator on a row (`==`, `>`, `%`, `+`, a subscript that is not the
-  read-only snapshot) is rewritten to `ScriptBytecodeAdapter` before type
-  checking. `orderby n in desc` is already an `Order` value by then and is
-  not rewritten. The snapshot index `ginqCaptured$[i]` stays an array load.
+* A comparison (`==`, `>`, `in`, a regex match) is rewritten to
+  `ScriptBytecodeAdapter` before type checking, so a row compared with a
+  subquery still type-checks. Arithmetic and a subscript stay operators
+  through type checking: a number added to a number is a static add, and
+  only an operator the checker cannot prove is rewritten to
+  `invokeMethodN` afterwards. `orderby n in desc` is already an `Order`
+  value and is not rewritten. The snapshot index `ginqCaptured$[i]` stays
+  an array load.
 * A call the checker cannot resolve is rewritten to
   `ScriptBytecodeAdapter.invokeMethodN`. That is a real public method. It is
   not `invokevirtual` of a stand-in, and the stand-in's declaring class is
@@ -94,11 +98,15 @@ What stays dynamic is the part the static writer cannot prove, and nothing else:
   the argument is not, so a list is not wrapped as one row.
 * A target whose declaring class is not public stays dynamic.
   `SourceRecord` is public because `navigate` returns it and a caller in
-  another package has to be able to name the row.
-* `stream`, `map`, `collect`, `reduce`, `filter`, and `flatMap` are rewritten
-  to `invokeMethodN`. A method pointer in the query (`BigDecimal::add`) is
-  marked dynamic, so it is a Groovy pointer that coerces. A SAM bridge would
-  cast an `Integer` row to `BigDecimal`.
+  another package has to be able to name the row. It is `@Internal`: not a
+  published API. `from` of an `int[]` is `Queryable<Integer>`. A primitive
+  is not a legal type argument.
+* A stream pipeline the checker can type is a static `Stream` call. That
+  includes `map`, `collect`, `reduce`, and a method reference that is a
+  legal SAM, such as `Stream<BigDecimal>.reduce(BigDecimal.ZERO, BigDecimal::add)`.
+  `Collectors.joining()` on a `Stream<String>` is the same kind of call.
+  An alias on a group row (`r.n`, `r.s`) has the source element's type, so
+  the stream does not collapse to `Stream<Object>`.
 * A parallel clause body is `QueryableHelper.supplyClause`, whose declared
   type is `Object`. `supplyAsync`'s type parameters inferred the row as
   `CompletableFuture`.

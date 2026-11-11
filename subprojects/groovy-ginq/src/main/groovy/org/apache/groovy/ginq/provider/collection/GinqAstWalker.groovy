@@ -883,7 +883,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                                                     return callX(
                                                             classX(QUERYABLE_HELPER_TYPE),
                                                             "navigate",
-                                                            args(varX(windowFunctionLambdaName), getMetaDataMethodCall(MD_ALIAS_NAME_LIST))
+                                                            args(varX(windowFunctionLambdaName), aliasNameListExpression)
                                                     )
                                                 }
                                             }
@@ -1412,7 +1412,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                                     callX(
                                         classX(QUERYABLE_HELPER_TYPE),
                                             "navigate",
-                                        args(varX(lambdaParamName), getMetaDataMethodCall(MD_ALIAS_NAME_LIST))
+                                        args(varX(lambdaParamName), aliasNameListExpression)
                                     )
                         } else {
                             transformedExpression = varX(lambdaParamName)

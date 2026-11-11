@@ -661,4 +661,31 @@ final class GinqStaticModeTest {
             assert Example.run() == ['seq', 'seq']
         '''
     }
+
+    @Test
+    void staticClauseKeepsAWellTypedStream() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            import java.util.stream.Collectors
+            @CompileStatic
+            class Example {
+                static List sums() {
+                    GQ {
+                        from n in [1, 1, 3, 3, 6, 6, 6]
+                        groupby n
+                        select n, agg(_g.stream().map(r -> BigDecimal.valueOf(r.n)).reduce(BigDecimal.ZERO, BigDecimal::add))
+                    }.toList()
+                }
+                static List joined() {
+                    GQ {
+                        from s in ['a', 'bc', 'def']
+                        groupby s.size()
+                        select s.size(), agg(_g.stream().map(r -> r.s).collect(Collectors.joining()))
+                    }.toList()
+                }
+            }
+            assert Example.sums() == [[1, 2], [3, 6], [6, 18]]
+            assert Example.joined() == [[1, 'a'], [2, 'bc'], [3, 'def']]
+        '''
+    }
 }

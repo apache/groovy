@@ -51,10 +51,11 @@ final class TypeSignatureWriter {
     }
 
     /**
-     * Type arguments written for {@code printType}. A use site that names
-     * arguments a non-generic class does not declare (for example
-     * {@code Serializable<T>}) is an illegal signature and the class fails
-     * to load, so those arguments are left off.
+     * Type arguments written for {@code printType}. Last resort for JVMS
+     * 4.7.9.1: if a use site still names arguments a class does not declare,
+     * write the raw type javac would emit for the legal type. The type
+     * checker is what must keep {@code Serializable<T>} and {@code Queryable<int>}
+     * out of the AST.
      */
     private static GenericsType[] typeArguments(final ClassNode printType) {
         GenericsType[] useSite = printType.getGenericsTypes();

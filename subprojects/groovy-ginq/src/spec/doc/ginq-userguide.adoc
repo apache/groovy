@@ -1228,12 +1228,11 @@ the query with a checker of its own.
 The `GQ` macro lowers the SQL-like syntax at conversion, before either checker.
 The lowered tree is a closure. Under `@CompileStatic` that closure stays on the
 static writer. A call the checker selects is the call that runs, including a
-target another transform already chose. An operator on a row, a call the checker
-cannot resolve, and a stream pipeline (`stream`, `map`, `collect`, `reduce`)
-stay dynamic, through `ScriptBytecodeAdapter` rather than a stand-in method.
-A method pointer such as `BigDecimal::add` coerces its arguments the way a
-dynamic query does. The enclosing method is type-checked, and under
-`@CompileStatic` it is statically compiled.
+target another transform already chose and a well-typed `Stream` pipeline
+(`map`, `collect`, `reduce`, and a method reference that is a legal SAM).
+An operator on a row that the static writer cannot prove, and a call the
+checker cannot resolve, go through `ScriptBytecodeAdapter`. The enclosing method
+is type-checked, and under `@CompileStatic` it is statically compiled.
 `GinqRowChecks` is added to the enclosing annotation's extension list, which is how
 a caller writes `row.powerOfN`, `row[0]`, and `it.toList()` on a result whose static
 type is not a bean. `@TypeChecked` uses the same extension and does not static-compile;
@@ -1289,12 +1288,15 @@ to it, including a later assignment. A `Query` parameter or field has no element
 type unless it is declared as `Query<Person>` (or whatever the element is).
 Inventing one would accept a property that belongs to a different element type.
 
-Names bound by `from` inside `GQ`, `GQL`, and `@GQ` stay dynamic. The lowered
-query is not type-checked, so `from r in rows where r.a` still works when `rows`
-is a list of maps. Checking those names would reject that access. A nested
-closure in the query is dynamic for the same reason. Use `Ginq.from` when the
-element type should be checked. `orderBy` keys are compared with their natural
-order when the fluent query runs.
+Under `@CompileStatic` the lowered query is type-checked. A name bound by
+`from` has the source element type when the source has one. A property the
+checker cannot resolve, such as `from r in rows where r.a` when `rows` is a
+list of maps, stays a dynamic read. A well-typed `Stream` pipeline inside a
+clause is a static `Stream` call, including a method reference that is a
+legal SAM. An operator or call the checker cannot prove still goes through
+`ScriptBytecodeAdapter`. Use `Ginq.from` when the fluent API should check the
+element type. `orderBy` keys are compared with their natural order when the
+fluent query runs.
 
 == GINQ Examples
 
